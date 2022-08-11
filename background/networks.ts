@@ -1,7 +1,12 @@
+import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import { Slip44CoinType } from "./constants/coin-types"
 import { HexString, UNIXTime } from "./types"
 import type { CoinGeckoAsset } from "./assets"
-import type { TransactionRequestWithFrom } from "./services/enrichment"
+import type {
+  EnrichedEIP1559TransactionSignatureRequest,
+  EnrichedEVMTransactionSignatureRequest,
+  TransactionRequestWithFrom,
+} from "./services/enrichment"
 
 /**
  * Each supported network family is generally incompatible with others from a
@@ -344,8 +349,13 @@ export function toHexChainID(chainID: string | number): string {
   return `0x${BigInt(chainID).toString(16)}`
 }
 
+// There is probably some clever way to combine the following type guards into one function
+
 export function isEIP1559TransactionRequest(
-  transactionRequest: AnyEVMTransaction | Partial<TransactionRequestWithFrom>
+  transactionRequest:
+    | AnyEVMTransaction
+    | EthersTransactionRequest
+    | Partial<TransactionRequestWithFrom>
 ): transactionRequest is EIP1559TransactionRequest {
   if (
     "maxFeePerGas" in transactionRequest &&
@@ -359,6 +369,18 @@ export function isEIP1559TransactionRequest(
 export function isEIP1559SignedTransaction(
   transactionRequest: SignedTransaction
 ): transactionRequest is SignedEVMTransaction {
+  if (
+    "maxFeePerGas" in transactionRequest &&
+    "maxPriorityFeePerGas" in transactionRequest
+  ) {
+    return true
+  }
+  return false
+}
+
+export function isEIP1559EnrichedTransactionSignatureRequest(
+  transactionRequest: EnrichedEVMTransactionSignatureRequest
+): transactionRequest is EnrichedEIP1559TransactionSignatureRequest {
   if (
     "maxFeePerGas" in transactionRequest &&
     "maxPriorityFeePerGas" in transactionRequest

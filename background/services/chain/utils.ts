@@ -187,7 +187,7 @@ function legacyEVMTransactionRequestFromEthersTransactionRequest(
 export function transactionRequestFromEthersTransactionRequest(
   ethersTransactionRequest: EthersTransactionRequest
 ): Partial<TransactionRequest> {
-  if ("maxFeePerGas" in ethersTransactionRequest) {
+  if (isEIP1559TransactionRequest(ethersTransactionRequest)) {
     return eip1559TransactionRequestFromEthersTransactionRequest(
       ethersTransactionRequest
     )
