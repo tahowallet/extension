@@ -6,7 +6,6 @@ import {
   EIP1193_ERROR_CODES,
   RPCRequest,
 } from "@tallyho/provider-bridge-shared"
-import { hexlify, toUtf8Bytes } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 
 import BaseService from "../base"
@@ -38,6 +37,7 @@ import {
 } from "./db"
 import { TALLY_INTERNAL_ORIGIN } from "./constants"
 import { ETHEREUM } from "../../constants"
+import { hexToAscii } from "../../lib/utils"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -365,10 +365,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     },
     origin: string
   ) {
-    const hexInput = input.match(/^0x[0-9A-Fa-f]*$/)
-      ? input
-      : hexlify(toUtf8Bytes(input))
-    const { data, type } = parseSigningData(input)
+    const asciiData = input.match(/^0x[0-9A-Fa-f]*$/)
+      ? hexToAscii(input)
+      : input
+    const { data, type } = parseSigningData(asciiData)
     const activeNetwork = await this.getActiveOrDefaultNetwork(origin)
 
     return new Promise<string>((resolve, reject) => {
@@ -380,7 +380,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           },
           signingData: data,
           messageType: type,
-          rawSigningData: hexInput,
+          rawSigningData: asciiData,
         },
         resolver: resolve,
         rejecter: reject,
