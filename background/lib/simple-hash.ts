@@ -25,7 +25,17 @@ const CHAIN_ID_TO_NAME = {
 }
 
 /**
+ * Get multiple addresses' NFT holdings across collections and networks
+ * using the SimpleHash API.
  *
+ * Note that pagination isn't supported in this wrapper, so any responses after
+ * the first page will be dropped.
+ *
+ * Learn more at https://simplehash.readme.io/reference/nfts-by-owners
+ *
+ * @param addresses the addresses whose NFT holdings we want to query
+ * @param networks the networks we're querying. Currently supports Ethereum,
+ *        Polygon, Arbitrum, & Optimism.
  */
 export default async function getNFTsByOwners(
   addresses: HexString[],
