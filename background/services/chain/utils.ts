@@ -94,16 +94,19 @@ export function ethersTransactionRequestFromEIP1559TransactionRequest(
 export function ethersTransactionRequestFromLegacyTransactionRequest(
   transaction: LegacyEVMTransactionRequest
 ): EthersTransactionRequest {
+  const { to, input, from, type, nonce, gasPrice, value, chainID, gasLimit } =
+    transaction
+
   return {
-    to: transaction.to,
-    data: transaction.input ?? undefined,
-    from: transaction.from,
-    type: transaction.type ?? undefined,
-    nonce: transaction.nonce,
-    gasPrice: transaction.gasPrice,
-    value: transaction.value,
-    chainId: parseInt(transaction.chainID, 10),
-    gasLimit: transaction.gasLimit,
+    to,
+    data: input ?? undefined,
+    from,
+    type: type ?? undefined,
+    nonce,
+    gasPrice,
+    value,
+    chainId: parseInt(chainID, 10),
+    gasLimit,
   }
 }
 

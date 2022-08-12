@@ -364,20 +364,21 @@ export default class ChainService extends BaseService<Events> {
     transactionRequest: EnrichedLegacyTransactionRequest
     gasEstimationError: string | undefined
   }> {
+    const { from, to, value, gasLimit, input, gasPrice, nonce, annotation } =
+      partialRequest
     // Basic transaction construction based on the provided options, with extra data from the chain service
     const transactionRequest: EnrichedLegacyTransactionRequest = {
-      from: partialRequest.from,
-      to: partialRequest.to,
-      value: partialRequest.value ?? 0n,
-      gasLimit: partialRequest.gasLimit ?? 0n,
-      input: partialRequest.input ?? null,
-      gasPrice:
-        partialRequest.gasPrice ?? (await this.estimateGasPrice(network)),
+      from,
+      to,
+      value: value ?? 0n,
+      gasLimit: gasLimit ?? 0n,
+      input: input ?? null,
+      gasPrice: gasPrice ?? (await this.estimateGasPrice(network)),
       type: 0 as const,
       network,
       chainID: network.chainID,
-      nonce: partialRequest.nonce,
-      annotation: partialRequest.annotation,
+      nonce,
+      annotation,
     }
 
     // Always estimate gas to decide whether the transaction will likely fail.
@@ -410,8 +411,7 @@ export default class ChainService extends BaseService<Events> {
     // gas explicitly or if it was set below the minimum network-allowed value.
     if (
       typeof estimatedGasLimit !== "undefined" &&
-      (typeof partialRequest.gasLimit === "undefined" ||
-        partialRequest.gasLimit < 21000n)
+      (typeof gasLimit === "undefined" || gasLimit < 21000n)
     ) {
       transactionRequest.gasLimit = estimatedGasLimit
     }
@@ -435,20 +435,32 @@ export default class ChainService extends BaseService<Events> {
     transactionRequest: EnrichedEIP1559TransactionRequest
     gasEstimationError: string | undefined
   }> {
+    const {
+      from,
+      to,
+      value,
+      gasLimit,
+      input,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+      nonce,
+      annotation,
+    } = partialRequest
+
     // Basic transaction construction based on the provided options, with extra data from the chain service
     const transactionRequest: EnrichedEIP1559TransactionRequest = {
-      from: partialRequest.from,
-      to: partialRequest.to,
-      value: partialRequest.value ?? 0n,
-      gasLimit: partialRequest.gasLimit ?? 0n,
-      maxFeePerGas: partialRequest.maxFeePerGas ?? 0n,
-      maxPriorityFeePerGas: partialRequest.maxPriorityFeePerGas ?? 0n,
-      input: partialRequest.input ?? null,
+      from,
+      to,
+      value: value ?? 0n,
+      gasLimit: gasLimit ?? 0n,
+      maxFeePerGas: maxFeePerGas ?? 0n,
+      maxPriorityFeePerGas: maxPriorityFeePerGas ?? 0n,
+      input: input ?? null,
       type: 2 as const,
       network,
       chainID: network.chainID,
-      nonce: partialRequest.nonce,
-      annotation: partialRequest.annotation,
+      nonce,
+      annotation,
     }
 
     // Always estimate gas to decide whether the transaction will likely fail.

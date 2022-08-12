@@ -484,24 +484,41 @@ export default class KeyringService extends BaseService<Events> {
       throw new Error("Transaction doesn't appear to have been signed.")
     }
 
+    const {
+      to,
+      gasPrice,
+      gasLimit,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+      hash,
+      from,
+      nonce,
+      data,
+      value,
+      type,
+      r,
+      s,
+      v,
+    } = tx
+
     if (
-      typeof tx.maxPriorityFeePerGas === "undefined" ||
-      typeof tx.maxFeePerGas === "undefined" ||
-      tx.type !== 2
+      typeof maxPriorityFeePerGas === "undefined" ||
+      typeof maxFeePerGas === "undefined" ||
+      type !== 2
     ) {
       const signedTx = {
-        hash: tx.hash,
-        from: tx.from,
-        to: tx.to,
-        nonce: tx.nonce,
-        input: tx.data,
-        value: tx.value.toBigInt(),
-        type: tx.type as 0,
-        gasPrice: tx.gasPrice?.toBigInt() ?? null,
-        gasLimit: tx.gasLimit.toBigInt(),
-        r: tx.r,
-        s: tx.s,
-        v: tx.v,
+        hash,
+        from,
+        to,
+        nonce,
+        input: data,
+        value: value.toBigInt(),
+        type: type as 0,
+        gasPrice: gasPrice?.toBigInt() ?? null,
+        gasLimit: gasLimit.toBigInt(),
+        r,
+        s,
+        v,
         blockHash: null,
         blockHeight: null,
         asset: network.baseAsset,
@@ -512,20 +529,20 @@ export default class KeyringService extends BaseService<Events> {
 
     // TODO move this to a helper function
     const signedTx: SignedTransaction = {
-      hash: tx.hash,
-      from: tx.from,
-      to: tx.to,
-      nonce: tx.nonce,
-      input: tx.data,
-      value: tx.value.toBigInt(),
-      type: tx.type,
+      hash,
+      from,
+      to,
+      nonce,
+      input: data,
+      value: value.toBigInt(),
+      type,
       gasPrice: null,
-      maxFeePerGas: tx.maxFeePerGas.toBigInt(),
-      maxPriorityFeePerGas: tx.maxPriorityFeePerGas.toBigInt(),
-      gasLimit: tx.gasLimit.toBigInt(),
-      r: tx.r,
-      s: tx.s,
-      v: tx.v,
+      maxFeePerGas: maxFeePerGas.toBigInt(),
+      maxPriorityFeePerGas: maxPriorityFeePerGas.toBigInt(),
+      gasLimit: gasLimit.toBigInt(),
+      r,
+      s,
+      v,
       blockHash: null,
       blockHeight: null,
       asset: network.baseAsset,
