@@ -121,15 +121,15 @@ export type EnrichedEVMTransactionRequest =
   | EnrichedEIP1559TransactionRequest
   | EnrichedLegacyTransactionRequest
 
-type EIP1559TransactionRequestWithFrom =
+type PartialEIP1559TransactionRequestWithFrom =
   | Partial<EIP1559TransactionRequest> & { from: string }
 
-type LegacyEVMTransactionRequestWithFrom =
+type PartialLegacyEVMTransactionRequestWithFrom =
   | Partial<LegacyEVMTransactionRequest> & { from: string }
 
-export type TransactionRequestWithFrom =
-  | EIP1559TransactionRequestWithFrom
-  | LegacyEVMTransactionRequestWithFrom
+export type PartialTransactionRequestWithFrom =
+  | PartialEIP1559TransactionRequestWithFrom
+  | PartialLegacyEVMTransactionRequestWithFrom
 
 export type TypedDataField = {
   value: string

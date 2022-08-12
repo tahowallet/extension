@@ -157,7 +157,6 @@ function eip1559TransactionRequestFromEthersTransactionRequest(
 function legacyEVMTransactionRequestFromEthersTransactionRequest(
   transaction: EthersTransactionRequest
 ): Partial<LegacyEVMTransactionRequest> {
-  // TODO What to do if transaction is not EIP1559?
   return {
     to: transaction.to,
     input: transaction.data?.toString() ?? null,

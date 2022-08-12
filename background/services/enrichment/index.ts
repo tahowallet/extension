@@ -26,7 +26,7 @@ import {
   SignTypedDataAnnotation,
   TransactionAnnotation,
   EnrichedSignTypedDataRequest,
-  TransactionRequestWithFrom,
+  PartialTransactionRequestWithFrom,
 } from "./types"
 import { SignTypedDataRequest } from "../../utils/signing"
 import {
@@ -114,7 +114,7 @@ export default class EnrichmentService extends BaseService<Events> {
     network: EVMNetwork,
     transaction:
       | AnyEVMTransaction
-      | (TransactionRequestWithFrom & {
+      | (PartialTransactionRequestWithFrom & {
           blockHash?: string
         }),
     desiredDecimals: number
@@ -392,7 +392,7 @@ export default class EnrichmentService extends BaseService<Events> {
 
   async enrichTransactionSignature(
     network: EVMNetwork,
-    transaction: TransactionRequestWithFrom,
+    transaction: PartialTransactionRequestWithFrom,
     desiredDecimals: number
   ): Promise<EnrichedEVMTransactionSignatureRequest> {
     const enrichedTxSignatureRequest = {

@@ -5,7 +5,7 @@ import type { CoinGeckoAsset } from "./assets"
 import type {
   EnrichedEIP1559TransactionSignatureRequest,
   EnrichedEVMTransactionSignatureRequest,
-  TransactionRequestWithFrom,
+  PartialTransactionRequestWithFrom,
 } from "./services/enrichment"
 
 /**
@@ -355,7 +355,7 @@ export function isEIP1559TransactionRequest(
   transactionRequest:
     | AnyEVMTransaction
     | EthersTransactionRequest
-    | Partial<TransactionRequestWithFrom>
+    | Partial<PartialTransactionRequestWithFrom>
 ): transactionRequest is EIP1559TransactionRequest {
   if (
     "maxFeePerGas" in transactionRequest &&
