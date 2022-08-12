@@ -126,16 +126,24 @@ export default class EnrichmentService extends BaseService<Events> {
 
     let hasInsufficientFunds = false
 
+    const {
+      assetAmount: { amount: baseAssetBalance },
+    } = await this.chainService.getLatestBaseAccountBalance({
+      address: transaction.from,
+      network,
+    })
+
     if (isEIP1559TransactionRequest(transaction)) {
       const { gasLimit, maxFeePerGas, maxPriorityFeePerGas } = transaction
       if (gasLimit && maxFeePerGas && maxPriorityFeePerGas) {
         const gasFee = gasLimit * maxFeePerGas
-        const {
-          assetAmount: { amount: baseAssetBalance },
-        } = await this.chainService.getLatestBaseAccountBalance({
-          address: transaction.from,
-          network,
-        })
+        hasInsufficientFunds =
+          gasFee + (transaction.value ?? 0n) > baseAssetBalance
+      }
+    } else if ("gasPrice" in transaction && "gasLimit" in transaction) {
+      const { gasPrice, gasLimit } = transaction
+      if (gasPrice && gasLimit) {
+        const gasFee = gasLimit * gasPrice
         hasInsufficientFunds =
           gasFee + (transaction.value ?? 0n) > baseAssetBalance
       }
