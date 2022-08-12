@@ -364,7 +364,9 @@ export const isEIP1559SignedTransaction = (
   signedTransaction: SignedTransaction
 ): signedTransaction is SignedEIP1559Transaction =>
   "maxFeePerGas" in signedTransaction &&
-  "maxPriorityFeePerGas" in signedTransaction
+  "maxPriorityFeePerGas" in signedTransaction &&
+  signedTransaction.maxFeePerGas !== null &&
+  signedTransaction.maxPriorityFeePerGas !== null
 
 export const isEIP1559EnrichedTransactionSignatureRequest = (
   transactionSignatureRequest: EnrichedEVMTransactionSignatureRequest

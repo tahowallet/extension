@@ -516,6 +516,8 @@ export default class KeyringService extends BaseService<Events> {
         type: type as 0,
         gasPrice: gasPrice?.toBigInt() ?? null,
         gasLimit: gasLimit.toBigInt(),
+        maxFeePerGas: null,
+        maxPriorityFeePerGas: null,
         r,
         s,
         v,
@@ -524,7 +526,7 @@ export default class KeyringService extends BaseService<Events> {
         asset: network.baseAsset,
         network: USE_MAINNET_FORK ? FORK : network,
       }
-      return signedTx as unknown as SignedTransaction
+      return signedTx
     }
 
     // TODO move this to a helper function
