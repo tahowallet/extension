@@ -39,13 +39,13 @@ export function getRecipient(activityItem: ActivityItem): {
   switch (annotation?.type) {
     case "asset-transfer":
       return {
-        address: annotation.recipient.address,
-        name: annotation.recipient.annotation.nameOnNetwork?.name,
+        address: annotation.recipient?.address,
+        name: annotation.recipient?.annotation.nameOnNetwork?.name,
       }
     case "contract-interaction":
       return {
         address: activityItem.to,
-        name: annotation.contractInfo.annotation.nameOnNetwork?.name,
+        name: annotation.contractInfo?.annotation.nameOnNetwork?.name,
       }
     default:
       return { address: activityItem.to }
