@@ -32,7 +32,7 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
   }
 
   return (
-    <table className="standard_width">
+    <table className="assets_table standard_width">
       <thead>
         <tr>
           <th>{t("overview.tableHeader.asset")}</th>
@@ -84,8 +84,14 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
         ))}
       </tbody>
       <style jsx>{`
+        .assets_table {
+          margin: 8px 0;
+        }
         tr {
           height: 55px;
+        }
+        thead tr {
+          height 32px;
         }
         td,
         th {

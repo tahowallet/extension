@@ -7,13 +7,19 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
 
-import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
+import {
+  HIDE_TOKEN_FEATURES,
+  SUPPORT_NFTS,
+} from "@tallyho/tally-background/features"
+import classNames from "classnames"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
 import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
+import NFTsWallet from "../components/NFTs/NFTsWallet"
+import SharedBanner from "../components/Shared/SharedBanner"
 
 export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
@@ -54,6 +60,11 @@ export default function Wallet(): ReactElement {
     return <Redirect to="/onboarding/info-intro" />
   }
 
+  let panelNames = ["Assets", "Activity"]
+  if (SUPPORT_NFTS) {
+    panelNames = ["Assets", "NFTs", "Activity"]
+  }
+
   return (
     <>
       <div className="page_content">
@@ -68,18 +79,51 @@ export default function Wallet(): ReactElement {
           <SharedPanelSwitcher
             setPanelNumber={setPanelNumber}
             panelNumber={panelNumber}
-            panelNames={["Assets", "Activity"]}
+            panelNames={panelNames}
           />
-          <div className="panel standard_width">
-            {panelNumber === 0 ? (
+          <div
+            className={classNames("panel standard_width", {
+              no_padding: SUPPORT_NFTS && panelNumber === 1,
+            })}
+          >
+            {panelNumber === 0 && (
               <WalletAssetList
                 assetAmounts={assetAmounts}
                 initializationLoadingTimeExpired={
                   initializationLoadingTimeExpired
                 }
               />
+            )}
+            {SUPPORT_NFTS ? (
+              <>
+                {panelNumber === 1 && (
+                  <>
+                    <SharedBanner
+                      icon="notif-announcement"
+                      iconColor="var(--link)"
+                      canBeClosed
+                      id="nft_soon"
+                      customStyles="margin: 8px 0;"
+                    >
+                      Coming soon: NFT price + sending
+                    </SharedBanner>
+                    <NFTsWallet />
+                  </>
+                )}
+                {panelNumber === 2 && (
+                  <WalletActivityList
+                    activities={currentAccountActivities ?? []}
+                  />
+                )}
+              </>
             ) : (
-              <WalletActivityList activities={currentAccountActivities ?? []} />
+              <>
+                {panelNumber === 1 && (
+                  <WalletActivityList
+                    activities={currentAccountActivities ?? []}
+                  />
+                )}
+              </>
             )}
           </div>
         </div>
@@ -107,6 +151,9 @@ export default function Wallet(): ReactElement {
           }
           .panel::-webkit-scrollbar {
             display: none;
+          }
+          .no_padding {
+            padding-top: 0;
           }
         `}
       </style>

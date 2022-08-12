@@ -1,6 +1,12 @@
+import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import { Slip44CoinType } from "./constants/coin-types"
 import { HexString, UNIXTime } from "./types"
 import type { CoinGeckoAsset } from "./assets"
+import type {
+  EnrichedEIP1559TransactionSignatureRequest,
+  EnrichedEVMTransactionSignatureRequest,
+  PartialTransactionRequestWithFrom,
+} from "./services/enrichment"
 
 /**
  * Each supported network family is generally incompatible with others from a
@@ -128,13 +134,17 @@ export type LegacyEVMTransaction = EVMTransaction & {
  * are used to post a transaction for inclusion are required, including the gas
  * limit used to limit the gas expenditure on a transaction. This is used to
  * request a signed transaction, and does not include signature fields.
+ *
+ * Nonce is permitted to be `undefined` as Tally internals can and often do
+ * populate the nonce immediately before a request is signed.
  */
 export type LegacyEVMTransactionRequest = Pick<
   LegacyEVMTransaction,
-  "gasPrice" | "type" | "nonce" | "from" | "to" | "input" | "value" | "network"
+  "gasPrice" | "type" | "from" | "to" | "input" | "value" | "network"
 > & {
   chainID: LegacyEVMTransaction["network"]["chainID"]
   gasLimit: bigint
+  nonce?: number
 }
 
 /**
@@ -171,8 +181,14 @@ export type EIP1559TransactionRequest = Pick<
 > & {
   gasLimit: bigint
   chainID: EIP1559Transaction["network"]["chainID"]
-  nonce: number | undefined
+  nonce?: number
 }
+
+export type TransactionRequest =
+  | EIP1559TransactionRequest
+  | LegacyEVMTransactionRequest
+
+export type TransactionRequestWithNonce = TransactionRequest & { nonce: number }
 
 /**
  * EVM log metadata, including the contract address that generated the log, the
@@ -222,17 +238,31 @@ export type AlmostSignedEVMTransaction = EVMTransaction & {
  * An EVM transaction with signature fields filled in and ready for broadcast
  * to the network.
  */
-export type SignedEVMTransaction = EVMTransaction & {
+type SignedEIP1559Transaction = EVMTransaction & {
   r: string
   s: string
   v: number
 }
 
 /**
+ * A Legacy EVM transaction with signature fields filled in and ready for broadcast
+ * to the network.
+ */
+export type SignedLegacyEVMTransaction = LegacyEVMTransaction & {
+  r: string
+  s: string
+  v: number
+}
+
+export type SignedTransaction =
+  | SignedEIP1559Transaction
+  | SignedLegacyEVMTransaction
+
+/**
  * An EVM transaction that has all signature fields and has been included in a
  * block.
  */
-export type SignedConfirmedEVMTransaction = SignedEVMTransaction &
+export type SignedConfirmedEVMTransaction = SignedEIP1559Transaction &
   ConfirmedEVMTransaction
 
 /**
@@ -242,7 +272,7 @@ export type AnyEVMTransaction =
   | EVMTransaction
   | ConfirmedEVMTransaction
   | AlmostSignedEVMTransaction
-  | SignedEVMTransaction
+  | SignedTransaction
   | FailedConfirmationEVMTransaction
 
 /**
@@ -320,6 +350,7 @@ export function toHexChainID(chainID: string | number): string {
 }
 
 
+
 /**
  *
  * Safe ChainID
@@ -345,3 +376,29 @@ export function toHexChainID(chainID: string | number): string {
      throw new Error(`Invalid chainID ${chainID}`)
    }
  }
+
+// There is probably some clever way to combine the following type guards into one function
+
+export const isEIP1559TransactionRequest = (
+  transactionRequest:
+    | AnyEVMTransaction
+    | EthersTransactionRequest
+    | Partial<PartialTransactionRequestWithFrom>
+): transactionRequest is EIP1559TransactionRequest =>
+  "maxFeePerGas" in transactionRequest &&
+  "maxPriorityFeePerGas" in transactionRequest
+
+export const isEIP1559SignedTransaction = (
+  signedTransaction: SignedTransaction
+): signedTransaction is SignedEIP1559Transaction =>
+  "maxFeePerGas" in signedTransaction &&
+  "maxPriorityFeePerGas" in signedTransaction &&
+  signedTransaction.maxFeePerGas !== null &&
+  signedTransaction.maxPriorityFeePerGas !== null
+
+export const isEIP1559EnrichedTransactionSignatureRequest = (
+  transactionSignatureRequest: EnrichedEVMTransactionSignatureRequest
+): transactionSignatureRequest is EnrichedEIP1559TransactionSignatureRequest =>
+  "maxFeePerGas" in transactionSignatureRequest &&
+  "maxPriorityFeePerGas" in transactionSignatureRequest
+

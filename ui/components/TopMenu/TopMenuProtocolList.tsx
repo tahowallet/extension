@@ -14,22 +14,18 @@ import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/sel
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
-import i18n from "../../_locales/i18n"
+import { i18n } from "../../_locales/i18n"
 
 const listItemInfo = [
   {
     network: ETHEREUM,
     info: i18n.t("protocol.mainnet"),
-    width: 18,
-    height: 29,
   },
   ...(SUPPORT_POLYGON
     ? [
         {
           network: POLYGON,
           info: i18n.t("protocol.l2"),
-          width: 24,
-          height: 24,
         },
       ]
     : []),
@@ -38,8 +34,6 @@ const listItemInfo = [
         {
           network: ARBITRUM_ONE,
           info: i18n.t("protocol.l2"),
-          width: 23.2,
-          height: 26,
         },
       ]
     : []),
@@ -48,8 +42,6 @@ const listItemInfo = [
         {
           network: OPTIMISM,
           info: i18n.t("protocol.l2"),
-          width: 24,
-          height: 24,
         },
       ]
     : []),
@@ -84,8 +76,6 @@ export default function TopMenuProtocolList({
             isSelected={sameNetwork(currentNetwork, info.network)}
             key={info.network.name}
             network={info.network}
-            height={info.height}
-            width={info.width}
             info={info.info}
             onSelect={onProtocolChange}
           />

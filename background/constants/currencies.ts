@@ -9,19 +9,10 @@ export const USD: FiatCurrency = {
   decimals: 10,
 }
 
-export const EUR: FiatCurrency = {
-  name: "euro",
-  symbol: "EUR",
-  decimals: 10,
-}
-
-export const CNY: FiatCurrency = {
-  name: "renminbi",
-  symbol: "CNY",
-  decimals: 10,
-}
-
-export const FIAT_CURRENCIES = [USD, EUR, CNY]
+export const FIAT_CURRENCIES = [USD]
+export const FIAT_CURRENCIES_SYMBOL = FIAT_CURRENCIES.map(
+  (currency) => currency.symbol
+)
 
 export const ETH: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   name: "Ether",

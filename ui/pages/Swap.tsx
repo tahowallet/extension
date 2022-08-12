@@ -22,6 +22,7 @@ import {
 } from "@tallyho/tally-background/features"
 import {
   selectCurrentAccountBalances,
+  selectCurrentAccountSigner,
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -40,6 +41,7 @@ import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
 import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -54,6 +56,7 @@ import {
 import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
+import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
 
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
@@ -93,6 +96,10 @@ export default function Swap(): ReactElement {
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
 
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+
+  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
+
+  const isReadOnlyAccount = currentAccountSigner === ReadOnlyAccountSigner
 
   // TODO We're special-casing ETH here in an odd way. Going forward, we should
   // filter by current chain and better handle network-native base assets
@@ -512,6 +519,7 @@ export default function Swap(): ReactElement {
         <div className="standard_width swap_wrap">
           <div className="header">
             <SharedActivityHeader label={t("swap.title")} activity="swap" />
+            <ReadOnlyNotice isLite />
             {HIDE_TOKEN_FEATURES ? (
               <></>
             ) : (
@@ -597,6 +605,7 @@ export default function Swap(): ReactElement {
                       type="primary"
                       size="large"
                       isDisabled={
+                        isReadOnlyAccount ||
                         typeof latestQuoteRequest.current === "undefined" ||
                         sellAmountLoading ||
                         buyAmountLoading
@@ -612,6 +621,7 @@ export default function Swap(): ReactElement {
                     type="primary"
                     size="large"
                     isDisabled={
+                      isReadOnlyAccount ||
                       typeof latestQuoteRequest.current === "undefined" ||
                       sellAmountLoading ||
                       buyAmountLoading ||

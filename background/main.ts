@@ -31,12 +31,13 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
-import { SignedEVMTransaction } from "./networks"
+import { AnyEVMTransaction, SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
 import rootReducer from "./redux-slices"
 import {
+  deleteAccount,
   loadAccount,
   updateAccountBalance,
   updateAccountName,
@@ -105,7 +106,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { ETHEREUM, POLYGON } from "./constants"
+import { ETHEREUM, OPTIMISM, POLYGON } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   SignatureResponse,
@@ -119,6 +120,12 @@ import {
 } from "./redux-slices/migrations"
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
+import { deleteNFts } from "./redux-slices/nfts"
+import { filterTransactionPropsForUI } from "./utils/view-model-transformer"
+import {
+  EnrichedEVMTransaction,
+  EnrichedEVMTransactionRequest,
+} from "./services/enrichment"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -483,6 +490,8 @@ export default class Main extends BaseService<never> {
     address: HexString,
     signerType?: SignerType
   ): Promise<void> {
+    this.store.dispatch(deleteAccount(address))
+    this.store.dispatch(deleteNFts(address))
     // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signerType)
   }
@@ -585,14 +594,10 @@ export default class Main extends BaseService<never> {
         } = selectDefaultNetworkFeeSettings(this.store.getState())
 
         const { transactionRequest: populatedRequest, gasEstimationError } =
-          await this.chainService.populatePartialEVMTransactionRequest(
+          await this.chainService.populatePartialTransactionRequest(
             network,
-            {
-              ...options,
-              maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
-              maxPriorityFeePerGas:
-                options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
-            }
+            { ...options },
+            { maxFeePerGas, maxPriorityFeePerGas }
           )
 
         const { annotation } =
@@ -602,7 +607,7 @@ export default class Main extends BaseService<never> {
             2 /* TODO desiredDecimals should be configurable */
           )
 
-        const enrichedPopulatedRequest = {
+        const enrichedPopulatedRequest: EnrichedEVMTransactionRequest = {
           ...populatedRequest,
           annotation,
         }
@@ -627,7 +632,7 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on(
       "broadcastSignedTransaction",
-      async (transaction: SignedEVMTransaction) => {
+      async (transaction: SignedTransaction) => {
         this.chainService.broadcastSignedTransaction(transaction)
       }
     )
@@ -694,7 +699,11 @@ export default class Main extends BaseService<never> {
     // Report on transactions for basic activity. Fancier stuff is handled via
     // connectEnrichmentService
     this.chainService.emitter.on("transaction", async (transactionInfo) => {
-      this.store.dispatch(activityEncountered(transactionInfo))
+      this.store.dispatch(
+        activityEncountered(
+          filterTransactionPropsForUI<AnyEVMTransaction>(transactionInfo)
+        )
+      )
     })
   }
 
@@ -763,7 +772,11 @@ export default class Main extends BaseService<never> {
         this.indexingService.notifyEnrichedTransaction(
           transactionData.transaction
         )
-        this.store.dispatch(activityEncountered(transactionData))
+        this.store.dispatch(
+          activityEncountered(
+            filterTransactionPropsForUI<EnrichedEVMTransaction>(transactionData)
+          )
+        )
       }
     )
   }
@@ -1086,7 +1099,7 @@ export default class Main extends BaseService<never> {
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await Promise.all(
-        [ETHEREUM, POLYGON].map(async (network) => {
+        [ETHEREUM, POLYGON, OPTIMISM].map(async (network) => {
           await this.providerBridgeService.grantPermission({
             ...permission,
             chainID: network.chainID,

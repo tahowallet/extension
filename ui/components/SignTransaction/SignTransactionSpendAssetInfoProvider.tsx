@@ -302,7 +302,7 @@ export default function SignTransactionSpendAssetInfoProvider({
           <TransactionDetailItem
             name="Spend limit"
             value={
-              <SharedSkeletonLoader isLoaded={!!asset.symbol}>
+              <SharedSkeletonLoader height={24} isLoaded={!!asset.symbol}>
                 approvalLimitDisplayValue
               </SharedSkeletonLoader>
             }

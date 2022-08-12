@@ -69,3 +69,15 @@ export const FORK: EVMNetwork = {
   chainID: process.env.MAINNET_FORK_CHAIN_ID ?? "1337",
   family: "EVM",
 }
+
+export const NETWORK_BY_CHAIN_ID = {
+  [ETHEREUM.chainID]: ETHEREUM,
+  [POLYGON.chainID]: POLYGON,
+  [ARBITRUM_ONE.chainID]: ARBITRUM_ONE,
+  [OPTIMISM.chainID]: OPTIMISM,
+  [ROPSTEN.chainID]: ROPSTEN,
+  [RINKEBY.chainID]: RINKEBY,
+  [GOERLI.chainID]: GOERLI,
+  [KOVAN.chainID]: KOVAN,
+  [FORK.chainID]: FORK,
+}
