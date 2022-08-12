@@ -19,5 +19,5 @@ type SigningProps<T extends SignOperationType> = {
 export default function Signing<T extends SignOperationType>(
   props: SigningProps<T>
 ): ReactElement {
-	return <></>
+  return <></>
 }
