@@ -351,41 +351,23 @@ export function toHexChainID(chainID: string | number): string {
 
 // There is probably some clever way to combine the following type guards into one function
 
-export function isEIP1559TransactionRequest(
+export const isEIP1559TransactionRequest = (
   transactionRequest:
     | AnyEVMTransaction
     | EthersTransactionRequest
     | Partial<PartialTransactionRequestWithFrom>
-): transactionRequest is EIP1559TransactionRequest {
-  if (
-    "maxFeePerGas" in transactionRequest &&
-    "maxPriorityFeePerGas" in transactionRequest
-  ) {
-    return true
-  }
-  return false
-}
+): transactionRequest is EIP1559TransactionRequest =>
+  "maxFeePerGas" in transactionRequest &&
+  "maxPriorityFeePerGas" in transactionRequest
 
-export function isEIP1559SignedTransaction(
-  transactionRequest: SignedTransaction
-): transactionRequest is SignedEIP1559Transaction {
-  if (
-    "maxFeePerGas" in transactionRequest &&
-    "maxPriorityFeePerGas" in transactionRequest
-  ) {
-    return true
-  }
-  return false
-}
+export const isEIP1559SignedTransaction = (
+  signedTransaction: SignedTransaction
+): signedTransaction is SignedEIP1559Transaction =>
+  "maxFeePerGas" in signedTransaction &&
+  "maxPriorityFeePerGas" in signedTransaction
 
-export function isEIP1559EnrichedTransactionSignatureRequest(
-  transactionRequest: EnrichedEVMTransactionSignatureRequest
-): transactionRequest is EnrichedEIP1559TransactionSignatureRequest {
-  if (
-    "maxFeePerGas" in transactionRequest &&
-    "maxPriorityFeePerGas" in transactionRequest
-  ) {
-    return true
-  }
-  return false
-}
+export const isEIP1559EnrichedTransactionSignatureRequest = (
+  transactionSignatureRequest: EnrichedEVMTransactionSignatureRequest
+): transactionSignatureRequest is EnrichedEIP1559TransactionSignatureRequest =>
+  "maxFeePerGas" in transactionSignatureRequest &&
+  "maxPriorityFeePerGas" in transactionSignatureRequest
