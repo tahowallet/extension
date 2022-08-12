@@ -401,7 +401,7 @@ export default class ChainService extends BaseService<Events> {
           "code" in anyError &&
           anyError.code === Logger.errors.UNPREDICTABLE_GAS_LIMIT
         ) {
-          gasEstimationError = anyError.error ?? "unknown transaction error"
+          gasEstimationError = anyError.error ?? "Unknown transaction error."
         }
       }
     }
@@ -472,7 +472,7 @@ export default class ChainService extends BaseService<Events> {
           "code" in anyError &&
           anyError.code === Logger.errors.UNPREDICTABLE_GAS_LIMIT
         ) {
-          gasEstimationError = anyError.error ?? "unknown transaction error"
+          gasEstimationError = anyError.error ?? "Unknown transaction error."
         }
       }
     }
