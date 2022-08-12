@@ -12,14 +12,14 @@ import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import {
-  EIP1559TransactionRequest,
   EVMNetwork,
-  SignedEVMTransaction,
+  SignedTransaction,
   toHexChainID,
+  TransactionRequest,
 } from "../../networks"
 import {
-  eip1559TransactionRequestFromEthersTransactionRequest,
   ethersTransactionFromSignedTransaction,
+  transactionRequestFromEthersTransactionRequest,
 } from "../chain/utils"
 import PreferenceService from "../preferences"
 import { internalProviderPort } from "../../redux-slices/utils/contract-utils"
@@ -29,7 +29,7 @@ import {
   SignDataRequest,
   parseSigningData,
 } from "../../utils/signing"
-import { SUPPORT_POLYGON } from "../../features"
+import { SUPPORT_OPTIMISM, SUPPORT_POLYGON } from "../../features"
 import {
   ActiveNetwork,
   getOrCreateDB,
@@ -68,8 +68,8 @@ type DAppRequestEvent<T, E> = {
 
 type Events = ServiceLifecycleEvents & {
   transactionSignatureRequest: DAppRequestEvent<
-    Partial<EIP1559TransactionRequest> & { from: string; network: EVMNetwork },
-    SignedEVMTransaction
+    Partial<TransactionRequest> & { from: string; network: EVMNetwork },
+    SignedTransaction
   >
   signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
   signDataRequest: DAppRequestEvent<SignDataRequest, string>
@@ -246,16 +246,21 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       // will just switch to a chain if we already support it - but not add a new one
       case "wallet_addEthereumChain":
       case "wallet_switchEthereumChain": {
-        if (SUPPORT_POLYGON) {
-          const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
-          const supportedNetwork = this.getSupportedNetworkByChainId(newChainId)
-          if (supportedNetwork) {
-            await this.db.setActiveChainIdForOrigin(origin, supportedNetwork)
-            return null
-          }
+        if (
+          !SUPPORT_OPTIMISM &&
+          toHexChainID((params[0] as SwitchEthereumChainParameter).chainId) ===
+            toHexChainID(10)
+        ) {
+          // Prevent users from accidentally switching to Optimism
           throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
         }
-        throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
+        const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
+        const supportedNetwork = this.getSupportedNetworkByChainId(newChainId)
+        if (supportedNetwork) {
+          await this.db.setActiveChainIdForOrigin(origin, supportedNetwork)
+          return null
+        }
+        throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
       }
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
@@ -306,9 +311,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   private async signTransaction(
     transactionRequest: JsonRpcTransactionRequest,
     origin: string
-  ) {
+  ): Promise<SignedTransaction> {
     const { from, ...convertedRequest } =
-      eip1559TransactionRequestFromEthersTransactionRequest({
+      transactionRequestFromEthersTransactionRequest({
         // Convert input -> data if necessary; if transactionRequest uses data
         // directly, it will be overwritten below. If someone sends both and
         // they differ, may devops199 have mercy on their soul (but we will
@@ -324,7 +329,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
 
     const activeNetwork = await this.getActiveOrDefaultNetwork(origin)
 
-    return new Promise<SignedEVMTransaction>((resolve, reject) => {
+    return new Promise<SignedTransaction>((resolve, reject) => {
       this.emitter.emit("transactionSignatureRequest", {
         payload: {
           ...convertedRequest,

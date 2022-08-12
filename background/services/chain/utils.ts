@@ -9,10 +9,14 @@ import { Transaction as EthersTransaction } from "@ethersproject/transactions"
 import {
   AnyEVMTransaction,
   EVMNetwork,
-  SignedEVMTransaction,
   AnyEVMBlock,
   EIP1559TransactionRequest,
   ConfirmedEVMTransaction,
+  LegacyEVMTransactionRequest,
+  isEIP1559TransactionRequest,
+  TransactionRequest,
+  isEIP1559SignedTransaction,
+  SignedTransaction,
 } from "../../networks"
 import { USE_MAINNET_FORK } from "../../features"
 import { FORK } from "../../constants"
@@ -87,10 +91,42 @@ export function ethersTransactionRequestFromEIP1559TransactionRequest(
   }
 }
 
-export function eip1559TransactionRequestFromEthersTransactionRequest(
+export function ethersTransactionRequestFromLegacyTransactionRequest(
+  transaction: LegacyEVMTransactionRequest
+): EthersTransactionRequest {
+  const { to, input, from, type, nonce, gasPrice, value, chainID, gasLimit } =
+    transaction
+
+  return {
+    to,
+    data: input ?? undefined,
+    from,
+    type: type ?? undefined,
+    nonce,
+    gasPrice,
+    value,
+    chainId: parseInt(chainID, 10),
+    gasLimit,
+  }
+}
+
+export function ethersTransactionFromTransactionRequest(
+  transactionRequest: TransactionRequest
+): EthersTransactionRequest {
+  if (isEIP1559TransactionRequest(transactionRequest)) {
+    return ethersTransactionRequestFromEIP1559TransactionRequest(
+      transactionRequest
+    )
+  }
+  // Legacy Transaction
+  return ethersTransactionRequestFromLegacyTransactionRequest(
+    transactionRequest
+  )
+}
+
+function eip1559TransactionRequestFromEthersTransactionRequest(
   transaction: EthersTransactionRequest
 ): Partial<EIP1559TransactionRequest> {
-  // TODO What to do if transaction is not EIP1559?
   return {
     to: transaction.to,
     input: transaction.data?.toString() ?? null,
@@ -120,30 +156,74 @@ export function eip1559TransactionRequestFromEthersTransactionRequest(
   }
 }
 
+function legacyEVMTransactionRequestFromEthersTransactionRequest(
+  transaction: EthersTransactionRequest
+): Partial<LegacyEVMTransactionRequest> {
+  return {
+    to: transaction.to,
+    input: transaction.data?.toString() ?? null,
+    from: transaction.from,
+    type: transaction.type as 0,
+    nonce:
+      typeof transaction.nonce !== "undefined"
+        ? parseInt(transaction.nonce.toString(), 16)
+        : undefined,
+    value:
+      typeof transaction.value !== "undefined"
+        ? BigInt(transaction.value.toString())
+        : undefined,
+    chainID: transaction.chainId?.toString(16),
+    gasLimit:
+      typeof transaction.gasLimit !== "undefined"
+        ? BigInt(transaction.gasLimit.toString())
+        : undefined,
+    gasPrice:
+      typeof transaction.gasPrice !== "undefined"
+        ? BigInt(transaction.gasPrice.toString())
+        : undefined,
+  }
+}
+
+export function transactionRequestFromEthersTransactionRequest(
+  ethersTransactionRequest: EthersTransactionRequest
+): Partial<TransactionRequest> {
+  if (isEIP1559TransactionRequest(ethersTransactionRequest)) {
+    return eip1559TransactionRequestFromEthersTransactionRequest(
+      ethersTransactionRequest
+    )
+  }
+  return legacyEVMTransactionRequestFromEthersTransactionRequest(
+    ethersTransactionRequest
+  )
+}
+
 export function ethersTransactionFromSignedTransaction(
-  tx: SignedEVMTransaction
+  tx: SignedTransaction
 ): EthersTransaction {
-  const baseTx = {
+  const baseTx: EthersTransaction = {
     nonce: Number(tx.nonce),
-    maxFeePerGas: tx.maxFeePerGas ? BigNumber.from(tx.maxFeePerGas) : undefined,
-    maxPriorityFeePerGas: tx.maxPriorityFeePerGas
-      ? BigNumber.from(tx.maxPriorityFeePerGas)
-      : undefined,
     to: tx.to,
-    from: tx.from,
     data: tx.input || "",
+    gasPrice: BigNumber.from(tx.gasPrice),
     type: tx.type,
     chainId: parseInt(USE_MAINNET_FORK ? FORK.chainID : tx.network.chainID, 10),
     value: BigNumber.from(tx.value),
     gasLimit: BigNumber.from(tx.gasLimit),
   }
 
-  return {
-    ...baseTx,
-    r: tx.r,
-    s: tx.s,
-    v: tx.v,
+  if (isEIP1559SignedTransaction(tx)) {
+    return {
+      ...baseTx,
+      maxFeePerGas: BigNumber.from(tx.maxFeePerGas),
+      maxPriorityFeePerGas: BigNumber.from(tx.maxPriorityFeePerGas),
+      r: tx.r,
+      from: tx.from,
+      s: tx.s,
+      v: tx.v,
+    }
   }
+
+  return baseTx
 }
 
 /**
@@ -214,7 +294,7 @@ export function transactionFromEthersTransaction(
   } as const // narrow types for compatiblity with our internal ones
 
   if (tx.r && tx.s && tx.v) {
-    const signedTx: SignedEVMTransaction = {
+    const signedTx: SignedTransaction = {
       ...newTx,
       r: tx.r,
       s: tx.s,
