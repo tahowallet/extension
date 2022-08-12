@@ -127,7 +127,6 @@ export function ethersTransactionFromTransactionRequest(
 function eip1559TransactionRequestFromEthersTransactionRequest(
   transaction: EthersTransactionRequest
 ): Partial<EIP1559TransactionRequest> {
-  // TODO What to do if transaction is not EIP1559?
   return {
     to: transaction.to,
     input: transaction.data?.toString() ?? null,
