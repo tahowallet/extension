@@ -1,7 +1,6 @@
 import { FiatCurrency, FungibleAsset, CoinGeckoAsset } from "../assets"
 import { NetworkBaseAsset } from "../networks"
 import { coinTypesByAssetSymbol } from "./coin-types"
-import { SUPPORT_POLYGON } from "../features"
 
 export const USD: FiatCurrency = {
   name: "United States Dollar",
@@ -53,7 +52,7 @@ export const BTC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   },
 }
 
-export const BASE_ASSETS = [ETH, BTC, ...(SUPPORT_POLYGON ? [MATIC] : [])]
+export const BASE_ASSETS = [ETH, BTC, MATIC]
 
 export const BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce<{
   [assetSymbol: string]: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset

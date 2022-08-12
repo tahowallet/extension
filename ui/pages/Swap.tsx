@@ -18,7 +18,6 @@ import {
 import {
   HIDE_SWAP_REWARDS,
   HIDE_TOKEN_FEATURES,
-  SUPPORT_POLYGON,
 } from "@tallyho/tally-background/features"
 import {
   selectCurrentAccountBalances,
@@ -160,12 +159,10 @@ export default function Swap(): ReactElement {
   )
 
   useSkipFirstRenderEffect(() => {
-    if (SUPPORT_POLYGON) {
-      setSellAsset(undefined)
-      setBuyAsset(undefined)
-      setSellAmount("")
-      setBuyAmount("")
-    }
+    setSellAsset(undefined)
+    setBuyAsset(undefined)
+    setSellAmount("")
+    setBuyAmount("")
   }, [currentNetwork.chainID, dispatch])
 
   const buyAssets = useBackgroundSelector((state) => {
