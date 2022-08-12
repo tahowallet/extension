@@ -144,7 +144,7 @@ export type LegacyEVMTransactionRequest = Pick<
 > & {
   chainID: LegacyEVMTransaction["network"]["chainID"]
   gasLimit: bigint
-  nonce: number | undefined
+  nonce?: number
 }
 
 /**
@@ -181,7 +181,7 @@ export type EIP1559TransactionRequest = Pick<
 > & {
   gasLimit: bigint
   chainID: EIP1559Transaction["network"]["chainID"]
-  nonce: number | undefined
+  nonce?: number
 }
 
 export type TransactionRequest =
