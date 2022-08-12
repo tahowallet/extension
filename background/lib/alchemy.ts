@@ -18,7 +18,6 @@ import {
   isValidAlchemyTokenMetadataResponse,
 } from "./validate"
 import { AddressOnNetwork } from "../accounts"
-import getNFTsByOwners from "./simple-hash"
 
 /**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
@@ -291,8 +290,7 @@ export function transactionFromAlchemyWebsocketTransaction(
   }
 }
 
-// TODO move this someplace that isn't Alchemy-specific
-export type NFTItem = {
+export type AlchemyNFTItem = {
   error?: string
   media: { gateway?: string }[]
   id: {
@@ -317,7 +315,7 @@ export type NFTItem = {
 export async function getNFTs({
   address,
   network,
-}: AddressOnNetwork): Promise<NFTItem[]> {
+}: AddressOnNetwork): Promise<AlchemyNFTItem[]> {
   // Today, only Polygon and Ethereum are supported
   if (!["Polygon", "Ethereum"].includes(network.name)) {
     return []
@@ -335,6 +333,6 @@ export async function getNFTs({
   const result = await (await fetch(requestUrl.toString())).json()
   return result.ownedNfts.filter(
     // TODO this is a misleading typeguard for unvalidated JSON
-    (nft: NFTItem) => typeof nft.error === "undefined"
+    (nft: AlchemyNFTItem) => typeof nft.error === "undefined"
   )
 }

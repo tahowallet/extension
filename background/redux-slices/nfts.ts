@@ -2,8 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import logger from "../lib/logger"
 import { createBackgroundAsyncThunk } from "./utils"
 import { EVMNetwork } from "../networks"
-import { getNFTs, NFTItem } from "../lib/alchemy"
-import getNFTsByOwners from "../lib/simple-hash"
+import { getNFTs, NFT } from "../lib/nfts"
 import { normalizeEVMAddress } from "../lib/utils"
 import { setSnackbarMessage } from "./ui"
 import { HexString } from "../types"
@@ -11,11 +10,11 @@ import { HexString } from "../types"
 export type NFTsState = {
   evm: {
     [chainID: string]: {
-      [address: string]: NFTItem[]
+      [address: string]: NFT[]
     }
   }
 }
-export { NFTItem } from "../lib/alchemy"
+export { AlchemyNFTItem as NFTItem } from "../lib/alchemy"
 
 export const initialState = {
   evm: {},
@@ -30,7 +29,11 @@ const NFTsSlice = createSlice({
       {
         payload,
       }: {
-        payload: { address: string; network: EVMNetwork; NFTs: NFTItem[] }[]
+        payload: {
+          address: string
+          network: EVMNetwork
+          NFTs: NFT[]
+        }[]
       }
     ) => {
       payload.forEach(({ address, network, NFTs }) => {
