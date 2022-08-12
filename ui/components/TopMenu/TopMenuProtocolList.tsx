@@ -7,7 +7,6 @@ import {
 import {
   SUPPORT_ARBITRUM,
   SUPPORT_OPTIMISM,
-  SUPPORT_POLYGON,
 } from "@tallyho/tally-background/features"
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
@@ -21,14 +20,10 @@ const listItemInfo = [
     network: ETHEREUM,
     info: i18n.t("protocol.mainnet"),
   },
-  ...(SUPPORT_POLYGON
-    ? [
-        {
-          network: POLYGON,
-          info: i18n.t("protocol.l2"),
-        },
-      ]
-    : []),
+  {
+    network: POLYGON,
+    info: i18n.t("protocol.l2"),
+  },
   ...(SUPPORT_ARBITRUM
     ? [
         {

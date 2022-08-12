@@ -29,7 +29,7 @@ import {
   SignDataRequest,
   parseSigningData,
 } from "../../utils/signing"
-import { SUPPORT_OPTIMISM, SUPPORT_POLYGON } from "../../features"
+import { SUPPORT_OPTIMISM } from "../../features"
 import {
   ActiveNetwork,
   getOrCreateDB,
@@ -295,17 +295,14 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   }
 
   async getActiveOrDefaultNetwork(origin: string): Promise<EVMNetwork> {
-    if (SUPPORT_POLYGON) {
-      const activeNetwork = await this.db.getActiveNetworkForOrigin(origin)
-      if (!activeNetwork) {
-        // If this is a new dapp or the dapp has not implemented wallet_switchEthereumChain
-        // use the default network.
-        const defaultNetwork = (await this.getInternalActiveChain()).network
-        return defaultNetwork
-      }
-      return activeNetwork.network
+    const activeNetwork = await this.db.getActiveNetworkForOrigin(origin)
+    if (!activeNetwork) {
+      // If this is a new dapp or the dapp has not implemented wallet_switchEthereumChain
+      // use the default network.
+      const defaultNetwork = (await this.getInternalActiveChain()).network
+      return defaultNetwork
     }
-    return this.activeNetwork
+    return activeNetwork.network
   }
 
   private async signTransaction(
