@@ -37,6 +37,7 @@ export default function BalanceHeader(): ReactElement {
           background: linear-gradient(250.02deg, #034f4b 0%, #033734 66.93%);
           border-radius: 8px 8px 0 0;
           padding: 16px 0;
+          margin-bottom: 16px;
           display: flex;
           flex-direction: column;
           align-items: center;

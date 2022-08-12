@@ -8,6 +8,8 @@ import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import NFTsOverview from "../components/NFTs/NFTsOverview"
 import SharedBanner from "../components/Shared/SharedBanner"
 import BalanceHeader from "../components/Overview/BalanceHeader"
+import NetworksChart from "../components/Overview/NetworksChart"
+import AccountList from "../components/Overview/AccountList"
 
 export default function Overview(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
@@ -24,6 +26,8 @@ export default function Overview(): ReactElement {
     <>
       <section className="stats">
         <BalanceHeader />
+        <AccountList />
+        <NetworksChart />
       </section>
       {SUPPORT_NFTS && (
         <div className="panel_switcher">
