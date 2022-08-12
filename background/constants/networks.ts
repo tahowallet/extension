@@ -6,7 +6,6 @@ export const ETHEREUM: EVMNetwork = {
   baseAsset: ETH,
   chainID: "1",
   family: "EVM",
-  coingeckoPlatformID: "ethereum",
 }
 
 export const POLYGON: EVMNetwork = {
@@ -14,7 +13,6 @@ export const POLYGON: EVMNetwork = {
   baseAsset: MATIC,
   chainID: "137",
   family: "EVM",
-  coingeckoPlatformID: "polygon-pos",
 }
 
 export const ARBITRUM_ONE: EVMNetwork = {
