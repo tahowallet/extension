@@ -212,10 +212,10 @@ export function ethersTransactionFromSignedTransaction(
   }
 
   if (isEIP1559SignedTransaction(tx)) {
-    baseTx.maxFeePerGas = BigNumber.from(tx.maxFeePerGas)
-    baseTx.maxPriorityFeePerGas = BigNumber.from(tx.maxPriorityFeePerGas)
     return {
       ...baseTx,
+      maxFeePerGas: BigNumber.from(tx.maxFeePerGas),
+      maxPriorityFeePerGas: BigNumber.from(tx.maxPriorityFeePerGas),
       r: tx.r,
       from: tx.from,
       s: tx.s,
