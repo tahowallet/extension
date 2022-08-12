@@ -1,7 +1,11 @@
 import { StatusCodes, TransportStatusError } from "@ledgerhq/errors"
 import KeyringService, { KeyringAccountSigner } from "../keyring"
 import LedgerService, { LedgerAccountSigner } from "../ledger"
-import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
+import {
+  SignedTransaction,
+  TransactionRequest,
+  TransactionRequestWithNonce,
+} from "../../networks"
 import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -18,7 +22,7 @@ type ErrorResponse = {
 export type TXSignatureResponse =
   | {
       type: "success-tx"
-      signedTx: SignedEVMTransaction
+      signedTx: SignedTransaction
     }
   | ErrorResponse
 
@@ -121,9 +125,9 @@ export default class SigningService extends BaseService<Events> {
   }
 
   private async signTransactionWithNonce(
-    transactionWithNonce: EIP1559TransactionRequest & { nonce: number },
+    transactionWithNonce: TransactionRequestWithNonce,
     accountSigner: AccountSigner
-  ): Promise<SignedEVMTransaction> {
+  ): Promise<SignedTransaction> {
     switch (accountSigner.type) {
       case "ledger":
         return this.ledgerService.signTransaction(
@@ -167,9 +171,9 @@ export default class SigningService extends BaseService<Events> {
   }
 
   async signTransaction(
-    transactionRequest: EIP1559TransactionRequest,
+    transactionRequest: TransactionRequest,
     accountSigner: AccountSigner
-  ): Promise<SignedEVMTransaction> {
+  ): Promise<SignedTransaction> {
     const transactionWithNonce =
       await this.chainService.populateEVMTransactionNonce(transactionRequest)
 
