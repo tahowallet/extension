@@ -33,7 +33,6 @@ import {
 import {
   SUPPORT_ARBITRUM,
   SUPPORT_OPTIMISM,
-  SUPPORT_POLYGON,
   USE_MAINNET_FORK,
 } from "../../features"
 import PreferenceService from "../preferences"
@@ -218,7 +217,7 @@ export default class ChainService extends BaseService<Events> {
 
     this.supportedNetworks = [
       ETHEREUM,
-      ...(SUPPORT_POLYGON ? [POLYGON] : []),
+      POLYGON,
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
