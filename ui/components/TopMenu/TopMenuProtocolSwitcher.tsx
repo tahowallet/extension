@@ -1,6 +1,5 @@
 import React, { ReactElement } from "react"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { MULTI_NETWORK } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../../hooks"
 
 type Props = {
@@ -12,12 +11,12 @@ export default function TopMenuProtocolSwitcher({
 }: Props): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   return (
-    <button type="button" onClick={() => MULTI_NETWORK && onClick?.()}>
+    <button type="button" onClick={() => onClick?.()}>
       <div className="icon_wrap">
         <span className="icon" />
       </div>
       {currentNetwork.name}
-      {MULTI_NETWORK && <span className="icon_chevron_down" />}
+      <span className="icon_chevron_down" />
       <style jsx>
         {`
           button {
