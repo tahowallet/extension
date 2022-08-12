@@ -494,7 +494,7 @@ export default class LedgerService extends BaseService<Events> {
 
   async signMessage(
     { address, network }: AddressOnNetwork,
-    message: string
+    hexDataToSign: HexString
   ): Promise<string> {
     if (!sameNetwork(network, ETHEREUM)) {
       throw new Error("Unsupported network for Ledger signing")
@@ -520,7 +520,7 @@ export default class LedgerService extends BaseService<Events> {
 
     const signature = await eth.signPersonalMessage(
       accountData.path,
-      Buffer.from(message).toString("hex")
+      hexDataToSign
     )
 
     const signatureHex = joinSignature({
