@@ -112,43 +112,53 @@ export async function getTokenPrices(
 }> {
   const fiatSymbol = fiatCurrency.symbol
 
-  // TODO cover failed schema validation and http & network errors
-  const addys = tokenAddresses.join(",")
-  const url = `${COINGECKO_API_ROOT}/simple/token_price/${network.baseAsset.metadata.coinGeckoPlatformID}?vs_currencies=${fiatSymbol}&include_last_updated_at=true&contract_addresses=${addys}`
-
-  const json = await fetchJson(url)
-
   const prices: {
     [index: string]: UnitPricePoint<FungibleAsset>
   } = {}
-  // TODO Improve typing with Ajv validation.
-  Object.entries(
-    json as {
-      [address: string]: { last_updated_at: number } & {
-        [currencySymbol: string]: string
+
+  // TODO cover failed schema validation
+  const addys = tokenAddresses.join(",")
+  const url = `${COINGECKO_API_ROOT}/simple/token_price/${network.baseAsset.metadata.coinGeckoPlatformID}?vs_currencies=${fiatSymbol}&include_last_updated_at=true&contract_addresses=${addys}`
+
+  try {
+    const json = await fetchJson(url)
+
+    // TODO Improve typing with Ajv validation.
+    Object.entries(
+      json as {
+        [address: string]: { last_updated_at: number } & {
+          [currencySymbol: string]: string
+        }
       }
-    }
-  ).forEach(([address, priceDetails]) => {
-    // TODO parse this as a fixed decimal rather than a number. Will require
-    // custom JSON deserialization
-    const price: number = Number.parseFloat(
-      priceDetails[fiatSymbol.toLowerCase()]
-    )
-    if (!Number.isNaN(price)) {
-      prices[address] = {
-        unitPrice: {
-          asset: fiatCurrency,
-          amount: BigInt(Math.trunc(price * 10 ** fiatCurrency.decimals)),
-        },
-        time: priceDetails.last_updated_at,
-      }
-    } else {
-      logger.warn(
-        "Price for Ethereum token from CoinGecko cannot be parsed.",
-        address,
-        priceDetails
+    ).forEach(([address, priceDetails]) => {
+      // TODO parse this as a fixed decimal rather than a number. Will require
+      // custom JSON deserialization
+      const price: number = Number.parseFloat(
+        priceDetails[fiatSymbol.toLowerCase()]
       )
-    }
-  })
+      if (!Number.isNaN(price)) {
+        prices[address] = {
+          unitPrice: {
+            asset: fiatCurrency,
+            amount: BigInt(Math.trunc(price * 10 ** fiatCurrency.decimals)),
+          },
+          time: priceDetails.last_updated_at,
+        }
+      } else {
+        logger.warn(
+          "Price for Ethereum token from CoinGecko cannot be parsed.",
+          address,
+          priceDetails
+        )
+      }
+    })
+  } catch (err) {
+    logger.error(
+      "Error fetching price for tokens on network.",
+      tokenAddresses,
+      network,
+      err
+    )
+  }
   return prices
 }
