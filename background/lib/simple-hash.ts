@@ -1,5 +1,4 @@
-import { HexString } from "../types"
-import { EVMNetwork } from "../networks"
+import { AddressOnNetwork } from "../accounts"
 import logger from "./logger"
 
 export type SimpleHashNFTModel = {
@@ -33,25 +32,23 @@ const CHAIN_ID_TO_NAME = {
  *
  * Learn more at https://simplehash.readme.io/reference/nfts-by-owners
  *
- * @param addresses the addresses whose NFT holdings we want to query
- * @param networks the networks we're querying. Currently supports Ethereum,
+ * @param address the address whose NFT holdings we want to query
+ * @param network the network we're querying. Currently supports Ethereum,
  *        Polygon, Arbitrum, & Optimism.
  */
-export async function getNFTsByOwners(
-  addresses: HexString[],
-  networks: EVMNetwork[]
-): Promise<SimpleHashNFTModel[]> {
+export async function getNFTs({
+  address,
+  network,
+}: AddressOnNetwork): Promise<SimpleHashNFTModel[]> {
   // TODO err on unsupported networks
-  const networkNames = networks
-    .map(
-      (n) =>
-        CHAIN_ID_TO_NAME[Number(n.chainID) as keyof typeof CHAIN_ID_TO_NAME]
-    )
-    .filter((i) => i)
+  const networkName =
+    CHAIN_ID_TO_NAME[
+      parseInt(network.chainID, 10) as keyof typeof CHAIN_ID_TO_NAME
+    ]
 
   const requestURL = new URL("https://api.simplehash.com/api/v0/nfts/owners")
-  requestURL.searchParams.set("chains", networkNames.join(","))
-  requestURL.searchParams.set("wallet_addresses", addresses.join(","))
+  requestURL.searchParams.set("chains", networkName)
+  requestURL.searchParams.set("wallet_addresses", address)
 
   const headers = new Headers()
   headers.set("X-API-KEY", process.env.SIMPLE_HASH_API_KEY ?? "")

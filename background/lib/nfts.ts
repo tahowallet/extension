@@ -2,7 +2,7 @@ import { AddressOnNetwork } from "../accounts"
 import { EVMNetwork } from "../networks"
 import { NETWORK_BY_CHAIN_ID } from "../constants"
 import { getNFTs as alchemyGetNFTs, AlchemyNFTItem } from "./alchemy"
-import { getNFTsByOwners, SimpleHashNFTModel } from "./simple-hash"
+import { getNFTs as simpleHashGetNFTs, SimpleHashNFTModel } from "./simple-hash"
 
 export type NFT = {
   name: string
@@ -80,7 +80,7 @@ export async function getNFTs({
     return (await alchemyGetNFTs({ address, network })).map(alchemyNFTtoNFT)
   }
   if (["Arbitrum", "Optimism"].includes(network.name)) {
-    return (await getNFTsByOwners([address], [network])).map(
+    return (await simpleHashGetNFTs({ address, network })).map(
       simpleHashNFTModelToNFT
     )
   }
