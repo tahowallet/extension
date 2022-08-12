@@ -52,7 +52,7 @@ if (!window.walletRouter) {
           !shouldSetTally &&
           this.currentProvider === this.tallyProvider
         ) {
-          this.currentProvider = this.lastInjectedProvider
+          this.currentProvider = this.lastInjectedProvider ?? this.tallyProvider
         }
 
         if (shouldReload && window.location.href.includes("app.uniswap.org")) {
