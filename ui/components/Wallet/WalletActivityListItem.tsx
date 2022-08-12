@@ -20,13 +20,13 @@ interface Props {
 function isReceiveActivity(activity: ActivityItem, account: string): boolean {
   return (
     activity.annotation?.type === "asset-transfer" &&
-    sameEVMAddress(activity.annotation?.recipient.address, account)
+    sameEVMAddress(activity.annotation?.recipient?.address, account)
   )
 }
 
 function isSendActivity(activity: ActivityItem, account: string): boolean {
   return activity.annotation?.type === "asset-transfer"
-    ? sameEVMAddress(activity.annotation?.sender.address, account)
+    ? sameEVMAddress(activity.annotation?.sender?.address, account)
     : true
 }
 
