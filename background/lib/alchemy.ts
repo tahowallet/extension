@@ -332,7 +332,6 @@ export async function getNFTs({
   // TODO validate data with ajv
   const result = await (await fetch(requestUrl.toString())).json()
   return result.ownedNfts.filter(
-    // TODO this is a misleading typeguard for unvalidated JSON
     (nft: AlchemyNFTItem) => typeof nft.error === "undefined"
   )
 }
