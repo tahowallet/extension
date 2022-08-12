@@ -6,6 +6,7 @@ export const ETHEREUM: EVMNetwork = {
   baseAsset: ETH,
   chainID: "1",
   family: "EVM",
+  coingeckoPlatformID: "ethereum",
 }
 
 export const POLYGON: EVMNetwork = {
@@ -13,6 +14,7 @@ export const POLYGON: EVMNetwork = {
   baseAsset: MATIC,
   chainID: "137",
   family: "EVM",
+  coingeckoPlatformID: "polygon-pos",
 }
 
 export const ARBITRUM_ONE: EVMNetwork = {
@@ -20,6 +22,7 @@ export const ARBITRUM_ONE: EVMNetwork = {
   baseAsset: ETH,
   chainID: "42161",
   family: "EVM",
+  coingeckoPlatformID: "arbitrum-one",
 }
 
 export const OPTIMISM: EVMNetwork = {
@@ -27,6 +30,7 @@ export const OPTIMISM: EVMNetwork = {
   baseAsset: ETH,
   chainID: "10",
   family: "EVM",
+  coingeckoPlatformID: "optimistic-ethereum",
 }
 
 export const ROPSTEN: EVMNetwork = {
@@ -68,6 +72,7 @@ export const FORK: EVMNetwork = {
   baseAsset: ETH,
   chainID: process.env.MAINNET_FORK_CHAIN_ID ?? "1337",
   family: "EVM",
+  coingeckoPlatformID: "ethereum",
 }
 
 export const NETWORK_BY_CHAIN_ID = {
