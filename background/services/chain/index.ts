@@ -1001,8 +1001,9 @@ export default class ChainService extends BaseService<Events> {
     // TODO this will require custom code for Arbitrum and Optimism support
     // as neither have Alchemy's assetTransfers endpoint
     if (
-      addressOnNetwork.network.chainID !== "1" /* Ethereum */ &&
-      addressOnNetwork.network.chainID !== "137" /* Polygon */
+      addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
+      addressOnNetwork.network.chainID !== POLYGON.chainID &&
+      addressOnNetwork.network.chainID !== OPTIMISM.chainID
     ) {
       logger.error(
         `Asset transfer check not supported on network ${JSON.stringify(
