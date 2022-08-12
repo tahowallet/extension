@@ -14,7 +14,7 @@ export type NFTsState = {
     }
   }
 }
-export { AlchemyNFTItem as NFTItem } from "../lib/alchemy"
+export { NFT } from "../lib/nfts"
 
 export const initialState = {
   evm: {},

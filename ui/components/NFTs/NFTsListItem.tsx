@@ -1,33 +1,33 @@
 import React, { ReactElement } from "react"
-import { NFTItem } from "@tallyho/tally-background/redux-slices/nfts"
+import { NFT } from "@tallyho/tally-background/redux-slices/nfts"
 import NFTsImage from "./NFTsImage"
 
 function NFTsListItem({
-  NFT,
+  nft,
   style,
   openPreview,
 }: {
-  NFT?: NFTItem
-  openPreview: (nft: NFTItem) => void
+  nft?: NFT
+  openPreview: (nft: NFT) => void
   style?: React.CSSProperties
 }): ReactElement {
   // getting undefined sometimes, react-window renders second column even if there is no item?
-  if (!NFT) return <></>
+  if (!nft) return <></>
 
-  const { title, media } = NFT
-  const src = media[0].gateway ?? ""
+  const { name, media } = nft
+  const src = media[0]?.url ?? ""
 
   return (
     <>
       <button
         className="nft"
         type="button"
-        onClick={() => openPreview(NFT)}
+        onClick={() => openPreview(nft)}
         style={style}
       >
-        <NFTsImage width={168} height={168} alt={title} src={src} />
+        <NFTsImage width={168} height={168} alt={name} src={src} />
         <span className="title">
-          <span>{title || "No title"}</span>
+          <span>{name || "No title"}</span>
         </span>
       </button>
       <style jsx>{`

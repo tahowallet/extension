@@ -1,22 +1,20 @@
 import React, { ReactElement, useState } from "react"
-import { NFTItem } from "@tallyho/tally-background/redux-slices/nfts"
+import { NFT } from "@tallyho/tally-background/redux-slices/nfts"
 import { VariableSizeGrid as List } from "react-window"
 import NFTsListItem from "./NFTsListItem"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import NFTsSlideUpPreviewContent from "./NFTsSlideUpPreviewContent"
 
 function NFTsList({
-  NFTs,
+  nfts,
   height = 538, // TODO: improve scroll, this number is full page NFT list height
 }: {
-  NFTs: NFTItem[]
+  nfts: NFT[]
   height?: number
 }): ReactElement {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-  const [currentNFTPreview, setCurrentNFTPreview] = useState<NFTItem | null>(
-    null
-  )
-  const openPreview = (nft: NFTItem) => {
+  const [currentNFTPreview, setCurrentNFTPreview] = useState<NFT | null>(null)
+  const openPreview = (nft: NFT) => {
     setIsPreviewOpen(true)
     setCurrentNFTPreview(nft)
   }
@@ -30,16 +28,16 @@ function NFTsList({
     <>
       <List
         columnCount={2}
-        rowCount={Math.ceil(NFTs.length / 2)}
+        rowCount={Math.ceil(nfts.length / 2)}
         rowHeight={() => 216}
         columnWidth={(index) => (index ? 168 : 184)}
         height={height}
         width={352}
-        itemData={NFTs}
+        itemData={nfts}
       >
         {({ columnIndex, rowIndex, data, style }) => (
           <NFTsListItem
-            NFT={data[rowIndex * 2 + columnIndex]}
+            nft={data[rowIndex * 2 + columnIndex]}
             style={style}
             openPreview={openPreview}
           />
@@ -47,7 +45,7 @@ function NFTsList({
       </List>
       <SharedSlideUpMenu isOpen={isPreviewOpen} close={closePreview}>
         {currentNFTPreview && (
-          <NFTsSlideUpPreviewContent NFT={currentNFTPreview} />
+          <NFTsSlideUpPreviewContent nft={currentNFTPreview} />
         )}
       </SharedSlideUpMenu>
     </>

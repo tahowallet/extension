@@ -3,7 +3,7 @@ import { EVMNetwork } from "../networks"
 import logger from "./logger"
 
 export type SimpleHashNFTModel = {
-  name?: string
+  name: string
   description?: string
   token_id: string
   contractAddress: string
@@ -37,7 +37,7 @@ const CHAIN_ID_TO_NAME = {
  * @param networks the networks we're querying. Currently supports Ethereum,
  *        Polygon, Arbitrum, & Optimism.
  */
-export default async function getNFTsByOwners(
+export async function getNFTsByOwners(
   addresses: HexString[],
   networks: EVMNetwork[]
 ): Promise<SimpleHashNFTModel[]> {
@@ -58,11 +58,11 @@ export default async function getNFTsByOwners(
 
   try {
     // TODO validate with AJV
-    const result = (
+    const result = (await (
       await fetch(requestURL.toString(), {
         headers,
       })
-    ).json() as unknown as SimpleHashAPIResponse
+    ).json()) as unknown as SimpleHashAPIResponse
     return result.nfts
   } catch (err) {
     logger.error("Error retrieving NFTs ", err)
