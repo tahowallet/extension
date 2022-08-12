@@ -1,9 +1,14 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { ReactElement, useEffect, useState } from "react"
 import {
   selectEstimatedFeesPerGas,
   selectTransactionData,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { updateTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import type {
+  EnrichedEIP1559TransactionRequest,
+  EnrichedLegacyTransactionRequest,
+} from "@tallyho/tally-background/services/enrichment"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
@@ -33,9 +38,10 @@ export default function SignTransactionDetailPanel(): ReactElement {
   }, [
     updateNum,
     dispatch,
-    transactionDetails?.maxFeePerGas,
+    (transactionDetails as EnrichedEIP1559TransactionRequest)?.maxFeePerGas,
     transactionDetails?.gasLimit,
-    transactionDetails?.maxFeePerGas,
+    (transactionDetails as EnrichedLegacyTransactionRequest)?.gasPrice,
+    (transactionDetails as EnrichedEIP1559TransactionRequest)?.maxFeePerGas,
   ])
 
   if (transactionDetails === undefined) return <></>
