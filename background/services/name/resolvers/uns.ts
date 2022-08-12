@@ -1,11 +1,10 @@
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import { ETHEREUM, POLYGON } from "../../../constants"
-import { SUPPORT_POLYGON } from "../../../features"
 import { isDefined } from "../../../lib/utils/type-guards"
 import { sameNetwork } from "../../../networks"
 import { NameResolver } from "../name-resolver"
 
-const UNS_SUPPORTED_NETWORKS = [ETHEREUM, ...(SUPPORT_POLYGON ? [POLYGON] : [])]
+const UNS_SUPPORTED_NETWORKS = [ETHEREUM, POLYGON]
 
 /**
  * Lookup a UNS domain name and fetch the owners address

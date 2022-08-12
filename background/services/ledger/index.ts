@@ -13,16 +13,16 @@ import {
   getAddress as ethersGetAddress,
 } from "ethers/lib/utils"
 import {
-  EIP1559TransactionRequest,
   sameNetwork,
-  SignedEVMTransaction,
+  SignedTransaction,
+  TransactionRequestWithNonce,
 } from "../../networks"
 import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
-import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
+import { ethersTransactionFromTransactionRequest } from "../chain/utils"
 import { ETHEREUM } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { AddressOnNetwork } from "../../accounts"
@@ -81,7 +81,7 @@ type Events = ServiceLifecycleEvents & {
   connected: ConnectedDevice
   disconnected: { id: string; type: LedgerType }
   address: { ledgerID: string; derivationPath: string; address: HexString }
-  signedTransaction: SignedEVMTransaction
+  signedTransaction: SignedTransaction
   signedData: string
   usbDeviceCount: number
 }
@@ -333,9 +333,9 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async signTransaction(
-    transactionRequest: EIP1559TransactionRequest & { nonce: number },
+    transactionRequest: TransactionRequestWithNonce,
     { deviceID, path: derivationPath }: LedgerAccountSigner
-  ): Promise<SignedEVMTransaction> {
+  ): Promise<SignedTransaction> {
     return this.runSerialized(async () => {
       try {
         if (!this.transport) {
@@ -347,9 +347,7 @@ export default class LedgerService extends BaseService<Events> {
         }
 
         const ethersTx =
-          ethersTransactionRequestFromEIP1559TransactionRequest(
-            transactionRequest
-          )
+          ethersTransactionFromTransactionRequest(transactionRequest)
 
         const serializedTx = serialize(
           ethersTx as UnsignedTransaction
@@ -393,7 +391,7 @@ export default class LedgerService extends BaseService<Events> {
           throw new Error("Can only sign EIP-1559 conforming transactions")
         }
 
-        const signedTx: SignedEVMTransaction = {
+        const signedTx: SignedTransaction = {
           hash: tx.hash,
           from: tx.from,
           to: tx.to,

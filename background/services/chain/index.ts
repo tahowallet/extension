@@ -15,10 +15,12 @@ import {
   AnyEVMTransaction,
   EIP1559TransactionRequest,
   EVMNetwork,
-  SignedEVMTransaction,
   BlockPrices,
-  LegacyEVMTransactionRequest,
   sameNetwork,
+  TransactionRequest,
+  TransactionRequestWithNonce,
+  SignedTransaction,
+  isEIP1559EnrichedTransactionSignatureRequest,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import {
@@ -31,7 +33,6 @@ import {
 import {
   SUPPORT_ARBITRUM,
   SUPPORT_OPTIMISM,
-  SUPPORT_POLYGON,
   USE_MAINNET_FORK,
 } from "../../features"
 import PreferenceService from "../preferences"
@@ -42,14 +43,17 @@ import {
   blockFromEthersBlock,
   blockFromWebsocketBlock,
   enrichTransactionWithReceipt,
-  ethersTransactionRequestFromEIP1559TransactionRequest,
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
+  ethersTransactionFromTransactionRequest,
 } from "./utils"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
+  EnrichedEIP1559TransactionSignatureRequest,
   EnrichedEVMTransactionSignatureRequest,
+  EnrichedLegacyTransactionRequest,
+  EnrichedLegacyTransactionSignatureRequest,
 } from "../enrichment"
 import SerialFallbackProvider from "./serial-fallback-provider"
 import AssetDataHelper from "./asset-data-helper"
@@ -213,7 +217,7 @@ export default class ChainService extends BaseService<Events> {
 
     this.supportedNetworks = [
       ETHEREUM,
-      ...(SUPPORT_POLYGON ? [POLYGON] : []),
+      POLYGON,
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
@@ -344,7 +348,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Populates the provided partial EIP1559 transaction request with all fields
+   * Populates the provided partial legacy transaction request with all fields
    * except the nonce. This leaves the transaction ready for user review, and
    * the nonce ready to be filled in immediately prior to signing to minimize the
    * likelihood for nonce reuse.
@@ -352,27 +356,31 @@ export default class ChainService extends BaseService<Events> {
    * Note that if the partial request already has a defined nonce, it is not
    * cleared.
    */
-  async populatePartialEVMTransactionRequest(
+  private async populatePartialLegacyEVMTransactionRequest(
     network: EVMNetwork,
-    partialRequest: EnrichedEVMTransactionSignatureRequest
+    partialRequest: EnrichedLegacyTransactionSignatureRequest
   ): Promise<{
-    transactionRequest: EnrichedEIP1559TransactionRequest
+    transactionRequest: EnrichedLegacyTransactionRequest
     gasEstimationError: string | undefined
   }> {
+    const { from, to, value, gasLimit, input, gasPrice, nonce, annotation } =
+      partialRequest
     // Basic transaction construction based on the provided options, with extra data from the chain service
-    const transactionRequest: EnrichedEIP1559TransactionRequest = {
-      from: partialRequest.from,
-      to: partialRequest.to,
-      value: partialRequest.value ?? 0n,
-      gasLimit: partialRequest.gasLimit ?? 0n,
-      maxFeePerGas: partialRequest.maxFeePerGas ?? 0n,
-      maxPriorityFeePerGas: partialRequest.maxPriorityFeePerGas ?? 0n,
-      input: partialRequest.input ?? null,
-      type: 2 as const,
+    const transactionRequest: EnrichedLegacyTransactionRequest = {
+      from,
+      to,
+      value: value ?? 0n,
+      gasLimit: gasLimit ?? 0n,
+      input: input ?? null,
+      // we know that a transactionRequest will fail with gasPrice 0
+      // and sometimes 3rd party api's (like 0x) may return transaction requests
+      // with gasPrice === 0, so we override the set gasPrice in those cases
+      gasPrice: gasPrice || (await this.estimateGasPrice(network)),
+      type: 0 as const,
       network,
       chainID: network.chainID,
-      nonce: partialRequest.nonce,
-      annotation: partialRequest.annotation,
+      nonce,
+      annotation,
     }
 
     // Always estimate gas to decide whether the transaction will likely fail.
@@ -396,7 +404,89 @@ export default class ChainService extends BaseService<Events> {
           "code" in anyError &&
           anyError.code === Logger.errors.UNPREDICTABLE_GAS_LIMIT
         ) {
-          gasEstimationError = anyError.error ?? "unknown transaction error"
+          gasEstimationError = anyError.error ?? "Unknown transaction error."
+        }
+      }
+    }
+
+    // We use the estimate as the actual limit only if user did not specify the
+    // gas explicitly or if it was set below the minimum network-allowed value.
+    if (
+      typeof estimatedGasLimit !== "undefined" &&
+      (typeof gasLimit === "undefined" || gasLimit < 21000n)
+    ) {
+      transactionRequest.gasLimit = estimatedGasLimit
+    }
+
+    return { transactionRequest, gasEstimationError }
+  }
+
+  /**
+   * Populates the provided partial EIP1559 transaction request with all fields
+   * except the nonce. This leaves the transaction ready for user review, and
+   * the nonce ready to be filled in immediately prior to signing to minimize the
+   * likelihood for nonce reuse.
+   *
+   * Note that if the partial request already has a defined nonce, it is not
+   * cleared.
+   */
+  private async populatePartialEIP1559TransactionRequest(
+    network: EVMNetwork,
+    partialRequest: EnrichedEIP1559TransactionSignatureRequest
+  ): Promise<{
+    transactionRequest: EnrichedEIP1559TransactionRequest
+    gasEstimationError: string | undefined
+  }> {
+    const {
+      from,
+      to,
+      value,
+      gasLimit,
+      input,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+      nonce,
+      annotation,
+    } = partialRequest
+
+    // Basic transaction construction based on the provided options, with extra data from the chain service
+    const transactionRequest: EnrichedEIP1559TransactionRequest = {
+      from,
+      to,
+      value: value ?? 0n,
+      gasLimit: gasLimit ?? 0n,
+      maxFeePerGas: maxFeePerGas ?? 0n,
+      maxPriorityFeePerGas: maxPriorityFeePerGas ?? 0n,
+      input: input ?? null,
+      type: 2 as const,
+      network,
+      chainID: network.chainID,
+      nonce,
+      annotation,
+    }
+
+    // Always estimate gas to decide whether the transaction will likely fail.
+    let estimatedGasLimit: bigint | undefined
+    let gasEstimationError: string | undefined
+    try {
+      estimatedGasLimit = await this.estimateGasLimit(
+        network,
+        transactionRequest
+      )
+    } catch (error) {
+      // Try to identify unpredictable gas errors to bubble that information
+      // out.
+      if (error instanceof Error) {
+        // Ethers does some heavily loose typing around errors to carry
+        // arbitrary info without subclassing Error, so an any cast is needed.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const anyError: any = error
+
+        if (
+          "code" in anyError &&
+          anyError.code === Logger.errors.UNPREDICTABLE_GAS_LIMIT
+        ) {
+          gasEstimationError = anyError.error ?? "Unknown transaction error."
         }
       }
     }
@@ -414,6 +504,37 @@ export default class ChainService extends BaseService<Events> {
     return { transactionRequest, gasEstimationError }
   }
 
+  async populatePartialTransactionRequest(
+    network: EVMNetwork,
+    partialRequest: EnrichedEVMTransactionSignatureRequest,
+    defaults: { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }
+  ): Promise<{
+    transactionRequest: TransactionRequest
+    gasEstimationError: string | undefined
+  }> {
+    if (isEIP1559EnrichedTransactionSignatureRequest(partialRequest)) {
+      const populated = await this.populatePartialEIP1559TransactionRequest(
+        network,
+        {
+          ...partialRequest,
+          maxFeePerGas: partialRequest.maxFeePerGas ?? defaults.maxFeePerGas,
+          maxPriorityFeePerGas:
+            partialRequest.maxPriorityFeePerGas ??
+            defaults.maxPriorityFeePerGas,
+        }
+      )
+      return populated
+    }
+    // Legacy Transaction
+    const populated = await this.populatePartialLegacyEVMTransactionRequest(
+      network,
+      {
+        ...partialRequest,
+      }
+    )
+    return populated
+  }
+
   /**
    * Populates the nonce for the passed EIP1559TransactionRequest, provided
    * that it is not yet populated. This process generates a new nonce based on
@@ -425,8 +546,8 @@ export default class ChainService extends BaseService<Events> {
    * for signing by a signer.
    */
   async populateEVMTransactionNonce(
-    transactionRequest: EIP1559TransactionRequest
-  ): Promise<EIP1559TransactionRequest & { nonce: number }> {
+    transactionRequest: TransactionRequest
+  ): Promise<TransactionRequestWithNonce> {
     if (typeof transactionRequest.nonce !== "undefined") {
       // TS undefined checks don't narrow the containing object's type, so we
       // have to cast `as` here.
@@ -484,12 +605,7 @@ export default class ChainService extends BaseService<Events> {
    * available for reuse all intervening nonces.
    */
   releaseEVMTransactionNonce(
-    transactionRequest:
-      | (EIP1559TransactionRequest & {
-          nonce: number
-        })
-      | (LegacyEVMTransactionRequest & { nonce: number })
-      | SignedEVMTransaction
+    transactionRequest: TransactionRequestWithNonce | SignedTransaction
   ): void {
     const { nonce } = transactionRequest
     const chainID =
@@ -680,18 +796,29 @@ export default class ChainService extends BaseService<Events> {
    */
   async estimateGasLimit(
     network: EVMNetwork,
-    transactionRequest: EIP1559TransactionRequest
+    transactionRequest: TransactionRequest
   ): Promise<bigint> {
     if (USE_MAINNET_FORK) {
       return 350000n
     }
     const estimate = await this.providerForNetworkOrThrow(network).estimateGas(
-      ethersTransactionRequestFromEIP1559TransactionRequest(transactionRequest)
+      ethersTransactionFromTransactionRequest(transactionRequest)
     )
 
     // Add 10% more gas as a safety net
     const uppedEstimate = estimate.add(estimate.div(10))
     return BigInt(uppedEstimate.toString())
+  }
+
+  /**
+   * Estimate the gas needed to make a transaction. Adds 10% as a safety net to
+   * the base estimate returned by the provider.
+   */
+  async estimateGasPrice(network: EVMNetwork): Promise<bigint> {
+    const estimate = await this.providerForNetworkOrThrow(network).getGasPrice()
+
+    // Add 10% more gas as a safety net
+    return (estimate.toBigInt() * 11n) / 10n
   }
 
   /**
@@ -701,13 +828,14 @@ export default class ChainService extends BaseService<Events> {
    *        it needs to include all gas limit and price params.
    */
   async broadcastSignedTransaction(
-    transaction: SignedEVMTransaction
+    transaction: SignedTransaction
   ): Promise<void> {
     try {
       const serialized = utils.serializeTransaction(
         ethersTransactionFromSignedTransaction(transaction),
         { r: transaction.r, s: transaction.s, v: transaction.v }
       )
+
       await Promise.all([
         this.providerForNetworkOrThrow(transaction.network)
           .sendTransaction(serialized)
@@ -875,8 +1003,9 @@ export default class ChainService extends BaseService<Events> {
     // TODO this will require custom code for Arbitrum and Optimism support
     // as neither have Alchemy's assetTransfers endpoint
     if (
-      addressOnNetwork.network.chainID !== "1" /* Ethereum */ &&
-      addressOnNetwork.network.chainID !== "137" /* Polygon */
+      addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
+      addressOnNetwork.network.chainID !== POLYGON.chainID &&
+      addressOnNetwork.network.chainID !== OPTIMISM.chainID
     ) {
       logger.error(
         `Asset transfer check not supported on network ${JSON.stringify(

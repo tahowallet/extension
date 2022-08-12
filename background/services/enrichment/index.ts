@@ -1,9 +1,5 @@
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
-import {
-  AnyEVMTransaction,
-  EIP1559TransactionRequest,
-  EVMNetwork,
-} from "../../networks"
+import { AnyEVMTransaction, EVMNetwork } from "../../networks"
 import { SmartContractFungibleAsset } from "../../assets"
 
 import ChainService from "../chain"
@@ -16,6 +12,7 @@ import {
   EnrichedEVMTransactionSignatureRequest,
   SignTypedDataAnnotation,
   EnrichedSignTypedDataRequest,
+  PartialTransactionRequestWithFrom,
 } from "./types"
 import { SignTypedDataRequest } from "../../utils/signing"
 import { enrichEIP2612SignTypedDataRequest, isEIP2612TypedData } from "./utils"
@@ -96,7 +93,7 @@ export default class EnrichmentService extends BaseService<Events> {
 
   async enrichTransactionSignature(
     network: EVMNetwork,
-    transaction: Partial<EIP1559TransactionRequest> & { from: string },
+    transaction: PartialTransactionRequestWithFrom,
     desiredDecimals: number
   ): Promise<EnrichedEVMTransactionSignatureRequest> {
     const enrichedTxSignatureRequest = {

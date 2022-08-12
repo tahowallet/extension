@@ -1,4 +1,4 @@
-import { EIP1559TransactionRequest } from "@tallyho/tally-background/networks"
+import { TransactionRequest } from "@tallyho/tally-background/networks"
 import { TransactionAnnotation } from "@tallyho/tally-background/services/enrichment"
 import { ReactElement, ReactNode } from "react"
 
@@ -25,7 +25,7 @@ export interface SignTransactionInfoProviderProps<
     | TransactionAnnotation
     | undefined
 > {
-  transactionDetails: EIP1559TransactionRequest
+  transactionDetails: TransactionRequest
   annotation: T
   inner: (info: SignTransactionInfo) => ReactElement
 }

@@ -1,9 +1,9 @@
 import {
   AnyEVMBlock,
   AnyEVMTransaction,
-  EIP1559TransactionRequest,
   EVMLog,
   EVMNetwork,
+  isEIP1559TransactionRequest,
 } from "../../networks"
 import {
   SmartContractFungibleAsset,
@@ -16,7 +16,10 @@ import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import ChainService from "../chain"
 import IndexingService from "../indexing"
 import NameService from "../name"
-import { TransactionAnnotation } from "./types"
+import {
+  TransactionAnnotation,
+  PartialTransactionRequestWithFrom,
+} from "./types"
 import {
   getDistinctRecipentAddressesFromERC20Logs,
   getERC20LogsForAddresses,
@@ -123,8 +126,7 @@ export default async function resolveTransactionAnnotation(
   network: EVMNetwork,
   transaction:
     | AnyEVMTransaction
-    | (Partial<EIP1559TransactionRequest> & {
-        from: string
+    | (PartialTransactionRequestWithFrom & {
         blockHash?: string
       }),
   desiredDecimals: number
@@ -142,24 +144,24 @@ export default async function resolveTransactionAnnotation(
 
   let block: AnyEVMBlock | undefined
 
-  const { gasLimit, maxFeePerGas, maxPriorityFeePerGas, blockHash } =
-    transaction
+  const {
+    assetAmount: { amount: baseAssetBalance },
+  } = await chainService.getLatestBaseAccountBalance({
+    address: transaction.from,
+    network,
+  })
 
-  // If this is a transaction request...
-  if (gasLimit && maxFeePerGas && maxPriorityFeePerGas) {
-    const gasFee = gasLimit * maxFeePerGas
-    const {
-      assetAmount: { amount: baseAssetBalance },
-    } = await chainService.getLatestBaseAccountBalance({
-      address: transaction.from,
-      network,
-    })
-    // ... and if the wallet doesn't have enough base asset to cover gas,
-    // push a warning
-    if (gasFee + (transaction.value ?? 0n) > baseAssetBalance) {
-      txAnnotation.warnings ??= []
-      txAnnotation.warnings.push("insufficient-funds")
-    }
+  const { gasLimit, blockHash } = transaction
+
+  const gasFee: bigint = isEIP1559TransactionRequest(transaction)
+    ? transaction?.maxFeePerGas ?? 0n * (gasLimit ?? 0n)
+    : (("gasPrice" in transaction && transaction?.gasPrice) || 0n) *
+      (gasLimit ?? 0n)
+
+  // If the wallet doesn't have enough base asset to cover gas, push a warning
+  if (gasFee + (transaction.value ?? 0n) > baseAssetBalance) {
+    txAnnotation.warnings ??= []
+    txAnnotation.warnings.push("insufficient-funds")
   }
 
   // If the transaction has been mined, get the block and set the timestamp
