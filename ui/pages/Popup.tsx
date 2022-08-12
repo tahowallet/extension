@@ -137,10 +137,11 @@ export function Main(): ReactElement {
               needsKeyringUnlock
             )
 
-            const normalizedPathname =
-              transformedLocation.pathname !== "/wallet"
-                ? transformedLocation.pathname
-                : "/"
+            const normalizedPathname = pagePreferences[
+              transformedLocation.pathname
+            ]
+              ? transformedLocation.pathname
+              : "/"
 
             // `initialEntries` needs to be a reversed version of route history
             // entities. Without avoiding the initial load, entries will keep reversing.

@@ -1,1 +1,7 @@
-{}
+{
+  "settings": {
+    "exportLogs": {
+      "discordTitle": ""
+    }
+  }
+}

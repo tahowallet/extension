@@ -11,7 +11,10 @@ import { EnrichedSignTypedDataRequest } from "../services/enrichment"
 import { EIP712TypedData } from "../types"
 import { AddressOnNetwork } from "../accounts"
 import { AccountSigner } from "../services/signing"
-import { EIP1559TransactionRequest } from "../networks"
+import {
+  EIP1559TransactionRequest,
+  LegacyEVMTransactionRequest,
+} from "../networks"
 
 /**
  * The different types of SignOperations that can be executed. These types
@@ -21,6 +24,7 @@ export type SignOperationType =
   | SignDataRequest
   | SignTypedDataRequest
   | EIP1559TransactionRequest
+  | LegacyEVMTransactionRequest
 
 /**
  * A request for a signing operation carrying the AccountSigner whose signature
