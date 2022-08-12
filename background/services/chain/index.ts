@@ -373,7 +373,10 @@ export default class ChainService extends BaseService<Events> {
       value: value ?? 0n,
       gasLimit: gasLimit ?? 0n,
       input: input ?? null,
-      gasPrice: gasPrice ?? (await this.estimateGasPrice(network)),
+      // we know that a transactionRequest will fail with gasPrice 0
+      // and sometimes 3rd party api's (like 0x) may return transaction requests
+      // with gasPrice === 0, so we override the set gasPrice in those cases
+      gasPrice: gasPrice || (await this.estimateGasPrice(network)),
       type: 0 as const,
       network,
       chainID: network.chainID,

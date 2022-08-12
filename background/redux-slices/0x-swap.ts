@@ -17,7 +17,12 @@ import {
 } from "../lib/validate"
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
-import { COMMUNITY_MULTISIG_ADDRESS, ETHEREUM, POLYGON } from "../constants"
+import {
+  COMMUNITY_MULTISIG_ADDRESS,
+  ETHEREUM,
+  OPTIMISM,
+  POLYGON,
+} from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
 
@@ -127,6 +132,7 @@ export const SWAP_FEE = 0.005
 const chainIdTo0xApiBase: { [chainID: string]: string | undefined } = {
   [ETHEREUM.chainID]: "api.0x.org",
   [POLYGON.chainID]: "polygon.api.0x.org",
+  [OPTIMISM.chainID]: "optimism.api.0x.org",
 }
 
 const get0xApiBase = (network: EVMNetwork) => {
