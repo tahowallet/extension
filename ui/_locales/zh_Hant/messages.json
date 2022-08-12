@@ -49,6 +49,7 @@
     "joinBtn": "加入我們的 Discord 並給予反饋",
     "joinDesc": "加入我們的 Discord 並給予反饋!",
     "joinTitle": "加入我們的社群",
+    "language": "語言",
     "mainMenu": "設定",
     "setAsDefault": "將 Tally Ho 設為你的預設錢包"
   },
@@ -72,10 +73,8 @@
   },
   "wallet": {
     "assetAmount": "資產 / 數目",
-    "estimatedFee": "預估的網路費用",
     "receive": "接收",
     "receiveAddress": "接收地址",
-    "receiveAddressDesc": "只傳送以太坊主網相容資產到此地址。",
     "secureSeed": "請先將您的回復種子存放到安全的地方",
     "send": "傳送",
     "sendAsset": "傳送資產",

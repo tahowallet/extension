@@ -54,7 +54,7 @@ interface ClaimingState {
   selectedForBonus: DAO | null
   selectedDelegate: Delegate | null
   signature: Signature | undefined
-  nonce: number | undefined
+  nonce?: number
   expiry: number | undefined
   claimStep: number
   currentlyClaiming: boolean
