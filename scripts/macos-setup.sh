@@ -12,7 +12,7 @@ brew list pre-commit &>/dev/null || brew install pre-commit
 pre-commit install --install-hooks
 
 echo "Installing nvm..."
-brew list nvm &>/dev/null || brew install nvm
+command -v nvm &>/dev/null || curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/nvm.sh | bash
 
 echo "Setting up nvm, yarn, and dependencies..."
 nvm use
