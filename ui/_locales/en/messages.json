@@ -280,11 +280,11 @@
     }
   },
   "signTransaction": {
+    "title": "Sign transaction",
     "awaitingHardwareSignature": "Awaiting hardware wallet signature",
     "reject": "Reject",
     "noSigning": "Read-only accounts cannot sign",
     "contractCreation": "Contract creation",
-    "interactingWith": "Interacting with",
     "unknownNetwork": "Unknown Network",
     "detailPanelName": "Details",
     "rawDataPanelName": "Raw data",
@@ -294,6 +294,9 @@
     "help": "I need help",
     "refresh": "Refresh",
     "spendApproval": {
+      "title": "Approve asset spend",
+      "approveSpender": "Approve <spenderAddress></spenderAddress>",
+      "spendAmount": "Spend {{assetSymbol}} tokens",
       "approve": "Approve",
       "infinite": "Infinite",
       "spend": "Spend",
@@ -305,7 +308,14 @@
       "invalidAmount": "Invalid amount"
     },
     "assetTransfer": {
+      "title": "Transfer",
       "sendTo": "Send to",
+      "spendAmountLabel": "Spend Amount"
+    },
+    "contractInteraction": {
+      "title": "Contract interaction",
+      "interactingWithLabel": "Interacting with",
+      "newlyCreatedContract": "Newly created contract"
     }
   },
   "swap": {
