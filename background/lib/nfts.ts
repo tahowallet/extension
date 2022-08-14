@@ -28,7 +28,10 @@ function alchemyNFTtoNFT(original: AlchemyNFTItem): NFT {
         url: m.gateway,
         type: "image" as const,
       })) as NFT["media"],
-    network: NETWORK_BY_CHAIN_ID[chainID as keyof typeof NETWORK_BY_CHAIN_ID],
+    network:
+      NETWORK_BY_CHAIN_ID[
+        chainID.toString() as keyof typeof NETWORK_BY_CHAIN_ID
+      ],
   }
 }
 
