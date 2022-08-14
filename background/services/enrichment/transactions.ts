@@ -208,7 +208,7 @@ export default async function resolveTransactionAnnotation(
     if (typeof transaction.value !== "undefined") {
       // Warn if we're sending ETH to a contract. This is normal if you're
       // funding a multisig or exchange, but it's good to double check
-      if (recipient.annotation.code) {
+      if (recipient.annotation.hasCode) {
         txAnnotation.warnings ??= []
         txAnnotation.warnings.push("send-to-contract")
       }
@@ -280,7 +280,7 @@ export default async function resolveTransactionAnnotation(
       }
       // Warn if we're sending the token to a contract. This is normal if
       // you're funding a multisig or exchange, but it's good to double check
-      if (recipient.annotation.code) {
+      if (recipient.annotation.hasCode) {
         txAnnotation.warnings ??= []
         txAnnotation.warnings.push("send-to-contract")
       }
@@ -291,7 +291,7 @@ export default async function resolveTransactionAnnotation(
       })
       // Warn if we're approving spending to a likely EOA. Note this will also
       // sweep up CREATE2 contracts that haven't yet been deployed
-      if (!spender.annotation.code) {
+      if (!spender.annotation.hasCode) {
         txAnnotation.warnings ??= []
         txAnnotation.warnings.push("approve-eoa")
       }

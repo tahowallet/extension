@@ -25,7 +25,7 @@ export async function resolveAddressAnnotation(
     balance,
     nameOnNetwork,
     nonce: BigInt(nonce),
-    code: codeHex !== "0x",
+    hasCode: codeHex !== "0x",
     timestamp: Date.now(),
   }
 }

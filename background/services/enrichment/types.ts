@@ -175,7 +175,7 @@ export type AddressOnNetworkAnnotation = {
    * Whether code was found at this address at the time of annotation
    * resolution.
    */
-  code: boolean
+  hasCode: boolean
   /**
    * A somewhat recent account balance. Accuracy here is less important, as
    * it will mostly be used to warn on sending to 0-balanace addresses.
