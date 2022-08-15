@@ -154,7 +154,7 @@ export default async function resolveTransactionAnnotation(
   const { gasLimit, blockHash } = transaction
 
   const gasFee: bigint = isEIP1559TransactionRequest(transaction)
-    ? transaction?.maxFeePerGas ?? 0n * (gasLimit ?? 0n)
+    ? (transaction?.maxFeePerGas ?? 0n) * (gasLimit ?? 0n)
     : (("gasPrice" in transaction && transaction?.gasPrice) || 0n) *
       (gasLimit ?? 0n)
 
