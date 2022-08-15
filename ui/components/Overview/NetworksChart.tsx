@@ -1,5 +1,7 @@
 import {
   ETHEREUM,
+  ARBITRUM_ONE,
+  OPTIMISM,
   NETWORK_BY_CHAIN_ID,
   POLYGON,
 } from "@tallyho/tally-background/constants"
@@ -10,6 +12,8 @@ import { useTranslation } from "react-i18next"
 const NETWORKS_CHART_COLORS = {
   [ETHEREUM.chainID]: "#62688F",
   [POLYGON.chainID]: "#8347E5",
+  [ARBITRUM_ONE.chainID]: "#2083C5",
+  [OPTIMISM.chainID]: "#CD041C",
 }
 
 const getNetworksPercents = (
