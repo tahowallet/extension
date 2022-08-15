@@ -1,4 +1,3 @@
-import { Network } from "@ethersproject/networks"
 import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import {
@@ -8,7 +7,7 @@ import {
   LegacyEVMTransactionRequest,
 } from "../../networks"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
-import { HexString, UNIXTime } from "../../types"
+import { UNIXTime } from "../../types"
 import { SignTypedDataRequest } from "../../utils/signing"
 
 export type BaseTransactionAnnotation = {
@@ -79,15 +78,8 @@ export type TransactionAnnotation =
   | AssetTransfer
   | AssetSwap
 
-export type ResolvedTransactionAnnotation = {
-  contractInfo: TransactionAnnotation
-  address: HexString
-  network: Network
-  resolvedAt: UNIXTime
-}
-
 export type EnrichedEVMTransaction = AnyEVMTransaction & {
-  annotation?: TransactionAnnotation | undefined
+  annotation?: TransactionAnnotation
 }
 
 export type EnrichedEVMTransactionSignatureRequest =
