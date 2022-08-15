@@ -84,7 +84,12 @@ export default function AccountList(): ReactElement {
         <div>
           {(!isCollapsible || isOpen ? accounts : accounts.slice(0, 3)).map(
             ({ name, total, percent }) => (
-              <AccountItem name={name} total={total} percent={percent} />
+              <AccountItem
+                key={name}
+                name={name}
+                total={total}
+                percent={percent}
+              />
             )
           )}
         </div>

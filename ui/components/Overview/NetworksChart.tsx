@@ -3,60 +3,43 @@ import {
   NETWORK_BY_CHAIN_ID,
   POLYGON,
 } from "@tallyho/tally-background/constants"
-import { getNetworkCount } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  AccountTotalList,
+  getNetworkCount,
+  selectAccountsTotal,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
-
-const mock = {
-  "1": {
-    "0xf6ff2962af467ca09d27378559b92ad912006719": 23,
-    "0xg6ff2962af467ca09d27378559b92ad912006719": 22,
-  },
-  "137": {
-    "0xf6ff2962af467ca09d27378559b92ad912006719": 333,
-    "0xg6ff2962af467ca09d27378559b92ad912006719": 123,
-  },
-}
 
 const NETWORKS_CHART_COLORS = {
   [ETHEREUM.chainID]: "#62688F",
   [POLYGON.chainID]: "#8347E5",
 }
 
-type AccountsBalance = {
-  [chainID: string]: {
-    [address: string]: number
-  }
-}
-
-const getBalanceSum = (balances: { [key: string]: number }) =>
-  Object.values(balances).reduce(
-    (total, currentBalance) => total + currentBalance,
-    0
-  )
-
 const getNetworksPercents = (
-  accountBalances: AccountsBalance
+  accountsTotal: AccountTotalList
 ): [string, number][] => {
-  const sumByNetwork = Object.fromEntries(
-    Object.entries(accountBalances).map(([chainID, addresses]) => [
-      chainID,
-      getBalanceSum(addresses),
-    ])
+  let totalsSum = 0
+  const totalsByChain: { [chainID: string]: number } = {}
+
+  Object.values(accountsTotal).forEach(({ totals }) =>
+    Object.entries(totals).forEach(([chainID, total]) => {
+      totalsByChain[chainID] ??= 0
+      totalsByChain[chainID] += total
+      totalsSum += total
+    })
   )
 
-  const totalSum = getBalanceSum(sumByNetwork)
-
-  return Object.entries(sumByNetwork).map(([chainID, balance]) => [
+  return Object.entries(totalsByChain).map(([chainID, total]) => [
     chainID,
-    Math.round((balance / totalSum) * 100),
+    Math.round((total / totalsSum) * 100),
   ])
 }
 
 export default function NetworksChart(): ReactElement {
   const networksCount = useBackgroundSelector(getNetworkCount)
-  const totals = mock
-  const percents = getNetworksPercents(totals)
+  const accountsTotal = useBackgroundSelector(selectAccountsTotal)
+  const percents = getNetworksPercents(accountsTotal)
 
   return (
     <>
