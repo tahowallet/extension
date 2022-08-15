@@ -1,3 +1,4 @@
+import { HexString, UNIXTime } from "../../types"
 import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import {
@@ -7,7 +8,6 @@ import {
   LegacyEVMTransactionRequest,
 } from "../../networks"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
-import { UNIXTime } from "../../types"
 import { SignTypedDataRequest } from "../../utils/signing"
 
 export type BaseTransactionAnnotation = {
@@ -47,9 +47,15 @@ export type ContractDeployment = BaseTransactionAnnotation & {
   type: "contract-deployment"
 }
 
+export type FunctionSignature = {
+  abi: string
+  selector: HexString
+}
+
 export type ContractInteraction = BaseTransactionAnnotation & {
   type: "contract-interaction"
   contractInfo: EnrichedAddressOnNetwork
+  functionSignature?: FunctionSignature
 }
 
 export type AssetApproval = BaseTransactionAnnotation & {

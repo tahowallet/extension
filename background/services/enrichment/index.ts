@@ -19,6 +19,7 @@ import { enrichEIP2612SignTypedDataRequest, isEIP2612TypedData } from "./utils"
 import { ETHEREUM } from "../../constants"
 
 import resolveTransactionAnnotation from "./transactions"
+import { getOrCreateDB, EnrichmentDatabase } from "./db"
 
 export * from "./types"
 
@@ -56,6 +57,7 @@ export default class EnrichmentService extends BaseService<Events> {
     [Promise<ChainService>, Promise<IndexingService>, Promise<NameService>]
   > = async (chainService, indexingService, nameService) => {
     return new this(
+      await getOrCreateDB(),
       await chainService,
       await indexingService,
       await nameService
@@ -63,6 +65,7 @@ export default class EnrichmentService extends BaseService<Events> {
   }
 
   private constructor(
+    private db: EnrichmentDatabase,
     private chainService: ChainService,
     private indexingService: IndexingService,
     private nameService: NameService
