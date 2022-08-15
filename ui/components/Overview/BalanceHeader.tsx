@@ -1,18 +1,16 @@
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
-import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import { useBackgroundSelector } from "../../hooks"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 
-export default function BalanceHeader(): ReactElement {
+export default function BalanceHeader({
+  balance,
+  initializationTimeExpired,
+}: {
+  balance?: string
+  initializationTimeExpired: boolean
+}): ReactElement {
   const { t } = useTranslation()
-  const initializationLoadingTimeExpired = useBackgroundSelector(
-    selectInitializationTimeExpired
-  )
-  const { combinedData } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
-  )
+
   return (
     <>
       <div className="balance_header">
@@ -20,11 +18,10 @@ export default function BalanceHeader(): ReactElement {
           {t("overview.totalBalanceEverywhere")}
         </span>
         <div className="balance_value">
-          {initializationLoadingTimeExpired ||
-          combinedData?.totalMainCurrencyValue ? (
+          {initializationTimeExpired || balance ? (
             <>
               <span className="balance_sign">$</span>
-              {combinedData?.totalMainCurrencyValue ?? "0"}
+              {balance ?? "0"}
             </>
           ) : (
             <SharedLoadingSpinner />

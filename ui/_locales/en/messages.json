@@ -2,7 +2,7 @@
   "popupEdition": "Community Edition",
   "overview": {
     "totalBalanceEverywhere": "Total balance on all accounts",
-    "addresses": "Addresses",
+    "accounts": "Accounts",
     "assets": "Assets",
     "networks": "Networks",
     "tableHeader": {
@@ -81,5 +81,9 @@
     "strong": "Strong",
     "strength": "Strength",
     "hintDesc": "For a strong password, consider a mix of lower and uppercase characters, symbols, and numbers. Passwords should be over 8 characters."
-  }
+  },
+  "toggle": {
+    "collapse": "Collapse",
+    "viewAll": "View all"
+  } 
 }

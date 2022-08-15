@@ -3,13 +3,9 @@ import {
   NETWORK_BY_CHAIN_ID,
   POLYGON,
 } from "@tallyho/tally-background/constants"
-import {
-  AccountTotalList,
-  getNetworkCount,
-  selectAccountsTotal,
-} from "@tallyho/tally-background/redux-slices/selectors"
+import { AccountTotalList } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
-import { useBackgroundSelector } from "../../hooks"
+import { useTranslation } from "react-i18next"
 
 const NETWORKS_CHART_COLORS = {
   [ETHEREUM.chainID]: "#62688F",
@@ -36,15 +32,22 @@ const getNetworksPercents = (
   ])
 }
 
-export default function NetworksChart(): ReactElement {
-  const networksCount = useBackgroundSelector(getNetworkCount)
-  const accountsTotal = useBackgroundSelector(selectAccountsTotal)
+export default function NetworksChart({
+  accountsTotal,
+  networksCount,
+}: {
+  accountsTotal: AccountTotalList
+  networksCount: number
+}): ReactElement {
+  const { t } = useTranslation()
   const percents = getNetworksPercents(accountsTotal)
 
   return (
     <>
       <div>
-        <div className="chains_header">Networks({networksCount})</div>
+        <div className="chains_header">
+          {t("overview.networks")}({networksCount})
+        </div>
         <div className="chains_chart">
           {percents.map(([chainID, percent]) => (
             <div

@@ -13,14 +13,18 @@ export default function AccountItem({
   total: number
 }): ReactElement {
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
-
+  const balance = formatCurrencyAmount(mainCurrencySymbol, total, 2)
   return (
     <>
       <div className="account_item">
-        <span className="account_value account_name">{name}</span>
-        <span className="account_value">{percent}</span>
-        <span className="account_value">
-          ${formatCurrencyAmount(mainCurrencySymbol, total, 2)}
+        <span className="account_value account_name" title={name}>
+          {name}
+        </span>
+        <span className="account_value" title={percent}>
+          {percent}
+        </span>
+        <span className="account_value" title={`$${balance}`}>
+          ${balance}
         </span>
       </div>
       <style jsx>{`
@@ -39,6 +43,9 @@ export default function AccountItem({
         .account_value {
           display: block;
           text-align: right;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
         }
         .account_value:nth-child(1) {
           width: 45%;

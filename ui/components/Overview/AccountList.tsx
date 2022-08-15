@@ -1,10 +1,6 @@
-import {
-  AccountTotalList,
-  getAddressCount,
-  selectAccountsTotal,
-} from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, useMemo, useState } from "react"
-import { useBackgroundSelector } from "../../hooks"
+import { AccountTotalList } from "@tallyho/tally-background/redux-slices/selectors"
+import React, { ReactElement, useState } from "react"
+import { useTranslation } from "react-i18next"
 import SharedIcon from "../Shared/SharedIcon"
 import AccountItem from "./AccountItem"
 
@@ -38,15 +34,16 @@ const getAccountsList = (accountsTotal: AccountTotalList) => {
   return list
 }
 
-export default function AccountList(): ReactElement {
+export default function AccountList({
+  accountsTotal,
+  accountsCount,
+}: {
+  accountsTotal: AccountTotalList
+  accountsCount: number
+}): ReactElement {
   const [isOpen, setIsOpen] = useState(false)
-  const accountsCount = useBackgroundSelector(getAddressCount)
-  const accountsTotal = useBackgroundSelector(selectAccountsTotal)
-
-  const accounts = useMemo(
-    () => getAccountsList(accountsTotal),
-    [accountsTotal]
-  )
+  const { t } = useTranslation()
+  const accounts = getAccountsList(accountsTotal)
 
   const isCollapsible = accounts.length > 3
   const toggle = () => setIsOpen((prev) => !prev)
@@ -55,14 +52,16 @@ export default function AccountList(): ReactElement {
     <>
       <div className="accounts_list">
         <div className="accounts_header">
-          <span>Accounts({accountsCount})</span>
+          <span>
+            {t("overview.accounts")}({accountsCount})
+          </span>
           {isCollapsible && (
             <button
               type="button"
               className="accounts_toggle"
               onClick={() => toggle()}
             >
-              {isOpen ? "Collapse" : "View all"}
+              {isOpen ? t("toggle.collapse") : t("toggle.viewAll")}
               <SharedIcon
                 icon="icons/s/arrow-toggle.svg"
                 width={12}

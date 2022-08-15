@@ -1,5 +1,10 @@
 import React, { ReactElement, useState } from "react"
-import { selectAccountAndTimestampedActivities } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  getAddressCount,
+  getNetworkCount,
+  selectAccountAndTimestampedActivities,
+  selectAccountsTotal,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { SUPPORT_NFTS } from "@tallyho/tally-background/features"
 import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundSelector } from "../hooks"
@@ -11,9 +16,13 @@ import BalanceHeader from "../components/Overview/BalanceHeader"
 import NetworksChart from "../components/Overview/NetworksChart"
 import AccountList from "../components/Overview/AccountList"
 
+const panelNames = ["Assets", "NFTs"]
+
 export default function Overview(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
-  const panelNames = ["Assets", "NFTs"]
+  const accountsTotal = useBackgroundSelector(selectAccountsTotal)
+  const networksCount = useBackgroundSelector(getNetworkCount)
+  const accountsCount = useBackgroundSelector(getAddressCount)
 
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities
@@ -25,9 +34,18 @@ export default function Overview(): ReactElement {
   return (
     <>
       <section className="stats">
-        <BalanceHeader />
-        <AccountList />
-        <NetworksChart />
+        <BalanceHeader
+          balance={combinedData.totalMainCurrencyValue}
+          initializationTimeExpired={initializationLoadingTimeExpired}
+        />
+        <AccountList
+          accountsTotal={accountsTotal}
+          accountsCount={accountsCount}
+        />
+        <NetworksChart
+          accountsTotal={accountsTotal}
+          networksCount={networksCount}
+        />
       </section>
       {SUPPORT_NFTS && (
         <div className="panel_switcher">
