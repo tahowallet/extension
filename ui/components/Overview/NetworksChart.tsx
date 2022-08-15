@@ -32,7 +32,7 @@ const getNetworksPercents = (
 
   return Object.entries(totalsByChain).map(([chainID, total]) => [
     chainID,
-    Math.round((total / totalsSum) * 100),
+    totalsSum ? Math.round((total / totalsSum) * 100) : 0,
   ])
 }
 
@@ -88,6 +88,7 @@ export default function NetworksChart({
           height: 6px;
           width: 100%;
           display: flex;
+          background: var(--green-95);
         }
         .chart_item {
           margin: 0 1px;

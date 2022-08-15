@@ -27,7 +27,7 @@ const getAccountsList = (accountsTotal: AccountTotalList) => {
   list.forEach((accountTotal) => {
     // eslint-disable-next-line no-param-reassign
     accountTotal.percent = `${Math.round(
-      (accountTotal.total / totalsSum) * 100
+      totalsSum ? (accountTotal.total / totalsSum) * 100 : 0
     )}%`
   })
 
