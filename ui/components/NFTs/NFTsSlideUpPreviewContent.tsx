@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
 import { ETHEREUM, POLYGON } from "@tallyho/tally-background/constants"
-import { NFTItem } from "@tallyho/tally-background/redux-slices/nfts"
+import { NFT } from "@tallyho/tally-background/redux-slices/nfts"
 import SharedIcon from "../Shared/SharedIcon"
 import NFTsImage from "./NFTsImage"
 import { scanWebsite } from "../../utils/constants"
@@ -8,13 +8,13 @@ import { scanWebsite } from "../../utils/constants"
 function getPreviewLink({
   chainID,
   contractAddress,
-  tokenId,
+  tokenID,
 }: {
   chainID: number
   contractAddress: string
-  tokenId: string
+  tokenID: string
 }) {
-  const parsedTokenID = BigInt(tokenId).toString()
+  const parsedTokenID = BigInt(tokenID).toString()
   const previewURL = {
     [POLYGON.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
     [ETHEREUM.chainID]: `/nft/${contractAddress}/${parsedTokenID}`,
@@ -24,23 +24,23 @@ function getPreviewLink({
 }
 
 export default function NFTsSlideUpPreviewContent({
-  NFT,
+  nft,
 }: {
-  NFT: NFTItem
+  nft: NFT
 }): ReactElement {
   const {
-    title,
+    name,
     media,
-    id: { tokenId },
-    chainID,
+    tokenID,
+    network: { chainID },
     contract: { address: contractAddress },
-  } = NFT
-  const src = media[0].gateway ?? ""
+  } = nft
+  const src = media[0].url ?? ""
 
   return (
     <>
       <header>
-        <h1>{title || "No title"}</h1>
+        <h1>{name || "No title"}</h1>
         <SharedIcon
           icon="icons/s/new-tab.svg"
           width={16}
@@ -49,7 +49,11 @@ export default function NFTsSlideUpPreviewContent({
           onClick={() => {
             window
               .open(
-                getPreviewLink({ chainID, contractAddress, tokenId }),
+                getPreviewLink({
+                  chainID: Number(chainID),
+                  contractAddress,
+                  tokenID,
+                }),
                 "_blank"
               )
               ?.focus()
@@ -57,7 +61,7 @@ export default function NFTsSlideUpPreviewContent({
         />
       </header>
       <div className="preview">
-        <NFTsImage alt={title} src={src} fit="contain" />
+        <NFTsImage alt={name} src={src} fit="contain" />
       </div>
       <style jsx>{`
         header {

@@ -4,7 +4,6 @@ import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
 import { keyPermissionsByChainIdAddressOrigin } from "../services/provider-bridge/utils"
 import { ETHEREUM, OPTIMISM, POLYGON } from "../constants"
-import { SUPPORT_POLYGON } from "../features"
 
 export type DAppPermissionState = {
   permissionRequests: { [origin: string]: PermissionRequest }
@@ -112,7 +111,7 @@ const dappSlice = createSlice({
           }))
 
           const allowedPermission = keyPermissionsByChainIdAddressOrigin(
-            SUPPORT_POLYGON ? permissions : [permission],
+            permissions,
             immerState.allowed
           )
 
