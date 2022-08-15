@@ -1,5 +1,3 @@
-import { ReactFragment } from "react"
-
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 
 import { useState, useEffect, useRef, ReactElement, ReactNode } from "react"
@@ -52,7 +50,7 @@ export function useSkipFirstRenderEffect(
 
 type PanelDescriptor = {
   name: string
-  panelElement: ReactElement
+  panelElement: () => ReactElement
 }
 
 export function useSwitchablePanels(panels: PanelDescriptor[]): ReactNode {

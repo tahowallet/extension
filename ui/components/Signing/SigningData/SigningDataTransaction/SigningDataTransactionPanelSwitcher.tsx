@@ -12,7 +12,7 @@ export default function SigningDataTransactionPanelSwitcher({
   const switchablePanels = useSwitchablePanels([
     {
       name: "Details",
-      panelElement: (
+      panelElement: () => (
         <SigningDataTransactionDetailPanel
           transactionRequest={transactionRequest}
         />
@@ -20,7 +20,7 @@ export default function SigningDataTransactionPanelSwitcher({
     },
     {
       name: "Raw data",
-      panelElement: (
+      panelElement: () => (
         <SigningDataTransactionRawDataPanel
           transactionRequest={transactionRequest}
         />
