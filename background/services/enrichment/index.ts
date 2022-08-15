@@ -35,7 +35,7 @@ import {
   getERC20LogsForAddresses,
   isEIP2612TypedData,
 } from "./utils"
-import { ETHEREUM } from "../../constants"
+import { ETHEREUM, EVM_ROLLUP_CHAIN_IDS, OPTIMISM } from "../../constants"
 import { parseLogsForWrappedDepositsAndWithdrawals } from "../../lib/wrappedAsset"
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
 
@@ -143,7 +143,15 @@ export default class EnrichmentService extends BaseService<Events> {
     } else if ("gasPrice" in transaction && "gasLimit" in transaction) {
       const { gasPrice, gasLimit } = transaction
       if (gasPrice && gasLimit) {
-        const gasFee = gasLimit * gasPrice
+        let gasFee = gasLimit * gasPrice
+        hasInsufficientFunds =
+          gasFee + (transaction.value ?? 0n) > baseAssetBalance
+        if (EVM_ROLLUP_CHAIN_IDS.has(network.chainID)) {
+          gasFee += await this.chainService.estimateL1RollupFee(
+            network,
+            transaction.input
+          )
+        }
         hasInsufficientFunds =
           gasFee + (transaction.value ?? 0n) > baseAssetBalance
       }

@@ -4,7 +4,7 @@ import {
   TransactionReceipt,
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
-import { utils } from "ethers"
+import { ethers, utils } from "ethers"
 import { Logger } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
@@ -29,6 +29,7 @@ import {
   POLYGON,
   ARBITRUM_ONE,
   OPTIMISM,
+  EVM_ROLLUP_CHAIN_IDS,
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
@@ -57,6 +58,10 @@ import type {
 } from "../enrichment"
 import SerialFallbackProvider from "./serial-fallback-provider"
 import AssetDataHelper from "./asset-data-helper"
+import {
+  OPTIMISM_GAS_ORACLE_ABI,
+  OPTIMISM_GAS_ORACLE_ADDRESS,
+} from "./utils/optimismGasPriceOracle"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -381,6 +386,9 @@ export default class ChainService extends BaseService<Events> {
       chainID: network.chainID,
       nonce,
       annotation,
+      estimatedRollupFee: EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
+        ? await this.estimateL1RollupFee(network, input)
+        : 0n,
     }
 
     // Always estimate gas to decide whether the transaction will likely fail.
@@ -810,11 +818,32 @@ export default class ChainService extends BaseService<Events> {
     return BigInt(uppedEstimate.toString())
   }
 
+  async estimateL1RollupFee(
+    network: EVMNetwork,
+    input: string | null | undefined
+  ): Promise<bigint> {
+    if (!input) {
+      throw new Error("Can't estimate L1 rollup fee for an empty transaction")
+    }
+
+    const provider = await this.providerForNetworkOrThrow(network)
+
+    const GasOracle = new ethers.Contract(
+      OPTIMISM_GAS_ORACLE_ADDRESS,
+      OPTIMISM_GAS_ORACLE_ABI,
+      provider
+    )
+
+    const l1Fee = await GasOracle.getL1Fee(input)
+
+    return BigInt(l1Fee.toString())
+  }
+
   /**
    * Estimate the gas needed to make a transaction. Adds 10% as a safety net to
    * the base estimate returned by the provider.
    */
-  async estimateGasPrice(network: EVMNetwork): Promise<bigint> {
+  private async estimateGasPrice(network: EVMNetwork): Promise<bigint> {
     const estimate = await this.providerForNetworkOrThrow(network).getGasPrice()
 
     // Add 10% more gas as a safety net

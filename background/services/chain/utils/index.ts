@@ -17,9 +17,9 @@ import {
   TransactionRequest,
   isEIP1559SignedTransaction,
   SignedTransaction,
-} from "../../networks"
-import { USE_MAINNET_FORK } from "../../features"
-import { FORK } from "../../constants"
+} from "../../../networks"
+import { USE_MAINNET_FORK } from "../../../features"
+import { FORK } from "../../../constants"
 
 /**
  * Parse a block as returned by a polling provider.

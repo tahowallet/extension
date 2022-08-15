@@ -137,6 +137,11 @@ export type LegacyEVMTransaction = EVMTransaction & {
  *
  * Nonce is permitted to be `undefined` as Tally internals can and often do
  * populate the nonce immediately before a request is signed.
+ *
+ * On networks that roll up to ethereum - the rollup fee is directly proportional
+ * to the size (in bytes) of the input of a given transaction.  Networks that do
+ * not roll up will have a rollup fee of 0.
+ *
  */
 export type LegacyEVMTransactionRequest = Pick<
   LegacyEVMTransaction,
@@ -144,6 +149,7 @@ export type LegacyEVMTransactionRequest = Pick<
 > & {
   chainID: LegacyEVMTransaction["network"]["chainID"]
   gasLimit: bigint
+  estimatedRollupFee: bigint
   nonce?: number
 }
 
