@@ -54,14 +54,29 @@ async function annotationsFromLogs(
     tokenTransferLogs,
     accountAddresses
   )
+  const relevantAddresses = [
+    ...new Set(
+      getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs)
+        .concat(
+          tokenTransferLogs.flatMap<string>(
+            ({ senderAddress, recipientAddress }) => [
+              senderAddress,
+              recipientAddress,
+            ]
+          )
+        )
+        .map(normalizeEVMAddress)
+    ),
+  ]
+
   // Look up transfer log names, then flatten to an address -> name map.
   const annotationsByAddress = Object.fromEntries(
     (
       await Promise.allSettled(
-        getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
+        relevantAddresses.map(
           async (address) =>
             [
-              normalizeEVMAddress(address),
+              address,
               await enrichAddressOnNetwork(chainService, nameService, {
                 address,
                 network,
