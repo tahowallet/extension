@@ -55,7 +55,11 @@ if (!window.walletRouter) {
           this.currentProvider = this.lastInjectedProvider ?? this.tallyProvider
         }
 
-        if (shouldReload && window.location.href.includes("app.uniswap.org")) {
+        if (
+          shouldReload &&
+          (window.location.href.includes("app.uniswap.org") ||
+            window.location.href.includes("galaxy.eco"))
+        ) {
           setTimeout(() => {
             window.location.reload()
           }, 1000)
