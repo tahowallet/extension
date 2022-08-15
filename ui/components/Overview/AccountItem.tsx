@@ -1,12 +1,27 @@
+import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
+import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
+import { useBackgroundSelector } from "../../hooks"
 
-export default function AccountItem(): ReactElement {
+export default function AccountItem({
+  name,
+  percent,
+  total,
+}: {
+  name: string
+  percent: string
+  total: number
+}): ReactElement {
+  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
+
   return (
     <>
       <div className="account_item">
-        <span className="account_value account_name">xyz.eth</span>
-        <span className="account_value">10%</span>
-        <span className="account_value">$1,324,231.00</span>
+        <span className="account_value account_name">{name}</span>
+        <span className="account_value">{percent}</span>
+        <span className="account_value">
+          ${formatCurrencyAmount(mainCurrencySymbol, total, 2)}
+        </span>
       </div>
       <style jsx>{`
         .account_item {

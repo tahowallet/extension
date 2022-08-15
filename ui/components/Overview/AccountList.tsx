@@ -1,25 +1,52 @@
-import { getAddressCount } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, useState } from "react"
+import {
+  AccountTotalList,
+  getAddressCount,
+  selectAccountsTotal,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import React, { ReactElement, useMemo, useState } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import SharedIcon from "../Shared/SharedIcon"
 import AccountItem from "./AccountItem"
 
-const mock = [
-  { address: "xyz.eth", balance: "123", percent: "10%" },
-  { address: "xyz.eth", balance: "123", percent: "10%" },
-  // { address: "xyz.eth", balance: "123", percent: "10%" },
-  // { address: "xyz.eth", balance: "123", percent: "10%" },
-  // { address: "xyz.eth", balance: "123", percent: "10%" },
-  // { address: "xyz.eth", balance: "123", percent: "10%" },
-  // { address: "xyz.eth", balance: "123", percent: "10%" },
-]
+const getAccountsList = (accountsTotal: AccountTotalList) => {
+  let totalsSum = 0
 
-const getItem = () => <AccountItem />
+  const list = Object.values(accountsTotal).map(
+    ({ ensName, totals, shortenedAddress }) => {
+      const total = Object.values(totals).reduce(
+        (sum, current) => sum + current,
+        0
+      )
+
+      totalsSum += total
+
+      return {
+        name: ensName ?? shortenedAddress,
+        total,
+        percent: "",
+      }
+    }
+  )
+
+  list.forEach((accountTotal) => {
+    // eslint-disable-next-line no-param-reassign
+    accountTotal.percent = `${Math.round(
+      (accountTotal.total / totalsSum) * 100
+    )}%`
+  })
+
+  return list
+}
 
 export default function AccountList(): ReactElement {
   const [isOpen, setIsOpen] = useState(false)
   const accountsCount = useBackgroundSelector(getAddressCount)
-  const accounts = mock
+  const accountsTotal = useBackgroundSelector(selectAccountsTotal)
+
+  const accounts = useMemo(
+    () => getAccountsList(accountsTotal),
+    [accountsTotal]
+  )
 
   const isCollapsible = accounts.length > 3
   const toggle = () => setIsOpen((prev) => !prev)
@@ -55,9 +82,11 @@ export default function AccountList(): ReactElement {
           )}
         </div>
         <div>
-          {isCollapsible
-            ? (isOpen ? accounts : accounts.slice(0, 3)).map(getItem)
-            : accounts.map(getItem)}
+          {(!isCollapsible || isOpen ? accounts : accounts.slice(0, 3)).map(
+            ({ name, total, percent }) => (
+              <AccountItem name={name} total={total} percent={percent} />
+            )
+          )}
         </div>
       </div>
       <style jsx>{`
