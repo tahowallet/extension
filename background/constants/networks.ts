@@ -6,6 +6,7 @@ export const ETHEREUM: EVMNetwork = {
   baseAsset: ETH,
   chainID: "1",
   family: "EVM",
+  coingeckoPlatformID: "ethereum",
 }
 
 export const POLYGON: EVMNetwork = {
@@ -13,6 +14,7 @@ export const POLYGON: EVMNetwork = {
   baseAsset: MATIC,
   chainID: "137",
   family: "EVM",
+  coingeckoPlatformID: "polygon-pos",
 }
 
 export const ARBITRUM_ONE: EVMNetwork = {
@@ -36,6 +38,7 @@ export const ROPSTEN: EVMNetwork = {
   baseAsset: ETH,
   chainID: "3",
   family: "EVM",
+  coingeckoPlatformID: "ethereum",
 }
 
 export const RINKEBY: EVMNetwork = {
@@ -43,6 +46,7 @@ export const RINKEBY: EVMNetwork = {
   baseAsset: ETH,
   chainID: "4",
   family: "EVM",
+  coingeckoPlatformID: "ethereum",
 }
 
 export const GOERLI: EVMNetwork = {
@@ -50,6 +54,7 @@ export const GOERLI: EVMNetwork = {
   baseAsset: ETH,
   chainID: "5",
   family: "EVM",
+  coingeckoPlatformID: "ethereum",
 }
 
 export const KOVAN: EVMNetwork = {
@@ -57,12 +62,14 @@ export const KOVAN: EVMNetwork = {
   baseAsset: ETH,
   chainID: "42",
   family: "EVM",
+  coingeckoPlatformID: "ethereum",
 }
 
 export const BITCOIN: Network = {
   name: "Bitcoin",
   baseAsset: BTC,
   family: "BTC",
+  coingeckoPlatformID: "bitcoin",
 }
 
 export const FORK: EVMNetwork = {

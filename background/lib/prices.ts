@@ -118,10 +118,7 @@ export async function getTokenPrices(
 
   // TODO cover failed schema validation
   const addys = tokenAddresses.join(",")
-  const url = `${COINGECKO_API_ROOT}/simple/token_price/${
-    network.coingeckoPlatformID ??
-    network.baseAsset.metadata.coinGeckoPlatformID
-  }?vs_currencies=${fiatSymbol}&include_last_updated_at=true&contract_addresses=${addys}`
+  const url = `${COINGECKO_API_ROOT}/simple/token_price/${network.coingeckoPlatformID}?vs_currencies=${fiatSymbol}&include_last_updated_at=true&contract_addresses=${addys}`
 
   try {
     const json = await fetchJson(url)
