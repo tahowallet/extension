@@ -14,6 +14,8 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { EVM_ROLLUP_CHAIN_IDS } from "@tallyho/tally-background/constants"
+import { isEIP1559TransactionRequest } from "@tallyho/tally-background/networks"
 import {
   PricePoint,
   unitPricePointForPricePoint,
@@ -21,8 +23,6 @@ import {
 } from "@tallyho/tally-background/assets"
 import { useBackgroundSelector } from "../../hooks"
 import FeeSettingsTextDeprecated from "./FeeSettingsTextDeprecated"
-import { EVM_ROLLUP_CHAIN_IDS } from "@tallyho/tally-background/constants"
-import { isEIP1559TransactionRequest } from "@tallyho/tally-background/networks"
 
 const getFeeDollarValue = (
   currencyPrice: PricePoint | undefined,
@@ -84,6 +84,7 @@ export default function FeeSettingsText({
   )
   const gasLimit = networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
   const estimatedSpendPerGas =
+    networkSettings.values.gasPrice ||
     baseFeePerGas + networkSettings.values.maxPriorityFeePerGas
 
   const estimatedGweiAmount =
