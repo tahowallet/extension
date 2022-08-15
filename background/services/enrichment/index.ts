@@ -35,7 +35,7 @@ import {
   getERC20LogsForAddresses,
   isEIP2612TypedData,
 } from "./utils"
-import { ETHEREUM, EVM_ROLLUP_CHAIN_IDS, OPTIMISM } from "../../constants"
+import { ETHEREUM, EVM_ROLLUP_CHAIN_IDS } from "../../constants"
 import { parseLogsForWrappedDepositsAndWithdrawals } from "../../lib/wrappedAsset"
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
 
