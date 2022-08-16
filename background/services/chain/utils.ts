@@ -266,10 +266,10 @@ export function transactionFromEthersTransaction(
   network: EVMNetwork
 ): AnyEVMTransaction {
   if (tx.hash === undefined) {
-    throw Error("Malformed transaction")
+    throw new Error("Malformed transaction")
   }
   if (tx.type !== 0 && tx.type !== 1 && tx.type !== 2) {
-    throw Error(`Unknown transaction type ${tx.type}`)
+    throw new Error(`Unknown transaction type ${tx.type}`)
   }
 
   const newTx = {
