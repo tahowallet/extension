@@ -7,7 +7,6 @@ import {
 import {
   SUPPORT_ARBITRUM,
   SUPPORT_OPTIMISM,
-  SUPPORT_POLYGON,
 } from "@tallyho/tally-background/features"
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
@@ -21,22 +20,10 @@ const listItemInfo = [
     network: ETHEREUM,
     info: i18n.t("protocol.mainnet"),
   },
-  ...(SUPPORT_POLYGON
-    ? [
-        {
-          network: POLYGON,
-          info: i18n.t("protocol.l2"),
-        },
-      ]
-    : []),
-  ...(SUPPORT_ARBITRUM
-    ? [
-        {
-          network: ARBITRUM_ONE,
-          info: i18n.t("protocol.l2"),
-        },
-      ]
-    : []),
+  {
+    network: POLYGON,
+    info: i18n.t("protocol.l2"),
+  },
   ...(SUPPORT_OPTIMISM
     ? [
         {
@@ -44,7 +31,27 @@ const listItemInfo = [
           info: i18n.t("protocol.l2"),
         },
       ]
-    : []),
+    : [
+        {
+          network: OPTIMISM,
+          info: i18n.t("comingSoon"),
+          isDisabled: true,
+        },
+      ]),
+  ...(SUPPORT_ARBITRUM
+    ? [
+        {
+          network: ARBITRUM_ONE,
+          info: i18n.t("protocol.l2"),
+        },
+      ]
+    : [
+        {
+          network: ARBITRUM_ONE,
+          info: i18n.t("comingSoon"),
+          isDisabled: true,
+        },
+      ]),
   // {
   //   name: "Binance Smart Chain",
   //   info: i18n.t("protocol.compatibleChain"),
@@ -78,6 +85,7 @@ export default function TopMenuProtocolList({
             network={info.network}
             info={info.info}
             onSelect={onProtocolChange}
+            isDisabled={info.isDisabled ?? false}
           />
         ))}
       </ul>

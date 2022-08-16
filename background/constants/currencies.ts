@@ -1,7 +1,6 @@
 import { FiatCurrency, FungibleAsset, CoinGeckoAsset } from "../assets"
 import { NetworkBaseAsset } from "../networks"
 import { coinTypesByAssetSymbol } from "./coin-types"
-import { SUPPORT_POLYGON } from "../features"
 
 export const USD: FiatCurrency = {
   name: "United States Dollar",
@@ -21,7 +20,6 @@ export const ETH: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   coinType: coinTypesByAssetSymbol.ETH,
   metadata: {
     coinGeckoID: "ethereum",
-    coinGeckoPlatformID: "ethereum",
     tokenLists: [],
     websiteURL: "https://ethereum.org",
   },
@@ -34,7 +32,6 @@ export const MATIC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   coinType: coinTypesByAssetSymbol.MATIC,
   metadata: {
     coinGeckoID: "matic-network",
-    coinGeckoPlatformID: "polygon-pos",
     tokenLists: [],
     websiteURL: "https://polygon.technology/",
   },
@@ -47,13 +44,12 @@ export const BTC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   coinType: coinTypesByAssetSymbol.BTC,
   metadata: {
     coinGeckoID: "bitcoin",
-    coinGeckoPlatformID: "bitcoin",
     tokenLists: [],
     websiteURL: "https://bitcoin.org",
   },
 }
 
-export const BASE_ASSETS = [ETH, BTC, ...(SUPPORT_POLYGON ? [MATIC] : [])]
+export const BASE_ASSETS = [ETH, BTC, MATIC]
 
 export const BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce<{
   [assetSymbol: string]: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset

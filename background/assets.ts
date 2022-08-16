@@ -53,7 +53,6 @@ export type Asset = {
 export type CoinGeckoAsset = Asset & {
   metadata: Asset["metadata"] & {
     coinGeckoID: string
-    coinGeckoPlatformID?: string
   }
 }
 

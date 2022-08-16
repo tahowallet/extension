@@ -1165,10 +1165,6 @@ export default class Main extends BaseService<never> {
         addressNetwork
       )
       this.store.dispatch(setReferrerStats(referrerStats))
-
-      this.providerBridgeService.notifyContentScriptsAboutAddressChange(
-        addressNetwork.address
-      )
     })
 
     uiSliceEmitter.on(

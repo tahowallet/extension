@@ -331,7 +331,7 @@ export async function getNFTs({
 
   // TODO validate data with ajv
   const result = await (await fetch(requestUrl.toString())).json()
-  return result.ownedNfts.filter(
-    (nft: AlchemyNFTItem) => typeof nft.error === "undefined"
-  )
+  return result.ownedNfts
+    .filter((nft: AlchemyNFTItem) => typeof nft.error === "undefined")
+    .map((nft: AlchemyNFTItem) => ({ ...nft, chainID: network.chainID }))
 }
