@@ -31,6 +31,7 @@ enum LedgerType {
   UNKNOWN,
   LEDGER_NANO_S,
   LEDGER_NANO_X,
+  LEDGER_NANO_S_PLUS,
 }
 
 const LedgerTypeAsString = Object.values(LedgerType)
@@ -44,6 +45,7 @@ export type LedgerAccountSigner = {
 export const LedgerProductDatabase = {
   LEDGER_NANO_S: { productId: 0x1015 },
   LEDGER_NANO_X: { productId: 0x4015 },
+  LEDGER_NANO_S_PLUS: { productId: 0x5015 },
 }
 
 export const isLedgerSupported = typeof navigator.usb === "object"
@@ -110,6 +112,9 @@ async function generateLedgerId(
       break
     case DeviceModelId.nanoX:
       extensionDeviceType = LedgerType.LEDGER_NANO_X
+      break
+    case DeviceModelId.nanoSP:
+      extensionDeviceType = LedgerType.LEDGER_NANO_S_PLUS
       break
     default:
       extensionDeviceType = LedgerType.UNKNOWN
@@ -496,7 +501,7 @@ export default class LedgerService extends BaseService<Events> {
 
   async signMessage(
     { address, network }: AddressOnNetwork,
-    message: string
+    hexDataToSign: HexString
   ): Promise<string> {
     if (!sameNetwork(network, ETHEREUM)) {
       throw new Error("Unsupported network for Ledger signing")
@@ -522,7 +527,7 @@ export default class LedgerService extends BaseService<Events> {
 
     const signature = await eth.signPersonalMessage(
       accountData.path,
-      Buffer.from(message).toString("hex")
+      hexDataToSign
     )
 
     const signatureHex = joinSignature({
