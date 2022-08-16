@@ -1,4 +1,5 @@
 import { TypedDataField } from "@ethersproject/abstract-signer"
+import { hexlify, toUtf8Bytes, toUtf8String } from "ethers/lib/utils"
 import { SiweMessage } from "siwe"
 import { AddressOnNetwork } from "../accounts"
 
@@ -87,7 +88,32 @@ export const parseSigningData: (signingData: string) => {
   data: ExpectedSigningData
   type: SignDataMessageType
 } = (signingData) => {
-  const data = checkEIP4361(signingData)
+  let normalizedData = signingData
+
+  // Attempt to normalize hex signing data to a UTF-8 string message. If the
+  // signing data is <= 32 bytes long, assume it's a hash or other short data
+  // that need not be normalized to a regular UTF-8 string.
+  if (signingData.startsWith("0x") && signingData.length > 66) {
+    let possibleMessageString: string | undefined
+    try {
+      possibleMessageString = toUtf8String(signingData)
+      // Below, if the signing data is not a valid UTF-8 string, we move on
+      // with an undefined possibleMessageString.
+      // eslint-disable-next-line no-empty
+    } catch (err) {}
+
+    // If the hex was parsable as UTF-8 and re-converting to bytes in a hex
+    // string produces the identical output, accept it as a valid string and
+    // set the interpreted data to the UTF-8 string.
+    if (
+      possibleMessageString !== undefined &&
+      hexlify(toUtf8Bytes(possibleMessageString)) === signingData.toLowerCase()
+    ) {
+      normalizedData = possibleMessageString
+    }
+  }
+
+  const data = checkEIP4361(normalizedData)
   if (data) {
     return {
       data,
@@ -102,7 +128,7 @@ export const parseSigningData: (signingData: string) => {
 
   // add additional checks for any other types to add in the future
   return {
-    data: signingData,
+    data: normalizedData,
     type: SignDataMessageType.EIP191,
   }
 }

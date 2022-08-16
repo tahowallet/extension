@@ -38,7 +38,7 @@
     "@ledgerhq/hw-transport": "^6.20.0",
     "@ledgerhq/hw-transport-webusb": "^6.20.0",
     "@redux-devtools/remote": "^0.7.4",
-    "@tallyho/hd-keyring": "^0.3.3",
+    "@tallyho/hd-keyring": "0.4.0",
     "@tallyho/provider-bridge-shared": "0.0.1",
     "@tallyho/window-provider": "0.0.1",
     "@types/w3c-web-usb": "^1.0.5",

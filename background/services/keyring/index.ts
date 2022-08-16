@@ -2,6 +2,7 @@ import { parse as parseRawTransaction } from "@ethersproject/transactions"
 
 import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 
+import { arrayify } from "ethers/lib/utils"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
@@ -11,14 +12,9 @@ import {
   encryptVault,
   SaltedKey,
 } from "./encryption"
-import {
-  HexString,
-  KeyringTypes,
-  EIP191Data,
-  EIP712TypedData,
-  UNIXTime,
-} from "../../types"
+import { HexString, KeyringTypes, EIP712TypedData, UNIXTime } from "../../types"
 import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
+
 import BaseService from "../base"
 import { FORK, MINUTE } from "../../constants"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
@@ -600,14 +596,18 @@ export default class KeyringService extends BaseService<Events> {
     signingData,
     account,
   }: {
-    signingData: EIP191Data
+    signingData: HexString
     account: HexString
   }): Promise<string> {
     this.requireUnlocked()
+
     // find the keyring using a linear search
     const keyring = await this.#findKeyring(account)
     try {
-      const signature = await keyring.signMessage(account, signingData)
+      const signature = await keyring.signMessageBytes(
+        account,
+        arrayify(signingData)
+      )
 
       return signature
     } catch (error) {
