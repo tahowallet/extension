@@ -1,9 +1,11 @@
 import React, { ReactElement, useState } from "react"
 
 type VerticalPosition = "top" | "bottom"
+type HorizontalPosition = "left" | "center" | "right"
 
 interface Props {
   verticalPosition?: VerticalPosition
+  horizontalPosition?: HorizontalPosition
   width: number
   height?: number
   children: React.ReactNode
@@ -15,8 +17,17 @@ interface Props {
   }) => ReactElement
 }
 
-function getHorizontalPosition(width: number) {
-  return `right: -${width / 2 + 4}px;`
+function getHorizontalPosition(horizontal: HorizontalPosition, width: number) {
+  switch (horizontal) {
+    case "center":
+      return `right: -${width / 2 + 4}px;`
+    case "right":
+      return `right: -${width + 8}px;`
+    case "left":
+      return `left: -${width + 8}px;`
+    default:
+      return ""
+  }
 }
 
 function getVerticalPosition(vertical: VerticalPosition, height: number) {
@@ -34,6 +45,7 @@ export default function SharedTooltip(props: Props): ReactElement {
   const {
     children,
     verticalPosition = "bottom",
+    horizontalPosition = "center",
     width,
     height = 20,
     IconComponent,
@@ -86,7 +98,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             border-radius: 3px;
             padding: 12px;
             ${getVerticalPosition(verticalPosition, height)}
-            ${getHorizontalPosition(width)}
+            ${getHorizontalPosition(horizontalPosition, width)}
           }
         `}
       </style>

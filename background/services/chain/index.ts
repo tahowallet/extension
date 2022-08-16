@@ -33,7 +33,6 @@ import {
 import {
   SUPPORT_ARBITRUM,
   SUPPORT_OPTIMISM,
-  SUPPORT_POLYGON,
   USE_MAINNET_FORK,
 } from "../../features"
 import PreferenceService from "../preferences"
@@ -218,7 +217,7 @@ export default class ChainService extends BaseService<Events> {
 
     this.supportedNetworks = [
       ETHEREUM,
-      ...(SUPPORT_POLYGON ? [POLYGON] : []),
+      POLYGON,
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
@@ -373,7 +372,10 @@ export default class ChainService extends BaseService<Events> {
       value: value ?? 0n,
       gasLimit: gasLimit ?? 0n,
       input: input ?? null,
-      gasPrice: gasPrice ?? (await this.estimateGasPrice(network)),
+      // we know that a transactionRequest will fail with gasPrice 0
+      // and sometimes 3rd party api's (like 0x) may return transaction requests
+      // with gasPrice === 0, so we override the set gasPrice in those cases
+      gasPrice: gasPrice || (await this.estimateGasPrice(network)),
       type: 0 as const,
       network,
       chainID: network.chainID,
@@ -1001,8 +1003,9 @@ export default class ChainService extends BaseService<Events> {
     // TODO this will require custom code for Arbitrum and Optimism support
     // as neither have Alchemy's assetTransfers endpoint
     if (
-      addressOnNetwork.network.chainID !== "1" /* Ethereum */ &&
-      addressOnNetwork.network.chainID !== "137" /* Polygon */
+      addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
+      addressOnNetwork.network.chainID !== POLYGON.chainID &&
+      addressOnNetwork.network.chainID !== OPTIMISM.chainID
     ) {
       logger.error(
         `Asset transfer check not supported on network ${JSON.stringify(

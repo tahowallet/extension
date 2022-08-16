@@ -3,9 +3,8 @@ import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import { ETHEREUM, POLYGON } from "../../../constants"
 import { sameNetwork } from "../../../networks"
 import { NameResolver } from "../name-resolver"
-import { SUPPORT_POLYGON } from "../../../features"
 
-const ENS_SUPPORTED_NETWORKS = [ETHEREUM, ...(SUPPORT_POLYGON ? [POLYGON] : [])]
+const ENS_SUPPORTED_NETWORKS = [ETHEREUM, POLYGON]
 
 export default function ensResolverFor(
   chainService: ChainService
