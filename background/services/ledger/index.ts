@@ -389,7 +389,7 @@ export default class LedgerService extends BaseService<Events> {
           tx.type !== 2 &&
           tx.type !== null
         ) {
-          throw Error(`Unknown transaction type ${tx.type}`)
+          throw new Error(`Unknown transaction type ${tx.type}`)
         }
 
         const signedTx = {
