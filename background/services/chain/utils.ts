@@ -94,13 +94,12 @@ export function ethersTransactionRequestFromEIP1559TransactionRequest(
 export function ethersTransactionRequestFromLegacyTransactionRequest(
   transaction: LegacyEVMTransactionRequest
 ): EthersTransactionRequest {
-  const { to, input, from, type, nonce, gasPrice, value, chainID, gasLimit } =
+  const { to, input, type, nonce, gasPrice, value, chainID, gasLimit } =
     transaction
 
   return {
     to,
     data: input ?? undefined,
-    from,
     type: type ?? undefined,
     nonce,
     gasPrice,
@@ -267,10 +266,10 @@ export function transactionFromEthersTransaction(
   network: EVMNetwork
 ): AnyEVMTransaction {
   if (tx.hash === undefined) {
-    throw Error("Malformed transaction")
+    throw new Error("Malformed transaction")
   }
   if (tx.type !== 0 && tx.type !== 1 && tx.type !== 2) {
-    throw Error(`Unknown transaction type ${tx.type}`)
+    throw new Error(`Unknown transaction type ${tx.type}`)
   }
 
   const newTx = {
