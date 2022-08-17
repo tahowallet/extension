@@ -279,13 +279,17 @@ const transactionSlice = createSlice({
     ) => {
       if (network.chainID === OPTIMISM.chainID) {
         // @TODO change up how we do block estimates since alchemy only gives us an `instant` estimate for optimism.
+        const optimismBlockEstimate = makeBlockEstimate(
+          INSTANT,
+          estimatedFeesPerGas
+        )
         immerState.estimatedFeesPerGas = {
           ...(immerState.estimatedFeesPerGas ?? {}),
           [network.chainID]: {
             baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
-            instant: makeBlockEstimate(INSTANT, estimatedFeesPerGas),
-            express: makeBlockEstimate(INSTANT, estimatedFeesPerGas),
-            regular: makeBlockEstimate(INSTANT, estimatedFeesPerGas),
+            instant: optimismBlockEstimate,
+            express: optimismBlockEstimate,
+            regular: optimismBlockEstimate,
           },
         }
       } else {
