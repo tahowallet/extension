@@ -328,6 +328,7 @@ export async function getNFTs({
   )
   requestUrl.searchParams.set("owner", address)
   requestUrl.searchParams.set("filters[]", "SPAM")
+  requestUrl.searchParams.set("pageSize", "100")
 
   // TODO validate data with ajv
   const result = await (await fetch(requestUrl.toString())).json()
