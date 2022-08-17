@@ -300,6 +300,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       // If this is a new dapp or the dapp has not implemented wallet_switchEthereumChain
       // use the default network.
       const defaultNetwork = (await this.getInternalActiveChain()).network
+      await this.db.setActiveChainIdForOrigin(origin, defaultNetwork)
       return defaultNetwork
     }
     return activeNetwork.network
