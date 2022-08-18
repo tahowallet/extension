@@ -2,6 +2,7 @@ import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
 import {
   getAccountTotal,
   selectCurrentAccountSigner,
+  selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   rejectDataSignature,
@@ -27,12 +28,16 @@ export enum SignDataType {
 export default function SignData(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const typedDataRequest = useBackgroundSelector(selectTypedData)
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const history = useHistory()
 
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof typedDataRequest !== "undefined") {
-      return getAccountTotal(state, typedDataRequest.account)
+      return getAccountTotal(state, {
+        address: typedDataRequest.account.address,
+        network: currentNetwork,
+      })
     }
     return undefined
   })

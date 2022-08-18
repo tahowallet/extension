@@ -51,7 +51,13 @@ const validTransactionRequests: {
     maxPriorityFeePerGas: 0n,
     gasLimit: 0n,
     chainID: "0",
-    network: { name: "none", chainID: "0", baseAsset: ETH, family: "EVM" },
+    network: {
+      name: "none",
+      chainID: "0",
+      baseAsset: ETH,
+      family: "EVM",
+      coingeckoPlatformID: "ethereum",
+    },
   },
 }
 

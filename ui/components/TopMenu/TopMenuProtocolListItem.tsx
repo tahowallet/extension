@@ -9,19 +9,22 @@ interface Props {
   info: string
   network: EVMNetwork
   isSelected: boolean
+  isDisabled: boolean
   onSelect: () => void
 }
 
 export default function TopMenuProtocolListItem(props: Props): ReactElement {
   const { t } = useTranslation()
-  const { info, isSelected, network, onSelect } = props
+  const { info, isSelected, network, onSelect, isDisabled } = props
 
   const dispatch = useDispatch()
 
   return (
     <li
-      className={classNames({ select: isSelected })}
+      className={classNames({ select: isSelected, disabled: isDisabled })}
       onClick={() => {
+        if (isDisabled) return
+
         dispatch(setSelectedNetwork(network))
         onSelect()
       }}
@@ -106,6 +109,12 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
           .select .left {
             margin-left: 0px;
           }
+          .disabled {
+            cursor: default;
+          }
+          .disabled .title {
+            color var(--green-20);
+          }
         `}
       </style>
     </li>
@@ -114,4 +123,5 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
 
 TopMenuProtocolListItem.defaultProps = {
   isSelected: false,
+  isDisabled: false,
 }
