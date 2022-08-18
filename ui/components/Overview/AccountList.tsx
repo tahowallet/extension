@@ -19,17 +19,19 @@ const getAccountsList = (accountsTotal: AccountTotalList) => {
       return {
         name: ensName ?? shortenedAddress,
         total,
-        percent: "",
+        percent: 0,
       }
     }
   )
 
   list.forEach((accountTotal) => {
     // eslint-disable-next-line no-param-reassign
-    accountTotal.percent = `${Math.round(
+    accountTotal.percent = Math.round(
       totalsSum ? (accountTotal.total / totalsSum) * 100 : 0
-    )}%`
+    )
   })
+
+  list.sort((account1, account2) => account2.percent - account1.percent)
 
   return list
 }

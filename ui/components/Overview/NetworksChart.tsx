@@ -18,7 +18,7 @@ const NETWORKS_CHART_COLORS = {
 
 const getNetworksPercents = (
   accountsTotal: AccountTotalList
-): [string, number][] => {
+): { chainID: string; percent: number }[] => {
   let totalsSum = 0
   const totalsByChain: { [chainID: string]: number } = {}
 
@@ -30,10 +30,15 @@ const getNetworksPercents = (
     })
   )
 
-  return Object.entries(totalsByChain).map(([chainID, total]) => [
-    chainID,
-    totalsSum ? Math.round((total / totalsSum) * 100) : 0,
-  ])
+  return Object.entries(totalsByChain).flatMap(([chainID, total]) => {
+    const percent = totalsSum ? Math.round((total / totalsSum) * 100) : 0
+    return percent > 0
+      ? {
+          chainID,
+          percent,
+        }
+      : []
+  })
 }
 
 export default function NetworksChart({
@@ -53,7 +58,7 @@ export default function NetworksChart({
           {t("overview.networks")}({networksCount})
         </div>
         <div className="chains_chart">
-          {percents.map(([chainID, percent]) => (
+          {percents.map(({ chainID, percent }) => (
             <div
               key={chainID}
               className="chart_item"
@@ -65,7 +70,7 @@ export default function NetworksChart({
           ))}
         </div>
         <div className="chains_legend">
-          {percents.map(([chainID, percent]) => (
+          {percents.map(({ chainID, percent }) => (
             <div className="chains_legend_item" key={chainID}>
               <div
                 className="chains_legend_dot"
@@ -94,9 +99,11 @@ export default function NetworksChart({
           margin: 0 1px;
         }
         .chart_item:first-child {
+          margin-left: 0;
           border-radius: 2px 0 0 2px;
         }
         .chart_item:last-child {
+          margin-right: 0;
           border-radius: 0 2px 2px 0;
         }
         .chains_legend {
@@ -112,6 +119,7 @@ export default function NetworksChart({
           font-size: 14px;
           line-height: 16px;
           margin-right: 8px;
+          margin-bottom: 4px;
         }
         .chains_legend_dot {
           width: 6px;

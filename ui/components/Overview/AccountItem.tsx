@@ -9,19 +9,20 @@ export default function AccountItem({
   total,
 }: {
   name: string
-  percent: string
+  percent: number
   total: number
 }): ReactElement {
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
   const balance = formatCurrencyAmount(mainCurrencySymbol, total, 2)
+  const percentText = `${percent}%`
   return (
     <>
       <div className="account_item">
         <span className="account_value account_name" title={name}>
           {name}
         </span>
-        <span className="account_value" title={percent}>
-          {percent}
+        <span className="account_value" title={percentText}>
+          {percentText}
         </span>
         <span className="account_value" title={`$${balance}`}>
           ${balance}
