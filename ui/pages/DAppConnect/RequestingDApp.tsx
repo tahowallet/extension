@@ -27,6 +27,7 @@ export default function RequestingDAppBlock(props: {
           width: 48px;
           height: 48px;
           border-radius: 12px;
+          flex-shrink: 0;
         }
         .dapp_title {
           color: #fff;
