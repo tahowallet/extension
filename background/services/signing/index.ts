@@ -270,22 +270,25 @@ export default class SigningService extends BaseService<Events> {
 
   async signData(
     addressOnNetwork: AddressOnNetwork,
-    message: string,
+    hexDataToSign: HexString,
     accountSigner: AccountSigner
   ): Promise<string> {
-    this.signData = this.signData.bind(this)
+    if (!hexDataToSign.startsWith("0x")) {
+      throw new Error("Signing service can only sign hex data.")
+    }
+
     try {
       let signedData
       switch (accountSigner.type) {
         case "ledger":
           signedData = await this.ledgerService.signMessage(
             addressOnNetwork,
-            message
+            hexDataToSign
           )
           break
         case "keyring":
           signedData = await this.keyringService.personalSign({
-            signingData: message,
+            signingData: hexDataToSign,
             account: addressOnNetwork.address,
           })
           break
