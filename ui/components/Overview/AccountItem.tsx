@@ -36,7 +36,7 @@ export default function AccountItem({
           font-size: 16px;
           font-weight: 500;
           line-height: 24px;
-          align: right;
+          text-align: right;
           margin-top: 8px;
           padding: 2px 6px;
           display: flex;
