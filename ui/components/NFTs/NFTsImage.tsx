@@ -40,7 +40,7 @@ export default function NFTsImage({
         height={height}
         borderRadius={8}
       >
-        <img alt={alt} src={imageSrc} />
+        <img loading="lazy" alt={alt} src={imageSrc} />
       </SharedSkeletonLoader>
       <style jsx>{`
         img {
