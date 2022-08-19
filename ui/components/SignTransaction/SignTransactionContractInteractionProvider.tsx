@@ -29,8 +29,8 @@ export default function SignTransactionContractInteractionProvider({
                 <SharedAddress
                   address={transactionDetails.to}
                   name={
-                    annotation !== undefined && "contractName" in annotation
-                      ? annotation.contractName
+                    annotation !== undefined && "contractInfo" in annotation
+                      ? annotation.contractInfo.annotation.nameOnNetwork?.name
                       : undefined
                   }
                 />
