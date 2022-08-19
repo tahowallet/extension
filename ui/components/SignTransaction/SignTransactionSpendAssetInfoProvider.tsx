@@ -37,7 +37,7 @@ export default function SignTransactionSpendAssetInfoProvider({
   const dispatch = useDispatch()
   const {
     assetAmount: { asset, amount: approvalLimit },
-    spenderAddress,
+    spender,
   } = annotation
   // `null` means no limit
   const approvalLimitString = isMaxUint256(approvalLimit)
@@ -96,7 +96,7 @@ export default function SignTransactionSpendAssetInfoProvider({
 
     const updatedInput = ERC20_INTERFACE.encodeFunctionData(
       ERC20_FUNCTIONS.approve,
-      [spenderAddress, hexlify(bigintAmount)]
+      [spender.address, hexlify(bigintAmount)]
     )
     dispatch(
       updateTransactionData({
@@ -125,8 +125,8 @@ export default function SignTransactionSpendAssetInfoProvider({
           <span className="site">
             Approve{" "}
             <SharedAddress
-              address={spenderAddress}
-              name={annotation.spenderName}
+              address={spender.address}
+              name={spender.annotation.nameOnNetwork?.name}
             />
           </span>
           <span className="spending_label">
