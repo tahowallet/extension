@@ -54,7 +54,8 @@ const TestedProductId = (productId: number): boolean => {
   )
 }
 
-/** Metadata details about the display of a given Ledger device.
+/**
+ * Metadata details about the display of a given Ledger device.
  */
 export type DisplayDetails = {
   /**
