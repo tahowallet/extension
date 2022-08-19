@@ -237,7 +237,7 @@ export function enrichTransactionWithReceipt(
   return {
     ...transaction,
     gasUsed,
-    gasPrice: receipt.effectiveGasPrice.toBigInt(),
+    gasPrice: receipt.effectiveGasPrice?.toBigInt() ?? transaction.gasPrice,
     logs: receipt.logs.map(({ address, data, topics }) => ({
       contractAddress: address,
       data,
