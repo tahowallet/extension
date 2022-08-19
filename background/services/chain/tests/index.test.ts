@@ -8,6 +8,11 @@ import {
   EnrichedLegacyTransactionSignatureRequest,
 } from "../../enrichment"
 
+type ChainServiceExternalized = Omit<ChainService, ""> & {
+  populatePartialEIP1559TransactionRequest: () => void
+  populatePartialLegacyEVMTransactionRequest: () => void
+}
+
 describe("Chain Service", () => {
   const sandbox = sinon.createSandbox()
 
@@ -31,8 +36,8 @@ describe("Chain Service", () => {
         }
 
       const stub = sandbox.stub(
-        chainService,
-        "populatePartialEIP1559TransactionRequest" as any // `as any` casting here since we are stubbing a private method
+        chainService as unknown as ChainServiceExternalized,
+        "populatePartialEIP1559TransactionRequest"
       )
 
       await chainService.populatePartialTransactionRequest(
@@ -62,8 +67,8 @@ describe("Chain Service", () => {
         }
 
       const stub = sandbox.stub(
-        chainService,
-        "populatePartialLegacyEVMTransactionRequest" as any // `as any` casting here since we are stubbing a private method
+        chainService as unknown as ChainServiceExternalized,
+        "populatePartialLegacyEVMTransactionRequest"
       )
 
       await chainService.populatePartialTransactionRequest(
