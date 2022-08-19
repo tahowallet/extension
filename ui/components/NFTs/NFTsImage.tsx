@@ -1,3 +1,4 @@
+import classNames from "classnames"
 import React, { ReactElement } from "react"
 
 export default function NFTsImage({
@@ -21,11 +22,14 @@ export default function NFTsImage({
         src={src}
         width={width}
         height={height}
+        className={classNames("loading")}
         onError={({ currentTarget }) => {
           // eslint-disable-next-line no-param-reassign
           currentTarget.onerror = null // prevents looping
           // eslint-disable-next-line no-param-reassign
           currentTarget.src = "./images/no_preview.svg"
+          // eslint-disable-next-line no-param-reassign
+          currentTarget.className = ""
         }}
       />
       <style jsx>{`
@@ -48,6 +52,8 @@ export default function NFTsImage({
           max-width: ${width ?? "100%"};
           border-radius: 8px;
           flex-grow: 1;
+        }
+        .loading {
           background-color: var(--hunter-green);
           border-radius: 8px;
           animation: pulse 1.1s infinite;
