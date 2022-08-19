@@ -6,7 +6,11 @@ import Blocknative, {
   BlocknativeNetworkIds,
 } from "../third-party-data/blocknative"
 import { BlockPrices, EVMNetwork } from "../networks"
-import { ETHEREUM, POLYGON } from "../constants/networks"
+import {
+  EIP_1559_COMPLIANT_CHAIN_IDS,
+  ETHEREUM,
+  POLYGON,
+} from "../constants/networks"
 import { gweiToWei } from "./utils"
 
 // We can't use destructuring because webpack has to replace all instances of
@@ -150,10 +154,14 @@ export default async function getBlockPrices(
     }
   }
 
-  if (feeData.maxPriorityFeePerGas === null || feeData.maxFeePerGas === null) {
+  if (
+    EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID) &&
+    (feeData.maxPriorityFeePerGas === null || feeData.maxFeePerGas === null)
+  ) {
     logger.warn(
       "Not receiving accurate EIP-1559 gas prices from provider",
-      feeData
+      feeData,
+      network.name
     )
   }
 
