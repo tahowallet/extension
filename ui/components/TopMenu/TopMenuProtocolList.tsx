@@ -8,6 +8,7 @@ import {
 } from "@tallyho/tally-background/constants"
 import {
   SUPPORT_ARBITRUM,
+  SUPPORT_GOERLI,
   SUPPORT_OPTIMISM,
 } from "@tallyho/tally-background/features"
 import { sameNetwork } from "@tallyho/tally-background/networks"
@@ -26,10 +27,14 @@ const listItemInfo = [
     network: POLYGON,
     info: i18n.t("protocol.l2"),
   },
-  {
-    network: GOERLI,
-    info: i18n.t("protocol.testnet"),
-  },
+  ...(SUPPORT_GOERLI
+    ? [
+        {
+          network: GOERLI,
+          info: i18n.t("protocol.testnet"),
+        },
+      ]
+    : []),
   ...(SUPPORT_OPTIMISM
     ? [
         {
