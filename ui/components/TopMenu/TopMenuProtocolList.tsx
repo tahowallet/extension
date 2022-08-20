@@ -1,6 +1,8 @@
+import React, { ReactElement } from "react"
 import {
   ARBITRUM_ONE,
   ETHEREUM,
+  GOERLI,
   OPTIMISM,
   POLYGON,
 } from "@tallyho/tally-background/constants"
@@ -10,7 +12,7 @@ import {
 } from "@tallyho/tally-background/features"
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement } from "react"
+import { selectShowTestNetworks } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 import { i18n } from "../../_locales/i18n"
@@ -23,6 +25,10 @@ const listItemInfo = [
   {
     network: POLYGON,
     info: i18n.t("protocol.l2"),
+  },
+  {
+    network: GOERLI,
+    info: i18n.t("protocol.testnet"),
   },
   ...(SUPPORT_OPTIMISM
     ? [
@@ -66,6 +72,16 @@ const listItemInfo = [
   // },
 ]
 
+const getListItems = (showTestNetworks: boolean) => {
+  if (showTestNetworks) {
+    return listItemInfo
+  }
+
+  return listItemInfo.filter(
+    (listItem) => listItem.info !== i18n.t("protocol.testnet")
+  )
+}
+
 interface TopMenuProtocolListProps {
   onProtocolChange: () => void
 }
@@ -74,11 +90,13 @@ export default function TopMenuProtocolList({
   onProtocolChange,
 }: TopMenuProtocolListProps): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
+  const listItems = getListItems(showTestNetworks)
 
   return (
     <div className="standard_width_padded center_horizontal">
       <ul>
-        {listItemInfo.map((info) => (
+        {listItems.map((info) => (
           <TopMenuProtocolListItem
             isSelected={sameNetwork(currentNetwork, info.network)}
             key={info.network.name}
