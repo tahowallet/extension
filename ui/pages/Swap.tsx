@@ -41,6 +41,7 @@ import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux
 import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
 import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
+import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -338,7 +339,9 @@ export default function Swap(): ReactElement {
             ? { sellAmount: amount }
             : { buyAmount: amount },
         slippageTolerance: swapTransactionSettings.slippageTolerance,
-        gasPrice: swapTransactionSettings.networkSettings.values.maxFeePerGas,
+        gasPrice: EIP_1559_COMPLIANT_CHAIN_IDS.has(selectedNetwork.chainID)
+          ? swapTransactionSettings.networkSettings.values.maxFeePerGas
+          : swapTransactionSettings.networkSettings.values.gasPrice ?? 0n,
         network: selectedNetwork,
       }
 

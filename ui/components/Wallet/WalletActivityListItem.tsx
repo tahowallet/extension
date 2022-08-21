@@ -20,13 +20,13 @@ interface Props {
 function isReceiveActivity(activity: ActivityItem, account: string): boolean {
   return (
     activity.annotation?.type === "asset-transfer" &&
-    sameEVMAddress(activity.annotation?.recipientAddress, account)
+    sameEVMAddress(activity.annotation?.recipient?.address, account)
   )
 }
 
 function isSendActivity(activity: ActivityItem, account: string): boolean {
   return activity.annotation?.type === "asset-transfer"
-    ? sameEVMAddress(activity.annotation?.senderAddress, account)
+    ? sameEVMAddress(activity.annotation?.sender?.address, account)
     : true
 }
 
@@ -71,8 +71,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         label: "Token approval",
         iconClass: "approve_icon",
         recipient: {
-          address: activity.annotation.spenderAddress,
-          name: activity.annotation.spenderName,
+          address: activity.annotation.spender.address,
+          name: activity.annotation.spender.annotation.nameOnNetwork?.name,
         },
         assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.annotation.assetAmount.asset.symbol,
