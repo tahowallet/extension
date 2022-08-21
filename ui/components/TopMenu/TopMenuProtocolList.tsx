@@ -18,7 +18,7 @@ import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 import { i18n } from "../../_locales/i18n"
 
-const listItemInfo = [
+const productionNetworks = [
   {
     network: ETHEREUM,
     info: i18n.t("protocol.mainnet"),
@@ -27,14 +27,6 @@ const listItemInfo = [
     network: POLYGON,
     info: i18n.t("protocol.l2"),
   },
-  ...(SUPPORT_GOERLI
-    ? [
-        {
-          network: GOERLI,
-          info: i18n.t("protocol.testnet"),
-        },
-      ]
-    : []),
   ...(SUPPORT_OPTIMISM
     ? [
         {
@@ -77,15 +69,17 @@ const listItemInfo = [
   // },
 ]
 
-const getListItems = (showTestNetworks: boolean) => {
-  if (showTestNetworks) {
-    return listItemInfo
-  }
-
-  return listItemInfo.filter(
-    (listItem) => listItem.info !== i18n.t("protocol.testnet")
-  )
-}
+const testNetworks = [
+  ...(SUPPORT_GOERLI
+    ? [
+        {
+          network: GOERLI,
+          info: i18n.t("protocol.testnet"),
+          isDisabled: false,
+        },
+      ]
+    : []),
+]
 
 interface TopMenuProtocolListProps {
   onProtocolChange: () => void
@@ -96,12 +90,11 @@ export default function TopMenuProtocolList({
 }: TopMenuProtocolListProps): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
-  const listItems = getListItems(showTestNetworks)
 
   return (
     <div className="standard_width_padded center_horizontal">
       <ul>
-        {listItems.map((info) => (
+        {productionNetworks.map((info) => (
           <TopMenuProtocolListItem
             isSelected={sameNetwork(currentNetwork, info.network)}
             key={info.network.name}
@@ -111,10 +104,28 @@ export default function TopMenuProtocolList({
             isDisabled={info.isDisabled ?? false}
           />
         ))}
+        {showTestNetworks && testNetworks.length > 0 && (
+          <>
+            <li className="protocol_divider">
+              <div className="divider_label">Testnets</div>
+              <div className="divider_line" />
+            </li>
+            {testNetworks.map((info) => (
+              <TopMenuProtocolListItem
+                isSelected={sameNetwork(currentNetwork, info.network)}
+                key={info.network.name}
+                network={info.network}
+                info={info.info}
+                onSelect={onProtocolChange}
+                isDisabled={info.isDisabled ?? false}
+              />
+            ))}
+          </>
+        )}
       </ul>
       <style jsx>
         {`
-          .divider {
+          .protocol_divider {
             display: flex;
             align-items: center;
             margin-bottom: 16px;
@@ -122,7 +133,9 @@ export default function TopMenuProtocolList({
           }
           .divider_line {
             width: 286px;
-            border-bottom: 1px solid var(--green-120);
+            border-bottom-color: var(--green-120);
+            border-bottom-style: solid;
+            border-bottom-width: 1px;
             margin-left: 19px;
             position: absolute;
             right: 0px;
