@@ -106,7 +106,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { ETHEREUM, OPTIMISM, POLYGON } from "./constants"
+import { ETHEREUM, GOERLI, OPTIMISM, POLYGON } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   SignatureResponse,
@@ -1099,7 +1099,7 @@ export default class Main extends BaseService<never> {
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await Promise.all(
-        [ETHEREUM, POLYGON, OPTIMISM].map(async (network) => {
+        [ETHEREUM, POLYGON, OPTIMISM, GOERLI].map(async (network) => {
           await this.providerBridgeService.grantPermission({
             ...permission,
             chainID: network.chainID,
