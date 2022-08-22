@@ -237,6 +237,16 @@ export function enrichTransactionWithReceipt(
   return {
     ...transaction,
     gasUsed,
+    /* Despite the [ethers js docs](https://docs.ethers.io/v5/api/providers/types/) stating that
+     * receipt.effectiveGasPrice "will simply be equal to the transaction gasPrice" on chains
+     * that do not support EIP-1559 - it seems that this is not yet the case with Optimism.
+     *
+     * The `?? transaction.gasPrice` code fixes a bug where transaction enrichment was fails
+     *  due to effectiveGasPrice being undefined and calling .toBigInt on it.
+     *
+     * This is not a perfect solution because transaction.gasPrice does not necessarily take
+     * into account L1 rollup fees.
+     */
     gasPrice: receipt.effectiveGasPrice?.toBigInt() ?? transaction.gasPrice,
     logs: receipt.logs.map(({ address, data, topics }) => ({
       contractAddress: address,
