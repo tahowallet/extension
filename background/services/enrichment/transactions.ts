@@ -17,6 +17,7 @@ import ChainService from "../chain"
 import IndexingService from "../indexing"
 import NameService from "../name"
 import {
+  FunctionSignature,
   TransactionAnnotation,
   PartialTransactionRequestWithFrom,
 } from "./types"
@@ -131,6 +132,27 @@ async function annotationsFromLogs(
   )
 
   return subannotations
+}
+
+async function getOrFetchFunctionSignature(
+  db: EnrichmentDatabase,
+  selector: string
+): Promise<FunctionSignature | null> {
+  const cachedSignature = await db.getFunctionSignature(selector)
+  if (cachedSignature) {
+    return cachedSignature
+  }
+
+  const fourByteSig = await lookupFunctionSelector(selector)
+  if (fourByteSig) {
+    const functionSignature = {
+      abi: fourByteSig.functionSignature,
+      selector: fourByteSig.functionSelector,
+    }
+    await db.addOrUpdateFunctionSignature(functionSignature, "4byte.directory")
+    return functionSignature
+  }
+  return null
 }
 
 /**
@@ -342,12 +364,11 @@ export default async function resolveTransactionAnnotation(
         }),
       }
       // Look up the function selector in case its a known ABI.
-      const fourByteSig = await lookupFunctionSelector(transaction.input)
-      if (fourByteSig) {
-        const functionSignature = {
-          abi: fourByteSig.functionSignature,
-          selector: fourByteSig.functionSelector,
-        }
+      const functionSignature = await getOrFetchFunctionSignature(
+        db,
+        transaction.input
+      )
+      if (functionSignature !== null) {
         txAnnotation = {
           ...txAnnotation,
           functionSignature,
