@@ -22,7 +22,7 @@ export async function lookupFunctionSelector(
   if (selector.length >= 10) {
     try {
       const results = await fetchJson(
-        `https://www.4byte.directory/api/v1/signatures/?hex_signature=${selector.slice(
+        `https://www.4byte.directory/api/v1/signatures/?ordering=created_at&hex_signature=${selector.slice(
           0,
           10
         )}`
