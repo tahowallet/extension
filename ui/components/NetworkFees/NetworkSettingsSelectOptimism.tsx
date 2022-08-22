@@ -51,7 +51,7 @@ export default function NetworkSettingsOptimism(): ReactElement {
         {`
           .explainer {
             width: 100%;
-            height: 80%;
+            height: 100%;
             display: flex;
             justify-content: space-between;
             flex-direction: column;
