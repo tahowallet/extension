@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import { FORK } from "../constants"
+import { FORK, OPTIMISM } from "../constants"
 import {
   EXPRESS,
   INSTANT,
@@ -42,6 +42,7 @@ export type NetworkFeeSettings = {
     maxFeePerGas: bigint
     maxPriorityFeePerGas: bigint
     baseFeePerGas?: bigint
+    gasPrice?: bigint
   }
 }
 
@@ -102,6 +103,7 @@ export type GasOption = {
   maxPriorityGwei: string
   maxGwei: string
   dollarValue: string
+  gasPrice?: string
   estimatedFeePerGas: bigint // wei
   baseMaxFeePerGas: bigint // wei
   baseMaxGwei: string
@@ -275,15 +277,33 @@ const transactionSlice = createSlice({
         payload: { estimatedFeesPerGas, network },
       }: { payload: { estimatedFeesPerGas: BlockPrices; network: EVMNetwork } }
     ) => {
-      immerState.estimatedFeesPerGas = {
-        ...(immerState.estimatedFeesPerGas ?? {}),
-        [network.chainID]: {
-          baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
-          instant: makeBlockEstimate(INSTANT, estimatedFeesPerGas),
-          express: makeBlockEstimate(EXPRESS, estimatedFeesPerGas),
-          regular: makeBlockEstimate(REGULAR, estimatedFeesPerGas),
-        },
+      if (network.chainID === OPTIMISM.chainID) {
+        // @TODO change up how we do block estimates since alchemy only gives us an `instant` estimate for optimism.
+        const optimismBlockEstimate = makeBlockEstimate(
+          INSTANT,
+          estimatedFeesPerGas
+        )
+        immerState.estimatedFeesPerGas = {
+          ...(immerState.estimatedFeesPerGas ?? {}),
+          [network.chainID]: {
+            baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
+            instant: optimismBlockEstimate,
+            express: optimismBlockEstimate,
+            regular: optimismBlockEstimate,
+          },
+        }
+      } else {
+        immerState.estimatedFeesPerGas = {
+          ...(immerState.estimatedFeesPerGas ?? {}),
+          [network.chainID]: {
+            baseFeePerGas: estimatedFeesPerGas.baseFeePerGas,
+            instant: makeBlockEstimate(INSTANT, estimatedFeesPerGas),
+            express: makeBlockEstimate(EXPRESS, estimatedFeesPerGas),
+            regular: makeBlockEstimate(REGULAR, estimatedFeesPerGas),
+          },
+        }
       }
+
       immerState.lastGasEstimatesRefreshed = Date.now()
     },
     setCustomGas: (
