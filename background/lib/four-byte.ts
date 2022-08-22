@@ -36,12 +36,12 @@ export async function lookupFunctionSelector(
         const {
           id,
           created_at: createdAt,
-          function_signature: functionSignature,
+          text_signature: functionSignature,
           hex_signature: functionSelector,
         } = results.results[0] as {
           id: string
           created_at: string
-          function_signature: string
+          text_signature: string
           hex_signature: string
         }
         return {
