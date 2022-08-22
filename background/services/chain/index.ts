@@ -225,7 +225,6 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks = [
       ETHEREUM,
       POLYGON,
-      GOERLI,
       ...(SUPPORT_GOERLI ? [GOERLI] : []),
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
