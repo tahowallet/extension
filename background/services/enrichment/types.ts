@@ -54,7 +54,7 @@ export type FunctionSignature = {
 
 export type ContractInteraction = BaseTransactionAnnotation & {
   type: "contract-interaction"
-  contractInfo: EnrichedAddressOnNetwork
+  contractInfo?: EnrichedAddressOnNetwork
   functionSignature?: FunctionSignature
 }
 

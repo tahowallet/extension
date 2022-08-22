@@ -152,10 +152,6 @@ export default async function resolveTransactionAnnotation(
     blockTimestamp: undefined,
     timestamp: Date.now(),
     type: "contract-interaction",
-    contractInfo: await enrichAddressOnNetwork(chainService, nameService, {
-      address: transaction.from,
-      network,
-    }),
   }
 
   let block: AnyEVMBlock | undefined
@@ -337,6 +333,10 @@ export default async function resolveTransactionAnnotation(
         // non-specific; the UI can choose to use it or not, but if we know the
         // address has an associated logo it's worth passing on.
         transactionLogoURL,
+        contractInfo: await enrichAddressOnNetwork(chainService, nameService, {
+          address: transaction.to,
+          network,
+        }),
       }
     }
   }
