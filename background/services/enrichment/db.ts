@@ -1,7 +1,6 @@
 import Dexie from "dexie"
+import { FunctionSignature } from "./types"
 import { UNIXTime } from "../../types"
-import { AddressOnNetwork } from "../../accounts"
-import { AddressOnNetworkAnnotation, FunctionSignature } from "./types"
 
 export type ResolvedFunctionSignature = FunctionSignature & {
   resolvedAt: UNIXTime
