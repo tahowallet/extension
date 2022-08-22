@@ -30,7 +30,7 @@
     "sendTo": "Send To:",
     "sendButton": "Continue",
     "receiveAddress": "Receive address",
-    "sendToContractWarning": "This is a token address, sending assets will result in loss of funds."
+    "sendToContractWarning": "This is a contract address, sending assets will result in loss of funds."
   },
   "swap": {
     "title": "Swap Assets",
