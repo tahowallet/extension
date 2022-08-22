@@ -26,6 +26,7 @@
   "dependencies": {
     "@ethereumjs/common": "^2.4.0",
     "@ethereumjs/tx": "^3.3.0",
+    "@ethersproject/abi": "^5.5.1",
     "@ethersproject/abstract-provider": "^5.5.1",
     "@ethersproject/abstract-signer": "^5.5.0",
     "@ethersproject/networks": "^5.5.1",

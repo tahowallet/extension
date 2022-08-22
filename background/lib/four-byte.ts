@@ -1,4 +1,5 @@
 import { fetchJson } from "@ethersproject/web"
+import { Interface } from "@ethersproject/abi"
 import { HexString } from "../types"
 import logger from "./logger"
 
@@ -7,6 +8,18 @@ export type FourByteSignature = {
   createdAt: string
   functionSignature: string
   functionSelector: string
+}
+
+/**
+ * Calculate a function selector from an ABI fragment.
+ *
+ * @param functionSignature an ABI fragment used to get the function selector,
+ *        in the form `"function(uint256,uint256)"`
+ */
+export function calculateFunctionSelector(functionSignature: string): string {
+  const abi = [`function ${functionSignature}`]
+  const iface = new Interface(abi)
+  return iface.getSighash(Object.keys(iface.functions)[0])
 }
 
 /**
@@ -21,11 +34,9 @@ export async function lookupFunctionSelector(
 ): Promise<FourByteSignature | null> {
   if (selector.length >= 10 && selector.match(/^0x[0-9a-fA-f]{8}/)) {
     try {
+      const first4 = selector.slice(0, 10).toLowerCase()
       const results = await fetchJson(
-        `https://www.4byte.directory/api/v1/signatures/?ordering=created_at&hex_signature=${selector.slice(
-          0,
-          10
-        )}`
+        `https://www.4byte.directory/api/v1/signatures/?ordering=created_at&hex_signature=${first4}`
       )
       if (
         "count" in results &&
@@ -44,6 +55,17 @@ export async function lookupFunctionSelector(
           text_signature: string
           hex_signature: string
         }
+
+        if (
+          calculateFunctionSelector(functionSignature).toLowerCase() !==
+            first4 ||
+          first4 !== functionSelector.toLowerCase()
+        ) {
+          throw new Error(
+            "Invalid function selector returned from 4byte.directory. Something is wrong."
+          )
+        }
+
         return {
           id,
           createdAt,
