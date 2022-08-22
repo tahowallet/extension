@@ -103,6 +103,7 @@ export default class EnrichmentService extends BaseService<Events> {
       ...transaction,
       network,
       annotation: await resolveTransactionAnnotation(
+        this.db,
         this.chainService,
         this.indexingService,
         this.nameService,
@@ -170,6 +171,7 @@ export default class EnrichmentService extends BaseService<Events> {
     return {
       ...transaction,
       annotation: await resolveTransactionAnnotation(
+        this.db,
         this.chainService,
         this.indexingService,
         this.nameService,

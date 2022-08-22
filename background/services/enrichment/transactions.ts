@@ -25,9 +25,11 @@ import {
   getERC20LogsForAddresses,
 } from "./utils"
 import { enrichAddressOnNetwork } from "./addresses"
+import { EnrichmentDatabase } from "./db"
 import { EVM_ROLLUP_CHAIN_IDS } from "../../constants"
 import { parseLogsForWrappedDepositsAndWithdrawals } from "../../lib/wrappedAsset"
 import { parseERC20Tx, parseLogsForERC20Transfers } from "../../lib/erc20"
+import { lookupFunctionSelector } from "../../lib/four-byte"
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
 
 async function annotationsFromLogs(
@@ -136,6 +138,7 @@ async function annotationsFromLogs(
  * or mined transaction.
  */
 export default async function resolveTransactionAnnotation(
+  db: EnrichmentDatabase,
   chainService: ChainService,
   indexingService: IndexingService,
   nameService: NameService,
@@ -337,6 +340,18 @@ export default async function resolveTransactionAnnotation(
           address: transaction.to,
           network,
         }),
+      }
+      // Look up the function selector in case its a known ABI.
+      const fourByteSig = await lookupFunctionSelector(transaction.input)
+      if (fourByteSig) {
+        const functionSignature = {
+          abi: fourByteSig.functionSignature,
+          selector: fourByteSig.functionSelector,
+        }
+        txAnnotation = {
+          ...txAnnotation,
+          functionSignature,
+        }
       }
     }
   }
