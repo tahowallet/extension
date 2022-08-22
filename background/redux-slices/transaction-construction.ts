@@ -58,7 +58,6 @@ export type TransactionConstruction = {
   signedTransaction?: SignedTransaction
   broadcastOnSign?: boolean
   transactionLikelyFails?: boolean
-  ETHAddressLookupCache: Record<string, boolean>
   estimatedFeesPerGas: { [chainID: string]: EstimatedFeesPerGas | undefined }
   customFeesPerGas?: EstimatedFeesPerGas["custom"]
   lastGasEstimatesRefreshed: number
@@ -87,7 +86,6 @@ export const initialState: TransactionConstruction = {
   estimatedFeesPerGas: {},
   customFeesPerGas: defaultCustomGas,
   lastGasEstimatesRefreshed: Date.now(),
-  ETHAddressLookupCache: {},
 }
 
 export type Events = {
@@ -95,7 +93,6 @@ export type Events = {
   requestSignature: SignOperation<TransactionRequest>
   signatureRejected: never
   broadcastSignedTransaction: SignedTransaction
-  lookupETHAddressType: string
 }
 
 export type GasOption = {
@@ -167,13 +164,6 @@ export const signTransaction = createBackgroundAsyncThunk(
   }
 )
 
-export const checkIsEthereumContractAddress = createBackgroundAsyncThunk(
-  "transaction-construction/check-is-contract-address",
-  async (address: string) => {
-    await emitter.emit("lookupETHAddressType", address)
-  }
-)
-
 const transactionSlice = createSlice({
   name: "transaction-construction",
   initialState,
@@ -225,16 +215,6 @@ const transactionSlice = createSlice({
 
       return newState
     },
-    setETHAddressType: (
-      state,
-      { payload: [address, value] }: { payload: [string, boolean] }
-    ) => ({
-      ...state,
-      ETHAddressLookupCache: {
-        ...state.ETHAddressLookupCache,
-        [address]: value,
-      },
-    }),
     clearTransactionState: (
       state,
       { payload }: { payload: TransactionConstructionStatus }
@@ -246,11 +226,6 @@ const transactionSlice = createSlice({
       broadcastOnSign: false,
       signedTransaction: undefined,
       customFeesPerGas: state.customFeesPerGas,
-      ETHAddressLookupCache: state.ETHAddressLookupCache,
-    }),
-    clearETHAddressLookupCache: (state) => ({
-      ...state,
-      ETHAddressLookupCache: {},
     }),
     setFeeType: (
       immerState,
@@ -261,7 +236,7 @@ const transactionSlice = createSlice({
       if (immerState.transactionRequest) {
         const selectedFeesPerGas =
           immerState.estimatedFeesPerGas?.[
-          immerState.transactionRequest.network.chainID
+            immerState.transactionRequest.network.chainID
           ]?.[immerState.feeTypeSelected] ?? immerState.customFeesPerGas
 
         immerState.transactionRequest = {
@@ -367,11 +342,9 @@ export const {
   broadcastOnSign,
   signed,
   setFeeType,
-  setETHAddressType,
   estimatedFeesPerGas,
   setCustomGas,
   clearCustomGas,
-  clearETHAddressLookupCache,
 } = transactionSlice.actions
 
 export default transactionSlice.reducer
