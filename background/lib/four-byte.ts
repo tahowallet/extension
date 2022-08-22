@@ -19,7 +19,7 @@ export type FourByteSignature = {
 export async function lookupFunctionSelector(
   selector: HexString
 ): Promise<FourByteSignature | null> {
-  if (selector.length >= 10) {
+  if (selector.length >= 10 && selector.match(/^0x[0-9a-fA-f]{8}/)) {
     try {
       const results = await fetchJson(
         `https://www.4byte.directory/api/v1/signatures/?ordering=created_at&hex_signature=${selector.slice(
