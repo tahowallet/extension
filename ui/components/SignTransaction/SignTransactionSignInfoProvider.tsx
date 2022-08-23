@@ -1,5 +1,5 @@
 import { unitPricePointForPricePoint } from "@tallyho/tally-background/assets"
-import { USD } from "@tallyho/tally-background/constants"
+import { ETH, ETHEREUM, USD } from "@tallyho/tally-background/constants"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
 import {
   enrichAssetAmountWithDecimalValues,
@@ -21,20 +21,22 @@ export default function SignTransactionSignInfoProvider({
   annotation,
   inner,
 }: SignTransactionInfoProviderProps): ReactElement {
+  const baseAssetSymbol = transactionDetails.network.baseAsset.symbol
+
   const baseAssetPricePoint = useBackgroundSelector((state) =>
-    selectAssetPricePoint(
-      state.assets,
-      transactionDetails.network.baseAsset.symbol,
-      USD.symbol
-    )
+    selectAssetPricePoint(state.assets, baseAssetSymbol, USD.symbol)
   )
+
+  // Increased precision for ETH or any values <0.01 ETH will show as 0 ETH
+  const desiredBaseAssetDecimals = baseAssetSymbol === ETH.symbol ? 4 : 2
+
   const transactionAssetAmount = enrichAssetAmountWithDecimalValues(
     {
       asset: transactionDetails.network.baseAsset,
       amount: transactionDetails.value,
     },
     heuristicDesiredDecimalsForUnitPrice(
-      2,
+      desiredBaseAssetDecimals,
       typeof baseAssetPricePoint !== "undefined"
         ? unitPricePointForPricePoint(baseAssetPricePoint)
         : undefined
@@ -42,7 +44,7 @@ export default function SignTransactionSignInfoProvider({
   )
 
   const {
-    localizedDecimalAmount: ethValue,
+    localizedDecimalAmount: baseAssetValue,
     localizedMainCurrencyAmount: dollarValue,
   } = enrichAssetAmountWithMainCurrencyValues(
     transactionAssetAmount,
@@ -71,7 +73,7 @@ export default function SignTransactionSignInfoProvider({
             <div className="spend_amount_label">Spend Amount</div>
             <div className="spend_amount">
               <div className="eth_value">
-                {ethValue} {transactionDetails.network.baseAsset.symbol}
+                ~{baseAssetValue} {baseAssetSymbol}
               </div>
               <div className="main_currency_value">
                 {dollarValue ? `$${dollarValue}` : "-"}
@@ -123,7 +125,7 @@ export default function SignTransactionSignInfoProvider({
       textualInfoBlock={
         <TransactionDetailContainer>
           <TransactionDetailItem name="Type" value="Sign" />
-          <TransactionDetailItem name="Spend amount" value={ethValue} />
+          <TransactionDetailItem name="Spend amount" value={baseAssetValue} />
           <TransactionDetailItem
             name="To:"
             value={
