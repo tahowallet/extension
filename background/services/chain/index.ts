@@ -30,9 +30,11 @@ import {
   ARBITRUM_ONE,
   OPTIMISM,
   EVM_ROLLUP_CHAIN_IDS,
+  GOERLI,
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
+  SUPPORT_GOERLI,
   SUPPORT_OPTIMISM,
   USE_MAINNET_FORK,
 } from "../../features"
@@ -223,6 +225,7 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks = [
       ETHEREUM,
       POLYGON,
+      ...(SUPPORT_GOERLI ? [GOERLI] : []),
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
@@ -1034,7 +1037,8 @@ export default class ChainService extends BaseService<Events> {
     if (
       addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
       addressOnNetwork.network.chainID !== POLYGON.chainID &&
-      addressOnNetwork.network.chainID !== OPTIMISM.chainID
+      addressOnNetwork.network.chainID !== OPTIMISM.chainID &&
+      addressOnNetwork.network.chainID !== GOERLI.chainID
     ) {
       logger.error(
         `Asset transfer check not supported on network ${JSON.stringify(
