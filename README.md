@@ -92,7 +92,7 @@ Builds are designed to be run from the top level of the repository.
 ### Development Setup
 
 If you’re on macOS, install Homebrew and run `scripts/macos-setup.sh`. Note
-that if you don’t have Homebrew or you’re not on macOS, the below information
+that if you don’t have Homebrew, or you’re not on macOS, the below information
 details what you’ll need. The script additionally sets up pre-commit hooks.
 
 ```
@@ -109,7 +109,7 @@ If you need to create or update a validation function then:
 - run `yarn run generate:validators`
 - import it in your code and happy validating :)
 
-This setup is necessary so we don't need to include `unsafe-eval` in the CSP policy.
+This setup is necessary, so we don't need to include `unsafe-eval` in the CSP policy.
 
 #### Required Software
 
@@ -293,12 +293,12 @@ Here is a light guide to the directory structure:
 .github/ # GitHub-specific tooling
 
 package.json      # private extension package
-webpack.config.js # Webpack build for extension
+webpack.config.ts # Webpack build for extension
 
 src/ # extension source files
-  background.js # entry file for the background extension script; should be
+  background.ts # entry file for the background extension script; should be
                 # minimal and call in to @tallyho/tally-wallet
-  ui.js         # entry file for the frontend UI; should be minimal and bind
+  ui.ts         # entry file for the frontend UI; should be minimal and bind
                 # the functionality in @tallyho/tally-ui
 
 dist/ # output directory for builds
@@ -311,8 +311,8 @@ dist/ # output directory for builds
   edge.zip   # bundles
   firefox.zip
 
-build-utils/ # build-related helpers, used in webpack.config.js
-  *.js
+build-utils/ # build-related helpers, used in webpack.config.ts
+  *.ts
 dev-utils/          # dev-mode helpers for the extension
   extension-reload.js # LiveReload support for the extension.
 manifest/         # extension manifest data
@@ -346,9 +346,9 @@ Firefox requires to upload source code if minifier is used and to be able to com
 
 ## Localization
 
-Tally currently only support English as the default language. We distil english strings to [\_locales](https://github.com/tallycash/extension/blob/main/ui/_locales/en/messages.json) to prepare for localization.
+Tally currently only support English as the default language. We distill english strings to [\_locales](https://github.com/tallycash/extension/blob/main/ui/_locales/en/messages.json) to prepare for localization.
 
-For other languages, we will use language code defined in [Support locales](https://developer.chrome.com/docs/webstore/i18n/#choosing-locales-to-support). We will use [weblate](https://hosted.weblate.org/projects/tallycash/extension/) for crowd translation, and will commit back to the github periodically after these translations are QA'ed.
+For other languages, we will use language code defined in [Support locales](https://developer.chrome.com/docs/webstore/i18n/#choosing-locales-to-support). We will use [weblate](https://hosted.weblate.org/projects/tallycash/extension/) for crowd translation, and will commit back to the GitHub periodically after these translations are QA'ed.
 
 <a href="https://hosted.weblate.org/engage/tallycash/">
 <img src="https://hosted.weblate.org/widgets/tallycash/-/extension/multi-auto.svg" alt="Translation status" />
