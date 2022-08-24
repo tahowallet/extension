@@ -6,8 +6,13 @@ import {
   selectDefaultWallet,
   selectHideDust,
   toggleHideDust,
+  selectShowTestNetworks,
+  toggleTestNetworks,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { SUPPORT_MULTIPLE_LANGUAGES } from "@tallyho/tally-background/features"
+import {
+  SUPPORT_GOERLI,
+  SUPPORT_MULTIPLE_LANGUAGES,
+} from "@tallyho/tally-background/features"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
@@ -50,12 +55,17 @@ export default function Settings(): ReactElement {
   const dispatch = useDispatch()
   const hideDust = useSelector(selectHideDust)
   const defaultWallet = useSelector(selectDefaultWallet)
+  const showTestNetworks = useSelector(selectShowTestNetworks)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))
   }
   const toggleDefaultWallet = (defaultWalletValue: boolean) => {
     dispatch(setNewDefaultWalletValue(defaultWalletValue))
+  }
+
+  const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
+    dispatch(toggleTestNetworks(defaultWalletValue))
   }
 
   const hideSmallAssetBalance = {
@@ -74,6 +84,16 @@ export default function Settings(): ReactElement {
       <SharedToggleButton
         onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
         value={defaultWallet}
+      />
+    ),
+  }
+
+  const enableTestNetworks = {
+    title: t("settings.enableTestNetworks"),
+    component: () => (
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleShowTestNetworks(toggleValue)}
+        value={showTestNetworks}
       />
     ),
   }
@@ -131,9 +151,14 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const generalList = SUPPORT_MULTIPLE_LANGUAGES
-    ? [hideSmallAssetBalance, setAsDefault, languages, bugReport]
-    : [hideSmallAssetBalance, setAsDefault, bugReport]
+  const generalList = [
+    hideSmallAssetBalance,
+    setAsDefault,
+    ...(SUPPORT_MULTIPLE_LANGUAGES ? [languages] : []),
+    ...(SUPPORT_GOERLI ? [enableTestNetworks] : []),
+    bugReport,
+  ]
+
   const settings = {
     general: generalList,
   }
