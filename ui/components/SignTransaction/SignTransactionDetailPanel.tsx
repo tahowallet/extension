@@ -9,13 +9,26 @@ import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedLegacyTransactionRequest,
 } from "@tallyho/tally-background/services/enrichment"
+import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import SharedBanner from "../Shared/SharedBanner"
+import SignTransactionDetailWarning from "./SignTransactionDetailWarning"
 
-export default function SignTransactionDetailPanel(): ReactElement {
+export type PanelState = {
+  dismissedWarnings: string[]
+}
+
+type SignTransactionDetailPanelProps = {
+  panelState: PanelState
+  setPanelState: React.Dispatch<React.SetStateAction<PanelState>>
+}
+
+export default function SignTransactionDetailPanel(
+  props: SignTransactionDetailPanelProps
+): ReactElement {
+  const { panelState, setPanelState } = props
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
   const [updateNum, setUpdateNum] = useState(0)
@@ -25,6 +38,8 @@ export default function SignTransactionDetailPanel(): ReactElement {
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const dispatch = useBackgroundDispatch()
+
+  const { t } = useTranslation()
 
   // Using useEffect here to avoid a race condition where updateTransactionData is
   // dispatched with old transactionDetails. transactionDetails is dependent on a
@@ -49,6 +64,9 @@ export default function SignTransactionDetailPanel(): ReactElement {
   const hasInsufficientFundsWarning =
     transactionDetails.annotation?.warnings?.includes("insufficient-funds")
 
+  const isContractAddress =
+    transactionDetails.annotation?.warnings?.includes("send-to-contract")
+
   const networkSettingsSaved = () => {
     setUpdateNum(updateNum + 1)
 
@@ -72,14 +90,29 @@ export default function SignTransactionDetailPanel(): ReactElement {
       </SharedSlideUpMenu>
       {hasInsufficientFundsWarning && (
         <span className="detail_item">
-          <SharedBanner icon="notif-attention" iconColor="var(--attention)">
-            <span className="detail_warning">
-              Not enough {transactionDetails.network.baseAsset.symbol} for
-              network fees
-            </span>
-          </SharedBanner>
+          <SignTransactionDetailWarning
+            message={`Not enough ${transactionDetails.network.baseAsset.symbol} for network fees`}
+          />
         </span>
       )}
+      {isContractAddress &&
+        !panelState.dismissedWarnings.includes("send-to-contract") && (
+          <span className="detail_item">
+            <SignTransactionDetailWarning
+              message={t("wallet.sendToContractWarning")}
+              dismissable
+              onDismiss={() =>
+                setPanelState((state) => ({
+                  ...state,
+                  dismissedWarnings: [
+                    ...state.dismissedWarnings,
+                    "send-to-contract",
+                  ],
+                }))
+              }
+            />
+          </span>
+        )}
       <span className="detail_item">
         Estimated network fee
         <FeeSettingsButton onClick={() => setNetworkSettingsModalOpen(true)} />
@@ -104,12 +137,6 @@ export default function SignTransactionDetailPanel(): ReactElement {
           .detail_item_right {
             color: var(--green-20);
             font-size: 16px;
-          }
-          .detail_warning {
-            font-size: 16px;
-            line-height: 24px;
-            font-weight: 500;
-            color: var(--attention);
           }
         `}
       </style>

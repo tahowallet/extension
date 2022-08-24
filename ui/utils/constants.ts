@@ -1,5 +1,6 @@
 import {
   ETHEREUM,
+  GOERLI,
   OPTIMISM,
   POLYGON,
 } from "@tallyho/tally-background/constants"
@@ -13,4 +14,5 @@ export const scanWebsite = {
     url: "https://optimistic.etherscan.io",
   },
   [POLYGON.chainID]: { title: "Polygonscan", url: "https://polygonscan.com" },
+  [GOERLI.chainID]: { title: "Etherscan", url: "https://goerli.etherscan.io/" },
 }

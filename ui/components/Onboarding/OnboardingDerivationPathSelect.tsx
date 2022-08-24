@@ -18,7 +18,7 @@ const initialDerivationPaths: Option[] = [
   },
   {
     value: "m/44'/60'/0'/0",
-    label: "BIP 44 (Trezor, MetaMask)",
+    label: "BIP 44 (Trezor, 🦊)",
   },
   {
     value: "m/44'/1'/0'/0",

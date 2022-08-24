@@ -9,6 +9,7 @@ import { createBackgroundAsyncThunk } from "./utils"
 const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
+  showTestNetworks: false,
 }
 
 export interface Location {
@@ -21,7 +22,11 @@ export type UIState = {
   selectedAccount: AddressOnNetwork
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
-  settings: { hideDust: boolean; defaultWallet: boolean }
+  settings: {
+    hideDust: boolean
+    defaultWallet: boolean
+    showTestNetworks: boolean
+  }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
   slippageTolerance: number
@@ -57,10 +62,13 @@ const uiSlice = createSlice({
       immerState,
       { payload: shouldHideDust }: { payload: boolean }
     ): void => {
-      immerState.settings = {
-        hideDust: shouldHideDust,
-        defaultWallet: immerState.settings?.defaultWallet,
-      }
+      immerState.settings.hideDust = shouldHideDust
+    },
+    toggleTestNetworks: (
+      immerState,
+      { payload: showTestNetworks }: { payload: boolean }
+    ): void => {
+      immerState.settings.showTestNetworks = showTestNetworks
     },
     setShowingActivityDetail: (
       state,
@@ -123,6 +131,7 @@ export const {
   setShowingActivityDetail,
   initializationLoadingTimeHitLimit,
   toggleHideDust,
+  toggleTestNetworks,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
@@ -200,4 +209,9 @@ export const selectDefaultWallet = createSelector(
 export const selectSlippageTolerance = createSelector(
   selectUI,
   (ui) => ui.slippageTolerance
+)
+
+export const selectShowTestNetworks = createSelector(
+  selectSettings,
+  (settings) => settings?.showTestNetworks
 )
