@@ -5,7 +5,7 @@ import {
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
 import { ethers, utils } from "ethers"
-import { Logger } from "ethers/lib/utils"
+import { Logger, UnsignedTransaction } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
 import { HexString, UNIXTime } from "../../types"
@@ -49,6 +49,7 @@ import {
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
   ethersTransactionFromTransactionRequest,
+  unsignedTransactionFromEVMTransaction,
 } from "./utils"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type {
@@ -389,9 +390,14 @@ export default class ChainService extends BaseService<Events> {
       chainID: network.chainID,
       nonce,
       annotation,
-      estimatedRollupFee: EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
-        ? await this.estimateL1RollupFee(network, input)
-        : 0n,
+      estimatedRollupFee: 0n,
+    }
+
+    if (EVM_ROLLUP_CHAIN_IDS.has(network.chainID)) {
+      transactionRequest.estimatedRollupFee = await this.estimateL1RollupFee(
+        network,
+        unsignedTransactionFromEVMTransaction(transactionRequest)
+      )
     }
 
     // Always estimate gas to decide whether the transaction will likely fail.
@@ -823,11 +829,12 @@ export default class ChainService extends BaseService<Events> {
 
   async estimateL1RollupFee(
     network: EVMNetwork,
-    input: string | null | undefined
+    transaction: UnsignedTransaction
   ): Promise<bigint> {
-    if (!input) {
-      throw new Error("Can't estimate L1 rollup fee for an empty transaction")
-    }
+    // Optimism-specific implementation
+    // https://community.optimism.io/docs/developers/build/transaction-fees/#displaying-fees-to-users
+    const unsignedRLPEncodedTransaction =
+      utils.serializeTransaction(transaction)
 
     const provider = await this.providerForNetworkOrThrow(network)
 
@@ -837,7 +844,7 @@ export default class ChainService extends BaseService<Events> {
       provider
     )
 
-    const l1Fee = await GasOracle.getL1Fee(input)
+    const l1Fee = await GasOracle.getL1Fee(unsignedRLPEncodedTransaction)
 
     return BigInt(l1Fee.toString())
   }
