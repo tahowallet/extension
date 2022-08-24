@@ -49,7 +49,7 @@ function transformLocation(
   needsKeyringUnlock: boolean
 ): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
-  // so I need to grab it from the window
+  // so, I need to grab it from the window
   const params = new URLSearchParams(window.location.search)
   const maybePage = params.get("page")
 
@@ -223,23 +223,22 @@ export function Main(): ReactElement {
         <style jsx global>
           {`
             ::-webkit-scrollbar {
-              width: 0px;
+              width: 0;
               background: transparent;
             }
 
             ${animationStyles(shouldDisplayDecoy, isDirectionRight)}
             .tab_bar_wrap {
               position: fixed;
-              bottom: 0px;
+              bottom: 0;
               width: 100%;
             }
             .top_menu_wrap {
-              margin: 0 auto;
+              margin: 5px auto 0;
               width: max-content;
               display: block;
               justify-content: center;
               z-index: 0;
-              margin-top: 5px;
             }
             .hide {
               opacity: 0;

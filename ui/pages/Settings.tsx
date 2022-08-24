@@ -11,6 +11,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/ui"
 import {
   SUPPORT_ANALYTICS,
+  ALLOW_CHANGE_PASSWORD,
   SUPPORT_GOERLI,
   SUPPORT_MULTIPLE_LANGUAGES,
 } from "@tallyho/tally-background/features"
@@ -21,15 +22,20 @@ import { getLanguageIndex, getAvalableLanguages } from "../_locales"
 import { getLanguage, setLanguage } from "../_locales/i18n"
 import SettingButton from "./Settings/SettingButton"
 
+interface ISettingRow extends ReactElement {
+  hideTitle?: boolean
+}
+
 function SettingRow(props: {
+  hideTitle?: boolean
   title: string
   component: () => ReactElement
-}): ReactElement {
-  const { title, component } = props
+}): ISettingRow {
+  const { hideTitle, title, component } = props
 
   return (
     <li>
-      <div className="left">{title}</div>
+      {!hideTitle && <div className="left">{title}</div>}
       <div className="right">{component()}</div>
       <style jsx>
         {`
@@ -113,8 +119,49 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const changePassword = {
+    hideTitle: true,
+    title: t("settings.changePassword"),
+    component: () => (
+      <SharedButton
+        type="unstyled"
+        size="medium"
+        linkTo="/keyring/set-password/change-password"
+      >
+        <div className="change_password_row">
+          <div className="action_name">{t("settings.changePassword")}</div>
+          <SharedIcon
+            icon="icons/s/continue.svg"
+            width={16}
+            color="var(--green-20)"
+            ariaLabel="Open change password"
+          />
+          <style jsx>{`
+            .action_name {
+              color: var(--green-20);
+              font-size: 18px;
+              font-weight: 600;
+              line-height: 24px;
+            }
+            .change_password_row {
+              width: 336px;
+              align-items: center;
+              justify-content: space-between;
+              align-content: center;
+              display: flex;
+            }
+            .change_password_row:hover > .action_name {
+              color: var(--green-5);
+            }
+          `}</style>
+        </div>
+      </SharedButton>
+    ),
+  }
+
   const bugReport = {
-    title: "",
+    hideTitle: true,
+    title: t("settings.bugReport"),
     component: () => (
       <SettingButton
         link="/settings/export-logs"
@@ -135,11 +182,16 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const generalList = [
+  const generalList: {
+    hideTitle?: boolean
+    title: string
+    component: () => JSX.Element
+  }[] = [
     hideSmallAssetBalance,
     setAsDefault,
     ...(SUPPORT_MULTIPLE_LANGUAGES ? [languages] : []),
     ...(SUPPORT_GOERLI ? [enableTestNetworks] : []),
+    ...(ALLOW_CHANGE_PASSWORD ? [changePassword] : []),
     bugReport,
     ...(SUPPORT_ANALYTICS ? [analytics] : []),
   ]
@@ -155,6 +207,7 @@ export default function Settings(): ReactElement {
         <ul>
           {settings.general.map((setting) => (
             <SettingRow
+              hideTitle={setting.hideTitle}
               key={setting.title}
               title={setting.title}
               component={setting.component}
@@ -195,7 +248,7 @@ export default function Settings(): ReactElement {
             margin-left: -21px;
             background-color: var(--green-95);
             text-align: center;
-            padding: 24px 0px;
+            padding: 24px 0;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -211,8 +264,8 @@ export default function Settings(): ReactElement {
           h2 {
             font-weight: 500;
             font-size: 22px;
-            padding: 0px;
-            margin: 0px 0px -1px 0px;
+            padding: 0;
+            margin: 0 0 -1px 0;
           }
           p {
             color: var(--green-20);
@@ -238,12 +291,11 @@ export default function Settings(): ReactElement {
             opacity: 0.8;
           }
           .version {
-            margin: 16px 0;
             color: var(--green-40);
             font-size: 16px;
             font-weight: 500;
             margin: 0 auto;
-            padding: 16px 0px;
+            padding: 16px 0;
           }
         `}
       </style>

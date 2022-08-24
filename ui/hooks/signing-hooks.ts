@@ -21,7 +21,7 @@ export const useAreKeyringsUnlocked = (redirectIfNot: boolean): boolean => {
 
   let redirectTarget: string | undefined
   if (keyringStatus === "uninitialized") {
-    redirectTarget = "/keyring/set-password"
+    redirectTarget = "/keyring/set-password/initial-password"
   } else if (keyringStatus === "locked") {
     redirectTarget = "/keyring/unlock"
   }

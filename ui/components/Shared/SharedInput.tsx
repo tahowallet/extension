@@ -6,7 +6,7 @@ interface Props<T> {
   id?: string
   label?: string
   maxLength?: number
-  focusedLabelBackgroundColor: string
+  focusedLabelBackgroundColor?: string
   placeholder?: string
   type: "password" | "text" | "number"
   value?: string | undefined
@@ -110,7 +110,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             height: 48px;
             border-radius: 4px;
             border: 2px solid var(--green-60);
-            padding: 0px 16px;
+            padding: 0 16px;
             box-sizing: border-box;
           }
           input::placeholder {
@@ -170,7 +170,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             transform: translateY(-57px) translateX(-5px);
             font-size: 12px;
             font-weight: 500;
-            padding: 0px 6px;
+            padding: 0 6px;
           }
           .error ~ label,
           input.error:focus ~ label {

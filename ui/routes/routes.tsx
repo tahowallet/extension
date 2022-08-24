@@ -36,7 +36,14 @@ interface PageList {
 
 const pageList: PageList[] = [
   {
-    path: "/keyring/set-password",
+    path: "/keyring/set-password/initial-password",
+    Component: KeyringSetPassword,
+    hasTabBar: false,
+    hasTopBar: false,
+    persistOnClose: false,
+  },
+  {
+    path: "/keyring/set-password/change-password",
     Component: KeyringSetPassword,
     hasTabBar: false,
     hasTopBar: false,

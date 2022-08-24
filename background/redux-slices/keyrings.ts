@@ -3,7 +3,7 @@ import Emittery from "emittery"
 
 import { setNewSelectedAccount, UIState } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
-import { Keyring, KeyringMetadata } from "../services/keyring/index"
+import { Keyring, KeyringMetadata } from "../services/keyring"
 
 type KeyringsState = {
   keyrings: Keyring[]
@@ -154,3 +154,5 @@ export const createPassword = createBackgroundAsyncThunk(
     await emitter.emit("createPassword", password)
   }
 )
+
+// TODO: define changePassword thunk
