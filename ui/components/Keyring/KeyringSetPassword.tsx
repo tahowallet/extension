@@ -2,7 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { useHistory, useLocation } from "react-router-dom"
 import {
   createPassword,
-  // TODO: import changePassword
+  changePassword,
 } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   setNewDefaultWalletValue,
@@ -93,7 +93,7 @@ export default function KeyringSetPassword(): ReactElement {
 
   const dispatchChangePassword = (): void => {
     if (validatePreviousPassword() && validatePassword()) {
-      // TODO: dispatch changePassword
+      changePassword(previousPassword, password)
     }
   }
 
