@@ -261,8 +261,8 @@ export default class IndexingService extends BaseService<Events> {
       ) {
         const { asset } = annotation.assetAmount
         const annotationAddressesOnNetwork = [
-          annotation.senderAddress,
-          annotation.recipientAddress,
+          annotation.sender.address,
+          annotation.recipient.address,
         ].map((address) => ({
           address,
           network: enrichedEVMTransaction.network,

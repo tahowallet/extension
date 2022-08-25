@@ -11,11 +11,14 @@ import {
 import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import { setSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
+import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "../NetworkFees/NetworkSettingsSelect"
 import FeeSettingsText from "../NetworkFees/FeeSettingsText"
 import SharedSelect, { Option } from "../Shared/SharedSelect"
+import NetworkSettingsSelectLegacy from "../NetworkFees/NetworkSettingsSelectLegacy"
 
 export type SwapTransactionSettings = {
   slippageTolerance: number
@@ -42,6 +45,7 @@ export default function SwapTransactionSettingsChooser({
 }: SwapTransactionSettingsProps): ReactElement {
   const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const [networkSettings, setNetworkSettings] = useState(
@@ -106,12 +110,21 @@ export default function SwapTransactionSettingsChooser({
                 />
               </div>
               <div className="row row_fee">
-                <NetworkSettingsSelect
-                  estimatedFeesPerGas={estimatedFeesPerGas}
-                  networkSettings={swapTransactionSettings.networkSettings}
-                  onNetworkSettingsChange={setNetworkSettings}
-                  onSave={saveSettings}
-                />
+                {EIP_1559_COMPLIANT_CHAIN_IDS.has(currentNetwork.chainID) ? (
+                  <NetworkSettingsSelect
+                    estimatedFeesPerGas={estimatedFeesPerGas}
+                    networkSettings={swapTransactionSettings.networkSettings}
+                    onNetworkSettingsChange={setNetworkSettings}
+                    onSave={saveSettings}
+                  />
+                ) : (
+                  <NetworkSettingsSelectLegacy
+                    estimatedFeesPerGas={estimatedFeesPerGas}
+                    networkSettings={swapTransactionSettings.networkSettings}
+                    onNetworkSettingsChange={setNetworkSettings}
+                    onSave={saveSettings}
+                  />
+                )}
               </div>
             </div>
           </SharedSlideUpMenu>

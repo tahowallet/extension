@@ -80,6 +80,13 @@ export const FORK: EVMNetwork = {
   coingeckoPlatformID: "ethereum",
 }
 
+export const EIP_1559_COMPLIANT_CHAIN_IDS = new Set(
+  [ETHEREUM, POLYGON, GOERLI].map((network) => network.chainID)
+)
+export const EVM_ROLLUP_CHAIN_IDS = new Set(
+  [OPTIMISM].map((network) => network.chainID)
+)
+
 export const NETWORK_BY_CHAIN_ID = {
   [ETHEREUM.chainID]: ETHEREUM,
   [POLYGON.chainID]: POLYGON,

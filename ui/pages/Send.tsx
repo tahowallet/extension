@@ -59,7 +59,7 @@ export default function Send(): ReactElement {
     } else {
       setSelectedAsset(currentAccount.network.baseAsset)
     }
-    // This disable is here because we don't necessarily have euqality-by-reference
+    // This disable is here because we don't necessarily have equality-by-reference
     // due to how we persist the ui redux slice with webext-redux.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentAccount.network.baseAsset.symbol])
