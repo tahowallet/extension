@@ -9,7 +9,7 @@ import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constant
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "./NetworkSettingsSelect"
-import NetworkSettingsSelectDeprecated from "./NetworkSettingsSelectDeprecated"
+import NetworkSettingsOptimism from "./NetworkSettingsSelectOptimism"
 
 interface NetworkSettingsChooserProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
@@ -43,12 +43,7 @@ export default function NetworkSettingsChooser({
             onSave={saveNetworkSettings}
           />
         ) : (
-          <NetworkSettingsSelectDeprecated
-            estimatedFeesPerGas={estimatedFeesPerGas}
-            networkSettings={networkSettings}
-            onNetworkSettingsChange={setNetworkSettings}
-            onSave={saveNetworkSettings}
-          />
+          <NetworkSettingsOptimism />
         )}
       </div>
       <style jsx>
