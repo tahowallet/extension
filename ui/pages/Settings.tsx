@@ -10,6 +10,7 @@ import {
   toggleTestNetworks,
 } from "@tallyho/tally-background/redux-slices/ui"
 import {
+  SUPPORT_ANALYTICS,
   SUPPORT_GOERLI,
   SUPPORT_MULTIPLE_LANGUAGES,
 } from "@tallyho/tally-background/features"
@@ -47,6 +48,47 @@ function SettingRow(props: {
         `}
       </style>
     </li>
+  )
+}
+
+function SettingButton(props: {
+  link: string
+  ariaLabel: string
+  tPath: string
+}): ReactElement {
+  const { t } = useTranslation()
+  const { link, ariaLabel, tPath } = props
+
+  return (
+    <SharedButton type="unstyled" size="medium" linkTo={link}>
+      <div className="button_row">
+        <div className="action_name">{t(tPath)}</div>
+        <SharedIcon
+          icon="icons/s/continue.svg"
+          width={16}
+          color="var(--green-20)"
+          ariaLabel={ariaLabel}
+        />
+        <style jsx>{`
+          .action_name {
+            color: var(--green-20);
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 24px;
+          }
+          .button_row {
+            width: 336px;
+            align-items: center;
+            justify-content: space-between;
+            align-content: center;
+            display: flex;
+          }
+          .button_row:hover > .action_name {
+            color: var(--green-5);
+          }
+        `}</style>
+      </div>
+    </SharedButton>
   )
 }
 
@@ -115,39 +157,22 @@ export default function Settings(): ReactElement {
   const bugReport = {
     title: "",
     component: () => (
-      <SharedButton
-        type="unstyled"
-        size="medium"
-        linkTo="/settings/export-logs"
-      >
-        <div className="bug_report_row">
-          <div className="action_name">{t("settings.bugReport")}</div>
-          <SharedIcon
-            icon="icons/s/continue.svg"
-            width={16}
-            color="var(--green-20)"
-            ariaLabel="Open bug report"
-          />
-          <style jsx>{`
-            .action_name {
-              color: var(--green-20);
-              font-size: 18px;
-              font-weight: 600;
-              line-height: 24px;
-            }
-            .bug_report_row {
-              width: 336px;
-              align-items: center;
-              justify-content: space-between;
-              align-content: center;
-              display: flex;
-            }
-            .bug_report_row:hover > .action_name {
-              color: var(--green-5);
-            }
-          `}</style>
-        </div>
-      </SharedButton>
+      <SettingButton
+        link="/settings/export-logs"
+        ariaLabel="Open bug report"
+        tPath="settings.bugReport"
+      />
+    ),
+  }
+
+  const analytics = {
+    title: "",
+    component: () => (
+      <SettingButton
+        link=""
+        ariaLabel="Open analytics"
+        tPath="settings.analytics"
+      />
     ),
   }
 
@@ -157,6 +182,7 @@ export default function Settings(): ReactElement {
     ...(SUPPORT_MULTIPLE_LANGUAGES ? [languages] : []),
     ...(SUPPORT_GOERLI ? [enableTestNetworks] : []),
     bugReport,
+    ...(SUPPORT_ANALYTICS ? [analytics] : []),
   ]
 
   const settings = {
