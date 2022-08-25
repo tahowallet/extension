@@ -25,7 +25,7 @@ export default function NetworkSettingsOptimism(): ReactElement {
         </span>
         <br />
         <span>
-          Tally stays in sync with the current Optimism and Ethereum network
+          Tally Ho stays in sync with the current Optimism and Ethereum network
           fees to estimate the fee for a given transaction. Only in rare cases
           will the actual fee you pay deviate by more than 25% from the provided
           estimate.
@@ -60,10 +60,8 @@ export default function NetworkSettingsOptimism(): ReactElement {
             box-sizing: border-box;
             padding: 12px;
             margin: 8px 0;
-            cursor: pointer;
+            color: var(--green-20);
             border-radius: 4px;
-            border: 1px solid transparent;
-            border-color: var(--success);
             box-shadow: 0px 16px 16px rgba(0, 20, 19, 0.14),
               0px 6px 8px rgba(0, 20, 19, 0.24),
               0px 2px 4px rgba(0, 20, 19, 0.34);
