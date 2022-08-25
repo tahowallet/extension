@@ -26,6 +26,7 @@ export const initialState: KeyringsState = {
 
 export type Events = {
   createPassword: string
+  checkPassword: string
   unlockKeyrings: string
   generateNewKeyring: never
   deriveAddress: string
@@ -155,12 +156,10 @@ export const createPassword = createBackgroundAsyncThunk(
   }
 )
 
-// TODO: define changePassword thunk and emitter
-export const changePassword = (
-  currentPassword: string,
-  newPassword: string
-): void => {
-  // eslint-disable-next-line no-empty
-  if (currentPassword && newPassword) {
+// FIXME: pair program this method
+export const checkPassword = createBackgroundAsyncThunk(
+  "keyrings/checkPassword",
+  async (password: string) => {
+    await emitter.emit("checkPassword", password)
   }
-}
+)

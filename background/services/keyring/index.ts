@@ -145,6 +145,43 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
+   * Verify if the provided password is valid.
+   * Do not actually lock or unlock the vault.
+   *
+   * @param password A user-chosen string used to encrypt keyring vaults.
+   *        Unlocking will fail if an existing vault is found, and this password
+   *        can't decrypt it.
+   * @returns true if the password is able to unlock the vault,
+   *          and false otherwise.
+   */
+  async verifyPassword(password: string): Promise<boolean> {
+    // FIXME: pair program this method
+    const { vaults } = await getEncryptedVaults()
+    const currentEncryptedVault = vaults.slice(-1)[0]?.vault
+    if (currentEncryptedVault) {
+      // attempt to load the vault
+      const saltedKey = await deriveSymmetricKeyFromPassword(
+        password,
+        currentEncryptedVault.salt
+      )
+      try {
+        await decryptVault<SerializedKeyringData>(
+          currentEncryptedVault,
+          saltedKey
+        )
+        this.#cachedKey = saltedKey
+      } catch (err) {
+        // if we weren't able to load the vault, don't unlock
+        return false
+      }
+      // hooray! vault is loaded
+      return true
+    }
+
+    return false
+  }
+
+  /**
    * Unlock the keyring with a provided password, initializing from the most
    * recently persisted keyring vault if one exists.
    *

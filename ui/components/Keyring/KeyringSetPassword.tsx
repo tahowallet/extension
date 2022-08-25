@@ -2,7 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { useHistory, useLocation } from "react-router-dom"
 import {
   createPassword,
-  changePassword,
+  checkPassword,
 } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   setNewDefaultWalletValue,
@@ -89,9 +89,18 @@ export default function KeyringSetPassword(): ReactElement {
     }
   }
 
-  const dispatchChangePassword = (): void => {
+  // FIXME: pair program this method
+  const dispatchChangePassword = async (): Promise<void> => {
     if (validateCurrentPassword() && validatePassword()) {
-      changePassword(currentPassword, password)
+      checkPassword(currentPassword)
+      // TODO: how do we actually know if the current password is valid?
+      const isCurrentPasswordValid = currentPassword === "testing123"
+      if (isCurrentPasswordValid) {
+        dispatchCreatePassword()
+        history.goBack()
+      } else {
+        setCurrentPasswordErrorMessage("Current password is incorrect")
+      }
     }
   }
 
