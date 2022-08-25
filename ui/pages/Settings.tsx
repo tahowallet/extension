@@ -126,7 +126,7 @@ export default function Settings(): ReactElement {
       <SharedButton
         type="unstyled"
         size="medium"
-        linkTo="/keyring/set-password/change-password"
+        linkTo="/keyring/change-password"
       >
         <div className="change_password_row">
           <div className="action_name">{t("settings.changePassword")}</div>

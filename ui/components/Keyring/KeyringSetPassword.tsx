@@ -8,7 +8,6 @@ import {
   setNewDefaultWalletValue,
   selectDefaultWallet,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { ALLOW_CHANGE_PASSWORD } from "@tallyho/tally-background/features"
 import {
   useBackgroundDispatch,
   useAreKeyringsUnlocked,
@@ -22,8 +21,8 @@ import SharedToggleButton from "../Shared/SharedToggleButton"
 import PasswordStrengthBar from "../Password/PasswordStrengthBar"
 
 export default function KeyringSetPassword(): ReactElement {
-  const [previousPassword, setPreviousPassword] = useState("")
-  const [previousPasswordErrorMessage, setPreviousPasswordErrorMessage] =
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [currentPasswordErrorMessage, setCurrentPasswordErrorMessage] =
     useState("")
   const [password, setPassword] = useState("")
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("")
@@ -31,8 +30,7 @@ export default function KeyringSetPassword(): ReactElement {
   const history = useHistory()
   const location = useLocation()
   const isInitialPassword = location.pathname.includes("initial-password")
-  const isChangePassword =
-    ALLOW_CHANGE_PASSWORD && location.pathname.includes("change-password")
+  const isChangePassword = location.pathname.includes("change-password")
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
   const defaultWallet = useBackgroundSelector(selectDefaultWallet)
@@ -45,9 +43,9 @@ export default function KeyringSetPassword(): ReactElement {
     }
   }, [history, areKeyringsUnlocked, isInitialPassword])
 
-  const validatePreviousPassword = (): boolean => {
-    if (previousPassword.length < 8) {
-      setPreviousPasswordErrorMessage("Must be at least 8 characters")
+  const validateCurrentPassword = (): boolean => {
+    if (currentPassword.length < 8) {
+      setCurrentPasswordErrorMessage("Must be at least 8 characters")
       return false
     }
     return true
@@ -65,12 +63,12 @@ export default function KeyringSetPassword(): ReactElement {
     return true
   }
 
-  const handlePreviousPasswordChange = (
+  const handleCurrentPasswordChange = (
     f: (value: string) => void
   ): ((value: string) => void) => {
     return (value: string) => {
       // If the input field changes, remove the error.
-      setPreviousPasswordErrorMessage("")
+      setCurrentPasswordErrorMessage("")
       return f(value)
     }
   }
@@ -92,24 +90,34 @@ export default function KeyringSetPassword(): ReactElement {
   }
 
   const dispatchChangePassword = (): void => {
-    if (validatePreviousPassword() && validatePassword()) {
-      changePassword(previousPassword, password)
+    if (validateCurrentPassword() && validatePassword()) {
+      changePassword(currentPassword, password)
     }
+  }
+
+  let backButtonPath = "/"
+  let headerText = "First, let's secure your wallet"
+  let inputLabel = "Password"
+  let buttonOnClick = dispatchCreatePassword
+  let buttonShowLoadingOnClick = !passwordErrorMessage
+  let buttonText = "Begin the hunt"
+  if (isChangePassword) {
+    backButtonPath = "/settings"
+    headerText = "Let's change your password"
+    inputLabel = "New Password"
+    buttonOnClick = dispatchChangePassword
+    buttonShowLoadingOnClick =
+      !currentPasswordErrorMessage && !passwordErrorMessage
+    buttonText = "Change password"
   }
 
   return (
     <section className="standard_width">
       <div className="top">
-        {isInitialPassword && <SharedBackButton path="/" />}
-        {isChangePassword && <SharedBackButton path="/settings" />}
+        <SharedBackButton path={backButtonPath} />
         <div className="wordmark" />
       </div>
-      {isInitialPassword && (
-        <h1 className="serif_header">First, let&apos;s secure your wallet</h1>
-      )}
-      {isChangePassword && (
-        <h1 className="serif_header">Let&apos;s change your password</h1>
-      )}
+      <h1 className="serif_header">{headerText}</h1>
 
       <form
         onSubmit={(event) => {
@@ -121,16 +129,16 @@ export default function KeyringSetPassword(): ReactElement {
           <div className="input_wrap input_wrap_padding_bottom">
             <SharedInput
               type="password"
-              label="Previous Password"
-              onChange={handlePreviousPasswordChange(setPreviousPassword)}
-              errorMessage={previousPasswordErrorMessage}
+              label="Current Password"
+              onChange={handleCurrentPasswordChange(setCurrentPassword)}
+              errorMessage={currentPasswordErrorMessage}
             />
           </div>
         )}
         <div className="input_wrap">
           <SharedInput
             type="password"
-            label={isChangePassword ? "New Password" : "Password"}
+            label={inputLabel}
             onChange={handleNewPasswordChange(setPassword)}
             errorMessage={passwordErrorMessage}
           />
@@ -158,30 +166,15 @@ export default function KeyringSetPassword(): ReactElement {
           </div>
         )}
         <div className="button_wrap">
-          {isInitialPassword && (
-            <SharedButton
-              type="primary"
-              size="large"
-              onClick={dispatchCreatePassword}
-              showLoadingOnClick={!passwordErrorMessage}
-              isFormSubmit
-            >
-              Begin the hunt
-            </SharedButton>
-          )}
-          {isChangePassword && (
-            <SharedButton
-              type="primary"
-              size="large"
-              onClick={dispatchChangePassword}
-              showLoadingOnClick={
-                !previousPasswordErrorMessage && !passwordErrorMessage
-              }
-              isFormSubmit
-            >
-              Change password
-            </SharedButton>
-          )}
+          <SharedButton
+            type="primary"
+            size="large"
+            onClick={buttonOnClick}
+            showLoadingOnClick={buttonShowLoadingOnClick}
+            isFormSubmit
+          >
+            {buttonText}
+          </SharedButton>
         </div>
       </form>
       <div className="restore">

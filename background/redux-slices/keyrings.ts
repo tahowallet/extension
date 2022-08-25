@@ -157,10 +157,10 @@ export const createPassword = createBackgroundAsyncThunk(
 
 // TODO: define changePassword thunk and emitter
 export const changePassword = (
-  previousPassword: string,
+  currentPassword: string,
   newPassword: string
 ): void => {
   // eslint-disable-next-line no-empty
-  if (previousPassword && newPassword) {
+  if (currentPassword && newPassword) {
   }
 }
