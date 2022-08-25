@@ -1,11 +1,5 @@
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
-import {
-  ARBITRUM_ONE,
-  ETHEREUM,
-  GOERLI,
-  OPTIMISM,
-  POLYGON,
-} from "../../../constants"
+import { ETHEREUM, POLYGON } from "../../../constants"
 import logger from "../../../lib/logger"
 import { isDefined } from "../../../lib/utils/type-guards"
 import { sameNetwork } from "../../../networks"
@@ -32,13 +26,7 @@ const makeFetchWithTimeout = (timeoutMs: number) => {
 
 const fetchWithTimeout = makeFetchWithTimeout(3_000)
 
-const UNS_SUPPORTED_NETWORKS = [
-  ETHEREUM,
-  POLYGON,
-  OPTIMISM,
-  ARBITRUM_ONE,
-  GOERLI,
-]
+const UNS_SUPPORTED_NETWORKS = [ETHEREUM, POLYGON]
 
 /**
  * Lookup a UNS domain name and fetch the owners address
