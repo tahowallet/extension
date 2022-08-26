@@ -26,7 +26,7 @@ export const initialState: KeyringsState = {
 
 export type Events = {
   createPassword: string
-  checkPassword: string
+  changePassword: string
   unlockKeyrings: string
   generateNewKeyring: never
   deriveAddress: string
@@ -156,10 +156,9 @@ export const createPassword = createBackgroundAsyncThunk(
   }
 )
 
-// FIXME: pair program this method
-export const checkPassword = createBackgroundAsyncThunk(
-  "keyrings/checkPassword",
-  async (password: string) => {
-    await emitter.emit("checkPassword", password)
+export const changePassword = createBackgroundAsyncThunk(
+  "keyrings/changePassword",
+  async (stringifiedPasswords: string) => {
+    await emitter.emit("changePassword", stringifiedPasswords)
   }
 )

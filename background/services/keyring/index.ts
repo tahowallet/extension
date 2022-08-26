@@ -154,8 +154,7 @@ export default class KeyringService extends BaseService<Events> {
    * @returns true if the password is able to unlock the vault,
    *          and false otherwise.
    */
-  async verifyPassword(password: string): Promise<boolean> {
-    // FIXME: pair program this method
+  private static async verifyPassword(password: string): Promise<boolean> {
     const { vaults } = await getEncryptedVaults()
     const currentEncryptedVault = vaults.slice(-1)[0]?.vault
     if (currentEncryptedVault) {
@@ -169,7 +168,6 @@ export default class KeyringService extends BaseService<Events> {
           currentEncryptedVault,
           saltedKey
         )
-        this.#cachedKey = saltedKey
       } catch (err) {
         // if we weren't able to load the vault, don't unlock
         return false
@@ -179,6 +177,35 @@ export default class KeyringService extends BaseService<Events> {
     }
 
     return false
+  }
+
+  /**
+   * Create a new vault encrypted with a new user-chosen password.
+   * Do not actually lock or unlock any vaults.
+   *
+   * @param stringifiedPasswords A JSON-stringified object with this shape:
+   * { currentPassword: string, newPassword: string }
+   *
+   * @returns true if the password was successfully changed,
+   *          and false otherwise.
+   */
+  // eslint-disable-next-line class-methods-use-this
+  async changePassword(stringifiedPasswords: string): Promise<boolean> {
+    const { currentPassword } = JSON.parse(stringifiedPasswords)
+    try {
+      const isCurrentPasswordValid = await KeyringService.verifyPassword(
+        currentPassword
+      )
+
+      if (isCurrentPasswordValid) {
+        // TODO: create a new vault encrypted with newPassword
+        return true
+      }
+
+      return false
+    } catch (err) {
+      return false
+    }
   }
 
   /**
