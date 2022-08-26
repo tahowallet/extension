@@ -907,6 +907,23 @@ export default class ChainService extends BaseService<Events> {
     const blockHeight =
       (await this.getBlockHeight(addressNetwork.network)) -
       BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY
+
+    // Let's try to go all in on tx history as a first step.
+    // If it works we are happy. If it doesn't we fall back on the limited time window.
+    try {
+      return await this.loadAssetTransfers(
+        addressNetwork,
+        BigInt(0),
+        BigInt(blockHeight)
+      )
+    } catch (err) {
+      logger.error(
+        "Failed loaded recent assets, retrying with shorter block range",
+        addressNetwork,
+        err
+      )
+    }
+
     let fromBlock = blockHeight - BLOCKS_FOR_TRANSACTION_HISTORY
     try {
       return await this.loadAssetTransfers(
@@ -1000,8 +1017,6 @@ export default class ChainService extends BaseService<Events> {
     startBlock: bigint,
     endBlock: bigint
   ): Promise<void> {
-    // TODO this will require custom code for Arbitrum and Optimism support
-    // as neither have Alchemy's assetTransfers endpoint
     if (
       addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
       addressOnNetwork.network.chainID !== POLYGON.chainID &&
