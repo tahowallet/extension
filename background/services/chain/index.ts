@@ -197,7 +197,7 @@ export default class ChainService extends BaseService<Events> {
       // },
       recentAssetTransfers: {
         schedule: {
-          periodInMinutes: 1,
+          periodInMinutes: 1.5,
         },
         handler: () => {
           this.handleRecentAssetTransferAlarm()
