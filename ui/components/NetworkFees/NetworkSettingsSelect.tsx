@@ -23,7 +23,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { SharedTypedInput } from "../Shared/SharedInput"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import NetworkSettingsSelectDeprecated from "./NetworkSettingsSelectDeprecated"
+import NetworkSettingsSelectLegacy from "./NetworkSettingsSelectLegacy"
 
 import {
   NetworkSettingsSelectOptionButton,
@@ -44,7 +44,7 @@ const gasOptionFromEstimate = (
   mainCurrencyPricePoint: PricePoint | undefined,
   baseFeePerGas: bigint,
   gasLimit: bigint | undefined,
-  { confidence, maxFeePerGas, maxPriorityFeePerGas }: BlockEstimate
+  { confidence, maxFeePerGas, maxPriorityFeePerGas, price }: BlockEstimate
 ): GasOption => {
   const feeOptionData: {
     [confidence: number]: NetworkFeeTypeChosen
@@ -86,6 +86,7 @@ const gasOptionFromEstimate = (
     baseMaxGwei: weiToGwei(BigInt(maxFeePerGas) - BigInt(maxPriorityFeePerGas)),
     maxFeePerGas,
     maxPriorityFeePerGas,
+    gasPrice: price?.toString(),
   }
 }
 
@@ -226,7 +227,7 @@ export default function NetworkSettingsSelect({
 
   if (!CUSTOM_GAS_SELECT) {
     return (
-      <NetworkSettingsSelectDeprecated
+      <NetworkSettingsSelectLegacy
         estimatedFeesPerGas={estimatedFeesPerGas}
         networkSettings={networkSettings}
         onNetworkSettingsChange={onNetworkSettingsChange}

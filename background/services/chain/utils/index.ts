@@ -4,7 +4,10 @@ import {
   TransactionReceipt as EthersTransactionReceipt,
   TransactionRequest as EthersTransactionRequest,
 } from "@ethersproject/abstract-provider"
-import { Transaction as EthersTransaction } from "@ethersproject/transactions"
+import {
+  Transaction as EthersTransaction,
+  UnsignedTransaction,
+} from "@ethersproject/transactions"
 
 import {
   AnyEVMTransaction,
@@ -17,9 +20,10 @@ import {
   TransactionRequest,
   isEIP1559SignedTransaction,
   SignedTransaction,
-} from "../../networks"
-import { USE_MAINNET_FORK } from "../../features"
-import { FORK } from "../../constants"
+} from "../../../networks"
+import { USE_MAINNET_FORK } from "../../../features"
+import { FORK } from "../../../constants"
+import type { PartialTransactionRequestWithFrom } from "../../enrichment"
 
 /**
  * Parse a block as returned by a polling provider.
@@ -196,6 +200,30 @@ export function transactionRequestFromEthersTransactionRequest(
   )
 }
 
+export function unsignedTransactionFromEVMTransaction(
+  tx: AnyEVMTransaction | PartialTransactionRequestWithFrom
+): UnsignedTransaction {
+  const unsignedTransaction: UnsignedTransaction = {
+    to: tx.to,
+    nonce: tx.nonce,
+    gasLimit: BigNumber.from(tx.gasLimit),
+    data: tx.input || "",
+    value: BigNumber.from(tx.value),
+    chainId: parseInt(USE_MAINNET_FORK ? FORK.chainID : tx.network.chainID, 10),
+    type: tx.type,
+  }
+
+  if (isEIP1559TransactionRequest(tx)) {
+    unsignedTransaction.maxFeePerGas = BigNumber.from(tx.maxFeePerGas)
+    unsignedTransaction.maxPriorityFeePerGas = BigNumber.from(
+      tx.maxPriorityFeePerGas
+    )
+  } else if ("gasPrice" in tx) {
+    unsignedTransaction.gasPrice = BigNumber.from(tx?.gasPrice ?? 0)
+  }
+  return unsignedTransaction
+}
+
 export function ethersTransactionFromSignedTransaction(
   tx: SignedTransaction
 ): EthersTransaction {
@@ -237,7 +265,17 @@ export function enrichTransactionWithReceipt(
   return {
     ...transaction,
     gasUsed,
-    gasPrice: receipt.effectiveGasPrice.toBigInt(),
+    /* Despite the [ethers js docs](https://docs.ethers.io/v5/api/providers/types/) stating that
+     * receipt.effectiveGasPrice "will simply be equal to the transaction gasPrice" on chains
+     * that do not support EIP-1559 - it seems that this is not yet the case with Optimism.
+     *
+     * The `?? transaction.gasPrice` code fixes a bug where transaction enrichment was fails
+     *  due to effectiveGasPrice being undefined and calling .toBigInt on it.
+     *
+     * This is not a perfect solution because transaction.gasPrice does not necessarily take
+     * into account L1 rollup fees.
+     */
+    gasPrice: receipt.effectiveGasPrice?.toBigInt() ?? transaction.gasPrice,
     logs: receipt.logs.map(({ address, data, topics }) => ({
       contractAddress: address,
       data,
