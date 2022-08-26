@@ -8,7 +8,7 @@ import { Keyring, KeyringMetadata } from "../services/keyring"
 type KeyringsState = {
   keyrings: Keyring[]
   keyringMetadata: { [keyringId: string]: { source: "import" | "internal" } }
-  isCurrentPasswordValid: boolean | null
+  didPasswordChangeSucceed: boolean | null
   importing: false | "pending" | "done"
   status: "locked" | "unlocked" | "uninitialized"
   keyringToVerify: {
@@ -20,7 +20,7 @@ type KeyringsState = {
 export const initialState: KeyringsState = {
   keyrings: [],
   keyringMetadata: {},
-  isCurrentPasswordValid: null,
+  didPasswordChangeSucceed: null,
   importing: false,
   status: "uninitialized",
   keyringToVerify: null,
@@ -101,12 +101,12 @@ const keyringsSlice = createSlice({
       ...state,
       keyringToVerify: payload,
     }),
-    setIsCurrentPasswordValid: (
+    setDidPasswordChangeSucceed: (
       state,
       { payload }: { payload: boolean | null }
     ) => ({
       ...state,
-      isCurrentPasswordValid: payload,
+      didPasswordChangeSucceed: payload,
     }),
   },
   extraReducers: (builder) => {
@@ -132,7 +132,7 @@ export const {
   keyringLocked,
   keyringUnlocked,
   setKeyringToVerify,
-  setIsCurrentPasswordValid,
+  setDidPasswordChangeSucceed,
 } = keyringsSlice.actions
 
 export default keyringsSlice.reducer

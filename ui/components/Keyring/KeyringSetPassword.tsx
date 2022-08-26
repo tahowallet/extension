@@ -3,7 +3,7 @@ import { useHistory, useLocation } from "react-router-dom"
 import {
   createPassword,
   changePassword,
-  setIsCurrentPasswordValid,
+  setDidPasswordChangeSucceed,
 } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   setNewDefaultWalletValue,
@@ -32,8 +32,8 @@ export default function KeyringSetPassword(): ReactElement {
   const location = useLocation()
   const isInitialPassword = location.pathname.includes("initial-password")
   const isChangePassword = location.pathname.includes("change-password")
-  const isCurrentPasswordValid = useBackgroundSelector(
-    (state) => state.keyrings.isCurrentPasswordValid
+  const didPasswordChangeSucceed = useBackgroundSelector(
+    (state) => state.keyrings.didPasswordChangeSucceed
   )
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
@@ -43,23 +43,23 @@ export default function KeyringSetPassword(): ReactElement {
 
   useEffect(() => {
     const initialPasswordProvided = isInitialPassword && areKeyringsUnlocked
-    const changePasswordSucceeded = isChangePassword && isCurrentPasswordValid
+    const changePasswordSuccess = isChangePassword && didPasswordChangeSucceed
     const changePasswordFailed =
-      isChangePassword && isCurrentPasswordValid === false
+      isChangePassword && didPasswordChangeSucceed === false
 
-    if (initialPasswordProvided || changePasswordSucceeded) {
+    if (initialPasswordProvided || changePasswordSuccess) {
       history.goBack()
     } else if (changePasswordFailed) {
       setCurrentPasswordErrorMessage("Current password is incorrect")
     }
 
-    dispatch(setIsCurrentPasswordValid(null))
+    dispatch(setDidPasswordChangeSucceed(null))
   }, [
     history,
     areKeyringsUnlocked,
     isInitialPassword,
     isChangePassword,
-    isCurrentPasswordValid,
+    didPasswordChangeSucceed,
     dispatch,
   ])
 

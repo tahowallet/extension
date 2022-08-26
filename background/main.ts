@@ -57,7 +57,7 @@ import {
   keyringUnlocked,
   updateKeyrings,
   setKeyringToVerify,
-  setIsCurrentPasswordValid,
+  setDidPasswordChangeSucceed,
 } from "./redux-slices/keyrings"
 import { blockSeen } from "./redux-slices/networks"
 import {
@@ -873,14 +873,14 @@ export default class Main extends BaseService<never> {
     })
 
     keyringSliceEmitter.on("changePassword", async (stringifiedPasswords) => {
-      const isCurrentPasswordValid = await this.keyringService.changePassword(
+      const didPasswordChangeSucceed = await this.keyringService.changePassword(
         stringifiedPasswords
       )
 
-      if (isCurrentPasswordValid) {
-        this.store.dispatch(setIsCurrentPasswordValid(true))
+      if (didPasswordChangeSucceed) {
+        this.store.dispatch(setDidPasswordChangeSucceed(true))
       } else {
-        this.store.dispatch(setIsCurrentPasswordValid(false))
+        this.store.dispatch(setDidPasswordChangeSucceed(false))
       }
     })
 
