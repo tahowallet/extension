@@ -194,15 +194,15 @@ export default class ChainService extends BaseService<Events> {
           this.handleQueuedTransactionAlarm()
         },
       },
-      // historicAssetTransfers: {
-      //   schedule: {
-      //     periodInMinutes: 1,
-      //   },
-      //   handler: () => {
-      //     this.handleHistoricAssetTransferAlarm()
-      //   },
-      //   runAtStart: false,
-      // },
+      historicAssetTransfers: {
+        schedule: {
+          periodInMinutes: 1,
+        },
+        handler: () => {
+          this.handleHistoricAssetTransferAlarm()
+        },
+        runAtStart: false,
+      },
       recentAssetTransfers: {
         schedule: {
           periodInMinutes: 1.5,
