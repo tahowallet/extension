@@ -118,8 +118,8 @@ export default function Settings(): ReactElement {
     component: () => (
       <SettingButton
         link="/settings/export-logs"
-        ariaLabel="Open bug report"
-        tPath="settings.bugReport"
+        label={t("settings.bugReport")}
+        ariaLabel={t("settings.exportLogs.ariaLabel")}
       />
     ),
   }
@@ -129,8 +129,8 @@ export default function Settings(): ReactElement {
     component: () => (
       <SettingButton
         link=""
-        ariaLabel="Open analytics"
-        tPath="settings.analytics"
+        label={t("settings.analytics")}
+        ariaLabel={t("settings.analyticsSetUp.ariaLabel")}
       />
     ),
   }

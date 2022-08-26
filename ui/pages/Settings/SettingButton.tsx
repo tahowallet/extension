@@ -1,20 +1,18 @@
 import React, { ReactElement } from "react"
-import { useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
 
 export default function SettingButton(props: {
   link: string
+  label: string
   ariaLabel: string
-  tPath: string
 }): ReactElement {
-  const { t } = useTranslation()
-  const { link, ariaLabel, tPath } = props
+  const { link, ariaLabel, label } = props
 
   return (
     <SharedButton type="unstyled" size="medium" linkTo={link}>
       <div className="button_row">
-        <div className="action_name">{t(tPath)}</div>
+        <div className="action_name">{label}</div>
         <SharedIcon
           icon="icons/s/continue.svg"
           width={16}
