@@ -16,6 +16,7 @@ import {
   SUPPORT_MULTIPLE_LANGUAGES,
 } from "@tallyho/tally-background/features"
 import SharedButton from "../components/Shared/SharedButton"
+import SharedIcon from "../components/Shared/SharedIcon"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
