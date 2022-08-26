@@ -25,6 +25,20 @@ export const ETH: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   },
 }
 
+export const OPTIMISTIC_ETH: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset =
+  {
+    name: "Ether",
+    symbol: "ETH",
+    decimals: 18,
+    coinType: coinTypesByAssetSymbol.ETH,
+    contractAddress: "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000",
+    metadata: {
+      coinGeckoID: "ethereum",
+      tokenLists: [],
+      websiteURL: "https://ethereum.org",
+    },
+  }
+
 export const MATIC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   name: "Matic Token",
   symbol: "MATIC",
@@ -49,7 +63,7 @@ export const BTC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   },
 }
 
-export const BASE_ASSETS = [ETH, BTC, MATIC]
+export const BASE_ASSETS = [ETH, BTC, MATIC, OPTIMISTIC_ETH]
 
 export const BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce<{
   [assetSymbol: string]: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset
