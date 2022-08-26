@@ -9,6 +9,7 @@ import {
   UnitPricePoint,
   AnyAsset,
 } from "../../assets"
+import { OPTIMISM } from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { AnyNetwork, NetworkBaseAsset } from "../../networks"
 
@@ -39,6 +40,13 @@ function isBaseAsset(asset: AnyAsset): asset is NetworkBaseAsset {
   return "coinType" in asset
 }
 
+function isOptimismBaseAsset(asset: AnyAsset) {
+  return (
+    "contractAddress" in asset &&
+    asset.contractAddress === OPTIMISM.baseAsset.contractAddress
+  )
+}
+
 /**
  * Given an asset and a network, determines whether the given asset is the base
  * asset for the given network. Used to special-case transactions that should
@@ -53,6 +61,10 @@ export function isNetworkBaseAsset(
   asset: AnyAsset,
   network: AnyNetwork
 ): asset is NetworkBaseAsset {
+  if (network.chainID === OPTIMISM.chainID && isOptimismBaseAsset(asset)) {
+    return true
+  }
+
   return (
     isBaseAsset(asset) &&
     asset.symbol === network.baseAsset.symbol &&

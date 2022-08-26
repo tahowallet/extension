@@ -28,7 +28,7 @@ const EIP191Info: React.FC<{
           margin: 16px;
           font-size: 14px;
           width: 100%;
-          line-break: anywhere;
+          overflow-wrap: anywhere;
         }
         .message-title {
           color: var(--green-40);

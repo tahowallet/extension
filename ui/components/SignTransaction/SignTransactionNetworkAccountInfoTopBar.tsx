@@ -1,6 +1,9 @@
 import React, { ReactElement } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { selectSigningData } from "@tallyho/tally-background/redux-slices/signing"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
+import { useBackgroundSelector } from "../../hooks"
 
 type Props = {
   accountTotal: AccountTotal
@@ -9,13 +12,20 @@ type Props = {
 export default function SignTransactionNetworkAccountInfoTopBar({
   accountTotal,
 }: Props): ReactElement {
+  const transactionData = useBackgroundSelector(selectTransactionData)
+  const signingData = useBackgroundSelector(selectSigningData)
   const { shortenedAddress, name, avatarURL } = accountTotal
+
+  const networkName =
+    transactionData?.network.name ?? signingData?.account.network.name
 
   return (
     <div className="top_bar_wrap standard_width">
       <div className="row_part">
-        <div className="network_icon" />
-        <span className="network_name">Arbitrum</span>
+        <div className="network_icon_wrap">
+          <div className="network_icon" />
+        </div>
+        <span className="network_name">{networkName ?? "Unknown Network"}</span>
       </div>
       <div className="row_part">
         <SharedCurrentAccountInformation
@@ -38,8 +48,6 @@ export default function SignTransactionNetworkAccountInfoTopBar({
             font-size: 16px;
             font-weight: 500;
             line-height: 24px;
-            margin-left: 5px;
-            opacity: 0;
           }
           .account_name {
             color: #fff;
@@ -62,11 +70,23 @@ export default function SignTransactionNetworkAccountInfoTopBar({
             background-size: cover;
           }
           .network_icon {
-            background: url("./images/arbitrum_icon_small@2x.png");
+            background: url("./images/networks/${networkName
+              ?.replaceAll(" ", "")
+              .toLowerCase()}-square@2x.png");
             background-size: cover;
-            width: 15px;
             height: 16px;
-            opacity: 0;
+            width: 16px;
+            border-radius: 4px;
+          }
+          .network_icon_wrap {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background-color: var(--green-80);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 5px;
           }
         `}
       </style>

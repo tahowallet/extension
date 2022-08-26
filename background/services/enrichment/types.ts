@@ -1,5 +1,5 @@
-import { Network } from "@ethersproject/networks"
 import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
+import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import {
   AnyEVMTransaction,
   EIP1559TransactionRequest,
@@ -7,7 +7,7 @@ import {
   LegacyEVMTransactionRequest,
 } from "../../networks"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
-import { HexString, UNIXTime } from "../../types"
+import { UNIXTime } from "../../types"
 import { SignTypedDataRequest } from "../../utils/signing"
 
 export type BaseTransactionAnnotation = {
@@ -49,22 +49,20 @@ export type ContractDeployment = BaseTransactionAnnotation & {
 
 export type ContractInteraction = BaseTransactionAnnotation & {
   type: "contract-interaction"
-  contractName?: string
+  contractInfo: EnrichedAddressOnNetwork
 }
 
 export type AssetApproval = BaseTransactionAnnotation & {
   type: "asset-approval"
   assetAmount: AnyAssetAmount<SmartContractFungibleAsset> & AssetDecimalAmount
-  spenderAddress: HexString
-  spenderName?: string
+  spender: EnrichedAddressOnNetwork
 }
 
 export type AssetTransfer = BaseTransactionAnnotation & {
   type: "asset-transfer"
   assetAmount: AnyAssetAmount & AssetDecimalAmount
-  recipientAddress: HexString
-  recipientName: HexString | undefined
-  senderAddress: HexString
+  recipient: EnrichedAddressOnNetwork
+  sender: EnrichedAddressOnNetwork
 }
 
 export type AssetSwap = BaseTransactionAnnotation & {
@@ -80,15 +78,8 @@ export type TransactionAnnotation =
   | AssetTransfer
   | AssetSwap
 
-export type ResolvedTransactionAnnotation = {
-  contractInfo: TransactionAnnotation
-  address: HexString
-  network: Network
-  resolvedAt: UNIXTime
-}
-
 export type EnrichedEVMTransaction = AnyEVMTransaction & {
-  annotation?: TransactionAnnotation | undefined
+  annotation?: TransactionAnnotation
 }
 
 export type EnrichedEVMTransactionSignatureRequest =
@@ -122,10 +113,10 @@ export type EnrichedEVMTransactionRequest =
   | EnrichedLegacyTransactionRequest
 
 type PartialEIP1559TransactionRequestWithFrom =
-  | Partial<EIP1559TransactionRequest> & { from: string }
+  | Partial<EIP1559TransactionRequest> & { from: string; network: EVMNetwork }
 
 type PartialLegacyEVMTransactionRequestWithFrom =
-  | Partial<LegacyEVMTransactionRequest> & { from: string }
+  | Partial<LegacyEVMTransactionRequest> & { from: string; network: EVMNetwork }
 
 export type PartialTransactionRequestWithFrom =
   | PartialEIP1559TransactionRequestWithFrom
@@ -160,4 +151,34 @@ export type SignTypedDataAnnotation =
 
 export type EnrichedSignTypedDataRequest = SignTypedDataRequest & {
   annotation: SignTypedDataAnnotation
+}
+
+export type AddressOnNetworkAnnotation = {
+  /**
+   * When this address/network annotation was resolved. Including this means
+   * consumers can more easily upsert annotations.
+   */
+  timestamp: UNIXTime
+  /**
+   * The latest nonce associated with the address / network.
+   */
+  nonce: bigint
+  /**
+   * Whether code was found at this address at the time of annotation
+   * resolution.
+   */
+  hasCode: boolean
+  /**
+   * A somewhat recent account balance. Accuracy here is less important, as
+   * it will mostly be used to warn on sending to 0-balanace addresses.
+   */
+  balance: AccountBalance
+  /**
+   * A reverse-resolved name for this address, if one has been found.
+   */
+  nameOnNetwork?: NameOnNetwork
+}
+
+export type EnrichedAddressOnNetwork = AddressOnNetwork & {
+  annotation: AddressOnNetworkAnnotation
 }

@@ -23,6 +23,8 @@ const SignDataInfo: React.FC<{
         }
         .content {
           color: var(--green-20);
+          word-break: break-word;
+          margin-left: 3px;
         }
       `}</style>
     </>
