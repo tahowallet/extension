@@ -3,6 +3,7 @@ import { useHistory, useLocation } from "react-router-dom"
 import {
   createPassword,
   changePassword,
+  setIsCurrentPasswordValid,
 } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   setNewDefaultWalletValue,
@@ -31,6 +32,9 @@ export default function KeyringSetPassword(): ReactElement {
   const location = useLocation()
   const isInitialPassword = location.pathname.includes("initial-password")
   const isChangePassword = location.pathname.includes("change-password")
+  const isCurrentPasswordValid = useBackgroundSelector(
+    (state) => state.keyrings.isCurrentPasswordValid
+  )
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
   const defaultWallet = useBackgroundSelector(selectDefaultWallet)
@@ -38,10 +42,26 @@ export default function KeyringSetPassword(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
-    if (isInitialPassword && areKeyringsUnlocked) {
+    const initialPasswordProvided = isInitialPassword && areKeyringsUnlocked
+    const changePasswordSucceeded = isChangePassword && isCurrentPasswordValid
+    const changePasswordFailed =
+      isChangePassword && isCurrentPasswordValid === false
+
+    if (initialPasswordProvided || changePasswordSucceeded) {
       history.goBack()
+    } else if (changePasswordFailed) {
+      setCurrentPasswordErrorMessage("Current password is incorrect")
     }
-  }, [history, areKeyringsUnlocked, isInitialPassword])
+
+    dispatch(setIsCurrentPasswordValid(null))
+  }, [
+    history,
+    areKeyringsUnlocked,
+    isInitialPassword,
+    isChangePassword,
+    isCurrentPasswordValid,
+    dispatch,
+  ])
 
   const validateCurrentPassword = (): boolean => {
     if (currentPassword.length < 8) {
@@ -58,6 +78,10 @@ export default function KeyringSetPassword(): ReactElement {
     }
     if (password !== passwordConfirmation) {
       setPasswordErrorMessage("Passwords don’t match")
+      return false
+    }
+    if (isChangePassword && password === currentPassword) {
+      setPasswordErrorMessage("Must not be the same as previous")
       return false
     }
     return true
@@ -89,31 +113,27 @@ export default function KeyringSetPassword(): ReactElement {
     }
   }
 
-  // FIXME: pair program this method
   const dispatchChangePassword = async (): Promise<void> => {
     if (validateCurrentPassword() && validatePassword()) {
-      changePassword(JSON.stringify({ currentPassword, newPassword: password }))
-      // TODO: how do we actually know if the password change succeeded?
-      const didChangePasswordSucceed = currentPassword === "testing123"
-      if (didChangePasswordSucceed) {
-        history.goBack()
-      } else {
-        setCurrentPasswordErrorMessage("Current password is incorrect")
-      }
+      dispatch(
+        changePassword(
+          JSON.stringify({ currentPassword, newPassword: password })
+        )
+      )
     }
   }
 
   let backButtonPath = "/"
   let headerText = "First, let's secure your wallet"
+  let onSubmit = dispatchCreatePassword
   let inputLabel = "Password"
-  let buttonOnClick = dispatchCreatePassword
   let buttonShowLoadingOnClick = !passwordErrorMessage
   let buttonText = "Begin the hunt"
   if (isChangePassword) {
     backButtonPath = "/settings"
     headerText = "Let's change your password"
+    onSubmit = dispatchChangePassword
     inputLabel = "New Password"
-    buttonOnClick = dispatchChangePassword
     buttonShowLoadingOnClick =
       !currentPasswordErrorMessage && !passwordErrorMessage
     buttonText = "Change password"
@@ -130,7 +150,7 @@ export default function KeyringSetPassword(): ReactElement {
       <form
         onSubmit={(event) => {
           event.preventDefault()
-          dispatchCreatePassword()
+          onSubmit()
         }}
       >
         {isChangePassword && (
@@ -177,7 +197,6 @@ export default function KeyringSetPassword(): ReactElement {
           <SharedButton
             type="primary"
             size="large"
-            onClick={buttonOnClick}
             showLoadingOnClick={buttonShowLoadingOnClick}
             isFormSubmit
           >

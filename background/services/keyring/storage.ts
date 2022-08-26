@@ -53,7 +53,7 @@ function equalVaults(vault1: EncryptedVault, vault2: EncryptedVault): boolean {
 
 /**
  * Write an encryptedVault to extension storage if and only if it's different
- * than the most recently saved vault.
+ * from the most recently saved vault.
  *
  * @param encryptedVault - an encrypted keyring vault
  */

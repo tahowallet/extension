@@ -191,19 +191,21 @@ export default class KeyringService extends BaseService<Events> {
    */
   // eslint-disable-next-line class-methods-use-this
   async changePassword(stringifiedPasswords: string): Promise<boolean> {
-    const { currentPassword } = JSON.parse(stringifiedPasswords)
+    const { currentPassword, newPassword } = JSON.parse(stringifiedPasswords)
     try {
       const isCurrentPasswordValid = await KeyringService.verifyPassword(
         currentPassword
       )
 
       if (isCurrentPasswordValid) {
-        // TODO: create a new vault encrypted with newPassword
+        this.#cachedKey = await deriveSymmetricKeyFromPassword(newPassword)
+        await this.persistKeyrings()
         return true
       }
 
       return false
     } catch (err) {
+      logger.error("Failed to change the password", err)
       return false
     }
   }

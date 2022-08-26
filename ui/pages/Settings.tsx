@@ -16,7 +16,6 @@ import {
   SUPPORT_MULTIPLE_LANGUAGES,
 } from "@tallyho/tally-background/features"
 import SharedButton from "../components/Shared/SharedButton"
-import SharedIcon from "../components/Shared/SharedIcon"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
@@ -122,41 +121,13 @@ export default function Settings(): ReactElement {
 
   const changePassword = {
     hideTitle: true,
-    title: t("settings.changePassword"),
+    title: t("settings.changePassword.title"),
     component: () => (
-      <SharedButton
-        type="unstyled"
-        size="medium"
-        linkTo="/keyring/change-password"
-      >
-        <div className="change_password_row">
-          <div className="action_name">{t("settings.changePassword")}</div>
-          <SharedIcon
-            icon="icons/s/continue.svg"
-            width={16}
-            color="var(--green-20)"
-            ariaLabel="Open change password"
-          />
-          <style jsx>{`
-            .action_name {
-              color: var(--green-20);
-              font-size: 18px;
-              font-weight: 600;
-              line-height: 24px;
-            }
-            .change_password_row {
-              width: 336px;
-              align-items: center;
-              justify-content: space-between;
-              align-content: center;
-              display: flex;
-            }
-            .change_password_row:hover > .action_name {
-              color: var(--green-5);
-            }
-          `}</style>
-        </div>
-      </SharedButton>
+      <SettingButton
+        link="/keyring/change-password"
+        label={t("settings.changePassword.title")}
+        ariaLabel={t("settings.exportLogs.ariaLabel")}
+      />
     ),
   }
 
@@ -173,7 +144,8 @@ export default function Settings(): ReactElement {
   }
 
   const analytics = {
-    title: "",
+    hideTitle: true,
+    title: t("settings.analytics"),
     component: () => (
       <SettingButton
         link=""
