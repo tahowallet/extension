@@ -89,10 +89,6 @@ const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 // OpenEthereum with tracing to catch up to where we are.
 const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
 
-// The number of asset transfer lookups that will be done per account to rebuild
-// historic activity.
-const HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT = 10
-
 // The number of milliseconds after a request to look up a transaction was
 // first seen to continue looking in case the transaction fails to be found
 // for either internal (request failure) or external (transaction dropped from
@@ -1002,27 +998,12 @@ export default class ChainService extends BaseService<Events> {
   private async loadHistoricAssetTransfers(
     addressNetwork: AddressOnNetwork
   ): Promise<void> {
-    const oldest = await this.db.getOldestAccountAssetTransferLookup(
-      addressNetwork
-    )
-    const newest = await this.db.getNewestAccountAssetTransferLookup(
-      addressNetwork
-    )
+    const oldest =
+      (await this.db.getOldestAccountAssetTransferLookup(addressNetwork)) ??
+      BigInt(await this.getBlockHeight(addressNetwork.network))
 
-    if (newest !== null && oldest !== null) {
-      const range = newest - oldest
-      if (
-        range <
-        BLOCKS_FOR_TRANSACTION_HISTORY *
-          HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT
-      ) {
-        // if we haven't hit 10x the single-call limit, pull another.
-        await this.loadAssetTransfers(
-          addressNetwork,
-          oldest - BigInt(BLOCKS_FOR_TRANSACTION_HISTORY),
-          oldest
-        )
-      }
+    if (oldest !== 0n) {
+      await this.loadAssetTransfers(addressNetwork, 0n, oldest)
     }
   }
 
