@@ -192,7 +192,7 @@ export default class ChainService extends BaseService<Events> {
       },
       historicAssetTransfers: {
         schedule: {
-          periodInMinutes: 1,
+          periodInMinutes: 60,
         },
         handler: () => {
           this.handleHistoricAssetTransferAlarm()
@@ -698,6 +698,12 @@ export default class ChainService extends BaseService<Events> {
     this.loadRecentAssetTransfers(addressNetwork).catch((e) => {
       logger.error(
         "chainService/addAccountToTrack: Error loading recent asset transfers",
+        e
+      )
+    })
+    this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
+      logger.error(
+        "chainService/addAccountToTrack: Error loading historic asset transfers",
         e
       )
     })
