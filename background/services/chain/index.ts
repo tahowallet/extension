@@ -1039,12 +1039,11 @@ export default class ChainService extends BaseService<Events> {
     startBlock: bigint,
     endBlock: bigint
   ): Promise<void> {
-    // TODO this will require custom code for Arbitrum and Optimism support
-    // as neither have Alchemy's assetTransfers endpoint
     if (
       addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
       addressOnNetwork.network.chainID !== POLYGON.chainID &&
       addressOnNetwork.network.chainID !== OPTIMISM.chainID &&
+      addressOnNetwork.network.chainID !== ARBITRUM_ONE.chainID &&
       addressOnNetwork.network.chainID !== GOERLI.chainID
     ) {
       logger.error(
