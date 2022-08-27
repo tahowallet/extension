@@ -1,0 +1,2 @@
+# Any changes to keyring code deserve extra scrutiny
+/background/services/keyring/* @shadowfiend @mhluongo
