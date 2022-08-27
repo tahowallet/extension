@@ -589,7 +589,6 @@ export default class ChainService extends BaseService<Events> {
     // the address has a pending transaction floating around with a nonce that
     // is not an increase by one over previous transactions, this approach will
     // allocate more nonces that won't mine.
-    // TODO Deal with multi-network.
     this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress] =
       Math.max(existingNonce, chainNonce)
 
