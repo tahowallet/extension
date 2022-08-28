@@ -21,7 +21,7 @@ import SignTransactionBaseInfoProvider, {
 
 export default function SignTransactionTransferInfoProvider({
   transactionDetails,
-  annotation: { assetAmount, recipientAddress, recipientName },
+  annotation: { assetAmount, recipient },
   inner,
 }: SignTransactionInfoProviderProps & {
   annotation: TransactionAnnotation & { type: "asset-transfer" }
@@ -54,7 +54,10 @@ export default function SignTransactionTransferInfoProvider({
           <div className="container">
             <div className="label">Send to</div>
             <div className="send_to">
-              <SharedAddress address={recipientAddress} name={recipientName} />
+              <SharedAddress
+                address={recipient?.address}
+                name={recipient?.annotation?.nameOnNetwork?.name}
+              />
             </div>
           </div>
           <div className="divider" />

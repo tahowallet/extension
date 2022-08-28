@@ -35,7 +35,7 @@ export default function NFTsSlideUpPreviewContent({
     network: { chainID },
     contract: { address: contractAddress },
   } = nft
-  const src = media[0].url ?? ""
+  const src = media[0]?.url ?? ""
 
   return (
     <>

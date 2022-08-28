@@ -20,6 +20,7 @@ import { ERC20_ABI } from "../lib/erc20"
 import {
   COMMUNITY_MULTISIG_ADDRESS,
   ETHEREUM,
+  GOERLI,
   OPTIMISM,
   POLYGON,
 } from "../constants"
@@ -133,6 +134,7 @@ const chainIdTo0xApiBase: { [chainID: string]: string | undefined } = {
   [ETHEREUM.chainID]: "api.0x.org",
   [POLYGON.chainID]: "polygon.api.0x.org",
   [OPTIMISM.chainID]: "optimism.api.0x.org",
+  [GOERLI.chainID]: "goerli.api.0x.org",
 }
 
 const get0xApiBase = (network: EVMNetwork) => {

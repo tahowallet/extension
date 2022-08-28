@@ -174,7 +174,7 @@ export async function getTokenBalances(
             typeof json["tokenBalances"][0]["tokenBalance"],
             null
           >
-        } => b.error === null && b.tokenBalance !== null
+        } => (b.error === null || !("error" in b)) && b.tokenBalance !== null
       )
       // A hex value of 0x without any subsequent numbers generally means "no
       // value" (as opposed to 0) in Ethereum implementations, so filter it out
@@ -328,6 +328,7 @@ export async function getNFTs({
   )
   requestUrl.searchParams.set("owner", address)
   requestUrl.searchParams.set("filters[]", "SPAM")
+  requestUrl.searchParams.set("pageSize", "100")
 
   // TODO validate data with ajv
   const result = await (await fetch(requestUrl.toString())).json()

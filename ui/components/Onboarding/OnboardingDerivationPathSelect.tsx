@@ -18,15 +18,11 @@ const initialDerivationPaths: Option[] = [
   },
   {
     value: "m/44'/60'/0'/0",
-    label: "Ethereum",
+    label: "BIP 44 (Trezor, 🦊)",
   },
   {
     value: "m/44'/1'/0'/0",
     label: "Ethereum Testnet",
-  },
-  {
-    value: "m/44'/61'/0'/0",
-    label: "Trezor",
   },
   {
     value: "m/44'/60'/0'",

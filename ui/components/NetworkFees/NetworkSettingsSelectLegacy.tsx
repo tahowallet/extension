@@ -35,6 +35,7 @@ type GasOption = {
   estimatedFeePerGas: bigint
   maxFeePerGas: bigint
   maxPriorityFeePerGas: bigint
+  gasPrice: bigint
 }
 
 // Map a BlockEstimate from the backend to a GasOption for the UI.
@@ -42,7 +43,7 @@ const gasOptionFromEstimate = (
   mainCurrencyPricePoint: PricePoint | undefined,
   baseFeePerGas: bigint,
   gasLimit: bigint | undefined,
-  { confidence, maxFeePerGas, maxPriorityFeePerGas }: BlockEstimate
+  { confidence, maxFeePerGas, maxPriorityFeePerGas, price }: BlockEstimate
 ): GasOption => {
   const feeOptionData: {
     [confidence: number]: NetworkFeeTypeChosen
@@ -77,6 +78,7 @@ const gasOptionFromEstimate = (
       (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
     maxFeePerGas,
     maxPriorityFeePerGas,
+    gasPrice: price ?? 0n,
   }
 }
 
@@ -108,7 +110,7 @@ function EstimateRefreshCountdownDivider() {
   )
 }
 
-export default function NetworkSettingsSelectDeprecated({
+export default function NetworkSettingsSelectLegacy({
   // FIXME Map this to GasOption[] in a selector.
   estimatedFeesPerGas,
   networkSettings,
@@ -133,6 +135,7 @@ export default function NetworkSettingsSelectDeprecated({
         values: {
           maxFeePerGas: gasOptions[activeFeeIndex].maxFeePerGas,
           maxPriorityFeePerGas: gasOptions[activeFeeIndex].maxPriorityFeePerGas,
+          gasPrice: gasOptions[activeFeeIndex].gasPrice,
         },
         gasLimit: networkSettings.gasLimit,
         suggestedGasLimit: networkSettings.suggestedGasLimit,
@@ -154,6 +157,7 @@ export default function NetworkSettingsSelectDeprecated({
       values: {
         maxFeePerGas: gasOptions[index].maxFeePerGas,
         maxPriorityFeePerGas: gasOptions[index].maxPriorityFeePerGas,
+        gasPrice: gasOptions[activeFeeIndex].gasPrice,
       },
       gasLimit: networkSettings.gasLimit,
       suggestedGasLimit: networkSettings.suggestedGasLimit,

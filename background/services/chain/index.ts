@@ -4,8 +4,8 @@ import {
   TransactionReceipt,
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
-import { utils } from "ethers"
-import { Logger } from "ethers/lib/utils"
+import { ethers, utils } from "ethers"
+import { Logger, UnsignedTransaction } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
 import { HexString, UNIXTime } from "../../types"
@@ -29,9 +29,12 @@ import {
   POLYGON,
   ARBITRUM_ONE,
   OPTIMISM,
+  EVM_ROLLUP_CHAIN_IDS,
+  GOERLI,
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
+  SUPPORT_GOERLI,
   SUPPORT_OPTIMISM,
   USE_MAINNET_FORK,
 } from "../../features"
@@ -46,6 +49,7 @@ import {
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
   ethersTransactionFromTransactionRequest,
+  unsignedTransactionFromEVMTransaction,
 } from "./utils"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type {
@@ -57,6 +61,10 @@ import type {
 } from "../enrichment"
 import SerialFallbackProvider from "./serial-fallback-provider"
 import AssetDataHelper from "./asset-data-helper"
+import {
+  OPTIMISM_GAS_ORACLE_ABI,
+  OPTIMISM_GAS_ORACLE_ADDRESS,
+} from "./utils/optimismGasPriceOracle"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -186,18 +194,18 @@ export default class ChainService extends BaseService<Events> {
           this.handleQueuedTransactionAlarm()
         },
       },
-      historicAssetTransfers: {
-        schedule: {
-          periodInMinutes: 1,
-        },
-        handler: () => {
-          this.handleHistoricAssetTransferAlarm()
-        },
-        runAtStart: false,
-      },
+      // historicAssetTransfers: {
+      //   schedule: {
+      //     periodInMinutes: 1,
+      //   },
+      //   handler: () => {
+      //     this.handleHistoricAssetTransferAlarm()
+      //   },
+      //   runAtStart: false,
+      // },
       recentAssetTransfers: {
         schedule: {
-          periodInMinutes: 1,
+          periodInMinutes: 1.5,
         },
         handler: () => {
           this.handleRecentAssetTransferAlarm()
@@ -218,6 +226,7 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks = [
       ETHEREUM,
       POLYGON,
+      ...(SUPPORT_GOERLI ? [GOERLI] : []),
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
@@ -381,6 +390,14 @@ export default class ChainService extends BaseService<Events> {
       chainID: network.chainID,
       nonce,
       annotation,
+      estimatedRollupFee: 0n,
+    }
+
+    if (EVM_ROLLUP_CHAIN_IDS.has(network.chainID)) {
+      transactionRequest.estimatedRollupFee = await this.estimateL1RollupFee(
+        network,
+        unsignedTransactionFromEVMTransaction(transactionRequest)
+      )
     }
 
     // Always estimate gas to decide whether the transaction will likely fail.
@@ -810,11 +827,33 @@ export default class ChainService extends BaseService<Events> {
     return BigInt(uppedEstimate.toString())
   }
 
+  async estimateL1RollupFee(
+    network: EVMNetwork,
+    transaction: UnsignedTransaction
+  ): Promise<bigint> {
+    // Optimism-specific implementation
+    // https://community.optimism.io/docs/developers/build/transaction-fees/#displaying-fees-to-users
+    const unsignedRLPEncodedTransaction =
+      utils.serializeTransaction(transaction)
+
+    const provider = await this.providerForNetworkOrThrow(network)
+
+    const GasOracle = new ethers.Contract(
+      OPTIMISM_GAS_ORACLE_ADDRESS,
+      OPTIMISM_GAS_ORACLE_ABI,
+      provider
+    )
+
+    const l1Fee = await GasOracle.getL1Fee(unsignedRLPEncodedTransaction)
+
+    return BigInt(l1Fee.toString())
+  }
+
   /**
    * Estimate the gas needed to make a transaction. Adds 10% as a safety net to
    * the base estimate returned by the provider.
    */
-  async estimateGasPrice(network: EVMNetwork): Promise<bigint> {
+  private async estimateGasPrice(network: EVMNetwork): Promise<bigint> {
     const estimate = await this.providerForNetworkOrThrow(network).getGasPrice()
 
     // Add 10% more gas as a safety net
@@ -1005,7 +1044,8 @@ export default class ChainService extends BaseService<Events> {
     if (
       addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
       addressOnNetwork.network.chainID !== POLYGON.chainID &&
-      addressOnNetwork.network.chainID !== OPTIMISM.chainID
+      addressOnNetwork.network.chainID !== OPTIMISM.chainID &&
+      addressOnNetwork.network.chainID !== GOERLI.chainID
     ) {
       logger.error(
         `Asset transfer check not supported on network ${JSON.stringify(

@@ -175,6 +175,7 @@ export default function AccountItemOptionsMenu({
             justify-content: space-between;
             width: 212px;
             border-radius: 4px;
+            z-index: 1;
           }
           .option {
             display: flex;
