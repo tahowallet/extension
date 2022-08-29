@@ -35,11 +35,7 @@ export default function NFTsOverview(): ReactElement {
 
   return (
     <div className="nft_overview">
-      {NFTItems.length ? (
-        <NFTsList nfts={NFTItems} height={343} />
-      ) : (
-        <NFTsEmpty />
-      )}
+      {NFTItems.length ? <NFTsList nfts={NFTItems} /> : <NFTsEmpty />}
       <style jsx>
         {`
           .nft_overview {
