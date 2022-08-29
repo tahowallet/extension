@@ -940,9 +940,12 @@ export default class ChainService extends BaseService<Events> {
    * off exponentially (in block range, not in time) on failure.
    *
    * @param addressNetwork the address and network whose asset transfers we need
+   * @param incomingOnly if true, only fetch asset transfers received by this
+   *        address
    */
   private async loadRecentAssetTransfers(
-    addressNetwork: AddressOnNetwork
+    addressNetwork: AddressOnNetwork,
+    incomingOnly = false
   ): Promise<void> {
     const blockHeight =
       (await this.getBlockHeight(addressNetwork.network)) -
@@ -952,7 +955,8 @@ export default class ChainService extends BaseService<Events> {
       return await this.loadAssetTransfers(
         addressNetwork,
         BigInt(fromBlock),
-        BigInt(blockHeight)
+        BigInt(blockHeight),
+        incomingOnly
       )
     } catch (err) {
       logger.error(
@@ -1023,7 +1027,8 @@ export default class ChainService extends BaseService<Events> {
   private async loadAssetTransfers(
     addressOnNetwork: AddressOnNetwork,
     startBlock: bigint,
-    endBlock: bigint
+    endBlock: bigint,
+    incomingOnly = false
   ): Promise<void> {
     if (
       addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
@@ -1042,7 +1047,8 @@ export default class ChainService extends BaseService<Events> {
     const assetTransfers = await this.assetData.getAssetTransfers(
       addressOnNetwork,
       Number(startBlock),
-      Number(endBlock)
+      Number(endBlock),
+      incomingOnly,
     )
 
     await this.db.recordAccountAssetTransferLookup(
