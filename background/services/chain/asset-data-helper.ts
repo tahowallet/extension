@@ -141,7 +141,8 @@ export default class AssetDataHelper {
   async getAssetTransfers(
     addressOnNetwork: AddressOnNetwork,
     startBlock: number,
-    endBlock?: number
+    endBlock?: number,
+    incomingOnly = false
   ): Promise<AssetTransfer[]> {
     const provider = this.providerTracker.providerForNetwork(
       addressOnNetwork.network
@@ -155,12 +156,27 @@ export default class AssetDataHelper {
         provider.currentProvider instanceof AlchemyWebSocketProvider ||
         provider.currentProvider instanceof AlchemyProvider
       ) {
-        return await getAlchemyAssetTransfers(
-          provider.currentProvider,
-          addressOnNetwork,
-          startBlock,
-          endBlock
-        )
+        const promises = [
+          getAlchemyAssetTransfers(
+            provider.currentProvider,
+            addressOnNetwork,
+            "incoming",
+            startBlock,
+            endBlock
+          ),
+        ]
+        if (!incomingOnly) {
+          promises.push(
+            getAlchemyAssetTransfers(
+              provider.currentProvider,
+              addressOnNetwork,
+              "outgoing",
+              startBlock,
+              endBlock
+            )
+          )
+        }
+        return (await Promise.all(promises)).flat()
       }
     } catch (error) {
       logger.warn(
