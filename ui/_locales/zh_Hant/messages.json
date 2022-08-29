@@ -9,15 +9,13 @@
   },
   "comingSoon": "敬請期待",
   "overview": {
-    "addresses": "地址",
     "assets": "資產",
     "networks": "網路",
     "tableHeader": {
       "asset": "資產",
       "balance": "帳戶總額",
       "price": "價格"
-    },
-    "totalBalance": "帳戶總額"
+    }
   },
   "passwordStrength": {
     "average": "普通",

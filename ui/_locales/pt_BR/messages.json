@@ -8,15 +8,13 @@
     "selectToken": "Selecionar token"
   },
   "overview": {
-    "addresses": "Endereços",
     "assets": "Ativos",
     "networks": "Redes",
     "tableHeader": {
       "asset": "Ativo",
       "balance": "Saldo",
       "price": "Preço"
-    },
-    "totalBalance": "Saldo total"
+    }
   },
   "passwordStrength": {
     "average": "Média",
