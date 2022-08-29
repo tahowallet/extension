@@ -376,7 +376,9 @@ export const isEIP1559TransactionRequest = (
     | Partial<PartialTransactionRequestWithFrom>
 ): transactionRequest is EIP1559TransactionRequest =>
   "maxFeePerGas" in transactionRequest &&
-  "maxPriorityFeePerGas" in transactionRequest
+  transactionRequest.maxFeePerGas !== null &&
+  "maxPriorityFeePerGas" in transactionRequest &&
+  transactionRequest.maxPriorityFeePerGas !== null
 
 export const isEIP1559SignedTransaction = (
   signedTransaction: SignedTransaction
