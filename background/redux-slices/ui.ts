@@ -211,6 +211,11 @@ export const selectSlippageTolerance = createSelector(
   (ui) => ui.slippageTolerance
 )
 
+export const selectInitializationTimeExpired = createSelector(
+  selectUI,
+  (ui) => ui.initializationLoadingTimeExpired
+)
+
 export const selectShowTestNetworks = createSelector(
   selectSettings,
   (settings) => settings?.showTestNetworks
