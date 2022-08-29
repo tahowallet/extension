@@ -120,7 +120,7 @@ export async function getAssetTransfers(
           }
         : addressOnNetwork.network.baseAsset
       return {
-        network, // TODO make this friendly across other networks
+        network,
         assetAmount: {
           asset,
           amount: BigInt(transfer.rawContract.value),
