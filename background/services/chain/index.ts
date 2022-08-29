@@ -16,7 +16,6 @@ import {
   EIP1559TransactionRequest,
   EVMNetwork,
   BlockPrices,
-  sameNetwork,
   TransactionRequest,
   TransactionRequestWithNonce,
   SignedTransaction,
@@ -1049,8 +1048,6 @@ export default class ChainService extends BaseService<Events> {
     const savedTransactionHashes = new Set(
       await this.db.getAllSavedTransactionHashes()
     )
-
-    console.log({ savedTransactionHashes })
     /// send all new tx hashes into a queue to retrieve + cache
     assetTransfers.forEach((a) => {
       if (!savedTransactionHashes.has(a.txHash)) {
