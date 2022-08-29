@@ -936,8 +936,7 @@ export default class ChainService extends BaseService<Events> {
    * **************** */
 
   /**
-   * Load recent asset transfers from an account on a particular network. Backs
-   * off exponentially (in block range, not in time) on failure.
+   * Load recent asset transfers from an account on a particular network.
    *
    * @param addressNetwork the address and network whose asset transfers we need
    * @param incomingOnly if true, only fetch asset transfers received by this
@@ -950,7 +949,7 @@ export default class ChainService extends BaseService<Events> {
     const blockHeight =
       (await this.getBlockHeight(addressNetwork.network)) -
       BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY
-    let fromBlock = blockHeight - BLOCKS_FOR_TRANSACTION_HISTORY
+    const fromBlock = blockHeight - BLOCKS_FOR_TRANSACTION_HISTORY
     try {
       return await this.loadAssetTransfers(
         addressNetwork,
@@ -966,36 +965,6 @@ export default class ChainService extends BaseService<Events> {
       )
     }
 
-    // TODO replace the home-spun backoff with a util function
-    fromBlock = blockHeight - Math.floor(BLOCKS_FOR_TRANSACTION_HISTORY / 2)
-    try {
-      return await this.loadAssetTransfers(
-        addressNetwork,
-        BigInt(fromBlock),
-        BigInt(blockHeight)
-      )
-    } catch (err) {
-      logger.error(
-        "Second failure loading recent assets, retrying with shorter block range",
-        addressNetwork,
-        err
-      )
-    }
-
-    fromBlock = blockHeight - Math.floor(BLOCKS_FOR_TRANSACTION_HISTORY / 4)
-    try {
-      return await this.loadAssetTransfers(
-        addressNetwork,
-        BigInt(fromBlock),
-        BigInt(blockHeight)
-      )
-    } catch (err) {
-      logger.error(
-        "Final failure loading recent assets for account",
-        addressNetwork,
-        err
-      )
-    }
     return Promise.resolve()
   }
 
