@@ -154,7 +154,8 @@ export default class KeyringService extends BaseService<Events> {
    * @returns true if the password is able to unlock the vault,
    *          and false otherwise.
    */
-  private static async verifyPassword(password: string): Promise<boolean> {
+  // eslint-disable-next-line class-methods-use-this
+  private async verifyPassword(password: string): Promise<boolean> {
     const { vaults } = await getEncryptedVaults()
     const currentEncryptedVault = vaults.slice(-1)[0]?.vault
     if (currentEncryptedVault) {
@@ -189,13 +190,10 @@ export default class KeyringService extends BaseService<Events> {
    * @returns true if the password was successfully changed,
    *          and false otherwise.
    */
-  // eslint-disable-next-line class-methods-use-this
   async changePassword(stringifiedPasswords: string): Promise<boolean> {
     const { currentPassword, newPassword } = JSON.parse(stringifiedPasswords)
     try {
-      const isCurrentPasswordValid = await KeyringService.verifyPassword(
-        currentPassword
-      )
+      const isCurrentPasswordValid = await this.verifyPassword(currentPassword)
 
       if (isCurrentPasswordValid) {
         this.#cachedKey = await deriveSymmetricKeyFromPassword(newPassword)
