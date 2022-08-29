@@ -176,9 +176,12 @@ export async function getTokenBalances(
         ): b is typeof json["tokenBalances"][0] & {
           tokenBalance: Exclude<
             typeof json["tokenBalances"][0]["tokenBalance"],
-            null
+            undefined | null
           >
-        } => (b.error === null || !("error" in b)) && b.tokenBalance !== null
+        } =>
+          (b.error === null || !("error" in b)) &&
+          "tokenBalance" in b &&
+          b.tokenBalance !== null
       )
       // A hex value of 0x without any subsequent numbers generally means "no
       // value" (as opposed to 0) in Ethereum implementations, so filter it out
