@@ -39,13 +39,17 @@ export async function getAssetTransfers(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
   addressOnNetwork: AddressOnNetwork,
   fromBlock: number,
-  toBlock?: number
+  toBlock?: number,
+  order: "asc" | "desc" = "desc",
+  maxCount = 1000
 ): Promise<AssetTransfer[]> {
   const { address: account, network } = addressOnNetwork
 
   const params = {
     fromBlock: utils.hexValue(fromBlock),
     toBlock: toBlock === undefined ? "latest" : utils.hexValue(toBlock),
+    maxCount: utils.hexValue(maxCount),
+    order,
     // excludeZeroValue: false,
   }
 
