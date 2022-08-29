@@ -58,16 +58,9 @@ async function annotationsFromLogs(
   )
   const relevantAddresses = [
     ...new Set(
-      getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs)
-        .concat(
-          tokenTransferLogs.flatMap<string>(
-            ({ senderAddress, recipientAddress }) => [
-              senderAddress,
-              recipientAddress,
-            ]
-          )
-        )
-        .map(normalizeEVMAddress)
+      getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
+        normalizeEVMAddress
+      )
     ),
   ]
 
