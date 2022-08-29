@@ -13,7 +13,9 @@
   },
   "passwordStrength": {
     "average": "平均",
-    "hintDesc": "对于强密码，请考虑混合使用大小写字符、符号和数字。密码应超过 8 个字符。"
+    "hintDesc": "对于强密码，请考虑混合使用大小写字符、符号和数字。密码应超过 8 个字符。",
+    "strength": "强度",
+    "strong": "强"
   },
   "protocol": {
     "compatibleChain": "以太坊兼容的区块链",
@@ -27,7 +29,7 @@
   "settings": {
     "enableTestNetworks": "启用测试网络",
     "exportLogs": {
-      "discordTitle": "1. 加入Discord的 #but-reports 频道"
+      "discordTitle": "1. 加入 Discord 的 #but-reports 频道"
     },
     "hideSmallAssetBalance": "在 {{sign}}{{amount}} 下隐藏资产余额",
     "language": "语言",
