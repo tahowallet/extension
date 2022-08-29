@@ -5,9 +5,11 @@ import classNames from "classnames"
 export default function SharedBackButton({
   path,
   onClick,
+  withoutBackText,
 }: {
   path?: string
   onClick?: () => void
+  withoutBackText?: boolean
 }): ReactElement {
   const historyPre: unknown = useHistory()
   const history = historyPre as {
@@ -35,7 +37,7 @@ export default function SharedBackButton({
       }}
     >
       <div className="icon_chevron_left" />
-      Back
+      {!withoutBackText && "Back"}
       <style jsx>{`
         button {
           color: var(--green-40);

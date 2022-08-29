@@ -17,7 +17,9 @@ export default function SettingsExportLogs(): ReactElement {
 
   return (
     <div className="standard_width_padded">
-      <SharedPageHeader>{t("settings.exportLogs.title")}</SharedPageHeader>
+      <SharedPageHeader withoutBackText>
+        {t("settings.exportLogs.title")}
+      </SharedPageHeader>
       <section>
         <h2>{t("settings.exportLogs.discordTitle")}</h2>
         <p className="text">{t("settings.exportLogs.discordDesc")}</p>

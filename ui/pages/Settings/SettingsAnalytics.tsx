@@ -9,8 +9,10 @@ export default function SettingsAnalytics(): ReactElement {
   const prefix = "settings.analyticsSetUp"
 
   return (
-    <div className="standard_width_padded">
-      <SharedPageHeader>{t(`${prefix}.title`)}</SharedPageHeader>
+    <div className="standard_width_padded analytics_wrapper">
+      <SharedPageHeader withoutBackText>
+        {t(`${prefix}.title`)}
+      </SharedPageHeader>
       <section className="toggle_container">
         <div className="header_container">
           <div className="title_container">
@@ -69,8 +71,12 @@ export default function SettingsAnalytics(): ReactElement {
           line-height: 24px;
           margin: 0;
         }
+        .analytics_wrapper {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
         .toggle_container {
-          margin: 12px 0 25px;
           border-radius: 15px;
           padding: 24px 20px;
           background-color: var(--green-120);
@@ -101,7 +107,7 @@ export default function SettingsAnalytics(): ReactElement {
         .list {
           display: flex;
           flex-flow: column;
-          margin: 10px 0;
+          margin: 16px 0;
           padding-left: 25px;
         }
         .list_item {
