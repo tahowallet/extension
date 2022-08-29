@@ -16,7 +16,6 @@ import {
   EIP1559TransactionRequest,
   EVMNetwork,
   BlockPrices,
-  sameNetwork,
   TransactionRequest,
   TransactionRequestWithNonce,
   SignedTransaction,
@@ -802,10 +801,7 @@ export default class ChainService extends BaseService<Events> {
     txHash: HexString,
     firstSeen: UNIXTime
   ): Promise<void> {
-    const seen = this.transactionsToRetrieve.some(
-      ({ network: queuedNetwork, hash }) =>
-        sameNetwork(network, queuedNetwork) && hash === txHash
-    )
+    const seen = this.transactionsToRetrieve.some(({ hash }) => hash === txHash)
 
     if (!seen) {
       // @TODO Interleave initial transaction retrieval by network
@@ -1049,14 +1045,19 @@ export default class ChainService extends BaseService<Events> {
 
     const firstSeen = Date.now()
 
-    /// send all found tx hashes into a queue to retrieve + cache
-    assetTransfers.forEach((a) =>
-      this.queueTransactionHashToRetrieve(
-        addressOnNetwork.network,
-        a.txHash,
-        firstSeen
-      )
+    const savedTransactionHashes = new Set(
+      await this.db.getAllSavedTransactionHashes()
     )
+    /// send all new tx hashes into a queue to retrieve + cache
+    assetTransfers.forEach((a) => {
+      if (!savedTransactionHashes.has(a.txHash)) {
+        this.queueTransactionHashToRetrieve(
+          addressOnNetwork.network,
+          a.txHash,
+          firstSeen
+        )
+      }
+    })
   }
 
   /**
