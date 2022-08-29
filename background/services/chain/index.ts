@@ -1054,7 +1054,7 @@ export default class ChainService extends BaseService<Events> {
         (tx) => `${tx.hash}-${tx.network.chainID}`
       )
     )
-    /// send all found tx hashes into a queue to retrieve + cache
+    /// send all new tx hashes into a queue to retrieve + cache
     assetTransfers.forEach((a) => {
       const cacheKey = `${a.txHash}-${addressOnNetwork.network.chainID}`
       if (!savedTransactionCacheKeys.has(cacheKey)) {
