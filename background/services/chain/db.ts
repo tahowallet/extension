@@ -174,6 +174,10 @@ export class ChainDatabase extends Dexie {
     )
   }
 
+  async getAllSavedTransactions(): Promise<AnyEVMTransaction[]> {
+    return this.chainTransactions.toArray()
+  }
+
   /**
    * Looks up and returns all pending transactions for the given network.
    */

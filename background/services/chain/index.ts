@@ -1049,14 +1049,22 @@ export default class ChainService extends BaseService<Events> {
 
     const firstSeen = Date.now()
 
-    /// send all found tx hashes into a queue to retrieve + cache
-    assetTransfers.forEach((a) =>
-      this.queueTransactionHashToRetrieve(
-        addressOnNetwork.network,
-        a.txHash,
-        firstSeen
+    const savedTransactionCacheKeys = new Set(
+      (await this.db.getAllSavedTransactions()).map(
+        (tx) => `${tx.hash}-${tx.network.chainID}`
       )
     )
+    /// send all found tx hashes into a queue to retrieve + cache
+    assetTransfers.forEach((a) => {
+      const cacheKey = `${a.txHash}-${addressOnNetwork.network.chainID}`
+      if (!savedTransactionCacheKeys.has(cacheKey)) {
+        this.queueTransactionHashToRetrieve(
+          addressOnNetwork.network,
+          a.txHash,
+          firstSeen
+        )
+      }
+    })
   }
 
   /**
