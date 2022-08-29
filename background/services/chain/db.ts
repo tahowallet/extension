@@ -1,4 +1,4 @@
-import Dexie from "dexie"
+import Dexie, { IndexableTypeArray } from "dexie"
 
 import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -174,8 +174,8 @@ export class ChainDatabase extends Dexie {
     )
   }
 
-  async getAllSavedTransactions(): Promise<AnyEVMTransaction[]> {
-    return this.chainTransactions.toArray()
+  async getAllSavedTransactionHashes(): Promise<IndexableTypeArray> {
+    return this.chainTransactions.orderBy("hash").keys()
   }
 
   /**

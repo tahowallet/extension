@@ -802,10 +802,7 @@ export default class ChainService extends BaseService<Events> {
     txHash: HexString,
     firstSeen: UNIXTime
   ): Promise<void> {
-    const seen = this.transactionsToRetrieve.some(
-      ({ network: queuedNetwork, hash }) =>
-        sameNetwork(network, queuedNetwork) && hash === txHash
-    )
+    const seen = this.transactionsToRetrieve.some(({ hash }) => hash === txHash)
 
     if (!seen) {
       // @TODO Interleave initial transaction retrieval by network
@@ -1049,15 +1046,14 @@ export default class ChainService extends BaseService<Events> {
 
     const firstSeen = Date.now()
 
-    const savedTransactionCacheKeys = new Set(
-      (await this.db.getAllSavedTransactions()).map(
-        (tx) => `${tx.hash}-${tx.network.chainID}`
-      )
+    const savedTransactionHashes = new Set(
+      await this.db.getAllSavedTransactionHashes()
     )
+
+    console.log({ savedTransactionHashes })
     /// send all new tx hashes into a queue to retrieve + cache
     assetTransfers.forEach((a) => {
-      const cacheKey = `${a.txHash}-${addressOnNetwork.network.chainID}`
-      if (!savedTransactionCacheKeys.has(cacheKey)) {
+      if (!savedTransactionHashes.has(a.txHash)) {
         this.queueTransactionHashToRetrieve(
           addressOnNetwork.network,
           a.txHash,
