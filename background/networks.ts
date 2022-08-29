@@ -20,6 +20,7 @@ export type NetworkBaseAsset = {
   symbol: string
   name: string
   decimals: number
+  contractAddress?: string
   coinType: Slip44CoinType
 }
 

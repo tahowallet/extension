@@ -18,7 +18,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "../NetworkFees/NetworkSettingsSelect"
 import FeeSettingsText from "../NetworkFees/FeeSettingsText"
 import SharedSelect, { Option } from "../Shared/SharedSelect"
-import NetworkSettingsSelectDeprecated from "../NetworkFees/NetworkSettingsSelectDeprecated"
+import NetworkSettingsSelectLegacy from "../NetworkFees/NetworkSettingsSelectLegacy"
 
 export type SwapTransactionSettings = {
   slippageTolerance: number
@@ -118,7 +118,7 @@ export default function SwapTransactionSettingsChooser({
                     onSave={saveSettings}
                   />
                 ) : (
-                  <NetworkSettingsSelectDeprecated
+                  <NetworkSettingsSelectLegacy
                     estimatedFeesPerGas={estimatedFeesPerGas}
                     networkSettings={swapTransactionSettings.networkSettings}
                     onNetworkSettingsChange={setNetworkSettings}

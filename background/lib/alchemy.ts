@@ -39,13 +39,17 @@ export async function getAssetTransfers(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
   addressOnNetwork: AddressOnNetwork,
   fromBlock: number,
-  toBlock?: number
+  toBlock?: number,
+  order: "asc" | "desc" = "desc",
+  maxCount = 1000
 ): Promise<AssetTransfer[]> {
   const { address: account, network } = addressOnNetwork
 
   const params = {
     fromBlock: utils.hexValue(fromBlock),
     toBlock: toBlock === undefined ? "latest" : utils.hexValue(toBlock),
+    maxCount: utils.hexValue(maxCount),
+    order,
     // excludeZeroValue: false,
   }
 
@@ -174,7 +178,7 @@ export async function getTokenBalances(
             typeof json["tokenBalances"][0]["tokenBalance"],
             null
           >
-        } => b.error === null && b.tokenBalance !== null
+        } => (b.error === null || !("error" in b)) && b.tokenBalance !== null
       )
       // A hex value of 0x without any subsequent numbers generally means "no
       // value" (as opposed to 0) in Ethereum implementations, so filter it out

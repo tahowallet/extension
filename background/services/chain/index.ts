@@ -5,7 +5,7 @@ import {
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
 import { ethers, utils } from "ethers"
-import { Logger } from "ethers/lib/utils"
+import { Logger, UnsignedTransaction } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
 import { HexString, UNIXTime } from "../../types"
@@ -49,6 +49,7 @@ import {
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
   ethersTransactionFromTransactionRequest,
+  unsignedTransactionFromEVMTransaction,
 } from "./utils"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type {
@@ -87,10 +88,6 @@ const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 // asset transfers. This is important to allow nodes like Erigon and
 // OpenEthereum with tracing to catch up to where we are.
 const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
-
-// The number of asset transfer lookups that will be done per account to rebuild
-// historic activity.
-const HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT = 10
 
 // The number of milliseconds after a request to look up a transaction was
 // first seen to continue looking in case the transaction fails to be found
@@ -195,7 +192,7 @@ export default class ChainService extends BaseService<Events> {
       },
       historicAssetTransfers: {
         schedule: {
-          periodInMinutes: 1,
+          periodInMinutes: 60,
         },
         handler: () => {
           this.handleHistoricAssetTransferAlarm()
@@ -204,7 +201,7 @@ export default class ChainService extends BaseService<Events> {
       },
       recentAssetTransfers: {
         schedule: {
-          periodInMinutes: 1,
+          periodInMinutes: 1.5,
         },
         handler: () => {
           this.handleRecentAssetTransferAlarm()
@@ -389,9 +386,14 @@ export default class ChainService extends BaseService<Events> {
       chainID: network.chainID,
       nonce,
       annotation,
-      estimatedRollupFee: EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
-        ? await this.estimateL1RollupFee(network, input)
-        : 0n,
+      estimatedRollupFee: 0n,
+    }
+
+    if (EVM_ROLLUP_CHAIN_IDS.has(network.chainID)) {
+      transactionRequest.estimatedRollupFee = await this.estimateL1RollupFee(
+        network,
+        unsignedTransactionFromEVMTransaction(transactionRequest)
+      )
     }
 
     // Always estimate gas to decide whether the transaction will likely fail.
@@ -583,7 +585,6 @@ export default class ChainService extends BaseService<Events> {
     // the address has a pending transaction floating around with a nonce that
     // is not an increase by one over previous transactions, this approach will
     // allocate more nonces that won't mine.
-    // TODO Deal with multi-network.
     this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress] =
       Math.max(existingNonce, chainNonce)
 
@@ -697,6 +698,12 @@ export default class ChainService extends BaseService<Events> {
     this.loadRecentAssetTransfers(addressNetwork).catch((e) => {
       logger.error(
         "chainService/addAccountToTrack: Error loading recent asset transfers",
+        e
+      )
+    })
+    this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
+      logger.error(
+        "chainService/addAccountToTrack: Error loading historic asset transfers",
         e
       )
     })
@@ -823,11 +830,12 @@ export default class ChainService extends BaseService<Events> {
 
   async estimateL1RollupFee(
     network: EVMNetwork,
-    input: string | null | undefined
+    transaction: UnsignedTransaction
   ): Promise<bigint> {
-    if (!input) {
-      throw new Error("Can't estimate L1 rollup fee for an empty transaction")
-    }
+    // Optimism-specific implementation
+    // https://community.optimism.io/docs/developers/build/transaction-fees/#displaying-fees-to-users
+    const unsignedRLPEncodedTransaction =
+      utils.serializeTransaction(transaction)
 
     const provider = await this.providerForNetworkOrThrow(network)
 
@@ -837,7 +845,7 @@ export default class ChainService extends BaseService<Events> {
       provider
     )
 
-    const l1Fee = await GasOracle.getL1Fee(input)
+    const l1Fee = await GasOracle.getL1Fee(unsignedRLPEncodedTransaction)
 
     return BigInt(l1Fee.toString())
   }
@@ -996,27 +1004,12 @@ export default class ChainService extends BaseService<Events> {
   private async loadHistoricAssetTransfers(
     addressNetwork: AddressOnNetwork
   ): Promise<void> {
-    const oldest = await this.db.getOldestAccountAssetTransferLookup(
-      addressNetwork
-    )
-    const newest = await this.db.getNewestAccountAssetTransferLookup(
-      addressNetwork
-    )
+    const oldest =
+      (await this.db.getOldestAccountAssetTransferLookup(addressNetwork)) ??
+      BigInt(await this.getBlockHeight(addressNetwork.network))
 
-    if (newest !== null && oldest !== null) {
-      const range = newest - oldest
-      if (
-        range <
-        BLOCKS_FOR_TRANSACTION_HISTORY *
-          HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT
-      ) {
-        // if we haven't hit 10x the single-call limit, pull another.
-        await this.loadAssetTransfers(
-          addressNetwork,
-          oldest - BigInt(BLOCKS_FOR_TRANSACTION_HISTORY),
-          oldest
-        )
-      }
+    if (oldest !== 0n) {
+      await this.loadAssetTransfers(addressNetwork, 0n, oldest)
     }
   }
 
@@ -1032,12 +1025,11 @@ export default class ChainService extends BaseService<Events> {
     startBlock: bigint,
     endBlock: bigint
   ): Promise<void> {
-    // TODO this will require custom code for Arbitrum and Optimism support
-    // as neither have Alchemy's assetTransfers endpoint
     if (
       addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
       addressOnNetwork.network.chainID !== POLYGON.chainID &&
       addressOnNetwork.network.chainID !== OPTIMISM.chainID &&
+      addressOnNetwork.network.chainID !== ARBITRUM_ONE.chainID &&
       addressOnNetwork.network.chainID !== GOERLI.chainID
     ) {
       logger.error(
