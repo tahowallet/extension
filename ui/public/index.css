@@ -148,10 +148,3 @@ label {
   opacity: 60%;
   background-color: var(--green-120);
 }
-
-.text {
-  color: var(--green-40);
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 24px;
-}
