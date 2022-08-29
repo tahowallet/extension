@@ -155,12 +155,22 @@ export default class AssetDataHelper {
         provider.currentProvider instanceof AlchemyWebSocketProvider ||
         provider.currentProvider instanceof AlchemyProvider
       ) {
-        return await getAlchemyAssetTransfers(
-          provider.currentProvider,
-          addressOnNetwork,
-          startBlock,
-          endBlock
-        )
+        return (await Promise.all([
+          getAlchemyAssetTransfers(
+            provider.currentProvider,
+            addressOnNetwork,
+            "incoming",
+            startBlock,
+            endBlock,
+          ),
+          getAlchemyAssetTransfers(
+            provider.currentProvider,
+            addressOnNetwork,
+            "outgoing",
+            startBlock,
+            endBlock,
+          )
+        ])).flat()
       }
     } catch (error) {
       logger.warn(
