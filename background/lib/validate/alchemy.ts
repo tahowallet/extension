@@ -40,8 +40,10 @@ export const alchemyTokenBalanceJTD = {
       elements: {
         properties: {
           contractAddress: { type: "string" },
-          tokenBalance: { type: "string", nullable: true },
           error: {},
+        },
+        optionalProperties: {
+          tokenBalance: { type: "string", nullable: true },
         },
       },
     },
