@@ -46,7 +46,6 @@
     "react-redux": "^7.2.4",
     "react-router-dom": "^5.3.0",
     "react-transition-group": "^4.4.2",
-    "react-window": "^1.8.7",
     "redux": "^4.1.0",
     "webextension-polyfill": "^0.8.0",
     "zxcvbn": "^4.4.2"
@@ -55,7 +54,6 @@
     "@types/react-dom": "^17.0.9",
     "@types/react-transition-group": "^4.4.4",
     "@types/zxcvbn": "^4.4.1",
-    "@types/react-window": "^1.8.5",
     "webext-redux": "^2.1.7"
   }
 }

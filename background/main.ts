@@ -111,7 +111,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { ETHEREUM, OPTIMISM, POLYGON } from "./constants"
+import { ETHEREUM, GOERLI, OPTIMISM, POLYGON } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   SignatureResponse,
@@ -701,18 +701,13 @@ export default class Main extends BaseService<never> {
         if (network.chainID === OPTIMISM.chainID) {
           const { transactionRequest: currentTransactionRequest } =
             this.store.getState().transactionConstruction
-          if (
-            currentTransactionRequest?.network.chainID === OPTIMISM.chainID &&
-            !isEIP1559EnrichedTransactionSignatureRequest(
-              currentTransactionRequest
-            )
-          ) {
+          if (currentTransactionRequest?.network.chainID === OPTIMISM.chainID) {
             // If there is a currently pending transaction request on Optimism,
             // we need to update its L1 rollup fee as well as the current estimated fees per gas
             const estimatedRollupFee =
               await this.chainService.estimateL1RollupFee(
                 currentTransactionRequest.network,
-                currentTransactionRequest.input
+                currentTransactionRequest
               )
             this.store.dispatch(updateL1RollupFee(estimatedRollupFee))
           }
@@ -1126,7 +1121,7 @@ export default class Main extends BaseService<never> {
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await Promise.all(
-        [ETHEREUM, POLYGON, OPTIMISM].map(async (network) => {
+        [ETHEREUM, POLYGON, OPTIMISM, GOERLI].map(async (network) => {
           await this.providerBridgeService.grantPermission({
             ...permission,
             chainID: network.chainID,

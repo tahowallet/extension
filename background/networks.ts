@@ -22,6 +22,7 @@ export type NetworkBaseAsset = {
   symbol: string
   name: string
   decimals: number
+  contractAddress?: string
   coinType: Slip44CoinType
 }
 
@@ -145,6 +146,13 @@ export type LegacyEVMTransaction = EVMTransaction & {
  * to the size (in bytes) of the input of a given transaction.  Networks that do
  * not roll up will have a rollup fee of 0.
  *
+ * There is some intentional tech debt here in that we are adding both estimatedRollupFee
+ * and estimatedRollupGwei as mandatory properties of LegacyEVMTransactionRequests.
+ *
+ * This is not strictly true - since there are networks that implement LegacyEVMTransactions
+ * which do not roll up to Ethereum. Once we choose to support one of those networks -
+ * we'll probably need to split this type into something like LegacyEVMTransactionRequest and
+ * LegacyEvmRollupTransactionRequest.
  */
 export type LegacyEVMTransactionRequest = Pick<
   LegacyEVMTransaction,

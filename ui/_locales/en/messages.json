@@ -2,8 +2,8 @@
   "popupEdition": "Community Edition",
   "comingSoon": "Coming soon",
   "overview": {
-    "totalBalance": "Total balance",
-    "addresses": "Addresses",
+    "totalBalanceEverywhere": "Total balance on all accounts",
+    "accounts": "Accounts",
     "assets": "Assets",
     "networks": "Networks",
     "tableHeader": {
@@ -14,6 +14,7 @@
   },
   "protocol": {
     "mainnet": "Mainnet",
+    "testnet": "Test Network",
     "l2": "L2 scaling solution",
     "compatibleChain": "Ethereum-compatible blockchain",
     "connected": "Connected"
@@ -29,7 +30,8 @@
     "assetAmount": "Asset / Amount",
     "sendTo": "Send To:",
     "sendButton": "Continue",
-    "receiveAddress": "Receive address"
+    "receiveAddress": "Receive address",
+    "sendToContractWarning": "This is a contract address, sending assets will result in loss of funds."
   },
   "swap": {
     "title": "Swap Assets",
@@ -61,8 +63,10 @@
     "mainMenu": "Settings",
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
     "setAsDefault": "Use Tally Ho as your default wallet",
+    "enableTestNetworks": "Enable test networks",
     "language": "Language",
     "bugReport": "Bug report",
+    "analytics": "Analytics",
     "joinTitle": "Join our community",
     "joinDesc": "Join our Discord to give us feedback!",
     "joinBtn": "Join and give feedback",
@@ -73,7 +77,11 @@
       "discordBtn": "Join Discord",
       "logTitle": "2. Export logs",
       "logDesc": "To better understand your bug, we need you to export your logs.",
-      "logBtn": "Export logs"
+      "logBtn": "Export logs",
+      "ariaLabel": "Open bug report"
+    },
+    "analyticsSetUp": {
+      "ariaLabel": "Open analytics"
     }
   },
   "passwordStrength": {
@@ -82,5 +90,9 @@
     "strong": "Strong",
     "strength": "Strength",
     "hintDesc": "For a strong password, consider a mix of lower and uppercase characters, symbols, and numbers. Passwords should be over 8 characters."
-  }
+  },
+  "toggle": {
+    "collapse": "Collapse",
+    "viewAll": "View all"
+  } 
 }

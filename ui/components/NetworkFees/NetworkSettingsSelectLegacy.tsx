@@ -110,7 +110,7 @@ function EstimateRefreshCountdownDivider() {
   )
 }
 
-export default function NetworkSettingsSelectDeprecated({
+export default function NetworkSettingsSelectLegacy({
   // FIXME Map this to GasOption[] in a selector.
   estimatedFeesPerGas,
   networkSettings,

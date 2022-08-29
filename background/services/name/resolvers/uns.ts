@@ -1,8 +1,86 @@
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
-import { ETHEREUM, POLYGON } from "../../../constants"
+import { ETHEREUM, POLYGON, SECOND } from "../../../constants"
+import logger from "../../../lib/logger"
 import { isDefined } from "../../../lib/utils/type-guards"
 import { sameNetwork } from "../../../networks"
 import { NameResolver } from "../name-resolver"
+
+// Time until response is stale
+const RESPONSE_TTL = 5 * SECOND
+
+const makeFetchWithTimeout = (timeoutMs: number) => {
+  return async function fetchWithTimeout(
+    requestInfo: RequestInfo,
+    options?: RequestInit | undefined
+  ) {
+    const controller = new AbortController()
+    const id = setTimeout(() => {
+      logger.warn("Request to ", requestInfo, " timed out")
+      return controller.abort()
+    }, timeoutMs)
+    const response = await fetch(requestInfo, {
+      ...options,
+      signal: controller.signal,
+    })
+    clearTimeout(id)
+    return response
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const cacheAsyncResults = <F extends (...args: any[]) => Promise<any>>(
+  ttl: number,
+  fn: F,
+  getCacheKey: (args: Parameters<F>) => string
+) => {
+  const cache: Record<
+    string,
+    | {
+        result: ReturnType<F>
+        pending: Promise<void>
+        expiresAt: number
+        status: "done"
+      }
+    | { pending: Promise<void>; status: "pending" }
+    | undefined
+  > = {}
+
+  return (async (...args: Parameters<F>) => {
+    const key = getCacheKey(args)
+
+    if (cache[key]?.status === "pending") {
+      await cache[key]?.pending
+    }
+
+    const cachedEntry = cache[key]
+    if (cachedEntry?.status === "done" && cachedEntry.expiresAt >= Date.now()) {
+      return cachedEntry.result
+    }
+
+    let resolve
+
+    const pending = new Promise<void>((r) => {
+      resolve = r
+    })
+    cache[key] = { pending, status: "pending" }
+
+    const result = await fn(...args)
+      .then((value) => {
+        cache[key] = {
+          result: value,
+          pending,
+          expiresAt: Date.now() + ttl,
+          status: "done",
+        }
+
+        return value
+      })
+      .finally(resolve)
+
+    return result
+  }) as F
+}
+const fetchWithTimeout = makeFetchWithTimeout(3_000)
 
 const UNS_SUPPORTED_NETWORKS = [ETHEREUM, POLYGON]
 
@@ -10,7 +88,7 @@ const UNS_SUPPORTED_NETWORKS = [ETHEREUM, POLYGON]
  * Lookup a UNS domain name and fetch the owners address
  */
 const lookupUNSDomain = async (domain: string) => {
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `https://unstoppabledomains.g.alchemy.com/domains/${domain}`,
     {
       method: "GET",
@@ -27,20 +105,24 @@ const lookupUNSDomain = async (domain: string) => {
 /**
  * Reverse lookup an address and fetch it's corresponding UNS domain name
  */
-const reverseLookupAddress = async (address: string) => {
-  const response = await fetch(
-    `https://unstoppabledomains.g.alchemy.com/domains/?owners=${address}&sortBy=id&sortDirection=ASC`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${process.env.ALCHEMY_KEY?.trim()}`,
-      },
-    }
-  )
-  const data = await response.json()
+const reverseLookupAddress = cacheAsyncResults(
+  RESPONSE_TTL,
+  async (address: string) => {
+    const response = await fetchWithTimeout(
+      `https://unstoppabledomains.g.alchemy.com/domains/?owners=${address}&sortBy=id&sortDirection=ASC`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${process.env.ALCHEMY_KEY?.trim()}`,
+        },
+      }
+    )
+    const data = await response.json()
 
-  return data
-}
+    return data
+  },
+  ([address]) => address
+)
 
 /**
  * Check if a given string a valid UNS domain

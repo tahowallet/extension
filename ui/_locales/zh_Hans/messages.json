@@ -1,7 +1,69 @@
 {
+  "assetInput": {
+    "error": {
+      "insufficientBalance": "余额不足",
+      "invalidAmount": "金额无效"
+    },
+    "search": "按姓名或地址搜索",
+    "selectToken": "选择令牌"
+  },
+  "comingSoon": "快来了",
+  "overview": {
+    "networks": "网络"
+  },
+  "passwordStrength": {
+    "average": "平均",
+    "hintDesc": "对于强密码，请考虑混合使用大小写字符、符号和数字。密码应超过 8 个字符。",
+    "strength": "强度",
+    "strong": "强"
+  },
+  "protocol": {
+    "compatibleChain": "以太坊兼容的区块链",
+    "connected": "连接的",
+    "l2": "L2 扩容解决方案",
+    "mainnet": "主网",
+    "testnet": "测试网络"
+  },
+  "readOnly": "只读",
+  "readOnlyNotice": "只读模式",
   "settings": {
+    "enableTestNetworks": "启用测试网络",
     "exportLogs": {
-      "discordTitle": ""
+      "discordTitle": "1. 加入 Discord 的 #but-reports 频道"
+    },
+    "hideSmallAssetBalance": "在 {{sign}}{{amount}} 下隐藏资产余额",
+    "language": "语言",
+    "mainMenu": "设置",
+    "setAsDefault": "使用 Tally Ho 作为您的默认钱包"
+  },
+  "swap": {
+    "error": {
+      "noApprovalTarget": "试图在没有批准目标的情况下批准转让。",
+      "noSellAsset": "尝试在没有出售资产的情况下批准转让。",
+      "nonContractAsset": "试图批准非合同资产的转让。"
+    },
+    "from": "换自：",
+    "getFinalQuote": "获取最终报价",
+    "title": "交换资产",
+    "to": "换成：",
+    "transactionSettings": {
+      "daoFee": "DAO 费用",
+      "estimatedFee": "预估网络费用",
+      "settings": "交易设置",
+      "slippageTolerance": "滑动公差",
+      "title": "交易设置"
     }
+  },
+  "wallet": {
+    "assetAmount": "资产/金额",
+    "receive": "收到",
+    "receiveAddress": "收货地址",
+    "secureSeed": "首先，确保您的恢复种子",
+    "send": "发送",
+    "sendAsset": "发送资产",
+    "sendButton": "继续",
+    "sendTo": "发送至：",
+    "sendToContractWarning": "这是一个合约地址，发送资产会导致资金损失。",
+    "totalAccountBalance": "账户总余额"
   }
 }

@@ -5,7 +5,7 @@ import {
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
 import { ethers, utils } from "ethers"
-import { Logger } from "ethers/lib/utils"
+import { Logger, UnsignedTransaction } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
 import { HexString, UNIXTime } from "../../types"
@@ -30,9 +30,11 @@ import {
   ARBITRUM_ONE,
   OPTIMISM,
   EVM_ROLLUP_CHAIN_IDS,
+  GOERLI,
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
+  SUPPORT_GOERLI,
   SUPPORT_OPTIMISM,
   USE_MAINNET_FORK,
 } from "../../features"
@@ -47,6 +49,7 @@ import {
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
   ethersTransactionFromTransactionRequest,
+  unsignedTransactionFromEVMTransaction,
 } from "./utils"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type {
@@ -85,10 +88,6 @@ const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 // asset transfers. This is important to allow nodes like Erigon and
 // OpenEthereum with tracing to catch up to where we are.
 const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
-
-// The number of asset transfer lookups that will be done per account to rebuild
-// historic activity.
-const HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT = 10
 
 // The number of milliseconds after a request to look up a transaction was
 // first seen to continue looking in case the transaction fails to be found
@@ -193,16 +192,24 @@ export default class ChainService extends BaseService<Events> {
       },
       historicAssetTransfers: {
         schedule: {
-          periodInMinutes: 1,
+          periodInMinutes: 60,
         },
         handler: () => {
           this.handleHistoricAssetTransferAlarm()
         },
         runAtStart: false,
       },
+      recentIncomingAssetTransfers: {
+        schedule: {
+          periodInMinutes: 1.5,
+        },
+        handler: () => {
+          this.handleRecentIncomingAssetTransferAlarm()
+        },
+      },
       recentAssetTransfers: {
         schedule: {
-          periodInMinutes: 1,
+          periodInMinutes: 15,
         },
         handler: () => {
           this.handleRecentAssetTransferAlarm()
@@ -223,6 +230,7 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks = [
       ETHEREUM,
       POLYGON,
+      ...(SUPPORT_GOERLI ? [GOERLI] : []),
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
@@ -386,12 +394,17 @@ export default class ChainService extends BaseService<Events> {
       chainID: network.chainID,
       nonce,
       annotation,
-      estimatedRollupFee: EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
-        ? await this.estimateL1RollupFee(network, input)
-        : 0n,
       estimatedRollupGwei: EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
         ? await this.estimateL1RollupGasPrice(network)
         : 0n,
+      estimatedRollupFee: 0n,
+    }
+
+    if (EVM_ROLLUP_CHAIN_IDS.has(network.chainID)) {
+      transactionRequest.estimatedRollupFee = await this.estimateL1RollupFee(
+        network,
+        unsignedTransactionFromEVMTransaction(transactionRequest)
+      )
     }
 
     // Always estimate gas to decide whether the transaction will likely fail.
@@ -583,7 +596,6 @@ export default class ChainService extends BaseService<Events> {
     // the address has a pending transaction floating around with a nonce that
     // is not an increase by one over previous transactions, this approach will
     // allocate more nonces that won't mine.
-    // TODO Deal with multi-network.
     this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress] =
       Math.max(existingNonce, chainNonce)
 
@@ -694,9 +706,9 @@ export default class ChainService extends BaseService<Events> {
         e
       )
     })
-    this.loadRecentAssetTransfers(addressNetwork).catch((e) => {
+    this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
       logger.error(
-        "chainService/addAccountToTrack: Error loading recent asset transfers",
+        "chainService/addAccountToTrack: Error loading historic asset transfers",
         e
       )
     })
@@ -834,11 +846,12 @@ export default class ChainService extends BaseService<Events> {
 
   async estimateL1RollupFee(
     network: EVMNetwork,
-    input: string | null | undefined
+    transaction: UnsignedTransaction
   ): Promise<bigint> {
-    if (!input) {
-      throw new Error("Can't estimate L1 rollup fee for an empty transaction")
-    }
+    // Optimism-specific implementation
+    // https://community.optimism.io/docs/developers/build/transaction-fees/#displaying-fees-to-users
+    const unsignedRLPEncodedTransaction =
+      utils.serializeTransaction(transaction)
 
     const provider = await this.providerForNetworkOrThrow(network)
 
@@ -848,7 +861,7 @@ export default class ChainService extends BaseService<Events> {
       provider
     )
 
-    const l1Fee = await GasOracle.getL1Fee(input)
+    const l1Fee = await GasOracle.getL1Fee(unsignedRLPEncodedTransaction)
 
     return BigInt(l1Fee.toString())
   }
@@ -939,23 +952,26 @@ export default class ChainService extends BaseService<Events> {
    * **************** */
 
   /**
-   * Load recent asset transfers from an account on a particular network. Backs
-   * off exponentially (in block range, not in time) on failure.
+   * Load recent asset transfers from an account on a particular network.
    *
    * @param addressNetwork the address and network whose asset transfers we need
+   * @param incomingOnly if true, only fetch asset transfers received by this
+   *        address
    */
   private async loadRecentAssetTransfers(
-    addressNetwork: AddressOnNetwork
+    addressNetwork: AddressOnNetwork,
+    incomingOnly = false
   ): Promise<void> {
     const blockHeight =
       (await this.getBlockHeight(addressNetwork.network)) -
       BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY
-    let fromBlock = blockHeight - BLOCKS_FOR_TRANSACTION_HISTORY
+    const fromBlock = blockHeight - BLOCKS_FOR_TRANSACTION_HISTORY
     try {
       return await this.loadAssetTransfers(
         addressNetwork,
         BigInt(fromBlock),
-        BigInt(blockHeight)
+        BigInt(blockHeight),
+        incomingOnly
       )
     } catch (err) {
       logger.error(
@@ -965,36 +981,6 @@ export default class ChainService extends BaseService<Events> {
       )
     }
 
-    // TODO replace the home-spun backoff with a util function
-    fromBlock = blockHeight - Math.floor(BLOCKS_FOR_TRANSACTION_HISTORY / 2)
-    try {
-      return await this.loadAssetTransfers(
-        addressNetwork,
-        BigInt(fromBlock),
-        BigInt(blockHeight)
-      )
-    } catch (err) {
-      logger.error(
-        "Second failure loading recent assets, retrying with shorter block range",
-        addressNetwork,
-        err
-      )
-    }
-
-    fromBlock = blockHeight - Math.floor(BLOCKS_FOR_TRANSACTION_HISTORY / 4)
-    try {
-      return await this.loadAssetTransfers(
-        addressNetwork,
-        BigInt(fromBlock),
-        BigInt(blockHeight)
-      )
-    } catch (err) {
-      logger.error(
-        "Final failure loading recent assets for account",
-        addressNetwork,
-        err
-      )
-    }
     return Promise.resolve()
   }
 
@@ -1007,27 +993,12 @@ export default class ChainService extends BaseService<Events> {
   private async loadHistoricAssetTransfers(
     addressNetwork: AddressOnNetwork
   ): Promise<void> {
-    const oldest = await this.db.getOldestAccountAssetTransferLookup(
-      addressNetwork
-    )
-    const newest = await this.db.getNewestAccountAssetTransferLookup(
-      addressNetwork
-    )
+    const oldest =
+      (await this.db.getOldestAccountAssetTransferLookup(addressNetwork)) ??
+      BigInt(await this.getBlockHeight(addressNetwork.network))
 
-    if (newest !== null && oldest !== null) {
-      const range = newest - oldest
-      if (
-        range <
-        BLOCKS_FOR_TRANSACTION_HISTORY *
-          HISTORIC_ASSET_TRANSFER_LOOKUPS_PER_ACCOUNT
-      ) {
-        // if we haven't hit 10x the single-call limit, pull another.
-        await this.loadAssetTransfers(
-          addressNetwork,
-          oldest - BigInt(BLOCKS_FOR_TRANSACTION_HISTORY),
-          oldest
-        )
-      }
+    if (oldest !== 0n) {
+      await this.loadAssetTransfers(addressNetwork, 0n, oldest)
     }
   }
 
@@ -1041,14 +1012,15 @@ export default class ChainService extends BaseService<Events> {
   private async loadAssetTransfers(
     addressOnNetwork: AddressOnNetwork,
     startBlock: bigint,
-    endBlock: bigint
+    endBlock: bigint,
+    incomingOnly = false
   ): Promise<void> {
-    // TODO this will require custom code for Arbitrum and Optimism support
-    // as neither have Alchemy's assetTransfers endpoint
     if (
       addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
       addressOnNetwork.network.chainID !== POLYGON.chainID &&
-      addressOnNetwork.network.chainID !== OPTIMISM.chainID
+      addressOnNetwork.network.chainID !== OPTIMISM.chainID &&
+      addressOnNetwork.network.chainID !== ARBITRUM_ONE.chainID &&
+      addressOnNetwork.network.chainID !== GOERLI.chainID
     ) {
       logger.error(
         `Asset transfer check not supported on network ${JSON.stringify(
@@ -1060,7 +1032,8 @@ export default class ChainService extends BaseService<Events> {
     const assetTransfers = await this.assetData.getAssetTransfers(
       addressOnNetwork,
       Number(startBlock),
-      Number(endBlock)
+      Number(endBlock),
+      incomingOnly
     )
 
     await this.db.recordAccountAssetTransferLookup(
@@ -1086,6 +1059,20 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
+  /**
+   * Check for any incoming asset transfers involving tracked accounts.
+   */
+  private async handleRecentIncomingAssetTransferAlarm(): Promise<void> {
+    const accountsToTrack = await this.db.getAccountsToTrack()
+
+    await Promise.allSettled(
+      accountsToTrack.map((an) => this.loadRecentAssetTransfers(an, true))
+    )
+  }
+
+  /**
+   * Check for any incoming or outgoing asset transfers involving tracked accounts.
+   */
   private async handleRecentAssetTransferAlarm(): Promise<void> {
     const accountsToTrack = await this.db.getAccountsToTrack()
 
