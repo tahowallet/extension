@@ -22,15 +22,11 @@ import { getLanguageIndex, getAvalableLanguages } from "../_locales"
 import { getLanguage, setLanguage } from "../_locales/i18n"
 import SettingButton from "./Settings/SettingButton"
 
-interface ISettingRow extends ReactElement {
-  hideTitle?: boolean
-}
-
 function SettingRow(props: {
   hideTitle?: boolean
   title: string
   component: () => ReactElement
-}): ISettingRow {
+}): ReactElement {
   const { hideTitle, title, component } = props
 
   return (

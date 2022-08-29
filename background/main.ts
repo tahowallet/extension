@@ -873,15 +873,11 @@ export default class Main extends BaseService<never> {
     })
 
     keyringSliceEmitter.on("changePassword", async (stringifiedPasswords) => {
-      const didPasswordChangeSucceed = await this.keyringService.changePassword(
+      const changePasswordSuccess = await this.keyringService.changePassword(
         stringifiedPasswords
       )
 
-      if (didPasswordChangeSucceed) {
-        this.store.dispatch(setDidPasswordChangeSucceed(true))
-      } else {
-        this.store.dispatch(setDidPasswordChangeSucceed(false))
-      }
+      this.store.dispatch(setDidPasswordChangeSucceed(changePasswordSuccess))
     })
 
     keyringSliceEmitter.on("unlockKeyrings", async (password) => {
