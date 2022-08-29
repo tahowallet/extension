@@ -199,9 +199,17 @@ export default class ChainService extends BaseService<Events> {
         },
         runAtStart: false,
       },
-      recentAssetTransfers: {
+      recentIncomingAssetTransfers: {
         schedule: {
           periodInMinutes: 1.5,
+        },
+        handler: () => {
+          this.handleRecentIncomingAssetTransferAlarm()
+        },
+      },
+      recentAssetTransfers: {
+        schedule: {
+          periodInMinutes: 15,
         },
         handler: () => {
           this.handleRecentAssetTransferAlarm()
@@ -695,12 +703,6 @@ export default class ChainService extends BaseService<Events> {
         e
       )
     })
-    this.loadRecentAssetTransfers(addressNetwork).catch((e) => {
-      logger.error(
-        "chainService/addAccountToTrack: Error loading recent asset transfers",
-        e
-      )
-    })
     this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
       logger.error(
         "chainService/addAccountToTrack: Error loading historic asset transfers",
@@ -936,23 +938,26 @@ export default class ChainService extends BaseService<Events> {
    * **************** */
 
   /**
-   * Load recent asset transfers from an account on a particular network. Backs
-   * off exponentially (in block range, not in time) on failure.
+   * Load recent asset transfers from an account on a particular network.
    *
    * @param addressNetwork the address and network whose asset transfers we need
+   * @param incomingOnly if true, only fetch asset transfers received by this
+   *        address
    */
   private async loadRecentAssetTransfers(
-    addressNetwork: AddressOnNetwork
+    addressNetwork: AddressOnNetwork,
+    incomingOnly = false
   ): Promise<void> {
     const blockHeight =
       (await this.getBlockHeight(addressNetwork.network)) -
       BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY
-    let fromBlock = blockHeight - BLOCKS_FOR_TRANSACTION_HISTORY
+    const fromBlock = blockHeight - BLOCKS_FOR_TRANSACTION_HISTORY
     try {
       return await this.loadAssetTransfers(
         addressNetwork,
         BigInt(fromBlock),
-        BigInt(blockHeight)
+        BigInt(blockHeight),
+        incomingOnly
       )
     } catch (err) {
       logger.error(
@@ -962,36 +967,6 @@ export default class ChainService extends BaseService<Events> {
       )
     }
 
-    // TODO replace the home-spun backoff with a util function
-    fromBlock = blockHeight - Math.floor(BLOCKS_FOR_TRANSACTION_HISTORY / 2)
-    try {
-      return await this.loadAssetTransfers(
-        addressNetwork,
-        BigInt(fromBlock),
-        BigInt(blockHeight)
-      )
-    } catch (err) {
-      logger.error(
-        "Second failure loading recent assets, retrying with shorter block range",
-        addressNetwork,
-        err
-      )
-    }
-
-    fromBlock = blockHeight - Math.floor(BLOCKS_FOR_TRANSACTION_HISTORY / 4)
-    try {
-      return await this.loadAssetTransfers(
-        addressNetwork,
-        BigInt(fromBlock),
-        BigInt(blockHeight)
-      )
-    } catch (err) {
-      logger.error(
-        "Final failure loading recent assets for account",
-        addressNetwork,
-        err
-      )
-    }
     return Promise.resolve()
   }
 
@@ -1023,7 +998,8 @@ export default class ChainService extends BaseService<Events> {
   private async loadAssetTransfers(
     addressOnNetwork: AddressOnNetwork,
     startBlock: bigint,
-    endBlock: bigint
+    endBlock: bigint,
+    incomingOnly = false
   ): Promise<void> {
     if (
       addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
@@ -1042,7 +1018,8 @@ export default class ChainService extends BaseService<Events> {
     const assetTransfers = await this.assetData.getAssetTransfers(
       addressOnNetwork,
       Number(startBlock),
-      Number(endBlock)
+      Number(endBlock),
+      incomingOnly
     )
 
     await this.db.recordAccountAssetTransferLookup(
@@ -1068,6 +1045,20 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
+  /**
+   * Check for any incoming asset transfers involving tracked accounts.
+   */
+  private async handleRecentIncomingAssetTransferAlarm(): Promise<void> {
+    const accountsToTrack = await this.db.getAccountsToTrack()
+
+    await Promise.allSettled(
+      accountsToTrack.map((an) => this.loadRecentAssetTransfers(an, true))
+    )
+  }
+
+  /**
+   * Check for any incoming or outgoing asset transfers involving tracked accounts.
+   */
   private async handleRecentAssetTransferAlarm(): Promise<void> {
     const accountsToTrack = await this.db.getAccountsToTrack()
 
