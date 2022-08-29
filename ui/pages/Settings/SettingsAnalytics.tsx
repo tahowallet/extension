@@ -30,17 +30,17 @@ export default function SettingsAnalytics(): ReactElement {
       <section>
         <h2 className="title_success">{t(`${prefix}.recordTitle`)}</h2>
         <ul className="list">
-          {[...Array(3).keys()].map((index) => (
-            <li className="list_item text">
-              {t(`${prefix}.recordItem${index + 1}`)}
+          {["Orders", "Accounts", "Gas"].map((value) => (
+            <li key={value} className="list_item text">
+              {t(`${prefix}.recordItem${value}`)}
             </li>
           ))}
         </ul>
         <h2 className="title_error">{t(`${prefix}.noRecordTitle`)}</h2>
         <ul className="list">
-          {[...Array(2).keys()].map((index) => (
-            <li className="list_item text">
-              {t(`${prefix}.noRecordItem${index + 1}`)}
+          {["Seed", "Transactions"].map((value) => (
+            <li key={value} className="list_item text">
+              {t(`${prefix}.noRecordItem${value}`)}
             </li>
           ))}
         </ul>
