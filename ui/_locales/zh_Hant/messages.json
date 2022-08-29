@@ -31,12 +31,14 @@
     "compatibleChain": "以太坊相容區塊鏈",
     "connected": "已連線",
     "l2": "L2 擴展方案",
-    "mainnet": "以太坊主網"
+    "mainnet": "以太坊主網",
+    "testnet": "測試網路"
   },
   "readOnly": "唯讀",
   "readOnlyNotice": "唯讀模式",
   "settings": {
     "bugReport": "問題回報",
+    "enableTestNetworks": "啟用測試網路",
     "exportLogs": {
       "discordBtn": "加入 Discord",
       "discordDesc": "參觀我們的 Discord 頻道，在那兒回報你的問題。請在問題中附加 log 紀錄。",
@@ -81,6 +83,7 @@
     "sendAsset": "傳送資產",
     "sendButton": "繼續",
     "sendTo": "傳送到",
+    "sendToContractWarning": "這是一個合約地址，向其發送資產可能導致資金損失",
     "totalAccountBalance": "帳戶總額"
   }
 }

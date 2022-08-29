@@ -66,6 +66,7 @@
     "enableTestNetworks": "Enable test networks",
     "language": "Language",
     "bugReport": "Bug report",
+    "analytics": "Analytics",
     "joinTitle": "Join our community",
     "joinDesc": "Join our Discord to give us feedback!",
     "joinBtn": "Join and give feedback",
@@ -76,7 +77,8 @@
       "discordBtn": "Join Discord",
       "logTitle": "2. Export logs",
       "logDesc": "To better understand your bug, we need you to export your logs.",
-      "logBtn": "Export logs"
+      "logBtn": "Export logs",
+      "ariaLabel": "Open bug report"
     },
     "analyticsSetUp": {
       "title": "Analytics",
@@ -90,7 +92,8 @@
       "noRecordItem1": "See/save your seed phrase",
       "noRecordItem2": "Make your address and transaction",
       "policyBtn": "Privacy policy",
-      "deleteBtn": "Delete my data"
+      "deleteBtn": "Delete my data",
+      "ariaLabel": "Open analytics"
     }
   },
   "passwordStrength": {

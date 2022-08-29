@@ -29,6 +29,7 @@ import { EVM_ROLLUP_CHAIN_IDS } from "../../constants"
 import { parseLogsForWrappedDepositsAndWithdrawals } from "../../lib/wrappedAsset"
 import { parseERC20Tx, parseLogsForERC20Transfers } from "../../lib/erc20"
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
+import { unsignedTransactionFromEVMTransaction } from "../chain/utils"
 
 async function annotationsFromLogs(
   chainService: ChainService,
@@ -170,7 +171,10 @@ export default async function resolveTransactionAnnotation(
   const { gasLimit, blockHash } = transaction
 
   const additionalL1Gas = EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
-    ? await chainService.estimateL1RollupFee(network, transaction.input)
+    ? await chainService.estimateL1RollupFee(
+        network,
+        unsignedTransactionFromEVMTransaction(transaction)
+      )
     : 0n
 
   const gasFee: bigint = isEIP1559TransactionRequest(transaction)
