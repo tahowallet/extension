@@ -31,11 +31,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
-import {
-  AnyEVMTransaction,
-  isEIP1559EnrichedTransactionSignatureRequest,
-  SignedTransaction,
-} from "./networks"
+import { AnyEVMTransaction, SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
