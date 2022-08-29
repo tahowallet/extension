@@ -372,8 +372,8 @@ export default class ChainService extends BaseService<Events> {
       partialRequest
     // Basic transaction construction based on the provided options, with extra data from the chain service
     const transactionRequest: EnrichedLegacyTransactionRequest = {
-      from,
-      to,
+      from: normalizeEVMAddress(from),
+      to: to ? normalizeEVMAddress(to) : to,
       value: value ?? 0n,
       gasLimit: gasLimit ?? 0n,
       input: input ?? null,
@@ -464,8 +464,8 @@ export default class ChainService extends BaseService<Events> {
 
     // Basic transaction construction based on the provided options, with extra data from the chain service
     const transactionRequest: EnrichedEIP1559TransactionRequest = {
-      from,
-      to,
+      from: normalizeEVMAddress(from),
+      to: to ? normalizeEVMAddress(to) : to,
       value: value ?? 0n,
       gasLimit: gasLimit ?? 0n,
       maxFeePerGas: maxFeePerGas ?? 0n,
