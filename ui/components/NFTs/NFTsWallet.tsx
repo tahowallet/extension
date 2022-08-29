@@ -36,7 +36,7 @@ export default function NFTsWallet(): ReactElement {
   return (
     <>
       {currentOwnedNFTsList?.length ? (
-        <NFTsList nfts={currentOwnedNFTsList} height={296} />
+        <NFTsList nfts={currentOwnedNFTsList} />
       ) : (
         <NFTsEmpty />
       )}
