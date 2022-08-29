@@ -199,9 +199,17 @@ export default class ChainService extends BaseService<Events> {
         },
         runAtStart: false,
       },
-      recentAssetTransfers: {
+      recentIncomingAssetTransfers: {
         schedule: {
           periodInMinutes: 1.5,
+        },
+        handler: () => {
+          this.handleRecentIncomingAssetTransferAlarm()
+        },
+      },
+      recentAssetTransfers: {
+        schedule: {
+          periodInMinutes: 15,
         },
         handler: () => {
           this.handleRecentAssetTransferAlarm()
@@ -1017,7 +1025,7 @@ export default class ChainService extends BaseService<Events> {
       addressOnNetwork,
       Number(startBlock),
       Number(endBlock),
-      incomingOnly,
+      incomingOnly
     )
 
     await this.db.recordAccountAssetTransferLookup(
@@ -1043,6 +1051,20 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
+  /**
+   * Check for any incoming asset transfers involving tracked accounts.
+   */
+  private async handleRecentIncomingAssetTransferAlarm(): Promise<void> {
+    const accountsToTrack = await this.db.getAccountsToTrack()
+
+    await Promise.allSettled(
+      accountsToTrack.map((an) => this.loadRecentAssetTransfers(an, true))
+    )
+  }
+
+  /**
+   * Check for any incoming or outgoing asset transfers involving tracked accounts.
+   */
   private async handleRecentAssetTransferAlarm(): Promise<void> {
     const accountsToTrack = await this.db.getAccountsToTrack()
 
