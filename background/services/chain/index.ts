@@ -394,6 +394,9 @@ export default class ChainService extends BaseService<Events> {
       chainID: network.chainID,
       nonce,
       annotation,
+      estimatedRollupGwei: EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
+        ? await this.estimateL1RollupGasPrice(network)
+        : 0n,
       estimatedRollupFee: 0n,
     }
 
@@ -828,6 +831,17 @@ export default class ChainService extends BaseService<Events> {
     // Add 10% more gas as a safety net
     const uppedEstimate = estimate.add(estimate.div(10))
     return BigInt(uppedEstimate.toString())
+  }
+
+  async estimateL1RollupGasPrice(network: EVMNetwork): Promise<bigint> {
+    if (network.chainID === OPTIMISM.chainID) {
+      // Using the L1 gas cost is not a completely accurate representation of
+      // what the rollup fee will be - but is close enough outside of periods of extreme
+      // volatility.  More reading here:
+      // https://help.optimism.io/hc/en-us/articles/4416677738907-What-happens-if-the-L1-gas-price-spikes-while-a-transaction-is-in-process
+      return this.estimateGasPrice(ETHEREUM)
+    }
+    throw new Error(`Cannot estimate rollup gas for ${network.name}`)
   }
 
   async estimateL1RollupFee(
