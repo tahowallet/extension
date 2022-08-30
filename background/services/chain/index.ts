@@ -1,9 +1,4 @@
-import {
-  AlchemyProvider,
-  AlchemyWebSocketProvider,
-  TransactionReceipt,
-} from "@ethersproject/providers"
-import { getNetwork } from "@ethersproject/networks"
+import { TransactionReceipt } from "@ethersproject/providers"
 import { ethers, utils } from "ethers"
 import { Logger, UnsignedTransaction } from "ethers/lib/utils"
 import logger from "../../lib/logger"
@@ -58,16 +53,14 @@ import type {
   EnrichedLegacyTransactionRequest,
   EnrichedLegacyTransactionSignatureRequest,
 } from "../enrichment"
-import SerialFallbackProvider from "./serial-fallback-provider"
+import SerialFallbackProvider, {
+  makeSerialFallbackProvider,
+} from "./serial-fallback-provider"
 import AssetDataHelper from "./asset-data-helper"
 import {
   OPTIMISM_GAS_ORACLE_ABI,
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
-
-// We can't use destructuring because webpack has to replace all instances of
-// `process.env` variables in the bundled output
-const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
 
 // How many queued transactions should be retrieved on every tx alarm, per
 // network. To get frequency, divide by the alarm period. 5 tx / 5 minutes →
@@ -173,6 +166,8 @@ export default class ChainService extends BaseService<Events> {
 
   supportedNetworks: EVMNetwork[]
 
+  activeNetworks: EVMNetwork[]
+
   assetData: AssetDataHelper
 
   private constructor(
@@ -234,23 +229,13 @@ export default class ChainService extends BaseService<Events> {
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
 
+    this.activeNetworks = [ETHEREUM]
+
     this.providers = {
       evm: Object.fromEntries(
-        this.supportedNetworks.map((network) => [
+        this.activeNetworks.map((network) => [
           network.chainID,
-          new SerialFallbackProvider(
-            network,
-            () =>
-              new AlchemyWebSocketProvider(
-                getNetwork(Number(network.chainID)),
-                ALCHEMY_KEY
-              ),
-            () =>
-              new AlchemyProvider(
-                getNetwork(Number(network.chainID)),
-                ALCHEMY_KEY
-              )
-          ),
+          makeSerialFallbackProvider(network),
         ])
       ),
     }
@@ -338,6 +323,17 @@ export default class ChainService extends BaseService<Events> {
     return USE_MAINNET_FORK
       ? this.providers.evm[ETHEREUM.chainID]
       : this.providers.evm[network.chainID]
+  }
+
+  /**
+   * Adds a supported network to list of active networks.
+   */
+  async activateNetwork(network: EVMNetwork): Promise<void> {
+    if (this.providers.evm[network.chainID]) {
+      logger.error(`${network.name} is already active.`)
+      return
+    }
+    this.providers.evm[network.chainID] = makeSerialFallbackProvider(network)
   }
 
   /**
