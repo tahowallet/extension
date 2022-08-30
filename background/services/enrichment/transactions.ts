@@ -58,16 +58,9 @@ async function annotationsFromLogs(
   )
   const relevantAddresses = [
     ...new Set(
-      getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs)
-        .concat(
-          tokenTransferLogs.flatMap<string>(
-            ({ senderAddress, recipientAddress }) => [
-              senderAddress,
-              recipientAddress,
-            ]
-          )
-        )
-        .map(normalizeEVMAddress)
+      getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
+        normalizeEVMAddress
+      )
     ),
   ]
 
@@ -92,42 +85,58 @@ async function annotationsFromLogs(
       .filter(([, annotation]) => isDefined(annotation))
   )
 
-  const subannotations = tokenTransferLogs.flatMap<TransactionAnnotation>(
-    ({ contractAddress, amount, senderAddress, recipientAddress }) => {
-      // See if the address matches a fungible asset.
-      const matchingFungibleAsset = assets.find(
-        (asset): asset is SmartContractFungibleAsset =>
-          isSmartContractFungibleAsset(asset) &&
-          sameEVMAddress(asset.contractAddress, contractAddress)
+  const subannotations = (
+    await Promise.all(
+      tokenTransferLogs.map(
+        async ({
+          contractAddress,
+          amount,
+          senderAddress,
+          recipientAddress,
+        }) => {
+          // See if the address matches a fungible asset.
+          const matchingFungibleAsset = assets.find(
+            (asset): asset is SmartContractFungibleAsset =>
+              isSmartContractFungibleAsset(asset) &&
+              sameEVMAddress(asset.contractAddress, contractAddress)
+          )
+
+          if (!matchingFungibleAsset) {
+            return undefined
+          }
+
+          // Try to find a resolved annotation for the recipient and sender and otherwise fetch them
+          const recipient =
+            annotationsByAddress[normalizeEVMAddress(recipientAddress)] ??
+            (await enrichAddressOnNetwork(chainService, nameService, {
+              address: recipientAddress,
+              network,
+            }))
+          const sender =
+            annotationsByAddress[normalizeEVMAddress(senderAddress)] ??
+            (await enrichAddressOnNetwork(chainService, nameService, {
+              address: senderAddress,
+              network,
+            }))
+
+          return {
+            type: "asset-transfer" as const,
+            assetAmount: enrichAssetAmountWithDecimalValues(
+              {
+                asset: matchingFungibleAsset,
+                amount,
+              },
+              desiredDecimals
+            ),
+            sender,
+            recipient,
+            timestamp: resolvedTime,
+            blockTimestamp: block?.timestamp,
+          }
+        }
       )
-
-      if (!matchingFungibleAsset) {
-        return []
-      }
-
-      // Try to find a resolved annotation for the recipient and sender
-      const recipient =
-        annotationsByAddress[normalizeEVMAddress(recipientAddress)]
-      const sender = annotationsByAddress[normalizeEVMAddress(senderAddress)]
-
-      return [
-        {
-          type: "asset-transfer",
-          assetAmount: enrichAssetAmountWithDecimalValues(
-            {
-              asset: matchingFungibleAsset,
-              amount,
-            },
-            desiredDecimals
-          ),
-          sender,
-          recipient,
-          timestamp: resolvedTime,
-          blockTimestamp: block?.timestamp,
-        },
-      ]
-    }
-  )
+    )
+  ).filter(isDefined)
 
   return subannotations
 }
