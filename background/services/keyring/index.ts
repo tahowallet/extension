@@ -348,6 +348,10 @@ export default class KeyringService extends BaseService<Events> {
     return newKeyring.id
   }
 
+  /**
+   * Return the source of a given address' keyring if it exists.  If an
+   * address does not have a keyring associated with it - returns null.
+   */
   async getKeyringSourceForAddress(
     address: string
   ): Promise<"import" | "internal" | null> {
