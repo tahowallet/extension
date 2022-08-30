@@ -56,16 +56,13 @@ async function annotationsFromLogs(
     tokenTransferLogs,
     accountAddresses
   )
-  const relevantAddresses = [
-    ...new Set(
-      getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
-        normalizeEVMAddress
-      )
-    ),
-  ]
+  const relevantAddresses =
+    getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
+      normalizeEVMAddress
+    )
 
   // Look up transfer log names, then flatten to an address -> name map.
-  const annotationsByAddress = Object.fromEntries(
+  const addressEnrichmentsByAddress = Object.fromEntries(
     (
       await Promise.allSettled(
         relevantAddresses.map(
@@ -86,7 +83,7 @@ async function annotationsFromLogs(
   )
 
   const subannotations = (
-    await Promise.all(
+    await Promise.allSettled(
       tokenTransferLogs.map(
         async ({
           contractAddress,
@@ -107,13 +104,15 @@ async function annotationsFromLogs(
 
           // Try to find a resolved annotation for the recipient and sender and otherwise fetch them
           const recipient =
-            annotationsByAddress[normalizeEVMAddress(recipientAddress)] ??
+            addressEnrichmentsByAddress[
+              normalizeEVMAddress(recipientAddress)
+            ] ??
             (await enrichAddressOnNetwork(chainService, nameService, {
               address: recipientAddress,
               network,
             }))
           const sender =
-            annotationsByAddress[normalizeEVMAddress(senderAddress)] ??
+            addressEnrichmentsByAddress[normalizeEVMAddress(senderAddress)] ??
             (await enrichAddressOnNetwork(chainService, nameService, {
               address: senderAddress,
               network,
@@ -136,7 +135,10 @@ async function annotationsFromLogs(
         }
       )
     )
-  ).filter(isDefined)
+  )
+    .filter(isFulfilledPromise)
+    .map(({ value }) => value)
+    .filter(isDefined)
 
   return subannotations
 }
