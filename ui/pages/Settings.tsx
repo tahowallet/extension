@@ -245,12 +245,6 @@ export default function Settings(): ReactElement {
             margin: 0 auto;
             padding: 16px 0px;
           }
-          .text {
-            color: var(--green-40);
-            font-size: 16px;
-            font-weight: 500;
-            line-height: 24px;
-          }
         `}
       </style>
     </>

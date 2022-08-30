@@ -25,13 +25,15 @@ export default function SettingsAnalytics(): ReactElement {
           </div>
           <SharedToggleButton onChange={() => {}} value={false} />
         </div>
-        <p className="toggle_description text">{t(`${prefix}.toggleDesc`)}</p>
+        <p className="toggle_description simple_text">
+          {t(`${prefix}.toggleDesc`)}
+        </p>
       </section>
       <section>
         <h2 className="title_success">{t(`${prefix}.recordTitle`)}</h2>
         <ul className="list">
           {["Orders", "Accounts", "Gas"].map((value) => (
-            <li key={value} className="list_item text">
+            <li key={value} className="list_item simple_text">
               {t(`${prefix}.recordItem${value}`)}
             </li>
           ))}
@@ -39,7 +41,7 @@ export default function SettingsAnalytics(): ReactElement {
         <h2 className="title_error">{t(`${prefix}.noRecordTitle`)}</h2>
         <ul className="list">
           {["Seed", "Transactions"].map((value) => (
-            <li key={value} className="list_item text">
+            <li key={value} className="list_item simple_text">
               {t(`${prefix}.noRecordItem${value}`)}
             </li>
           ))}

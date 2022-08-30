@@ -22,7 +22,7 @@ export default function SettingsExportLogs(): ReactElement {
       </SharedPageHeader>
       <section>
         <h2>{t("settings.exportLogs.discordTitle")}</h2>
-        <p className="text">{t("settings.exportLogs.discordDesc")}</p>
+        <p className="simple_text">{t("settings.exportLogs.discordDesc")}</p>
         <SharedButton
           type="secondary"
           size="medium"
@@ -37,7 +37,7 @@ export default function SettingsExportLogs(): ReactElement {
       </section>
       <section>
         <h2>{t("settings.exportLogs.logTitle")}</h2>
-        <p className="text">{t("settings.exportLogs.logDesc")}</p>
+        <p className="simple_text">{t("settings.exportLogs.logDesc")}</p>
         <a
           href={`data:application/octet-stream;charset=utf-16le;base64,${base64LogContent}`}
           download={logFileName}
