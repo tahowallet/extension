@@ -3,7 +3,9 @@ import { Slip44CoinType } from "./constants/coin-types"
 import { HexString, UNIXTime } from "./types"
 import type { CoinGeckoAsset } from "./assets"
 import type {
+  EnrichedEIP1559TransactionRequest,
   EnrichedEIP1559TransactionSignatureRequest,
+  EnrichedEVMTransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
   PartialTransactionRequestWithFrom,
 } from "./services/enrichment"
@@ -159,6 +161,7 @@ export type LegacyEVMTransactionRequest = Pick<
   chainID: LegacyEVMTransaction["network"]["chainID"]
   gasLimit: bigint
   estimatedRollupFee: bigint
+  estimatedRollupGwei: bigint
   nonce?: number
 }
 
@@ -373,7 +376,9 @@ export const isEIP1559TransactionRequest = (
     | Partial<PartialTransactionRequestWithFrom>
 ): transactionRequest is EIP1559TransactionRequest =>
   "maxFeePerGas" in transactionRequest &&
-  "maxPriorityFeePerGas" in transactionRequest
+  transactionRequest.maxFeePerGas !== null &&
+  "maxPriorityFeePerGas" in transactionRequest &&
+  transactionRequest.maxPriorityFeePerGas !== null
 
 export const isEIP1559SignedTransaction = (
   signedTransaction: SignedTransaction
@@ -388,3 +393,9 @@ export const isEIP1559EnrichedTransactionSignatureRequest = (
 ): transactionSignatureRequest is EnrichedEIP1559TransactionSignatureRequest =>
   "maxFeePerGas" in transactionSignatureRequest &&
   "maxPriorityFeePerGas" in transactionSignatureRequest
+
+export const isEIP1559EnrichedTransactionRequest = (
+  enrichedTransactionRequest: EnrichedEVMTransactionRequest
+): enrichedTransactionRequest is EnrichedEIP1559TransactionRequest =>
+  "maxFeePerGas" in enrichedTransactionRequest &&
+  "maxPriorityFeePerGas" in enrichedTransactionRequest

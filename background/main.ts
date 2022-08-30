@@ -77,6 +77,7 @@ import {
   rejectTransactionSignature,
   transactionSigned,
   clearCustomGas,
+  updateL1RollupFee,
 } from "./redux-slices/transaction-construction"
 import { selectDefaultNetworkFeeSettings } from "./redux-slices/selectors/transactionConstructionSelectors"
 import { allAliases } from "./redux-slices/utils"
@@ -690,11 +691,28 @@ export default class Main extends BaseService<never> {
       this.chainService.getLatestBaseAccountBalance(addressNetwork)
     })
 
-    this.chainService.emitter.on("blockPrices", ({ blockPrices, network }) => {
-      this.store.dispatch(
-        estimatedFeesPerGas({ estimatedFeesPerGas: blockPrices, network })
-      )
-    })
+    this.chainService.emitter.on(
+      "blockPrices",
+      async ({ blockPrices, network }) => {
+        if (network.chainID === OPTIMISM.chainID) {
+          const { transactionRequest: currentTransactionRequest } =
+            this.store.getState().transactionConstruction
+          if (currentTransactionRequest?.network.chainID === OPTIMISM.chainID) {
+            // If there is a currently pending transaction request on Optimism,
+            // we need to update its L1 rollup fee as well as the current estimated fees per gas
+            const estimatedRollupFee =
+              await this.chainService.estimateL1RollupFee(
+                currentTransactionRequest.network,
+                currentTransactionRequest
+              )
+            this.store.dispatch(updateL1RollupFee(estimatedRollupFee))
+          }
+        }
+        this.store.dispatch(
+          estimatedFeesPerGas({ estimatedFeesPerGas: blockPrices, network })
+        )
+      }
+    )
 
     // Report on transactions for basic activity. Fancier stuff is handled via
     // connectEnrichmentService
