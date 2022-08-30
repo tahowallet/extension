@@ -255,7 +255,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
         }
         const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
-        const supportedNetwork = this.getSupportedNetworkByChainId(newChainId)
+        const supportedNetwork = this.getActiveNetworkByChainId(newChainId)
         if (supportedNetwork) {
           await this.db.setActiveChainIdForOrigin(origin, supportedNetwork)
           return null
@@ -339,12 +339,20 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  getSupportedNetworkByChainId(chainID: string): EVMNetwork | undefined {
-    const network = this.chainService.supportedNetworks.find(
-      (supportedNetwork) =>
-        toHexChainID(supportedNetwork.chainID) === toHexChainID(chainID)
+  getActiveNetworkByChainId(chainID: string): EVMNetwork | undefined {
+    const activeNetwork = this.chainService.activeNetworks.find(
+      (network) => toHexChainID(network.chainID) === toHexChainID(chainID)
     )
-    return network
+    if (activeNetwork) {
+      return activeNetwork
+    }
+    const supportedNetwork = this.chainService.supportedNetworks.find(
+      (network) => toHexChainID(network.chainID) === toHexChainID(chainID)
+    )
+    if (supportedNetwork) {
+      this.chainService.activateNetwork(supportedNetwork)
+    }
+    return supportedNetwork
   }
 
   private async signTypedData(params: SignTypedDataRequest) {
