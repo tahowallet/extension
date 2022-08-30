@@ -348,6 +348,18 @@ export default class KeyringService extends BaseService<Events> {
     return newKeyring.id
   }
 
+  async getKeyringSourceForAddress(
+    address: string
+  ): Promise<"import" | "internal" | null> {
+    try {
+      const keyring = await this.#findKeyring(address)
+      return this.#keyringMetadata[keyring.id].source
+    } catch (e) {
+      // Address is not associated with a keyring
+      return null
+    }
+  }
+
   /**
    * Return an array of keyring representations that can safely be stored and
    * used outside the extension.
