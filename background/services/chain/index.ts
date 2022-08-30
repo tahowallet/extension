@@ -252,25 +252,16 @@ export default class ChainService extends BaseService<Events> {
 
     const accounts = await this.getAccountsToTrack()
 
-    // get the latest blocks and subscribe for all support networks
+    // get the latest blocks and subscribe for all active networks
     // TODO revisit whether we actually want to subscribe to new heads
     // if a user isn't tracking a relevant addressOnNetwork
-    this.supportedNetworks.forEach(async (network) => {
+    this.activeNetworks.forEach(async (network) => {
       const provider = this.providerForNetwork(network)
       if (provider) {
-        Promise.all([
-          provider.getBlockNumber().then(async (n) => {
-            const result = await provider.getBlock(n)
-            const block = blockFromEthersBlock(network, result)
-            await this.db.addBlock(block)
-          }),
-
+        Promise.allSettled([
+          this.getLatestBlockForNetwork(network),
           this.subscribeToNewHeads(network),
-        ]).catch((e) => {
-          logger.error("Error getting block number or new head", e)
-        })
-      } else {
-        logger.error(`Couldn't find provider for supported network ${network}`)
+        ])
       }
     })
 
@@ -290,7 +281,7 @@ export default class ChainService extends BaseService<Events> {
           // Schedule any stored unconfirmed transactions for
           // retrieval---either to confirm they no longer exist, or to
           // read/monitor their status.
-          this.supportedNetworks.map((network) =>
+          this.activeNetworks.map((network) =>
             this.db
               .getNetworkPendingTransactions(network)
               .then((pendingTransactions) => {
@@ -345,10 +336,10 @@ export default class ChainService extends BaseService<Events> {
 
     if (!provider) {
       logger.error(
-        "Request received for operation on unsupported network",
+        "Request received for operation on an inactive network",
         network,
         "expected",
-        this.supportedNetworks
+        this.activeNetworks
       )
       throw new Error(`Unexpected network ${network}`)
     }
@@ -1258,6 +1249,25 @@ export default class ChainService extends BaseService<Events> {
           network.name === trackedNetwork.name
       )
     )
+  }
+
+  /**
+   * Get the latest block for a network and save it to the db.
+   *
+   * @param network The EVM network to watch.
+   */
+  private async getLatestBlockForNetwork(network: EVMNetwork): Promise<void> {
+    const provider = this.providerForNetwork(network)
+    if (provider) {
+      try {
+        const blockNumber = provider.getBlockNumber()
+        const result = await provider.getBlock(blockNumber)
+        const block = blockFromEthersBlock(network, result)
+        await this.db.addBlock(block)
+      } catch (e) {
+        logger.error("Error getting block number", e)
+      }
+    }
   }
 
   /**

@@ -134,8 +134,8 @@ export default class IndexingService extends BaseService<Events> {
 
     this.connectChainServiceEvents()
 
-    // on launch, push any assets we have cached for all supported networks
-    this.chainService.supportedNetworks.forEach(async (network) => {
+    // on launch, push any assets we have cached for all active networks
+    this.chainService.activeNetworks.forEach(async (network) => {
       this.emitter.emit("assets", await this.getCachedAssets(network))
     })
 
@@ -586,7 +586,7 @@ export default class IndexingService extends BaseService<Events> {
     const activeAssetsToTrack = assetsToTrack.filter(
       (asset) =>
         asset.symbol === "ETH" ||
-        this.chainService.supportedNetworks
+        this.chainService.activeNetworks
           .map((n) => n.chainID)
           .includes(asset.homeNetwork.chainID)
     )
@@ -596,7 +596,7 @@ export default class IndexingService extends BaseService<Events> {
 
       const allActiveAssetsByAddress = getAssetsByAddress(activeAssetsToTrack)
 
-      const activeAssetsByNetwork = this.chainService.supportedNetworks.map(
+      const activeAssetsByNetwork = this.chainService.activeNetworks.map(
         (network) => ({
           activeAssetsByAddress: getActiveAssetsByAddressForNetwork(
             network,
@@ -682,6 +682,8 @@ export default class IndexingService extends BaseService<Events> {
           }
         }
 
+        // Cache assets across all supported networks even if a network
+        // may be inactive.
         this.chainService.supportedNetworks.forEach(async (network) => {
           this.emitter.emit("assets", await this.getCachedAssets(network))
         })
@@ -707,7 +709,7 @@ export default class IndexingService extends BaseService<Events> {
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
     const activeAssetsToTrack = assetsToTrack.filter((asset) =>
-      this.chainService.supportedNetworks
+      this.chainService.activeNetworks
         .map((n) => n.chainID)
         .includes(asset.homeNetwork.chainID)
     )

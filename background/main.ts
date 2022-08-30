@@ -508,7 +508,7 @@ export default class Main extends BaseService<never> {
         await this.ledgerService.saveAddress(path, address)
 
         await Promise.all(
-          this.chainService.supportedNetworks.map(async (network) => {
+          this.chainService.activeNetworks.map(async (network) => {
             const addressNetwork = {
               address,
               network,
@@ -843,7 +843,7 @@ export default class Main extends BaseService<never> {
     })
 
     this.keyringService.emitter.on("address", (address) => {
-      this.chainService.supportedNetworks.forEach((network) => {
+      this.chainService.activeNetworks.forEach((network) => {
         // Mark as loading and wire things up.
         this.store.dispatch(
           loadAccount({
@@ -1130,6 +1130,8 @@ export default class Main extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await Promise.all(
+          // We use supportedNetworks here because we currently grant
+          // dapp permission for all supported networks when approving a dapp.
           this.chainService.supportedNetworks.map(async (network) => {
             await this.providerBridgeService.denyOrRevokePermission({
               ...permission,
