@@ -56,13 +56,10 @@ async function annotationsFromLogs(
     tokenTransferLogs,
     accountAddresses
   )
-  const relevantAddresses = [
-    ...new Set(
-      getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
-        normalizeEVMAddress
-      )
-    ),
-  ]
+  const relevantAddresses =
+    getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
+      normalizeEVMAddress
+    )
 
   // Look up transfer log names, then flatten to an address -> name map.
   const annotationsByAddress = Object.fromEntries(
