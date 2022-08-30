@@ -86,7 +86,7 @@ async function annotationsFromLogs(
   )
 
   const subannotations = (
-    await Promise.all(
+    await Promise.allSettled(
       tokenTransferLogs.map(
         async ({
           contractAddress,
@@ -136,7 +136,10 @@ async function annotationsFromLogs(
         }
       )
     )
-  ).filter(isDefined)
+  )
+    .filter(isFulfilledPromise)
+    .map(({ value }) => value)
+    .filter(isDefined)
 
   return subannotations
 }
