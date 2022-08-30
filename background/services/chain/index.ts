@@ -318,6 +318,10 @@ export default class ChainService extends BaseService<Events> {
       : this.providers.evm[network.chainID]
   }
 
+  /**
+   * Pulls the list of active networks from memory or indexedDB.
+   * Defaults to ethereum in the case that neither exist.
+   */
   async getActiveNetworks(): Promise<EVMNetwork[]> {
     if (this.activeNetworks.length > 0) {
       return this.activeNetworks
@@ -341,7 +345,8 @@ export default class ChainService extends BaseService<Events> {
     }
 
     // Default to supporting Ethereum so ENS resolution works during onboarding
-    return [ETHEREUM]
+    this.activateNetwork(ETHEREUM)
+    return this.activeNetworks
   }
 
   /**
