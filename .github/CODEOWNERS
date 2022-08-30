@@ -5,5 +5,7 @@
 /background/services/keyring/* @shadowfiend @mhluongo
 # Any changes to dependencies deserve extra scrutiny to help prevent supply
 # chain attacks
-package.json @0xDaedalus @shadowfiend @mhluongo
-yarn.lock @0xDaedalus @shadowfiend @mhluongo
+package.json @greg-nagy @0xDaedalus @shadowfiend @mhluongo
+yarn.lock @tallycash/extension-dependency-auditors
+# Any changes to code owners deserve extra scrutiny
+.github/CODEOWNERS @shadowfiend @mhluongo
