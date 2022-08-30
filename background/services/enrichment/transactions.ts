@@ -62,7 +62,7 @@ async function annotationsFromLogs(
     )
 
   // Look up transfer log names, then flatten to an address -> name map.
-  const annotationsByAddress = Object.fromEntries(
+  const addressEnrichmentsByAddress = Object.fromEntries(
     (
       await Promise.allSettled(
         relevantAddresses.map(
@@ -104,13 +104,15 @@ async function annotationsFromLogs(
 
           // Try to find a resolved annotation for the recipient and sender and otherwise fetch them
           const recipient =
-            annotationsByAddress[normalizeEVMAddress(recipientAddress)] ??
+            addressEnrichmentsByAddress[
+              normalizeEVMAddress(recipientAddress)
+            ] ??
             (await enrichAddressOnNetwork(chainService, nameService, {
               address: recipientAddress,
               network,
             }))
           const sender =
-            annotationsByAddress[normalizeEVMAddress(senderAddress)] ??
+            addressEnrichmentsByAddress[normalizeEVMAddress(senderAddress)] ??
             (await enrichAddressOnNetwork(chainService, nameService, {
               address: senderAddress,
               network,
