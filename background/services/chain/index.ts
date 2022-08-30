@@ -333,15 +333,13 @@ export default class ChainService extends BaseService<Events> {
     // with active accounts
     const chainIdsToTrack = new Set(await this.getChainIDsToTrack())
     if (chainIdsToTrack.size > 0) {
-      const activeNetworks: EVMNetwork[] = []
       chainIdsToTrack.forEach((chainID) => {
         const network = NETWORK_BY_CHAIN_ID[chainID]
         if (network) {
-          activeNetworks.push(network)
+          this.activateNetwork(network)
         }
       })
-      this.activeNetworks = activeNetworks
-      return activeNetworks
+      return this.activeNetworks
     }
 
     // Default to supporting Ethereum so ENS resolution works during onboarding
