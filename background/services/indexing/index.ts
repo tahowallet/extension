@@ -595,7 +595,6 @@ export default class IndexingService extends BaseService<Events> {
       // TODO only uses USD
 
       const allActiveAssetsByAddress = getAssetsByAddress(activeAssetsToTrack)
-      const activeNetworks = await this.chainService.getActiveNetworks()
 
       const activeAssetsByNetwork = activeNetworks.map((network) => ({
         activeAssetsByAddress: getActiveAssetsByAddressForNetwork(

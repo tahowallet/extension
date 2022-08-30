@@ -62,7 +62,6 @@ import {
   OPTIMISM_GAS_ORACLE_ABI,
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
-import { IndexableTypeArray } from "dexie"
 
 // How many queued transactions should be retrieved on every tx alarm, per
 // network. To get frequency, divide by the alarm period. 5 tx / 5 minutes →
@@ -349,11 +348,7 @@ export default class ChainService extends BaseService<Events> {
    * Adds a supported network to list of active networks.
    */
   async activateNetwork(network: EVMNetwork): Promise<void> {
-    if (this.providers.evm[network.chainID]) {
-      logger.error(`${network.name} is already active.`)
-      return
-    }
-    this.providers.evm[network.chainID] = makeSerialFallbackProvider(network)
+    this.activeNetworks.push(network)
   }
 
   /**
