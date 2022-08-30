@@ -15,3 +15,5 @@ export const SUPPORT_NFTS = process.env.SUPPORT_NFTS === "true"
 export const SUPPORT_MULTIPLE_LANGUAGES =
   process.env.SUPPORT_MULTIPLE_LANGUAGES === "true"
 export const SUPPORT_ANALYTICS = process.env.SUPPORT_ANALYTICS === "true"
+export const SUPPORT_TABBED_ONBOARDING =
+  process.env.SUPPORT_TABBED_ONBOARDING === "true"
