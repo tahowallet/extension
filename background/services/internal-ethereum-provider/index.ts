@@ -255,7 +255,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
         }
         const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
-        const supportedNetwork = this.getActiveNetworkByChainId(newChainId)
+        const supportedNetwork = await this.getActiveNetworkByChainId(
+          newChainId
+        )
         if (supportedNetwork) {
           await this.db.setActiveChainIdForOrigin(origin, supportedNetwork)
           return null
@@ -339,8 +341,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  getActiveNetworkByChainId(chainID: string): EVMNetwork | undefined {
-    const activeNetwork = this.chainService.activeNetworks.find(
+  async getActiveNetworkByChainId(
+    chainID: string
+  ): Promise<EVMNetwork | undefined> {
+    const activeNetworks = await this.chainService.getActiveNetworks()
+    const activeNetwork = activeNetworks.find(
       (network) => toHexChainID(network.chainID) === toHexChainID(chainID)
     )
     if (activeNetwork) {

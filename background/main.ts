@@ -503,12 +503,13 @@ export default class Main extends BaseService<never> {
       address: string
     }>
   ): Promise<void> {
+    const activeNetworks = await this.chainService.getActiveNetworks()
     await Promise.all(
       accounts.map(async ({ path, address }) => {
         await this.ledgerService.saveAddress(path, address)
 
         await Promise.all(
-          this.chainService.activeNetworks.map(async (network) => {
+          activeNetworks.map(async (network) => {
             const addressNetwork = {
               address,
               network,
@@ -842,8 +843,9 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateKeyrings(keyrings))
     })
 
-    this.keyringService.emitter.on("address", (address) => {
-      this.chainService.activeNetworks.forEach((network) => {
+    this.keyringService.emitter.on("address", async (address) => {
+      const activeNetworks = await this.chainService.getActiveNetworks()
+      activeNetworks.forEach((network) => {
         // Mark as loading and wire things up.
         this.store.dispatch(
           loadAccount({

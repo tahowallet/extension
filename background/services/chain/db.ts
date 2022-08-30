@@ -321,6 +321,15 @@ export class ChainDatabase extends Dexie {
   async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.accountsToTrack.toArray()
   }
+
+  async getChainIDsToTrack(): Promise<string[]> {
+    const chainIDs = await this.accountsToTrack
+      .orderBy("network.chainID")
+      .keys()
+    return chainIDs.filter(
+      (chainID): chainID is string => typeof chainID === "string"
+    )
+  }
 }
 
 export async function getOrCreateDB(): Promise<ChainDatabase> {

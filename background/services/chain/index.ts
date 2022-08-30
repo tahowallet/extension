@@ -25,6 +25,7 @@ import {
   OPTIMISM,
   EVM_ROLLUP_CHAIN_IDS,
   GOERLI,
+  NETWORK_BY_CHAIN_ID,
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
@@ -61,6 +62,7 @@ import {
   OPTIMISM_GAS_ORACLE_ABI,
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
+import { IndexableTypeArray } from "dexie"
 
 // How many queued transactions should be retrieved on every tx alarm, per
 // network. To get frequency, divide by the alarm period. 5 tx / 5 minutes →
@@ -166,7 +168,7 @@ export default class ChainService extends BaseService<Events> {
 
   supportedNetworks: EVMNetwork[]
 
-  activeNetworks: EVMNetwork[]
+  private activeNetworks: EVMNetwork[]
 
   assetData: AssetDataHelper
 
@@ -229,11 +231,11 @@ export default class ChainService extends BaseService<Events> {
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
 
-    this.activeNetworks = [ETHEREUM]
+    this.activeNetworks = []
 
     this.providers = {
       evm: Object.fromEntries(
-        this.activeNetworks.map((network) => [
+        this.supportedNetworks.map((network) => [
           network.chainID,
           makeSerialFallbackProvider(network),
         ])
@@ -251,11 +253,12 @@ export default class ChainService extends BaseService<Events> {
     await super.internalStartService()
 
     const accounts = await this.getAccountsToTrack()
+    const activeNetworks = await this.getActiveNetworks()
 
     // get the latest blocks and subscribe for all active networks
     // TODO revisit whether we actually want to subscribe to new heads
     // if a user isn't tracking a relevant addressOnNetwork
-    this.activeNetworks.forEach(async (network) => {
+    activeNetworks.forEach(async (network) => {
       const provider = this.providerForNetwork(network)
       if (provider) {
         Promise.allSettled([
@@ -281,7 +284,7 @@ export default class ChainService extends BaseService<Events> {
           // Schedule any stored unconfirmed transactions for
           // retrieval---either to confirm they no longer exist, or to
           // read/monitor their status.
-          this.activeNetworks.map((network) =>
+          (await this.activeNetworks).map((network) =>
             this.db
               .getNetworkPendingTransactions(network)
               .then((pendingTransactions) => {
@@ -314,6 +317,32 @@ export default class ChainService extends BaseService<Events> {
     return USE_MAINNET_FORK
       ? this.providers.evm[ETHEREUM.chainID]
       : this.providers.evm[network.chainID]
+  }
+
+  async getActiveNetworks(): Promise<EVMNetwork[]> {
+    if (this.activeNetworks.length > 0) {
+      return this.activeNetworks
+    }
+
+    // Since activeNetworks will be an empty array at extension load (or reload time)
+    // we need a durable way to track which networks an extension is tracking.
+    // The below code should only be called once per extension reload for extensions
+    // with active accounts
+    const chainIdsToTrack = new Set(await this.getChainIDsToTrack())
+    if (chainIdsToTrack.size > 0) {
+      const activeNetworks: EVMNetwork[] = []
+      chainIdsToTrack.forEach((chainID) => {
+        const network = NETWORK_BY_CHAIN_ID[chainID]
+        if (network) {
+          activeNetworks.push(network)
+        }
+      })
+      this.activeNetworks = activeNetworks
+      return activeNetworks
+    }
+
+    // Default to supporting Ethereum so ENS resolution works during onboarding
+    return [ETHEREUM]
   }
 
   /**
@@ -649,6 +678,10 @@ export default class ChainService extends BaseService<Events> {
 
   async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.db.getAccountsToTrack()
+  }
+
+  async getChainIDsToTrack(): Promise<string[]> {
+    return this.db.getChainIDsToTrack()
   }
 
   async removeAccountToTrack(address: string): Promise<void> {
