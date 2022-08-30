@@ -223,7 +223,8 @@ export default class Main extends BaseService<never> {
 
   static create: ServiceCreatorFunction<never, Main, []> = async () => {
     const preferenceService = PreferenceService.create()
-    const chainService = ChainService.create(preferenceService)
+    const keyringService = KeyringService.create()
+    const chainService = ChainService.create(preferenceService, keyringService)
     const indexingService = IndexingService.create(
       preferenceService,
       chainService
@@ -234,7 +235,6 @@ export default class Main extends BaseService<never> {
       indexingService,
       nameService
     )
-    const keyringService = KeyringService.create()
     const internalEthereumProviderService =
       InternalEthereumProviderService.create(chainService, preferenceService)
     const providerBridgeService = ProviderBridgeService.create(
