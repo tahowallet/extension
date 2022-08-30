@@ -18,6 +18,7 @@ import {
   isValidAlchemyTokenMetadataResponse,
 } from "./validate"
 import { AddressOnNetwork } from "../accounts"
+import { ALCHEMY_KEY } from "../constants"
 
 /**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
@@ -331,7 +332,7 @@ export async function getNFTs({
   const requestUrl = new URL(
     `https://${
       network.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
-    }.alchemyapi.io/nft/v2/${process.env.ALCHEMY_KEY}/getNFTs/`
+    }.alchemyapi.io/nft/v2/${ALCHEMY_KEY}/getNFTs/`
   )
   requestUrl.searchParams.set("owner", address)
   requestUrl.searchParams.set("filters[]", "SPAM")

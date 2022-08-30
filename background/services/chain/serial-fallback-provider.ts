@@ -7,7 +7,7 @@ import {
   WebSocketProvider,
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
-import { MINUTE, SECOND } from "../../constants"
+import { ALCHEMY_KEY, MINUTE, SECOND } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
 import { AddressOnNetwork } from "../../accounts"
@@ -663,10 +663,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 }
-
-// We can't use destructuring because webpack has to replace all instances of
-// `process.env` variables in the bundled output
-const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
 
 export function makeSerialFallbackProvider(
   network: EVMNetwork
