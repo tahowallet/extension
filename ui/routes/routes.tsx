@@ -22,6 +22,7 @@ import KeyringUnlock from "../components/Keyring/KeyringUnlock"
 import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
 import Eligible from "../pages/Claiming/Eligible"
 import SettingsExportLogs from "../pages/Settings/SettingsExportLogs"
+import SettingsAnalytics from "../pages/Settings/SettingsAnalytics"
 
 interface PageList {
   path: string
@@ -129,6 +130,13 @@ const pageList: PageList[] = [
   {
     path: "/settings/export-logs",
     Component: SettingsExportLogs,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: true,
+  },
+  {
+    path: "/settings/analytics",
+    Component: SettingsAnalytics,
     hasTabBar: true,
     hasTopBar: false,
     persistOnClose: true,
