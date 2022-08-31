@@ -116,21 +116,29 @@ function AddWalletRow({
   )
 }
 
-export default function OnboardingStartTheHunt(): ReactElement {
+export default function OnboardingStartTheHunt({
+  embedded = false,
+}: {
+  embedded: boolean
+}): ReactElement {
   const history = useHistory()
 
   return (
     <section className="start_wrap">
       <div className="top standard_width">
-        <h1>Add accounts</h1>
-        <button
-          type="button"
-          aria-label="close"
-          className="icon_close"
-          onClick={() => {
-            history.push("/")
-          }}
-        />
+        {!embedded && (
+          <>
+            <h1>Add accounts</h1>
+            <button
+              type="button"
+              aria-label="close"
+              className="icon_close"
+              onClick={() => {
+                history.push("/")
+              }}
+            />
+          </>
+        )}
       </div>
       <div className="button_sections_wrap">
         {accountCreateButtonInfos.map((creationSection) => {
@@ -164,8 +172,8 @@ export default function OnboardingStartTheHunt(): ReactElement {
             align-items: center;
           }
           .start_wrap {
-            padding-top: 15px;
-            background-color: var(--hunter-green);
+            padding-top: ${embedded ? "83.5px" : "15px"};
+            ${embedded ? "" : `background-color: var(--hunter-green);`}
           }
           .button_sections_wrap {
             height: 500px;

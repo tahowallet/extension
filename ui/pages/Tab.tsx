@@ -22,12 +22,12 @@ export default function Tab({ store }: { store: Store }): ReactElement {
           <Switch>
             <Route path="/onboarding" exact>
               <BrowserTabContainer>
-                <OnboardingInfoIntro />
+                <OnboardingInfoIntro embedded />
               </BrowserTabContainer>
             </Route>
             <Route path="/onboarding/add-wallet" exact>
               <BrowserTabContainer>
-                <OnboardingAddWallet />
+                <OnboardingAddWallet embedded />
               </BrowserTabContainer>
             </Route>
             <Route path="/onboarding/view-only-wallet" exact>
