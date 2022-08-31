@@ -471,7 +471,7 @@ export default class Main extends BaseService<never> {
     this.connectPopupMonitor()
   }
 
-  async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
+  async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
@@ -485,6 +485,19 @@ export default class Main extends BaseService<never> {
       network,
       name,
     })
+  }
+
+  async addAccountToAllNetworks(address: string): Promise<void> {
+    await Promise.allSettled(
+      this.chainService.supportedNetworks.map(async (network) => {
+        const addressNetwork = {
+          address,
+          network,
+        }
+        await this.chainService.addAccountToTrack(addressNetwork)
+        this.store.dispatch(loadAccount(addressNetwork))
+      })
+    )
   }
 
   async removeAccount(
@@ -506,17 +519,7 @@ export default class Main extends BaseService<never> {
     await Promise.all(
       accounts.map(async ({ path, address }) => {
         await this.ledgerService.saveAddress(path, address)
-
-        await Promise.all(
-          this.chainService.supportedNetworks.map(async (network) => {
-            const addressNetwork = {
-              address,
-              network,
-            }
-            await this.chainService.addAccountToTrack(addressNetwork)
-            this.store.dispatch(loadAccount(addressNetwork))
-          })
-        )
+        await this.addAccountToAllNetworks(address)
       })
     )
     this.store.dispatch(
@@ -843,20 +846,7 @@ export default class Main extends BaseService<never> {
     })
 
     this.keyringService.emitter.on("address", (address) => {
-      this.chainService.supportedNetworks.forEach((network) => {
-        // Mark as loading and wire things up.
-        this.store.dispatch(
-          loadAccount({
-            address,
-            network,
-          })
-        )
-
-        this.chainService.addAccountToTrack({
-          address,
-          network,
-        })
-      })
+      this.addAccountToAllNetworks(address)
     })
 
     this.keyringService.emitter.on("locked", async (isLocked) => {

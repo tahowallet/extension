@@ -1,6 +1,6 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { Redirect } from "react-router-dom"
-import { addAddressNetwork } from "@tallyho/tally-background/redux-slices/accounts"
+import { addAddressToAllNetworks } from "@tallyho/tally-background/redux-slices/accounts"
 import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { HexString } from "@tallyho/tally-background/types"
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
@@ -38,7 +38,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
       return
     }
 
-    await dispatch(addAddressNetwork(addressOnNetwork))
+    await dispatch(addAddressToAllNetworks(addressOnNetwork.address))
     dispatch(setNewSelectedAccount(addressOnNetwork))
     setRedirect(true)
   }, [dispatch, addressOnNetwork])
