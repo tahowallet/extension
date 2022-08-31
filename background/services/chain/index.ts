@@ -15,6 +15,7 @@ import {
   TransactionRequestWithNonce,
   SignedTransaction,
   isEIP1559EnrichedTransactionSignatureRequest,
+  toHexChainID,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import {
@@ -261,7 +262,7 @@ export default class ChainService extends BaseService<Events> {
       const provider = this.providerForNetwork(network)
       if (provider) {
         Promise.allSettled([
-          this.getLatestBlockForNetwork(network),
+          this.fetchLatestBlockForNetwork(network),
           this.subscribeToNewHeads(network),
         ])
       }
@@ -331,27 +332,43 @@ export default class ChainService extends BaseService<Events> {
     // we need a durable way to track which networks an extension is tracking.
     // The below code should only be called once per extension reload for extensions
     // with active accounts
-    const chainIdsToTrack = new Set(await this.getChainIDsToTrack())
-    if (chainIdsToTrack.size > 0) {
-      chainIdsToTrack.forEach((chainID) => {
-        const network = NETWORK_BY_CHAIN_ID[chainID]
-        if (network) {
-          this.activateNetwork(network)
-        }
+    const networksToTrack = await this.getNetworksToTrack()
+    if (networksToTrack.length > 0) {
+      networksToTrack.forEach((network) => {
+        this.activateNetworkOrThrow(network.chainID)
       })
       return this.activeNetworks
     }
 
     // Default to supporting Ethereum so ENS resolution works during onboarding
-    this.activateNetwork(ETHEREUM)
+    this.activateNetworkOrThrow(ETHEREUM.chainID)
     return this.activeNetworks
   }
 
   /**
    * Adds a supported network to list of active networks.
    */
-  async activateNetwork(network: EVMNetwork): Promise<void> {
-    this.activeNetworks.push(network)
+  async activateNetworkOrThrow(chainID: string): Promise<EVMNetwork> {
+    const activeNetwork = this.activeNetworks.find(
+      (ntwrk) => toHexChainID(ntwrk.chainID) === toHexChainID(chainID)
+    )
+
+    if (activeNetwork) {
+      logger.warn(
+        `${activeNetwork.name} already active - no need to activate it`
+      )
+      return activeNetwork
+    }
+
+    const supportedNetwork = this.supportedNetworks.find(
+      (ntwrk) => toHexChainID(ntwrk.chainID) === toHexChainID(chainID)
+    )
+    if (!supportedNetwork) {
+      throw new Error(`Network with chainID ${chainID} is not supported`)
+    }
+
+    this.activeNetworks.push(supportedNetwork)
+    return supportedNetwork
   }
 
   /**
@@ -678,8 +695,12 @@ export default class ChainService extends BaseService<Events> {
     return this.db.getAccountsToTrack()
   }
 
-  async getChainIDsToTrack(): Promise<string[]> {
-    return this.db.getChainIDsToTrack()
+  async getNetworksToTrack(): Promise<EVMNetwork[]> {
+    const chainIDs = await this.db.getChainIDsToTrack()
+    return [...chainIDs].map((chainID) => {
+      const network = NETWORK_BY_CHAIN_ID[chainID]
+      return network
+    })
   }
 
   async removeAccountToTrack(address: string): Promise<void> {
@@ -1287,7 +1308,7 @@ export default class ChainService extends BaseService<Events> {
    *
    * @param network The EVM network to watch.
    */
-  private async getLatestBlockForNetwork(network: EVMNetwork): Promise<void> {
+  private async fetchLatestBlockForNetwork(network: EVMNetwork): Promise<void> {
     const provider = this.providerForNetwork(network)
     if (provider) {
       try {

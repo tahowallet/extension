@@ -341,6 +341,14 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
+  /**
+   * Attempts to retrieve a network from the extension's currently
+   * active networks.  Falls back to querying supported networks and
+   * activating a given network if it is supported.
+   *
+   * @param chainID EVM Network chainID
+   * @returns a supported EVMNetwork or undefined.
+   */
   async getActiveNetworkByChainId(
     chainID: string
   ): Promise<EVMNetwork | undefined> {
@@ -351,13 +359,13 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     if (activeNetwork) {
       return activeNetwork
     }
-    const supportedNetwork = this.chainService.supportedNetworks.find(
-      (network) => toHexChainID(network.chainID) === toHexChainID(chainID)
-    )
-    if (supportedNetwork) {
-      this.chainService.activateNetwork(supportedNetwork)
+
+    try {
+      return await this.chainService.activateNetworkOrThrow(chainID)
+    } catch (e) {
+      logger.warn(e)
+      return undefined
     }
-    return supportedNetwork
   }
 
   private async signTypedData(params: SignTypedDataRequest) {

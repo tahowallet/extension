@@ -586,7 +586,7 @@ export default class IndexingService extends BaseService<Events> {
 
     // Filter all assets based on supported networks
     const activeAssetsToTrack = assetsToTrack.filter(
-      async (asset) =>
+      (asset) =>
         asset.symbol === "ETH" ||
         activeNetworks.map((n) => n.chainID).includes(asset.homeNetwork.chainID)
     )

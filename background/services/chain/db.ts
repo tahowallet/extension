@@ -322,12 +322,14 @@ export class ChainDatabase extends Dexie {
     return this.accountsToTrack.toArray()
   }
 
-  async getChainIDsToTrack(): Promise<string[]> {
+  async getChainIDsToTrack(): Promise<Set<string>> {
     const chainIDs = await this.accountsToTrack
       .orderBy("network.chainID")
       .keys()
-    return chainIDs.filter(
-      (chainID): chainID is string => typeof chainID === "string"
+    return new Set(
+      chainIDs.filter(
+        (chainID): chainID is string => typeof chainID === "string"
+      )
     )
   }
 }
