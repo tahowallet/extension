@@ -144,7 +144,7 @@ export default function Settings(): ReactElement {
     title: t("settings.analytics"),
     component: () => (
       <SettingButton
-        link=""
+        link="/settings/analytics"
         label={t("settings.analytics")}
         ariaLabel={t("settings.analyticsSetUp.ariaLabel")}
       />

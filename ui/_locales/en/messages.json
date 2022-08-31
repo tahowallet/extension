@@ -81,6 +81,18 @@
       "ariaLabel": "Open bug report"
     },
     "analyticsSetUp": {
+      "title": "Analytics",
+      "toggleTitle": "Analytics are on",
+      "toggleDesc": "Analytics help us understand your needs and empowers us to build a better wallet for you!",
+      "recordTitle": "What we will record",
+      "recordItemOrders": "Number of Swaps / Sends",
+      "recordItemAccounts": "Number of accounts",
+      "recordItemGas": "Gas paid overall",
+      "noRecordTitle": "We will never record",
+      "noRecordItemSeed": "Your seed phrase",
+      "noRecordItemTransactions": "Your address and transactions",
+      "policyBtn": "Privacy policy",
+      "deleteBtn": "Delete my data",
       "ariaLabel": "Open analytics"
     },
     "changePassword": {
