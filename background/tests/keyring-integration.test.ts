@@ -286,19 +286,19 @@ describe("KeyringService when initialized", () => {
   })
 
   it("successfully changes the vault password when provided with the correct current password", async () => {
-    const badPasswordChangeAttempt = JSON.stringify({
+    const badPasswordChangeAttempt = {
       currentPassword: "booyan",
       newPassword: "my new password",
-    })
+    }
     const badPasswordSuccess = await service.changePassword(
       badPasswordChangeAttempt
     )
     expect(badPasswordSuccess).toEqual(false)
 
-    const goodPasswordChangeAttempt = JSON.stringify({
+    const goodPasswordChangeAttempt = {
       currentPassword: testPassword,
       newPassword: "my new password",
-    })
+    }
     const goodPasswordSuccess = await service.changePassword(
       goodPasswordChangeAttempt
     )

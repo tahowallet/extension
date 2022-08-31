@@ -1,4 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
 import {
   changePassword,
@@ -25,6 +26,7 @@ export default function KeyringChangePassword(): ReactElement {
     (state) => state.keyrings.didPasswordChangeSucceed
   )
 
+  const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
@@ -32,18 +34,18 @@ export default function KeyringChangePassword(): ReactElement {
     const changePasswordFailed = didPasswordChangeSucceed === false
 
     if (changePasswordSuccess) {
-      dispatch(setSnackbarMessage("Password successfully changed"))
+      dispatch(setSnackbarMessage(t("keyring.changePassword.success")))
       history.goBack()
     } else if (changePasswordFailed) {
-      setCurrentPasswordErrorMessage("Current password is incorrect")
+      setCurrentPasswordErrorMessage(t("keyring.errors.passwordIncorrect"))
     }
 
     dispatch(setDidPasswordChangeSucceed(null))
-  }, [history, didPasswordChangeSucceed, dispatch])
+  }, [history, didPasswordChangeSucceed, dispatch, t])
 
   const validateCurrentPassword = (): boolean => {
     if (currentPassword.length < 8) {
-      setCurrentPasswordErrorMessage("Must be at least 8 characters")
+      setCurrentPasswordErrorMessage(t("keyring.errors.passwordMinimumLength"))
       return false
     }
     return true
@@ -51,15 +53,15 @@ export default function KeyringChangePassword(): ReactElement {
 
   const validatePassword = (): boolean => {
     if (newPassword.length < 8) {
-      setNewPasswordErrorMessage("Must be at least 8 characters")
+      setNewPasswordErrorMessage(t("keyring.errors.passwordMinimumLength"))
       return false
     }
     if (newPassword !== newPasswordConfirmation) {
-      setNewPasswordErrorMessage("Passwords don’t match")
+      setNewPasswordErrorMessage(t("keyring.errors.passwordMismatch"))
       return false
     }
     if (newPassword === currentPassword) {
-      setNewPasswordErrorMessage("Must not be the same as previous")
+      setNewPasswordErrorMessage(t("keyring.errors.passwordSameAsPrevious"))
       return false
     }
     return true
@@ -97,7 +99,7 @@ export default function KeyringChangePassword(): ReactElement {
         <SharedBackButton path="/settings" />
         <div className="wordmark" />
       </div>
-      <h1 className="serif_header">Let&apos;s change your password</h1>
+      <h1 className="serif_header">{t("keyring.changePassword.title")}</h1>
 
       <form
         onSubmit={(event) => {
@@ -108,7 +110,7 @@ export default function KeyringChangePassword(): ReactElement {
         <div className="input_wrap input_wrap_padding_bottom">
           <SharedInput
             type="password"
-            label="Current Password"
+            label={t("keyring.changePassword.currentPasswordLabel")}
             onChange={handleCurrentPasswordChange(setCurrentPassword)}
             errorMessage={currentPasswordErrorMessage}
           />
@@ -116,7 +118,7 @@ export default function KeyringChangePassword(): ReactElement {
         <div className="input_wrap">
           <SharedInput
             type="password"
-            label="New Password"
+            label={t("keyring.changePassword.newPasswordLabel")}
             onChange={handleNewPasswordChange(setNewPassword)}
             errorMessage={newPasswordErrorMessage}
           />
@@ -129,7 +131,7 @@ export default function KeyringChangePassword(): ReactElement {
         <div className="input_wrap input_wrap_padding_bottom">
           <SharedInput
             type="password"
-            label="Repeat Password"
+            label={t("keyring.repeatPasswordLabel")}
             onChange={handleNewPasswordChange(setNewPasswordConfirmation)}
             errorMessage={newPasswordErrorMessage}
           />
@@ -143,7 +145,7 @@ export default function KeyringChangePassword(): ReactElement {
             }
             isFormSubmit
           >
-            Change password
+            {t("keyring.changePassword.submit")}
           </SharedButton>
         </div>
       </form>

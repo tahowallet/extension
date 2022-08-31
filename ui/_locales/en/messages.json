@@ -110,5 +110,28 @@
   "toggle": {
     "collapse": "Collapse",
     "viewAll": "View all"
-  } 
+  },
+  "keyring": {
+    "setPassword": {
+      "title": "First, let's secure your wallet",
+      "passwordLabel": "Password",
+      "tallyAsDefault": "Set Tally Ho as default wallet",
+      "submit": "Begin the hunt",
+      "restore": "Restoring account?"
+    },
+    "changePassword": {
+      "success": "Password successfully changed",
+      "title": "Let's change your password",
+      "currentPasswordLabel": "Current Password",
+      "newPasswordLabel": "New Password",
+      "submit": "Change password"
+    },
+    "errors": {
+      "passwordMinimumLength": "Must be at least 8 characters",
+      "passwordMismatch": "Passwords don’t match",
+      "passwordIncorrect": "Current password is incorrect",
+      "passwordSameAsPrevious": "Must not be the same as previous"
+    },
+    "repeatPasswordLabel": "Repeat Password"
+  }
 }

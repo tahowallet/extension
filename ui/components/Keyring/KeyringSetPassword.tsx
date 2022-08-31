@@ -1,4 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
 import { createPassword } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
@@ -27,6 +28,7 @@ export default function KeyringSetPassword(): ReactElement {
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
   const defaultWallet = useBackgroundSelector(selectDefaultWallet)
 
+  const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
@@ -37,11 +39,11 @@ export default function KeyringSetPassword(): ReactElement {
 
   const validatePassword = (): boolean => {
     if (password.length < 8) {
-      setPasswordErrorMessage("Must be at least 8 characters")
+      setPasswordErrorMessage(t("keyring.errors.passwordMinimumLength"))
       return false
     }
     if (password !== passwordConfirmation) {
-      setPasswordErrorMessage("Passwords don’t match")
+      setPasswordErrorMessage(t("keyring.errors.passwordMismatch"))
       return false
     }
     return true
@@ -69,7 +71,7 @@ export default function KeyringSetPassword(): ReactElement {
         <SharedBackButton path="/" />
         <div className="wordmark" />
       </div>
-      <h1 className="serif_header">First, let&apos;s secure your wallet</h1>
+      <h1 className="serif_header">{t("keyring.setPassword.title")}</h1>
 
       <form
         onSubmit={(event) => {
@@ -80,7 +82,7 @@ export default function KeyringSetPassword(): ReactElement {
         <div className="input_wrap">
           <SharedInput
             type="password"
-            label="Password"
+            label={t("keyring.setPassword.passwordLabel")}
             onChange={handleInputChange(setPassword)}
             errorMessage={passwordErrorMessage}
           />
@@ -91,13 +93,13 @@ export default function KeyringSetPassword(): ReactElement {
         <div className="input_wrap input_wrap_padding_bottom">
           <SharedInput
             type="password"
-            label="Repeat Password"
+            label={t("keyring.repeatPasswordLabel")}
             onChange={handleInputChange(setPasswordConfirmation)}
             errorMessage={passwordErrorMessage}
           />
         </div>
         <div className="set_as_default_ask">
-          Set Tally Ho as default wallet
+          {t("keyring.setPassword.tallyAsDefault")}
           <SharedToggleButton
             onChange={(toggleValue) => {
               dispatch(setNewDefaultWalletValue(toggleValue))
@@ -112,13 +114,13 @@ export default function KeyringSetPassword(): ReactElement {
             showLoadingOnClick={!passwordErrorMessage}
             isFormSubmit
           >
-            Begin the hunt
+            {t("keyring.setPassword.submit")}
           </SharedButton>
         </div>
       </form>
       <div className="restore">
         <SharedButton type="tertiary" size="medium">
-          Restoring account?
+          {t("keyring.setPassword.restore")}
         </SharedButton>
       </div>
       <style jsx>{`
