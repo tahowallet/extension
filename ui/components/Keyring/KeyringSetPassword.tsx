@@ -1,10 +1,6 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { useHistory, useLocation } from "react-router-dom"
-import {
-  createPassword,
-  changePassword,
-  setDidPasswordChangeSucceed,
-} from "@tallyho/tally-background/redux-slices/keyrings"
+import { useHistory } from "react-router-dom"
+import { createPassword } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   setNewDefaultWalletValue,
   selectDefaultWallet,
@@ -16,25 +12,16 @@ import {
 } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
-import titleStyle from "../Onboarding/titleStyle"
 import SharedBackButton from "../Shared/SharedBackButton"
 import SharedToggleButton from "../Shared/SharedToggleButton"
 import PasswordStrengthBar from "../Password/PasswordStrengthBar"
+import styles from "./styles"
 
 export default function KeyringSetPassword(): ReactElement {
-  const [currentPassword, setCurrentPassword] = useState("")
-  const [currentPasswordErrorMessage, setCurrentPasswordErrorMessage] =
-    useState("")
   const [password, setPassword] = useState("")
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("")
   const [passwordConfirmation, setPasswordConfirmation] = useState("")
   const history = useHistory()
-  const location = useLocation()
-  const isInitialPassword = location.pathname.includes("initial-password")
-  const isChangePassword = location.pathname.includes("change-password")
-  const didPasswordChangeSucceed = useBackgroundSelector(
-    (state) => state.keyrings.didPasswordChangeSucceed
-  )
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
   const defaultWallet = useBackgroundSelector(selectDefaultWallet)
@@ -42,34 +29,10 @@ export default function KeyringSetPassword(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
-    const initialPasswordProvided = isInitialPassword && areKeyringsUnlocked
-    const changePasswordSuccess = isChangePassword && didPasswordChangeSucceed
-    const changePasswordFailed =
-      isChangePassword && didPasswordChangeSucceed === false
-
-    if (initialPasswordProvided || changePasswordSuccess) {
+    if (areKeyringsUnlocked) {
       history.goBack()
-    } else if (changePasswordFailed) {
-      setCurrentPasswordErrorMessage("Current password is incorrect")
     }
-
-    dispatch(setDidPasswordChangeSucceed(null))
-  }, [
-    history,
-    areKeyringsUnlocked,
-    isInitialPassword,
-    isChangePassword,
-    didPasswordChangeSucceed,
-    dispatch,
-  ])
-
-  const validateCurrentPassword = (): boolean => {
-    if (currentPassword.length < 8) {
-      setCurrentPasswordErrorMessage("Must be at least 8 characters")
-      return false
-    }
-    return true
-  }
+  }, [history, areKeyringsUnlocked])
 
   const validatePassword = (): boolean => {
     if (password.length < 8) {
@@ -80,24 +43,10 @@ export default function KeyringSetPassword(): ReactElement {
       setPasswordErrorMessage("Passwords don’t match")
       return false
     }
-    if (isChangePassword && password === currentPassword) {
-      setPasswordErrorMessage("Must not be the same as previous")
-      return false
-    }
     return true
   }
 
-  const handleCurrentPasswordChange = (
-    f: (value: string) => void
-  ): ((value: string) => void) => {
-    return (value: string) => {
-      // If the input field changes, remove the error.
-      setCurrentPasswordErrorMessage("")
-      return f(value)
-    }
-  }
-
-  const handleNewPasswordChange = (
+  const handleInputChange = (
     f: (value: string) => void
   ): ((value: string) => void) => {
     return (value: string) => {
@@ -113,61 +62,25 @@ export default function KeyringSetPassword(): ReactElement {
     }
   }
 
-  const dispatchChangePassword = async (): Promise<void> => {
-    if (validateCurrentPassword() && validatePassword()) {
-      dispatch(
-        changePassword(
-          JSON.stringify({ currentPassword, newPassword: password })
-        )
-      )
-    }
-  }
-
-  let backButtonPath = "/"
-  let headerText = "First, let's secure your wallet"
-  let onSubmit = dispatchCreatePassword
-  let inputLabel = "Password"
-  let buttonShowLoadingOnClick = !passwordErrorMessage
-  let buttonText = "Begin the hunt"
-  if (isChangePassword) {
-    backButtonPath = "/settings"
-    headerText = "Let's change your password"
-    onSubmit = dispatchChangePassword
-    inputLabel = "New Password"
-    buttonShowLoadingOnClick =
-      !currentPasswordErrorMessage && !passwordErrorMessage
-    buttonText = "Change password"
-  }
-
   return (
     <section className="standard_width">
       <div className="top">
-        <SharedBackButton path={backButtonPath} />
+        <SharedBackButton path="/" />
         <div className="wordmark" />
       </div>
-      <h1 className="serif_header">{headerText}</h1>
+      <h1 className="serif_header">First, let&apos;s secure your wallet</h1>
 
       <form
         onSubmit={(event) => {
           event.preventDefault()
-          onSubmit()
+          dispatchCreatePassword()
         }}
       >
-        {isChangePassword && (
-          <div className="input_wrap input_wrap_padding_bottom">
-            <SharedInput
-              type="password"
-              label="Current Password"
-              onChange={handleCurrentPasswordChange(setCurrentPassword)}
-              errorMessage={currentPasswordErrorMessage}
-            />
-          </div>
-        )}
         <div className="input_wrap">
           <SharedInput
             type="password"
-            label={inputLabel}
-            onChange={handleNewPasswordChange(setPassword)}
+            label="Password"
+            onChange={handleInputChange(setPassword)}
             errorMessage={passwordErrorMessage}
           />
         </div>
@@ -178,29 +91,27 @@ export default function KeyringSetPassword(): ReactElement {
           <SharedInput
             type="password"
             label="Repeat Password"
-            onChange={handleNewPasswordChange(setPasswordConfirmation)}
+            onChange={handleInputChange(setPasswordConfirmation)}
             errorMessage={passwordErrorMessage}
           />
         </div>
-        {isInitialPassword && (
-          <div className="set_as_default_ask">
-            Set Tally Ho as default wallet
-            <SharedToggleButton
-              onChange={(toggleValue) => {
-                dispatch(setNewDefaultWalletValue(toggleValue))
-              }}
-              value={defaultWallet}
-            />
-          </div>
-        )}
+        <div className="set_as_default_ask">
+          Set Tally Ho as default wallet
+          <SharedToggleButton
+            onChange={(toggleValue) => {
+              dispatch(setNewDefaultWalletValue(toggleValue))
+            }}
+            value={defaultWallet}
+          />
+        </div>
         <div className="button_wrap">
           <SharedButton
             type="primary"
             size="large"
-            showLoadingOnClick={buttonShowLoadingOnClick}
+            showLoadingOnClick={!passwordErrorMessage}
             isFormSubmit
           >
-            {buttonText}
+            Begin the hunt
           </SharedButton>
         </div>
       </form>
@@ -209,64 +120,7 @@ export default function KeyringSetPassword(): ReactElement {
           Restoring account?
         </SharedButton>
       </div>
-      <style jsx>
-        {`
-          .top {
-            display: flex;
-            width: 100%;
-          }
-          .wordmark {
-            background: url("./images/wordmark@2x.png");
-            background-size: cover;
-            width: 95px;
-            height: 25px;
-            position: absolute;
-            left: 0;
-            right: 0;
-            margin: 0 auto;
-          }
-          ${titleStyle}
-          .serif_header {
-            width: 335px;
-            text-align: center;
-            margin-top: 40px;
-            margin-bottom: 25px;
-          }
-          section {
-            padding-top: 25px;
-            background-color: var(--hunter-green);
-          }
-          .input_wrap {
-            width: 211px;
-            padding-top: 10px;
-          }
-          .strength_bar_wrap {
-            width: 211px;
-            height: 26px;
-            box-sizing: border-box;
-            padding-top: 10px;
-          }
-          .input_wrap_padding_bottom {
-            padding-bottom: 30px;
-          }
-          .set_as_default_ask {
-            display: flex;
-            width: 262px;
-            justify-content: space-between;
-            align-items: center;
-            color: var(--green-20);
-            font-weight: 500;
-          }
-          .restore {
-            display: none; // TODO Implement account restoration.
-            position: fixed;
-            bottom: 26px;
-          }
-          .button_wrap {
-            padding-top: 10px;
-          }
-        `}
-      </style>
+      <style jsx>{styles}</style>
     </section>
   )
 }

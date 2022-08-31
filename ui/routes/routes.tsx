@@ -20,6 +20,7 @@ import Swap from "../pages/Swap"
 import DAppPermissionRequest from "../pages/DAppConnectRequest"
 import KeyringUnlock from "../components/Keyring/KeyringUnlock"
 import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
+import KeyringChangePassword from "../components/Keyring/KeyringChangePassword"
 import Eligible from "../pages/Claiming/Eligible"
 import SettingsExportLogs from "../pages/Settings/SettingsExportLogs"
 
@@ -44,7 +45,7 @@ const pageList: PageList[] = [
   },
   {
     path: "/keyring/change-password",
-    Component: KeyringSetPassword,
+    Component: KeyringChangePassword,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
