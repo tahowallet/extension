@@ -10,6 +10,7 @@ import {
   useAreKeyringsUnlocked,
   useBackgroundSelector,
 } from "../../hooks"
+import titleStyle from "../Onboarding/titleStyle"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 import SharedBackButton from "../Shared/SharedBackButton"
@@ -120,7 +121,10 @@ export default function KeyringSetPassword(): ReactElement {
           Restoring account?
         </SharedButton>
       </div>
-      <style jsx>{styles}</style>
+      <style jsx>{`
+        ${titleStyle}
+        ${styles}
+      `}</style>
     </section>
   )
 }

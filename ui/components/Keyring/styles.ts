@@ -1,5 +1,3 @@
-import titleStyle from "../Onboarding/titleStyle"
-
 export default `
   .top {
     display: flex;
@@ -15,7 +13,6 @@ export default `
     right: 0;
     margin: 0 auto;
   }
-  ${titleStyle}
   .serif_header {
     width: 335px;
     text-align: center;
@@ -48,7 +45,7 @@ export default `
     font-weight: 500;
   }
   .restore {
-    display: none; // TODO Implement account restoration.
+    display: none;
     position: fixed;
     bottom: 26px;
   }

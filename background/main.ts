@@ -128,6 +128,7 @@ import {
   EnrichedEVMTransaction,
   EnrichedEVMTransactionRequest,
 } from "./services/enrichment"
+import { ChangePasswordPayload } from "./services/keyring"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -872,13 +873,16 @@ export default class Main extends BaseService<never> {
       await this.keyringService.unlock(password, true)
     })
 
-    keyringSliceEmitter.on("changePassword", async (stringifiedPasswords) => {
-      const changePasswordSuccess = await this.keyringService.changePassword(
-        stringifiedPasswords
-      )
+    keyringSliceEmitter.on(
+      "changePassword",
+      async (passwords: ChangePasswordPayload) => {
+        const changePasswordSuccess = await this.keyringService.changePassword(
+          passwords
+        )
 
-      this.store.dispatch(setDidPasswordChangeSucceed(changePasswordSuccess))
-    })
+        this.store.dispatch(setDidPasswordChangeSucceed(changePasswordSuccess))
+      }
+    )
 
     keyringSliceEmitter.on("unlockKeyrings", async (password) => {
       await this.keyringService.unlock(password)

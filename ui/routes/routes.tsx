@@ -38,7 +38,7 @@ interface PageList {
 
 const pageList: PageList[] = [
   {
-    path: "/keyring/initial-password",
+    path: "/keyring/set-password",
     Component: KeyringSetPassword,
     hasTabBar: false,
     hasTopBar: false,

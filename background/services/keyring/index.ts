@@ -36,6 +36,11 @@ export type KeyringAccountSigner = {
   keyringID: string
 }
 
+export type ChangePasswordPayload = {
+  currentPassword: string
+  newPassword: string
+}
+
 export interface KeyringMetadata {
   source: "import" | "internal"
 }
@@ -184,14 +189,16 @@ export default class KeyringService extends BaseService<Events> {
    * Create a new vault encrypted with a new user-chosen password.
    * Do not actually lock or unlock any vaults.
    *
-   * @param stringifiedPasswords A JSON-stringified object with this shape:
+   * @param changePasswordPayload An object with this shape:
    * { currentPassword: string, newPassword: string }
    *
    * @returns true if the password was successfully changed,
    *          and false otherwise.
    */
-  async changePassword(stringifiedPasswords: string): Promise<boolean> {
-    const { currentPassword, newPassword } = JSON.parse(stringifiedPasswords)
+  async changePassword({
+    currentPassword,
+    newPassword,
+  }: ChangePasswordPayload): Promise<boolean> {
     try {
       const isCurrentPasswordValid = await this.verifyPassword(currentPassword)
 

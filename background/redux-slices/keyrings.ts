@@ -3,7 +3,11 @@ import Emittery from "emittery"
 
 import { setNewSelectedAccount, UIState } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
-import { Keyring, KeyringMetadata } from "../services/keyring"
+import {
+  ChangePasswordPayload,
+  Keyring,
+  KeyringMetadata,
+} from "../services/keyring"
 
 type KeyringsState = {
   keyrings: Keyring[]
@@ -28,7 +32,7 @@ export const initialState: KeyringsState = {
 
 export type Events = {
   createPassword: string
-  changePassword: string
+  changePassword: ChangePasswordPayload
   unlockKeyrings: string
   generateNewKeyring: never
   deriveAddress: string
@@ -168,7 +172,7 @@ export const createPassword = createBackgroundAsyncThunk(
 
 export const changePassword = createBackgroundAsyncThunk(
   "keyrings/changePassword",
-  async (stringifiedPasswords: string) => {
-    await emitter.emit("changePassword", stringifiedPasswords)
+  async (passwords: ChangePasswordPayload) => {
+    await emitter.emit("changePassword", passwords)
   }
 )

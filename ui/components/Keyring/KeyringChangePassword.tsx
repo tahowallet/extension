@@ -4,7 +4,9 @@ import {
   changePassword,
   setDidPasswordChangeSucceed,
 } from "@tallyho/tally-background/redux-slices/keyrings"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import titleStyle from "../Onboarding/titleStyle"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 import SharedBackButton from "../Shared/SharedBackButton"
@@ -15,9 +17,9 @@ export default function KeyringChangePassword(): ReactElement {
   const [currentPassword, setCurrentPassword] = useState("")
   const [currentPasswordErrorMessage, setCurrentPasswordErrorMessage] =
     useState("")
-  const [password, setPassword] = useState("")
-  const [passwordErrorMessage, setPasswordErrorMessage] = useState("")
-  const [passwordConfirmation, setPasswordConfirmation] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [newPasswordErrorMessage, setNewPasswordErrorMessage] = useState("")
+  const [newPasswordConfirmation, setNewPasswordConfirmation] = useState("")
   const history = useHistory()
   const didPasswordChangeSucceed = useBackgroundSelector(
     (state) => state.keyrings.didPasswordChangeSucceed
@@ -30,6 +32,7 @@ export default function KeyringChangePassword(): ReactElement {
     const changePasswordFailed = didPasswordChangeSucceed === false
 
     if (changePasswordSuccess) {
+      dispatch(setSnackbarMessage("Password successfully changed"))
       history.goBack()
     } else if (changePasswordFailed) {
       setCurrentPasswordErrorMessage("Current password is incorrect")
@@ -47,16 +50,16 @@ export default function KeyringChangePassword(): ReactElement {
   }
 
   const validatePassword = (): boolean => {
-    if (password.length < 8) {
-      setPasswordErrorMessage("Must be at least 8 characters")
+    if (newPassword.length < 8) {
+      setNewPasswordErrorMessage("Must be at least 8 characters")
       return false
     }
-    if (password !== passwordConfirmation) {
-      setPasswordErrorMessage("Passwords don’t match")
+    if (newPassword !== newPasswordConfirmation) {
+      setNewPasswordErrorMessage("Passwords don’t match")
       return false
     }
-    if (password === currentPassword) {
-      setPasswordErrorMessage("Must not be the same as previous")
+    if (newPassword === currentPassword) {
+      setNewPasswordErrorMessage("Must not be the same as previous")
       return false
     }
     return true
@@ -77,18 +80,14 @@ export default function KeyringChangePassword(): ReactElement {
   ): ((value: string) => void) => {
     return (value: string) => {
       // If the input field changes, remove the error.
-      setPasswordErrorMessage("")
+      setNewPasswordErrorMessage("")
       return f(value)
     }
   }
 
   const dispatchChangePassword = async (): Promise<void> => {
     if (validateCurrentPassword() && validatePassword()) {
-      dispatch(
-        changePassword(
-          JSON.stringify({ currentPassword, newPassword: password })
-        )
-      )
+      dispatch(changePassword({ currentPassword, newPassword }))
     }
   }
 
@@ -118,19 +117,21 @@ export default function KeyringChangePassword(): ReactElement {
           <SharedInput
             type="password"
             label="New Password"
-            onChange={handleNewPasswordChange(setPassword)}
-            errorMessage={passwordErrorMessage}
+            onChange={handleNewPasswordChange(setNewPassword)}
+            errorMessage={newPasswordErrorMessage}
           />
         </div>
         <div className="strength_bar_wrap">
-          {!passwordErrorMessage && <PasswordStrengthBar password={password} />}
+          {!newPasswordErrorMessage && (
+            <PasswordStrengthBar password={newPassword} />
+          )}
         </div>
         <div className="input_wrap input_wrap_padding_bottom">
           <SharedInput
             type="password"
             label="Repeat Password"
-            onChange={handleNewPasswordChange(setPasswordConfirmation)}
-            errorMessage={passwordErrorMessage}
+            onChange={handleNewPasswordChange(setNewPasswordConfirmation)}
+            errorMessage={newPasswordErrorMessage}
           />
         </div>
         <div className="button_wrap">
@@ -138,7 +139,7 @@ export default function KeyringChangePassword(): ReactElement {
             type="primary"
             size="large"
             showLoadingOnClick={
-              !currentPasswordErrorMessage && !passwordErrorMessage
+              !currentPasswordErrorMessage && !newPasswordErrorMessage
             }
             isFormSubmit
           >
@@ -146,7 +147,10 @@ export default function KeyringChangePassword(): ReactElement {
           </SharedButton>
         </div>
       </form>
-      <style jsx>{styles}</style>
+      <style jsx>{`
+        ${titleStyle}
+        ${styles}
+      `}</style>
     </section>
   )
 }
