@@ -14,6 +14,7 @@ interface Props {
     | "tertiary"
     | "tertiaryWhite"
     | "tertiaryGray"
+    | "tertiaryError"
     | "deemphasizedWhite"
     | "warning"
     | "unstyled"
@@ -156,6 +157,7 @@ export default function SharedButton(
         { tertiary: type === "tertiary" },
         { "tertiary white": type === "tertiaryWhite" },
         { "tertiary gray": type === "tertiaryGray" },
+        { "tertiary error": type === "tertiaryError" },
         { deemphasized_white: type === "deemphasizedWhite" },
         { warning: type === "warning" },
         { twitter: type === "twitter" }
@@ -342,6 +344,18 @@ export default function SharedButton(
           }
           .gray:hover .icon_button {
             background-color: var(--green-40);
+          }
+          .error {
+            color: var(--error);
+          }
+          .error .icon_button {
+            background-color: var(--error);
+          }
+          .error:hover {
+            color: var(--error-80);
+          }
+          .error:hover .icon_button {
+            background-color: var(--error-80);
           }
           .tertiary.disabled {
             color: var(--green-60);
