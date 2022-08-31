@@ -93,7 +93,21 @@
       "noRecordItemTransactions": "Your address and transactions",
       "policyBtn": "Privacy policy",
       "deleteBtn": "Delete my data",
-      "ariaLabel": "Open analytics"
+      "ariaLabel": "Open analytics",
+      "analyticsOffSlideUpMenu": {
+        "title": "Turn Analytics off?",
+        "desc": "Are you sure you want to turn analytics off? They help us a lot in building a better wallet for you",
+        "cancelBtn": "Cancel",
+        "submitBtn": "Yes, turn off",
+        "snackbar": "Analytics are off, turn back at any time"
+      },
+      "deleteSlideUpMenu": {
+        "title": "Delete your data?",
+        "desc": "Are you sure you want to delete your data? They help us a lot in building a better wallet for you",
+        "cancelBtn": "Cancel",
+        "submitBtn": "Yes, delete data",
+        "snackbar": "Private data will be removed soon"
+      }
     }
   },
   "passwordStrength": {
@@ -106,5 +120,5 @@
   "toggle": {
     "collapse": "Collapse",
     "viewAll": "View all"
-  } 
+  }
 }
