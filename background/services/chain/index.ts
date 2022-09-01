@@ -265,20 +265,9 @@ export default class ChainService extends BaseService<Events> {
     // TODO revisit whether we actually want to subscribe to new heads
     // if a user isn't tracking a relevant addressOnNetwork
     activeNetworks.forEach(async (network) => {
-      const provider = this.providerForNetwork(network)
-      // @TODO We probably want retry logic here.
-      if (provider) {
-        Promise.all([
-          this.fetchLatestBlockForNetwork(network),
-          this.subscribeToNewHeads(network),
-        ]).catch((e) => {
-          logger.error("Error getting block number or new head", e)
-        })
-      } else {
-        logger.error(
-          `Couldn't find provider for active network ${network.name}`
-        )
-      }
+      this.subscribeToNetworkEvents(network).catch((e) => {
+        logger.error("Error getting block number or new head", e)
+      })
     })
 
     Promise.allSettled(
@@ -392,6 +381,8 @@ export default class ChainService extends BaseService<Events> {
       throw new Error(`Network with chainID ${chainID} is not supported`)
     }
 
+    this.activeNetworks.push(networkToActivate)
+
     const existingSubscription = this.subscribedNetworks.find(
       (networkSubscription) =>
         networkSubscription.network.chainID === networkToActivate.chainID
@@ -399,9 +390,23 @@ export default class ChainService extends BaseService<Events> {
 
     if (!existingSubscription) {
       this.subscribeToNetworkEvents(networkToActivate)
+      const addressesToTrack = new Set([
+        ...(await this.getAccountsToTrack()).map((account) => account.address),
+      ])
+      addressesToTrack.forEach((address) => {
+        Promise.all([
+          this.subscribeToAccountTransactions({
+            address,
+            network: networkToActivate,
+          }),
+          this.getLatestBaseAccountBalance({
+            address,
+            network: networkToActivate,
+          }),
+        ])
+      })
     }
 
-    this.activeNetworks.push(networkToActivate)
     return networkToActivate
   }
 
