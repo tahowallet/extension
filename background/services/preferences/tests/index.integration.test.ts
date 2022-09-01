@@ -28,10 +28,10 @@ describe("Preference Service Integration", () => {
 
   describe("setDefaultWalletValue", () => {
     it("should correctly toggle defaultWallet in indexedDB", async () => {
-      // Should default to true
-      expect(await preferenceService.getDefaultWallet()).toEqual(true)
-      await preferenceService.setDefaultWalletValue(false)
+      // Should default to false
       expect(await preferenceService.getDefaultWallet()).toEqual(false)
+      await preferenceService.setDefaultWalletValue(true)
+      expect(await preferenceService.getDefaultWallet()).toEqual(true)
     })
   })
 })
