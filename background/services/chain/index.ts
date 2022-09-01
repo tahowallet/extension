@@ -63,6 +63,7 @@ import {
   OPTIMISM_GAS_ORACLE_ABI,
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
+import KeyringService from "../keyring"
 
 // How many queued transactions should be retrieved on every tx alarm, per
 // network. To get frequency, divide by the alarm period. 5 tx / 5 minutes →
@@ -161,9 +162,13 @@ export default class ChainService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     ChainService,
-    [Promise<PreferenceService>]
-  > = async (preferenceService) => {
-    return new this(await getOrCreateDB(), await preferenceService)
+    [Promise<PreferenceService>, Promise<KeyringService>]
+  > = async (preferenceService, keyringService) => {
+    return new this(
+      await getOrCreateDB(),
+      await preferenceService,
+      await keyringService
+    )
   }
 
   supportedNetworks: EVMNetwork[]
@@ -174,7 +179,8 @@ export default class ChainService extends BaseService<Events> {
 
   private constructor(
     private db: ChainDatabase,
-    private preferenceService: PreferenceService
+    private preferenceService: PreferenceService,
+    private keyringService: KeyringService
   ) {
     super({
       queuedTransactions: {
@@ -732,24 +738,30 @@ export default class ChainService extends BaseService<Events> {
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.db.addAccountToTrack(addressNetwork)
     this.emitter.emit("newAccountToTrack", addressNetwork)
-    this.getLatestBaseAccountBalance(addressNetwork).catch((e) => {
-      logger.error(
-        "chainService/addAccountToTrack: Error getting latestBaseAccountBalance",
-        e
-      )
-    })
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
       logger.error(
         "chainService/addAccountToTrack: Error subscribing to account transactions",
         e
       )
     })
-    this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
+    this.getLatestBaseAccountBalance(addressNetwork).catch((e) => {
       logger.error(
-        "chainService/addAccountToTrack: Error loading historic asset transfers",
+        "chainService/addAccountToTrack: Error getting latestBaseAccountBalance",
         e
       )
     })
+    if (
+      (await this.keyringService.getKeyringSourceForAddress(
+        addressNetwork.address
+      )) !== "internal"
+    ) {
+      this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
+        logger.error(
+          "chainService/addAccountToTrack: Error loading historic asset transfers",
+          e
+        )
+      })
+    }
   }
 
   async getBlockHeight(network: EVMNetwork): Promise<number> {

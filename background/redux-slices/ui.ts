@@ -3,7 +3,7 @@ import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
-import { AccountState, addAddressNetwork } from "./accounts"
+import { AccountState, addAddressToNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 
 const defaultSettings = {
@@ -172,7 +172,7 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
     if (
       !account.accountsData.evm[network.chainID]?.[ui.selectedAccount.address]
     ) {
-      dispatch(addAddressNetwork({ ...ui.selectedAccount, network }))
+      dispatch(addAddressToNetwork({ ...ui.selectedAccount, network }))
     }
   }
 )

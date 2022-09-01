@@ -223,7 +223,8 @@ export default class Main extends BaseService<never> {
 
   static create: ServiceCreatorFunction<never, Main, []> = async () => {
     const preferenceService = PreferenceService.create()
-    const chainService = ChainService.create(preferenceService)
+    const keyringService = KeyringService.create()
+    const chainService = ChainService.create(preferenceService, keyringService)
     const indexingService = IndexingService.create(
       preferenceService,
       chainService
@@ -234,7 +235,6 @@ export default class Main extends BaseService<never> {
       indexingService,
       nameService
     )
-    const keyringService = KeyringService.create()
     const internalEthereumProviderService =
       InternalEthereumProviderService.create(chainService, preferenceService)
     const providerBridgeService = ProviderBridgeService.create(
@@ -471,7 +471,7 @@ export default class Main extends BaseService<never> {
     this.connectPopupMonitor()
   }
 
-  async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
+  async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
@@ -485,6 +485,20 @@ export default class Main extends BaseService<never> {
       network,
       name,
     })
+  }
+
+  async addAccountToActiveNetworks(address: string): Promise<void> {
+    const activeNetworks = await this.chainService.getActiveNetworks()
+    await Promise.all(
+      activeNetworks.map(async (network) => {
+        const addressNetwork = {
+          address,
+          network,
+        }
+        await this.addAccountToTrack(addressNetwork)
+        this.store.dispatch(loadAccount(addressNetwork))
+      })
+    )
   }
 
   async removeAccount(
@@ -503,21 +517,10 @@ export default class Main extends BaseService<never> {
       address: string
     }>
   ): Promise<void> {
-    const activeNetworks = await this.chainService.getActiveNetworks()
     await Promise.all(
       accounts.map(async ({ path, address }) => {
         await this.ledgerService.saveAddress(path, address)
-
-        await Promise.all(
-          activeNetworks.map(async (network) => {
-            const addressNetwork = {
-              address,
-              network,
-            }
-            await this.chainService.addAccountToTrack(addressNetwork)
-            this.store.dispatch(loadAccount(addressNetwork))
-          })
-        )
+        await this.addAccountToActiveNetworks(address)
       })
     )
     this.store.dispatch(
@@ -844,21 +847,7 @@ export default class Main extends BaseService<never> {
     })
 
     this.keyringService.emitter.on("address", async (address) => {
-      const activeNetworks = await this.chainService.getActiveNetworks()
-      activeNetworks.forEach((network) => {
-        // Mark as loading and wire things up.
-        this.store.dispatch(
-          loadAccount({
-            address,
-            network,
-          })
-        )
-
-        this.chainService.addAccountToTrack({
-          address,
-          network,
-        })
-      })
+      await this.addAccountToActiveNetworks(address)
     })
 
     this.keyringService.emitter.on("locked", async (isLocked) => {
