@@ -44,7 +44,7 @@ type NewState = {
                 address: string
                 network: EVMNetwork
                 annotation: {
-                  nameOnNetwork: {
+                  nameOnNetwork?: {
                     name: string
                     network: EVMNetwork
                   }
@@ -83,15 +83,17 @@ export default (prevState: Record<string, unknown>): NewState => {
               const spender = {
                 address: annotation.spenderAddress,
                 network: NETWORK_BY_CHAIN_ID[chainID],
-                annotation: {
-                  nameOnNetwork: {
-                    name: annotation.spenderName,
-                    network: NETWORK_BY_CHAIN_ID[chainID],
-                  },
-                },
+                annotation: annotation.spenderName
+                  ? {
+                      nameOnNetwork: {
+                        name: annotation.spenderName,
+                        network: NETWORK_BY_CHAIN_ID[chainID],
+                      },
+                    }
+                  : {},
               }
 
-              const { spenderName, spenderAddress, ...newAnnotation } =
+              const { spenderName, spenderAddress, ...oldAnnotationProps } =
                 annotation
 
               newState.activities[address][chainID].entities[
@@ -99,7 +101,7 @@ export default (prevState: Record<string, unknown>): NewState => {
               ] = {
                 ...activityItem,
                 annotation: {
-                  ...newAnnotation,
+                  ...oldAnnotationProps,
                   spender,
                 },
               }
