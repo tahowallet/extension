@@ -1,5 +1,5 @@
 import { setNewDefaultWalletValue } from "@tallyho/tally-background/redux-slices/ui"
-import React, { ReactElement, useCallback, useEffect } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedToggleButton from "../../components/Shared/SharedToggleButton"
@@ -10,10 +10,13 @@ export default function SwitchWalletPage({
   close: () => Promise<void>
 }): ReactElement {
   const dispatch = useDispatch()
+  const [toggleState, setToggleState] = useState(false)
 
   const toggleDefaultWallet = useCallback(
-    (defaultWalletValue: boolean) =>
-      dispatch(setNewDefaultWalletValue(defaultWalletValue)),
+    (defaultWalletValue: boolean) => {
+      setToggleState(defaultWalletValue)
+      dispatch(setNewDefaultWalletValue(defaultWalletValue))
+    },
     [dispatch]
   )
 
@@ -33,7 +36,7 @@ export default function SwitchWalletPage({
           <span>Use Tally Ho as default wallet</span>
           <SharedToggleButton
             onChange={(value) => toggleDefaultWallet(value)}
-            value={false}
+            value={toggleState}
           />
         </div>
         <div className="button_wrap">
