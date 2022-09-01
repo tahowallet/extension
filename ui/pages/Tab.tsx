@@ -4,7 +4,7 @@ import { HashRouter, Route, Switch } from "react-router-dom"
 import { Store } from "webext-redux"
 import BrowserTabContainer from "../components/BrowserTab/BrowserTabContainer"
 import Ledger from "./Ledger/Ledger"
-import OnboardingAddWallet from "./Onboarding/OnboardingAddWallet"
+import TabbedOnboardingAddWallet from "./Onboarding/TabbedOnboardingAddWallet"
 import OnboardingImportMetamask from "./Onboarding/OnboardingImportMetamask"
 import OnboardingInfoIntro from "./Onboarding/OnboardingInfoIntro"
 import OnboardingViewOnlyWallet from "./Onboarding/OnboardingViewOnlyWallet"
@@ -27,7 +27,7 @@ export default function Tab({ store }: { store: Store }): ReactElement {
             </Route>
             <Route path="/onboarding/add-wallet" exact>
               <BrowserTabContainer>
-                <OnboardingAddWallet embedded />
+                <TabbedOnboardingAddWallet />
               </BrowserTabContainer>
             </Route>
             <Route path="/onboarding/view-only-wallet" exact>
