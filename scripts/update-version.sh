@@ -20,5 +20,5 @@ echo "$(jq ".version=\"$npm_package_version\"" manifest/manifest.json | yarn -s 
 git add manifest/manifest.json
 
 # Add version to bug template and stage for version bump commit.
-yq e -i '.body[] |= select(has("id")) |= select(.id == "version").attributes.options = ["Community Edition v'$npm_package_version'"] + select(.id == "version").attributes.options' .github/ISSUE_TEMPLATE/BUG.yml
+yq e -i '.body[] |= select(has("id")) |= select(.id == "version").attributes.options = ["v'$npm_package_version'"] + select(.id == "version").attributes.options' .github/ISSUE_TEMPLATE/BUG.yml
 git add .github/ISSUE_TEMPLATE/BUG.yml

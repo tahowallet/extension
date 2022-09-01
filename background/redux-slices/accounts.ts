@@ -371,8 +371,8 @@ export const resolveNameOnNetwork = createBackgroundAsyncThunk(
  * the promise returned from this action's dispatch will be fulfilled by a void
  * value.
  */
-export const addAddressNetwork = createBackgroundAsyncThunk(
-  "account/addAccount",
+export const addAddressToNetwork = createBackgroundAsyncThunk(
+  "account/addAddressToNetwork",
   async (addressNetwork: AddressOnNetwork, { dispatch, extra: { main } }) => {
     const normalizedAddressNetwork = {
       address: normalizeEVMAddress(addressNetwork.address),
@@ -380,7 +380,14 @@ export const addAddressNetwork = createBackgroundAsyncThunk(
     }
 
     dispatch(loadAccount(normalizedAddressNetwork))
-    await main.addAccount(normalizedAddressNetwork)
+    await main.addAccountToTrack(normalizedAddressNetwork)
+  }
+)
+
+export const addAddressToActiveNetworks = createBackgroundAsyncThunk(
+  "account/addAddressToActiveNetworks",
+  async (address: string, { extra: { main } }) => {
+    await main.addAccountToActiveNetworks(address)
   }
 )
 
