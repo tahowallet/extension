@@ -32,7 +32,7 @@ export default function Tab({ store }: { store: Store }): ReactElement {
             </Route>
             <Route path="/onboarding/view-only-wallet" exact>
               <BrowserTabContainer>
-                <OnboardingViewOnlyWallet />
+                <OnboardingViewOnlyWallet embedded />
               </BrowserTabContainer>
             </Route>
             <Route path="/onboarding/import-metamask" exact>
