@@ -11,7 +11,7 @@ const accountCreateButtonInfos = [
       {
         label: "Import recovery phrase",
         icon: "./images/add_wallet/import.svg",
-        url: "/onboarding/import-metamask",
+        url: "/onboarding/import-metamask/set-password",
         isAvailable: true,
       },
       {
@@ -34,7 +34,7 @@ const accountCreateButtonInfos = [
       {
         label: "Create new wallet",
         icon: "./images/add_wallet/create_tally.svg",
-        url: "/onboarding/onboarding-interstitial-create-phrase",
+        url: "/onboarding/new-seed/set-password",
         isAvailable: true,
       },
     ],

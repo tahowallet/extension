@@ -5,7 +5,10 @@ import { Store } from "webext-redux"
 import BrowserTabContainer from "../components/BrowserTab/BrowserTabContainer"
 import Ledger from "./Ledger/Ledger"
 import TabbedOnboardingAddWallet from "./Onboarding/TabbedOnboardingAddWallet"
-import OnboardingImportMetamask from "./Onboarding/OnboardingImportMetamask"
+import TabbedOnboardingImportMetamask from "./Onboarding/TabbedOnboardingImportMetamask"
+import TabbedOnboardingSetPassword from "./Onboarding/TabbedOnboardingSetPassword"
+import TabbedOnboardingSaveSeed from "./Onboarding/TabbedOnboardingSaveSeed"
+import TabbedOnboardingVerifySeed from "./Onboarding/TabbedOnboardingVerifySeed"
 import OnboardingInfoIntro from "./Onboarding/OnboardingInfoIntro"
 import OnboardingViewOnlyWallet from "./Onboarding/OnboardingViewOnlyWallet"
 import TabNotFound from "./TabNotFound"
@@ -30,14 +33,34 @@ export default function Tab({ store }: { store: Store }): ReactElement {
                 <TabbedOnboardingAddWallet />
               </BrowserTabContainer>
             </Route>
-            <Route path="/onboarding/view-only-wallet" exact>
+            <Route path="/onboarding/import-metamask/set-password" exact>
               <BrowserTabContainer>
-                <OnboardingViewOnlyWallet embedded />
+                <TabbedOnboardingSetPassword nextPage="/onboarding/import-metamask" />
               </BrowserTabContainer>
             </Route>
             <Route path="/onboarding/import-metamask" exact>
               <BrowserTabContainer>
-                <OnboardingImportMetamask nextPage="/" />
+                <TabbedOnboardingImportMetamask nextPage="/" />
+              </BrowserTabContainer>
+            </Route>
+            <Route path="/onboarding/new-seed/set-password" exact>
+              <BrowserTabContainer>
+                <TabbedOnboardingSetPassword nextPage="/onboarding/new-seed" />
+              </BrowserTabContainer>
+            </Route>
+            <Route path="/onboarding/new-seed" exact>
+              <BrowserTabContainer>
+                <TabbedOnboardingSaveSeed />
+              </BrowserTabContainer>
+            </Route>
+            <Route path="/onboarding/new-seed/verify" exact>
+              <BrowserTabContainer>
+                <TabbedOnboardingVerifySeed />
+              </BrowserTabContainer>
+            </Route>
+            <Route path="/onboarding/view-only-wallet" exact>
+              <BrowserTabContainer>
+                <OnboardingViewOnlyWallet embedded />
               </BrowserTabContainer>
             </Route>
             <Route path="/ledger" exact>
