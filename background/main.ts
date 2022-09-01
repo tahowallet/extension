@@ -517,6 +517,7 @@ export default class Main extends BaseService<never> {
       address: string
     }>
   ): Promise<void> {
+    const activeNetworks = await this.chainService.getActiveNetworks()
     await Promise.all(
       accounts.map(async ({ path, address }) => {
         await this.ledgerService.saveAddress(path, address)
