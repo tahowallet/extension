@@ -85,6 +85,7 @@ import {
   requestPermission,
   emitter as providerBridgeSliceEmitter,
   initializePermissions,
+  revokePermissionsForAddress,
 } from "./redux-slices/dapp"
 import logger from "./lib/logger"
 import {
@@ -493,6 +494,9 @@ export default class Main extends BaseService<never> {
   ): Promise<void> {
     this.store.dispatch(deleteAccount(address))
     this.store.dispatch(deleteNFts(address))
+    // remove dApp premissions
+    this.store.dispatch(revokePermissionsForAddress(address))
+    await this.providerBridgeService.revokePermissionsForAddress(address)
     // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signerType)
   }

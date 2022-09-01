@@ -92,6 +92,19 @@ const dappSlice = createSlice({
 
       return state
     },
+    revokePermissionsForAddress: (
+      immerState,
+      { payload: address }: { payload: string }
+    ) => {
+      ;[ETHEREUM, POLYGON, OPTIMISM, GOERLI].forEach((network) => {
+        if (immerState.allowed.evm[network.chainID]?.[address]) {
+          const { [address]: _, ...withoutAddressToRemove } =
+            immerState.allowed.evm[network.chainID]
+
+          immerState.allowed.evm[network.chainID] = withoutAddressToRemove
+        }
+      })
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -148,6 +161,10 @@ const dappSlice = createSlice({
   },
 })
 
-export const { requestPermission, initializePermissions } = dappSlice.actions
+export const {
+  requestPermission,
+  initializePermissions,
+  revokePermissionsForAddress,
+} = dappSlice.actions
 
 export default dappSlice.reducer
