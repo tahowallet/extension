@@ -21,6 +21,7 @@ const accountCreateButtonInfos = [
           window.open("/tab.html#/ledger", "_blank")?.focus()
           window.close()
         },
+        url: "/ledger",
         isAvailable: isLedgerSupported,
       },
       {
@@ -149,7 +150,11 @@ export default function OnboardingStartTheHunt({
                 {creationSection.items.map(
                   ({ label, icon, url, isAvailable, onClick }) =>
                     isAvailable ? (
-                      <AddWalletRow icon={icon} url={url} onClick={onClick}>
+                      <AddWalletRow
+                        icon={icon}
+                        url={url}
+                        onClick={embedded ? undefined : onClick}
+                      >
                         {label}
                       </AddWalletRow>
                     ) : (
