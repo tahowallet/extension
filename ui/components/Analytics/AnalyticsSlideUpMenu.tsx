@@ -22,7 +22,12 @@ export default function AnalyticsSlideUpMenu(props: {
 
   return (
     <>
-      <SharedSlideUpMenu size="small" isOpen={isOpen} close={() => onCancel()}>
+      <SharedSlideUpMenu
+        size="custom"
+        customSize="247px"
+        isOpen={isOpen}
+        close={() => onCancel()}
+      >
         <div className="menu_container">
           <div>
             <h2 className="title">{t(`${prefix}.title`)}</h2>

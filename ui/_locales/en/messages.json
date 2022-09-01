@@ -82,7 +82,8 @@
     },
     "analyticsSetUp": {
       "title": "Analytics",
-      "toggleTitle": "Analytics are on",
+      "toggleTitleOn": "Analytics are on",
+      "toggleTitleOff": "Analytics are off",
       "toggleDesc": "Analytics help us understand your needs and empowers us to build a better wallet for you!",
       "recordTitle": "What we will record",
       "recordItemOrders": "Number of Swaps / Sends",

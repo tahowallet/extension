@@ -10,6 +10,8 @@ const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
   showTestNetworks: false,
+  analyticsOn: false,
+  deleteAnalytics: false,
 }
 
 export interface Location {
@@ -26,6 +28,8 @@ export type UIState = {
     hideDust: boolean
     defaultWallet: boolean
     showTestNetworks: boolean
+    analyticsOn: boolean
+    deleteAnalytics: boolean
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
@@ -70,6 +74,17 @@ const uiSlice = createSlice({
     ): void => {
       immerState.settings.showTestNetworks = showTestNetworks
     },
+    toggleAnalyticsOn: (
+      state,
+      { payload: analyticsOn }: { payload: boolean }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        analyticsOn,
+        deleteAnalytics: false,
+      },
+    }),
     setShowingActivityDetail: (
       state,
       { payload: transactionID }: { payload: string | null }
@@ -124,6 +139,16 @@ const uiSlice = createSlice({
       ...state,
       slippageTolerance,
     }),
+    setDeleteAnalytics: (
+      state,
+      { payload: deleteAnalytics }: { payload: boolean }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        deleteAnalytics,
+      },
+    }),
   },
 })
 
@@ -132,12 +157,14 @@ export const {
   initializationLoadingTimeHitLimit,
   toggleHideDust,
   toggleTestNetworks,
+  toggleAnalyticsOn,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
   clearSnackbarMessage,
   setRouteHistoryEntries,
   setSlippageTolerance,
+  setDeleteAnalytics,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -219,4 +246,9 @@ export const selectInitializationTimeExpired = createSelector(
 export const selectShowTestNetworks = createSelector(
   selectSettings,
   (settings) => settings?.showTestNetworks
+)
+
+export const selectAnalyticsOn = createSelector(
+  selectSettings,
+  (settings) => settings?.analyticsOn
 )
