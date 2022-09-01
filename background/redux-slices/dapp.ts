@@ -96,12 +96,12 @@ const dappSlice = createSlice({
       immerState,
       { payload: address }: { payload: string }
     ) => {
-      ;[ETHEREUM, POLYGON, OPTIMISM, GOERLI].forEach((network) => {
-        if (immerState.allowed.evm[network.chainID]?.[address]) {
+      Object.keys(immerState.allowed.evm).forEach((chainID) => {
+        if (immerState.allowed.evm[chainID]?.[address]) {
           const { [address]: _, ...withoutAddressToRemove } =
-            immerState.allowed.evm[network.chainID]
+            immerState.allowed.evm[chainID]
 
-          immerState.allowed.evm[network.chainID] = withoutAddressToRemove
+          immerState.allowed.evm[chainID] = withoutAddressToRemove
         }
       })
     },
@@ -141,19 +141,13 @@ const dappSlice = createSlice({
         ) => {
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.origin]
-          ;[ETHEREUM, POLYGON, OPTIMISM, GOERLI].forEach((network) => {
-            if (
-              immerState.allowed.evm[network.chainID]?.[
-                permission.accountAddress
-              ]
-            ) {
+
+          Object.keys(immerState.allowed.evm).forEach((chainID) => {
+            if (immerState.allowed.evm[chainID]?.[permission.accountAddress]) {
               const { [permission.origin]: _, ...withoutOriginToRemove } =
-                immerState.allowed.evm[network.chainID][
-                  permission.accountAddress
-                ]
-              immerState.allowed.evm[network.chainID][
-                permission.accountAddress
-              ] = withoutOriginToRemove
+                immerState.allowed.evm[chainID][permission.accountAddress]
+              immerState.allowed.evm[chainID][permission.accountAddress] =
+                withoutOriginToRemove
             }
           })
         }
