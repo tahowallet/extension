@@ -266,11 +266,18 @@ export default class ChainService extends BaseService<Events> {
     // if a user isn't tracking a relevant addressOnNetwork
     activeNetworks.forEach(async (network) => {
       const provider = this.providerForNetwork(network)
+      // @TODO We probably want retry logic here.
       if (provider) {
-        Promise.allSettled([
+        Promise.all([
           this.fetchLatestBlockForNetwork(network),
           this.subscribeToNewHeads(network),
-        ])
+        ]).catch((e) => {
+          logger.error("Error getting block number or new head", e)
+        })
+      } else {
+        logger.error(
+          `Couldn't find provider for active network ${network.name}`
+        )
       }
     })
 
@@ -290,7 +297,7 @@ export default class ChainService extends BaseService<Events> {
           // Schedule any stored unconfirmed transactions for
           // retrieval---either to confirm they no longer exist, or to
           // read/monitor their status.
-          (await this.activeNetworks).map((network) =>
+          activeNetworks.map((network) =>
             this.db
               .getNetworkPendingTransactions(network)
               .then((pendingTransactions) => {
@@ -351,6 +358,18 @@ export default class ChainService extends BaseService<Events> {
     return this.activeNetworks
   }
 
+  async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
+    const provider = this.providerForNetwork(network)
+    if (provider) {
+      await Promise.allSettled([
+        this.fetchLatestBlockForNetwork(network),
+        this.subscribeToNewHeads(network),
+      ])
+    } else {
+      logger.error(`Couldn't find provider for network ${network.name}`)
+    }
+  }
+
   /**
    * Adds a supported network to list of active networks.
    */
@@ -366,15 +385,24 @@ export default class ChainService extends BaseService<Events> {
       return activeNetwork
     }
 
-    const supportedNetwork = this.supportedNetworks.find(
+    const networkToActivate = this.supportedNetworks.find(
       (ntwrk) => toHexChainID(ntwrk.chainID) === toHexChainID(chainID)
     )
-    if (!supportedNetwork) {
+    if (!networkToActivate) {
       throw new Error(`Network with chainID ${chainID} is not supported`)
     }
 
-    this.activeNetworks.push(supportedNetwork)
-    return supportedNetwork
+    const existingSubscription = this.subscribedNetworks.find(
+      (networkSubscription) =>
+        networkSubscription.network.chainID === networkToActivate.chainID
+    )
+
+    if (!existingSubscription) {
+      this.subscribeToNetworkEvents(networkToActivate)
+    }
+
+    this.activeNetworks.push(networkToActivate)
+    return networkToActivate
   }
 
   /**
