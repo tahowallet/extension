@@ -394,16 +394,10 @@ export default class ChainService extends BaseService<Events> {
         ...(await this.getAccountsToTrack()).map((account) => account.address),
       ])
       addressesToTrack.forEach((address) => {
-        Promise.all([
-          this.subscribeToAccountTransactions({
-            address,
-            network: networkToActivate,
-          }),
-          this.getLatestBaseAccountBalance({
-            address,
-            network: networkToActivate,
-          }),
-        ])
+        this.addAccountToTrack({
+          address,
+          network: networkToActivate,
+        })
       })
     }
 
