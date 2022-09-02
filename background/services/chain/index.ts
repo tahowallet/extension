@@ -1188,10 +1188,12 @@ export default class ChainService extends BaseService<Events> {
         // If more transactions can be retrieved in this alarm, bump the count,
         // retrieve the transaction, and drop from the updated queue.
         fetchedByNetwork[network.chainID] += 1
-        queue = queue.then(() =>
-          this.retrieveTransaction(network, hash, firstSeen).then(() =>
-            wait(2.5 * SECOND)
-          )
+
+        // Do not request all transactions and their related data at once
+        queue = queue.finally(() =>
+          this.retrieveTransaction(network, hash, firstSeen)
+            // Only wait if call doesn't throw
+            .then(() => wait(2.5 * SECOND))
         )
 
         return false
