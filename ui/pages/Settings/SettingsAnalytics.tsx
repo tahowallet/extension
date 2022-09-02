@@ -97,7 +97,7 @@ export default function SettingsAnalytics(): ReactElement {
           {t(`${prefix}.policyBtn`)}
         </SharedButton>
         <SharedButton
-          type="tertiary"
+          type="tertiaryError"
           size="medium"
           iconSmall="garbage"
           iconPosition="left"
