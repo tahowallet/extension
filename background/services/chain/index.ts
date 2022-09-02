@@ -335,9 +335,13 @@ export default class ChainService extends BaseService<Events> {
     // The below code should only be called once per extension reload for extensions
     // with active accounts
     const networksToTrack = await this.getNetworksToTrack()
-    networksToTrack.forEach((network) => {
-      this.activateNetworkOrThrow(network.chainID)
-    })
+
+    await Promise.allSettled([
+      networksToTrack.map(async (network) =>
+        this.activateNetworkOrThrow(network.chainID)
+      ),
+    ])
+
     return this.activeNetworks
   }
 
