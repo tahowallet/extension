@@ -1,7 +1,7 @@
+import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import {
-  selectAnalyticsOn,
-  setDeleteAnalytics,
-  toggleAnalyticsOn,
+  selectCollectAnalytics,
+  toggleCollectAnalytics,
 } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -15,25 +15,24 @@ export default function SettingsAnalytics(): ReactElement {
   const prefix = "settings.analyticsSetUp"
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const analyticsOn = useSelector(selectAnalyticsOn)
+  const collectAnalytics = useSelector(selectCollectAnalytics)
   const [showAnalyticsMenu, setShowAnalyticsMenu] = useState(false)
   const [showDeleteMenu, setShowDeleteMenu] = useState(false)
 
   const handleToggleChange = (toggleValue: boolean) => {
     if (toggleValue) {
-      dispatch(toggleAnalyticsOn(true))
+      dispatch(toggleCollectAnalytics(true))
     } else {
       setShowAnalyticsMenu(true)
     }
   }
 
-  const handleAnalyticsOffSubmit = () => {
-    dispatch(toggleAnalyticsOn(false))
+  const handleCollectAnalyticsSubmit = () => {
+    dispatch(toggleCollectAnalytics(false))
     setShowAnalyticsMenu(false)
   }
 
   const handleDeleteSubmit = () => {
-    dispatch(setDeleteAnalytics(true))
     setShowDeleteMenu(false)
   }
 
@@ -47,13 +46,17 @@ export default function SettingsAnalytics(): ReactElement {
           <div className="title_container">
             <img
               className="icon"
-              src={`./images/message_${analyticsOn ? "correct" : "error"}.png`}
-              alt={analyticsOn ? "correct" : "error"}
+              src={`./images/message_${
+                collectAnalytics ? "correct" : "error"
+              }.png`}
+              alt={collectAnalytics ? "correct" : "error"}
             />
-            <h2>{t(`${prefix}.toggleTitle${analyticsOn ? "On" : "Off"}`)}</h2>
+            <h2>
+              {t(`${prefix}.toggleTitle${collectAnalytics ? "On" : "Off"}`)}
+            </h2>
           </div>
           <SharedToggleButton
-            value={analyticsOn}
+            value={collectAnalytics}
             onChange={(toggleValue) => {
               handleToggleChange(toggleValue)
             }}
@@ -88,7 +91,7 @@ export default function SettingsAnalytics(): ReactElement {
           iconSmall="new-tab"
           iconPosition="left"
           onClick={() =>
-            window.open(`https://tally.cash/privacy/`, "_blank")?.focus()
+            window.open(`${WEBSITE_ORIGIN}/privacy/`, "_blank")?.focus()
           }
         >
           {t(`${prefix}.policyBtn`)}
@@ -98,7 +101,7 @@ export default function SettingsAnalytics(): ReactElement {
           size="medium"
           iconSmall="garbage"
           iconPosition="left"
-          isDisabled={!analyticsOn}
+          isDisabled={!collectAnalytics}
           onClick={() => setShowDeleteMenu(true)}
         >
           {t(`${prefix}.deleteBtn`)}
@@ -107,7 +110,7 @@ export default function SettingsAnalytics(): ReactElement {
       <AnalyticsSlideUpMenu
         isOpen={showAnalyticsMenu}
         onCancel={() => setShowAnalyticsMenu(false)}
-        onSubmit={() => handleAnalyticsOffSubmit()}
+        onSubmit={() => handleCollectAnalyticsSubmit()}
         prefix={`${prefix}.analyticsOffSlideUpMenu`}
       />
       <AnalyticsSlideUpMenu

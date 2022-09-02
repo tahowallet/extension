@@ -10,8 +10,7 @@ const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
   showTestNetworks: false,
-  analyticsOn: false,
-  deleteAnalytics: false,
+  collectAnalytics: false,
 }
 
 export interface Location {
@@ -28,8 +27,7 @@ export type UIState = {
     hideDust: boolean
     defaultWallet: boolean
     showTestNetworks: boolean
-    analyticsOn: boolean
-    deleteAnalytics: boolean
+    collectAnalytics: boolean
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
@@ -74,15 +72,14 @@ const uiSlice = createSlice({
     ): void => {
       immerState.settings.showTestNetworks = showTestNetworks
     },
-    toggleAnalyticsOn: (
+    toggleCollectAnalytics: (
       state,
-      { payload: analyticsOn }: { payload: boolean }
+      { payload: collectAnalytics }: { payload: boolean }
     ) => ({
       ...state,
       settings: {
         ...state.settings,
-        analyticsOn,
-        deleteAnalytics: false,
+        collectAnalytics,
       },
     }),
     setShowingActivityDetail: (
@@ -139,16 +136,6 @@ const uiSlice = createSlice({
       ...state,
       slippageTolerance,
     }),
-    setDeleteAnalytics: (
-      state,
-      { payload: deleteAnalytics }: { payload: boolean }
-    ) => ({
-      ...state,
-      settings: {
-        ...state.settings,
-        deleteAnalytics,
-      },
-    }),
   },
 })
 
@@ -157,14 +144,13 @@ export const {
   initializationLoadingTimeHitLimit,
   toggleHideDust,
   toggleTestNetworks,
-  toggleAnalyticsOn,
+  toggleCollectAnalytics,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
   clearSnackbarMessage,
   setRouteHistoryEntries,
   setSlippageTolerance,
-  setDeleteAnalytics,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -248,7 +234,7 @@ export const selectShowTestNetworks = createSelector(
   (settings) => settings?.showTestNetworks
 )
 
-export const selectAnalyticsOn = createSelector(
+export const selectCollectAnalytics = createSelector(
   selectSettings,
-  (settings) => settings?.analyticsOn
+  (settings) => settings?.collectAnalytics
 )
