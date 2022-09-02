@@ -335,19 +335,17 @@ export default class ChainService extends BaseService<Events> {
     // The below code should only be called once per extension reload for extensions
     // with active accounts
     const networksToTrack = await this.getNetworksToTrack()
-    if (networksToTrack.length > 0) {
-      networksToTrack.forEach((network) => {
-        this.activateNetworkOrThrow(network.chainID)
-      })
-      return this.activeNetworks
-    }
 
-    // Default to supporting Ethereum so ENS resolution works during onboarding
-    this.activateNetworkOrThrow(ETHEREUM.chainID)
+    await Promise.allSettled([
+      networksToTrack.map(async (network) =>
+        this.activateNetworkOrThrow(network.chainID)
+      ),
+    ])
+
     return this.activeNetworks
   }
 
-  async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
+  private async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
     const provider = this.providerForNetwork(network)
     if (provider) {
       await Promise.allSettled([
@@ -390,9 +388,9 @@ export default class ChainService extends BaseService<Events> {
 
     if (!existingSubscription) {
       this.subscribeToNetworkEvents(networkToActivate)
-      const addressesToTrack = new Set([
-        ...(await this.getAccountsToTrack()).map((account) => account.address),
-      ])
+      const addressesToTrack = new Set(
+        (await this.getAccountsToTrack()).map((account) => account.address)
+      )
       addressesToTrack.forEach((address) => {
         this.addAccountToTrack({
           address,
@@ -730,6 +728,10 @@ export default class ChainService extends BaseService<Events> {
 
   async getNetworksToTrack(): Promise<EVMNetwork[]> {
     const chainIDs = await this.db.getChainIDsToTrack()
+    if (chainIDs.size === 0) {
+      // Default to tracking Ethereum so ENS resolution works during onboarding
+      return [ETHEREUM]
+    }
     return [...chainIDs].map((chainID) => {
       const network = NETWORK_BY_CHAIN_ID[chainID]
       return network

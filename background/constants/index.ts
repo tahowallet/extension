@@ -26,10 +26,6 @@ export const DAY = 24 * HOUR
 export const COMMUNITY_MULTISIG_ADDRESS =
   "0x99b36fDbC582D113aF36A21EBa06BFEAb7b9bE12"
 
-// We can't use destructuring because webpack has to replace all instances of
-// `process.env` variables in the bundled output
-export const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
-
 export enum EarnStages {
   ComingSoon = "ComingSoon",
   Deploying = "Deploying",

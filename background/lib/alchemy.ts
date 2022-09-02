@@ -18,7 +18,10 @@ import {
   isValidAlchemyTokenMetadataResponse,
 } from "./validate"
 import { AddressOnNetwork } from "../accounts"
-import { ALCHEMY_KEY } from "../constants"
+
+// We can't use destructuring because webpack has to replace all instances of
+// `process.env` variables in the bundled output
+export const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
 
 /**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an

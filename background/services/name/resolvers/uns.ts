@@ -1,5 +1,6 @@
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
-import { ALCHEMY_KEY, ETHEREUM, POLYGON, SECOND } from "../../../constants"
+import { ETHEREUM, POLYGON, SECOND } from "../../../constants"
+import { ALCHEMY_KEY } from "../../../lib/alchemy"
 import logger from "../../../lib/logger"
 import { isDefined } from "../../../lib/utils/type-guards"
 import { sameNetwork } from "../../../networks"
