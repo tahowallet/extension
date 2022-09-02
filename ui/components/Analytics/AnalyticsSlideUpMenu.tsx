@@ -39,7 +39,7 @@ export default function AnalyticsSlideUpMenu(props: {
               size="small"
               onClick={() => onCancel()}
             >
-              {t(`${prefix}.cancelBtn`)}
+              {t("shared.cancelBtn")}
             </SharedButton>
             <SharedButton
               type="tertiary"
