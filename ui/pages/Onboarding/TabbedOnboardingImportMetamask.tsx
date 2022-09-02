@@ -151,7 +151,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
     <section className="center_horizontal standard_width">
       <div className="content">
         <div className="back_button_wrap">
-          <SharedBackButton path="/" />
+          <SharedBackButton />
         </div>
         <form
           onSubmit={(event) => {
