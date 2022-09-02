@@ -339,6 +339,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
     this.notifyContentScriptsAboutAddressChange()
   }
 
+  async revokePermissionsForAddress(revokeAddress: string): Promise<void> {
+    await this.db.deletePermissionByAddress(revokeAddress)
+    this.notifyContentScriptsAboutAddressChange()
+  }
+
   async checkPermission(
     origin: string,
     chainID: string

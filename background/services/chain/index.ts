@@ -265,13 +265,9 @@ export default class ChainService extends BaseService<Events> {
     // TODO revisit whether we actually want to subscribe to new heads
     // if a user isn't tracking a relevant addressOnNetwork
     activeNetworks.forEach(async (network) => {
-      const provider = this.providerForNetwork(network)
-      if (provider) {
-        Promise.allSettled([
-          this.fetchLatestBlockForNetwork(network),
-          this.subscribeToNewHeads(network),
-        ])
-      }
+      this.subscribeToNetworkEvents(network).catch((e) => {
+        logger.error("Error getting block number or new head", e)
+      })
     })
 
     Promise.allSettled(
@@ -290,7 +286,7 @@ export default class ChainService extends BaseService<Events> {
           // Schedule any stored unconfirmed transactions for
           // retrieval---either to confirm they no longer exist, or to
           // read/monitor their status.
-          (await this.activeNetworks).map((network) =>
+          activeNetworks.map((network) =>
             this.db
               .getNetworkPendingTransactions(network)
               .then((pendingTransactions) => {
@@ -351,6 +347,18 @@ export default class ChainService extends BaseService<Events> {
     return this.activeNetworks
   }
 
+  async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
+    const provider = this.providerForNetwork(network)
+    if (provider) {
+      await Promise.allSettled([
+        this.fetchLatestBlockForNetwork(network),
+        this.subscribeToNewHeads(network),
+      ])
+    } else {
+      logger.error(`Couldn't find provider for network ${network.name}`)
+    }
+  }
+
   /**
    * Adds a supported network to list of active networks.
    */
@@ -366,15 +374,40 @@ export default class ChainService extends BaseService<Events> {
       return activeNetwork
     }
 
-    const supportedNetwork = this.supportedNetworks.find(
+    const networkToActivate = this.supportedNetworks.find(
       (ntwrk) => toHexChainID(ntwrk.chainID) === toHexChainID(chainID)
     )
-    if (!supportedNetwork) {
+    if (!networkToActivate) {
       throw new Error(`Network with chainID ${chainID} is not supported`)
     }
 
-    this.activeNetworks.push(supportedNetwork)
-    return supportedNetwork
+    this.activeNetworks.push(networkToActivate)
+
+    const existingSubscription = this.subscribedNetworks.find(
+      (networkSubscription) =>
+        networkSubscription.network.chainID === networkToActivate.chainID
+    )
+
+    if (!existingSubscription) {
+      this.subscribeToNetworkEvents(networkToActivate)
+      const addressesToTrack = new Set([
+        ...(await this.getAccountsToTrack()).map((account) => account.address),
+      ])
+      addressesToTrack.forEach((address) => {
+        Promise.all([
+          this.subscribeToAccountTransactions({
+            address,
+            network: networkToActivate,
+          }),
+          this.getLatestBaseAccountBalance({
+            address,
+            network: networkToActivate,
+          }),
+        ])
+      })
+    }
+
+    return networkToActivate
   }
 
   /**
