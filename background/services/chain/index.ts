@@ -388,9 +388,9 @@ export default class ChainService extends BaseService<Events> {
 
     if (!existingSubscription) {
       this.subscribeToNetworkEvents(networkToActivate)
-      const addressesToTrack = new Set([
-        ...(await this.getAccountsToTrack()).map((account) => account.address),
-      ])
+      const addressesToTrack = new Set(
+        (await this.getAccountsToTrack()).map((account) => account.address)
+      )
       addressesToTrack.forEach((address) => {
         this.addAccountToTrack({
           address,
