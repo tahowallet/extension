@@ -335,15 +335,9 @@ export default class ChainService extends BaseService<Events> {
     // The below code should only be called once per extension reload for extensions
     // with active accounts
     const networksToTrack = await this.getNetworksToTrack()
-    if (networksToTrack.length > 0) {
-      networksToTrack.forEach((network) => {
-        this.activateNetworkOrThrow(network.chainID)
-      })
-      return this.activeNetworks
-    }
-
-    // Default to supporting Ethereum so ENS resolution works during onboarding
-    this.activateNetworkOrThrow(ETHEREUM.chainID)
+    networksToTrack.forEach((network) => {
+      this.activateNetworkOrThrow(network.chainID)
+    })
     return this.activeNetworks
   }
 
@@ -730,6 +724,10 @@ export default class ChainService extends BaseService<Events> {
 
   async getNetworksToTrack(): Promise<EVMNetwork[]> {
     const chainIDs = await this.db.getChainIDsToTrack()
+    if (chainIDs.size === 0) {
+      // Default to tracking Ethereum so ENS resolution works during onboarding
+      return [ETHEREUM]
+    }
     return [...chainIDs].map((chainID) => {
       const network = NETWORK_BY_CHAIN_ID[chainID]
       return network
