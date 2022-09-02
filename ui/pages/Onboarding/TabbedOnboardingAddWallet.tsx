@@ -1,5 +1,4 @@
 import React, { ReactElement } from "react"
-import { useHistory } from "react-router-dom"
 import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
@@ -114,27 +113,9 @@ function AddWalletRow({
 }
 
 export default function TabbedOnboardingAddWallet(): ReactElement {
-  // TODO remove the "embedded" flag fully
-  const embedded = true
-  const history = useHistory<unknown>()
-
   return (
     <section className="start_wrap">
-      <div className="top standard_width">
-        {!embedded && (
-          <>
-            <h1>Add accounts</h1>
-            <button
-              type="button"
-              aria-label="close"
-              className="icon_close"
-              onClick={() => {
-                history.push("/")
-              }}
-            />
-          </>
-        )}
-      </div>
+      <div className="top standard_width" />
       <div className="button_sections_wrap">
         {accountCreateButtonInfos.map((creationSection) => {
           return (
@@ -181,6 +162,7 @@ export default function TabbedOnboardingAddWallet(): ReactElement {
             justify-content: space-between;
             align-items: center;
             margin-bottom: 5px;
+            padding-top: 68.5px;
           }
           h1 {
             color: #fff;

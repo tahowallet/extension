@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import {
   createPassword,
   generateNewKeyring,
@@ -41,7 +41,7 @@ export default function KeyringSetPassword({
       dispatch(generateNewKeyring())
       history.push(nextPage)
     }
-  }, [history, areKeyringsUnlocked])
+  }, [areKeyringsUnlocked, dispatch, history, nextPage])
 
   const validatePassword = (): boolean => {
     if (password.length < 8) {
@@ -75,7 +75,6 @@ export default function KeyringSetPassword({
     <section className="standard_width">
       <div className="top">
         <SharedBackButton />
-        <div className="wordmark" />
       </div>
       <h1 className="serif_header">First, let&apos;s secure your wallet</h1>
 
