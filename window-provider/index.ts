@@ -22,6 +22,7 @@ const impersonateMetamaskWhitelist = [
   "opensea.io",
   "bridge.umbria.network",
   "galaxy.eco",
+  "dydx.exchange",
 ]
 
 export default class TallyWindowProvider extends EventEmitter {
