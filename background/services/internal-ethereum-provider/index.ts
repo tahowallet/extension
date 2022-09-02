@@ -255,7 +255,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
         }
         const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
-        const supportedNetwork = this.getSupportedNetworkByChainId(newChainId)
+        const supportedNetwork = await this.getActiveNetworkByChainId(
+          newChainId
+        )
         if (supportedNetwork) {
           await this.db.setActiveChainIdForOrigin(origin, supportedNetwork)
           return null
@@ -339,12 +341,31 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  getSupportedNetworkByChainId(chainID: string): EVMNetwork | undefined {
-    const network = this.chainService.supportedNetworks.find(
-      (supportedNetwork) =>
-        toHexChainID(supportedNetwork.chainID) === toHexChainID(chainID)
+  /**
+   * Attempts to retrieve a network from the extension's currently
+   * active networks.  Falls back to querying supported networks and
+   * activating a given network if it is supported.
+   *
+   * @param chainID EVM Network chainID
+   * @returns a supported EVMNetwork or undefined.
+   */
+  async getActiveNetworkByChainId(
+    chainID: string
+  ): Promise<EVMNetwork | undefined> {
+    const activeNetworks = await this.chainService.getActiveNetworks()
+    const activeNetwork = activeNetworks.find(
+      (network) => toHexChainID(network.chainID) === toHexChainID(chainID)
     )
-    return network
+    if (activeNetwork) {
+      return activeNetwork
+    }
+
+    try {
+      return await this.chainService.activateNetworkOrThrow(chainID)
+    } catch (e) {
+      logger.warn(e)
+      return undefined
+    }
   }
 
   private async signTypedData(params: SignTypedDataRequest) {

@@ -1,5 +1,5 @@
 import { EVMNetwork, Network } from "../networks"
-import { BTC, ETH, MATIC } from "./currencies"
+import { BTC, ETH, MATIC, OPTIMISTIC_ETH } from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
   name: "Ethereum",
@@ -27,7 +27,7 @@ export const ARBITRUM_ONE: EVMNetwork = {
 
 export const OPTIMISM: EVMNetwork = {
   name: "Optimism",
-  baseAsset: ETH,
+  baseAsset: OPTIMISTIC_ETH,
   chainID: "10",
   family: "EVM",
   coingeckoPlatformID: "optimistic-ethereum",

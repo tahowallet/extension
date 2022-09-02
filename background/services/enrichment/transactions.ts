@@ -29,6 +29,7 @@ import { EVM_ROLLUP_CHAIN_IDS } from "../../constants"
 import { parseLogsForWrappedDepositsAndWithdrawals } from "../../lib/wrappedAsset"
 import { parseERC20Tx, parseLogsForERC20Transfers } from "../../lib/erc20"
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
+import { unsignedTransactionFromEVMTransaction } from "../chain/utils"
 
 async function annotationsFromLogs(
   chainService: ChainService,
@@ -55,23 +56,13 @@ async function annotationsFromLogs(
     tokenTransferLogs,
     accountAddresses
   )
-  const relevantAddresses = [
-    ...new Set(
-      getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs)
-        .concat(
-          tokenTransferLogs.flatMap<string>(
-            ({ senderAddress, recipientAddress }) => [
-              senderAddress,
-              recipientAddress,
-            ]
-          )
-        )
-        .map(normalizeEVMAddress)
-    ),
-  ]
+  const relevantAddresses =
+    getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
+      normalizeEVMAddress
+    )
 
   // Look up transfer log names, then flatten to an address -> name map.
-  const annotationsByAddress = Object.fromEntries(
+  const addressEnrichmentsByAddress = Object.fromEntries(
     (
       await Promise.allSettled(
         relevantAddresses.map(
@@ -91,42 +82,63 @@ async function annotationsFromLogs(
       .filter(([, annotation]) => isDefined(annotation))
   )
 
-  const subannotations = tokenTransferLogs.flatMap<TransactionAnnotation>(
-    ({ contractAddress, amount, senderAddress, recipientAddress }) => {
-      // See if the address matches a fungible asset.
-      const matchingFungibleAsset = assets.find(
-        (asset): asset is SmartContractFungibleAsset =>
-          isSmartContractFungibleAsset(asset) &&
-          sameEVMAddress(asset.contractAddress, contractAddress)
+  const subannotations = (
+    await Promise.allSettled(
+      tokenTransferLogs.map(
+        async ({
+          contractAddress,
+          amount,
+          senderAddress,
+          recipientAddress,
+        }) => {
+          // See if the address matches a fungible asset.
+          const matchingFungibleAsset = assets.find(
+            (asset): asset is SmartContractFungibleAsset =>
+              isSmartContractFungibleAsset(asset) &&
+              sameEVMAddress(asset.contractAddress, contractAddress)
+          )
+
+          if (!matchingFungibleAsset) {
+            return undefined
+          }
+
+          // Try to find a resolved annotation for the recipient and sender and otherwise fetch them
+          const recipient =
+            addressEnrichmentsByAddress[
+              normalizeEVMAddress(recipientAddress)
+            ] ??
+            (await enrichAddressOnNetwork(chainService, nameService, {
+              address: recipientAddress,
+              network,
+            }))
+          const sender =
+            addressEnrichmentsByAddress[normalizeEVMAddress(senderAddress)] ??
+            (await enrichAddressOnNetwork(chainService, nameService, {
+              address: senderAddress,
+              network,
+            }))
+
+          return {
+            type: "asset-transfer" as const,
+            assetAmount: enrichAssetAmountWithDecimalValues(
+              {
+                asset: matchingFungibleAsset,
+                amount,
+              },
+              desiredDecimals
+            ),
+            sender,
+            recipient,
+            timestamp: resolvedTime,
+            blockTimestamp: block?.timestamp,
+          }
+        }
       )
-
-      if (!matchingFungibleAsset) {
-        return []
-      }
-
-      // Try to find a resolved annotation for the recipient and sender
-      const recipient =
-        annotationsByAddress[normalizeEVMAddress(recipientAddress)]
-      const sender = annotationsByAddress[normalizeEVMAddress(senderAddress)]
-
-      return [
-        {
-          type: "asset-transfer",
-          assetAmount: enrichAssetAmountWithDecimalValues(
-            {
-              asset: matchingFungibleAsset,
-              amount,
-            },
-            desiredDecimals
-          ),
-          sender,
-          recipient,
-          timestamp: resolvedTime,
-          blockTimestamp: block?.timestamp,
-        },
-      ]
-    }
+    )
   )
+    .filter(isFulfilledPromise)
+    .map(({ value }) => value)
+    .filter(isDefined)
 
   return subannotations
 }
@@ -170,7 +182,10 @@ export default async function resolveTransactionAnnotation(
   const { gasLimit, blockHash } = transaction
 
   const additionalL1Gas = EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
-    ? await chainService.estimateL1RollupFee(network, transaction.input)
+    ? await chainService.estimateL1RollupFee(
+        network,
+        unsignedTransactionFromEVMTransaction(transaction)
+      )
     : 0n
 
   const gasFee: bigint = isEIP1559TransactionRequest(transaction)

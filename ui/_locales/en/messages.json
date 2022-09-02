@@ -2,8 +2,8 @@
   "popupEdition": "Community Edition",
   "comingSoon": "Coming soon",
   "overview": {
-    "totalBalance": "Total balance",
-    "addresses": "Addresses",
+    "totalBalanceEverywhere": "Total balance on all accounts",
+    "accounts": "Accounts",
     "assets": "Assets",
     "networks": "Networks",
     "tableHeader": {
@@ -66,6 +66,7 @@
     "enableTestNetworks": "Enable test networks",
     "language": "Language",
     "bugReport": "Bug report",
+    "analytics": "Analytics",
     "joinTitle": "Join our community",
     "joinDesc": "Join our Discord to give us feedback!",
     "joinBtn": "Join and give feedback",
@@ -76,7 +77,23 @@
       "discordBtn": "Join Discord",
       "logTitle": "2. Export logs",
       "logDesc": "To better understand your bug, we need you to export your logs.",
-      "logBtn": "Export logs"
+      "logBtn": "Export logs",
+      "ariaLabel": "Open bug report"
+    },
+    "analyticsSetUp": {
+      "title": "Analytics",
+      "toggleTitle": "Analytics are on",
+      "toggleDesc": "Analytics help us understand your needs and empowers us to build a better wallet for you!",
+      "recordTitle": "What we will record",
+      "recordItemOrders": "Number of Swaps / Sends",
+      "recordItemAccounts": "Number of accounts",
+      "recordItemGas": "Gas paid overall",
+      "noRecordTitle": "We will never record",
+      "noRecordItemSeed": "Your seed phrase",
+      "noRecordItemTransactions": "Your address and transactions",
+      "policyBtn": "Privacy policy",
+      "deleteBtn": "Delete my data",
+      "ariaLabel": "Open analytics"
     }
   },
   "passwordStrength": {
@@ -85,5 +102,9 @@
     "strong": "Strong",
     "strength": "Strength",
     "hintDesc": "For a strong password, consider a mix of lower and uppercase characters, symbols, and numbers. Passwords should be over 8 characters."
-  }
+  },
+  "toggle": {
+    "collapse": "Collapse",
+    "viewAll": "View all"
+  } 
 }

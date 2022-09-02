@@ -31,7 +31,7 @@ import {
   selectKeyringsByAddresses,
   selectSourcesByAddress,
 } from "./keyringsSelectors"
-import { AddressOnNetwork } from "../../accounts"
+import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { EVMNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
 import { BASE_ASSETS_BY_SYMBOL, NETWORK_BY_CHAIN_ID } from "../../constants"
 import { DOGGO } from "../../constants/assets"
@@ -209,19 +209,6 @@ export const selectAccountAndTimestampedActivities = createSelector(
   }
 )
 
-export const selectMainCurrencyPricePoint = createSelector(
-  getAssetsState,
-  (state) => selectMainCurrencySymbol(state),
-  selectCurrentNetwork,
-  (assets, mainCurrencySymbol, currentNetwork) => {
-    return selectAssetPricePoint(
-      assets,
-      currentNetwork.baseAsset.symbol,
-      mainCurrencySymbol
-    )
-  }
-)
-
 export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   getAssetsState,
@@ -256,16 +243,6 @@ export const selectCurrentAccountBalances = createSelector(
           )
         : undefined,
     }
-  }
-)
-
-export const selectCurrentAccountAssetBalance = createSelector(
-  selectCurrentAccountBalances,
-  (_: RootState, assetSymbol: string) => assetSymbol,
-  (assetsBalances, assetSymbol) => {
-    return assetsBalances?.assetAmounts.find(
-      (asset) => asset.asset.symbol === assetSymbol
-    )
   }
 )
 
@@ -309,22 +286,53 @@ const getAccountType = (
   return AccountType.Internal
 }
 
+const getTotalBalance = (
+  accountBalances: { [assetSymbol: string]: AccountBalance },
+  assets: AssetsState,
+  mainCurrencySymbol: string
+) => {
+  return Object.values(accountBalances)
+    .map(({ assetAmount }) => {
+      const assetPricePoint = selectAssetPricePoint(
+        assets,
+        assetAmount.asset.symbol,
+        mainCurrencySymbol
+      )
+
+      if (typeof assetPricePoint === "undefined") {
+        return 0
+      }
+
+      const convertedAmount = convertAssetAmountViaPricePoint(
+        assetAmount,
+        assetPricePoint
+      )
+
+      if (typeof convertedAmount === "undefined") {
+        return 0
+      }
+
+      return assetAmountToDesiredDecimals(convertedAmount, desiredDecimals)
+    })
+    .reduce((total, assetBalance) => total + assetBalance, 0)
+}
+
 export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
   getAccountState,
   getAssetsState,
-  selectCurrentNetwork,
   selectAccountSignersByAddress,
   selectKeyringsByAddresses,
   selectSourcesByAddress,
   selectMainCurrencySymbol,
+  selectCurrentNetwork,
   (
     accounts,
     assets,
-    currentNetwork,
     accountSignersByAddress,
     keyringsByAddresses,
     sourcesByAddress,
-    mainCurrencySymbol
+    mainCurrencySymbol,
+    currentNetwork
   ): CategorizedAccountTotals => {
     return Object.entries(
       accounts.accountsData.evm[currentNetwork.chainID] ?? {}
@@ -354,34 +362,6 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
           }
         }
 
-        const totalMainCurrencyAmount = Object.values(accountData.balances)
-          .map(({ assetAmount }) => {
-            const assetPricePoint = selectAssetPricePoint(
-              assets,
-              assetAmount.asset.symbol,
-              mainCurrencySymbol
-            )
-
-            if (typeof assetPricePoint === "undefined") {
-              return 0
-            }
-
-            const convertedAmount = convertAssetAmountViaPricePoint(
-              assetAmount,
-              assetPricePoint
-            )
-
-            if (typeof convertedAmount === "undefined") {
-              return 0
-            }
-
-            return assetAmountToDesiredDecimals(
-              convertedAmount,
-              desiredDecimals
-            )
-          })
-          .reduce((total, assetBalance) => total + assetBalance, 0)
-
         return {
           address,
           network: currentNetwork,
@@ -393,7 +373,7 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
           avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
           localizedTotalMainCurrencyAmount: formatCurrencyAmount(
             mainCurrencySymbol,
-            totalMainCurrencyAmount,
+            getTotalBalance(accountData.balances, assets, mainCurrencySymbol),
             desiredDecimals
           ),
         }
@@ -408,6 +388,48 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
         }),
         {}
       )
+  }
+)
+
+export type AccountTotalList = {
+  [address: string]: {
+    ensName?: string
+    shortenedAddress: string
+    totals: {
+      [chainID: string]: number
+    }
+  }
+}
+/** Get list of all accounts totals on all networks */
+export const selectAccountsTotal = createSelector(
+  getAccountState,
+  getAssetsState,
+  selectMainCurrencySymbol,
+  (accountsState, assetsState, mainCurrencySymbol) => {
+    const accountsTotal: AccountTotalList = {}
+
+    Object.entries(accountsState.accountsData.evm)
+      .filter(([, accounts]) => typeof accounts !== "undefined")
+      .forEach(([chainID, accounts]) =>
+        Object.entries(accounts).forEach(([address, accountData]) => {
+          if (accountData === "loading") return
+
+          const normalizedAddress = normalizeEVMAddress(address)
+          accountsTotal[normalizedAddress] ??= {
+            ensName: accountData.ens.name,
+            shortenedAddress: truncateAddress(address),
+            totals: {},
+          }
+
+          accountsTotal[normalizedAddress].totals[chainID] = getTotalBalance(
+            accountData.balances,
+            assetsState,
+            mainCurrencySymbol
+          )
+        })
+      )
+
+    return accountsTotal
   }
 )
 
@@ -440,28 +462,23 @@ export const selectCurrentAccountTotal = createSelector(
     findAccountTotal(categorizedAccountTotals, currentAccount)
 )
 
-export const getAllAddresses = createSelector(
-  (state: RootState) => state.account,
-  (account) => [
-    ...new Set(
-      Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
-        Object.keys(chainAddresses)
-      )
-    ),
-  ]
-)
+export const getAllAddresses = createSelector(getAccountState, (account) => [
+  ...new Set(
+    Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
+      Object.keys(chainAddresses)
+    )
+  ),
+])
 
 export const getAddressCount = createSelector(
   getAllAddresses,
   (allAddresses) => allAddresses.length
 )
 
-export const getAllNetworks = createSelector(
-  (state: RootState) => state.account,
-  (account) =>
-    Object.keys(account.accountsData.evm).map(
-      (chainID) => NETWORK_BY_CHAIN_ID[chainID]
-    )
+export const getAllNetworks = createSelector(getAccountState, (account) =>
+  Object.keys(account.accountsData.evm).map(
+    (chainID) => NETWORK_BY_CHAIN_ID[chainID]
+  )
 )
 
 export const getNetworkCount = createSelector(

@@ -1,10 +1,13 @@
 import {
+  AlchemyProvider,
+  AlchemyWebSocketProvider,
   EventType,
   JsonRpcProvider,
   Listener,
   WebSocketProvider,
 } from "@ethersproject/providers"
-import { MINUTE, SECOND } from "../../constants"
+import { getNetwork } from "@ethersproject/networks"
+import { ALCHEMY_KEY, MINUTE, SECOND } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
 import { AddressOnNetwork } from "../../accounts"
@@ -659,4 +662,18 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       throw error
     }
   }
+}
+
+export function makeSerialFallbackProvider(
+  network: EVMNetwork
+): SerialFallbackProvider {
+  return new SerialFallbackProvider(
+    network,
+    () =>
+      new AlchemyWebSocketProvider(
+        getNetwork(Number(network.chainID)),
+        ALCHEMY_KEY
+      ),
+    () => new AlchemyProvider(getNetwork(Number(network.chainID)), ALCHEMY_KEY)
+  )
 }

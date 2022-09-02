@@ -1,4 +1,4 @@
-import Dexie from "dexie"
+import Dexie, { IndexableTypeArray } from "dexie"
 
 import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -174,6 +174,10 @@ export class ChainDatabase extends Dexie {
     )
   }
 
+  async getAllSavedTransactionHashes(): Promise<IndexableTypeArray> {
+    return this.chainTransactions.orderBy("hash").keys()
+  }
+
   /**
    * Looks up and returns all pending transactions for the given network.
    */
@@ -316,6 +320,17 @@ export class ChainDatabase extends Dexie {
 
   async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.accountsToTrack.toArray()
+  }
+
+  async getChainIDsToTrack(): Promise<Set<string>> {
+    const chainIDs = await this.accountsToTrack
+      .orderBy("network.chainID")
+      .keys()
+    return new Set(
+      chainIDs.filter(
+        (chainID): chainID is string => typeof chainID === "string"
+      )
+    )
   }
 }
 
