@@ -347,7 +347,7 @@ export default class ChainService extends BaseService<Events> {
     return this.activeNetworks
   }
 
-  async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
+  private async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
     const provider = this.providerForNetwork(network)
     if (provider) {
       await Promise.allSettled([
