@@ -1,5 +1,5 @@
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
-import { ETHEREUM, POLYGON, SECOND } from "../../../constants"
+import { ALCHEMY_KEY, ETHEREUM, POLYGON, SECOND } from "../../../constants"
 import logger from "../../../lib/logger"
 import { isDefined } from "../../../lib/utils/type-guards"
 import { sameNetwork } from "../../../networks"
@@ -93,7 +93,7 @@ const lookupUNSDomain = async (domain: string) => {
     {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${process.env.ALCHEMY_KEY?.trim()}`,
+        Authorization: `Bearer ${ALCHEMY_KEY?.trim()}`,
       },
     }
   )
