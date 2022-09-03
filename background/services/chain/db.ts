@@ -334,7 +334,7 @@ export class ChainDatabase extends Dexie {
   }
 }
 
-export async function createDB(): Promise<ChainDatabase> {
+export function createDB(): ChainDatabase {
   const db = new ChainDatabase()
 
   return db

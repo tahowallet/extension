@@ -163,11 +163,7 @@ export default class ChainService extends BaseService<Events> {
     ChainService,
     [Promise<PreferenceService>, Promise<KeyringService>]
   > = async (preferenceService, keyringService) => {
-    return new this(
-      await createDB(),
-      await preferenceService,
-      await keyringService
-    )
+    return new this(createDB(), await preferenceService, await keyringService)
   }
 
   supportedNetworks: EVMNetwork[]
