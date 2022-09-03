@@ -18,7 +18,7 @@ describe("Chain Database ", () => {
   beforeEach(() => {
     // Reset state of indexedDB
     indexedDB = new IDBFactory()
-    db = createDB()
+    db = createDB({ indexedDB })
   })
 
   describe("addAccountToTrack", () => {
@@ -29,6 +29,14 @@ describe("Chain Database ", () => {
       await db.addAccountToTrack(account2)
       const accountsToTrack = await db.getAccountsToTrack()
       expect(accountsToTrack).toEqual([account1, account2])
+    })
+
+    it("should not add the same account twice.", async () => {
+      expect(await db.getAccountsToTrack()).toHaveLength(0)
+      await db.addAccountToTrack(account1)
+      expect(await db.getAccountsToTrack()).toHaveLength(1)
+      await db.addAccountToTrack(account1)
+      expect(await db.getAccountsToTrack()).toHaveLength(1)
     })
   })
 })

@@ -1,4 +1,4 @@
-import Dexie, { IndexableTypeArray } from "dexie"
+import Dexie, { DexieOptions, IndexableTypeArray } from "dexie"
 
 import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -64,8 +64,8 @@ export class ChainDatabase extends Dexie {
    */
   private balances!: Dexie.Table<AccountBalance, number>
 
-  constructor() {
-    super("tally/chain")
+  constructor(options?: DexieOptions) {
+    super("tally/chain", options)
     this.version(1).stores({
       migrations: "++id,appliedAt",
       accountsToTrack:
@@ -334,8 +334,8 @@ export class ChainDatabase extends Dexie {
   }
 }
 
-export function createDB(): ChainDatabase {
-  const db = new ChainDatabase()
+export function createDB(options?: DexieOptions): ChainDatabase {
+  const db = new ChainDatabase(options)
 
   return db
 }
