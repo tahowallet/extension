@@ -251,15 +251,6 @@ export class ChainDatabase extends Dexie {
     await this.accountsToTrack.where("address").equals(address).delete()
   }
 
-  async setAccountsToTrack(
-    addressesAndNetworks: Set<AddressOnNetwork>
-  ): Promise<void> {
-    await this.transaction("rw", this.accountsToTrack, () => {
-      this.accountsToTrack.clear()
-      this.accountsToTrack.bulkAdd([...addressesAndNetworks])
-    })
-  }
-
   async getOldestAccountAssetTransferLookup(
     addressNetwork: AddressOnNetwork
   ): Promise<bigint | null> {
