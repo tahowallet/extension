@@ -1404,43 +1404,52 @@ export default class ChainService extends BaseService<Events> {
     const provider = this.providerForNetworkOrThrow(network)
     await provider.subscribeFullPendingTransactions(
       { address, network },
-      async (transaction) => {
-        // handle incoming transactions for an account
-        try {
-          const normalizedFromAddress = normalizeEVMAddress(transaction.from)
-
-          // If this is an EVM chain, we're tracking the from address's
-          // nonce, and the pending transaction has a higher nonce, update our
-          // view of it. This helps reduce the number of times when a
-          // transaction submitted outside of this wallet causes this wallet to
-          // produce bad transactions with reused nonces.
-          if (
-            typeof network.chainID !== "undefined" &&
-            typeof this.evmChainLastSeenNoncesByNormalizedAddress[
-              network.chainID
-            ]?.[normalizedFromAddress] !== "undefined" &&
-            this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID]?.[
-              normalizedFromAddress
-            ] <= transaction.nonce
-          ) {
-            this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
-              normalizedFromAddress
-            ] = transaction.nonce
-          }
-          await this.saveTransaction(transaction, "alchemy")
-
-          // Wait for confirmation/receipt information.
-          this.subscribeToTransactionConfirmation(network, transaction)
-        } catch (error) {
-          logger.error(`Error saving tx: ${transaction}`, error)
-        }
-      }
+      this.handlePendingTransaction.bind(this)
     )
 
     this.subscribedAccounts.push({
       account: address,
       provider,
     })
+  }
+
+  /**
+   * Persists pending transactions and subscribes to their confirmation
+   *
+   * @param transaction The pending transaction
+   */
+  private async handlePendingTransaction(
+    transaction: AnyEVMTransaction
+  ): Promise<void> {
+    try {
+      const { network } = transaction
+      const normalizedFromAddress = normalizeEVMAddress(transaction.from)
+
+      // If this is an EVM chain, we're tracking the from address's
+      // nonce, and the pending transaction has a higher nonce, update our
+      // view of it. This helps reduce the number of times when a
+      // transaction submitted outside of this wallet causes this wallet to
+      // produce bad transactions with reused nonces.
+      if (
+        typeof network.chainID !== "undefined" &&
+        typeof this.evmChainLastSeenNoncesByNormalizedAddress[
+          network.chainID
+        ]?.[normalizedFromAddress] !== "undefined" &&
+        this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID]?.[
+          normalizedFromAddress
+        ] <= transaction.nonce
+      ) {
+        this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
+          normalizedFromAddress
+        ] = transaction.nonce
+      }
+      await this.saveTransaction(transaction, "alchemy")
+
+      // Wait for confirmation/receipt information.
+      this.subscribeToTransactionConfirmation(network, transaction)
+    } catch (error) {
+      logger.error(`Error saving tx: ${transaction}`, error)
+    }
   }
 
   /**
