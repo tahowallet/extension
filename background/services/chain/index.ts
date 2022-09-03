@@ -35,7 +35,7 @@ import {
 } from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { getOrCreateDB, ChainDatabase } from "./db"
+import { createDB, ChainDatabase } from "./db"
 import BaseService from "../base"
 import {
   blockFromEthersBlock,
@@ -164,7 +164,7 @@ export default class ChainService extends BaseService<Events> {
     [Promise<PreferenceService>, Promise<KeyringService>]
   > = async (preferenceService, keyringService) => {
     return new this(
-      await getOrCreateDB(),
+      await createDB(),
       await preferenceService,
       await keyringService
     )
