@@ -1,1 +1,41 @@
-{}
+{
+  "comingSoon": "Próximamente",
+  "overview": {
+    "tableHeader": {
+      "balance": "Saldo"
+    }
+  },
+  "passwordStrength": {
+    "average": "Promedio",
+    "hintDesc": "Para una contraseña segura, considere mezclar mayúsculas y minúsculas, símbolos, y números. Las contraseñas deben tener más de 8 caracteres"
+  },
+  "protocol": {
+    "connected": "Conectado",
+    "l2": "Soluciones de escalabilidad L2",
+    "mainnet": "Mainnet"
+  },
+  "settings": {
+    "bugReport": "Informe de errores",
+    "exportLogs": {
+      "ariaLabel": "Reporta un error",
+      "discordBtn": "Únase a Discord",
+      "logTitle": "2. Exportar registros",
+      "title": "Informe de errores"
+    },
+    "hideSmallAssetBalance": "Ocultar saldos menores de {{sign}}{{amount}}",
+    "joinBtn": "Únete y danos tu opinión",
+    "joinDesc": "¡Únete a nuestro Discord y danos tu opinión!",
+    "joinTitle": "Únete a nuestra comunidad"
+  },
+  "swap": {
+    "transactionSettings": {
+      "daoFee": "Comisión DAO",
+      "estimatedFee": "Comisión de la red estimada"
+    }
+  },
+  "wallet": {
+    "assetAmount": "Activo / Monto",
+    "secureSeed": "Primero, asegure su frase semilla",
+    "sendButton": "Continuar"
+  }
+}
