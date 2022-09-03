@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto"
 import { IDBFactory } from "fake-indexeddb"
 import { ETHEREUM, POLYGON } from "../../../constants"
 import { ChainDatabase, createDB } from "../db"
