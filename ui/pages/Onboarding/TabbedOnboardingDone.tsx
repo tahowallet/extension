@@ -46,7 +46,7 @@ export default function TabbedOnboardingDone(): ReactElement {
               ? "/images/mac-shortcut.svg"
               : "/images/windows-shortcut.svg"
           }
-          alt={os === "mac" ? "option + shift + T" : "alt + shift + T"}
+          alt={os === "mac" ? "option + T" : "alt + T"}
         />
       </div>
       <div className="button_container">
