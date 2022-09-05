@@ -10,6 +10,7 @@ const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
   showTestNetworks: false,
+  collectAnalytics: false,
 }
 
 export interface Location {
@@ -26,6 +27,7 @@ export type UIState = {
     hideDust: boolean
     defaultWallet: boolean
     showTestNetworks: boolean
+    collectAnalytics: boolean
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
@@ -70,6 +72,16 @@ const uiSlice = createSlice({
     ): void => {
       immerState.settings.showTestNetworks = showTestNetworks
     },
+    toggleCollectAnalytics: (
+      state,
+      { payload: collectAnalytics }: { payload: boolean }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        collectAnalytics,
+      },
+    }),
     setShowingActivityDetail: (
       state,
       { payload: transactionID }: { payload: string | null }
@@ -132,6 +144,7 @@ export const {
   initializationLoadingTimeHitLimit,
   toggleHideDust,
   toggleTestNetworks,
+  toggleCollectAnalytics,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
@@ -224,4 +237,9 @@ export const selectInitializationTimeExpired = createSelector(
 export const selectShowTestNetworks = createSelector(
   selectSettings,
   (settings) => settings?.showTestNetworks
+)
+
+export const selectCollectAnalytics = createSelector(
+  selectSettings,
+  (settings) => settings?.collectAnalytics
 )
