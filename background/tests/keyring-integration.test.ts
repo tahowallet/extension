@@ -284,26 +284,6 @@ describe("KeyringService when initialized", () => {
     expect(service.locked()).toEqual(false)
     expect(await service.unlock(testPassword)).toEqual(true)
   })
-
-  it("successfully changes the vault password when provided with the correct current password", async () => {
-    const badPasswordChangeAttempt = {
-      currentPassword: "booyan",
-      newPassword: "my new password",
-    }
-    const badPasswordSuccess = await service.changePassword(
-      badPasswordChangeAttempt
-    )
-    expect(badPasswordSuccess).toEqual(false)
-
-    const goodPasswordChangeAttempt = {
-      currentPassword: testPassword,
-      newPassword: "my new password",
-    }
-    const goodPasswordSuccess = await service.changePassword(
-      goodPasswordChangeAttempt
-    )
-    expect(goodPasswordSuccess).toEqual(true)
-  })
 })
 
 describe("KeyringService when saving keyrings", () => {
