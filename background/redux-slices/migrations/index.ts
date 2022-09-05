@@ -19,7 +19,7 @@ import to17 from "./to-17"
  * The version of persisted Redux state the extension is expecting. Any previous
  * state without this version, or with a lower version, ought to be migrated.
  */
-export const REDUX_STATE_VERSION = 16
+export const REDUX_STATE_VERSION = 17
 
 /**
  * Common type for all migration functions.
