@@ -1,9 +1,4 @@
-import {
-  AlchemyProvider,
-  AlchemyWebSocketProvider,
-  TransactionReceipt,
-} from "@ethersproject/providers"
-import { getNetwork } from "@ethersproject/networks"
+import { TransactionReceipt } from "@ethersproject/providers"
 import { ethers, utils } from "ethers"
 import { Logger, UnsignedTransaction } from "ethers/lib/utils"
 import logger from "../../lib/logger"
@@ -20,6 +15,7 @@ import {
   TransactionRequestWithNonce,
   SignedTransaction,
   isEIP1559EnrichedTransactionSignatureRequest,
+  toHexChainID,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import {
@@ -30,10 +26,10 @@ import {
   OPTIMISM,
   EVM_ROLLUP_CHAIN_IDS,
   GOERLI,
+  NETWORK_BY_CHAIN_ID,
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
-  SUPPORT_GOERLI,
   SUPPORT_OPTIMISM,
   USE_MAINNET_FORK,
 } from "../../features"
@@ -58,17 +54,15 @@ import type {
   EnrichedLegacyTransactionRequest,
   EnrichedLegacyTransactionSignatureRequest,
 } from "../enrichment"
-import SerialFallbackProvider from "./serial-fallback-provider"
+import SerialFallbackProvider, {
+  makeSerialFallbackProvider,
+} from "./serial-fallback-provider"
 import AssetDataHelper from "./asset-data-helper"
 import {
   OPTIMISM_GAS_ORACLE_ABI,
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
 import KeyringService from "../keyring"
-
-// We can't use destructuring because webpack has to replace all instances of
-// `process.env` variables in the bundled output
-const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
 
 // How many queued transactions should be retrieved on every tx alarm, per
 // network. To get frequency, divide by the alarm period. 5 tx / 5 minutes →
@@ -178,6 +172,8 @@ export default class ChainService extends BaseService<Events> {
 
   supportedNetworks: EVMNetwork[]
 
+  private activeNetworks: EVMNetwork[]
+
   assetData: AssetDataHelper
 
   private constructor(
@@ -235,28 +231,18 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks = [
       ETHEREUM,
       POLYGON,
-      ...(SUPPORT_GOERLI ? [GOERLI] : []),
+      GOERLI,
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
+
+    this.activeNetworks = []
 
     this.providers = {
       evm: Object.fromEntries(
         this.supportedNetworks.map((network) => [
           network.chainID,
-          new SerialFallbackProvider(
-            network,
-            () =>
-              new AlchemyWebSocketProvider(
-                getNetwork(Number(network.chainID)),
-                ALCHEMY_KEY
-              ),
-            () =>
-              new AlchemyProvider(
-                getNetwork(Number(network.chainID)),
-                ALCHEMY_KEY
-              )
-          ),
+          makeSerialFallbackProvider(network),
         ])
       ),
     }
@@ -272,27 +258,15 @@ export default class ChainService extends BaseService<Events> {
     await super.internalStartService()
 
     const accounts = await this.getAccountsToTrack()
+    const activeNetworks = await this.getActiveNetworks()
 
-    // get the latest blocks and subscribe for all support networks
+    // get the latest blocks and subscribe for all active networks
     // TODO revisit whether we actually want to subscribe to new heads
     // if a user isn't tracking a relevant addressOnNetwork
-    this.supportedNetworks.forEach(async (network) => {
-      const provider = this.providerForNetwork(network)
-      if (provider) {
-        Promise.all([
-          provider.getBlockNumber().then(async (n) => {
-            const result = await provider.getBlock(n)
-            const block = blockFromEthersBlock(network, result)
-            await this.db.addBlock(block)
-          }),
-
-          this.subscribeToNewHeads(network),
-        ]).catch((e) => {
-          logger.error("Error getting block number or new head", e)
-        })
-      } else {
-        logger.error(`Couldn't find provider for supported network ${network}`)
-      }
+    activeNetworks.forEach(async (network) => {
+      this.subscribeToNetworkEvents(network).catch((e) => {
+        logger.error("Error getting block number or new head", e)
+      })
     })
 
     Promise.allSettled(
@@ -311,7 +285,7 @@ export default class ChainService extends BaseService<Events> {
           // Schedule any stored unconfirmed transactions for
           // retrieval---either to confirm they no longer exist, or to
           // read/monitor their status.
-          this.supportedNetworks.map((network) =>
+          activeNetworks.map((network) =>
             this.db
               .getNetworkPendingTransactions(network)
               .then((pendingTransactions) => {
@@ -347,6 +321,87 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
+   * Pulls the list of active networks from memory or indexedDB.
+   * Defaults to ethereum in the case that neither exist.
+   */
+  async getActiveNetworks(): Promise<EVMNetwork[]> {
+    if (this.activeNetworks.length > 0) {
+      return this.activeNetworks
+    }
+
+    // Since activeNetworks will be an empty array at extension load (or reload time)
+    // we need a durable way to track which networks an extension is tracking.
+    // The below code should only be called once per extension reload for extensions
+    // with active accounts
+    const networksToTrack = await this.getNetworksToTrack()
+
+    await Promise.allSettled([
+      networksToTrack.map(async (network) =>
+        this.activateNetworkOrThrow(network.chainID)
+      ),
+    ])
+
+    return this.activeNetworks
+  }
+
+  private async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
+    const provider = this.providerForNetwork(network)
+    if (provider) {
+      await Promise.allSettled([
+        this.fetchLatestBlockForNetwork(network),
+        this.subscribeToNewHeads(network),
+      ])
+    } else {
+      logger.error(`Couldn't find provider for network ${network.name}`)
+    }
+  }
+
+  /**
+   * Adds a supported network to list of active networks.
+   */
+  async activateNetworkOrThrow(chainID: string): Promise<EVMNetwork> {
+    const activeNetwork = this.activeNetworks.find(
+      (ntwrk) => toHexChainID(ntwrk.chainID) === toHexChainID(chainID)
+    )
+
+    if (activeNetwork) {
+      logger.warn(
+        `${activeNetwork.name} already active - no need to activate it`
+      )
+      return activeNetwork
+    }
+
+    const networkToActivate = this.supportedNetworks.find(
+      (ntwrk) => toHexChainID(ntwrk.chainID) === toHexChainID(chainID)
+    )
+    if (!networkToActivate) {
+      throw new Error(`Network with chainID ${chainID} is not supported`)
+    }
+
+    this.activeNetworks.push(networkToActivate)
+
+    const existingSubscription = this.subscribedNetworks.find(
+      (networkSubscription) =>
+        networkSubscription.network.chainID === networkToActivate.chainID
+    )
+
+    if (!existingSubscription) {
+      this.subscribeToNetworkEvents(networkToActivate)
+      const addressesToTrack = new Set(
+        (await this.getAccountsToTrack()).map((account) => account.address)
+      )
+      addressesToTrack.forEach((address) => {
+        this.addAccountToTrack({
+          address,
+          network: networkToActivate,
+        })
+      })
+    }
+
+    return networkToActivate
+  }
+
+  /**
    * Finds a provider for the given network, or returns undefined if no such
    * provider exists.
    */
@@ -355,10 +410,10 @@ export default class ChainService extends BaseService<Events> {
 
     if (!provider) {
       logger.error(
-        "Request received for operation on unsupported network",
+        "Request received for operation on an inactive network",
         network,
         "expected",
-        this.supportedNetworks
+        this.activeNetworks
       )
       throw new Error(`Unexpected network ${network}`)
     }
@@ -668,6 +723,22 @@ export default class ChainService extends BaseService<Events> {
 
   async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.db.getAccountsToTrack()
+  }
+
+  async getNetworksToTrack(): Promise<EVMNetwork[]> {
+    const chainIDs = await this.db.getChainIDsToTrack()
+    if (chainIDs.size === 0) {
+      // Default to tracking Ethereum so ENS resolution works during onboarding
+      // Temporarily add Goerli to default networks to track.  The
+      // SUPPORT_GOERLI still gates actual use of Goerli.
+      return [ETHEREUM, GOERLI]
+    }
+    // Temporarily add Goerli to default networks to track.  The
+    // SUPPORT_GOERLI still gates actual use of Goerli.
+    return [...chainIDs, GOERLI.chainID].map((chainID) => {
+      const network = NETWORK_BY_CHAIN_ID[chainID]
+      return network
+    })
   }
 
   async removeAccountToTrack(address: string): Promise<void> {
@@ -1274,6 +1345,25 @@ export default class ChainService extends BaseService<Events> {
           network.name === trackedNetwork.name
       )
     )
+  }
+
+  /**
+   * Get the latest block for a network and save it to the db.
+   *
+   * @param network The EVM network to watch.
+   */
+  private async fetchLatestBlockForNetwork(network: EVMNetwork): Promise<void> {
+    const provider = this.providerForNetwork(network)
+    if (provider) {
+      try {
+        const blockNumber = provider.getBlockNumber()
+        const result = await provider.getBlock(blockNumber)
+        const block = blockFromEthersBlock(network, result)
+        await this.db.addBlock(block)
+      } catch (e) {
+        logger.error("Error getting block number", e)
+      }
+    }
   }
 
   /**
