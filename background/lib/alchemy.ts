@@ -20,6 +20,10 @@ import {
 import { AddressOnNetwork } from "../accounts"
 import fetchWithTimeout from "../utils/fetching"
 
+// We can't use destructuring because webpack has to replace all instances of
+// `process.env` variables in the bundled output
+export const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
+
 /**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
  * account.
@@ -332,7 +336,7 @@ export async function getNFTs({
   const requestUrl = new URL(
     `https://${
       network.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
-    }.alchemyapi.io/nft/v2/${process.env.ALCHEMY_KEY}/getNFTs/`
+    }.alchemyapi.io/nft/v2/${ALCHEMY_KEY}/getNFTs/`
   )
   requestUrl.searchParams.set("owner", address)
   requestUrl.searchParams.set("filters[]", "SPAM")

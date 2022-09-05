@@ -165,15 +165,20 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
 export const setSelectedNetwork = createBackgroundAsyncThunk(
   "ui/setSelectedNetwork",
   async (network: EVMNetwork, { getState, dispatch }) => {
-    emitter.emit("newSelectedNetwork", network)
     const state = getState() as { ui: UIState; account: AccountState }
     const { ui, account } = state
+    const currentlySelectedChainID = ui.selectedAccount.network.chainID
+    emitter.emit("newSelectedNetwork", network)
+    // Add any accounts on the currently selected network to the newly
+    // selected network - if those accounts don't yet exist on it.
+    Object.keys(account.accountsData.evm[currentlySelectedChainID]).forEach(
+      (address) => {
+        if (!account.accountsData.evm[network.chainID]?.[address]) {
+          dispatch(addAddressNetwork({ address, network }))
+        }
+      }
+    )
     dispatch(setNewSelectedAccount({ ...ui.selectedAccount, network }))
-    if (
-      !account.accountsData.evm[network.chainID]?.[ui.selectedAccount.address]
-    ) {
-      dispatch(addAddressNetwork({ ...ui.selectedAccount, network }))
-    }
   }
 )
 
