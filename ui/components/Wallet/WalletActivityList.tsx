@@ -120,15 +120,16 @@ export default function WalletActivityList({
           <SharedButton
             type="tertiary"
             size="small"
-            iconMedium="new-tab"
+            iconSmall="new-tab"
             onClick={openExplorer}
+            style={{ padding: 0 }}
           >
             {scanWebsite[network.chainID].title}
           </SharedButton>
         </div>
         <style jsx>{`
           span {
-            width: 316px;
+            width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -141,6 +142,7 @@ export default function WalletActivityList({
           .row {
             display: flex;
             flex-direction: row;
+            gap: 8px;
           }
           .hand {
             margin: 10px 0px;
