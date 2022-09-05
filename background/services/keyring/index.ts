@@ -5,7 +5,11 @@ import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 import { arrayify } from "ethers/lib/utils"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
+import {
+  getEncryptedVaults,
+  keepOnlyOneEncryptedVault,
+  writeLatestEncryptedVault,
+} from "./storage"
 import {
   decryptVault,
   deriveSymmetricKeyFromPassword,
@@ -204,7 +208,7 @@ export default class KeyringService extends BaseService<Events> {
 
       if (isCurrentPasswordValid) {
         this.#cachedKey = await deriveSymmetricKeyFromPassword(newPassword)
-        await this.persistKeyrings()
+        await this.persistKeyrings(true)
         return true
       }
 
@@ -284,7 +288,7 @@ export default class KeyringService extends BaseService<Events> {
       }
     }
 
-    // if there's no vault or we want to force a new vault, generate a new key
+    // if there's no vault, or we want to force a new vault, generate a new key
     // and unlock
     if (!this.#cachedKey) {
       this.#cachedKey = await deriveSymmetricKeyFromPassword(password)
@@ -720,8 +724,12 @@ export default class KeyringService extends BaseService<Events> {
 
   /**
    * Serialize, encrypt, and persist all HDKeyrings.
+   *
+   * @param deleteOlderVaults An optional parameter that if true
+   * will persist only the latest vault and remove all others
+   *
    */
-  private async persistKeyrings() {
+  private async persistKeyrings(deleteOlderVaults = false) {
     this.requireUnlocked()
 
     // This if guard will always pass due to requireUnlocked, but statically
@@ -739,7 +747,12 @@ export default class KeyringService extends BaseService<Events> {
         },
         this.#cachedKey
       )
-      await writeLatestEncryptedVault(vault)
+
+      if (deleteOlderVaults) {
+        await keepOnlyOneEncryptedVault(vault)
+      } else {
+        await writeLatestEncryptedVault(vault)
+      }
     }
   }
 }
