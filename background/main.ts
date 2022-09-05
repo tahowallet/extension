@@ -86,6 +86,7 @@ import {
   requestPermission,
   emitter as providerBridgeSliceEmitter,
   initializePermissions,
+  revokePermissionsForAddress,
 } from "./redux-slices/dapp"
 import logger from "./lib/logger"
 import {
@@ -495,6 +496,9 @@ export default class Main extends BaseService<never> {
   ): Promise<void> {
     this.store.dispatch(deleteAccount(address))
     this.store.dispatch(deleteNFts(address))
+    // remove dApp premissions
+    this.store.dispatch(revokePermissionsForAddress(address))
+    await this.providerBridgeService.revokePermissionsForAddress(address)
     // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signerType)
   }
@@ -505,12 +509,13 @@ export default class Main extends BaseService<never> {
       address: string
     }>
   ): Promise<void> {
+    const activeNetworks = await this.chainService.getActiveNetworks()
     await Promise.all(
       accounts.map(async ({ path, address }) => {
         await this.ledgerService.saveAddress(path, address)
 
         await Promise.all(
-          this.chainService.supportedNetworks.map(async (network) => {
+          activeNetworks.map(async (network) => {
             const addressNetwork = {
               address,
               network,
@@ -844,8 +849,9 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateKeyrings(keyrings))
     })
 
-    this.keyringService.emitter.on("address", (address) => {
-      this.chainService.supportedNetworks.forEach((network) => {
+    this.keyringService.emitter.on("address", async (address) => {
+      const activeNetworks = await this.chainService.getActiveNetworks()
+      activeNetworks.forEach((network) => {
         // Mark as loading and wire things up.
         this.store.dispatch(
           loadAccount({
@@ -1143,6 +1149,8 @@ export default class Main extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await Promise.all(
+          // We use supportedNetworks here because we currently grant
+          // dapp permission for all supported networks when approving a dapp.
           this.chainService.supportedNetworks.map(async (network) => {
             await this.providerBridgeService.denyOrRevokePermission({
               ...permission,
