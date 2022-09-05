@@ -35,7 +35,7 @@ export async function getEncryptedVaults(): Promise<SerializedEncryptedVaults> {
   ) {
     return tallyVaults as SerializedEncryptedVaults
   }
-  throw new Error("Encrypted vaults are using an unkown serialization format")
+  throw new Error("Encrypted vaults are using an unknown serialization format")
 }
 
 function equalVaults(vault1: EncryptedVault, vault2: EncryptedVault): boolean {
@@ -53,7 +53,7 @@ function equalVaults(vault1: EncryptedVault, vault2: EncryptedVault): boolean {
 
 /**
  * Write an encryptedVault to extension storage if and only if it's different
- * than the most recently saved vault.
+ * from the most recently saved vault.
  *
  * @param encryptedVault - an encrypted keyring vault
  */
@@ -85,4 +85,26 @@ export async function writeLatestEncryptedVault(
       },
     })
   }
+}
+
+/**
+ * Write one encryptedVault to extension storage, while
+ * removing all other vaults from extension storage.
+ *
+ * @param encryptedVault - an encrypted keyring vault
+ */
+export async function keepOnlyOneEncryptedVault(
+  encryptedVault: EncryptedVault
+): Promise<void> {
+  await browser.storage.local.set({
+    tallyVaults: {
+      version: 1,
+      vaults: [
+        {
+          timeSaved: Date.now(),
+          vault: encryptedVault,
+        },
+      ],
+    },
+  })
 }

@@ -5,7 +5,11 @@ import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 import { arrayify } from "ethers/lib/utils"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
+import {
+  getEncryptedVaults,
+  keepOnlyOneEncryptedVault,
+  writeLatestEncryptedVault,
+} from "./storage"
 import {
   decryptVault,
   deriveSymmetricKeyFromPassword,
@@ -34,6 +38,11 @@ export type Keyring = {
 export type KeyringAccountSigner = {
   type: "keyring"
   keyringID: string
+}
+
+export type ChangePasswordPayload = {
+  currentPassword: string
+  newPassword: string
 }
 
 export interface KeyringMetadata {
@@ -145,6 +154,72 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
+   * Verify if the provided password is valid.
+   * Do not actually lock or unlock the vault.
+   *
+   * @param password A user-chosen string used to encrypt keyring vaults.
+   *        Unlocking will fail if an existing vault is found, and this password
+   *        can't decrypt it.
+   * @returns true if the password is able to unlock the vault,
+   *          and false otherwise.
+   */
+  // eslint-disable-next-line class-methods-use-this
+  private async verifyPassword(password: string): Promise<boolean> {
+    const { vaults } = await getEncryptedVaults()
+    const currentEncryptedVault = vaults.slice(-1)[0]?.vault
+    if (currentEncryptedVault) {
+      // attempt to load the vault
+      const saltedKey = await deriveSymmetricKeyFromPassword(
+        password,
+        currentEncryptedVault.salt
+      )
+      try {
+        await decryptVault<SerializedKeyringData>(
+          currentEncryptedVault,
+          saltedKey
+        )
+      } catch (err) {
+        // if we weren't able to load the vault, don't unlock
+        return false
+      }
+      // hooray! vault is loaded
+      return true
+    }
+
+    return false
+  }
+
+  /**
+   * Create a new vault encrypted with a new user-chosen password.
+   * Do not actually lock or unlock any vaults.
+   *
+   * @param changePasswordPayload An object with this shape:
+   * { currentPassword: string, newPassword: string }
+   *
+   * @returns true if the password was successfully changed,
+   *          and false otherwise.
+   */
+  async changePassword({
+    currentPassword,
+    newPassword,
+  }: ChangePasswordPayload): Promise<boolean> {
+    try {
+      const isCurrentPasswordValid = await this.verifyPassword(currentPassword)
+
+      if (isCurrentPasswordValid) {
+        this.#cachedKey = await deriveSymmetricKeyFromPassword(newPassword)
+        await this.persistKeyrings(true)
+        return true
+      }
+
+      return false
+    } catch (err) {
+      logger.error("Failed to change the password", err)
+      return false
+    }
+  }
+
+  /**
    * Unlock the keyring with a provided password, initializing from the most
    * recently persisted keyring vault if one exists.
    *
@@ -213,7 +288,7 @@ export default class KeyringService extends BaseService<Events> {
       }
     }
 
-    // if there's no vault or we want to force a new vault, generate a new key
+    // if there's no vault, or we want to force a new vault, generate a new key
     // and unlock
     if (!this.#cachedKey) {
       this.#cachedKey = await deriveSymmetricKeyFromPassword(password)
@@ -649,8 +724,12 @@ export default class KeyringService extends BaseService<Events> {
 
   /**
    * Serialize, encrypt, and persist all HDKeyrings.
+   *
+   * @param deleteOlderVaults An optional parameter that if true
+   * will persist only the latest vault and remove all others
+   *
    */
-  private async persistKeyrings() {
+  private async persistKeyrings(deleteOlderVaults = false) {
     this.requireUnlocked()
 
     // This if guard will always pass due to requireUnlocked, but statically
@@ -668,7 +747,12 @@ export default class KeyringService extends BaseService<Events> {
         },
         this.#cachedKey
       )
-      await writeLatestEncryptedVault(vault)
+
+      if (deleteOlderVaults) {
+        await keepOnlyOneEncryptedVault(vault)
+      } else {
+        await writeLatestEncryptedVault(vault)
+      }
     }
   }
 }
