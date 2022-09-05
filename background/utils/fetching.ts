@@ -1,8 +1,9 @@
 import { logger } from "ethers"
 
-const DEFAULT_TIMEOUT = 3_000
+const DEFAULT_TIMEOUT = 10000
 
-const makeFetchWithTimeout = (timeoutMs: number) => {
+export const makeFetchWithTimeout = (timeoutMs: number) => {
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   return async function fetchWithTimeout(
     requestInfo: RequestInfo,
     options?: RequestInit | undefined
@@ -21,7 +22,4 @@ const makeFetchWithTimeout = (timeoutMs: number) => {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, prettier/prettier
-const fetchWithTimeout = (timeoutMs = DEFAULT_TIMEOUT) => makeFetchWithTimeout(timeoutMs)
-
-export default fetchWithTimeout
+export const fetchWithTimeout = makeFetchWithTimeout(DEFAULT_TIMEOUT)

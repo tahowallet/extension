@@ -1,5 +1,5 @@
 import { AddressOnNetwork } from "../accounts"
-import fetchWithTimeout from "../utils/fetching"
+import { fetchWithTimeout } from "../utils/fetching"
 import logger from "./logger"
 
 export type SimpleHashNFTModel = {
@@ -57,7 +57,7 @@ export async function getNFTs({
   try {
     // TODO validate with AJV
     const result = (await (
-      await fetchWithTimeout()(requestURL.toString(), {
+      await fetchWithTimeout(requestURL.toString(), {
         headers,
       })
     ).json()) as unknown as SimpleHashAPIResponse

@@ -3,7 +3,7 @@ import { ETHEREUM, POLYGON, SECOND } from "../../../constants"
 import { ALCHEMY_KEY } from "../../../lib/alchemy"
 import { isDefined } from "../../../lib/utils/type-guards"
 import { sameNetwork } from "../../../networks"
-import fetchWithTimeout from "../../../utils/fetching"
+import { makeFetchWithTimeout } from "../../../utils/fetching"
 import { NameResolver } from "../name-resolver"
 
 // Time until response is stale
@@ -63,13 +63,15 @@ const cacheAsyncResults = <F extends (...args: any[]) => Promise<any>>(
   }) as F
 }
 
+const fetchWithTimeout = makeFetchWithTimeout(3_000)
+
 const UNS_SUPPORTED_NETWORKS = [ETHEREUM, POLYGON]
 
 /**
  * Lookup a UNS domain name and fetch the owners address
  */
 const lookupUNSDomain = async (domain: string) => {
-  const response = await fetchWithTimeout()(
+  const response = await fetchWithTimeout(
     `https://unstoppabledomains.g.alchemy.com/domains/${domain}`,
     {
       method: "GET",
@@ -89,7 +91,7 @@ const lookupUNSDomain = async (domain: string) => {
 const reverseLookupAddress = cacheAsyncResults(
   RESPONSE_TTL,
   async (address: string) => {
-    const response = await fetchWithTimeout()(
+    const response = await fetchWithTimeout(
       `https://unstoppabledomains.g.alchemy.com/domains/?owners=${address}&sortBy=id&sortDirection=ASC`,
       {
         method: "GET",
