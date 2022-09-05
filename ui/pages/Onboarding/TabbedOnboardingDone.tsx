@@ -5,6 +5,7 @@ import SharedButton from "../../components/Shared/SharedButton"
 
 export default function TabbedOnboardingDone(): ReactElement {
   const [os, setOS] = useState("windows")
+
   // fetch the OS using the extension API to decide what shortcut to show
   useEffect(() => {
     let active = true
@@ -21,6 +22,38 @@ export default function TabbedOnboardingDone(): ReactElement {
       active = false
     }
   }, [])
+
+  // state for alt, t, and option key status
+  const [tPressed, setTPressed] = useState(false)
+  const [altPressed, setAltPressed] = useState(false)
+
+  // add keydown/up listeners for our shortcut code
+  useEffect(() => {
+    const downListener = (e: KeyboardEvent) => {
+      if (e.altKey || e.key === "Alt") {
+        setAltPressed(true)
+      }
+      if (e.key === "t") {
+        setTPressed(true)
+      }
+    }
+    const upListener = (e: KeyboardEvent) => {
+      if (e.altKey || e.key === "Alt") {
+        setAltPressed(false)
+      }
+      if (e.key === "t") {
+        setTPressed(false)
+      }
+    }
+
+    window.addEventListener("keydown", downListener.bind(window))
+    window.addEventListener("keyup", upListener.bind(window))
+
+    return () => {
+      window.removeEventListener("keydown", downListener)
+      window.removeEventListener("keyup", upListener)
+    }
+  })
 
   return (
     <LedgerPanelContainer
@@ -43,8 +76,12 @@ export default function TabbedOnboardingDone(): ReactElement {
           className="indicator"
           src={
             os === "mac"
-              ? "/images/mac-shortcut.svg"
-              : "/images/windows-shortcut.svg"
+              ? `/images/mac-shortcut${altPressed ? "-option" : ""}${
+                  tPressed ? "-t" : ""
+                }.svg`
+              : `/images/windows-shortcut${altPressed ? "-alt" : ""}${
+                  tPressed ? "-t" : ""
+                }.svg`
           }
           alt={os === "mac" ? "option + T" : "alt + T"}
         />
