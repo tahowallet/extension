@@ -23,6 +23,7 @@ const impersonateMetamaskWhitelist = [
   "matcha.xyz",
   "bridge.umbria.network",
   "galaxy.eco",
+  "galxe.com",
   "dydx.exchange",
 ]
 
