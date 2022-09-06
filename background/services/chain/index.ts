@@ -998,6 +998,7 @@ export default class ChainService extends BaseService<Events> {
         this.saveTransaction(transaction, "local"),
       ])
     } catch (error) {
+      this.releaseEVMTransactionNonce(transaction)
       this.emitter.emit("transactionSendFailure")
       logger.error("Error broadcasting transaction", transaction, error)
 
