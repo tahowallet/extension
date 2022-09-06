@@ -14,8 +14,8 @@ const defaultPreferences: Preferences = {
       "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
       "https://meta.yearn.finance/api/tokens/list", // the Yearn list
       "https://messari.io/tokenlist/messari-verified", // Messari-verified projects
-      "https://wrapped.tokensoft.eth.link", // Wrapped tokens
-      "https://tokenlist.aave.eth.link", // Aave-listed tokens and interest-bearing assets
+      "https://wrapped.tokensoft.eth.limo", // Wrapped tokens
+      "https://tokenlist.aave.eth.limo", // Aave-listed tokens and interest-bearing assets
       "https://raw.githubusercontent.com/compound-finance/token-list/master/compound.tokenlist.json", // Compound-listed tokens and interest-bearing assets
       "https://api-polygon-tokens.polygon.technology/tokenlists/default.tokenlist.json", // Polygon Default Tokens
       "https://static.optimism.io/optimism.tokenlist.json", // Optimism Default Tokens
@@ -23,7 +23,7 @@ const defaultPreferences: Preferences = {
     ],
   },
   currency: USD,
-  defaultWallet: true,
+  defaultWallet: false,
   selectedAccount: {
     address: "",
     network: ETHEREUM,

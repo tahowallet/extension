@@ -6,14 +6,21 @@ import {
   selectDefaultWallet,
   selectHideDust,
   toggleHideDust,
+  selectShowTestNetworks,
+  toggleTestNetworks,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { SUPPORT_MULTIPLE_LANGUAGES } from "@tallyho/tally-background/features"
+import {
+  SUPPORT_ANALYTICS,
+  SUPPORT_GOERLI,
+  SUPPORT_MANAGE_DAPPS,
+  SUPPORT_MULTIPLE_LANGUAGES,
+} from "@tallyho/tally-background/features"
 import SharedButton from "../components/Shared/SharedButton"
-import SharedIcon from "../components/Shared/SharedIcon"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
 import { getLanguage, setLanguage } from "../_locales/i18n"
+import SettingButton from "./Settings/SettingButton"
 
 function SettingRow(props: {
   title: string
@@ -50,12 +57,17 @@ export default function Settings(): ReactElement {
   const dispatch = useDispatch()
   const hideDust = useSelector(selectHideDust)
   const defaultWallet = useSelector(selectDefaultWallet)
+  const showTestNetworks = useSelector(selectShowTestNetworks)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))
   }
   const toggleDefaultWallet = (defaultWalletValue: boolean) => {
     dispatch(setNewDefaultWalletValue(defaultWalletValue))
+  }
+
+  const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
+    dispatch(toggleTestNetworks(defaultWalletValue))
   }
 
   const hideSmallAssetBalance = {
@@ -78,6 +90,16 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const enableTestNetworks = {
+    title: t("settings.enableTestNetworks"),
+    component: () => (
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleShowTestNetworks(toggleValue)}
+        value={showTestNetworks}
+      />
+    ),
+  }
+
   const langOptions = getAvalableLanguages()
   const langIdx = getLanguageIndex(getLanguage())
   const languages = {
@@ -95,45 +117,46 @@ export default function Settings(): ReactElement {
   const bugReport = {
     title: "",
     component: () => (
-      <SharedButton
-        type="unstyled"
-        size="medium"
-        linkTo="/settings/export-logs"
-      >
-        <div className="bug_report_row">
-          <div className="action_name">{t("settings.bugReport")}</div>
-          <SharedIcon
-            icon="icons/s/continue.svg"
-            width={16}
-            color="var(--green-20)"
-            ariaLabel="Open bug report"
-          />
-          <style jsx>{`
-            .action_name {
-              color: var(--green-20);
-              font-size: 18px;
-              font-weight: 600;
-              line-height: 24px;
-            }
-            .bug_report_row {
-              width: 336px;
-              align-items: center;
-              justify-content: space-between;
-              align-content: center;
-              display: flex;
-            }
-            .bug_report_row:hover > .action_name {
-              color: var(--green-5);
-            }
-          `}</style>
-        </div>
-      </SharedButton>
+      <SettingButton
+        link="/settings/export-logs"
+        label={t("settings.bugReport")}
+        ariaLabel={t("settings.exportLogs.ariaLabel")}
+      />
     ),
   }
 
-  const generalList = SUPPORT_MULTIPLE_LANGUAGES
-    ? [hideSmallAssetBalance, setAsDefault, languages, bugReport]
-    : [hideSmallAssetBalance, setAsDefault, bugReport]
+  const dAppsSettings = {
+    title: "",
+    component: () => (
+      <SettingButton
+        link="/settings/connected-websites"
+        label={t("settings.connectedWebsites")}
+        ariaLabel={t("settings.connectedWebsitesSettings.ariaLabel")}
+      />
+    ),
+  }
+
+  const analytics = {
+    title: "",
+    component: () => (
+      <SettingButton
+        link="/settings/analytics"
+        label={t("settings.analytics")}
+        ariaLabel={t("settings.analyticsSetUp.ariaLabel")}
+      />
+    ),
+  }
+
+  const generalList = [
+    hideSmallAssetBalance,
+    setAsDefault,
+    ...(SUPPORT_MULTIPLE_LANGUAGES ? [languages] : []),
+    ...(SUPPORT_GOERLI ? [enableTestNetworks] : []),
+    ...(SUPPORT_MANAGE_DAPPS ? [dAppsSettings] : []),
+    bugReport,
+    ...(SUPPORT_ANALYTICS ? [analytics] : []),
+  ]
+
   const settings = {
     general: generalList,
   }

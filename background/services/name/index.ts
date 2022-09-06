@@ -205,17 +205,14 @@ export default class NameService extends BaseService<Events> {
     addressOnNetwork: AddressOnNetwork,
     checkCache = true
   ): Promise<NameOnNetwork | undefined> {
-    const { address: normalizedAddress, network } =
-      normalizeAddressOnNetwork(addressOnNetwork)
+    const { address, network } = normalizeAddressOnNetwork(addressOnNetwork)
 
     if (!this.cachedResolvedNames[network.family][network.chainID]) {
       this.cachedResolvedNames[network.family][network.chainID] = {}
     }
 
     const cachedResolvedNameRecord =
-      this.cachedResolvedNames[network.family]?.[network.chainID]?.[
-        normalizedAddress
-      ]
+      this.cachedResolvedNames[network.family]?.[network.chainID]?.[address]
 
     if (checkCache && cachedResolvedNameRecord) {
       const {
@@ -228,14 +225,14 @@ export default class NameService extends BaseService<Events> {
     }
 
     const workingResolvers = this.resolvers.filter((resolver) =>
-      resolver.canAttemptNameResolution(addressOnNetwork)
+      resolver.canAttemptNameResolution({ address, network })
     )
 
     const firstMatchingResolution = (
       await Promise.allSettled(
         workingResolvers.map(async (resolver) => ({
           type: resolver.type,
-          resolved: await resolver.lookUpNameForAddress(addressOnNetwork),
+          resolved: await resolver.lookUpNameForAddress({ address, network }),
         }))
       )
     )
@@ -253,7 +250,7 @@ export default class NameService extends BaseService<Events> {
       firstMatchingResolution
 
     const nameRecord = {
-      from: { addressOnNetwork },
+      from: { addressOnNetwork: { address, network } },
       resolved: {
         nameOnNetwork,
         // TODO Read this from the name service; for now, this avoids infinite
@@ -265,9 +262,8 @@ export default class NameService extends BaseService<Events> {
 
     const cachedNameOnNetwork = cachedResolvedNameRecord?.resolved.nameOnNetwork
 
-    this.cachedResolvedNames[network.family][network.chainID][
-      normalizedAddress
-    ] = nameRecord
+    this.cachedResolvedNames[network.family][network.chainID][address] =
+      nameRecord
 
     // Only emit an event if the resolved name changed.
     if (cachedNameOnNetwork?.name !== nameOnNetwork.name) {

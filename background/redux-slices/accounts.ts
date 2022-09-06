@@ -120,13 +120,15 @@ function newAccountData(
             (existingAccountsCount % availableDefaultNames.length)
         )
     )
-  const defaultAccountName =
-    sameAccountOnDifferentChain?.defaultName ??
-    availableDefaultNames[defaultNameIndex]
 
-  // Move used default names to the start so they can be skipped above.
-  availableDefaultNames.splice(defaultNameIndex, 1)
-  availableDefaultNames.unshift(defaultAccountName)
+  let defaultAccountName = sameAccountOnDifferentChain?.defaultName
+
+  if (typeof defaultAccountName === "undefined") {
+    defaultAccountName = availableDefaultNames[defaultNameIndex]
+    // Move used default names to the start so they can be skipped above.
+    availableDefaultNames.splice(defaultNameIndex, 1)
+    availableDefaultNames.unshift(defaultAccountName)
+  }
 
   const defaultAccountAvatar = `./images/avatars/${defaultAccountName.toLowerCase()}@2x.png`
 

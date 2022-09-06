@@ -2,8 +2,8 @@
   "popupEdition": "Community Edition",
   "comingSoon": "Coming soon",
   "overview": {
-    "totalBalance": "Total balance",
-    "addresses": "Addresses",
+    "totalBalanceEverywhere": "Total balance on all accounts",
+    "accounts": "Accounts",
     "assets": "Assets",
     "networks": "Networks",
     "tableHeader": {
@@ -14,6 +14,7 @@
   },
   "protocol": {
     "mainnet": "Mainnet",
+    "testnet": "Test Network",
     "l2": "L2 scaling solution",
     "compatibleChain": "Ethereum-compatible blockchain",
     "connected": "Connected"
@@ -29,7 +30,8 @@
     "assetAmount": "Asset / Amount",
     "sendTo": "Send To:",
     "sendButton": "Continue",
-    "receiveAddress": "Receive address"
+    "receiveAddress": "Receive address",
+    "sendToContractWarning": "This is a contract address, sending assets will result in loss of funds."
   },
   "swap": {
     "title": "Swap Assets",
@@ -61,8 +63,11 @@
     "mainMenu": "Settings",
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
     "setAsDefault": "Use Tally Ho as your default wallet",
+    "enableTestNetworks": "Enable test networks",
     "language": "Language",
     "bugReport": "Bug report",
+    "connectedWebsites": "Connected websites",
+    "analytics": "Analytics",
     "joinTitle": "Join our community",
     "joinDesc": "Join our Discord to give us feedback!",
     "joinBtn": "Join and give feedback",
@@ -73,7 +78,42 @@
       "discordBtn": "Join Discord",
       "logTitle": "2. Export logs",
       "logDesc": "To better understand your bug, we need you to export your logs.",
-      "logBtn": "Export logs"
+      "logBtn": "Export logs",
+      "ariaLabel": "Open bug report"
+    },
+    "analyticsSetUp": {
+      "title": "Analytics",
+      "toggleTitleOn": "Analytics are on",
+      "toggleTitleOff": "Analytics are off",
+      "toggleDesc": "Analytics help us understand your needs and empowers us to build a better wallet for you!",
+      "recordTitle": "What we will record",
+      "recordItemOrders": "Number of Swaps / Sends",
+      "recordItemAccounts": "Number of accounts",
+      "recordItemGas": "Gas paid overall",
+      "noRecordTitle": "We will never record",
+      "noRecordItemSeed": "Your seed phrase",
+      "noRecordItemTransactions": "Your address and transactions",
+      "policyBtn": "Privacy policy",
+      "deleteBtn": "Delete my data",
+      "ariaLabel": "Open analytics",
+      "analyticsOffSlideUpMenu": {
+        "title": "Turn Analytics off?",
+        "desc": "Are you sure you want to turn analytics off? They help us a lot in building a better wallet for you",
+        "submitBtn": "Yes, turn off",
+        "snackbar": "Analytics are off, turn back at any time"
+      },
+      "deleteSlideUpMenu": {
+        "title": "Delete your data?",
+        "desc": "Are you sure you want to delete your data? They help us a lot in building a better wallet for you",
+        "submitBtn": "Yes, delete data",
+        "snackbar": "Private data will be removed soon"
+      }
+    },
+    "connectedWebsitesSettings": {
+      "title": "Connected websites",
+      "disconnected": "Website disconnected",
+      "ariaLabel": "Manage connected websites",
+      "emptyList": "Not connected to any websites"
     }
   },
   "passwordStrength": {
@@ -82,5 +122,12 @@
     "strong": "Strong",
     "strength": "Strength",
     "hintDesc": "For a strong password, consider a mix of lower and uppercase characters, symbols, and numbers. Passwords should be over 8 characters."
+  },
+  "toggle": {
+    "collapse": "Collapse",
+    "viewAll": "View all"
+  },
+  "shared": {
+    "cancelBtn": "Cancel"
   }
 }

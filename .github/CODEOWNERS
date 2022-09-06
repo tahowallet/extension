@@ -1,0 +1,11 @@
+# Any changes to keyring code deserve extra scrutiny to prevent key
+# exfiltration and general "roll your own crypto" mistakes. Newer
+# contributions to keyring code should be assumed insecure, requiring
+# agreement across the team to merge.
+/background/services/keyring/* @shadowfiend @mhluongo
+# Any changes to dependencies deserve extra scrutiny to help prevent supply
+# chain attacks
+package.json @greg-nagy @0xDaedalus @shadowfiend @mhluongo
+yarn.lock @tallycash/extension-dependency-auditors
+# Any changes to code owners deserve extra scrutiny
+.github/CODEOWNERS @shadowfiend @mhluongo

@@ -1,5 +1,8 @@
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
-import { isProbablyEVMAddress } from "@tallyho/tally-background/lib/utils"
+import {
+  isProbablyEVMAddress,
+  normalizeEVMAddress,
+} from "@tallyho/tally-background/lib/utils"
 import { resolveNameOnNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { HexString } from "@tallyho/tally-background/types"
@@ -157,7 +160,7 @@ export const useAddressOrNameValidation: AsyncValidationHook<
       if (trimmed === "") {
         onValidChange(undefined)
       } else if (isProbablyEVMAddress(trimmed)) {
-        onValidChange({ address: trimmed })
+        onValidChange({ address: normalizeEVMAddress(trimmed) })
       } else {
         setIsValidating(true)
         validatingValue.current = trimmed

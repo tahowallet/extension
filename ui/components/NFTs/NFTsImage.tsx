@@ -1,7 +1,5 @@
-import React, { ReactElement, useState, useEffect } from "react"
-import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
-
-const placeholderSrc = "./images/no_preview.svg"
+import classNames from "classnames"
+import React, { ReactElement, useState } from "react"
 
 export default function NFTsImage({
   width,
@@ -16,33 +14,40 @@ export default function NFTsImage({
   src: string
   fit?: string
 }): ReactElement {
-  const [imageSrc, setImageSrc] = useState<string>(placeholderSrc)
   const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const img = new Image()
-    img.src = src
-    img.onload = () => {
-      setImageSrc(src)
-      setIsLoading(false)
-    }
-    img.onerror = () => {
-      setImageSrc(placeholderSrc)
-      setIsLoading(false)
-    }
-  }, [src])
-
   return (
     <>
-      <SharedSkeletonLoader
-        isLoaded={!isLoading}
+      <img
+        loading="lazy"
+        onLoad={() => setIsLoading(false)}
+        className={classNames({
+          loading: isLoading,
+        })}
+        alt={alt}
+        src={src}
         width={width}
         height={height}
-        borderRadius={8}
-      >
-        <img alt={alt} src={imageSrc} />
-      </SharedSkeletonLoader>
+        onError={({ currentTarget }) => {
+          // eslint-disable-next-line no-param-reassign
+          currentTarget.onerror = null // prevents looping
+          // eslint-disable-next-line no-param-reassign
+          currentTarget.src = "./images/no_preview.svg"
+          // eslint-disable-next-line no-param-reassign
+          currentTarget.className = ""
+        }}
+      />
       <style jsx>{`
+        @keyframes pulse {
+          0% {
+            background-color: var(--hunter-green);
+          }
+          50% {
+            background-color: var(--green-95);
+          }
+          100% {
+            background-color: var(--hunter-green);
+          }
+        }
         img {
           width: ${width ?? "auto"};
           height: ${height ?? "auto"};
@@ -51,6 +56,11 @@ export default function NFTsImage({
           max-width: ${width ?? "100%"};
           border-radius: 8px;
           flex-grow: 1;
+        }
+        .loading {
+          background-color: var(--hunter-green);
+          border-radius: 8px;
+          animation: pulse 1.1s infinite;
         }
       `}</style>
     </>

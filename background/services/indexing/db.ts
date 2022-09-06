@@ -61,7 +61,7 @@ export type CachedTokenList = TokenListCitation & {
  */
 function assetID(asset: AnyAsset): string {
   const id = `${asset.symbol}`
-  if (!("contractAddress" in asset)) {
+  if (!("contractAddress" in asset) || "coinType" in asset) {
     return id
   }
   const network = asset.homeNetwork
