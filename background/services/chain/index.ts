@@ -50,6 +50,7 @@ import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEIP1559TransactionSignatureRequest,
+  EnrichedEVMTransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
   EnrichedLegacyTransactionRequest,
   EnrichedLegacyTransactionSignatureRequest,
@@ -925,12 +926,18 @@ export default class ChainService extends BaseService<Events> {
 
   async estimateL1RollupFee(
     network: EVMNetwork,
-    transaction: UnsignedTransaction
+    transaction: UnsignedTransaction | EnrichedEVMTransactionRequest
   ): Promise<bigint> {
     // Optimism-specific implementation
     // https://community.optimism.io/docs/developers/build/transaction-fees/#displaying-fees-to-users
-    const unsignedRLPEncodedTransaction =
-      utils.serializeTransaction(transaction)
+    const unsignedRLPEncodedTransaction = utils.serializeTransaction({
+      to: transaction.to,
+      nonce: transaction.nonce,
+      gasLimit: transaction.gasLimit,
+      gasPrice: "gasPrice" in transaction ? transaction.gasPrice : undefined,
+      data: "data" in transaction ? transaction.data : undefined,
+      value: "value" in transaction ? transaction.value : undefined,
+    })
 
     const provider = await this.providerForNetworkOrThrow(network)
 
