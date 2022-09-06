@@ -1,6 +1,4 @@
 import React, { ReactElement, useState } from "react"
-import { useDispatch } from "react-redux"
-import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import SharedButton from "../../components/Shared/SharedButton"
 import OnboardingStepsIndicator from "../../components/Onboarding/OnboardingStepsIndicator"
 import { useBackgroundSelector } from "../../hooks"
@@ -57,8 +55,6 @@ function WarningMessage({ onAccept }: { onAccept: () => void }): ReactElement {
 }
 
 function SeedContainer(): ReactElement {
-  const dispatch = useDispatch()
-
   const freshMnemonic = useBackgroundSelector((state) => {
     return state.keyrings.keyringToVerify?.mnemonic
   })
@@ -115,10 +111,9 @@ function SeedContainer(): ReactElement {
           type="tertiary"
           size="small"
           iconMedium="copy"
-          onClick={() => {
+          onClick={() =>
             navigator.clipboard.writeText(freshMnemonic?.join(" ") ?? "")
-            dispatch(setSnackbarMessage("Copied!"))
-          }}
+          }
         >
           Copy phrase to clipboard
         </SharedButton>
