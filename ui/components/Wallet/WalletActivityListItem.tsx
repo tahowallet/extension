@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useRef, useState } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
@@ -32,6 +32,22 @@ function isSendActivity(activity: ActivityItem, account: string): boolean {
 
 export default function WalletActivityListItem(props: Props): ReactElement {
   const { onClick, activity, asAccount } = props
+  const outcomeRef = useRef<HTMLDivElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const [outcomeWidth, setOutcomeWidth] = useState(0)
+  const [bottomWidth, setBottomWidth] = useState(0)
+
+  useEffect(() => {
+    if (outcomeRef.current) {
+      setOutcomeWidth(outcomeRef.current.offsetWidth)
+    }
+  }, [outcomeRef])
+
+  useEffect(() => {
+    if (bottomRef.current) {
+      setBottomWidth(bottomRef.current.offsetWidth)
+    }
+  }, [bottomRef])
 
   // TODO Replace this with better conditional rendering.
   let renderDetails: {
@@ -139,7 +155,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               dayjs.unix(activity.annotation?.blockTimestamp).format("MMM D")}
           </div>
         </div>
-        <div className="bottom">
+        <div ref={bottomRef} className="bottom">
           <div className="left">
             <div className="token_icon_wrap">
               <SharedAssetIcon
@@ -154,12 +170,18 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               <span className="bold_amount_count">
                 {renderDetails.assetValue}
               </span>
-              {renderDetails.assetSymbol}
+              <span className="name" title={renderDetails.assetSymbol}>
+                {renderDetails.assetSymbol}
+              </span>
             </div>
           </div>
           <div className="right">
             {isSendActivity(activity, asAccount) ? (
-              <div className="outcome" title={renderDetails.recipient.address}>
+              <div
+                ref={outcomeRef}
+                className="outcome"
+                title={renderDetails.recipient.address}
+              >
                 To:
                 {` ${
                   renderDetails.recipient.name ??
@@ -169,7 +191,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
                 }`}
               </div>
             ) : (
-              <div className="outcome" title={activity.from}>
+              <div ref={outcomeRef} className="outcome" title={activity.from}>
                 From:
                 {` ${activity.fromTruncated}`}
               </div>
@@ -294,6 +316,14 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             // For Infinite text in token approvals.
             text-transform: none;
           }
+          .name {
+            max-width: calc(${bottomWidth}px - 70px - 32px - ${outcomeWidth}px);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-block;
+            vertical-align: text-top;
+          }
           .price {
             width: 58px;
             height: 17px;
@@ -319,6 +349,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             display: flex;
             justify-content: space-between;
             text-align: right;
+            white-space: nowrap;
           }
           .outcome {
             color: var(--green-5);
