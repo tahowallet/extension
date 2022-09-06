@@ -40,8 +40,9 @@ export default function ConnectedWebsitesListItem(
           <span className="host">{host}</span>
         </div>
         <SharedIcon
-          color="var(--error)"
-          width={32}
+          color="var(--green-40)"
+          hoverColor="var(--error)"
+          width={24}
           icon="icons/m/disconnect.svg"
           onClick={handleDisconnect}
         />
