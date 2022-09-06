@@ -83,7 +83,8 @@
     },
     "analyticsSetUp": {
       "title": "Analytics",
-      "toggleTitle": "Analytics are on",
+      "toggleTitleOn": "Analytics are on",
+      "toggleTitleOff": "Analytics are off",
       "toggleDesc": "Analytics help us understand your needs and empowers us to build a better wallet for you!",
       "recordTitle": "What we will record",
       "recordItemOrders": "Number of Swaps / Sends",
@@ -94,7 +95,19 @@
       "noRecordItemTransactions": "Your address and transactions",
       "policyBtn": "Privacy policy",
       "deleteBtn": "Delete my data",
-      "ariaLabel": "Open analytics"
+      "ariaLabel": "Open analytics",
+      "analyticsOffSlideUpMenu": {
+        "title": "Turn Analytics off?",
+        "desc": "Are you sure you want to turn analytics off? They help us a lot in building a better wallet for you",
+        "submitBtn": "Yes, turn off",
+        "snackbar": "Analytics are off, turn back at any time"
+      },
+      "deleteSlideUpMenu": {
+        "title": "Delete your data?",
+        "desc": "Are you sure you want to delete your data? They help us a lot in building a better wallet for you",
+        "submitBtn": "Yes, delete data",
+        "snackbar": "Private data will be removed soon"
+      }
     },
     "connectedWebsitesSettings": {
       "title": "Connected websites",
@@ -113,5 +126,8 @@
   "toggle": {
     "collapse": "Collapse",
     "viewAll": "View all"
+  },
+  "shared": {
+    "cancelBtn": "Cancel"
   }
 }
