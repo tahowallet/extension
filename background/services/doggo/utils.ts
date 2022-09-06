@@ -1,5 +1,6 @@
 import { IPFSLinkItem } from "./types"
 import { HexString } from "../../types"
+import { fetchWithTimeout } from "../../utils/fetching"
 
 export const IPFSFileDirectoryIPFSHash = process.env.FILE_DIRECTORY_IPFS_HASH
 export const partGlossaryIPFSHash = process.env.PART_GLOSSARY_IPFS_HASH
@@ -22,10 +23,10 @@ export async function getFileHashProspect(
 ): Promise<string> {
   const numericTargetAddress = BigInt(targetAddress)
 
-  const IPFSFileDirectory = await fetch(
+  const IPFSFileDirectory = await fetchWithTimeout(
     `${IPFSHTTPGet}${IPFSFileDirectoryIPFSHash}`
   )
-  const partGlossary = await fetch(
+  const partGlossary = await fetchWithTimeout(
     `${IPFSHTTPGatewayPrefix}${partGlossaryIPFSHash}`
   )
 
@@ -60,7 +61,7 @@ export async function getClaimFromFileHash(
   index: HexString
   proof: HexString[]
 }> {
-  const res = await fetch(`${IPFSHTTPGatewayPrefix}${hash}`)
+  const res = await fetchWithTimeout(`${IPFSHTTPGatewayPrefix}${hash}`)
   let claim
   const reader = res?.body?.getReader()
   let result
