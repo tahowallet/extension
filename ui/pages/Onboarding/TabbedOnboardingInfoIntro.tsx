@@ -180,10 +180,6 @@ export default function TabbedOnboardingInfoIntro(): ReactElement {
             text-align: center;
             z-index: 1;
           }
-        `}
-      </style>
-      <style jsx>
-        {`
           .illustration {
             background: url("./images/${steps[activeStep - 1].image
               .fileName}@2x.png");
