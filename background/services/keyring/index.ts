@@ -7,8 +7,8 @@ import { normalizeEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import {
   getEncryptedVaults,
-  keepOnlyOneEncryptedVault,
-  writeLatestEncryptedVault,
+  appendLatestEncryptedVault,
+  overwriteLatestEncryptedVault,
 } from "./storage"
 import {
   decryptVault,
@@ -179,13 +179,15 @@ export default class KeyringService extends BaseService<Events> {
           saltedKey
         )
       } catch (err) {
-        // if we weren't able to load the vault, don't unlock
+        // if an error occurred while decrypting the vault,
+        // then password verification fails
         return false
       }
-      // hooray! vault is loaded
+      // the password is successfully verified if it can decrypt the vault
       return true
     }
 
+    // password verification fails if currentEncryptedVault does not exist
     return false
   }
 
@@ -193,8 +195,8 @@ export default class KeyringService extends BaseService<Events> {
    * Create a new vault encrypted with a new user-chosen password.
    * Do not actually lock or unlock any vaults.
    *
-   * @param changePasswordPayload An object with this shape:
-   * { currentPassword: string, newPassword: string }
+   * @param changePasswordPayload An object containing the currentPassword
+   * to be verified and the newPassword for encrypting the current vault
    *
    * @returns true if the password was successfully changed,
    *          and false otherwise.
@@ -544,7 +546,7 @@ export default class KeyringService extends BaseService<Events> {
   /**
    * Sign a transaction.
    *
-   * @param account - the account desired to sign the transaction
+   * @param addressOnNetwork - the account desired to sign the transaction
    * @param txRequest -
    */
   async signTransaction(
@@ -725,11 +727,11 @@ export default class KeyringService extends BaseService<Events> {
   /**
    * Serialize, encrypt, and persist all HDKeyrings.
    *
-   * @param deleteOlderVaults An optional parameter that if true
-   * will persist only the latest vault and remove all others
+   * @param overwriteLatestVault An optional parameter that if true
+   * will overwrite the latest vault instead of appending a new vault
    *
    */
-  private async persistKeyrings(deleteOlderVaults = false) {
+  private async persistKeyrings(overwriteLatestVault = false) {
     this.requireUnlocked()
 
     // This if guard will always pass due to requireUnlocked, but statically
@@ -748,10 +750,10 @@ export default class KeyringService extends BaseService<Events> {
         this.#cachedKey
       )
 
-      if (deleteOlderVaults) {
-        await keepOnlyOneEncryptedVault(vault)
+      if (overwriteLatestVault) {
+        await overwriteLatestEncryptedVault(vault)
       } else {
-        await writeLatestEncryptedVault(vault)
+        await appendLatestEncryptedVault(vault)
       }
     }
   }

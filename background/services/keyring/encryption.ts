@@ -52,11 +52,11 @@ function requireCryptoGlobal(message?: string) {
  * Derive a WebCrypto symmetric key from a password and optional salt.
  *
  * @param password A user-supplied password. Without this value
- * @param salt A random salt used in the initial key derivation, if there has
- *        been one before. If no salt is provided, a random salt will be
- *        generated.
+ * @param existingSalt A random salt used in the initial key derivation,
+ *        if there has been one before. If no salt is provided, a random
+ *        salt will be generated.
  *
- *        Note that the the symmetric, alone, or the salt *and* the password,
+ *        Note that the symmetric, alone, or the salt *and* the password,
  *        together, must be retained to decrypt anything encrypted by the
  *        returned key. While the salt isn't secret key material, losing it
  *        could jeopardize access to user data (and therefor, funds).
@@ -106,8 +106,8 @@ export async function deriveSymmetricKeyFromPassword(
  * mode.
  *
  * @param vault Any JSON-serializable object that should be encrypted.
- * @param password A user-supplied password to encrypt the object, or a cached
- *        salted key
+ * @param passwordOrSaltedKey A user-supplied password to encrypt the object,
+ *        or a cached salted key
  * @returns the ciphertext and all non-password material required for later
  *          decryption, including the salt and AES initialization vector.
  */
@@ -153,8 +153,8 @@ export async function encryptVault<V>(
  *
  * @param vault an encrypted vault, including salt, initialization vector, and
  *        ciphertext, as produced by `encryptVault`.
- * @param password A user-supplied password to decrypt the vault, or a cached
- *        salted key
+ * @param passwordOrSaltedKey A user-supplied password to decrypt the vault,
+ *        or a cached salted key
  * @returns the decrypted object, serialized and deserialized via JSON. For
  *          most objects `decryptVault(encryptVault(o, password), password)`
  *          should deeply equal `o`.

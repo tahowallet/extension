@@ -52,12 +52,12 @@ function equalVaults(vault1: EncryptedVault, vault2: EncryptedVault): boolean {
 }
 
 /**
- * Write an encryptedVault to extension storage if and only if it's different
+ * Append an encryptedVault to extension storage if and only if it's different
  * from the most recently saved vault.
  *
  * @param encryptedVault - an encrypted keyring vault
  */
-export async function writeLatestEncryptedVault(
+export async function appendLatestEncryptedVault(
   encryptedVault: EncryptedVault
 ): Promise<void> {
   const serializedVaults = await getEncryptedVaults()
@@ -88,23 +88,37 @@ export async function writeLatestEncryptedVault(
 }
 
 /**
- * Write one encryptedVault to extension storage, while
- * removing all other vaults from extension storage.
+ * Overwrite the most recently saved vault
  *
  * @param encryptedVault - an encrypted keyring vault
  */
-export async function keepOnlyOneEncryptedVault(
+export async function overwriteLatestEncryptedVault(
   encryptedVault: EncryptedVault
 ): Promise<void> {
-  await browser.storage.local.set({
-    tallyVaults: {
-      version: 1,
-      vaults: [
-        {
-          timeSaved: Date.now(),
-          vault: encryptedVault,
-        },
-      ],
-    },
-  })
+  const serializedVaults = await getEncryptedVaults()
+  const vaults = [...serializedVaults.vaults]
+
+  if (vaults.length === 0) {
+    throw new Error(
+      "At least one encrypted vault was expected but none were found"
+    )
+  }
+
+  const currentLatest = vaults.reduce<SerializedEncryptedVault | null>(
+    (newestVault, nextVault) =>
+      newestVault && newestVault.timeSaved > nextVault.timeSaved
+        ? newestVault
+        : nextVault,
+    null
+  )
+
+  if (currentLatest) {
+    currentLatest.timeSaved = Date.now()
+    currentLatest.vault = encryptedVault
+
+    // Persist the vault changes
+    await browser.storage.local.set({
+      tallyVaults: { ...serializedVaults },
+    })
+  }
 }
