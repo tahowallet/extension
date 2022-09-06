@@ -4,6 +4,7 @@ import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selec
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 import ConnectedWebsitesListItem from "./ConnectedWebsitesListItem"
 import { useBackgroundSelector } from "../../hooks"
+import ConnectedWebsitesListEmpty from "./ConnectedWebsitesListEmpty"
 
 export default function SettingsConnectedWebsites(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "settings" })
@@ -26,13 +27,17 @@ export default function SettingsConnectedWebsites(): ReactElement {
         {t(`connectedWebsitesSettings.title`)}
       </SharedPageHeader>
       <section>
-        <ul>
-          {dappsByOrigin.map((permission) => (
-            <li key={permission.origin}>
-              <ConnectedWebsitesListItem permission={permission} />
-            </li>
-          ))}
-        </ul>
+        {dappsByOrigin.length === 0 ? (
+          <ConnectedWebsitesListEmpty />
+        ) : (
+          <ul>
+            {dappsByOrigin.map((permission) => (
+              <li key={permission.origin}>
+                <ConnectedWebsitesListItem permission={permission} />
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
       <style jsx>{`
         .wrapper {
