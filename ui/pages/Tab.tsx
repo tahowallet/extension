@@ -6,7 +6,7 @@ import BrowserTabContainer from "../components/BrowserTab/BrowserTabContainer"
 import Ledger from "./Ledger/Ledger"
 import TabbedOnboardingAddWallet from "./Onboarding/TabbedOnboardingAddWallet"
 import TabbedOnboardingDone from "./Onboarding/TabbedOnboardingDone"
-import TabbedOnboardingImportMetamask from "./Onboarding/TabbedOnboardingImportMetamask"
+import TabbedOnboardingImportSeed from "./Onboarding/TabbedOnboardingImportSeed"
 import TabbedOnboardingSetPassword from "./Onboarding/TabbedOnboardingSetPassword"
 import TabbedOnboardingSaveSeed from "./Onboarding/TabbedOnboardingSaveSeed"
 import TabbedOnboardingVerifySeed from "./Onboarding/TabbedOnboardingVerifySeed"
@@ -34,14 +34,14 @@ export default function Tab({ store }: { store: Store }): ReactElement {
                 <TabbedOnboardingAddWallet />
               </BrowserTabContainer>
             </Route>
-            <Route path="/onboarding/import-metamask/set-password" exact>
+            <Route path="/onboarding/import-seed/set-password" exact>
               <BrowserTabContainer>
-                <TabbedOnboardingSetPassword nextPage="/onboarding/import-metamask" />
+                <TabbedOnboardingSetPassword nextPage="/onboarding/import-seed" />
               </BrowserTabContainer>
             </Route>
-            <Route path="/onboarding/import-metamask" exact>
+            <Route path="/onboarding/import-seed" exact>
               <BrowserTabContainer>
-                <TabbedOnboardingImportMetamask nextPage="/onboarding/done" />
+                <TabbedOnboardingImportSeed nextPage="/onboarding/done" />
               </BrowserTabContainer>
             </Route>
             <Route path="/onboarding/new-seed/set-password" exact>
