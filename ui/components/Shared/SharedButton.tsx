@@ -27,6 +27,7 @@ interface Props {
   showLoadingOnClick: boolean
   isLoading: boolean
   isFormSubmit: boolean
+  style?: React.CSSProperties
 }
 
 interface PropsWithMediumIcon extends Props {
@@ -115,6 +116,7 @@ export default function SharedButton(
     showLoadingOnClick,
     isLoading,
     isFormSubmit,
+    style,
   } = props
 
   const [navigateTo, setNavigateTo] =
@@ -163,6 +165,7 @@ export default function SharedButton(
         { twitter: type === "twitter" }
       )}
       onClick={handleClick}
+      style={style}
     >
       {isShowingLoadingSpinner && (
         <div className="spinner_wrap">

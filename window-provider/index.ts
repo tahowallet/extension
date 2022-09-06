@@ -20,6 +20,7 @@ import { EventEmitter } from "events"
 //       so let's do this only on the websites that need this feature
 const impersonateMetamaskWhitelist = [
   "opensea.io",
+  "matcha.xyz",
   "bridge.umbria.network",
   "galaxy.eco",
   "dydx.exchange",
