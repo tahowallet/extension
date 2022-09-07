@@ -4,8 +4,7 @@ import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
 import { FungibleAsset } from "../../assets"
-import { GOERLI, OPTIMISM, POLYGON } from "../../constants"
-import { SUPPORT_OPTIMISM } from "../../features"
+import { GOERLI, POLYGON } from "../../constants"
 
 type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
@@ -100,7 +99,7 @@ export class ChainDatabase extends Dexie {
         })
     })
 
-    this.version(5).upgrade((tx) => {
+    this.version(4).upgrade((tx) => {
       tx.table("accountsToTrack")
         .where("network.chainID")
         .equals(GOERLI.chainID)
