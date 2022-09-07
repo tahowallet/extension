@@ -13,6 +13,7 @@ import {
   SUPPORT_ANALYTICS,
   ALLOW_CHANGE_PASSWORD,
   SUPPORT_GOERLI,
+  SUPPORT_MANAGE_DAPPS,
   SUPPORT_MULTIPLE_LANGUAGES,
 } from "@tallyho/tally-background/features"
 import SharedButton from "../components/Shared/SharedButton"
@@ -139,6 +140,17 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const dAppsSettings = {
+    title: "",
+    component: () => (
+      <SettingButton
+        link="/settings/connected-websites"
+        label={t("settings.connectedWebsites")}
+        ariaLabel={t("settings.connectedWebsitesSettings.ariaLabel")}
+      />
+    ),
+  }
+
   const analytics = {
     hideTitle: true,
     title: t("settings.analytics"),
@@ -161,6 +173,7 @@ export default function Settings(): ReactElement {
     ...(SUPPORT_MULTIPLE_LANGUAGES ? [languages] : []),
     ...(SUPPORT_GOERLI ? [enableTestNetworks] : []),
     ...(ALLOW_CHANGE_PASSWORD ? [changePassword] : []),
+    ...(SUPPORT_MANAGE_DAPPS ? [dAppsSettings] : []),
     bugReport,
     ...(SUPPORT_ANALYTICS ? [analytics] : []),
   ]
