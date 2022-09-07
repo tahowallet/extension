@@ -25,6 +25,7 @@ import {
   OPTIMISM,
   EVM_ROLLUP_CHAIN_IDS,
   GOERLI,
+  SECOND,
   NETWORK_BY_CHAIN_ID,
   EIP_1559_COMPLIANT_CHAIN_IDS,
 } from "../../constants"
@@ -1099,11 +1100,9 @@ export default class ChainService extends BaseService<Events> {
     incomingOnly = false
   ): Promise<void> {
     if (
-      addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
-      addressOnNetwork.network.chainID !== POLYGON.chainID &&
-      addressOnNetwork.network.chainID !== OPTIMISM.chainID &&
-      addressOnNetwork.network.chainID !== ARBITRUM_ONE.chainID &&
-      addressOnNetwork.network.chainID !== GOERLI.chainID
+      [ETHEREUM, POLYGON, OPTIMISM, ARBITRUM_ONE, GOERLI].every(
+        (network) => network.chainID !== addressOnNetwork.network.chainID
+      )
     ) {
       logger.error(
         `Asset transfer check not supported on network ${JSON.stringify(
@@ -1179,6 +1178,8 @@ export default class ChainService extends BaseService<Events> {
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
     const fetchedByNetwork: { [chainID: string]: number } = {}
+    const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+    let queue = Promise.resolve()
 
     // Drop all transactions that weren't retrieved from the queue.
     this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
@@ -1196,7 +1197,14 @@ export default class ChainService extends BaseService<Events> {
         // If more transactions can be retrieved in this alarm, bump the count,
         // retrieve the transaction, and drop from the updated queue.
         fetchedByNetwork[network.chainID] += 1
-        this.retrieveTransaction(network, hash, firstSeen)
+
+        // Do not request all transactions and their related data at once
+        queue = queue.finally(() =>
+          this.retrieveTransaction(network, hash, firstSeen)
+            // Only wait if call doesn't throw
+            .then(() => wait(2.5 * SECOND))
+        )
+
         return false
       }
     )
