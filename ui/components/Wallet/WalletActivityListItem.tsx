@@ -298,6 +298,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           }
           .name {
             white-space: nowrap;
+            padding-top: 3px;
           }
           .price {
             width: 58px;
