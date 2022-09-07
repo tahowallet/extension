@@ -96,7 +96,7 @@ type Props = {
   nextPage: string
 }
 
-export default function OnboardingImportMetamask(props: Props): ReactElement {
+export default function OnboardingImportSeed(props: Props): ReactElement {
   const { nextPage } = props
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)

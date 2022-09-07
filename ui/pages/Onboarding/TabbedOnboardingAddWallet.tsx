@@ -10,7 +10,7 @@ const accountCreateButtonInfos = [
       {
         label: "Import recovery phrase",
         icon: "./images/add_wallet/import.svg",
-        url: "/onboarding/import-metamask/set-password",
+        url: "/onboarding/import-seed/set-password",
         isAvailable: true,
       },
       {
