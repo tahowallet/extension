@@ -31,7 +31,6 @@ import {
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
-  SUPPORT_GOERLI,
   SUPPORT_OPTIMISM,
   USE_MAINNET_FORK,
 } from "../../features"
@@ -233,7 +232,7 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks = [
       ETHEREUM,
       POLYGON,
-      ...(SUPPORT_GOERLI ? [GOERLI] : []),
+      GOERLI,
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
@@ -336,19 +335,17 @@ export default class ChainService extends BaseService<Events> {
     // The below code should only be called once per extension reload for extensions
     // with active accounts
     const networksToTrack = await this.getNetworksToTrack()
-    if (networksToTrack.length > 0) {
-      networksToTrack.forEach((network) => {
-        this.activateNetworkOrThrow(network.chainID)
-      })
-      return this.activeNetworks
-    }
 
-    // Default to supporting Ethereum so ENS resolution works during onboarding
-    this.activateNetworkOrThrow(ETHEREUM.chainID)
+    await Promise.allSettled([
+      networksToTrack.map(async (network) =>
+        this.activateNetworkOrThrow(network.chainID)
+      ),
+    ])
+
     return this.activeNetworks
   }
 
-  async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
+  private async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
     const provider = this.providerForNetwork(network)
     if (provider) {
       await Promise.allSettled([
@@ -391,9 +388,9 @@ export default class ChainService extends BaseService<Events> {
 
     if (!existingSubscription) {
       this.subscribeToNetworkEvents(networkToActivate)
-      const addressesToTrack = new Set([
-        ...(await this.getAccountsToTrack()).map((account) => account.address),
-      ])
+      const addressesToTrack = new Set(
+        (await this.getAccountsToTrack()).map((account) => account.address)
+      )
       addressesToTrack.forEach((address) => {
         this.addAccountToTrack({
           address,
@@ -731,7 +728,15 @@ export default class ChainService extends BaseService<Events> {
 
   async getNetworksToTrack(): Promise<EVMNetwork[]> {
     const chainIDs = await this.db.getChainIDsToTrack()
-    return [...chainIDs].map((chainID) => {
+    if (chainIDs.size === 0) {
+      // Default to tracking Ethereum so ENS resolution works during onboarding
+      // Temporarily add Goerli to default networks to track.  The
+      // SUPPORT_GOERLI still gates actual use of Goerli.
+      return [ETHEREUM, GOERLI]
+    }
+    // Temporarily add Goerli to default networks to track.  The
+    // SUPPORT_GOERLI still gates actual use of Goerli.
+    return [...chainIDs, GOERLI.chainID].map((chainID) => {
       const network = NETWORK_BY_CHAIN_ID[chainID]
       return network
     })

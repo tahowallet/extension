@@ -1,12 +1,40 @@
-import React, { ReactElement } from "react"
+import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
+import {
+  selectCollectAnalytics,
+  toggleCollectAnalytics,
+} from "@tallyho/tally-background/redux-slices/ui"
+import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { useDispatch, useSelector } from "react-redux"
+import AnalyticsSlideUpMenu from "../../components/Analytics/AnalyticsSlideUpMenu"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 import SharedToggleButton from "../../components/Shared/SharedToggleButton"
 
 export default function SettingsAnalytics(): ReactElement {
-  const { t } = useTranslation()
   const prefix = "settings.analyticsSetUp"
+  const { t } = useTranslation()
+  const dispatch = useDispatch()
+  const collectAnalytics = useSelector(selectCollectAnalytics)
+  const [showAnalyticsMenu, setShowAnalyticsMenu] = useState(false)
+  const [showDeleteMenu, setShowDeleteMenu] = useState(false)
+
+  const handleToggleChange = (toggleValue: boolean) => {
+    if (toggleValue) {
+      dispatch(toggleCollectAnalytics(true))
+    } else {
+      setShowAnalyticsMenu(true)
+    }
+  }
+
+  const handleCollectAnalyticsSubmit = () => {
+    dispatch(toggleCollectAnalytics(false))
+    setShowAnalyticsMenu(false)
+  }
+
+  const handleDeleteSubmit = () => {
+    setShowDeleteMenu(false)
+  }
 
   return (
     <div className="standard_width_padded analytics_wrapper">
@@ -18,12 +46,21 @@ export default function SettingsAnalytics(): ReactElement {
           <div className="title_container">
             <img
               className="icon"
-              src="./images/message_correct.png"
-              alt="correct"
+              src={`./images/message_${
+                collectAnalytics ? "correct" : "error"
+              }.png`}
+              alt={collectAnalytics ? "correct" : "error"}
             />
-            <h2>{t(`${prefix}.toggleTitle`)}</h2>
+            <h2>
+              {t(`${prefix}.toggleTitle${collectAnalytics ? "On" : "Off"}`)}
+            </h2>
           </div>
-          <SharedToggleButton onChange={() => {}} value={false} />
+          <SharedToggleButton
+            value={collectAnalytics}
+            onChange={(toggleValue) => {
+              handleToggleChange(toggleValue)
+            }}
+          />
         </div>
         <p className="toggle_description simple_text">
           {t(`${prefix}.toggleDesc`)}
@@ -53,6 +90,9 @@ export default function SettingsAnalytics(): ReactElement {
           size="medium"
           iconSmall="new-tab"
           iconPosition="left"
+          onClick={() =>
+            window.open(`${WEBSITE_ORIGIN}/privacy/`, "_blank")?.focus()
+          }
         >
           {t(`${prefix}.policyBtn`)}
         </SharedButton>
@@ -61,10 +101,24 @@ export default function SettingsAnalytics(): ReactElement {
           size="medium"
           iconSmall="garbage"
           iconPosition="left"
+          isDisabled={!collectAnalytics}
+          onClick={() => setShowDeleteMenu(true)}
         >
           {t(`${prefix}.deleteBtn`)}
         </SharedButton>
       </section>
+      <AnalyticsSlideUpMenu
+        isOpen={showAnalyticsMenu}
+        onCancel={() => setShowAnalyticsMenu(false)}
+        onSubmit={() => handleCollectAnalyticsSubmit()}
+        prefix={`${prefix}.analyticsOffSlideUpMenu`}
+      />
+      <AnalyticsSlideUpMenu
+        isOpen={showDeleteMenu}
+        onCancel={() => setShowDeleteMenu(false)}
+        onSubmit={() => handleDeleteSubmit()}
+        prefix={`${prefix}.deleteSlideUpMenu`}
+      />
       <style jsx>{`
         h2 {
           color: var(--green-20);

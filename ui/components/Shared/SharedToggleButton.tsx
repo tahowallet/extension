@@ -1,4 +1,4 @@
-import React, { useState, ReactElement } from "react"
+import React, { useState, ReactElement, useEffect } from "react"
 import classNames from "classnames"
 
 interface SharedToggleButtonProps {
@@ -12,8 +12,11 @@ export default function SharedToggleButton({
 }: SharedToggleButtonProps): ReactElement {
   const [isActive, setIsActive] = useState(value || false)
 
+  useEffect(() => {
+    setIsActive(!!value)
+  }, [value])
+
   const handleToggleAction = () => {
-    setIsActive(!isActive)
     onChange(!isActive)
   }
 

@@ -138,6 +138,18 @@ const computeCombinedAssetAmountsData = (
         return 1
       }
 
+      // Always display the current network's base asset first
+      const networkBaseAsset = currentNetwork.baseAsset
+
+      const leftIsNetworkBaseAsset =
+        networkBaseAsset.symbol === asset1.asset.symbol
+      const rightIsNetworkBaseAsset =
+        networkBaseAsset.symbol === asset2.asset.symbol
+
+      if (leftIsNetworkBaseAsset !== rightIsNetworkBaseAsset) {
+        return leftIsNetworkBaseAsset ? -1 : 1
+      }
+
       const leftIsBaseAsset = asset1.asset.symbol in BASE_ASSETS_BY_SYMBOL
       const rightIsBaseAsset = asset2.asset.symbol in BASE_ASSETS_BY_SYMBOL
 
