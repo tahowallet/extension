@@ -225,16 +225,11 @@ export default async function resolveTransactionAnnotation(
       // If the tx has no data, it's either a simple ETH send, or it's relying
       // on a contract that's `payable` to execute code
 
-      const [recipient, sender] = await Promise.all([
-        enrichAddressOnNetwork(chainService, nameService, {
-          address: transaction.to,
-          network,
-        }),
-        enrichAddressOnNetwork(chainService, nameService, {
-          address: transaction.from,
-          network,
-        }),
-      ])
+      const recipient = txAnnotation.contractInfo
+      const sender = await enrichAddressOnNetwork(chainService, nameService, {
+        address: transaction.from,
+        network,
+      })
 
       // This is _almost certainly_ not a contract interaction, move on. Note that
       // a simple ETH send to a contract address can still effectively be a
