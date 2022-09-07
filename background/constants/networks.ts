@@ -98,3 +98,7 @@ export const NETWORK_BY_CHAIN_ID = {
   [KOVAN.chainID]: KOVAN,
   [FORK.chainID]: FORK,
 }
+
+export const TEST_NETWORK_BY_CHAIN_ID = {
+  [GOERLI.chainID]: GOERLI,
+}
