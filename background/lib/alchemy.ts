@@ -18,6 +18,7 @@ import {
   isValidAlchemyTokenMetadataResponse,
 } from "./validate"
 import { AddressOnNetwork } from "../accounts"
+import { fetchWithTimeout } from "../utils/fetching"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -342,7 +343,7 @@ export async function getNFTs({
   requestUrl.searchParams.set("pageSize", "100")
 
   // TODO validate data with ajv
-  const result = await (await fetch(requestUrl.toString())).json()
+  const result = await (await fetchWithTimeout(requestUrl.toString())).json()
   return result.ownedNfts
     .filter((nft: AlchemyNFTItem) => typeof nft.error === "undefined")
     .map((nft: AlchemyNFTItem) => ({ ...nft, chainID: network.chainID }))
