@@ -100,24 +100,6 @@ export class ChainDatabase extends Dexie {
         })
     })
 
-    if (SUPPORT_OPTIMISM) {
-      this.version(4).upgrade((tx) => {
-        tx.table("accountsToTrack")
-          .toArray()
-          .then((accounts) => {
-            const addresses = new Set<string>()
-
-            accounts.forEach(({ address }) => addresses.add(address))
-            ;[...addresses].forEach((address) => {
-              tx.table("accountsToTrack").put({
-                network: OPTIMISM,
-                address,
-              })
-            })
-          })
-      })
-    }
-
     this.chainTransactions.hook(
       "updating",
       (modifications, _, chainTransaction) => {
