@@ -15,6 +15,9 @@ export default function BrowserTabContainer({
               url("/images/logo_horizontal.svg"),
             no-repeat bottom / cover url("/images/tab_background.svg"),
             linear-gradient(to top, #10322f, var(--hunter-green) 100%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
       `}</style>
     </>

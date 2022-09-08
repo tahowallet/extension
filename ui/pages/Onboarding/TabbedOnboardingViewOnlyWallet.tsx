@@ -10,11 +10,8 @@ import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedAddressInput from "../../components/Shared/SharedAddressInput"
 
-export default function OnboardingViewOnlyWallet({
-  embedded = false,
-}: {
-  embedded: boolean
-}): ReactElement {
+export default function TabbedOnboardingViewOnlyWallet(): ReactElement {
+  const embedded = true
   const dispatch = useBackgroundDispatch()
   const [redirect, setRedirect] = useState(false)
   const [addressOnNetwork, setAddressOnNetwork] = useState<
@@ -47,11 +44,12 @@ export default function OnboardingViewOnlyWallet({
     setRedirect(true)
   }, [dispatch, addressOnNetwork])
 
-  // Redirect to the home tab once an account is set
+  // Redirect to the final onboarding tab once an account is set
   if (redirect) {
-    return <Redirect to="/" />
+    return <Redirect to="/onboarding/done" />
   }
 
+  // TODO remove the "embedded" variable and restyle
   return (
     <section className="start_wrap">
       <div className="top standard_width">

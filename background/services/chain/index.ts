@@ -14,7 +14,6 @@ import {
   TransactionRequest,
   TransactionRequestWithNonce,
   SignedTransaction,
-  isEIP1559EnrichedTransactionSignatureRequest,
   toHexChainID,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
@@ -28,6 +27,7 @@ import {
   GOERLI,
   SECOND,
   NETWORK_BY_CHAIN_ID,
+  EIP_1559_COMPLIANT_CHAIN_IDS,
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
@@ -598,15 +598,18 @@ export default class ChainService extends BaseService<Events> {
     transactionRequest: TransactionRequest
     gasEstimationError: string | undefined
   }> {
-    if (isEIP1559EnrichedTransactionSignatureRequest(partialRequest)) {
+    if (EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)) {
+      const {
+        maxFeePerGas = defaults.maxFeePerGas,
+        maxPriorityFeePerGas = defaults.maxPriorityFeePerGas,
+      } = partialRequest as EnrichedEIP1559TransactionSignatureRequest
+
       const populated = await this.populatePartialEIP1559TransactionRequest(
         network,
         {
-          ...partialRequest,
-          maxFeePerGas: partialRequest.maxFeePerGas ?? defaults.maxFeePerGas,
-          maxPriorityFeePerGas:
-            partialRequest.maxPriorityFeePerGas ??
-            defaults.maxPriorityFeePerGas,
+          ...(partialRequest as EnrichedEIP1559TransactionSignatureRequest),
+          maxFeePerGas,
+          maxPriorityFeePerGas,
         }
       )
       return populated
@@ -615,7 +618,7 @@ export default class ChainService extends BaseService<Events> {
     const populated = await this.populatePartialLegacyEVMTransactionRequest(
       network,
       {
-        ...partialRequest,
+        ...(partialRequest as EnrichedLegacyTransactionRequest),
       }
     )
     return populated
@@ -996,6 +999,7 @@ export default class ChainService extends BaseService<Events> {
         this.saveTransaction(transaction, "local"),
       ])
     } catch (error) {
+      this.releaseEVMTransactionNonce(transaction)
       this.emitter.emit("transactionSendFailure")
       logger.error("Error broadcasting transaction", transaction, error)
 

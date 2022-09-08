@@ -1,5 +1,6 @@
 import React, { ReactElement } from "react"
 import { useHistory } from "react-router-dom"
+import { History, MemoryHistory } from "history"
 import classNames from "classnames"
 
 export default function SharedBackButton({
@@ -11,22 +12,26 @@ export default function SharedBackButton({
   onClick?: () => void
   withoutBackText?: boolean
 }): ReactElement {
-  const historyPre: unknown = useHistory()
-  const history = historyPre as {
-    entries: { pathname: string }[]
-    push: (path: string, state: { isBack: boolean }) => void
-  }
+  const history: History<unknown> | MemoryHistory<unknown> =
+    useHistory<unknown>()
 
   const goBack = () => {
-    const newLocation = path ?? history.entries.at(-2)?.pathname ?? "/"
-    history.push(newLocation, { isBack: true })
+    if ("entries" in history) {
+      const newLocation =
+        path ??
+        (history as MemoryHistory<unknown>).entries.at(-2)?.pathname ??
+        "/"
+      ;(history as MemoryHistory<unknown>).push(newLocation, { isBack: true })
+    } else {
+      history.goBack()
+    }
   }
 
   return (
     <button
       type="button"
       className={classNames({
-        hide: !onClick && history.entries.length <= 1,
+        hide: !onClick && history.length <= 1,
       })}
       onClick={() => {
         if (onClick) {
