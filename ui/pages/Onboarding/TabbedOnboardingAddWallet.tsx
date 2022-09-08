@@ -1,5 +1,4 @@
 import React, { ReactElement } from "react"
-import { useHistory } from "react-router-dom"
 import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
@@ -11,16 +10,12 @@ const accountCreateButtonInfos = [
       {
         label: "Import recovery phrase",
         icon: "./images/add_wallet/import.svg",
-        url: "/onboarding/import-metamask",
+        url: "/onboarding/import-seed/set-password",
         isAvailable: true,
       },
       {
         label: "Connect to Ledger",
         icon: "./images/add_wallet/ledger.svg",
-        onClick: () => {
-          window.open("/tab.html#/ledger", "_blank")?.focus()
-          window.close()
-        },
         url: "/ledger",
         isAvailable: isLedgerSupported,
       },
@@ -38,7 +33,7 @@ const accountCreateButtonInfos = [
       {
         label: "Create new wallet",
         icon: "./images/add_wallet/create_tally.svg",
-        url: "/onboarding/onboarding-interstitial-create-phrase",
+        url: "/onboarding/new-seed/set-password",
         isAvailable: true,
       },
     ],
@@ -117,30 +112,10 @@ function AddWalletRow({
   )
 }
 
-export default function OnboardingStartTheHunt({
-  embedded = false,
-}: {
-  embedded: boolean
-}): ReactElement {
-  const history = useHistory()
-
+export default function TabbedOnboardingAddWallet(): ReactElement {
   return (
     <section className="start_wrap">
-      <div className="top standard_width">
-        {!embedded && (
-          <>
-            <h1>Add accounts</h1>
-            <button
-              type="button"
-              aria-label="close"
-              className="icon_close"
-              onClick={() => {
-                history.push("/")
-              }}
-            />
-          </>
-        )}
-      </div>
+      <div className="top standard_width" />
       <div className="button_sections_wrap">
         {accountCreateButtonInfos.map((creationSection) => {
           return (
@@ -148,13 +123,9 @@ export default function OnboardingStartTheHunt({
               <h2>{creationSection.title}</h2>
               <ul>
                 {creationSection.items.map(
-                  ({ label, icon, url, isAvailable, onClick }) =>
+                  ({ label, icon, url, isAvailable }) =>
                     isAvailable ? (
-                      <AddWalletRow
-                        icon={icon}
-                        url={url}
-                        onClick={embedded ? undefined : onClick}
-                      >
+                      <AddWalletRow icon={icon} url={url}>
                         {label}
                       </AddWalletRow>
                     ) : (
@@ -177,8 +148,7 @@ export default function OnboardingStartTheHunt({
             align-items: center;
           }
           .start_wrap {
-            padding-top: ${embedded ? "83.5px" : "15px"};
-            ${embedded ? "" : `background-color: var(--hunter-green);`}
+            padding-top: "83.5px";
           }
           .button_sections_wrap {
             height: 500px;
@@ -192,6 +162,7 @@ export default function OnboardingStartTheHunt({
             justify-content: space-between;
             align-items: center;
             margin-bottom: 5px;
+            padding-top: 68.5px;
           }
           h1 {
             color: #fff;
