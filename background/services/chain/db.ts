@@ -4,8 +4,7 @@ import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
 import { FungibleAsset } from "../../assets"
-import { OPTIMISM, POLYGON } from "../../constants"
-import { SUPPORT_OPTIMISM } from "../../features"
+import { GOERLI, POLYGON } from "../../constants"
 
 type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
@@ -100,23 +99,12 @@ export class ChainDatabase extends Dexie {
         })
     })
 
-    if (SUPPORT_OPTIMISM) {
-      this.version(4).upgrade((tx) => {
-        tx.table("accountsToTrack")
-          .toArray()
-          .then((accounts) => {
-            const addresses = new Set<string>()
-
-            accounts.forEach(({ address }) => addresses.add(address))
-            ;[...addresses].forEach((address) => {
-              tx.table("accountsToTrack").put({
-                network: OPTIMISM,
-                address,
-              })
-            })
-          })
-      })
-    }
+    this.version(4).upgrade((tx) => {
+      tx.table("accountsToTrack")
+        .where("network.chainID")
+        .equals(GOERLI.chainID)
+        .delete()
+    })
 
     this.chainTransactions.hook(
       "updating",
