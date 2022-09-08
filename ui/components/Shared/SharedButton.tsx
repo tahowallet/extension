@@ -3,6 +3,7 @@ import classNames from "classnames"
 import { Redirect } from "react-router-dom"
 import { History } from "history"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
+import { PropsIcon } from "./utils"
 
 interface Props {
   children: React.ReactNode
@@ -30,78 +31,7 @@ interface Props {
   style?: React.CSSProperties
 }
 
-interface PropsWithMediumIcon extends Props {
-  iconMedium?:
-    | "connected"
-    | "continue"
-    | "copy"
-    | "dark"
-    | "dashboard"
-    | "developer"
-    | "disconnect"
-    | "earn"
-    | "export"
-    | "eye-off"
-    | "eye-on"
-    | "feedback"
-    | "gift"
-    | "import"
-    | "info"
-    | "light"
-    | "list"
-    | "lock"
-    | "menu"
-    | "new-tab"
-    | "notif-accouncement"
-    | "notif-attention"
-    | "notif-correct"
-    | "notif-wrong"
-    | "search"
-    | "swap"
-    | "switch"
-    | "wallet"
-    | "discord"
-    | "github"
-  iconSmall?: never
-}
-
-interface PropsWithSmallIcon extends Props {
-  iconSmall?:
-    | "add"
-    | "arrow-right"
-    | "back"
-    | "close"
-    | "continue"
-    | "copy"
-    | "discord"
-    | "download"
-    | "dropdown"
-    | "edit"
-    | "garbage"
-    | "lock"
-    | "mark-read"
-    | "new-tab"
-    | "notif-announ"
-    | "notif-attention"
-    | "notif-correct"
-    | "notif-wrong"
-    | "notification"
-    | "receive"
-    | "send"
-    | "settings"
-    | "swap"
-  iconMedium?: never
-}
-
-export default function SharedButton(
-  props:
-    | (Props & {
-        iconMedium?: never
-        iconSmall?: never
-      })
-    | PropsWithMediumIcon
-    | PropsWithSmallIcon
-): ReactElement {
+export default function SharedButton(props: Props & PropsIcon): ReactElement {
   const {
     id,
     children,

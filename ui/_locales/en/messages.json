@@ -123,6 +123,18 @@
     "strength": "Strength",
     "hintDesc": "For a strong password, consider a mix of lower and uppercase characters, symbols, and numbers. Passwords should be over 8 characters."
   },
+  "keyring": {
+    "title": "Set unlock signing password",
+    "subtitle": "You will be asked to enter this\npassword to unlock signing transactions.",
+    "password": "Password",
+    "repeatPassword": "Repeat password",
+    "restorePassword": "Restoring account?",
+    "submitBtn": "Begin the hunt",
+    "error": {
+      "characterCount": "Must be at least 8 characters",
+      "noMatch": "Passwords don’t match"
+    }
+  },
   "toggle": {
     "collapse": "Collapse",
     "viewAll": "View all"

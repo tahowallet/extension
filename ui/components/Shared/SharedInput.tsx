@@ -1,6 +1,7 @@
 import React, { ChangeEvent, ReactElement, useEffect, useRef } from "react"
 import classNames from "classnames"
 import { useParsedValidation, useRunOnFirstRender } from "../../hooks"
+import { PropsIcon } from "./utils"
 
 interface Props<T> {
   id?: string
@@ -24,7 +25,9 @@ interface Props<T> {
   isSmall?: boolean
 }
 
-export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
+export function SharedTypedInput<T = string>(
+  props: Props<T> & PropsIcon
+): ReactElement {
   const {
     id,
     label,
@@ -43,6 +46,8 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     parseAndValidate,
     isEmpty = false,
     isSmall = false,
+    iconMedium,
+    iconSmall,
   } = props
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -88,6 +93,8 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
         className={classNames({
           error: !isEmpty && (errorMessage ?? parserError !== undefined),
           small: isSmall,
+          ...((iconSmall || iconMedium) && { icon: true }),
+          icon_medium: !!iconMedium,
         })}
         step={step}
         ref={inputRef}
@@ -189,6 +196,17 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             -webkit-appearance: none;
             margin: 0;
           }
+          .icon {
+            background: url("./images/icons/s/${iconSmall}.svg") no-repeat;
+            background-position: right 10px top 50%;
+            background-size: 16px;
+            padding-right: 38px;
+          }
+          .icon_medium {
+            background: url("./images/icons/m/${iconMedium}.svg") no-repeat;
+            background-position: right 10px top 50%;
+            background-size: 24px;
+          }
         `}
       </style>
     </>
@@ -201,7 +219,9 @@ SharedTypedInput.defaultProps = {
 }
 
 export default function SharedInput(
-  props: Omit<Props<string>, "onChange"> & { onChange?: (_: string) => void }
+  props: Omit<Props<string>, "onChange"> & {
+    onChange?: (_: string) => void
+  } & PropsIcon
 ): ReactElement {
   const onChangeWrapper = (newValue: string | undefined) => {
     props.onChange?.(newValue ?? "")
