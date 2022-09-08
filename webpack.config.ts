@@ -22,8 +22,8 @@ const baseConfig: Configuration = {
   devtool: "source-map",
   stats: "errors-only",
   entry: {
-    ui: "./src/ui.ts",
-    "tab-ui": "./src/tab-ui.ts",
+    popup: "./src/popup.ts",
+    tab: "./src/tab.ts",
     background: "./src/background.ts",
     "background-ui": "./src/background-ui.ts",
     "window-provider": "./src/window-provider.ts",
