@@ -31,6 +31,7 @@ import {
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
+  SUPPORT_GOERLI,
   SUPPORT_OPTIMISM,
   USE_MAINNET_FORK,
 } from "../../features"
@@ -232,7 +233,7 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks = [
       ETHEREUM,
       POLYGON,
-      GOERLI,
+      ...(SUPPORT_GOERLI ? [GOERLI] : []),
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
@@ -733,13 +734,9 @@ export default class ChainService extends BaseService<Events> {
     const chainIDs = await this.db.getChainIDsToTrack()
     if (chainIDs.size === 0) {
       // Default to tracking Ethereum so ENS resolution works during onboarding
-      // Temporarily add Goerli to default networks to track.  The
-      // SUPPORT_GOERLI still gates actual use of Goerli.
-      return [ETHEREUM, GOERLI]
+      return [ETHEREUM]
     }
-    // Temporarily add Goerli to default networks to track.  The
-    // SUPPORT_GOERLI still gates actual use of Goerli.
-    return [...chainIDs, GOERLI.chainID].map((chainID) => {
+    return [...chainIDs].map((chainID) => {
       const network = NETWORK_BY_CHAIN_ID[chainID]
       return network
     })
