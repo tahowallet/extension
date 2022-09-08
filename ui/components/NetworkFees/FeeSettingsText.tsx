@@ -4,15 +4,10 @@ import {
   weiToGwei,
 } from "@tallyho/tally-background/lib/utils"
 import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
-import {
-  EstimatedFeesPerGas,
-  NetworkFeeSettings,
-  NetworkFeeTypeChosen,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import {
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
-  selectFeeType,
   selectTransactionData,
   selectTransactionMainCurrencyPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
@@ -70,38 +65,30 @@ const getFeeDollarValue = (
 }
 
 const estimateGweiAmount = (options: {
-  estimatedFeesPerGas: EstimatedFeesPerGas | undefined
-  selectedFeeType: NetworkFeeTypeChosen
   baseFeePerGas: bigint
   networkSettings: NetworkFeeSettings
   network: EVMNetwork
   transactionData?: EnrichedEVMTransactionRequest
 }): string => {
-  const {
-    network,
-    networkSettings,
-    baseFeePerGas,
-    estimatedFeesPerGas,
-    selectedFeeType,
-    transactionData,
-  } = options
+  const { network, networkSettings, baseFeePerGas, transactionData } = options
 
   let estimatedSpendPerGas =
-    networkSettings.values.gasPrice ||
     baseFeePerGas + networkSettings.values.maxPriorityFeePerGas
+
   if (
     transactionData &&
     !isEIP1559EnrichedTransactionRequest(transactionData) &&
     EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
   ) {
-    estimatedSpendPerGas += transactionData.estimatedRollupGwei
+    estimatedSpendPerGas =
+      (networkSettings.values.gasPrice || estimatedSpendPerGas) +
+      transactionData.estimatedRollupGwei
   }
 
-  const estimatedGweiAmount =
-    typeof estimatedFeesPerGas !== "undefined" &&
-    typeof selectedFeeType !== "undefined"
-      ? truncateDecimalAmount(weiToGwei(estimatedSpendPerGas ?? 0n), 0)
-      : ""
+  const estimatedGweiAmount = truncateDecimalAmount(
+    weiToGwei(estimatedSpendPerGas ?? 0n),
+    0
+  )
 
   return estimatedGweiAmount
 }
@@ -111,10 +98,10 @@ export default function FeeSettingsText({
 }: {
   customNetworkSetting?: NetworkFeeSettings
 }): ReactElement {
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const transactionData = useBackgroundSelector(selectTransactionData)
-  const selectedFeeType = useBackgroundSelector(selectFeeType)
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const currentNetwork = transactionData?.network || selectedNetwork
+  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   let networkSettings = useBackgroundSelector(selectDefaultNetworkFeeSettings)
   networkSettings = customNetworkSetting ?? networkSettings
   const baseFeePerGas =
@@ -128,8 +115,6 @@ export default function FeeSettingsText({
     selectTransactionMainCurrencyPricePoint
   )
   const estimatedGweiAmount = estimateGweiAmount({
-    estimatedFeesPerGas,
-    selectedFeeType,
     baseFeePerGas,
     networkSettings,
     transactionData,

@@ -71,7 +71,8 @@ export default function ensResolverFor(
               name: undefined,
             }
 
-      const provider = chainService.providerForNetwork(network)
+      // Hard-coded to ETHEREUM to support ENS names on ETH L2's.
+      const provider = chainService.providerForNetwork(ETHEREUM)
 
       if (name === undefined || provider === undefined) {
         return undefined
@@ -95,7 +96,8 @@ export default function ensResolverFor(
       network,
     }: AddressOnNetwork): Promise<NameOnNetwork | undefined> {
       const name = await chainService
-        .providerForNetwork(network)
+        // Hard-coded to ETHEREUM to support ENS names on ETH L2's.
+        .providerForNetwork(ETHEREUM)
         ?.lookupAddress(address)
 
       if (name === undefined || name === null) {

@@ -3,7 +3,6 @@ import React, { ReactElement, useState } from "react"
 import { ledgerUSBVendorId } from "@ledgerhq/devices"
 import { LedgerProductDatabase } from "@tallyho/tally-background/services/ledger"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
-import BrowserTabContainer from "../../components/BrowserTab/BrowserTabContainer"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import LedgerConnectPopup from "./LedgerConnectPopup"
 import LedgerImportDone from "./LedgerImportDone"
@@ -36,7 +35,7 @@ export default function Ledger(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const connectionError = phase === "2-connect" && !device && !connecting
   return (
-    <BrowserTabContainer>
+    <>
       {(phase === "0-prepare" || connectionError) && (
         <LedgerPrepare
           initialScreen={phase === "0-prepare"}
@@ -93,6 +92,6 @@ export default function Ledger(): ReactElement {
           }}
         />
       )}
-    </BrowserTabContainer>
+    </>
   )
 }
