@@ -64,12 +64,12 @@ export function parseLogsForWrappedDepositsAndWithdrawals(
         )
 
         if (
-          typeof decodedDeposit.wad !== "undefined" &&
+          typeof decodedDeposit.amount !== "undefined" &&
           typeof decodedDeposit.dst !== "undefined"
         ) {
           return {
             contractAddress,
-            amount: (decodedDeposit.wad as BigNumber).toBigInt(),
+            amount: (decodedDeposit.amount as BigNumber).toBigInt(),
             recipientAddress: decodedDeposit.dst,
             senderAddress: contractAddress,
           }
@@ -85,12 +85,12 @@ export function parseLogsForWrappedDepositsAndWithdrawals(
         )
 
         if (
-          typeof decodedWithdrawal.wad !== "undefined" &&
+          typeof decodedWithdrawal.amount !== "undefined" &&
           typeof decodedWithdrawal.src !== "undefined"
         ) {
           return {
             contractAddress,
-            amount: (decodedWithdrawal.wad as BigNumber).toBigInt(),
+            amount: (decodedWithdrawal.amount as BigNumber).toBigInt(),
             recipientAddress: contractAddress,
             senderAddress: decodedWithdrawal.src,
           }
