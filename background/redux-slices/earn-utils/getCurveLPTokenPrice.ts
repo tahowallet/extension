@@ -1,12 +1,13 @@
 import { BigNumber } from "ethers"
 import { HexString } from "../../types"
+import { fetchWithTimeout } from "../../utils/fetching"
 
 const getCurveLPTokenPrice = async (wantToken: HexString): Promise<bigint> => {
-  const curveCrypto = await fetch(
+  const curveCrypto = await fetchWithTimeout(
     "https://api.curve.fi/api/getPools/ethereum/crypto"
   )
   const curveCryptoParsed = await curveCrypto.json()
-  const curveFactoryCrypto = await fetch(
+  const curveFactoryCrypto = await fetchWithTimeout(
     "https://api.curve.fi/api/getPools/ethereum/factory-crypto"
   )
   const curveFactoryCryptoParsed = await curveFactoryCrypto.json()

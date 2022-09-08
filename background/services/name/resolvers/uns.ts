@@ -1,32 +1,13 @@
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import { ETHEREUM, POLYGON, SECOND } from "../../../constants"
 import { ALCHEMY_KEY } from "../../../lib/alchemy"
-import logger from "../../../lib/logger"
 import { isDefined } from "../../../lib/utils/type-guards"
 import { sameNetwork } from "../../../networks"
+import { makeFetchWithTimeout } from "../../../utils/fetching"
 import { NameResolver } from "../name-resolver"
 
 // Time until response is stale
 const RESPONSE_TTL = 5 * SECOND
-
-const makeFetchWithTimeout = (timeoutMs: number) => {
-  return async function fetchWithTimeout(
-    requestInfo: RequestInfo,
-    options?: RequestInit | undefined
-  ) {
-    const controller = new AbortController()
-    const id = setTimeout(() => {
-      logger.warn("Request to ", requestInfo, " timed out")
-      return controller.abort()
-    }, timeoutMs)
-    const response = await fetch(requestInfo, {
-      ...options,
-      signal: controller.signal,
-    })
-    clearTimeout(id)
-    return response
-  }
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const cacheAsyncResults = <F extends (...args: any[]) => Promise<any>>(
@@ -81,6 +62,7 @@ const cacheAsyncResults = <F extends (...args: any[]) => Promise<any>>(
     return result
   }) as F
 }
+
 const fetchWithTimeout = makeFetchWithTimeout(3_000)
 
 const UNS_SUPPORTED_NETWORKS = [ETHEREUM, POLYGON]
