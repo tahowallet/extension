@@ -98,9 +98,10 @@ export default function FeeSettingsText({
 }: {
   customNetworkSetting?: NetworkFeeSettings
 }): ReactElement {
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   const transactionData = useBackgroundSelector(selectTransactionData)
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const currentNetwork = transactionData?.network || selectedNetwork
+  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   let networkSettings = useBackgroundSelector(selectDefaultNetworkFeeSettings)
   networkSettings = customNetworkSetting ?? networkSettings
   const baseFeePerGas =
