@@ -14,7 +14,6 @@ import {
   TransactionRequest,
   TransactionRequestWithNonce,
   SignedTransaction,
-  isEIP1559EnrichedTransactionSignatureRequest,
   toHexChainID,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
@@ -26,10 +25,13 @@ import {
   OPTIMISM,
   EVM_ROLLUP_CHAIN_IDS,
   GOERLI,
+  SECOND,
   NETWORK_BY_CHAIN_ID,
+  EIP_1559_COMPLIANT_CHAIN_IDS,
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
+  SUPPORT_GOERLI,
   SUPPORT_OPTIMISM,
   USE_MAINNET_FORK,
 } from "../../features"
@@ -231,7 +233,7 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks = [
       ETHEREUM,
       POLYGON,
-      GOERLI,
+      ...(SUPPORT_GOERLI ? [GOERLI] : []),
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
@@ -596,15 +598,18 @@ export default class ChainService extends BaseService<Events> {
     transactionRequest: TransactionRequest
     gasEstimationError: string | undefined
   }> {
-    if (isEIP1559EnrichedTransactionSignatureRequest(partialRequest)) {
+    if (EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)) {
+      const {
+        maxFeePerGas = defaults.maxFeePerGas,
+        maxPriorityFeePerGas = defaults.maxPriorityFeePerGas,
+      } = partialRequest as EnrichedEIP1559TransactionSignatureRequest
+
       const populated = await this.populatePartialEIP1559TransactionRequest(
         network,
         {
-          ...partialRequest,
-          maxFeePerGas: partialRequest.maxFeePerGas ?? defaults.maxFeePerGas,
-          maxPriorityFeePerGas:
-            partialRequest.maxPriorityFeePerGas ??
-            defaults.maxPriorityFeePerGas,
+          ...(partialRequest as EnrichedEIP1559TransactionSignatureRequest),
+          maxFeePerGas,
+          maxPriorityFeePerGas,
         }
       )
       return populated
@@ -613,7 +618,7 @@ export default class ChainService extends BaseService<Events> {
     const populated = await this.populatePartialLegacyEVMTransactionRequest(
       network,
       {
-        ...partialRequest,
+        ...(partialRequest as EnrichedLegacyTransactionRequest),
       }
     )
     return populated
@@ -729,13 +734,9 @@ export default class ChainService extends BaseService<Events> {
     const chainIDs = await this.db.getChainIDsToTrack()
     if (chainIDs.size === 0) {
       // Default to tracking Ethereum so ENS resolution works during onboarding
-      // Temporarily add Goerli to default networks to track.  The
-      // SUPPORT_GOERLI still gates actual use of Goerli.
-      return [ETHEREUM, GOERLI]
+      return [ETHEREUM]
     }
-    // Temporarily add Goerli to default networks to track.  The
-    // SUPPORT_GOERLI still gates actual use of Goerli.
-    return [...chainIDs, GOERLI.chainID].map((chainID) => {
+    return [...chainIDs].map((chainID) => {
       const network = NETWORK_BY_CHAIN_ID[chainID]
       return network
     })
@@ -998,6 +999,7 @@ export default class ChainService extends BaseService<Events> {
         this.saveTransaction(transaction, "local"),
       ])
     } catch (error) {
+      this.releaseEVMTransactionNonce(transaction)
       this.emitter.emit("transactionSendFailure")
       logger.error("Error broadcasting transaction", transaction, error)
 
@@ -1095,11 +1097,9 @@ export default class ChainService extends BaseService<Events> {
     incomingOnly = false
   ): Promise<void> {
     if (
-      addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
-      addressOnNetwork.network.chainID !== POLYGON.chainID &&
-      addressOnNetwork.network.chainID !== OPTIMISM.chainID &&
-      addressOnNetwork.network.chainID !== ARBITRUM_ONE.chainID &&
-      addressOnNetwork.network.chainID !== GOERLI.chainID
+      [ETHEREUM, POLYGON, OPTIMISM, ARBITRUM_ONE, GOERLI].every(
+        (network) => network.chainID !== addressOnNetwork.network.chainID
+      )
     ) {
       logger.error(
         `Asset transfer check not supported on network ${JSON.stringify(
@@ -1175,6 +1175,8 @@ export default class ChainService extends BaseService<Events> {
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
     const fetchedByNetwork: { [chainID: string]: number } = {}
+    const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+    let queue = Promise.resolve()
 
     // Drop all transactions that weren't retrieved from the queue.
     this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
@@ -1192,7 +1194,14 @@ export default class ChainService extends BaseService<Events> {
         // If more transactions can be retrieved in this alarm, bump the count,
         // retrieve the transaction, and drop from the updated queue.
         fetchedByNetwork[network.chainID] += 1
-        this.retrieveTransaction(network, hash, firstSeen)
+
+        // Do not request all transactions and their related data at once
+        queue = queue.finally(() =>
+          this.retrieveTransaction(network, hash, firstSeen)
+            // Only wait if call doesn't throw
+            .then(() => wait(2.5 * SECOND))
+        )
+
         return false
       }
     )

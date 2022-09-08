@@ -154,7 +154,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               <span className="bold_amount_count">
                 {renderDetails.assetValue}
               </span>
-              {renderDetails.assetSymbol}
+              <span className="name">{renderDetails.assetSymbol}</span>
             </div>
           </div>
           <div className="right">
@@ -185,7 +185,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             background-color: var(--green-95);
             display: flex;
             flex-direction: column;
-            padding: 11px 19px 8px 8px;
+            padding: 10px 19px 8px 8px;
             box-sizing: border-box;
             margin-bottom: 16px;
             justify-content: space-between;
@@ -246,7 +246,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             justify-content: space-between;
             width: 100%;
             align-items: center;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
           }
           .bottom {
             display: flex;
@@ -263,7 +263,6 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             height: 32px;
             background-color: var(--hunter-green);
             border-radius: 80px;
-            margin-right: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -282,9 +281,12 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             letter-spacing: 0.42px;
             line-height: 16px;
             text-transform: uppercase;
+            display: flex;
+            flex-wrap: wrap;
+            padding: 0px 8px;
+            align-items: center;
           }
           .bold_amount_count {
-            width: 70px;
             height: 24px;
             color: #fefefc;
             font-size: 18px;
@@ -293,6 +295,10 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             margin-right: 4px;
             // For Infinite text in token approvals.
             text-transform: none;
+          }
+          .name {
+            white-space: nowrap;
+            padding-top: 3px;
           }
           .price {
             width: 58px;
@@ -319,6 +325,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             display: flex;
             justify-content: space-between;
             text-align: right;
+            white-space: nowrap;
           }
           .outcome {
             color: var(--green-5);

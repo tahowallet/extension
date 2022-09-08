@@ -231,7 +231,7 @@ export function ethersTransactionFromSignedTransaction(
     nonce: Number(tx.nonce),
     to: tx.to,
     data: tx.input || "",
-    gasPrice: BigNumber.from(tx.gasPrice),
+    gasPrice: tx.gasPrice ? BigNumber.from(tx.gasPrice) : undefined,
     type: tx.type,
     chainId: parseInt(USE_MAINNET_FORK ? FORK.chainID : tx.network.chainID, 10),
     value: BigNumber.from(tx.value),
