@@ -68,7 +68,7 @@ const pageList: PageList[] = [
   },
   {
     path: "/onboarding/import-metamask",
-    Component: (): ReactElement => <OnboardingImportMetamask nextPage="/" />,
+    Component: () => <OnboardingImportMetamask nextPage="/" />,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,

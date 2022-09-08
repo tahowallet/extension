@@ -78,11 +78,7 @@ const steps = HIDE_TOKEN_FEATURES
       },
     ]
 
-export default function OnboardingInfoIntro({
-  embedded = false,
-}: {
-  embedded: boolean
-}): ReactElement {
+export default function TabbedOnboardingInfoIntro(): ReactElement {
   const [activeStep, setActiveStep] = useState(1)
   const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
 
@@ -142,10 +138,7 @@ export default function OnboardingInfoIntro({
           .illustration_section {
             height: 380px;
             display: flex;
-            ${embedded
-              ? ""
-              : "background: linear-gradient(180deg, #002f2b 0%, #00403b 100%);"}
-            ${embedded ? "padding-top: 68.5px;" : ""}
+            padding-top: 68.5px;
           }
           section {
             display: flex;
@@ -161,8 +154,6 @@ export default function OnboardingInfoIntro({
             margin: 12px 0px 0px 0px;
           }
           .forest {
-            ${embedded ? "" : `background: url("./images/dark_forest@2x.png");`}
-            /*  */
             background-size: cover;
             width: 384px;
             height: 141px;
@@ -189,10 +180,6 @@ export default function OnboardingInfoIntro({
             text-align: center;
             z-index: 1;
           }
-        `}
-      </style>
-      <style jsx>
-        {`
           .illustration {
             background: url("./images/${steps[activeStep - 1].image
               .fileName}@2x.png");
