@@ -4,7 +4,7 @@ import {
   getNetworkCountForOverview,
   getTotalBalanceForOverview,
   selectAccountAndTimestampedActivities,
-  selectAccountsTotalForOverview,
+  selectAccountTotalsForOverview,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { SUPPORT_NFTS } from "@tallyho/tally-background/features"
 import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
@@ -21,7 +21,7 @@ const panelNames = ["Assets", "NFTs"]
 
 export default function Overview(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
-  const accountsTotal = useBackgroundSelector(selectAccountsTotalForOverview)
+  const accountsTotal = useBackgroundSelector(selectAccountTotalsForOverview)
   const balance = useBackgroundSelector(getTotalBalanceForOverview)
   const networksCount = useBackgroundSelector(getNetworkCountForOverview)
   const accountsCount = useBackgroundSelector(getAddressCount)

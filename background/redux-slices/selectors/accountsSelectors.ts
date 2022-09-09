@@ -417,7 +417,7 @@ export type AccountTotalList = {
   }
 }
 /** Get list of all accounts totals on all networks but without test networks */
-export const selectAccountsTotalForOverview = createSelector(
+export const selectAccountTotalsForOverview = createSelector(
   getAccountState,
   getAssetsState,
   selectMainCurrencySymbol,
@@ -428,7 +428,7 @@ export const selectAccountsTotalForOverview = createSelector(
       .filter(
         ([chainID, accounts]) =>
           typeof accounts !== "undefined" &&
-          !Object.keys(TEST_NETWORK_BY_CHAIN_ID).includes(chainID)
+          !TEST_NETWORK_BY_CHAIN_ID.has(chainID)
       )
       .forEach(([chainID, accounts]) =>
         Object.entries(accounts).forEach(([address, accountData]) => {
@@ -502,20 +502,20 @@ export const getAllNetworks = createSelector(getAccountState, (account) =>
 )
 
 export const getNetworkCountForOverview = createSelector(
-  getAllNetworks,
-  (allNetworks) =>
-    allNetworks.filter(
-      (name) => !Object.values(TEST_NETWORK_BY_CHAIN_ID).includes(name)
+  getAccountState,
+  (account) =>
+    Object.keys(account.accountsData.evm).filter(
+      (chainID) => !TEST_NETWORK_BY_CHAIN_ID.has(chainID)
     ).length
 )
 
 export const getTotalBalanceForOverview = createSelector(
-  selectAccountsTotalForOverview,
+  selectAccountTotalsForOverview,
   (accountsTotal) =>
     Object.values(accountsTotal)
       .reduce(
         (total, { totals }) =>
-          Object.values(totals).reduce((sum, value) => sum + value) + total,
+          Object.values(totals).reduce((sum, balance) => sum + balance) + total,
         0
       )
       .toFixed(2)

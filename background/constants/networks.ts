@@ -99,6 +99,6 @@ export const NETWORK_BY_CHAIN_ID = {
   [FORK.chainID]: FORK,
 }
 
-export const TEST_NETWORK_BY_CHAIN_ID = {
-  [GOERLI.chainID]: GOERLI,
-}
+export const TEST_NETWORK_BY_CHAIN_ID = new Set(
+  [GOERLI].map((network) => network.chainID)
+)
