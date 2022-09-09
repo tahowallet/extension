@@ -38,8 +38,9 @@ export default function NetworkSettingsOptimism(): ReactElement {
       </div>
 
       <div className="simple_text">
-        The estimated gas cost for Optimism transactions includes Optimism fee +
-        Ethereum roll-up fee (fee to register transaction on Ethereum chain).
+        The estimated gas cost for Optimism transactions includes an Optimism
+        fee + an Ethereum roll-up fee (the fee to register transaction on
+        Ethereum chain).
       </div>
 
       <div className="simple_text">
