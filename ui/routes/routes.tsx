@@ -23,6 +23,7 @@ import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
 import Eligible from "../pages/Claiming/Eligible"
 import SettingsExportLogs from "../pages/Settings/SettingsExportLogs"
 import SettingsAnalytics from "../pages/Settings/SettingsAnalytics"
+import SettingsConnectedWebsites from "../pages/Settings/SettingsConnectedWebsites"
 
 interface PageList {
   path: string
@@ -59,7 +60,7 @@ const pageList: PageList[] = [
   },
   {
     path: "/onboarding/import-metamask",
-    Component: (): ReactElement => <OnboardingImportMetamask nextPage="/" />,
+    Component: () => <OnboardingImportMetamask nextPage="/" />,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
@@ -130,6 +131,13 @@ const pageList: PageList[] = [
   {
     path: "/settings/export-logs",
     Component: SettingsExportLogs,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: true,
+  },
+  {
+    path: "/settings/connected-websites",
+    Component: SettingsConnectedWebsites,
     hasTabBar: true,
     hasTopBar: false,
     persistOnClose: true,
