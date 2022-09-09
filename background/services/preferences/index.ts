@@ -6,7 +6,7 @@ import { Preferences, TokenListPreferences } from "./types"
 import { getOrCreateDB, PreferenceDatabase } from "./db"
 import BaseService from "../base"
 import { normalizeEVMAddress } from "../../lib/utils"
-import { ETHEREUM, OPTIMISM } from "../../constants"
+import { ETHEREUM, OPTIMISM, ARBITRUM_ONE } from "../../constants"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString } from "../../types"
 
@@ -29,6 +29,11 @@ const BUILT_IN_CONTRACTS = [
     name: "0x Router",
   },
   {
+    network: OPTIMISM,
+    address: normalizeEVMAddress("0xdef1abe32c034e558cdd535791643c58a13acc10"),
+    name: "0x Router",
+  },
+  {
     network: ETHEREUM,
     // Uniswap v3 Router
     address: normalizeEVMAddress("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"),
@@ -36,6 +41,12 @@ const BUILT_IN_CONTRACTS = [
   },
   {
     network: OPTIMISM,
+    // Uniswap v3 Router
+    address: normalizeEVMAddress("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"),
+    name: "🦄 Uniswap",
+  },
+  {
+    network: ARBITRUM_ONE,
     // Uniswap v3 Router
     address: normalizeEVMAddress("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"),
     name: "🦄 Uniswap",
