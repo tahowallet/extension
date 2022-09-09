@@ -22,10 +22,15 @@ import {
   ETHEREUM,
   GOERLI,
   OPTIMISM,
+  OPTIMISTIC_ETH,
   POLYGON,
 } from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
+
+// This is how 0x represents native token addresses
+const ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS =
+  "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
 
 // @TODO Use ajv validators in conjunction with these types
 type ZeroExErrorResponse = {
@@ -175,6 +180,13 @@ const get0xAssetName = (
   // 0x Does not support trading MATIC by contract address on polygon
   if (network.name === "Polygon" && asset.symbol === "MATIC") {
     return "MATIC"
+  }
+  if (
+    network.name === OPTIMISM.name &&
+    "contractAddress" in asset &&
+    asset.contractAddress === OPTIMISTIC_ETH.contractAddress
+  ) {
+    return ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS
   }
   return "contractAddress" in asset ? asset.contractAddress : asset.symbol
 }
