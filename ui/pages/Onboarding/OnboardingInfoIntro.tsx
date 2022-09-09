@@ -1,7 +1,11 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { getAddressCount } from "@tallyho/tally-background/redux-slices/selectors"
-import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
+import {
+  HIDE_TOKEN_FEATURES,
+  SUPPORT_TABBED_ONBOARDING,
+} from "@tallyho/tally-background/features"
+import { browser } from "@tallyho/tally-background"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedProgressIndicator from "../../components/Shared/SharedProgressIndicator"
@@ -83,6 +87,12 @@ export default function OnboardingInfoIntro({
 }: {
   embedded: boolean
 }): ReactElement {
+  // if tabbed onboarding is supported, exit the popup and prefer the tab
+  if (SUPPORT_TABBED_ONBOARDING) {
+    const url = browser.runtime.getURL("tab.html#onboarding")
+    browser.tabs.create({ url })
+  }
+
   const [activeStep, setActiveStep] = useState(1)
   const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
 
