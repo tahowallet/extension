@@ -10,6 +10,7 @@ import type {
   EnrichedLegacyTransactionRequest,
 } from "@tallyho/tally-background/services/enrichment"
 import { useTranslation } from "react-i18next"
+import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
@@ -61,6 +62,10 @@ export default function SignTransactionDetailPanel(
 
   if (transactionDetails === undefined) return <></>
 
+  const isEIP1559Compliant = EIP_1559_COMPLIANT_CHAIN_IDS.has(
+    transactionDetails.network.chainID
+  )
+
   const hasInsufficientFundsWarning =
     transactionDetails.annotation?.warnings?.includes("insufficient-funds")
 
@@ -80,7 +85,10 @@ export default function SignTransactionDetailPanel(
         isOpen={networkSettingsModalOpen}
         close={() => setNetworkSettingsModalOpen(false)}
         customSize={`${
-          3 * 56 + 320 + (hasInsufficientFundsWarning ? 15 : 0)
+          3 * 56 +
+          320 +
+          (hasInsufficientFundsWarning ? 15 : 0) +
+          (isEIP1559Compliant ? 0 : 40)
         }px`}
       >
         <NetworkSettingsChooser
