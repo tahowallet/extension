@@ -14,7 +14,6 @@ import {
   TransactionRequest,
   TransactionRequestWithNonce,
   SignedTransaction,
-  isEIP1559EnrichedTransactionSignatureRequest,
   toHexChainID,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
@@ -28,9 +27,11 @@ import {
   GOERLI,
   SECOND,
   NETWORK_BY_CHAIN_ID,
+  EIP_1559_COMPLIANT_CHAIN_IDS,
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
+  SUPPORT_GOERLI,
   SUPPORT_OPTIMISM,
   USE_MAINNET_FORK,
 } from "../../features"
@@ -51,6 +52,7 @@ import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEIP1559TransactionSignatureRequest,
+  EnrichedEVMTransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
   EnrichedLegacyTransactionRequest,
   EnrichedLegacyTransactionSignatureRequest,
@@ -232,7 +234,7 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks = [
       ETHEREUM,
       POLYGON,
-      GOERLI,
+      ...(SUPPORT_GOERLI ? [GOERLI] : []),
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
@@ -597,15 +599,18 @@ export default class ChainService extends BaseService<Events> {
     transactionRequest: TransactionRequest
     gasEstimationError: string | undefined
   }> {
-    if (isEIP1559EnrichedTransactionSignatureRequest(partialRequest)) {
+    if (EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)) {
+      const {
+        maxFeePerGas = defaults.maxFeePerGas,
+        maxPriorityFeePerGas = defaults.maxPriorityFeePerGas,
+      } = partialRequest as EnrichedEIP1559TransactionSignatureRequest
+
       const populated = await this.populatePartialEIP1559TransactionRequest(
         network,
         {
-          ...partialRequest,
-          maxFeePerGas: partialRequest.maxFeePerGas ?? defaults.maxFeePerGas,
-          maxPriorityFeePerGas:
-            partialRequest.maxPriorityFeePerGas ??
-            defaults.maxPriorityFeePerGas,
+          ...(partialRequest as EnrichedEIP1559TransactionSignatureRequest),
+          maxFeePerGas,
+          maxPriorityFeePerGas,
         }
       )
       return populated
@@ -614,7 +619,7 @@ export default class ChainService extends BaseService<Events> {
     const populated = await this.populatePartialLegacyEVMTransactionRequest(
       network,
       {
-        ...partialRequest,
+        ...(partialRequest as EnrichedLegacyTransactionRequest),
       }
     )
     return populated
@@ -730,13 +735,9 @@ export default class ChainService extends BaseService<Events> {
     const chainIDs = await this.db.getChainIDsToTrack()
     if (chainIDs.size === 0) {
       // Default to tracking Ethereum so ENS resolution works during onboarding
-      // Temporarily add Goerli to default networks to track.  The
-      // SUPPORT_GOERLI still gates actual use of Goerli.
-      return [ETHEREUM, GOERLI]
+      return [ETHEREUM]
     }
-    // Temporarily add Goerli to default networks to track.  The
-    // SUPPORT_GOERLI still gates actual use of Goerli.
-    return [...chainIDs, GOERLI.chainID].map((chainID) => {
+    return [...chainIDs].map((chainID) => {
       const network = NETWORK_BY_CHAIN_ID[chainID]
       return network
     })
@@ -926,12 +927,18 @@ export default class ChainService extends BaseService<Events> {
 
   async estimateL1RollupFee(
     network: EVMNetwork,
-    transaction: UnsignedTransaction
+    transaction: UnsignedTransaction | EnrichedEVMTransactionRequest
   ): Promise<bigint> {
     // Optimism-specific implementation
     // https://community.optimism.io/docs/developers/build/transaction-fees/#displaying-fees-to-users
-    const unsignedRLPEncodedTransaction =
-      utils.serializeTransaction(transaction)
+    const unsignedRLPEncodedTransaction = utils.serializeTransaction({
+      to: transaction.to,
+      nonce: transaction.nonce,
+      gasLimit: transaction.gasLimit,
+      gasPrice: "gasPrice" in transaction ? transaction.gasPrice : undefined,
+      data: "data" in transaction ? transaction.data : undefined,
+      value: "value" in transaction ? transaction.value : undefined,
+    })
 
     const provider = await this.providerForNetworkOrThrow(network)
 
@@ -999,6 +1006,7 @@ export default class ChainService extends BaseService<Events> {
         this.saveTransaction(transaction, "local"),
       ])
     } catch (error) {
+      this.releaseEVMTransactionNonce(transaction)
       this.emitter.emit("transactionSendFailure")
       logger.error("Error broadcasting transaction", transaction, error)
 

@@ -40,7 +40,7 @@ export async function newProxyStore(): Promise<
 /**
  * Starts the API subsystems, including all services.
  */
-export async function startApi(): Promise<Main> {
+export async function startMain(): Promise<Main> {
   const mainService = await Main.create()
 
   mainService.startService()
