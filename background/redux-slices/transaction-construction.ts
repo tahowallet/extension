@@ -229,15 +229,21 @@ const transactionSlice = createSlice({
       signedTransaction: undefined,
       customFeesPerGas: state.customFeesPerGas,
     }),
-    updateL1RollupFee: (
+    updateRollupEstimates: (
       immerState,
-      { payload: newL1RollupFee }: { payload: bigint }
+      {
+        payload,
+      }: {
+        payload: { estimatedRollupFee: bigint; estimatedRollupGwei: bigint }
+      }
     ) => {
+      const { estimatedRollupFee, estimatedRollupGwei } = payload
       if (
         immerState.transactionRequest?.network.chainID === OPTIMISM.chainID &&
         !isEIP1559TransactionRequest(immerState.transactionRequest)
       ) {
-        immerState.transactionRequest.estimatedRollupFee = newL1RollupFee
+        immerState.transactionRequest.estimatedRollupFee = estimatedRollupFee
+        immerState.transactionRequest.estimatedRollupGwei = estimatedRollupGwei
       }
     },
     setFeeType: (
@@ -358,7 +364,7 @@ export const {
   estimatedFeesPerGas,
   setCustomGas,
   clearCustomGas,
-  updateL1RollupFee,
+  updateRollupEstimates,
 } = transactionSlice.actions
 
 export default transactionSlice.reducer

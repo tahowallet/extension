@@ -1,5 +1,9 @@
 import React, { ReactElement } from "react"
-import { ETHEREUM, POLYGON } from "@tallyho/tally-background/constants"
+import {
+  ETHEREUM,
+  OPTIMISM,
+  POLYGON,
+} from "@tallyho/tally-background/constants"
 import { NFT } from "@tallyho/tally-background/redux-slices/nfts"
 import SharedIcon from "../Shared/SharedIcon"
 import NFTsImage from "./NFTsImage"
@@ -18,6 +22,7 @@ function getPreviewLink({
   const previewURL = {
     [POLYGON.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
     [ETHEREUM.chainID]: `/nft/${contractAddress}/${parsedTokenID}`,
+    [OPTIMISM.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
   }
 
   return `${scanWebsite[chainID].url}${previewURL[chainID]}`

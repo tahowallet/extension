@@ -6,7 +6,7 @@ export type SimpleHashNFTModel = {
   name: string
   description?: string
   token_id: string
-  contractAddress: string
+  contract_address: string
   chain: "polygon" | "arbitrum" | "optimism" | "ethereum"
   audio_url: string | null
   image_url: string | null

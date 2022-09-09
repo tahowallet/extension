@@ -47,7 +47,7 @@ function simpleHashNFTModelToNFT(original: SimpleHashNFTModel): NFT {
     name,
     description,
     token_id: tokenID,
-    contractAddress,
+    contract_address: contractAddress,
     chain,
   } = original
   const media = [
