@@ -30,12 +30,7 @@ const BUILT_IN_CONTRACTS = [
   },
   {
     network: OPTIMISM,
-    address: normalizeEVMAddress("0xDef1C0ded9bec7F1a1670819833240f027b25EfF"),
-    name: "0x Router",
-  },
-  {
-    network: ARBITRUM_ONE,
-    address: normalizeEVMAddress("0xDef1C0ded9bec7F1a1670819833240f027b25EfF"),
+    address: normalizeEVMAddress("0xdef1abe32c034e558cdd535791643c58a13acc10"),
     name: "0x Router",
   },
   {
