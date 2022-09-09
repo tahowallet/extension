@@ -11,7 +11,7 @@ import PasswordStrengthBar from "../Password/PasswordStrengthBar"
 
 export default function KeyringSetPassword(): ReactElement {
   const { t } = useTranslation()
-  const prefix = "keyring"
+  const prefix = "keyring.setPassword"
   const [password, setPassword] = useState("")
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("")
   const [passwordConfirmation, setPasswordConfirmation] = useState("")

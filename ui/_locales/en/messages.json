@@ -61,6 +61,7 @@
   },
   "settings": {
     "mainMenu": "Settings",
+    "signing": "Signing",
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
     "setAsDefault": "Use Tally Ho as your default wallet",
     "enableTestNetworks": "Enable test networks",
@@ -124,15 +125,23 @@
     "hintDesc": "For a strong password, consider a mix of lower and uppercase characters, symbols, and numbers. Passwords should be over 8 characters."
   },
   "keyring": {
-    "title": "Set unlock signing password",
-    "subtitle": "You will be asked to enter this\npassword to unlock signing transactions.",
-    "password": "Password",
-    "repeatPassword": "Repeat password",
-    "restorePassword": "Restoring account?",
-    "submitBtn": "Begin the hunt",
-    "error": {
-      "characterCount": "Must be at least 8 characters",
-      "noMatch": "Passwords don’t match"
+    "setPassword": {
+      "title": "Set unlock signing password",
+      "subtitle": "You will be asked to enter this\npassword to unlock signing transactions.",
+      "password": "Password",
+      "repeatPassword": "Repeat password",
+      "restorePassword": "Restoring account?",
+      "submitBtn": "Begin the hunt",
+      "error": {
+        "characterCount": "Must be at least 8 characters",
+        "noMatch": "Passwords don’t match"
+      }
+    },
+    "unlock": {
+      "title": "Unlock signing",
+      "submitBtn": "Unlock",
+      "signingPassword": "Signing password",
+      "forgotPassword": "Forgot password?"
     }
   },
   "toggle": {
