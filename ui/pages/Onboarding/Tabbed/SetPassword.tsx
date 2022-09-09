@@ -12,16 +12,16 @@ import {
   useBackgroundDispatch,
   useAreKeyringsUnlocked,
   useBackgroundSelector,
-} from "../../hooks"
-import titleStyle from "../../components/Onboarding/titleStyle"
-import SharedButton from "../../components/Shared/SharedButton"
-import SharedInput from "../../components/Shared/SharedInput"
-import SharedBackButton from "../../components/Shared/SharedBackButton"
-import SharedBanner from "../../components/Shared/SharedBanner"
-import SharedToggleButton from "../../components/Shared/SharedToggleButton"
-import PasswordStrengthBar from "../../components/Password/PasswordStrengthBar"
+} from "../../../hooks"
+import titleStyle from "../../../components/Onboarding/titleStyle"
+import SharedButton from "../../../components/Shared/SharedButton"
+import SharedInput from "../../../components/Shared/SharedInput"
+import SharedBackButton from "../../../components/Shared/SharedBackButton"
+import SharedBanner from "../../../components/Shared/SharedBanner"
+import SharedToggleButton from "../../../components/Shared/SharedToggleButton"
+import PasswordStrengthBar from "../../../components/Password/PasswordStrengthBar"
 
-export default function KeyringSetPassword({
+export default function SetPassword({
   nextPage,
 }: {
   nextPage: string

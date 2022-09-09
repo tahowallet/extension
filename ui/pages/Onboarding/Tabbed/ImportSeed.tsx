@@ -4,14 +4,14 @@ import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
 import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features"
-import SharedButton from "../../components/Shared/SharedButton"
-import SharedBackButton from "../../components/Shared/SharedBackButton"
-import OnboardingDerivationPathSelect from "../../components/Onboarding/OnboardingDerivationPathSelect"
+import SharedButton from "../../../components/Shared/SharedButton"
+import SharedBackButton from "../../../components/Shared/SharedBackButton"
+import OnboardingDerivationPathSelect from "../../../components/Onboarding/OnboardingDerivationPathSelect"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
   useAreKeyringsUnlocked,
-} from "../../hooks"
+} from "../../../hooks"
 
 function TextArea({
   value,
@@ -96,7 +96,7 @@ type Props = {
   nextPage: string
 }
 
-export default function OnboardingImportSeed(props: Props): ReactElement {
+export default function ImportSeed(props: Props): ReactElement {
   const { nextPage } = props
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)

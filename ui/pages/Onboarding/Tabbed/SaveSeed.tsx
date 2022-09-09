@@ -1,15 +1,15 @@
 import React, { ReactElement, useState } from "react"
-import SharedButton from "../../components/Shared/SharedButton"
-import OnboardingStepsIndicator from "../../components/Onboarding/OnboardingStepsIndicator"
-import { useBackgroundSelector } from "../../hooks"
-import SharedBackButton from "../../components/Shared/SharedBackButton"
+import SharedButton from "../../../components/Shared/SharedButton"
+import OnboardingStepsIndicator from "../../../components/Onboarding/OnboardingStepsIndicator"
+import { useBackgroundSelector } from "../../../hooks"
+import SharedBackButton from "../../../components/Shared/SharedBackButton"
 import {
   OnboardingBox,
   OnboardingHeader,
   OnboardingSubheader,
   OnboardingContainer,
   OnboardingMessageHeader,
-} from "./styles"
+} from "../styles"
 
 function WarningMessage({ onAccept }: { onAccept: () => void }): ReactElement {
   return (
@@ -162,7 +162,7 @@ function SeedContainer(): ReactElement {
   )
 }
 
-export default function OnboardingSaveSeed(): ReactElement {
+export default function SaveSeed(): ReactElement {
   const [revealSeed, setRevealSeed] = useState(false)
 
   return (

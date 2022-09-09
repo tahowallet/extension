@@ -2,9 +2,9 @@ import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { getAddressCount } from "@tallyho/tally-background/redux-slices/selectors"
 import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
-import { useBackgroundSelector } from "../../hooks"
-import SharedButton from "../../components/Shared/SharedButton"
-import SharedProgressIndicator from "../../components/Shared/SharedProgressIndicator"
+import { useBackgroundSelector } from "../../../hooks"
+import SharedButton from "../../../components/Shared/SharedButton"
+import SharedProgressIndicator from "../../../components/Shared/SharedProgressIndicator"
 
 const steps = HIDE_TOKEN_FEATURES
   ? [
@@ -78,7 +78,7 @@ const steps = HIDE_TOKEN_FEATURES
       },
     ]
 
-export default function TabbedOnboardingInfoIntro(): ReactElement {
+export default function Intro(): ReactElement {
   const [activeStep, setActiveStep] = useState(1)
   const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
 

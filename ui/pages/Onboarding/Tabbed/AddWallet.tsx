@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react"
 import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
-import SharedButton from "../../components/Shared/SharedButton"
-import SharedIcon from "../../components/Shared/SharedIcon"
+import SharedButton from "../../../components/Shared/SharedButton"
+import SharedIcon from "../../../components/Shared/SharedIcon"
 
 const accountCreateButtonInfos = [
   {
@@ -112,7 +112,7 @@ function AddWalletRow({
   )
 }
 
-export default function TabbedOnboardingAddWallet(): ReactElement {
+export default function AddWallet(): ReactElement {
   return (
     <section className="start_wrap">
       <div className="top standard_width" />

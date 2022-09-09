@@ -1,18 +1,18 @@
 import React, { ReactElement, useState } from "react"
-import OnboardingStepsIndicator from "../../components/Onboarding/OnboardingStepsIndicator"
-import SeedVerification from "./VerifySeed/SeedVerification"
+import OnboardingStepsIndicator from "../../../components/Onboarding/OnboardingStepsIndicator"
+import SeedVerification from "../VerifySeed/SeedVerification"
 import {
   OnboardingContainer,
   OnboardingHeader,
   OnboardingSubheader,
-} from "./styles"
-import VerifySeedSuccess from "./VerifySeed/VerifySeedSuccess"
-import VerifySeedError from "./VerifySeed/VerifySeedError"
-import { useBackgroundSelector } from "../../hooks"
+} from "../styles"
+import VerifySeedSuccess from "../VerifySeed/VerifySeedSuccess"
+import VerifySeedError from "../VerifySeed/VerifySeedError"
+import { useBackgroundSelector } from "../../../hooks"
 
 type VerificationStep = "verification" | "success" | "error"
 
-export default function OnboardingVerifySeed(): ReactElement {
+export default function VerifySeed(): ReactElement {
   const [verificationStep, setVerificationStep] =
     useState<VerificationStep>("verification")
   const mnemonic = useBackgroundSelector((state) => {

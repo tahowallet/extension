@@ -5,12 +5,12 @@ import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui
 import { HexString } from "@tallyho/tally-background/types"
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import SharedButton from "../../components/Shared/SharedButton"
-import SharedBackButton from "../../components/Shared/SharedBackButton"
-import SharedAddressInput from "../../components/Shared/SharedAddressInput"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
+import SharedButton from "../../../components/Shared/SharedButton"
+import SharedBackButton from "../../../components/Shared/SharedBackButton"
+import SharedAddressInput from "../../../components/Shared/SharedAddressInput"
 
-export default function TabbedOnboardingViewOnlyWallet(): ReactElement {
+export default function ViewOnlyWallet(): ReactElement {
   const embedded = true
   const dispatch = useBackgroundDispatch()
   const [redirect, setRedirect] = useState(false)
