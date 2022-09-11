@@ -148,11 +148,8 @@ export default function ImportSeed(props: Props): ReactElement {
   if (!areKeyringsUnlocked) return <></>
 
   return (
-    <section className="center_horizontal standard_width">
+    <>
       <div className="content">
-        <div className="back_button_wrap">
-          <SharedBackButton />
-        </div>
         <form
           onSubmit={(event) => {
             event.preventDefault()
@@ -206,7 +203,7 @@ export default function ImportSeed(props: Props): ReactElement {
         </form>
       </div>
       <style jsx>{`
-        section {
+        .content {
           display: flex;
           align-items: center;
           flex-direction: column;
@@ -216,10 +213,6 @@ export default function ImportSeed(props: Props): ReactElement {
         .content {
           animation: fadeIn ease 200ms;
           width: inherit;
-        }
-        .back_button_wrap {
-          position: fixed;
-          top: 25px;
         }
         h1 {
           margin: unset;
@@ -232,15 +225,14 @@ export default function ImportSeed(props: Props): ReactElement {
         .bottom {
           justify-content: space-between;
           flex-direction: column;
+          /* margin-top: ${HIDE_IMPORT_DERIVATION_PATH ? "35px" : "24px"}; */
           margin-bottom: ${HIDE_IMPORT_DERIVATION_PATH ? "24px" : "16px"};
-          margin-top: ${HIDE_IMPORT_DERIVATION_PATH ? "35px" : "24px"};
         }
         .illustration_import {
           background: url("./images/illustration_import_seed@2x.png");
           background-size: cover;
           width: 106.5px;
           height: 103.5px;
-          margin-top: 60px;
           margin-bottom: 15px;
         }
         .serif_header {
@@ -274,6 +266,6 @@ export default function ImportSeed(props: Props): ReactElement {
           width: 320px;
         }
       `}</style>
-    </section>
+    </>
   )
 }

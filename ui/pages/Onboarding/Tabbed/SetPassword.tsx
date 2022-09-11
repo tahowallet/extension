@@ -16,7 +16,6 @@ import {
 import titleStyle from "../../../components/Onboarding/titleStyle"
 import SharedButton from "../../../components/Shared/SharedButton"
 import SharedInput from "../../../components/Shared/SharedInput"
-import SharedBackButton from "../../../components/Shared/SharedBackButton"
 import SharedBanner from "../../../components/Shared/SharedBanner"
 import SharedToggleButton from "../../../components/Shared/SharedToggleButton"
 import PasswordStrengthBar from "../../../components/Password/PasswordStrengthBar"
@@ -72,10 +71,7 @@ export default function SetPassword({
   }
 
   return (
-    <section className="standard_width">
-      <div className="top">
-        <SharedBackButton />
-      </div>
+    <>
       <h1 className="serif_header">First, let&apos;s secure your wallet</h1>
 
       <div className="warning_wrap">
@@ -141,10 +137,6 @@ export default function SetPassword({
       </div>
       <style jsx>
         {`
-          .top {
-            display: flex;
-            width: 100%;
-          }
           .wordmark {
             background: url("./images/wordmark@2x.png");
             background-size: cover;
@@ -159,11 +151,7 @@ export default function SetPassword({
           .serif_header {
             width: 335px;
             text-align: center;
-            margin-top: 40px;
             margin-bottom: 7px;
-          }
-          section {
-            padding-top: 25px;
           }
           .input_wrap {
             width: 211px;
@@ -204,6 +192,6 @@ export default function SetPassword({
           }
         `}
       </style>
-    </section>
+    </>
   )
 }

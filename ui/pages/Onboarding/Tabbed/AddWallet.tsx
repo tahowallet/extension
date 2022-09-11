@@ -114,8 +114,7 @@ function AddWalletRow({
 
 export default function AddWallet(): ReactElement {
   return (
-    <section className="start_wrap">
-      <div className="top standard_width" />
+    <>
       <div className="button_sections_wrap">
         {accountCreateButtonInfos.map((creationSection) => {
           return (
@@ -146,9 +145,6 @@ export default function AddWallet(): ReactElement {
             flex-direction: column;
             justify-content: center;
             align-items: center;
-          }
-          .start_wrap {
-            padding-top: "83.5px";
           }
           .button_sections_wrap {
             height: 500px;
@@ -194,6 +190,6 @@ export default function AddWallet(): ReactElement {
           }
         `}
       </style>
-    </section>
+    </>
   )
 }
