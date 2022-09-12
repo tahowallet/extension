@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
-import titleStyle from "../Onboarding/titleStyle"
 import SharedBackButton from "../Shared/SharedBackButton"
 import PasswordStrengthBar from "../Password/PasswordStrengthBar"
 
@@ -121,7 +120,6 @@ export default function KeyringSetPassword(): ReactElement {
             right: 0px;
             margin: 0 auto;
           }
-          ${titleStyle}
           .serif_header {
             text-align: center;
             margin: 40px 30px 7px 30px;
@@ -135,6 +133,10 @@ export default function KeyringSetPassword(): ReactElement {
           section {
             padding-top: 25px;
             background-color: var(--hunter-green);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
           }
           .input_wrap {
             width: 260px;

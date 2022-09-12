@@ -10,7 +10,6 @@ import {
 } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
-import titleStyle from "../Onboarding/titleStyle"
 
 export default function KeyringUnlock(): ReactElement {
   const { t } = useTranslation()
@@ -66,41 +65,38 @@ export default function KeyringUnlock(): ReactElement {
           {t("shared.cancelBtn")}
         </SharedButton>
       </div>
-      <div className="content">
-        <div className="img_wrap">
-          <div className="illustration_unlock" />
-        </div>
-        <h1 className="serif_header">{t(`${prefix}.title`)}</h1>
-        <form onSubmit={dispatchUnlockWallet}>
-          <div className="signing_wrap">
-            <div className="input_wrap">
-              <SharedInput
-                type="password"
-                label={t(`${prefix}.signingPassword`)}
-                onChange={(value) => {
-                  setPassword(value)
-                  // Clear error message on input change
-                  setErrorMessage("")
-                }}
-                errorMessage={errorMessage}
-                iconMedium="eye-on"
-                focusedLabelBackgroundColor="var(--green-95)"
-              />
-            </div>
-            <div>
-              <SharedButton type="primary" size="large" isFormSubmit>
-                {t(`${prefix}.submitBtn`)}
-              </SharedButton>
-            </div>
-          </div>
-          <SharedButton type="tertiaryGray" size="small" onClick={() => {}}>
-            {t(`${prefix}.forgotPassword`)}
-          </SharedButton>
-        </form>
+      <div className="img_wrap">
+        <div className="illustration_unlock" />
       </div>
+      <h1 className="serif_header">{t(`${prefix}.title`)}</h1>
+      <form onSubmit={dispatchUnlockWallet}>
+        <div className="signing_wrap">
+          <div className="input_wrap">
+            <SharedInput
+              type="password"
+              label={t(`${prefix}.signingPassword`)}
+              onChange={(value) => {
+                setPassword(value)
+                // Clear error message on input change
+                setErrorMessage("")
+              }}
+              errorMessage={errorMessage}
+              iconMedium="eye-on"
+              focusedLabelBackgroundColor="var(--green-95)"
+            />
+          </div>
+          <div>
+            <SharedButton type="primary" size="large" isFormSubmit>
+              {t(`${prefix}.submitBtn`)}
+            </SharedButton>
+          </div>
+        </div>
+        <SharedButton type="tertiaryGray" size="small" onClick={() => {}}>
+          {t(`${prefix}.forgotPassword`)}
+        </SharedButton>
+      </form>
       <style jsx>
         {`
-          ${titleStyle}
           .illustration_unlock {
             background: url("./images/illustration_unlock@2x.png");
             background-position: center;
@@ -110,21 +106,19 @@ export default function KeyringUnlock(): ReactElement {
             height: 172.18px;
           }
           section {
-            background-color: var(--green-95) !important;
+            background-color: var(--green-95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             width: 100%;
             height: 100%;
+            gap: 25px;
           }
           form {
             display: flex;
             justify-content: space-between;
             margin-bottom: 12px;
-          }
-          .content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 25px;
-            height: 100%;
           }
           .signing_wrap {
             display: flex;
@@ -136,9 +130,9 @@ export default function KeyringUnlock(): ReactElement {
             width: 100%;
             display: flex;
             justify-content: flex-end;
-            position: fixed;
             right: 0px;
             top: 0px;
+            margin-top: 12px;
           }
           .input_wrap {
             width: 260px;
