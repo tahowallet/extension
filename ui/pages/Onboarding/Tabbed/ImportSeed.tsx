@@ -5,7 +5,6 @@ import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
 import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features"
 import SharedButton from "../../../components/Shared/SharedButton"
-import SharedBackButton from "../../../components/Shared/SharedBackButton"
 import OnboardingDerivationPathSelect from "../../../components/Onboarding/OnboardingDerivationPathSelect"
 import {
   useBackgroundDispatch,

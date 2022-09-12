@@ -80,7 +80,7 @@ export default function Intro(): ReactElement {
   const [activeStep, setActiveStep] = useState(1)
   const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
 
-  const { url, path } = useRouteMatch()
+  const { path } = useRouteMatch()
 
   if (redirectToAddWallet) {
     return <Redirect push to={`${path}/add-wallet`} />

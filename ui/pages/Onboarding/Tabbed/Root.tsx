@@ -3,6 +3,7 @@ import React, { ReactElement } from "react"
 import { useRouteMatch, Route, Switch } from "react-router-dom"
 
 import SharedBackButton from "../../../components/Shared/SharedBackButton"
+import { OnboardingContainer } from "../styles"
 import AddWallet from "./AddWallet"
 import Done from "./Done"
 import ImportSeed from "./ImportSeed"
@@ -18,7 +19,7 @@ type Props = {
 
 function Navigation({ children }: Props): ReactElement {
   return (
-    <section className="standard_width">
+    <section className="standard_width onboarding_container">
       <div className="top">
         <SharedBackButton />
       </div>
@@ -30,8 +31,12 @@ function Navigation({ children }: Props): ReactElement {
           }
           .top {
             display: flex;
+            justify-content: space-between;
             width: 100%;
             margin-bottom: 40px;
+          }
+          .onboarding_container {
+            ${OnboardingContainer}
           }
         `}
       </style>
@@ -60,11 +65,11 @@ export default function Root(): ReactElement {
         <Route path={`${path}/new-seed/set-password`}>
           <SetPassword nextPage={`${path}/new-seed`} />
         </Route>
+        <Route path={`${path}/new-seed/verify`}>
+          <VerifySeed nextPage={`${path}/done`} />
+        </Route>
         <Route path={`${path}/new-seed`}>
           <SaveSeed />
-        </Route>
-        <Route path={`${path}/new-seed/verify`}>
-          <VerifySeed />
         </Route>
         <Route path={`${path}/view-only-wallet`}>
           <ViewOnlyWallet />
