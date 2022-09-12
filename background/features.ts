@@ -18,3 +18,5 @@ export const SUPPORT_ANALYTICS = process.env.SUPPORT_ANALYTICS === "true"
 export const SUPPORT_TABBED_ONBOARDING =
   process.env.SUPPORT_TABBED_ONBOARDING === "true"
 export const SUPPORT_MANAGE_DAPPS = process.env.SUPPORT_MANAGE_DAPPS === "true"
+export const SUPPORT_KEYRING_SIGNING =
+  process.env.SUPPORT_KEYRING_SIGNING === "true"

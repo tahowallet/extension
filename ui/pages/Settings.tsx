@@ -12,6 +12,7 @@ import {
 import {
   SUPPORT_ANALYTICS,
   SUPPORT_GOERLI,
+  SUPPORT_KEYRING_SIGNING,
   SUPPORT_MANAGE_DAPPS,
   SUPPORT_MULTIPLE_LANGUAGES,
 } from "@tallyho/tally-background/features"
@@ -179,17 +180,19 @@ export default function Settings(): ReactElement {
       <section className="standard_width_padded">
         <div className="main_menu_wrap">
           <h1>{t("settings.mainMenu")}</h1>
-          <div className="signing_wrap">
-            <SharedButton
-              type="tertiaryOpposite"
-              size="medium"
-              iconMedium={areKeyringsUnlocked ? "un-lock" : "lock"}
-              iconPosition="right"
-              onClick={toggleKeyringStatus}
-            >
-              {t("settings.signing")}
-            </SharedButton>
-          </div>
+          {SUPPORT_KEYRING_SIGNING && (
+            <div className="signing_wrap">
+              <SharedButton
+                type="tertiaryOpposite"
+                size="medium"
+                iconMedium={areKeyringsUnlocked ? "un-lock" : "lock"}
+                iconPosition="right"
+                onClick={toggleKeyringStatus}
+              >
+                {t("settings.signing")}
+              </SharedButton>
+            </div>
+          )}
         </div>
         <ul>
           {settings.general.map((setting) => (
