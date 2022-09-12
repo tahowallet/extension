@@ -69,8 +69,18 @@ function gweiTransformer(value: bigint | null | undefined): string {
   return `${weiToGwei(value) || "0"} Gwei`
 }
 
-function blockHeightTransformer(blockHeight: number | null): string {
-  return blockHeight === null ? "(pending)" : blockHeight.toString()
+function blockHeightTransformer(
+  blockHeight: number | null,
+  status: number | undefined
+): string {
+  if (blockHeight !== null && status !== undefined && status !== 1)
+    return "(failed)"
+
+  if (blockHeight !== null) return blockHeight.toString()
+
+  if (blockHeight === null && status === 0) return "(dropped)"
+
+  return "(pending)"
 }
 
 function toStringTransformer(value: bigint | number): string {
@@ -126,7 +136,11 @@ export function adaptForUI(
 export const keysMap: UIAdaptationMap = {
   blockHeight: {
     readableName: "Block Height",
-    transformer: (tx) => blockHeightTransformer(tx.blockHeight),
+    transformer: (tx) =>
+      blockHeightTransformer(
+        tx.blockHeight,
+        "status" in tx ? tx.status : undefined
+      ),
     detailTransformer: () => "",
   },
   value: {
