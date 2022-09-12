@@ -5,7 +5,7 @@ import { BlockPrices, BlockEstimate } from "../../networks"
 import { EthereumTransactionData } from "./types"
 import { gweiToWei } from "../../lib/utils"
 import { ETHEREUM } from "../../constants/networks"
-import { logger } from "ethers"
+import logger from "../../lib/logger"
 
 const BLOCKNATIVE_API_ROOT = "https://api.blocknative.com"
 
