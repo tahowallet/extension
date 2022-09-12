@@ -181,7 +181,7 @@ export default function Settings(): ReactElement {
           <h1>{t("settings.mainMenu")}</h1>
           <div className="signing_wrap">
             <SharedButton
-              type="tertiary"
+              type="tertiaryOpposite"
               size="medium"
               iconMedium={areKeyringsUnlocked ? "un-lock" : "lock"}
               iconPosition="right"

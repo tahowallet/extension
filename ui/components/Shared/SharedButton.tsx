@@ -13,6 +13,7 @@ interface Props {
     | "primaryGreen"
     | "secondary"
     | "tertiary"
+    | "tertiaryOpposite"
     | "tertiaryWhite"
     | "tertiaryGray"
     | "tertiaryError"
@@ -88,6 +89,7 @@ export default function SharedButton(props: Props & PropsIcon): ReactElement {
         { disabled: isDisabled },
         { tertiary: type === "tertiary" },
         { "tertiary white": type === "tertiaryWhite" },
+        { "tertiary opposite": type === "tertiaryOpposite" },
         { "tertiary gray": type === "tertiaryGray" },
         { "tertiary error": type === "tertiaryError" },
         { deemphasized_white: type === "deemphasizedWhite" },
@@ -289,6 +291,18 @@ export default function SharedButton(props: Props & PropsIcon): ReactElement {
           }
           .error:hover .icon_button {
             background-color: var(--error-80);
+          }
+          .opposite {
+            color: var(--green-40);
+          }
+          .opposite .icon_button {
+            background-color: var(--green-40);
+          }
+          .opposite:hover {
+            color: var(--trophy-gold);
+          }
+          .opposite:hover .icon_button {
+            background-color: var(--trophy-gold);
           }
           .tertiary.disabled {
             color: var(--green-60);
