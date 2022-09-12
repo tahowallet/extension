@@ -48,7 +48,7 @@ type AccountData = {
   defaultAvatar: string
 }
 
-type Evm = {
+type AccountsByChainID = {
   [chainID: string]: {
     [address: string]: AccountData | "loading"
   }
@@ -59,7 +59,7 @@ export type AccountState = {
   accountLoading?: string
   hasAccountError?: boolean
   accountsData: {
-    evm: Evm
+    evm: AccountsByChainID
   }
   combinedData: CombinedAccountData
 }
@@ -152,7 +152,7 @@ function updateCombinedData(immerState: AccountState) {
   // each other.
   const filteredEvm = Object.keys(immerState.accountsData.evm)
     .filter((key) => !TEST_NETWORK_BY_CHAIN_ID.has(key))
-    .reduce<Evm>((evm, key) => {
+    .reduce<AccountsByChainID>((evm, key) => {
       return {
         ...evm,
         [key]: immerState.accountsData.evm[key],

@@ -1,41 +1,132 @@
 {
+  "assetInput": {
+    "error": {
+      "insufficientBalance": "Saldo insuficiente",
+      "invalidAmount": "Monto inválido"
+    },
+    "search": "Buscar por nombre o dirección",
+    "selectToken": "Seleccionar Token"
+  },
   "comingSoon": "Próximamente",
   "overview": {
+    "accounts": "Cuentas",
+    "assets": "Activos",
+    "networks": "Redes",
     "tableHeader": {
-      "balance": "Saldo"
-    }
+      "asset": "Activo",
+      "balance": "Saldo",
+      "price": "Precio"
+    },
+    "totalBalanceEverywhere": "Saldo Total en todas las cuentas"
   },
   "passwordStrength": {
     "average": "Promedio",
-    "hintDesc": "Para una contraseña segura, considere mezclar mayúsculas y minúsculas, símbolos, y números. Las contraseñas deben tener más de 8 caracteres"
+    "hintDesc": "Para una contraseña segura, considere mezclar mayúsculas y minúsculas, símbolos, y números. Las contraseñas deben tener más de 8 caracteres",
+    "strength": "Fuerza",
+    "strong": "Fuerte",
+    "weak": "Débil"
   },
+  "popupEdition": "Edición comunitaria",
   "protocol": {
+    "compatibleChain": "Blockchain compatible con Ethereum",
     "connected": "Conectado",
     "l2": "Soluciones de escalabilidad L2",
-    "mainnet": "Mainnet"
+    "mainnet": "Mainnet",
+    "testnet": "Red de prueba"
   },
+  "readOnly": "Solo lectura",
+  "readOnlyNotice": "Modo - Solo lectura",
   "settings": {
+    "analytics": "Analítica",
+    "analyticsSetUp": {
+      "analyticsOffSlideUpMenu": {
+        "desc": "¿Está seguro que desea desactivar la analítica? Nos ayudan mucho a construir una mejor billetera para ti.",
+        "snackbar": "La analítica está desactivada, regrese en otro momento",
+        "submitBtn": "Sí, apagar",
+        "title": "¿Desactivar analítica?"
+      },
+      "ariaLabel": "Analítica abierta",
+      "deleteBtn": "Eliminar mis datos",
+      "deleteSlideUpMenu": {
+        "desc": "¿Está seguro que desea eliminar sus datos? Nos ayudan mucho a construir una mejor billetera para ti.",
+        "snackbar": "Los datos privados serán eliminados pronto",
+        "submitBtn": "Sí, elimina los datos",
+        "title": "¿Eliminar tus datos?"
+      },
+      "noRecordItemSeed": "Tu Frase Semilla",
+      "noRecordItemTransactions": "Tu dirección y transacciones",
+      "noRecordTitle": "Nunca grabaremos",
+      "policyBtn": "Política de Privacidad",
+      "recordItemAccounts": "Número de Cuentas",
+      "recordItemGas": "Gas pagado en general",
+      "recordItemOrders": "Número de intercambios / envíos",
+      "title": "Analíticas",
+      "toggleDesc": "¡Las analíticas nos ayudan a comprender sus necesidades y nos permiten construir una billetera mejor para ti!",
+      "toggleTitleOff": "La analítica está desactivada",
+      "toggleTitleOn": "La analítica está activada"
+    },
     "bugReport": "Informe de errores",
+    "connectedWebsites": "Sitios Web a los que está conectado",
+    "connectedWebsitesSettings": {
+      "ariaLabel": "Administrar sitios web conectados",
+      "disconnected": "Sitios web desconectados",
+      "emptyList": "No está conectado a ningún sitio web",
+      "title": "Sitios web a los que está conectado"
+    },
+    "enableTestNetworks": "Habilitar redes de prueba",
     "exportLogs": {
       "ariaLabel": "Reporta un error",
       "discordBtn": "Únase a Discord",
+      "discordDesc": "Visítanos en nuestro canal de Discord, y reporta tu error allí. Asegúrate de incluir los registros.",
+      "discordTitle": "Únete a #bug-reports en Discord",
+      "logBtn": "Exportar registros",
+      "logDesc": "Para entender mejor su error, necesitamos que exporte sus registros",
       "logTitle": "2. Exportar registros",
       "title": "Informe de errores"
     },
     "hideSmallAssetBalance": "Ocultar saldos menores de {{sign}}{{amount}}",
     "joinBtn": "Únete y danos tu opinión",
     "joinDesc": "¡Únete a nuestro Discord y danos tu opinión!",
-    "joinTitle": "Únete a nuestra comunidad"
+    "joinTitle": "Únete a nuestra comunidad",
+    "language": "Idioma",
+    "mainMenu": "Ajustes",
+    "setAsDefault": "Usa Tally Ho como su billetera predeterminada"
+  },
+  "shared": {
+    "cancelBtn": "Cancelar"
   },
   "swap": {
+    "error": {
+      "noApprovalTarget": "Intentando aprobar la transferencia sin un objetivo de aprobación.",
+      "noSellAsset": "Intentando aprobar la transferencia sin un activo de venta.",
+      "nonContractAsset": "Intentar aprobar la transferencia de un activo no contractual."
+    },
+    "from": "Intercambiar desde :",
+    "getFinalQuote": "Obtener cotización final",
+    "title": "Intercambiar Activos",
+    "to": "Cambiar a :",
     "transactionSettings": {
       "daoFee": "Comisión DAO",
-      "estimatedFee": "Comisión de la red estimada"
+      "estimatedFee": "Comisión de la red estimada",
+      "settings": "Ajustes de transacciones",
+      "slippageTolerance": "Tolerancia del deslizamiento",
+      "title": "Configuración de transacciones"
     }
+  },
+  "toggle": {
+    "collapse": "Colapsar",
+    "viewAll": "Ver todo"
   },
   "wallet": {
     "assetAmount": "Activo / Monto",
+    "receive": "Recibir",
+    "receiveAddress": "Dirección para recibir",
     "secureSeed": "Primero, asegure su frase semilla",
-    "sendButton": "Continuar"
+    "send": "Enviar",
+    "sendAsset": "Enviar Activo",
+    "sendButton": "Continuar",
+    "sendTo": "Enviar a:",
+    "sendToContractWarning": "Esta es una dirección de un contrato, el envío de activos resultará en la pérdida de fondos.",
+    "totalAccountBalance": "Saldo Total en la Cuenta"
   }
 }
