@@ -1,9 +1,10 @@
 import React, { ReactElement, useState } from "react"
 import {
   getAddressCount,
-  getNetworkCount,
+  getNetworkCountForOverview,
+  getTotalBalanceForOverview,
   selectAccountAndTimestampedActivities,
-  selectAccountsTotal,
+  selectAccountTotalsForOverview,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { SUPPORT_NFTS } from "@tallyho/tally-background/features"
 import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
@@ -20,8 +21,9 @@ const panelNames = ["Assets", "NFTs"]
 
 export default function Overview(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
-  const accountsTotal = useBackgroundSelector(selectAccountsTotal)
-  const networksCount = useBackgroundSelector(getNetworkCount)
+  const accountsTotal = useBackgroundSelector(selectAccountTotalsForOverview)
+  const balance = useBackgroundSelector(getTotalBalanceForOverview)
+  const networksCount = useBackgroundSelector(getNetworkCountForOverview)
   const accountsCount = useBackgroundSelector(getAddressCount)
 
   const { combinedData } = useBackgroundSelector(
@@ -35,7 +37,7 @@ export default function Overview(): ReactElement {
     <>
       <section className="stats">
         <BalanceHeader
-          balance={combinedData.totalMainCurrencyValue}
+          balance={balance}
           initializationTimeExpired={initializationLoadingTimeExpired}
         />
         <AccountList

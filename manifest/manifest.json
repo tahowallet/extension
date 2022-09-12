@@ -1,6 +1,6 @@
 {
   "name": "Tally Ho",
-  "version": "0.15.1",
+  "version": "0.16.0",
   "description": "The community owned and operated Web3 wallet.",
   "homepage_url": "https://tally.cash",
   "author": "https://tally.cash",
@@ -18,10 +18,10 @@
   "commands": {
     "_execute_browser_action": {
       "suggested_key": {
-        "windows": "Alt+Shift+T",
-        "mac": "Alt+Shift+T",
-        "chromeos": "Alt+Shift+T",
-        "linux": "Alt+Shift+T"
+        "windows": "Alt+T",
+        "mac": "Alt+T",
+        "chromeos": "Alt+T",
+        "linux": "Alt+T"
       }
     }
   },

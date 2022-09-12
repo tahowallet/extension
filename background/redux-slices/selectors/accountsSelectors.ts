@@ -33,7 +33,11 @@ import {
 } from "./keyringsSelectors"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { EVMNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
-import { BASE_ASSETS_BY_SYMBOL, NETWORK_BY_CHAIN_ID } from "../../constants"
+import {
+  BASE_ASSETS_BY_SYMBOL,
+  NETWORK_BY_CHAIN_ID,
+  TEST_NETWORK_BY_CHAIN_ID,
+} from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { HIDE_TOKEN_FEATURES } from "../../features"
 import {
@@ -412,8 +416,8 @@ export type AccountTotalList = {
     }
   }
 }
-/** Get list of all accounts totals on all networks */
-export const selectAccountsTotal = createSelector(
+/** Get list of all accounts totals on all networks but without test networks */
+export const selectAccountTotalsForOverview = createSelector(
   getAccountState,
   getAssetsState,
   selectMainCurrencySymbol,
@@ -421,7 +425,11 @@ export const selectAccountsTotal = createSelector(
     const accountsTotal: AccountTotalList = {}
 
     Object.entries(accountsState.accountsData.evm)
-      .filter(([, accounts]) => typeof accounts !== "undefined")
+      .filter(
+        ([chainID, accounts]) =>
+          typeof accounts !== "undefined" &&
+          !TEST_NETWORK_BY_CHAIN_ID.has(chainID)
+      )
       .forEach(([chainID, accounts]) =>
         Object.entries(accounts).forEach(([address, accountData]) => {
           if (accountData === "loading") return
@@ -493,7 +501,23 @@ export const getAllNetworks = createSelector(getAccountState, (account) =>
   )
 )
 
-export const getNetworkCount = createSelector(
-  getAllNetworks,
-  (allNetworks) => allNetworks.length
+export const getNetworkCountForOverview = createSelector(
+  getAccountState,
+  (account) =>
+    Object.keys(account.accountsData.evm).filter(
+      (chainID) => !TEST_NETWORK_BY_CHAIN_ID.has(chainID)
+    ).length
+)
+
+export const getTotalBalanceForOverview = createSelector(
+  selectAccountTotalsForOverview,
+  (accountsTotal) =>
+    Object.values(accountsTotal)
+      .reduce(
+        (total, { totals }) =>
+          Object.values(totals).reduce((sum, balance) => sum + balance) + total,
+        0
+      )
+      .toFixed(2)
+      .toString()
 )
