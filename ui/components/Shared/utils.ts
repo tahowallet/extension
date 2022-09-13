@@ -63,7 +63,7 @@ export interface PropsWithSmallIcon {
   iconMedium?: never
 }
 
-export type PropsIcon =
+export type PropsWithIcon =
   | { iconMedium?: never; iconSmall?: never }
   | PropsWithMediumIcon
   | PropsWithSmallIcon

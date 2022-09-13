@@ -1,7 +1,7 @@
 import React, { ChangeEvent, ReactElement, useEffect, useRef } from "react"
 import classNames from "classnames"
 import { useParsedValidation, useRunOnFirstRender } from "../../hooks"
-import { PropsIcon } from "./utils"
+import { PropsWithIcon } from "./utils"
 
 interface Props<T> {
   id?: string
@@ -26,7 +26,7 @@ interface Props<T> {
 }
 
 export function SharedTypedInput<T = string>(
-  props: Props<T> & PropsIcon
+  props: Props<T> & PropsWithIcon
 ): ReactElement {
   const {
     id,
@@ -221,7 +221,7 @@ SharedTypedInput.defaultProps = {
 export default function SharedInput(
   props: Omit<Props<string>, "onChange"> & {
     onChange?: (_: string) => void
-  } & PropsIcon
+  } & PropsWithIcon
 ): ReactElement {
   const onChangeWrapper = (newValue: string | undefined) => {
     props.onChange?.(newValue ?? "")

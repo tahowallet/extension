@@ -3,7 +3,7 @@ import classNames from "classnames"
 import { Redirect } from "react-router-dom"
 import { History } from "history"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
-import { PropsIcon } from "./utils"
+import { PropsWithIcon } from "./utils"
 
 interface Props {
   children: React.ReactNode
@@ -32,7 +32,9 @@ interface Props {
   style?: React.CSSProperties
 }
 
-export default function SharedButton(props: Props & PropsIcon): ReactElement {
+export default function SharedButton(
+  props: Props & PropsWithIcon
+): ReactElement {
   const {
     id,
     children,
