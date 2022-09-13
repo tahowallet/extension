@@ -87,13 +87,11 @@ export const getERC20LogsForAddresses = (
   logs: ERC20TransferLog[],
   addresses: string[]
 ): ERC20TransferLog[] => {
-  const relevantAddresses = Object.fromEntries(
-    addresses.map((address) => [address, true])
-  )
+  const relevantAddresses = new Set(addresses)
 
   return logs.filter(
     (log) =>
-      relevantAddresses[normalizeEVMAddress(log.recipientAddress)] ||
-      relevantAddresses[normalizeEVMAddress(log.senderAddress)]
+      relevantAddresses.has(normalizeEVMAddress(log.recipientAddress)) ||
+      relevantAddresses.has(normalizeEVMAddress(log.senderAddress))
   )
 }

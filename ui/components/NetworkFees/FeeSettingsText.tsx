@@ -8,23 +8,31 @@ import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/trans
 import {
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
-  selectFeeType,
+  selectTransactionData,
   selectTransactionMainCurrencyPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { EVM_ROLLUP_CHAIN_IDS } from "@tallyho/tally-background/constants"
+import {
+  EVMNetwork,
+  isEIP1559EnrichedTransactionRequest,
+  isEIP1559TransactionRequest,
+} from "@tallyho/tally-background/networks"
 import {
   PricePoint,
   unitPricePointForPricePoint,
   assetAmountToDesiredDecimals,
 } from "@tallyho/tally-background/assets"
+import type { EnrichedEVMTransactionRequest } from "@tallyho/tally-background/services/enrichment"
 import { useBackgroundSelector } from "../../hooks"
 import FeeSettingsTextDeprecated from "./FeeSettingsTextDeprecated"
 
 const getFeeDollarValue = (
   currencyPrice: PricePoint | undefined,
   gasLimit?: bigint,
-  estimatedSpendPerGas?: bigint
+  estimatedSpendPerGas?: bigint,
+  estimatedL1RollupFee?: bigint
 ): string | undefined => {
   if (estimatedSpendPerGas) {
     if (!gasLimit || !currencyPrice) return undefined
@@ -45,7 +53,8 @@ const getFeeDollarValue = (
       enrichAssetAmountWithMainCurrencyValues(
         {
           asset,
-          amount: estimatedSpendPerGas * gasLimit,
+          amount:
+            estimatedSpendPerGas * gasLimit + (estimatedL1RollupFee ?? 0n),
         },
         currencyPrice,
         currencyCostPerBaseAsset && currencyCostPerBaseAsset < 1 ? 4 : 2
@@ -55,14 +64,44 @@ const getFeeDollarValue = (
   return undefined
 }
 
+const estimateGweiAmount = (options: {
+  baseFeePerGas: bigint
+  networkSettings: NetworkFeeSettings
+  network: EVMNetwork
+  transactionData?: EnrichedEVMTransactionRequest
+}): string => {
+  const { network, networkSettings, baseFeePerGas, transactionData } = options
+
+  let estimatedSpendPerGas =
+    baseFeePerGas + networkSettings.values.maxPriorityFeePerGas
+
+  if (
+    transactionData &&
+    !isEIP1559EnrichedTransactionRequest(transactionData) &&
+    EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
+  ) {
+    estimatedSpendPerGas =
+      (networkSettings.values.gasPrice || estimatedSpendPerGas) +
+      transactionData.estimatedRollupGwei
+  }
+
+  const estimatedGweiAmount = truncateDecimalAmount(
+    weiToGwei(estimatedSpendPerGas ?? 0n),
+    0
+  )
+
+  return estimatedGweiAmount
+}
+
 export default function FeeSettingsText({
   customNetworkSetting,
 }: {
   customNetworkSetting?: NetworkFeeSettings
 }): ReactElement {
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const transactionData = useBackgroundSelector(selectTransactionData)
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const currentNetwork = transactionData?.network || selectedNetwork
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
-  const selectedFeeType = useBackgroundSelector(selectFeeType)
   let networkSettings = useBackgroundSelector(selectDefaultNetworkFeeSettings)
   networkSettings = customNetworkSetting ?? networkSettings
   const baseFeePerGas =
@@ -75,23 +114,33 @@ export default function FeeSettingsText({
   const mainCurrencyPricePoint = useBackgroundSelector(
     selectTransactionMainCurrencyPricePoint
   )
+  const estimatedGweiAmount = estimateGweiAmount({
+    baseFeePerGas,
+    networkSettings,
+    transactionData,
+    network: currentNetwork,
+  })
+
   const gasLimit = networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
   const estimatedSpendPerGas =
+    networkSettings.values.gasPrice ||
     baseFeePerGas + networkSettings.values.maxPriorityFeePerGas
 
-  const estimatedGweiAmount =
-    typeof estimatedFeesPerGas !== "undefined" &&
-    typeof selectedFeeType !== "undefined"
-      ? truncateDecimalAmount(weiToGwei(estimatedSpendPerGas ?? 0n), 0)
-      : ""
-
   if (typeof estimatedFeesPerGas === "undefined") return <div>Unknown</div>
+
+  const estimatedRollupFee =
+    transactionData &&
+    EVM_ROLLUP_CHAIN_IDS.has(transactionData.network.chainID) &&
+    !isEIP1559TransactionRequest(transactionData)
+      ? transactionData.estimatedRollupFee
+      : 0n
 
   const gweiValue = `${estimatedGweiAmount} Gwei`
   const dollarValue = getFeeDollarValue(
     mainCurrencyPricePoint,
     gasLimit,
-    estimatedSpendPerGas
+    estimatedSpendPerGas,
+    estimatedRollupFee
   )
 
   if (!CUSTOM_GAS_SELECT) {

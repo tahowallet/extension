@@ -13,14 +13,14 @@ import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import {
-  EIP1559TransactionRequest,
   EVMNetwork,
-  SignedEVMTransaction,
+  SignedTransaction,
   toHexChainID,
+  TransactionRequest,
 } from "../../networks"
 import {
-  eip1559TransactionRequestFromEthersTransactionRequest,
   ethersTransactionFromSignedTransaction,
+  transactionRequestFromEthersTransactionRequest,
 } from "../chain/utils"
 import PreferenceService from "../preferences"
 import { internalProviderPort } from "../../redux-slices/utils/contract-utils"
@@ -30,7 +30,7 @@ import {
   SignDataRequest,
   parseSigningData,
 } from "../../utils/signing"
-import { SUPPORT_POLYGON } from "../../features"
+import { SUPPORT_OPTIMISM } from "../../features"
 import {
   ActiveNetwork,
   getOrCreateDB,
@@ -68,8 +68,8 @@ type DAppRequestEvent<T, E> = {
 
 type Events = ServiceLifecycleEvents & {
   transactionSignatureRequest: DAppRequestEvent<
-    Partial<EIP1559TransactionRequest> & { from: string; network: EVMNetwork },
-    SignedEVMTransaction
+    Partial<TransactionRequest> & { from: string; network: EVMNetwork },
+    SignedTransaction
   >
   signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
   signDataRequest: DAppRequestEvent<SignDataRequest, string>
@@ -246,16 +246,23 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       // will just switch to a chain if we already support it - but not add a new one
       case "wallet_addEthereumChain":
       case "wallet_switchEthereumChain": {
-        if (SUPPORT_POLYGON) {
-          const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
-          const supportedNetwork = this.getSupportedNetworkByChainId(newChainId)
-          if (supportedNetwork) {
-            await this.db.setActiveChainIdForOrigin(origin, supportedNetwork)
-            return null
-          }
+        if (
+          !SUPPORT_OPTIMISM &&
+          toHexChainID((params[0] as SwitchEthereumChainParameter).chainId) ===
+            toHexChainID(10)
+        ) {
+          // Prevent users from accidentally switching to Optimism
           throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
         }
-        throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
+        const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
+        const supportedNetwork = await this.getActiveNetworkByChainId(
+          newChainId
+        )
+        if (supportedNetwork) {
+          await this.db.setActiveChainIdForOrigin(origin, supportedNetwork)
+          return null
+        }
+        throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
       }
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
@@ -290,25 +297,22 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   }
 
   async getActiveOrDefaultNetwork(origin: string): Promise<EVMNetwork> {
-    if (SUPPORT_POLYGON) {
-      const activeNetwork = await this.db.getActiveNetworkForOrigin(origin)
-      if (!activeNetwork) {
-        // If this is a new dapp or the dapp has not implemented wallet_switchEthereumChain
-        // use the default network.
-        const defaultNetwork = (await this.getInternalActiveChain()).network
-        return defaultNetwork
-      }
-      return activeNetwork.network
+    const activeNetwork = await this.db.getActiveNetworkForOrigin(origin)
+    if (!activeNetwork) {
+      // If this is a new dapp or the dapp has not implemented wallet_switchEthereumChain
+      // use the default network.
+      const defaultNetwork = (await this.getInternalActiveChain()).network
+      return defaultNetwork
     }
-    return this.activeNetwork
+    return activeNetwork.network
   }
 
   private async signTransaction(
     transactionRequest: JsonRpcTransactionRequest,
     origin: string
-  ) {
+  ): Promise<SignedTransaction> {
     const { from, ...convertedRequest } =
-      eip1559TransactionRequestFromEthersTransactionRequest({
+      transactionRequestFromEthersTransactionRequest({
         // Convert input -> data if necessary; if transactionRequest uses data
         // directly, it will be overwritten below. If someone sends both and
         // they differ, may devops199 have mercy on their soul (but we will
@@ -324,7 +328,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
 
     const activeNetwork = await this.getActiveOrDefaultNetwork(origin)
 
-    return new Promise<SignedEVMTransaction>((resolve, reject) => {
+    return new Promise<SignedTransaction>((resolve, reject) => {
       this.emitter.emit("transactionSignatureRequest", {
         payload: {
           ...convertedRequest,
@@ -337,12 +341,31 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  getSupportedNetworkByChainId(chainID: string): EVMNetwork | undefined {
-    const network = this.chainService.supportedNetworks.find(
-      (supportedNetwork) =>
-        toHexChainID(supportedNetwork.chainID) === toHexChainID(chainID)
+  /**
+   * Attempts to retrieve a network from the extension's currently
+   * active networks.  Falls back to querying supported networks and
+   * activating a given network if it is supported.
+   *
+   * @param chainID EVM Network chainID
+   * @returns a supported EVMNetwork or undefined.
+   */
+  async getActiveNetworkByChainId(
+    chainID: string
+  ): Promise<EVMNetwork | undefined> {
+    const activeNetworks = await this.chainService.getActiveNetworks()
+    const activeNetwork = activeNetworks.find(
+      (network) => toHexChainID(network.chainID) === toHexChainID(chainID)
     )
-    return network
+    if (activeNetwork) {
+      return activeNetwork
+    }
+
+    try {
+      return await this.chainService.activateNetworkOrThrow(chainID)
+    } catch (e) {
+      logger.warn(e)
+      return undefined
+    }
   }
 
   private async signTypedData(params: SignTypedDataRequest) {

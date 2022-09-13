@@ -10,12 +10,25 @@ import { getAssetsState } from "./accountsSelectors"
 import { selectMainCurrencySymbol } from "./uiSelectors"
 import { selectAssetPricePoint } from "../assets"
 
+export const selectTransactionNetwork = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.transactionRequest?.network,
+  (network) => network
+)
+
 export const selectDefaultNetworkFeeSettings = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction,
   (state: { networks: NetworksState }) => state.networks,
   selectCurrentNetwork,
-  (transactionConstruction, networks, currentNetwork): NetworkFeeSettings => {
+  selectTransactionNetwork,
+  (
+    transactionConstruction,
+    networks,
+    selectedNetwork,
+    transactionNetwork
+  ): NetworkFeeSettings => {
+    const currentNetwork = transactionNetwork || selectedNetwork
     const selectedFeesPerGas =
       transactionConstruction.estimatedFeesPerGas?.[currentNetwork.chainID]?.[
         transactionConstruction.feeTypeSelected
@@ -27,6 +40,7 @@ export const selectDefaultNetworkFeeSettings = createSelector(
       values: {
         maxFeePerGas: selectedFeesPerGas?.maxFeePerGas ?? 0n,
         maxPriorityFeePerGas: selectedFeesPerGas?.maxPriorityFeePerGas ?? 0n,
+        gasPrice: selectedFeesPerGas?.price ?? 0n,
         baseFeePerGas:
           networks.evm[currentNetwork.chainID].baseFeePerGas ?? undefined, // @TODO: Support multi-network
       },
@@ -37,8 +51,12 @@ export const selectDefaultNetworkFeeSettings = createSelector(
 export const selectEstimatedFeesPerGas = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.estimatedFeesPerGas,
+  selectTransactionNetwork,
   selectCurrentNetwork,
-  (gasData, selectedNetwork) => gasData[selectedNetwork.chainID]
+  (gasData, transactionNetwork, selectedNetwork) =>
+    transactionNetwork
+      ? gasData[transactionNetwork.chainID]
+      : gasData[selectedNetwork.chainID]
 )
 
 export const selectFeeType = createSelector(

@@ -18,6 +18,11 @@ import {
   isValidAlchemyTokenMetadataResponse,
 } from "./validate"
 import { AddressOnNetwork } from "../accounts"
+import { fetchWithTimeout } from "../utils/fetching"
+
+// We can't use destructuring because webpack has to replace all instances of
+// `process.env` variables in the bundled output
+export const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
 
 /**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
@@ -38,15 +43,28 @@ import { AddressOnNetwork } from "../accounts"
 export async function getAssetTransfers(
   provider: AlchemyProvider | AlchemyWebSocketProvider,
   addressOnNetwork: AddressOnNetwork,
+  direction: "incoming" | "outgoing",
   fromBlock: number,
-  toBlock?: number
+  toBlock?: number,
+  order: "asc" | "desc" = "desc",
+  maxCount = 1000
 ): Promise<AssetTransfer[]> {
   const { address: account, network } = addressOnNetwork
 
   const params = {
     fromBlock: utils.hexValue(fromBlock),
     toBlock: toBlock === undefined ? "latest" : utils.hexValue(toBlock),
+    maxCount: utils.hexValue(maxCount),
+    order,
     // excludeZeroValue: false,
+  }
+
+  const extraParams: { toAddress?: HexString; fromAddress?: HexString } = {}
+
+  if (direction === "incoming") {
+    extraParams.toAddress = account
+  } else {
+    extraParams.fromAddress = account
   }
 
   // Categories that are most important to us, supported both on Ethereum Mainnet and polygon
@@ -58,25 +76,16 @@ export async function getAssetTransfers(
     // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-testnets-and-layer-2s
     category.push("internal")
   }
-  // TODO handle partial failure
-  const rpcResponses = await Promise.all([
-    provider.send("alchemy_getAssetTransfers", [
-      {
-        ...params,
-        fromAddress: account,
-        category,
-      },
-    ]),
-    provider.send("alchemy_getAssetTransfers", [
-      {
-        ...params,
-        toAddress: account,
-        category,
-      },
-    ]),
+
+  const rpcResponse = await provider.send("alchemy_getAssetTransfers", [
+    {
+      ...params,
+      ...extraParams,
+      category,
+    },
   ])
 
-  return rpcResponses
+  return [rpcResponse]
     .flatMap((jsonResponse: unknown) => {
       if (isValidAlchemyAssetTransferResponse(jsonResponse)) {
         return jsonResponse.transfers
@@ -116,7 +125,7 @@ export async function getAssetTransfers(
           }
         : addressOnNetwork.network.baseAsset
       return {
-        network, // TODO make this friendly across other networks
+        network,
         assetAmount: {
           asset,
           amount: BigInt(transfer.rawContract.value),
@@ -172,9 +181,12 @@ export async function getTokenBalances(
         ): b is typeof json["tokenBalances"][0] & {
           tokenBalance: Exclude<
             typeof json["tokenBalances"][0]["tokenBalance"],
-            null
+            undefined | null
           >
-        } => b.error === null && b.tokenBalance !== null
+        } =>
+          (b.error === null || !("error" in b)) &&
+          "tokenBalance" in b &&
+          b.tokenBalance !== null
       )
       // A hex value of 0x without any subsequent numbers generally means "no
       // value" (as opposed to 0) in Ethereum implementations, so filter it out
@@ -288,4 +300,51 @@ export function transactionFromAlchemyWebsocketTransaction(
     asset: network.baseAsset,
     network,
   }
+}
+
+export type AlchemyNFTItem = {
+  error?: string
+  media: { gateway?: string }[]
+  id: {
+    tokenId: string
+  }
+  contract: { address: string }
+  title: string
+  chainID: number
+}
+
+/**
+ * Use Alchemy's getNFTs call to get a wallet's NFT holdings across collections.
+ *
+ * Note that pagination isn't supported in this wrapper, so any responses after
+ * 100 NFTs will be dropped.
+ *
+ * More information https://docs.alchemy.com/reference/getnfts
+ *
+ * @param addressOnNetwork the address whose NFT portfolio we're fetching and
+ *        the network it should happen on.
+ */
+export async function getNFTs({
+  address,
+  network,
+}: AddressOnNetwork): Promise<AlchemyNFTItem[]> {
+  // Today, only Polygon and Ethereum are supported
+  if (!["Polygon", "Ethereum"].includes(network.name)) {
+    return []
+  }
+
+  const requestUrl = new URL(
+    `https://${
+      network.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
+    }.alchemyapi.io/nft/v2/${ALCHEMY_KEY}/getNFTs/`
+  )
+  requestUrl.searchParams.set("owner", address)
+  requestUrl.searchParams.set("filters[]", "SPAM")
+  requestUrl.searchParams.set("pageSize", "100")
+
+  // TODO validate data with ajv
+  const result = await (await fetchWithTimeout(requestUrl.toString())).json()
+  return result.ownedNfts
+    .filter((nft: AlchemyNFTItem) => typeof nft.error === "undefined")
+    .map((nft: AlchemyNFTItem) => ({ ...nft, chainID: network.chainID }))
 }

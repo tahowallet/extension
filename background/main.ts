@@ -31,7 +31,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
-import { AnyEVMTransaction, SignedEVMTransaction } from "./networks"
+import { AnyEVMTransaction, SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -77,6 +77,7 @@ import {
   rejectTransactionSignature,
   transactionSigned,
   clearCustomGas,
+  updateRollupEstimates,
 } from "./redux-slices/transaction-construction"
 import { selectDefaultNetworkFeeSettings } from "./redux-slices/selectors/transactionConstructionSelectors"
 import { allAliases } from "./redux-slices/utils"
@@ -84,6 +85,7 @@ import {
   requestPermission,
   emitter as providerBridgeSliceEmitter,
   initializePermissions,
+  revokePermissionsForAddress,
 } from "./redux-slices/dapp"
 import logger from "./lib/logger"
 import {
@@ -106,7 +108,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { ETHEREUM, POLYGON } from "./constants"
+import { ETHEREUM, GOERLI, OPTIMISM, POLYGON } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   SignatureResponse,
@@ -122,7 +124,10 @@ import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 import { deleteNFts } from "./redux-slices/nfts"
 import { filterTransactionPropsForUI } from "./utils/view-model-transformer"
-import { EnrichedEVMTransaction } from "./services/enrichment"
+import {
+  EnrichedEVMTransaction,
+  EnrichedEVMTransactionRequest,
+} from "./services/enrichment"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -219,7 +224,8 @@ export default class Main extends BaseService<never> {
 
   static create: ServiceCreatorFunction<never, Main, []> = async () => {
     const preferenceService = PreferenceService.create()
-    const chainService = ChainService.create(preferenceService)
+    const keyringService = KeyringService.create()
+    const chainService = ChainService.create(preferenceService, keyringService)
     const indexingService = IndexingService.create(
       preferenceService,
       chainService
@@ -230,7 +236,6 @@ export default class Main extends BaseService<never> {
       indexingService,
       nameService
     )
-    const keyringService = KeyringService.create()
     const internalEthereumProviderService =
       InternalEthereumProviderService.create(chainService, preferenceService)
     const providerBridgeService = ProviderBridgeService.create(
@@ -489,6 +494,9 @@ export default class Main extends BaseService<never> {
   ): Promise<void> {
     this.store.dispatch(deleteAccount(address))
     this.store.dispatch(deleteNFts(address))
+    // remove dApp premissions
+    this.store.dispatch(revokePermissionsForAddress(address))
+    await this.providerBridgeService.revokePermissionsForAddress(address)
     // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signerType)
   }
@@ -499,12 +507,13 @@ export default class Main extends BaseService<never> {
       address: string
     }>
   ): Promise<void> {
+    const activeNetworks = await this.chainService.getActiveNetworks()
     await Promise.all(
       accounts.map(async ({ path, address }) => {
         await this.ledgerService.saveAddress(path, address)
 
         await Promise.all(
-          this.chainService.supportedNetworks.map(async (network) => {
+          activeNetworks.map(async (network) => {
             const addressNetwork = {
               address,
               network,
@@ -591,14 +600,10 @@ export default class Main extends BaseService<never> {
         } = selectDefaultNetworkFeeSettings(this.store.getState())
 
         const { transactionRequest: populatedRequest, gasEstimationError } =
-          await this.chainService.populatePartialEVMTransactionRequest(
+          await this.chainService.populatePartialTransactionRequest(
             network,
-            {
-              ...options,
-              maxFeePerGas: options.maxFeePerGas ?? maxFeePerGas,
-              maxPriorityFeePerGas:
-                options.maxPriorityFeePerGas ?? maxPriorityFeePerGas,
-            }
+            { ...options },
+            { maxFeePerGas, maxPriorityFeePerGas }
           )
 
         const { annotation } =
@@ -608,7 +613,7 @@ export default class Main extends BaseService<never> {
             2 /* TODO desiredDecimals should be configurable */
           )
 
-        const enrichedPopulatedRequest = {
+        const enrichedPopulatedRequest: EnrichedEVMTransactionRequest = {
           ...populatedRequest,
           annotation,
         }
@@ -633,7 +638,7 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on(
       "broadcastSignedTransaction",
-      async (transaction: SignedEVMTransaction) => {
+      async (transaction: SignedTransaction) => {
         this.chainService.broadcastSignedTransaction(transaction)
       }
     )
@@ -691,11 +696,33 @@ export default class Main extends BaseService<never> {
       this.chainService.getLatestBaseAccountBalance(addressNetwork)
     })
 
-    this.chainService.emitter.on("blockPrices", ({ blockPrices, network }) => {
-      this.store.dispatch(
-        estimatedFeesPerGas({ estimatedFeesPerGas: blockPrices, network })
-      )
-    })
+    this.chainService.emitter.on(
+      "blockPrices",
+      async ({ blockPrices, network }) => {
+        if (network.chainID === OPTIMISM.chainID) {
+          const { transactionRequest: currentTransactionRequest } =
+            this.store.getState().transactionConstruction
+          if (currentTransactionRequest?.network.chainID === OPTIMISM.chainID) {
+            // If there is a currently pending transaction request on Optimism,
+            // we need to update its L1 rollup fee as well as the current estimated fees per gas
+            const estimatedRollupFee =
+              await this.chainService.estimateL1RollupFee(
+                currentTransactionRequest.network,
+                currentTransactionRequest
+              )
+            const estimatedRollupGwei =
+              await this.chainService.estimateL1RollupGasPrice(network)
+
+            this.store.dispatch(
+              updateRollupEstimates({ estimatedRollupFee, estimatedRollupGwei })
+            )
+          }
+        }
+        this.store.dispatch(
+          estimatedFeesPerGas({ estimatedFeesPerGas: blockPrices, network })
+        )
+      }
+    )
 
     // Report on transactions for basic activity. Fancier stuff is handled via
     // connectEnrichmentService
@@ -825,8 +852,9 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateKeyrings(keyrings))
     })
 
-    this.keyringService.emitter.on("address", (address) => {
-      this.chainService.supportedNetworks.forEach((network) => {
+    this.keyringService.emitter.on("address", async (address) => {
+      const activeNetworks = await this.chainService.getActiveNetworks()
+      activeNetworks.forEach((network) => {
         // Mark as loading and wire things up.
         this.store.dispatch(
           loadAccount({
@@ -1100,7 +1128,7 @@ export default class Main extends BaseService<never> {
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await Promise.all(
-        [ETHEREUM, POLYGON].map(async (network) => {
+        [ETHEREUM, POLYGON, OPTIMISM, GOERLI].map(async (network) => {
           await this.providerBridgeService.grantPermission({
             ...permission,
             chainID: network.chainID,
@@ -1113,6 +1141,8 @@ export default class Main extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await Promise.all(
+          // We use supportedNetworks here because we currently grant
+          // dapp permission for all supported networks when approving a dapp.
           this.chainService.supportedNetworks.map(async (network) => {
             await this.providerBridgeService.denyOrRevokePermission({
               ...permission,

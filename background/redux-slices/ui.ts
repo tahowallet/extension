@@ -9,6 +9,8 @@ import { createBackgroundAsyncThunk } from "./utils"
 const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
+  showTestNetworks: false,
+  collectAnalytics: false,
 }
 
 export interface Location {
@@ -21,7 +23,12 @@ export type UIState = {
   selectedAccount: AddressOnNetwork
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
-  settings: { hideDust: boolean; defaultWallet: boolean }
+  settings: {
+    hideDust: boolean
+    defaultWallet: boolean
+    showTestNetworks: boolean
+    collectAnalytics: boolean
+  }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
   slippageTolerance: number
@@ -57,11 +64,24 @@ const uiSlice = createSlice({
       immerState,
       { payload: shouldHideDust }: { payload: boolean }
     ): void => {
-      immerState.settings = {
-        hideDust: shouldHideDust,
-        defaultWallet: immerState.settings?.defaultWallet,
-      }
+      immerState.settings.hideDust = shouldHideDust
     },
+    toggleTestNetworks: (
+      immerState,
+      { payload: showTestNetworks }: { payload: boolean }
+    ): void => {
+      immerState.settings.showTestNetworks = showTestNetworks
+    },
+    toggleCollectAnalytics: (
+      state,
+      { payload: collectAnalytics }: { payload: boolean }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        collectAnalytics,
+      },
+    }),
     setShowingActivityDetail: (
       state,
       { payload: transactionID }: { payload: string | null }
@@ -123,6 +143,8 @@ export const {
   setShowingActivityDetail,
   initializationLoadingTimeHitLimit,
   toggleHideDust,
+  toggleTestNetworks,
+  toggleCollectAnalytics,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
@@ -156,15 +178,20 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
 export const setSelectedNetwork = createBackgroundAsyncThunk(
   "ui/setSelectedNetwork",
   async (network: EVMNetwork, { getState, dispatch }) => {
-    emitter.emit("newSelectedNetwork", network)
     const state = getState() as { ui: UIState; account: AccountState }
     const { ui, account } = state
+    const currentlySelectedChainID = ui.selectedAccount.network.chainID
+    emitter.emit("newSelectedNetwork", network)
+    // Add any accounts on the currently selected network to the newly
+    // selected network - if those accounts don't yet exist on it.
+    Object.keys(account.accountsData.evm[currentlySelectedChainID]).forEach(
+      (address) => {
+        if (!account.accountsData.evm[network.chainID]?.[address]) {
+          dispatch(addAddressNetwork({ address, network }))
+        }
+      }
+    )
     dispatch(setNewSelectedAccount({ ...ui.selectedAccount, network }))
-    if (
-      !account.accountsData.evm[network.chainID]?.[ui.selectedAccount.address]
-    ) {
-      dispatch(addAddressNetwork({ ...ui.selectedAccount, network }))
-    }
   }
 )
 
@@ -200,4 +227,19 @@ export const selectDefaultWallet = createSelector(
 export const selectSlippageTolerance = createSelector(
   selectUI,
   (ui) => ui.slippageTolerance
+)
+
+export const selectInitializationTimeExpired = createSelector(
+  selectUI,
+  (ui) => ui.initializationLoadingTimeExpired
+)
+
+export const selectShowTestNetworks = createSelector(
+  selectSettings,
+  (settings) => settings?.showTestNetworks
+)
+
+export const selectCollectAnalytics = createSelector(
+  selectSettings,
+  (settings) => settings?.collectAnalytics
 )

@@ -13,16 +13,16 @@ import {
   getAddress as ethersGetAddress,
 } from "ethers/lib/utils"
 import {
-  EIP1559TransactionRequest,
   sameNetwork,
-  SignedEVMTransaction,
+  SignedTransaction,
+  TransactionRequestWithNonce,
 } from "../../networks"
 import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
-import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
+import { ethersTransactionFromTransactionRequest } from "../chain/utils"
 import { ETHEREUM } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { AddressOnNetwork } from "../../accounts"
@@ -31,6 +31,7 @@ enum LedgerType {
   UNKNOWN,
   LEDGER_NANO_S,
   LEDGER_NANO_X,
+  LEDGER_NANO_S_PLUS,
 }
 
 const LedgerTypeAsString = Object.values(LedgerType)
@@ -44,6 +45,7 @@ export type LedgerAccountSigner = {
 export const LedgerProductDatabase = {
   LEDGER_NANO_S: { productId: 0x1015 },
   LEDGER_NANO_X: { productId: 0x4015 },
+  LEDGER_NANO_S_PLUS: { productId: 0x5015 },
 }
 
 export const isLedgerSupported = typeof navigator.usb === "object"
@@ -81,7 +83,7 @@ type Events = ServiceLifecycleEvents & {
   connected: ConnectedDevice
   disconnected: { id: string; type: LedgerType }
   address: { ledgerID: string; derivationPath: string; address: HexString }
-  signedTransaction: SignedEVMTransaction
+  signedTransaction: SignedTransaction
   signedData: string
   usbDeviceCount: number
 }
@@ -110,6 +112,9 @@ async function generateLedgerId(
       break
     case DeviceModelId.nanoX:
       extensionDeviceType = LedgerType.LEDGER_NANO_X
+      break
+    case DeviceModelId.nanoSP:
+      extensionDeviceType = LedgerType.LEDGER_NANO_S_PLUS
       break
     default:
       extensionDeviceType = LedgerType.UNKNOWN
@@ -333,9 +338,9 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async signTransaction(
-    transactionRequest: EIP1559TransactionRequest & { nonce: number },
+    transactionRequest: TransactionRequestWithNonce,
     { deviceID, path: derivationPath }: LedgerAccountSigner
-  ): Promise<SignedEVMTransaction> {
+  ): Promise<SignedTransaction> {
     return this.runSerialized(async () => {
       try {
         if (!this.transport) {
@@ -347,9 +352,7 @@ export default class LedgerService extends BaseService<Events> {
         }
 
         const ethersTx =
-          ethersTransactionRequestFromEIP1559TransactionRequest(
-            transactionRequest
-          )
+          ethersTransactionFromTransactionRequest(transactionRequest)
 
         const serializedTx = serialize(
           ethersTx as UnsignedTransaction
@@ -386,14 +389,15 @@ export default class LedgerService extends BaseService<Events> {
         }
 
         if (
-          typeof tx.maxPriorityFeePerGas === "undefined" ||
-          typeof tx.maxFeePerGas === "undefined" ||
-          tx.type !== 2
+          tx.type !== 0 &&
+          tx.type !== 1 &&
+          tx.type !== 2 &&
+          tx.type !== null
         ) {
-          throw new Error("Can only sign EIP-1559 conforming transactions")
+          throw new Error(`Unknown transaction type ${tx.type}`)
         }
 
-        const signedTx: SignedEVMTransaction = {
+        const signedTx = {
           hash: tx.hash,
           from: tx.from,
           to: tx.to,
@@ -401,19 +405,20 @@ export default class LedgerService extends BaseService<Events> {
           input: tx.data,
           value: tx.value.toBigInt(),
           type: tx.type,
-          gasPrice: null,
-          maxFeePerGas: tx.maxFeePerGas.toBigInt(),
-          maxPriorityFeePerGas: tx.maxPriorityFeePerGas.toBigInt(),
+          gasPrice: tx.gasPrice ? tx.gasPrice.toBigInt() : null,
+          maxFeePerGas: tx.maxFeePerGas ? tx.maxFeePerGas.toBigInt() : null,
+          maxPriorityFeePerGas: tx.maxPriorityFeePerGas
+            ? tx.maxPriorityFeePerGas.toBigInt()
+            : null,
           gasLimit: tx.gasLimit.toBigInt(),
           r: tx.r,
           s: tx.s,
           v: tx.v,
-
           blockHash: null,
           blockHeight: null,
           asset: transactionRequest.network.baseAsset,
           network: transactionRequest.network,
-        }
+        } as const // narrow types for compatiblity with our internal ones
 
         return signedTx
       } catch (err) {
@@ -496,7 +501,7 @@ export default class LedgerService extends BaseService<Events> {
 
   async signMessage(
     { address, network }: AddressOnNetwork,
-    message: string
+    hexDataToSign: HexString
   ): Promise<string> {
     if (!sameNetwork(network, ETHEREUM)) {
       throw new Error("Unsupported network for Ledger signing")
@@ -522,7 +527,8 @@ export default class LedgerService extends BaseService<Events> {
 
     const signature = await eth.signPersonalMessage(
       accountData.path,
-      Buffer.from(message).toString("hex")
+      // Ledger requires unprefixed hex, so make sure that's what we pass.
+      hexDataToSign.replace(/^0x/, "")
     )
 
     const signatureHex = joinSignature({

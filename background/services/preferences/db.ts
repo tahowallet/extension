@@ -135,6 +135,50 @@ export class PreferenceDatabase extends Dexie {
           })
       })
 
+    // Add the Polygon, Optimism, and Arbitrum token lists
+    this.version(7)
+      .stores({
+        preferences: "++id",
+      })
+      .upgrade((tx) => {
+        return tx
+          .table("preferences")
+          .toCollection()
+          .modify((storedPreferences: Preferences) => {
+            // eslint-disable-next-line no-param-reassign
+            storedPreferences.tokenLists = {
+              ...storedPreferences.tokenLists,
+              urls: [
+                "https://api-polygon-tokens.polygon.technology/tokenlists/default.tokenlist.json",
+                "https://static.optimism.io/optimism.tokenlist.json",
+                "https://bridge.arbitrum.io/token-list-42161.json",
+                ...storedPreferences.tokenLists.urls,
+              ],
+            }
+          })
+      })
+
+    // Update .eth.link token lists urls to .eth.limo fallback
+    this.version(8)
+      .stores({
+        preferences: "++id",
+      })
+      .upgrade((tx) => {
+        return tx
+          .table("preferences")
+          .toCollection()
+          .modify((storedPreferences: Preferences) => {
+            const updatedURLs = storedPreferences.tokenLists.urls.map((url) =>
+              url.endsWith(".eth.link") ? `${url.slice(0, -9)}.eth.limo` : url
+            )
+            // eslint-disable-next-line no-param-reassign
+            storedPreferences.tokenLists = {
+              ...storedPreferences.tokenLists,
+              urls: updatedURLs,
+            }
+          })
+      })
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works

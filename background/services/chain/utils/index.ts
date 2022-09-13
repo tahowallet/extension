@@ -4,18 +4,26 @@ import {
   TransactionReceipt as EthersTransactionReceipt,
   TransactionRequest as EthersTransactionRequest,
 } from "@ethersproject/abstract-provider"
-import { Transaction as EthersTransaction } from "@ethersproject/transactions"
+import {
+  Transaction as EthersTransaction,
+  UnsignedTransaction,
+} from "@ethersproject/transactions"
 
 import {
   AnyEVMTransaction,
   EVMNetwork,
-  SignedEVMTransaction,
   AnyEVMBlock,
   EIP1559TransactionRequest,
   ConfirmedEVMTransaction,
-} from "../../networks"
-import { USE_MAINNET_FORK } from "../../features"
-import { FORK } from "../../constants"
+  LegacyEVMTransactionRequest,
+  isEIP1559TransactionRequest,
+  TransactionRequest,
+  isEIP1559SignedTransaction,
+  SignedTransaction,
+} from "../../../networks"
+import { USE_MAINNET_FORK } from "../../../features"
+import { FORK } from "../../../constants"
+import type { PartialTransactionRequestWithFrom } from "../../enrichment"
 
 /**
  * Parse a block as returned by a polling provider.
@@ -87,10 +95,41 @@ export function ethersTransactionRequestFromEIP1559TransactionRequest(
   }
 }
 
-export function eip1559TransactionRequestFromEthersTransactionRequest(
+export function ethersTransactionRequestFromLegacyTransactionRequest(
+  transaction: LegacyEVMTransactionRequest
+): EthersTransactionRequest {
+  const { to, input, type, nonce, gasPrice, value, chainID, gasLimit } =
+    transaction
+
+  return {
+    to,
+    data: input ?? undefined,
+    type: type ?? undefined,
+    nonce,
+    gasPrice,
+    value,
+    chainId: parseInt(chainID, 10),
+    gasLimit,
+  }
+}
+
+export function ethersTransactionFromTransactionRequest(
+  transactionRequest: TransactionRequest
+): EthersTransactionRequest {
+  if (isEIP1559TransactionRequest(transactionRequest)) {
+    return ethersTransactionRequestFromEIP1559TransactionRequest(
+      transactionRequest
+    )
+  }
+  // Legacy Transaction
+  return ethersTransactionRequestFromLegacyTransactionRequest(
+    transactionRequest
+  )
+}
+
+function eip1559TransactionRequestFromEthersTransactionRequest(
   transaction: EthersTransactionRequest
 ): Partial<EIP1559TransactionRequest> {
-  // TODO What to do if transaction is not EIP1559?
   return {
     to: transaction.to,
     input: transaction.data?.toString() ?? null,
@@ -120,30 +159,98 @@ export function eip1559TransactionRequestFromEthersTransactionRequest(
   }
 }
 
-export function ethersTransactionFromSignedTransaction(
-  tx: SignedEVMTransaction
-): EthersTransaction {
-  const baseTx = {
-    nonce: Number(tx.nonce),
-    maxFeePerGas: tx.maxFeePerGas ? BigNumber.from(tx.maxFeePerGas) : undefined,
-    maxPriorityFeePerGas: tx.maxPriorityFeePerGas
-      ? BigNumber.from(tx.maxPriorityFeePerGas)
-      : undefined,
+function legacyEVMTransactionRequestFromEthersTransactionRequest(
+  transaction: EthersTransactionRequest
+): Partial<LegacyEVMTransactionRequest> {
+  return {
+    to: transaction.to,
+    input: transaction.data?.toString() ?? null,
+    from: transaction.from,
+    type: transaction.type as 0,
+    nonce:
+      typeof transaction.nonce !== "undefined"
+        ? parseInt(transaction.nonce.toString(), 16)
+        : undefined,
+    value:
+      typeof transaction.value !== "undefined"
+        ? BigInt(transaction.value.toString())
+        : undefined,
+    chainID: transaction.chainId?.toString(16),
+    gasLimit:
+      typeof transaction.gasLimit !== "undefined"
+        ? BigInt(transaction.gasLimit.toString())
+        : undefined,
+    gasPrice:
+      typeof transaction.gasPrice !== "undefined"
+        ? BigInt(transaction.gasPrice.toString())
+        : undefined,
+  }
+}
+
+export function transactionRequestFromEthersTransactionRequest(
+  ethersTransactionRequest: EthersTransactionRequest
+): Partial<TransactionRequest> {
+  if (isEIP1559TransactionRequest(ethersTransactionRequest)) {
+    return eip1559TransactionRequestFromEthersTransactionRequest(
+      ethersTransactionRequest
+    )
+  }
+  return legacyEVMTransactionRequestFromEthersTransactionRequest(
+    ethersTransactionRequest
+  )
+}
+
+export function unsignedTransactionFromEVMTransaction(
+  tx: AnyEVMTransaction | PartialTransactionRequestWithFrom
+): UnsignedTransaction {
+  const unsignedTransaction: UnsignedTransaction = {
     to: tx.to,
-    from: tx.from,
+    nonce: tx.nonce,
+    gasLimit: BigNumber.from(tx.gasLimit),
     data: tx.input || "",
+    value: BigNumber.from(tx.value),
+    chainId: parseInt(USE_MAINNET_FORK ? FORK.chainID : tx.network.chainID, 10),
+    type: tx.type,
+  }
+
+  if (isEIP1559TransactionRequest(tx)) {
+    unsignedTransaction.maxFeePerGas = BigNumber.from(tx.maxFeePerGas)
+    unsignedTransaction.maxPriorityFeePerGas = BigNumber.from(
+      tx.maxPriorityFeePerGas
+    )
+  } else if ("gasPrice" in tx) {
+    unsignedTransaction.gasPrice = BigNumber.from(tx?.gasPrice ?? 0)
+  }
+  return unsignedTransaction
+}
+
+export function ethersTransactionFromSignedTransaction(
+  tx: SignedTransaction
+): EthersTransaction {
+  const baseTx: EthersTransaction = {
+    nonce: Number(tx.nonce),
+    to: tx.to,
+    data: tx.input || "",
+    gasPrice: tx.gasPrice ? BigNumber.from(tx.gasPrice) : undefined,
     type: tx.type,
     chainId: parseInt(USE_MAINNET_FORK ? FORK.chainID : tx.network.chainID, 10),
     value: BigNumber.from(tx.value),
     gasLimit: BigNumber.from(tx.gasLimit),
   }
 
-  return {
-    ...baseTx,
-    r: tx.r,
-    s: tx.s,
-    v: tx.v,
+  if (isEIP1559SignedTransaction(tx)) {
+    return {
+      ...baseTx,
+      maxFeePerGas: BigNumber.from(tx.maxFeePerGas),
+      maxPriorityFeePerGas: BigNumber.from(tx.maxPriorityFeePerGas),
+      r: tx.r,
+      from: tx.from,
+      s: tx.s,
+      v: tx.v,
+    }
   }
+
+  return baseTx
 }
 
 /**
@@ -158,7 +265,17 @@ export function enrichTransactionWithReceipt(
   return {
     ...transaction,
     gasUsed,
-    gasPrice: receipt.effectiveGasPrice.toBigInt(),
+    /* Despite the [ethers js docs](https://docs.ethers.io/v5/api/providers/types/) stating that
+     * receipt.effectiveGasPrice "will simply be equal to the transaction gasPrice" on chains
+     * that do not support EIP-1559 - it seems that this is not yet the case with Optimism.
+     *
+     * The `?? transaction.gasPrice` code fixes a bug where transaction enrichment was fails
+     *  due to effectiveGasPrice being undefined and calling .toBigInt on it.
+     *
+     * This is not a perfect solution because transaction.gasPrice does not necessarily take
+     * into account L1 rollup fees.
+     */
+    gasPrice: receipt.effectiveGasPrice?.toBigInt() ?? transaction.gasPrice,
     logs: receipt.logs.map(({ address, data, topics }) => ({
       contractAddress: address,
       data,
@@ -187,10 +304,10 @@ export function transactionFromEthersTransaction(
   network: EVMNetwork
 ): AnyEVMTransaction {
   if (tx.hash === undefined) {
-    throw Error("Malformed transaction")
+    throw new Error("Malformed transaction")
   }
   if (tx.type !== 0 && tx.type !== 1 && tx.type !== 2) {
-    throw Error(`Unknown transaction type ${tx.type}`)
+    throw new Error(`Unknown transaction type ${tx.type}`)
   }
 
   const newTx = {
@@ -214,7 +331,7 @@ export function transactionFromEthersTransaction(
   } as const // narrow types for compatiblity with our internal ones
 
   if (tx.r && tx.s && tx.v) {
-    const signedTx: SignedEVMTransaction = {
+    const signedTx: SignedTransaction = {
       ...newTx,
       r: tx.r,
       s: tx.s,

@@ -4,6 +4,7 @@ import {
   selectCurrentAccountActivitiesWithTimestamps,
   selectCurrentAccountBalances,
   selectCurrentAccountSigner,
+  selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import {
@@ -17,6 +18,7 @@ import SharedButton from "../components/Shared/SharedButton"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedTooltip from "../components/Shared/SharedTooltip"
+import { scanWebsite } from "../utils/constants"
 
 export default function SingleAsset(): ReactElement {
   const location = useLocation<AnyAsset>()
@@ -28,6 +30,7 @@ export default function SingleAsset(): ReactElement {
       : undefined
 
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const filteredActivities = useBackgroundSelector((state) =>
     (selectCurrentAccountActivitiesWithTimestamps(state) ?? []).filter(
@@ -102,7 +105,9 @@ export default function SingleAsset(): ReactElement {
                   IconComponent={() => (
                     <a
                       className="new_tab_link"
-                      href={`https://etherscan.io/token/${contractAddress}`}
+                      href={`${
+                        scanWebsite[currentNetwork.chainID].url
+                      }/token/${contractAddress}`}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -110,7 +115,7 @@ export default function SingleAsset(): ReactElement {
                     </a>
                   )}
                 >
-                  View asset on Etherscan
+                  View asset on {scanWebsite[currentNetwork.chainID].title}
                 </SharedTooltip>
               ) : (
                 <></>

@@ -1,11 +1,10 @@
-import Dexie from "dexie"
+import Dexie, { IndexableTypeArray } from "dexie"
 
 import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
 import { FungibleAsset } from "../../assets"
-import { POLYGON } from "../../constants"
-import { SUPPORT_POLYGON } from "../../features"
+import { GOERLI, POLYGON } from "../../constants"
 
 type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
@@ -84,23 +83,28 @@ export class ChainDatabase extends Dexie {
       migrations: null,
     })
 
-    if (SUPPORT_POLYGON) {
-      this.version(3).upgrade((tx) => {
-        tx.table("accountsToTrack")
-          .toArray()
-          .then((accounts) => {
-            const addresses = new Set<string>()
+    this.version(3).upgrade((tx) => {
+      tx.table("accountsToTrack")
+        .toArray()
+        .then((accounts) => {
+          const addresses = new Set<string>()
 
-            accounts.forEach(({ address }) => addresses.add(address))
-            ;[...addresses].forEach((address) => {
-              tx.table("accountsToTrack").put({
-                network: POLYGON,
-                address,
-              })
+          accounts.forEach(({ address }) => addresses.add(address))
+          ;[...addresses].forEach((address) => {
+            tx.table("accountsToTrack").put({
+              network: POLYGON,
+              address,
             })
           })
-      })
-    }
+        })
+    })
+
+    this.version(4).upgrade((tx) => {
+      tx.table("accountsToTrack")
+        .where("network.chainID")
+        .equals(GOERLI.chainID)
+        .delete()
+    })
 
     this.chainTransactions.hook(
       "updating",
@@ -156,6 +160,10 @@ export class ChainDatabase extends Dexie {
           .toArray()
       )[0] || null
     )
+  }
+
+  async getAllSavedTransactionHashes(): Promise<IndexableTypeArray> {
+    return this.chainTransactions.orderBy("hash").keys()
   }
 
   /**
@@ -300,6 +308,17 @@ export class ChainDatabase extends Dexie {
 
   async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.accountsToTrack.toArray()
+  }
+
+  async getChainIDsToTrack(): Promise<Set<string>> {
+    const chainIDs = await this.accountsToTrack
+      .orderBy("network.chainID")
+      .keys()
+    return new Set(
+      chainIDs.filter(
+        (chainID): chainID is string => typeof chainID === "string"
+      )
+    )
   }
 }
 

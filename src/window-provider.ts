@@ -52,10 +52,14 @@ if (!window.walletRouter) {
           !shouldSetTally &&
           this.currentProvider === this.tallyProvider
         ) {
-          this.currentProvider = this.lastInjectedProvider
+          this.currentProvider = this.lastInjectedProvider ?? this.tallyProvider
         }
 
-        if (shouldReload && window.location.href.includes("app.uniswap.org")) {
+        if (
+          shouldReload &&
+          (window.location.href.includes("app.uniswap.org") ||
+            window.location.href.includes("galaxy.eco"))
+        ) {
           setTimeout(() => {
             window.location.reload()
           }, 1000)
@@ -117,8 +121,10 @@ Object.defineProperty(window, "ethereum", {
           // Uniswap MM connector checks the providers array for the MM provider and forces to use that
           // https://github.com/Uniswap/web3-react/blob/main/packages/metamask/src/index.ts#L57
           // as a workaround we need to remove this list for uniswap so the actual provider change can work after reload.
+          // The same is true for `galaxy.eco`
           if (
             window.location.href.includes("app.uniswap.org") &&
+            window.location.href.includes("galaxy.eco") &&
             prop === "providers"
           ) {
             return null

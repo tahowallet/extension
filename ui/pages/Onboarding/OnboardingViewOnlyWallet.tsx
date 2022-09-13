@@ -10,7 +10,11 @@ import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedAddressInput from "../../components/Shared/SharedAddressInput"
 
-export default function OnboardingViewOnlyWallet(): ReactElement {
+export default function OnboardingViewOnlyWallet({
+  embedded = false,
+}: {
+  embedded: boolean
+}): ReactElement {
   const dispatch = useBackgroundDispatch()
   const [redirect, setRedirect] = useState(false)
   const [addressOnNetwork, setAddressOnNetwork] = useState<
@@ -49,10 +53,10 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
   }
 
   return (
-    <section className="standard_width">
-      <div className="top">
+    <section className="start_wrap">
+      <div className="top standard_width">
         <SharedBackButton />
-        <div className="wordmark" />
+        {!embedded && <div className="wordmark" />}
       </div>
       <div className="content">
         <h1 className="serif_header">Explore Tally Ho!</h1>
@@ -98,9 +102,6 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
             right: 0px;
             margin: 0 auto;
           }
-          section {
-            background-color: var(--hunter-green);
-          }
           .content {
             display: flex;
             flex-direction: column;
@@ -121,6 +122,7 @@ export default function OnboardingViewOnlyWallet(): ReactElement {
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            ${embedded ? "" : `background-color: var(--hunter-green);`}
           }
           .subtitle {
             color: var(--green-60);

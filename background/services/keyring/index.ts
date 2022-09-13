@@ -2,6 +2,7 @@ import { parse as parseRawTransaction } from "@ethersproject/transactions"
 
 import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 
+import { arrayify } from "ethers/lib/utils"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
@@ -11,17 +12,12 @@ import {
   encryptVault,
   SaltedKey,
 } from "./encryption"
-import {
-  HexString,
-  KeyringTypes,
-  EIP191Data,
-  EIP712TypedData,
-  UNIXTime,
-} from "../../types"
-import { EIP1559TransactionRequest, SignedEVMTransaction } from "../../networks"
+import { HexString, KeyringTypes, EIP712TypedData, UNIXTime } from "../../types"
+import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
+
 import BaseService from "../base"
 import { FORK, MINUTE } from "../../constants"
-import { ethersTransactionRequestFromEIP1559TransactionRequest } from "../chain/utils"
+import { ethersTransactionFromTransactionRequest } from "../chain/utils"
 import { USE_MAINNET_FORK } from "../../features"
 import { AddressOnNetwork } from "../../accounts"
 import logger from "../../lib/logger"
@@ -60,7 +56,7 @@ interface Events extends ServiceLifecycleEvents {
   }
   address: string
   // TODO message was signed
-  signedTx: SignedEVMTransaction
+  signedTx: SignedTransaction
   signedData: string
 }
 
@@ -353,6 +349,22 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
+   * Return the source of a given address' keyring if it exists.  If an
+   * address does not have a keyring associated with it - returns null.
+   */
+  async getKeyringSourceForAddress(
+    address: string
+  ): Promise<"import" | "internal" | null> {
+    try {
+      const keyring = await this.#findKeyring(address)
+      return this.#keyringMetadata[keyring.id].source
+    } catch (e) {
+      // Address is not associated with a keyring
+      return null
+    }
+  }
+
+  /**
    * Return an array of keyring representations that can safely be stored and
    * used outside the extension.
    */
@@ -462,8 +474,8 @@ export default class KeyringService extends BaseService<Events> {
    */
   async signTransaction(
     addressOnNetwork: AddressOnNetwork,
-    txRequest: EIP1559TransactionRequest & { nonce: number }
-  ): Promise<SignedEVMTransaction> {
+    txRequest: TransactionRequestWithNonce
+  ): Promise<SignedTransaction> {
     this.requireUnlocked()
 
     const { address: account, network } = addressOnNetwork
@@ -472,8 +484,8 @@ export default class KeyringService extends BaseService<Events> {
     const keyring = await this.#findKeyring(account)
 
     // ethers has a looser / slightly different request type
-    const ethersTxRequest =
-      ethersTransactionRequestFromEIP1559TransactionRequest(txRequest)
+    const ethersTxRequest = ethersTransactionFromTransactionRequest(txRequest)
+
     // unfortunately, ethers gives us a serialized signed tx here
     const signed = await keyring.signTransaction(account, ethersTxRequest)
 
@@ -484,30 +496,67 @@ export default class KeyringService extends BaseService<Events> {
       throw new Error("Transaction doesn't appear to have been signed.")
     }
 
+    const {
+      to,
+      gasPrice,
+      gasLimit,
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+      hash,
+      from,
+      nonce,
+      data,
+      value,
+      type,
+      r,
+      s,
+      v,
+    } = tx
+
     if (
-      typeof tx.maxPriorityFeePerGas === "undefined" ||
-      typeof tx.maxFeePerGas === "undefined" ||
-      tx.type !== 2
+      typeof maxPriorityFeePerGas === "undefined" ||
+      typeof maxFeePerGas === "undefined" ||
+      type !== 2
     ) {
-      throw new Error("Can only sign EIP-1559 conforming transactions")
+      const signedTx = {
+        hash,
+        from,
+        to,
+        nonce,
+        input: data,
+        value: value.toBigInt(),
+        type: type as 0,
+        gasPrice: gasPrice?.toBigInt() ?? null,
+        gasLimit: gasLimit.toBigInt(),
+        maxFeePerGas: null,
+        maxPriorityFeePerGas: null,
+        r,
+        s,
+        v,
+        blockHash: null,
+        blockHeight: null,
+        asset: network.baseAsset,
+        network: USE_MAINNET_FORK ? FORK : network,
+      }
+      return signedTx
     }
 
     // TODO move this to a helper function
-    const signedTx: SignedEVMTransaction = {
-      hash: tx.hash,
-      from: tx.from,
-      to: tx.to,
-      nonce: tx.nonce,
-      input: tx.data,
-      value: tx.value.toBigInt(),
-      type: tx.type,
+    const signedTx: SignedTransaction = {
+      hash,
+      from,
+      to,
+      nonce,
+      input: data,
+      value: value.toBigInt(),
+      type,
       gasPrice: null,
-      maxFeePerGas: tx.maxFeePerGas.toBigInt(),
-      maxPriorityFeePerGas: tx.maxPriorityFeePerGas.toBigInt(),
-      gasLimit: tx.gasLimit.toBigInt(),
-      r: tx.r,
-      s: tx.s,
-      v: tx.v,
+      maxFeePerGas: maxFeePerGas.toBigInt(),
+      maxPriorityFeePerGas: maxPriorityFeePerGas.toBigInt(),
+      gasLimit: gasLimit.toBigInt(),
+      r,
+      s,
+      v,
       blockHash: null,
       blockHeight: null,
       asset: network.baseAsset,
@@ -563,14 +612,18 @@ export default class KeyringService extends BaseService<Events> {
     signingData,
     account,
   }: {
-    signingData: EIP191Data
+    signingData: HexString
     account: HexString
   }): Promise<string> {
     this.requireUnlocked()
+
     // find the keyring using a linear search
     const keyring = await this.#findKeyring(account)
     try {
-      const signature = await keyring.signMessage(account, signingData)
+      const signature = await keyring.signMessageBytes(
+        account,
+        arrayify(signingData)
+      )
 
       return signature
     } catch (error) {

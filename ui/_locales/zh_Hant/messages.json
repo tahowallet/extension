@@ -7,8 +7,9 @@
     "search": "透過名稱或地址搜尋",
     "selectToken": "選擇代幣"
   },
+  "comingSoon": "敬請期待",
   "overview": {
-    "addresses": "地址",
+    "accounts": "帳號",
     "assets": "資產",
     "networks": "網路",
     "tableHeader": {
@@ -16,7 +17,7 @@
       "balance": "帳戶總額",
       "price": "價格"
     },
-    "totalBalance": "帳戶總額"
+    "totalBalanceEverywhere": "所有帳戶的總額"
   },
   "passwordStrength": {
     "average": "普通",
@@ -30,13 +31,52 @@
     "compatibleChain": "以太坊相容區塊鏈",
     "connected": "已連線",
     "l2": "L2 擴展方案",
-    "mainnet": "以太坊主網"
+    "mainnet": "以太坊主網",
+    "testnet": "測試網路"
   },
   "readOnly": "唯讀",
   "readOnlyNotice": "唯讀模式",
   "settings": {
+    "analytics": "分析",
+    "analyticsSetUp": {
+      "analyticsOffSlideUpMenu": {
+        "desc": "確定想要關閉分析？開啟分析使我們能夠為您打造更好的錢包",
+        "snackbar": "分析已關閉，可隨時重新開啟",
+        "submitBtn": "是的，關閉",
+        "title": "關閉分析？"
+      },
+      "ariaLabel": "開放分析",
+      "deleteBtn": "刪除我的資料",
+      "deleteSlideUpMenu": {
+        "desc": "確定想要刪除您的資料？這些資料可以協助我們為您打造更好的錢包。",
+        "snackbar": "私人資料即將被移除",
+        "submitBtn": "是的，刪除資料",
+        "title": "想要刪除您的資料？"
+      },
+      "noRecordItemSeed": "你的助記詞",
+      "noRecordItemTransactions": "您的地址和交易",
+      "noRecordTitle": "我們永遠不會記錄",
+      "policyBtn": "隱私政策",
+      "recordItemAccounts": "帳號數目",
+      "recordItemGas": "Gas 支付總額",
+      "recordItemOrders": "交換/發送次數",
+      "recordTitle": "我們將記錄什麼",
+      "title": "分析",
+      "toggleDesc": "分析幫助我們了解您的需求，並使我們能夠為您打造更好的錢包！",
+      "toggleTitleOff": "分析已關閉",
+      "toggleTitleOn": "分析已開啟"
+    },
     "bugReport": "問題回報",
+    "connectedWebsites": "已連結的網站",
+    "connectedWebsitesSettings": {
+      "ariaLabel": "管理已連結的網站",
+      "disconnected": "網站已斷開",
+      "emptyList": "尚未與任何網站連結",
+      "title": "已連結的網站"
+    },
+    "enableTestNetworks": "啟用測試網路",
     "exportLogs": {
+      "ariaLabel": "開啟問題報告",
       "discordBtn": "加入 Discord",
       "discordDesc": "參觀我們的 Discord 頻道，在那兒回報你的問題。請在問題中附加 log 紀錄。",
       "discordTitle": "1. 加入 Discord 中的 #bug-reports 頻道",
@@ -49,8 +89,12 @@
     "joinBtn": "加入我們的 Discord 並給予反饋",
     "joinDesc": "加入我們的 Discord 並給予反饋!",
     "joinTitle": "加入我們的社群",
+    "language": "語言",
     "mainMenu": "設定",
     "setAsDefault": "將 Tally Ho 設為你的預設錢包"
+  },
+  "shared": {
+    "cancelBtn": "取消"
   },
   "swap": {
     "error": {
@@ -70,6 +114,10 @@
       "title": "交易設定"
     }
   },
+  "toggle": {
+    "collapse": "展開",
+    "viewAll": "查看全部"
+  },
   "wallet": {
     "assetAmount": "資產 / 數目",
     "receive": "接收",
@@ -79,6 +127,7 @@
     "sendAsset": "傳送資產",
     "sendButton": "繼續",
     "sendTo": "傳送到",
+    "sendToContractWarning": "這是一個合約地址，向其發送資產可能導致資金損失",
     "totalAccountBalance": "帳戶總額"
   }
 }
