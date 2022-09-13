@@ -42,7 +42,7 @@ export const selectDefaultNetworkFeeSettings = createSelector(
         maxPriorityFeePerGas: selectedFeesPerGas?.maxPriorityFeePerGas ?? 0n,
         gasPrice: selectedFeesPerGas?.price ?? 0n,
         baseFeePerGas:
-          networks.evm[currentNetwork.chainID].baseFeePerGas ?? undefined, // @TODO: Support multi-network
+          networks.evm[currentNetwork.chainID]?.baseFeePerGas ?? undefined,
       },
     }
   }
