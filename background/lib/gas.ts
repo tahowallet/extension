@@ -17,6 +17,8 @@ import { gweiToWei } from "./utils"
 // `process.env` variables in the bundled output
 const BLOCKNATIVE_API_KEY = process.env.BLOCKNATIVE_API_KEY // eslint-disable-line prefer-destructuring
 
+let blocknative: Blocknative
+
 type PolygonFeeDetails = {
   maxPriorityFee: number // gwei
   maxFee: number // gwei
@@ -88,10 +90,12 @@ export default async function getBlockPrices(
     network.chainID === ETHEREUM.chainID
   ) {
     try {
-      const blocknative = Blocknative.connect(
-        BLOCKNATIVE_API_KEY,
-        BlocknativeNetworkIds.ethereum.mainnet
-      )
+      if (!blocknative) {
+        blocknative = Blocknative.connect(
+          BLOCKNATIVE_API_KEY,
+          BlocknativeNetworkIds.ethereum.mainnet
+        )
+      }
       return await blocknative.getBlockPrices()
     } catch (err) {
       logger.error("Error getting block prices from BlockNative", err)
