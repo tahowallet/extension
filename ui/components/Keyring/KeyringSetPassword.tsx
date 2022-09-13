@@ -61,7 +61,12 @@ export default function KeyringSetPassword(): ReactElement {
         <div className="wordmark" />
       </div>
       <h1 className="serif_header">{t(`${prefix}.title`)}</h1>
-      <div className="simple_text subtitle">{t(`${prefix}.subtitle`)}</div>
+      <div className="simple_text subtitle">
+        {t(`${prefix}.subtitleFirstLine`).concat(
+          "\n",
+          t(`${prefix}.subtitleSecondLine`)
+        )}
+      </div>
       <form
         onSubmit={(event) => {
           event.preventDefault()

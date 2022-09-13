@@ -127,7 +127,8 @@
   "keyring": {
     "setPassword": {
       "title": "Set unlock signing password",
-      "subtitle": "You will be asked to enter this\npassword to unlock signing transactions.",
+      "subtitleFirstLine": "You will be asked to enter this",
+      "subtitleSecondLine": "password to unlock signing transactions.",
       "password": "Password",
       "repeatPassword": "Repeat password",
       "restorePassword": "Restoring account?",
