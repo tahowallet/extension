@@ -183,7 +183,7 @@ export default function Settings(): ReactElement {
           {SUPPORT_KEYRING_LOCKING && (
             <div className="signing_wrap">
               <SharedButton
-                type="tertiaryOpposite"
+                type="tertiaryInvertedGold"
                 size="medium"
                 iconMedium={areKeyringsUnlocked ? "un-lock" : "lock"}
                 iconPosition="right"

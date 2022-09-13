@@ -13,10 +13,10 @@ interface Props {
     | "primaryGreen"
     | "secondary"
     | "tertiary"
-    | "tertiaryOpposite"
     | "tertiaryWhite"
     | "tertiaryGray"
     | "tertiaryError"
+    | "tertiaryInvertedGold"
     | "deemphasizedWhite"
     | "warning"
     | "unstyled"
@@ -91,9 +91,9 @@ export default function SharedButton(
         { disabled: isDisabled },
         { tertiary: type === "tertiary" },
         { "tertiary white": type === "tertiaryWhite" },
-        { "tertiary opposite": type === "tertiaryOpposite" },
         { "tertiary gray": type === "tertiaryGray" },
         { "tertiary error": type === "tertiaryError" },
+        { "tertiary inverted": type === "tertiaryInvertedGold" },
         { deemphasized_white: type === "deemphasizedWhite" },
         { warning: type === "warning" },
         { twitter: type === "twitter" }
@@ -294,16 +294,16 @@ export default function SharedButton(
           .error:hover .icon_button {
             background-color: var(--error-80);
           }
-          .opposite {
+          .inverted {
             color: var(--green-40);
           }
-          .opposite .icon_button {
+          .inverted .icon_button {
             background-color: var(--green-40);
           }
-          .opposite:hover {
+          .inverted:hover {
             color: var(--trophy-gold);
           }
-          .opposite:hover .icon_button {
+          .inverted:hover .icon_button {
             background-color: var(--trophy-gold);
           }
           .tertiary.disabled {
