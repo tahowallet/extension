@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { getAddressCount } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -87,11 +87,28 @@ export default function OnboardingInfoIntro({
 }: {
   embedded: boolean
 }): ReactElement {
-  // if tabbed onboarding is supported, exit the popup and prefer the tab
-  if (SUPPORT_TABBED_ONBOARDING) {
-    const url = browser.runtime.getURL("tab.html#onboarding")
-    browser.tabs.create({ url })
-  }
+  useEffect(() => {
+    // if tabbed onboarding is supported, exit the popup and prefer the tab
+    if (SUPPORT_TABBED_ONBOARDING) {
+      const baseURL = browser.runtime.getURL("tab.html")
+
+      const openOnboardingTab = async () => {
+        const tabs = (await browser.tabs.query({ url: baseURL })).filter(
+          (tab) => tab?.url && tab.url.includes("onboarding")
+        )
+        if (tabs.length > 0 && tabs[0]?.id) {
+          await browser.tabs.update(tabs[0].id, { active: true })
+          window.close()
+        } else {
+          await browser.tabs.create({
+            url: browser.runtime.getURL("tab.html#onboarding"),
+          })
+        }
+      }
+
+      openOnboardingTab()
+    }
+  }, []) // empty dependency array means run once and only once
 
   const [activeStep, setActiveStep] = useState(1)
   const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
