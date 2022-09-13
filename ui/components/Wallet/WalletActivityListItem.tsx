@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useRef, useState } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
@@ -32,6 +32,22 @@ function isSendActivity(activity: ActivityItem, account: string): boolean {
 
 export default function WalletActivityListItem(props: Props): ReactElement {
   const { onClick, activity, asAccount } = props
+  const outcomeRef = useRef<HTMLDivElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const [outcomeWidth, setOutcomeWidth] = useState(0)
+  const [bottomWidth, setBottomWidth] = useState(0)
+
+  useEffect(() => {
+    if (outcomeRef.current) {
+      setOutcomeWidth(outcomeRef.current.offsetWidth)
+    }
+  }, [outcomeRef])
+
+  useEffect(() => {
+    if (bottomRef.current) {
+      setBottomWidth(bottomRef.current.offsetWidth)
+    }
+  }, [bottomRef])
 
   // TODO Replace this with better conditional rendering.
   let renderDetails: {
@@ -139,7 +155,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               dayjs.unix(activity.annotation?.blockTimestamp).format("MMM D")}
           </div>
         </div>
-        <div className="bottom">
+        <div ref={bottomRef} className="bottom">
           <div className="left">
             <div className="token_icon_wrap">
               <SharedAssetIcon
@@ -157,7 +173,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               <span className="name">{renderDetails.assetSymbol}</span>
             </div>
           </div>
-          <div className="right">
+          <div ref={outcomeRef} className="right">
             {isSendActivity(activity, asAccount) ? (
               <div className="outcome" title={renderDetails.recipient.address}>
                 To:
@@ -185,7 +201,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             background-color: var(--green-95);
             display: flex;
             flex-direction: column;
-            padding: 10px 19px 8px 8px;
+            padding: 9px 19px 8px 8px;
             box-sizing: border-box;
             margin-bottom: 16px;
             justify-content: space-between;
@@ -293,6 +309,9 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             font-weight: 600;
             line-height: 24px;
             margin-right: 4px;
+            max-width: calc(${bottomWidth}px - 50px - ${outcomeWidth}px);
+            overflow: hidden;
+            text-overflow: ellipsis;
             // For Infinite text in token approvals.
             text-transform: none;
           }
