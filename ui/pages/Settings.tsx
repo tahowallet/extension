@@ -12,7 +12,7 @@ import {
 import {
   SUPPORT_ANALYTICS,
   SUPPORT_GOERLI,
-  SUPPORT_KEYRING_SIGNING,
+  SUPPORT_KEYRING_LOCKING,
   SUPPORT_MANAGE_DAPPS,
   SUPPORT_MULTIPLE_LANGUAGES,
 } from "@tallyho/tally-background/features"
@@ -180,7 +180,7 @@ export default function Settings(): ReactElement {
       <section className="standard_width_padded">
         <div className="main_menu_wrap">
           <h1>{t("settings.mainMenu")}</h1>
-          {SUPPORT_KEYRING_SIGNING && (
+          {SUPPORT_KEYRING_LOCKING && (
             <div className="signing_wrap">
               <SharedButton
                 type="tertiaryOpposite"
