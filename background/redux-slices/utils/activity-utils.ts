@@ -3,6 +3,11 @@ import { ConfirmedEVMTransaction } from "../../networks"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
 import { HexString } from "../../types"
 
+enum TxStatus {
+  FAIL = 0,
+  SUCCESS = 1,
+}
+
 type FieldAdapter = {
   readableName: string
   transformer: (tx: EnrichedEVMTransaction) => string
@@ -73,12 +78,19 @@ function blockHeightTransformer(
   blockHeight: number | null,
   status: number | undefined
 ): string {
-  if (blockHeight !== null && status !== undefined && status !== 1)
+  if (
+    blockHeight !== null &&
+    status !== undefined &&
+    status !== TxStatus.SUCCESS
+  ) {
     return "(failed)"
-
-  if (blockHeight !== null) return blockHeight.toString()
-
-  if (blockHeight === null && status === 0) return "(dropped)"
+  }
+  if (blockHeight !== null) {
+    return blockHeight.toString()
+  }
+  if (blockHeight === null && status === TxStatus.FAIL) {
+    return "(dropped)"
+  }
 
   return "(pending)"
 }
