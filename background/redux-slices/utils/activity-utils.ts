@@ -3,6 +3,11 @@ import { ConfirmedEVMTransaction } from "../../networks"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
 import { HexString } from "../../types"
 
+enum TxStatus {
+  FAIL = 0,
+  SUCCESS = 1,
+}
+
 type FieldAdapter = {
   readableName: string
   transformer: (tx: EnrichedEVMTransaction) => string
@@ -69,8 +74,25 @@ function gweiTransformer(value: bigint | null | undefined): string {
   return `${weiToGwei(value) || "0"} Gwei`
 }
 
-function blockHeightTransformer(blockHeight: number | null): string {
-  return blockHeight === null ? "(pending)" : blockHeight.toString()
+function blockHeightTransformer(
+  blockHeight: number | null,
+  status: number | undefined
+): string {
+  if (
+    blockHeight !== null &&
+    status !== undefined &&
+    status !== TxStatus.SUCCESS
+  ) {
+    return "(failed)"
+  }
+  if (blockHeight !== null) {
+    return blockHeight.toString()
+  }
+  if (blockHeight === null && status === TxStatus.FAIL) {
+    return "(dropped)"
+  }
+
+  return "(pending)"
 }
 
 function toStringTransformer(value: bigint | number): string {
@@ -126,7 +148,11 @@ export function adaptForUI(
 export const keysMap: UIAdaptationMap = {
   blockHeight: {
     readableName: "Block Height",
-    transformer: (tx) => blockHeightTransformer(tx.blockHeight),
+    transformer: (tx) =>
+      blockHeightTransformer(
+        tx.blockHeight,
+        "status" in tx ? tx.status : undefined
+      ),
     detailTransformer: () => "",
   },
   value: {
