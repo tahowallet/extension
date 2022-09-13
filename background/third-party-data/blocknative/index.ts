@@ -5,6 +5,7 @@ import { BlockPrices, BlockEstimate } from "../../networks"
 import { EthereumTransactionData } from "./types"
 import { gweiToWei } from "../../lib/utils"
 import { ETHEREUM } from "../../constants/networks"
+import logger from "../../lib/logger"
 
 const BLOCKNATIVE_API_ROOT = "https://api.blocknative.com"
 
@@ -40,6 +41,20 @@ export default class Blocknative {
     this.blocknative = new BlocknativeSdk({
       dappId: apiKey,
       networkId,
+      onopen() {
+        logger.debug("Connected to blocknative")
+      },
+      onclose() {
+        logger.warn("Blocknative connection closed")
+      },
+      // https://docs.blocknative.com/notify-sdk#ondown-optional
+      // Log why we went down and rely on sdk to automatically reconnect.
+      ondown(closeEvent) {
+        logger.warn("Blocknative connection down", closeEvent)
+      },
+      onreopen() {
+        logger.debug("Reconnected to blocknative")
+      },
     })
 
     this.apiKey = apiKey
