@@ -63,7 +63,9 @@ export default function KeyringSetPassword(): ReactElement {
       </div>
       <h1 className="serif_header">{t("title")}</h1>
       <div className="simple_text subtitle">
-        {t("subtitleFirstLine").concat("\n", t("subtitleSecondLine"))}
+        {t("subtitleFirstLine")}
+        <br />
+        {t("subtitleSecondLine")}
       </div>
       <form
         onSubmit={(event) => {
