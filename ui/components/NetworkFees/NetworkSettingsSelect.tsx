@@ -4,7 +4,6 @@ import {
   ESTIMATED_FEE_MULTIPLIERS,
   ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL,
 } from "@tallyho/tally-background/constants/network-fees"
-import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import {
   EstimatedFeesPerGas,
   NetworkFeeSettings,
@@ -23,7 +22,6 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { SharedTypedInput } from "../Shared/SharedInput"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import NetworkSettingsSelectLegacy from "./NetworkSettingsSelectLegacy"
 
 import {
   NetworkSettingsSelectOptionButton,
@@ -222,17 +220,6 @@ export default function NetworkSettingsSelect({
         maxFeePerGas:
           BigInt(customMaxBaseFee) + BigInt(customMaxPriorityFeePerGas),
       })
-    )
-  }
-
-  if (!CUSTOM_GAS_SELECT) {
-    return (
-      <NetworkSettingsSelectLegacy
-        estimatedFeesPerGas={estimatedFeesPerGas}
-        networkSettings={networkSettings}
-        onNetworkSettingsChange={onNetworkSettingsChange}
-        onSave={onSave}
-      />
     )
   }
 
