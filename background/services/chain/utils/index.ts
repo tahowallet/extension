@@ -50,9 +50,9 @@ export function blockFromEthersBlock(
 }
 
 /**
- * Parse a block as returned by a websocket provider subscription.
+ * Parse a block as returned by a provider query.
  */
-export function blockFromWebsocketBlock(
+export function blockFromProviderBlock(
   network: EVMNetwork,
   incomingGethResult: unknown
 ): AnyEVMBlock {
@@ -69,7 +69,8 @@ export function blockFromWebsocketBlock(
     hash: gethResult.hash,
     blockHeight: BigNumber.from(gethResult.number).toNumber(),
     parentHash: gethResult.parentHash,
-    difficulty: BigInt(gethResult.difficulty),
+    // PoS networks will not have block difficulty.
+    difficulty: gethResult.difficulty ? BigInt(gethResult.difficulty) : 0n,
     timestamp: BigNumber.from(gethResult.timestamp).toNumber(),
     baseFeePerGas: gethResult.baseFeePerGas
       ? BigInt(gethResult.baseFeePerGas)

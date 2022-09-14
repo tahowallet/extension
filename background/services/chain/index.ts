@@ -41,7 +41,7 @@ import { getOrCreateDB, ChainDatabase } from "./db"
 import BaseService from "../base"
 import {
   blockFromEthersBlock,
-  blockFromWebsocketBlock,
+  blockFromProviderBlock,
   enrichTransactionWithReceipt,
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
@@ -227,6 +227,14 @@ export default class ChainService extends BaseService<Events> {
         },
         handler: () => {
           this.pollBlockPrices()
+        },
+      },
+      latestBlocks: {
+        schedule: {
+          periodInMinutes: 0.25, // every 15 seconds
+        },
+        handler: () => {
+          this.getLatestBlocks()
         },
       },
     })
@@ -1027,6 +1035,34 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
+  /*
+   * Fetch, persist, and emit the latest block on a given network.
+   */
+  private async pollLatestBlock(
+    network: EVMNetwork,
+    provider: SerialFallbackProvider
+  ): Promise<void> {
+    const ethersBlock = await provider.getBlock("latest")
+    // add new head to database
+    const block = blockFromProviderBlock(network, ethersBlock)
+    await this.db.addBlock(block)
+    // emit the new block, don't wait to settle
+    this.emitter.emit("block", block)
+    // TODO if it matches a known blockheight and the difficulty is higher,
+    // emit a reorg event
+  }
+
+  /*
+   * Poll for latest blocks on all networks
+   */
+  private async getLatestBlocks(): Promise<void> {
+    await Promise.allSettled(
+      this.subscribedNetworks.map(async ({ network, provider }) => {
+        this.pollLatestBlock(network, provider)
+      })
+    )
+  }
+
   async send(
     method: string,
     params: unknown[],
@@ -1391,24 +1427,12 @@ export default class ChainService extends BaseService<Events> {
   private async subscribeToNewHeads(network: EVMNetwork): Promise<void> {
     const provider = this.providerForNetworkOrThrow(network)
     // eslint-disable-next-line no-underscore-dangle
-    await provider.subscribe(
-      "newHeadsSubscriptionID",
-      ["newHeads"],
-      async (result: unknown) => {
-        // add new head to database
-        const block = blockFromWebsocketBlock(network, result)
-        await this.db.addBlock(block)
-        // emit the new block, don't wait to settle
-        this.emitter.emit("block", block)
-        // TODO if it matches a known blockheight and the difficulty is higher,
-        // emit a reorg event
-      }
-    )
     this.subscribedNetworks.push({
       network,
       provider,
     })
 
+    this.pollLatestBlock(network, provider)
     this.pollBlockPrices()
   }
 
