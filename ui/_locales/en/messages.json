@@ -142,7 +142,10 @@
       "title": "Unlock signing",
       "submitBtn": "Unlock",
       "signingPassword": "Signing password",
-      "forgotPassword": "Forgot password?"
+      "forgotPassword": "Forgot password?",
+      "error": {
+        "incorrect": "Incorrect password"
+      }
     }
   },
   "toggle": {

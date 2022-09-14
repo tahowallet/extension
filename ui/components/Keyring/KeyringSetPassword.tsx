@@ -9,8 +9,9 @@ import SharedBackButton from "../Shared/SharedBackButton"
 import PasswordStrengthBar from "../Password/PasswordStrengthBar"
 
 export default function KeyringSetPassword(): ReactElement {
-  const { t } = useTranslation()
-  const prefix = "keyring.setPassword"
+  const { t } = useTranslation("translation", {
+    keyPrefix: "keyring.setPassword",
+  })
   const [password, setPassword] = useState("")
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("")
   const [passwordConfirmation, setPasswordConfirmation] = useState("")
@@ -28,11 +29,11 @@ export default function KeyringSetPassword(): ReactElement {
 
   const validatePassword = (): boolean => {
     if (password.length < 8) {
-      setPasswordErrorMessage(t(`${prefix}.error.characterCount`))
+      setPasswordErrorMessage(t("error.characterCount"))
       return false
     }
     if (password !== passwordConfirmation) {
-      setPasswordErrorMessage(t(`${prefix}.error.noMatch`))
+      setPasswordErrorMessage(t("error.noMatch"))
       return false
     }
     return true
@@ -60,12 +61,9 @@ export default function KeyringSetPassword(): ReactElement {
         <SharedBackButton path="/" />
         <div className="wordmark" />
       </div>
-      <h1 className="serif_header">{t(`${prefix}.title`)}</h1>
+      <h1 className="serif_header">{t("title")}</h1>
       <div className="simple_text subtitle">
-        {t(`${prefix}.subtitleFirstLine`).concat(
-          "\n",
-          t(`${prefix}.subtitleSecondLine`)
-        )}
+        {t("subtitleFirstLine").concat("\n", t("subtitleSecondLine"))}
       </div>
       <form
         onSubmit={(event) => {
@@ -76,7 +74,7 @@ export default function KeyringSetPassword(): ReactElement {
         <div className="input_wrap">
           <SharedInput
             type="password"
-            label={t(`${prefix}.password`)}
+            label={t("password")}
             onChange={handleInputChange(setPassword)}
             errorMessage={passwordErrorMessage}
             iconMedium="eye-on"
@@ -88,7 +86,7 @@ export default function KeyringSetPassword(): ReactElement {
         <div className="input_wrap repeat_password_wrap">
           <SharedInput
             type="password"
-            label={t(`${prefix}.repeatPassword`)}
+            label={t("repeatPassword")}
             onChange={handleInputChange(setPasswordConfirmation)}
             errorMessage={passwordErrorMessage}
             iconMedium="eye-on"
@@ -101,12 +99,12 @@ export default function KeyringSetPassword(): ReactElement {
           showLoadingOnClick={!passwordErrorMessage}
           isFormSubmit
         >
-          {t(`${prefix}.submitBtn`)}
+          {t("submitBtn")}
         </SharedButton>
       </form>
       <div className="restore">
         <SharedButton type="tertiary" size="medium">
-          {t(`${prefix}.restorePassword`)}
+          {t("restorePassword")}
         </SharedButton>
       </div>
       <style jsx>

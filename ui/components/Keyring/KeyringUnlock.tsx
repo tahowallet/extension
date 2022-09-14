@@ -12,8 +12,8 @@ import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 
 export default function KeyringUnlock(): ReactElement {
-  const { t } = useTranslation()
-  const prefix = "keyring.unlock"
+  const { t } = useTranslation("translation", { keyPrefix: "keyring.unlock" })
+  const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
   const [password, setPassword] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
   const isDappPopup = useIsDappPopup()
@@ -38,7 +38,7 @@ export default function KeyringUnlock(): ReactElement {
     event.preventDefault()
     await dispatch(unlockKeyrings(password))
     // If keyring was unable to unlock, display error message
-    setErrorMessage("Incorrect password")
+    setErrorMessage(t("error.incorrect"))
   }
 
   const handleReject = async () => {
@@ -62,19 +62,19 @@ export default function KeyringUnlock(): ReactElement {
     <section className="standard_width">
       <div className="cancel_btn_wrap">
         <SharedButton type="tertiaryGray" size="small" onClick={handleCancel}>
-          {t("shared.cancelBtn")}
+          {tShared("cancelBtn")}
         </SharedButton>
       </div>
       <div className="img_wrap">
         <div className="illustration_unlock" />
       </div>
-      <h1 className="serif_header">{t(`${prefix}.title`)}</h1>
+      <h1 className="serif_header">{t("title")}</h1>
       <form onSubmit={dispatchUnlockWallet}>
         <div className="signing_wrap">
           <div className="input_wrap">
             <SharedInput
               type="password"
-              label={t(`${prefix}.signingPassword`)}
+              label={t("signingPassword")}
               onChange={(value) => {
                 setPassword(value)
                 // Clear error message on input change
@@ -87,12 +87,12 @@ export default function KeyringUnlock(): ReactElement {
           </div>
           <div>
             <SharedButton type="primary" size="large" isFormSubmit>
-              {t(`${prefix}.submitBtn`)}
+              {t("submitBtn")}
             </SharedButton>
           </div>
         </div>
         <SharedButton type="tertiaryGray" size="small" onClick={() => {}}>
-          {t(`${prefix}.forgotPassword`)}
+          {t("forgotPassword")}
         </SharedButton>
       </form>
       <style jsx>
