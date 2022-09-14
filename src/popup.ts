@@ -1,4 +1,4 @@
-import { attachUiToRootElement, Popup } from "@tallyho/tally-ui"
+import { attachPopupUIToRootElement } from "@tallyho/tally-ui"
 
 setTimeout(() => {
   const isAppRendered = !!document.getElementsByClassName("top_menu_wrap_decoy")
@@ -9,4 +9,4 @@ setTimeout(() => {
   }
 }, 1000)
 
-attachUiToRootElement(Popup)
+attachPopupUIToRootElement()
