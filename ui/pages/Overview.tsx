@@ -6,7 +6,6 @@ import {
   selectAccountAndTimestampedActivities,
   selectAccountTotalsForOverview,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { SUPPORT_NFTS } from "@tallyho/tally-background/features"
 import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundSelector } from "../hooks"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
@@ -49,22 +48,20 @@ export default function Overview(): ReactElement {
           networksCount={networksCount}
         />
       </section>
-      {SUPPORT_NFTS && (
-        <div className="panel_switcher">
-          <SharedPanelSwitcher
-            setPanelNumber={setPanelNumber}
-            panelNumber={panelNumber}
-            panelNames={panelNames}
-          />
-        </div>
-      )}
+      <div className="panel_switcher">
+        <SharedPanelSwitcher
+          setPanelNumber={setPanelNumber}
+          panelNumber={panelNumber}
+          panelNames={panelNames}
+        />
+      </div>
       {panelNumber === 0 && (
         <OverviewAssetsTable
           assets={combinedData.assets}
           initializationLoadingTimeExpired={initializationLoadingTimeExpired}
         />
       )}
-      {panelNumber === 1 && SUPPORT_NFTS && (
+      {panelNumber === 1 && (
         <>
           <SharedBanner
             icon="notif-announcement"
