@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto"
 import PreferenceService from ".."
 import { POLYGON } from "../../../constants"
 import DEFAULT_PREFERENCES from "../defaults"
