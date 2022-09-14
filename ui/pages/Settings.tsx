@@ -12,7 +12,6 @@ import {
 import {
   SUPPORT_ANALYTICS,
   SUPPORT_GOERLI,
-  SUPPORT_MANAGE_DAPPS,
   SUPPORT_MULTIPLE_LANGUAGES,
 } from "@tallyho/tally-background/features"
 import SharedButton from "../components/Shared/SharedButton"
@@ -152,7 +151,7 @@ export default function Settings(): ReactElement {
     setAsDefault,
     ...(SUPPORT_MULTIPLE_LANGUAGES ? [languages] : []),
     ...(SUPPORT_GOERLI ? [enableTestNetworks] : []),
-    ...(SUPPORT_MANAGE_DAPPS ? [dAppsSettings] : []),
+    dAppsSettings,
     bugReport,
     ...(SUPPORT_ANALYTICS ? [analytics] : []),
   ]
