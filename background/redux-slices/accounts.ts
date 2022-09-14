@@ -10,6 +10,7 @@ import {
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
 import { SignerType } from "../services/signing"
+import { TEST_NETWORK_BY_CHAIN_ID } from "../constants"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -47,16 +48,18 @@ type AccountData = {
   defaultAvatar: string
 }
 
+type AccountsByChainID = {
+  [chainID: string]: {
+    [address: string]: AccountData | "loading"
+  }
+}
+
 export type AccountState = {
   account?: AddressOnNetwork
   accountLoading?: string
   hasAccountError?: boolean
   accountsData: {
-    evm: {
-      [chainID: string]: {
-        [address: string]: AccountData | "loading"
-      }
-    }
+    evm: AccountsByChainID
   }
   combinedData: CombinedAccountData
 }
@@ -147,7 +150,16 @@ function updateCombinedData(immerState: AccountState) {
   // accountsData are mutually exclusive; that is, that there are no two
   // accounts in accountsData all or part of whose balances are shared with
   // each other.
-  const combinedAccountBalances = Object.values(immerState.accountsData.evm)
+  const filteredEvm = Object.keys(immerState.accountsData.evm)
+    .filter((key) => !TEST_NETWORK_BY_CHAIN_ID.has(key))
+    .reduce<AccountsByChainID>((evm, key) => {
+      return {
+        ...evm,
+        [key]: immerState.accountsData.evm[key],
+      }
+    }, {})
+
+  const combinedAccountBalances = Object.values(filteredEvm)
     .flatMap((accountDataByChain) => Object.values(accountDataByChain))
     .flatMap((ad) =>
       ad === "loading"

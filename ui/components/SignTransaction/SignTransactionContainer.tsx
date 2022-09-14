@@ -26,6 +26,7 @@ export default function SignTransactionContainer({
   reviewPanel,
   extraPanel,
   confirmButtonLabel,
+  canConfirm,
   handleConfirm,
   handleReject,
   isTransactionSigning,
@@ -38,6 +39,7 @@ export default function SignTransactionContainer({
   reviewPanel: ReactNode
   extraPanel: ReactNode
   confirmButtonLabel: ReactNode
+  canConfirm: boolean
   handleConfirm: () => void
   handleReject: () => void
   isTransactionSigning: boolean
@@ -158,7 +160,9 @@ export default function SignTransactionContainer({
                 onClick={handleConfirm}
                 showLoadingOnClick
                 isDisabled={
-                  isOnDelayToSign || warnings.includes("insufficient-funds")
+                  isOnDelayToSign ||
+                  !canConfirm ||
+                  warnings.includes("insufficient-funds")
                 }
               >
                 {confirmButtonLabel}

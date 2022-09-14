@@ -62,16 +62,17 @@ export default function SignTransaction(): ReactElement {
 
   if (isLocked) return <></>
 
+  const canConfirm =
+    isTransactionDataReady &&
+    transactionDetails &&
+    accountSigner &&
+    accountSigner !== ReadOnlyAccountSigner
+
   const handleReject = async () => {
     await dispatch(rejectTransactionSignature())
   }
   const handleConfirm = async () => {
-    if (
-      isTransactionDataReady &&
-      transactionDetails &&
-      accountSigner &&
-      accountSigner !== ReadOnlyAccountSigner
-    ) {
+    if (canConfirm) {
       dispatch(
         signTransaction({
           request: transactionDetails,
@@ -89,6 +90,7 @@ export default function SignTransaction(): ReactElement {
           signerAccountTotal={signerAccountTotal}
           title={title}
           confirmButtonLabel={confirmButtonLabel}
+          canConfirm={canConfirm}
           handleConfirm={handleConfirm}
           handleReject={handleReject}
           detailPanel={infoBlock}

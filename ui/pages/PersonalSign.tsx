@@ -71,9 +71,12 @@ export default function PersonalSignData(): ReactElement {
     return <></>
   }
 
+  const canConfirm =
+    currentAccountSigner !== ReadOnlyAccountSigner &&
+    signingDataRequest !== undefined
+
   const handleConfirm = () => {
-    if (currentAccountSigner === ReadOnlyAccountSigner) return
-    if (signingDataRequest === undefined) return
+    if (!canConfirm) return
 
     dispatch(
       signData({
@@ -93,6 +96,7 @@ export default function PersonalSignData(): ReactElement {
     <SignTransactionContainer
       signerAccountTotal={signerAccountTotal}
       confirmButtonLabel="Sign"
+      canConfirm={canConfirm}
       handleConfirm={handleConfirm}
       handleReject={handleReject}
       title={TITLE[signingDataRequest.messageType]}

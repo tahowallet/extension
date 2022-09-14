@@ -3,7 +3,6 @@ import {
   truncateDecimalAmount,
   weiToGwei,
 } from "@tallyho/tally-background/lib/utils"
-import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import {
   selectDefaultNetworkFeeSettings,
@@ -26,7 +25,6 @@ import {
 } from "@tallyho/tally-background/assets"
 import type { EnrichedEVMTransactionRequest } from "@tallyho/tally-background/services/enrichment"
 import { useBackgroundSelector } from "../../hooks"
-import FeeSettingsTextDeprecated from "./FeeSettingsTextDeprecated"
 
 const getFeeDollarValue = (
   currencyPrice: PricePoint | undefined,
@@ -143,15 +141,11 @@ export default function FeeSettingsText({
     estimatedRollupFee
   )
 
-  if (!CUSTOM_GAS_SELECT) {
-    return <FeeSettingsTextDeprecated />
-  }
-
   if (!dollarValue) return <div>~{gweiValue}</div>
 
   return (
     <div>
-      {!gasLimit && CUSTOM_GAS_SELECT ? (
+      {!gasLimit ? (
         <>TBD</>
       ) : (
         <>

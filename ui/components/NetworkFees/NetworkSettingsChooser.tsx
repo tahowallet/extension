@@ -4,9 +4,11 @@ import {
   NetworkFeeSettings,
   setFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import {
+  selectDefaultNetworkFeeSettings,
+  selectTransactionData,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "./NetworkSettingsSelect"
 import NetworkSettingsOptimism from "./NetworkSettingsSelectOptimism"
@@ -23,7 +25,7 @@ export default function NetworkSettingsChooser({
   const [networkSettings, setNetworkSettings] = useState(
     useBackgroundSelector(selectDefaultNetworkFeeSettings)
   )
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const dispatch = useBackgroundDispatch()
 
@@ -35,7 +37,8 @@ export default function NetworkSettingsChooser({
   return (
     <>
       <div className="wrapper">
-        {EIP_1559_COMPLIANT_CHAIN_IDS.has(currentNetwork.chainID) ? (
+        {transactionDetails &&
+        EIP_1559_COMPLIANT_CHAIN_IDS.has(transactionDetails.network.chainID) ? (
           <NetworkSettingsSelect
             estimatedFeesPerGas={estimatedFeesPerGas}
             networkSettings={networkSettings}
