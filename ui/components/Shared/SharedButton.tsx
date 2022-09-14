@@ -3,7 +3,7 @@ import classNames from "classnames"
 import { Redirect } from "react-router-dom"
 import { History } from "history"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
-import { PropsWithIcon } from "./utils"
+import { PropsWithIcon } from "./types"
 
 interface Props {
   children: React.ReactNode

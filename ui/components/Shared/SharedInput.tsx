@@ -1,7 +1,7 @@
 import React, { ChangeEvent, ReactElement, useEffect, useRef } from "react"
 import classNames from "classnames"
 import { useParsedValidation, useRunOnFirstRender } from "../../hooks"
-import { PropsWithIcon } from "./utils"
+import { PropsWithIcon } from "./types"
 
 interface Props<T> {
   id?: string

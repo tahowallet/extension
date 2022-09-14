@@ -1,4 +1,4 @@
-export interface PropsWithMediumIcon {
+interface PropsWithMediumIcon {
   iconMedium?:
     | "connected"
     | "continue"
@@ -34,7 +34,7 @@ export interface PropsWithMediumIcon {
   iconSmall?: never
 }
 
-export interface PropsWithSmallIcon {
+interface PropsWithSmallIcon {
   iconSmall?:
     | "add"
     | "arrow-right"
