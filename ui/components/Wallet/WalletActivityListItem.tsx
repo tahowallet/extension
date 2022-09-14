@@ -167,7 +167,10 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               />
             </div>
             <div className="amount">
-              <span className="bold_amount_count">
+              <span
+                className="bold_amount_count"
+                title={renderDetails.assetValue}
+              >
                 {renderDetails.assetValue}
               </span>
               <span className="name">{renderDetails.assetSymbol}</span>
