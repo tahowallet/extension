@@ -17,7 +17,7 @@ import {
   SUPPORT_MULTIPLE_LANGUAGES,
 } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
-import { keyringLocked } from "@tallyho/tally-background/redux-slices/keyrings"
+import { lockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
@@ -80,7 +80,7 @@ export default function Settings(): ReactElement {
     if (!areKeyringsUnlocked) {
       history.push("/keyring/unlock")
     } else {
-      dispatch(keyringLocked())
+      dispatch(lockKeyrings())
     }
   }
 
