@@ -76,11 +76,11 @@ export default function Settings(): ReactElement {
     dispatch(toggleTestNetworks(defaultWalletValue))
   }
 
-  const toggleKeyringStatus = () => {
+  const toggleKeyringStatus = async () => {
     if (!areKeyringsUnlocked) {
       history.push("/keyring/unlock")
     } else {
-      dispatch(lockKeyrings())
+      await dispatch(lockKeyrings())
     }
   }
 
