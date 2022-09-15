@@ -483,6 +483,7 @@ export default class ChainService extends BaseService<Events> {
         transactionRequest
       )
     } catch (error) {
+      logger.error("Error estimating gas limit: ", error)
       // Try to identify unpredictable gas errors to bubble that information
       // out.
       if (error instanceof Error) {
