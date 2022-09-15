@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto"
 import sinon from "sinon"
 import {
   createKeyringService,
