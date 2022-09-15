@@ -174,9 +174,9 @@ function legacyEVMTransactionRequestFromEthersTransactionRequest(
         ? parseInt(transaction.nonce.toString(), 16)
         : undefined,
     value:
-      typeof transaction.value !== "undefined"
-        ? BigInt(transaction.value.toString())
-        : undefined,
+      // Some Dapps may send us transactionRequests with value set to `null`.
+      // If transaction.value === 0, we are fine to cast it to undefined on the LegacyEVMTransactionRequest
+      transaction.value ? BigInt(transaction.value.toString()) : undefined,
     chainID: transaction.chainId?.toString(16),
     gasLimit:
       typeof transaction.gasLimit !== "undefined"
