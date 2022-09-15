@@ -1141,9 +1141,7 @@ export default class Main extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await Promise.all(
-          // We use supportedNetworks here because we currently grant
-          // dapp permission for all supported networks when approving a dapp.
-          this.chainService.supportedNetworks.map(async (network) => {
+          [ETHEREUM, POLYGON, OPTIMISM, GOERLI].map(async (network) => {
             await this.providerBridgeService.denyOrRevokePermission({
               ...permission,
               chainID: network.chainID,

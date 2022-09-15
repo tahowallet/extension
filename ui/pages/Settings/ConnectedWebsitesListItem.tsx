@@ -25,8 +25,8 @@ export default function ConnectedWebsitesListItem(
 
   const dispatch = useBackgroundDispatch()
 
-  const handleDisconnect = useCallback(() => {
-    dispatch(denyOrRevokePermission({ ...permission, state: "deny" }))
+  const handleDisconnect = useCallback(async () => {
+    await dispatch(denyOrRevokePermission({ ...permission, state: "deny" }))
 
     dispatch(setSnackbarMessage(t("connectedWebsitesSettings.disconnected")))
   }, [dispatch, permission, t])
@@ -45,6 +45,7 @@ export default function ConnectedWebsitesListItem(
           width={24}
           icon="icons/m/disconnect.svg"
           onClick={handleDisconnect}
+          customStyles="flex-shrink: 0;"
         />
       </div>
       <style jsx>{`
