@@ -6,18 +6,30 @@ import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 
 export default function AnalyticsSlideUpMenu(props: {
-  prefix: string
   isOpen: boolean
+  title: string
+  description: string
+  submitLabel: string
+  snackBarMsg: string
   onCancel: () => void
   onSubmit: () => void
 }): ReactElement {
+  const {
+    isOpen,
+    onCancel,
+    onSubmit,
+    title,
+    description,
+    submitLabel,
+    snackBarMsg,
+  } = props
+
   const dispatch = useDispatch()
   const { t } = useTranslation()
-  const { prefix, isOpen, onCancel, onSubmit } = props
 
   const handleSubmit = () => {
     onSubmit()
-    dispatch(setSnackbarMessage(t(`${prefix}.snackbar`)))
+    dispatch(setSnackbarMessage(snackBarMsg))
   }
 
   return (
@@ -30,8 +42,8 @@ export default function AnalyticsSlideUpMenu(props: {
       >
         <div className="menu_container">
           <div>
-            <h2 className="title">{t(`${prefix}.title`)}</h2>
-            <p className="simple_text">{t(`${prefix}.desc`)}</p>
+            <h2 className="title">{title}</h2>
+            <p className="simple_text">{description}</p>
           </div>
           <div className="btn_container">
             <SharedButton
@@ -46,7 +58,7 @@ export default function AnalyticsSlideUpMenu(props: {
               size="small"
               onClick={() => handleSubmit()}
             >
-              {t(`${prefix}.submitBtn`)}
+              {submitLabel}
             </SharedButton>
           </div>
         </div>

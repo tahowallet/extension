@@ -12,8 +12,9 @@ import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 import SharedToggleButton from "../../components/Shared/SharedToggleButton"
 
 export default function SettingsAnalytics(): ReactElement {
-  const prefix = "settings.analyticsSetUp"
-  const { t } = useTranslation()
+  const { t } = useTranslation("translation", {
+    keyPrefix: "settings.analyticsSetUp",
+  })
   const dispatch = useDispatch()
   const collectAnalytics = useSelector(selectCollectAnalytics)
   const [showAnalyticsMenu, setShowAnalyticsMenu] = useState(false)
@@ -38,9 +39,7 @@ export default function SettingsAnalytics(): ReactElement {
 
   return (
     <div className="standard_width_padded analytics_wrapper">
-      <SharedPageHeader withoutBackText>
-        {t(`${prefix}.title`)}
-      </SharedPageHeader>
+      <SharedPageHeader withoutBackText>{t("title")}</SharedPageHeader>
       <section className="toggle_container">
         <div className="header_container">
           <div className="title_container">
@@ -51,9 +50,7 @@ export default function SettingsAnalytics(): ReactElement {
               }.png`}
               alt={collectAnalytics ? "correct" : "error"}
             />
-            <h2>
-              {t(`${prefix}.toggleTitle${collectAnalytics ? "On" : "Off"}`)}
-            </h2>
+            <h2>{t(`toggleTitle${collectAnalytics ? "On" : "Off"}`)}</h2>
           </div>
           <SharedToggleButton
             value={collectAnalytics}
@@ -62,24 +59,22 @@ export default function SettingsAnalytics(): ReactElement {
             }}
           />
         </div>
-        <p className="toggle_description simple_text">
-          {t(`${prefix}.toggleDesc`)}
-        </p>
+        <p className="toggle_description simple_text">{t(`toggleDesc`)}</p>
       </section>
       <section>
-        <h2 className="title_success">{t(`${prefix}.recordTitle`)}</h2>
+        <h2 className="title_success">{t(`recordTitle`)}</h2>
         <ul className="list">
-          {["Orders", "Accounts", "Gas"].map((value) => (
+          {(["Orders", "Accounts", "Gas"] as const).map((value) => (
             <li key={value} className="list_item simple_text">
-              {t(`${prefix}.recordItem${value}`)}
+              {t(`recordItem${value}`)}
             </li>
           ))}
         </ul>
-        <h2 className="title_error">{t(`${prefix}.noRecordTitle`)}</h2>
+        <h2 className="title_error">{t(`noRecordTitle`)}</h2>
         <ul className="list">
-          {["Seed", "Transactions"].map((value) => (
+          {(["Seed", "Transactions"] as const).map((value) => (
             <li key={value} className="list_item simple_text">
-              {t(`${prefix}.noRecordItem${value}`)}
+              {t(`noRecordItem${value}`)}
             </li>
           ))}
         </ul>
@@ -94,7 +89,7 @@ export default function SettingsAnalytics(): ReactElement {
             window.open(`${WEBSITE_ORIGIN}/privacy/`, "_blank")?.focus()
           }
         >
-          {t(`${prefix}.policyBtn`)}
+          {t(`policyBtn`)}
         </SharedButton>
         <SharedButton
           type="tertiaryError"
@@ -104,20 +99,26 @@ export default function SettingsAnalytics(): ReactElement {
           isDisabled={!collectAnalytics}
           onClick={() => setShowDeleteMenu(true)}
         >
-          {t(`${prefix}.deleteBtn`)}
+          {t(`deleteBtn`)}
         </SharedButton>
       </section>
       <AnalyticsSlideUpMenu
         isOpen={showAnalyticsMenu}
         onCancel={() => setShowAnalyticsMenu(false)}
         onSubmit={() => handleCollectAnalyticsSubmit()}
-        prefix={`${prefix}.analyticsOffSlideUpMenu`}
+        title={t("analyticsOffSlideUpMenu.title")}
+        description={t("analyticsOffSlideUpMenu.desc")}
+        submitLabel={t("analyticsOffSlideUpMenu.submitBtn")}
+        snackBarMsg={t("analyticsOffSlideUpMenu.snackbar")}
       />
       <AnalyticsSlideUpMenu
         isOpen={showDeleteMenu}
         onCancel={() => setShowDeleteMenu(false)}
         onSubmit={() => handleDeleteSubmit()}
-        prefix={`${prefix}.deleteSlideUpMenu`}
+        title={t("deleteSlideUpMenu.title")}
+        description={t("deleteSlideUpMenu.desc")}
+        submitLabel={t("deleteSlideUpMenu.submitBtn")}
+        snackBarMsg={t("deleteSlideUpMenu.snackbar")}
       />
       <style jsx>{`
         h2 {
