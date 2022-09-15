@@ -153,6 +153,8 @@
     "viewAll": "View all"
   },
   "shared": {
-    "cancelBtn": "Cancel"
+    "cancelBtn": "Cancel",
+    "showPasswordHint": "Show Password",
+    "hidePasswordHint": "Hide Password"
   }
 }

@@ -1,5 +1,12 @@
-import React, { ChangeEvent, ReactElement, useEffect, useRef } from "react"
+import React, {
+  ChangeEvent,
+  ReactElement,
+  useEffect,
+  useReducer,
+  useRef,
+} from "react"
 import classNames from "classnames"
+import { useTranslation } from "react-i18next"
 import { useParsedValidation, useRunOnFirstRender } from "../../hooks"
 import { PropsWithIcon } from "./types"
 
@@ -50,6 +57,7 @@ export function SharedTypedInput<T = string>(
     iconSmall,
   } = props
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const { t } = useTranslation("translation", { keyPrefix: "shared" })
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus()
@@ -68,39 +76,67 @@ export function SharedTypedInput<T = string>(
     parseAndValidate
   )
 
+  const [showPassword, toggleShowPassword] = useReducer(
+    (visible) => !visible,
+    false
+  )
+
   useRunOnFirstRender(() => {
     if (currentValue && currentValue.trim() !== inputValue) {
       handleInputChange(currentValue)
     }
   })
 
+  const passwordInputType = showPassword ? "text" : "password"
   return (
     <>
-      <input
-        id={id}
-        type={type}
-        placeholder={
-          typeof placeholder === "undefined" || placeholder === ""
-            ? " "
-            : placeholder
-        }
-        value={isEmpty ? "" : inputValue}
-        spellCheck={false}
-        onInput={(event: ChangeEvent<HTMLInputElement>) =>
-          handleInputChange(event.target.value)
-        }
-        onFocus={onFocus}
-        className={classNames({
-          error: !isEmpty && (errorMessage ?? parserError !== undefined),
-          small: isSmall,
-          ...((iconSmall || iconMedium) && { icon: true }),
-          icon_medium: !!iconMedium,
-        })}
-        step={step}
-        ref={inputRef}
-        maxLength={maxLength}
-      />
-      <label htmlFor={id}>{label}</label>
+      <div className="icon_wrapper">
+        <input
+          id={id}
+          type={type === "password" ? passwordInputType : type}
+          placeholder={
+            typeof placeholder === "undefined" || placeholder === ""
+              ? " "
+              : placeholder
+          }
+          value={isEmpty ? "" : inputValue}
+          spellCheck={false}
+          onInput={(event: ChangeEvent<HTMLInputElement>) =>
+            handleInputChange(event.target.value)
+          }
+          onFocus={onFocus}
+          className={classNames({
+            error: !isEmpty && (errorMessage ?? parserError !== undefined),
+            small: isSmall,
+            password: type === "password",
+          })}
+          step={step}
+          ref={inputRef}
+          maxLength={maxLength}
+        />
+        {(iconMedium || iconSmall) &&
+          (type === "password" ? (
+            <button
+              role="switch"
+              type="button"
+              aria-label={
+                !showPassword ? t("showPasswordHint") : t("hidePasswordHint")
+              }
+              aria-checked={showPassword}
+              onClick={toggleShowPassword}
+              className={classNames("icon", {
+                icon_medium: iconMedium,
+                active: showPassword,
+              })}
+            />
+          ) : (
+            <i
+              role="presentation"
+              className={classNames("icon", { icon_medium: iconMedium })}
+            />
+          ))}
+        <label htmlFor={id}>{label}</label>
+      </div>
       {!isEmpty && errorMessage && (
         <div className="validation_message">{errorMessage}</div>
       )}
@@ -119,6 +155,9 @@ export function SharedTypedInput<T = string>(
             border: 2px solid var(--green-60);
             padding: 0px 16px;
             box-sizing: border-box;
+          }
+          input.password {
+            padding-right: 40px;
           }
           input::placeholder {
             color: var(--green-40);
@@ -196,15 +235,33 @@ export function SharedTypedInput<T = string>(
             -webkit-appearance: none;
             margin: 0;
           }
+          .icon_wrapper {
+            position: relative;
+          }
           .icon {
-            background: url("./images/icons/s/${iconSmall}.svg") no-repeat;
-            background-position: right 10px top 50%;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            margin-right: 16px;
+            height: 16px;
+            width: 16px;
+            mask-image: url("./images/icons/s/${iconSmall}.svg");
+            mask-size: cover;
+            background-position: center;
+            background-color: var(--green-60);
             background-size: 16px;
-            padding-right: 38px;
+            transition: all 0.12s ease-out;
+            transform: translateY(50%);
+          }
+          .icon.active {
+            background-color: var(--trophy-gold);
           }
           .icon_medium {
-            background: url("./images/icons/m/${iconMedium}.svg") no-repeat;
-            background-position: right 10px top 50%;
+            mask-image: url("./images/icons/m/${iconMedium}.svg");
+            mask-size: cover;
+            width: 24px;
+            height: 24px;
             background-size: 24px;
           }
         `}
