@@ -58,7 +58,7 @@ if (!window.walletRouter) {
         if (
           shouldReload &&
           (window.location.href.includes("app.uniswap.org") ||
-            window.location.href.includes("galaxy.eco"))
+            window.location.href.includes("galxe.com"))
         ) {
           setTimeout(() => {
             window.location.reload()
@@ -124,7 +124,7 @@ Object.defineProperty(window, "ethereum", {
           // The same is true for `galaxy.eco`
           if (
             (window.location.href.includes("app.uniswap.org") ||
-              window.location.href.includes("galaxy.eco")) &&
+              window.location.href.includes("galxe.com")) &&
             prop === "providers"
           ) {
             return null
