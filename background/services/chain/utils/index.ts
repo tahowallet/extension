@@ -99,10 +99,11 @@ export function ethersTransactionRequestFromEIP1559TransactionRequest(
 export function ethersTransactionRequestFromLegacyTransactionRequest(
   transaction: LegacyEVMTransactionRequest
 ): EthersTransactionRequest {
-  const { to, input, type, nonce, gasPrice, value, chainID, gasLimit } =
+  const { to, input, type, nonce, gasPrice, value, chainID, gasLimit, from } =
     transaction
 
   return {
+    from,
     to,
     data: input ?? undefined,
     type: type ?? undefined,
