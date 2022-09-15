@@ -1,4 +1,4 @@
-import Dexie, { IndexableTypeArray } from "dexie"
+import Dexie, { DexieOptions, IndexableTypeArray } from "dexie"
 
 import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -63,8 +63,8 @@ export class ChainDatabase extends Dexie {
    */
   private balances!: Dexie.Table<AccountBalance, number>
 
-  constructor() {
-    super("tally/chain")
+  constructor(options?: DexieOptions) {
+    super("tally/chain", options)
     this.version(1).stores({
       migrations: "++id,appliedAt",
       accountsToTrack:
@@ -239,15 +239,6 @@ export class ChainDatabase extends Dexie {
     await this.accountsToTrack.where("address").equals(address).delete()
   }
 
-  async setAccountsToTrack(
-    addressesAndNetworks: Set<AddressOnNetwork>
-  ): Promise<void> {
-    await this.transaction("rw", this.accountsToTrack, () => {
-      this.accountsToTrack.clear()
-      this.accountsToTrack.bulkAdd([...addressesAndNetworks])
-    })
-  }
-
   async getOldestAccountAssetTransferLookup(
     addressNetwork: AddressOnNetwork
   ): Promise<bigint | null> {
@@ -322,8 +313,8 @@ export class ChainDatabase extends Dexie {
   }
 }
 
-export async function getOrCreateDB(): Promise<ChainDatabase> {
-  const db = new ChainDatabase()
+export function createDB(options?: DexieOptions): ChainDatabase {
+  const db = new ChainDatabase(options)
 
   return db
 }
