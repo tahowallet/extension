@@ -658,7 +658,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return "subscribed"
     } catch (error) {
       const errorString = String(error)
-      if (errorString.match(/unsupported subscription/i)) {
+      if (errorString.match(/is unsupported on/i)) {
         return "unsupported"
       }
 
