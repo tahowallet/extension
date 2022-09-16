@@ -137,15 +137,18 @@ export class ChainDatabase extends Dexie {
     )
   }
 
-  async getLatestBlock(network: Network): Promise<AnyEVMBlock> {
+  async getLatestBlock(network: Network): Promise<AnyEVMBlock | null> {
     return (
-      await this.blocks
-        .where("[network.name+timestamp]")
-        .aboveOrEqual([network.name, Date.now() - 60 * 60 * 24])
-        .and((block) => block.network.name === network.name)
-        .reverse()
-        .sortBy("timestamp")
-    )[0]
+      (
+        await this.blocks
+          .where("[network.name+timestamp]")
+          // Only query blocks from the last 90 seconds
+          .aboveOrEqual([network.name, Date.now() - 60 * 60 * 24])
+          .and((block) => block.network.name === network.name)
+          .reverse()
+          .sortBy("timestamp")
+      )[0] || null
+    )
   }
 
   async getTransaction(
