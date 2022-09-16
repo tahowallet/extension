@@ -7,10 +7,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
 
-import {
-  HIDE_TOKEN_FEATURES,
-  SUPPORT_NFTS,
-} from "@tallyho/tally-background/features"
+import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -60,10 +57,7 @@ export default function Wallet(): ReactElement {
     return <Redirect to="/onboarding/info-intro" />
   }
 
-  let panelNames = ["Assets", "Activity"]
-  if (SUPPORT_NFTS) {
-    panelNames = ["Assets", "NFTs", "Activity"]
-  }
+  const panelNames = ["Assets", "NFTs", "Activity"]
 
   return (
     <>
@@ -83,7 +77,7 @@ export default function Wallet(): ReactElement {
           />
           <div
             className={classNames("panel standard_width", {
-              no_padding: SUPPORT_NFTS && panelNumber === 1,
+              no_padding: panelNumber === 1,
             })}
           >
             {panelNumber === 0 && (
@@ -94,36 +88,22 @@ export default function Wallet(): ReactElement {
                 }
               />
             )}
-            {SUPPORT_NFTS ? (
+            {panelNumber === 1 && (
               <>
-                {panelNumber === 1 && (
-                  <>
-                    <SharedBanner
-                      icon="notif-announcement"
-                      iconColor="var(--link)"
-                      canBeClosed
-                      id="nft_soon"
-                      customStyles="margin: 8px 0;"
-                    >
-                      Coming soon: NFT price + sending
-                    </SharedBanner>
-                    <NFTsWallet />
-                  </>
-                )}
-                {panelNumber === 2 && (
-                  <WalletActivityList
-                    activities={currentAccountActivities ?? []}
-                  />
-                )}
+                <SharedBanner
+                  icon="notif-announcement"
+                  iconColor="var(--link)"
+                  canBeClosed
+                  id="nft_soon"
+                  customStyles="margin: 8px 0;"
+                >
+                  Coming soon: NFT price + sending
+                </SharedBanner>
+                <NFTsWallet />
               </>
-            ) : (
-              <>
-                {panelNumber === 1 && (
-                  <WalletActivityList
-                    activities={currentAccountActivities ?? []}
-                  />
-                )}
-              </>
+            )}
+            {panelNumber === 2 && (
+              <WalletActivityList activities={currentAccountActivities ?? []} />
             )}
           </div>
         </div>

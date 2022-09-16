@@ -205,6 +205,7 @@ export default function SharedButton(
             line-height: 24px;
             text-align: center;
             padding: 0 17px;
+            transition: background-color 0.2s, color 0.2s;
           }
           .button:hover {
             background-color: var(--gold-80);
@@ -252,7 +253,7 @@ export default function SharedButton(
             margin-left: 10px;
           }
           .secondary {
-            background: unset;
+            background-color: transparent;
             border: 2px solid var(--trophy-gold);
             color: var(--trophy-gold);
             box-sizing: border-box;
@@ -272,6 +273,7 @@ export default function SharedButton(
           }
           .disabled {
             background-color: var(--green-60);
+            border-color: var(--green-60);
             color: var(--green-80);
             pointer-events: none;
           }

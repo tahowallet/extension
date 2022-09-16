@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto"
 import PreferenceService from ".."
 import { ETHEREUM } from "../../../constants"
 

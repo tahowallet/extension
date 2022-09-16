@@ -15,7 +15,7 @@ import { getProvider } from "./utils/contract-utils"
 import { sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
-import { FIAT_CURRENCIES_SYMBOL } from "../constants"
+import { BASE_ASSETS_BY_SYMBOL, FIAT_CURRENCIES_SYMBOL } from "../constants"
 
 type SingleAssetState = AnyAsset & {
   recentPrices: {
@@ -59,7 +59,11 @@ const assetsSlice = createSlice({
                 a.homeNetwork.name === asset.homeNetwork.name &&
                 normalizeEVMAddress(a.contractAddress) ===
                   normalizeEVMAddress(asset.contractAddress)) ||
-              asset.name === a.name
+              // Only match base assets by name - since there may be
+              // many assets that share a name and symbol across L2's
+              (BASE_ASSETS_BY_SYMBOL[a.symbol] &&
+                BASE_ASSETS_BY_SYMBOL[asset.symbol] &&
+                a.name === asset.name)
           )
           // if there aren't duplicates, add the asset
           if (duplicates.length === 0) {
