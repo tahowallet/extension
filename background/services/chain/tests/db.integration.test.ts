@@ -1,5 +1,5 @@
 import { IDBFactory } from "fake-indexeddb"
-import { POLYGON } from "../../../constants"
+import { ETHEREUM, POLYGON } from "../../../constants"
 import {
   createAccountBalance,
   createAddressOnNetwork,
@@ -38,7 +38,7 @@ describe("Chain Database ", () => {
     })
   })
   describe("addBalance", () => {
-    it("Should correctly add balances to indexedDB", async () => {
+    it("should correctly persist balances to indexedDB", async () => {
       expect((await db.table("balances").toArray()).length).toEqual(0)
       const accountBalance = createAccountBalance()
       await db.addBalance(accountBalance)
@@ -46,15 +46,14 @@ describe("Chain Database ", () => {
       expect(accountBalances).toEqual([accountBalance])
     })
   })
-  xdescribe("addBlock", () => {
-    // Use AnyEVMBlock factory
-    // Implementation should be similar to addBalance test
+  describe("addBlock", () => {
+    it.todo("should correctly persist blocks to indexedDB") // Implementation should be similar to addBalance
   })
-  xdescribe("addOrUpdateTransaction", () => {
-    // Use AnyEVMTransaction factory
-    // Test adding and updating separately
+  describe("addOrUpdateTransaction", () => {
+    it.todo("should correctly persist transactions to indexedDB")
+    it.todo("should correctly update transactions in indexedDB")
   })
-  xdescribe("getAccountsToTrack", () => {
+  describe("getAccountsToTrack", () => {
     it("should correctly retrieve persisted accounts", async () => {
       expect(await db.getAccountsToTrack()).toHaveLength(0)
       await db.addAccountToTrack(account1)
@@ -64,10 +63,34 @@ describe("Chain Database ", () => {
       expect(accountsToTrack).toEqual([account1, account2])
     })
   })
-  xdescribe("getAllSavedTransactionHashes", () => {})
-  xdescribe("getBlock", () => {})
-  xdescribe("getChainIdsToTrack", () => {})
-  xdescribe("getLatestAccountBalance", () => {})
+  describe("getAllSavedTransactionHashes", () => {
+    it.todo(
+      "Should return the hashes of all persisted transactions ordered by hash"
+    )
+  })
+  describe("getBlock", () => {
+    it.todo("Should return a block if that block is in indexedDB")
+    it.todo("Should not return a block if that block is not in indexedDB") // check for both hash and network mismatch
+  })
+  describe("getChainIdsToTrack", () => {
+    it("Should return chainIds corresponding to the networks of accounts being tracked", async () => {
+      await db.addAccountToTrack(account1)
+      expect(await db.getChainIDsToTrack()).toEqual(new Set(ETHEREUM.chainID))
+      await db.addAccountToTrack(account2)
+      expect(await db.getChainIDsToTrack()).toEqual(
+        new Set([ETHEREUM.chainID, POLYGON.chainID])
+      )
+    })
+    it("Should disallow duplicate chain ids", async () => {
+      expect((await db.getChainIDsToTrack()) instanceof Set).toEqual(true)
+    })
+  })
+  describe("getLatestAccountBalance", () => {
+    it.todo(
+      "Should retrieve the most recent account balance corresponding to a given address, network, & asset persisted in indexedDB"
+    )
+    it.todo("Should return null if no account balances are found")
+  })
   xdescribe("getLatestBlock", () => {})
   xdescribe("getNetworkPendingTransactions", () => {})
   xdescribe("getNewestAccountAssetTransferLookup", () => {})
