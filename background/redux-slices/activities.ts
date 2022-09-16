@@ -4,6 +4,7 @@ import { truncateAddress } from "../lib/utils"
 
 import { assetAmountToDesiredDecimals } from "../assets"
 import { EnrichedEVMTransaction } from "../services/enrichment"
+import { HexString } from "../types"
 
 export { ActivityItem }
 
@@ -110,8 +111,17 @@ const activitiesSlice = createSlice({
         }
       })
     },
+    deleteAccountActivities: (
+      immerState,
+      { payload: address }: { payload: HexString }
+    ) => {
+      delete immerState[address]
+
+      return immerState
+    },
   },
 })
 
-export const { activityEncountered } = activitiesSlice.actions
+export const { activityEncountered, deleteAccountActivities } =
+  activitiesSlice.actions
 export default activitiesSlice.reducer

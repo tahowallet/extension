@@ -44,7 +44,10 @@ import {
   updateAccountName,
   updateENSAvatar,
 } from "./redux-slices/accounts"
-import { activityEncountered } from "./redux-slices/activities"
+import {
+  activityEncountered,
+  deleteAccountActivities,
+} from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   setEligibility,
@@ -503,6 +506,7 @@ export default class Main extends BaseService<never> {
     signerType?: SignerType
   ): Promise<void> {
     this.store.dispatch(deleteAccount(address))
+    this.store.dispatch(deleteAccountActivities(address))
     this.store.dispatch(deleteNFts(address))
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))
