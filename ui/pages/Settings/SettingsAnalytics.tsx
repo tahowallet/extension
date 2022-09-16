@@ -11,6 +11,12 @@ import SharedButton from "../../components/Shared/SharedButton"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 import SharedToggleButton from "../../components/Shared/SharedToggleButton"
 
+/* List items */
+
+const analyticsRecordedItems = ["Orders", "Accounts", "Gas"] as const
+
+const analyticsNotRecordedItems = ["Seed", "Transactions"] as const
+
 export default function SettingsAnalytics(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "settings.analyticsSetUp",
@@ -64,7 +70,7 @@ export default function SettingsAnalytics(): ReactElement {
       <section>
         <h2 className="title_success">{t(`recordTitle`)}</h2>
         <ul className="list">
-          {(["Orders", "Accounts", "Gas"] as const).map((value) => (
+          {analyticsRecordedItems.map((value) => (
             <li key={value} className="list_item simple_text">
               {t(`recordItem${value}`)}
             </li>
@@ -72,7 +78,7 @@ export default function SettingsAnalytics(): ReactElement {
         </ul>
         <h2 className="title_error">{t(`noRecordTitle`)}</h2>
         <ul className="list">
-          {(["Seed", "Transactions"] as const).map((value) => (
+          {analyticsNotRecordedItems.map((value) => (
             <li key={value} className="list_item simple_text">
               {t(`noRecordItem${value}`)}
             </li>
@@ -106,19 +112,13 @@ export default function SettingsAnalytics(): ReactElement {
         isOpen={showAnalyticsMenu}
         onCancel={() => setShowAnalyticsMenu(false)}
         onSubmit={() => handleCollectAnalyticsSubmit()}
-        title={t("analyticsOffSlideUpMenu.title")}
-        description={t("analyticsOffSlideUpMenu.desc")}
-        submitLabel={t("analyticsOffSlideUpMenu.submitBtn")}
-        snackBarMsg={t("analyticsOffSlideUpMenu.snackbar")}
+        prefix="settings.analyticsSetUp.analyticsOffSlideUpMenu"
       />
       <AnalyticsSlideUpMenu
         isOpen={showDeleteMenu}
         onCancel={() => setShowDeleteMenu(false)}
         onSubmit={() => handleDeleteSubmit()}
-        title={t("deleteSlideUpMenu.title")}
-        description={t("deleteSlideUpMenu.desc")}
-        submitLabel={t("deleteSlideUpMenu.submitBtn")}
-        snackBarMsg={t("deleteSlideUpMenu.snackbar")}
+        prefix="settings.analyticsSetUp.deleteSlideUpMenu"
       />
       <style jsx>{`
         h2 {
