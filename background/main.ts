@@ -886,6 +886,10 @@ export default class Main extends BaseService<never> {
       await this.keyringService.unlock(password)
     })
 
+    keyringSliceEmitter.on("lockKeyrings", async () => {
+      await this.keyringService.lock()
+    })
+
     keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
       await this.signingService.deriveAddress({
         type: "keyring",
