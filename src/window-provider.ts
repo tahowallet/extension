@@ -125,6 +125,7 @@ Object.defineProperty(window, "ethereum", {
           // The same is true for `galaxy.eco`
           if (
             (window.location.href.includes("app.uniswap.org") ||
+              window.location.href.includes("kwenta.io") ||
               window.location.href.includes("galxe.com")) &&
             prop === "providers"
           ) {
