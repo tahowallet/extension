@@ -1,4 +1,5 @@
-import { ETH, OPTIMISM } from "../constants"
+import { AccountBalance } from "../accounts"
+import { ETH, ETHEREUM, OPTIMISM } from "../constants"
 import { AnyEVMTransaction, LegacyEVMTransactionRequest } from "../networks"
 import {
   ChainService,
@@ -97,3 +98,27 @@ export const createAnyEVMTransaction = (
     ...overrides,
   }
 }
+
+export const createAccountBalance = (
+  overrides: Partial<AccountBalance> = {}
+): AccountBalance => ({
+  address: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+  assetAmount: {
+    asset: {
+      metadata: {
+        tokenLists: [],
+      },
+      name: "USD Coin",
+      symbol: "USDC",
+      decimals: 6,
+      homeNetwork: ETHEREUM,
+      contractAddress: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    },
+    amount: BigInt(5000000),
+  },
+  network: ETHEREUM,
+  blockHeight: BigInt(15547463),
+  retrievedAt: 1663346934656,
+  dataSource: "alchemy",
+  ...overrides,
+})

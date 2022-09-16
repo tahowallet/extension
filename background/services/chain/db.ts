@@ -314,7 +314,5 @@ export class ChainDatabase extends Dexie {
 }
 
 export function createDB(options?: DexieOptions): ChainDatabase {
-  const db = new ChainDatabase(options)
-
-  return db
+  return new ChainDatabase(options)
 }
