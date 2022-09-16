@@ -36,7 +36,7 @@ describe("Chain Database ", () => {
       await db.addAccountToTrack(account1)
       expect(await db.getAccountsToTrack()).toHaveLength(1)
       await db.addAccountToTrack(account1)
-      expect(await db.getAccountsToTrack()).toHaveLength(1)
+      expect(await db.getAccountsToTrack()).toEqual([account1])
     })
   })
 })
