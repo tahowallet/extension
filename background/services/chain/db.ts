@@ -142,7 +142,7 @@ export class ChainDatabase extends Dexie {
       (
         await this.blocks
           .where("[network.name+timestamp]")
-          // Only query blocks from the last 90 seconds
+          // Only query blocks from the last 86 seconds
           .aboveOrEqual([network.name, Date.now() - 60 * 60 * 24])
           .and((block) => block.network.name === network.name)
           .reverse()

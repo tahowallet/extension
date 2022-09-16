@@ -1,8 +1,9 @@
 import { IDBFactory } from "fake-indexeddb"
-import { ETHEREUM, POLYGON } from "../../../constants"
+import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"
 import {
   createAccountBalance,
   createAddressOnNetwork,
+  createAnyEVMTransaction,
 } from "../../../tests/factories"
 import { ChainDatabase, createDB } from "../db"
 
@@ -65,15 +66,15 @@ describe("Chain Database ", () => {
   })
   describe("getAllSavedTransactionHashes", () => {
     it.todo(
-      "Should return the hashes of all persisted transactions ordered by hash"
+      "should return the hashes of all persisted transactions ordered by hash"
     )
   })
   describe("getBlock", () => {
-    it.todo("Should return a block if that block is in indexedDB")
-    it.todo("Should not return a block if that block is not in indexedDB") // check for both hash and network mismatch
+    it.todo("should return a block if that block is in indexedDB")
+    it.todo("should not return a block if that block is not in indexedDB") // check for both hash and network mismatch
   })
   describe("getChainIdsToTrack", () => {
-    it("Should return chainIds corresponding to the networks of accounts being tracked", async () => {
+    it("should return chainIds corresponding to the networks of accounts being tracked", async () => {
       await db.addAccountToTrack(account1)
       expect(await db.getChainIDsToTrack()).toEqual(new Set(ETHEREUM.chainID))
       await db.addAccountToTrack(account2)
@@ -81,18 +82,72 @@ describe("Chain Database ", () => {
         new Set([ETHEREUM.chainID, POLYGON.chainID])
       )
     })
-    it("Should disallow duplicate chain ids", async () => {
+    it("should disallow duplicate chain ids", async () => {
       expect((await db.getChainIDsToTrack()) instanceof Set).toEqual(true)
     })
   })
   describe("getLatestAccountBalance", () => {
     it.todo(
-      "Should retrieve the most recent account balance corresponding to a given address, network, & asset persisted in indexedDB"
+      "should retrieve the most recent account balance corresponding to a given address, network, & asset persisted in indexedDB"
     )
-    it.todo("Should return null if no account balances are found")
+    it.todo("should return null if no account balances are found")
   })
-  xdescribe("getLatestBlock", () => {})
-  xdescribe("getNetworkPendingTransactions", () => {})
+  describe("getLatestBlock", () => {
+    it.todo("should retrieve the most recent block for a given network")
+    it.todo(
+      "should return null if the most recent block is older than 86 seconds"
+    )
+  })
+  describe("getNetworkPendingTransactions", () => {
+    it("should return all pending transactions", async () => {
+      const pendingEthTx1 = createAnyEVMTransaction({
+        network: ETHEREUM,
+        blockHash: null,
+      })
+
+      const pendingEthTx2 = createAnyEVMTransaction({
+        network: ETHEREUM,
+        blockHash: null,
+      })
+
+      const completeEthTx = createAnyEVMTransaction({
+        network: ETHEREUM,
+      })
+
+      const pendingOptimismTx1 = createAnyEVMTransaction({
+        network: OPTIMISM,
+        blockHash: null,
+      })
+
+      await db.addOrUpdateTransaction(pendingEthTx1, "alchemy")
+      await db.addOrUpdateTransaction(pendingEthTx2, "alchemy")
+      await db.addOrUpdateTransaction(completeEthTx, "alchemy")
+      await db.addOrUpdateTransaction(pendingOptimismTx1, "alchemy")
+
+      const ethPendingTransactions = await db.getNetworkPendingTransactions(
+        ETHEREUM
+      )
+
+      const opPendingTransactions = await db.getNetworkPendingTransactions(
+        OPTIMISM
+      )
+
+      expect(ethPendingTransactions.length).toEqual(2)
+      expect(
+        ethPendingTransactions.find((tx) => tx.hash === pendingEthTx1.hash)
+      ).toBeTruthy()
+      expect(
+        ethPendingTransactions.find((tx) => tx.hash === pendingEthTx2.hash)
+      ).toBeTruthy()
+      expect(
+        ethPendingTransactions.find((tx) => tx.hash === completeEthTx.hash)
+      ).toBeFalsy()
+      expect(opPendingTransactions.length).toEqual(1)
+      expect(
+        opPendingTransactions.find((tx) => tx.hash === pendingOptimismTx1.hash)
+      ).toBeTruthy()
+    })
+  })
   xdescribe("getNewestAccountAssetTransferLookup", () => {})
   xdescribe("getOldestAccountAssetTransferLookup", () => {})
   xdescribe("getTransaction", () => {})
