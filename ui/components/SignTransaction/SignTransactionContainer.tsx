@@ -18,6 +18,7 @@ import SignTransactionMultipleLedgersConnected from "./SignTransactionMultipleLe
 import SignTransactionNetworkAccountInfoTopBar from "./SignTransactionNetworkAccountInfoTopBar"
 import SignTransactionWrongLedgerConnected from "./SignTransactionWrongLedgerConnected"
 import { useSigningLedgerState } from "./useSigningLedgerState"
+import { useDebounce } from "../../hooks"
 
 export default function SignTransactionContainer({
   signerAccountTotal,
@@ -70,6 +71,10 @@ export default function SignTransactionContainer({
     when rendering new sign content or when changing window focus.
   */
   const delaySignButtonTimeout = useRef<number | undefined>()
+
+  // Debounced unlock buttons because dispatching transaction events is async and can happen in batches
+  const [unlockButtons, setUnlockButtons] = useDebounce(canConfirm, 300)
+  useEffect(() => setUnlockButtons(canConfirm), [canConfirm, setUnlockButtons])
 
   function clearDelaySignButtonTimeout() {
     if (typeof delaySignButtonTimeout.current !== "undefined") {
@@ -134,7 +139,12 @@ export default function SignTransactionContainer({
         <>
           {extraPanel}
           <div className="footer_actions">
-            <SharedButton size="large" type="secondary" onClick={handleReject}>
+            <SharedButton
+              size="large"
+              type="secondary"
+              isDisabled={!unlockButtons}
+              onClick={handleReject}
+            >
               Reject
             </SharedButton>
             {/* TODO: split into different components depending on signing method, to avoid convoluted logic below */}
@@ -161,7 +171,7 @@ export default function SignTransactionContainer({
                 showLoadingOnClick
                 isDisabled={
                   isOnDelayToSign ||
-                  !canConfirm ||
+                  !unlockButtons ||
                   warnings.includes("insufficient-funds")
                 }
               >

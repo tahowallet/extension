@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useRef, useState } from "react"
+import { RefObject, useEffect, useRef, useState, useCallback } from "react"
 
 export const useOnClickOutside = <T extends HTMLElement = HTMLElement>(
   ref: RefObject<T>,
@@ -78,6 +78,34 @@ export function useDelayContentChange<T>(
   }
 
   return delayedContent
+}
+
+function debounce<T>(setStateFn: (V: T) => void, ms: number) {
+  let timeout: NodeJS.Timer
+
+  return (value: T) => {
+    clearTimeout(timeout)
+
+    timeout = setTimeout(() => {
+      setStateFn(value)
+    }, ms)
+  }
+}
+
+export const useDebounce = <T>(initial: T, wait = 300): [T, (v: T) => void] => {
+  const [state, setState] = useState(initial)
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debounceCallback = useCallback(
+    debounce((prop: T) => setState(prop), wait),
+    [debounce, wait]
+  )
+
+  const setDebouncedState = (debounced: T) => {
+    debounceCallback(debounced)
+  }
+
+  return [state, setDebouncedState]
 }
 
 export const setLocalStorageItem = (key: string, value: string): void =>
