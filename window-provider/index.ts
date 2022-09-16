@@ -20,12 +20,14 @@ import { EventEmitter } from "events"
 //       so let's do this only on the websites that need this feature
 const impersonateMetamaskWhitelist = [
   "opensea.io",
+  "app.lyra.finance",
   "matcha.xyz",
   "bridge.umbria.network",
   "galaxy.eco",
   "galxe.com",
   "dydx.exchange",
   "app.euler.finance",
+  "stargate.finance",
 ]
 
 export default class TallyWindowProvider extends EventEmitter {
