@@ -1,20 +1,17 @@
 import { IDBFactory } from "fake-indexeddb"
-import { ETHEREUM, POLYGON } from "../../../constants"
-import { createAccountBalance } from "../../../tests/factories"
+import { POLYGON } from "../../../constants"
+import {
+  createAccountBalance,
+  createAddressOnNetwork,
+} from "../../../tests/factories"
 import { ChainDatabase, createDB } from "../db"
 
 describe("Chain Database ", () => {
   let db: ChainDatabase
 
-  const account1 = {
-    address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-    network: ETHEREUM,
-  }
+  const account1 = createAddressOnNetwork()
 
-  const account2 = {
-    address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-    network: POLYGON,
-  }
+  const account2 = createAddressOnNetwork({ network: POLYGON })
 
   beforeEach(() => {
     // Reset state of indexedDB
@@ -50,10 +47,13 @@ describe("Chain Database ", () => {
     })
   })
   xdescribe("addBlock", () => {
-    // Requires an AnyEVMBlock factory
+    // Use AnyEVMBlock factory
     // Implementation should be similar to addBalance test
   })
-  xdescribe("addOrUpdateTransaction", () => {})
+  xdescribe("addOrUpdateTransaction", () => {
+    // Use AnyEVMTransaction factory
+    // Test adding and updating separately
+  })
   xdescribe("getAccountsToTrack", () => {})
   xdescribe("getAllSavedTransactionHashes", () => {})
   xdescribe("getBlock", () => {})

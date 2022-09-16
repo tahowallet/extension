@@ -1,4 +1,4 @@
-import { AccountBalance } from "../accounts"
+import { AccountBalance, AddressOnNetwork } from "../accounts"
 import { ETH, ETHEREUM, OPTIMISM } from "../constants"
 import { AnyEVMTransaction, LegacyEVMTransactionRequest } from "../networks"
 import {
@@ -118,7 +118,15 @@ export const createAccountBalance = (
   },
   network: ETHEREUM,
   blockHeight: BigInt(15547463),
-  retrievedAt: 1663346934656,
+  retrievedAt: Date.now(),
   dataSource: "alchemy",
+  ...overrides,
+})
+
+export const createAddressOnNetwork = (
+  overrides: Partial<AddressOnNetwork> = {}
+): AddressOnNetwork => ({
+  address: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+  network: ETHEREUM,
   ...overrides,
 })
