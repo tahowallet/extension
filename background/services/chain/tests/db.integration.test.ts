@@ -54,7 +54,16 @@ describe("Chain Database ", () => {
     // Use AnyEVMTransaction factory
     // Test adding and updating separately
   })
-  xdescribe("getAccountsToTrack", () => {})
+  xdescribe("getAccountsToTrack", () => {
+    it("should correctly retrieve persisted accounts", async () => {
+      expect(await db.getAccountsToTrack()).toHaveLength(0)
+      await db.addAccountToTrack(account1)
+      expect(await db.getAccountsToTrack()).toHaveLength(1)
+      await db.addAccountToTrack(account2)
+      const accountsToTrack = await db.getAccountsToTrack()
+      expect(accountsToTrack).toEqual([account1, account2])
+    })
+  })
   xdescribe("getAllSavedTransactionHashes", () => {})
   xdescribe("getBlock", () => {})
   xdescribe("getChainIdsToTrack", () => {})
