@@ -75,7 +75,7 @@ if (!window.walletRouter) {
         )
       },
       setSelectedProvider(provider: WalletProvider) {
-        this.currentProvider = provider
+        return
       },
       addProvider(newProvider: WalletProvider) {
         if (!this.providers.includes(newProvider)) {
