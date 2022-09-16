@@ -50,6 +50,7 @@ export const createSigningService = async (
   )
 }
 
+// Copied from a legacy Optimism transaction generated with our test wallet.
 export const createLegacyTransactionRequest = (
   overrides: Partial<LegacyEVMTransactionRequest> = {}
 ): LegacyEVMTransactionRequest => {
