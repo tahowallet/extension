@@ -2,9 +2,11 @@ import { BackgroundDispatch, RootState } from "@tallyho/tally-background"
 import { noopAction } from "@tallyho/tally-background/redux-slices/utils"
 import { useEffect, useState } from "react"
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux"
+import { AsyncifyFn } from "../components/Shared/types"
 
-export const useBackgroundDispatch = (): BackgroundDispatch =>
-  useDispatch<BackgroundDispatch>()
+export const useBackgroundDispatch = (): AsyncifyFn<BackgroundDispatch> =>
+  useDispatch<BackgroundDispatch>() as AsyncifyFn<BackgroundDispatch>
+
 export const useBackgroundSelector: TypedUseSelectorHook<RootState> =
   useSelector
 
