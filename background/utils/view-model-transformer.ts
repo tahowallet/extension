@@ -24,6 +24,7 @@ export const transactionPropertiesForUI = [
   "annotation.blockTimestamp",
   "annotation.type",
   "annotation.source",
+  "annotation.contractInfo.annotation.nameOnNetwork.name",
   "annotation.recipient.address",
   "annotation.recipient.network",
   "annotation.recipient.annotation",
