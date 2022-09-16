@@ -72,7 +72,9 @@ export default function SetPassword({
 
   return (
     <>
-      <h1 className="serif_header">First, let&apos;s secure your wallet</h1>
+      <h1 className="serif_header center_text">
+        First, let&apos;s secure your wallet
+      </h1>
 
       <div className="warning_wrap">
         <SharedBanner
@@ -150,7 +152,6 @@ export default function SetPassword({
           ${titleStyle}
           .serif_header {
             width: 335px;
-            text-align: center;
             margin-bottom: 7px;
           }
           .input_wrap {
