@@ -1,31 +1,23 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { createPassword } from "@tallyho/tally-background/redux-slices/keyrings"
-import {
-  setNewDefaultWalletValue,
-  selectDefaultWallet,
-} from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
-import {
-  useBackgroundDispatch,
-  useAreKeyringsUnlocked,
-  useBackgroundSelector,
-} from "../../hooks"
+import { useTranslation } from "react-i18next"
+import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
-import titleStyle from "../Onboarding/titleStyle"
 import SharedBackButton from "../Shared/SharedBackButton"
-import SharedBanner from "../Shared/SharedBanner"
-import SharedToggleButton from "../Shared/SharedToggleButton"
 import PasswordStrengthBar from "../Password/PasswordStrengthBar"
 
 export default function KeyringSetPassword(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "keyring.setPassword",
+  })
   const [password, setPassword] = useState("")
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("")
   const [passwordConfirmation, setPasswordConfirmation] = useState("")
   const history = useHistory()
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
-  const defaultWallet = useBackgroundSelector(selectDefaultWallet)
 
   const dispatch = useBackgroundDispatch()
 
@@ -37,11 +29,11 @@ export default function KeyringSetPassword(): ReactElement {
 
   const validatePassword = (): boolean => {
     if (password.length < 8) {
-      setPasswordErrorMessage("Must be at least 8 characters")
+      setPasswordErrorMessage(t("error.characterCount"))
       return false
     }
     if (password !== passwordConfirmation) {
-      setPasswordErrorMessage("Passwords don’t match")
+      setPasswordErrorMessage(t("error.noMatch"))
       return false
     }
     return true
@@ -69,20 +61,12 @@ export default function KeyringSetPassword(): ReactElement {
         <SharedBackButton path="/" />
         <div className="wordmark" />
       </div>
-      <h1 className="serif_header">First, let&apos;s secure your wallet</h1>
-
-      <div className="warning_wrap">
-        <SharedBanner
-          icon="notif-attention"
-          iconColor="var(--attention)"
-          iconAriaLabel="password attention"
-        >
-          <div className="warning_content">
-            You will NOT be able to change this password for now
-          </div>
-        </SharedBanner>
+      <h1 className="serif_header">{t("title")}</h1>
+      <div className="simple_text subtitle">
+        {t("subtitleFirstLine")}
+        <br />
+        {t("subtitleSecondLine")}
       </div>
-
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -92,9 +76,10 @@ export default function KeyringSetPassword(): ReactElement {
         <div className="input_wrap">
           <SharedInput
             type="password"
-            label="Password"
+            label={t("password")}
             onChange={handleInputChange(setPassword)}
             errorMessage={passwordErrorMessage}
+            iconMedium="eye-on"
           />
         </div>
         <div className="strength_bar_wrap">
@@ -103,18 +88,10 @@ export default function KeyringSetPassword(): ReactElement {
         <div className="input_wrap repeat_password_wrap">
           <SharedInput
             type="password"
-            label="Repeat Password"
+            label={t("repeatPassword")}
             onChange={handleInputChange(setPasswordConfirmation)}
             errorMessage={passwordErrorMessage}
-          />
-        </div>
-        <div className="set_as_default_ask">
-          Set Tally Ho as default wallet
-          <SharedToggleButton
-            onChange={(toggleValue) => {
-              dispatch(setNewDefaultWalletValue(toggleValue))
-            }}
-            value={defaultWallet}
+            iconMedium="eye-on"
           />
         </div>
         <SharedButton
@@ -124,12 +101,12 @@ export default function KeyringSetPassword(): ReactElement {
           showLoadingOnClick={!passwordErrorMessage}
           isFormSubmit
         >
-          Begin the hunt
+          {t("submitBtn")}
         </SharedButton>
       </form>
       <div className="restore">
         <SharedButton type="tertiary" size="medium">
-          Restoring account?
+          {t("restorePassword")}
         </SharedButton>
       </div>
       <style jsx>
@@ -148,53 +125,41 @@ export default function KeyringSetPassword(): ReactElement {
             right: 0px;
             margin: 0 auto;
           }
-          ${titleStyle}
           .serif_header {
-            width: 335px;
             text-align: center;
-            margin-top: 40px;
-            margin-bottom: 7px;
+            margin: 40px 30px 7px 30px;
+            line-height: 42px;
+          }
+          .subtitle {
+            text-align: center;
+            margin: 24px 0px 51px 0px;
+            white-space: pre-line;
           }
           section {
             padding-top: 25px;
             background-color: var(--hunter-green);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
           }
           .input_wrap {
-            width: 211px;
+            width: 260px;
           }
           .strength_bar_wrap {
-            width: 211px;
+            width: 260px;
             height: 26px;
             box-sizing: border-box;
             padding-top: 10px;
           }
           .repeat_password_wrap {
-            margin-bottom: 25px;
-            margin-top: 10px;
-          }
-          .set_as_default_ask {
-            display: flex;
-            width: 262px;
-            justify-content: space-between;
-            align-items: center;
-            color: var(--green-20);
-            font-weight: 500;
-            margin-bottom: 40px;
+            margin-bottom: 60px;
+            margin-top: 27px;
           }
           .restore {
             display: none; // TODO Implement account restoration.
             position: fixed;
             bottom: 26px;
-          }
-          .warning_wrap {
-            margin-top: 16px;
-            margin-bottom: 24px;
-          }
-          .warning_content {
-            color: var(--attention);
-            font-weight: 500;
-            font-size: 16px;
-            line-height: 24px;
           }
         `}
       </style>
