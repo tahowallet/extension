@@ -27,6 +27,7 @@ const impersonateMetamaskWhitelist = [
   "galxe.com",
   "dydx.exchange",
   "app.euler.finance",
+  "stargate.finance",
 ]
 
 export default class TallyWindowProvider extends EventEmitter {
