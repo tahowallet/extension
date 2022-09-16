@@ -49,7 +49,10 @@ describe("Chain Database ", () => {
       expect(accountBalances).toEqual([accountBalance])
     })
   })
-  xdescribe("addBlock", () => {})
+  xdescribe("addBlock", () => {
+    // Requires an AnyEVMBlock factory
+    // Implementation should be similar to addBalance test
+  })
   xdescribe("addOrUpdateTransaction", () => {})
   xdescribe("getAccountsToTrack", () => {})
   xdescribe("getAllSavedTransactionHashes", () => {})
