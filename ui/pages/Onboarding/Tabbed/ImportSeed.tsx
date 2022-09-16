@@ -224,7 +224,7 @@ export default function ImportSeed(props: Props): ReactElement {
         .bottom {
           justify-content: space-between;
           flex-direction: column;
-          /* margin-top: ${HIDE_IMPORT_DERIVATION_PATH ? "35px" : "24px"}; */
+          margin-top: ${HIDE_IMPORT_DERIVATION_PATH ? "35px" : "24px"};
           margin-bottom: ${HIDE_IMPORT_DERIVATION_PATH ? "24px" : "16px"};
         }
         .illustration_import {
