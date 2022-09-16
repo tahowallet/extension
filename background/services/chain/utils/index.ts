@@ -50,9 +50,9 @@ export function blockFromEthersBlock(
 }
 
 /**
- * Parse a block as returned by a websocket provider subscription.
+ * Parse a block as returned by a provider query.
  */
-export function blockFromWebsocketBlock(
+export function blockFromProviderBlock(
   network: EVMNetwork,
   incomingGethResult: unknown
 ): AnyEVMBlock {
@@ -69,7 +69,8 @@ export function blockFromWebsocketBlock(
     hash: gethResult.hash,
     blockHeight: BigNumber.from(gethResult.number).toNumber(),
     parentHash: gethResult.parentHash,
-    difficulty: BigInt(gethResult.difficulty),
+    // PoS networks will not have block difficulty.
+    difficulty: gethResult.difficulty ? BigInt(gethResult.difficulty) : 0n,
     timestamp: BigNumber.from(gethResult.timestamp).toNumber(),
     baseFeePerGas: gethResult.baseFeePerGas
       ? BigInt(gethResult.baseFeePerGas)
@@ -98,10 +99,11 @@ export function ethersTransactionRequestFromEIP1559TransactionRequest(
 export function ethersTransactionRequestFromLegacyTransactionRequest(
   transaction: LegacyEVMTransactionRequest
 ): EthersTransactionRequest {
-  const { to, input, type, nonce, gasPrice, value, chainID, gasLimit } =
+  const { to, input, type, nonce, gasPrice, value, chainID, gasLimit, from } =
     transaction
 
   return {
+    from,
     to,
     data: input ?? undefined,
     type: type ?? undefined,
@@ -172,9 +174,9 @@ function legacyEVMTransactionRequestFromEthersTransactionRequest(
         ? parseInt(transaction.nonce.toString(), 16)
         : undefined,
     value:
-      typeof transaction.value !== "undefined"
-        ? BigInt(transaction.value.toString())
-        : undefined,
+      // Some Dapps may send us transactionRequests with value set to `null`.
+      // If transaction.value === 0, we are fine to cast it to undefined on the LegacyEVMTransactionRequest
+      transaction.value ? BigInt(transaction.value.toString()) : undefined,
     chainID: transaction.chainId?.toString(16),
     gasLimit:
       typeof transaction.gasLimit !== "undefined"
