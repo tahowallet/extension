@@ -15,11 +15,11 @@ import {
 } from "../../hooks"
 import titleStyle from "../../components/Onboarding/titleStyle"
 import SharedButton from "../../components/Shared/SharedButton"
-import SharedInput from "../../components/Shared/SharedInput"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import SharedBanner from "../../components/Shared/SharedBanner"
 import SharedToggleButton from "../../components/Shared/SharedToggleButton"
 import PasswordStrengthBar from "../../components/Password/PasswordStrengthBar"
+import PasswordInput from "../../components/Shared/PasswordInput"
 
 export default function KeyringSetPassword({
   nextPage,
@@ -97,8 +97,7 @@ export default function KeyringSetPassword({
         }}
       >
         <div className="input_wrap">
-          <SharedInput
-            type="password"
+          <PasswordInput
             label="Password"
             onChange={handleInputChange(setPassword)}
             errorMessage={passwordErrorMessage}
@@ -108,8 +107,7 @@ export default function KeyringSetPassword({
           {!passwordErrorMessage && <PasswordStrengthBar password={password} />}
         </div>
         <div className="input_wrap repeat_password_wrap">
-          <SharedInput
-            type="password"
+          <PasswordInput
             label="Repeat Password"
             onChange={handleInputChange(setPasswordConfirmation)}
             errorMessage={passwordErrorMessage}
