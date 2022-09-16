@@ -4,14 +4,13 @@ import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
 import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features"
-import SharedButton from "../../components/Shared/SharedButton"
-import SharedBackButton from "../../components/Shared/SharedBackButton"
-import OnboardingDerivationPathSelect from "../../components/Onboarding/OnboardingDerivationPathSelect"
+import SharedButton from "../../../components/Shared/SharedButton"
+import OnboardingDerivationPathSelect from "../../../components/Onboarding/OnboardingDerivationPathSelect"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
   useAreKeyringsUnlocked,
-} from "../../hooks"
+} from "../../../hooks"
 
 function TextArea({
   value,
@@ -96,7 +95,7 @@ type Props = {
   nextPage: string
 }
 
-export default function OnboardingImportSeed(props: Props): ReactElement {
+export default function ImportSeed(props: Props): ReactElement {
   const { nextPage } = props
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
@@ -148,11 +147,8 @@ export default function OnboardingImportSeed(props: Props): ReactElement {
   if (!areKeyringsUnlocked) return <></>
 
   return (
-    <section className="center_horizontal standard_width">
+    <>
       <div className="content">
-        <div className="back_button_wrap">
-          <SharedBackButton />
-        </div>
         <form
           onSubmit={(event) => {
             event.preventDefault()
@@ -206,7 +202,7 @@ export default function OnboardingImportSeed(props: Props): ReactElement {
         </form>
       </div>
       <style jsx>{`
-        section {
+        .content {
           display: flex;
           align-items: center;
           flex-direction: column;
@@ -216,10 +212,6 @@ export default function OnboardingImportSeed(props: Props): ReactElement {
         .content {
           animation: fadeIn ease 200ms;
           width: inherit;
-        }
-        .back_button_wrap {
-          position: fixed;
-          top: 25px;
         }
         h1 {
           margin: unset;
@@ -232,15 +224,14 @@ export default function OnboardingImportSeed(props: Props): ReactElement {
         .bottom {
           justify-content: space-between;
           flex-direction: column;
-          margin-bottom: ${HIDE_IMPORT_DERIVATION_PATH ? "24px" : "16px"};
           margin-top: ${HIDE_IMPORT_DERIVATION_PATH ? "35px" : "24px"};
+          margin-bottom: ${HIDE_IMPORT_DERIVATION_PATH ? "24px" : "16px"};
         }
         .illustration_import {
           background: url("./images/illustration_import_seed@2x.png");
           background-size: cover;
           width: 106.5px;
           height: 103.5px;
-          margin-top: 60px;
           margin-bottom: 15px;
         }
         .serif_header {
@@ -274,6 +265,6 @@ export default function OnboardingImportSeed(props: Props): ReactElement {
           width: 320px;
         }
       `}</style>
-    </section>
+    </>
   )
 }
