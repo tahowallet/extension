@@ -106,7 +106,7 @@ export const createAnyEVMTransaction = (
 export const createAccountBalance = (
   overrides: Partial<AccountBalance> = {}
 ): AccountBalance => ({
-  address: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+  address: createRandom0xHash(),
   assetAmount: {
     asset: {
       metadata: {

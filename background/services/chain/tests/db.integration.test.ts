@@ -44,7 +44,8 @@ describe("Chain Database ", () => {
       const accountBalance = createAccountBalance()
       await db.addBalance(accountBalance)
       const accountBalances = await db.table("balances").toArray()
-      expect(accountBalances).toEqual([accountBalance])
+      expect(accountBalances.length).toEqual(1)
+      expect(accountBalances[0].address).toEqual(accountBalance.address)
     })
   })
   describe("addBlock", () => {
@@ -156,7 +157,7 @@ describe("Chain Database ", () => {
       "should correctly return the most recent asset transfer for a given addressNetwork"
     )
   })
-  xdescribe("getOldestAccountAssetTransferLookup", () => {
+  describe("getOldestAccountAssetTransferLookup", () => {
     it.todo(
       "should correctly return the oldest asset transfer for a given addressNetwork"
     )
