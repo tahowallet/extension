@@ -132,6 +132,7 @@ describe("Chain Database ", () => {
         OPTIMISM
       )
 
+      // Should pick up pending transactions
       expect(ethPendingTransactions.length).toEqual(2)
       expect(
         ethPendingTransactions.find((tx) => tx.hash === pendingEthTx1.hash)
@@ -139,19 +140,45 @@ describe("Chain Database ", () => {
       expect(
         ethPendingTransactions.find((tx) => tx.hash === pendingEthTx2.hash)
       ).toBeTruthy()
+      // Should not pick up complete transactions
       expect(
         ethPendingTransactions.find((tx) => tx.hash === completeEthTx.hash)
       ).toBeFalsy()
+      // Should pick up pending transactions on different networks separately
       expect(opPendingTransactions.length).toEqual(1)
       expect(
         opPendingTransactions.find((tx) => tx.hash === pendingOptimismTx1.hash)
       ).toBeTruthy()
     })
   })
-  xdescribe("getNewestAccountAssetTransferLookup", () => {})
-  xdescribe("getOldestAccountAssetTransferLookup", () => {})
-  xdescribe("getTransaction", () => {})
-  xdescribe("recordAccountAssetTransferLookup", () => {})
-  xdescribe("removeAccountToTrack", () => {})
-  xdescribe("removeAccountToTrack", () => {})
+  describe("getNewestAccountAssetTransferLookup", () => {
+    it.todo(
+      "should correctly return the most recent asset transfer for a given addressNetwork"
+    )
+  })
+  xdescribe("getOldestAccountAssetTransferLookup", () => {
+    it.todo(
+      "should correctly return the oldest asset transfer for a given addressNetwork"
+    )
+  })
+  describe("getTransaction", () => {
+    describe("getBlock", () => {
+      it.todo("should return a block if that block is in indexedDB")
+      it.todo("should not return a block if that block is not in indexedDB") // check for both hash and network mismatch
+    })
+  })
+  describe("recordAccountAssetTransferLookup", () => {
+    it("should correctly persist accountAssetTransferLookups", async () => {
+      const addressNetwork = createAddressOnNetwork()
+      await db.recordAccountAssetTransferLookup(addressNetwork, 0n, 1n)
+
+      const assetTransferLookups = await db
+        .table("accountAssetTransferLookups")
+        .toArray()
+      expect(assetTransferLookups.length).toEqual(1)
+      expect(assetTransferLookups[0].addressNetwork).toEqual(addressNetwork)
+      expect(assetTransferLookups[0].startBlock).toEqual(0n)
+      expect(assetTransferLookups[0].endBlock).toEqual(1n)
+    })
+  })
 })
