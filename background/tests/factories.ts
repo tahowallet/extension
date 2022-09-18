@@ -118,7 +118,7 @@ export const createAccountBalance = (
       homeNetwork: ETHEREUM,
       contractAddress: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
     },
-    amount: BigInt(5000000),
+    amount: 5000000n,
   },
   network: ETHEREUM,
   blockHeight: BigInt(15547463),
