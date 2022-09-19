@@ -7,12 +7,15 @@ import {
   WebSocketProvider,
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
-import { ALCHEMY_KEY, MINUTE, SECOND } from "../../constants"
+import { MINUTE, SECOND } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
 import { AddressOnNetwork } from "../../accounts"
 import { transactionFromEthersTransaction } from "./utils"
-import { transactionFromAlchemyWebsocketTransaction } from "../../lib/alchemy"
+import {
+  ALCHEMY_KEY,
+  transactionFromAlchemyWebsocketTransaction,
+} from "../../lib/alchemy"
 
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 150
@@ -655,7 +658,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return "subscribed"
     } catch (error) {
       const errorString = String(error)
-      if (errorString.match(/unsupported subscription/i)) {
+      if (errorString.match(/is unsupported on/i)) {
         return "unsupported"
       }
 

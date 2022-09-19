@@ -13,6 +13,7 @@ import {
   getAddress as ethersGetAddress,
 } from "ethers/lib/utils"
 import {
+  isEIP1559TransactionRequest,
   sameNetwork,
   SignedTransaction,
   TransactionRequestWithNonce,
@@ -354,8 +355,16 @@ export default class LedgerService extends BaseService<Events> {
         const ethersTx =
           ethersTransactionFromTransactionRequest(transactionRequest)
 
+        let serializableEthersTx = ethersTx
+
+        if (!isEIP1559TransactionRequest(ethersTx)) {
+          // Ethers does not permit "from" field when serializing legacy transaction requests
+          const { from, ...fieldsWithoutFrom } = ethersTx
+          serializableEthersTx = fieldsWithoutFrom
+        }
+
         const serializedTx = serialize(
-          ethersTx as UnsignedTransaction
+          serializableEthersTx as UnsignedTransaction
         ).substring(2) // serialize adds 0x prefix which kills Eth::signTransaction
 
         const accountData = await this.db.getAccountByAddress(
@@ -371,11 +380,14 @@ export default class LedgerService extends BaseService<Events> {
           null
         )
 
-        const signedTransaction = serialize(ethersTx as UnsignedTransaction, {
-          r: `0x${signature.r}`,
-          s: `0x${signature.s}`,
-          v: parseInt(signature.v, 16),
-        })
+        const signedTransaction = serialize(
+          serializableEthersTx as UnsignedTransaction,
+          {
+            r: `0x${signature.r}`,
+            s: `0x${signature.s}`,
+            v: parseInt(signature.v, 16),
+          }
+        )
         const tx = parseRawTransaction(signedTransaction)
 
         if (

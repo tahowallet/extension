@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useRef, useState } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
 import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
@@ -32,6 +32,22 @@ function isSendActivity(activity: ActivityItem, account: string): boolean {
 
 export default function WalletActivityListItem(props: Props): ReactElement {
   const { onClick, activity, asAccount } = props
+  const outcomeRef = useRef<HTMLDivElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const [outcomeWidth, setOutcomeWidth] = useState(0)
+  const [bottomWidth, setBottomWidth] = useState(0)
+
+  useEffect(() => {
+    if (outcomeRef.current) {
+      setOutcomeWidth(outcomeRef.current.offsetWidth)
+    }
+  }, [outcomeRef])
+
+  useEffect(() => {
+    if (bottomRef.current) {
+      setBottomWidth(bottomRef.current.offsetWidth)
+    }
+  }, [bottomRef])
 
   // TODO Replace this with better conditional rendering.
   let renderDetails: {
@@ -139,7 +155,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               dayjs.unix(activity.annotation?.blockTimestamp).format("MMM D")}
           </div>
         </div>
-        <div className="bottom">
+        <div ref={bottomRef} className="bottom">
           <div className="left">
             <div className="token_icon_wrap">
               <SharedAssetIcon
@@ -151,13 +167,16 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               />
             </div>
             <div className="amount">
-              <span className="bold_amount_count">
+              <span
+                className="bold_amount_count"
+                title={renderDetails.assetValue}
+              >
                 {renderDetails.assetValue}
               </span>
-              {renderDetails.assetSymbol}
+              <span className="name">{renderDetails.assetSymbol}</span>
             </div>
           </div>
-          <div className="right">
+          <div ref={outcomeRef} className="right">
             {isSendActivity(activity, asAccount) ? (
               <div className="outcome" title={renderDetails.recipient.address}>
                 To:
@@ -185,7 +204,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             background-color: var(--green-95);
             display: flex;
             flex-direction: column;
-            padding: 11px 19px 8px 8px;
+            padding: 9px 19px 8px 8px;
             box-sizing: border-box;
             margin-bottom: 16px;
             justify-content: space-between;
@@ -246,7 +265,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             justify-content: space-between;
             width: 100%;
             align-items: center;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
           }
           .bottom {
             display: flex;
@@ -263,7 +282,6 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             height: 32px;
             background-color: var(--hunter-green);
             border-radius: 80px;
-            margin-right: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -282,17 +300,27 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             letter-spacing: 0.42px;
             line-height: 16px;
             text-transform: uppercase;
+            display: flex;
+            flex-wrap: wrap;
+            padding: 0px 8px;
+            align-items: center;
           }
           .bold_amount_count {
-            width: 70px;
             height: 24px;
             color: #fefefc;
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
             margin-right: 4px;
+            max-width: calc(${bottomWidth}px - 50px - ${outcomeWidth}px);
+            overflow: hidden;
+            text-overflow: ellipsis;
             // For Infinite text in token approvals.
             text-transform: none;
+          }
+          .name {
+            white-space: nowrap;
+            padding-top: 3px;
           }
           .price {
             width: 58px;
@@ -319,6 +347,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             display: flex;
             justify-content: space-between;
             text-align: right;
+            white-space: nowrap;
           }
           .outcome {
             color: var(--green-5);

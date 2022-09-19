@@ -1,5 +1,5 @@
 import classNames from "classnames"
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 
 export default function NFTsImage({
   width,
@@ -14,15 +14,19 @@ export default function NFTsImage({
   src: string
   fit?: string
 }): ReactElement {
+  const [isLoading, setIsLoading] = useState(true)
   return (
     <>
       <img
         loading="lazy"
+        onLoad={() => setIsLoading(false)}
+        className={classNames({
+          loading: isLoading,
+        })}
         alt={alt}
         src={src}
         width={width}
         height={height}
-        className={classNames("loading")}
         onError={({ currentTarget }) => {
           // eslint-disable-next-line no-param-reassign
           currentTarget.onerror = null // prevents looping

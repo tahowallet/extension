@@ -12,6 +12,7 @@ import {
   findClosestAssetIndex,
   prioritizedAssetSimilarityKeys,
 } from "./asset-similarity"
+import { fetchWithTimeout } from "../utils/fetching"
 
 // We allow `any` here because we don't know what we'll get back from a 3rd party api.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,7 +29,7 @@ const cleanTokenListResponse = (json: any, url: string) => {
 export async function fetchAndValidateTokenList(
   url: string
 ): Promise<TokenListAndReference> {
-  const response = await fetch(url)
+  const response = await fetchWithTimeout(url)
   if (!response.ok) {
     throw new Error(`Error resolving token list at ${url}`)
   }

@@ -3,6 +3,7 @@ import classNames from "classnames"
 import { Redirect } from "react-router-dom"
 import { History } from "history"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
+import { PropsWithIcon } from "./types"
 
 interface Props {
   children: React.ReactNode
@@ -15,6 +16,7 @@ interface Props {
     | "tertiaryWhite"
     | "tertiaryGray"
     | "tertiaryError"
+    | "tertiaryInvertedGold"
     | "deemphasizedWhite"
     | "warning"
     | "unstyled"
@@ -27,79 +29,11 @@ interface Props {
   showLoadingOnClick: boolean
   isLoading: boolean
   isFormSubmit: boolean
-}
-
-interface PropsWithMediumIcon extends Props {
-  iconMedium?:
-    | "connected"
-    | "continue"
-    | "copy"
-    | "dark"
-    | "dashboard"
-    | "developer"
-    | "disconnect"
-    | "earn"
-    | "export"
-    | "eye-off"
-    | "eye-on"
-    | "feedback"
-    | "gift"
-    | "import"
-    | "info"
-    | "light"
-    | "list"
-    | "lock"
-    | "menu"
-    | "new-tab"
-    | "notif-accouncement"
-    | "notif-attention"
-    | "notif-correct"
-    | "notif-wrong"
-    | "search"
-    | "swap"
-    | "switch"
-    | "wallet"
-    | "discord"
-    | "github"
-  iconSmall?: never
-}
-
-interface PropsWithSmallIcon extends Props {
-  iconSmall?:
-    | "add"
-    | "arrow-right"
-    | "back"
-    | "close"
-    | "continue"
-    | "copy"
-    | "discord"
-    | "download"
-    | "dropdown"
-    | "edit"
-    | "garbage"
-    | "lock"
-    | "mark-read"
-    | "new-tab"
-    | "notif-announ"
-    | "notif-attention"
-    | "notif-correct"
-    | "notif-wrong"
-    | "notification"
-    | "receive"
-    | "send"
-    | "settings"
-    | "swap"
-  iconMedium?: never
+  style?: React.CSSProperties
 }
 
 export default function SharedButton(
-  props:
-    | (Props & {
-        iconMedium?: never
-        iconSmall?: never
-      })
-    | PropsWithMediumIcon
-    | PropsWithSmallIcon
+  props: Props & PropsWithIcon
 ): ReactElement {
   const {
     id,
@@ -115,6 +49,7 @@ export default function SharedButton(
     showLoadingOnClick,
     isLoading,
     isFormSubmit,
+    style,
   } = props
 
   const [navigateTo, setNavigateTo] =
@@ -158,11 +93,13 @@ export default function SharedButton(
         { "tertiary white": type === "tertiaryWhite" },
         { "tertiary gray": type === "tertiaryGray" },
         { "tertiary error": type === "tertiaryError" },
+        { "tertiary inverted": type === "tertiaryInvertedGold" },
         { deemphasized_white: type === "deemphasizedWhite" },
         { warning: type === "warning" },
         { twitter: type === "twitter" }
       )}
       onClick={handleClick}
+      style={style}
     >
       {isShowingLoadingSpinner && (
         <div className="spinner_wrap">
@@ -202,6 +139,7 @@ export default function SharedButton(
             line-height: 24px;
             text-align: center;
             padding: 0 17px;
+            transition: background-color 0.2s, color 0.2s;
           }
           .button:hover {
             background-color: var(--gold-80);
@@ -249,7 +187,7 @@ export default function SharedButton(
             margin-left: 10px;
           }
           .secondary {
-            background: unset;
+            background-color: transparent;
             border: 2px solid var(--trophy-gold);
             color: var(--trophy-gold);
             box-sizing: border-box;
@@ -269,6 +207,7 @@ export default function SharedButton(
           }
           .disabled {
             background-color: var(--green-60);
+            border-color: var(--green-60);
             color: var(--green-80);
             pointer-events: none;
           }
@@ -356,6 +295,18 @@ export default function SharedButton(
           }
           .error:hover .icon_button {
             background-color: var(--error-80);
+          }
+          .inverted {
+            color: var(--green-40);
+          }
+          .inverted .icon_button {
+            background-color: var(--green-40);
+          }
+          .inverted:hover {
+            color: var(--trophy-gold);
+          }
+          .inverted:hover .icon_button {
+            background-color: var(--trophy-gold);
           }
           .tertiary.disabled {
             color: var(--green-60);

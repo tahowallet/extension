@@ -77,7 +77,7 @@ import {
   rejectTransactionSignature,
   transactionSigned,
   clearCustomGas,
-  updateL1RollupFee,
+  updateRollupEstimates,
 } from "./redux-slices/transaction-construction"
 import { selectDefaultNetworkFeeSettings } from "./redux-slices/selectors/transactionConstructionSelectors"
 import { allAliases } from "./redux-slices/utils"
@@ -710,7 +710,12 @@ export default class Main extends BaseService<never> {
                 currentTransactionRequest.network,
                 currentTransactionRequest
               )
-            this.store.dispatch(updateL1RollupFee(estimatedRollupFee))
+            const estimatedRollupGwei =
+              await this.chainService.estimateL1RollupGasPrice(network)
+
+            this.store.dispatch(
+              updateRollupEstimates({ estimatedRollupFee, estimatedRollupGwei })
+            )
           }
         }
         this.store.dispatch(
@@ -879,6 +884,10 @@ export default class Main extends BaseService<never> {
 
     keyringSliceEmitter.on("unlockKeyrings", async (password) => {
       await this.keyringService.unlock(password)
+    })
+
+    keyringSliceEmitter.on("lockKeyrings", async () => {
+      await this.keyringService.lock()
     })
 
     keyringSliceEmitter.on("deriveAddress", async (keyringID) => {

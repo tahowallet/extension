@@ -1,11 +1,10 @@
-import Dexie, { IndexableTypeArray } from "dexie"
+import Dexie, { DexieOptions, IndexableTypeArray } from "dexie"
 
 import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
 import { FungibleAsset } from "../../assets"
-import { OPTIMISM, POLYGON } from "../../constants"
-import { SUPPORT_OPTIMISM } from "../../features"
+import { GOERLI, POLYGON } from "../../constants"
 
 type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
@@ -64,8 +63,8 @@ export class ChainDatabase extends Dexie {
    */
   private balances!: Dexie.Table<AccountBalance, number>
 
-  constructor() {
-    super("tally/chain")
+  constructor(options?: DexieOptions) {
+    super("tally/chain", options)
     this.version(1).stores({
       migrations: "++id,appliedAt",
       accountsToTrack:
@@ -100,23 +99,12 @@ export class ChainDatabase extends Dexie {
         })
     })
 
-    if (SUPPORT_OPTIMISM) {
-      this.version(4).upgrade((tx) => {
-        tx.table("accountsToTrack")
-          .toArray()
-          .then((accounts) => {
-            const addresses = new Set<string>()
-
-            accounts.forEach(({ address }) => addresses.add(address))
-            ;[...addresses].forEach((address) => {
-              tx.table("accountsToTrack").put({
-                network: OPTIMISM,
-                address,
-              })
-            })
-          })
-      })
-    }
+    this.version(4).upgrade((tx) => {
+      tx.table("accountsToTrack")
+        .where("network.chainID")
+        .equals(GOERLI.chainID)
+        .delete()
+    })
 
     this.chainTransactions.hook(
       "updating",
@@ -251,15 +239,6 @@ export class ChainDatabase extends Dexie {
     await this.accountsToTrack.where("address").equals(address).delete()
   }
 
-  async setAccountsToTrack(
-    addressesAndNetworks: Set<AddressOnNetwork>
-  ): Promise<void> {
-    await this.transaction("rw", this.accountsToTrack, () => {
-      this.accountsToTrack.clear()
-      this.accountsToTrack.bulkAdd([...addressesAndNetworks])
-    })
-  }
-
   async getOldestAccountAssetTransferLookup(
     addressNetwork: AddressOnNetwork
   ): Promise<bigint | null> {
@@ -334,8 +313,8 @@ export class ChainDatabase extends Dexie {
   }
 }
 
-export async function getOrCreateDB(): Promise<ChainDatabase> {
-  const db = new ChainDatabase()
+export function createDB(options?: DexieOptions): ChainDatabase {
+  const db = new ChainDatabase(options)
 
   return db
 }

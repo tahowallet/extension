@@ -14,7 +14,6 @@ import {
   TransactionRequest,
   TransactionRequestWithNonce,
   SignedTransaction,
-  isEIP1559EnrichedTransactionSignatureRequest,
   toHexChainID,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
@@ -26,7 +25,9 @@ import {
   OPTIMISM,
   EVM_ROLLUP_CHAIN_IDS,
   GOERLI,
+  SECOND,
   NETWORK_BY_CHAIN_ID,
+  EIP_1559_COMPLIANT_CHAIN_IDS,
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
@@ -36,11 +37,11 @@ import {
 } from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { getOrCreateDB, ChainDatabase } from "./db"
+import { createDB, ChainDatabase } from "./db"
 import BaseService from "../base"
 import {
   blockFromEthersBlock,
-  blockFromWebsocketBlock,
+  blockFromProviderBlock,
   enrichTransactionWithReceipt,
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
@@ -51,6 +52,7 @@ import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEIP1559TransactionSignatureRequest,
+  EnrichedEVMTransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
   EnrichedLegacyTransactionRequest,
   EnrichedLegacyTransactionSignatureRequest,
@@ -164,11 +166,7 @@ export default class ChainService extends BaseService<Events> {
     ChainService,
     [Promise<PreferenceService>, Promise<KeyringService>]
   > = async (preferenceService, keyringService) => {
-    return new this(
-      await getOrCreateDB(),
-      await preferenceService,
-      await keyringService
-    )
+    return new this(createDB(), await preferenceService, await keyringService)
   }
 
   supportedNetworks: EVMNetwork[]
@@ -225,6 +223,14 @@ export default class ChainService extends BaseService<Events> {
         },
         handler: () => {
           this.pollBlockPrices()
+        },
+      },
+      latestBlocks: {
+        schedule: {
+          periodInMinutes: 0.25, // every 15 seconds
+        },
+        handler: () => {
+          this.getLatestBlocks()
         },
       },
     })
@@ -335,19 +341,17 @@ export default class ChainService extends BaseService<Events> {
     // The below code should only be called once per extension reload for extensions
     // with active accounts
     const networksToTrack = await this.getNetworksToTrack()
-    if (networksToTrack.length > 0) {
-      networksToTrack.forEach((network) => {
-        this.activateNetworkOrThrow(network.chainID)
-      })
-      return this.activeNetworks
-    }
 
-    // Default to supporting Ethereum so ENS resolution works during onboarding
-    this.activateNetworkOrThrow(ETHEREUM.chainID)
+    await Promise.allSettled([
+      networksToTrack.map(async (network) =>
+        this.activateNetworkOrThrow(network.chainID)
+      ),
+    ])
+
     return this.activeNetworks
   }
 
-  async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
+  private async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
     const provider = this.providerForNetwork(network)
     if (provider) {
       await Promise.allSettled([
@@ -390,9 +394,9 @@ export default class ChainService extends BaseService<Events> {
 
     if (!existingSubscription) {
       this.subscribeToNetworkEvents(networkToActivate)
-      const addressesToTrack = new Set([
-        ...(await this.getAccountsToTrack()).map((account) => account.address),
-      ])
+      const addressesToTrack = new Set(
+        (await this.getAccountsToTrack()).map((account) => account.address)
+      )
       addressesToTrack.forEach((address) => {
         this.addAccountToTrack({
           address,
@@ -479,6 +483,7 @@ export default class ChainService extends BaseService<Events> {
         transactionRequest
       )
     } catch (error) {
+      logger.error("Error estimating gas limit: ", error)
       // Try to identify unpredictable gas errors to bubble that information
       // out.
       if (error instanceof Error) {
@@ -599,15 +604,18 @@ export default class ChainService extends BaseService<Events> {
     transactionRequest: TransactionRequest
     gasEstimationError: string | undefined
   }> {
-    if (isEIP1559EnrichedTransactionSignatureRequest(partialRequest)) {
+    if (EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)) {
+      const {
+        maxFeePerGas = defaults.maxFeePerGas,
+        maxPriorityFeePerGas = defaults.maxPriorityFeePerGas,
+      } = partialRequest as EnrichedEIP1559TransactionSignatureRequest
+
       const populated = await this.populatePartialEIP1559TransactionRequest(
         network,
         {
-          ...partialRequest,
-          maxFeePerGas: partialRequest.maxFeePerGas ?? defaults.maxFeePerGas,
-          maxPriorityFeePerGas:
-            partialRequest.maxPriorityFeePerGas ??
-            defaults.maxPriorityFeePerGas,
+          ...(partialRequest as EnrichedEIP1559TransactionSignatureRequest),
+          maxFeePerGas,
+          maxPriorityFeePerGas,
         }
       )
       return populated
@@ -616,7 +624,7 @@ export default class ChainService extends BaseService<Events> {
     const populated = await this.populatePartialLegacyEVMTransactionRequest(
       network,
       {
-        ...partialRequest,
+        ...(partialRequest as EnrichedLegacyTransactionRequest),
       }
     )
     return populated
@@ -730,6 +738,10 @@ export default class ChainService extends BaseService<Events> {
 
   async getNetworksToTrack(): Promise<EVMNetwork[]> {
     const chainIDs = await this.db.getChainIDsToTrack()
+    if (chainIDs.size === 0) {
+      // Default to tracking Ethereum so ENS resolution works during onboarding
+      return [ETHEREUM]
+    }
     return [...chainIDs].map((chainID) => {
       const network = NETWORK_BY_CHAIN_ID[chainID]
       return network
@@ -920,12 +932,18 @@ export default class ChainService extends BaseService<Events> {
 
   async estimateL1RollupFee(
     network: EVMNetwork,
-    transaction: UnsignedTransaction
+    transaction: UnsignedTransaction | EnrichedEVMTransactionRequest
   ): Promise<bigint> {
     // Optimism-specific implementation
     // https://community.optimism.io/docs/developers/build/transaction-fees/#displaying-fees-to-users
-    const unsignedRLPEncodedTransaction =
-      utils.serializeTransaction(transaction)
+    const unsignedRLPEncodedTransaction = utils.serializeTransaction({
+      to: transaction.to,
+      nonce: transaction.nonce,
+      gasLimit: transaction.gasLimit,
+      gasPrice: "gasPrice" in transaction ? transaction.gasPrice : undefined,
+      data: "data" in transaction ? transaction.data : undefined,
+      value: "value" in transaction ? transaction.value : undefined,
+    })
 
     const provider = await this.providerForNetworkOrThrow(network)
 
@@ -993,6 +1011,7 @@ export default class ChainService extends BaseService<Events> {
         this.saveTransaction(transaction, "local"),
       ])
     } catch (error) {
+      this.releaseEVMTransactionNonce(transaction)
       this.emitter.emit("transactionSendFailure")
       logger.error("Error broadcasting transaction", transaction, error)
 
@@ -1009,6 +1028,34 @@ export default class ChainService extends BaseService<Events> {
       this.subscribedNetworks.map(async ({ network, provider }) => {
         const blockPrices = await getBlockPrices(network, provider)
         this.emitter.emit("blockPrices", { blockPrices, network })
+      })
+    )
+  }
+
+  /*
+   * Fetch, persist, and emit the latest block on a given network.
+   */
+  private async pollLatestBlock(
+    network: EVMNetwork,
+    provider: SerialFallbackProvider
+  ): Promise<void> {
+    const ethersBlock = await provider.getBlock("latest")
+    // add new head to database
+    const block = blockFromProviderBlock(network, ethersBlock)
+    await this.db.addBlock(block)
+    // emit the new block, don't wait to settle
+    this.emitter.emit("block", block)
+    // TODO if it matches a known blockheight and the difficulty is higher,
+    // emit a reorg event
+  }
+
+  /*
+   * Poll for latest blocks on all networks
+   */
+  private async getLatestBlocks(): Promise<void> {
+    await Promise.allSettled(
+      this.subscribedNetworks.map(async ({ network, provider }) => {
+        this.pollLatestBlock(network, provider)
       })
     )
   }
@@ -1090,11 +1137,9 @@ export default class ChainService extends BaseService<Events> {
     incomingOnly = false
   ): Promise<void> {
     if (
-      addressOnNetwork.network.chainID !== ETHEREUM.chainID &&
-      addressOnNetwork.network.chainID !== POLYGON.chainID &&
-      addressOnNetwork.network.chainID !== OPTIMISM.chainID &&
-      addressOnNetwork.network.chainID !== ARBITRUM_ONE.chainID &&
-      addressOnNetwork.network.chainID !== GOERLI.chainID
+      [ETHEREUM, POLYGON, OPTIMISM, ARBITRUM_ONE, GOERLI].every(
+        (network) => network.chainID !== addressOnNetwork.network.chainID
+      )
     ) {
       logger.error(
         `Asset transfer check not supported on network ${JSON.stringify(
@@ -1170,6 +1215,8 @@ export default class ChainService extends BaseService<Events> {
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
     const fetchedByNetwork: { [chainID: string]: number } = {}
+    const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+    let queue = Promise.resolve()
 
     // Drop all transactions that weren't retrieved from the queue.
     this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
@@ -1187,7 +1234,14 @@ export default class ChainService extends BaseService<Events> {
         // If more transactions can be retrieved in this alarm, bump the count,
         // retrieve the transaction, and drop from the updated queue.
         fetchedByNetwork[network.chainID] += 1
-        this.retrieveTransaction(network, hash, firstSeen)
+
+        // Do not request all transactions and their related data at once
+        queue = queue.finally(() =>
+          this.retrieveTransaction(network, hash, firstSeen)
+            // Only wait if call doesn't throw
+            .then(() => wait(2.5 * SECOND))
+        )
+
         return false
       }
     )
@@ -1370,24 +1424,12 @@ export default class ChainService extends BaseService<Events> {
   private async subscribeToNewHeads(network: EVMNetwork): Promise<void> {
     const provider = this.providerForNetworkOrThrow(network)
     // eslint-disable-next-line no-underscore-dangle
-    await provider.subscribe(
-      "newHeadsSubscriptionID",
-      ["newHeads"],
-      async (result: unknown) => {
-        // add new head to database
-        const block = blockFromWebsocketBlock(network, result)
-        await this.db.addBlock(block)
-        // emit the new block, don't wait to settle
-        this.emitter.emit("block", block)
-        // TODO if it matches a known blockheight and the difficulty is higher,
-        // emit a reorg event
-      }
-    )
     this.subscribedNetworks.push({
       network,
       provider,
     })
 
+    this.pollLatestBlock(network, provider)
     this.pollBlockPrices()
   }
 
@@ -1403,43 +1445,52 @@ export default class ChainService extends BaseService<Events> {
     const provider = this.providerForNetworkOrThrow(network)
     await provider.subscribeFullPendingTransactions(
       { address, network },
-      async (transaction) => {
-        // handle incoming transactions for an account
-        try {
-          const normalizedFromAddress = normalizeEVMAddress(transaction.from)
-
-          // If this is an EVM chain, we're tracking the from address's
-          // nonce, and the pending transaction has a higher nonce, update our
-          // view of it. This helps reduce the number of times when a
-          // transaction submitted outside of this wallet causes this wallet to
-          // produce bad transactions with reused nonces.
-          if (
-            typeof network.chainID !== "undefined" &&
-            typeof this.evmChainLastSeenNoncesByNormalizedAddress[
-              network.chainID
-            ]?.[normalizedFromAddress] !== "undefined" &&
-            this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID]?.[
-              normalizedFromAddress
-            ] <= transaction.nonce
-          ) {
-            this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
-              normalizedFromAddress
-            ] = transaction.nonce
-          }
-          await this.saveTransaction(transaction, "alchemy")
-
-          // Wait for confirmation/receipt information.
-          this.subscribeToTransactionConfirmation(network, transaction)
-        } catch (error) {
-          logger.error(`Error saving tx: ${transaction}`, error)
-        }
-      }
+      this.handlePendingTransaction.bind(this)
     )
 
     this.subscribedAccounts.push({
       account: address,
       provider,
     })
+  }
+
+  /**
+   * Persists pending transactions and subscribes to their confirmation
+   *
+   * @param transaction The pending transaction
+   */
+  private async handlePendingTransaction(
+    transaction: AnyEVMTransaction
+  ): Promise<void> {
+    try {
+      const { network } = transaction
+      const normalizedFromAddress = normalizeEVMAddress(transaction.from)
+
+      // If this is an EVM chain, we're tracking the from address's
+      // nonce, and the pending transaction has a higher nonce, update our
+      // view of it. This helps reduce the number of times when a
+      // transaction submitted outside of this wallet causes this wallet to
+      // produce bad transactions with reused nonces.
+      if (
+        typeof network.chainID !== "undefined" &&
+        typeof this.evmChainLastSeenNoncesByNormalizedAddress[
+          network.chainID
+        ]?.[normalizedFromAddress] !== "undefined" &&
+        this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID]?.[
+          normalizedFromAddress
+        ] <= transaction.nonce
+      ) {
+        this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
+          normalizedFromAddress
+        ] = transaction.nonce
+      }
+      await this.saveTransaction(transaction, "alchemy")
+
+      // Wait for confirmation/receipt information.
+      this.subscribeToTransactionConfirmation(network, transaction)
+    } catch (error) {
+      logger.error(`Error saving tx: ${transaction}`, error)
+    }
   }
 
   /**
