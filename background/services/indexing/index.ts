@@ -683,7 +683,14 @@ export default class IndexingService extends BaseService<Events> {
         // Cache assets across all supported networks even if a network
         // may be inactive.
         this.chainService.supportedNetworks.forEach(async (network) => {
-          this.emitter.emit("assets", await this.getCachedAssets(network))
+          const assets = await this.getCachedAssets(network)
+          console.log(
+            "--- debug",
+            network.name,
+            "getCachedAssets.length",
+            assets.length
+          )
+          this.emitter.emit("assets", assets)
         })
       })
     )
