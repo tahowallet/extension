@@ -1,10 +1,8 @@
 import React, { ReactElement, useState } from "react"
-import { Redirect } from "react-router-dom"
-import { getAddressCount } from "@tallyho/tally-background/redux-slices/selectors"
+import { useRouteMatch, Redirect } from "react-router-dom"
 import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
-import { useBackgroundSelector } from "../../hooks"
-import SharedButton from "../../components/Shared/SharedButton"
-import SharedProgressIndicator from "../../components/Shared/SharedProgressIndicator"
+import SharedButton from "../../../components/Shared/SharedButton"
+import SharedProgressIndicator from "../../../components/Shared/SharedProgressIndicator"
 
 const steps = HIDE_TOKEN_FEATURES
   ? [
@@ -78,21 +76,14 @@ const steps = HIDE_TOKEN_FEATURES
       },
     ]
 
-export default function TabbedOnboardingInfoIntro(): ReactElement {
+export default function Intro(): ReactElement {
   const [activeStep, setActiveStep] = useState(1)
   const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
 
-  const hasAccounts = useBackgroundSelector(
-    (state) => getAddressCount(state) > 0
-  )
+  const { path } = useRouteMatch()
 
   if (redirectToAddWallet) {
-    return <Redirect push to="/onboarding/add-wallet" />
-  }
-
-  // If there's an account, return to /wallet
-  if (hasAccounts) {
-    return <Redirect to="/wallet" />
+    return <Redirect push to={`${path}/add-wallet`} />
   }
 
   return (

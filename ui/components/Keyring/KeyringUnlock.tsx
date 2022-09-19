@@ -2,6 +2,8 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { useHistory } from "react-router-dom"
 import { unlockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
 import { rejectTransactionSignature } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import { useTranslation } from "react-i18next"
+import { SUPPORT_FORGOT_PASSWORD } from "@tallyho/tally-background/features"
 import {
   useBackgroundDispatch,
   useAreKeyringsUnlocked,
@@ -9,10 +11,10 @@ import {
 } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
-import titleStyle from "../Onboarding/titleStyle"
-import SharedBackButton from "../Shared/SharedBackButton"
 
 export default function KeyringUnlock(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "keyring.unlock" })
+  const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
   const [password, setPassword] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
   const isDappPopup = useIsDappPopup()
@@ -37,7 +39,7 @@ export default function KeyringUnlock(): ReactElement {
     event.preventDefault()
     await dispatch(unlockKeyrings(password))
     // If keyring was unable to unlock, display error message
-    setErrorMessage("Incorrect password")
+    setErrorMessage(t("error.incorrect"))
   }
 
   const handleReject = async () => {
@@ -49,78 +51,94 @@ export default function KeyringUnlock(): ReactElement {
     history.goBack()
   }
 
+  const handleCancel = () => {
+    if (isDappPopup) {
+      handleReject()
+    } else {
+      handleBack()
+    }
+  }
+
   return (
     <section className="standard_width">
-      {isDappPopup && (
-        <div className="cancel_tx_button_wrap">
-          <SharedButton
-            type="tertiaryWhite"
-            size="small"
-            onClick={handleReject}
-          >
-            Cancel tx
-          </SharedButton>
-        </div>
-      )}
-      <div className="back_button_wrap">
-        <SharedBackButton onClick={handleBack} />
-      </div>
-      <div className="illustration_unlock" />
-      <h1 className="serif_header">Unlock Your Wallet</h1>
-      <div className="subtitle">
-        You locked your signing permissions or the session has timed out. In
-        order to continue, please unlock your wallet.
-      </div>
-      <form onSubmit={dispatchUnlockWallet}>
-        <div className="input_wrap">
-          <SharedInput
-            type="password"
-            label="Password"
-            onChange={(value) => {
-              setPassword(value)
-              // Clear error message on input change
-              setErrorMessage("")
-            }}
-            errorMessage={errorMessage}
-          />
-        </div>
-        <SharedButton type="primary" size="large" isFormSubmit>
-          Unlock
+      <div className="cancel_btn_wrap">
+        <SharedButton type="tertiaryGray" size="small" onClick={handleCancel}>
+          {tShared("cancelBtn")}
         </SharedButton>
+      </div>
+      <div className="img_wrap">
+        <div className="illustration_unlock" />
+      </div>
+      <h1 className="serif_header">{t("title")}</h1>
+      <form onSubmit={dispatchUnlockWallet}>
+        <div className="signing_wrap">
+          <div className="input_wrap">
+            <SharedInput
+              type="password"
+              label={t("signingPassword")}
+              onChange={(value) => {
+                setPassword(value)
+                // Clear error message on input change
+                setErrorMessage("")
+              }}
+              errorMessage={errorMessage}
+              iconMedium="eye-on"
+              focusedLabelBackgroundColor="var(--green-95)"
+            />
+          </div>
+          <div>
+            <SharedButton type="primary" size="large" isFormSubmit>
+              {t("submitBtn")}
+            </SharedButton>
+          </div>
+        </div>
+        {SUPPORT_FORGOT_PASSWORD && (
+          <SharedButton type="tertiaryGray" size="small" onClick={() => {}}>
+            {t("forgotPassword")}
+          </SharedButton>
+        )}
       </form>
       <style jsx>
         {`
-          ${titleStyle}
           .illustration_unlock {
             background: url("./images/illustration_unlock@2x.png");
-            background-size: cover;
-            width: 227.86px;
-            height: 214.21px;
-            margin-bottom: 17px;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: contain;
+            width: 182.83px;
+            height: 172.18px;
           }
           section {
-            padding-top: 24px;
-            background-color: var(--hunter-green);
+            background-color: var(--green-95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            gap: 25px;
           }
-          .input_wrap {
-            width: 211px;
-            margin-bottom: 30px;
+          form {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
           }
-          .subtitle {
-            width: 321px;
-            text-align: center;
+          .signing_wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
           }
-          .cancel_tx_button_wrap {
+          .cancel_btn_wrap {
             width: 100%;
             display: flex;
             justify-content: flex-end;
-            opacity: 0.7;
-            position: fixed;
             right: 0px;
             top: 0px;
+            margin-top: 12px;
           }
-          .back_button_wrap {
-            margin-right: auto;
+          .input_wrap {
+            width: 260px;
           }
         `}
       </style>
