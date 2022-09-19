@@ -1,9 +1,6 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import {
-  ESTIMATED_FEE_MULTIPLIERS,
-  ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL,
-} from "@tallyho/tally-background/constants/network-fees"
+import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/network-fees"
 import {
   EstimatedFeesPerGas,
   NetworkFeeSettings,
@@ -30,6 +27,7 @@ import {
 } from "./NetworkSettingsSelectOptionButtons"
 import SharedButton from "../Shared/SharedButton"
 import SharedBanner from "../Shared/SharedBanner"
+import { ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL } from "../../utils/constants"
 
 interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined

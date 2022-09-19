@@ -83,6 +83,12 @@
       "70": "~5 min",
       "95": "~1 min",
       "99": "~30 sec"
+    },
+    "types": {
+      "regular": "Regular",
+      "express": "Express",
+      "instant": "Instant",
+      "custom": "Custom"
     }
   },
   "overview": {
