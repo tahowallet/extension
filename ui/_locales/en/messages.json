@@ -65,7 +65,8 @@
     "saveSettings": "Save settings",
     "errors": {
       "limitTooLow": "Gas Limit must be higher than 21000",
-      "invalidLimit": "Gas Limit must be a number"
+      "invalidLimit": "Gas Limit must be a number",
+      "lowGas": "Low"
     },
     "optimism": {
       "title": "Network fees",
@@ -78,6 +79,8 @@
       "explainerThree": "Only in rare cases will the actual fee you pay change by more than 25% from the estimate.",
       "learnMore": "Learn More"
     },
+    "miner": "Miner:",
+    "maxBase": "Max Base:",
     "speeds": {
       "0": "-",
       "70": "~5 min",
