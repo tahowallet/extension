@@ -1,5 +1,6 @@
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useOnClickOutside } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import AccountItemEditName from "./AccountItemEditName"
@@ -13,6 +14,9 @@ type AccountItemOptionsMenuProps = {
 export default function AccountItemOptionsMenu({
   accountTotal,
 }: AccountItemOptionsMenuProps): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "accounts.accountItem",
+  })
   const { address, network } = accountTotal
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
@@ -104,7 +108,7 @@ export default function AccountItemOptionsMenu({
             >
               <AccountitemOptionLabel
                 icon="icons/s/edit.svg"
-                label="Edit name"
+                label={t("editName")}
                 hoverable
               />
             </button>
@@ -132,7 +136,7 @@ export default function AccountItemOptionsMenu({
             >
               <AccountitemOptionLabel
                 icon="garbage@2x.png"
-                label="Remove address"
+                label={t("removeAddress")}
                 hoverable
                 color="var(--error)"
                 hoverColor="var(--error-80)"

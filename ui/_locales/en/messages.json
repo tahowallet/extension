@@ -1,6 +1,51 @@
 {
-  "popupEdition": "Community Edition",
+  "accounts": {
+    "accountItem": {
+      "noNameError": "Name is required",
+      "editName": "Edit name",
+      "saveName": "Save name",
+      "typeNewName": "Type new name",
+      "cancel": "Cancel",
+      "regularWarning": "Removing this address doesn&apos;t delete your recovery phrase or any private keys. Instead it just hides it from the extension and you won&apos;t be able to use it until you add it back.",
+      "loudWarningTitle": "Removing this address will remove its associated account from the UI.",
+      "loudWarningBody": "Are you sure you want to proceed?",
+      "removeAddress": "Remove address",
+      "removeConfirm": "Yes, I want to remove it"
+    }
+  },
+  "assetInput": {
+    "search": "Search by name or address",
+    "selectToken": "Select token",
+    "error": {
+      "invalidAmount": "Invalid amount",
+      "insufficientBalance": "Insufficient balance"
+    }
+  },
   "comingSoon": "Coming soon",
+  "keyring": {
+    "setPassword": {
+      "title": "Set unlock signing password",
+      "subtitleFirstLine": "You will be asked to enter this",
+      "subtitleSecondLine": "password to unlock signing transactions.",
+      "password": "Password",
+      "repeatPassword": "Repeat password",
+      "restorePassword": "Restoring account?",
+      "submitBtn": "Begin the hunt",
+      "error": {
+        "characterCount": "Must be at least 8 characters",
+        "noMatch": "Passwords don’t match"
+      }
+    },
+    "unlock": {
+      "title": "Unlock signing",
+      "submitBtn": "Unlock",
+      "signingPassword": "Signing password",
+      "forgotPassword": "Forgot password?",
+      "error": {
+        "incorrect": "Incorrect password"
+      }
+    }
+  },
   "overview": {
     "totalBalanceEverywhere": "Total balance on all accounts",
     "accounts": "Accounts",
@@ -12,6 +57,14 @@
       "balance": "Balance"
     }
   },
+  "passwordStrength": {
+    "weak": "Weak",
+    "average": "Average",
+    "strong": "Strong",
+    "strength": "Strength",
+    "hintDesc": "For a strong password, consider a mix of lower and uppercase characters, symbols, and numbers. Passwords should be over 8 characters."
+  },
+  "popupEdition": "Community Edition",
   "protocol": {
     "mainnet": "Mainnet",
     "testnet": "Test Network",
@@ -21,44 +74,6 @@
   },
   "readOnly": "Read-only",
   "readOnlyNotice": "Read-only mode",
-  "wallet": {
-    "totalAccountBalance": "Total account balance",
-    "send": "Send",
-    "receive": "Receive",
-    "secureSeed": "First, secure your recovery seed",
-    "sendAsset": "Send Asset",
-    "assetAmount": "Asset / Amount",
-    "sendTo": "Send To:",
-    "sendButton": "Continue",
-    "receiveAddress": "Receive address",
-    "sendToContractWarning": "This is a contract address, sending assets will result in loss of funds."
-  },
-  "swap": {
-    "title": "Swap Assets",
-    "from": "Swap from:",
-    "to": "Swap to:",
-    "error": {
-      "noSellAsset": "Attempting to approve transfer without a sell asset.",
-      "noApprovalTarget": "Attempting to approve transfer without an approval target.",
-      "nonContractAsset": "Attempting to approve transfer of a non-contract asset."
-    },
-    "getFinalQuote": "Get final quote",
-    "transactionSettings": {
-      "title": "Transaction settings",
-      "slippageTolerance": "Slippage tolerance",
-      "settings": "Transaction settings",
-      "estimatedFee": "Estimated network fee",
-      "daoFee": "DAO fee"
-    }
-  },
-  "assetInput": {
-    "search": "Search by name or address",
-    "selectToken": "Select token",
-    "error": {
-      "invalidAmount": "Invalid amount",
-      "insufficientBalance": "Insufficient balance"
-    }
-  },
   "settings": {
     "mainMenu": "Settings",
     "signing": "Signing",
@@ -117,44 +132,43 @@
       "emptyList": "Not connected to any websites"
     }
   },
-  "passwordStrength": {
-    "weak": "Weak",
-    "average": "Average",
-    "strong": "Strong",
-    "strength": "Strength",
-    "hintDesc": "For a strong password, consider a mix of lower and uppercase characters, symbols, and numbers. Passwords should be over 8 characters."
+  "shared": {
+    "cancelBtn": "Cancel",
+    "showPasswordHint": "Show Password",
+    "hidePasswordHint": "Hide Password"
   },
-  "keyring": {
-    "setPassword": {
-      "title": "Set unlock signing password",
-      "subtitleFirstLine": "You will be asked to enter this",
-      "subtitleSecondLine": "password to unlock signing transactions.",
-      "password": "Password",
-      "repeatPassword": "Repeat password",
-      "restorePassword": "Restoring account?",
-      "submitBtn": "Begin the hunt",
-      "error": {
-        "characterCount": "Must be at least 8 characters",
-        "noMatch": "Passwords don’t match"
-      }
+  "swap": {
+    "title": "Swap Assets",
+    "from": "Swap from:",
+    "to": "Swap to:",
+    "error": {
+      "noSellAsset": "Attempting to approve transfer without a sell asset.",
+      "noApprovalTarget": "Attempting to approve transfer without an approval target.",
+      "nonContractAsset": "Attempting to approve transfer of a non-contract asset."
     },
-    "unlock": {
-      "title": "Unlock signing",
-      "submitBtn": "Unlock",
-      "signingPassword": "Signing password",
-      "forgotPassword": "Forgot password?",
-      "error": {
-        "incorrect": "Incorrect password"
-      }
+    "getFinalQuote": "Get final quote",
+    "transactionSettings": {
+      "title": "Transaction settings",
+      "slippageTolerance": "Slippage tolerance",
+      "settings": "Transaction settings",
+      "estimatedFee": "Estimated network fee",
+      "daoFee": "DAO fee"
     }
   },
   "toggle": {
     "collapse": "Collapse",
     "viewAll": "View all"
   },
-  "shared": {
-    "cancelBtn": "Cancel",
-    "showPasswordHint": "Show Password",
-    "hidePasswordHint": "Hide Password"
+  "wallet": {
+    "totalAccountBalance": "Total account balance",
+    "send": "Send",
+    "receive": "Receive",
+    "secureSeed": "First, secure your recovery seed",
+    "sendAsset": "Send Asset",
+    "assetAmount": "Asset / Amount",
+    "sendTo": "Send To:",
+    "sendButton": "Continue",
+    "receiveAddress": "Receive address",
+    "sendToContractWarning": "This is a contract address, sending assets will result in loss of funds."
   }
 }

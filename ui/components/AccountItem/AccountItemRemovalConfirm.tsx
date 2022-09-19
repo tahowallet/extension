@@ -9,6 +9,7 @@ import { useDispatch } from "react-redux"
 import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import { useAreKeyringsUnlocked, useBackgroundSelector } from "../../hooks"
@@ -19,22 +20,20 @@ interface AccountItemRemovalConfirmProps {
   close: () => void
 }
 
-const RegularWarning = (
-  <span>
-    Removing this address doesn&apos;t delete your recovery phrase or any
-    private keys. Instead it just hides it from the extension and you won&apos;t
-    be able to use it until you add it back.
-  </span>
-)
+const RegularWarning = () => {
+  const { t } = useTranslation()
+  return <span>{t("accounts.accountItem.regularWarning")}</span>
+}
 
-const LoudWarning = (
-  <span>
-    <h3>
-      Removing this address will remove its associated account from the UI.
-    </h3>{" "}
-    Are you sure you want to proceed?
-  </span>
-)
+const LoudWarning = () => {
+  const { t } = useTranslation()
+  return (
+    <span>
+      <h3>{t("accounts.accountItem.loudWarningTitle")}</h3>
+      {t("accounts.accountItem.loudWarningBody")}
+    </span>
+  )
+}
 
 export default function AccountItemRemovalConfirm({
   account,
@@ -42,6 +41,9 @@ export default function AccountItemRemovalConfirm({
 }: AccountItemRemovalConfirmProps): ReactElement {
   const { address, network } = account
 
+  const { t } = useTranslation("translation", {
+    keyPrefix: "accounts.accountItem",
+  })
   const dispatch = useDispatch()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
   const history = useHistory()
@@ -58,7 +60,7 @@ export default function AccountItemRemovalConfirm({
     <div className="remove_address_option">
       <div className="header">
         <AccountItemActionHeader
-          label="Remove address"
+          label={t("removeAddress")}
           icon="garbage@2x.png"
           color="var(--error)"
         />
@@ -74,7 +76,7 @@ export default function AccountItemRemovalConfirm({
         </li>
       </ul>
       <div className="remove_address_details">
-        {showLoudWarning ? LoudWarning : RegularWarning}
+        {showLoudWarning ? <LoudWarning /> : <RegularWarning />}
       </div>
       <div className="button_container">
         <SharedButton
@@ -85,7 +87,7 @@ export default function AccountItemRemovalConfirm({
             close()
           }}
         >
-          Cancel
+          {t("cancel")}
         </SharedButton>
         <SharedButton
           type="primary"
@@ -119,7 +121,7 @@ export default function AccountItemRemovalConfirm({
             }
           }}
         >
-          Yes, I want to remove it
+          {t("removeConfirm")}
         </SharedButton>
       </div>
       <style jsx>{`
