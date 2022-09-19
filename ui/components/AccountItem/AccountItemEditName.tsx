@@ -102,7 +102,7 @@ export default function AccountItemEditName({
             close()
           }}
         >
-          {t("cancelSaveName")}
+          {t("cancel")}
         </SharedButton>
         <SharedButton type="primaryGreen" size="medium" onClick={onSubmit}>
           {t("saveName")}
