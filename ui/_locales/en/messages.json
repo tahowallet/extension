@@ -94,6 +94,10 @@
       "custom": "Custom"
     }
   },
+  "nfts": {
+    "empty":"Looks like you don&apos;t have any NFTs yet? Get some and view them here!",
+    "noTitle": "No title"
+  },
   "overview": {
     "totalBalanceEverywhere": "Total balance on all accounts",
     "accounts": "Accounts",
