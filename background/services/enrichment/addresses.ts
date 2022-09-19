@@ -19,7 +19,9 @@ export async function resolveAddressAnnotation(
     provider.getTransactionCount(address),
     provider.getCode(address),
     chainService.getLatestBaseAccountBalance(addressOnNetwork),
-    nameService.lookUpName(addressOnNetwork),
+    nameService
+      .lookUpName(addressOnNetwork)
+      .then((record) => record?.resolved?.nameOnNetwork),
   ])
   return {
     balance,
