@@ -55,6 +55,19 @@
       }
     }
   },
+  "networkFees": {
+    "unknownFee": "Unknown",
+    "toBeDetermined": "TBD",
+    "settingsTitle": "Network fees (Gwei)",
+    "gasLimit": "Gas limit",
+    "insufficientBaseAsset": "Not enough {{symbol}} for network fees",
+    "totalMax": "Total Max",
+    "saveSettings": "Save settings",
+    "errors": {
+      "limitTooLow": "Gas Limit must be higher than 21000",
+      "invalidLimit": "Gas Limit must be a number"
+    }
+  },
   "overview": {
     "totalBalanceEverywhere": "Total balance on all accounts",
     "accounts": "Accounts",
@@ -143,6 +156,7 @@
   },
   "shared": {
     "cancelBtn": "Cancel",
+    "gwei": "Gwei",
     "showPasswordHint": "Show Password",
     "hidePasswordHint": "Hide Password"
   },
