@@ -67,3 +67,8 @@ export type PropsWithIcon =
   | { iconMedium?: never; iconSmall?: never }
   | PropsWithMediumIcon
   | PropsWithSmallIcon
+
+/**
+ * Simplifies type hints
+ */
+export type Simplify<T> = { [k in keyof T]: T[k] }
