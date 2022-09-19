@@ -6,7 +6,9 @@ import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 
 export default function AnalyticsSlideUpMenu(props: {
-  prefix: string
+  prefix: `settings.analyticsSetUp.${
+    | "analyticsOffSlideUpMenu"
+    | "deleteSlideUpMenu"}`
   isOpen: boolean
   onCancel: () => void
   onSubmit: () => void
