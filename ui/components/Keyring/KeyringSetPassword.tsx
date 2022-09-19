@@ -4,9 +4,9 @@ import { useHistory } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
-import SharedInput from "../Shared/SharedInput"
 import SharedBackButton from "../Shared/SharedBackButton"
 import PasswordStrengthBar from "../Password/PasswordStrengthBar"
+import PasswordInput from "../Shared/PasswordInput"
 
 export default function KeyringSetPassword(): ReactElement {
   const { t } = useTranslation("translation", {
@@ -74,24 +74,20 @@ export default function KeyringSetPassword(): ReactElement {
         }}
       >
         <div className="input_wrap">
-          <SharedInput
-            type="password"
+          <PasswordInput
             label={t("password")}
             onChange={handleInputChange(setPassword)}
             errorMessage={passwordErrorMessage}
-            iconMedium="eye-on"
           />
         </div>
         <div className="strength_bar_wrap">
           {!passwordErrorMessage && <PasswordStrengthBar password={password} />}
         </div>
         <div className="input_wrap repeat_password_wrap">
-          <SharedInput
-            type="password"
+          <PasswordInput
             label={t("repeatPassword")}
             onChange={handleInputChange(setPasswordConfirmation)}
             errorMessage={passwordErrorMessage}
-            iconMedium="eye-on"
           />
         </div>
         <SharedButton

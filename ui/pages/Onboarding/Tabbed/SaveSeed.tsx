@@ -1,15 +1,13 @@
 import React, { ReactElement, useState } from "react"
-import SharedButton from "../../components/Shared/SharedButton"
-import OnboardingStepsIndicator from "../../components/Onboarding/OnboardingStepsIndicator"
-import { useBackgroundSelector } from "../../hooks"
-import SharedBackButton from "../../components/Shared/SharedBackButton"
+import SharedButton from "../../../components/Shared/SharedButton"
+import OnboardingStepsIndicator from "../../../components/Onboarding/OnboardingStepsIndicator"
+import { useBackgroundSelector } from "../../../hooks"
 import {
   OnboardingBox,
   OnboardingHeader,
   OnboardingSubheader,
-  OnboardingContainer,
   OnboardingMessageHeader,
-} from "./styles"
+} from "../styles"
 
 function WarningMessage({ onAccept }: { onAccept: () => void }): ReactElement {
   return (
@@ -162,15 +160,11 @@ function SeedContainer(): ReactElement {
   )
 }
 
-export default function OnboardingSaveSeed(): ReactElement {
+export default function SaveSeed(): ReactElement {
   const [revealSeed, setRevealSeed] = useState(false)
 
   return (
-    <section className="onboarding_container">
-      <div className="top">
-        <SharedBackButton path="/" />
-        <div className="wordmark" />
-      </div>
+    <>
       <OnboardingStepsIndicator activeStep={1} />
       <h1 className="serif_header center_text">
         Save and store your recovery phrase
@@ -185,24 +179,8 @@ export default function OnboardingSaveSeed(): ReactElement {
           .serif_header {
             ${OnboardingHeader}
           }
-          .onboarding_container {
-            ${OnboardingContainer}
-          }
-          .top {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            height: 40px;
-          }
-          .wordmark {
-            background: url("./images/wordmark@2x.png");
-            background-size: cover;
-            width: 95px;
-            height: 25px;
-            margin-right: calc(50% - 95px / 2);
-          }
         `}
       </style>
-    </section>
+    </>
   )
 }

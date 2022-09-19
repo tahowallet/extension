@@ -10,7 +10,7 @@ import {
   useIsDappPopup,
 } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
-import SharedInput from "../Shared/SharedInput"
+import PasswordInput from "../Shared/PasswordInput"
 
 export default function KeyringUnlock(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "keyring.unlock" })
@@ -73,8 +73,7 @@ export default function KeyringUnlock(): ReactElement {
       <form onSubmit={dispatchUnlockWallet}>
         <div className="signing_wrap">
           <div className="input_wrap">
-            <SharedInput
-              type="password"
+            <PasswordInput
               label={t("signingPassword")}
               onChange={(value) => {
                 setPassword(value)
@@ -82,7 +81,6 @@ export default function KeyringUnlock(): ReactElement {
                 setErrorMessage("")
               }}
               errorMessage={errorMessage}
-              iconMedium="eye-on"
               focusedLabelBackgroundColor="var(--green-95)"
             />
           </div>

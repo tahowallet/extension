@@ -1,7 +1,6 @@
 import React, { ChangeEvent, ReactElement, useEffect, useRef } from "react"
 import classNames from "classnames"
 import { useParsedValidation, useRunOnFirstRender } from "../../hooks"
-import { PropsWithIcon } from "./types"
 
 interface Props<T> {
   id?: string
@@ -25,9 +24,7 @@ interface Props<T> {
   isSmall?: boolean
 }
 
-export function SharedTypedInput<T = string>(
-  props: Props<T> & PropsWithIcon
-): ReactElement {
+export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
   const {
     id,
     label,
@@ -46,8 +43,6 @@ export function SharedTypedInput<T = string>(
     parseAndValidate,
     isEmpty = false,
     isSmall = false,
-    iconMedium,
-    iconSmall,
   } = props
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -93,8 +88,6 @@ export function SharedTypedInput<T = string>(
         className={classNames({
           error: !isEmpty && (errorMessage ?? parserError !== undefined),
           small: isSmall,
-          ...((iconSmall || iconMedium) && { icon: true }),
-          icon_medium: !!iconMedium,
         })}
         step={step}
         ref={inputRef}
@@ -196,17 +189,6 @@ export function SharedTypedInput<T = string>(
             -webkit-appearance: none;
             margin: 0;
           }
-          .icon {
-            background: url("./images/icons/s/${iconSmall}.svg") no-repeat;
-            background-position: right 10px top 50%;
-            background-size: 16px;
-            padding-right: 38px;
-          }
-          .icon_medium {
-            background: url("./images/icons/m/${iconMedium}.svg") no-repeat;
-            background-position: right 10px top 50%;
-            background-size: 24px;
-          }
         `}
       </style>
     </>
@@ -221,7 +203,7 @@ SharedTypedInput.defaultProps = {
 export default function SharedInput(
   props: Omit<Props<string>, "onChange"> & {
     onChange?: (_: string) => void
-  } & PropsWithIcon
+  }
 ): ReactElement {
   const onChangeWrapper = (newValue: string | undefined) => {
     props.onChange?.(newValue ?? "")
