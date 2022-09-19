@@ -1,10 +1,14 @@
 import React, { ReactElement } from "react"
 import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { OPTIMISM } from "@tallyho/tally-background/constants"
+import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 
 export default function NetworkSettingsOptimism(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "networkFees.optimism",
+  })
   const transactionData = useBackgroundSelector(selectTransactionData)
   if (transactionData?.network.chainID !== OPTIMISM.chainID) {
     throw new Error(
@@ -14,41 +18,33 @@ export default function NetworkSettingsOptimism(): ReactElement {
 
   return (
     <div className="fees standard_width">
-      <div className="title">Network Fees</div>
-      <div className="simple_text">
-        Gas fees on Optimism work differently from Ethereum.
-      </div>
+      <div className="title">{t("title")}</div>
+      <div className="simple_text">{t("header")}</div>
 
       <div className="fees_chart">
         <div className="fees_chart_item">
           <div className="fees_icon icon_optimism" />
-          <span>Transaction fee</span>
+          <span>{t("transactionFee")}</span>
         </div>
         <div className="fee_chart_sign">+</div>
         <div className="fees_chart_item">
           <div className="fees_icon icon_ethereum" />
-          <span>Roll-up</span>
+          <span>{t("rollUp")}</span>
         </div>
         <div className="fee_chart_sign">=</div>
 
         <div className="fees_chart_item">
           <div className="fees_icon icon_gas" />
-          <span>Estimated Gas</span>
+          <span>{t("estimatedGas")}</span>
         </div>
       </div>
 
-      <div className="simple_text">
-        The estimated gas cost for Optimism transactions includes an Optimism
-        fee + an Ethereum roll-up fee (the fee to register transaction on
-        Ethereum chain).
-      </div>
+      <div className="simple_text">{t("explainerOne")}</div>
 
       <div className="simple_text">
-        Tally Ho stays in sync with the current Optimism and Ethereum network
-        fees to estimate the fee for a given transaction.
+        {t("explainerTwo")}
         <br />
-        Only in rare cases will the actual fee you pay change by more than 25%
-        from the estimate.
+        {t("explainerThree")}
       </div>
 
       <SharedButton
@@ -64,7 +60,7 @@ export default function NetworkSettingsOptimism(): ReactElement {
             ?.focus()
         }}
       >
-        Learn More
+        {t("learnMore")}
       </SharedButton>
       <style jsx>
         {`
