@@ -25,7 +25,7 @@ import { RESOLVE_RNS_NAMES } from "../../features"
 
 export { NameResolverSystem }
 
-type ResolvedAddressRecord = {
+export type ResolvedAddressRecord = {
   from: NameOnNetwork
   resolved: {
     addressOnNetwork: AddressOnNetwork
@@ -33,7 +33,7 @@ type ResolvedAddressRecord = {
   system: NameResolverSystem
 }
 
-type ResolvedNameRecord = {
+export type ResolvedNameRecord = {
   from: {
     addressOnNetwork: AddressOnNetwork
   }
