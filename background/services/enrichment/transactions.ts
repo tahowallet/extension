@@ -241,7 +241,16 @@ export default async function resolveTransactionAnnotation(
       if (typeof transaction.value !== "undefined") {
         // Warn if we're sending ETH to a contract. This is normal if you're
         // funding a multisig or exchange, but it's good to double check
-        if (recipient.annotation.hasCode) {
+        // If the annotation is a built-in contract or in the address book,
+        // skip the warning.
+        if (
+          recipient.annotation.hasCode &&
+          !(
+            recipient.annotation.nameRecord?.system ===
+              "tally-known-contracts" ||
+            recipient.annotation.nameRecord?.system === "tally-address-book"
+          )
+        ) {
           txAnnotation.warnings ??= []
           txAnnotation.warnings.push("send-to-contract")
         }
@@ -312,8 +321,17 @@ export default async function resolveTransactionAnnotation(
           txAnnotation.warnings.push("send-to-token")
         }
         // Warn if we're sending the token to a contract. This is normal if
-        // you're funding a multisig or exchange, but it's good to double check
-        if (recipient.annotation.hasCode) {
+        // you're funding a multisig or exchange, but it's good to double check.
+        // If the annotation is a built-in contract or in the address book,
+        // skip the warning.
+        if (
+          recipient.annotation.hasCode &&
+          !(
+            recipient.annotation.nameRecord?.system ===
+              "tally-known-contracts" ||
+            recipient.annotation.nameRecord?.system === "tally-address-book"
+          )
+        ) {
           txAnnotation.warnings ??= []
           txAnnotation.warnings.push("send-to-contract")
         }
