@@ -1,3 +1,3 @@
-import { attachUiToRootElement, Tab } from "@tallyho/tally-ui"
+import { attachTabUIToRootElement } from "@tallyho/tally-ui"
 
-attachUiToRootElement(Tab)
+attachTabUIToRootElement()

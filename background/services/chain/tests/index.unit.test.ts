@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto"
 import sinon from "sinon"
 import ChainService from ".."
 import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"

@@ -37,11 +37,11 @@ import {
 } from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { getOrCreateDB, ChainDatabase } from "./db"
+import { createDB, ChainDatabase } from "./db"
 import BaseService from "../base"
 import {
   blockFromEthersBlock,
-  blockFromWebsocketBlock,
+  blockFromProviderBlock,
   enrichTransactionWithReceipt,
   ethersTransactionFromSignedTransaction,
   transactionFromEthersTransaction,
@@ -166,11 +166,7 @@ export default class ChainService extends BaseService<Events> {
     ChainService,
     [Promise<PreferenceService>, Promise<KeyringService>]
   > = async (preferenceService, keyringService) => {
-    return new this(
-      await getOrCreateDB(),
-      await preferenceService,
-      await keyringService
-    )
+    return new this(createDB(), await preferenceService, await keyringService)
   }
 
   supportedNetworks: EVMNetwork[]
@@ -227,6 +223,14 @@ export default class ChainService extends BaseService<Events> {
         },
         handler: () => {
           this.pollBlockPrices()
+        },
+      },
+      latestBlocks: {
+        schedule: {
+          periodInMinutes: 0.25, // every 15 seconds
+        },
+        handler: () => {
+          this.getLatestBlocks()
         },
       },
     })
@@ -479,6 +483,7 @@ export default class ChainService extends BaseService<Events> {
         transactionRequest
       )
     } catch (error) {
+      logger.error("Error estimating gas limit: ", error)
       // Try to identify unpredictable gas errors to bubble that information
       // out.
       if (error instanceof Error) {
@@ -1027,6 +1032,34 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
+  /*
+   * Fetch, persist, and emit the latest block on a given network.
+   */
+  private async pollLatestBlock(
+    network: EVMNetwork,
+    provider: SerialFallbackProvider
+  ): Promise<void> {
+    const ethersBlock = await provider.getBlock("latest")
+    // add new head to database
+    const block = blockFromProviderBlock(network, ethersBlock)
+    await this.db.addBlock(block)
+    // emit the new block, don't wait to settle
+    this.emitter.emit("block", block)
+    // TODO if it matches a known blockheight and the difficulty is higher,
+    // emit a reorg event
+  }
+
+  /*
+   * Poll for latest blocks on all networks
+   */
+  private async getLatestBlocks(): Promise<void> {
+    await Promise.allSettled(
+      this.subscribedNetworks.map(async ({ network, provider }) => {
+        this.pollLatestBlock(network, provider)
+      })
+    )
+  }
+
   async send(
     method: string,
     params: unknown[],
@@ -1391,24 +1424,12 @@ export default class ChainService extends BaseService<Events> {
   private async subscribeToNewHeads(network: EVMNetwork): Promise<void> {
     const provider = this.providerForNetworkOrThrow(network)
     // eslint-disable-next-line no-underscore-dangle
-    await provider.subscribe(
-      "newHeadsSubscriptionID",
-      ["newHeads"],
-      async (result: unknown) => {
-        // add new head to database
-        const block = blockFromWebsocketBlock(network, result)
-        await this.db.addBlock(block)
-        // emit the new block, don't wait to settle
-        this.emitter.emit("block", block)
-        // TODO if it matches a known blockheight and the difficulty is higher,
-        // emit a reorg event
-      }
-    )
     this.subscribedNetworks.push({
       network,
       provider,
     })
 
+    this.pollLatestBlock(network, provider)
     this.pollBlockPrices()
   }
 
@@ -1424,43 +1445,52 @@ export default class ChainService extends BaseService<Events> {
     const provider = this.providerForNetworkOrThrow(network)
     await provider.subscribeFullPendingTransactions(
       { address, network },
-      async (transaction) => {
-        // handle incoming transactions for an account
-        try {
-          const normalizedFromAddress = normalizeEVMAddress(transaction.from)
-
-          // If this is an EVM chain, we're tracking the from address's
-          // nonce, and the pending transaction has a higher nonce, update our
-          // view of it. This helps reduce the number of times when a
-          // transaction submitted outside of this wallet causes this wallet to
-          // produce bad transactions with reused nonces.
-          if (
-            typeof network.chainID !== "undefined" &&
-            typeof this.evmChainLastSeenNoncesByNormalizedAddress[
-              network.chainID
-            ]?.[normalizedFromAddress] !== "undefined" &&
-            this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID]?.[
-              normalizedFromAddress
-            ] <= transaction.nonce
-          ) {
-            this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
-              normalizedFromAddress
-            ] = transaction.nonce
-          }
-          await this.saveTransaction(transaction, "alchemy")
-
-          // Wait for confirmation/receipt information.
-          this.subscribeToTransactionConfirmation(network, transaction)
-        } catch (error) {
-          logger.error(`Error saving tx: ${transaction}`, error)
-        }
-      }
+      this.handlePendingTransaction.bind(this)
     )
 
     this.subscribedAccounts.push({
       account: address,
       provider,
     })
+  }
+
+  /**
+   * Persists pending transactions and subscribes to their confirmation
+   *
+   * @param transaction The pending transaction
+   */
+  private async handlePendingTransaction(
+    transaction: AnyEVMTransaction
+  ): Promise<void> {
+    try {
+      const { network } = transaction
+      const normalizedFromAddress = normalizeEVMAddress(transaction.from)
+
+      // If this is an EVM chain, we're tracking the from address's
+      // nonce, and the pending transaction has a higher nonce, update our
+      // view of it. This helps reduce the number of times when a
+      // transaction submitted outside of this wallet causes this wallet to
+      // produce bad transactions with reused nonces.
+      if (
+        typeof network.chainID !== "undefined" &&
+        typeof this.evmChainLastSeenNoncesByNormalizedAddress[
+          network.chainID
+        ]?.[normalizedFromAddress] !== "undefined" &&
+        this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID]?.[
+          normalizedFromAddress
+        ] <= transaction.nonce
+      ) {
+        this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
+          normalizedFromAddress
+        ] = transaction.nonce
+      }
+      await this.saveTransaction(transaction, "alchemy")
+
+      // Wait for confirmation/receipt information.
+      this.subscribeToTransactionConfirmation(network, transaction)
+    } catch (error) {
+      logger.error(`Error saving tx: ${transaction}`, error)
+    }
   }
 
   /**

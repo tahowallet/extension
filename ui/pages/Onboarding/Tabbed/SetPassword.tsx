@@ -12,16 +12,15 @@ import {
   useBackgroundDispatch,
   useAreKeyringsUnlocked,
   useBackgroundSelector,
-} from "../../hooks"
-import titleStyle from "../../components/Onboarding/titleStyle"
-import SharedButton from "../../components/Shared/SharedButton"
-import SharedBackButton from "../../components/Shared/SharedBackButton"
-import SharedBanner from "../../components/Shared/SharedBanner"
-import SharedToggleButton from "../../components/Shared/SharedToggleButton"
-import PasswordStrengthBar from "../../components/Password/PasswordStrengthBar"
-import PasswordInput from "../../components/Shared/PasswordInput"
+} from "../../../hooks"
+import titleStyle from "../../../components/Onboarding/titleStyle"
+import SharedButton from "../../../components/Shared/SharedButton"
+import SharedBanner from "../../../components/Shared/SharedBanner"
+import SharedToggleButton from "../../../components/Shared/SharedToggleButton"
+import PasswordStrengthBar from "../../../components/Password/PasswordStrengthBar"
+import PasswordInput from "../../../components/Shared/PasswordInput"
 
-export default function KeyringSetPassword({
+export default function SetPassword({
   nextPage,
 }: {
   nextPage: string
@@ -72,11 +71,10 @@ export default function KeyringSetPassword({
   }
 
   return (
-    <section className="standard_width">
-      <div className="top">
-        <SharedBackButton />
-      </div>
-      <h1 className="serif_header">First, let&apos;s secure your wallet</h1>
+    <>
+      <h1 className="serif_header center_text">
+        First, let&apos;s secure your wallet
+      </h1>
 
       <div className="warning_wrap">
         <SharedBanner
@@ -139,10 +137,6 @@ export default function KeyringSetPassword({
       </div>
       <style jsx>
         {`
-          .top {
-            display: flex;
-            width: 100%;
-          }
           .wordmark {
             background: url("./images/wordmark@2x.png");
             background-size: cover;
@@ -156,12 +150,7 @@ export default function KeyringSetPassword({
           ${titleStyle}
           .serif_header {
             width: 335px;
-            text-align: center;
-            margin-top: 40px;
             margin-bottom: 7px;
-          }
-          section {
-            padding-top: 25px;
           }
           .input_wrap {
             width: 211px;
@@ -202,6 +191,6 @@ export default function KeyringSetPassword({
           }
         `}
       </style>
-    </section>
+    </>
   )
 }

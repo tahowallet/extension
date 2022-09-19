@@ -9,6 +9,7 @@
   "license": "GPL-3.0",
   "jest": {
     "setupFiles": [
+      "fake-indexeddb/auto",
       "jest-webextension-mock",
       "./setupJest.ts"
     ],
