@@ -1,4 +1,13 @@
 {
+  "accounts": {
+    "accountItem": {
+      "noNameError": "Name is required",
+      "editName": "Edit name",
+      "saveName": "Save name",
+      "typeNewName": "Type new name",
+      "cancelSaveName": "Cancel"
+    }
+  },
   "assetInput": {
     "search": "Search by name or address",
     "selectToken": "Select token",
