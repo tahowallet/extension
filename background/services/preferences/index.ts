@@ -35,6 +35,19 @@ const BUILT_IN_CONTRACTS = [
   },
   {
     network: ETHEREUM,
+    // https://etherscan.io/address/0x52ec2f3d7c5977a8e558c8d9c6000b615098e8fc
+    address: normalizeEVMAddress("0x52ec2f3d7c5977a8e558c8d9c6000b615098e8fc"),
+    name: "🔴 Optimism Teleportr",
+  },
+
+  {
+    network: OPTIMISM,
+    // https://optimistic.etherscan.io/address/0x4200000000000000000000000000000000000010
+    address: normalizeEVMAddress("0x4200000000000000000000000000000000000010"),
+    name: "🔴 Optimism Teleportr",
+  },
+  {
+    network: ETHEREUM,
     // Uniswap v3 Router
     address: normalizeEVMAddress("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"),
     name: "🦄 Uniswap",
