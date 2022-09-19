@@ -5,7 +5,13 @@ import SharedButton from "../../../components/Shared/SharedButton"
 import { useBackgroundDispatch } from "../../../hooks"
 import { OnboardingBox, OnboardingMessageHeader } from "../styles"
 
-function VerifySeedSuccess({ mnemonic }: { mnemonic: string[] }): ReactElement {
+function VerifySeedSuccess({
+  mnemonic,
+  nextPage = "/",
+}: {
+  mnemonic: string[]
+  nextPage?: string
+}): ReactElement {
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
 
@@ -35,7 +41,7 @@ function VerifySeedSuccess({ mnemonic }: { mnemonic: string[] }): ReactElement {
               source: "internal",
             })
           )
-          history.push("/")
+          history.push(nextPage)
         }}
       >
         Take me to my wallet

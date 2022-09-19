@@ -1,9 +1,9 @@
 import React, { useEffect, useState, ReactElement } from "react"
 import browser from "webextension-polyfill"
-import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
-import SharedButton from "../../components/Shared/SharedButton"
+import LedgerPanelContainer from "../../../components/Ledger/LedgerPanelContainer"
+import SharedButton from "../../../components/Shared/SharedButton"
 
-export default function TabbedOnboardingDone(): ReactElement {
+export default function Done(): ReactElement {
   const [os, setOS] = useState("windows")
 
   // fetch the OS using the extension API to decide what shortcut to show
