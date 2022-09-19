@@ -51,6 +51,18 @@ const BUILT_IN_CONTRACTS = [
     address: normalizeEVMAddress("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"),
     name: "🦄 Uniswap",
   },
+  {
+    network: ETHEREUM,
+    // Optimism's custodial Teleportr bridge
+    address: normalizeEVMAddress("0x52ec2f3d7c5977a8e558c8d9c6000b615098e8fc"),
+    name: "🔴 Optimism Teleportr",
+  },
+  {
+    network: ETHEREUM,
+    // Optimism's non-custodial Gateway bridge
+    address: normalizeEVMAddress("0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1"),
+    name: "🔴 Optimism Gateway",
+  },
 ]
 
 interface Events extends ServiceLifecycleEvents {
