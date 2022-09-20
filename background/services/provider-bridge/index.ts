@@ -120,16 +120,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
 
     const { origin } = new URL(url)
+
     const completeTab =
       typeof tab !== "undefined" && typeof tab.id !== "undefined"
-        ? {
-            ...tab,
-            // Firefox sometimes requires an extra query to get favicons,
-            // unclear why but may be related to
-            // https://bugzilla.mozilla.org/show_bug.cgi?id=1417721 .
-            ...(await browser.tabs.get(tab.id)),
-          }
+        ? await browser.tabs.get(tab?.id)
         : tab
+
     const faviconUrl = completeTab?.favIconUrl ?? ""
     const title = completeTab?.title ?? ""
 
