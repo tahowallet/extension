@@ -210,7 +210,11 @@
     "cancelBtn": "Cancel",
     "gwei": "Gwei",
     "showPasswordHint": "Show Password",
-    "hidePasswordHint": "Hide Password"
+    "hidePasswordHint": "Hide Password",
+    "close": "Close",
+    "accountItemSummary": {
+      "connectedStatus": "Connected"
+    }
   },
   "swap": {
     "title": "Swap Assets",
@@ -233,6 +237,19 @@
   "toggle": {
     "collapse": "Collapse",
     "viewAll": "View all"
+  },
+  "topMenu": {
+    "showCurrentDappConnection": "Show current dApp connection",
+    "rewardsProgram": "Rewards program",
+    "copyAddressTooltip": "Copy address",
+    "addressCopiedMsg": "Address copied to clipboard",
+    "protocolList": {
+      "testnetsSectionTitle": "Testnets"
+    },
+    "connectedDappInfo": {
+      "modalClose": "Background close",
+      "dAppTitle": "Account connected to"
+    }
   },
   "wallet": {
     "totalAccountBalance": "Total account balance",

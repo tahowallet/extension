@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 
+import { useTranslation } from "react-i18next"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 
 export default function SharedAccountItemSummary(props: Props): ReactElement {
   const { isSelected, accountTotal, children } = props
+  const { t } = useTranslation()
   const {
     shortenedAddress,
     name,
@@ -51,7 +53,9 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
               </div>
             )}
             {isSelected ? (
-              <div className="connected_status">Connected</div>
+              <div className="connected_status">
+                {t("shared.accountItemSummary.connectedStatus")}
+              </div>
             ) : null}
           </div>
         </div>

@@ -4,6 +4,7 @@ import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selectors"
 import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp"
+import { useTranslation } from "react-i18next"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 
@@ -16,6 +17,7 @@ import TopMenuProtocolList from "./TopMenuProtocolList"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 export default function TopMenu(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "topMenu" })
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isBonusProgramOpen, setIsBonusProgramOpen] = useState(false)
@@ -130,7 +132,7 @@ export default function TopMenu(): ReactElement {
             {isConnectedToDApp && (
               <button
                 type="button"
-                aria-label="Show current dApp connection"
+                aria-label={t("showCurrentDappConnection")}
                 className="connection_button"
                 onClick={() => {
                   setIsActiveDAppConnectionInfoOpen(
@@ -142,7 +144,7 @@ export default function TopMenu(): ReactElement {
             {!HIDE_TOKEN_FEATURES && (
               <button
                 type="button"
-                aria-label="Rewards program"
+                aria-label={t("rewardsProgram")}
                 className="gift_button"
                 onClick={() => {
                   setIsBonusProgramOpen(!isBonusProgramOpen)
