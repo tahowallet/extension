@@ -18,13 +18,13 @@ export default function AccountItem({
   return (
     <>
       <div className="account_item">
-        <span className="account_value account_name" title={name}>
+        <span className="account_value ellipsis account_name" title={name}>
           {name}
         </span>
-        <span className="account_value" title={percentText}>
+        <span className="account_value ellipsis" title={percentText}>
           {percentText}
         </span>
-        <span className="account_value" title={`$${balance}`}>
+        <span className="account_value ellipsis" title={`$${balance}`}>
           ${balance}
         </span>
       </div>
@@ -44,9 +44,6 @@ export default function AccountItem({
         .account_value {
           display: block;
           text-align: right;
-          overflow: hidden;
-          white-space: nowrap;
-          text-overflow: ellipsis;
         }
         .account_value:nth-child(1) {
           width: 45%;
