@@ -26,6 +26,14 @@ type HogResponse = {
 
 export async function createEvent(): Promise<HogResponse> {
   try {
+
+    var browser = require("webextension-polyfill");
+
+    const [currentTab] = await browser.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+
     const response = await fetch("https://app.posthog.com/capture/", {
       method: "POST",
       body: JSON.stringify({
@@ -36,9 +44,8 @@ export async function createEvent(): Promise<HogResponse> {
         properties: {
           distinct_id: myuuid,
           data:  "This is a test to storing event data into posthog",
-          current_url: window.location.href,
-          url: window.location.href,
-          source: window.location.href,
+          current_url: currentTab.url,
+          $lib: currentTab.url,
         },
       }),
       headers: {
@@ -53,6 +60,8 @@ export async function createEvent(): Promise<HogResponse> {
     const result = (await response.json()) as HogResponse
     // eslint-disable-next-line no-console
     console.log("data: ", JSON.stringify(result, null, 4))
+    console.log("current tab url:", currentTab.url)
+
     return result
   } catch (error) {
     if (error instanceof Error) {
