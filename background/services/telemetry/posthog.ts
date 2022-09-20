@@ -35,7 +35,10 @@ export async function createEvent(): Promise<HogResponse> {
         event: "Wallet Opened - Erik",
         properties: {
           distinct_id: myuuid,
-          data:  myuuid,
+          data:  "This is a test to storing event data into posthog",
+          current_url: window.location.href,
+          url: window.location.href,
+          source: window.location.href,
         },
       }),
       headers: {
