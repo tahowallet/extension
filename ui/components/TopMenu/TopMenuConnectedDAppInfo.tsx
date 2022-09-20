@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 
 export default function TopMenuConnectedDAppInfo(props: {
   title: string
@@ -7,6 +8,7 @@ export default function TopMenuConnectedDAppInfo(props: {
   close: () => void
   disconnect: () => void
 }): ReactElement {
+  const { t } = useTranslation()
   const { title, url, close, faviconUrl, disconnect } = props
   return (
     <div className="bg">
@@ -14,10 +16,10 @@ export default function TopMenuConnectedDAppInfo(props: {
         <button
           type="button"
           className="icon_close"
-          aria-label="Close"
+          aria-label={t("shared.close")}
           onClick={close}
         />
-        <h1>Account connected to</h1>
+        <h1>{t("topMenu.connectedDappInfo.dAppTitle")}</h1>
         <div className="favicon" />
         <div className="title">{title}</div>
         <div className="url">{url}</div>
@@ -29,7 +31,7 @@ export default function TopMenuConnectedDAppInfo(props: {
         />
       </div>
       <button
-        aria-label="Background close"
+        aria-label={t("topMenu.connectedDappInfo.modalClose")}
         type="button"
         className="void_space"
         onClick={close}

@@ -14,6 +14,7 @@ import {
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectShowTestNetworks } from "@tallyho/tally-background/redux-slices/ui"
+import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 import { i18n } from "../../_locales/i18n"
@@ -88,6 +89,7 @@ interface TopMenuProtocolListProps {
 export default function TopMenuProtocolList({
   onProtocolChange,
 }: TopMenuProtocolListProps): ReactElement {
+  const { t } = useTranslation()
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
 
@@ -107,7 +109,9 @@ export default function TopMenuProtocolList({
         {showTestNetworks && testNetworks.length > 0 && (
           <>
             <li className="protocol_divider">
-              <div className="divider_label">Testnets</div>
+              <div className="divider_label">
+                {t("topMenu.protocolList.testnetsSectionTitle")}
+              </div>
               <div className="divider_line" />
             </li>
             {testNetworks.map((info) => (

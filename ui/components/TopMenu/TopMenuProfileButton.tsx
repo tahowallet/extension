@@ -4,6 +4,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useState, useRef } from "react"
+import { useTranslation } from "react-i18next"
 import { useDispatch } from "react-redux"
 import { useBackgroundSelector } from "../../hooks"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
@@ -14,6 +15,7 @@ const TOOLTIP_DELAY = 500
 export default function TopMenuProfileButton(props: {
   onClick?: () => void
 }): ReactElement {
+  const { t } = useTranslation()
   const dispatch = useDispatch()
   const { name, avatarURL, address } =
     useBackgroundSelector(selectCurrentAccountTotal) ?? {}
@@ -44,7 +46,7 @@ export default function TopMenuProfileButton(props: {
     if (address) {
       navigator.clipboard.writeText(address)
       hideTooltip()
-      dispatch(setSnackbarMessage("Address copied to clipboard"))
+      dispatch(setSnackbarMessage(t("topMenu.addressCopiedMsg")))
     }
   }
 
