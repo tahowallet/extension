@@ -1,5 +1,6 @@
 import React, { ReactElement } from "react"
 import { NFT } from "@tallyho/tally-background/redux-slices/nfts"
+import { useTranslation } from "react-i18next"
 import NFTsImage from "./NFTsImage"
 
 function NFTsListItem({
@@ -11,6 +12,7 @@ function NFTsListItem({
   openPreview: (nft: NFT) => void
   style?: React.CSSProperties
 }): ReactElement {
+  const { t } = useTranslation()
   // getting undefined sometimes, react-window renders second column even if there is no item?
   if (!nft) return <></>
 
@@ -27,7 +29,7 @@ function NFTsListItem({
       >
         <NFTsImage width={168} height={168} alt={name} src={src} />
         <span className="title ellipsis">
-          <span>{name || "No title"}</span>
+          <span>{name || t("nfts.noTitle")}</span>
         </span>
       </button>
       <style jsx>{`

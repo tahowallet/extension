@@ -55,6 +55,16 @@
       }
     }
   },
+  "ledger": {
+    "derivationPaths": {
+      "ledgerLive": "Ledger Live",
+      "bip44": "BIP 44 (Trezor, 🦊)",
+      "ethTestnet": "Ethereum Testnet",
+      "ledgerLegacy": "Ledger Legacy",
+      "rsk": "RSK",
+      "rskTestnet": "RSK Tetnet"
+    }
+  },
   "networkFees": {
     "unknownFee": "Unknown",
     "toBeDetermined": "TBD",
@@ -93,6 +103,22 @@
       "instant": "Instant",
       "custom": "Custom"
     }
+  },
+  "nfts": {
+    "empty":"Looks like you don&apos;t have any NFTs yet? Get some and view them here!",
+    "noTitle": "No title"
+  },
+  "onboarding": {
+    "steps": {
+      "create": "Create",
+      "save": "Save",
+      "verify": "Verify"
+    },
+    "derivationPath": "Derivation path",
+    "addDerivationPath": "Add derivation path",
+    "pathLabel": "Label",
+    "customPath": "Custom path",
+    "addCustomPath": "Add custom path"
   },
   "overview": {
     "totalBalanceEverywhere": "Total balance on all accounts",
