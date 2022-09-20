@@ -101,7 +101,9 @@ export default function EarnCard({ vault }: EarnCardProps): ReactElement {
                     />
                     DOGGO
                   </div>
-                  <div className="other_reward"> + {vault.asset.symbol}</div>
+                  <div className="other_reward ellipsis">
+                    + {vault.asset.symbol}
+                  </div>
                 </div>
               </div>
             </>
@@ -161,9 +163,6 @@ export default function EarnCard({ vault }: EarnCardProps): ReactElement {
           background-color: var(--hunter-green);
         }
         .other_reward {
-          text-overflow: ellipsis;
-          overflow: hidden;
-          white-space: nowrap;
           padding-left: 2px;
         }
 

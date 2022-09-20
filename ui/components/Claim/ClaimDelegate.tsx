@@ -130,7 +130,7 @@ export default function ClaimDelegate(props: {
                           url={delegate?.avatar}
                         />
                         <div className="delegate_info">
-                          <div className="name">
+                          <div className="name ellipsis">
                             {delegate.ensName && delegate.ensName.length > 0
                               ? delegate.ensName
                               : delegate.truncatedAddress}
@@ -220,9 +220,6 @@ export default function ClaimDelegate(props: {
             display: block;
             line-height: 32px;
             width: 175px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
           }
           .delegates {
             background-color: var(--hunter-green);

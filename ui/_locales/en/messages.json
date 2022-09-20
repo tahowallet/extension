@@ -11,6 +11,15 @@
       "loudWarningBody": "Are you sure you want to proceed?",
       "removeAddress": "Remove address",
       "removeConfirm": "Yes, I want to remove it"
+    },
+    "notificationPanel": {
+      "accountPanelName": "Accounts",
+      "addWallet": "Add Wallet",
+      "addAddress": "Add address",
+      "readOnly": "Read-only",
+      "import":"Import",
+      "internal":"Tally Ho",
+      "ledger":"Full access via Ledger"
     }
   },
   "assetInput": {
@@ -45,6 +54,71 @@
         "incorrect": "Incorrect password"
       }
     }
+  },
+  "ledger": {
+    "derivationPaths": {
+      "ledgerLive": "Ledger Live",
+      "bip44": "BIP 44 (Trezor, 🦊)",
+      "ethTestnet": "Ethereum Testnet",
+      "ledgerLegacy": "Ledger Legacy",
+      "rsk": "RSK",
+      "rskTestnet": "RSK Tetnet"
+    }
+  },
+  "networkFees": {
+    "unknownFee": "Unknown",
+    "toBeDetermined": "TBD",
+    "settingsTitle": "Network fees (Gwei)",
+    "gasLimit": "Gas limit",
+    "insufficientBaseAsset": "Not enough {{symbol}} for network fees",
+    "totalMax": "Total Max",
+    "saveSettings": "Save settings",
+    "errors": {
+      "limitTooLow": "Gas Limit must be higher than 21000",
+      "invalidLimit": "Gas Limit must be a number",
+      "lowGas": "Low"
+    },
+    "optimism": {
+      "title": "Network fees",
+      "header": "Gas fees on Optimism work differently from Ethereum.",
+      "transactionFee": "Transaction fee",
+      "rollUp": "Roll-up",
+      "estimatedGas": "Estimated Gas",
+      "explainerOne": "The estimated gas cost for Optimism transactions includes an Optimism fee + an Ethereum roll-up fee (the fee to register transaction on Ethereum chain).",
+      "explainerTwo": "Tally Ho stays in sync with the current Optimism and Ethereum network fees to estimate the fee for a given transaction.",
+      "explainerThree": "Only in rare cases will the actual fee you pay change by more than 25% from the estimate.",
+      "learnMore": "Learn More"
+    },
+    "miner": "Miner:",
+    "maxBase": "Max Base:",
+    "speeds": {
+      "0": "-",
+      "70": "~5 min",
+      "95": "~1 min",
+      "99": "~30 sec"
+    },
+    "types": {
+      "regular": "Regular",
+      "express": "Express",
+      "instant": "Instant",
+      "custom": "Custom"
+    }
+  },
+  "nfts": {
+    "empty":"Looks like you don&apos;t have any NFTs yet? Get some and view them here!",
+    "noTitle": "No title"
+  },
+  "onboarding": {
+    "steps": {
+      "create": "Create",
+      "save": "Save",
+      "verify": "Verify"
+    },
+    "derivationPath": "Derivation path",
+    "addDerivationPath": "Add derivation path",
+    "pathLabel": "Label",
+    "customPath": "Custom path",
+    "addCustomPath": "Add custom path"
   },
   "overview": {
     "totalBalanceEverywhere": "Total balance on all accounts",
@@ -134,6 +208,7 @@
   },
   "shared": {
     "cancelBtn": "Cancel",
+    "gwei": "Gwei",
     "showPasswordHint": "Show Password",
     "hidePasswordHint": "Hide Password"
   },
@@ -169,6 +244,6 @@
     "sendTo": "Send To:",
     "sendButton": "Continue",
     "receiveAddress": "Receive address",
-    "sendToContractWarning": "This is a contract address, sending assets will result in loss of funds."
+    "sendToContractWarning": "This is a contract address, sending assets could result in loss of funds."
   }
 }
