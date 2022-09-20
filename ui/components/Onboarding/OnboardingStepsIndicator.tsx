@@ -1,5 +1,6 @@
 import React, { ReactElement } from "react"
 import classNames from "classnames"
+import { useTranslation } from "react-i18next"
 
 interface OnboardingStepProps {
   label: string
@@ -58,13 +59,14 @@ interface OnboardingStepsIndicatorProps {
 export default function OnboardingStepsIndicator(
   props: OnboardingStepsIndicatorProps
 ): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "onboarding.steps" })
   const { activeStep } = props
 
   return (
     <ul>
-      <OnboardingStep label="Create" isActive={activeStep === 0} />
-      <OnboardingStep label="Save" isActive={activeStep === 1} />
-      <OnboardingStep label="Verify" isActive={activeStep === 2} />
+      <OnboardingStep label={t("create")} isActive={activeStep === 0} />
+      <OnboardingStep label={t("save")} isActive={activeStep === 1} />
+      <OnboardingStep label={t("verify")} isActive={activeStep === 2} />
       <style jsx>
         {`
           ul {

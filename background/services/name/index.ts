@@ -1,4 +1,4 @@
-import { DomainName, HexString, UNIXTime } from "../../types"
+import { HexString, UNIXTime } from "../../types"
 import { normalizeAddressOnNetwork } from "../../lib/utils"
 import { getTokenMetadata } from "../../lib/erc721"
 import { storageGatewayURL } from "../../lib/storage-gateway"
@@ -25,17 +25,15 @@ import { RESOLVE_RNS_NAMES } from "../../features"
 
 export { NameResolverSystem }
 
-type ResolvedAddressRecord = {
-  from: {
-    name: DomainName
-  }
+export type ResolvedAddressRecord = {
+  from: NameOnNetwork
   resolved: {
     addressOnNetwork: AddressOnNetwork
   }
   system: NameResolverSystem
 }
 
-type ResolvedNameRecord = {
+export type ResolvedNameRecord = {
   from: {
     addressOnNetwork: AddressOnNetwork
   }
@@ -163,7 +161,7 @@ export default class NameService extends BaseService<Events> {
 
   async lookUpEthereumAddress(
     nameOnNetwork: NameOnNetwork
-  ): Promise<AddressOnNetwork | undefined> {
+  ): Promise<ResolvedAddressRecord | undefined> {
     const workingResolvers = this.resolvers.filter((resolver) =>
       resolver.canAttemptAddressResolution(nameOnNetwork)
     )
@@ -192,19 +190,21 @@ export default class NameService extends BaseService<Events> {
     // TODO cache name resolution and TTL
     const normalizedAddressOnNetwork =
       normalizeAddressOnNetwork(addressOnNetwork)
-    this.emitter.emit("resolvedAddress", {
+
+    const resolvedRecord = {
       from: nameOnNetwork,
       resolved: { addressOnNetwork: normalizedAddressOnNetwork },
       system: resolverType,
-    })
+    }
+    this.emitter.emit("resolvedAddress", resolvedRecord)
 
-    return normalizedAddressOnNetwork
+    return resolvedRecord
   }
 
   async lookUpName(
     addressOnNetwork: AddressOnNetwork,
     checkCache = true
-  ): Promise<NameOnNetwork | undefined> {
+  ): Promise<ResolvedNameRecord | undefined> {
     const { address, network } = normalizeAddressOnNetwork(addressOnNetwork)
 
     if (!this.cachedResolvedNames[network.family][network.chainID]) {
@@ -216,11 +216,11 @@ export default class NameService extends BaseService<Events> {
 
     if (checkCache && cachedResolvedNameRecord) {
       const {
-        resolved: { nameOnNetwork, expiresAt },
+        resolved: { expiresAt },
       } = cachedResolvedNameRecord
 
       if (expiresAt >= Date.now()) {
-        return nameOnNetwork
+        return cachedResolvedNameRecord
       }
     }
 
@@ -270,7 +270,7 @@ export default class NameService extends BaseService<Events> {
       this.emitter.emit("resolvedName", nameRecord)
     }
 
-    return nameOnNetwork
+    return nameRecord
   }
 
   clearNameCacheEntry(chainId: string, address: HexString): void {

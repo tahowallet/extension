@@ -3,9 +3,10 @@ import { gweiToWei } from "@tallyho/tally-background/lib/utils"
 import { GasOption } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
-import capitalize from "../../utils/capitalize"
+import { useTranslation } from "react-i18next"
 import SharedInput from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
+import { NETWORK_FEE_CHOSEN_TYPE_TO_HUMAN_READABLE_TYPE } from "../../utils/constants"
 
 const buttonStyle = `
   .subtext_large {
@@ -91,6 +92,7 @@ export function NetworkSettingsSelectOptionButton({
   handleSelectGasOption: () => void
   isActive: boolean
 }): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "networkFees" })
   return (
     <button
       key={option.confidence}
@@ -101,18 +103,20 @@ export function NetworkSettingsSelectOptionButton({
       type="button"
     >
       <div className="network_option_left">
-        <div className="name">{capitalize(option.type)}</div>
+        <div className="name">
+          {NETWORK_FEE_CHOSEN_TYPE_TO_HUMAN_READABLE_TYPE[option.type]}
+        </div>
         <div className="subtext">{option.estimatedSpeed}</div>
       </div>
 
       <div className="network_option_right">
         <div className="miner_wrap">
           <span className="subtext_large miner">
-            <span className="r_label">Miner:</span>
+            <span className="r_label">{t("miner")}</span>
             {`${Number(option.maxPriorityGwei).toFixed(2)}`}
           </span>
         </div>
-        <span className="subtext_large large r_label">Max Base: </span>
+        <span className="subtext_large large r_label">{t("maxBase")} </span>
         <div className="price">{` ${Number(option.baseMaxGwei).toFixed(
           2
         )}`}</div>
@@ -143,6 +147,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
     customMaxPriorityFeePerGas: bigint
   ) => void
 }): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "networkFees" })
   const [warningMessage, setWarningMessage] = useState("")
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const baseGasFee = useBackgroundSelector(
@@ -160,12 +165,14 @@ export function NetworkSettingsSelectOptionButtonCustom({
       type="button"
     >
       <div className="network_option_left">
-        <div className="name">{capitalize(option.type)}</div>
+        <div className="name">
+          {NETWORK_FEE_CHOSEN_TYPE_TO_HUMAN_READABLE_TYPE[option.type]}
+        </div>
       </div>
 
       <div className="network_option_right">
         <div className="miner_wrap">
-          <span className="subtext_large r_label">Miner:</span>
+          <span className="subtext_large r_label">{t("miner")}</span>
           <div className="input_wrap">
             <SharedInput
               value={`${option.maxPriorityGwei}`}
@@ -182,7 +189,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
           </div>
         </div>
 
-        <span className="subtext_large r_label">Max Base:</span>
+        <span className="subtext_large r_label">{t("maxBase")}</span>
         <div className="input_wrap">
           <SharedInput
             value={`${option.baseMaxGwei}`}
@@ -194,7 +201,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
                 option.maxPriorityFeePerGas
               )
               if (baseGasFee && gweiToWei(parseFloat(value)) < baseGasFee) {
-                setWarningMessage("Low")
+                setWarningMessage(t("errors.lowGas"))
               } else {
                 setWarningMessage("")
               }
