@@ -2,9 +2,10 @@ import { ETH, OPTIMISM } from "../constants"
 import { AnyEVMTransaction, LegacyEVMTransactionRequest } from "../networks"
 import {
   ChainService,
-  PreferenceService,
-  LedgerService,
   KeyringService,
+  LedgerService,
+  NameService,
+  PreferenceService,
   SigningService,
 } from "../services"
 
@@ -27,6 +28,18 @@ export const createChainService = async (
   return ChainService.create(
     overrides.preferenceService ?? createPreferenceService(),
     overrides.keyringService ?? createKeyringService()
+  )
+}
+
+export async function createNameService(overrides?: {
+  chainService?: Promise<ChainService>
+  preferenceService?: Promise<PreferenceService>
+}): Promise<NameService> {
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+  return NameService.create(
+    overrides?.chainService ?? createChainService({ preferenceService }),
+    preferenceService
   )
 }
 
