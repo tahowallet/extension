@@ -60,7 +60,7 @@ export async function enrichEIP2612SignTypedDataRequest(
         false
       ),
     ])
-  ).map((nameOnNetwork) => nameOnNetwork?.name)
+  ).map((nameOnNetwork) => nameOnNetwork?.resolved?.nameOnNetwork.name)
 
   return {
     type: "EIP-2612",

@@ -88,7 +88,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         iconClass: "approve_icon",
         recipient: {
           address: activity.annotation.spender.address,
-          name: activity.annotation.spender.annotation.nameOnNetwork?.name,
+          name: activity.annotation.spender.annotation?.nameRecord?.resolved
+            .nameOnNetwork.name,
         },
         assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.annotation.assetAmount.asset.symbol,
