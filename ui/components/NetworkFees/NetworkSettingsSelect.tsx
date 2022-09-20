@@ -1,9 +1,6 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import {
-  ESTIMATED_FEE_MULTIPLIERS,
-  ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL,
-} from "@tallyho/tally-background/constants/network-fees"
+import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/network-fees"
 import {
   EstimatedFeesPerGas,
   NetworkFeeSettings,
@@ -20,6 +17,7 @@ import {
   selectTransactionData,
   selectTransactionMainCurrencyPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { useTranslation } from "react-i18next"
 import { SharedTypedInput } from "../Shared/SharedInput"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
@@ -29,6 +27,7 @@ import {
 } from "./NetworkSettingsSelectOptionButtons"
 import SharedButton from "../Shared/SharedButton"
 import SharedBanner from "../Shared/SharedBanner"
+import { ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL } from "../../utils/constants"
 
 interface NetworkSettingsSelectProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
@@ -95,6 +94,7 @@ export default function NetworkSettingsSelect({
   onNetworkSettingsChange,
   onSave,
 }: NetworkSettingsSelectProps): ReactElement {
+  const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
 
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
@@ -226,7 +226,7 @@ export default function NetworkSettingsSelect({
   return (
     <div className="fees standard_width">
       <span className="settings_label network_fee_label">
-        Network fees (Gwei)
+        {t("networkFees.settingsTitle")}
       </span>
       {gasOptions.map((option, i) => {
         return (
@@ -259,8 +259,9 @@ export default function NetworkSettingsSelect({
         ) && (
           <SharedBanner icon="notif-attention" iconColor="var(--attention)">
             <span className="warning_text">
-              Not enough {transactionDetails.network.baseAsset.symbol} for
-              network fees
+              {t("networkFees.insufficientBaseAsset", {
+                symbol: transactionDetails.network.baseAsset.symbol,
+              })}
             </span>
           </SharedBanner>
         )}
@@ -280,31 +281,31 @@ export default function NetworkSettingsSelect({
                   // @TODO Consider nontypical gas minimums when adding networks
                   if (parsed < 21000n) {
                     return {
-                      error: "Gas Limit must be higher than 21000",
+                      error: t("networkFees.errors.limitTooLow"),
                     }
                   }
 
                   return { parsed }
                 } catch (e) {
-                  return { error: "Gas Limit must be a number" }
+                  return { error: t("networkFees.errors.invalidLimit") }
                 }
               }}
-              label="Gas limit"
+              label={t("networkFees.gasLimit")}
               type="number"
               focusedLabelBackgroundColor="var(--green-95)"
               step={1000}
             />
           </div>
           <div className="max_fee">
-            <span className="max_label">Total Max</span>
-            <div className="price">
-              {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
+            <span className="max_label">{t("networkFees.totalMax")}</span>
+            <div className="price ellipsis">
+              {gasOptions?.[activeFeeIndex]?.maxGwei} {t("shared.gwei")}
             </div>
           </div>
         </div>
         <div className="confirm">
           <SharedButton size="medium" type="primary" onClick={onSave}>
-            Save settings
+            {t("networkFees.saveSettings")}
           </SharedButton>
         </div>
       </footer>
@@ -329,9 +330,6 @@ export default function NetworkSettingsSelect({
           }
           .price {
             width: 176px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
             text-align: right;
           }
           .max_label {

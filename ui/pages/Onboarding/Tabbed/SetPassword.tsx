@@ -15,10 +15,10 @@ import {
 } from "../../../hooks"
 import titleStyle from "../../../components/Onboarding/titleStyle"
 import SharedButton from "../../../components/Shared/SharedButton"
-import SharedInput from "../../../components/Shared/SharedInput"
 import SharedBanner from "../../../components/Shared/SharedBanner"
 import SharedToggleButton from "../../../components/Shared/SharedToggleButton"
 import PasswordStrengthBar from "../../../components/Password/PasswordStrengthBar"
+import PasswordInput from "../../../components/Shared/PasswordInput"
 
 export default function SetPassword({
   nextPage,
@@ -95,8 +95,7 @@ export default function SetPassword({
         }}
       >
         <div className="input_wrap">
-          <SharedInput
-            type="password"
+          <PasswordInput
             label="Password"
             onChange={handleInputChange(setPassword)}
             errorMessage={passwordErrorMessage}
@@ -106,8 +105,7 @@ export default function SetPassword({
           {!passwordErrorMessage && <PasswordStrengthBar password={password} />}
         </div>
         <div className="input_wrap repeat_password_wrap">
-          <SharedInput
-            type="password"
+          <PasswordInput
             label="Repeat Password"
             onChange={handleInputChange(setPasswordConfirmation)}
             errorMessage={passwordErrorMessage}

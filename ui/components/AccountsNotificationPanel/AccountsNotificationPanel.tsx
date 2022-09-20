@@ -1,4 +1,5 @@
 import React, { ReactElement, useState } from "react"
+import { useTranslation } from "react-i18next"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import AccountsNotificationPanelNotifications from "./AccountsNotificationPanelNotifications"
 import AccountsNotificationPanelAccounts from "./AccountsNotificationPanelAccounts"
@@ -11,6 +12,7 @@ export default function TopMenuNotifications({
   onCurrentAddressChange,
 }: Props): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
+  const { t } = useTranslation()
 
   return (
     <div>
@@ -18,7 +20,7 @@ export default function TopMenuNotifications({
         <SharedPanelSwitcher
           setPanelNumber={setPanelNumber}
           panelNumber={panelNumber}
-          panelNames={["Accounts"]}
+          panelNames={[t("accounts.notificationPanel.accountPanelName")]}
         />
       </div>
       {panelNumber === 1 ? (

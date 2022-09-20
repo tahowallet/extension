@@ -3,6 +3,7 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { addOrEditAddressName } from "@tallyho/tally-background/redux-slices/accounts"
 import { useDispatch } from "react-redux"
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import AccountItemActionHeader from "./AccountItemActionHeader"
@@ -19,6 +20,9 @@ export default function AccountItemEditName({
   addressOnNetwork,
   close,
 }: AccountItemEditNameProps): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "accounts.accountItem",
+  })
   const dispatch = useDispatch()
   const [newName, setNewName] = useState("")
   const [error, setError] = useState("")
@@ -26,11 +30,11 @@ export default function AccountItemEditName({
 
   useEffect(() => {
     if (touched && newName.trim() === "") {
-      setError("Name is required")
+      setError(t("noNameError"))
     } else {
       setError("")
     }
-  }, [newName, error, touched])
+  }, [newName, error, touched, t])
 
   const onSubmit = useCallback(
     (
@@ -41,7 +45,7 @@ export default function AccountItemEditName({
       event.preventDefault()
       if (!newName) {
         setTouched(true)
-        setError("Name is required")
+        setError(t("noNameError"))
         return
       }
       if (error) {
@@ -55,14 +59,14 @@ export default function AccountItemEditName({
       )
       close()
     },
-    [addressOnNetwork, close, dispatch, error, newName]
+    [addressOnNetwork, close, dispatch, error, newName, t]
   )
 
   return (
     <div className="edit_address_name">
       <div className="header">
         <AccountItemActionHeader
-          label="Edit name"
+          label={t("editName")}
           icon="icons/s/edit.svg"
           color="#fff"
         />
@@ -78,7 +82,7 @@ export default function AccountItemEditName({
         <form onSubmit={onSubmit}>
           <SharedInput
             label=""
-            placeholder="Type new name"
+            placeholder={t("typeNewName")}
             errorMessage={error}
             onChange={(value) => {
               if (!touched) {
@@ -98,10 +102,10 @@ export default function AccountItemEditName({
             close()
           }}
         >
-          Cancel
+          {t("cancel")}
         </SharedButton>
         <SharedButton type="primaryGreen" size="medium" onClick={onSubmit}>
-          Save name
+          {t("saveName")}
         </SharedButton>
       </div>
       <style jsx>{`

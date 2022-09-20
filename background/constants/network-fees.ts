@@ -20,15 +20,6 @@ export const MAX_FEE_MULTIPLIER: { [confidence: number]: bigint } = {
   0: 20n,
 }
 
-export const ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL: {
-  [confidence: number]: string
-} = {
-  70: "~5 min",
-  95: "~1 min",
-  99: "~30 sec",
-  0: "-",
-}
-
 export const INSTANT = 99
 export const EXPRESS = 95
 export const REGULAR = 70

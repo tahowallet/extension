@@ -5,6 +5,7 @@ import {
   POLYGON,
 } from "@tallyho/tally-background/constants"
 import { NFT } from "@tallyho/tally-background/redux-slices/nfts"
+import { useTranslation } from "react-i18next"
 import SharedIcon from "../Shared/SharedIcon"
 import NFTsImage from "./NFTsImage"
 import { scanWebsite } from "../../utils/constants"
@@ -33,6 +34,7 @@ export default function NFTsSlideUpPreviewContent({
 }: {
   nft: NFT
 }): ReactElement {
+  const { t } = useTranslation()
   const {
     name,
     media,
@@ -45,7 +47,7 @@ export default function NFTsSlideUpPreviewContent({
   return (
     <>
       <header>
-        <h1>{name || "No title"}</h1>
+        <h1>{name || t("nfts.noTitle")}</h1>
         <SharedIcon
           icon="icons/s/new-tab.svg"
           width={16}
