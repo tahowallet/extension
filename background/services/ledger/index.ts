@@ -74,6 +74,7 @@ const DisplayDetailsByLedgerType: {
   [LedgerType.UNKNOWN]: { messageSigningDisplayLength: 0 },
   [LedgerType.LEDGER_NANO_S]: { messageSigningDisplayLength: 99 },
   [LedgerType.LEDGER_NANO_X]: { messageSigningDisplayLength: 255 },
+  [LedgerType.LEDGER_NANO_S_PLUS]: { messageSigningDisplayLength: 255 },
 }
 
 type MetaData = {
