@@ -3,6 +3,8 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import logger from "../../lib/logger"
 import { encodeJSON } from "../../lib/utils"
+import { createEvent } from "./posthog"
+
 
 /**
  * The TelemetryService is responsible for tracking usage statistics in Tally.
@@ -58,6 +60,7 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
     }
 
     logger.debug(...output)
+      createEvent()
   }
 
   private static formatBytes(bytes: number | undefined) {
