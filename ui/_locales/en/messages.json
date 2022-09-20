@@ -55,6 +55,45 @@
       }
     }
   },
+  "networkFees": {
+    "unknownFee": "Unknown",
+    "toBeDetermined": "TBD",
+    "settingsTitle": "Network fees (Gwei)",
+    "gasLimit": "Gas limit",
+    "insufficientBaseAsset": "Not enough {{symbol}} for network fees",
+    "totalMax": "Total Max",
+    "saveSettings": "Save settings",
+    "errors": {
+      "limitTooLow": "Gas Limit must be higher than 21000",
+      "invalidLimit": "Gas Limit must be a number",
+      "lowGas": "Low"
+    },
+    "optimism": {
+      "title": "Network fees",
+      "header": "Gas fees on Optimism work differently from Ethereum.",
+      "transactionFee": "Transaction fee",
+      "rollUp": "Roll-up",
+      "estimatedGas": "Estimated Gas",
+      "explainerOne": "The estimated gas cost for Optimism transactions includes an Optimism fee + an Ethereum roll-up fee (the fee to register transaction on Ethereum chain).",
+      "explainerTwo": "Tally Ho stays in sync with the current Optimism and Ethereum network fees to estimate the fee for a given transaction.",
+      "explainerThree": "Only in rare cases will the actual fee you pay change by more than 25% from the estimate.",
+      "learnMore": "Learn More"
+    },
+    "miner": "Miner:",
+    "maxBase": "Max Base:",
+    "speeds": {
+      "0": "-",
+      "70": "~5 min",
+      "95": "~1 min",
+      "99": "~30 sec"
+    },
+    "types": {
+      "regular": "Regular",
+      "express": "Express",
+      "instant": "Instant",
+      "custom": "Custom"
+    }
+  },
   "overview": {
     "totalBalanceEverywhere": "Total balance on all accounts",
     "accounts": "Accounts",
@@ -143,6 +182,7 @@
   },
   "shared": {
     "cancelBtn": "Cancel",
+    "gwei": "Gwei",
     "showPasswordHint": "Show Password",
     "hidePasswordHint": "Hide Password"
   },
