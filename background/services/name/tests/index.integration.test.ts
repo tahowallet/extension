@@ -20,11 +20,13 @@ describe("NameService", () => {
     })
     expect(nameRecord).toBeDefined()
     if (nameRecord !== undefined) {
-      expect(nameRecord?.resolved.nameOnNetwork.name).toContain(
+      expect(nameRecord.resolved.nameOnNetwork.name).toContain(
         "Optimism Teleportr"
       )
+      expect(nameRecord.system).toEqual("tally-known-contracts")
     }
   })
+  it.todo("Doesn't use ENS or UNS to resolve built-in contracts")
   it.todo("Looks up and returns names from the address book")
   it.todo("Caches names by normalized address network")
   it.todo("Resolves the same address for ENS names, regardless of network")
