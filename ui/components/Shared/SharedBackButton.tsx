@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import { useHistory } from "react-router-dom"
 import { History, MemoryHistory } from "history"
 import classNames from "classnames"
+import { useTranslation } from "react-i18next"
 
 export default function SharedBackButton({
   path,
@@ -12,6 +13,7 @@ export default function SharedBackButton({
   onClick?: () => void
   withoutBackText?: boolean
 }): ReactElement {
+  const { t } = useTranslation()
   const history: History<unknown> | MemoryHistory<unknown> =
     useHistory<unknown>()
 
@@ -42,7 +44,7 @@ export default function SharedBackButton({
       }}
     >
       <div className="icon_chevron_left" />
-      {!withoutBackText && "Back"}
+      {!withoutBackText && t("shared.goBack")}
       <style jsx>{`
         button {
           color: var(--green-40);
