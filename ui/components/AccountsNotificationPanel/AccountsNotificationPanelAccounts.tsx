@@ -15,6 +15,7 @@ import {
 } from "@tallyho/tally-background/lib/utils"
 import { clearSignature } from "@tallyho/tally-background/redux-slices/earn"
 import { resetClaimFlow } from "@tallyho/tally-background/redux-slices/claim"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
@@ -23,6 +24,7 @@ import {
 } from "../../hooks"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import AccountItemOptionsMenu from "../AccountItem/AccountItemOptionsMenu"
+import { i18n } from "../../_locales/i18n"
 
 type WalletTypeInfo = {
   title: string
@@ -31,20 +33,20 @@ type WalletTypeInfo = {
 
 const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   [AccountType.ReadOnly]: {
-    title: "Read-only",
+    title: i18n.t("accounts.notificationPanel.readOnly"),
     icon: "./images/eye_account@2x.png",
   },
   [AccountType.Imported]: {
-    title: "Import",
+    title: i18n.t("accounts.notificationPanel.import"),
     icon: "./images/imported@2x.png",
   },
   [AccountType.Internal]: {
-    title: "Tally Ho",
+    title: i18n.t("accounts.notificationPanel.internal"),
     icon: "./images/tally_avatar.svg",
   },
   [AccountType.Ledger]: {
-    title: "Full access via Ledger", // FIXME: check copy against UI specs
-    icon: "./images/ledger_icon@2x.png", // FIXME: use proper icon
+    title: i18n.t("accounts.notificationPanel.ledger"),
+    icon: "./images/ledger_icon@2x.png",
   },
 }
 
@@ -57,6 +59,7 @@ function WalletTypeHeader({
   onClickAddAddress?: () => void
   walletNumber?: number
 }) {
+  const { t } = useTranslation()
   const { title, icon } = walletTypeDetails[accountType]
   const history = useHistory()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
@@ -82,7 +85,7 @@ function WalletTypeHeader({
                 }
               }}
             >
-              Add address
+              {t("accounts.notificationPanel.addAddress")}
             </SharedButton>
           </div>
         ) : (
@@ -146,6 +149,7 @@ type Props = {
 export default function AccountsNotificationPanelAccounts({
   onCurrentAddressChange,
 }: Props): ReactElement {
+  const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
@@ -301,7 +305,7 @@ export default function AccountsNotificationPanelAccounts({
           iconPosition="left"
           linkTo="/onboarding/add-wallet"
         >
-          Add Wallet
+          {t("accounts.notificationPanel.addWallet")}
         </SharedButton>
       </footer>
       <style jsx>

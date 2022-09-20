@@ -11,6 +11,15 @@
       "loudWarningBody": "Are you sure you want to proceed?",
       "removeAddress": "Remove address",
       "removeConfirm": "Yes, I want to remove it"
+    },
+    "notificationPanel": {
+      "accountPanelName": "Accounts",
+      "addWallet": "Add Wallet",
+      "addAddress": "Add address",
+      "readOnly": "Read-only",
+      "import":"Import",
+      "internal":"Tally Ho",
+      "ledger":"Full access via Ledger"
     }
   },
   "assetInput": {

@@ -297,7 +297,7 @@ export default function NetworkSettingsSelect({
           </div>
           <div className="max_fee">
             <span className="max_label">Total Max</span>
-            <div className="price">
+            <div className="price ellipsis">
               {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
             </div>
           </div>
@@ -329,9 +329,6 @@ export default function NetworkSettingsSelect({
           }
           .price {
             width: 176px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
             text-align: right;
           }
           .max_label {
