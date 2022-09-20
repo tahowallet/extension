@@ -39,9 +39,25 @@ function SignDataMessage({
       {keys.map((key) => (
         <div className="single_message">
           <div className="key">{capitalize(key)}</div>
-          <div className="light">{`${message[key]}`}</div>
+          <div className="light ellipsis">{`${message[key]}`}</div>
         </div>
       ))}
+      <style jsx>{`
+        .single_message {
+          display: flex;
+          justify-content: space-between;
+          text-align: left;
+          margin: 16px;
+          width: 80%;
+        }
+        .light {
+          color: #ccd3d3;
+        }
+        .key {
+          color: var(--green-40);
+          margin-right: 8px;
+        }
+      `}</style>
     </>
   )
 }
@@ -121,26 +137,6 @@ export default function SignDataDetailPanel(): ReactElement {
           overflow-wrap: anywhere;
           max-width: 220px;
           text-align: right;
-        }
-        .light {
-          color: #ccd3d3;
-        }
-        .key {
-          color: var(--green-40);
-        }
-        .divider {
-          width: 80%;
-          height: 2px;
-          opacity: 60%;
-          background-color: var(--green-120);
-        }
-        .single_message {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-          text-align: left;
-          padding: 16px;
-          width: 80%;
         }
         .divider {
           width: 80%;
