@@ -26,7 +26,7 @@ function NFTsListItem({
         style={style}
       >
         <NFTsImage width={168} height={168} alt={name} src={src} />
-        <span className="title">
+        <span className="title ellipsis">
           <span>{name || "No title"}</span>
         </span>
       </button>
@@ -49,9 +49,6 @@ function NFTsListItem({
         }
         .title {
           max-width: 168px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
           margin-top: 8px;
           font-weight: 500;
           font-size: 14px;
