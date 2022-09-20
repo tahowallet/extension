@@ -6,6 +6,7 @@ import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import SharedInput from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
+import { NETWORK_FEE_CHOSEN_TYPE_TO_HUMAN_READABLE_TYPE } from "../../utils/constants"
 
 const buttonStyle = `
   .subtext_large {
@@ -102,7 +103,9 @@ export function NetworkSettingsSelectOptionButton({
       type="button"
     >
       <div className="network_option_left">
-        <div className="name">{option.type}</div>
+        <div className="name">
+          {NETWORK_FEE_CHOSEN_TYPE_TO_HUMAN_READABLE_TYPE[option.type]}
+        </div>
         <div className="subtext">{option.estimatedSpeed}</div>
       </div>
 
@@ -162,7 +165,9 @@ export function NetworkSettingsSelectOptionButtonCustom({
       type="button"
     >
       <div className="network_option_left">
-        <div className="name">{option.type}</div>
+        <div className="name">
+          {NETWORK_FEE_CHOSEN_TYPE_TO_HUMAN_READABLE_TYPE[option.type]}
+        </div>
       </div>
 
       <div className="network_option_right">
