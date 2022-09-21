@@ -114,7 +114,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     port: Required<browser.Runtime.Port>,
     event: PortRequestEvent
   ): Promise<void> {
-    const { url } = port.sender
+    const { url, tab } = port.sender
     if (typeof url === "undefined") {
       return
     }
@@ -194,13 +194,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
         )) as string
       ).toString()
 
+      // these params are taken directly from the dapp website
       const [title, faviconUrl] = event.request.params as string[]
 
       const permissionRequest: PermissionRequest = {
         key: `${origin}_${accountAddress}_${dAppChainID}`,
         origin,
         chainID: dAppChainID,
-        faviconUrl,
+        faviconUrl: faviconUrl || tab?.favIconUrl || "", // if favicon was not found on the website then try with browser's `tab`
         title,
         state: "request",
         accountAddress,
