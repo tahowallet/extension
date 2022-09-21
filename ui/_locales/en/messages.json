@@ -69,6 +69,26 @@
       "step1": "Accept or Reject transaction on device",
       "step2": "Refresh page"
     },
+    "notConnected": {
+      "title": "Connect to Ledger",
+      "helpMessage": "Take the following steps:",
+      "step1": "Plug in Ledger",
+      "step2": "Enter PIN to unlock",
+      "step3": "Open Ethereum app"
+    },
+    "multipleLedgersConnected": {
+      "title": "Multiple Ledgers are connected",
+      "helpMessage": "Take the following steps:",
+      "step1": "Remove all Ledgers but one",
+      "step2": "Enter PIN to unlock",
+      "step3": "Open Ethereum app"
+    },
+    "wrongLedger": {
+      "title": "Wrong Ledger",
+      "helpMessage": "Looks like you are using the wrong Ledger.",
+      "connectLedger": "Connect the Ledger containing this account:",
+      "refresh": "Refresh the page"
+    },
     "derivationPaths": {
       "ledgerLive": "Ledger Live",
       "bip44": "BIP 44 (Trezor, 🦊)",
@@ -230,7 +250,8 @@
       "connectedStatus": "Connected"
     },
     "selectToken": "Select token",
-    "backButtonText": "Back"
+    "backButtonText": "Back",
+    "saveBtn": "Save"
   },
   "signing": {
     "signatureRequired": "Your signature is required",
@@ -256,8 +277,27 @@
     "noSigning": "Read-only accounts cannot sign",
     "sendTo": "Send to",
     "contractCreation": "Contract creation",
-    "interactingWith": "Interacting with"
-  },
+    "interactingWith": "Interacting with",
+    "unknownNetwork": "Unknown Network",
+    "detailPanelName": "Details",
+    "rawDataPanelName": "Raw data",
+    "rawDataCopyMsg": "Raw data copied to clipboard",
+    "copyRawData":  "Copy hex",
+    "spendAmount": "Spend Amount",
+    "help": "I need help",
+    "refresh": "Refresh",
+    "spendAsset": {
+      "approve": "Approve",
+      "infinite": "Infinite",
+      "spend": "Spend",
+      "tokens": "tokens",
+      "spendLimit": "Spend limit",
+      "tooltip1": "Spend limit is the amount of funds from a particular asset, that you allow a contract to spend.",
+      "tooltip2": "Infinite tx has the drawback that if the contract is mailicous, it can steal all your funds.",
+      "changeLimit": "Change limit",
+      "invalidAmount": "Invalid amount"
+    }
+    },
   "swap": {
     "title": "Swap Assets",
     "from": "Swap from:",
