@@ -1,5 +1,6 @@
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement, useCallback, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch } from "../../../../hooks"
 import { SignerFrameProps } from ".."
 import SharedButton from "../../../Shared/SharedButton"
@@ -18,6 +19,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
   signActionCreator,
   rejectActionCreator,
 }: SignerFrameProps<T>): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "ledger" })
   const { t: tSigning } = useTranslation("translation", {
     keyPrefix: "signTransaction",
   })
@@ -74,6 +76,31 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
             isArbitraryDataSigningRequired={isArbitraryDataSigningRequired}
             displayDetails={ledgerState.displayDetails}
           />
+
+          <footer className="cannot_reject_warning">
+            <span className="block_icon" />
+            {t("onlyRejectFromLedger")}
+          </footer>
+          <style jsx>{`
+            .cannot_reject_warning {
+              position: fixed;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              bottom: 0;
+              padding: 16px;
+              color: var(--error);
+              font-weight: 600;
+              font-size: 18px;
+            }
+            .block_icon {
+              width: 24px;
+              height: 24px;
+              margin: 8px;
+              background: no-repeat center / cover
+                url("./images/block_icon@2x.png");
+            }
+          `}</style>
         </>
       ) : (
         <>
@@ -91,7 +118,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
                   setIsSlideUpOpen(true)
                 }}
               >
-                Check Ledger
+                {t("checkLedger")}
               </SharedButton>
             ) : (
               <SharedButton

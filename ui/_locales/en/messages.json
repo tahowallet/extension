@@ -17,9 +17,9 @@
       "addWallet": "Add Wallet",
       "addAddress": "Add address",
       "readOnly": "Read-only",
-      "import":"Import",
-      "internal":"Tally Ho",
-      "ledger":"Full access via Ledger"
+      "import": "Import",
+      "internal": "Tally Ho",
+      "ledger": "Full access via Ledger"
     }
   },
   "assetInput": {
@@ -58,6 +58,14 @@
   "ledger": {
     "checkLedger": "Check Ledger",
     "onlyRejectFromLedger": "Tx can only be Rejected from Ledger",
+    "connectionStatus": {
+      "availableButNoSigning": "Ledger is connected but cannot sign",
+      "readyToSign": "Ledger is ready to sign",
+      "disconnected": "Ledger is disconnected",
+      "wrongLedger": "Wrong Ledger connected",
+      "multipleLedgers": "Multiple ledgers connected",
+      "busy": "Ledger is busy"
+    },
     "activation": {
       "title": "Activate blind signing",
       "helpMessage": "Take the following steps:",
@@ -141,7 +149,7 @@
     }
   },
   "nfts": {
-    "empty":"Looks like you don&apos;t have any NFTs yet? Get some and view them here!",
+    "empty": "Looks like you don&apos;t have any NFTs yet? Get some and view them here!",
     "noTitle": "No title"
   },
   "onboarding": {
@@ -297,7 +305,7 @@
       "changeLimit": "Change limit",
       "invalidAmount": "Invalid amount"
     }
-    },
+  },
   "swap": {
     "title": "Swap Assets",
     "from": "Swap from:",

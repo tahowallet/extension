@@ -15,6 +15,14 @@ import React, { ReactElement } from "react"
 import TransactionDetailContainer from "../../../../TransactionDetail/TransactionDetailContainer"
 import TransactionDetailItem from "../../../../TransactionDetail/TransactionDetailItem"
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
+// !!                                                                     !! //
+// !! Note that ~none of the strings in this file are internationalized   !! //
+// !! This is because the strings in this file reflect the actual UI of   !! //
+// !! the Ledger hardware wallet, which is only ever rendered in English! !! //
+// !!                                                                     !! //
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
+
 type SignerLedgerSigningProps<T extends SignOperationType> = {
   request: T
   isArbitraryDataSigningRequired: boolean
@@ -41,7 +49,7 @@ function SignerLedgerSigningMessage({
     </TransactionDetailContainer>
   )
 }
-
+/* intentionally not i18ned, see above */
 function SignerLedgerSigningTypedData({
   typedData,
 }: {
@@ -58,9 +66,18 @@ function SignerLedgerSigningTypedData({
 
   return (
     <TransactionDetailContainer>
-      <TransactionDetailItem name="Sign typed message" value="" />
-      <TransactionDetailItem name="Domain hash" value={domainHash} />
-      <TransactionDetailItem name="Message hash" value={messageHash} />
+      <TransactionDetailItem
+        name="Sign typed message" /* intentionally not i18ned, see above */
+        value=""
+      />
+      <TransactionDetailItem
+        name="Domain hash" /* intentionally not i18ned, see above */
+        value={domainHash}
+      />
+      <TransactionDetailItem
+        name="Message hash" /* intentionally not i18ned, see above */
+        value={messageHash}
+      />
     </TransactionDetailContainer>
   )
 }
@@ -92,23 +109,32 @@ function SignerLedgerSigningTransaction({
   return (
     <>
       <TransactionDetailContainer>
-        <TransactionDetailItem name="Review transaction" value="" />
+        <TransactionDetailItem
+          name="Review transaction" /* intentionally not i18ned, see above */
+          value=""
+        />
         {isArbitraryDataSigningRequired ? (
-          <TransactionDetailItem name="Blind signing" value="" />
+          <TransactionDetailItem
+            name="Blind signing" /* intentionally not i18ned, see above */
+            value=""
+          />
         ) : (
           <></>
         )}
-        <TransactionDetailItem name="Amount" value={`ETH ${ethAmountString}`} />
         <TransactionDetailItem
-          name="Address"
+          name="Amount" /* intentionally not i18ned, see above */
+          value={`ETH ${ethAmountString}`}
+        />
+        <TransactionDetailItem
+          name="Address" /* intentionally not i18ned, see above */
           value={
             transactionRequest.to !== undefined
               ? ethers.utils.getAddress(transactionRequest.to)
-              : "Contract"
+              : "Contract" /* intentionally not i18ned, see above */
           }
         />
         <TransactionDetailItem
-          name="Max fees"
+          name="Max fees" /* intentionally not i18ned, see above */
           value={`ETH ${maxFeeAmountString}`}
         />
       </TransactionDetailContainer>
@@ -117,25 +143,6 @@ function SignerLedgerSigningTransaction({
         <span className="block_icon" />
         Tx can only be Rejected from Ledger
       </footer>
-      <style jsx>{`
-        .cannot_reject_warning {
-          position: fixed;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          bottom: 0;
-          padding: 16px;
-          color: var(--error);
-          font-weight: 600;
-          font-size: 18px;
-        }
-        .block_icon {
-          width: 24px;
-          height: 24px;
-          margin: 8px;
-          background: no-repeat center / cover url("./images/block_icon@2x.png");
-        }
-      `}</style>
     </>
   )
 }

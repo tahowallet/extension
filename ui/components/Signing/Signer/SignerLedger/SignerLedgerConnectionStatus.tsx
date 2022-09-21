@@ -1,5 +1,6 @@
 import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import { SigningLedgerState } from "../../../SignTransaction/useSigningLedgerState"
 
 type SignerLedgerConnectionStatusProps = {
@@ -11,48 +12,52 @@ export default function SignerLedgerConnectionStatus({
   ledgerState,
   mustEnableArbitraryDataSigning,
 }: SignerLedgerConnectionStatusProps): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "ledger.connectionStatus",
+  })
+
   switch (ledgerState.state) {
     case "available":
       if (mustEnableArbitraryDataSigning) {
         return (
           <img
             src="/images/connect_ledger_indicator_disconnected.svg"
-            alt="Ledger is connected but cannot sign"
+            alt={t("availableButNoSigning")}
           />
         )
       }
       return (
         <img
           src="/images/connect_ledger_indicator_connected.svg"
-          alt="Ledger is ready to sign"
+          alt={t("readyToSign")}
         />
       )
     case "no-ledger-connected":
       return (
         <img
           src="/images/connect_ledger_indicator_disconnected.svg"
-          alt="Ledger is disconnected"
+          alt={t("disconnected")}
         />
       )
     case "wrong-ledger-connected":
       return (
         <img
           src="/images/connect_ledger_indicator_disconnected.svg"
-          alt="Wrong Ledger connected"
+          alt={t("wrongLedger")}
         />
       )
     case "multiple-ledgers-connected":
       return (
         <img
           src="/images/connect_ledger_indicator_disconnected.svg"
-          alt="Multiple ledgers connected"
+          alt={t("multipleLedgers")}
         />
       )
     case "busy":
       return (
         <img
           src="/images/connect_ledger_indicator_disconnected.svg"
-          alt="Ledger is busy"
+          alt={t("busy")}
         />
       )
     default:
