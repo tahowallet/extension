@@ -19,10 +19,12 @@ export function connectProviderBridge(): void {
     ) {
       // if dapp wants to connect let's grab its details
       if (event.data.request.method === "eth_requestAccounts") {
-        const faviconElement = window.document.querySelector(
-          "link[rel~='icon']"
-        ) as HTMLLinkElement | null
-        const faviconUrl = faviconElement?.href ?? ""
+        const faviconElements: NodeListOf<HTMLLinkElement> =
+          window.document.querySelectorAll("link[rel*='icon']")
+        const largestFavicon = [...faviconElements].sort((el) =>
+          parseInt(el.sizes?.toString().split("x")[0], 10)
+        )[0]
+        const faviconUrl = largestFavicon?.href ?? ""
         const { title } = window.document ?? ""
 
         event.data.request.params.push(title, faviconUrl)
