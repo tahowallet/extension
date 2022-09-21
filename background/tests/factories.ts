@@ -4,6 +4,8 @@ import { ETH, ETHEREUM, OPTIMISM } from "../constants"
 import { AnyEVMTransaction, LegacyEVMTransactionRequest } from "../networks"
 import {
   ChainService,
+  EnrichmentService,
+  IndexingService,
   KeyringService,
   LedgerService,
   NameService,
@@ -65,6 +67,35 @@ export const createSigningService = async (
     overrides.keyringService ?? createKeyringService(),
     overrides.ledgerService ?? createLedgerService(),
     overrides.chainService ?? createChainService()
+  )
+}
+
+export async function createIndexingService(overrides?: {
+  chainService?: Promise<ChainService>
+  preferenceService?: Promise<PreferenceService>
+}): Promise<IndexingService> {
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+  return IndexingService.create(
+    preferenceService,
+    overrides?.chainService ?? createChainService({ preferenceService })
+  )
+}
+
+export async function createEnrichmentService(overrides?: {
+  chainService?: Promise<ChainService>
+  indexingService?: Promise<IndexingService>
+  nameService?: Promise<NameService>
+  preferenceService?: Promise<PreferenceService>
+}): Promise<EnrichmentService> {
+  const indexingService = overrides?.indexingService ?? createIndexingService()
+  const nameService = overrides?.nameService ?? createNameService()
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+  return EnrichmentService.create(
+    overrides?.chainService ?? createChainService({ preferenceService }),
+    indexingService,
+    nameService
   )
 }
 
