@@ -28,17 +28,6 @@ const steps = HIDE_TOKEN_FEATURES
         body: `That means Tally Ho is owned by our users. And all profits go straight to the community.`,
         buttonCopy: "Continue",
       },
-      {
-        image: {
-          width: 267,
-          height: 236.6,
-          fileName: "illustration_onboarding_default",
-          extraStyles: `margin-top: 21px;`,
-        },
-        title: "Tally Ho set as default",
-        body: `Tally Ho will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
-        buttonCopy: "Get started",
-      },
     ]
   : [
       {

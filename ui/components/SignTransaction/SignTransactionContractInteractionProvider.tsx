@@ -30,7 +30,8 @@ export default function SignTransactionContractInteractionProvider({
                   address={transactionDetails.to}
                   name={
                     annotation !== undefined && "contractInfo" in annotation
-                      ? annotation.contractInfo.annotation.nameOnNetwork?.name
+                      ? annotation.contractInfo.annotation.nameRecord?.resolved
+                          .nameOnNetwork.name
                       : undefined
                   }
                 />
