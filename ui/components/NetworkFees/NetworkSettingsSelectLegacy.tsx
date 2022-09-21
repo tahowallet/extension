@@ -230,7 +230,7 @@ export default function NetworkSettingsSelectLegacy({
               <div className="subtext">Probability: {option.confidence}%</div>
             </div>
             <div className="option_right">
-              <div className="price">{`~${option.estimatedGwei} Gwei`}</div>
+              <div className="price ellipsis">{`~${option.estimatedGwei} Gwei`}</div>
               <div className="subtext">{option.dollarValue}</div>
             </div>
           </button>
@@ -268,7 +268,7 @@ export default function NetworkSettingsSelectLegacy({
         </div>
         <div className="max_fee">
           <span className="max_label">Max Fee</span>
-          <div className="price">
+          <div className="price ellipsis">
             {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
           </div>
         </div>
@@ -322,9 +322,6 @@ export default function NetworkSettingsSelectLegacy({
           }
           .price {
             width: 176px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
             text-align: right;
           }
           .subtext {

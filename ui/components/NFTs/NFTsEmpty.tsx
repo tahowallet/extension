@@ -1,13 +1,12 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 
 export default function NFTsEmpty(): ReactElement {
+  const { t } = useTranslation()
   return (
     <div className="standard_width container">
       <img className="bowl_image" src="./images/empty_bowl@2x.png" alt="" />
-      <p>
-        Looks like you don&apos;t have any NFTs yet? Get some and view them
-        here!
-      </p>
+      <p>{t("nfts.empty")}</p>
       <style jsx>
         {`
           .container {

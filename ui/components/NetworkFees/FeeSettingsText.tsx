@@ -18,6 +18,7 @@ import {
   isEIP1559EnrichedTransactionRequest,
   isEIP1559TransactionRequest,
 } from "@tallyho/tally-background/networks"
+import { useTranslation } from "react-i18next"
 import {
   PricePoint,
   unitPricePointForPricePoint,
@@ -96,6 +97,7 @@ export default function FeeSettingsText({
 }: {
   customNetworkSetting?: NetworkFeeSettings
 }): ReactElement {
+  const { t } = useTranslation()
   const transactionData = useBackgroundSelector(selectTransactionData)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const currentNetwork = transactionData?.network || selectedNetwork
@@ -124,7 +126,8 @@ export default function FeeSettingsText({
     networkSettings.values.gasPrice ||
     baseFeePerGas + networkSettings.values.maxPriorityFeePerGas
 
-  if (typeof estimatedFeesPerGas === "undefined") return <div>Unknown</div>
+  if (typeof estimatedFeesPerGas === "undefined")
+    return <div>{t("networkFees.unknownFee")}</div>
 
   const estimatedRollupFee =
     transactionData &&
@@ -146,7 +149,7 @@ export default function FeeSettingsText({
   return (
     <div>
       {!gasLimit ? (
-        <>TBD</>
+        <>{t("networkFees.toBeDetermined")}</>
       ) : (
         <>
           ~${dollarValue}

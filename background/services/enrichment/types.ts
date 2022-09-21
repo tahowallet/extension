@@ -1,5 +1,5 @@
 import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
-import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../../accounts"
+import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyEVMTransaction,
   EIP1559TransactionRequest,
@@ -9,6 +9,7 @@ import {
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
 import { UNIXTime } from "../../types"
 import { SignTypedDataRequest } from "../../utils/signing"
+import { ResolvedNameRecord } from "../name"
 
 export type BaseTransactionAnnotation = {
   /**
@@ -174,9 +175,9 @@ export type AddressOnNetworkAnnotation = {
    */
   balance: AccountBalance
   /**
-   * A reverse-resolved name for this address, if one has been found.
+   * A reverse-resolved name record for this address, if one has been found.
    */
-  nameOnNetwork?: NameOnNetwork
+  nameRecord?: ResolvedNameRecord
 }
 
 export type EnrichedAddressOnNetwork = AddressOnNetwork & {

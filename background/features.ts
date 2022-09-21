@@ -15,3 +15,7 @@ export const SUPPORT_MULTIPLE_LANGUAGES =
 export const SUPPORT_ANALYTICS = process.env.SUPPORT_ANALYTICS === "true"
 export const SUPPORT_TABBED_ONBOARDING =
   process.env.SUPPORT_TABBED_ONBOARDING === "true"
+export const SUPPORT_KEYRING_LOCKING =
+  process.env.SUPPORT_KEYRING_LOCKING === "true"
+export const SUPPORT_FORGOT_PASSWORD =
+  process.env.SUPPORT_FORGOT_PASSWORD === "true"

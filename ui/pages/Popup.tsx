@@ -13,6 +13,7 @@ import { Provider } from "react-redux"
 import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { runtime } from "webextension-polyfill"
+import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
 import {
   selectCurrentAccountSigner,
@@ -62,7 +63,10 @@ function transformLocation(
   }
 
   if (isTransactionPendingSignature) {
-    pathname = needsKeyringUnlock ? "/keyring/unlock" : "/sign-transaction"
+    pathname =
+      !USE_UPDATED_SIGNING_UI && needsKeyringUnlock
+        ? "/keyring/unlock"
+        : "/sign-transaction"
   }
 
   return {

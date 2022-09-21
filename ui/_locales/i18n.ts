@@ -28,6 +28,12 @@ const setLanguage = (lang: string): void => {
     .then(() => lang && setLocalStorageItem(LANGUAGE_KEY, lang))
 }
 
+declare module "react-i18next" {
+  interface CustomTypeOptions {
+    resources: typeof resources["en"]
+  }
+}
+
 export { i18n, getLanguage, setLanguage }
 
 export default i18n
