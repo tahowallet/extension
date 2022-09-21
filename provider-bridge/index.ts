@@ -17,6 +17,17 @@ export function connectProviderBridge(): void {
       event.source === window && // we want to recieve msgs only from the in-page script
       event.data.target === PROVIDER_BRIDGE_TARGET
     ) {
+      // if dapp wants to connect let's grab its details
+      if (event.data.request.method === "eth_requestAccounts") {
+        const faviconElement = window.document.querySelector(
+          "link[rel~='icon']"
+        ) as HTMLLinkElement | null
+        const faviconUrl = faviconElement?.href ?? ""
+        const { title } = window.document ?? ""
+
+        event.data.request.params.push(title, faviconUrl)
+      }
+
       // TODO: replace with better logging before v1. Now it's invaluable in debugging.
       // eslint-disable-next-line no-console
       console.log(

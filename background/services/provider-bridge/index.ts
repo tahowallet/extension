@@ -114,20 +114,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
     port: Required<browser.Runtime.Port>,
     event: PortRequestEvent
   ): Promise<void> {
-    const { url, tab } = port.sender
+    const { url } = port.sender
     if (typeof url === "undefined") {
       return
     }
 
     const { origin } = new URL(url)
-
-    const completeTab =
-      typeof tab !== "undefined" && typeof tab.id !== "undefined"
-        ? await browser.tabs.get(tab?.id)
-        : tab
-
-    const faviconUrl = completeTab?.favIconUrl ?? ""
-    const title = completeTab?.title ?? ""
 
     const response: PortResponseEvent = {
       id: event.id,
@@ -201,6 +193,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
           origin
         )) as string
       ).toString()
+
+      const [title, faviconUrl] = event.request.params as string[]
 
       const permissionRequest: PermissionRequest = {
         key: `${origin}_${accountAddress}_${dAppChainID}`,
