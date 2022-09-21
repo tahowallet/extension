@@ -362,7 +362,7 @@ export function sameNetwork(
  */
 export function toHexChainID(chainID: string | number): string {
   if (typeof chainID === "string" && chainID.startsWith("0x")) {
-    return chainID
+    return chainID.toLowerCase()
   }
   return `0x${BigInt(chainID).toString(16)}`
 }
