@@ -149,9 +149,6 @@ export default class TallyWindowProvider extends EventEmitter {
 
     const { method: sentMethod } = sendData.request
 
-    // TODO: refactor these into their own function handler
-    // https://github.com/tallycash/tally-extension/pull/440#discussion_r753504700
-
     if (isEIP1193Error(result)) {
       reject(result)
     }
@@ -162,29 +159,36 @@ export default class TallyWindowProvider extends EventEmitter {
       this.emit("connect", { chainId: this.chainId })
     }
 
-    if (
-      sentMethod === "wallet_switchEthereumChain" ||
-      sentMethod === "wallet_addEthereumChain"
-    ) {
-      // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
-      if (result === null) {
-        this.handleChainIdChange(
-          (sendData.request.params[0] as { chainId: string }).chainId
-        )
-      }
-    } else if (sentMethod === "eth_chainId" || sentMethod === "net_version") {
-      if (
-        typeof result === "string" &&
-        Number(this.chainId) !== Number(result)
-      ) {
-        this.handleChainIdChange(result)
-      }
-    } else if (
-      (sentMethod === "eth_accounts" || sentMethod === "eth_requestAccounts") &&
-      Array.isArray(result) &&
-      result.length !== 0
-    ) {
-      this.handleAddressChange(result)
+    switch (sentMethod) {
+      case "wallet_switchEthereumChain":
+      case "wallet_addEthereumChain":
+        // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
+        if (result === null) {
+          this.handleChainIdChange(
+            (sendData.request.params[0] as { chainId: string }).chainId
+          )
+        }
+        break
+
+      case "eth_chainId":
+      case "net_version":
+        if (
+          typeof result === "string" &&
+          Number(this.chainId) !== Number(result)
+        ) {
+          this.handleChainIdChange(result)
+        }
+        break
+
+      case "eth_accounts":
+      case "eth_requestAccounts":
+        if (Array.isArray(result) && result.length !== 0) {
+          this.handleAddressChange(result)
+        }
+        break
+
+      default:
+        break
     }
 
     resolve(result)
