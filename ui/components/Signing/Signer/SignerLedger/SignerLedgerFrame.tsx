@@ -18,6 +18,10 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
   signActionCreator,
   rejectActionCreator,
 }: SignerFrameProps<T>): ReactElement {
+  const { t: tSigning } = useTranslation("translation", {
+    keyPrefix: "signTransaction",
+  })
+
   const [isSigning, setIsSigning] = useState(false)
   const dispatch = useBackgroundDispatch()
 
@@ -76,7 +80,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
           {children}
           <footer>
             <SharedButton size="large" type="secondary" onClick={handleReject}>
-              Reject
+              {tSigning("reject")}
             </SharedButton>
 
             {ledgerCannotSign ? (
