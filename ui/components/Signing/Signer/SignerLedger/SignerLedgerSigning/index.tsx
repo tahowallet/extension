@@ -22,20 +22,20 @@ type SignerLedgerSigningProps<T extends SignOperationType> = {
 }
 
 function SignerLedgerSigningMessage({
-  rawMessage,
+  message,
   displayDetails: ledgerDisplayDetails,
 }: {
-  rawMessage: string
+  message: string
   displayDetails: DisplayDetails
 }): ReactElement {
   return (
     <TransactionDetailContainer>
       <TransactionDetailItem name="Sign message" value="" />
       <TransactionDetailItem
-        name="Message"
-        value={`${rawMessage.substring(
+        name="Message" /* intentionally not i18ned, see above */
+        value={`${message.substring(
           0,
-          ledgerDisplayDetails.messageSigningDisplayLength
+          ledgerDisplayDetails.messageSigningDisplayLength - 3
         )}…`}
       />
     </TransactionDetailContainer>
@@ -146,9 +146,14 @@ export default function SignerLedgerSigning<T extends SignOperationType>({
   displayDetails,
 }: SignerLedgerSigningProps<T>): ReactElement {
   if ("signingData" in request) {
+    const message =
+      typeof request.signingData === "string"
+        ? request.signingData
+        : request.signingData.unparsedMessageData
+
     return (
       <SignerLedgerSigningMessage
-        rawMessage={request.rawSigningData}
+        message={message}
         displayDetails={displayDetails}
       />
     )

@@ -14,6 +14,10 @@ export type EIP712DomainType = {
 
 // spec found https://eips.ethereum.org/EIPS/eip-4361
 export interface EIP4361Data {
+  /**
+   * The message string that was parsed to produce this EIP-4361 data.
+   */
+  unparsedMessageData: string
   domain: string
   address: string
   version: string
@@ -64,6 +68,7 @@ const checkEIP4361: (message: string) => EIP4361Data | undefined = (
   try {
     const siweMessage = new SiweMessage(message)
     return {
+      unparsedMessageData: message,
       domain: siweMessage.domain,
       address: siweMessage.address,
       statement: siweMessage.statement,
