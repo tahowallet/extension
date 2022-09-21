@@ -120,18 +120,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
 
     const { origin } = new URL(url)
-    const completeTab =
-      typeof tab !== "undefined" && typeof tab.id !== "undefined"
-        ? {
-            ...tab,
-            // Firefox sometimes requires an extra query to get favicons,
-            // unclear why but may be related to
-            // https://bugzilla.mozilla.org/show_bug.cgi?id=1417721 .
-            ...(await browser.tabs.get(tab.id)),
-          }
-        : tab
-    const faviconUrl = completeTab?.favIconUrl ?? ""
-    const title = completeTab?.title ?? ""
 
     const response: PortResponseEvent = {
       id: event.id,
@@ -206,11 +194,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
         )) as string
       ).toString()
 
+      // these params are taken directly from the dapp website
+      const [title, faviconUrl] = event.request.params as string[]
+
       const permissionRequest: PermissionRequest = {
         key: `${origin}_${accountAddress}_${dAppChainID}`,
         origin,
         chainID: dAppChainID,
-        faviconUrl,
+        faviconUrl: faviconUrl || tab?.favIconUrl || "", // if favicon was not found on the website then try with browser's `tab`
         title,
         state: "request",
         accountAddress,

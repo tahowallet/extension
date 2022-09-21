@@ -56,7 +56,9 @@ export default function SignTransactionTransferInfoProvider({
             <div className="send_to">
               <SharedAddress
                 address={recipient?.address}
-                name={recipient?.annotation?.nameOnNetwork?.name}
+                name={
+                  recipient?.annotation?.nameRecord?.resolved.nameOnNetwork.name
+                }
               />
             </div>
           </div>

@@ -5,13 +5,11 @@ import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui
 import { HexString } from "@tallyho/tally-background/types"
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import SharedButton from "../../components/Shared/SharedButton"
-import SharedBackButton from "../../components/Shared/SharedBackButton"
-import SharedAddressInput from "../../components/Shared/SharedAddressInput"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
+import SharedButton from "../../../components/Shared/SharedButton"
+import SharedAddressInput from "../../../components/Shared/SharedAddressInput"
 
-export default function TabbedOnboardingViewOnlyWallet(): ReactElement {
-  const embedded = true
+export default function ViewOnlyWallet(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const [redirect, setRedirect] = useState(false)
   const [addressOnNetwork, setAddressOnNetwork] = useState<
@@ -51,11 +49,7 @@ export default function TabbedOnboardingViewOnlyWallet(): ReactElement {
 
   // TODO remove the "embedded" variable and restyle
   return (
-    <section className="start_wrap">
-      <div className="top standard_width">
-        <SharedBackButton />
-        {!embedded && <div className="wordmark" />}
-      </div>
+    <>
       <div className="content">
         <h1 className="serif_header">Explore Tally Ho!</h1>
         <div className="subtitle">
@@ -86,41 +80,15 @@ export default function TabbedOnboardingViewOnlyWallet(): ReactElement {
 
       <style jsx>
         {`
-          .top {
-            display: flex;
-            width: 100%;
-          }
-          .wordmark {
-            background: url("./images/wordmark@2x.png");
-            background-size: cover;
-            width: 95px;
-            height: 25px;
-            position: absolute;
-            left: 0px;
-            right: 0px;
-            margin: 0 auto;
-          }
           .content {
             display: flex;
             flex-direction: column;
             align-items: center;
             animation: fadeIn ease 200ms;
           }
-          .back_button_wrap {
-            position: fixed;
-            top: 25px;
-          }
           h1 {
             margin-top: 55px;
             margin-bottom: 15px;
-          }
-          section {
-            padding-top: 25px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            ${embedded ? "" : `background-color: var(--hunter-green);`}
           }
           .subtitle {
             color: var(--green-60);
@@ -135,6 +103,6 @@ export default function TabbedOnboardingViewOnlyWallet(): ReactElement {
           }
         `}
       </style>
-    </section>
+    </>
   )
 }

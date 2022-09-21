@@ -23,7 +23,7 @@ type ChainServiceExternalized = Omit<ChainService, ""> & {
   }
 }
 
-describe("Chain Service", () => {
+describe("ChainService", () => {
   const sandbox = sinon.createSandbox()
   let chainService: ChainService
 

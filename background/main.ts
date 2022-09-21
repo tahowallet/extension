@@ -886,6 +886,10 @@ export default class Main extends BaseService<never> {
       await this.keyringService.unlock(password)
     })
 
+    keyringSliceEmitter.on("lockKeyrings", async () => {
+      await this.keyringService.lock()
+    })
+
     keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
       await this.signingService.deriveAddress({
         type: "keyring",
@@ -1104,7 +1108,7 @@ export default class Main extends BaseService<never> {
                 address: referral,
                 network,
               })
-            )?.name
+            )?.resolved?.nameOnNetwork?.name
           : referral
         const address = isAddress
           ? referral
@@ -1113,7 +1117,7 @@ export default class Main extends BaseService<never> {
                 name: referral,
                 network,
               })
-            )?.address
+            )?.resolved?.addressOnNetwork?.address
 
         if (typeof address !== "undefined") {
           this.store.dispatch(
@@ -1262,7 +1266,8 @@ export default class Main extends BaseService<never> {
     nameOnNetwork: NameOnNetwork
   ): Promise<AddressOnNetwork | undefined> {
     try {
-      return await this.nameService.lookUpEthereumAddress(nameOnNetwork)
+      return (await this.nameService.lookUpEthereumAddress(nameOnNetwork))
+        ?.resolved?.addressOnNetwork
     } catch (error) {
       logger.info("Error looking up Ethereum address: ", error)
       return undefined

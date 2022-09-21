@@ -49,7 +49,7 @@ const resources = {
   es: {
     translation: es,
   },
-}
+} as const
 
 export { SUPPORT_LANGUAGES, getLanguageIndex, getAvalableLanguages, resources }
 

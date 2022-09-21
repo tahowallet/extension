@@ -126,7 +126,7 @@ export default function SignTransactionSpendAssetInfoProvider({
             Approve{" "}
             <SharedAddress
               address={spender.address}
-              name={spender.annotation.nameOnNetwork?.name}
+              name={spender.annotation.nameRecord?.resolved.nameOnNetwork.name}
             />
           </span>
           <span className="spending_label">
