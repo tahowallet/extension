@@ -49,6 +49,7 @@ export default function SignTransactionContainer({
   warnings?: Warning[]
 }): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
+  const { t: ledgerT } = useTranslation("translation", { keyPrefix: "ledger" })
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
   const accountSigner = signerAccountTotal?.accountSigner
   const [isOnDelayToSign, setIsOnDelayToSign] = useState(true)
@@ -138,7 +139,7 @@ export default function SignTransactionContainer({
       {isWaitingForHardware ? (
         <div className="cannot_reject_warning">
           <span className="block_icon" />
-          {t("cannotRejectWarning")}
+          {ledgerT("onlyRejectFromLedger")}
         </div>
       ) : (
         <>
@@ -164,7 +165,7 @@ export default function SignTransactionContainer({
                   setSlideUpOpen(true)
                 }}
               >
-                {t("checkLedger")}
+                {ledgerT("checkLedger")}
               </SharedButton>
             )}
             {((isLedgerSigning && canLedgerSign) ||
