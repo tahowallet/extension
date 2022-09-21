@@ -46,7 +46,18 @@ export default class TallyWindowProvider extends EventEmitter {
 
   isWeb3 = true
 
-  bridgeListeners = new Map()
+  requestResolvers = new Map<
+    string,
+    {
+      resolve: (value: unknown) => void
+      reject: (value: unknown) => void
+      sendData: {
+        id: string
+        target: string
+        request: Required<RequestArgument>
+      }
+    }
+  >()
 
   providerInfo = {
     label: "Tally Ho!",
@@ -97,14 +108,86 @@ export default class TallyWindowProvider extends EventEmitter {
           this.isMetaMask = result.defaultWallet
         }
         if (result.chainId && result.chainId !== this.chainId) {
-          this.handleChainIdChange.bind(this)(result.chainId)
+          this.handleChainIdChange(result.chainId)
         }
       } else if (isTallyAccountPayload(result)) {
-        this.handleAddressChange.bind(this)(result.address)
+        this.handleAddressChange(result.address)
       }
     }
 
     this.transport.addEventListener(internalListener)
+    this.transport.addEventListener(this.internalBridgeListener.bind(this))
+  }
+
+  private internalBridgeListener(event: unknown): void {
+    let id
+    let result: unknown
+
+    if (isWindowResponseEvent(event)) {
+      if (
+        event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
+        event.source !== window || // we want to recieve messages only from the provider-bridge script
+        event.data.target !== WINDOW_PROVIDER_TARGET
+      ) {
+        return
+      }
+
+      ;({ id, result } = event.data)
+    } else if (isPortResponseEvent(event)) {
+      ;({ id, result } = event)
+    } else {
+      return
+    }
+
+    const requestResolver = this.requestResolvers.get(id)
+
+    if (!requestResolver) return
+
+    const { sendData, reject, resolve } = requestResolver
+
+    this.requestResolvers.delete(sendData.id)
+
+    const { method: sentMethod } = sendData.request
+
+    // TODO: refactor these into their own function handler
+    // https://github.com/tallycash/tally-extension/pull/440#discussion_r753504700
+
+    if (isEIP1193Error(result)) {
+      reject(result)
+    }
+
+    // let's emmit connected on the first successful response from background
+    if (!this.connected) {
+      this.connected = true
+      this.emit("connect", { chainId: this.chainId })
+    }
+
+    if (
+      sentMethod === "wallet_switchEthereumChain" ||
+      sentMethod === "wallet_addEthereumChain"
+    ) {
+      // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
+      if (result === null) {
+        this.handleChainIdChange(
+          (sendData.request.params[0] as { chainId: string }).chainId
+        )
+      }
+    } else if (sentMethod === "eth_chainId" || sentMethod === "net_version") {
+      if (
+        typeof result === "string" &&
+        Number(this.chainId) !== Number(result)
+      ) {
+        this.handleChainIdChange(result)
+      }
+    } else if (
+      (sentMethod === "eth_accounts" || sentMethod === "eth_requestAccounts") &&
+      Array.isArray(result) &&
+      result.length !== 0
+    ) {
+      this.handleAddressChange(result)
+    }
+
+    resolve(result)
   }
 
   // deprecated EIP-1193 method
@@ -168,6 +251,7 @@ export default class TallyWindowProvider extends EventEmitter {
     if (typeof method !== "string") {
       return Promise.reject(new Error(`unsupported method type: ${method}`))
     }
+
     const sendData = {
       id: this.requestID.toString(),
       target: PROVIDER_BRIDGE_TARGET,
@@ -181,87 +265,12 @@ export default class TallyWindowProvider extends EventEmitter {
 
     this.transport.postMessage(sendData)
 
-    return new Promise((resolve, reject) => {
-      // TODO: refactor the listener function out of the Promise
-      const listener = (event: unknown) => {
-        let id
-        let result: unknown
-
-        if (isWindowResponseEvent(event)) {
-          if (
-            event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
-            event.source !== window || // we want to recieve messages only from the provider-bridge script
-            event.data.target !== WINDOW_PROVIDER_TARGET
-          ) {
-            return
-          }
-
-          ;({ id, result } = event.data)
-        } else if (isPortResponseEvent(event)) {
-          ;({ id, result } = event)
-        } else {
-          return
-        }
-
-        if (sendData.id !== id) return
-
-        this.transport.removeEventListener(
-          this.bridgeListeners.get(sendData.id)
-        )
-        this.bridgeListeners.delete(sendData.id)
-
-        const { method: sentMethod } = sendData.request
-
-        // TODO: refactor these into their own function handler
-        // https://github.com/tallycash/tally-extension/pull/440#discussion_r753504700
-
-        if (isEIP1193Error(result)) {
-          reject(result)
-        }
-
-        // let's emmit connected on the first successful response from background
-        if (!this.connected) {
-          this.connected = true
-          this.emit("connect", { chainId: this.chainId })
-        }
-
-        if (
-          sentMethod === "wallet_switchEthereumChain" ||
-          sentMethod === "wallet_addEthereumChain"
-        ) {
-          // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
-          if (result === null) {
-            this.handleChainIdChange.bind(this)(
-              (sendData.request.params[0] as { chainId: string }).chainId
-            )
-          }
-        } else if (
-          sentMethod === "eth_chainId" ||
-          sentMethod === "net_version"
-        ) {
-          if (
-            typeof result === "string" &&
-            Number(this.chainId) !== Number(result)
-          ) {
-            this.handleChainIdChange.bind(this)(result)
-          }
-        } else if (
-          (sentMethod === "eth_accounts" ||
-            sentMethod === "eth_requestAccounts") &&
-          Array.isArray(result) &&
-          result.length !== 0
-        ) {
-          this.handleAddressChange.bind(this)(result)
-        }
-
-        resolve(result)
-      }
-
-      this.bridgeListeners.set(sendData.id, listener)
-      // TODO: refactor this to have a single `unsafeAddEventListener` call in the constructor
-      // https://github.com/tallycash/tally-extension/pull/440#discussion_r753509947
-
-      this.transport.addEventListener(this.bridgeListeners.get(sendData.id))
+    return new Promise<unknown>((resolve, reject) => {
+      this.requestResolvers.set(sendData.id, {
+        resolve,
+        reject,
+        sendData,
+      })
     })
   }
 
