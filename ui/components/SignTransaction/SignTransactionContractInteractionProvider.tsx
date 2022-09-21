@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import SharedAddress from "../Shared/SharedAddress"
 import TransactionDetailAddressValue from "../TransactionDetail/TransactionDetailAddressValue"
 import TransactionDetailContainer from "../TransactionDetail/TransactionDetailContainer"
@@ -12,6 +13,7 @@ export default function SignTransactionContractInteractionProvider({
   annotation,
   inner,
 }: SignTransactionInfoProviderProps): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
   return (
     <SignTransactionBaseInfoProvider
       title="Contract interaction"
@@ -20,12 +22,12 @@ export default function SignTransactionContractInteractionProvider({
           <div className="container">
             {typeof transactionDetails.to === "undefined" ? (
               <>
-                <div className="label">Send to</div>
-                <div className="send_to">Contract creation</div>
+                <div className="label">{t("sendTo")}</div>
+                <div className="send_to">{t("contractCreation")}</div>
               </>
             ) : (
               <>
-                <div className="label">Interacting with</div>
+                <div className="label">{t("interactingWith")}</div>
                 <SharedAddress
                   address={transactionDetails.to}
                   name={

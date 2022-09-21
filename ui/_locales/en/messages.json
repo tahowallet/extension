@@ -56,6 +56,19 @@
     }
   },
   "ledger": {
+    "activation": {
+      "title": "Activate blind signing",
+      "helpMessage": "Take the following steps:",
+      "step1": "Open Ethereum app on Ledger",
+      "step2": "Navigate to Settings",
+      "step3": "Enable blind signing"
+    },
+    "busy": {
+      "title": "Ledger is busy",
+      "helpMessage": "Looks like your Ledger has another signature in progress.",
+      "step1": "Accept or Reject transaction on device",
+      "step2": "Refresh page"
+    },
     "derivationPaths": {
       "ledgerLive": "Ledger Live",
       "bip44": "BIP 44 (Trezor, 🦊)",
@@ -70,6 +83,7 @@
     "toBeDetermined": "TBD",
     "settingsTitle": "Network fees (Gwei)",
     "gasLimit": "Gas limit",
+    "estimatedNetworkFee": "Estimated network fee",
     "insufficientBaseAsset": "Not enough {{symbol}} for network fees",
     "totalMax": "Total Max",
     "saveSettings": "Save settings",
@@ -233,6 +247,16 @@
       "chainID": "Chain ID",
       "expiration": "Expiration"
     }
+  },
+  "signTransaction": {
+    "awaitingHardwareSignature": "Awaiting hardware wallet signature",
+    "cannotRejectWarning": "Tx can only be Rejected from Ledger",
+    "reject": "Reject",
+    "checkLedger": "Check Ledger",
+    "noSigning": "Read-only accounts cannot sign",
+    "sendTo": "Send to",
+    "contractCreation": "Contract creation",
+    "interactingWith": "Interacting with"
   },
   "swap": {
     "title": "Swap Assets",
