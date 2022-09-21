@@ -218,6 +218,22 @@
     "selectToken": "Select token",
     "backButtonText": "Back"
   },
+  "signing": {
+    "signatureRequired": "Your signature is required",
+    "dappSignatureRequest": "A dapp is requesting your signature",
+    "message": "Message",
+    "signed": "Signed,",
+    "type": "Type",
+    "EIP4361": {
+      "subtext1": "Wants you to sign in with your",
+      "subtext2": "Ethereum account:",
+      "statement": "Statement",
+      "nonce": "Nonce",
+      "version": "Version",
+      "chainID": "Chain ID",
+      "expiration": "Expiration"
+    }
+  },
   "swap": {
     "title": "Swap Assets",
     "from": "Swap from:",

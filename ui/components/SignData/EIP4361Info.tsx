@@ -1,6 +1,7 @@
 import React from "react"
 import { EIP4361Data } from "@tallyho/tally-background/utils/signing"
 import SignDataInfo from "./SignDataInfo"
+import { useTranslation } from "react-i18next"
 
 // can add networks, ideally should come from some sort of network config
 // TODO fetch this from NETWORK config
@@ -17,30 +18,34 @@ const CHAIN_NAMES: (chain: number) => string = (chain) => {
 const EIP4361Info: React.FC<{ signingData: EIP4361Data }> = ({
   signingData,
 }) => {
+  const { t } = useTranslation("translation", { keyPrefix: "signing.EIP4361" })
   return (
     <>
       <div className="domain">{signingData.domain}</div>
       <div className="divider spaced" />
       <div className="subtext">
-        Wants you to sign in with your
+        {t("subtext1")}
         <br />
-        Ethereum account:
+        {t("subtext2")}
       </div>
       <div className="address">{signingData.address}</div>
       <div className="divider spaced" />
       {signingData?.statement ? (
-        <SignDataInfo label="Statement" content={signingData.statement} />
+        <SignDataInfo label={t("statement")} content={signingData.statement} />
       ) : null}
-      <SignDataInfo label="Nonce" content={signingData.nonce} />
-      <SignDataInfo label="Version" content={signingData.version} />
+      <SignDataInfo label={t("nonce")} content={signingData.nonce} />
+      <SignDataInfo label={t("version")} content={signingData.version} />
       <SignDataInfo
-        label="Chain ID"
+        label={t("chainID")}
         content={`${signingData.chainId.toString()} (${CHAIN_NAMES(
           signingData.chainId
         )})`}
       />
       {signingData?.expiration ? (
-        <SignDataInfo label="Expiration" content={signingData.expiration} />
+        <SignDataInfo
+          label={t("expiration")}
+          content={signingData.expiration}
+        />
       ) : null}
       <style jsx>{`
         .subtext {

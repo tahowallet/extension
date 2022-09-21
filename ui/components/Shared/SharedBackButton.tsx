@@ -44,7 +44,7 @@ export default function SharedBackButton({
       }}
     >
       <div className="icon_chevron_left" />
-      {!withoutBackText && t("shared.goBack")}
+      {!withoutBackText && t("shared.backButtonText")}
       <style jsx>{`
         button {
           color: var(--green-40);
