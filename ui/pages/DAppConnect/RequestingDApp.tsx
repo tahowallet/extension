@@ -1,7 +1,5 @@
 import React, { ReactElement } from "react"
 
-const TITLE_MAX_LENGTH = 55
-
 export default function RequestingDAppBlock(props: {
   title: string
   url: string
@@ -12,10 +10,8 @@ export default function RequestingDAppBlock(props: {
     <div className="request_wrap">
       <div className="dapp_favicon" />
       <div className="info">
-        <div className="dapp_title" title={title}>
-          {title.length > TITLE_MAX_LENGTH
-            ? `${title.slice(TITLE_MAX_LENGTH)}...`
-            : title}
+        <div className="dapp_title ellipsis_multiline" title={title}>
+          {title}
         </div>
         <div className="dapp_url" title={url}>
           {url}
@@ -41,7 +37,6 @@ export default function RequestingDAppBlock(props: {
           color: #fff;
           font-size: 16px;
           font-weight: 500;
-          overflow-wrap: anywhere;
         }
         .dapp_url {
           color: var(--green-40);
