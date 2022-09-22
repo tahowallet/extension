@@ -15,6 +15,7 @@ import {
   TransactionRequestWithNonce,
   SignedTransaction,
   toHexChainID,
+  ConfirmedEVMTransaction,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import {
@@ -1268,10 +1269,7 @@ export default class ChainService extends BaseService<Events> {
         network
       ).getTransaction(hash)
 
-      const transaction = transactionFromEthersTransaction(result, network)
-
-      // TODO make this provider type specific
-      await this.saveTransaction(transaction, "alchemy")
+      let transaction = transactionFromEthersTransaction(result, network)
 
       if (!transaction.blockHash && !transaction.blockHeight) {
         this.subscribeToTransactionConfirmation(
@@ -1282,8 +1280,14 @@ export default class ChainService extends BaseService<Events> {
         // Get relevant block data.
         await this.getBlockData(transaction.network, transaction.blockHash)
         // Retrieve gas used, status, etc
-        this.retrieveTransactionReceipt(transaction.network, transaction)
+        transaction = await this.retrieveTransactionReceipt(
+          transaction.network,
+          transaction
+        )
       }
+
+      // TODO make this provider type specific
+      await this.saveTransaction(transaction, "alchemy")
     } catch (error) {
       logger.error(`Error retrieving transaction ${hash}`, error)
       if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
@@ -1514,7 +1518,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Retrieve a confirmed transaction's transaction receipt, saving the results.
+   * Retrieve a confirmed transaction's transaction receipt
    *
    * @param network the EVM network we're interested in
    * @param transaction the confirmed transaction we're interested in
@@ -1522,14 +1526,9 @@ export default class ChainService extends BaseService<Events> {
   private async retrieveTransactionReceipt(
     network: EVMNetwork,
     transaction: AnyEVMTransaction
-  ): Promise<void> {
+  ): Promise<ConfirmedEVMTransaction> {
     const provider = this.providerForNetworkOrThrow(network)
     const receipt = await provider.getTransactionReceipt(transaction.hash)
-    await this.saveTransaction(
-      enrichTransactionWithReceipt(transaction, receipt),
-      "alchemy"
-    )
+    return enrichTransactionWithReceipt(transaction, receipt)
   }
-
-  // TODO removing an account to track
 }
