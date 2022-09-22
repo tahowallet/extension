@@ -57,9 +57,30 @@ const TestedProductId = (productId: number): boolean => {
   )
 }
 
+/**
+ * Metadata details about the display of a given Ledger device.
+ */
+export type DisplayDetails = {
+  /**
+   * When confirming a message for signing, the length of the message that the
+   * Ledger will display before cutting it off.
+   */
+  messageSigningDisplayLength: number
+}
+
+const DisplayDetailsByLedgerType: {
+  [ledgerType in LedgerType]: DisplayDetails
+} = {
+  [LedgerType.UNKNOWN]: { messageSigningDisplayLength: 0 },
+  [LedgerType.LEDGER_NANO_S]: { messageSigningDisplayLength: 99 },
+  [LedgerType.LEDGER_NANO_X]: { messageSigningDisplayLength: 255 },
+  [LedgerType.LEDGER_NANO_S_PLUS]: { messageSigningDisplayLength: 255 },
+}
+
 type MetaData = {
   ethereumVersion: string
   isArbitraryDataSigningEnabled: boolean
+  displayDetails: DisplayDetails
 }
 
 export type ConnectedDevice = {
@@ -205,6 +226,7 @@ export default class LedgerService extends BaseService<Events> {
         metadata: {
           ethereumVersion: appData.version,
           isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
+          displayDetails: DisplayDetailsByLedgerType[type],
         },
       })
 
@@ -220,6 +242,7 @@ export default class LedgerService extends BaseService<Events> {
           metadata: {
             ethereumVersion: appData.version,
             isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
+            displayDetails: DisplayDetailsByLedgerType[type],
           },
         })
       }
