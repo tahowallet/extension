@@ -4,6 +4,7 @@ import {
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
 import { EnrichedSignTypedDataRequest } from "@tallyho/tally-background/services/enrichment"
+import { useTranslation } from "react-i18next"
 import capitalize from "../../utils/capitalize"
 
 type SignTypedDataInfoProps = {
@@ -13,6 +14,7 @@ type SignTypedDataInfoProps = {
 export default function SignTypedDataInfo({
   typedDataRequest,
 }: SignTypedDataInfoProps): ReactElement {
+  const { t } = useTranslation()
   const { typedData, annotation } = typedDataRequest
 
   const fieldsToDisplay =
@@ -24,7 +26,7 @@ export default function SignTypedDataInfo({
   return (
     <div className="messages">
       <div className="message">
-        <div className="key">Type</div>
+        <div className="key">{t("signing.type")}</div>
         <div className="value">{typedData.primaryType}</div>
       </div>
       {keys.map((key) => {

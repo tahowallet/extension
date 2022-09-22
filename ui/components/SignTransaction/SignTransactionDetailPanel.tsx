@@ -99,7 +99,9 @@ export default function SignTransactionDetailPanel(
       {hasInsufficientFundsWarning && (
         <span className="detail_item">
           <SignTransactionDetailWarning
-            message={`Not enough ${transactionDetails.network.baseAsset.symbol} for network fees`}
+            message={t("networkFees.insufficientBaseAsset", {
+              symbol: transactionDetails.network.baseAsset.symbol,
+            })}
           />
         </span>
       )}
@@ -122,7 +124,7 @@ export default function SignTransactionDetailPanel(
           </span>
         )}
       <span className="detail_item">
-        Estimated network fee
+        {t("networkFees.estimatedNetworkFee")}
         <FeeSettingsButton onClick={() => setNetworkSettingsModalOpen(true)} />
       </span>
       <style jsx>
