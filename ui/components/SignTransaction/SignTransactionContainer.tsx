@@ -8,6 +8,7 @@ import React, {
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { Warning } from "@tallyho/tally-background/services/enrichment"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -47,6 +48,7 @@ export default function SignTransactionContainer({
   isArbitraryDataSigningRequired: boolean
   warnings?: Warning[]
 }): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
   const accountSigner = signerAccountTotal?.accountSigner
   const [isOnDelayToSign, setIsOnDelayToSign] = useState(true)
@@ -125,7 +127,7 @@ export default function SignTransactionContainer({
         )}
       </SharedSkeletonLoader>
       <h1 className="serif_header title">
-        {isWaitingForHardware ? "Awaiting hardware wallet signature" : title}
+        {isWaitingForHardware ? t("awaitingHardwareSignature") : title}
       </h1>
       <div className="primary_info_card standard_width">
         {isWaitingForHardware ? reviewPanel : detailPanel}
@@ -133,7 +135,7 @@ export default function SignTransactionContainer({
       {isWaitingForHardware ? (
         <div className="cannot_reject_warning">
           <span className="block_icon" />
-          Tx can only be Rejected from Ledger
+          {t("cannotRejectWarning")}
         </div>
       ) : (
         <>
@@ -145,11 +147,11 @@ export default function SignTransactionContainer({
               isDisabled={!unlockButtons}
               onClick={handleReject}
             >
-              Reject
+              {t("reject")}
             </SharedButton>
             {/* TODO: split into different components depending on signing method, to avoid convoluted logic below */}
             {accountSigner === ReadOnlyAccountSigner && (
-              <span className="no-signing">Read-only accounts cannot sign</span>
+              <span className="no-signing">{t("noSigning")}</span>
             )}
             {isLedgerSigning && !canLedgerSign && (
               <SharedButton
@@ -159,7 +161,7 @@ export default function SignTransactionContainer({
                   setSlideUpOpen(true)
                 }}
               >
-                Check Ledger
+                {t("checkLedger")}
               </SharedButton>
             )}
             {((isLedgerSigning && canLedgerSign) ||
