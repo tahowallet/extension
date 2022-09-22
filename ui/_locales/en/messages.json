@@ -56,6 +56,39 @@
     }
   },
   "ledger": {
+    "activation": {
+      "title": "Activate blind signing",
+      "helpMessage": "Take the following steps:",
+      "step1": "Open Ethereum app on Ledger",
+      "step2": "Navigate to Settings",
+      "step3": "Enable blind signing"
+    },
+    "busy": {
+      "title": "Ledger is busy",
+      "helpMessage": "Looks like your Ledger has another signature in progress.",
+      "step1": "Accept or Reject transaction on device",
+      "step2": "Refresh page"
+    },
+    "notConnected": {
+      "title": "Connect to Ledger",
+      "helpMessage": "Take the following steps:",
+      "step1": "Plug in Ledger",
+      "step2": "Enter PIN to unlock",
+      "step3": "Open Ethereum app"
+    },
+    "multipleLedgersConnected": {
+      "title": "Multiple Ledgers are connected",
+      "helpMessage": "Take the following steps:",
+      "step1": "Remove all Ledgers but one",
+      "step2": "Enter PIN to unlock",
+      "step3": "Open Ethereum app"
+    },
+    "wrongLedger": {
+      "title": "Wrong Ledger",
+      "helpMessage": "Looks like you are using the wrong Ledger.",
+      "connectLedger": "Connect the Ledger containing this account:",
+      "refresh": "Refresh the page"
+    },
     "derivationPaths": {
       "ledgerLive": "Ledger Live",
       "bip44": "BIP 44 (Trezor, 🦊)",
@@ -70,6 +103,7 @@
     "toBeDetermined": "TBD",
     "settingsTitle": "Network fees (Gwei)",
     "gasLimit": "Gas limit",
+    "estimatedNetworkFee": "Estimated network fee",
     "insufficientBaseAsset": "Not enough {{symbol}} for network fees",
     "totalMax": "Total Max",
     "saveSettings": "Save settings",
@@ -214,8 +248,56 @@
     "close": "Close",
     "accountItemSummary": {
       "connectedStatus": "Connected"
+    },
+    "selectToken": "Select token",
+    "backButtonText": "Back",
+    "saveBtn": "Save"
+  },
+  "signing": {
+    "signatureRequired": "Your signature is required",
+    "dappSignatureRequest": "A dapp is requesting your signature",
+    "message": "Message",
+    "signed": "Signed,",
+    "type": "Type",
+    "EIP4361": {
+      "subtext1": "Wants you to sign in with your",
+      "subtext2": "Ethereum account:",
+      "statement": "Statement",
+      "nonce": "Nonce",
+      "version": "Version",
+      "chainID": "Chain ID",
+      "expiration": "Expiration"
     }
   },
+  "signTransaction": {
+    "awaitingHardwareSignature": "Awaiting hardware wallet signature",
+    "cannotRejectWarning": "Tx can only be Rejected from Ledger",
+    "reject": "Reject",
+    "checkLedger": "Check Ledger",
+    "noSigning": "Read-only accounts cannot sign",
+    "sendTo": "Send to",
+    "contractCreation": "Contract creation",
+    "interactingWith": "Interacting with",
+    "unknownNetwork": "Unknown Network",
+    "detailPanelName": "Details",
+    "rawDataPanelName": "Raw data",
+    "rawDataCopyMsg": "Raw data copied to clipboard",
+    "copyRawData":  "Copy hex",
+    "spendAmount": "Spend Amount",
+    "help": "I need help",
+    "refresh": "Refresh",
+    "spendAsset": {
+      "approve": "Approve",
+      "infinite": "Infinite",
+      "spend": "Spend",
+      "tokens": "tokens",
+      "spendLimit": "Spend limit",
+      "tooltip1": "Spend limit is the amount of funds from a particular asset, that you allow a contract to spend.",
+      "tooltip2": "Infinite tx has the drawback that if the contract is mailicous, it can steal all your funds.",
+      "changeLimit": "Change limit",
+      "invalidAmount": "Invalid amount"
+    }
+    },
   "swap": {
     "title": "Swap Assets",
     "from": "Swap from:",

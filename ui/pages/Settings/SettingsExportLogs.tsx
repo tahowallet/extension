@@ -17,7 +17,7 @@ export default function SettingsExportLogs(): ReactElement {
 
   return (
     <div className="standard_width_padded">
-      <SharedPageHeader withoutBackText>
+      <SharedPageHeader withoutBackText backPath="/settings">
         {t("settings.exportLogs.title")}
       </SharedPageHeader>
       <section>

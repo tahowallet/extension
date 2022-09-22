@@ -1,5 +1,6 @@
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 import SignTransactionSlideUpContentLayout from "./SignTransactionSlideUpContentLayout"
 
@@ -8,16 +9,19 @@ export default function SignTransactionWrongLedgerConnected({
 }: {
   signerAccountTotal?: AccountTotal
 }): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "ledger.wrongLedger",
+  })
   const address = signerAccountTotal?.address ?? ""
 
   return (
     <SignTransactionSlideUpContentLayout
-      title="Wrong Ledger"
-      helpMessage="Looks like you are using the wrong Ledger."
+      title={t("title")}
+      helpMessage={t("helpMessage")}
       steps={[
         <div className="step_account">
           <div className="step_account_content">
-            <div>Connect the Ledger containing this account:</div>
+            <div>{t("connectLedger")}</div>
             <div>
               <SharedButton
                 iconSmall="new-tab"
@@ -46,7 +50,7 @@ export default function SignTransactionWrongLedgerConnected({
             }
           `}</style>
         </div>,
-        <>Refresh the page</>,
+        <>{t("refresh")}</>,
       ]}
     />
   )

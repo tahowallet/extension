@@ -108,7 +108,7 @@ const pageList: PageList[] = [
     persistOnClose: true,
   },
   {
-    path: "/overview",
+    path: "/portfolio",
     Component: Overview,
     hasTabBar: true,
     hasTopBar: false,
