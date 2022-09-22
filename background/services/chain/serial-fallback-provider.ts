@@ -16,6 +16,10 @@ import {
   ALCHEMY_KEY,
   transactionFromAlchemyWebsocketTransaction,
 } from "../../lib/alchemy"
+import {
+  QuickNodeProvider,
+  QuickNodeWebsocketProvider,
+} from "../../lib/quicknode"
 
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 150
@@ -670,6 +674,28 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 export function makeSerialFallbackProvider(
   network: EVMNetwork
 ): SerialFallbackProvider {
+  if (network.name === "Polygon") {
+    return new SerialFallbackProvider(
+      network,
+      () =>
+        new QuickNodeWebsocketProvider(
+          "wss://sly-ultra-glade.matic.discover.quiknode.pro/6359aba702e6ea2cc2a5a09d27658e69bffbe1e6/",
+          {
+            ...network,
+            chainId: Number(network.chainID),
+          }
+        ),
+      () =>
+        new QuickNodeProvider(
+          "https://sly-ultra-glade.matic.discover.quiknode.pro/6359aba702e6ea2cc2a5a09d27658e69bffbe1e6/",
+          {
+            ...network,
+            chainId: Number(network.chainID),
+          }
+        )
+    )
+  }
+
   return new SerialFallbackProvider(
     network,
     () =>

@@ -1,12 +1,19 @@
 import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
+  WebSocketProvider,
 } from "@ethersproject/providers"
 import {
   getAssetTransfers as getAlchemyAssetTransfers,
   getTokenBalances as getAlchemyTokenBalances,
   getTokenMetadata as getAlchemyTokenMetadata,
 } from "../../lib/alchemy"
+
+import {
+  getTokenBalances as getQuickNodeTokenBalances,
+  QuickNodeProvider,
+  QuickNodeWebsocketProvider,
+} from "../../lib/quicknode"
 import SerialFallbackProvider from "./serial-fallback-provider"
 import {
   AssetTransfer,
@@ -54,6 +61,17 @@ export default class AssetDataHelper {
         provider.currentProvider instanceof AlchemyProvider
       ) {
         return await getAlchemyTokenBalances(
+          provider.currentProvider,
+          addressOnNetwork,
+          smartContractAddresses
+        )
+      }
+
+      if (
+        provider.currentProvider instanceof QuickNodeWebsocketProvider ||
+        provider.currentProvider instanceof QuickNodeProvider
+      ) {
+        return await getQuickNodeTokenBalances(
           provider.currentProvider,
           addressOnNetwork,
           smartContractAddresses
