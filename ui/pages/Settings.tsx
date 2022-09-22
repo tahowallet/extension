@@ -13,7 +13,6 @@ import {
   SUPPORT_ANALYTICS,
   SUPPORT_GOERLI,
   SUPPORT_KEYRING_LOCKING,
-  SUPPORT_MANAGE_DAPPS,
   SUPPORT_MULTIPLE_LANGUAGES,
 } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
@@ -166,7 +165,7 @@ export default function Settings(): ReactElement {
     setAsDefault,
     ...(SUPPORT_MULTIPLE_LANGUAGES ? [languages] : []),
     ...(SUPPORT_GOERLI ? [enableTestNetworks] : []),
-    ...(SUPPORT_MANAGE_DAPPS ? [dAppsSettings] : []),
+    dAppsSettings,
     bugReport,
     ...(SUPPORT_ANALYTICS ? [analytics] : []),
   ]
@@ -243,7 +242,7 @@ export default function Settings(): ReactElement {
           }
           .community_cta_wrap {
             width: 100vw;
-            margin-top: auto;
+            margin-top: 20px;
             margin-left: -21px;
             background-color: var(--green-95);
             text-align: center;

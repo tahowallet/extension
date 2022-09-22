@@ -21,8 +21,12 @@ export default function TopMenuConnectedDAppInfo(props: {
         />
         <h1>{t("topMenu.connectedDappInfo.dAppTitle")}</h1>
         <div className="favicon" />
-        <div className="title">{title}</div>
-        <div className="url">{url}</div>
+        <div className="title text ellipsis" title={title}>
+          {title}
+        </div>
+        <div className="url text ellipsis" title={url}>
+          {url}
+        </div>
         <button
           aria-label="disconnect"
           type="button"
@@ -94,17 +98,22 @@ export default function TopMenuConnectedDAppInfo(props: {
           height: 48px;
           border-radius: 12px;
           margin-top: 5px;
+          flex-shrink: 0;
         }
         .title {
           color: #fff;
-          font-size: 16px;
           font-weight: 500;
           margin-top: 10px;
         }
         .url {
           color: var(--green-40);
-          font-size: 16px;
           margin-top: 5px;
+        }
+        .text {
+          font-size: 16px;
+          width: calc(100% - 16px);
+          padding: 0 8px;
+          text-align: center;
         }
         .disconnect_icon {
           background: url("./images/disconnect@2x.png");
