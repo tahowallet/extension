@@ -207,7 +207,7 @@ export default async function resolveTransactionAnnotation(
 
   // If the tx has a recipient, its a contract interaction or another tx type
   // rather than a deployment.
-  if (typeof transaction.to !== "undefined") {
+  if (typeof transaction.to !== "undefined" && transaction.to !== null) {
     txAnnotation = {
       ...txAnnotation,
       type: "contract-interaction",
