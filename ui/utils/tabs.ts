@@ -1,7 +1,7 @@
 import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
 
 const tabs: string[] = [
-  "overview",
+  "portfolio",
   "wallet",
   "swap",
   "earn",

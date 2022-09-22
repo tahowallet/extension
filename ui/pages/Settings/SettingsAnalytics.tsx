@@ -45,7 +45,9 @@ export default function SettingsAnalytics(): ReactElement {
 
   return (
     <div className="standard_width_padded analytics_wrapper">
-      <SharedPageHeader withoutBackText>{t("title")}</SharedPageHeader>
+      <SharedPageHeader withoutBackText backPath="/settings">
+        {t("title")}
+      </SharedPageHeader>
       <section className="toggle_container">
         <div className="header_container">
           <div className="title_container">
