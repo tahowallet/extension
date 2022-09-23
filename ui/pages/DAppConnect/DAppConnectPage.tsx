@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedAccountItemSummary from "../../components/Shared/SharedAccountItemSummary"
 import RequestingDAppBlock from "./RequestingDApp"
@@ -21,12 +22,13 @@ export default function DAppConnectPage({
   grantPermission,
   switchWallet,
 }: DAppConnectPageProps): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "dappConnection" })
   const { title, origin, faviconUrl, accountAddress } = permission
 
   return (
     <>
       <section className="standard_width">
-        <h1 className="serif_header">Connect to dApp</h1>
+        <h1 className="serif_header">{t("connectToDapp")}</h1>
         <div className="connection_destination">
           <RequestingDAppBlock
             title={title}
@@ -43,12 +45,12 @@ export default function DAppConnectPage({
         </div>
         <ul className="permissions_list">
           <li className="permissions_list_title">
-            dApp would get permission to:
+            {t("dappPermissionListTitle")}
           </li>
           <li>
             <ul>
-              <li>View address of connected account</li>
-              <li>Create but not sign transactions for you</li>
+              <li>{t("viewAddressPermission")}</li>
+              <li>{t("createTransactionPermission")}</li>
             </ul>
           </li>
         </ul>
@@ -56,10 +58,10 @@ export default function DAppConnectPage({
       </section>
       <div className="footer_actions">
         <SharedButton size="large" type="secondary" onClick={denyPermission}>
-          Reject
+          {t("rejectConnection")}
         </SharedButton>
         <SharedButton type="primary" size="large" onClick={grantPermission}>
-          Connect
+          {t("acceptConnection")}
         </SharedButton>
       </div>
       <style jsx>{`

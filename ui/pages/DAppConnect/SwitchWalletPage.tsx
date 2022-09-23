@@ -1,5 +1,6 @@
 import { setNewDefaultWalletValue } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useDispatch } from "react-redux"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedToggleButton from "../../components/Shared/SharedToggleButton"
@@ -9,6 +10,7 @@ export default function SwitchWalletPage({
 }: {
   close: () => Promise<void>
 }): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "switchWallet" })
   const dispatch = useDispatch()
   const [toggleState, setToggleState] = useState(false)
 
@@ -27,13 +29,10 @@ export default function SwitchWalletPage({
   return (
     <div className="page">
       <section className="standard_width">
-        <h1 className="serif_header">Tally Ho not Default</h1>
-        <p>
-          We disabled Tally as default wallet for you. You can always enable it
-          back from Menu ☰ at any time.
-        </p>
+        <h1 className="serif_header">{t("notDefaultWalletMessage")}</h1>
+        <p>{t("disableWalletExplainer")}</p>
         <div className="toggle_default">
-          <span>Use Tally Ho as default wallet</span>
+          <span>{t("useTallyHoAsDefaultPrompt")}</span>
           <SharedToggleButton
             onChange={(value) => toggleDefaultWallet(value)}
             value={toggleState}
@@ -41,7 +40,7 @@ export default function SwitchWalletPage({
         </div>
         <div className="button_wrap">
           <SharedButton type="primary" size="large" onClick={close}>
-            Close window
+            {t("closeButton")}
           </SharedButton>
         </div>
       </section>

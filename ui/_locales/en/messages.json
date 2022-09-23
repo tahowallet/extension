@@ -31,6 +31,14 @@
     }
   },
   "comingSoon": "Coming soon",
+  "dappConnection": {
+    "connectToDapp": "Connect to dApp",
+    "dappPermissionListTitle": "dApp would get permission to:",
+    "viewAddressPermission": "View address of connected account",
+    "createTransactionPermission": "Create but not sign transactions for you",
+    "rejectConnection": "Reject",
+    "acceptConnection": "Connect",
+  },
   "keyring": {
     "setPassword": {
       "title": "Set unlock signing password",
@@ -333,6 +341,15 @@
       "estimatedFee": "Estimated network fee",
       "daoFee": "DAO fee"
     }
+  },
+  "switchWallet": {
+    "title": "Want to use another wallet instead?",
+    "tooltip": "You are seeing this because TallyHo! is set as default wallet, you can change this option in the main menu.",
+    "confirmSwitchWallet": "Yes, switch wallet",
+    "notDefaultWalletMessage": "Tally Ho not Default",
+    "disableWalletExplainer": "We disabled Tally as default wallet for you. You can always enable it back from Menu ☰ at any time.",
+    "useTallyHoAsDefaultPrompt": "Use Tally Ho as default wallet",
+    "closeButton": "Close window"
   },
   "toggle": {
     "collapse": "Collapse",
