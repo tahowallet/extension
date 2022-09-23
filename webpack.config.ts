@@ -210,10 +210,32 @@ export default (
             {
               from: `manifest/manifest(|.${mode}|.${browser}|.${browser}.${mode}).json`,
               to: "manifest.json",
-              transformAll: (assets: { data: Buffer }[]) => {
+              transformAll: (
+                assets: { data: Buffer; sourceFilename: string }[]
+              ) => {
+                const getPriority = (filename: string) => {
+                  switch (true) {
+                    case filename.endsWith(`manifest.${browser}.${mode}.json`):
+                      return 8
+                    case filename.endsWith(`manifest.${browser}.json`):
+                      return 4
+                    case filename.endsWith(`manifest.${mode}.json`):
+                      return 2
+                    case filename.endsWith("manifest.json"):
+                      return 1
+                    default:
+                      return 0
+                  }
+                }
+
                 const combinedManifest = webpackMerge(
                   {},
                   ...assets
+                    .sort(
+                      (a, b) =>
+                        getPriority(a.sourceFilename) -
+                        getPriority(b.sourceFilename)
+                    )
                     .map((asset) => asset.data.toString("utf8"))
                     // JSON.parse chokes on empty strings
                     .filter((assetData) => assetData.trim().length > 0)
