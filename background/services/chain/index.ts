@@ -1514,7 +1514,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Retrieve a confirmed transaction's transaction receipt
+   * Retrieve a confirmed transaction's transaction receipt, saving the results.
    *
    * @param network the EVM network we're interested in
    * @param transaction the confirmed transaction we're interested in
