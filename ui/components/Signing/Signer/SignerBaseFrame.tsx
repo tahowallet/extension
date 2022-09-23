@@ -1,4 +1,5 @@
 import React, { ReactElement, useState } from "react"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../Shared/SharedButton"
 
 type SignerBaseFrameProps = {
@@ -14,6 +15,8 @@ export default function SignerBaseFrame({
   onConfirm,
   onReject,
 }: SignerBaseFrameProps): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
+
   const [isOnDelayToSign /* , setIsOnDelayToSign */] = useState(false)
 
   return (
@@ -21,7 +24,7 @@ export default function SignerBaseFrame({
       {children}
       <footer>
         <SharedButton size="large" type="secondary" onClick={onReject}>
-          Reject
+          {t("reject")}
         </SharedButton>
 
         <SharedButton

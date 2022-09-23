@@ -49,12 +49,16 @@ export default function SignTransactionContainer({
   warnings?: Warning[]
 }): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
+  const { t: ledgerT } = useTranslation("translation", { keyPrefix: "ledger" })
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
   const accountSigner = signerAccountTotal?.accountSigner
   const [isOnDelayToSign, setIsOnDelayToSign] = useState(true)
   const [focusChangeNonce, setFocusChangeNonce] = useState(0)
 
-  const signingLedgerState = useSigningLedgerState(accountSigner ?? null)
+  const signingLedgerState = useSigningLedgerState(
+    signerAccountTotal?.address,
+    accountSigner ?? null
+  )
 
   const isLedgerSigning = accountSigner?.type === "ledger"
   const isWaitingForHardware = isLedgerSigning && isTransactionSigning
@@ -135,7 +139,7 @@ export default function SignTransactionContainer({
       {isWaitingForHardware ? (
         <div className="cannot_reject_warning">
           <span className="block_icon" />
-          {t("cannotRejectWarning")}
+          {ledgerT("onlyRejectFromLedger")}
         </div>
       ) : (
         <>
@@ -161,7 +165,7 @@ export default function SignTransactionContainer({
                   setSlideUpOpen(true)
                 }}
               >
-                {t("checkLedger")}
+                {ledgerT("checkLedger")}
               </SharedButton>
             )}
             {((isLedgerSigning && canLedgerSign) ||
@@ -196,7 +200,7 @@ export default function SignTransactionContainer({
         )}
         {signingLedgerState?.state === "wrong-ledger-connected" && (
           <SignTransactionWrongLedgerConnected
-            signerAccountTotal={signerAccountTotal}
+            requiredAddress={signingLedgerState.requiredAddress}
           />
         )}
         {signingLedgerState?.state === "multiple-ledgers-connected" && (
