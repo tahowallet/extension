@@ -294,7 +294,7 @@
     "spendAmount": "Spend Amount",
     "help": "I need help",
     "refresh": "Refresh",
-    "spendAsset": {
+    "spendApproval": {
       "approve": "Approve",
       "infinite": "Infinite",
       "spend": "Spend",
