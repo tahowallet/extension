@@ -153,7 +153,9 @@
     "noTitle": "No title"
   },
   "achievements": {
-    "empty": "Nothing to see here\nBut you can start with the quest below"
+    "empty": "Nothing to see here",
+    "startWith": "You can start with the Tally Ho collection!",
+    "collection": "Tally Ho collection"
   },
   "onboarding": {
     "steps": {

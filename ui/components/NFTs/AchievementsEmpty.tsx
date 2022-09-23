@@ -29,6 +29,7 @@ export default function AchievementsEmpty(): ReactElement {
             font-weight: 500;
             color: var(--green-40);
             font-size: 16px;
+            margin-bottom: 32px;
             white-space: pre-line;
           }
         `}
