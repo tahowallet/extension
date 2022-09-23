@@ -38,10 +38,10 @@ const flatMapNFTs = (NFTs: NFTsState) =>
 
 /** Returns flat list of all NFTs without Galxe's items */
 export const selectNFTsList = createSelector(selectNFTs, (NFTs) =>
-  flatMapNFTs(NFTs).filter((NFT) => !NFT.isOAT)
+  flatMapNFTs(NFTs).filter((NFT) => !NFT.isAchievement)
 )
 
 /** Returns flat list of all Galxe's NFTs */
-export const selectOATsList = createSelector(selectNFTs, (NFTs) =>
-  flatMapNFTs(NFTs).filter((NFT) => NFT.isOAT)
+export const selectAchievementsList = createSelector(selectNFTs, (NFTs) =>
+  flatMapNFTs(NFTs).filter((NFT) => NFT.isAchievement)
 )

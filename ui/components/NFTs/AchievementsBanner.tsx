@@ -2,7 +2,7 @@ import React, { ReactElement } from "react"
 import SharedBanner from "../Shared/SharedBanner"
 import SharedButton from "../Shared/SharedButton"
 
-export default function OATsBanner(): ReactElement {
+export default function AchievementsBanner(): ReactElement {
   return (
     <SharedBanner>
       <div className="container">

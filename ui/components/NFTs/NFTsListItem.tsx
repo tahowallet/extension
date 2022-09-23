@@ -6,10 +6,10 @@ import NFTsImage from "./NFTsImage"
 function NFTsListItem({
   nft,
   openPreview,
-  isOAT,
+  isAchievement,
 }: {
   nft?: NFT
-  isOAT?: boolean
+  isAchievement?: boolean
   openPreview: (nft: NFT) => void
 }): ReactElement {
   const { t } = useTranslation()
@@ -27,7 +27,7 @@ function NFTsListItem({
           height={168}
           alt={name}
           src={src}
-          isOAT={isOAT}
+          isAchievement={isAchievement}
         />
         <span className="title ellipsis">
           <span>{name || t("nfts.noTitle")}</span>
@@ -45,7 +45,7 @@ function NFTsListItem({
           content: "";
           width: 168px;
           height: 168px;
-          border-radius: ${isOAT ? "100%" : "8px"};
+          border-radius: ${isAchievement ? "100%" : "8px"};
           position: absolute;
           background: #fff;
           opacity: 0.2;
@@ -56,7 +56,7 @@ function NFTsListItem({
           font-weight: 500;
           font-size: 14px;
           line-height: 16px;
-          ${isOAT && "text-align: center;"}
+          ${isAchievement && "text-align: center;"}
         }
       `}</style>
     </>

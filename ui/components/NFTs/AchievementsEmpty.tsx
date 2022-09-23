@@ -1,14 +1,14 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import OATsBanner from "./OATsBanner"
+import AchievementsBanner from "./AchievementsBanner"
 
-export default function OATsEmpty(): ReactElement {
+export default function AchievementsEmpty(): ReactElement {
   const { t } = useTranslation()
   return (
     <div className="standard_width container">
       <img className="bowl_image" src="./images/empty_bowl@2x.png" alt="" />
-      <p>{t("oats.empty")}</p>
-      <OATsBanner />
+      <p>{t("achievements.empty")}</p>
+      <AchievementsBanner />
       <style jsx>
         {`
           .container {

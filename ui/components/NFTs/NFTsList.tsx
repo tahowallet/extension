@@ -6,10 +6,10 @@ import NFTsSlideUpPreviewContent from "./NFTsSlideUpPreviewContent"
 
 function NFTsList({
   nfts,
-  isOAT,
+  isAchievement,
 }: {
   nfts: NFT[]
-  isOAT?: boolean
+  isAchievement?: boolean
 }): ReactElement {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [currentNFTPreview, setCurrentNFTPreview] = useState<NFT | null>(null)
@@ -29,7 +29,7 @@ function NFTsList({
         {nfts.map((item) => (
           <NFTsListItem
             nft={item}
-            isOAT={isOAT}
+            isAchievement={isAchievement}
             openPreview={openPreview}
             key={`${item.tokenID}_${item.contract.address}`}
           />

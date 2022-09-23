@@ -4,14 +4,14 @@ import {
   getAllAddresses,
   getAllNetworks,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { selectOATsList } from "@tallyho/tally-background/redux-slices/selectors/nftsSelectors"
+import { selectAchievementsList } from "@tallyho/tally-background/redux-slices/selectors/nftsSelectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
-import OATsEmpty from "./OATsEmpty"
+import AchievementsEmpty from "./AchievementsEmpty"
 import NFTsList from "./NFTsList"
 
-export default function OATsOverview(): ReactElement {
-  const OATs = useBackgroundSelector(selectOATsList)
+export default function AchievementsOverview(): ReactElement {
+  const achievements = useBackgroundSelector(selectAchievementsList)
   const allNetworks = useBackgroundSelector(getAllNetworks)
   const allAddresses = useBackgroundSelector(getAllAddresses)
   const dispatch = useBackgroundDispatch()
@@ -27,11 +27,15 @@ export default function OATsOverview(): ReactElement {
     // here with 'allAddresses' and 'allNetworks' in the deps table
   }, [dispatch]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <div className="oat_overview">
-      {OATs.length ? <NFTsList nfts={OATs} isOAT /> : <OATsEmpty />}
+    <div className="achievement_overview">
+      {achievements.length ? (
+        <NFTsList nfts={achievements} isAchievement />
+      ) : (
+        <AchievementsEmpty />
+      )}
       <style jsx>
         {`
-          .oat_overview {
+          .achievement_overview {
             margin: 0 16px;
           }
         `}
