@@ -23,7 +23,7 @@ export default function SettingsConnectedWebsites(): ReactElement {
 
   return (
     <div className="standard_width_padded wrapper">
-      <SharedPageHeader withoutBackText>
+      <SharedPageHeader withoutBackText backPath="/settings">
         {t(`connectedWebsitesSettings.title`)}
       </SharedPageHeader>
       <section>
