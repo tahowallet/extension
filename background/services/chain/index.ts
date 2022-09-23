@@ -15,7 +15,6 @@ import {
   TransactionRequestWithNonce,
   SignedTransaction,
   toHexChainID,
-  ConfirmedEVMTransaction,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import {
@@ -1269,7 +1268,10 @@ export default class ChainService extends BaseService<Events> {
         network
       ).getTransaction(hash)
 
-      let transaction = transactionFromEthersTransaction(result, network)
+      const transaction = transactionFromEthersTransaction(result, network)
+
+      // TODO make this provider type specific
+      await this.saveTransaction(transaction, "alchemy")
 
       if (!transaction.blockHash && !transaction.blockHeight) {
         this.subscribeToTransactionConfirmation(
@@ -1280,14 +1282,8 @@ export default class ChainService extends BaseService<Events> {
         // Get relevant block data.
         await this.getBlockData(transaction.network, transaction.blockHash)
         // Retrieve gas used, status, etc
-        transaction = await this.retrieveTransactionReceipt(
-          transaction.network,
-          transaction
-        )
+        this.retrieveTransactionReceipt(transaction.network, transaction)
       }
-
-      // TODO make this provider type specific
-      await this.saveTransaction(transaction, "alchemy")
     } catch (error) {
       logger.error(`Error retrieving transaction ${hash}`, error)
       if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
@@ -1526,9 +1522,12 @@ export default class ChainService extends BaseService<Events> {
   private async retrieveTransactionReceipt(
     network: EVMNetwork,
     transaction: AnyEVMTransaction
-  ): Promise<ConfirmedEVMTransaction> {
+  ): Promise<void> {
     const provider = this.providerForNetworkOrThrow(network)
     const receipt = await provider.getTransactionReceipt(transaction.hash)
-    return enrichTransactionWithReceipt(transaction, receipt)
+    await this.saveTransaction(
+      enrichTransactionWithReceipt(transaction, receipt),
+      "alchemy"
+    )
   }
 }
