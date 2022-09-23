@@ -300,8 +300,8 @@
       "spend": "Spend",
       "tokens": "tokens",
       "spendLimit": "Spend limit",
-      "tooltip1": "Spend limit is the amount of funds from a particular asset, that you allow a contract to spend.",
-      "tooltip2": "Infinite tx has the drawback that if the contract is mailicous, it can steal all your funds.",
+      "tooltip1": "Spend limit is the amount of funds from a particular asset that you allow a contract to spend.",
+      "tooltip2": "Infinite tx has the drawback that if the contract is malicous, it can steal all your funds.",
       "changeLimit": "Change limit",
       "invalidAmount": "Invalid amount"
     }
