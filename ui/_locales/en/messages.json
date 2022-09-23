@@ -310,6 +310,16 @@
     "title": "Swap Assets",
     "from": "Swap from:",
     "to": "Swap to:",
+    "sellAsset": "You pay",
+    "buyAsset": "You receive",
+    "continueSwap": "Continue Swap",
+    "exchangeRoute": "Exchange route",
+    "rewards": {
+      "header": "Swap rewards for community",
+      "body": "This week, 240,000 DOGGO tokens will be equally shared as Swap Rewards.",
+      "tooltip": "Tally rewards it's users that use swap every week. A council decides weekly prizes and who is eligible.",
+      "detailButton": "Details"
+    },
     "error": {
       "noSellAsset": "Attempting to approve transfer without a sell asset.",
       "noApprovalTarget": "Attempting to approve transfer without an approval target.",
