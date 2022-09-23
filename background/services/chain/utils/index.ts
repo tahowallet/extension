@@ -308,7 +308,7 @@ export function transactionFromEthersTransaction(
   if (tx.hash === undefined) {
     throw new Error("Malformed transaction")
   }
-  if (tx.type !== 0 && tx.type !== 1 && tx.type !== 2) {
+  if (tx.type !== 0 && tx.type !== 1 && tx.type !== 2 && tx.type !== 100) {
     throw new Error(`Unknown transaction type ${tx.type}`)
   }
 

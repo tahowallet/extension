@@ -118,7 +118,7 @@ export type EVMTransaction = {
    * 1 - EIP-2930
    * 2 - EIP-1559 transactions
    */
-  type: 0 | 1 | 2 | null
+  type: 0 | 1 | 2 | 100 | null
 }
 
 /**
@@ -172,7 +172,7 @@ export type LegacyEVMTransactionRequest = Pick<
  */
 export type EIP1559Transaction = EVMTransaction & {
   gasPrice: null
-  type: 1 | 2
+  type: 1 | 2 | 100
   maxFeePerGas: bigint
   maxPriorityFeePerGas: bigint
 }
