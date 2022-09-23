@@ -22,7 +22,7 @@ export default function SignTransactionContractInteractionProvider({
           <div className="container">
             {typeof transactionDetails.to === "undefined" ? (
               <>
-                <div className="label">{t("sendTo")}</div>
+                <div className="label">{t("assetTransfer.sendTo")}</div>
                 <div className="send_to">{t("contractCreation")}</div>
               </>
             ) : (

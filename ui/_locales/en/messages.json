@@ -283,7 +283,6 @@
     "awaitingHardwareSignature": "Awaiting hardware wallet signature",
     "reject": "Reject",
     "noSigning": "Read-only accounts cannot sign",
-    "sendTo": "Send to",
     "contractCreation": "Contract creation",
     "interactingWith": "Interacting with",
     "unknownNetwork": "Unknown Network",
@@ -304,6 +303,9 @@
       "tooltip2": "Infinite tx has the drawback that if the contract is mailicous, it can steal all your funds.",
       "changeLimit": "Change limit",
       "invalidAmount": "Invalid amount"
+    },
+    "assetTransfer": {
+      "sendTo": "Send to",
     }
   },
   "swap": {
