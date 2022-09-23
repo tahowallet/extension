@@ -4,13 +4,14 @@ import {
   getAllAddresses,
   getAllNetworks,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { selectNFTsList } from "@tallyho/tally-background/redux-slices/selectors/nftsSelectors"
+import { selectOATsList } from "@tallyho/tally-background/redux-slices/selectors/nftsSelectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import NFTsList from "./NFTsList"
-import NFTsEmpty from "./NFTsEmpty"
 
-export default function NFTsOverview(): ReactElement {
-  const NFTs = useBackgroundSelector(selectNFTsList)
+import OATsEmpty from "./OATsEmpty"
+import NFTsList from "./NFTsList"
+
+export default function OATsOverview(): ReactElement {
+  const OATs = useBackgroundSelector(selectOATsList)
   const allNetworks = useBackgroundSelector(getAllNetworks)
   const allAddresses = useBackgroundSelector(getAllAddresses)
   const dispatch = useBackgroundDispatch()
@@ -22,17 +23,15 @@ export default function NFTsOverview(): ReactElement {
         networks: allNetworks,
       })
     )
-
     // every 30s or so we are updating balances which is causing rerendering loop
     // here with 'allAddresses' and 'allNetworks' in the deps table
   }, [dispatch]) // eslint-disable-line react-hooks/exhaustive-deps
-
   return (
-    <div className="nft_overview">
-      {NFTs.length ? <NFTsList nfts={NFTs} /> : <NFTsEmpty />}
+    <div className="oat_overview">
+      {OATs.length ? <NFTsList nfts={OATs} isOAT /> : <OATsEmpty />}
       <style jsx>
         {`
-          .nft_overview {
+          .oat_overview {
             margin: 0 16px;
           }
         `}

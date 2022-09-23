@@ -6,7 +6,7 @@
       "saveName": "Save name",
       "typeNewName": "Type new name",
       "cancel": "Cancel",
-      "regularWarning": "Removing this address doesn&apos;t delete your recovery phrase or any private keys. Instead it just hides it from the extension and you won&apos;t be able to use it until you add it back.",
+      "regularWarning": "Removing this address doesn't delete your recovery phrase or any private keys. Instead it just hides it from the extension and you won't be able to use it until you add it back.",
       "loudWarningTitle": "Removing this address will remove its associated account from the UI.",
       "loudWarningBody": "Are you sure you want to proceed?",
       "removeAddress": "Remove address",
@@ -105,8 +105,11 @@
     }
   },
   "nfts": {
-    "empty":"Looks like you don&apos;t have any NFTs yet? Get some and view them here!",
+    "empty":"Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title"
+  },
+  "oats": {
+    "empty": "Nothing to see here :(\nBut you can start with the quest below"
   },
   "onboarding": {
     "steps": {

@@ -7,12 +7,14 @@ export default function NFTsImage({
   alt,
   src,
   fit = "cover",
+  isOAT,
 }: {
   width?: number
   height?: number
   alt: string
   src: string
   fit?: string
+  isOAT?: boolean
 }): ReactElement {
   const [isLoading, setIsLoading] = useState(true)
   return (
@@ -54,12 +56,12 @@ export default function NFTsImage({
           object-fit: ${fit};
           max-height: ${height ?? "100%"};
           max-width: ${width ?? "100%"};
-          border-radius: 8px;
+          border-radius: ${isOAT ? "100%" : "8px"};
           flex-grow: 1;
         }
         .loading {
           background-color: var(--hunter-green);
-          border-radius: 8px;
+          border-radius: ${isOAT ? "100%" : "8px"};
           animation: pulse 1.1s infinite;
         }
       `}</style>

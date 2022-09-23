@@ -5,12 +5,12 @@ import NFTsImage from "./NFTsImage"
 
 function NFTsListItem({
   nft,
-  style,
   openPreview,
+  isOAT,
 }: {
   nft?: NFT
+  isOAT?: boolean
   openPreview: (nft: NFT) => void
-  style?: React.CSSProperties
 }): ReactElement {
   const { t } = useTranslation()
   // getting undefined sometimes, react-window renders second column even if there is no item?
@@ -21,13 +21,14 @@ function NFTsListItem({
 
   return (
     <>
-      <button
-        className="nft"
-        type="button"
-        onClick={() => openPreview(nft)}
-        style={style}
-      >
-        <NFTsImage width={168} height={168} alt={name} src={src} />
+      <button className="nft" type="button" onClick={() => openPreview(nft)}>
+        <NFTsImage
+          width={168}
+          height={168}
+          alt={name}
+          src={src}
+          isOAT={isOAT}
+        />
         <span className="title ellipsis">
           <span>{name || t("nfts.noTitle")}</span>
         </span>
@@ -44,7 +45,7 @@ function NFTsListItem({
           content: "";
           width: 168px;
           height: 168px;
-          border-radius: 8px;
+          border-radius: ${isOAT ? "100%" : "8px"};
           position: absolute;
           background: #fff;
           opacity: 0.2;
@@ -55,6 +56,7 @@ function NFTsListItem({
           font-weight: 500;
           font-size: 14px;
           line-height: 16px;
+          ${isOAT && "text-align: center;"}
         }
       `}</style>
     </>
