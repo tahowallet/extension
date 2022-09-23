@@ -37,7 +37,7 @@
     "viewAddressPermission": "View address of connected account",
     "createTransactionPermission": "Create but not sign transactions for you",
     "rejectConnection": "Reject",
-    "acceptConnection": "Connect",
+    "acceptConnection": "Connect"
   },
   "keyring": {
     "setPassword": {
@@ -66,6 +66,34 @@
   "ledger": {
     "checkLedger": "Check Ledger",
     "onlyRejectFromLedger": "Tx can only be Rejected from Ledger",
+    "onboarding": {
+      "prepare": {
+        "continueButton": "Continue",
+        "tryAgainButton": "Try Again",
+        "subheadingWord1": "start",
+        "subheadingWord2": "retry",
+        "subheading": "Make sure you take these 3 steps before we {{subheadingWord}}",
+        "initialScreenHeader": "Before we get started",
+        "header": "Check your Ledger",
+        "noLedgerConnected": "No Ledger device is connected",
+        "multipleLedgersConnected": "Multiple Ledgers are connected",
+        "stepsExplainer": "Please follow the steps below and click on Try Again!",
+        "step1": "Plug in a single Ledger",
+        "step2": "Enter pin to unlock",
+        "step3": "Open Ethereum App"
+      },
+      "selectDevice": "Select the device",
+      "clickConnect": "Click connect",
+      "previous": "Previous",
+      "next": "Next",
+      "selectLedgeraccounts": "Select ledger accounts",
+      "multipleLedgersDescriptor": "You can select as many as you want",
+      "connectSelectedLedger": "Connect selected",
+      "doneMessageOne": "Congratulations!",
+      "doneMessageTwo": "You can open Tally Ho now.",
+      "onboardingSuccessful": "Selected accounts were succesfully connected.",
+      "closeTab": "Close tab"
+    },
     "connectionStatus": {
       "availableButNoSigning": "Ledger is connected but cannot sign",
       "readyToSign": "Ledger is ready to sign",
