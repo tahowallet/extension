@@ -7,8 +7,7 @@ export default function SignTransactionPanelCombined(): ReactElement {
     <>
       <SignTransactionDetailPanel
         // Don't display for contract interactions
-        panelState={{ dismissedWarnings: ["send-to-contract"] }}
-        setPanelState={() => {}}
+        defaultPanelState={{ dismissedWarnings: ["send-to-contract"] }}
       />
       <SignTransactionRawDataPanel />
     </>

@@ -22,14 +22,15 @@ export type PanelState = {
 }
 
 type SignTransactionDetailPanelProps = {
-  panelState: PanelState
-  setPanelState: React.Dispatch<React.SetStateAction<PanelState>>
+  defaultPanelState?: PanelState
 }
 
-export default function SignTransactionDetailPanel(
-  props: SignTransactionDetailPanelProps
-): ReactElement {
-  const { panelState, setPanelState } = props
+export default function SignTransactionDetailPanel({
+  defaultPanelState,
+}: SignTransactionDetailPanelProps): ReactElement {
+  const [panelState, setPanelState] = useState(
+    defaultPanelState ?? { dismissedWarnings: [] }
+  )
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
   const [updateNum, setUpdateNum] = useState(0)
