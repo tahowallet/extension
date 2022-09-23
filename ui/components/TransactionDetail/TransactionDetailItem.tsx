@@ -27,7 +27,8 @@ export default function TransactionDetailItem({
 
         .container.inline {
           flex-flow: row;
-          align-items: center;
+          align-items: top;
+          column-gap: 10px;
           justify-content: space-between;
         }
 
@@ -37,6 +38,7 @@ export default function TransactionDetailItem({
 
         .value {
           color: var(--green-20);
+          word-break: break-word;
         }
       `}</style>
     </div>

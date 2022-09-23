@@ -1,5 +1,6 @@
 import { connectLedger } from "@tallyho/tally-background/redux-slices/ledger"
 import React, { ReactElement, ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 
@@ -14,6 +15,8 @@ export default function SignTransactionSlideUpContentLayout({
   steps: ReactNode[]
   onHelpClick?: () => void
 }): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
+
   const dispatch = useBackgroundDispatch()
   return (
     <div className="container">
@@ -28,14 +31,14 @@ export default function SignTransactionSlideUpContentLayout({
       </div>
       <div className="footer_actions">
         <SharedButton type="tertiaryGray" size="small" onClick={onHelpClick}>
-          I need help
+          {t("help")}
         </SharedButton>
         <SharedButton
           type="primary"
           size="medium"
           onClick={() => dispatch(connectLedger())}
         >
-          Refresh
+          {t("refresh")}
         </SharedButton>
       </div>
       <style jsx>{`

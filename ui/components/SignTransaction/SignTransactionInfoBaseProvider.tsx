@@ -2,6 +2,7 @@ import { TransactionRequest } from "@tallyho/tally-background/networks"
 import { TransactionAnnotation } from "@tallyho/tally-background/services/enrichment"
 import { ReactElement, ReactNode } from "react"
 
+// @TODO Internationalize title while keeping our nice typesafety
 export interface SignTransactionInfo {
   title:
     | "Contract interaction"

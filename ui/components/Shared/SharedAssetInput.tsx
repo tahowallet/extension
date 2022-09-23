@@ -150,7 +150,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
   return (
     <>
       <div className="standard_width_padded center_horizontal">
-        <div className="search_label">Select token</div>
+        <div className="search_label">{t("shared.selectToken")}</div>
         <div className="search_wrap">
           <input
             type="text"

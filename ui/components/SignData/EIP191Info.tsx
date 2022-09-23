@@ -1,26 +1,26 @@
 import React from "react"
 import { SignDataRequest } from "@tallyho/tally-background/utils/signing"
+import { useTranslation } from "react-i18next"
 
 const EIP191Info: React.FC<{
   signingData: SignDataRequest["signingData"]
   account: string
   internal: boolean
 }> = ({ signingData, account, internal }) => {
+  const { t } = useTranslation("translation", { keyPrefix: "signing" })
   return (
     <>
       <div className="label header">
-        {internal
-          ? "Your signature is required"
-          : "A dapp is requesting your signature"}
+        {internal ? t("signatureRequired") : t("dappSignatureRequest")}
       </div>
       <div className="divider" />
       <div className="divider" />
       <div className="message">
-        <div className="message-title">Message</div>
+        <div className="message-title">{t("message")}</div>
         <div className="light">{`${signingData}`}</div>
       </div>
       <div className="message">
-        <div className="signed">Signed,</div>
+        <div className="signed">{t("signed")}</div>
         <div>{account ?? "Unknown"}</div>
       </div>
       <style jsx>{`
