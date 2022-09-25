@@ -86,7 +86,7 @@
       "clickConnect": "Click connect",
       "previous": "Previous",
       "next": "Next",
-      "selectLedgeraccounts": "Select ledger accounts",
+      "selectLedgeraccounts": "Select Ledger accounts",
       "multipleLedgersDescriptor": "You can select as many as you want",
       "connectSelectedLedger": "Connect selected",
       "doneMessageOne": "Congratulations!",
@@ -337,7 +337,7 @@
       "tokens": "tokens",
       "spendLimit": "Spend limit",
       "tooltip1": "Spend limit is the amount of funds from a particular asset that you allow a contract to spend.",
-      "tooltip2": "Infinite tx has the drawback that if the contract is malicous, it can steal all your funds.",
+      "tooltip2": "Infinite tx has the drawback that if the contract is malicious, it can steal all your funds.",
       "changeLimit": "Change limit",
       "invalidAmount": "Invalid amount"
     }
@@ -372,7 +372,7 @@
   },
   "switchWallet": {
     "title": "Want to use another wallet instead?",
-    "tooltip": "You are seeing this because TallyHo! is set as default wallet, you can change this option in the main menu.",
+    "tooltip": "You are seeing this because Tally Ho! is set as default wallet, you can change this option in the main menu.",
     "confirmSwitchWallet": "Yes, switch wallet",
     "notDefaultWalletMessage": "Tally Ho not Default",
     "disableWalletExplainer": "We disabled Tally as default wallet for you. You can always enable it back from Menu ☰ at any time.",
