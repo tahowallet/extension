@@ -14,6 +14,11 @@ export type NFT = {
     url: string
   }[]
   contract: { address: string }
+  isAchievement: boolean
+}
+
+function isGalxeAchievement(url: string | null | undefined) {
+  return !!url && (url.includes("galaxy.eco") || url.includes("galxe.com"))
 }
 
 function alchemyNFTtoNFT(original: AlchemyNFTItem): NFT {
@@ -32,6 +37,7 @@ function alchemyNFTtoNFT(original: AlchemyNFTItem): NFT {
       NETWORK_BY_CHAIN_ID[
         chainID.toString() as keyof typeof NETWORK_BY_CHAIN_ID
       ],
+    isAchievement: isGalxeAchievement(original.metadata?.external_link),
   }
 }
 
@@ -72,6 +78,7 @@ function simpleHashNFTModelToNFT(original: SimpleHashNFTModel): NFT {
     tokenID,
     media: media as NFT["media"],
     network: NETWORK_BY_CHAIN_ID[chainID],
+    isAchievement: isGalxeAchievement(original.external_url),
   }
 }
 
