@@ -225,7 +225,7 @@ export default class ChainService extends BaseService<Events> {
       blockPrices: {
         runAtStart: false,
         schedule: {
-          periodInMinutes: 0.25, // Every 30 seconds
+          periodInMinutes: 0.25, // Every 15 seconds
         },
         handler: () => {
           this.pollBlockPrices()
