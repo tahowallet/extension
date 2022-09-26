@@ -39,6 +39,7 @@ export type Events = {
   newDefaultWalletValue: boolean
   refreshBackgroundPage: null
   newSelectedAccount: AddressOnNetwork
+  userActivityEncountered: AddressOnNetwork
   newSelectedNetwork: EVMNetwork
 }
 
@@ -172,6 +173,13 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
     await emitter.emit("newSelectedAccount", addressNetwork)
     // Once the default value has persisted, propagate to the store.
     dispatch(uiSlice.actions.setSelectedAccount(addressNetwork))
+  }
+)
+
+export const userActivityEncountered = createBackgroundAsyncThunk(
+  "ui/userActivityEncountered",
+  async (addressNetwork: AddressOnNetwork) => {
+    await emitter.emit("userActivityEncountered", addressNetwork)
   }
 )
 
