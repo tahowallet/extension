@@ -28,6 +28,7 @@ import {
   SECOND,
   NETWORK_BY_CHAIN_ID,
   EIP_1559_COMPLIANT_CHAIN_IDS,
+  MINUTE,
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
@@ -86,6 +87,8 @@ const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 // OpenEthereum with tracing to catch up to where we are.
 const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
 
+const NETWORK_POLLING_TIMEOUT = MINUTE * 5
+
 // The number of milliseconds after a request to look up a transaction was
 // first seen to continue looking in case the transaction fails to be found
 // for either internal (request failure) or external (transaction dropped from
@@ -142,7 +145,7 @@ export default class ChainService extends BaseService<Events> {
 
   private lastUserActivityOnNetwork: {
     [chainID: string]: UNIXTime
-  } = {}
+  }
 
   /**
    * For each chain id, track an address's last seen nonce. The tracked nonce
@@ -248,6 +251,11 @@ export default class ChainService extends BaseService<Events> {
     ]
 
     this.activeNetworks = []
+
+    this.lastUserActivityOnNetwork =
+      Object.fromEntries(
+        this.supportedNetworks.map((network) => [network.chainID, Date.now()])
+      ) || {}
 
     this.providers = {
       evm: Object.fromEntries(
@@ -1036,6 +1044,13 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async pollBlockPricesForNetwork(chainID: string): Promise<void> {
+    if (
+      Date.now() >
+      (this.lastUserActivityOnNetwork[chainID] ?? 0) + NETWORK_POLLING_TIMEOUT
+    ) {
+      return
+    }
+
     const subscription = this.subscribedNetworks.find(
       ({ network }) => toHexChainID(network.chainID) === toHexChainID(chainID)
     )
