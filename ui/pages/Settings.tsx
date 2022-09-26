@@ -161,8 +161,8 @@ export default function Settings(): ReactElement {
   }
 
   const generalList = [
-    hideSmallAssetBalance,
     setAsDefault,
+    hideSmallAssetBalance,
     ...(SUPPORT_MULTIPLE_LANGUAGES ? [languages] : []),
     ...(SUPPORT_GOERLI ? [enableTestNetworks] : []),
     dAppsSettings,
@@ -242,7 +242,7 @@ export default function Settings(): ReactElement {
           }
           .community_cta_wrap {
             width: 100vw;
-            margin-top: auto;
+            margin-top: 20px;
             margin-left: -21px;
             background-color: var(--green-95);
             text-align: center;

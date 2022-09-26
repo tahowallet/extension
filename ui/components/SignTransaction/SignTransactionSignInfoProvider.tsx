@@ -7,6 +7,7 @@ import {
   heuristicDesiredDecimalsForUnitPrice,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../../hooks"
 import SharedAddress from "../Shared/SharedAddress"
 import TransactionDetailAddressValue from "../TransactionDetail/TransactionDetailAddressValue"
@@ -21,6 +22,7 @@ export default function SignTransactionSignInfoProvider({
   annotation,
   inner,
 }: SignTransactionInfoProviderProps): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
   const baseAssetPricePoint = useBackgroundSelector((state) =>
     selectAssetPricePoint(
       state.assets,
@@ -56,7 +58,7 @@ export default function SignTransactionSignInfoProvider({
       infoBlock={
         <div className="sign_block">
           <div className="container">
-            <div className="label">Send to</div>
+            <div className="label">{t("sendTo")}</div>
             <SharedAddress
               address={transactionDetails.to ?? ""}
               name={
@@ -69,7 +71,7 @@ export default function SignTransactionSignInfoProvider({
           </div>
           <div className="divider" />
           <div className="container">
-            <div className="spend_amount_label">Spend Amount</div>
+            <div className="spend_amount_label">{t("spendAmount")}</div>
             <div className="spend_amount">
               <div className="eth_value">
                 {ethValue} {transactionDetails.network.baseAsset.symbol}

@@ -59,17 +59,18 @@ export default function SignTransaction(): ReactElement {
     )
   }
 
-  if (accountSigner === null || transactionDetails === undefined) {
+  if (
+    accountSigner === null ||
+    accountSigner === undefined ||
+    transactionDetails === undefined
+  ) {
     return <SignTransactionLoader />
   }
 
   if (isLocked) return <></>
 
   const canConfirm =
-    isTransactionDataReady &&
-    transactionDetails &&
-    accountSigner &&
-    accountSigner !== ReadOnlyAccountSigner
+    isTransactionDataReady && accountSigner !== ReadOnlyAccountSigner
 
   const handleReject = async () => {
     await dispatch(rejectTransactionSignature())

@@ -6,7 +6,7 @@
       "saveName": "Save name",
       "typeNewName": "Type new name",
       "cancel": "Cancel",
-      "regularWarning": "Removing this address doesn&apos;t delete your recovery phrase or any private keys. Instead it just hides it from the extension and you won&apos;t be able to use it until you add it back.",
+      "regularWarning": "Removing this address doesn't delete your recovery phrase or any private keys. Instead it just hides it from the extension and you won't be able to use it until you add it back.",
       "loudWarningTitle": "Removing this address will remove its associated account from the UI.",
       "loudWarningBody": "Are you sure you want to proceed?",
       "removeAddress": "Remove address",
@@ -17,9 +17,9 @@
       "addWallet": "Add Wallet",
       "addAddress": "Add address",
       "readOnly": "Read-only",
-      "import":"Import",
-      "internal":"Tally Ho",
-      "ledger":"Full access via Ledger"
+      "import": "Import",
+      "internal": "Tally Ho",
+      "ledger": "Full access via Ledger"
     }
   },
   "assetInput": {
@@ -56,6 +56,49 @@
     }
   },
   "ledger": {
+    "checkLedger": "Check Ledger",
+    "onlyRejectFromLedger": "Tx can only be Rejected from Ledger",
+    "connectionStatus": {
+      "availableButNoSigning": "Ledger is connected but cannot sign",
+      "readyToSign": "Ledger is ready to sign",
+      "disconnected": "Ledger is disconnected",
+      "wrongLedger": "Wrong Ledger connected",
+      "multipleLedgers": "Multiple ledgers connected",
+      "busy": "Ledger is busy"
+    },
+    "activation": {
+      "title": "Activate blind signing",
+      "helpMessage": "Take the following steps:",
+      "step1": "Open Ethereum app on Ledger",
+      "step2": "Navigate to Settings",
+      "step3": "Enable blind signing"
+    },
+    "busy": {
+      "title": "Ledger is busy",
+      "helpMessage": "Looks like your Ledger has another signature in progress.",
+      "step1": "Accept or Reject transaction on device",
+      "step2": "Refresh page"
+    },
+    "notConnected": {
+      "title": "Connect to Ledger",
+      "helpMessage": "Take the following steps:",
+      "step1": "Plug in Ledger",
+      "step2": "Enter PIN to unlock",
+      "step3": "Open Ethereum app"
+    },
+    "multipleLedgersConnected": {
+      "title": "Multiple Ledgers are connected",
+      "helpMessage": "Take the following steps:",
+      "step1": "Remove all Ledgers but one",
+      "step2": "Enter PIN to unlock",
+      "step3": "Open Ethereum app"
+    },
+    "wrongLedger": {
+      "title": "Wrong Ledger",
+      "helpMessage": "Looks like you are using the wrong Ledger.",
+      "connectLedger": "Connect the Ledger containing this account:",
+      "refresh": "Refresh the page"
+    },
     "derivationPaths": {
       "ledgerLive": "Ledger Live",
       "bip44": "BIP 44 (Trezor, 🦊)",
@@ -70,6 +113,7 @@
     "toBeDetermined": "TBD",
     "settingsTitle": "Network fees (Gwei)",
     "gasLimit": "Gas limit",
+    "estimatedNetworkFee": "Estimated network fee",
     "insufficientBaseAsset": "Not enough {{symbol}} for network fees",
     "totalMax": "Total Max",
     "saveSettings": "Save settings",
@@ -105,8 +149,13 @@
     }
   },
   "nfts": {
-    "empty":"Looks like you don&apos;t have any NFTs yet? Get some and view them here!",
+    "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title"
+  },
+  "achievements": {
+    "empty": "Nothing to see here",
+    "startWith": "You can start with the Tally Ho collection!",
+    "collection": "Tally Ho collection"
   },
   "onboarding": {
     "steps": {
@@ -214,6 +263,53 @@
     "close": "Close",
     "accountItemSummary": {
       "connectedStatus": "Connected"
+    },
+    "selectToken": "Select token",
+    "backButtonText": "Back",
+    "saveBtn": "Save",
+    "closeWindow": "Close window"
+  },
+  "signing": {
+    "signatureRequired": "Your signature is required",
+    "dappSignatureRequest": "A dapp is requesting your signature",
+    "message": "Message",
+    "signed": "Signed,",
+    "type": "Type",
+    "EIP4361": {
+      "subtext1": "Wants you to sign in with your",
+      "subtext2": "Ethereum account:",
+      "statement": "Statement",
+      "nonce": "Nonce",
+      "version": "Version",
+      "chainID": "Chain ID",
+      "expiration": "Expiration"
+    }
+  },
+  "signTransaction": {
+    "awaitingHardwareSignature": "Awaiting hardware wallet signature",
+    "reject": "Reject",
+    "noSigning": "Read-only accounts cannot sign",
+    "sendTo": "Send to",
+    "contractCreation": "Contract creation",
+    "interactingWith": "Interacting with",
+    "unknownNetwork": "Unknown Network",
+    "detailPanelName": "Details",
+    "rawDataPanelName": "Raw data",
+    "rawDataCopyMsg": "Raw data copied to clipboard",
+    "copyRawData": "Copy hex",
+    "spendAmount": "Spend Amount",
+    "help": "I need help",
+    "refresh": "Refresh",
+    "spendAsset": {
+      "approve": "Approve",
+      "infinite": "Infinite",
+      "spend": "Spend",
+      "tokens": "tokens",
+      "spendLimit": "Spend limit",
+      "tooltip1": "Spend limit is the amount of funds from a particular asset, that you allow a contract to spend.",
+      "tooltip2": "Infinite tx has the drawback that if the contract is mailicous, it can steal all your funds.",
+      "changeLimit": "Change limit",
+      "invalidAmount": "Invalid amount"
     }
   },
   "swap": {
@@ -262,5 +358,13 @@
     "sendButton": "Continue",
     "receiveAddress": "Receive address",
     "sendToContractWarning": "This is a contract address, sending assets could result in loss of funds."
+  },
+  "dAppConnect": {
+    "switchWallet":{
+      "title": "Tally Ho not Default",
+      "descFirstPart": "We disabled Tally as default wallet for you. You can always enable it back from Settings",
+      "descSecondPart": "at any time.",
+      "toggleTitle": "Use Tally Ho as default wallet"
+    }
   }
 }

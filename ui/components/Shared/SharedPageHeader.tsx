@@ -4,13 +4,15 @@ import SharedBackButton from "./SharedBackButton"
 export default function SharedPageHeader({
   children,
   withoutBackText,
+  backPath,
 }: {
   children: React.ReactNode
   withoutBackText?: boolean
+  backPath?: string
 }): ReactElement {
   return (
     <div className="header_wrap">
-      <SharedBackButton withoutBackText={withoutBackText} />
+      <SharedBackButton withoutBackText={withoutBackText} path={backPath} />
       <h1>{children}</h1>
       <style jsx>{`
         h1 {
