@@ -268,13 +268,6 @@ export default class ChainService extends BaseService<Events> {
     const activeNetworks = await this.getActiveNetworks()
 
     // get the latest blocks and subscribe for all active networks
-    // TODO revisit whether we actually want to subscribe to new heads
-    // if a user isn't tracking a relevant addressOnNetwork
-    activeNetworks.forEach(async (network) => {
-      this.subscribeToNetworkEvents(network).catch((e) => {
-        logger.error("Error getting block number or new head", e)
-      })
-    })
 
     Promise.allSettled(
       accounts
@@ -1024,6 +1017,7 @@ export default class ChainService extends BaseService<Events> {
    * Write block prices to IndexedDB so we have them for later
    */
   async pollBlockPrices(): Promise<void> {
+    console.log("polling", this.subscribedNetworks)
     await Promise.allSettled(
       this.subscribedNetworks.map(async ({ network, provider }) => {
         const blockPrices = await getBlockPrices(network, provider)
