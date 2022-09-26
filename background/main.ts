@@ -733,6 +733,10 @@ export default class Main extends BaseService<never> {
         )
       )
     })
+
+    uiSliceEmitter.on("userActivityEncountered", (addressOnNetwork) => {
+      this.chainService.markNetworkActivity(addressOnNetwork.network.chainID)
+    })
   }
 
   async connectNameService(): Promise<void> {

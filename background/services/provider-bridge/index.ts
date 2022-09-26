@@ -340,7 +340,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     origin: string,
     chainID: string
   ): Promise<PermissionRequest | undefined> {
-    // This is analagous to "User opened a dapp on chain X"
+    // This is analogous to "User opened a dapp on chain X"
     this.emitter.emit("permissionQueriedForChain", chainID)
 
     const { address: selectedAddress } =

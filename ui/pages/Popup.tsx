@@ -6,6 +6,7 @@ import classNames from "classnames"
 import {
   setRouteHistoryEntries,
   Location,
+  userActivityEncountered,
 } from "@tallyho/tally-background/redux-slices/ui"
 
 import { Store } from "webext-redux"
@@ -17,6 +18,7 @@ import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
 import {
   selectCurrentAccountSigner,
+  selectCurrentAddressNetwork,
   selectKeyringStatus,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
@@ -87,6 +89,12 @@ function useConnectPopupMonitor() {
 
 export function Main(): ReactElement {
   const dispatch = useBackgroundDispatch()
+
+  // Emit an event when the popup page is first loaded.
+  const currentAccount = useBackgroundSelector(selectCurrentAddressNetwork)
+  useEffect(() => {
+    dispatch(userActivityEncountered(currentAccount))
+  })
 
   const isDappPopup = useIsDappPopup()
   const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)
