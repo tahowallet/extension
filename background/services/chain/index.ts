@@ -232,14 +232,6 @@ export default class ChainService extends BaseService<Events> {
           this.pollBlockPrices()
         },
       },
-      latestBlocks: {
-        schedule: {
-          periodInMinutes: 0.25, // every 15 seconds
-        },
-        handler: () => {
-          this.getLatestBlocks()
-        },
-      },
     })
 
     this.supportedNetworks = [
@@ -1096,17 +1088,6 @@ export default class ChainService extends BaseService<Events> {
     this.emitter.emit("block", block)
     // TODO if it matches a known blockheight and the difficulty is higher,
     // emit a reorg event
-  }
-
-  /*
-   * Poll for latest blocks on all networks
-   */
-  private async getLatestBlocks(): Promise<void> {
-    await Promise.allSettled(
-      this.subscribedNetworks.map(async ({ network, provider }) => {
-        this.pollLatestBlock(network, provider)
-      })
-    )
   }
 
   async send(
