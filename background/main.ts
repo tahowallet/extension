@@ -1082,7 +1082,6 @@ export default class Main extends BaseService<never> {
     )
 
     uiSliceEmitter.on("newSelectedNetwork", (network) => {
-      this.chainService.markNetworkActivity(network.chainID)
       this.internalEthereumProviderService.routeSafeRPCRequest(
         "wallet_switchEthereumChain",
         [{ chainId: network.chainID }],

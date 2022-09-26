@@ -378,6 +378,7 @@ export default class ChainService extends BaseService<Events> {
       logger.warn(
         `${activeNetwork.name} already active - no need to activate it`
       )
+      this.markNetworkActivity(activeNetwork.chainID)
       return activeNetwork
     }
 
@@ -408,6 +409,7 @@ export default class ChainService extends BaseService<Events> {
       })
     }
 
+    this.markNetworkActivity(networkToActivate.chainID)
     return networkToActivate
   }
 

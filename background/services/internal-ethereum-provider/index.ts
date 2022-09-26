@@ -357,6 +357,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       (network) => toHexChainID(network.chainID) === toHexChainID(chainID)
     )
     if (activeNetwork) {
+      this.chainService.markNetworkActivity(activeNetwork.chainID)
       return activeNetwork
     }
 
