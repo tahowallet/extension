@@ -161,8 +161,8 @@ export default function Settings(): ReactElement {
   }
 
   const generalList = [
-    hideSmallAssetBalance,
     setAsDefault,
+    hideSmallAssetBalance,
     ...(SUPPORT_MULTIPLE_LANGUAGES ? [languages] : []),
     ...(SUPPORT_GOERLI ? [enableTestNetworks] : []),
     dAppsSettings,
