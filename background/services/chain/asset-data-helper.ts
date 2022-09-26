@@ -1,7 +1,6 @@
 import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
-  WebSocketProvider,
 } from "@ethersproject/providers"
 import {
   getAssetTransfers as getAlchemyAssetTransfers,
