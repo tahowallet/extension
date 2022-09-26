@@ -1031,6 +1031,10 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
+  markNetworkActivity(chainID: string): void {
+    this.lastUserActivityOnNetwork[chainID] = Date.now()
+  }
+
   /*
    * Periodically fetch block prices and emit an event whenever new data is received
    * Write block prices to IndexedDB so we have them for later
