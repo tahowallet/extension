@@ -1075,6 +1075,7 @@ export default class Main extends BaseService<never> {
     )
 
     uiSliceEmitter.on("newSelectedNetwork", (network) => {
+      this.chainService.markNetworkActivity(network.chainID)
       this.internalEthereumProviderService.routeSafeRPCRequest(
         "wallet_switchEthereumChain",
         [{ chainId: network.chainID }],
@@ -1096,6 +1097,14 @@ export default class Main extends BaseService<never> {
       "initializeAllowedPages",
       async (allowedPages: PermissionMap) => {
         this.store.dispatch(initializePermissions(allowedPages))
+      }
+    )
+
+    this.providerBridgeService.emitter.on(
+      "permissionQueriedForChain",
+      async (chainID: string) => {
+        this.chainService.markNetworkActivity(chainID)
+        this.chainService.pollBlockPricesForNetwork(chainID)
       }
     )
 
