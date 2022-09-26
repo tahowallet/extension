@@ -1031,7 +1031,14 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
-  markNetworkActivity(chainID: string): void {
+  async markNetworkActivity(chainID: string): Promise<void> {
+    if (
+      Date.now() - NETWORK_POLLING_TIMEOUT >
+      this.lastUserActivityOnNetwork[chainID]
+    ) {
+      // Reactivating a potentially deactivated network
+      this.pollBlockPricesForNetwork(chainID)
+    }
     this.lastUserActivityOnNetwork[chainID] = Date.now()
   }
 
