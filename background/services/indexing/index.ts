@@ -11,7 +11,12 @@ import {
   SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../../assets"
-import { BASE_ASSETS, FIAT_CURRENCIES, USD } from "../../constants"
+import {
+  BASE_ASSETS,
+  FIAT_CURRENCIES,
+  NETWORK_BY_CHAIN_ID,
+  USD,
+} from "../../constants"
 import { getPrices, getTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
@@ -78,6 +83,14 @@ export default class IndexingService extends BaseService<Events> {
    */
   private scheduledTokenRefresh = false
 
+  private cachedAssets: Record<EVMNetwork["chainID"], Promise<AnyAsset[]>> =
+    Object.fromEntries(
+      Object.keys(NETWORK_BY_CHAIN_ID).map((network) => [
+        network,
+        Promise.resolve([]),
+      ])
+    )
+
   /**
    * Create a new IndexingService. The service isn't initialized until
    * startService() is called and resolved.
@@ -110,7 +123,6 @@ export default class IndexingService extends BaseService<Events> {
           periodInMinutes: 1,
         },
         handler: () => this.handleTokenAlarm(),
-        runAtStart: true,
       },
       tokenRefreshes: {
         schedule: {
@@ -133,11 +145,18 @@ export default class IndexingService extends BaseService<Events> {
     await super.internalStartService()
 
     this.connectChainServiceEvents()
-    const activeNetworks = await this.chainService.getActiveNetworks()
 
-    // on launch, push any assets we have cached for all active networks
-    activeNetworks.forEach(async (network) => {
-      this.emitter.emit("assets", await this.getCachedAssets(network))
+    this.chainService.emitter.once("serviceStarted").then(async () => {
+      const activeNetworks = await this.chainService.getActiveNetworks()
+
+      // Push any assets we have cached in the db for all active networks
+      activeNetworks.forEach(async (network) => {
+        await this.cacheAssetsForNetwork(network)
+        this.emitter.emit("assets", await this.cachedAssets[network.chainID])
+      })
+
+      // ... and kick off token list fetching
+      await this.fetchAndCacheTokenLists()
     })
   }
 
@@ -160,7 +179,17 @@ export default class IndexingService extends BaseService<Events> {
   async addAssetToTrack(asset: SmartContractFungibleAsset): Promise<void> {
     // TODO Track across all account/network pairs, not just on one network or
     // TODO account.
-    return this.db.addAssetToTrack(asset)
+    await this.db.addAssetToTrack(asset)
+    this.cacheAssetsForNetwork(asset.homeNetwork)
+  }
+
+  /**
+   * Adds a custom asset, invalidates internal cache for asset network
+   * @param asset The custom asset
+   */
+  async addCustomAsset(asset: SmartContractFungibleAsset): Promise<void> {
+    await this.db.addCustomAsset(asset)
+    this.cacheAssetsForNetwork(asset.homeNetwork)
   }
 
   /**
@@ -180,23 +209,36 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   /**
-   * Get cached asset metadata from hard-coded base assets and configured token
-   * lists.
-   *
+   * Retrieves cached assets data from internal cache
    * @returns An array of assets, including base assets that are "built in" to
    *          the codebase. Fiat currencies are not included.
    */
   async getCachedAssets(network: EVMNetwork): Promise<AnyAsset[]> {
+    return this.cachedAssets[network.chainID]
+  }
+
+  /**
+   * Caches to memory asset metadata from hard-coded base assets and configured token
+   * lists.
+   */
+  async cacheAssetsForNetwork(network: EVMNetwork): Promise<void> {
+    let resolve!: (value: AnyAsset[]) => void
+    this.cachedAssets[network.chainID] = new Promise((r) => {
+      resolve = r
+    })
+
     const customAssets = await this.db.getCustomAssetsByNetwork(network)
     const tokenListPrefs =
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
 
-    return memoizedMergeAssets<FungibleAsset>(
+    const result = memoizedMergeAssets<FungibleAsset>(
       [network.baseAsset],
       customAssets,
       networkAssetsFromLists(network, tokenLists)
     )
+
+    resolve(result)
   }
 
   /**
@@ -210,7 +252,7 @@ export default class IndexingService extends BaseService<Events> {
     network: EVMNetwork,
     contractAddress: HexString
   ): Promise<SmartContractFungibleAsset> {
-    const knownAssets = await this.getCachedAssets(network)
+    const knownAssets = await this.cachedAssets[network.chainID]
     const found = knownAssets.find(
       (asset) =>
         "decimals" in asset &&
@@ -367,9 +409,10 @@ export default class IndexingService extends BaseService<Events> {
             ({ smartContract: { contractAddress } }) => contractAddress
           )
         )
-        const cachedAssets = await this.getCachedAssets(
-          addressOnNetwork.network
-        )
+        const cachedAssets = await this.cachedAssets[
+          addressOnNetwork.network.chainID
+        ]
+
         const otherActiveAssets = cachedAssets
           .filter(isSmartContractFungibleAsset)
           .filter(
@@ -429,9 +472,8 @@ export default class IndexingService extends BaseService<Events> {
     const listedAssetByAddress = (smartContractAssets ?? []).reduce<{
       [contractAddress: string]: SmartContractFungibleAsset
     }>((acc, asset) => {
-      const newAcc = { ...acc }
-      newAcc[normalizeEVMAddress(asset.contractAddress)] = asset
-      return newAcc
+      acc[normalizeEVMAddress(asset.contractAddress)] = asset
+      return acc
     }, {})
 
     // look up all assets and set balances
@@ -508,7 +550,7 @@ export default class IndexingService extends BaseService<Events> {
     contractAddress: string
   ): Promise<void> {
     const { network } = addressOnNetwork
-    const knownAssets = await this.getCachedAssets(network)
+    const knownAssets = await this.cachedAssets[network.chainID]
     const found = knownAssets.find(
       (asset) =>
         "decimals" in asset &&
@@ -533,7 +575,7 @@ export default class IndexingService extends BaseService<Events> {
           })) || undefined
 
         if (customAsset) {
-          await this.db.addCustomAsset(customAsset)
+          await this.addCustomAsset(customAsset)
           this.emitter.emit("assets", [customAsset])
         }
       }
@@ -683,7 +725,8 @@ export default class IndexingService extends BaseService<Events> {
     // Cache assets across all supported networks even if a network
     // may be inactive.
     this.chainService.supportedNetworks.forEach(async (network) => {
-      this.emitter.emit("assets", await this.getCachedAssets(network))
+      await this.cacheAssetsForNetwork(network)
+      this.emitter.emit("assets", await this.cachedAssets[network.chainID])
     })
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if
