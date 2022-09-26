@@ -1,6 +1,6 @@
 import sinon from "sinon"
 import ChainService from ".."
-import { OPTIMISM } from "../../../constants"
+import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"
 import {
   AnyEVMTransaction,
   TransactionRequest,
@@ -32,6 +32,24 @@ describe("ChainService", () => {
     chainService = await createChainService()
     await chainService.startService()
   })
+
+  describe("internalStartService", () => {
+    it("should not add duplicate networks on startup", async () => {
+      // Startup is simulated in the `beforeEach`
+      expect(
+        chainService.supportedNetworks.filter(
+          (network) => network.chainID === ETHEREUM.chainID
+        )
+      ).toHaveLength(1)
+
+      expect(
+        chainService.supportedNetworks.filter(
+          (network) => network.chainID === POLYGON.chainID
+        )
+      ).toHaveLength(1)
+    })
+  })
+
   it("handlePendingTransactions should update nonce tracking, subscribe to transaction confirmations, and persist the transaction to indexedDB", async () => {
     const chainServiceExternalized =
       chainService as unknown as ChainServiceExternalized
