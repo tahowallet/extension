@@ -1029,11 +1029,30 @@ export default class ChainService extends BaseService<Events> {
    */
   async pollBlockPrices(): Promise<void> {
     await Promise.allSettled(
-      this.subscribedNetworks.map(async ({ network, provider }) => {
-        const blockPrices = await getBlockPrices(network, provider)
-        this.emitter.emit("blockPrices", { blockPrices, network })
-      })
+      this.subscribedNetworks.map(async ({ network }) =>
+        this.pollBlockPricesForNetwork(network.chainID)
+      )
     )
+  }
+
+  async pollBlockPricesForNetwork(chainID: string): Promise<void> {
+    const subscription = this.subscribedNetworks.find(
+      ({ network }) => toHexChainID(network.chainID) === toHexChainID(chainID)
+    )
+
+    if (!subscription) {
+      logger.warn(`Can't fetch block prices for unsupported chainID ${chainID}`)
+      return
+    }
+
+    const blockPrices = await getBlockPrices(
+      subscription.network,
+      subscription.provider
+    )
+    this.emitter.emit("blockPrices", {
+      blockPrices,
+      network: subscription.network,
+    })
   }
 
   /*
