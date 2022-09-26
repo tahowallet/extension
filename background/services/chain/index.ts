@@ -140,6 +140,10 @@ export default class ChainService extends BaseService<Events> {
     provider: SerialFallbackProvider
   }[]
 
+  private lastUserActivityOnNetwork: {
+    [chainID: string]: UNIXTime
+  } = {}
+
   /**
    * For each chain id, track an address's last seen nonce. The tracked nonce
    * should generally not be allocated to a new transaction, nor should any
