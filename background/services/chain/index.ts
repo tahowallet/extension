@@ -225,8 +225,7 @@ export default class ChainService extends BaseService<Events> {
       blockPrices: {
         runAtStart: false,
         schedule: {
-          periodInMinutes:
-            Number(process.env.GAS_PRICE_POLLING_FREQUENCY ?? "120") / 60,
+          periodInMinutes: 0.5, // Every 30 seconds
         },
         handler: () => {
           this.pollBlockPrices()
