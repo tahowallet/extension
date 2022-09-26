@@ -1017,7 +1017,6 @@ export default class ChainService extends BaseService<Events> {
    * Write block prices to IndexedDB so we have them for later
    */
   async pollBlockPrices(): Promise<void> {
-    console.log("polling", this.subscribedNetworks)
     await Promise.allSettled(
       this.subscribedNetworks.map(async ({ network, provider }) => {
         const blockPrices = await getBlockPrices(network, provider)
