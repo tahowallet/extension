@@ -1,7 +1,7 @@
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { ReactElement } from "react"
-import { ResolvedSignatureDetails } from "../SigningData"
+import { ResolvedSignatureDetails } from "../SignatureDetails"
 
 /**
  * The props passed to a signer-specific frame, as well as to the dispatcher
