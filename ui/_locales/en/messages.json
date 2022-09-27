@@ -353,7 +353,7 @@
     "rewards": {
       "header": "Swap rewards for community",
       "body": "This week, 240,000 DOGGO tokens will be equally shared as Swap Rewards.",
-      "tooltip": "Tally rewards it's users that use swap every week. A council decides weekly prizes and who is eligible.",
+      "tooltip": "Tally Ho rewards it's users that use swap every week. A council decides weekly prizes and who is eligible.",
       "detailButton": "Details"
     },
     "error": {
@@ -375,7 +375,7 @@
     "tooltip": "You are seeing this because Tally Ho! is set as default wallet, you can change this option in the main menu.",
     "confirmSwitchWallet": "Yes, switch wallet",
     "notDefaultWalletMessage": "Tally Ho not Default",
-    "disableWalletExplainer": "We disabled Tally as default wallet for you. You can always enable it back from Menu ☰ at any time.",
+    "disableWalletExplainer": "We disabled Tally Ho as the default wallet for you. You can always re-enable it from Menu ☰ at any time.",
     "useTallyHoAsDefaultPrompt": "Use Tally Ho as default wallet",
     "closeButton": "Close window"
   },
