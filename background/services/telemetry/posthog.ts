@@ -1,6 +1,17 @@
 import {v4 as uuidv4} from 'uuid';
 
-let myuuid = uuidv4();
+var retrievedUUID = localStorage.getItem('testUUID');
+
+if (retrievedUUID) {
+  console.log('retrieved UUID: ', retrievedUUID);
+}
+
+if (retrievedUUID === null)
+{
+  let myuuid = uuidv4();
+  localStorage.setItem('testUUID', myuuid);
+  console.log('new UUID set: ', myuuid);
+}
 
 /* just some quick thoughts on pushing to posthog on a
  per event basis instead of including a lib...
@@ -42,7 +53,7 @@ export async function createEvent(): Promise<HogResponse> {
         api_key: "phc_VzveyNxrn2xyiKDYn7XjrgaqELGeUilDZGiBVh6jNmh",
         event: "Wallet Opened - Erik",
         properties: {
-          distinct_id: myuuid,
+          distinct_id: retrievedUUID,
           data:  "This is a test to storing event data into posthog",
           current_url: currentTab.url,
           $lib: currentTab.url,
