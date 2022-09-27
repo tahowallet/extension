@@ -16,6 +16,7 @@ import React, { ReactElement, useState } from "react"
 import { useDispatch } from "react-redux"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
+import { INTERNAL_PROVIDER_DOMAIN_NAME } from "@tallyho/tally-background/constants"
 import FeeSettingsText from "../NetworkFees/FeeSettingsText"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedButton from "../Shared/SharedButton"
@@ -45,6 +46,11 @@ export default function SignTransactionSpendAssetInfoProvider({
     assetAmount: { asset, amount: approvalLimit },
     spender,
   } = annotation
+
+  const isInternalProvider =
+    spender.annotation.nameRecord?.resolved.nameOnNetwork.name ===
+    INTERNAL_PROVIDER_DOMAIN_NAME
+
   // `null` means no limit
   const approvalLimitString = isMaxUint256(approvalLimit)
     ? null
@@ -219,7 +225,9 @@ export default function SignTransactionSpendAssetInfoProvider({
           <style jsx>
             {`
               .site_icon {
-                background: url("./images/dapp_favicon_default@2x.png");
+                background: url("./images/${isInternalProvider
+                  ? "0x_dApp_favicon.svg"
+                  : "dapp_favicon_default@2x.png"}");
                 background-size: cover;
                 width: 48px;
                 height: 48px;

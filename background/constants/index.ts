@@ -33,6 +33,8 @@ export enum EarnStages {
   Live = "Live",
 }
 
+export const INTERNAL_PROVIDER_DOMAIN_NAME = "0x Router"
+
 export * from "./assets"
 export * from "./currencies"
 export * from "./networks"
