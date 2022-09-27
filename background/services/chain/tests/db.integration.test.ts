@@ -80,7 +80,7 @@ describe("Chain Database ", () => {
         addTransactionOpt.hash
       )
 
-      expect(getEthTransaction?.hash).toBeTruthy()
+      expect(getEthTransaction?.hash).toEqual(addTransactionEth.hash)
       expect(getOptTransaction?.hash).toBeTruthy()
     })
     it("should correctly update transactions in indexedDB", async () => {
