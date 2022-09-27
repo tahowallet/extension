@@ -37,14 +37,8 @@ describe("ChainService", () => {
     it("should not add duplicate networks on startup", async () => {
       // Startup is simulated in the `beforeEach`
       expect(
-        chainService.supportedNetworks.filter(
-          (network) => network.chainID === ETHEREUM.chainID
-        )
-      ).toHaveLength(1)
-
-      expect(
-        chainService.supportedNetworks.filter(
-          (network) => network.chainID === POLYGON.chainID
+        chainService.subscribedNetworks.filter(
+          ({ network }) => network.chainID === ETHEREUM.chainID
         )
       ).toHaveLength(1)
     })
