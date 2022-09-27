@@ -19,7 +19,7 @@
       "readOnly": "Read-only",
       "import": "Import",
       "internal": "Tally Ho",
-      "ledger": "Full access via Ledger"
+      "ledger": "Ledger"
     }
   },
   "assetInput": {
