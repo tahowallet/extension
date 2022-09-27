@@ -1530,6 +1530,4 @@ export default class ChainService extends BaseService<Events> {
       "alchemy"
     )
   }
-
-  // TODO removing an account to track
 }
