@@ -38,7 +38,7 @@ const EIP4361Info: React.FC<{
       </div>
       <div className="address">{signingData.address}</div>
       <div className="divider spaced" />
-      {signingData?.statement ? (
+      {signingData?.statement ? ( // FIXME Content should be on the next line for this one.
         <SignDataInfo label={t("statement")} content={signingData.statement} />
       ) : null}
       <SignDataInfo label={t("nonce")} content={signingData.nonce} />
