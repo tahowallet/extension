@@ -90,11 +90,13 @@ function useConnectPopupMonitor() {
 export function Main(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
-  // Emit an event when the popup page is first loaded.
   const currentAccount = useBackgroundSelector(selectCurrentAddressNetwork)
+  // Emit an event when the popup page is first loaded.
   useEffect(() => {
     dispatch(userActivityEncountered(currentAccount))
-  })
+    // We explicitly do not want to reload on dependency change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const isDappPopup = useIsDappPopup()
   const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)
