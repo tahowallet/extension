@@ -9,8 +9,8 @@ import { useBackgroundSelector } from "../../hooks"
 import SignTransactionNetworkAccountInfoTopBar from "../SignTransaction/SignTransactionNetworkAccountInfoTopBar"
 import {
   ResolvedSignatureDetails,
-  resolveSignatureDetails,
-} from "./SigningData"
+  useResolvedSignatureDetails,
+} from "./SignatureDetails"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SignTransactionLoader from "../SignTransaction/SignTransactionLoader"
 import SignerFrame from "./Signer/SignerFrame"
@@ -108,17 +108,23 @@ export default function Signing<T extends SignOperationType>({
   request,
   accountSigner,
 }: SigningProps<T>): ReactElement {
-  if (request === undefined) {
+  const signatureDetails = useResolvedSignatureDetails(
+    request === undefined
+      ? undefined
+      : {
+          request,
+          // FIXME Move defaulting to selectCurrentAccountSigner when removing feature
+          // FIXME flag.
+          accountSigner: accountSigner ?? ReadOnlyAccountSigner,
+        }
+  )
+
+  // Note that signatureDetails should only be undefined if request is
+  // undefined.
+  if (request === undefined || signatureDetails === undefined) {
     // FIXME Move to SigningLoader when removing feature flag.
     return <SignTransactionLoader />
   }
-
-  const signatureDetails = resolveSignatureDetails({
-    request,
-    // FIXME Move defaulting to selectCurrentAccountSigner when removing feature
-    // FIXME flag.
-    accountSigner: accountSigner ?? ReadOnlyAccountSigner,
-  })
 
   return <SigningLoaded request={request} signatureDetails={signatureDetails} />
 }

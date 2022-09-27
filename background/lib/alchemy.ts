@@ -311,6 +311,9 @@ export type AlchemyNFTItem = {
   contract: { address: string }
   title: string
   chainID: number
+  metadata: {
+    external_link: string | null
+  }
 }
 
 /**

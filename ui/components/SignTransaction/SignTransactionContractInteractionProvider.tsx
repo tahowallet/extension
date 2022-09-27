@@ -22,12 +22,16 @@ export default function SignTransactionContractInteractionProvider({
           <div className="container">
             {typeof transactionDetails.to === "undefined" ? (
               <>
-                <div className="label">{t("sendTo")}</div>
-                <div className="send_to">{t("contractCreation")}</div>
+                <div className="label">{t("assetTransfer.sendTo")}</div>
+                <div className="send_to">
+                  {t("contractInteraction.newlyCreatedContract")}
+                </div>
               </>
             ) : (
               <>
-                <div className="label">{t("interactingWith")}</div>
+                <div className="label">
+                  {t("contractInteraction.interactingWithLabel")}
+                </div>
                 <SharedAddress
                   address={transactionDetails.to}
                   name={
