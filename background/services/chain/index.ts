@@ -1225,14 +1225,14 @@ export default class ChainService extends BaseService<Events> {
    * Check for any incoming asset transfers involving tracked accounts.
    */
   private async handleRecentIncomingAssetTransferAlarm(
-    forceRefresh = false
+    forceUpdate = false
   ): Promise<void> {
     const accountsToTrack = await this.db.getAccountsToTrack()
     await Promise.allSettled(
       accountsToTrack
         .filter(
           (addressNetwork) =>
-            forceRefresh ||
+            forceUpdate ||
             this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
         )
         .map(async (addressNetwork) => {
