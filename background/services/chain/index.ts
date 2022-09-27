@@ -1056,10 +1056,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async pollBlockPricesForNetwork(chainID: string): Promise<void> {
-    if (
-      Date.now() >
-      (this.lastUserActivityOnNetwork[chainID] ?? 0) + NETWORK_POLLING_TIMEOUT
-    ) {
+    if (!this.isCurrentlyActiveChainID(chainID)) {
       return
     }
 
