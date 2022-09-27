@@ -16,12 +16,15 @@ type ChainServiceExternalized = Omit<ChainService, ""> & {
 describe("Chain Service", () => {
   const sandbox = sinon.createSandbox()
 
-  describe("populatePartialTransactionRequest", () => {
-    let chainService: ChainService
+  let chainService: ChainService
 
+  beforeEach(async () => {
+    sandbox.restore()
+    chainService = await createChainService()
+  })
+
+  describe("populatePartialTransactionRequest", () => {
     beforeEach(async () => {
-      sandbox.restore()
-      chainService = await createChainService()
       await chainService.startService()
     })
 
@@ -82,13 +85,6 @@ describe("Chain Service", () => {
   })
 
   describe("getActiveNetworks", () => {
-    let chainService: ChainService
-
-    beforeEach(async () => {
-      sandbox.restore()
-      chainService = await createChainService()
-    })
-
     it("should wait until tracked networks activate", async () => {
       const activeNetworksMock: EVMNetwork[] = []
 
