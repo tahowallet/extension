@@ -1,9 +1,10 @@
 import { IDBFactory } from "fake-indexeddb"
-import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"
+import { ETHEREUM, OPTIMISM, POLYGON, ETH } from "../../../constants"
 import {
   createAccountBalance,
   createAddressOnNetwork,
   createAnyEVMTransaction,
+  createAnyEVMBlock,
 } from "../../../tests/factories"
 import { ChainDatabase, createDB } from "../db"
 
@@ -49,11 +50,72 @@ describe("Chain Database ", () => {
     })
   })
   describe("addBlock", () => {
-    it.todo("should correctly persist blocks to indexedDB") // Implementation should be similar to addBalance
+    it("should correctly persist blocks to indexedDB", async () => {
+      expect((await db.table("blocks").toArray()).length).toEqual(0)
+      const block = createAnyEVMBlock()
+      await db.addBlock(block)
+      const blocks = await db.table("blocks").toArray()
+      expect(blocks.length).toEqual(1)
+    }) // Implementation should be similar to addBalance
   })
   describe("addOrUpdateTransaction", () => {
-    it.todo("should correctly persist transactions to indexedDB")
-    it.todo("should correctly update transactions in indexedDB")
+    const addTransactionEth = createAnyEVMTransaction({
+      network: ETHEREUM,
+    })
+
+    const addTransactionOpt = createAnyEVMTransaction({
+      network: OPTIMISM,
+    })
+    it("should correctly persist transactions to indexedDB", async () => {
+      await db.addOrUpdateTransaction(addTransactionEth, "alchemy")
+      await db.addOrUpdateTransaction(addTransactionOpt, "alchemy")
+
+      const getEthTransaction = await db.getTransaction(
+        addTransactionEth.network,
+        addTransactionEth.hash
+      )
+
+      const getOptTransaction = await db.getTransaction(
+        addTransactionOpt.network,
+        addTransactionOpt.hash
+      )
+
+      expect(getEthTransaction?.hash).toBeTruthy()
+      expect(getOptTransaction?.hash).toBeTruthy()
+    })
+    it("should correctly update transactions in indexedDB", async () => {
+      await db.addOrUpdateTransaction(addTransactionEth, "alchemy")
+      await db.addOrUpdateTransaction(addTransactionOpt, "alchemy")
+
+      const getEthTransaction = await db.getTransaction(
+        addTransactionEth.network,
+        addTransactionEth.hash
+      )
+
+      const getOptTransaction = await db.getTransaction(
+        addTransactionOpt.network,
+        addTransactionOpt.hash
+      )
+
+      expect(getEthTransaction).toBeTruthy()
+      expect(getOptTransaction).toBeTruthy()
+
+      const updateEth = createAnyEVMTransaction({
+        network: ETHEREUM,
+        hash: getEthTransaction?.hash,
+        gasPrice: 40400000000n,
+      })
+      const updateOpt = createAnyEVMTransaction({
+        network: OPTIMISM,
+        hash: getOptTransaction?.hash,
+        gasPrice: 40400000000n,
+      })
+
+      await db.addOrUpdateTransaction(updateEth, "alchemy")
+      await db.addOrUpdateTransaction(updateOpt, "alchemy")
+      expect(updateEth).toBeTruthy()
+      expect(updateOpt).toBeTruthy()
+    })
   })
   describe("getAccountsToTrack", () => {
     it("should correctly retrieve persisted accounts", async () => {
@@ -66,13 +128,47 @@ describe("Chain Database ", () => {
     })
   })
   describe("getAllSavedTransactionHashes", () => {
-    it.todo(
-      "should return the hashes of all persisted transactions ordered by hash"
-    )
+    it("should return the hashes of all persisted transactions ordered by hash", async () => {
+      expect(await db.getAllSavedTransactionHashes()).toHaveLength(0)
+
+      const savedTransaction1 = createAnyEVMTransaction({
+        network: ETHEREUM,
+      })
+      const savedTransaction2 = createAnyEVMTransaction({
+        network: ETHEREUM,
+      })
+      const savedTransaction3 = createAnyEVMTransaction({
+        network: OPTIMISM,
+      })
+      const savedTransaction4 = createAnyEVMTransaction({
+        network: OPTIMISM,
+      })
+
+      await db.addOrUpdateTransaction(savedTransaction1, "alchemy")
+      await db.addOrUpdateTransaction(savedTransaction2, "alchemy")
+      await db.addOrUpdateTransaction(savedTransaction3, "alchemy")
+      await db.addOrUpdateTransaction(savedTransaction4, "alchemy")
+
+      const allTransactions = await db.getAllSavedTransactionHashes()
+
+      expect(allTransactions).toHaveLength(4)
+      expect(allTransactions.map((tx) => tx)).toBeTruthy()
+    })
   })
   describe("getBlock", () => {
-    it.todo("should return a block if that block is in indexedDB")
-    it.todo("should not return a block if that block is not in indexedDB") // check for both hash and network mismatch
+    /* Creating two blocks. */
+    /* Creating two blocks. */
+    const block = createAnyEVMBlock()
+    const block2 = createAnyEVMBlock()
+    it("should return a block if that block is in indexedDB", async () => {
+      await db.addBlock(block)
+      const getBlock = await db.getBlock(block.network, block.hash)
+      expect(getBlock).toBeTruthy()
+    })
+    it("should not return a block if that block is not in indexedDB", async () => {
+      const getBlock = await db.getBlock(block2.network, block2.hash)
+      expect(getBlock).toBeFalsy()
+    }) // check for both hash and network mismatch
   })
   describe("getChainIdsToTrack", () => {
     it("should return chainIds corresponding to the networks of accounts being tracked", async () => {
@@ -88,16 +184,46 @@ describe("Chain Database ", () => {
     })
   })
   describe("getLatestAccountBalance", () => {
-    it.todo(
-      "should retrieve the most recent account balance corresponding to a given address, network, & asset persisted in indexedDB"
-    )
-    it.todo("should return null if no account balances are found")
+    it("should retrieve the most recent account balance corresponding to a given address, network, & asset persisted in indexedDB", async () => {
+      const accountBalance = createAccountBalance({
+        assetAmount: {
+          asset: { name: "Ether", symbol: "ETH", decimals: 18 },
+          amount: 4n,
+        },
+      })
+      await db.addBalance(accountBalance)
+      const latest = await db.getLatestAccountBalance(
+        accountBalance.address,
+        accountBalance.network,
+        ETH
+      )
+      expect(latest?.assetAmount.amount).toEqual(4n)
+    })
+    it("should return null if no account balances are found", async () => {
+      const account = createAccountBalance()
+      const latest = await db.getLatestAccountBalance(
+        account.address,
+        account.network,
+        ETH
+      )
+      expect(latest).toBeNull()
+    })
   })
   describe("getLatestBlock", () => {
-    it.todo("should retrieve the most recent block for a given network")
-    it.todo(
-      "should return null if the most recent block is older than 86 seconds"
-    )
+    const block = createAnyEVMBlock()
+    it("should retrieve the most recent block for a given network", async () => {
+      await db.addBlock(block)
+      expect(await db.getLatestBlock(OPTIMISM)).toBeTruthy()
+    })
+    it("should return null if the most recent block is older than 86 seconds", async () => {
+      // Database has this query working
+      const blocks = await db.getLatestBlock(OPTIMISM)
+      if (blocks?.timestamp) {
+        if (blocks.timestamp > Date.now() - 60 * 60 * 24) {
+          expect(block).toBeNull()
+        }
+      }
+    })
   })
   describe("getNetworkPendingTransactions", () => {
     it("should return all pending transactions", async () => {
@@ -153,19 +279,36 @@ describe("Chain Database ", () => {
     })
   })
   describe("getNewestAccountAssetTransferLookup", () => {
-    it.todo(
-      "should correctly return the most recent asset transfer for a given addressNetwork"
-    )
+    it("should correctly return the most recent asset transfer for a given addressNetwork", async () => {
+      await db.recordAccountAssetTransferLookup(account1, 1n, 1n)
+      await db.recordAccountAssetTransferLookup(account1, 2n, 1n)
+      await db.recordAccountAssetTransferLookup(account1, 3n, 1n)
+      const newest = await db.getNewestAccountAssetTransferLookup(account1)
+      expect(newest).toEqual(3n)
+    })
   })
   describe("getOldestAccountAssetTransferLookup", () => {
-    it.todo(
-      "should correctly return the oldest asset transfer for a given addressNetwork"
-    )
+    it("should correctly return the oldest asset transfer for a given addressNetwork", async () => {
+      await db.recordAccountAssetTransferLookup(account2, 1n, 1n)
+      await db.recordAccountAssetTransferLookup(account2, 2n, 1n)
+      await db.recordAccountAssetTransferLookup(account2, 3n, 1n)
+      const oldest = await db.getOldestAccountAssetTransferLookup(account2)
+      expect(oldest).toEqual(1n)
+    })
   })
   describe("getTransaction", () => {
     describe("getBlock", () => {
-      it.todo("should return a block if that block is in indexedDB")
-      it.todo("should not return a block if that block is not in indexedDB") // check for both hash and network mismatch
+      const block = createAnyEVMBlock()
+      const block2 = createAnyEVMBlock()
+      it("should return a block if that block is in indexedDB", async () => {
+        await db.addBlock(block)
+        const getBlock = await db.getBlock(block.network, block.hash)
+        expect(getBlock).toBeTruthy()
+      })
+      it("should not return a block if that block is not in indexedDB", async () => {
+        const getBlock = await db.getBlock(block2.network, block2.hash)
+        expect(getBlock).toBeFalsy()
+      }) // check for both hash and network mismatch
     })
   })
   describe("recordAccountAssetTransferLookup", () => {
