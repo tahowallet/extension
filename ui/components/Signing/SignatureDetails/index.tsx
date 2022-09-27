@@ -18,6 +18,7 @@ import {
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
 import { AnyAction } from "redux"
+import TransactionSignatureDetails from "./TransactionSignatureDetails"
 
 /**
  * Details regarding a signature request, resolved for a signer ahead of time
@@ -38,13 +39,13 @@ export function resolveTransactionSignatureDetails({
   request,
   accountSigner,
 }: SignOperation<TransactionRequest>): ResolvedSignatureDetails {
-  // TODO Render signing data accordingly.
-
   return {
     signer: accountSigner,
     signingAddress: { address: request.from, network: request.network },
     signingActionLabel: "Sign",
-    renderedSigningData: <></>,
+    renderedSigningData: (
+      <TransactionSignatureDetails transactionRequest={request} />
+    ),
     signActionCreator: () => signTransaction({ request, accountSigner }),
     rejectActionCreator: rejectTransactionSignature,
   }
@@ -94,4 +95,12 @@ export function resolveSignatureDetails<T extends SignOperationType>({
     return resolveTypedDataSignatureDetails({ request, accountSigner })
   }
   return resolveTransactionSignatureDetails({ request, accountSigner })
+}
+
+export function useResolvedSignatureDetails<T extends SignOperationType>(
+  signOperation: SignOperation<T> | undefined
+): ResolvedSignatureDetails | undefined {
+  return signOperation === undefined
+    ? undefined
+    : resolveSignatureDetails(signOperation)
 }

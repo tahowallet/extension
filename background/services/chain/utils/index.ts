@@ -315,7 +315,7 @@ export function transactionFromEthersTransaction(
   const newTx = {
     hash: tx.hash,
     from: tx.from,
-    to: tx.to,
+    to: tx.to ?? undefined,
     nonce: parseInt(tx.nonce.toString(), 10),
     gasLimit: tx.gasLimit.toBigInt(),
     gasPrice: tx.gasPrice ? tx.gasPrice.toBigInt() : null,

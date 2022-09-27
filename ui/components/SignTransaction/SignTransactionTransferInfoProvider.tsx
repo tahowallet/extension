@@ -54,7 +54,7 @@ export default function SignTransactionTransferInfoProvider({
       infoBlock={
         <div className="sign_block">
           <div className="container">
-            <div className="label">{t("sendTo")}</div>
+            <div className="label">{t("assetTransfer.sendTo")}</div>
             <div className="send_to">
               <SharedAddress
                 address={recipient?.address}

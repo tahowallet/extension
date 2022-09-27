@@ -266,7 +266,8 @@
     },
     "selectToken": "Select token",
     "backButtonText": "Back",
-    "saveBtn": "Save"
+    "saveBtn": "Save",
+    "closeWindow": "Close window"
   },
   "signing": {
     "signatureRequired": "Your signature is required",
@@ -285,12 +286,11 @@
     }
   },
   "signTransaction": {
+    "title": "Sign transaction",
     "awaitingHardwareSignature": "Awaiting hardware wallet signature",
     "reject": "Reject",
     "noSigning": "Read-only accounts cannot sign",
-    "sendTo": "Send to",
     "contractCreation": "Contract creation",
-    "interactingWith": "Interacting with",
     "unknownNetwork": "Unknown Network",
     "detailPanelName": "Details",
     "rawDataPanelName": "Raw data",
@@ -299,7 +299,10 @@
     "spendAmount": "Spend Amount",
     "help": "I need help",
     "refresh": "Refresh",
-    "spendAsset": {
+    "spendApproval": {
+      "title": "Approve asset spend",
+      "approveSpender": "Approve <spenderAddress></spenderAddress>",
+      "spendAmount": "Spend {{assetSymbol}} tokens",
       "approve": "Approve",
       "infinite": "Infinite",
       "spend": "Spend",
@@ -309,6 +312,16 @@
       "tooltip2": "Infinite tx has the drawback that if the contract is mailicous, it can steal all your funds.",
       "changeLimit": "Change limit",
       "invalidAmount": "Invalid amount"
+    },
+    "assetTransfer": {
+      "title": "Transfer",
+      "sendTo": "Send to",
+      "spendAmountLabel": "Spend Amount"
+    },
+    "contractInteraction": {
+      "title": "Contract interaction",
+      "interactingWithLabel": "Interacting with",
+      "newlyCreatedContract": "Newly created contract"
     }
   },
   "swap": {
@@ -357,5 +370,13 @@
     "sendButton": "Continue",
     "receiveAddress": "Receive address",
     "sendToContractWarning": "This is a contract address, sending assets could result in loss of funds."
+  },
+  "dAppConnect": {
+    "switchWallet":{
+      "title": "Tally Ho not Default",
+      "descFirstPart": "We disabled Tally as default wallet for you. You can always enable it back from Settings",
+      "descSecondPart": "at any time.",
+      "toggleTitle": "Use Tally Ho as default wallet"
+    }
   }
 }
