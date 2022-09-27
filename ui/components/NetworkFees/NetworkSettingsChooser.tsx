@@ -11,7 +11,7 @@ import {
 import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "./NetworkSettingsSelect"
-import NetworkSettingsOptimism from "./NetworkSettingsSelectOptimism"
+import NetworkSettingsOptimismAndArbitrum from "./NetworkSettingsSelectOptimismAndArbitrum"
 
 interface NetworkSettingsChooserProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
@@ -46,7 +46,7 @@ export default function NetworkSettingsChooser({
             onSave={saveNetworkSettings}
           />
         ) : (
-          <NetworkSettingsOptimism />
+          <NetworkSettingsOptimismAndArbitrum />
         )}
       </div>
       <style jsx>

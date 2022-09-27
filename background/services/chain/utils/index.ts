@@ -136,7 +136,7 @@ function eip1559TransactionRequestFromEthersTransactionRequest(
     to: transaction.to,
     input: transaction.data?.toString() ?? null,
     from: transaction.from,
-    type: transaction.type as 1 | 2,
+    type: transaction.type as 1 | 2 | 100,
     nonce:
       typeof transaction.nonce !== "undefined"
         ? parseInt(transaction.nonce.toString(), 16)

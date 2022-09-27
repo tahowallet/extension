@@ -117,6 +117,7 @@ export type EVMTransaction = {
    * 0 - plain jane
    * 1 - EIP-2930
    * 2 - EIP-1559 transactions
+   * 100 - EIP-2718
    */
   type: 0 | 1 | 2 | 100 | null
 }
