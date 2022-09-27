@@ -6,15 +6,22 @@ const EIP191Info: React.FC<{
   signingData: SignDataRequest["signingData"]
   account: string
   internal: boolean
-}> = ({ signingData, account, internal }) => {
+  // FIXME Drop this once new signing flow is final.
+  excludeHeader?: boolean
+}> = ({ signingData, account, internal, excludeHeader }) => {
   const { t } = useTranslation("translation", { keyPrefix: "signing" })
   return (
     <>
-      <div className="label header">
-        {internal ? t("signatureRequired") : t("dappSignatureRequest")}
-      </div>
-      <div className="divider" />
-      <div className="divider" />
+      {excludeHeader ?? false ? (
+        <></>
+      ) : (
+        <>
+          <div className="label header">
+            {internal ? t("signatureRequired") : t("dappSignatureRequest")}
+          </div>
+          <div className="divider" />
+        </>
+      )}
       <div className="message">
         <div className="message-title">{t("message")}</div>
         <div className="light">{`${signingData}`}</div>
@@ -26,9 +33,9 @@ const EIP191Info: React.FC<{
       <style jsx>{`
         .message {
           margin: 16px;
-          font-size: 14px;
           width: 100%;
           overflow-wrap: anywhere;
+          color: --var(green-20);
         }
         .message-title {
           color: var(--green-40);
