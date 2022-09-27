@@ -37,7 +37,7 @@ import {
 } from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { createDB, ChainDatabase } from "./db"
+import { createDB, ChainDatabase, Transaction } from "./db"
 import BaseService from "../base"
 import {
   blockFromEthersBlock,
@@ -93,6 +93,10 @@ const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
 const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
 
 interface Events extends ServiceLifecycleEvents {
+  initializeActivities: {
+    transactions: Transaction[]
+    accounts: AddressOnNetwork[]
+  }
   newAccountToTrack: AddressOnNetwork
   accountsWithBalances: AccountBalance[]
   transactionSend: HexString
@@ -266,6 +270,9 @@ export default class ChainService extends BaseService<Events> {
 
     const accounts = await this.getAccountsToTrack()
     const activeNetworks = await this.getActiveNetworks()
+    const transactions = await this.db.getAllTransactions()
+
+    this.emitter.emit("initializeActivities", { transactions, accounts })
 
     // get the latest blocks and subscribe for all active networks
     // TODO revisit whether we actually want to subscribe to new heads

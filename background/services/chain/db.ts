@@ -6,7 +6,7 @@ import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
 import { FungibleAsset } from "../../assets"
 import { GOERLI, POLYGON } from "../../constants"
 
-type Transaction = AnyEVMTransaction & {
+export type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
   firstSeen: UNIXTime
 }
@@ -167,6 +167,10 @@ export class ChainDatabase extends Dexie {
 
   async getAllSavedTransactionHashes(): Promise<IndexableTypeArray> {
     return this.chainTransactions.orderBy("hash").keys()
+  }
+
+  async getAllTransactions(): Promise<Transaction[]> {
+    return this.chainTransactions.toArray()
   }
 
   /**

@@ -3,6 +3,7 @@ import { combineReducers } from "redux"
 import accountsReducer from "./accounts"
 import assetsReducer from "./assets"
 import activitiesReducer from "./activities"
+import activitiesOnChainReducer from "./activitiesOnChain"
 import keyringsReducer from "./keyrings"
 import networksReducer from "./networks"
 import swapReducer from "./0x-swap"
@@ -19,6 +20,7 @@ const mainReducer = combineReducers({
   account: accountsReducer,
   assets: assetsReducer,
   activities: activitiesReducer,
+  activitiesOnChain: activitiesOnChainReducer,
   keyrings: keyringsReducer,
   networks: networksReducer,
   swap: swapReducer,

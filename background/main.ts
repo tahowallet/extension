@@ -128,6 +128,10 @@ import {
   EnrichedEVMTransaction,
   EnrichedEVMTransactionRequest,
 } from "./services/enrichment"
+import {
+  activityOnChainEncountered,
+  initializeActivities,
+} from "./redux-slices/activitiesOnChain"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -561,6 +565,10 @@ export default class Main extends BaseService<never> {
   }
 
   async connectChainService(): Promise<void> {
+    this.chainService.emitter.on("initializeActivities", (payload) => {
+      this.store.dispatch(initializeActivities(payload))
+    })
+
     // Wire up chain service to account slice.
     this.chainService.emitter.on(
       "accountsWithBalances",
@@ -732,6 +740,7 @@ export default class Main extends BaseService<never> {
           filterTransactionPropsForUI<AnyEVMTransaction>(transactionInfo)
         )
       )
+      this.store.dispatch(activityOnChainEncountered(transactionInfo))
     })
   }
 
@@ -805,6 +814,8 @@ export default class Main extends BaseService<never> {
             filterTransactionPropsForUI<EnrichedEVMTransaction>(transactionData)
           )
         )
+
+        this.store.dispatch(activityOnChainEncountered(transactionData))
       }
     )
   }
