@@ -10,15 +10,16 @@ import SharedIcon from "../Shared/SharedIcon"
 import NFTsImage from "./NFTsImage"
 import { scanWebsite } from "../../utils/constants"
 
-function getPreviewLink({
-  chainID,
-  contractAddress,
-  tokenID,
-}: {
-  chainID: number
-  contractAddress: string
-  tokenID: string
-}) {
+function getPreviewLink(nft: NFT) {
+  const {
+    contract: { address: contractAddress },
+    tokenID,
+    achievementUrl,
+  } = nft
+
+  if (achievementUrl) return achievementUrl
+
+  const chainID = Number(nft.network.chainID)
   const parsedTokenID = BigInt(tokenID).toString()
   const previewURL = {
     [POLYGON.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
@@ -35,13 +36,7 @@ export default function NFTsSlideUpPreviewContent({
   nft: NFT
 }): ReactElement {
   const { t } = useTranslation()
-  const {
-    name,
-    media,
-    tokenID,
-    network: { chainID },
-    contract: { address: contractAddress },
-  } = nft
+  const { name, media } = nft
   const src = media[0]?.url ?? ""
 
   return (
@@ -54,16 +49,7 @@ export default function NFTsSlideUpPreviewContent({
           color="var(--green-40)"
           hoverColor="var(--trophy-gold)"
           onClick={() => {
-            window
-              .open(
-                getPreviewLink({
-                  chainID: Number(chainID),
-                  contractAddress,
-                  tokenID,
-                }),
-                "_blank"
-              )
-              ?.focus()
+            window.open(getPreviewLink(nft), "_blank")?.focus()
           }}
         />
       </header>

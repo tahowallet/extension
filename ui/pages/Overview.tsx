@@ -15,8 +15,9 @@ import SharedBanner from "../components/Shared/SharedBanner"
 import BalanceHeader from "../components/Overview/BalanceHeader"
 import NetworksChart from "../components/Overview/NetworksChart"
 import AccountList from "../components/Overview/AccountList"
+import AchievementsOverview from "../components/NFTs/AchievementsOverview"
 
-const panelNames = ["Assets", "NFTs"]
+const panelNames = ["Assets", "NFTs", "Achievements"]
 
 export default function Overview(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
@@ -75,6 +76,7 @@ export default function Overview(): ReactElement {
           <NFTsOverview />
         </>
       )}
+      {panelNumber === 2 && <AchievementsOverview />}
       <style jsx>
         {`
           .stats {
