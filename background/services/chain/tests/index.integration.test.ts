@@ -1,6 +1,6 @@
 import sinon from "sinon"
 import ChainService from ".."
-import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"
+import { ETHEREUM, OPTIMISM } from "../../../constants"
 import {
   AnyEVMTransaction,
   TransactionRequest,
