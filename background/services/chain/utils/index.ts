@@ -20,6 +20,8 @@ import {
   TransactionRequest,
   isEIP1559SignedTransaction,
   SignedTransaction,
+  isKnownTxType,
+  KnownTxTypes,
 } from "../../../networks"
 import { USE_MAINNET_FORK } from "../../../features"
 import { FORK } from "../../../constants"
@@ -136,7 +138,7 @@ function eip1559TransactionRequestFromEthersTransactionRequest(
     to: transaction.to,
     input: transaction.data?.toString() ?? null,
     from: transaction.from,
-    type: transaction.type as 1 | 2 | 100,
+    type: transaction.type as KnownTxTypes,
     nonce:
       typeof transaction.nonce !== "undefined"
         ? parseInt(transaction.nonce.toString(), 16)
@@ -308,7 +310,7 @@ export function transactionFromEthersTransaction(
   if (tx.hash === undefined) {
     throw new Error("Malformed transaction")
   }
-  if (tx.type !== 0 && tx.type !== 1 && tx.type !== 2 && tx.type !== 100) {
+  if (!isKnownTxType(tx.type)) {
     throw new Error(`Unknown transaction type ${tx.type}`)
   }
 
