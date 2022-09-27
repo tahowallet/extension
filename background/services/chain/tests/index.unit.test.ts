@@ -1,6 +1,7 @@
 import sinon from "sinon"
 import ChainService from ".."
 import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"
+import { EVMNetwork } from "../../../networks"
 import { createChainService } from "../../../tests/factories"
 import {
   EnrichedEIP1559TransactionSignatureRequest,
@@ -77,6 +78,50 @@ describe("Chain Service", () => {
       )
 
       expect(stub.callCount).toBe(1)
+    })
+  })
+
+  describe("getActiveNetworks", () => {
+    let chainService: ChainService
+
+    beforeEach(async () => {
+      sandbox.restore()
+      chainService = await createChainService()
+    })
+
+    it("should wait until tracked networks activate", async () => {
+      const activeNetworksMock: EVMNetwork[] = []
+
+      sandbox
+        .stub(
+          chainService as unknown as ChainServiceExternalized,
+          "getNetworksToTrack"
+        )
+        .resolves([ETHEREUM, POLYGON])
+
+      const resolvesWithPolygon = sinon.promise()
+
+      sandbox
+        .stub(
+          chainService as unknown as ChainServiceExternalized,
+          "activateNetworkOrThrow"
+        )
+        .onFirstCall()
+        .callsFake(() => {
+          activeNetworksMock.push(ETHEREUM)
+          return Promise.resolve(ETHEREUM)
+        })
+        .onSecondCall()
+        .returns(resolvesWithPolygon as Promise<EVMNetwork>)
+
+      setTimeout(() => {
+        activeNetworksMock.push(POLYGON)
+        resolvesWithPolygon.resolve(POLYGON)
+      }, 30)
+
+      await chainService.getActiveNetworks()
+
+      expect(activeNetworksMock).toEqual([ETHEREUM, POLYGON])
     })
   })
 })
