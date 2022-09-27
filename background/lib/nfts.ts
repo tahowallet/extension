@@ -15,6 +15,7 @@ export type NFT = {
   }[]
   contract: { address: string }
   isAchievement: boolean
+  achievementUrl: string | null
 }
 
 function isGalxeAchievement(url: string | null | undefined) {
@@ -23,6 +24,8 @@ function isGalxeAchievement(url: string | null | undefined) {
 
 function alchemyNFTtoNFT(original: AlchemyNFTItem): NFT {
   const { contract, chainID } = original
+  const achievementUrl = original.metadata?.external_link ?? null
+  const isAchievement = isGalxeAchievement(achievementUrl)
   return {
     contract,
     name: original.title,
@@ -37,7 +40,8 @@ function alchemyNFTtoNFT(original: AlchemyNFTItem): NFT {
       NETWORK_BY_CHAIN_ID[
         chainID.toString() as keyof typeof NETWORK_BY_CHAIN_ID
       ],
-    isAchievement: isGalxeAchievement(original.metadata?.external_link),
+    isAchievement,
+    achievementUrl: isAchievement ? achievementUrl : null,
   }
 }
 
@@ -56,6 +60,8 @@ function simpleHashNFTModelToNFT(original: SimpleHashNFTModel): NFT {
     contract_address: contractAddress,
     chain,
   } = original
+  const achievementUrl = original.external_url ?? null
+  const isAchievement = isGalxeAchievement(achievementUrl)
   const media = [
     {
       type: "image",
@@ -78,7 +84,8 @@ function simpleHashNFTModelToNFT(original: SimpleHashNFTModel): NFT {
     tokenID,
     media: media as NFT["media"],
     network: NETWORK_BY_CHAIN_ID[chainID],
-    isAchievement: isGalxeAchievement(original.external_url),
+    isAchievement,
+    achievementUrl: isAchievement ? achievementUrl : null,
   }
 }
 
