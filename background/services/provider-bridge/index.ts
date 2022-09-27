@@ -176,7 +176,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
         event.request.params,
         origin
       )
-    } else if (event.request.method === "wallet_addEthereumChain") {
+    } else if (
+      event.request.method === "wallet_addEthereumChain" ||
+      event.request.method === "wallet_switchEthereumChain"
+    ) {
       response.result =
         await this.internalEthereumProviderService.routeSafeRPCRequest(
           event.request.method,
