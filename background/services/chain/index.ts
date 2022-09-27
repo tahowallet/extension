@@ -1059,7 +1059,9 @@ export default class ChainService extends BaseService<Events> {
     )
 
     if (!subscription) {
-      logger.warn(`Can't fetch block prices for unsupported chainID ${chainID}`)
+      logger.warn(
+        `Can't fetch block prices for unsubscribed chainID ${chainID}`
+      )
       return
     }
 
