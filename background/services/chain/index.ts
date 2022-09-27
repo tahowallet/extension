@@ -225,7 +225,7 @@ export default class ChainService extends BaseService<Events> {
       blockPrices: {
         runAtStart: false,
         schedule: {
-          periodInMinutes: 0.25, // Every 15 seconds
+          periodInMinutes: MINUTE / 4, // Every 15 seconds
         },
         handler: () => {
           this.pollBlockPrices()
@@ -1220,9 +1220,15 @@ export default class ChainService extends BaseService<Events> {
    */
   private async handleRecentIncomingAssetTransferAlarm(): Promise<void> {
     const accountsToTrack = await this.db.getAccountsToTrack()
-
     await Promise.allSettled(
       accountsToTrack.map((an) => this.loadRecentAssetTransfers(an, true))
+    )
+  }
+
+  private isCurrentlyActiveChainID(chainID: string): boolean {
+    return (
+      Date.now() <
+      this.lastUserActivityOnNetwork[chainID] + NETWORK_POLLING_TIMEOUT
     )
   }
 
