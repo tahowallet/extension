@@ -342,11 +342,11 @@ export default class ChainService extends BaseService<Events> {
     // with active accounts
     const networksToTrack = await this.getNetworksToTrack()
 
-    await Promise.allSettled([
+    await Promise.allSettled(
       networksToTrack.map(async (network) =>
         this.activateNetworkOrThrow(network.chainID)
-      ),
-    ])
+      )
+    )
 
     return this.activeNetworks
   }
