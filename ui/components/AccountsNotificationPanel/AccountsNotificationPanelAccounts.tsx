@@ -29,24 +29,29 @@ import { i18n } from "../../_locales/i18n"
 type WalletTypeInfo = {
   title: string
   icon: string
+  category: string
 }
 
 const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   [AccountType.ReadOnly]: {
     title: i18n.t("accounts.notificationPanel.readOnly"),
     icon: "./images/eye_account@2x.png",
+    category: "Read-only",
   },
   [AccountType.Imported]: {
     title: i18n.t("accounts.notificationPanel.import"),
     icon: "./images/imported@2x.png",
+    category: "Imported & generated",
   },
   [AccountType.Internal]: {
     title: i18n.t("accounts.notificationPanel.internal"),
     icon: "./images/tally_avatar.svg",
+    category: "Internal",
   },
   [AccountType.Ledger]: {
     title: i18n.t("accounts.notificationPanel.ledger"),
-    icon: "./images/ledger_icon@2x.png",
+    icon: "./images/ledger_icon@2x.svg",
+    category: "Hardware wallets",
   },
 }
 
@@ -68,7 +73,9 @@ function WalletTypeHeader({
     <>
       <header className="wallet_title">
         <h2 className="left">
-          <div className="icon" />
+          <div className="icon_wrap">
+            <div className="icon" />
+          </div>
           {title} {accountType !== AccountType.ReadOnly ? walletNumber : null}
         </h2>
         {onClickAddAddress ? (
@@ -97,23 +104,27 @@ function WalletTypeHeader({
           display: flex;
           align-items: center;
           justify-content: space-between;
+          padding-top: 16px;
         }
         .wallet_title > h2 {
-          color: #fff;
+          color: var(--green-40);
           font-size: 18px;
           font-weight: 600;
           line-height: 24px;
-          padding: 0px 12px 0px 16px;
+          padding: 0px 12px 0px 24px;
           margin: 8px 0px;
         }
+        .icon_wrap {
+          background-color: var(--green-60);
+          margin: 0 7px 0 0;
+          border-radius: 4px;
+        }
         .icon {
-          background: url("${icon}");
-          background-size: cover;
-          background-color: #faf9f4;
+          mask-image: url("${icon}");
+          mask-size: cover;
+          background-color: var(--green-20);
           width: 24px;
           height: 24px;
-          border-radius: 4px;
-          margin: 0 7px 0 0;
         }
         .icon_wallet {
           background: url("./images/wallet_kind_icon@2x.png") center no-repeat;
@@ -217,6 +228,11 @@ export default function AccountsNotificationPanelAccounts({
             (accountTotalsByKeyringId, idx) => {
               return (
                 <section key={accountType}>
+                  <div className="category_wrap">
+                    <p className="simple_text category_title">
+                      {walletTypeDetails[accountType].category}
+                    </p>
+                  </div>
                   <WalletTypeHeader
                     accountType={accountType}
                     walletNumber={idx + 1}
@@ -339,8 +355,13 @@ export default function AccountsNotificationPanelAccounts({
             height: 432px;
             overflow-y: scroll;
           }
-          section:first-of-type {
-            padding-top: 16px;
+          .category_wrap {
+            background-color: var(--hunter-green);
+            padding: 8px 10px 8px 24px;
+          }
+          .category_title {
+            margin: 0;
+            color: var(--green-60);
           }
         `}
       </style>
