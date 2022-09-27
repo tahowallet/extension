@@ -1110,7 +1110,6 @@ export default class Main extends BaseService<never> {
       "permissionQueriedForChain",
       async (chainID: string) => {
         this.chainService.markNetworkActivity(chainID)
-        this.chainService.pollBlockPricesForNetwork(chainID)
       }
     )
 
