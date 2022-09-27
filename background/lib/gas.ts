@@ -129,33 +129,6 @@ export default async function getBlockPrices(
   const gasPrice = feeData?.gasPrice?.toBigInt() || 0n
 
   if (baseFeePerGas) {
-    console.log({
-      network,
-      blockNumber: currentBlock.number,
-      baseFeePerGas,
-      estimatedTransactionCount: null,
-      estimatedPrices: [
-        {
-          confidence: 99,
-          maxPriorityFeePerGas: 2_500_000_000n,
-          maxFeePerGas: baseFeePerGas * 2n + 2_500_000_000n,
-          price: gasPrice, // this estimate isn't great
-        },
-        {
-          confidence: 95,
-          maxPriorityFeePerGas: 1_500_000_000n,
-          maxFeePerGas: (baseFeePerGas * 15n) / 10n + 1_500_000_000n,
-          price: (gasPrice * 9n) / 10n,
-        },
-        {
-          confidence: 70,
-          maxPriorityFeePerGas: 1_100_000_000n,
-          maxFeePerGas: (baseFeePerGas * 13n) / 10n + 1_100_000_000n,
-          price: (gasPrice * 8n) / 10n,
-        },
-      ],
-      dataSource: "local",
-    })
     return {
       network,
       blockNumber: currentBlock.number,
@@ -199,21 +172,6 @@ export default async function getBlockPrices(
   const maxFeePerGas = feeData?.maxFeePerGas?.toBigInt() || 0n
   const maxPriorityFeePerGas = feeData?.maxPriorityFeePerGas?.toBigInt() || 0n
 
-  console.log({
-    network,
-    blockNumber: currentBlock.number,
-    baseFeePerGas: (maxFeePerGas - maxPriorityFeePerGas) / 2n,
-    estimatedTransactionCount: null,
-    estimatedPrices: [
-      {
-        confidence: 99,
-        maxPriorityFeePerGas,
-        maxFeePerGas,
-        price: gasPrice,
-      },
-    ],
-    dataSource: "local",
-  })
   return {
     network,
     blockNumber: currentBlock.number,
