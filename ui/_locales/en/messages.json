@@ -42,6 +42,11 @@
     "rejectConnection": "Reject",
     "acceptConnection": "Connect"
   },
+  "genericPages": {
+    "pageDoesNotExist": "This page does not exist. That's all we know.",
+    "errorPageTitle": "Unexpected Error",
+    "returnHome": "Return Home"
+  },
   "keyring": {
     "setPassword": {
       "title": "Set unlock signing password",
@@ -310,8 +315,7 @@
     "selectToken": "Select token",
     "backButtonText": "Back",
     "saveBtn": "Save",
-    "closeWindow": "Close window",
-    "pageDoesNotExist": "This page does not exist. That's all we know."
+    "closeWindow": "Close window"
   },
   "signing": {
     "signatureRequired": "Your signature is required",

@@ -6,7 +6,7 @@ export default function TabNotFound(): ReactElement {
   return (
     <>
       <div>
-        <p>{t("shared.pageDoesNotExist")}</p>
+        <p>{t("genericPages.pageDoesNotExist")}</p>
       </div>
       <style jsx>{`
         div {
