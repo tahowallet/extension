@@ -1,3 +1,4 @@
+import { chain } from "lodash"
 import sinon from "sinon"
 import ChainService from ".."
 import { ETHEREUM, MINUTE, OPTIMISM, POLYGON } from "../../../constants"
@@ -12,6 +13,7 @@ import {
 type ChainServiceExternalized = Omit<ChainService, ""> & {
   populatePartialEIP1559TransactionRequest: () => void
   populatePartialLegacyEVMTransactionRequest: () => void
+  handleRecentAssetTransferAlarm: (forceUpdate: boolean) => Promise<void>
   lastUserActivityOnNetwork: {
     [chainID: string]: UNIXTime
   }
@@ -95,19 +97,46 @@ describe("Chain Service", () => {
       )
     })
 
-    it("should get block prices if the NETWORK_POLLING_TIMEOUT has been exceeded", () => {
-      const T_PLUS_TEN = Date.now() + 10 * MINUTE
-      const dateStub = sandbox.stub(Date, "now")
-      // Fake 10 minutes into the future
-      dateStub.onCall(1).returns(T_PLUS_TEN)
-      // Then, return the real date so we don't skip polling inside of pollBlockPricesForNetwork
-      dateStub.onCall(2).returns(Date.now())
+    it("should get block prices if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
+      // Set last activity time to 10 minutes ago
+      ;(
+        chainService as unknown as ChainServiceExternalized
+      ).lastUserActivityOnNetwork[ETHEREUM.chainID] = Date.now() - 10 * MINUTE
       const getBlockPricesStub = sandbox
         .stub(gas, "default")
         .callsFake(async () => createBlockPrices())
 
-      chainService.markNetworkActivity(ETHEREUM.chainID)
+      await chainService.markNetworkActivity(ETHEREUM.chainID)
       expect(getBlockPricesStub.called).toEqual(true)
+    })
+
+    it("should get block prices if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
+      // Set last activity time to 10 minutes ago
+      ;(
+        chainService as unknown as ChainServiceExternalized
+      ).lastUserActivityOnNetwork[ETHEREUM.chainID] = Date.now() - 10 * MINUTE
+      const getBlockPricesStub = sandbox
+        .stub(gas, "default")
+        .callsFake(async () => createBlockPrices())
+
+      await chainService.markNetworkActivity(ETHEREUM.chainID)
+      expect(getBlockPricesStub.called).toEqual(true)
+    })
+
+    it("should query recent transfers if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
+      // Set last activity time to 10 minutes ago
+      ;(
+        chainService as unknown as ChainServiceExternalized
+      ).lastUserActivityOnNetwork[ETHEREUM.chainID] = Date.now() - 10 * MINUTE
+      const handleRecentAssetTransferAlarmStub = sandbox
+        .stub(
+          chainService as unknown as ChainServiceExternalized,
+          "handleRecentAssetTransferAlarm"
+        )
+        .callsFake(async () => {})
+
+      await chainService.markNetworkActivity(ETHEREUM.chainID)
+      expect(handleRecentAssetTransferAlarmStub.called).toEqual(true)
     })
   })
 })
