@@ -303,7 +303,8 @@
     "selectToken": "Select token",
     "backButtonText": "Back",
     "saveBtn": "Save",
-    "closeWindow": "Close window"
+    "closeWindow": "Close window",
+    "pageDoesNotExist": "This page does not exist. That's all we know."
   },
   "signing": {
     "signatureRequired": "Your signature is required",
