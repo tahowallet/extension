@@ -2,7 +2,6 @@
  * @jest-environment node
  */
 import "fake-indexeddb/auto"
-import { BaseKeyring as QRKeyring } from "@keystonehq/base-eth-keyring"
 import { ETHSignature } from "@keystonehq/bc-ur-registry-eth"
 import QRHardwareService from ".."
 import { QRHardwareDatabase } from "../db"
@@ -32,10 +31,10 @@ describe("Preference Service Integration", () => {
   describe("syncQRKeyring", () => {
     describe("when hd key", () => {
       let emitSpy: jest.SpyInstance
-      let keyring: QRKeyring
+      let deviceID: string
       beforeEach(async () => {
         emitSpy = jest.spyOn(qrHardwareService.emitter, "emit")
-        keyring = await qrHardwareService.syncQRKeyring(qrWallet.ur)
+        deviceID = await qrHardwareService.syncQRKeyring(qrWallet.ur)
       })
       it("saves hd key", async () => {
         const db = new QRHardwareDatabase()
@@ -50,7 +49,7 @@ describe("Preference Service Integration", () => {
       it("emits synced event", async () => {
         expect(emitSpy).toHaveBeenCalledTimes(1)
         expect(emitSpy).toHaveBeenCalledWith("synced", {
-          id: (await keyring.getAccounts())[0],
+          id: deviceID,
         })
       })
       describe("when sync keyring already exist", () => {
@@ -71,7 +70,7 @@ describe("Preference Service Integration", () => {
         it("emits synced event", async () => {
           expect(emitSpy).toHaveBeenCalledTimes(1)
           expect(emitSpy).toHaveBeenCalledWith("synced", {
-            id: (await keyring.getAccounts())[0],
+            id: deviceID,
           })
         })
       })

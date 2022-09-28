@@ -54,10 +54,6 @@ const getKeyringFromUR = ({ type, cbor }: { type: string; cbor: string }) => {
 }
 
 export default class QRHardwareService extends BaseService<Events> {
-  keyring: QRKeyring | undefined
-
-  deviceID: string | undefined
-
   static create: ServiceCreatorFunction<Events, QRHardwareService, []> =
     async () => {
       return new this(await getOrCreateDB())
@@ -73,31 +69,28 @@ export default class QRHardwareService extends BaseService<Events> {
   }: {
     type: string
     cbor: string
-  }): Promise<QRKeyring> {
+  }): Promise<string> {
     const keyring = getKeyringFromUR({ type, cbor })
 
-    this.keyring = keyring
-
     const accounts = await keyring.addAccounts()
-    // eslint-disable-next-line prefer-destructuring
-    this.deviceID = accounts[0]
-    this.emitter.emit("synced", { id: this.deviceID })
+    const deviceID = accounts[0]
+    this.emitter.emit("synced", { id: deviceID })
 
-    const exist = await this.db.getAccountByAddress(this.deviceID)
+    const exist = await this.db.getAccountByAddress(deviceID)
 
     if (exist) {
-      return keyring
+      return deviceID
     }
 
     const qrHardwareAccount = {
-      address: normalizeEVMAddress(this.deviceID),
+      address: normalizeEVMAddress(deviceID),
       type,
       cbor,
     }
 
     await this.db.addAccount(qrHardwareAccount)
 
-    return keyring
+    return deviceID
   }
 
   async deriveAddress({
