@@ -9,6 +9,7 @@ import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
 import LedgerContinueButton from "../../components/Ledger/LedgerContinueButton"
@@ -117,6 +118,9 @@ function LedgerAccountList({
   parentPath: string
   onConnect: () => void
 }): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "ledger.onboarding",
+  })
   const [pageIndex, setPageIndex] = useState(0)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
@@ -201,7 +205,7 @@ function LedgerAccountList({
               size="medium"
               type="tertiary"
             >
-              Previous
+              {t("previous")}
             </SharedButton>
           </div>
           <div className="current_page">
@@ -215,7 +219,7 @@ function LedgerAccountList({
               size="medium"
               type="tertiary"
             >
-              Next
+              {t("next")}
             </SharedButton>
           </div>
         </div>
@@ -229,7 +233,7 @@ function LedgerAccountList({
           onConnect()
         }}
       >
-        Connect selected
+        {t("connectSelectedLedger")}
       </LedgerContinueButton>
 
       <style jsx>{`
@@ -363,14 +367,17 @@ export default function LedgerImportAccounts({
   device: LedgerDeviceState
   onConnect: () => void
 }): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "ledger.onboarding",
+  })
   const [parentPath, setParentPath] = useState<string | null>(null)
 
   return (
     <>
       <LedgerPanelContainer
         indicatorImageSrc="/images/connect_ledger_indicator_connected.svg"
-        heading="Select ledger accounts"
-        subHeading="You can select as many as you want"
+        heading={t("selectLedgeraccounts")}
+        subHeading={t("connectSelectedLedger")}
       >
         <div className="derivation_path">
           <OnboardingDerivationPathSelectAlt

@@ -139,9 +139,6 @@ export default class IndexingService extends BaseService<Events> {
     activeNetworks.forEach(async (network) => {
       this.emitter.emit("assets", await this.getCachedAssets(network))
     })
-
-    // ... and kick off token list fetching
-    await this.fetchAndCacheTokenLists()
   }
 
   /**
@@ -665,6 +662,7 @@ export default class IndexingService extends BaseService<Events> {
   private async fetchAndCacheTokenLists(): Promise<void> {
     const tokenListPrefs =
       await this.preferenceService.getTokenListPreferences()
+
     // load each token list in preferences
     await Promise.allSettled(
       tokenListPrefs.urls.map(async (url) => {
@@ -679,14 +677,14 @@ export default class IndexingService extends BaseService<Events> {
             )
           }
         }
-
-        // Cache assets across all supported networks even if a network
-        // may be inactive.
-        this.chainService.supportedNetworks.forEach(async (network) => {
-          this.emitter.emit("assets", await this.getCachedAssets(network))
-        })
       })
     )
+
+    // Cache assets across all supported networks even if a network
+    // may be inactive.
+    this.chainService.supportedNetworks.forEach(async (network) => {
+      this.emitter.emit("assets", await this.getCachedAssets(network))
+    })
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if
     // the version has gone up
