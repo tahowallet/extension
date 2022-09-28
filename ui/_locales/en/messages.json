@@ -367,6 +367,10 @@
     "to": "Swap to:",
     "sellAsset": "You pay",
     "buyAsset": "You receive",
+    "approveAsset": "Approve Asset",
+    "waitingForApproval": "Waiting for approval transaction...",
+    "switchAssets": "Switch Assets",
+    "swapRewardsTeaser": "Swap rewards coming soon",
     "continueSwap": "Continue Swap",
     "exchangeRoute": "Exchange route",
     "rewards": {
