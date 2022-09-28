@@ -22,6 +22,9 @@
       "ledger": "Full access via Ledger"
     }
   },
+  "assets": {
+    "viewAsset": "View asset on {{siteTitle}}"
+  },
   "assetInput": {
     "search": "Search by name or address",
     "selectToken": "Select token",
@@ -294,6 +297,8 @@
   "shared": {
     "cancelBtn": "Cancel",
     "gwei": "Gwei",
+    "send": "Send",
+    "swap": "Swap",
     "showPasswordHint": "Show Password",
     "hidePasswordHint": "Hide Password",
     "close": "Close",

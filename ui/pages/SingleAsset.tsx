@@ -12,6 +12,7 @@ import {
   isSmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
+import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -21,6 +22,7 @@ import SharedTooltip from "../components/Shared/SharedTooltip"
 import { scanWebsite } from "../utils/constants"
 
 export default function SingleAsset(): ReactElement {
+  const { t } = useTranslation()
   const location = useLocation<AnyAsset>()
   const locationAsset = location.state
   const { symbol } = locationAsset
@@ -115,7 +117,9 @@ export default function SingleAsset(): ReactElement {
                     </a>
                   )}
                 >
-                  View asset on {scanWebsite[currentNetwork.chainID].title}
+                  {t("assets.viewAsset", {
+                    sitetitle: scanWebsite[currentNetwork.chainID].title,
+                  })}
                 </SharedTooltip>
               ) : (
                 <></>
@@ -140,7 +144,7 @@ export default function SingleAsset(): ReactElement {
                     state: asset,
                   }}
                 >
-                  Send
+                  {t("shared.send")}
                 </SharedButton>
                 <SharedButton
                   type="primary"
@@ -151,7 +155,7 @@ export default function SingleAsset(): ReactElement {
                     state: asset,
                   }}
                 >
-                  Swap
+                  {t("shared.swap")}
                 </SharedButton>
               </>
             ) : (
