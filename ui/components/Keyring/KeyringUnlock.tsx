@@ -4,6 +4,7 @@ import { unlockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
 import { rejectTransactionSignature } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { useTranslation } from "react-i18next"
 import { SUPPORT_FORGOT_PASSWORD } from "@tallyho/tally-background/features"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import {
   useBackgroundDispatch,
   useAreKeyringsUnlocked,
@@ -30,8 +31,9 @@ export default function KeyringUnlock(): ReactElement {
   useEffect(() => {
     if (areKeyringsUnlocked) {
       history.goBack()
+      dispatch(setSnackbarMessage(t("snackbar")))
     }
-  }, [history, areKeyringsUnlocked])
+  }, [history, areKeyringsUnlocked, dispatch, t])
 
   const dispatchUnlockWallet = async (
     event: React.FormEvent<HTMLFormElement>

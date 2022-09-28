@@ -53,7 +53,8 @@
       "forgotPassword": "Forgot password?",
       "error": {
         "incorrect": "Incorrect password"
-      }
+      },
+      "snackbar": "Signing unlocked"
     }
   },
   "ledger": {
