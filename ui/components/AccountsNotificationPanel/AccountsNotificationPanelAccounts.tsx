@@ -350,6 +350,7 @@ export default function AccountsNotificationPanelAccounts({
             width: 100%;
             box-sizing: border-box;
             padding: 8px 0px 8px 24px;
+            cursor: pointer;
           }
           footer {
             width: 100%;
