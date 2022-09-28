@@ -4,6 +4,7 @@ import deepDiff from "webext-redux/lib/strategies/deepDiff/diff"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
+import { debounce } from "lodash"
 
 import {
   decodeJSON,
@@ -147,9 +148,7 @@ const devToolsSanitizer = (input: unknown) => {
   }
 }
 
-const reduxCache: Middleware = (store) => (next) => (action) => {
-  const result = next(action)
-  const state = store.getState()
+const persistStoreFn = <T>(state: T) => {
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
@@ -158,7 +157,18 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
       version: REDUX_STATE_VERSION,
     })
   }
+}
 
+const persistStoreState = debounce(persistStoreFn, 50, {
+  trailing: true,
+  maxWait: 50,
+})
+
+const reduxCache: Middleware = (store) => (next) => (action) => {
+  const result = next(action)
+  const state = store.getState()
+
+  persistStoreState(state)
   return result
 }
 
