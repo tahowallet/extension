@@ -47,6 +47,7 @@
     },
     "unlock": {
       "title": "Unlock signing",
+      "subtitle": "Enter your signing password to continue",
       "submitBtn": "Unlock",
       "signingPassword": "Signing password",
       "forgotPassword": "Forgot password?",

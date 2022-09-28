@@ -70,6 +70,7 @@ export default function KeyringUnlock(): ReactElement {
         <div className="illustration_unlock" />
       </div>
       <h1 className="serif_header">{t("title")}</h1>
+      <div className="simple_text subtitle">{t("subtitle")}</div>
       <form onSubmit={dispatchUnlockWallet}>
         <div className="signing_wrap">
           <div className="input_wrap">
@@ -114,7 +115,12 @@ export default function KeyringUnlock(): ReactElement {
             align-items: center;
             width: 100%;
             height: 100%;
-            gap: 25px;
+            gap: 16px;
+          }
+          .subtitle {
+            width: 55%;
+            text-align: center;
+            box-sizing: border-box;
           }
           form {
             display: flex;
