@@ -21,7 +21,7 @@
       "internal": "Tally Ho",
       "ledger": "Ledger",
       "category": {
-        "readOnly": "Read-only",
+        "readOnly": "Preview",
         "ledger": "Hardware wallets",
         "others": "Imported & generated"
       }

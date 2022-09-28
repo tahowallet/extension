@@ -343,6 +343,9 @@ export default function AccountsNotificationPanelAccounts({
             align-content: center;
             margin-bottom: 8px;
           }
+          section:last-of-type {
+            margin-bottom: 16px;
+          }
           li {
             width: 100%;
             box-sizing: border-box;
