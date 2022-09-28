@@ -151,10 +151,16 @@ export default class ProviderBridgeService extends BaseService<Events> {
       this.emitter.emit("setClaimReferrer", String(referrer))
 
       response.result = null
-    } else if (event.request.method === "eth_chainId") {
-      // we need to send back the chainId independent of dApp permission if we want to be compliant with MM and web3-react
-      // We are calling the `internalEthereumProviderService.routeSafeRPCRequest` directly here, because the point
-      // of this exception is to provide the proper chainId for the dApp, independent from the permissions.
+    } else if (
+      event.request.method === "eth_chainId" ||
+      event.request.method === "net_version"
+    ) {
+      // we need to send back the chainId and net_version (a deprecated
+      // precursor to eth_chainId) independent of dApp permission if we want to
+      // be compliant with MM and web3-react We are calling the
+      // `internalEthereumProviderService.routeSafeRPCRequest` directly here,
+      // because the point of this exception is to provide the proper chainId
+      // for the dApp, independent from the permissions.
       response.result =
         await this.internalEthereumProviderService.routeSafeRPCRequest(
           event.request.method,
@@ -170,7 +176,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
         event.request.params,
         origin
       )
-    } else if (event.request.method === "wallet_addEthereumChain") {
+    } else if (
+      event.request.method === "wallet_addEthereumChain" ||
+      event.request.method === "wallet_switchEthereumChain"
+    ) {
       response.result =
         await this.internalEthereumProviderService.routeSafeRPCRequest(
           event.request.method,
