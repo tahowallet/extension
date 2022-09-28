@@ -3,7 +3,7 @@ import { RootState } from ".."
 import { NFTsState } from "../nfts"
 
 // Adds chainID to each NFT for convenience in frontend
-const selectNFTs = createSelector(
+export const selectNFTs = createSelector(
   (state: RootState) => state.nfts,
   (nfts): NFTsState => {
     return {
@@ -30,4 +30,18 @@ const selectNFTs = createSelector(
     }
   }
 )
-export default selectNFTs
+
+const flatMapNFTs = (NFTs: NFTsState) =>
+  Object.values(NFTs.evm).flatMap((NFTsByChain) =>
+    Object.values(NFTsByChain).flatMap((item) => item)
+  )
+
+/** Returns flat list of all NFTs without Galxe's items */
+export const selectNFTsList = createSelector(selectNFTs, (NFTs) =>
+  flatMapNFTs(NFTs).filter((NFT) => !NFT.isAchievement)
+)
+
+/** Returns flat list of all Galxe's NFTs */
+export const selectAchievementsList = createSelector(selectNFTs, (NFTs) =>
+  flatMapNFTs(NFTs).filter((NFT) => NFT.isAchievement)
+)

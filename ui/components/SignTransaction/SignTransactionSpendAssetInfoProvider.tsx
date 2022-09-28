@@ -36,7 +36,7 @@ export default function SignTransactionSpendAssetInfoProvider({
   inner,
 }: SignTransactionInfoProviderProps<AssetApproval>): ReactElement {
   const { t } = useTranslation("translation", {
-    keyPrefix: "signTransaction.spendAsset",
+    keyPrefix: "signTransaction.spendApproval",
   })
 
   const { t: sharedT } = useTranslation("translation", { keyPrefix: "shared" })

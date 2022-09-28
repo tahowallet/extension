@@ -5,6 +5,7 @@ import {
   AnyEVMTransaction,
   LegacyEVMTransactionRequest,
   AnyEVMBlock,
+  BlockPrices,
 } from "../networks"
 import {
   ChainService,
@@ -162,6 +163,25 @@ export const createAddressOnNetwork = (
   overrides: Partial<AddressOnNetwork> = {}
 ): AddressOnNetwork => ({
   address: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+  network: ETHEREUM,
+  ...overrides,
+})
+
+export const createBlockPrices = (
+  overrides: Partial<BlockPrices> = {}
+): BlockPrices => ({
+  baseFeePerGas: 0n,
+  blockNumber: 25639147,
+  dataSource: "local",
+  estimatedPrices: [
+    {
+      confidence: 99,
+      maxFeePerGas: 0n,
+      maxPriorityFeePerGas: 0n,
+      price: 1001550n,
+    },
+  ],
+  estimatedTransactionCount: null,
   network: ETHEREUM,
   ...overrides,
 })
