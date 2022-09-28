@@ -1,4 +1,3 @@
-import { chain } from "lodash"
 import sinon from "sinon"
 import ChainService from ".."
 import { ETHEREUM, MINUTE, OPTIMISM, POLYGON } from "../../../constants"
