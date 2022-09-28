@@ -8,6 +8,8 @@ import {
 import { Transaction } from "../services/chain/db"
 import { EnrichedEVMTransaction } from "../services/enrichment"
 
+const ACTIVITIES_MAX_COUNT = 25
+
 export type ActivityOnChain = {
   to?: string
   from: string
@@ -57,22 +59,38 @@ const sortActivities = (a: ActivityOnChain, b: ActivityOnChain): number => {
   return b.blockHeight - a.blockHeight
 }
 
+const cleanActivitiesArray = (activitiesArray: ActivityOnChain[]) => {
+  activitiesArray.sort(sortActivities)
+  activitiesArray.splice(ACTIVITIES_MAX_COUNT)
+}
+
 const addActivityToState =
   (activities: ActivitesOnChainState) =>
   (address: string, chainID: string, transaction: Transaction) => {
+    const { to, from, blockHeight, value, nonce, hash } = transaction
     const normalizedAddress = normalizeEVMAddress(address)
 
     activities[normalizedAddress] ??= {} // eslint-disable-line no-param-reassign
     activities[normalizedAddress][chainID] ??= [] // eslint-disable-line no-param-reassign
-    // TODO: check if this is add or update
-    activities[normalizedAddress][chainID].push({
-      to: transaction.to && normalizeEVMAddress(transaction.to),
-      from: normalizeEVMAddress(transaction.from),
-      blockHeight: transaction.blockHeight,
-      value: transaction.value,
-      nonce: transaction.nonce,
-      hash: transaction.hash,
-    })
+
+    const activity = {
+      to: to && normalizeEVMAddress(to),
+      from: normalizeEVMAddress(from),
+      blockHeight,
+      value,
+      nonce,
+      hash,
+    }
+
+    const exisistingIndex = activities[normalizedAddress][chainID].findIndex(
+      (tx) => tx.hash === hash
+    )
+
+    if (exisistingIndex !== -1) {
+      activities[normalizedAddress][chainID][exisistingIndex] = activity // eslint-disable-line no-param-reassign
+    } else {
+      activities[normalizedAddress][chainID].push(activity)
+    }
   }
 
 const initializeActivitiesFromTransactions = ({
@@ -115,9 +133,9 @@ const initializeActivitiesFromTransactions = ({
     }
   })
 
-  // Sort transactions
+  // Sort and reduce # of transactions
   normalizedAccounts.forEach(({ address, network }) =>
-    activities[address][network.chainID]?.sort(sortActivities)
+    cleanActivitiesArray(activities[address][network.chainID])
   )
 
   return activities
@@ -155,7 +173,7 @@ const activitiesOnChainSlice = createSlice({
           chainID,
           transaction as Transaction
         )
-        immerState[normalizeEVMAddress(address)][chainID].sort(sortActivities)
+        cleanActivitiesArray(immerState[normalizeEVMAddress(address)][chainID])
       })
     },
   },
