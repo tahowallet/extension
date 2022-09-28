@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
 import SharedButton from "../../components/Shared/SharedButton"
 
@@ -7,17 +8,20 @@ export default function LedgerImportDone({
 }: {
   onClose: () => void
 }): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "ledger.onboarding",
+  })
   return (
     <LedgerPanelContainer
       indicatorImageSrc="/images/connect_ledger_indicator_connected.svg"
       heading={
         <>
-          Congratulations!
+          {t("doneMessageOne")}
           <br />
-          You can open Tally Ho now.
+          {t("doneMessageTwo")}
         </>
       }
-      subHeading="Selected accounts were succesfully connected."
+      subHeading={t("onboardingSuccessful")}
     >
       <div className="button_container">
         <SharedButton
@@ -27,7 +31,7 @@ export default function LedgerImportDone({
           type="tertiary"
           onClick={onClose}
         >
-          Close tab
+          {t("closeTab")}
         </SharedButton>
       </div>
       <style jsx>{`

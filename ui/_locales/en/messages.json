@@ -31,6 +31,14 @@
     }
   },
   "comingSoon": "Coming soon",
+  "dappConnection": {
+    "connectToDapp": "Connect to dApp",
+    "dappPermissionListTitle": "dApp would get permission to:",
+    "viewAddressPermission": "View address of connected account",
+    "createTransactionPermission": "Create but not sign transactions for you",
+    "rejectConnection": "Reject",
+    "acceptConnection": "Connect"
+  },
   "keyring": {
     "setPassword": {
       "title": "Set unlock signing password",
@@ -58,6 +66,34 @@
   "ledger": {
     "checkLedger": "Check Ledger",
     "onlyRejectFromLedger": "Tx can only be Rejected from Ledger",
+    "onboarding": {
+      "prepare": {
+        "continueButton": "Continue",
+        "tryAgainButton": "Try Again",
+        "subheadingWord1": "start",
+        "subheadingWord2": "retry",
+        "subheading": "Make sure you take these 3 steps before we {{subheadingWord}}",
+        "initialScreenHeader": "Before we get started",
+        "header": "Check your Ledger",
+        "noLedgerConnected": "No Ledger device is connected",
+        "multipleLedgersConnected": "Multiple Ledgers are connected",
+        "stepsExplainer": "Please follow the steps below and click on Try Again!",
+        "step1": "Plug in a single Ledger",
+        "step2": "Enter pin to unlock",
+        "step3": "Open Ethereum App"
+      },
+      "selectDevice": "Select the device",
+      "clickConnect": "Click connect",
+      "previous": "Previous",
+      "next": "Next",
+      "selectLedgeraccounts": "Select Ledger accounts",
+      "multipleLedgersDescriptor": "You can select as many as you want",
+      "connectSelectedLedger": "Connect selected",
+      "doneMessageOne": "Congratulations!",
+      "doneMessageTwo": "You can open Tally Ho now.",
+      "onboardingSuccessful": "Selected accounts were succesfully connected.",
+      "closeTab": "Close tab"
+    },
     "connectionStatus": {
       "availableButNoSigning": "Ledger is connected but cannot sign",
       "readyToSign": "Ledger is ready to sign",
@@ -308,8 +344,8 @@
       "spend": "Spend",
       "tokens": "tokens",
       "spendLimit": "Spend limit",
-      "tooltip1": "Spend limit is the amount of funds from a particular asset, that you allow a contract to spend.",
-      "tooltip2": "Infinite tx has the drawback that if the contract is mailicous, it can steal all your funds.",
+      "tooltip1": "Spend limit is the amount of funds from a particular asset that you allow a contract to spend.",
+      "tooltip2": "Infinite tx has the drawback that if the contract is malicious, it can steal all your funds.",
       "changeLimit": "Change limit",
       "invalidAmount": "Invalid amount"
     },
@@ -328,6 +364,16 @@
     "title": "Swap Assets",
     "from": "Swap from:",
     "to": "Swap to:",
+    "sellAsset": "You pay",
+    "buyAsset": "You receive",
+    "continueSwap": "Continue Swap",
+    "exchangeRoute": "Exchange route",
+    "rewards": {
+      "header": "Swap rewards for community",
+      "body": "This week, 240,000 DOGGO tokens will be equally shared as Swap Rewards.",
+      "tooltip": "Tally Ho rewards it's users that use swap every week. A council decides weekly prizes and who is eligible.",
+      "detailButton": "Details"
+    },
     "error": {
       "noSellAsset": "Attempting to approve transfer without a sell asset.",
       "noApprovalTarget": "Attempting to approve transfer without an approval target.",
@@ -341,6 +387,15 @@
       "estimatedFee": "Estimated network fee",
       "daoFee": "DAO fee"
     }
+  },
+  "switchWallet": {
+    "title": "Want to use another wallet instead?",
+    "tooltip": "You are seeing this because Tally Ho! is set as default wallet, you can change this option in the main menu.",
+    "confirmSwitchWallet": "Yes, switch wallet",
+    "notDefaultWalletMessage": "Tally Ho not Default",
+    "disableWalletExplainer": "We disabled Tally Ho as the default wallet for you. You can always re-enable it from Menu ☰ at any time.",
+    "useTallyHoAsDefaultPrompt": "Use Tally Ho as default wallet",
+    "closeButton": "Close window"
   },
   "toggle": {
     "collapse": "Collapse",
@@ -360,6 +415,24 @@
     }
   },
   "wallet": {
+    "activities": {
+      "historicalActivityExplainer": "Tally Ho will populate your historical activity over time; this may take an hour or more for accounts that have been active for a long time. For new accounts, new activity will show up here.",
+      "endOfList": "You have reached the end of activity list.",
+      "moreHistory": "For more history visit",
+      "tokenApproved": "Token approval",
+      "contractInteraction": "Contract Interaction",
+      "tokenReceived": "Received",
+      "tokenSent": "Send",
+      "infiniteApproval": "Infinite",
+      "tokenSwapped": "Swap",
+      "transactionFailed": "Failed",
+      "transactionDropped": "Dropped",
+      "transactionPending": "Pending...",
+      "contractCreation": "(Contract creation)",
+      "transactionTo": "To:",
+      "transactionFrom": "From:",
+      "loadingActivities": "Digging deeper..."
+    },
     "totalAccountBalance": "Total account balance",
     "send": "Send",
     "receive": "Receive",
