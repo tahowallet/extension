@@ -364,6 +364,12 @@
       "title": "Contract interaction",
       "interactingWithLabel": "Interacting with",
       "newlyCreatedContract": "Newly created contract"
+    },
+    "signTypedData": {
+      "authorizeDeposit": "Authorize Deposit",
+      "signMessage": "Sign {{messageType}}",
+      "confirmButtonLabel": "Confirm"
+
     }
   },
   "swap": {
