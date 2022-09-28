@@ -343,6 +343,7 @@
     "spendAmount": "Spend Amount",
     "help": "I need help",
     "refresh": "Refresh",
+    "confirmButtonLabel": "Sign",
     "spendApproval": {
       "title": "Approve asset spend",
       "approveSpender": "Approve <spenderAddress></spenderAddress>",

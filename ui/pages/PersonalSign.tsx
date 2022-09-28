@@ -21,6 +21,7 @@ import {
 import PersonalSignDetailPanel from "./PersonalSignDetailPanel"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import Signing from "../components/Signing"
+import { useTranslation } from "react-i18next"
 
 const TITLE: Record<SignDataMessageType, string> = {
   [SignDataMessageType.EIP4361]: "Sign in with Ethereum",
@@ -28,6 +29,7 @@ const TITLE: Record<SignDataMessageType, string> = {
 }
 
 export default function PersonalSignData(): ReactElement {
+  const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const signingDataRequest = useBackgroundSelector(selectSigningData)
@@ -95,7 +97,7 @@ export default function PersonalSignData(): ReactElement {
   return (
     <SignTransactionContainer
       signerAccountTotal={signerAccountTotal}
-      confirmButtonLabel="Sign"
+      confirmButtonLabel={t("signTransaction.confirmButtonLabel")}
       canConfirm={canConfirm}
       handleConfirm={handleConfirm}
       handleReject={handleReject}
