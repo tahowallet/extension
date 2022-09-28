@@ -249,6 +249,8 @@
     "joinTitle": "Join our community",
     "joinDesc": "Join our Discord to give us feedback!",
     "joinBtn": "Join and give feedback",
+    "versionLabel": "Version {{version}}",
+    "unknownVersionOrCommit": "<unknown>",
     "exportLogs": {
       "title": "Bug report",
       "discordTitle": "1. Join #bug-reports on Discord",
@@ -369,7 +371,6 @@
       "authorizeDeposit": "Authorize Deposit",
       "signMessage": "Sign {{messageType}}",
       "confirmButtonLabel": "Confirm"
-
     }
   },
   "swap": {
