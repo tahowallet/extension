@@ -35,23 +35,23 @@ type WalletTypeInfo = {
 const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   [AccountType.ReadOnly]: {
     title: i18n.t("accounts.notificationPanel.readOnly"),
-    icon: "./images/eye_account@2x.png",
-    category: "Read-only",
+    icon: "./images/eye@2x.png",
+    category: i18n.t("accounts.notificationPanel.category.readOnly"),
   },
   [AccountType.Imported]: {
     title: i18n.t("accounts.notificationPanel.import"),
     icon: "./images/imported@2x.png",
-    category: "Imported & generated",
+    category: i18n.t("accounts.notificationPanel.category.others"),
   },
   [AccountType.Internal]: {
     title: i18n.t("accounts.notificationPanel.internal"),
-    icon: "./images/tally_avatar.svg",
-    category: "Internal",
+    icon: "./images/stars_grey.svg",
+    category: i18n.t("accounts.notificationPanel.category.others"),
   },
   [AccountType.Ledger]: {
     title: i18n.t("accounts.notificationPanel.ledger"),
-    icon: "./images/ledger_icon@2x.svg",
-    category: "Hardware wallets",
+    icon: "./images/ledger_icon.svg",
+    category: i18n.t("accounts.notificationPanel.category.ledger"),
   },
 }
 
@@ -223,94 +223,103 @@ export default function AccountsNotificationPanelAccounts({
             },
             {} as { [keyringId: string]: AccountTotal[] }
           )
-
-          return Object.values(accountTotalsByType).map(
-            (accountTotalsByKeyringId, idx) => {
-              return (
-                <section key={accountType}>
-                  <div className="category_wrap">
-                    <p className="simple_text category_title">
-                      {walletTypeDetails[accountType].category}
-                    </p>
-                  </div>
-                  <WalletTypeHeader
-                    accountType={accountType}
-                    walletNumber={idx + 1}
-                    onClickAddAddress={
-                      accountType === "imported" || accountType === "internal"
-                        ? () => {
-                            if (accountTotalsByKeyringId[0].keyringId) {
-                              dispatch(
-                                deriveAddress(
-                                  accountTotalsByKeyringId[0].keyringId
-                                )
-                              )
-                            }
-                          }
-                        : undefined
-                    }
-                  />
-                  <ul>
-                    {accountTotalsByKeyringId.map((accountTotal) => {
-                      const normalizedAddress = normalizeEVMAddress(
-                        accountTotal.address
-                      )
-
-                      const isSelected = sameEVMAddress(
-                        normalizedAddress,
-                        selectedAccountAddress
-                      )
-
-                      return (
-                        <li
-                          key={normalizedAddress}
-                          // We use these event handlers in leiu of :hover so that we can prevent child hovering
-                          // from affecting the hover state of this li.
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              "var(--hunter-green)"
-                          }}
-                          onFocus={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              "var(--hunter-green)"
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = ""
-                          }}
-                          onBlur={(e) => {
-                            e.currentTarget.style.backgroundColor = ""
-                          }}
-                        >
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                updateCurrentAccount(normalizedAddress)
+          return (
+            <>
+              {!(
+                accountType === AccountType.Imported &&
+                (accountTotals[AccountType.Internal]?.length ?? 0)
+              ) && (
+                <div className="category_wrap">
+                  <p className="simple_text category_title">
+                    {walletTypeDetails[accountType].category}
+                  </p>
+                </div>
+              )}
+              {Object.values(accountTotalsByType).map(
+                (accountTotalsByKeyringId, idx) => {
+                  return (
+                    <section key={accountType}>
+                      <WalletTypeHeader
+                        accountType={accountType}
+                        walletNumber={idx + 1}
+                        onClickAddAddress={
+                          accountType === "imported" ||
+                          accountType === "internal"
+                            ? () => {
+                                if (accountTotalsByKeyringId[0].keyringId) {
+                                  dispatch(
+                                    deriveAddress(
+                                      accountTotalsByKeyringId[0].keyringId
+                                    )
+                                  )
+                                }
                               }
-                            }}
-                            onClick={() => {
-                              dispatch(resetClaimFlow())
-                              updateCurrentAccount(normalizedAddress)
-                            }}
-                          >
-                            <SharedAccountItemSummary
+                            : undefined
+                        }
+                      />
+                      <ul>
+                        {accountTotalsByKeyringId.map((accountTotal) => {
+                          const normalizedAddress = normalizeEVMAddress(
+                            accountTotal.address
+                          )
+
+                          const isSelected = sameEVMAddress(
+                            normalizedAddress,
+                            selectedAccountAddress
+                          )
+
+                          return (
+                            <li
                               key={normalizedAddress}
-                              accountTotal={accountTotal}
-                              isSelected={isSelected}
+                              // We use these event handlers in leiu of :hover so that we can prevent child hovering
+                              // from affecting the hover state of this li.
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "var(--hunter-green)"
+                              }}
+                              onFocus={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "var(--hunter-green)"
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = ""
+                              }}
+                              onBlur={(e) => {
+                                e.currentTarget.style.backgroundColor = ""
+                              }}
                             >
-                              <AccountItemOptionsMenu
-                                accountTotal={accountTotal}
-                              />
-                            </SharedAccountItemSummary>
-                          </div>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </section>
-              )
-            }
+                              <div
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    updateCurrentAccount(normalizedAddress)
+                                  }
+                                }}
+                                onClick={() => {
+                                  dispatch(resetClaimFlow())
+                                  updateCurrentAccount(normalizedAddress)
+                                }}
+                              >
+                                <SharedAccountItemSummary
+                                  key={normalizedAddress}
+                                  accountTotal={accountTotal}
+                                  isSelected={isSelected}
+                                >
+                                  <AccountItemOptionsMenu
+                                    accountTotal={accountTotal}
+                                  />
+                                </SharedAccountItemSummary>
+                              </div>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </section>
+                  )
+                }
+              )}
+            </>
           )
         })}
       <footer>
