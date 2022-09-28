@@ -56,7 +56,7 @@ describe("Chain Database ", () => {
       await db.addBlock(block)
       const blocks = await db.table("blocks").toArray()
       expect(blocks.length).toEqual(1)
-    }) // Implementation should be similar to addBalance
+    })
   })
   describe("addOrUpdateTransaction", () => {
     const addTransactionEth = createAnyEVMTransaction({
@@ -81,11 +81,14 @@ describe("Chain Database ", () => {
       )
 
       expect(getEthTransaction?.hash).toEqual(addTransactionEth.hash)
-      expect(getOptTransaction?.hash).toBeTruthy()
+      expect(getOptTransaction?.hash).toEqual(addTransactionOpt.hash)
     })
     it("should correctly update transactions in indexedDB", async () => {
       await db.addOrUpdateTransaction(addTransactionEth, "alchemy")
       await db.addOrUpdateTransaction(addTransactionOpt, "alchemy")
+
+      expect(addTransactionEth.gasPrice).toEqual(40300000000n)
+      expect(addTransactionOpt.gasPrice).toEqual(40300000000n)
 
       const getEthTransaction = await db.getTransaction(
         addTransactionEth.network,
@@ -113,8 +116,8 @@ describe("Chain Database ", () => {
 
       await db.addOrUpdateTransaction(updateEth, "alchemy")
       await db.addOrUpdateTransaction(updateOpt, "alchemy")
-      expect(updateEth).toBeTruthy()
-      expect(updateOpt).toBeTruthy()
+      expect(updateEth.gasPrice).toEqual(40400000000n)
+      expect(updateOpt.gasPrice).toEqual(40400000000n)
     })
   })
   describe("getAccountsToTrack", () => {
@@ -152,23 +155,22 @@ describe("Chain Database ", () => {
       const allTransactions = await db.getAllSavedTransactionHashes()
 
       expect(allTransactions).toHaveLength(4)
-      expect(allTransactions.map((tx) => tx)).toBeTruthy()
+      expect(allTransactions.filter((key) => !!key)).toHaveLength(4)
     })
   })
   describe("getBlock", () => {
     /* Creating two blocks. */
-    /* Creating two blocks. */
-    const block = createAnyEVMBlock()
-    const block2 = createAnyEVMBlock()
     it("should return a block if that block is in indexedDB", async () => {
+      const block = createAnyEVMBlock()
       await db.addBlock(block)
       const getBlock = await db.getBlock(block.network, block.hash)
       expect(getBlock).toBeTruthy()
     })
     it("should not return a block if that block is not in indexedDB", async () => {
+      const block2 = createAnyEVMBlock()
       const getBlock = await db.getBlock(block2.network, block2.hash)
       expect(getBlock).toBeFalsy()
-    }) // check for both hash and network mismatch
+    })
   })
   describe("getChainIdsToTrack", () => {
     it("should return chainIds corresponding to the networks of accounts being tracked", async () => {
@@ -200,10 +202,10 @@ describe("Chain Database ", () => {
       expect(latest?.assetAmount.amount).toEqual(4n)
     })
     it("should return null if no account balances are found", async () => {
-      const account = createAccountBalance()
+      const accountBalance = createAccountBalance()
       const latest = await db.getLatestAccountBalance(
-        account.address,
-        account.network,
+        accountBalance.address,
+        accountBalance.network,
         ETH
       )
       expect(latest).toBeNull()
@@ -218,11 +220,7 @@ describe("Chain Database ", () => {
     it("should return null if the most recent block is older than 86 seconds", async () => {
       // Database has this query working
       const blocks = await db.getLatestBlock(OPTIMISM)
-      if (blocks?.timestamp) {
-        if (blocks.timestamp > Date.now() - 60 * 60 * 24) {
-          expect(block).toBeNull()
-        }
-      }
+      if (!blocks) expect(blocks).toBeNull()
     })
   })
   describe("getNetworkPendingTransactions", () => {
@@ -308,7 +306,7 @@ describe("Chain Database ", () => {
       it("should not return a block if that block is not in indexedDB", async () => {
         const getBlock = await db.getBlock(block2.network, block2.hash)
         expect(getBlock).toBeFalsy()
-      }) // check for both hash and network mismatch
+      })
     })
   })
   describe("recordAccountAssetTransferLookup", () => {
