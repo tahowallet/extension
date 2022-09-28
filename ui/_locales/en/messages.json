@@ -207,6 +207,16 @@
       "save": "Save",
       "verify": "Verify"
     },
+    "seedVerification": {
+      "seedIsInWrongOrder": "Wrong Order",
+      "seedMismatchExplainer": "We are sorry, the recovery phrase you entered did not match.You can try to re-order them, but make sure you have them written down.",
+      "createNewWallet": "If you prefer you can <1><0>create a new wallet.<0></1>",
+      "retryVerification": "Try again",
+      "verifySeedPrompt": "Verify recovery phrase",
+      "successMessage": "Congratulations!",
+      "successExplainer": "Secret recovery phrase is correct and you can now start using your new wallet.",
+      "successButton": "Take me to my wallet"
+    },
     "derivationPath": "Derivation path",
     "addDerivationPath": "Add derivation path",
     "pathLabel": "Label",
