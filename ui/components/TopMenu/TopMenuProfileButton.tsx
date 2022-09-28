@@ -1,3 +1,4 @@
+import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   selectCurrentAccount,
   selectCurrentAccountTotal,
@@ -17,7 +18,7 @@ export default function TopMenuProfileButton(props: {
 }): ReactElement {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const { name, avatarURL, address } =
+  const { name, avatarURL, address, accountType } =
     useBackgroundSelector(selectCurrentAccountTotal) ?? {}
 
   const { truncatedAddress } = useBackgroundSelector(selectCurrentAccount) ?? {}
@@ -67,6 +68,10 @@ export default function TopMenuProfileButton(props: {
               name={name}
               avatarURL={avatarURL}
               showHoverStyle
+              showKeyring={
+                accountType === AccountType.Imported ||
+                accountType === AccountType.Internal
+              }
             />
           </>
         )}
