@@ -217,6 +217,23 @@
       "successExplainer": "Secret recovery phrase is correct and you can now start using your new wallet.",
       "successButton": "Take me to my wallet"
     },
+    "addWallet": {
+      "addExistingAccount": "Add existing accounts",
+      "importWallet": "Import recovery phrase",
+      "addLedger": "Connect to Ledger",
+      "addReadOnly": "Read-only address",
+      "addNewAccount": "Add new recovery phrase",
+      "createNewWallet": "Create new wallet",
+      "addAccounts": "Add accounts",
+      "importExistingWallet": {
+        "pasteRecoveryPhrase": "Paste recovery phrase",
+        "phraseLengthError": "Must be a 12 or 24 word recovery phrase",
+        "invalidPhraseError": "Invalid recovery phrase",
+        "importAccount": "Import account",
+        "enterPhrasePrompt": "Copy paste or write down a 12 or 24 word secret recovery phrase.",
+        "helpFindPhrase": "How do I find the recovery phrase?"
+      }
+    },
     "derivationPath": "Derivation path",
     "addDerivationPath": "Add derivation path",
     "pathLabel": "Label",

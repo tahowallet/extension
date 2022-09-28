@@ -13,6 +13,7 @@ import { SignDataMessageType } from "@tallyho/tally-background/utils/signing"
 import { useHistory } from "react-router-dom"
 import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
+import { useTranslation } from "react-i18next"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -21,7 +22,6 @@ import {
 import PersonalSignDetailPanel from "./PersonalSignDetailPanel"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import Signing from "../components/Signing"
-import { useTranslation } from "react-i18next"
 
 const TITLE: Record<SignDataMessageType, string> = {
   [SignDataMessageType.EIP4361]: "Sign in with Ethereum",
