@@ -442,7 +442,13 @@
     "sendTo": "Send To:",
     "sendButton": "Continue",
     "receiveAddress": "Receive address",
-    "sendToContractWarning": "This is a contract address, sending assets could result in loss of funds."
+    "sendToContractWarning": "This is a contract address, sending assets could result in loss of funds.",
+    "pages": {
+      "assets": "Assets",
+      "NFTs": "NFTs",
+      "activity": "Activity"
+    },
+    "NFTPricingComingSoon": "Coming soon: NFT price + sending"
   },
   "dAppConnect": {
     "switchWallet":{
