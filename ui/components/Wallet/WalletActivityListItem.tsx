@@ -9,6 +9,7 @@ import {
 } from "@tallyho/tally-background/lib/utils"
 import { HexString } from "@tallyho/tally-background/types"
 import { getRecipient } from "@tallyho/tally-background/redux-slices/utils/activity-utils"
+import { useTranslation } from "react-i18next"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
@@ -31,6 +32,9 @@ function isSendActivity(activity: ActivityItem, account: string): boolean {
 }
 
 export default function WalletActivityListItem(props: Props): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet.activities",
+  })
   const { onClick, activity, asAccount } = props
   const outcomeRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -62,7 +66,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     assetValue: string
   } = {
     iconClass: undefined,
-    label: "Contract interaction",
+    label: t("contractInteraction"),
     recipient: getRecipient(activity),
     assetLogoURL: undefined,
     assetSymbol: activity.asset.symbol,
@@ -73,7 +77,9 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     case "asset-transfer":
       renderDetails = {
         ...renderDetails,
-        label: isReceiveActivity(activity, asAccount) ? "Received" : "Send",
+        label: isReceiveActivity(activity, asAccount)
+          ? t("tokenReceived")
+          : t("tokenSent"),
         iconClass: isReceiveActivity(activity, asAccount)
           ? "receive_icon"
           : "send_icon",
@@ -84,7 +90,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
       break
     case "asset-approval":
       renderDetails = {
-        label: "Token approval",
+        label: t("tokenApproved"),
         iconClass: "approve_icon",
         recipient: {
           address: activity.annotation.spender.address,
@@ -94,14 +100,14 @@ export default function WalletActivityListItem(props: Props): ReactElement {
         assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.annotation.assetAmount.asset.symbol,
         assetValue: isMaxUint256(activity.annotation.assetAmount.amount)
-          ? "Infinite"
+          ? t("infiniteApproval")
           : activity.annotation.assetAmount.localizedDecimalAmount,
       }
       break
     case "asset-swap":
       renderDetails = {
         iconClass: "swap_icon",
-        label: "Swap",
+        label: t("tokenSwapped"),
         recipient: getRecipient(activity),
         assetLogoURL: activity.annotation.transactionLogoURL,
         assetSymbol: activity.asset.symbol,
@@ -113,7 +119,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     default:
       renderDetails = {
         iconClass: "contract_interaction_icon",
-        label: "Contract Interaction",
+        label: t("contractInteraction"),
         recipient: getRecipient(activity),
         // TODO fall back to the asset URL we have in metadata
         assetLogoURL: activity.annotation?.transactionLogoURL,
@@ -134,19 +140,19 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             {"status" in activity &&
             activity.blockHash !== null &&
             activity.status !== 1 ? (
-              <div className="status failed">Failed</div>
+              <div className="status failed">{t("transactionFailed")}</div>
             ) : (
               <></>
             )}
             {"status" in activity &&
             activity.blockHash === null &&
             activity.status === 0 ? (
-              <div className="status dropped">Dropped</div>
+              <div className="status dropped">{t("transactionDropped")}</div>
             ) : (
               <></>
             )}
             {!("status" in activity) && activity.blockHash === null ? (
-              <div className="status pending">Pending...</div>
+              <div className="status pending">{t("transactionPending")}</div>
             ) : (
               <></>
             )}
@@ -180,17 +186,17 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           <div ref={outcomeRef} className="right">
             {isSendActivity(activity, asAccount) ? (
               <div className="outcome" title={renderDetails.recipient.address}>
-                To:
+                {t("transactionTo")}
                 {` ${
                   renderDetails.recipient.name ??
                   (renderDetails.recipient.address === undefined
-                    ? "(Contract creation)"
+                    ? t("contractCreation")
                     : truncateAddress(renderDetails.recipient.address))
                 }`}
               </div>
             ) : (
               <div className="outcome" title={activity.from}>
-                From:
+                {t("transactionFrom")}
                 {` ${activity.fromTruncated}`}
               </div>
             )}

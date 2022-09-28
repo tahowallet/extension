@@ -1,29 +1,27 @@
 import React, { ReactElement } from "react"
 import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
+import { useTranslation } from "react-i18next"
 import SharedTooltip from "../Shared/SharedTooltip"
 
 export default function SwapRewardsCard(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "swap.rewards" })
   return (
     <div className="container">
       <div className="image" />
       <div>
-        <h5 className="header">Swap rewards for community</h5>
+        <h5 className="header">{t("header")}</h5>
         <p className="text">
-          This week, 240,000 DOGGO tokens will be equally shared as Swap
-          Rewards.
+          {t("body")}
           <span className="tooltip_inline_wrap">
             <SharedTooltip width={150} verticalPosition="top">
-              <p className="tooltip">
-                {`Tally rewards it's users that use swap every week. A council decides
-          weekly prizes and who is eligible.`}
-              </p>
+              <p className="tooltip">{t("tooltip")}</p>
               <a
                 href={`${WEBSITE_ORIGIN}/rewards`}
                 target="_blank"
                 rel="noreferrer"
                 className="details"
               >
-                Details
+                {t("detailButton")}
                 <div className="details_icon" />
               </a>
             </SharedTooltip>
