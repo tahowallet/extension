@@ -189,8 +189,12 @@ export default function Settings(): ReactElement {
           </SharedButton>
         </div>
         <div className="version">
-          Version: {process.env.VERSION ?? `<unknown>`}_
-          {process.env.COMMIT_SHA?.slice(0, 7) ?? `<unknown>`}
+          {t("settings.versionLabel", {
+            version:
+              process.env.VERSION ?? t("settings.unknownVersionOrCommit"),
+          })}
+          {process.env.COMMIT_SHA?.slice(0, 7) ??
+            t("settings.unknownVersionOrCommit")}
         </div>
       </section>
       <style jsx>

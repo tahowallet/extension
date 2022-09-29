@@ -7,6 +7,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { useHistory } from "react-router-dom"
 import { FungibleAsset } from "@tallyho/tally-background/assets"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
 import SwapQuoteAssetCard from "./SwapQuoteAssetCard"
@@ -28,6 +29,7 @@ export default function SwapQuote({
   finalQuote,
   swapTransactionSettings,
 }: Props): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "swap" })
   const dispatch = useBackgroundDispatch()
 
   const { sellAmount, buyAmount, sources } = {
@@ -66,16 +68,16 @@ export default function SwapQuote({
 
   return (
     <section className="center_horizontal standard_width">
-      <SharedActivityHeader label="Swap Assets" activity="swap" />
+      <SharedActivityHeader label={t("title")} activity="swap" />
       <div className="quote_cards">
         <SwapQuoteAssetCard
-          label="You pay"
+          label={t("sellAsset")}
           asset={sellAsset}
           amount={sellAmount}
         />
         <span className="icon_switch" />
         <SwapQuoteAssetCard
-          label="You receive"
+          label={t("buyAsset")}
           asset={buyAsset}
           amount={buyAmount}
         />
@@ -90,7 +92,7 @@ export default function SwapQuote({
         />
       </div>
       <div className="exchange_section_wrap">
-        <span className="top_label label">Exchange route</span>
+        <span className="top_label label">{t("exchangeRoute")}</span>
 
         {sources.map((source) => (
           <div className="exchange_content standard_width" key={source.name}>
@@ -106,7 +108,7 @@ export default function SwapQuote({
       </div>
       <div className="confirm_button center_horizontal">
         <SharedButton type="primary" size="large" onClick={handleConfirmClick}>
-          Continue Swap
+          {t("continueSwap")}
         </SharedButton>
       </div>
       <style jsx>
