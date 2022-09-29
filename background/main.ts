@@ -743,6 +743,10 @@ export default class Main extends BaseService<never> {
         )
       )
     })
+
+    uiSliceEmitter.on("userActivityEncountered", (addressOnNetwork) => {
+      this.chainService.markNetworkActivity(addressOnNetwork.network.chainID)
+    })
   }
 
   async connectNameService(): Promise<void> {
@@ -1040,6 +1044,9 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
+        this.chainService.pollBlockPricesForNetwork(
+          payload.account.network.chainID
+        )
         this.store.dispatch(signDataRequest(payload))
 
         const clear = () => {
@@ -1106,6 +1113,13 @@ export default class Main extends BaseService<never> {
       "initializeAllowedPages",
       async (allowedPages: PermissionMap) => {
         this.store.dispatch(initializePermissions(allowedPages))
+      }
+    )
+
+    this.providerBridgeService.emitter.on(
+      "permissionQueriedForChain",
+      async (chainID: string) => {
+        this.chainService.markNetworkActivity(chainID)
       }
     )
 

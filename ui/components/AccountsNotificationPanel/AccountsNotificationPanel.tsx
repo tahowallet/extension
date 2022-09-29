@@ -1,7 +1,5 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
-import AccountsNotificationPanelNotifications from "./AccountsNotificationPanelNotifications"
 import AccountsNotificationPanelAccounts from "./AccountsNotificationPanelAccounts"
 
 type Props = {
@@ -11,26 +9,22 @@ type Props = {
 export default function TopMenuNotifications({
   onCurrentAddressChange,
 }: Props): ReactElement {
-  const [panelNumber, setPanelNumber] = useState(0)
   const { t } = useTranslation()
 
   return (
     <div>
       <div className="panel_switcher_wrap">
-        <SharedPanelSwitcher
-          setPanelNumber={setPanelNumber}
-          panelNumber={panelNumber}
-          panelNames={[t("accounts.notificationPanel.accountPanelName")]}
-        />
+        <h3>{t("accounts.notificationPanel.accountPanelName")}</h3>
       </div>
-      {panelNumber === 1 ? (
-        <AccountsNotificationPanelNotifications />
-      ) : (
-        <AccountsNotificationPanelAccounts
-          onCurrentAddressChange={onCurrentAddressChange}
-        />
-      )}
+      <AccountsNotificationPanelAccounts
+        onCurrentAddressChange={onCurrentAddressChange}
+      />
       <style jsx>{`
+        h3 {
+          padding-left: 24px;
+          padding-bottom: 16px;
+          margin: 0;
+        }
         .panel_switcher_wrap {
           width: 100%;
           background-color: var(--green-95);
@@ -39,6 +33,7 @@ export default function TopMenuNotifications({
           padding-top: 25px;
           margin-top: -25px;
           z-index: 1;
+          border-bottom: 1px solid var(--green-120);
         }
       `}</style>
     </div>

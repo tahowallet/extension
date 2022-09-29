@@ -13,6 +13,7 @@ import { SignDataMessageType } from "@tallyho/tally-background/utils/signing"
 import { useHistory } from "react-router-dom"
 import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
+import { useTranslation } from "react-i18next"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -28,6 +29,7 @@ const TITLE: Record<SignDataMessageType, string> = {
 }
 
 export default function PersonalSignData(): ReactElement {
+  const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const signingDataRequest = useBackgroundSelector(selectSigningData)
@@ -95,7 +97,7 @@ export default function PersonalSignData(): ReactElement {
   return (
     <SignTransactionContainer
       signerAccountTotal={signerAccountTotal}
-      confirmButtonLabel="Sign"
+      confirmButtonLabel={t("signTransaction.confirmButtonLabel")}
       canConfirm={canConfirm}
       handleConfirm={handleConfirm}
       handleReject={handleReject}

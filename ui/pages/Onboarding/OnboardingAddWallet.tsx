@@ -1,21 +1,23 @@
 import React, { ReactElement } from "react"
 import { useHistory } from "react-router-dom"
 import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
+import { i18n } from "../../_locales/i18n"
 
 const accountCreateButtonInfos = [
   {
-    title: "Add existing accounts",
+    title: i18n.t("onboarding.addWallet.addExistingAccount"),
     items: [
       {
-        label: "Import recovery phrase",
+        label: i18n.t("onboarding.addWallet.importWallet"),
         icon: "./images/add_wallet/import.svg",
         url: "/onboarding/import-metamask",
         isAvailable: true,
       },
       {
-        label: "Connect to Ledger",
+        label: i18n.t("onboarding.addWallet.addLedger"),
         icon: "./images/add_wallet/ledger.svg",
         onClick: () => {
           window.open("/tab.html#/ledger", "_blank")?.focus()
@@ -25,7 +27,7 @@ const accountCreateButtonInfos = [
         isAvailable: isLedgerSupported,
       },
       {
-        label: "Read-only address",
+        label: i18n.t("onboarding.addWallet.addReadOnly"),
         icon: "./images/add_wallet/preview.svg",
         url: "/onboarding/view-only-wallet",
         isAvailable: true,
@@ -33,10 +35,10 @@ const accountCreateButtonInfos = [
     ],
   },
   {
-    title: "Add new recovery phrase",
+    title: i18n.t("onboarding.addWallet.addNewAccount"),
     items: [
       {
-        label: "Create new wallet",
+        label: i18n.t("onboarding.addWallet.createNewWallet"),
         icon: "./images/add_wallet/create_tally.svg",
         url: "/onboarding/onboarding-interstitial-create-phrase",
         isAvailable: true,
@@ -122,6 +124,7 @@ export default function OnboardingStartTheHunt({
 }: {
   embedded: boolean
 }): ReactElement {
+  const { t } = useTranslation()
   const history = useHistory()
 
   return (
@@ -129,7 +132,7 @@ export default function OnboardingStartTheHunt({
       <div className="top standard_width">
         {!embedded && (
           <>
-            <h1>Add accounts</h1>
+            <h1>{t("onboarding.addWallet.addAccounts")}</h1>
             <button
               type="button"
               aria-label="close"
