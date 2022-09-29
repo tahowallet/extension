@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import LedgerContinueButton from "../../components/Ledger/LedgerContinueButton"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
 
@@ -11,17 +12,22 @@ export default function LedgerPrepare({
   initialScreen: boolean
   deviceCount: number
 }): ReactElement {
-  const buttonLabel = initialScreen ? "Continue" : "Try Again"
-  const subHeadingVerb = initialScreen ? "start" : "retry"
+  const { t } = useTranslation("translation", {
+    keyPrefix: "ledger.onboarding.prepare",
+  })
+  const buttonLabel = initialScreen ? t("continueButton") : t("tryAgainButton")
+  const subHeadingWord = initialScreen
+    ? t("subheadingWord1")
+    : t("subheadingWord2")
   const warningText =
-    deviceCount === 0
-      ? "No Ledger device is connected"
-      : "Multiple Ledgers are connected"
+    deviceCount === 0 ? t("noLedgerConnected") : t("multipleLedgersConnected")
   return (
     <LedgerPanelContainer
       indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
-      heading={initialScreen ? "Before we get started" : "Check your Ledger"}
-      subHeading={`Make sure you take these 3 steps before we ${subHeadingVerb}`}
+      heading={initialScreen ? t("initialScreenHeader") : t("header")}
+      subHeading={t("subheading", {
+        subheadingWord: subHeadingWord,
+      })}
     >
       {!initialScreen && deviceCount !== 1 ? (
         <div className="steps">
@@ -30,18 +36,16 @@ export default function LedgerPrepare({
             {warningText}
           </div>
           <div className="box">
-            <p className="highlight_text">
-              Please follow the steps below and click on Try Again!
-            </p>
+            <p className="highlight_text">{t("stepsExplainer")}</p>
           </div>
         </div>
       ) : (
         <></>
       )}
       <ol className="steps">
-        <li>Plug in a single Ledger</li>
-        <li>Enter pin to unlock</li>
-        <li>Open Ethereum App</li>
+        <li>{t("step1")}</li>
+        <li>{t("step2")}</li>
+        <li>{t("step3")}</li>
       </ol>
       <LedgerContinueButton onClick={onContinue}>
         {buttonLabel}

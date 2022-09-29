@@ -357,11 +357,16 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       (network) => toHexChainID(network.chainID) === toHexChainID(chainID)
     )
     if (activeNetwork) {
+      this.chainService.markNetworkActivity(activeNetwork.chainID)
       return activeNetwork
     }
 
     try {
-      return await this.chainService.activateNetworkOrThrow(chainID)
+      const activatedNetwork = await this.chainService.activateNetworkOrThrow(
+        chainID
+      )
+      this.chainService.markNetworkActivity(chainID)
+      return activatedNetwork
     } catch (e) {
       logger.warn(e)
       return undefined

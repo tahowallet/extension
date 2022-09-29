@@ -546,7 +546,7 @@ export default function Swap(): ReactElement {
                 iconColor="var(--link)"
                 customStyles="margin-bottom: 16px"
               >
-                Swap rewards coming soon
+                {t("swap.swapRewardsTeaser")}
               </SharedBanner>
             )
           )}
@@ -568,7 +568,7 @@ export default function Swap(): ReactElement {
               />
             </div>
             <button className="icon_change" type="button" onClick={flipSwap}>
-              Switch Assets
+              {t("swap.switchAssets")}
             </button>
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
@@ -598,7 +598,7 @@ export default function Swap(): ReactElement {
                 needsApproval ? (
                   isApprovalInProgress ? (
                     <SharedButton type="primary" size="large" isDisabled>
-                      Waiting for approval transaction...
+                      {t("swap.waitingForApproval")}
                     </SharedButton>
                   ) : (
                     <SharedButton
@@ -613,7 +613,7 @@ export default function Swap(): ReactElement {
                       onClick={approveAsset}
                       showLoadingOnClick={!confirmationMenu}
                     >
-                      Approve asset
+                      {t("swap.approveAsset")}
                     </SharedButton>
                   )
                 ) : (
