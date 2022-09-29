@@ -22,6 +22,9 @@
       "ledger": "Full access via Ledger"
     }
   },
+  "assets": {
+    "viewAsset": "View asset on {{siteTitle}}"
+  },
   "assetInput": {
     "search": "Search by name or address",
     "selectToken": "Select token",
@@ -38,6 +41,11 @@
     "createTransactionPermission": "Create but not sign transactions for you",
     "rejectConnection": "Reject",
     "acceptConnection": "Connect"
+  },
+  "genericPages": {
+    "pageDoesNotExist": "This page does not exist. That's all we know.",
+    "errorPageTitle": "Unexpected Error",
+    "returnHome": "Return Home"
   },
   "keyring": {
     "setPassword": {
@@ -199,6 +207,33 @@
       "save": "Save",
       "verify": "Verify"
     },
+    "seedVerification": {
+      "seedIsInWrongOrder": "Wrong Order",
+      "seedMismatchExplainer": "We are sorry, the recovery phrase you entered did not match.You can try to re-order them, but make sure you have them written down.",
+      "createNewWallet": "If you prefer you can <1><0>create a new wallet.<0></1>",
+      "retryVerification": "Try again",
+      "verifySeedPrompt": "Verify recovery phrase",
+      "successMessage": "Congratulations!",
+      "successExplainer": "Secret recovery phrase is correct and you can now start using your new wallet.",
+      "successButton": "Take me to my wallet"
+    },
+    "addWallet": {
+      "addExistingAccount": "Add existing accounts",
+      "importWallet": "Import recovery phrase",
+      "addLedger": "Connect to Ledger",
+      "addReadOnly": "Read-only address",
+      "addNewAccount": "Add new recovery phrase",
+      "createNewWallet": "Create new wallet",
+      "addAccounts": "Add accounts",
+      "importExistingWallet": {
+        "pasteRecoveryPhrase": "Paste recovery phrase",
+        "phraseLengthError": "Must be a 12 or 24 word recovery phrase",
+        "invalidPhraseError": "Invalid recovery phrase",
+        "importAccount": "Import account",
+        "enterPhrasePrompt": "Copy paste or write down a 12 or 24 word secret recovery phrase.",
+        "helpFindPhrase": "How do I find the recovery phrase?"
+      }
+    },
     "derivationPath": "Derivation path",
     "addDerivationPath": "Add derivation path",
     "pathLabel": "Label",
@@ -246,6 +281,8 @@
     "joinTitle": "Join our community",
     "joinDesc": "Join our Discord to give us feedback!",
     "joinBtn": "Join and give feedback",
+    "versionLabel": "Version {{version}}",
+    "unknownVersionOrCommit": "<unknown>",
     "exportLogs": {
       "title": "Bug report",
       "discordTitle": "1. Join #bug-reports on Discord",
@@ -294,6 +331,8 @@
   "shared": {
     "cancelBtn": "Cancel",
     "gwei": "Gwei",
+    "send": "Send",
+    "swap": "Swap",
     "showPasswordHint": "Show Password",
     "hidePasswordHint": "Hide Password",
     "close": "Close",
@@ -335,6 +374,7 @@
     "spendAmount": "Spend Amount",
     "help": "I need help",
     "refresh": "Refresh",
+    "confirmButtonLabel": "Sign",
     "spendApproval": {
       "title": "Approve asset spend",
       "approveSpender": "Approve <spenderAddress></spenderAddress>",
@@ -358,6 +398,11 @@
       "title": "Contract interaction",
       "interactingWithLabel": "Interacting with",
       "newlyCreatedContract": "Newly created contract"
+    },
+    "signTypedData": {
+      "authorizeDeposit": "Authorize Deposit",
+      "signMessage": "Sign {{messageType}}",
+      "confirmButtonLabel": "Confirm"
     }
   },
   "swap": {
@@ -366,6 +411,10 @@
     "to": "Swap to:",
     "sellAsset": "You pay",
     "buyAsset": "You receive",
+    "approveAsset": "Approve Asset",
+    "waitingForApproval": "Waiting for approval transaction...",
+    "switchAssets": "Switch Assets",
+    "swapRewardsTeaser": "Swap rewards coming soon",
     "continueSwap": "Continue Swap",
     "exchangeRoute": "Exchange route",
     "rewards": {
@@ -442,7 +491,13 @@
     "sendTo": "Send To:",
     "sendButton": "Continue",
     "receiveAddress": "Receive address",
-    "sendToContractWarning": "This is a contract address, sending assets could result in loss of funds."
+    "sendToContractWarning": "This is a contract address, sending assets could result in loss of funds.",
+    "pages": {
+      "assets": "Assets",
+      "NFTs": "NFTs",
+      "activity": "Activity"
+    },
+    "NFTPricingComingSoon": "Coming soon: NFT price + sending"
   },
   "dAppConnect": {
     "switchWallet":{
