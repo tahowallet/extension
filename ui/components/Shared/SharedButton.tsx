@@ -16,7 +16,8 @@ interface Props {
     | "tertiaryWhite"
     | "tertiaryGray"
     | "tertiaryError"
-    | "tertiaryInvertedGold"
+    | "tertiaryGreenHighlight"
+    | "tertiaryErrorHighlight"
     | "deemphasizedWhite"
     | "warning"
     | "unstyled"
@@ -93,7 +94,8 @@ export default function SharedButton(
         { "tertiary white": type === "tertiaryWhite" },
         { "tertiary gray": type === "tertiaryGray" },
         { "tertiary error": type === "tertiaryError" },
-        { "tertiary inverted": type === "tertiaryInvertedGold" },
+        { "tertiary greenHighlight": type === "tertiaryGreenHighlight" },
+        { "tertiary errorHighlight": type === "tertiaryErrorHighlight" },
         { deemphasized_white: type === "deemphasizedWhite" },
         { warning: type === "warning" },
         { twitter: type === "twitter" }
@@ -296,17 +298,29 @@ export default function SharedButton(
           .error:hover .icon_button {
             background-color: var(--error-80);
           }
-          .inverted {
+          .greenHighlight {
             color: var(--green-40);
           }
-          .inverted .icon_button {
+          .greenHighlight .icon_button {
             background-color: var(--green-40);
           }
-          .inverted:hover {
-            color: var(--trophy-gold);
+          .greenHighlight:hover {
+            color: var(--success);
           }
-          .inverted:hover .icon_button {
-            background-color: var(--trophy-gold);
+          .greenHighlight:hover .icon_button {
+            background-color: var(--success);
+          }
+          .errorHighlight {
+            color: var(--green-40);
+          }
+          .errorHighlight .icon_button {
+            background-color: var(--green-40);
+          }
+          .errorHighlight:hover {
+            color: var(--error);
+          }
+          .errorHighlight:hover .icon_button {
+            background-color: var(--error);
           }
           .tertiary.disabled {
             color: var(--green-60);
