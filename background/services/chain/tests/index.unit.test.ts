@@ -1,8 +1,10 @@
 import sinon from "sinon"
 import ChainService from ".."
-import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"
+import { ETHEREUM, MINUTE, OPTIMISM, POLYGON } from "../../../constants"
 import { EVMNetwork } from "../../../networks"
-import { createChainService } from "../../../tests/factories"
+import * as gas from "../../../lib/gas"
+import { createBlockPrices, createChainService } from "../../../tests/factories"
+import { UNIXTime } from "../../../types"
 import {
   EnrichedEIP1559TransactionSignatureRequest,
   EnrichedLegacyTransactionSignatureRequest,
@@ -11,13 +13,14 @@ import {
 type ChainServiceExternalized = Omit<ChainService, ""> & {
   populatePartialEIP1559TransactionRequest: () => void
   populatePartialLegacyEVMTransactionRequest: () => void
+  lastUserActivityOnNetwork: {
+    [chainID: string]: UNIXTime
+  }
 }
 
 describe("Chain Service", () => {
   const sandbox = sinon.createSandbox()
-
   let chainService: ChainService
-
   beforeEach(async () => {
     sandbox.restore()
     chainService = await createChainService()
@@ -81,6 +84,43 @@ describe("Chain Service", () => {
       )
 
       expect(stub.callCount).toBe(1)
+    })
+  })
+
+  describe("markNetworkActivity", () => {
+    beforeEach(async () => {
+      sandbox.stub(chainService, "supportedNetworks").value([ETHEREUM])
+
+      await chainService.startService()
+    })
+
+    it("should correctly update lastUserActivityOnNetwork", () => {
+      sandbox.useFakeTimers({ now: Date.now() })
+
+      const lastUserActivity = (
+        chainService as unknown as ChainServiceExternalized
+      ).lastUserActivityOnNetwork[ETHEREUM.chainID]
+
+      sandbox.clock.tick(1 * MINUTE)
+      chainService.markNetworkActivity(ETHEREUM.chainID)
+
+      expect(lastUserActivity).toBeLessThan(
+        (chainService as unknown as ChainServiceExternalized)
+          .lastUserActivityOnNetwork[ETHEREUM.chainID]
+      )
+    })
+
+    it("should get block prices if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
+      sandbox.useFakeTimers({ now: Date.now() })
+
+      const getBlockPricesStub = sandbox
+        .stub(gas, "default")
+        .callsFake(async () => createBlockPrices())
+
+      // Fake 10 minutes into the future
+      sandbox.clock.tick(10 * MINUTE)
+      chainService.markNetworkActivity(ETHEREUM.chainID)
+      expect(getBlockPricesStub.called).toEqual(true)
     })
   })
 
