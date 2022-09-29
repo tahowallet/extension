@@ -27,7 +27,7 @@ export default function SharedCurrentAccountInformation({
       {showKeyring && (
         <div className="keyring_icon_wrap">
           <SharedIcon
-            icon={`icons/s/${icon}.svg`}
+            icon={`icons/s/${icon}-bold.svg`}
             width={18}
             color={`var(--${areKeyringsUnlocked ? "success" : "error"})`}
             ariaLabel={icon}
