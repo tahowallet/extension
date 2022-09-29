@@ -29,24 +29,29 @@ import { i18n } from "../../_locales/i18n"
 type WalletTypeInfo = {
   title: string
   icon: string
+  category: string
 }
 
 const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   [AccountType.ReadOnly]: {
     title: i18n.t("accounts.notificationPanel.readOnly"),
-    icon: "./images/eye_account@2x.png",
+    icon: "./images/eye@2x.png",
+    category: i18n.t("accounts.notificationPanel.category.readOnly"),
   },
   [AccountType.Imported]: {
     title: i18n.t("accounts.notificationPanel.import"),
     icon: "./images/imported@2x.png",
+    category: i18n.t("accounts.notificationPanel.category.others"),
   },
   [AccountType.Internal]: {
     title: i18n.t("accounts.notificationPanel.internal"),
-    icon: "./images/tally_avatar.svg",
+    icon: "./images/stars_grey.svg",
+    category: i18n.t("accounts.notificationPanel.category.others"),
   },
   [AccountType.Ledger]: {
     title: i18n.t("accounts.notificationPanel.ledger"),
-    icon: "./images/ledger_icon@2x.png",
+    icon: "./images/ledger_icon.svg",
+    category: i18n.t("accounts.notificationPanel.category.ledger"),
   },
 }
 
@@ -68,7 +73,9 @@ function WalletTypeHeader({
     <>
       <header className="wallet_title">
         <h2 className="left">
-          <div className="icon" />
+          <div className="icon_wrap">
+            <div className="icon" />
+          </div>
           {title} {accountType !== AccountType.ReadOnly ? walletNumber : null}
         </h2>
         {onClickAddAddress ? (
@@ -97,23 +104,27 @@ function WalletTypeHeader({
           display: flex;
           align-items: center;
           justify-content: space-between;
+          padding-top: 16px;
         }
         .wallet_title > h2 {
-          color: #fff;
+          color: var(--green-40);
           font-size: 18px;
           font-weight: 600;
           line-height: 24px;
-          padding: 0px 12px 0px 16px;
+          padding: 0px 12px 0px 24px;
           margin: 8px 0px;
         }
+        .icon_wrap {
+          background-color: var(--green-60);
+          margin: 0 7px 0 0;
+          border-radius: 4px;
+        }
         .icon {
-          background: url("${icon}");
-          background-size: cover;
-          background-color: #faf9f4;
+          mask-image: url("${icon}");
+          mask-size: cover;
+          background-color: var(--green-20);
           width: 24px;
           height: 24px;
-          border-radius: 4px;
-          margin: 0 7px 0 0;
         }
         .icon_wallet {
           background: url("./images/wallet_kind_icon@2x.png") center no-repeat;
@@ -212,89 +223,103 @@ export default function AccountsNotificationPanelAccounts({
             },
             {} as { [keyringId: string]: AccountTotal[] }
           )
-
-          return Object.values(accountTotalsByType).map(
-            (accountTotalsByKeyringId, idx) => {
-              return (
-                <section key={accountType}>
-                  <WalletTypeHeader
-                    accountType={accountType}
-                    walletNumber={idx + 1}
-                    onClickAddAddress={
-                      accountType === "imported" || accountType === "internal"
-                        ? () => {
-                            if (accountTotalsByKeyringId[0].keyringId) {
-                              dispatch(
-                                deriveAddress(
-                                  accountTotalsByKeyringId[0].keyringId
-                                )
-                              )
-                            }
-                          }
-                        : undefined
-                    }
-                  />
-                  <ul>
-                    {accountTotalsByKeyringId.map((accountTotal) => {
-                      const normalizedAddress = normalizeEVMAddress(
-                        accountTotal.address
-                      )
-
-                      const isSelected = sameEVMAddress(
-                        normalizedAddress,
-                        selectedAccountAddress
-                      )
-
-                      return (
-                        <li
-                          key={normalizedAddress}
-                          // We use these event handlers in leiu of :hover so that we can prevent child hovering
-                          // from affecting the hover state of this li.
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              "var(--hunter-green)"
-                          }}
-                          onFocus={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              "var(--hunter-green)"
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = ""
-                          }}
-                          onBlur={(e) => {
-                            e.currentTarget.style.backgroundColor = ""
-                          }}
-                        >
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                updateCurrentAccount(normalizedAddress)
+          return (
+            <>
+              {!(
+                accountType === AccountType.Imported &&
+                (accountTotals[AccountType.Internal]?.length ?? 0)
+              ) && (
+                <div className="category_wrap">
+                  <p className="simple_text category_title">
+                    {walletTypeDetails[accountType].category}
+                  </p>
+                </div>
+              )}
+              {Object.values(accountTotalsByType).map(
+                (accountTotalsByKeyringId, idx) => {
+                  return (
+                    <section key={accountType}>
+                      <WalletTypeHeader
+                        accountType={accountType}
+                        walletNumber={idx + 1}
+                        onClickAddAddress={
+                          accountType === "imported" ||
+                          accountType === "internal"
+                            ? () => {
+                                if (accountTotalsByKeyringId[0].keyringId) {
+                                  dispatch(
+                                    deriveAddress(
+                                      accountTotalsByKeyringId[0].keyringId
+                                    )
+                                  )
+                                }
                               }
-                            }}
-                            onClick={() => {
-                              dispatch(resetClaimFlow())
-                              updateCurrentAccount(normalizedAddress)
-                            }}
-                          >
-                            <SharedAccountItemSummary
+                            : undefined
+                        }
+                      />
+                      <ul>
+                        {accountTotalsByKeyringId.map((accountTotal) => {
+                          const normalizedAddress = normalizeEVMAddress(
+                            accountTotal.address
+                          )
+
+                          const isSelected = sameEVMAddress(
+                            normalizedAddress,
+                            selectedAccountAddress
+                          )
+
+                          return (
+                            <li
                               key={normalizedAddress}
-                              accountTotal={accountTotal}
-                              isSelected={isSelected}
+                              // We use these event handlers in leiu of :hover so that we can prevent child hovering
+                              // from affecting the hover state of this li.
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "var(--hunter-green)"
+                              }}
+                              onFocus={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "var(--hunter-green)"
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = ""
+                              }}
+                              onBlur={(e) => {
+                                e.currentTarget.style.backgroundColor = ""
+                              }}
                             >
-                              <AccountItemOptionsMenu
-                                accountTotal={accountTotal}
-                              />
-                            </SharedAccountItemSummary>
-                          </div>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </section>
-              )
-            }
+                              <div
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    updateCurrentAccount(normalizedAddress)
+                                  }
+                                }}
+                                onClick={() => {
+                                  dispatch(resetClaimFlow())
+                                  updateCurrentAccount(normalizedAddress)
+                                }}
+                              >
+                                <SharedAccountItemSummary
+                                  key={normalizedAddress}
+                                  accountTotal={accountTotal}
+                                  isSelected={isSelected}
+                                >
+                                  <AccountItemOptionsMenu
+                                    accountTotal={accountTotal}
+                                  />
+                                </SharedAccountItemSummary>
+                              </div>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </section>
+                  )
+                }
+              )}
+            </>
           )
         })}
       <footer>
@@ -318,10 +343,14 @@ export default function AccountsNotificationPanelAccounts({
             align-content: center;
             margin-bottom: 8px;
           }
+          section:last-of-type {
+            margin-bottom: 16px;
+          }
           li {
             width: 100%;
             box-sizing: border-box;
             padding: 8px 0px 8px 24px;
+            cursor: pointer;
           }
           footer {
             width: 100%;
@@ -339,8 +368,13 @@ export default function AccountsNotificationPanelAccounts({
             height: 432px;
             overflow-y: scroll;
           }
-          section:first-of-type {
-            padding-top: 16px;
+          .category_wrap {
+            background-color: var(--hunter-green);
+            padding: 8px 10px 8px 24px;
+          }
+          .category_title {
+            margin: 0;
+            color: var(--green-60);
           }
         `}
       </style>

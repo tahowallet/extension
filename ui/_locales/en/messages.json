@@ -19,7 +19,12 @@
       "readOnly": "Read-only",
       "import": "Import",
       "internal": "Tally Ho",
-      "ledger": "Full access via Ledger"
+      "ledger": "Ledger",
+      "category": {
+        "readOnly": "Preview",
+        "ledger": "Hardware wallets",
+        "others": "Imported & generated"
+      }
     }
   },
   "assets": {
