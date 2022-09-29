@@ -21,9 +21,15 @@ export default function SharedCurrentAccountInformation({
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
   const icon = areKeyringsUnlocked ? "un-lock" : "lock"
   return (
-    <div className={classNames("account_info_wrap", { hover: showHoverStyle })}>
-      <span className="account_info_label">{name ?? shortenedAddress}</span>
-      <div className="avatar" />
+    <div className="account_info_wrap">
+      <span
+        className={classNames("account_info_label", {
+          hover_label: showHoverStyle,
+        })}
+      >
+        {name ?? shortenedAddress}
+      </span>
+      <div className={classNames("avatar", { hover_avatar: showHoverStyle })} />
       {showKeyring && (
         <div className="keyring_icon_wrap">
           <SharedIcon
@@ -50,9 +56,13 @@ export default function SharedCurrentAccountInformation({
             background: url("${avatarURL ?? "./images/portrait.png"}");
             background-color: var(--green-40);
             background-size: cover;
+            border: 2px solid var(--hunter-green);
           }
-          .hover:hover .account_info_label {
+          .hover_label:hover {
             color: var(--trophy-gold);
+          }
+          .avatar:hover {
+            border: 2px solid var(--trophy-gold);
           }
           .keyring_icon_wrap {
             background-color: var(--hunter-green);
