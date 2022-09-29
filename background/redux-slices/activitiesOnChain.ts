@@ -1,28 +1,152 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { AddressOnNetwork } from "../accounts"
+import { assetAmountToDesiredDecimals } from "../assets"
 import {
+  isMaxUint256,
   normalizeAddressOnNetwork,
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../lib/utils"
 import { Transaction } from "../services/chain/db"
 import { EnrichedEVMTransaction } from "../services/enrichment"
+import { HexString } from "../types"
 
 const ACTIVITIES_MAX_COUNT = 25
+const VALUE_DECIMALS = 2
+export const INFINITE_VALUE = "infinite"
 
 export type ActivityOnChain = {
+  status?: number
+  type?: string
   to?: string
+  recipient: { address: HexString | undefined; name?: string }
   from: string
   blockHeight: number | null
-  value: bigint
+  value: string
   nonce: number
   hash: string
+  blockHash: string | null
+  blockTimestamp?: number
+  assetSymbol: string
+  assetLogoUrl?: string
 }
 
 export type ActivitesOnChainState = {
   [address: string]: {
     [chainID: string]: ActivityOnChain[]
   }
+}
+
+function isEnrichedTransaction(
+  transaction: Transaction | EnrichedEVMTransaction
+): transaction is EnrichedEVMTransaction {
+  return "annotation" in transaction
+}
+
+function getRecipient(transaction: EnrichedEVMTransaction): {
+  address: HexString | undefined
+  name?: string
+} {
+  const { annotation } = transaction
+
+  switch (annotation?.type) {
+    case "asset-transfer":
+      return {
+        address: annotation.recipient?.address,
+        name: annotation.recipient?.annotation.nameRecord?.resolved
+          .nameOnNetwork.name,
+      }
+    case "contract-interaction":
+      return {
+        address: transaction.to,
+        name: annotation.contractInfo?.annotation.nameRecord?.resolved
+          .nameOnNetwork.name,
+      }
+    case "asset-approval":
+      return {
+        address: annotation.spender.address,
+        name: annotation.spender.annotation?.nameRecord?.resolved.nameOnNetwork
+          .name,
+      }
+    default:
+      return { address: transaction.to }
+  }
+}
+
+const getAssetSymbol = (transaction: EnrichedEVMTransaction) => {
+  const { annotation } = transaction
+
+  switch (annotation?.type) {
+    case "asset-transfer":
+    case "asset-approval":
+      return annotation.assetAmount.asset.symbol
+    default:
+      return transaction.asset.symbol
+  }
+}
+
+const getValue = (transaction: Transaction | EnrichedEVMTransaction) => {
+  const { asset, value } = transaction
+  const localizedValue = assetAmountToDesiredDecimals(
+    {
+      asset,
+      amount: value,
+    },
+    VALUE_DECIMALS
+  ).toLocaleString("default", {
+    maximumFractionDigits: VALUE_DECIMALS,
+  })
+
+  if (isEnrichedTransaction(transaction)) {
+    const { annotation } = transaction
+    switch (annotation?.type) {
+      case "asset-transfer":
+        return annotation.assetAmount.localizedDecimalAmount
+      case "asset-approval":
+        return isMaxUint256(annotation.assetAmount.amount)
+          ? INFINITE_VALUE
+          : annotation.assetAmount.localizedDecimalAmount
+      default:
+        return localizedValue
+    }
+  }
+
+  return localizedValue
+}
+
+const getActivity = (
+  transaction: Transaction | EnrichedEVMTransaction
+): ActivityOnChain => {
+  const { to, from, blockHeight, nonce, hash, blockHash, asset } = transaction
+
+  let activity: ActivityOnChain = {
+    status: "status" in transaction ? transaction.status : undefined,
+    to: to && normalizeEVMAddress(to),
+    from: normalizeEVMAddress(from),
+    recipient: { address: to },
+    blockHeight,
+    assetSymbol: asset.symbol,
+    nonce,
+    hash,
+    blockHash,
+    value: getValue(transaction),
+  }
+
+  if (isEnrichedTransaction(transaction)) {
+    const { annotation } = transaction
+
+    activity = {
+      ...activity,
+      type: annotation?.type,
+      value: getValue(transaction),
+      blockTimestamp: annotation?.blockTimestamp,
+      assetLogoUrl: annotation?.transactionLogoURL,
+      assetSymbol: getAssetSymbol(transaction),
+      recipient: getRecipient(transaction),
+    }
+  }
+
+  return activity
 }
 
 const sortActivities = (a: ActivityOnChain, b: ActivityOnChain): number => {
@@ -66,24 +190,19 @@ const cleanActivitiesArray = (activitiesArray: ActivityOnChain[]) => {
 
 const addActivityToState =
   (activities: ActivitesOnChainState) =>
-  (address: string, chainID: string, transaction: Transaction) => {
-    const { to, from, blockHeight, value, nonce, hash } = transaction
+  (
+    address: string,
+    chainID: string,
+    transaction: Transaction | EnrichedEVMTransaction
+  ) => {
+    const activity = getActivity(transaction)
     const normalizedAddress = normalizeEVMAddress(address)
 
     activities[normalizedAddress] ??= {} // eslint-disable-line no-param-reassign
     activities[normalizedAddress][chainID] ??= [] // eslint-disable-line no-param-reassign
 
-    const activity = {
-      to: to && normalizeEVMAddress(to),
-      from: normalizeEVMAddress(from),
-      blockHeight,
-      value,
-      nonce,
-      hash,
-    }
-
     const exisistingIndex = activities[normalizedAddress][chainID].findIndex(
-      (tx) => tx.hash === hash
+      (tx) => tx.hash === transaction.hash
     )
 
     if (exisistingIndex !== -1) {
@@ -168,11 +287,7 @@ const activitiesOnChainSlice = createSlice({
     ) => {
       const { chainID } = transaction.network
       forAccounts.forEach((address) => {
-        addActivityToState(immerState)(
-          address,
-          chainID,
-          transaction as Transaction
-        )
+        addActivityToState(immerState)(address, chainID, transaction)
         cleanActivitiesArray(immerState[normalizeEVMAddress(address)][chainID])
       })
     },

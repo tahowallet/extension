@@ -3,6 +3,7 @@ import { ActivityItem } from "../activities"
 import { selectCurrentAccount, selectCurrentNetwork } from "./uiSelectors"
 import { RootState } from ".."
 
+// old activities selector
 export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
   (state: RootState) => {
     const currentAccount = selectCurrentAccount(state)
@@ -30,4 +31,13 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
   }
 )
 
+// new selector
+export const selectCurrentAccountActivities = createSelector(
+  (state: RootState) => state.activitiesOnChain,
+  selectCurrentAccount,
+  selectCurrentNetwork,
+  (activities, account, network) => {
+    return activities[account.address][network.chainID]
+  }
+)
 export default selectCurrentAccountActivitiesWithTimestamps

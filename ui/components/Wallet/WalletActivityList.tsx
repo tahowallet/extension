@@ -5,8 +5,8 @@ import {
   selectCurrentNetwork,
   selectShowingActivityDetail,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 import { useTranslation } from "react-i18next"
+import { ActivityOnChain } from "@tallyho/tally-background/redux-slices/activitiesOnChain"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import WalletActivityDetails from "./WalletActivityDetails"
@@ -15,7 +15,7 @@ import { scanWebsite } from "../../utils/constants"
 import SharedButton from "../Shared/SharedButton"
 
 type Props = {
-  activities: ActivityItem[]
+  activities: ActivityOnChain[]
 }
 
 export default function WalletActivityList({
@@ -53,7 +53,7 @@ export default function WalletActivityList({
   }, [network.chainID, currentAccount])
 
   const handleOpen = useCallback(
-    (activityItem: ActivityItem) => {
+    (activityItem: ActivityOnChain) => {
       setInstantlyHideActivityDetails(false)
       dispatch(setShowingActivityDetail(activityItem.hash))
     },

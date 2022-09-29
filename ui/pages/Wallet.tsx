@@ -2,7 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { Redirect } from "react-router-dom"
 import {
   getAddressCount,
-  selectCurrentAccountActivitiesWithTimestamps,
+  selectCurrentAccountActivities,
   selectCurrentAccountBalances,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
@@ -45,7 +45,7 @@ export default function Wallet(): ReactElement {
   }
 
   const currentAccountActivities = useBackgroundSelector(
-    selectCurrentAccountActivitiesWithTimestamps
+    selectCurrentAccountActivities
   )
 
   const initializationLoadingTimeExpired = useBackgroundSelector(
