@@ -1,3 +1,4 @@
+import { SUPPORT_KEYRING_LOCKING } from "@tallyho/tally-background/features"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   selectCurrentAccount,
@@ -69,8 +70,9 @@ export default function TopMenuProfileButton(props: {
               avatarURL={avatarURL}
               showHoverStyle
               showKeyring={
-                accountType === AccountType.Imported ||
-                accountType === AccountType.Internal
+                SUPPORT_KEYRING_LOCKING &&
+                (accountType === AccountType.Imported ||
+                  accountType === AccountType.Internal)
               }
             />
           </>
