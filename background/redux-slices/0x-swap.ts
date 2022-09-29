@@ -27,6 +27,7 @@ import {
 } from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
+import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
 
 // This is how 0x represents native token addresses
 const ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS =
@@ -436,9 +437,27 @@ export const approveTransfer = createBackgroundAsyncThunk(
  */
 export const executeSwap = createBackgroundAsyncThunk(
   "0x-swap/executeSwap",
-  async (quote: ZrxQuote, { dispatch }) => {
+  async (
+    quote: ZrxQuote & { sellAsset: FungibleAsset; buyAsset: FungibleAsset },
+    { dispatch }
+  ) => {
     const provider = getProvider()
     const signer = provider.getSigner()
+
+    const sellAssetAmount = enrichAssetAmountWithDecimalValues(
+      {
+        asset: quote.sellAsset,
+        amount: BigInt(quote.sellAmount),
+      },
+      2
+    )
+    const buyAssetAmount = enrichAssetAmountWithDecimalValues(
+      {
+        asset: quote.buyAsset,
+        amount: BigInt(quote.buyAmount),
+      },
+      2
+    )
 
     // Clear the swap quote, then request signature + broadcast.
     dispatch(clearSwapQuote())
@@ -451,6 +470,13 @@ export const executeSwap = createBackgroundAsyncThunk(
       to: quote.to,
       value: BigNumber.from(quote.value),
       type: 1 as const,
+      annotation: {
+        type: "asset-swap",
+        fromAssetAmount: sellAssetAmount,
+        toAssetAmount: buyAssetAmount,
+        timestamp: Date.now(),
+        blockTimestamp: undefined,
+      },
     })
   }
 )
