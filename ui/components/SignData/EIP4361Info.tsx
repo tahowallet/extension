@@ -19,11 +19,11 @@ const EIP4361Info: React.FC<{
   signingData: EIP4361Data
   // FIXME Drop this once new signing flow is final.
   excludeHeader?: boolean
-}> = ({ signingData, excludeHeader }) => {
+}> = ({ signingData, excludeHeader = false }) => {
   const { t } = useTranslation("translation", { keyPrefix: "signing.EIP4361" })
   return (
     <>
-      {excludeHeader ?? false ? (
+      {excludeHeader ? (
         <></>
       ) : (
         <>

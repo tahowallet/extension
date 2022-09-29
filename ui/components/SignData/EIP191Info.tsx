@@ -8,11 +8,11 @@ const EIP191Info: React.FC<{
   internal: boolean
   // FIXME Drop this once new signing flow is final.
   excludeHeader?: boolean
-}> = ({ signingData, account, internal, excludeHeader }) => {
+}> = ({ signingData, account, internal, excludeHeader = false }) => {
   const { t } = useTranslation("translation", { keyPrefix: "signing" })
   return (
     <>
-      {excludeHeader ?? false ? (
+      {excludeHeader ? (
         <></>
       ) : (
         <>
