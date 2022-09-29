@@ -9,6 +9,7 @@ import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/clai
 
 import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
 import classNames from "classnames"
+import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -19,6 +20,7 @@ import NFTsWallet from "../components/NFTs/NFTsWallet"
 import SharedBanner from "../components/Shared/SharedBanner"
 
 export default function Wallet(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "wallet" })
   const [panelNumber, setPanelNumber] = useState(0)
 
   const dispatch = useBackgroundDispatch()
@@ -57,7 +59,7 @@ export default function Wallet(): ReactElement {
     return <Redirect to="/onboarding/info-intro" />
   }
 
-  const panelNames = ["Assets", "NFTs", "Activity"]
+  const panelNames = [t("pages.assets"), t("pages.NFTs"), t("pages.activity")]
 
   return (
     <>
@@ -97,7 +99,7 @@ export default function Wallet(): ReactElement {
                   id="nft_soon"
                   customStyles="margin: 8px 0;"
                 >
-                  Coming soon: NFT price + sending
+                  {t("NFTPricingComingSoon")}
                 </SharedBanner>
                 <NFTsWallet />
               </>

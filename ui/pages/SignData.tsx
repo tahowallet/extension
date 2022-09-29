@@ -11,6 +11,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/signing"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import React, { ReactElement, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
 import Signing from "../components/Signing"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
@@ -26,6 +27,9 @@ export enum SignDataType {
 }
 
 export default function SignData(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "signTransaction.signTypedData",
+  })
   const dispatch = useBackgroundDispatch()
   const typedDataRequest = useBackgroundSelector(selectTypedData)
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
@@ -90,15 +94,17 @@ export default function SignData(): ReactElement {
 
   const getTitle = () => {
     if (typedDataRequest?.typedData.primaryType === "PermitAndTransferFrom") {
-      return "Authorize Deposit"
+      return t("authorizeDeposit")
     }
-    return `Sign ${typedDataRequest?.typedData.primaryType ?? "Message"}`
+    return t("signMessage", {
+      messageType: typedDataRequest?.typedData.primaryType ?? "Message",
+    })
   }
 
   return (
     <SignTransactionContainer
       signerAccountTotal={signerAccountTotal}
-      confirmButtonLabel="Confirm"
+      confirmButtonLabel={t("confirmButtonLabel")}
       canConfirm={canConfirm}
       handleConfirm={handleConfirm}
       handleReject={handleReject}
