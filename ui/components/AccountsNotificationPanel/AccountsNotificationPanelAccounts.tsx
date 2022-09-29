@@ -223,6 +223,7 @@ export default function AccountsNotificationPanelAccounts({
       history.push("/keyring/unlock")
     } else {
       await dispatch(lockKeyrings())
+      onCurrentAddressChange("")
     }
   }
 
