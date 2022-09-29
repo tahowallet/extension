@@ -20,7 +20,7 @@ import {
 import { getPrices, getTokenPrices } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
-  memoizedMergeAssets,
+  mergeAssets,
   networkAssetsFromLists,
 } from "../../lib/token-lists"
 import PreferenceService from "../preferences"
@@ -83,12 +83,9 @@ export default class IndexingService extends BaseService<Events> {
    */
   private scheduledTokenRefresh = false
 
-  private cachedAssets: Record<EVMNetwork["chainID"], Promise<AnyAsset[]>> =
+  private cachedAssets: Record<EVMNetwork["chainID"], AnyAsset[]> =
     Object.fromEntries(
-      Object.keys(NETWORK_BY_CHAIN_ID).map((network) => [
-        network,
-        Promise.resolve([]),
-      ])
+      Object.keys(NETWORK_BY_CHAIN_ID).map((network) => [network, []])
     )
 
   /**
@@ -152,12 +149,12 @@ export default class IndexingService extends BaseService<Events> {
       // Push any assets we have cached in the db for all active networks
       activeNetworks.forEach(async (network) => {
         await this.cacheAssetsForNetwork(network)
-        this.emitter.emit("assets", await this.cachedAssets[network.chainID])
+        this.emitter.emit("assets", this.cachedAssets[network.chainID])
       })
-
-      // ... and kick off token list fetching
-      await this.fetchAndCacheTokenLists()
     })
+
+    // Kick off token list fetching in the background
+    this.fetchAndCacheTokenLists()
   }
 
   /**
@@ -213,7 +210,7 @@ export default class IndexingService extends BaseService<Events> {
    * @returns An array of assets, including base assets that are "built in" to
    *          the codebase. Fiat currencies are not included.
    */
-  async getCachedAssets(network: EVMNetwork): Promise<AnyAsset[]> {
+  getCachedAssets(network: EVMNetwork): AnyAsset[] {
     return this.cachedAssets[network.chainID]
   }
 
@@ -222,23 +219,16 @@ export default class IndexingService extends BaseService<Events> {
    * lists.
    */
   async cacheAssetsForNetwork(network: EVMNetwork): Promise<void> {
-    let resolve!: (value: AnyAsset[]) => void
-    this.cachedAssets[network.chainID] = new Promise((r) => {
-      resolve = r
-    })
-
     const customAssets = await this.db.getCustomAssetsByNetwork(network)
     const tokenListPrefs =
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
 
-    const result = memoizedMergeAssets<FungibleAsset>(
+    this.cachedAssets[network.chainID] = mergeAssets<FungibleAsset>(
       [network.baseAsset],
       customAssets,
       networkAssetsFromLists(network, tokenLists)
     )
-
-    resolve(result)
   }
 
   /**
@@ -252,7 +242,7 @@ export default class IndexingService extends BaseService<Events> {
     network: EVMNetwork,
     contractAddress: HexString
   ): Promise<SmartContractFungibleAsset> {
-    const knownAssets = await this.cachedAssets[network.chainID]
+    const knownAssets = this.cachedAssets[network.chainID]
     const found = knownAssets.find(
       (asset) =>
         "decimals" in asset &&
@@ -409,9 +399,7 @@ export default class IndexingService extends BaseService<Events> {
             ({ smartContract: { contractAddress } }) => contractAddress
           )
         )
-        const cachedAssets = await this.cachedAssets[
-          addressOnNetwork.network.chainID
-        ]
+        const cachedAssets = this.cachedAssets[addressOnNetwork.network.chainID]
 
         const otherActiveAssets = cachedAssets
           .filter(isSmartContractFungibleAsset)
@@ -550,7 +538,7 @@ export default class IndexingService extends BaseService<Events> {
     contractAddress: string
   ): Promise<void> {
     const { network } = addressOnNetwork
-    const knownAssets = await this.cachedAssets[network.chainID]
+    const knownAssets = this.cachedAssets[network.chainID]
     const found = knownAssets.find(
       (asset) =>
         "decimals" in asset &&
@@ -726,7 +714,7 @@ export default class IndexingService extends BaseService<Events> {
     // may be inactive.
     this.chainService.supportedNetworks.forEach(async (network) => {
       await this.cacheAssetsForNetwork(network)
-      this.emitter.emit("assets", await this.cachedAssets[network.chainID])
+      this.emitter.emit("assets", this.cachedAssets[network.chainID])
     })
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if
