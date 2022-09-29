@@ -1,9 +1,13 @@
 import React, { ReactElement } from "react"
+import { Trans, useTranslation } from "react-i18next"
 import { Link, useHistory } from "react-router-dom"
 import SharedButton from "../../../components/Shared/SharedButton"
 import { OnboardingBox, OnboardingMessageHeader } from "../styles"
 
 function VerifySeedError(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.seedVerification",
+  })
   const history = useHistory()
 
   return (
@@ -15,18 +19,16 @@ function VerifySeedError(): ReactElement {
             src="./images/message_error.png"
             alt="error"
           />
-          <span>Wrong order</span>
+          <span>{t("seedIsInWrongOrder")}</span>
         </div>
+        <p>{t("seedMismatchExplainer")}</p>
         <p>
-          We are sorry, the recovery phrase you entered did not match.You can
-          try to re-order them, but make sure you have them written down.
-        </p>
-        <p>
-          If you prefer you can{" "}
-          <Link to="/onboarding/onboarding-interstitial-create-phrase">
-            <span className="link">create a new wallet</span>
-          </Link>
-          .
+          <Trans i18nKey="onboarding.seedVerification.createNewWallet">
+            If you prefer you can
+            <Link to="/onboarding/onboarding-interstitial-create-phrase">
+              <span className="link"> </span>
+            </Link>
+          </Trans>
         </p>
       </div>
       <SharedButton
@@ -34,7 +36,7 @@ function VerifySeedError(): ReactElement {
         type="primary"
         onClick={() => history.push("/onboarding/save-seed")}
       >
-        Try again
+        {t("retryVerification")}
       </SharedButton>
       <style jsx>
         {`

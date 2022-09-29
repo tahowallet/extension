@@ -1,5 +1,6 @@
 import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../../components/Shared/SharedButton"
 import { OnboardingBox } from "../styles"
 
@@ -73,6 +74,7 @@ function SeedVerification({
   setStep: (s: "success" | "error") => void
   mnemonic: string[]
 }): ReactElement {
+  const { t } = useTranslation()
   const [selectedWords, setSelectedWords] = useState<Word[]>([])
   const [remainingWords, setRemainingWords] = useState<string[]>([])
 
@@ -185,7 +187,7 @@ function SeedVerification({
               size="medium"
               onClick={() => handleVerification()}
             >
-              Verify recovery phrase
+              {t("onboarding.seedVerification.verifySeedPrompt")}
             </SharedButton>
           </div>
         ) : (
