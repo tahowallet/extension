@@ -24,7 +24,12 @@
         "readOnly": "Preview",
         "ledger": "Hardware wallets",
         "others": "Imported & generated"
-      }
+      },
+      "signing": {
+        "lock": "Lock signing",
+        "unlock": "Unlock signing"
+      },
+      "snackbar": "Signing locked"
     }
   },
   "assets": {
