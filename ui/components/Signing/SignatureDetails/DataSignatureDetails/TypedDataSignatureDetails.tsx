@@ -8,6 +8,8 @@ import SharedIcon from "../../../Shared/SharedIcon"
 import DataSignatureDetails from "."
 
 function TypedDataFieldValue({ value }: { value: unknown }): ReactElement {
+  const { t } = useTranslation("translation")
+
   if (typeof value === "string" && isProbablyEVMAddress(value)) {
     return (
       <div className="value">
@@ -18,7 +20,9 @@ function TypedDataFieldValue({ value }: { value: unknown }): ReactElement {
           height={16}
           color="var(--green-40)"
           hoverColor="var(--trophy-gold)"
-          ariaLabel="View Address on Etherscan"
+          ariaLabel={t("viewAddressOnBlockExplorer", {
+            blockExplorer: "Etherscan",
+          })}
           onClick={() => {
             window
               .open(`https://etherscan.io/address/${value}`, "_blank")
@@ -31,7 +35,6 @@ function TypedDataFieldValue({ value }: { value: unknown }): ReactElement {
               display: flex;
               column-gap: 5px;
               align-items: center;
-
               color: var(--green-20);
             }
           `}
