@@ -19,7 +19,8 @@ export type ActivityOnChain = {
   status?: number
   type?: string
   to?: string
-  recipient: { address: HexString | undefined; name?: string }
+  recipient: { address?: HexString; name?: string }
+  sender: { address?: HexString; name?: string }
   from: string
   blockHeight: number | null
   value: string
@@ -44,7 +45,7 @@ function isEnrichedTransaction(
 }
 
 function getRecipient(transaction: EnrichedEVMTransaction): {
-  address: HexString | undefined
+  address?: HexString
   name?: string
 } {
   const { annotation } = transaction
@@ -70,6 +71,24 @@ function getRecipient(transaction: EnrichedEVMTransaction): {
       }
     default:
       return { address: transaction.to }
+  }
+}
+
+function getSender(transaction: EnrichedEVMTransaction): {
+  address?: HexString
+  name?: string
+} {
+  const { annotation } = transaction
+
+  switch (annotation?.type) {
+    case "asset-transfer":
+      return {
+        address: annotation.sender.address,
+        name: annotation.sender?.annotation.nameRecord?.resolved.nameOnNetwork
+          .name,
+      }
+    default:
+      return { address: transaction.from }
   }
 }
 
@@ -124,6 +143,7 @@ const getActivity = (
     to: to && normalizeEVMAddress(to),
     from: normalizeEVMAddress(from),
     recipient: { address: to },
+    sender: { address: from },
     blockHeight,
     assetSymbol: asset.symbol,
     nonce,
@@ -143,6 +163,7 @@ const getActivity = (
       assetLogoUrl: annotation?.transactionLogoURL,
       assetSymbol: getAssetSymbol(transaction),
       recipient: getRecipient(transaction),
+      sender: getSender(transaction),
     }
   }
 

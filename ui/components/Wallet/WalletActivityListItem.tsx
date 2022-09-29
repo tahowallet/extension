@@ -31,9 +31,8 @@ function isReceiveActivity(
 
 function isSendActivity(activity: ActivityOnChain, account: string): boolean {
   return activity.type === "asset-transfer"
-    ? !isReceiveActivity(activity, account)
-    : // ? sameEVMAddress(activity.annotation?.sender?.address, account)
-      true
+    ? sameEVMAddress(activity.sender?.address, account)
+    : true
 }
 
 export default function WalletActivityListItem(props: Props): ReactElement {
@@ -60,13 +59,13 @@ export default function WalletActivityListItem(props: Props): ReactElement {
 
   // TODO Replace this with better conditional rendering.
   let renderDetails: {
-    iconClass: string | undefined
+    iconClass?: string
     label: string
     recipient: {
-      address: HexString | undefined
-      name?: string | undefined
+      address?: HexString
+      name?: string
     }
-    assetLogoURL: string | undefined
+    assetLogoURL?: string
     assetSymbol: string
     assetValue: string
   } = {

@@ -159,11 +159,18 @@ export default async function resolveTransactionAnnotation(
       }),
   desiredDecimals: number
 ): Promise<TransactionAnnotation> {
+  const assets = await indexingService.getCachedAssets(network)
+
   // By default, annotate all requests as contract interactions
   let txAnnotation: TransactionAnnotation = {
     blockTimestamp: undefined,
     timestamp: Date.now(),
     type: "contract-deployment",
+    transactionLogoURL: assets.find(
+      (asset) =>
+        asset.metadata?.logoURL &&
+        asset.symbol === transaction.network.baseAsset.symbol
+    )?.metadata?.logoURL,
   }
 
   let block: AnyEVMBlock | undefined
@@ -270,7 +277,7 @@ export default async function resolveTransactionAnnotation(
         }
       }
     } else {
-      const assets = await indexingService.getCachedAssets(network)
+      const erc20Tx = parseERC20Tx(transaction.input)
 
       // See if the address matches a fungible asset.
       const matchingFungibleAsset = assets.find(
@@ -280,8 +287,6 @@ export default async function resolveTransactionAnnotation(
       )
 
       const transactionLogoURL = matchingFungibleAsset?.metadata?.logoURL
-
-      const erc20Tx = parseERC20Tx(transaction.input)
 
       // TODO handle the case where we don't have asset metadata already
       if (
@@ -366,15 +371,6 @@ export default async function resolveTransactionAnnotation(
             },
             desiredDecimals
           ),
-        }
-      } else {
-        // Fall back on a standard contract interaction.
-        txAnnotation = {
-          ...txAnnotation,
-          // Include the logo URL if we resolve it even if the interaction is
-          // non-specific; the UI can choose to use it or not, but if we know the
-          // address has an associated logo it's worth passing on.
-          transactionLogoURL,
         }
       }
     }

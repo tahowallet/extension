@@ -37,7 +37,7 @@ export const selectCurrentAccountActivities = createSelector(
   selectCurrentAccount,
   selectCurrentNetwork,
   (activities, account, network) => {
-    return activities[account.address][network.chainID]
+    return activities[account.address]?.[network.chainID] ?? []
   }
 )
 export default selectCurrentAccountActivitiesWithTimestamps
