@@ -233,10 +233,10 @@ export default class ChainService extends BaseService<Events> {
       blockPrices: {
         runAtStart: false,
         schedule: {
-          periodInMinutes: MINUTE / 1e3 / 4, // Every 15 seconds
+          periodInMinutes: MINUTE / 1e3, // Every minute
         },
         handler: () => {
-          this.pollBlockPrices()
+          this.handleBlockPricesAlarm()
         },
       },
     })
@@ -1040,7 +1040,7 @@ export default class ChainService extends BaseService<Events> {
    * Periodically fetch block prices and emit an event whenever new data is received
    * Write block prices to IndexedDB so we have them for later
    */
-  async pollBlockPrices(): Promise<void> {
+  async handleBlockPricesAlarm(): Promise<void> {
     await Promise.allSettled(
       this.subscribedNetworks.map(async ({ network }) =>
         this.pollBlockPricesForNetwork(network.chainID)
@@ -1485,7 +1485,7 @@ export default class ChainService extends BaseService<Events> {
     })
 
     this.pollLatestBlock(network, provider)
-    this.pollBlockPrices()
+    this.pollBlockPricesForNetwork(network.chainID)
   }
 
   /**
