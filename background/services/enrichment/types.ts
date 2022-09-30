@@ -142,16 +142,10 @@ export type EIP2612SignTypedDataAnnotation = {
   }
 }
 
-export type UnrecognizedSignTypedDataAnnotation = {
-  type: "unrecognized"
-}
-
-export type SignTypedDataAnnotation =
-  | EIP2612SignTypedDataAnnotation
-  | UnrecognizedSignTypedDataAnnotation
+export type SignTypedDataAnnotation = EIP2612SignTypedDataAnnotation
 
 export type EnrichedSignTypedDataRequest = SignTypedDataRequest & {
-  annotation: SignTypedDataAnnotation
+  annotation?: SignTypedDataAnnotation
 }
 
 export type AddressOnNetworkAnnotation = {

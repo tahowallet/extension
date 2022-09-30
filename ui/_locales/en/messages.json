@@ -32,6 +32,7 @@
       "snackbar": "Signing locked"
     }
   },
+  "viewAddressOnBlockExplorer": "View address on {{blockExplorer}}",
   "assets": {
     "viewAsset": "View asset on {{siteTitle}}"
   },

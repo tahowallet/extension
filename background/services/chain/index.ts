@@ -214,6 +214,14 @@ export default class ChainService extends BaseService<Events> {
           this.handleRecentIncomingAssetTransferAlarm()
         },
       },
+      forceRecentAssetTransfers: {
+        schedule: {
+          periodInMinutes: (HOUR * 12) / 1e3,
+        },
+        handler: () => {
+          this.handleRecentAssetTransferAlarm(true)
+        },
+      },
       recentAssetTransfers: {
         schedule: {
           periodInMinutes: 15,
@@ -225,7 +233,7 @@ export default class ChainService extends BaseService<Events> {
       blockPrices: {
         runAtStart: false,
         schedule: {
-          periodInMinutes: 0.25, // Every 15 seconds
+          periodInMinutes: MINUTE / 1e3 / 4, // Every 15 seconds
         },
         handler: () => {
           this.pollBlockPrices()
@@ -1023,6 +1031,7 @@ export default class ChainService extends BaseService<Events> {
     this.lastUserActivityOnNetwork[chainID] = now
     if (now - NETWORK_POLLING_TIMEOUT > deactivatesAt) {
       // Reactivating a potentially deactivated network
+      this.handleRecentAssetTransferAlarm()
       this.pollBlockPricesForNetwork(chainID)
     }
   }
@@ -1040,10 +1049,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async pollBlockPricesForNetwork(chainID: string): Promise<void> {
-    if (
-      Date.now() >
-      (this.lastUserActivityOnNetwork[chainID] ?? 0) + NETWORK_POLLING_TIMEOUT
-    ) {
+    if (!this.isCurrentlyActiveChainID(chainID)) {
       return
     }
 
@@ -1211,22 +1217,46 @@ export default class ChainService extends BaseService<Events> {
   /**
    * Check for any incoming asset transfers involving tracked accounts.
    */
-  private async handleRecentIncomingAssetTransferAlarm(): Promise<void> {
+  private async handleRecentIncomingAssetTransferAlarm(
+    forceUpdate = false
+  ): Promise<void> {
     const accountsToTrack = await this.db.getAccountsToTrack()
-
     await Promise.allSettled(
-      accountsToTrack.map((an) => this.loadRecentAssetTransfers(an, true))
+      accountsToTrack
+        .filter(
+          (addressNetwork) =>
+            forceUpdate ||
+            this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
+        )
+        .map(async (addressNetwork) => {
+          return this.loadRecentAssetTransfers(addressNetwork, true)
+        })
+    )
+  }
+
+  private isCurrentlyActiveChainID(chainID: string): boolean {
+    return (
+      Date.now() <
+      this.lastUserActivityOnNetwork[chainID] + NETWORK_POLLING_TIMEOUT
     )
   }
 
   /**
    * Check for any incoming or outgoing asset transfers involving tracked accounts.
    */
-  private async handleRecentAssetTransferAlarm(): Promise<void> {
+  private async handleRecentAssetTransferAlarm(
+    forceUpdate = false
+  ): Promise<void> {
     const accountsToTrack = await this.db.getAccountsToTrack()
 
     await Promise.allSettled(
-      accountsToTrack.map((an) => this.loadRecentAssetTransfers(an))
+      accountsToTrack
+        .filter(
+          (addressNetwork) =>
+            forceUpdate ||
+            this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
+        )
+        .map((addressNetwork) => this.loadRecentAssetTransfers(addressNetwork))
     )
   }
 

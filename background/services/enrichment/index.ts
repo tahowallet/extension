@@ -120,12 +120,11 @@ export default class EnrichmentService extends BaseService<Events> {
   async enrichSignTypedDataRequest(
     signTypedDataRequest: SignTypedDataRequest
   ): Promise<EnrichedSignTypedDataRequest> {
-    let annotation: SignTypedDataAnnotation = {
-      type: "unrecognized",
-    }
+    let annotation: SignTypedDataAnnotation | undefined
+
     const { typedData } = signTypedDataRequest
     if (isEIP2612TypedData(typedData)) {
-      const assets = await this.indexingService.getCachedAssets(ETHEREUM)
+      const assets = this.indexingService.getCachedAssets(ETHEREUM)
       const correspondingAsset = assets.find(
         (asset): asset is SmartContractFungibleAsset => {
           if (
