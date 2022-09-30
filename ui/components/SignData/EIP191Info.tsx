@@ -1,9 +1,9 @@
 import React from "react"
-import { SignDataRequest } from "@tallyho/tally-background/utils/signing"
+import { MessageSigningRequest } from "@tallyho/tally-background/utils/signing"
 import { useTranslation } from "react-i18next"
 
 const EIP191Info: React.FC<{
-  signingData: SignDataRequest["signingData"]
+  signingData: MessageSigningRequest["signingData"]
   account: string
   internal: boolean
   // FIXME Drop this once new signing flow is final.

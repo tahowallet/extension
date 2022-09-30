@@ -1,35 +1,28 @@
 import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
-import {
-  EIP4361Data,
-  SignDataMessageType,
-  SignDataRequest,
-} from "@tallyho/tally-background/utils/signing"
+import { MessageSigningRequest } from "@tallyho/tally-background/utils/signing"
 import React, { ReactElement } from "react"
 import EIP191Info from "../../../SignData/EIP191Info"
 import EIP4361Info from "../../../SignData/EIP4361Info"
 import DataSignatureDetails from "."
 
 export type MessageDataSignatureDetailsProps = {
-  messageRequest: SignDataRequest
+  messageRequest: MessageSigningRequest
 }
 
 export default function MessageDataSignatureDetails({
   messageRequest,
 }: MessageDataSignatureDetailsProps): ReactElement {
   switch (messageRequest.messageType) {
-    case SignDataMessageType.EIP4361:
+    case "eip4361":
       return (
         <DataSignatureDetails
-          requestingSource={(messageRequest.signingData as EIP4361Data).domain}
+          requestingSource={messageRequest.signingData.domain}
           excludeTitle
         >
-          <EIP4361Info
-            signingData={messageRequest.signingData as EIP4361Data}
-            excludeHeader
-          />
+          <EIP4361Info signingData={messageRequest.signingData} excludeHeader />
         </DataSignatureDetails>
       )
-    case SignDataMessageType.EIP191:
+    case "eip191":
       return (
         <DataSignatureDetails>
           <EIP191Info
@@ -41,6 +34,6 @@ export default function MessageDataSignatureDetails({
         </DataSignatureDetails>
       )
     default:
-      return assertUnreachable(messageRequest.messageType)
+      return assertUnreachable(messageRequest)
   }
 }
