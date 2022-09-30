@@ -1217,16 +1217,12 @@ export default class ChainService extends BaseService<Events> {
   /**
    * Check for any incoming asset transfers involving tracked accounts.
    */
-  private async handleRecentIncomingAssetTransferAlarm(
-    forceUpdate = false
-  ): Promise<void> {
+  private async handleRecentIncomingAssetTransferAlarm(): Promise<void> {
     const accountsToTrack = await this.db.getAccountsToTrack()
     await Promise.allSettled(
       accountsToTrack
-        .filter(
-          (addressNetwork) =>
-            forceUpdate ||
-            this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
+        .filter((addressNetwork) =>
+          this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
         )
         .map(async (addressNetwork) => {
           return this.loadRecentAssetTransfers(addressNetwork, true)
