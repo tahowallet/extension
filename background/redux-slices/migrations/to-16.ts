@@ -68,6 +68,9 @@ export default (prevState: Record<string, unknown>): NewState => {
 
   Object.keys(typedPrevState.activities).forEach((address) => {
     Object.keys(typedPrevState.activities[address]).forEach((chainID) => {
+      if (chainID === "ids" || chainID === "entities") {
+        return
+      }
       Object.keys(typedPrevState.activities[address][chainID].entities).forEach(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         (_) => {
