@@ -1042,17 +1042,17 @@ export default class ChainService extends BaseService<Events> {
    */
   async handleBlockPricesAlarm(): Promise<void> {
     await Promise.allSettled(
-      this.subscribedNetworks.map(async ({ network }) =>
-        this.pollBlockPricesForNetwork(network.chainID)
-      )
+      this.subscribedNetworks
+        .filter((addressNetwork) =>
+          this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
+        )
+        .map(async ({ network }) =>
+          this.pollBlockPricesForNetwork(network.chainID)
+        )
     )
   }
 
   async pollBlockPricesForNetwork(chainID: string): Promise<void> {
-    if (!this.isCurrentlyActiveChainID(chainID)) {
-      return
-    }
-
     const subscription = this.subscribedNetworks.find(
       ({ network }) => toHexChainID(network.chainID) === toHexChainID(chainID)
     )
