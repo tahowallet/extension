@@ -7,6 +7,7 @@ import {
   selectAccountTotalsForOverview,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
+import { ENABLE_ACHIEVEMENTS_TAB } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../hooks"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -17,7 +18,11 @@ import NetworksChart from "../components/Overview/NetworksChart"
 import AccountList from "../components/Overview/AccountList"
 import AchievementsOverview from "../components/NFTs/AchievementsOverview"
 
-const panelNames = ["Assets", "NFTs", "Achievements"]
+const panelNames = ["Assets", "NFTs"]
+
+if (ENABLE_ACHIEVEMENTS_TAB) {
+  panelNames.push("Achievements")
+}
 
 export default function Overview(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
