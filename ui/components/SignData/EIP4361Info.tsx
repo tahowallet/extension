@@ -15,14 +15,22 @@ const CHAIN_NAMES: (chain: number) => string = (chain) => {
 }
 
 // this overides the type to expect EIP4361Data
-const EIP4361Info: React.FC<{ signingData: EIP4361Data }> = ({
-  signingData,
-}) => {
+const EIP4361Info: React.FC<{
+  signingData: EIP4361Data
+  // FIXME Drop this once new signing flow is final.
+  excludeHeader?: boolean
+}> = ({ signingData, excludeHeader = false }) => {
   const { t } = useTranslation("translation", { keyPrefix: "signing.EIP4361" })
   return (
     <>
-      <div className="domain">{signingData.domain}</div>
-      <div className="divider spaced" />
+      {excludeHeader ? (
+        <></>
+      ) : (
+        <>
+          <div className="domain">{signingData.domain}</div>
+          <div className="divider spaced" />
+        </>
+      )}
       <div className="subtext">
         {t("subtext1")}
         <br />
@@ -30,7 +38,7 @@ const EIP4361Info: React.FC<{ signingData: EIP4361Data }> = ({
       </div>
       <div className="address">{signingData.address}</div>
       <div className="divider spaced" />
-      {signingData?.statement ? (
+      {signingData?.statement ? ( // FIXME Content should be on the next line for this one.
         <SignDataInfo label={t("statement")} content={signingData.statement} />
       ) : null}
       <SignDataInfo label={t("nonce")} content={signingData.nonce} />
@@ -53,6 +61,7 @@ const EIP4361Info: React.FC<{ signingData: EIP4361Data }> = ({
           line-height: 24px;
           font-size: 16px;
           margin-bottom: 4px;
+          ${excludeHeader ? "margin-top: 16px;" : ""}
         }
         .domain,
         .address,
