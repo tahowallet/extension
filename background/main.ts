@@ -538,7 +538,7 @@ export default class Main extends BaseService<never> {
       setNewSelectedAccount({
         address: accounts[0].address,
         network:
-          await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+          await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
             TALLY_INTERNAL_ORIGIN
           ),
       })

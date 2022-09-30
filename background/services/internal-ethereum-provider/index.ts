@@ -31,11 +31,7 @@ import {
   parseSigningData,
 } from "../../utils/signing"
 import { SUPPORT_OPTIMISM } from "../../features"
-import {
-  ActiveNetwork,
-  getOrCreateDB,
-  InternalEthereumProviderDatabase,
-} from "./db"
+import { getOrCreateDB, InternalEthereumProviderDatabase } from "./db"
 import { TALLY_INTERNAL_ORIGIN } from "./constants"
 import { ETHEREUM } from "../../constants"
 
@@ -126,9 +122,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  // @TODO Persist this in db so we get correct network on app startup.
-  private activeNetwork = ETHEREUM
-
   async routeSafeRPCRequest(
     method: string,
     params: RPCRequest["params"],
@@ -143,7 +136,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return this.signTypedData({
           account: {
             address: params[0] as string,
-            network: await this.getActiveOrDefaultNetwork(origin),
+            network: await this.getCurrentOrDefaultNetworkForOrigin(origin),
           },
           typedData: JSON.parse(params[1] as string),
         })
@@ -153,7 +146,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         // on a user's idea of a dApp connection rather than a network-specific
         // modality, requiring it to be constantly "switched"
         return toHexChainID(
-          (await this.getActiveOrDefaultNetwork(origin)).chainID
+          (await this.getCurrentOrDefaultNetworkForOrigin(origin)).chainID
         )
       case "eth_blockNumber":
       case "eth_call":
@@ -197,7 +190,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return this.chainService.send(
           method,
           params,
-          await this.getActiveOrDefaultNetwork(origin)
+          await this.getCurrentOrDefaultNetworkForOrigin(origin)
         )
       case "eth_accounts": {
         // This is a special method, because Alchemy provider DO support it, but always return null (because they do not store keys.)
@@ -257,7 +250,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
         const trackedNetwork = await this.getTrackedNetworkByChainId(newChainId)
         if (trackedNetwork) {
-          await this.db.setActiveChainIdForOrigin(origin, trackedNetwork)
+          await this.db.setCurrentChainIdForOrigin(origin, trackedNetwork)
           return null
         }
         throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
@@ -288,21 +281,23 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     }
   }
 
-  private async getInternalActiveChain(): Promise<ActiveNetwork> {
-    return this.db.getActiveNetworkForOrigin(
+  private async getCurrentInternalNetwork(): Promise<EVMNetwork> {
+    return this.db.getCurrentNetworkForOrigin(
       TALLY_INTERNAL_ORIGIN
-    ) as Promise<ActiveNetwork>
+    ) as Promise<EVMNetwork>
   }
 
-  async getActiveOrDefaultNetwork(origin: string): Promise<EVMNetwork> {
-    const activeNetwork = await this.db.getActiveNetworkForOrigin(origin)
-    if (!activeNetwork) {
+  async getCurrentOrDefaultNetworkForOrigin(
+    origin: string
+  ): Promise<EVMNetwork> {
+    const currentNetwork = await this.db.getCurrentNetworkForOrigin(origin)
+    if (!currentNetwork) {
       // If this is a new dapp or the dapp has not implemented wallet_switchEthereumChain
       // use the default network.
-      const defaultNetwork = (await this.getInternalActiveChain()).network
+      const defaultNetwork = await this.getCurrentInternalNetwork()
       return defaultNetwork
     }
-    return activeNetwork.network
+    return currentNetwork
   }
 
   private async signTransaction(
@@ -324,14 +319,16 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       throw new Error("Transactions must have a from address for signing.")
     }
 
-    const activeNetwork = await this.getActiveOrDefaultNetwork(origin)
+    const currentNetwork = await this.getCurrentOrDefaultNetworkForOrigin(
+      origin
+    )
 
     return new Promise<SignedTransaction>((resolve, reject) => {
       this.emitter.emit("transactionSignatureRequest", {
         payload: {
           ...convertedRequest,
           from,
-          network: activeNetwork,
+          network: currentNetwork,
         },
         resolver: resolve,
         rejecter: reject,
@@ -394,14 +391,16 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       ? input
       : hexlify(toUtf8Bytes(input))
     const { data, type } = parseSigningData(input)
-    const activeNetwork = await this.getActiveOrDefaultNetwork(origin)
+    const currentNetwork = await this.getCurrentOrDefaultNetworkForOrigin(
+      origin
+    )
 
     return new Promise<string>((resolve, reject) => {
       this.emitter.emit("signDataRequest", {
         payload: {
           account: {
             address: account,
-            network: activeNetwork,
+            network: currentNetwork,
           },
           signingData: data,
           messageType: type,
