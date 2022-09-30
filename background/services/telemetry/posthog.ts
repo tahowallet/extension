@@ -1,44 +1,16 @@
 import {v4 as uuidv4} from 'uuid';
 
-function getCookie(name: string)
- {
-   var re = new RegExp(name + "=([^;]+)");
-   var value = re.exec(document.cookie);
-   return (value != null) ? unescape(value[1]) : null;
- }
-
- chrome.storage.local.get(null, function(items) {
-    var allKeys = Object.keys(items);
-    console.log("all storage: ", allKeys);
-});
-
-var retrievedUUID = getCookie("UUID");
-
 chrome.cookies.get({ url: 'http://localhost:8000', name: 'UUID' },
   function (cookie) {
     if (cookie) {
-      console.log(cookie.value);
+      console.log("UUID: ",cookie.value);
+      createEvent()
     }
     else {
-      console.log('Can\'t get cookie! Check the name!');
+      console.log('No UUID found stored in localstorage');
     }
 });
-
-console.log(retrievedUUID);
-
-if (retrievedUUID) {
-  console.log('retrieved UUID: ', retrievedUUID);
-  createEvent()
-}
-
-chrome.storage.local.get(['testUUID'], function(result) {
-  console.log(result);
-});
-
-if (retrievedUUID === null)
-{
-  console.log('No UUID found from website');
-}
+var retrievedUUID = "5ed6e82c-1fd9-46c1-88bf-31a7f69d51e9";
 
 /* just some quick thoughts on pushing to posthog on a
  per event basis instead of including a lib...
