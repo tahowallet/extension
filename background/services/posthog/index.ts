@@ -7,33 +7,12 @@ function getCookie(name: string)
    return (value != null) ? unescape(value[1]) : null;
  }
 
- chrome.storage.local.get(null, function(items) {
-    var allKeys = Object.keys(items);
-    console.log("all storage: ", allKeys);
-});
-
 var retrievedUUID = getCookie("UUID");
-
-chrome.cookies.get({ url: 'http://localhost:8000', name: 'UUID' },
-  function (cookie) {
-    if (cookie) {
-      console.log(cookie.value);
-    }
-    else {
-      console.log('Can\'t get cookie! Check the name!');
-    }
-});
-
-console.log(retrievedUUID);
 
 if (retrievedUUID) {
   console.log('retrieved UUID: ', retrievedUUID);
   createEvent()
 }
-
-chrome.storage.local.get(['testUUID'], function(result) {
-  console.log(result);
-});
 
 if (retrievedUUID === null)
 {
