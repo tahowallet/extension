@@ -255,11 +255,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
         }
         const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
-        const supportedNetwork = await this.getActiveNetworkByChainId(
-          newChainId
-        )
-        if (supportedNetwork) {
-          await this.db.setActiveChainIdForOrigin(origin, supportedNetwork)
+        const trackedNetwork = await this.getTrackedNetworkByChainId(newChainId)
+        if (trackedNetwork) {
+          await this.db.setActiveChainIdForOrigin(origin, trackedNetwork)
           return null
         }
         throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
@@ -343,30 +341,29 @@ export default class InternalEthereumProviderService extends BaseService<Events>
 
   /**
    * Attempts to retrieve a network from the extension's currently
-   * active networks.  Falls back to querying supported networks and
-   * activating a given network if it is supported.
+   * tracked networks.  Falls back to querying supported networks and
+   * tracking a given network if it is supported.
    *
    * @param chainID EVM Network chainID
    * @returns a supported EVMNetwork or undefined.
    */
-  async getActiveNetworkByChainId(
+  async getTrackedNetworkByChainId(
     chainID: string
   ): Promise<EVMNetwork | undefined> {
-    const activeNetworks = await this.chainService.getActiveNetworks()
-    const activeNetwork = activeNetworks.find(
+    const trackedNetworks = await this.chainService.getTrackedNetworks()
+    const trackedNetwork = trackedNetworks.find(
       (network) => toHexChainID(network.chainID) === toHexChainID(chainID)
     )
-    if (activeNetwork) {
-      this.chainService.markNetworkActivity(activeNetwork.chainID)
-      return activeNetwork
+    if (trackedNetwork) {
+      this.chainService.markNetworkActivity(trackedNetwork.chainID)
+      return trackedNetwork
     }
 
     try {
-      const activatedNetwork = await this.chainService.activateNetworkOrThrow(
-        chainID
-      )
+      const newlyTrackedNetwork =
+        await this.chainService.startTrackingNetworkOrThrow(chainID)
       this.chainService.markNetworkActivity(chainID)
-      return activatedNetwork
+      return newlyTrackedNetwork
     } catch (e) {
       logger.warn(e)
       return undefined

@@ -178,7 +178,7 @@ export default class ChainService extends BaseService<Events> {
 
   supportedNetworks: EVMNetwork[]
 
-  private activeNetworks: EVMNetwork[]
+  private trackedNetworks: EVMNetwork[]
 
   assetData: AssetDataHelper
 
@@ -249,7 +249,7 @@ export default class ChainService extends BaseService<Events> {
       ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
 
-    this.activeNetworks = []
+    this.trackedNetworks = []
 
     this.lastUserActivityOnNetwork =
       Object.fromEntries(
@@ -276,7 +276,7 @@ export default class ChainService extends BaseService<Events> {
     await super.internalStartService()
 
     const accounts = await this.getAccountsToTrack()
-    const activeNetworks = await this.getActiveNetworks()
+    const trackedNetworks = await this.getTrackedNetworks()
 
     // get the latest blocks and subscribe for all active networks
 
@@ -296,7 +296,7 @@ export default class ChainService extends BaseService<Events> {
           // Schedule any stored unconfirmed transactions for
           // retrieval---either to confirm they no longer exist, or to
           // read/monitor their status.
-          activeNetworks.map((network) =>
+          trackedNetworks.map((network) =>
             this.db
               .getNetworkPendingTransactions(network)
               .then((pendingTransactions) => {
@@ -332,15 +332,15 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Pulls the list of active networks from memory or indexedDB.
+   * Pulls the list of tracked networks from memory or indexedDB.
    * Defaults to ethereum in the case that neither exist.
    */
-  async getActiveNetworks(): Promise<EVMNetwork[]> {
-    if (this.activeNetworks.length > 0) {
-      return this.activeNetworks
+  async getTrackedNetworks(): Promise<EVMNetwork[]> {
+    if (this.trackedNetworks.length > 0) {
+      return this.trackedNetworks
     }
 
-    // Since activeNetworks will be an empty array at extension load (or reload time)
+    // Since trackedNetworks will be an empty array at extension load (or reload time)
     // we need a durable way to track which networks an extension is tracking.
     // The below code should only be called once per extension reload for extensions
     // with active accounts
@@ -348,11 +348,11 @@ export default class ChainService extends BaseService<Events> {
 
     await Promise.allSettled([
       networksToTrack.map(async (network) =>
-        this.activateNetworkOrThrow(network.chainID)
+        this.startTrackingNetworkOrThrow(network.chainID)
       ),
     ])
 
-    return this.activeNetworks
+    return this.trackedNetworks
   }
 
   private async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
@@ -370,48 +370,48 @@ export default class ChainService extends BaseService<Events> {
   /**
    * Adds a supported network to list of active networks.
    */
-  async activateNetworkOrThrow(chainID: string): Promise<EVMNetwork> {
-    const activeNetwork = this.activeNetworks.find(
+  async startTrackingNetworkOrThrow(chainID: string): Promise<EVMNetwork> {
+    const trackedNetwork = this.trackedNetworks.find(
       (ntwrk) => toHexChainID(ntwrk.chainID) === toHexChainID(chainID)
     )
 
-    if (activeNetwork) {
+    if (trackedNetwork) {
       logger.warn(
-        `${activeNetwork.name} already active - no need to activate it`
+        `${trackedNetwork.name} already being tracked - no need to activate it`
       )
-      this.markNetworkActivity(activeNetwork.chainID)
-      return activeNetwork
+      this.markNetworkActivity(trackedNetwork.chainID)
+      return trackedNetwork
     }
 
-    const networkToActivate = this.supportedNetworks.find(
+    const networkToTrack = this.supportedNetworks.find(
       (ntwrk) => toHexChainID(ntwrk.chainID) === toHexChainID(chainID)
     )
-    if (!networkToActivate) {
+    if (!networkToTrack) {
       throw new Error(`Network with chainID ${chainID} is not supported`)
     }
 
-    this.activeNetworks.push(networkToActivate)
+    this.trackedNetworks.push(networkToTrack)
 
     const existingSubscription = this.subscribedNetworks.find(
       (networkSubscription) =>
-        networkSubscription.network.chainID === networkToActivate.chainID
+        networkSubscription.network.chainID === networkToTrack.chainID
     )
 
     if (!existingSubscription) {
-      this.subscribeToNetworkEvents(networkToActivate)
+      this.subscribeToNetworkEvents(networkToTrack)
       const addressesToTrack = new Set(
         (await this.getAccountsToTrack()).map((account) => account.address)
       )
       addressesToTrack.forEach((address) => {
         this.addAccountToTrack({
           address,
-          network: networkToActivate,
+          network: networkToTrack,
         })
       })
     }
 
-    this.markNetworkActivity(networkToActivate.chainID)
-    return networkToActivate
+    this.markNetworkActivity(networkToTrack.chainID)
+    return networkToTrack
   }
 
   /**
@@ -426,7 +426,7 @@ export default class ChainService extends BaseService<Events> {
         "Request received for operation on an inactive network",
         network,
         "expected",
-        this.activeNetworks
+        this.trackedNetworks
       )
       throw new Error(`Unexpected network ${network}`)
     }
