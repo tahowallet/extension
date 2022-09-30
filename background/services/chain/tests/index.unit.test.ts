@@ -8,6 +8,7 @@ import {
   EnrichedEIP1559TransactionSignatureRequest,
   EnrichedLegacyTransactionSignatureRequest,
 } from "../../enrichment"
+import { ChainDatabase } from "../db"
 
 type ChainServiceExternalized = Omit<ChainService, ""> & {
   populatePartialEIP1559TransactionRequest: () => void
@@ -16,6 +17,7 @@ type ChainServiceExternalized = Omit<ChainService, ""> & {
   lastUserActivityOnNetwork: {
     [chainID: string]: UNIXTime
   }
+  db: ChainDatabase
 }
 
 describe("Chain Service", () => {
@@ -25,6 +27,30 @@ describe("Chain Service", () => {
     sandbox.restore()
     chainService = await createChainService()
     await chainService.startService()
+  })
+
+  describe("Alarms", () => {
+    describe("handleBlockPricesAlarm", () => {
+      it("should only poll for block prices on active networks", async () => {
+        const sixMinsAgo = Date.now() - 6 * MINUTE
+        ;(
+          chainService as unknown as ChainServiceExternalized
+        ).lastUserActivityOnNetwork = {
+          [ETHEREUM.chainID]: Date.now(),
+          [POLYGON.chainID]: sixMinsAgo,
+          [OPTIMISM.chainID]: sixMinsAgo,
+        }
+
+        const pollStub = sandbox
+          .stub(chainService, "pollBlockPricesForNetwork")
+          .callsFake(async () => {})
+
+        await chainService.handleBlockPricesAlarm()
+        expect(pollStub.calledWith(ETHEREUM.chainID)).toEqual(true)
+        expect(pollStub.calledWith(POLYGON.chainID)).toEqual(false)
+        expect(pollStub.calledWith(OPTIMISM.chainID)).toEqual(false)
+      })
+    })
   })
 
   describe("populatePartialTransactionRequest", () => {
