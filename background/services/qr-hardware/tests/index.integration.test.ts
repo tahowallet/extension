@@ -3,7 +3,7 @@
  */
 import "fake-indexeddb/auto"
 import { ETHSignature } from "@keystonehq/bc-ur-registry-eth"
-import QRHardwareService from ".."
+import QRHardwareService, { SyncedDevice } from ".."
 import { QRHardwareDatabase } from "../db"
 import { normalizeEVMAddress } from "../../../lib/utils"
 import { ETH } from "../../../constants"
@@ -31,10 +31,10 @@ describe("Preference Service Integration", () => {
   describe("syncQRKeyring", () => {
     describe("when hd key", () => {
       let emitSpy: jest.SpyInstance
-      let deviceID: string
+      let syncedDevice: SyncedDevice
       beforeEach(async () => {
         emitSpy = jest.spyOn(qrHardwareService.emitter, "emit")
-        deviceID = await qrHardwareService.syncQRKeyring(qrWallet.ur)
+        syncedDevice = await qrHardwareService.syncQRKeyring(qrWallet.ur)
       })
       it("saves hd key", async () => {
         const db = new QRHardwareDatabase()
@@ -48,9 +48,7 @@ describe("Preference Service Integration", () => {
       })
       it("emits synced event", async () => {
         expect(emitSpy).toHaveBeenCalledTimes(1)
-        expect(emitSpy).toHaveBeenCalledWith("synced", {
-          id: deviceID,
-        })
+        expect(emitSpy).toHaveBeenCalledWith("synced", syncedDevice)
       })
       describe("when sync keyring already exist", () => {
         beforeEach(async () => {
@@ -69,9 +67,7 @@ describe("Preference Service Integration", () => {
         })
         it("emits synced event", async () => {
           expect(emitSpy).toHaveBeenCalledTimes(1)
-          expect(emitSpy).toHaveBeenCalledWith("synced", {
-            id: deviceID,
-          })
+          expect(emitSpy).toHaveBeenCalledWith("synced", syncedDevice)
         })
       })
     })
@@ -146,9 +142,14 @@ describe("Preference Service Integration", () => {
           "note..."
         )
 
+        const ur = ethSignature.toUR()
+
         qrHardwareService.emitter.emit("signedTransaction", {
           id,
-          cbor: ethSignature.toCBOR().toString("hex"),
+          ur: {
+            type: ur.type,
+            cbor: ur.cbor.toString("hex"),
+          },
         })
       })
       signedTx = await qrHardwareService.signTransaction(txRequest, {

@@ -1,4 +1,7 @@
-import { BaseKeyring as QRKeyring } from "@keystonehq/base-eth-keyring"
+import {
+  BaseKeyring as QRKeyring,
+  StoredKeyring,
+} from "@keystonehq/base-eth-keyring"
 import {
   EthSignRequest,
   ETHSignature,
@@ -6,7 +9,6 @@ import {
   CryptoAccount,
   DataType,
 } from "@keystonehq/bc-ur-registry-eth"
-import { UR } from "@ngraveio/bc-ur"
 import * as uuid from "uuid"
 import {
   serialize,
@@ -29,13 +31,30 @@ export type QRHardwareAccountSigner = {
 
 export type SyncedDevice = {
   id: string
+  keyring: {
+    mode: string | undefined
+    xfp: string
+    xpub: string
+    hdPath: string
+    childrenPath: string
+  }
+}
+
+export interface SerializedUR {
+  type: string
+  cbor: string
+}
+
+export interface URRequest {
+  id: string
+  ur: SerializedUR
 }
 
 type Events = ServiceLifecycleEvents & {
   synced: SyncedDevice
   address: { id: string; derivationPath: string; address: HexString }
-  requestSignature: { id: string; ur: UR }
-  signedTransaction: { id: string; cbor: string }
+  requestSignature: { id: string; ur: { type: string; cbor: string } }
+  signedTransaction: URRequest
   cancelSignature: { id: string }
 }
 
@@ -69,17 +88,29 @@ export default class QRHardwareService extends BaseService<Events> {
   }: {
     type: string
     cbor: string
-  }): Promise<string> {
+  }): Promise<SyncedDevice> {
     const keyring = getKeyringFromUR({ type, cbor })
 
     const accounts = await keyring.addAccounts()
     const deviceID = accounts[0]
-    this.emitter.emit("synced", { id: deviceID })
+
+    const serializedKeyring: StoredKeyring = await keyring.serialize()
+    const syncedDevice: SyncedDevice = {
+      id: deviceID,
+      keyring: {
+        mode: serializedKeyring.keyringMode,
+        xfp: serializedKeyring.xfp,
+        xpub: serializedKeyring.xpub,
+        hdPath: serializedKeyring.hdPath,
+        childrenPath: serializedKeyring.childrenPath,
+      },
+    }
+    this.emitter.emit("synced", syncedDevice)
 
     const exist = await this.db.getAccountByAddress(deviceID)
 
     if (exist) {
-      return deviceID
+      return syncedDevice
     }
 
     const qrHardwareAccount = {
@@ -90,7 +121,7 @@ export default class QRHardwareService extends BaseService<Events> {
 
     await this.db.addAccount(qrHardwareAccount)
 
-    return deviceID
+    return syncedDevice
   }
 
   async deriveAddress({
@@ -119,7 +150,7 @@ export default class QRHardwareService extends BaseService<Events> {
       address: normalizeEVMAddress(address),
     })
 
-    return address
+    return normalizeEVMAddress(address)
   }
 
   async signTransaction(
@@ -153,71 +184,77 @@ export default class QRHardwareService extends BaseService<Events> {
 
     return new Promise((resolve, reject) => {
       const ur = ethSignRequest.toUR()
-      this.emitter.emit("requestSignature", { id: requestId, ur })
-
-      this.emitter.on("signedTransaction", ({ id, cbor }) => {
-        if (id !== requestId) return
-
-        const ethSignature = ETHSignature.fromCBOR(Buffer.from(cbor, "hex"))
-
-        const signature = ethSignature.getSignature()
-
-        const r = signature.slice(0, 32)
-        const s = signature.slice(32, 64)
-        const v = signature.slice(64)
-
-        const signedTransaction = serialize(ethersTx as UnsignedTransaction, {
-          r: `0x${r.toString("hex")}`,
-          s: `0x${s.toString("hex")}`,
-          v: parseInt(v.toString("hex"), 16),
-        })
-
-        const tx = parseRawTransaction(signedTransaction)
-
-        if (
-          !tx.hash ||
-          !tx.from ||
-          !tx.r ||
-          !tx.s ||
-          typeof tx.v === "undefined"
-        ) {
-          throw new Error("Transaction doesn't appear to have been signed.")
-        }
-
-        if (
-          tx.type !== 0 &&
-          tx.type !== 1 &&
-          tx.type !== 2 &&
-          tx.type !== null
-        ) {
-          throw new Error(`Unknown transaction type ${tx.type}`)
-        }
-
-        const signedTx = {
-          hash: tx.hash,
-          from: tx.from,
-          to: tx.to,
-          nonce: tx.nonce,
-          input: tx.data,
-          value: tx.value.toBigInt(),
-          type: tx.type,
-          gasPrice: tx.gasPrice ? tx.gasPrice.toBigInt() : null,
-          maxFeePerGas: tx.maxFeePerGas ? tx.maxFeePerGas.toBigInt() : null,
-          maxPriorityFeePerGas: tx.maxPriorityFeePerGas
-            ? tx.maxPriorityFeePerGas.toBigInt()
-            : null,
-          gasLimit: tx.gasLimit.toBigInt(),
-          r: tx.r,
-          s: tx.s,
-          v: tx.v,
-          blockHash: null,
-          blockHeight: null,
-          asset: transactionRequest.network.baseAsset,
-          network: transactionRequest.network,
-        } as const
-
-        resolve(signedTx)
+      this.emitter.emit("requestSignature", {
+        id: requestId,
+        ur: { type: ur.type, cbor: ur.cbor.toString("hex") },
       })
+
+      this.emitter.on(
+        "signedTransaction",
+        ({ id, ur: { cbor } }: URRequest) => {
+          if (id !== requestId) return
+
+          const ethSignature = ETHSignature.fromCBOR(Buffer.from(cbor, "hex"))
+
+          const signature = ethSignature.getSignature()
+
+          const r = signature.slice(0, 32)
+          const s = signature.slice(32, 64)
+          const v = signature.slice(64)
+
+          const signedTransaction = serialize(ethersTx as UnsignedTransaction, {
+            r: `0x${r.toString("hex")}`,
+            s: `0x${s.toString("hex")}`,
+            v: parseInt(v.toString("hex"), 16),
+          })
+
+          const tx = parseRawTransaction(signedTransaction)
+
+          if (
+            !tx.hash ||
+            !tx.from ||
+            !tx.r ||
+            !tx.s ||
+            typeof tx.v === "undefined"
+          ) {
+            throw new Error("Transaction doesn't appear to have been signed.")
+          }
+
+          if (
+            tx.type !== 0 &&
+            tx.type !== 1 &&
+            tx.type !== 2 &&
+            tx.type !== null
+          ) {
+            throw new Error(`Unknown transaction type ${tx.type}`)
+          }
+
+          const signedTx = {
+            hash: tx.hash,
+            from: tx.from,
+            to: tx.to,
+            nonce: tx.nonce,
+            input: tx.data,
+            value: tx.value.toBigInt(),
+            type: tx.type,
+            gasPrice: tx.gasPrice ? tx.gasPrice.toBigInt() : null,
+            maxFeePerGas: tx.maxFeePerGas ? tx.maxFeePerGas.toBigInt() : null,
+            maxPriorityFeePerGas: tx.maxPriorityFeePerGas
+              ? tx.maxPriorityFeePerGas.toBigInt()
+              : null,
+            gasLimit: tx.gasLimit.toBigInt(),
+            r: tx.r,
+            s: tx.s,
+            v: tx.v,
+            blockHash: null,
+            blockHeight: null,
+            asset: transactionRequest.network.baseAsset,
+            network: transactionRequest.network,
+          } as const
+
+          resolve(signedTx)
+        }
+      )
 
       this.emitter.on("cancelSignature", ({ id }) => {
         if (id !== requestId) return
