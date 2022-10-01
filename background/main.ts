@@ -129,6 +129,11 @@ import {
   EnrichedEVMTransaction,
   EnrichedEVMTransactionRequest,
 } from "./services/enrichment"
+import QRHardwareService, {
+  SyncedDevice,
+  URRequest,
+} from "./services/qr-hardware"
+import { setQRSigning } from "./redux-slices/qr-hardware"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -258,9 +263,12 @@ export default class Main extends BaseService<never> {
 
     const ledgerService = LedgerService.create()
 
+    const qrHardwareService = QRHardwareService.create()
+
     const signingService = SigningService.create(
       keyringService,
       ledgerService,
+      qrHardwareService,
       chainService
     )
 
@@ -302,7 +310,8 @@ export default class Main extends BaseService<never> {
       await doggoService,
       await telemetryService,
       await ledgerService,
-      await signingService
+      await signingService,
+      await qrHardwareService
     )
   }
 
@@ -372,7 +381,9 @@ export default class Main extends BaseService<never> {
      * A promise to the signing service which will route operations between the UI
      * and the exact signing services.
      */
-    private signingService: SigningService
+    private signingService: SigningService,
+
+    private qrHardwareService: QRHardwareService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -431,6 +442,7 @@ export default class Main extends BaseService<never> {
       this.telemetryService.startService(),
       this.ledgerService.startService(),
       this.signingService.startService(),
+      this.qrHardwareService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -450,6 +462,7 @@ export default class Main extends BaseService<never> {
       this.telemetryService.stopService(),
       this.ledgerService.stopService(),
       this.signingService.stopService(),
+      this.qrHardwareService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -467,6 +480,7 @@ export default class Main extends BaseService<never> {
     this.connectDoggoService()
     this.connectTelemetryService()
     this.connectLedgerService()
+    this.connectQRHardwareService()
     this.connectSigningService()
 
     await this.connectChainService()
@@ -558,6 +572,63 @@ export default class Main extends BaseService<never> {
 
   async connectLedger(): Promise<string | null> {
     return this.ledgerService.refreshConnectedLedger()
+  }
+
+  async syncQRKeyring({
+    type,
+    cbor,
+  }: {
+    type: string
+    cbor: string
+  }): Promise<SyncedDevice> {
+    return this.qrHardwareService.syncQRKeyring({ type, cbor })
+  }
+
+  async deriveQRHardwareAddress(
+    deviceID: string,
+    derivationPath: string
+  ): Promise<string> {
+    return this.signingService.deriveAddress({
+      type: "qr-hardware",
+      deviceID,
+      path: derivationPath,
+    })
+  }
+
+  async importQRHardwareAccounts(
+    accounts: Array<{
+      path: string
+      address: string
+    }>
+  ): Promise<void> {
+    const activeNetworks = await this.chainService.getActiveNetworks()
+    await Promise.all(
+      accounts.map(async ({ address }) => {
+        await Promise.all(
+          activeNetworks.map(async (network) => {
+            const addressNetwork = {
+              address,
+              network,
+            }
+            await this.chainService.addAccountToTrack(addressNetwork)
+            this.store.dispatch(loadAccount(addressNetwork))
+          })
+        )
+      })
+    )
+    this.store.dispatch(
+      setNewSelectedAccount({
+        address: accounts[0].address,
+        network:
+          await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+            TALLY_INTERNAL_ORIGIN
+          ),
+      })
+    )
+  }
+
+  async resolveQRSignature(requestUR: URRequest): Promise<void> {
+    this.qrHardwareService.emitter.emit("signedTransaction", requestUR)
   }
 
   async getAccountEthBalanceUncached(
@@ -857,6 +928,15 @@ export default class Main extends BaseService<never> {
     this.ledgerService.emitter.on("usbDeviceCount", (usbDeviceCount) => {
       this.store.dispatch(setUsbDeviceCount({ usbDeviceCount }))
     })
+  }
+
+  async connectQRHardwareService(): Promise<void> {
+    this.qrHardwareService.emitter.on(
+      "requestSignature",
+      (urRequest: URRequest) => {
+        this.store.dispatch(setQRSigning(urRequest))
+      }
+    )
   }
 
   async connectKeyringService(): Promise<void> {

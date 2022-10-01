@@ -12,6 +12,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import { AddressOnNetwork } from "../../accounts"
 import { assertUnreachable } from "../../lib/utils/type-guards"
+import QRHardwareService, { QRHardwareAccountSigner } from "../qr-hardware"
 
 type SigningErrorReason = "userRejected" | "genericError"
 type ErrorResponse = {
@@ -55,6 +56,7 @@ export type AccountSigner =
   | typeof ReadOnlyAccountSigner
   | KeyringAccountSigner
   | HardwareAccountSigner
+  | QRHardwareAccountSigner
 export type HardwareAccountSigner = LedgerAccountSigner
 
 export type SignerType = AccountSigner["type"]
@@ -91,11 +93,22 @@ export default class SigningService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     SigningService,
-    [Promise<KeyringService>, Promise<LedgerService>, Promise<ChainService>]
-  > = async (keyringService, ledgerService, chainService) => {
+    [
+      Promise<KeyringService>,
+      Promise<LedgerService>,
+      Promise<QRHardwareService>,
+      Promise<ChainService>
+    ]
+  > = async (
+    keyringService,
+    ledgerService,
+    qrHardwareService,
+    chainService
+  ) => {
     return new this(
       await keyringService,
       await ledgerService,
+      await qrHardwareService,
       await chainService
     )
   }
@@ -103,6 +116,7 @@ export default class SigningService extends BaseService<Events> {
   private constructor(
     private keyringService: KeyringService,
     private ledgerService: LedgerService,
+    private qrHardwareService: QRHardwareService,
     private chainService: ChainService
   ) {
     super()
@@ -119,6 +133,10 @@ export default class SigningService extends BaseService<Events> {
 
     if (signerID.type === "keyring") {
       return this.keyringService.deriveAddress(signerID)
+    }
+
+    if (signerID.type === "qr-hardware") {
+      return this.qrHardwareService.deriveAddress(signerID)
     }
 
     throw new Error(`Unknown signerID: ${signerID}`)
@@ -142,6 +160,11 @@ export default class SigningService extends BaseService<Events> {
           },
           transactionWithNonce
         )
+      case "qr-hardware":
+        return this.qrHardwareService.signTransaction(
+          transactionWithNonce,
+          accountSigner
+        )
       case "read-only":
         throw new Error("Read-only signers cannot sign.")
       default:
@@ -160,6 +183,9 @@ export default class SigningService extends BaseService<Events> {
           break
         case "ledger":
           await this.ledgerService.removeAddress(address)
+          break
+        case "qr-hardware":
+          // todo
           break
         case "read-only":
           break // no additional work here, just account removal below
@@ -241,6 +267,12 @@ export default class SigningService extends BaseService<Events> {
             accountSigner
           )
           break
+        case "qr-hardware":
+          signedData = await this.keyringService.signTypedData({
+            typedData,
+            account: account.address,
+          })
+          break
         case "keyring":
           signedData = await this.keyringService.signTypedData({
             typedData,
@@ -285,6 +317,12 @@ export default class SigningService extends BaseService<Events> {
             addressOnNetwork,
             hexDataToSign
           )
+          break
+        case "qr-hardware":
+          signedData = await this.keyringService.personalSign({
+            signingData: hexDataToSign,
+            account: addressOnNetwork.address,
+          })
           break
         case "keyring":
           signedData = await this.keyringService.personalSign({

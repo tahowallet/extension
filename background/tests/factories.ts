@@ -10,6 +10,7 @@ import {
   PreferenceService,
   SigningService,
 } from "../services"
+import QRHardwareService from "../services/qr-hardware"
 
 const createRandom0xHash = () =>
   keccak256(Buffer.from(Math.random().toString()))
@@ -52,9 +53,14 @@ export const createLedgerService = async (): Promise<LedgerService> => {
   return LedgerService.create()
 }
 
+export const createQRHardwareService = async (): Promise<QRHardwareService> => {
+  return QRHardwareService.create()
+}
+
 type CreateSigningServiceOverrides = {
   keyringService?: Promise<KeyringService>
   ledgerService?: Promise<LedgerService>
+  qrHardwareService?: Promise<QRHardwareService>
   chainService?: Promise<ChainService>
 }
 
@@ -64,6 +70,7 @@ export const createSigningService = async (
   return SigningService.create(
     overrides.keyringService ?? createKeyringService(),
     overrides.ledgerService ?? createLedgerService(),
+    overrides.qrHardwareService ?? createQRHardwareService(),
     overrides.chainService ?? createChainService()
   )
 }
