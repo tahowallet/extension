@@ -11,6 +11,7 @@ import uiReducer from "./ui"
 import dappReducer from "./dapp"
 import claimReducer from "./claim"
 import ledgerReducer from "./ledger"
+import qrHardwareReducer from "./qr-hardware"
 import signingReducer from "./signing"
 import earnReducer from "./earn"
 import nftsReducer from "./nfts"
@@ -29,6 +30,7 @@ const mainReducer = combineReducers({
   signing: signingReducer,
   earn: earnReducer,
   ledger: ledgerReducer,
+  qrHardware: qrHardwareReducer,
   nfts: nftsReducer,
 })
 

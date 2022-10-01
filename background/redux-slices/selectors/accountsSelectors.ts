@@ -280,6 +280,7 @@ export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
 const signerTypeToAccountType: Record<SignerType, AccountType> = {
   keyring: AccountType.Imported,
   ledger: AccountType.Ledger,
+  "qr-hardware": AccountType.QRHardware,
   "read-only": AccountType.ReadOnly,
 }
 
