@@ -48,6 +48,10 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
     title: i18n.t("accounts.notificationPanel.ledger"),
     icon: "./images/ledger_icon@2x.png",
   },
+  [AccountType.QRHardware]: {
+    title: i18n.t("accounts.notificationPanel.ledger"),
+    icon: "./images/ledger_icon@2x.png",
+  },
 }
 
 function WalletTypeHeader({

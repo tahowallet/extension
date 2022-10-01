@@ -6,6 +6,7 @@ import BrowserTabContainer from "../components/BrowserTab/BrowserTabContainer"
 import Ledger from "./Ledger/Ledger"
 import TabbedOnboardingRoot from "./Onboarding/Tabbed/Root"
 
+import QRHardware from "./QRHardware/QRHardware"
 import TabNotFound from "./TabNotFound"
 
 /**
@@ -27,6 +28,9 @@ export default function Tab({ store }: { store: Store }): ReactElement {
               <BrowserTabContainer>
                 <Ledger />
               </BrowserTabContainer>
+            </Route>
+            <Route path="/qr-wallet" exact>
+              <QRHardware />
             </Route>
             <Route>
               <TabNotFound />

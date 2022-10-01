@@ -5,6 +5,7 @@ import SignerKeyringFrame from "./SignerKeyring/SignerKeyringFrame"
 import SignerLedgerFrame from "./SignerLedger/SignerLedgerFrame"
 import SignerReadOnlyFrame from "./SignerReadOnly/SignerReadOnlyFrame"
 import { SignerFrameProps } from "."
+import SignerQRHardwareFrame from "./SignerQRHardware/SignerQRHardwareFrame"
 
 // SignerFrame acts as a dispatcher, so prop spreading is a good tradeoff.
 // The explicit prop and component types ease the linter rule's concern around
@@ -26,6 +27,8 @@ export default function SignerFrame<T extends SignOperationType>(
       return <SignerKeyringFrame {...props} />
     case "ledger":
       return <SignerLedgerFrame {...props} />
+    case "qr-hardware":
+      return <SignerQRHardwareFrame {...props} />
     case "read-only":
       return <SignerReadOnlyFrame {...props} />
     default:
