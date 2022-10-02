@@ -8,6 +8,7 @@ import { QRHardwareDatabase } from "../db"
 import { normalizeEVMAddress } from "../../../lib/utils"
 import { ETH } from "../../../constants"
 import { EIP1559TransactionRequest } from "../../../networks"
+import { EIP712TypedData } from "../../../types"
 
 describe("Preference Service Integration", () => {
   let qrHardwareService: QRHardwareService
@@ -146,7 +147,7 @@ describe("Preference Service Integration", () => {
 
           const ur = ethSignature.toUR()
 
-          qrHardwareService.emitter.emit("signedTransaction", {
+          qrHardwareService.emitter.emit("resolvedSignature", {
             id,
             ur: {
               type: ur.type,
@@ -188,12 +189,92 @@ describe("Preference Service Integration", () => {
           expect(error.message).toEqual("Cancelled signing")
         }
 
-        expect(clearListenerSpy).toBeCalledWith("signedTransaction")
+        expect(clearListenerSpy).toBeCalledWith("resolvedSignature")
       })
     })
   })
 
-  describe("signTypedTransaction", () => {})
+  describe("signTypedData", () => {
+    const typedData: EIP712TypedData = {
+      domain: {
+        chainId: 1,
+        verifyingContract: "0x1",
+      },
+      types: { test: [{ name: "test", type: "test" }] },
+      message: { msg: "msg" },
+      primaryType: "test",
+    }
+    const r = "d4f0a7bcd95bba1fbb1051885054730e3f47064288575aacc102fbbf6a9a14da"
+    const s = "00fe1a7ecafe1a7ecafe1a7ecafe1a7ecafe1a7ecafe1a7ecafe1a7ecafe1a7e"
+
+    let signedTx
+    beforeEach(async () => {
+      await qrHardwareService.syncQRKeyring(qrWallet.ur)
+    })
+
+    describe("when signed data", () => {
+      const rlpSignatureData = Buffer.from(`${r}${s}13`, "hex")
+      beforeEach(() => {
+        qrHardwareService.emitter.on("requestSignature", ({ id }) => {
+          // r,v,s
+          const ethSignature = new ETHSignature(
+            rlpSignatureData,
+            Buffer.from(id),
+            "note..."
+          )
+
+          const ur = ethSignature.toUR()
+
+          qrHardwareService.emitter.emit("resolvedSignature", {
+            id,
+            ur: {
+              type: ur.type,
+              cbor: ur.cbor.toString("hex"),
+            },
+          })
+        })
+      })
+      it("returns signature", async () => {
+        signedTx = await qrHardwareService.signTypedData(
+          typedData,
+          qrWallet.addresses[0][1],
+          {
+            deviceID: qrWallet.addresses[0][1],
+            path: qrWallet.addresses[0][0],
+            type: "qr-hardware",
+          }
+        )
+
+        expect(signedTx).toEqual(`0x${r}${s}1b`)
+
+        expect(clearListenerSpy).toBeCalledWith("cancelSignature")
+      })
+    })
+    describe("when cancelled signature", () => {
+      beforeEach(() => {
+        qrHardwareService.emitter.on("requestSignature", () => {
+          qrHardwareService.emitter.emit("cancelSignature")
+        })
+      })
+      it("throws error", async () => {
+        try {
+          await qrHardwareService.signTypedData(
+            typedData,
+            qrWallet.addresses[0][1],
+            {
+              deviceID: qrWallet.addresses[0][1],
+              path: qrWallet.addresses[0][0],
+              type: "qr-hardware",
+            }
+          )
+        } catch (error: any) {
+          expect(error.message).toEqual("Cancelled signing")
+        }
+
+        expect(clearListenerSpy).toBeCalledWith("resolvedSignature")
+      })
+    })
+  })
 
   describe("signMessage", () => {})
 })

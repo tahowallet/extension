@@ -15,8 +15,9 @@ import {
   UnsignedTransaction,
   parse as parseRawTransaction,
 } from "@ethersproject/transactions"
+import { joinSignature } from "ethers/lib/utils"
 import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
-import { HexString } from "../../types"
+import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, QRHardwareDatabase } from "./db"
@@ -54,7 +55,7 @@ type Events = ServiceLifecycleEvents & {
   synced: SyncedDevice
   address: { id: string; derivationPath: string; address: HexString }
   requestSignature: { id: string; ur: { type: string; cbor: string } }
-  signedTransaction: URRequest
+  resolvedSignature: URRequest
   cancelSignature: undefined
 }
 
@@ -155,9 +156,9 @@ export default class QRHardwareService extends BaseService<Events> {
 
   async signTransaction(
     transactionRequest: TransactionRequestWithNonce,
-    { deviceID, path: derivationPath, type }: QRHardwareAccountSigner
+    signer: QRHardwareAccountSigner
   ): Promise<SignedTransaction> {
-    const qrHardwareAccount = await this.db.getAccountByAddress(deviceID)
+    const qrHardwareAccount = await this.db.getAccountByAddress(signer.deviceID)
     const keyring: QRKeyring = getKeyringFromUR({
       type: qrHardwareAccount!.type,
       cbor: qrHardwareAccount!.cbor,
@@ -167,15 +168,14 @@ export default class QRHardwareService extends BaseService<Events> {
 
     const serializedTx = serialize(ethersTx as UnsignedTransaction).substring(2)
 
-    const t: QRHardwareAccountSigner = { deviceID, path: derivationPath, type }
-    const address = await this.deriveAddress(t)
+    const address = await this.deriveAddress(signer)
 
     const requestId = uuid.v4()
 
     const ethSignRequest = EthSignRequest.constructETHRequest(
       Buffer.from(serializedTx, "hex"),
       ethersTx.type === 0 ? DataType.transaction : DataType.typedTransaction,
-      derivationPath,
+      signer.path,
       (await keyring.serialize()).xfp,
       requestId,
       ethersTx.chainId,
@@ -190,9 +190,8 @@ export default class QRHardwareService extends BaseService<Events> {
       })
 
       this.emitter
-        .once("signedTransaction")
+        .once("resolvedSignature")
         .then(({ ur: { cbor } }: URRequest) => {
-
           const ethSignature = ETHSignature.fromCBOR(Buffer.from(cbor, "hex"))
 
           const signature = ethSignature.getSignature()
@@ -256,7 +255,66 @@ export default class QRHardwareService extends BaseService<Events> {
         })
 
       this.emitter.once("cancelSignature").then(() => {
-        this.emitter.clearListeners("signedTransaction")
+        this.emitter.clearListeners("resolvedSignature")
+
+        reject(new Error("Cancelled signing"))
+      })
+    })
+  }
+
+  async signTypedData(
+    typedData: EIP712TypedData,
+    address: HexString,
+    signer: QRHardwareAccountSigner
+  ): Promise<string> {
+    const qrHardwareAccount = await this.db.getAccountByAddress(signer.deviceID)
+    const keyring: QRKeyring = getKeyringFromUR({
+      type: qrHardwareAccount!.type,
+      cbor: qrHardwareAccount!.cbor,
+    })
+
+    // eslint-disable-next-line no-underscore-dangle
+    const hdPath = await keyring._pathFromAddress(address)
+    const requestId = uuid.v4()
+    const ethSignRequest = EthSignRequest.constructETHRequest(
+      Buffer.from(JSON.stringify(typedData), "utf-8"),
+      DataType.typedData,
+      hdPath,
+      (await keyring.serialize()).xfp,
+      requestId,
+      undefined,
+      address
+    )
+
+    const ur = ethSignRequest.toUR()
+    this.emitter.emit("requestSignature", {
+      id: requestId,
+      ur: { type: ur.type, cbor: ur.cbor.toString("hex") },
+    })
+
+    return new Promise((resolve, reject) => {
+      this.emitter
+        .once("resolvedSignature")
+        .then(({ ur: { cbor } }: URRequest) => {
+          const ethSignature = ETHSignature.fromCBOR(Buffer.from(cbor, "hex"))
+
+          const signature = ethSignature.getSignature()
+
+          const r = signature.slice(0, 32)
+          const s = signature.slice(32, 64)
+          const v = signature.slice(64)
+          const serializedSignature = joinSignature({
+            r: `0x${r.toString("hex")}`,
+            s: `0x${s.toString("hex")}`,
+            v: parseInt(v.toString("hex"), 16),
+          })
+
+          this.emitter.clearListeners("cancelSignature")
+          resolve(serializedSignature)
+        })
+
+      this.emitter.once("cancelSignature").then(() => {
+        this.emitter.clearListeners("resolvedSignature")
 
         reject(new Error("Cancelled signing"))
       })

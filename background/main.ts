@@ -628,7 +628,7 @@ export default class Main extends BaseService<never> {
   }
 
   async resolveQRSignature(requestUR: URRequest): Promise<void> {
-    this.qrHardwareService.emitter.emit("signedTransaction", requestUR)
+    this.qrHardwareService.emitter.emit("resolvedSignature", requestUR)
   }
 
   async getAccountEthBalanceUncached(

@@ -268,10 +268,11 @@ export default class SigningService extends BaseService<Events> {
           )
           break
         case "qr-hardware":
-          signedData = await this.keyringService.signTypedData({
+          signedData = await this.qrHardwareService.signTypedData(
             typedData,
-            account: account.address,
-          })
+            account.address,
+            accountSigner
+          )
           break
         case "keyring":
           signedData = await this.keyringService.signTypedData({
