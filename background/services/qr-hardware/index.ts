@@ -55,7 +55,7 @@ type Events = ServiceLifecycleEvents & {
   address: { id: string; derivationPath: string; address: HexString }
   requestSignature: { id: string; ur: { type: string; cbor: string } }
   signedTransaction: URRequest
-  cancelSignature: { id: string }
+  cancelSignature: undefined
 }
 
 const getKeyringFromUR = ({ type, cbor }: { type: string; cbor: string }) => {
@@ -189,10 +189,9 @@ export default class QRHardwareService extends BaseService<Events> {
         ur: { type: ur.type, cbor: ur.cbor.toString("hex") },
       })
 
-      this.emitter.on(
-        "signedTransaction",
-        ({ id, ur: { cbor } }: URRequest) => {
-          if (id !== requestId) return
+      this.emitter
+        .once("signedTransaction")
+        .then(({ ur: { cbor } }: URRequest) => {
 
           const ethSignature = ETHSignature.fromCBOR(Buffer.from(cbor, "hex"))
 
@@ -252,14 +251,14 @@ export default class QRHardwareService extends BaseService<Events> {
             network: transactionRequest.network,
           } as const
 
+          this.emitter.clearListeners("cancelSignature")
           resolve(signedTx)
-        }
-      )
+        })
 
-      this.emitter.on("cancelSignature", ({ id }) => {
-        if (id !== requestId) return
+      this.emitter.once("cancelSignature").then(() => {
+        this.emitter.clearListeners("signedTransaction")
 
-        reject(new Error("Signing canceled"))
+        reject(new Error("Cancelled signing"))
       })
     })
   }
