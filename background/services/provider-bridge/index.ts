@@ -27,11 +27,8 @@ import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
 import { PermissionMap } from "./utils"
 import { toHexChainID } from "../../networks"
-<<<<<<< HEAD
 import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
-=======
 import { AddressOnNetwork } from "../../accounts"
->>>>>>> 272de103 (Narrow down network activity to address activity where possible)
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
