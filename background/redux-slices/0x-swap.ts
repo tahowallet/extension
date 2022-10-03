@@ -18,6 +18,7 @@ import {
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 import {
+  ARBITRUM_ONE,
   COMMUNITY_MULTISIG_ADDRESS,
   ETHEREUM,
   GOERLI,
@@ -140,6 +141,7 @@ const chainIdTo0xApiBase: { [chainID: string]: string | undefined } = {
   [POLYGON.chainID]: "polygon.api.0x.org",
   [OPTIMISM.chainID]: "optimism.api.0x.org",
   [GOERLI.chainID]: "goerli.api.0x.org",
+  [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
 }
 
 const get0xApiBase = (network: EVMNetwork) => {
