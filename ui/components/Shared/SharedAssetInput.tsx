@@ -367,34 +367,44 @@ export default function SharedAssetInput<T extends AnyAsset>(
     showMaxButton &&
     selectedAssetAndAmount?.asset.symbol !== currentNetwork.baseAsset.symbol
 
-  const getErrorMessage = (givenAmount: string): string | undefined => {
-    if (
-      givenAmount.trim() === "" ||
-      typeof selectedAssetAndAmount === "undefined" ||
-      !hasAmounts(selectedAssetAndAmount) ||
-      !("decimals" in selectedAssetAndAmount.asset)
-    ) {
+  const [errorMessage, setErrorMessage] = useState("")
+
+  const getErrorMessage = useCallback(
+    (givenAmount: string): string | undefined => {
+      if (
+        givenAmount.trim() === "" ||
+        typeof selectedAssetAndAmount === "undefined" ||
+        !hasAmounts(selectedAssetAndAmount) ||
+        !("decimals" in selectedAssetAndAmount.asset)
+      ) {
+        return undefined
+      }
+
+      const parsedGivenAmount = parseToFixedPointNumber(givenAmount.trim())
+      if (typeof parsedGivenAmount === "undefined") {
+        return t("assetInput.error.invalidAmount")
+      }
+
+      const decimalMatched = convertFixedPointNumber(
+        parsedGivenAmount,
+        selectedAssetAndAmount.asset.decimals
+      )
+      if (
+        decimalMatched.amount > selectedAssetAndAmount.amount ||
+        selectedAssetAndAmount.amount <= 0
+      ) {
+        return t("assetInput.error.insufficientBalance")
+      }
+
       return undefined
-    }
+    },
+    [selectedAssetAndAmount, t]
+  )
 
-    const parsedGivenAmount = parseToFixedPointNumber(givenAmount.trim())
-    if (typeof parsedGivenAmount === "undefined") {
-      return t("assetInput.error.invalidAmount")
-    }
-
-    const decimalMatched = convertFixedPointNumber(
-      parsedGivenAmount,
-      selectedAssetAndAmount.asset.decimals
-    )
-    if (
-      decimalMatched.amount > selectedAssetAndAmount.amount ||
-      selectedAssetAndAmount.amount <= 0
-    ) {
-      return t("assetInput.error.insufficientBalance")
-    }
-
-    return undefined
-  }
+  useEffect(() => {
+    const error = getErrorMessage(amount)
+    setErrorMessage(error ?? "")
+  }, [amount, getErrorMessage])
 
   const setMaxBalance = () => {
     if (
@@ -499,38 +509,45 @@ export default function SharedAssetInput<T extends AnyAsset>(
               )
             }
           />
-          {showCurrencyAmount && (
-            <div className="simple_text price_impact_wrap">
-              ${amountMainCurrency || "0.00"}
-              {priceImpact && (
-                <span className="price_impact_percent">
-                  ({priceImpact}%
-                  <SharedTooltip
-                    width={180}
-                    height={27}
-                    horizontalPosition="left"
-                    IconComponent={() => (
-                      <SharedIcon
-                        width={16}
-                        icon="icons/m/info.svg"
-                        color="var(--error)"
-                        customStyles="margin-left: -5px;"
-                      />
-                    )}
-                  >
-                    <div>
-                      {t("assetInput.tooltip.firstLine")}
-                      <br />
-                      {t("assetInput.tooltip.secondLine")}
-                    </div>
-                  </SharedTooltip>
-                  )
-                </span>
-              )}
-            </div>
-          )}
+          {showCurrencyAmount &&
+            (!errorMessage ? (
+              <>
+                <div className="simple_text price_impact_wrap">
+                  ${amountMainCurrency || "0.00"}
+                  {priceImpact && (
+                    <span className="price_impact_percent">
+                      ({priceImpact}%
+                      <SharedTooltip
+                        width={180}
+                        height={27}
+                        horizontalPosition="left"
+                        IconComponent={() => (
+                          <SharedIcon
+                            width={16}
+                            icon="icons/m/info.svg"
+                            color="var(--error)"
+                            customStyles="margin-left: -5px;"
+                          />
+                        )}
+                      >
+                        <div>
+                          {t("assetInput.tooltip.firstLine")}
+                          <br />
+                          {t("assetInput.tooltip.secondLine")}
+                        </div>
+                      </SharedTooltip>
+                      )
+                    </span>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="error_message">{errorMessage}</div>
+            ))}
         </div>
-        <div className="error_message">{getErrorMessage(amount)}</div>
+        {errorMessage && !showCurrencyAmount && (
+          <div className="error_message error_message_wrap">{errorMessage}</div>
+        )}
       </div>
       <style jsx>
         {`
@@ -631,17 +648,17 @@ export default function SharedAssetInput<T extends AnyAsset>(
           }
           .error_message {
             color: var(--error);
-            position: absolute;
             font-weight: 500;
             font-size: 14px;
-            line-height: 20px;
+            line-height: 24px;
+          }
+          .error_message_wrap {
+            position: absolute;
+            width: 150px;
+            margin-left: 172px;
             transform: translateY(-3px);
             align-self: flex-end;
             text-align: end;
-            width: 150px;
-            background-color: var(--green-95);
-            margin-left: 172px;
-            z-index: 1;
           }
         `}
       </style>
