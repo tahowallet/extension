@@ -133,6 +133,7 @@ import {
   activityOnChainEncountered,
   initializeActivities,
 } from "./redux-slices/activitiesOnChain"
+import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -574,9 +575,40 @@ export default class Main extends BaseService<never> {
     return accountBalance.assetAmount.amount
   }
 
+  async enrichActivities(addressNetwork: AddressOnNetwork): Promise<void> {
+    const activitiesToEnrich = selectActivitesHashesForEnrichment(
+      this.store.getState()
+    )
+
+    const transactions = await Promise.all(
+      activitiesToEnrich.map((txHash) =>
+        this.chainService.getTransaction(addressNetwork.network, txHash)
+      )
+    )
+
+    const enrichedTransactions = await Promise.all(
+      transactions.map((transaction) =>
+        this.enrichmentService.enrichTransaction(transaction, 2)
+      )
+    )
+
+    enrichedTransactions.forEach((transaction) =>
+      this.store.dispatch(
+        activityOnChainEncountered({
+          transaction,
+          forAccounts: [addressNetwork.address],
+        })
+      )
+    )
+  }
+
   async connectChainService(): Promise<void> {
     this.chainService.emitter.on("initializeActivities", (payload) => {
       this.store.dispatch(initializeActivities(payload))
+      const addressNetwork = this.store.getState().ui.selectedAccount
+      if (addressNetwork) {
+        this.enrichActivities(addressNetwork)
+      }
     })
 
     // Wire up chain service to account slice.
@@ -1239,6 +1271,10 @@ export default class Main extends BaseService<never> {
       this.providerBridgeService.notifyContentScriptsAboutAddressChange(
         addressNetwork.address
       )
+    })
+
+    uiSliceEmitter.on("newSelectedAccountSwitched", async (addressNetwork) => {
+      this.enrichActivities(addressNetwork)
     })
 
     uiSliceEmitter.on(

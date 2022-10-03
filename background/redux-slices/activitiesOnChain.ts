@@ -12,7 +12,7 @@ import { EnrichedEVMTransaction } from "../services/enrichment"
 import { HexString } from "../types"
 
 const ACTIVITIES_MAX_COUNT = 25
-const VALUE_DECIMALS = 2
+const ACTIVITY_DECIMALS = 2
 export const INFINITE_VALUE = "infinite"
 
 export type ActivityOnChain = {
@@ -111,9 +111,9 @@ const getValue = (transaction: Transaction | EnrichedEVMTransaction) => {
       asset,
       amount: value,
     },
-    VALUE_DECIMALS
+    ACTIVITY_DECIMALS
   ).toLocaleString("default", {
-    maximumFractionDigits: VALUE_DECIMALS,
+    maximumFractionDigits: ACTIVITY_DECIMALS,
   })
 
   if (isEnrichedTransaction(transaction)) {
@@ -204,7 +204,7 @@ const sortActivities = (a: ActivityOnChain, b: ActivityOnChain): number => {
   return b.blockHeight - a.blockHeight
 }
 
-const cleanActivitiesArray = (activitiesArray: ActivityOnChain[]) => {
+const cleanActivitiesArray = (activitiesArray: ActivityOnChain[] = []) => {
   activitiesArray.sort(sortActivities)
   activitiesArray.splice(ACTIVITIES_MAX_COUNT)
 }
@@ -275,7 +275,7 @@ const initializeActivitiesFromTransactions = ({
 
   // Sort and reduce # of transactions
   normalizedAccounts.forEach(({ address, network }) =>
-    cleanActivitiesArray(activities[address][network.chainID])
+    cleanActivitiesArray(activities[address]?.[network.chainID])
   )
 
   return activities
@@ -309,7 +309,9 @@ const activitiesOnChainSlice = createSlice({
       const { chainID } = transaction.network
       forAccounts.forEach((address) => {
         addActivityToState(immerState)(address, chainID, transaction)
-        cleanActivitiesArray(immerState[normalizeEVMAddress(address)][chainID])
+        cleanActivitiesArray(
+          immerState[normalizeEVMAddress(address)]?.[chainID]
+        )
       })
     },
   },

@@ -40,4 +40,15 @@ export const selectCurrentAccountActivities = createSelector(
     return activities[account.address]?.[network.chainID] ?? []
   }
 )
+
+export const selectActivitesHashesForEnrichment = createSelector(
+  (state: RootState) => state.activitiesOnChain,
+  selectCurrentAccount,
+  selectCurrentNetwork,
+  (activities, account, network) => {
+    return (activities[account.address]?.[network.chainID] ?? []).flatMap(
+      (activity) => ("type" in activity ? [] : activity.hash)
+    )
+  }
+)
 export default selectCurrentAccountActivitiesWithTimestamps
