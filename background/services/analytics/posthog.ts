@@ -7,22 +7,9 @@ function getCookie(name: string)
    return (value != null) ? unescape(value[1]) : null;
  }
 
+
+
 var retrievedUUID = getCookie("UUID");
-
-if (retrievedUUID) {
-  console.log('retrieved UUID: ', retrievedUUID);
-  createEvent()
-}
-
-if (retrievedUUID === null)
-{
-  console.log('No UUID found from website');
-}
-
-/* just some quick thoughts on pushing to posthog on a
- per event basis instead of including a lib...
- nothing to store and allows us to keep things pretty simple.
- */
 
 interface HogEventProp {
   distinct_id: string
@@ -41,8 +28,24 @@ type HogResponse = {
   data: string
 }
 
-export async function createEvent(): Promise<HogResponse> {
+export function posthogEvent(eventName:string) {
+
+  chrome.cookies.get({ url: 'http://localhost:8000', name: 'UUID' },
+   function (cookie) {
+     if (cookie) {
+       console.log("UUID: ",cookie.value);
+       createEvent(eventName, cookie.value)
+     }
+     else {
+       console.log('No UUID found stored in localstorage');
+     }
+ });
+}
+
+export async function createEvent(eventName:string, userID:string): Promise<HogResponse> {
   try {
+
+    var posthogEvent = eventName;
 
     const response = await fetch("https://app.posthog.com/capture/", {
       method: "POST",
@@ -50,9 +53,9 @@ export async function createEvent(): Promise<HogResponse> {
         // this is a safe public write only api key
         // roll this key for demo
         api_key: "phc_VzveyNxrn2xyiKDYn7XjrgaqELGeUilDZGiBVh6jNmh",
-        event: "Wallet Installed - Erik",
+        event: posthogEvent,
         properties: {
-          distinct_id: retrievedUUID,
+          distinct_id: userID,
           data:  "This is a test to storing event data into posthog",
           current_url: window.location.href,
           $lib: window.location.href,

@@ -3,7 +3,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import logger from "../../lib/logger"
 import { encodeJSON } from "../../lib/utils"
-import { createEvent } from "./posthog"
+import { posthogEvent } from "../analytics/posthog"
 
 
 /**
@@ -58,7 +58,7 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
         TelemetryService.formatBytes(encodeJSON(state).length)
       )
     }
-    createEvent()
+    posthogEvent("Wallet Installed")
     logger.debug(...output)
 
   }
