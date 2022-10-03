@@ -10,6 +10,7 @@ import {
 import { Transaction } from "../services/chain/db"
 import { EnrichedEVMTransaction } from "../services/enrichment"
 import { HexString } from "../types"
+import { createBackgroundAsyncThunk } from "./utils"
 
 const ACTIVITIES_MAX_COUNT = 25
 const ACTIVITY_DECIMALS = 2
@@ -32,11 +33,17 @@ export type ActivityOnChain = {
   assetLogoUrl?: string
 }
 
-export type ActivitesOnChainState = {
+type ActivitiesOnChain = {
   [address: string]: {
     [chainID: string]: ActivityOnChain[]
   }
 }
+
+type ActivitiesOnChainState = {
+  activities: ActivitiesOnChain
+}
+
+export type ActivityDetails = { label: string; value: string }[]
 
 function isEnrichedTransaction(
   transaction: Transaction | EnrichedEVMTransaction
@@ -210,7 +217,7 @@ const cleanActivitiesArray = (activitiesArray: ActivityOnChain[] = []) => {
 }
 
 const addActivityToState =
-  (activities: ActivitesOnChainState) =>
+  (activities: ActivitiesOnChain) =>
   (
     address: string,
     chainID: string,
@@ -239,7 +246,7 @@ const initializeActivitiesFromTransactions = ({
 }: {
   transactions: Transaction[]
   accounts: AddressOnNetwork[]
-}): ActivitesOnChainState => {
+}): ActivitiesOnChain => {
   const activities: {
     [address: string]: {
       [chainID: string]: ActivityOnChain[]
@@ -281,7 +288,9 @@ const initializeActivitiesFromTransactions = ({
   return activities
 }
 
-const initialState: ActivitesOnChainState = {}
+const initialState: ActivitiesOnChainState = {
+  activities: {},
+}
 
 const activitiesOnChainSlice = createSlice({
   name: "activitiesOnChain",
@@ -294,7 +303,9 @@ const activitiesOnChainSlice = createSlice({
       }: {
         payload: { transactions: Transaction[]; accounts: AddressOnNetwork[] }
       }
-    ) => initializeActivitiesFromTransactions(payload),
+    ) => ({
+      activities: initializeActivitiesFromTransactions(payload),
+    }),
     activityOnChainEncountered: (
       immerState,
       {
@@ -308,9 +319,9 @@ const activitiesOnChainSlice = createSlice({
     ) => {
       const { chainID } = transaction.network
       forAccounts.forEach((address) => {
-        addActivityToState(immerState)(address, chainID, transaction)
+        addActivityToState(immerState.activities)(address, chainID, transaction)
         cleanActivitiesArray(
-          immerState[normalizeEVMAddress(address)]?.[chainID]
+          immerState.activities[normalizeEVMAddress(address)]?.[chainID]
         )
       })
     },
@@ -321,3 +332,10 @@ export const { initializeActivities, activityOnChainEncountered } =
   activitiesOnChainSlice.actions
 
 export default activitiesOnChainSlice.reducer
+
+export const fetchSelectedActivityDetails = createBackgroundAsyncThunk(
+  "activities/fetchSelectedActivityDetails",
+  async (activityHash: string, { extra: { main } }) => {
+    return main.getActivityDetails(activityHash)
+  }
+)

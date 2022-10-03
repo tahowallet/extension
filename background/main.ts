@@ -130,10 +130,12 @@ import {
   EnrichedEVMTransactionRequest,
 } from "./services/enrichment"
 import {
+  ActivityDetails,
   activityOnChainEncountered,
   initializeActivities,
 } from "./redux-slices/activitiesOnChain"
 import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
+import { getActivityDetails } from "./redux-slices/utils/activity-on-chain-utils"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -580,26 +582,21 @@ export default class Main extends BaseService<never> {
       this.store.getState()
     )
 
-    const transactions = await Promise.all(
-      activitiesToEnrich.map((txHash) =>
-        this.chainService.getTransaction(addressNetwork.network, txHash)
+    activitiesToEnrich.forEach(async (txHash) => {
+      const transaction = await this.chainService.getTransaction(
+        addressNetwork.network,
+        txHash
       )
-    )
+      const enrichedTransaction =
+        await this.enrichmentService.enrichTransaction(transaction, 2)
 
-    const enrichedTransactions = await Promise.all(
-      transactions.map((transaction) =>
-        this.enrichmentService.enrichTransaction(transaction, 2)
-      )
-    )
-
-    enrichedTransactions.forEach((transaction) =>
       this.store.dispatch(
         activityOnChainEncountered({
-          transaction,
+          transaction: enrichedTransaction,
           forAccounts: [addressNetwork.address],
         })
       )
-    )
+    })
   }
 
   async connectChainService(): Promise<void> {
@@ -1331,6 +1328,20 @@ export default class Main extends BaseService<never> {
   connectTelemetryService(): void {
     // Pass the redux store to the telemetry service so we can analyze its size
     this.telemetryService.connectReduxStore(this.store)
+  }
+
+  async getActivityDetails(txHash: string): Promise<ActivityDetails> {
+    const addressNetwork = this.store.getState().ui.selectedAccount
+    const transaction = await this.chainService.getTransaction(
+      addressNetwork.network,
+      txHash
+    )
+    const enrichedTransaction = await this.enrichmentService.enrichTransaction(
+      transaction,
+      2
+    )
+
+    return getActivityDetails(enrichedTransaction)
   }
 
   async resolveNameOnNetwork(

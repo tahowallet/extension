@@ -1,10 +1,13 @@
-import React, { useCallback, ReactElement } from "react"
-import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
-import { getRecipient } from "@tallyho/tally-background/redux-slices/utils/activity-utils"
+import React, { useCallback, ReactElement, useEffect, useState } from "react"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  ActivityDetails,
+  ActivityOnChain,
+  fetchSelectedActivityDetails,
+} from "@tallyho/tally-background/redux-slices/activitiesOnChain"
 import SharedButton from "../Shared/SharedButton"
 import SharedAddress from "../Shared/SharedAddress"
-import { useBackgroundSelector } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { scanWebsite } from "../../utils/constants"
 
 interface DetailRowItemProps {
@@ -101,7 +104,7 @@ function DestinationCard(props: DestinationCardProps): ReactElement {
 }
 
 interface WalletActivityDetailsProps {
-  activityItem: ActivityItem
+  activityItem: ActivityOnChain
 }
 // Include this "or" type to handle existing placeholder data
 // on the single asset page. TODO: Remove once single asset page
@@ -111,7 +114,8 @@ export default function WalletActivityDetails(
   props: WalletActivityDetailsProps
 ): ReactElement {
   const { activityItem } = props
-
+  const dispatch = useBackgroundDispatch()
+  const [details, setDetails] = useState<ActivityDetails>([])
   const network = useBackgroundSelector(selectCurrentNetwork)
 
   const openExplorer = useCallback(() => {
@@ -123,10 +127,20 @@ export default function WalletActivityDetails(
       ?.focus()
   }, [activityItem?.hash, network.chainID])
 
-  if (!activityItem) return <></>
+  useEffect(() => {
+    const fetchDetails = async () => {
+      if (activityItem?.hash) {
+        setDetails(
+          (await dispatch(
+            fetchSelectedActivityDetails(activityItem.hash)
+          )) as unknown as ActivityDetails
+        )
+      }
+    }
+    fetchDetails()
+  }, [activityItem.hash, dispatch])
 
-  const { address: recipientAddress, name: recipientName } =
-    getRecipient(activityItem)
+  if (!activityItem) return <></>
 
   return (
     <div className="wrap standard_width center_horizontal">
@@ -147,30 +161,26 @@ export default function WalletActivityDetails(
         <div className="icon_transfer" />
         <DestinationCard
           label="To"
-          address={recipientAddress || "(Contract creation)"}
-          name={recipientName}
+          address={activityItem.recipient.address || "(Contract creation)"}
+          name={activityItem.recipient.name}
         />
       </div>
       <ul>
-        {Object.entries(activityItem.infoRows).map(
-          ([key, { label, value }]) => {
-            return (
-              <DetailRowItem
-                key={key}
-                label={label}
-                value={value}
-                valueDetail=""
-              />
-            )
-          }
-        )}
+        {details.map(({ label, value }) => {
+          return (
+            <DetailRowItem
+              key={label}
+              label={label}
+              value={value}
+              valueDetail=""
+            />
+          )
+        })}
         <DetailRowItem
           label="Timestamp"
           value={
-            typeof activityItem.annotation?.blockTimestamp !== "undefined"
-              ? new Date(
-                  activityItem.annotation?.blockTimestamp * 1000
-                ).toLocaleString()
+            typeof activityItem.blockTimestamp !== "undefined"
+              ? new Date(activityItem.blockTimestamp * 1000).toLocaleString()
               : "(Unknown)"
           }
           valueDetail=""

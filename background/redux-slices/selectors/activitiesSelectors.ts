@@ -1,39 +1,9 @@
-import { createSelector, EntityId } from "@reduxjs/toolkit"
-import { ActivityItem } from "../activities"
+import { createSelector } from "@reduxjs/toolkit"
 import { selectCurrentAccount, selectCurrentNetwork } from "./uiSelectors"
 import { RootState } from ".."
 
-// old activities selector
-export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
-  (state: RootState) => {
-    const currentAccount = selectCurrentAccount(state)
-    const { address } = currentAccount
-
-    return {
-      currentAccountActivities:
-        typeof address !== "undefined" ? state.activities[address] : undefined,
-    }
-  },
-  selectCurrentNetwork,
-  ({ currentAccountActivities }, network) => {
-    return currentAccountActivities?.[network.chainID]?.ids.map(
-      (id: EntityId): ActivityItem => {
-        const activityItem =
-          // Guaranteed by the fact that we got the id from the ids collection.
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          currentAccountActivities[network.chainID].entities[id]!
-
-        return {
-          ...activityItem,
-        }
-      }
-    )
-  }
-)
-
-// new selector
 export const selectCurrentAccountActivities = createSelector(
-  (state: RootState) => state.activitiesOnChain,
+  (state: RootState) => state.activitiesOnChain.activities,
   selectCurrentAccount,
   selectCurrentNetwork,
   (activities, account, network) => {
@@ -42,7 +12,7 @@ export const selectCurrentAccountActivities = createSelector(
 )
 
 export const selectActivitesHashesForEnrichment = createSelector(
-  (state: RootState) => state.activitiesOnChain,
+  (state: RootState) => state.activitiesOnChain.activities,
   selectCurrentAccount,
   selectCurrentNetwork,
   (activities, account, network) => {
@@ -51,4 +21,3 @@ export const selectActivitesHashesForEnrichment = createSelector(
     )
   }
 )
-export default selectCurrentAccountActivitiesWithTimestamps
