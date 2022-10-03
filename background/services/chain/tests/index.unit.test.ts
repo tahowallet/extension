@@ -100,7 +100,7 @@ describe("Chain Service", () => {
         chainService as unknown as ChainServiceExternalized
       ).lastUserActivityOnNetwork[ETHEREUM.chainID]
       chainService.markNetworkActivity(ETHEREUM.chainID)
-      expect(lastUserActivity).toBeLessThan(
+      expect(lastUserActivity).toBeLessThanOrEqual(
         (chainService as unknown as ChainServiceExternalized)
           .lastUserActivityOnNetwork[ETHEREUM.chainID]
       )
