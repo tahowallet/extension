@@ -14,6 +14,7 @@ import {
 import {
   BASE_ASSETS,
   FIAT_CURRENCIES,
+  HOUR,
   NETWORK_BY_CHAIN_ID,
   USD,
 } from "../../constants"
@@ -115,11 +116,17 @@ export default class IndexingService extends BaseService<Events> {
     private chainService: ChainService
   ) {
     super({
+      forceTokens: {
+        schedule: {
+          periodInMinutes: (HOUR / 1e3) * 12,
+        },
+        handler: () => this.handleTokenAlarm({ onlyActiveAccounts: false }),
+      },
       tokens: {
         schedule: {
           periodInMinutes: 1,
         },
-        handler: () => this.handleTokenAlarm(),
+        handler: () => this.handleTokenAlarm({ onlyActiveAccounts: true }),
       },
       tokenRefreshes: {
         schedule: {
@@ -723,12 +730,14 @@ export default class IndexingService extends BaseService<Events> {
 
   private async handleTokenRefresh(): Promise<void> {
     if (this.scheduledTokenRefresh) {
-      await this.handleTokenAlarm()
+      await this.handleTokenAlarm({ onlyActiveAccounts: true })
       this.scheduledTokenRefresh = false
     }
   }
 
-  private async handleTokenAlarm(): Promise<void> {
+  private async handleTokenAlarm({
+    onlyActiveAccounts = false,
+  }): Promise<void> {
     // no need to block here, as the first fetch blocks the entire service init
     this.fetchAndCacheTokenLists()
 
@@ -743,7 +752,7 @@ export default class IndexingService extends BaseService<Events> {
     // wait on balances being written to the db, don't wait on event emission
     await Promise.allSettled(
       (
-        await this.chainService.getAccountsToTrack()
+        await this.chainService.getAccountsToTrack(onlyActiveAccounts)
       ).map(async (addressOnNetwork) => {
         await this.retrieveTokenBalances(addressOnNetwork, activeAssetsToTrack)
       })
