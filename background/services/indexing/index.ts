@@ -746,7 +746,6 @@ export default class IndexingService extends BaseService<Events> {
         await this.chainService.getAccountsToTrack()
       ).map(async (addressOnNetwork) => {
         await this.retrieveTokenBalances(addressOnNetwork, activeAssetsToTrack)
-        await this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
       })
     )
   }

@@ -220,7 +220,7 @@ export default class ChainService extends BaseService<Events> {
       },
       forceRecentAssetTransfers: {
         schedule: {
-          periodInMinutes: (HOUR * 12) / 1e3,
+          periodInMinutes: (HOUR / 1e3) * 12,
         },
         handler: () => {
           this.handleRecentAssetTransferAlarm(true)
@@ -234,6 +234,26 @@ export default class ChainService extends BaseService<Events> {
           this.handleRecentAssetTransferAlarm()
         },
       },
+      baseAssetBalances: {
+        schedule: {
+          periodInMinutes: 2,
+        },
+        handler: () => {
+          this.handleBaseAssetBalancesAlarm()
+        },
+      },
+      forceBaseAssetBalances: {
+        // Force a balance refresh of all addresses on all networks
+        // at extension load.
+        runAtStart: true,
+        schedule: {
+          periodInMinutes: (HOUR / 1e3) * 12,
+        },
+        handler: () => {
+          this.handleBaseAssetBalancesAlarm(true)
+        },
+      },
+
       blockPrices: {
         runAtStart: false,
         schedule: {
@@ -1282,6 +1302,25 @@ export default class ChainService extends BaseService<Events> {
               this.isCurrentlyActiveAddress(addressNetwork.address))
         )
         .map((addressNetwork) => this.loadRecentAssetTransfers(addressNetwork))
+    )
+  }
+
+  private async handleBaseAssetBalancesAlarm(
+    forceUpdate = false
+  ): Promise<void> {
+    const accountsToTrack = await this.db.getAccountsToTrack()
+
+    await Promise.allSettled(
+      accountsToTrack
+        .filter(
+          (addressNetwork) =>
+            forceUpdate ||
+            (this.isCurrentlyActiveChainID(addressNetwork.network.chainID) &&
+              this.isCurrentlyActiveAddress(addressNetwork.address))
+        )
+        .map((addressNetwork) =>
+          this.getLatestBaseAccountBalance(addressNetwork)
+        )
     )
   }
 
