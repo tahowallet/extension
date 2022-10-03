@@ -1117,7 +1117,7 @@ export default class Main extends BaseService<never> {
     )
 
     this.providerBridgeService.emitter.on(
-      "permissionQueriedForChain",
+      "dappOpenedOnChain",
       async (chainID: string) => {
         this.chainService.markNetworkActivity(chainID)
       }

@@ -32,7 +32,7 @@ type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
   initializeAllowedPages: PermissionMap
   setClaimReferrer: string
-  permissionQueriedForChain: string
+  dappOpenedOnChain: string
 }
 
 /**
@@ -132,6 +132,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
       await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
         origin
       )
+
+    if (event.request.method === "eth_requestAccounts") {
+      // This is analogous to "User opened a dapp on chain X"
+      this.emitter.emit("dappOpenedOnChain", chainID)
+    }
 
     const originPermission = await this.checkPermission(origin, chainID)
     if (isTallyConfigPayload(event.request)) {
@@ -349,9 +354,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
     origin: string,
     chainID: string
   ): Promise<PermissionRequest | undefined> {
-    // This is analogous to "User opened a dapp on chain X"
-    this.emitter.emit("permissionQueriedForChain", chainID)
-
     const { address: selectedAddress } =
       await this.preferenceService.getSelectedAccount()
     const currentAddress = selectedAddress
