@@ -22,6 +22,8 @@ import SharedAssetItem, {
 } from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 import { useBackgroundSelector } from "../../hooks"
+import SharedIcon from "./SharedIcon"
+import SharedTooltip from "./SharedTooltip"
 
 // List of symbols we want to display first.  Lower array index === higher priority.
 // For now we just prioritize somewhat popular assets that we are able to load an icon for.
@@ -284,10 +286,13 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   label: string
   selectedAsset: AssetType | undefined
   amount: string
+  amountMainCurrency?: string
+  priceImpact?: string
   isAssetOptionsLocked: boolean
   disableDropdown: boolean
   showMaxButton: boolean
   isDisabled?: boolean
+  showCurrencyAmount?: boolean
   onAssetSelect?: (asset: AssetType) => void
   onAmountChange?: (value: string, errorMessage: string | undefined) => void
 }
@@ -321,10 +326,13 @@ export default function SharedAssetInput<T extends AnyAsset>(
     label,
     selectedAsset,
     amount,
+    amountMainCurrency,
+    priceImpact,
     isAssetOptionsLocked,
     disableDropdown,
     showMaxButton,
     isDisabled,
+    showCurrencyAmount,
     onAssetSelect,
     onAmountChange,
   } = props
@@ -473,24 +481,55 @@ export default function SharedAssetInput<T extends AnyAsset>(
             </SharedButton>
           )}
         </div>
-
-        <input
-          id={`asset_amount_input${inputId}`}
-          className="input_amount"
-          type="number"
-          step="any"
-          placeholder="0.0"
-          min="0"
-          disabled={isDisabled}
-          value={amount}
-          spellCheck={false}
-          onChange={(event) =>
-            onAmountChange?.(
-              event.target.value,
-              getErrorMessage(event.target.value)
-            )
-          }
-        />
+        <div className="input_amount_wrap">
+          <input
+            id={`asset_amount_input${inputId}`}
+            className="input_amount"
+            type="number"
+            step="any"
+            placeholder="0.0"
+            min="0"
+            disabled={isDisabled}
+            value={amount}
+            spellCheck={false}
+            onChange={(event) =>
+              onAmountChange?.(
+                event.target.value,
+                getErrorMessage(event.target.value)
+              )
+            }
+          />
+          {showCurrencyAmount && (
+            <div className="simple_text price_impact_wrap">
+              ${amountMainCurrency || "0.00"}
+              {priceImpact && (
+                <span className="price_impact_percent">
+                  ({priceImpact}%
+                  <SharedTooltip
+                    width={180}
+                    height={27}
+                    horizontalPosition="left"
+                    IconComponent={() => (
+                      <SharedIcon
+                        width={16}
+                        icon="icons/m/info.svg"
+                        color="var(--error)"
+                        customStyles="margin-left: -5px;"
+                      />
+                    )}
+                  >
+                    <div>
+                      {t("assetInput.tooltip.firstLine")}
+                      <br />
+                      {t("assetInput.tooltip.secondLine")}
+                    </div>
+                  </SharedTooltip>
+                  )
+                </span>
+              )}
+            </div>
+          )}
+        </div>
         <div className="error_message">{getErrorMessage(amount)}</div>
       </div>
       <style jsx>
@@ -546,6 +585,10 @@ export default function SharedAssetInput<T extends AnyAsset>(
             color: var(--green-40);
             opacity: 1;
           }
+          .input_amount_wrap {
+            display: flex;
+            flex-direction: column;
+          }
           .input_amount::placeholder {
             color: var(--green-40);
             opacity: 1;
@@ -571,6 +614,20 @@ export default function SharedAssetInput<T extends AnyAsset>(
           .input_amount:disabled {
             cursor: default;
             color: var(--green-40);
+          }
+          .price_impact_wrap {
+            font-size: 14px;
+            display: flex;
+            flex-direction: row;
+            justify-content: end;
+            gap: 2px;
+          }
+          .price_impact_percent {
+            color: var(--error);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 2px;
           }
           .error_message {
             color: var(--error);

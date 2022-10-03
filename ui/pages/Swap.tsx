@@ -20,9 +20,11 @@ import {
   HIDE_TOKEN_FEATURES,
 } from "@tallyho/tally-background/features"
 import {
+  getAssetsState,
   selectCurrentAccountBalances,
   selectCurrentAccountSigner,
   selectCurrentNetwork,
+  selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
@@ -30,7 +32,11 @@ import {
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
-import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
+import {
+  convertFixedPointNumber,
+  fixedPointNumberToString,
+  parseToFixedPointNumber,
+} from "@tallyho/tally-background/lib/fixed-point"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import logger from "@tallyho/tally-background/lib/logger"
 import { useLocation } from "react-router-dom"
@@ -39,9 +45,13 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
-import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import {
+  enrichAssetAmountWithMainCurrencyValues,
+  isNetworkBaseAsset,
+} from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
+import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -493,6 +503,56 @@ export default function Swap(): ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [swapTransactionSettings, isApprovalInProgress])
 
+  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
+  const assets = useBackgroundSelector(getAssetsState)
+
+  const getAssetAmount = (
+    asset: SmartContractFungibleAsset | FungibleAsset,
+    amount: string
+  ) => {
+    const fixedPointAmount = parseToFixedPointNumber(amount.toString())
+    if (typeof fixedPointAmount === "undefined") {
+      return undefined
+    }
+    const decimalMatched = convertFixedPointNumber(
+      fixedPointAmount,
+      asset.decimals
+    )
+
+    const assetPricePoint = selectAssetPricePoint(
+      assets,
+      asset?.symbol,
+      mainCurrencySymbol
+    )
+
+    return enrichAssetAmountWithMainCurrencyValues(
+      {
+        asset,
+        amount: decimalMatched.amount,
+      },
+      assetPricePoint,
+      2
+    )
+  }
+
+  const assetSellAmount = sellAsset && getAssetAmount(sellAsset, sellAmount)
+  const assetBuyAmount = buyAsset && getAssetAmount(buyAsset, buyAmount)
+
+  const getPriceImpact = (): string | undefined => {
+    const buyCurrencyAmount = assetBuyAmount?.localizedMainCurrencyAmount
+    const sellCurrencyAmount = assetSellAmount?.localizedMainCurrencyAmount
+
+    if (buyCurrencyAmount && sellCurrencyAmount) {
+      const priceImpact = (+buyCurrencyAmount / +sellCurrencyAmount)
+        .toFixed(2)
+        .toString()
+      return `${
+        sellCurrencyAmount > buyCurrencyAmount ? "-" : ""
+      }${priceImpact}`
+    }
+    return undefined
+  }
+
   return (
     <>
       <CorePage>
@@ -554,6 +614,10 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
                 amount={sellAmount}
+                amountMainCurrency={
+                  assetSellAmount?.localizedMainCurrencyAmount
+                }
+                showCurrencyAmount
                 assetsAndAmounts={sellAssetAmounts}
                 selectedAsset={sellAsset}
                 isDisabled={sellAmountLoading}
@@ -573,6 +637,9 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
                 amount={buyAmount}
+                amountMainCurrency={assetBuyAmount?.localizedMainCurrencyAmount}
+                showCurrencyAmount
+                priceImpact={getPriceImpact()}
                 // FIXME Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
                 selectedAsset={buyAsset}
