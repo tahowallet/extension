@@ -7,8 +7,6 @@ function getCookie(name: string)
    return (value != null) ? unescape(value[1]) : null;
  }
 
-
-
 var retrievedUUID = getCookie("UUID");
 
 interface HogEventProp {
