@@ -15,7 +15,7 @@ const getSourceLabel = (
     annotation,
     typedData: { domain },
   } = typedDataRequest
-  if (annotation.type !== "unrecognized") {
+  if (annotation !== undefined) {
     return capitalize(annotation.source)
   }
 

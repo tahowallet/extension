@@ -303,7 +303,7 @@ const parseAndNotifyOnZeroExApiError = (
           (e) => e.reason === "INSUFFICIENT_ASSET_LIQUIDITY"
         )
       ) {
-        dispatch(setSnackbarMessage("Price Impact Too High"))
+        dispatch(setSnackbarMessage("Insufficient liquidity for this trade."))
       }
     }
   } catch (e) {

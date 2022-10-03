@@ -47,10 +47,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
             {typeof localizedTotalMainCurrencyAmount === "undefined" ? (
               <SharedLoadingSpinner size="small" />
             ) : (
-              <div className="balance">
-                <span className="lighter">$</span>
-                {localizedTotalMainCurrencyAmount}
-              </div>
+              <div className="balance">${localizedTotalMainCurrencyAmount}</div>
             )}
             {isSelected ? (
               <div className="connected_status">
@@ -119,7 +116,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
         }
         .balance {
           text-align: right;
-          color: #fff;
+          color: var(--green-40);
           font-size: 16px;
         }
         .connected_status {
@@ -131,9 +128,6 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
         }
         .info {
           margin-left: 16px;
-        }
-        .lighter {
-          color: var(--green-40);
         }
         .right {
           display: flex;
