@@ -150,6 +150,10 @@ export default class ChainService extends BaseService<Events> {
     [chainID: string]: UNIXTime
   }
 
+  private lastUserActivityOnAddress: {
+    [address: HexString]: UNIXTime
+  } = {}
+
   /**
    * For each chain id, track an address's last seen nonce. The tracked nonce
    * should generally not be allocated to a new transaction, nor should any
