@@ -1274,6 +1274,13 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
+  private isCurrentlyActiveAddress(address: HexString): boolean {
+    return (
+      Date.now() <
+      this.lastUserActivityOnAddress[address] + NETWORK_POLLING_TIMEOUT
+    )
+  }
+
   /**
    * Check for any incoming or outgoing asset transfers involving tracked accounts.
    */
