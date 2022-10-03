@@ -33,7 +33,6 @@ import {
 import { SUPPORT_OPTIMISM } from "../../features"
 import { getOrCreateDB, InternalEthereumProviderDatabase } from "./db"
 import { TALLY_INTERNAL_ORIGIN } from "./constants"
-import { ETHEREUM } from "../../constants"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
