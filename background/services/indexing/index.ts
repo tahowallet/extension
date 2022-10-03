@@ -115,17 +115,17 @@ export default class IndexingService extends BaseService<Events> {
     private chainService: ChainService
   ) {
     super({
-      tokens: {
+      balance: {
         schedule: {
           periodInMinutes: 1,
         },
-        handler: () => this.handleTokenAlarm(),
+        handler: () => this.handleBalanceAlarm(),
       },
-      tokenRefreshes: {
+      balanceRefresh: {
         schedule: {
           periodInMinutes: 1,
         },
-        handler: () => this.handleTokenRefresh(),
+        handler: () => this.handleBalanceRefresh(),
       },
       prices: {
         schedule: {
@@ -720,14 +720,14 @@ export default class IndexingService extends BaseService<Events> {
     // the version has gone up
   }
 
-  private async handleTokenRefresh(): Promise<void> {
+  private async handleBalanceRefresh(): Promise<void> {
     if (this.scheduledTokenRefresh) {
-      await this.handleTokenAlarm()
+      await this.handleBalanceAlarm()
       this.scheduledTokenRefresh = false
     }
   }
 
-  private async handleTokenAlarm(): Promise<void> {
+  private async handleBalanceAlarm(): Promise<void> {
     // no need to block here, as the first fetch blocks the entire service init
     this.fetchAndCacheTokenLists()
 
