@@ -3,8 +3,6 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import logger from "../../lib/logger"
 import { encodeJSON } from "../../lib/utils"
-import { posthogEvent } from "../analytics/posthog"
-
 
 /**
  * The TelemetryService is responsible for tracking usage statistics in Tally.
@@ -58,7 +56,6 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
         TelemetryService.formatBytes(encodeJSON(state).length)
       )
     }
-    posthogEvent("Wallet Installed")
     logger.debug(...output)
 
   }
