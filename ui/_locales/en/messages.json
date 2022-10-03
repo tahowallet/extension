@@ -176,14 +176,14 @@
       "invalidLimit": "Gas Limit must be a number",
       "lowGas": "Low"
     },
-    "optimism": {
+    "optimismOrArbitrum": {
       "title": "Network fees",
-      "header": "Gas fees on Optimism work differently from Ethereum.",
+      "header": "Gas fees on {{name}} work differently from Ethereum.",
       "transactionFee": "Transaction fee",
       "rollUp": "Roll-up",
       "estimatedGas": "Estimated Gas",
-      "explainerOne": "The estimated gas cost for Optimism transactions includes an Optimism fee + an Ethereum roll-up fee (the fee to register transaction on Ethereum chain).",
-      "explainerTwo": "Tally Ho stays in sync with the current Optimism and Ethereum network fees to estimate the fee for a given transaction.",
+      "explainerOne": "The estimated gas cost for {{name}} transactions includes an {{name}} fee + an Ethereum roll-up fee (the fee to register transaction on Ethereum chain).",
+      "explainerTwo": "Tally Ho stays in sync with the current {{name}} and Ethereum network fees to estimate the fee for a given transaction.",
       "explainerThree": "Only in rare cases will the actual fee you pay change by more than 25% from the estimate.",
       "learnMore": "Learn More"
     },
