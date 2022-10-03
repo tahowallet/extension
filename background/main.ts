@@ -4,6 +4,7 @@ import deepDiff from "webext-redux/lib/strategies/deepDiff/diff"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
+import { posthogEvent } from "./services/analytics/posthog"
 
 import {
   decodeJSON,
@@ -1287,3 +1288,13 @@ export default class Main extends BaseService<never> {
     this.store.dispatch(rejectDataSignature())
   }
 }
+
+// Redirect user after uninstalling extension
+if(chrome.runtime.setUninstallURL) {
+  chrome.runtime.setUninstallURL('https://localhost:8000');
+};
+
+// Fire analytics event when extension is installed
+chrome.runtime.onInstalled.addListener(details => {
+  posthogEvent("Extension installed");
+});
