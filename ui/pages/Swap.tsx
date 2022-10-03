@@ -539,13 +539,12 @@ export default function Swap(): ReactElement {
   const assetBuyAmount = buyAsset && getAssetAmount(buyAsset, buyAmount)
 
   const getPriceImpact = (): string | undefined => {
-    const buyCurrencyAmount = assetBuyAmount?.localizedMainCurrencyAmount
-    const sellCurrencyAmount = assetSellAmount?.localizedMainCurrencyAmount
+    const buyCurrencyAmount = assetBuyAmount?.mainCurrencyAmount
+    const sellCurrencyAmount = assetSellAmount?.mainCurrencyAmount
 
     if (buyCurrencyAmount && sellCurrencyAmount) {
-      const priceImpact = (+buyCurrencyAmount / +sellCurrencyAmount)
-        .toFixed(2)
-        .toString()
+      const priceImpact = (buyCurrencyAmount / sellCurrencyAmount).toFixed(2)
+
       return `${
         sellCurrencyAmount > buyCurrencyAmount ? "-" : ""
       }${priceImpact}`
