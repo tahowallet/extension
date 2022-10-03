@@ -745,8 +745,16 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
-  async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
-    return this.db.getAccountsToTrack()
+  async getAccountsToTrack(
+    onlyActiveAccounts = false
+  ): Promise<AddressOnNetwork[]> {
+    const accounts = await this.db.getAccountsToTrack()
+    if (onlyActiveAccounts) {
+      return accounts.filter(({ address }) =>
+        this.isCurrentlyActiveAddress(address)
+      )
+    }
+    return accounts
   }
 
   async getNetworksToTrack(): Promise<EVMNetwork[]> {
