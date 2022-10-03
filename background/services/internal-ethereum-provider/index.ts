@@ -259,6 +259,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           newChainId
         )
         if (supportedNetwork) {
+          const { address } = await this.preferenceService.getSelectedAccount()
+          await this.chainService.markAddressActivity({
+            address,
+            network: supportedNetwork,
+          })
           await this.db.setActiveChainIdForOrigin(origin, supportedNetwork)
           return null
         }
@@ -357,7 +362,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       (network) => toHexChainID(network.chainID) === toHexChainID(chainID)
     )
     if (activeNetwork) {
-      this.chainService.markNetworkActivity(activeNetwork.chainID)
       return activeNetwork
     }
 
@@ -365,7 +369,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       const activatedNetwork = await this.chainService.activateNetworkOrThrow(
         chainID
       )
-      this.chainService.markNetworkActivity(chainID)
       return activatedNetwork
     } catch (e) {
       logger.warn(e)

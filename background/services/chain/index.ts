@@ -147,6 +147,10 @@ export default class ChainService extends BaseService<Events> {
     [chainID: string]: UNIXTime
   }
 
+  private lastUserActivityOnAddress: {
+    [address: HexString]: UNIXTime
+  } = {}
+
   /**
    * For each chain id, track an address's last seen nonce. The tracked nonce
    * should generally not be allocated to a new transaction, nor should any
@@ -379,7 +383,6 @@ export default class ChainService extends BaseService<Events> {
       logger.warn(
         `${activeNetwork.name} already active - no need to activate it`
       )
-      this.markNetworkActivity(activeNetwork.chainID)
       return activeNetwork
     }
 
@@ -410,7 +413,6 @@ export default class ChainService extends BaseService<Events> {
       })
     }
 
-    this.markNetworkActivity(networkToActivate.chainID)
     return networkToActivate
   }
 
@@ -1026,13 +1028,27 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async markNetworkActivity(chainID: string): Promise<void> {
+    const normalizedChainID = toHexChainID(chainID)
     const now = Date.now()
     const deactivatesAt = this.lastUserActivityOnNetwork[chainID]
-    this.lastUserActivityOnNetwork[chainID] = now
+    this.lastUserActivityOnNetwork[normalizedChainID] = now
     if (now - NETWORK_POLLING_TIMEOUT > deactivatesAt) {
       // Reactivating a potentially deactivated network
+      this.pollBlockPricesForNetwork(normalizedChainID)
+    }
+  }
+
+  async markAddressActivity({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<void> {
+    this.markNetworkActivity(network.chainID)
+    const now = Date.now()
+    const inactiveAt = this.lastUserActivityOnNetwork[address]
+    this.lastUserActivityOnAddress[address] = now
+    if (now - NETWORK_POLLING_TIMEOUT > inactiveAt) {
+      // Reactivating a potentially deactivated network
       this.handleRecentAssetTransferAlarm()
-      this.pollBlockPricesForNetwork(chainID)
     }
   }
 
@@ -1226,7 +1242,8 @@ export default class ChainService extends BaseService<Events> {
         .filter(
           (addressNetwork) =>
             forceUpdate ||
-            this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
+            (this.isCurrentlyActiveChainID(addressNetwork.network.chainID) &&
+              this.isCurrentlyActiveAddress(addressNetwork.address))
         )
         .map(async (addressNetwork) => {
           return this.loadRecentAssetTransfers(addressNetwork, true)
@@ -1238,6 +1255,13 @@ export default class ChainService extends BaseService<Events> {
     return (
       Date.now() <
       this.lastUserActivityOnNetwork[chainID] + NETWORK_POLLING_TIMEOUT
+    )
+  }
+
+  private isCurrentlyActiveAddress(address: HexString): boolean {
+    return (
+      Date.now() <
+      this.lastUserActivityOnAddress[address] + NETWORK_POLLING_TIMEOUT
     )
   }
 
@@ -1254,7 +1278,8 @@ export default class ChainService extends BaseService<Events> {
         .filter(
           (addressNetwork) =>
             forceUpdate ||
-            this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
+            (this.isCurrentlyActiveChainID(addressNetwork.network.chainID) &&
+              this.isCurrentlyActiveAddress(addressNetwork.address))
         )
         .map((addressNetwork) => this.loadRecentAssetTransfers(addressNetwork))
     )

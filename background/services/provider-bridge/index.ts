@@ -27,12 +27,13 @@ import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
 import { PermissionMap } from "./utils"
 import { toHexChainID } from "../../networks"
+import { AddressOnNetwork } from "../../accounts"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
   initializeAllowedPages: PermissionMap
   setClaimReferrer: string
-  dappOpenedOnChain: string
+  dappOpenedOnChain: AddressOnNetwork
 }
 
 /**
@@ -128,24 +129,25 @@ export default class ProviderBridgeService extends BaseService<Events> {
       result: [],
     }
 
-    const { chainID } =
+    const network =
       await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
         origin
       )
 
     if (event.request.method === "eth_requestAccounts") {
       // This is analogous to "User opened a dapp on chain X"
-      this.emitter.emit("dappOpenedOnChain", chainID)
+      const { address } = await this.preferenceService.getSelectedAccount()
+      this.emitter.emit("dappOpenedOnChain", { address, network })
     }
 
-    const originPermission = await this.checkPermission(origin, chainID)
+    const originPermission = await this.checkPermission(origin, network.chainID)
     if (isTallyConfigPayload(event.request)) {
       // let's start with the internal communication
       response.id = "tallyHo"
       response.result = {
         method: event.request.method,
         defaultWallet: await this.preferenceService.getDefaultWallet(),
-        chainId: toHexChainID(chainID),
+        chainId: toHexChainID(network.chainID),
       }
     } else if (event.request.method === "tally_setClaimReferrer") {
       const referrer = event.request.params[0]
