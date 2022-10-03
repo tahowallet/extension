@@ -14,6 +14,7 @@ import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import { useAreKeyringsUnlocked, useBackgroundSelector } from "../../hooks"
 import AccountItemActionHeader from "./AccountItemActionHeader"
+import { posthogEvent } from "../../../background/services/analytics/posthog"
 
 interface AccountItemRemovalConfirmProps {
   account: AccountTotal
@@ -96,6 +97,7 @@ export default function AccountItemRemovalConfirm({
             e.stopPropagation()
             // don't prompt for unlock if removing read-only account.
             if (readOnlyAccount || areKeyringsUnlocked) {
+              posthogEvent("Wallet Removed");
               dispatch(
                 removeAccount({
                   addressOnNetwork: { address, network },
@@ -107,6 +109,7 @@ export default function AccountItemRemovalConfirm({
                   accountsData.evm[network.chainID]
                 ).find((accountAddress) => accountAddress !== address)
                 if (newAddress) {
+                  posthogEvent("Wallet Removed");
                   dispatch(
                     setNewSelectedAccount({
                       address: newAddress,
