@@ -63,8 +63,8 @@ function purgeSensitiveFailSafe(log: string): string {
   // 2. Private key length segments
   // 3. Lowercase groups of 12 words, which therefore covers 24
 
-  return `${log} `.replaceAll(
-    /(0x(\S+))|(\b[a-zA-Z0-9]{64}\b)|((?:[a-z]+\s){12})/g,
+  return log.replaceAll(
+    /0x[0-9a-fA-F]+|(\b[a-zA-Z0-9]{64}\b)|(?:[a-z]+(?:\s|$)){12}/g,
     "[REDACTED]"
   )
 }
