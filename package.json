@@ -13,6 +13,9 @@
       "jest-webextension-mock",
       "./setupJest.ts"
     ],
+    "setupFilesAfterEnv": [
+      "./setupJest.env.ts"
+    ],
     "testEnvironment": "jsdom"
   },
   "keywords": [
