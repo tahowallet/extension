@@ -218,7 +218,7 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: 1.5,
         },
         handler: () => {
-          this.handleRecentIncomingAssetTransferAlarm()
+          this.handleRecentIncomingAssetTransferAlarm(true)
         },
       },
       forceRecentAssetTransfers: {
@@ -226,7 +226,7 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: (HOUR * 12) / 1e3,
         },
         handler: () => {
-          this.handleRecentAssetTransferAlarm(true)
+          this.handleRecentAssetTransferAlarm()
         },
       },
       recentAssetTransfers: {
@@ -234,7 +234,7 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: 15,
         },
         handler: () => {
-          this.handleRecentAssetTransferAlarm()
+          this.handleRecentAssetTransferAlarm(true)
         },
       },
       blockPrices: {
@@ -1259,19 +1259,13 @@ export default class ChainService extends BaseService<Events> {
    * Check for any incoming asset transfers involving tracked accounts.
    */
   private async handleRecentIncomingAssetTransferAlarm(
-    forceUpdate = false
+    onlyActiveAccounts = false
   ): Promise<void> {
-    const accountsToTrack = await this.db.getAccountsToTrack()
+    const accountsToTrack = await this.getAccountsToTrack(onlyActiveAccounts)
     await Promise.allSettled(
-      accountsToTrack
-        .filter(
-          (addressNetwork) =>
-            forceUpdate ||
-            this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
-        )
-        .map(async (addressNetwork) => {
-          return this.loadRecentAssetTransfers(addressNetwork, true)
-        })
+      accountsToTrack.map(async (addressNetwork) => {
+        return this.loadRecentAssetTransfers(addressNetwork, true)
+      })
     )
   }
 
@@ -1293,23 +1287,19 @@ export default class ChainService extends BaseService<Events> {
    * Check for any incoming or outgoing asset transfers involving tracked accounts.
    */
   private async handleRecentAssetTransferAlarm(
-    forceUpdate = false
+    onlyActiveAccounts = false
   ): Promise<void> {
-    const accountsToTrack = await this.db.getAccountsToTrack()
+    const accountsToTrack = await this.getAccountsToTrack(onlyActiveAccounts)
 
     await Promise.allSettled(
-      accountsToTrack
-        .filter(
-          (addressNetwork) =>
-            forceUpdate ||
-            this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
-        )
-        .map((addressNetwork) => this.loadRecentAssetTransfers(addressNetwork))
+      accountsToTrack.map((addressNetwork) =>
+        this.loadRecentAssetTransfers(addressNetwork)
+      )
     )
   }
 
   private async handleHistoricAssetTransferAlarm(): Promise<void> {
-    const accountsToTrack = await this.db.getAccountsToTrack()
+    const accountsToTrack = await this.getAccountsToTrack()
 
     await Promise.allSettled(
       accountsToTrack.map((an) => this.loadHistoricAssetTransfers(an))
