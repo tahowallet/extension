@@ -750,8 +750,10 @@ export default class ChainService extends BaseService<Events> {
   ): Promise<AddressOnNetwork[]> {
     const accounts = await this.db.getAccountsToTrack()
     if (onlyActiveAccounts) {
-      return accounts.filter(({ address }) =>
-        this.isCurrentlyActiveAddress(address)
+      return accounts.filter(
+        ({ address, network }) =>
+          this.isCurrentlyActiveAddress(address) &&
+          this.isCurrentlyActiveChainID(network.chainID)
       )
     }
     return accounts
