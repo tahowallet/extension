@@ -3,8 +3,9 @@ import { AccountBalance, AddressOnNetwork } from "../accounts"
 import { ETH, ETHEREUM, OPTIMISM } from "../constants"
 import {
   AnyEVMTransaction,
-  BlockPrices,
   LegacyEVMTransactionRequest,
+  AnyEVMBlock,
+  BlockPrices,
 } from "../networks"
 import {
   ChainService,
@@ -116,6 +117,20 @@ export const createAnyEVMTransaction = (
     type: 0,
     v: 309,
     value: 500000000000000000n,
+    ...overrides,
+  }
+}
+
+export const createAnyEVMBlock = (
+  overrides: Partial<AnyEVMBlock> = {}
+): AnyEVMBlock => {
+  return {
+    hash: createRandom0xHash(),
+    parentHash: createRandom0xHash(),
+    difficulty: 1000000000000n,
+    blockHeight: 15547463,
+    timestamp: Date.now(),
+    network: OPTIMISM,
     ...overrides,
   }
 }

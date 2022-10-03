@@ -19,3 +19,5 @@ export const SUPPORT_KEYRING_LOCKING =
   process.env.SUPPORT_KEYRING_LOCKING === "true"
 export const SUPPORT_FORGOT_PASSWORD =
   process.env.SUPPORT_FORGOT_PASSWORD === "true"
+export const ENABLE_ACHIEVEMENTS_TAB =
+  process.env.ENABLE_ACHIEVEMENTS_TAB === "true"

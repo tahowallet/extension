@@ -41,7 +41,7 @@ async function annotationsFromLogs(
   resolvedTime: number,
   block: AnyEVMBlock | undefined
 ): Promise<TransactionAnnotation[]> {
-  const assets = await indexingService.getCachedAssets(network)
+  const assets = indexingService.getCachedAssets(network)
 
   const accountAddresses = (await chainService.getAccountsToTrack()).map(
     (account) => account.address
@@ -270,7 +270,7 @@ export default async function resolveTransactionAnnotation(
         }
       }
     } else {
-      const assets = await indexingService.getCachedAssets(network)
+      const assets = indexingService.getCachedAssets(network)
 
       // See if the address matches a fungible asset.
       const matchingFungibleAsset = assets.find(

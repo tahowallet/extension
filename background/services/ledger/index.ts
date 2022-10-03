@@ -14,6 +14,7 @@ import {
 } from "ethers/lib/utils"
 import {
   isEIP1559TransactionRequest,
+  isKnownTxType,
   sameNetwork,
   SignedTransaction,
   TransactionRequestWithNonce,
@@ -423,12 +424,7 @@ export default class LedgerService extends BaseService<Events> {
           throw new Error("Transaction doesn't appear to have been signed.")
         }
 
-        if (
-          tx.type !== 0 &&
-          tx.type !== 1 &&
-          tx.type !== 2 &&
-          tx.type !== null
-        ) {
+        if (!isKnownTxType(tx.type)) {
           throw new Error(`Unknown transaction type ${tx.type}`)
         }
 
