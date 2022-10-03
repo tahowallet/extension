@@ -11,10 +11,8 @@ import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/sel
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
-import LedgerContinueButton from "../../components/Ledger/LedgerContinueButton"
-import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
-import OnboardingDerivationPathSelectAlt from "../../components/Onboarding/OnboardingDerivationPathSelect"
 import { scanWebsite } from "../../utils/constants"
+import QRHardwarePanelContainer from "./QRHardwarePanelContainer"
 
 const addressesPerPage = 6
 
@@ -112,9 +110,11 @@ function usePageData({
 function QRDeviceAccountList({
   device,
   onConnect,
+  onReset,
 }: {
   device: QRHardwareState
   onConnect: () => void
+  onReset: () => void
 }): ReactElement {
   const [pageIndex, setPageIndex] = useState(0)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
@@ -135,7 +135,6 @@ function QRDeviceAccountList({
             ({ path, address, balance, isSelected, setSelected }) => (
               <div className="item" key={path}>
                 <label className="checkbox_label">
-                  {/* TODO: Share this implementation of checkbox. */}
                   <input
                     className="checkbox_input"
                     type="checkbox"
@@ -219,7 +218,9 @@ function QRDeviceAccountList({
           </div>
         </div>
       </div>
-      <LedgerContinueButton
+      <SharedButton
+        type="primary"
+        size="large"
         isDisabled={pageData.selectedAccounts.length === 0}
         onClick={() => {
           dispatch(
@@ -229,7 +230,16 @@ function QRDeviceAccountList({
         }}
       >
         Connect selected
-      </LedgerContinueButton>
+      </SharedButton>
+      <SharedButton
+        type="tertiaryGray"
+        size="large"
+        onClick={() => {
+          onReset()
+        }}
+      >
+        Forget this device
+      </SharedButton>
 
       <style jsx>{`
         .addresses {
@@ -358,30 +368,24 @@ function QRDeviceAccountList({
 export default function QRHardwareImportAccounts({
   device,
   onConnect,
+  onReset,
 }: {
   device: QRHardwareState
   onConnect: () => void
+  onReset: () => void
 }): ReactElement {
-  const [parentPath, setParentPath] = useState<string | null>(null)
-
   return (
     <>
-      <LedgerPanelContainer
-        indicatorImageSrc="/images/connect_ledger_indicator_connected.svg"
-        heading="Select ledger accounts"
+      <QRHardwarePanelContainer
+        heading="Select accounts"
         subHeading="You can select as many as you want"
       >
-        <div className="derivation_path">
-          <OnboardingDerivationPathSelectAlt
-            onChange={(value) => {
-              setParentPath(value)
-            }}
-          />
-        </div>
-        {parentPath !== null && (
-          <QRDeviceAccountList device={device} onConnect={onConnect} />
-        )}
-      </LedgerPanelContainer>
+        <QRDeviceAccountList
+          device={device}
+          onConnect={onConnect}
+          onReset={onReset}
+        />
+      </QRHardwarePanelContainer>
       <style jsx>{`
         .derivation_path {
           margin: 0.5rem 0;

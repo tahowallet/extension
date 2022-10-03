@@ -25,6 +25,16 @@ const accountCreateButtonInfos = [
         isAvailable: isLedgerSupported,
       },
       {
+        label: "Connect to Airgapped wallets",
+        icon: "./images/add_wallet/preview.svg",
+        onClick: () => {
+          window.open("/tab.html#/qr-wallet", "_blank")?.focus()
+          window.close()
+        },
+        url: "/qr-wallet",
+        isAvailable: isLedgerSupported,
+      },
+      {
         label: "Read-only address",
         icon: "./images/add_wallet/preview.svg",
         url: "/onboarding/view-only-wallet",

@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
-import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
 import SharedButton from "../../components/Shared/SharedButton"
+import QRHardwarePanelContainer from "./QRHardwarePanelContainer"
 
 export default function QRHardwareImportDone({
   onClose,
@@ -8,8 +8,7 @@ export default function QRHardwareImportDone({
   onClose: () => void
 }): ReactElement {
   return (
-    <LedgerPanelContainer
-      indicatorImageSrc="/images/connect_ledger_indicator_connected.svg"
+    <QRHardwarePanelContainer
       heading={
         <>
           Congratulations!
@@ -37,6 +36,6 @@ export default function QRHardwareImportDone({
           padding: 1rem;
         }
       `}</style>
-    </LedgerPanelContainer>
+    </QRHardwarePanelContainer>
   )
 }

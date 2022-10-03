@@ -35,8 +35,13 @@ const qrHardwareSlice = createSlice({
   name: "qrHardware",
   initialState,
   reducers: {
-    resetState: (immerState) => {
-      // immerState.currentDeviceID = null
+    resetState: (
+      immerState,
+      { payload: resetCurrentDeviceID }: { payload: boolean }
+    ) => {
+      if (resetCurrentDeviceID) {
+        immerState.currentDeviceID = null
+      }
       Object.values(immerState.devices).forEach((device) => {
         Object.values(device.accounts).forEach((account) => {
           account.fetchingAddress = false // eslint-disable-line no-param-reassign
@@ -186,7 +191,7 @@ export const fetchAddress = createBackgroundAsyncThunk(
         qrHardwareSlice.actions.resolveAddress({ deviceID, path, address })
       )
     } catch (err) {
-      dispatch(qrHardwareSlice.actions.resetState())
+      dispatch(qrHardwareSlice.actions.resetState(true))
     }
   }
 )
