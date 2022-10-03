@@ -27,7 +27,7 @@ import { internalProviderPort } from "../../redux-slices/utils/contract-utils"
 
 import {
   SignTypedDataRequest,
-  SignDataRequest,
+  MessageSigningRequest,
   parseSigningData,
 } from "../../utils/signing"
 import { SUPPORT_OPTIMISM } from "../../features"
@@ -72,7 +72,7 @@ type Events = ServiceLifecycleEvents & {
     SignedTransaction
   >
   signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
-  signDataRequest: DAppRequestEvent<SignDataRequest, string>
+  signDataRequest: DAppRequestEvent<MessageSigningRequest, string>
   // connect
   // disconnet
   // account change
@@ -396,7 +396,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     const hexInput = input.match(/^0x[0-9A-Fa-f]*$/)
       ? input
       : hexlify(toUtf8Bytes(input))
-    const { data, type } = parseSigningData(input)
+    const typeAndData = parseSigningData(input)
     const activeNetwork = await this.getActiveOrDefaultNetwork(origin)
 
     return new Promise<string>((resolve, reject) => {
@@ -406,9 +406,8 @@ export default class InternalEthereumProviderService extends BaseService<Events>
             address: account,
             network: activeNetwork,
           },
-          signingData: data,
-          messageType: type,
           rawSigningData: hexInput,
+          ...typeAndData,
         },
         resolver: resolve,
         rejecter: reject,
