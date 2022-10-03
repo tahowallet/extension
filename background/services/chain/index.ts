@@ -1032,13 +1032,26 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
+  async markAddressActivity({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<void> {
+    this.markNetworkActivity(network.chainID)
+    const now = Date.now()
+    const inactiveAt = this.lastUserActivityOnNetwork[address]
+    this.lastUserActivityOnAddress[address] = now
+    if (now - NETWORK_POLLING_TIMEOUT > inactiveAt) {
+      // Reactivating a potentially deactivated address
+      this.handleRecentAssetTransferAlarm()
+    }
+  }
+
   async markNetworkActivity(chainID: string): Promise<void> {
     const now = Date.now()
     const deactivatesAt = this.lastUserActivityOnNetwork[chainID]
     this.lastUserActivityOnNetwork[chainID] = now
     if (now - NETWORK_POLLING_TIMEOUT > deactivatesAt) {
       // Reactivating a potentially deactivated network
-      this.handleRecentAssetTransferAlarm()
       this.pollBlockPricesForNetwork(chainID)
     }
   }
