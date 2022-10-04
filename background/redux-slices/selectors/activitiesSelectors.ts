@@ -7,7 +7,7 @@ export const selectCurrentAccountActivities = createSelector(
   selectCurrentAccount,
   selectCurrentNetwork,
   (activities, account, network) => {
-    return activities[account.address]?.[network.chainID] ?? []
+    return activities?.[account.address]?.[network.chainID] ?? []
   }
 )
 
@@ -16,7 +16,7 @@ export const selectActivitesHashesForEnrichment = createSelector(
   selectCurrentAccount,
   selectCurrentNetwork,
   (activities, account, network) => {
-    return (activities[account.address]?.[network.chainID] ?? []).flatMap(
+    return (activities?.[account.address]?.[network.chainID] ?? []).flatMap(
       (activity) => ("type" in activity ? [] : activity.hash)
     )
   }
