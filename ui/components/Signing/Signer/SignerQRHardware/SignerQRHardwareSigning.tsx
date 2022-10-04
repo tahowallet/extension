@@ -59,29 +59,111 @@ export default function SignerQRHardwareSigning({
 
   if (scanningSignature) {
     return (
-      <AnimatedQRScanner
-        purpose={Purpose.SIGN}
-        handleScan={handleScan}
-        handleError={handleError}
-        options={{
-          width: 300,
-        }}
-      />
+      <>
+        <div className="container">
+          <div className="title">Scan signature</div>
+          <div className="content">
+            <AnimatedQRScanner
+              purpose={Purpose.SIGN}
+              handleScan={handleScan}
+              handleError={handleError}
+              options={{
+                width: 300,
+              }}
+            />
+          </div>
+        </div>
+        <style jsx>
+          {`
+            .container {
+              margin-top: -24px; // Revert slide-up padding-top (FIXME?)
+            }
+            .title {
+              margin: 1rem 2rem;
+              font-weight: 500;
+              font-size: 22px;
+              line-height: 32px;
+              color: var(--trophy-gold);
+            }
+            .content {
+              display: flex;
+              justify-content: center;
+              margin: 1rem;
+              padding: 1rem;
+              border-radius: 1rem;
+              background-color: var(--hunter-green);
+            }
+            .message {
+              margin: 0.5rem;
+              font-size: 16px;
+              line-height: 24px;
+              color: var(--green-60);
+            }
+            .footer_actions {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 1rem;
+              box-shadow: 0 0 5px rgba(0, 20, 19, 0.5);
+            }
+          `}
+        </style>
+      </>
     )
   }
 
   if (signingInitiated && qrSigningRequest) {
     return (
       <>
-        <AnimatedQRCode
-          cbor={qrSigningRequest.ur.cbor}
-          type={qrSigningRequest.ur.type}
-        />
-        <footer>
-          <SharedButton type="primary" size="large" onClick={handleSignature}>
-            scan signature
-          </SharedButton>
-        </footer>
+        <div className="container">
+          <div className="title">Scan and sign</div>
+          <div className="content">
+            <AnimatedQRCode
+              cbor={qrSigningRequest.ur.cbor}
+              type={qrSigningRequest.ur.type}
+            />
+          </div>
+          <div className="footer_actions">
+            <SharedButton type="primary" size="large" onClick={handleSignature}>
+              Get signature
+            </SharedButton>
+          </div>
+        </div>
+        <style jsx>
+          {`
+            .container {
+              margin-top: -24px; // Revert slide-up padding-top (FIXME?)
+            }
+            .title {
+              margin: 1rem 2rem;
+              font-weight: 500;
+              font-size: 22px;
+              line-height: 32px;
+              color: var(--trophy-gold);
+            }
+            .content {
+              display: flex;
+              justify-content: center;
+              margin: 1rem;
+              padding: 1rem;
+              border-radius: 1rem;
+              background-color: var(--hunter-green);
+            }
+            .message {
+              margin: 0.5rem;
+              font-size: 16px;
+              line-height: 24px;
+              color: var(--green-60);
+            }
+            .footer_actions {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 1rem;
+              box-shadow: 0 0 5px rgba(0, 20, 19, 0.5);
+            }
+          `}
+        </style>
       </>
     )
   }
