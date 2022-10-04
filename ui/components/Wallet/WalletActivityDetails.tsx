@@ -9,23 +9,20 @@ import SharedButton from "../Shared/SharedButton"
 import SharedAddress from "../Shared/SharedAddress"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { scanWebsite } from "../../utils/constants"
+import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 
 interface DetailRowItemProps {
   label: string
   value: unknown
-  valueDetail: string
 }
 
 function DetailRowItem(props: DetailRowItemProps): ReactElement {
-  const { label, value, valueDetail } = props
+  const { label, value } = props
 
   return (
     <li>
       {label}
-      <div className="right">
-        {value}
-        <div className="value_detail">{valueDetail}</div>
-      </div>
+      <div className="right">{value}</div>
       <style jsx>
         {`
           li {
@@ -166,43 +163,18 @@ export default function WalletActivityDetails(
         />
       </div>
       <ul>
+        {details.length
+          ? null
+          : Array.from({ length: 7 }).map(() => (
+              <SharedSkeletonLoader
+                height={24}
+                customStyles="margin: 10px 0 15px;"
+              />
+            ))}
         {details.map(({ label, value }) => {
-          return (
-            <DetailRowItem
-              key={label}
-              label={label}
-              value={value}
-              valueDetail=""
-            />
-          )
+          return <DetailRowItem key={label} label={label} value={value} />
         })}
-        <DetailRowItem
-          label="Timestamp"
-          value={
-            typeof activityItem.blockTimestamp !== "undefined"
-              ? new Date(activityItem.blockTimestamp * 1000).toLocaleString()
-              : "(Unknown)"
-          }
-          valueDetail=""
-        />
       </ul>
-      <div className="activity_log_wrap">
-        <div className="activity_log_title">Activity Log</div>
-        <ul>
-          <li className="activity_log_item">
-            <div className="activity_log_icon plus" />
-            Tx created at 03:00 on 14/4/2021
-          </li>
-          <li className="activity_log_item">
-            <div className="activity_log_icon arrow" />
-            Tx submitted 03:01 on 14/4/2021
-          </li>
-          <li className="activity_log_item">
-            <div className="activity_log_icon check" />
-            Tx confirmed at 03:03 on 14/4/2021
-          </li>
-        </ul>
-      </div>
       <style jsx>
         {`
           .wrap {
@@ -279,9 +251,6 @@ export default function WalletActivityDetails(
           .check {
             mask-image: url("./images/check@2x.png");
             background-color: var(--success);
-          }
-          .activity_log_wrap {
-            display: none;
           }
         `}
       </style>

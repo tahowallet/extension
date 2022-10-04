@@ -49,6 +49,12 @@ function getGweiPrice(value: bigint | null | undefined): string {
   return `${weiToGwei(value) || "0"} Gwei`
 }
 
+function getTimestamp(blockTimestamp: number | undefined) {
+  return blockTimestamp
+    ? new Date(blockTimestamp * 1000).toLocaleString()
+    : "(Unknown)"
+}
+
 export function getActivityDetails(
   tx: EnrichedEVMTransaction
 ): ActivityDetails {
@@ -59,5 +65,6 @@ export function getActivityDetails(
     { label: "Gas Price", value: getGweiPrice(tx.gasPrice) },
     { label: "Gas", value: "gasUsed" in tx ? tx.gasUsed.toString() : "" },
     { label: "Nonce", value: tx.nonce.toString() },
+    { label: "Timestamp", value: getTimestamp(tx.annotation?.blockTimestamp) },
   ]
 }
