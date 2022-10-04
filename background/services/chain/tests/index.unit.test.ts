@@ -95,12 +95,16 @@ describe("Chain Service", () => {
       await chainService.startService()
     })
 
-    it("should correctly update lastUserActivityOnNetwork", () => {
+    it("should correctly update lastUserActivityOnNetwork", async () => {
       const lastUserActivity = (
         chainService as unknown as ChainServiceExternalized
       ).lastUserActivityOnNetwork[ETHEREUM.chainID]
+
+      await new Promise((r) => setTimeout(r, 1))
+
       chainService.markNetworkActivity(ETHEREUM.chainID)
-      expect(lastUserActivity).toBeLessThanOrEqual(
+
+      expect(lastUserActivity).toBeLessThan(
         (chainService as unknown as ChainServiceExternalized)
           .lastUserActivityOnNetwork[ETHEREUM.chainID]
       )
