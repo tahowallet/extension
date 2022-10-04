@@ -48,9 +48,9 @@ export default function SingleAsset(): ReactElement {
           return activity.assetSymbol === symbol
         case "asset-swap":
           return (
-            activity.assetSymbol === symbol // TODO: this needs to be fixed
-            // activity.annotation.fromAssetAmount.asset.symbol === symbol ||
-            // activity.annotation.toAssetAmount.asset.symbol === symbol
+            // TODO: this should recognize both assets of the swap but it is
+            // ignored right now as swaps are recognized as contract interactions
+            activity.assetSymbol === symbol
           )
         case "contract-interaction":
         case "contract-deployment":
