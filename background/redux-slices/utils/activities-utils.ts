@@ -1,7 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import { convertToEth, weiToGwei } from "../../lib/utils"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
-import { ActivityDetails } from "../activitiesOnChain"
+import { ActivityDetail } from "../activities"
 
 enum TxStatus {
   FAIL = 0,
@@ -57,7 +57,7 @@ function getTimestamp(blockTimestamp: number | undefined) {
 
 export function getActivityDetails(
   tx: EnrichedEVMTransaction
-): ActivityDetails {
+): ActivityDetail[] {
   return [
     { label: "Block Height", value: getBlockHeight(tx) },
     { label: "Amount", value: getAmount(tx) },

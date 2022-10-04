@@ -3,7 +3,7 @@ import { selectCurrentAccount, selectCurrentNetwork } from "./uiSelectors"
 import { RootState } from ".."
 
 export const selectCurrentAccountActivities = createSelector(
-  (state: RootState) => state.activitiesOnChain.activities,
+  (state: RootState) => state.activities.activities,
   selectCurrentAccount,
   selectCurrentNetwork,
   (activities, account, network) => {
@@ -12,7 +12,7 @@ export const selectCurrentAccountActivities = createSelector(
 )
 
 export const selectActivitesHashesForEnrichment = createSelector(
-  (state: RootState) => state.activitiesOnChain.activities,
+  (state: RootState) => state.activities.activities,
   selectCurrentAccount,
   selectCurrentNetwork,
   (activities, account, network) => {

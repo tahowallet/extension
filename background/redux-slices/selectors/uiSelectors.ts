@@ -19,7 +19,7 @@ export const selectCurrentAccount = createSelector(
 )
 
 export const selectShowingActivityDetail = createSelector(
-  (state: RootState) => state.activitiesOnChain.activities,
+  (state: RootState) => state.activities.activities,
   selectCurrentAccount,
   (state: RootState) => state.ui.showingActivityDetailID,
   (activities, currentAccountOnNetwork, showingActivityDetailID) => {

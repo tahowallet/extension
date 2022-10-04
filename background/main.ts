@@ -125,12 +125,12 @@ import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/con
 import { deleteNFts } from "./redux-slices/nfts"
 import { EnrichedEVMTransactionRequest } from "./services/enrichment"
 import {
-  ActivityDetails,
-  activityOnChainEncountered,
+  ActivityDetail,
+  activityEncountered,
   initializeActivities,
-} from "./redux-slices/activitiesOnChain"
+} from "./redux-slices/activities"
 import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
-import { getActivityDetails } from "./redux-slices/utils/activity-on-chain-utils"
+import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -586,7 +586,7 @@ export default class Main extends BaseService<never> {
         await this.enrichmentService.enrichTransaction(transaction, 2)
 
       this.store.dispatch(
-        activityOnChainEncountered({
+        activityEncountered({
           transaction: enrichedTransaction,
           forAccounts: [addressNetwork.address],
         })
@@ -769,7 +769,7 @@ export default class Main extends BaseService<never> {
     // Report on transactions for basic activity. Fancier stuff is handled via
     // connectEnrichmentService
     this.chainService.emitter.on("transaction", async (transactionInfo) => {
-      this.store.dispatch(activityOnChainEncountered(transactionInfo))
+      this.store.dispatch(activityEncountered(transactionInfo))
     })
 
     uiSliceEmitter.on("userActivityEncountered", (addressOnNetwork) => {
@@ -842,7 +842,7 @@ export default class Main extends BaseService<never> {
         this.indexingService.notifyEnrichedTransaction(
           transactionData.transaction
         )
-        this.store.dispatch(activityOnChainEncountered(transactionData))
+        this.store.dispatch(activityEncountered(transactionData))
       }
     )
   }
@@ -1314,7 +1314,7 @@ export default class Main extends BaseService<never> {
     this.telemetryService.connectReduxStore(this.store)
   }
 
-  async getActivityDetails(txHash: string): Promise<ActivityDetails> {
+  async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
     const addressNetwork = this.store.getState().ui.selectedAccount
     const transaction = await this.chainService.getTransaction(
       addressNetwork.network,

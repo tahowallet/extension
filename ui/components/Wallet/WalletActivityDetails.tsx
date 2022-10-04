@@ -1,22 +1,17 @@
 import React, { useCallback, ReactElement, useEffect, useState } from "react"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import {
-  ActivityDetails,
-  ActivityOnChain,
+  ActivityDetail,
+  Activity,
   fetchSelectedActivityDetails,
-} from "@tallyho/tally-background/redux-slices/activitiesOnChain"
+} from "@tallyho/tally-background/redux-slices/activities"
 import SharedButton from "../Shared/SharedButton"
 import SharedAddress from "../Shared/SharedAddress"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { scanWebsite } from "../../utils/constants"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 
-interface DetailRowItemProps {
-  label: string
-  value: unknown
-}
-
-function DetailRowItem(props: DetailRowItemProps): ReactElement {
+function DetailRowItem(props: ActivityDetail): ReactElement {
   const { label, value } = props
 
   return (
@@ -101,7 +96,7 @@ function DestinationCard(props: DestinationCardProps): ReactElement {
 }
 
 interface WalletActivityDetailsProps {
-  activityItem: ActivityOnChain
+  activityItem: Activity
 }
 // Include this "or" type to handle existing placeholder data
 // on the single asset page. TODO: Remove once single asset page
@@ -112,7 +107,7 @@ export default function WalletActivityDetails(
 ): ReactElement {
   const { activityItem } = props
   const dispatch = useBackgroundDispatch()
-  const [details, setDetails] = useState<ActivityDetails>([])
+  const [details, setDetails] = useState<ActivityDetail[]>([])
   const network = useBackgroundSelector(selectCurrentNetwork)
 
   const openExplorer = useCallback(() => {
@@ -130,7 +125,7 @@ export default function WalletActivityDetails(
         setDetails(
           (await dispatch(
             fetchSelectedActivityDetails(activityItem.hash)
-          )) as unknown as ActivityDetails
+          )) as unknown as ActivityDetail[]
         )
       }
     }

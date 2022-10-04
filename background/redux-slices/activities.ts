@@ -16,7 +16,7 @@ const ACTIVITIES_MAX_COUNT = 25
 const ACTIVITY_DECIMALS = 2
 export const INFINITE_VALUE = "infinite"
 
-export type ActivityOnChain = {
+export type Activity = {
   status?: number
   type?: string
   to?: string
@@ -33,17 +33,17 @@ export type ActivityOnChain = {
   assetLogoUrl?: string
 }
 
-type ActivitiesOnChain = {
+type Activities = {
   [address: string]: {
-    [chainID: string]: ActivityOnChain[]
+    [chainID: string]: Activity[]
   }
 }
 
-type ActivitiesOnChainState = {
-  activities: ActivitiesOnChain
+type ActivitiesState = {
+  activities: Activities
 }
 
-export type ActivityDetails = { label: string; value: string }[]
+export type ActivityDetail = { label: string; value: string }
 
 function isEnrichedTransaction(
   transaction: Transaction | EnrichedEVMTransaction
@@ -142,10 +142,10 @@ const getValue = (transaction: Transaction | EnrichedEVMTransaction) => {
 
 const getActivity = (
   transaction: Transaction | EnrichedEVMTransaction
-): ActivityOnChain => {
+): Activity => {
   const { to, from, blockHeight, nonce, hash, blockHash, asset } = transaction
 
-  let activity: ActivityOnChain = {
+  let activity: Activity = {
     status: "status" in transaction ? transaction.status : undefined,
     to: to && normalizeEVMAddress(to),
     from: normalizeEVMAddress(from),
@@ -177,7 +177,7 @@ const getActivity = (
   return activity
 }
 
-const sortActivities = (a: ActivityOnChain, b: ActivityOnChain): number => {
+const sortActivities = (a: Activity, b: Activity): number => {
   if (
     a.blockHeight === null ||
     b.blockHeight === null ||
@@ -211,13 +211,13 @@ const sortActivities = (a: ActivityOnChain, b: ActivityOnChain): number => {
   return b.blockHeight - a.blockHeight
 }
 
-const cleanActivitiesArray = (activitiesArray: ActivityOnChain[] = []) => {
+const cleanActivitiesArray = (activitiesArray: Activity[] = []) => {
   activitiesArray.sort(sortActivities)
   activitiesArray.splice(ACTIVITIES_MAX_COUNT)
 }
 
 const addActivityToState =
-  (activities: ActivitiesOnChain) =>
+  (activities: Activities) =>
   (
     address: string,
     chainID: string,
@@ -246,10 +246,10 @@ const initializeActivitiesFromTransactions = ({
 }: {
   transactions: Transaction[]
   accounts: AddressOnNetwork[]
-}): ActivitiesOnChain => {
+}): Activities => {
   const activities: {
     [address: string]: {
-      [chainID: string]: ActivityOnChain[]
+      [chainID: string]: Activity[]
     }
   } = {}
 
@@ -288,12 +288,12 @@ const initializeActivitiesFromTransactions = ({
   return activities
 }
 
-const initialState: ActivitiesOnChainState = {
+const initialState: ActivitiesState = {
   activities: {},
 }
 
-const activitiesOnChainSlice = createSlice({
-  name: "activitiesOnChain",
+const activitiesSlice = createSlice({
+  name: "activities",
   initialState,
   reducers: {
     initializeActivities: (
@@ -306,7 +306,7 @@ const activitiesOnChainSlice = createSlice({
     ) => ({
       activities: initializeActivitiesFromTransactions(payload),
     }),
-    activityOnChainEncountered: (
+    activityEncountered: (
       immerState,
       {
         payload: { transaction, forAccounts },
@@ -328,10 +328,10 @@ const activitiesOnChainSlice = createSlice({
   },
 })
 
-export const { initializeActivities, activityOnChainEncountered } =
-  activitiesOnChainSlice.actions
+export const { initializeActivities, activityEncountered } =
+  activitiesSlice.actions
 
-export default activitiesOnChainSlice.reducer
+export default activitiesSlice.reducer
 
 export const fetchSelectedActivityDetails = createBackgroundAsyncThunk(
   "activities/fetchSelectedActivityDetails",

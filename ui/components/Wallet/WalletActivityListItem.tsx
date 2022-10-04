@@ -8,28 +8,25 @@ import {
 import { HexString } from "@tallyho/tally-background/types"
 import { useTranslation } from "react-i18next"
 import {
-  ActivityOnChain,
+  Activity,
   INFINITE_VALUE,
-} from "@tallyho/tally-background/redux-slices/activitiesOnChain"
+} from "@tallyho/tally-background/redux-slices/activities"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
   onClick: () => void
-  activity: ActivityOnChain
+  activity: Activity
   asAccount: string
 }
 
-function isReceiveActivity(
-  activity: ActivityOnChain,
-  account: string
-): boolean {
+function isReceiveActivity(activity: Activity, account: string): boolean {
   return (
     activity.type === "asset-transfer" &&
     sameEVMAddress(activity.recipient?.address, account)
   )
 }
 
-function isSendActivity(activity: ActivityOnChain, account: string): boolean {
+function isSendActivity(activity: Activity, account: string): boolean {
   return activity.type === "asset-transfer"
     ? sameEVMAddress(activity.sender?.address, account)
     : true
