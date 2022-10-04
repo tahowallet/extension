@@ -607,7 +607,7 @@ export default class ChainService extends BaseService<Events> {
     partialRequest: EnrichedEVMTransactionSignatureRequest,
     defaults: { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }
   ): Promise<{
-    transactionRequest: TransactionRequest
+    transactionRequest: EnrichedEVMTransactionRequest
     gasEstimationError: string | undefined
   }> {
     if (EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)) {
