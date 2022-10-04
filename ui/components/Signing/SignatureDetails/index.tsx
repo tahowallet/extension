@@ -12,7 +12,7 @@ import {
   signTransaction,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import {
-  SignDataRequest,
+  MessageSigningRequest,
   SignTypedDataRequest,
 } from "@tallyho/tally-background/utils/signing"
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
@@ -55,7 +55,7 @@ export function resolveTransactionSignatureDetails({
 export function resolveDataSignatureDetails({
   request,
   accountSigner,
-}: SignOperation<SignDataRequest>): ResolvedSignatureDetails {
+}: SignOperation<MessageSigningRequest>): ResolvedSignatureDetails {
   return {
     signer: accountSigner,
     signingAddress: request.account,

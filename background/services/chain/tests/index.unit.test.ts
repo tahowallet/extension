@@ -1,6 +1,7 @@
 import sinon from "sinon"
 import ChainService from ".."
 import { ETHEREUM, MINUTE, OPTIMISM, POLYGON } from "../../../constants"
+import { EVMNetwork } from "../../../networks"
 import * as gas from "../../../lib/gas"
 import { createBlockPrices, createChainService } from "../../../tests/factories"
 import { UNIXTime } from "../../../types"
@@ -26,7 +27,6 @@ describe("Chain Service", () => {
   beforeEach(async () => {
     sandbox.restore()
     chainService = await createChainService()
-    await chainService.startService()
   })
 
   describe("Alarms", () => {
@@ -54,6 +54,10 @@ describe("Chain Service", () => {
   })
 
   describe("populatePartialTransactionRequest", () => {
+    beforeEach(async () => {
+      await chainService.startService()
+    })
+
     it("should use the correct method to populate EIP1559 Transaction Requests", async () => {
       const partialTransactionRequest: EnrichedEIP1559TransactionSignatureRequest =
         {
@@ -111,11 +115,21 @@ describe("Chain Service", () => {
   })
 
   describe("markNetworkActivity", () => {
-    it("should correctly update lastUserActivityOnNetwork", () => {
+    beforeEach(async () => {
+      sandbox.stub(chainService, "supportedNetworks").value([ETHEREUM])
+
+      await chainService.startService()
+    })
+
+    it("should correctly update lastUserActivityOnNetwork", async () => {
       const lastUserActivity = (
         chainService as unknown as ChainServiceExternalized
       ).lastUserActivityOnNetwork[ETHEREUM.chainID]
+
+      await new Promise((r) => setTimeout(r, 1))
+
       chainService.markNetworkActivity(ETHEREUM.chainID)
+
       expect(lastUserActivity).toBeLessThan(
         (chainService as unknown as ChainServiceExternalized)
           .lastUserActivityOnNetwork[ETHEREUM.chainID]
@@ -162,6 +176,43 @@ describe("Chain Service", () => {
 
       await chainService.markNetworkActivity(ETHEREUM.chainID)
       expect(handleRecentAssetTransferAlarmStub.called).toEqual(true)
+    })
+  })
+
+  describe("getActiveNetworks", () => {
+    it("should wait until tracked networks activate", async () => {
+      const activeNetworksMock: EVMNetwork[] = []
+
+      sandbox
+        .stub(
+          chainService as unknown as ChainServiceExternalized,
+          "getNetworksToTrack"
+        )
+        .resolves([ETHEREUM, POLYGON])
+
+      const resolvesWithPolygon = sinon.promise()
+
+      sandbox
+        .stub(
+          chainService as unknown as ChainServiceExternalized,
+          "activateNetworkOrThrow"
+        )
+        .onFirstCall()
+        .callsFake(() => {
+          activeNetworksMock.push(ETHEREUM)
+          return Promise.resolve(ETHEREUM)
+        })
+        .onSecondCall()
+        .returns(resolvesWithPolygon as Promise<EVMNetwork>)
+
+      setTimeout(() => {
+        activeNetworksMock.push(POLYGON)
+        resolvesWithPolygon.resolve(POLYGON)
+      }, 30)
+
+      await chainService.getActiveNetworks()
+
+      expect(activeNetworksMock).toEqual([ETHEREUM, POLYGON])
     })
   })
 })
