@@ -32,7 +32,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
-import { AnyEVMTransaction, SignedTransaction } from "./networks"
+import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -44,7 +44,6 @@ import {
   updateAccountName,
   updateENSAvatar,
 } from "./redux-slices/accounts"
-import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   setEligibility,
@@ -124,11 +123,7 @@ import {
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 import { deleteNFts } from "./redux-slices/nfts"
-import { filterTransactionPropsForUI } from "./utils/view-model-transformer"
-import {
-  EnrichedEVMTransaction,
-  EnrichedEVMTransactionRequest,
-} from "./services/enrichment"
+import { EnrichedEVMTransactionRequest } from "./services/enrichment"
 import {
   ActivityDetails,
   activityOnChainEncountered,
@@ -774,11 +769,6 @@ export default class Main extends BaseService<never> {
     // Report on transactions for basic activity. Fancier stuff is handled via
     // connectEnrichmentService
     this.chainService.emitter.on("transaction", async (transactionInfo) => {
-      this.store.dispatch(
-        activityEncountered(
-          filterTransactionPropsForUI<AnyEVMTransaction>(transactionInfo)
-        )
-      )
       this.store.dispatch(activityOnChainEncountered(transactionInfo))
     })
 
@@ -852,12 +842,6 @@ export default class Main extends BaseService<never> {
         this.indexingService.notifyEnrichedTransaction(
           transactionData.transaction
         )
-        this.store.dispatch(
-          activityEncountered(
-            filterTransactionPropsForUI<EnrichedEVMTransaction>(transactionData)
-          )
-        )
-
         this.store.dispatch(activityOnChainEncountered(transactionData))
       }
     )
