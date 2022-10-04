@@ -130,9 +130,13 @@ export default class QRHardwareService extends BaseService<Events> {
     path: derivationPath,
   }: QRHardwareAccountSigner): Promise<HexString> {
     const qrHardwareAccount = await this.db.getAccountByAddress(deviceID)
+    if (!qrHardwareAccount) {
+      throw new Error(`QR hardware not found for device ID ${deviceID}`)
+    }
+
     const keyring: QRKeyring = getKeyringFromUR({
-      type: qrHardwareAccount!.type,
-      cbor: qrHardwareAccount!.cbor,
+      type: qrHardwareAccount.type,
+      cbor: qrHardwareAccount.cbor,
     })
 
     const pathComponents = derivationPath.split("/")
@@ -162,9 +166,13 @@ export default class QRHardwareService extends BaseService<Events> {
     this.emitter.clearListeners("cancelSignature")
 
     const qrHardwareAccount = await this.db.getAccountByAddress(signer.deviceID)
+    if (!qrHardwareAccount) {
+      throw new Error(`QR hardware not found for device ID ${signer.deviceID}`)
+    }
+
     const keyring: QRKeyring = getKeyringFromUR({
-      type: qrHardwareAccount!.type,
-      cbor: qrHardwareAccount!.cbor,
+      type: qrHardwareAccount.type,
+      cbor: qrHardwareAccount.cbor,
     })
 
     const ethersTx = ethersTransactionFromTransactionRequest(transactionRequest)
@@ -272,11 +280,15 @@ export default class QRHardwareService extends BaseService<Events> {
   ): Promise<string> {
     this.emitter.clearListeners("resolvedSignature")
     this.emitter.clearListeners("cancelSignature")
-    
+
     const qrHardwareAccount = await this.db.getAccountByAddress(signer.deviceID)
+    if (!qrHardwareAccount) {
+      throw new Error(`QR hardware not found for device ID ${signer.deviceID}`)
+    }
+
     const keyring: QRKeyring = getKeyringFromUR({
-      type: qrHardwareAccount!.type,
-      cbor: qrHardwareAccount!.cbor,
+      type: qrHardwareAccount.type,
+      cbor: qrHardwareAccount.cbor,
     })
 
     // eslint-disable-next-line no-underscore-dangle
