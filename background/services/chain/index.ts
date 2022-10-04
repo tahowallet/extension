@@ -33,7 +33,6 @@ import {
 import {
   SUPPORT_ARBITRUM,
   SUPPORT_GOERLI,
-  SUPPORT_OPTIMISM,
   USE_MAINNET_FORK,
 } from "../../features"
 import PreferenceService from "../preferences"
@@ -244,9 +243,9 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks = [
       ETHEREUM,
       POLYGON,
+      OPTIMISM,
       ...(SUPPORT_GOERLI ? [GOERLI] : []),
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
-      ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
 
     this.activeNetworks = []
@@ -607,7 +606,7 @@ export default class ChainService extends BaseService<Events> {
     partialRequest: EnrichedEVMTransactionSignatureRequest,
     defaults: { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }
   ): Promise<{
-    transactionRequest: TransactionRequest
+    transactionRequest: EnrichedEVMTransactionRequest
     gasEstimationError: string | undefined
   }> {
     if (EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)) {

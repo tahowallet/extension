@@ -1,4 +1,6 @@
 import * as util from "util"
+// eslint-disable-next-line import/no-extraneous-dependencies
+import Dexie from "dexie"
 
 // ref: https://jestjs.io/docs/manual-mocks#mocking-methods-which-are-not-implemented-in-jsdom
 // ref: https://github.com/jsdom/jsdom/issues/2524
@@ -29,4 +31,9 @@ Object.defineProperty(browser, "alarms", {
       addListener: () => {},
     },
   },
+})
+
+/* Prevent Dexie from caching indexedDB global so fake-indexeddb can reset properly */
+Object.defineProperty(Dexie.dependencies, "indexedDB", {
+  get: () => indexedDB,
 })
