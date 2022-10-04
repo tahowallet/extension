@@ -211,6 +211,7 @@ export default function AccountsNotificationPanelAccounts({
   }
 
   useEffect(() => {
+    // Prevents notifications from displaying when the component is not yet mounted
     if (!isMounted.current) {
       isMounted.current = true
     } else if (!areKeyringsUnlocked) {
