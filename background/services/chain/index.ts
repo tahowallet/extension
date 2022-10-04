@@ -1053,7 +1053,7 @@ export default class ChainService extends BaseService<Events> {
             this.pollBlockPricesForNetwork(network.chainID)
           )
         )
-      }, (GAS_POLLING_PERIOD / GAS_POLLS_PER_PERIOD) * 1e3 /* convert to ms */ * i)
+      }, (GAS_POLLING_PERIOD / GAS_POLLS_PER_PERIOD) * (GAS_POLLING_PERIOD * MINUTE) * i)
     }
 
     // Immediately run the first poll
