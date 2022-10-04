@@ -34,17 +34,26 @@ export type SignTypedDataRequest = {
 
 export type ExpectedSigningData = EIP191Data | EIP4361Data
 
-export type SignDataRequest = {
-  account: AddressOnNetwork
-  rawSigningData: string
-  signingData: ExpectedSigningData
-  messageType: SignDataMessageType
+type EIP191SigningData = {
+  messageType: "eip191"
+  signingData: EIP191Data
 }
 
-export enum SignDataMessageType {
-  EIP191 = 0,
-  EIP4361 = 1,
+type EIP4361SigningData = {
+  messageType: "eip4361"
+  signingData: EIP4361Data
 }
+
+export type MessageSigningData = EIP191SigningData | EIP4361SigningData
+
+export type MessageSigningRequest<
+  T extends MessageSigningData = MessageSigningData
+> = T & {
+  account: AddressOnNetwork
+  rawSigningData: string
+}
+
+export type SigningDataType = "eip191" | "eip4361"
 
 type EIP2612Message = {
   owner: HexString
@@ -89,10 +98,7 @@ const checkEIP4361: (message: string) => EIP4361Data | undefined = (
  *
  * EIP4361 standard can be found https://eips.ethereum.org/EIPS/eip-4361
  */
-export const parseSigningData: (signingData: string) => {
-  data: ExpectedSigningData
-  type: SignDataMessageType
-} = (signingData) => {
+export function parseSigningData(signingData: string): MessageSigningData {
   let normalizedData = signingData
 
   // Attempt to normalize hex signing data to a UTF-8 string message. If the
@@ -121,19 +127,13 @@ export const parseSigningData: (signingData: string) => {
   const data = checkEIP4361(normalizedData)
   if (data) {
     return {
-      data,
-      type: SignDataMessageType.EIP4361,
+      messageType: "eip4361",
+      signingData: data,
     }
   }
 
-  // data = checkOtherType(lines)
-  // if (!!data) {
-  // return data
-  // }
-
-  // add additional checks for any other types to add in the future
   return {
-    data: normalizedData,
-    type: SignDataMessageType.EIP191,
+    messageType: "eip191",
+    signingData: normalizedData,
   }
 }

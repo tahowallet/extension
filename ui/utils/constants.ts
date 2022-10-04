@@ -1,4 +1,5 @@
 import {
+  ARBITRUM_ONE,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
@@ -17,6 +18,10 @@ export const scanWebsite = {
   },
   [POLYGON.chainID]: { title: "Polygonscan", url: "https://polygonscan.com" },
   [GOERLI.chainID]: { title: "Etherscan", url: "https://goerli.etherscan.io/" },
+  [ARBITRUM_ONE.chainID]: {
+    title: "Arbiscan",
+    url: "https://arbiscan.io/",
+  },
 }
 
 export const ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL: {
