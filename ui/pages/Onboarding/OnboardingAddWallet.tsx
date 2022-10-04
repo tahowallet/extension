@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import { useHistory } from "react-router-dom"
 import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
+import { SUPPORT_QR_WALLETS } from "@tallyho/tally-background/features"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
 
@@ -32,7 +33,7 @@ const accountCreateButtonInfos = [
           window.close()
         },
         url: "/qr-wallet",
-        isAvailable: isLedgerSupported,
+        isAvailable: SUPPORT_QR_WALLETS,
       },
       {
         label: "Read-only address",
