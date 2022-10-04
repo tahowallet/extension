@@ -103,6 +103,7 @@
     "fork-ts-checker-webpack-plugin": "^6.3.2",
     "install": "^0.13.0",
     "jest": "^27.2.2",
+    "dexie": "^3.0.3",
     "npm": "^7.5.6",
     "npm-run-all": "^4.1.5",
     "patch-package": "^6.4.7",
