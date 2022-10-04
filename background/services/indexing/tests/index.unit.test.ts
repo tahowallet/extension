@@ -40,6 +40,13 @@ describe("IndexingService", () => {
   })
 
   afterEach(async () => {
+    // Always try to stop services, ignore failed promises where the service
+    // was never started.
+    await Promise.allSettled([
+      chainService.stopService(),
+      indexingService.stopService(),
+    ])
+
     sandbox.restore()
   })
 

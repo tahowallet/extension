@@ -27,8 +27,10 @@ Object.defineProperty(browser, "alarms", {
   writable: true,
   value: {
     create: () => {},
+    clear: () => {},
     onAlarm: {
       addListener: () => {},
+      removeListener: () => {},
     },
   },
 })

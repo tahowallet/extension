@@ -32,6 +32,10 @@ describe("Chain Service", () => {
       await chainService.startService()
     })
 
+    afterEach(async () => {
+      await chainService.stopService()
+    })
+
     it("should use the correct method to populate EIP1559 Transaction Requests", async () => {
       const partialTransactionRequest: EnrichedEIP1559TransactionSignatureRequest =
         {
