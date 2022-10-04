@@ -19,15 +19,16 @@ export default function QRHardware(): ReactElement {
   const devices = useBackgroundSelector((state) => state.qrHardware.devices)
   const device = deviceID === null ? null : devices[deviceID] ?? null
 
+  const dispatch = useBackgroundDispatch()
+
   if (device && phase === "0-scan") {
     setPhase("1-import")
+    dispatch(resetState(false))
   }
 
   if (!device && phase !== "0-scan") {
     setPhase("0-scan")
   }
-
-  const dispatch = useBackgroundDispatch()
 
   const handleScan = useCallback(
     ({ type, cbor }) => {

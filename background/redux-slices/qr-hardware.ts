@@ -43,10 +43,8 @@ const qrHardwareSlice = createSlice({
         immerState.currentDeviceID = null
       }
       Object.values(immerState.devices).forEach((device) => {
-        Object.values(device.accounts).forEach((account) => {
-          account.fetchingAddress = false // eslint-disable-line no-param-reassign
-          account.fetchingBalance = false // eslint-disable-line no-param-reassign
-        })
+        // eslint-disable-next-line no-param-reassign
+        device.accounts = {}
       })
     },
     addQRDevice: (
