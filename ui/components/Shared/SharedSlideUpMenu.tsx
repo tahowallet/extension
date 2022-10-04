@@ -85,7 +85,8 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             width: 100%;
             height: var(--menu-height);
             overflow: hidden;
-            border-radius: 16px;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
             background-color: var(--green-95);
             position: fixed;
             left: 0px;
