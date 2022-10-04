@@ -158,6 +158,9 @@ export default class QRHardwareService extends BaseService<Events> {
     transactionRequest: TransactionRequestWithNonce,
     signer: QRHardwareAccountSigner
   ): Promise<SignedTransaction> {
+    this.emitter.clearListeners("resolvedSignature")
+    this.emitter.clearListeners("cancelSignature")
+
     const qrHardwareAccount = await this.db.getAccountByAddress(signer.deviceID)
     const keyring: QRKeyring = getKeyringFromUR({
       type: qrHardwareAccount!.type,
@@ -267,6 +270,9 @@ export default class QRHardwareService extends BaseService<Events> {
     address: HexString,
     signer: QRHardwareAccountSigner
   ): Promise<string> {
+    this.emitter.clearListeners("resolvedSignature")
+    this.emitter.clearListeners("cancelSignature")
+    
     const qrHardwareAccount = await this.db.getAccountByAddress(signer.deviceID)
     const keyring: QRKeyring = getKeyringFromUR({
       type: qrHardwareAccount!.type,

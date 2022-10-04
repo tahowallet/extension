@@ -77,7 +77,7 @@ describe("Preference Service Integration", () => {
       })
     })
 
-    describe("when account", () => {
+    describe("when individual account", () => {
       describe("when sync keyring already exist", () => {})
     })
   })
@@ -134,6 +134,20 @@ describe("Preference Service Integration", () => {
       await qrHardwareService.syncQRKeyring(qrWallet.ur)
     })
 
+    describe("when signing transaction", () => {
+      beforeEach(() => {
+        qrHardwareService.signTransaction(txRequest, {
+          deviceID: qrWallet.addresses[0][1],
+          path: qrWallet.addresses[0][0],
+          type: "qr-hardware",
+        })
+      })
+
+      it("removes existing events", () => {
+        expect(clearListenerSpy).toBeCalledWith("cancelSignature")
+        expect(clearListenerSpy).toBeCalledWith("resolvedSignature")
+      })
+    })
     describe("when signed transaction", () => {
       beforeEach(() => {
         qrHardwareService.emitter.on("requestSignature", ({ id }) => {
@@ -210,6 +224,21 @@ describe("Preference Service Integration", () => {
     let signedTx
     beforeEach(async () => {
       await qrHardwareService.syncQRKeyring(qrWallet.ur)
+    })
+
+    describe("when signing data", () => {
+      beforeEach(() => {
+        qrHardwareService.signTypedData(typedData, qrWallet.addresses[0][1], {
+          deviceID: qrWallet.addresses[0][1],
+          path: qrWallet.addresses[0][0],
+          type: "qr-hardware",
+        })
+      })
+
+      it("removes existing events", () => {
+        expect(clearListenerSpy).toBeCalledWith("cancelSignature")
+        expect(clearListenerSpy).toBeCalledWith("resolvedSignature")
+      })
     })
 
     describe("when signed data", () => {
