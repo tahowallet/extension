@@ -1,29 +1,41 @@
 import React, { ReactElement } from "react"
 import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { OPTIMISM } from "@tallyho/tally-background/constants"
+import {
+  ARBITRUM_ONE,
+  NETWORK_BY_CHAIN_ID,
+  OPTIMISM,
+} from "@tallyho/tally-background/constants"
 import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 
-export default function NetworkSettingsOptimism(): ReactElement {
+export default function NetworkSettingsOptimismAndArbitrum(): ReactElement {
   const { t } = useTranslation("translation", {
-    keyPrefix: "networkFees.optimism",
+    keyPrefix: "networkFees.optimismOrArbitrum",
   })
+
   const transactionData = useBackgroundSelector(selectTransactionData)
-  if (transactionData?.network.chainID !== OPTIMISM.chainID) {
+
+  const { name, chainID } =
+    NETWORK_BY_CHAIN_ID[transactionData?.network.chainID ?? 1]
+  if (chainID !== OPTIMISM.chainID && chainID !== ARBITRUM_ONE.chainID) {
     throw new Error(
-      "NetworkSettingsSelect mismatch - expected an Optimism transaction"
+      "NetworkSettingsSelect mismatch - expected an Optimism or Arbitrum transaction"
     )
   }
 
   return (
     <div className="fees standard_width">
       <div className="title">{t("title")}</div>
-      <div className="simple_text">{t("header")}</div>
+      <div className="simple_text">{t("header", { name })}</div>
 
       <div className="fees_chart">
         <div className="fees_chart_item">
-          <div className="fees_icon icon_optimism" />
+          {name === "Optimism" ? (
+            <div className="fees_icon icon_optimism" />
+          ) : (
+            <div className="fees_icon icon_arbitrum" />
+          )}
           <span>{t("transactionFee")}</span>
         </div>
         <div className="fee_chart_sign">+</div>
@@ -39,10 +51,10 @@ export default function NetworkSettingsOptimism(): ReactElement {
         </div>
       </div>
 
-      <div className="simple_text">{t("explainerOne")}</div>
+      <div className="simple_text">{t("explainerOne", { name })}</div>
 
       <div className="simple_text">
-        {t("explainerTwo")}
+        {t("explainerTwo", { name })}
         <br />
         {t("explainerThree")}
       </div>
@@ -54,7 +66,9 @@ export default function NetworkSettingsOptimism(): ReactElement {
         onClick={() => {
           window
             .open(
-              "https://help.optimism.io/hc/en-us/articles/4411895794715-Transaction-fees",
+              name === "Optimism"
+                ? "https://help.optimism.io/hc/en-us/articles/4411895794715-Transaction-fees"
+                : "https://developer.arbitrum.io/arbos/gas",
               "_blank"
             )
             ?.focus()
@@ -97,6 +111,9 @@ export default function NetworkSettingsOptimism(): ReactElement {
           }
           .fees_icon.icon_optimism {
             background-image: url("/images/networks/optimism@2x.png");
+          }
+          .fees_icon.icon_arbitrum {
+            background-image: url("/images/networks/arbitrum_icon_small@2x.png");
           }
           .fees_icon.icon_ethereum {
             background-image: url("/images/ethereum-background@2x.png");

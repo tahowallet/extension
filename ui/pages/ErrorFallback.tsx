@@ -1,13 +1,15 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../components/Shared/SharedButton"
 
 export default function ErrorFallback(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "genericPages" })
   return (
     <>
       <div className="wrap">
-        <h1 className="serif_header">Unexpected Error</h1>
+        <h1 className="serif_header">{t("errorPageTitle")}</h1>
         <SharedButton type="primary" size="medium" linkTo="/">
-          Return Home
+          {t("returnHome")}
         </SharedButton>
       </div>
       <style jsx>{`

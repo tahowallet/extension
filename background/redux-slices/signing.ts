@@ -1,11 +1,6 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import {
-  ExpectedSigningData,
-  SignDataMessageType,
-  SignDataRequest,
-  SignTypedDataRequest,
-} from "../utils/signing"
+import { MessageSigningRequest, SignTypedDataRequest } from "../utils/signing"
 import { createBackgroundAsyncThunk } from "./utils"
 import { EnrichedSignTypedDataRequest } from "../services/enrichment"
 import { EIP712TypedData } from "../types"
@@ -21,7 +16,7 @@ import {
  * correspond to the signature requests that they carry.
  */
 export type SignOperationType =
-  | SignDataRequest
+  | MessageSigningRequest
   | SignTypedDataRequest
   | EIP1559TransactionRequest
   | LegacyEVMTransactionRequest
@@ -41,11 +36,7 @@ type Events = {
     account: AddressOnNetwork
     accountSigner: AccountSigner
   }
-  requestSignData: {
-    signingData: ExpectedSigningData
-    messageType: SignDataMessageType
-    rawSigningData: string
-    account: AddressOnNetwork
+  requestSignData: MessageSigningRequest & {
     accountSigner: AccountSigner
   }
   signatureRejected: never
@@ -58,7 +49,7 @@ type SigningState = {
   typedDataRequest: EnrichedSignTypedDataRequest | undefined
 
   signedData: string | undefined
-  signDataRequest: SignDataRequest | undefined
+  signDataRequest: MessageSigningRequest | undefined
 }
 
 export const initialState: SigningState = {
@@ -87,16 +78,10 @@ export const signTypedData = createBackgroundAsyncThunk(
 
 export const signData = createBackgroundAsyncThunk(
   "signing/signData",
-  async (data: SignOperation<SignDataRequest>) => {
-    const {
-      request: { account, signingData, rawSigningData, messageType },
-      accountSigner,
-    } = data
+  async (data: SignOperation<MessageSigningRequest>) => {
+    const { request, accountSigner } = data
     await signingSliceEmitter.emit("requestSignData", {
-      rawSigningData,
-      signingData,
-      account,
-      messageType,
+      ...request,
       accountSigner,
     })
   }
@@ -118,7 +103,10 @@ const signingSlice = createSlice({
       ...state,
       typedDataRequest: payload,
     }),
-    signDataRequest: (state, { payload }: { payload: SignDataRequest }) => {
+    signDataRequest: (
+      state,
+      { payload }: { payload: MessageSigningRequest }
+    ) => {
       return {
         ...state,
         signDataRequest: payload,

@@ -98,7 +98,7 @@ import {
   signDataRequest,
 } from "./redux-slices/signing"
 
-import { SignTypedDataRequest, SignDataRequest } from "./utils/signing"
+import { SignTypedDataRequest, MessageSigningRequest } from "./utils/signing"
 import {
   emitter as earnSliceEmitter,
   setVaultsAsStale,
@@ -108,7 +108,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { ETHEREUM, GOERLI, OPTIMISM, POLYGON } from "./constants"
+import { ARBITRUM_ONE, ETHEREUM, GOERLI, OPTIMISM, POLYGON } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   SignatureResponse,
@@ -649,11 +649,15 @@ export default class Main extends BaseService<never> {
           )
 
         const { annotation } =
-          await this.enrichmentService.enrichTransactionSignature(
-            network,
-            populatedRequest,
-            2 /* TODO desiredDecimals should be configurable */
-          )
+          // Respect a prepopulated annotation. For now, this short-circuits
+          // the usual enrichment process.
+          populatedRequest.annotation === undefined
+            ? await this.enrichmentService.enrichTransactionSignature(
+                network,
+                populatedRequest,
+                2 /* TODO desiredDecimals should be configurable */
+              )
+            : { annotation: populatedRequest.annotation }
 
         const enrichedPopulatedRequest: EnrichedEVMTransactionRequest = {
           ...populatedRequest,
@@ -1064,7 +1068,7 @@ export default class Main extends BaseService<never> {
         resolver,
         rejecter,
       }: {
-        payload: SignDataRequest
+        payload: MessageSigningRequest
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
@@ -1141,7 +1145,7 @@ export default class Main extends BaseService<never> {
     )
 
     this.providerBridgeService.emitter.on(
-      "permissionQueriedForChain",
+      "dappOpenedOnChain",
       async (chainID: string) => {
         this.chainService.markNetworkActivity(chainID)
       }
@@ -1182,12 +1186,15 @@ export default class Main extends BaseService<never> {
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await Promise.all(
-        [ETHEREUM, POLYGON, OPTIMISM, GOERLI].map(async (network) => {
-          await this.providerBridgeService.grantPermission({
-            ...permission,
-            chainID: network.chainID,
-          })
-        })
+        // TODO: replace this with this.chainService.supportedNetworks when removing the chain feature flags
+        [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE].map(
+          async (network) => {
+            await this.providerBridgeService.grantPermission({
+              ...permission,
+              chainID: network.chainID,
+            })
+          }
+        )
       )
     })
 

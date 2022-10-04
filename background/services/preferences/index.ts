@@ -70,6 +70,20 @@ const BUILT_IN_CONTRACTS = [
     address: normalizeEVMAddress("0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1"),
     name: "🔴 Optimism Gateway",
   },
+  {
+    network: ETHEREUM,
+    // Arbitrum's Delayed Inbox
+    // https://etherscan.io/address/0x4dbd4fc535ac27206064b68ffcf827b0a60bab3f
+    address: normalizeEVMAddress("0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f"),
+    name: "🔵 Arbitrum bridge",
+  },
+  {
+    network: ETHEREUM,
+    // Arbitrum's old bridge contract
+    // https://etherscan.io/address/0x011b6e24ffb0b5f5fcc564cf4183c5bbbc96d515
+    address: normalizeEVMAddress("0x011B6E24FfB0B5f5fCc564cf4183C5BBBc96D515"),
+    name: "🔵 Arbitrum Old Bridge",
+  },
 ]
 
 interface Events extends ServiceLifecycleEvents {

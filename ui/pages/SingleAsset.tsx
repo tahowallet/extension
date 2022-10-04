@@ -12,6 +12,7 @@ import {
   isSmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
+import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -21,6 +22,7 @@ import SharedTooltip from "../components/Shared/SharedTooltip"
 import { scanWebsite } from "../utils/constants"
 
 export default function SingleAsset(): ReactElement {
+  const { t } = useTranslation()
   const location = useLocation<AnyAsset>()
   const locationAsset = location.state
   const { symbol } = locationAsset
@@ -114,7 +116,9 @@ export default function SingleAsset(): ReactElement {
                     </a>
                   )}
                 >
-                  View asset on {scanWebsite[currentNetwork.chainID].title}
+                  {t("assets.viewAsset", {
+                    sitetitle: scanWebsite[currentNetwork.chainID].title,
+                  })}
                 </SharedTooltip>
               ) : (
                 <></>
@@ -139,7 +143,7 @@ export default function SingleAsset(): ReactElement {
                     state: asset,
                   }}
                 >
-                  Send
+                  {t("shared.send")}
                 </SharedButton>
                 <SharedButton
                   type="primary"
@@ -150,7 +154,7 @@ export default function SingleAsset(): ReactElement {
                     state: asset,
                   }}
                 >
-                  Swap
+                  {t("shared.swap")}
                 </SharedButton>
               </>
             ) : (
@@ -159,30 +163,11 @@ export default function SingleAsset(): ReactElement {
           </div>
         </div>
       )}
-      <div className="sub_info_separator_wrap standard_width_padded">
-        <div className="left">Asset is on: Arbitrum</div>
-        <div className="right">Move to Ethereum</div>
-      </div>
       <WalletActivityList activities={filteredActivities} />
       <style jsx>
         {`
           .back_button_wrap {
             margin-bottom: 4px;
-          }
-          .sub_info_separator_wrap {
-            display: none; // TODO asset network location and transfer for later
-            border: 1px solid var(--green-120);
-            border-left: 0px;
-            border-right: 0px;
-            padding-top: 8px;
-            padding-bottom: 8px;
-            box-sizing: border-box;
-            color: var(--green-60);
-            font-size: 14px;
-            line-height: 16px;
-            justify-content: space-between;
-            margin-top: 23px;
-            margin-bottom: 16px;
           }
           .header {
             display: flex;

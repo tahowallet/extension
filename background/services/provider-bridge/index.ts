@@ -27,12 +27,13 @@ import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
 import { PermissionMap } from "./utils"
 import { toHexChainID } from "../../networks"
+import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
   initializeAllowedPages: PermissionMap
   setClaimReferrer: string
-  permissionQueriedForChain: string
+  dappOpenedOnChain: string
 }
 
 /**
@@ -133,8 +134,19 @@ export default class ProviderBridgeService extends BaseService<Events> {
         origin
       )
 
+    if (event.request.method === "eth_requestAccounts") {
+      // This is analogous to "User opened a dapp on chain X"
+      this.emitter.emit("dappOpenedOnChain", chainID)
+    }
+
     const originPermission = await this.checkPermission(origin, chainID)
-    if (isTallyConfigPayload(event.request)) {
+    if (origin === TALLY_INTERNAL_ORIGIN) {
+      // Explicitly disallow anyone who has managed to pretend to be the
+      // internal provider.
+      response.result = new EIP1193Error(
+        EIP1193_ERROR_CODES.unauthorized
+      ).toJSON()
+    } else if (isTallyConfigPayload(event.request)) {
       // let's start with the internal communication
       response.id = "tallyHo"
       response.result = {
@@ -349,9 +361,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
     origin: string,
     chainID: string
   ): Promise<PermissionRequest | undefined> {
-    // This is analogous to "User opened a dapp on chain X"
-    this.emitter.emit("permissionQueriedForChain", chainID)
-
     const { address: selectedAddress } =
       await this.preferenceService.getSelectedAccount()
     const currentAddress = selectedAddress

@@ -41,7 +41,7 @@ async function annotationsFromLogs(
   resolvedTime: number,
   block: AnyEVMBlock | undefined
 ): Promise<TransactionAnnotation[]> {
-  const assets = await indexingService.getCachedAssets(network)
+  const assets = indexingService.getCachedAssets(network)
 
   const accountAddresses = (await chainService.getAccountsToTrack()).map(
     (account) => account.address

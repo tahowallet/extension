@@ -18,6 +18,7 @@ import {
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 import {
+  ARBITRUM_ONE,
   COMMUNITY_MULTISIG_ADDRESS,
   ETHEREUM,
   GOERLI,
@@ -27,6 +28,7 @@ import {
 } from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
+import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
 
 // This is how 0x represents native token addresses
 const ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS =
@@ -140,6 +142,7 @@ const chainIdTo0xApiBase: { [chainID: string]: string | undefined } = {
   [POLYGON.chainID]: "polygon.api.0x.org",
   [OPTIMISM.chainID]: "optimism.api.0x.org",
   [GOERLI.chainID]: "goerli.api.0x.org",
+  [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
 }
 
 const get0xApiBase = (network: EVMNetwork) => {
@@ -301,7 +304,7 @@ const parseAndNotifyOnZeroExApiError = (
           (e) => e.reason === "INSUFFICIENT_ASSET_LIQUIDITY"
         )
       ) {
-        dispatch(setSnackbarMessage("Price Impact Too High"))
+        dispatch(setSnackbarMessage("Insufficient liquidity for this trade."))
       }
     }
   } catch (e) {
@@ -436,9 +439,27 @@ export const approveTransfer = createBackgroundAsyncThunk(
  */
 export const executeSwap = createBackgroundAsyncThunk(
   "0x-swap/executeSwap",
-  async (quote: ZrxQuote, { dispatch }) => {
+  async (
+    quote: ZrxQuote & { sellAsset: FungibleAsset; buyAsset: FungibleAsset },
+    { dispatch }
+  ) => {
     const provider = getProvider()
     const signer = provider.getSigner()
+
+    const sellAssetAmount = enrichAssetAmountWithDecimalValues(
+      {
+        asset: quote.sellAsset,
+        amount: BigInt(quote.sellAmount),
+      },
+      2
+    )
+    const buyAssetAmount = enrichAssetAmountWithDecimalValues(
+      {
+        asset: quote.buyAsset,
+        amount: BigInt(quote.buyAmount),
+      },
+      2
+    )
 
     // Clear the swap quote, then request signature + broadcast.
     dispatch(clearSwapQuote())
@@ -451,6 +472,13 @@ export const executeSwap = createBackgroundAsyncThunk(
       to: quote.to,
       value: BigNumber.from(quote.value),
       type: 1 as const,
+      annotation: {
+        type: "asset-swap",
+        fromAssetAmount: sellAssetAmount,
+        toAssetAmount: buyAssetAmount,
+        timestamp: Date.now(),
+        blockTimestamp: undefined,
+      },
     })
   }
 )

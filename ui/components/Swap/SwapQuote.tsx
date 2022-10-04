@@ -52,6 +52,8 @@ export default function SwapQuote({
     await dispatch(
       executeSwap({
         ...quoteWithoutGasPrice,
+        sellAsset,
+        buyAsset,
         gasPrice:
           swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
           gasPrice,
@@ -62,6 +64,8 @@ export default function SwapQuote({
   }, [
     finalQuote,
     dispatch,
+    sellAsset,
+    buyAsset,
     swapTransactionSettings.networkSettings.values.maxFeePerGas,
     history,
   ])
