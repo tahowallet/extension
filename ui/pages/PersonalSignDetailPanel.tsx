@@ -1,7 +1,3 @@
-import {
-  EIP4361Data,
-  SignDataMessageType,
-} from "@tallyho/tally-background/utils/signing"
 import { selectSigningData } from "@tallyho/tally-background/redux-slices/signing"
 import React from "react"
 import { EIP191Info, EIP4361Info } from "../components/SignData"
@@ -18,13 +14,11 @@ export default function PersonalSignDetailPanel(): JSX.Element {
         <div className="container">
           {(() => {
             switch (signingDataRequest.messageType) {
-              case SignDataMessageType.EIP4361:
+              case "eip4361":
                 return (
-                  <EIP4361Info
-                    signingData={signingDataRequest.signingData as EIP4361Data}
-                  />
+                  <EIP4361Info signingData={signingDataRequest.signingData} />
                 )
-              case SignDataMessageType.EIP191:
+              case "eip191":
               default:
                 return (
                   <EIP191Info
