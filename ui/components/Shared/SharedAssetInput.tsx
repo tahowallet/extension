@@ -287,7 +287,7 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   selectedAsset: AssetType | undefined
   amount: string
   amountMainCurrency?: string
-  priceImpact?: string
+  priceImpact?: number
   isAssetOptionsLocked: boolean
   disableDropdown: boolean
   showMaxButton: boolean
@@ -426,6 +426,23 @@ export default function SharedAssetInput<T extends AnyAsset>(
     onAmountChange?.(fixedPointString, getErrorMessage(fixedPointString))
   }
 
+  const getPriceImpactColor = useCallback(
+    (value: number | undefined): string => {
+      if (value) {
+        switch (true) {
+          case value < -5:
+            return "error"
+          case value <= 1 && value >= -5:
+            return "attention"
+          default:
+            return "green-40"
+        }
+      }
+      return "green-40"
+    },
+    []
+  )
+
   return (
     <>
       <label
@@ -513,7 +530,8 @@ export default function SharedAssetInput<T extends AnyAsset>(
             (!errorMessage ? (
               <>
                 <div className="simple_text price_impact_wrap">
-                  ${amountMainCurrency || "0.00"}
+                  {amountMainCurrency === "0.00" && "<"}$
+                  {amountMainCurrency || "0.00"}
                   {priceImpact && (
                     <span className="price_impact_percent">
                       ({priceImpact}%
@@ -525,15 +543,15 @@ export default function SharedAssetInput<T extends AnyAsset>(
                           <SharedIcon
                             width={16}
                             icon="icons/m/info.svg"
-                            color="var(--error)"
+                            color={`var(--${getPriceImpactColor(priceImpact)})`}
                             customStyles="margin-left: -5px;"
                           />
                         )}
                       >
                         <div>
-                          {t("assetInput.tooltip.firstLine")}
+                          {t("assetInput.priceImpactTooltip.firstLine")}
                           <br />
-                          {t("assetInput.tooltip.secondLine")}
+                          {t("assetInput.priceImpactTooltip.secondLine")}
                         </div>
                       </SharedTooltip>
                       )
@@ -640,7 +658,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             gap: 2px;
           }
           .price_impact_percent {
-            color: var(--error);
+            color: var(--${getPriceImpactColor(priceImpact)});
             display: flex;
             flex-direction: row;
             align-items: center;
