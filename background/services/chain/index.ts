@@ -100,6 +100,10 @@ interface Events extends ServiceLifecycleEvents {
     transactions: Transaction[]
     accounts: AddressOnNetwork[]
   }
+  initializeActivitiesForAccount: {
+    transactions: Transaction[]
+    account: AddressOnNetwork
+  }
   newAccountToTrack: AddressOnNetwork
   accountsWithBalances: AccountBalance[]
   transactionSend: HexString
@@ -1438,6 +1442,24 @@ export default class ChainService extends BaseService<Events> {
     if (error) {
       throw error
     }
+  }
+
+  async emitSavedTransactions(account: AddressOnNetwork): Promise<void> {
+    const { address, network } = account
+    const transactionsForNetwork = await this.db.getTransactionsForNetwork(
+      network
+    )
+
+    const transactions = transactionsForNetwork.filter(
+      (transaction) =>
+        sameEVMAddress(transaction.from, address) ||
+        sameEVMAddress(transaction.to, address)
+    )
+
+    this.emitter.emit("initializeActivitiesForAccount", {
+      transactions,
+      account,
+    })
   }
 
   /**

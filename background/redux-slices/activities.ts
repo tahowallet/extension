@@ -7,6 +7,7 @@ import {
 } from "../lib/utils"
 import { Transaction } from "../services/chain/db"
 import { EnrichedEVMTransaction } from "../services/enrichment"
+import { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
   sortActivities,
@@ -124,7 +125,30 @@ const activitiesSlice = createSlice({
     ) => ({
       activities: initializeActivitiesFromTransactions(payload),
     }),
-    activityEncountered: (
+    initializeActivitiesForAccount: (
+      immerState,
+      {
+        payload: { transactions, account },
+      }: { payload: { transactions: Transaction[]; account: AddressOnNetwork } }
+    ) => {
+      const {
+        address,
+        network: { chainID },
+      } = account
+      transactions.forEach((transaction) =>
+        addActivityToState(immerState.activities)(address, chainID, transaction)
+      )
+      cleanActivitiesArray(
+        immerState.activities[normalizeEVMAddress(address)]?.[chainID]
+      )
+    },
+    removeActivities: (
+      immerState,
+      { payload: address }: { payload: HexString }
+    ) => {
+      immerState.activities[address] = {}
+    },
+    addActivity: (
       immerState,
       {
         payload: { transaction, forAccounts },
@@ -146,8 +170,12 @@ const activitiesSlice = createSlice({
   },
 })
 
-export const { initializeActivities, activityEncountered } =
-  activitiesSlice.actions
+export const {
+  initializeActivities,
+  addActivity,
+  removeActivities,
+  initializeActivitiesForAccount,
+} = activitiesSlice.actions
 
 export default activitiesSlice.reducer
 

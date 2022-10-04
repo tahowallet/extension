@@ -126,8 +126,10 @@ import { deleteNFts } from "./redux-slices/nfts"
 import { EnrichedEVMTransactionRequest } from "./services/enrichment"
 import {
   ActivityDetail,
-  activityEncountered,
+  addActivity,
   initializeActivities,
+  initializeActivitiesForAccount,
+  removeActivities,
 } from "./redux-slices/activities"
 import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
 import { getActivityDetails } from "./redux-slices/utils/activities-utils"
@@ -486,6 +488,7 @@ export default class Main extends BaseService<never> {
 
   async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.chainService.addAccountToTrack(addressNetwork)
+    await this.chainService.emitSavedTransactions(addressNetwork)
   }
 
   addOrEditAddressName({
@@ -505,6 +508,7 @@ export default class Main extends BaseService<never> {
     signerType?: SignerType
   ): Promise<void> {
     this.store.dispatch(deleteAccount(address))
+    this.store.dispatch(removeActivities(address))
     this.store.dispatch(deleteNFts(address))
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))
@@ -586,7 +590,7 @@ export default class Main extends BaseService<never> {
         await this.enrichmentService.enrichTransaction(transaction, 2)
 
       this.store.dispatch(
-        activityEncountered({
+        addActivity({
           transaction: enrichedTransaction,
           forAccounts: [addressNetwork.address],
         })
@@ -602,6 +606,16 @@ export default class Main extends BaseService<never> {
         this.enrichActivities(addressNetwork)
       }
     })
+    this.chainService.emitter.on(
+      "initializeActivitiesForAccount",
+      (payload) => {
+        this.store.dispatch(initializeActivitiesForAccount(payload))
+        const addressNetwork = this.store.getState().ui.selectedAccount
+        if (addressNetwork) {
+          this.enrichActivities(addressNetwork)
+        }
+      }
+    )
 
     // Wire up chain service to account slice.
     this.chainService.emitter.on(
@@ -773,7 +787,7 @@ export default class Main extends BaseService<never> {
     // Report on transactions for basic activity. Fancier stuff is handled via
     // connectEnrichmentService
     this.chainService.emitter.on("transaction", async (transactionInfo) => {
-      this.store.dispatch(activityEncountered(transactionInfo))
+      this.store.dispatch(addActivity(transactionInfo))
     })
 
     uiSliceEmitter.on("userActivityEncountered", (addressOnNetwork) => {
@@ -846,7 +860,7 @@ export default class Main extends BaseService<never> {
         this.indexingService.notifyEnrichedTransaction(
           transactionData.transaction
         )
-        this.store.dispatch(activityEncountered(transactionData))
+        this.store.dispatch(addActivity(transactionData))
       }
     )
   }
