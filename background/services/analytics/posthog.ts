@@ -1,4 +1,5 @@
 import {v4 as uuidv4} from 'uuid';
+import toggleCollectAnalytics from '../../../ui/pages/Settings/SettingsAnalytics'
 
 function getCookie(name: string)
  {
@@ -80,12 +81,3 @@ export async function createEvent(eventName:string, userID:string): Promise<HogR
     return Promise.reject(console.log("unexpected error: "))
   }
 }
-
-// export function CreatePostHogSender<T>(HogEventproperties) {
-//   return (props: T) => {
-//     createEvent()
-//   }
-// }
-
-// export const WalletOpenedEvent =
-//   CreatePostHogSender<WalletOpenedEventProps>("Wallet Opened")
