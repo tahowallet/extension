@@ -20,6 +20,7 @@ export default function AccountsNotificationPanelNotifications(): ReactElement {
         {Array(3)
           .fill("")
           .map((_, index) => (
+            // eslint-disable-next-line react/no-array-index-key
             <AccountsNotificationPanelNotificationItem key={index.toString()} />
           ))}
       </ul>
@@ -38,6 +39,7 @@ export default function AccountsNotificationPanelNotifications(): ReactElement {
         {Array(4)
           .fill("")
           .map((_, index) => (
+            // eslint-disable-next-line react/no-array-index-key
             <AccountsNotificationPanelNotificationItem key={index.toString()} />
           ))}
       </ul>

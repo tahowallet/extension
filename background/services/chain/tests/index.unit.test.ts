@@ -112,6 +112,7 @@ describe("Chain Service", () => {
 
     it("should get block prices if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
       // Set last activity time to 10 minutes ago
+      // eslint-disable-next-line @typescript-eslint/no-extra-semi
       ;(
         chainService as unknown as ChainServiceExternalized
       ).lastUserActivityOnNetwork[ETHEREUM.chainID] = Date.now() - 10 * MINUTE
@@ -125,6 +126,7 @@ describe("Chain Service", () => {
 
     it("should get block prices if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
       // Set last activity time to 10 minutes ago
+      // eslint-disable-next-line @typescript-eslint/no-extra-semi
       ;(
         chainService as unknown as ChainServiceExternalized
       ).lastUserActivityOnNetwork[ETHEREUM.chainID] = Date.now() - 10 * MINUTE
@@ -138,6 +140,7 @@ describe("Chain Service", () => {
 
     it("should query recent transfers if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
       // Set last activity time to 10 minutes ago
+      // eslint-disable-next-line @typescript-eslint/no-extra-semi
       ;(
         chainService as unknown as ChainServiceExternalized
       ).lastUserActivityOnNetwork[ETHEREUM.chainID] = Date.now() - 10 * MINUTE

@@ -75,11 +75,13 @@ export default class TallyWindowProvider extends EventEmitter {
           return
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-extra-semi
         ;({ result } = event.data)
       } else if (
         isPortResponseEvent(event) &&
         isTallyInternalCommunication(event)
       ) {
+        // eslint-disable-next-line @typescript-eslint/no-extra-semi
         ;({ result } = event)
       } else {
         return
@@ -197,8 +199,10 @@ export default class TallyWindowProvider extends EventEmitter {
             return
           }
 
+          // eslint-disable-next-line @typescript-eslint/no-extra-semi
           ;({ id, result } = event.data)
         } else if (isPortResponseEvent(event)) {
+          // eslint-disable-next-line @typescript-eslint/no-extra-semi
           ;({ id, result } = event)
         } else {
           return
