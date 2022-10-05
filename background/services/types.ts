@@ -109,7 +109,4 @@ export type ServiceCreatorFunction<
   EventsType extends ServiceLifecycleEvents,
   ServiceType extends Service<EventsType>,
   Deps extends Promise<Service<ServiceLifecycleEvents>>[]
-> = (
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  ...serviceDependencies: [...Deps, DexieOptions?]
-) => Promise<ServiceType>
+> = (...serviceDependencies: [...Deps, DexieOptions?]) => Promise<ServiceType>
