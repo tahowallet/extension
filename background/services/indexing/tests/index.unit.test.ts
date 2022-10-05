@@ -152,14 +152,14 @@ describe("IndexingService", () => {
         ).toEqual(["ETH"])
       })
 
-      await wait(20)
+      await indexingService.emitter.once("assets").then(() => {
+        /* Caches assets for every supported network + 1 active network */
+        expect(cacheSpy).toHaveBeenCalledTimes(3)
 
-      /* Caches assets for every supported network + 1 active network */
-      expect(cacheSpy).toHaveBeenCalledTimes(3)
-
-      expect(
-        indexingService.getCachedAssets(ETHEREUM).map((asset) => asset.symbol)
-      ).toEqual(["ETH", "TEST"])
+        expect(
+          indexingService.getCachedAssets(ETHEREUM).map((asset) => asset.symbol)
+        ).toEqual(["ETH", "TEST"])
+      })
     })
 
     it("should update cache when adding a custom asset", async () => {

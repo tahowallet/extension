@@ -1,7 +1,10 @@
 import React, { ReactElement } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { selectSigningData } from "@tallyho/tally-background/redux-slices/signing"
+import {
+  selectSigningData,
+  selectTypedData,
+} from "@tallyho/tally-background/redux-slices/signing"
 import { useTranslation } from "react-i18next"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
 import { useBackgroundSelector } from "../../hooks"
@@ -16,10 +19,13 @@ export default function SignTransactionNetworkAccountInfoTopBar({
   const { t } = useTranslation()
   const transactionData = useBackgroundSelector(selectTransactionData)
   const signingData = useBackgroundSelector(selectSigningData)
+  const typedData = useBackgroundSelector(selectTypedData)
   const { shortenedAddress, name, avatarURL } = accountTotal
 
   const networkName =
-    transactionData?.network.name ?? signingData?.account.network.name
+    transactionData?.network.name ??
+    signingData?.account.network.name ??
+    typedData?.account.network.name
 
   return (
     <div className="top_bar_wrap standard_width">
