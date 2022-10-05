@@ -15,10 +15,7 @@ import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin"
 import WebExtensionArchivePlugin from "./build-utils/web-extension-archive-webpack-plugin"
 import InjectWindowProvider from "./build-utils/inject-window-provider"
 
-const supportedBrowsers = [
-  "chrome",
-  ...(process.env.CI === "true" ? [] : ["brave", "edge", "firefox", "opera"]),
-]
+const supportedBrowsers = ["chrome"]
 
 // Replicated and adjusted for each target browser and the current build mode.
 const baseConfig: Configuration = {
