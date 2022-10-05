@@ -1,4 +1,3 @@
-import {v4 as uuidv4} from 'uuid';
 import toggleCollectAnalytics from '../../../ui/pages/Settings/SettingsAnalytics'
 
 function getCookie(name: string)
