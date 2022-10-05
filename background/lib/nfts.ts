@@ -93,10 +93,10 @@ export async function getNFTs({
   address,
   network,
 }: AddressOnNetwork): Promise<NFT[]> {
-  if (["Polygon", "Ethereum"].includes(network.name)) {
+  if (["Polygon", "Ethereum", "Arbitrum"].includes(network.name)) {
     return (await alchemyGetNFTs({ address, network })).map(alchemyNFTtoNFT)
   }
-  if (["Arbitrum", "Optimism"].includes(network.name)) {
+  if (["Optimism"].includes(network.name)) {
     return (await simpleHashGetNFTs({ address, network })).map(
       simpleHashNFTModelToNFT
     )
