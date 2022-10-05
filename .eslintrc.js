@@ -22,6 +22,7 @@ module.exports = {
       { allowRequiredDefaults: true },
     ],
     "react/require-default-props": [0],
+    "react/no-unknown-property": [2, { ignore: ["jsx", "global"] }],
     // Shared components may have labels associated externally in a way ESLint
     // does not detect.
     "jsx-a11y/label-has-associated-control": [
