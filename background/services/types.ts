@@ -1,3 +1,4 @@
+import { DexieOptions } from "dexie"
 import Emittery from "emittery"
 
 export interface ServiceLifecycleEvents {
@@ -108,4 +109,7 @@ export type ServiceCreatorFunction<
   EventsType extends ServiceLifecycleEvents,
   ServiceType extends Service<EventsType>,
   Deps extends Promise<Service<ServiceLifecycleEvents>>[]
-> = (...serviceDependencies: Deps) => Promise<ServiceType>
+> = (
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  ...serviceDependencies: [...Deps, DexieOptions?]
+) => Promise<ServiceType>
