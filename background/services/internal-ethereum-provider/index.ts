@@ -213,7 +213,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       }
       case "eth_sendTransaction":
         return this.signTransaction(
-          params[0] as JsonRpcTransactionRequest,
+          {
+            ...(params[0] as JsonRpcTransactionRequest),
+            // we populate the nonce during the signing process. If we receive one, it's safer to just ignore it.
+            nonce: undefined,
+          },
           origin
         ).then(async (signed) => {
           await this.chainService.broadcastSignedTransaction(signed)
