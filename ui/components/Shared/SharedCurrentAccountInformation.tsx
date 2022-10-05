@@ -19,7 +19,7 @@ export default function SharedCurrentAccountInformation({
   showKeyring,
 }: Props): ReactElement {
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
-  const icon = areKeyringsUnlocked ? "un-lock" : "lock"
+  const icon = areKeyringsUnlocked ? "unlock" : "lock"
   return (
     <div className={classNames("account_info_wrap", { hover: showHoverStyle })}>
       <span className="account_info_label">{name ?? shortenedAddress}</span>
@@ -28,7 +28,7 @@ export default function SharedCurrentAccountInformation({
         <div className="keyring_icon_wrap">
           <SharedIcon
             icon={`icons/s/${icon}-bold.svg`}
-            width={18}
+            width={16}
             color={`var(--${areKeyringsUnlocked ? "success" : "error"})`}
             ariaLabel={icon}
           />
@@ -56,8 +56,8 @@ export default function SharedCurrentAccountInformation({
           }
           .keyring_icon_wrap {
             background-color: var(--hunter-green);
-            padding: 0px 5px 3px 3px;
-            border-radius: 2px;
+            padding: 2px 6px 4px 2px;
+            border-radius: 8px;
             position: absolute;
             right: -16px;
             top: -10px;
