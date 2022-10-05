@@ -33,7 +33,6 @@ import {
 import {
   SUPPORT_ARBITRUM,
   SUPPORT_GOERLI,
-  SUPPORT_OPTIMISM,
   USE_MAINNET_FORK,
 } from "../../features"
 import PreferenceService from "../preferences"
@@ -94,6 +93,10 @@ const NETWORK_POLLING_TIMEOUT = MINUTE * 5
 // for either internal (request failure) or external (transaction dropped from
 // mempool) reasons.
 const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
+
+const GAS_POLLS_PER_PERIOD = 4 // 4 times per minute
+
+const GAS_POLLING_PERIOD = 1 // 1 minute
 
 interface Events extends ServiceLifecycleEvents {
   newAccountToTrack: AddressOnNetwork
@@ -233,7 +236,7 @@ export default class ChainService extends BaseService<Events> {
       blockPrices: {
         runAtStart: false,
         schedule: {
-          periodInMinutes: MINUTE / 1e3 / 4, // Every 15 seconds
+          periodInMinutes: GAS_POLLING_PERIOD,
         },
         handler: () => {
           this.pollBlockPrices()
@@ -244,9 +247,9 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks = [
       ETHEREUM,
       POLYGON,
+      OPTIMISM,
       ...(SUPPORT_GOERLI ? [GOERLI] : []),
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
-      ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
 
     this.trackedNetworks = []
@@ -607,7 +610,7 @@ export default class ChainService extends BaseService<Events> {
     partialRequest: EnrichedEVMTransactionSignatureRequest,
     defaults: { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }
   ): Promise<{
-    transactionRequest: TransactionRequest
+    transactionRequest: EnrichedEVMTransactionRequest
     gasEstimationError: string | undefined
   }> {
     if (EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)) {
@@ -1041,6 +1044,18 @@ export default class ChainService extends BaseService<Events> {
    * Write block prices to IndexedDB so we have them for later
    */
   async pollBlockPrices(): Promise<void> {
+    // Schedule next N polls at even interval
+    for (let i = 1; i < GAS_POLLS_PER_PERIOD; i += 1) {
+      setTimeout(async () => {
+        await Promise.allSettled(
+          this.subscribedNetworks.map(async ({ network }) =>
+            this.pollBlockPricesForNetwork(network.chainID)
+          )
+        )
+      }, (GAS_POLLING_PERIOD / GAS_POLLS_PER_PERIOD) * (GAS_POLLING_PERIOD * MINUTE) * i)
+    }
+
+    // Immediately run the first poll
     await Promise.allSettled(
       this.subscribedNetworks.map(async ({ network }) =>
         this.pollBlockPricesForNetwork(network.chainID)
@@ -1118,6 +1133,7 @@ export default class ChainService extends BaseService<Events> {
       (await this.getBlockHeight(addressNetwork.network)) -
       BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY
     const fromBlock = blockHeight - BLOCKS_FOR_TRANSACTION_HISTORY
+
     try {
       return await this.loadAssetTransfers(
         addressNetwork,

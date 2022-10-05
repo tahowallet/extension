@@ -177,7 +177,6 @@ export default class IndexingService extends BaseService<Events> {
     // TODO Track across all account/network pairs, not just on one network or
     // TODO account.
     await this.db.addAssetToTrack(asset)
-    this.cacheAssetsForNetwork(asset.homeNetwork)
   }
 
   /**
@@ -186,7 +185,7 @@ export default class IndexingService extends BaseService<Events> {
    */
   async addCustomAsset(asset: SmartContractFungibleAsset): Promise<void> {
     await this.db.addCustomAsset(asset)
-    this.cacheAssetsForNetwork(asset.homeNetwork)
+    await this.cacheAssetsForNetwork(asset.homeNetwork)
   }
 
   /**

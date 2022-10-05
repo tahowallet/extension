@@ -5,7 +5,6 @@ export const HIDE_SWAP_REWARDS = process.env.HIDE_SWAP_REWARDS === "true"
 export const RESOLVE_RNS_NAMES = process.env.RESOLVE_RNS_NAMES === "true"
 export const SUPPORT_GOERLI = process.env.SUPPORT_GOERLI === "true"
 export const SUPPORT_ARBITRUM = process.env.SUPPORT_ARBITRUM === "true"
-export const SUPPORT_OPTIMISM = process.env.SUPPORT_OPTIMISM === "true"
 export const HIDE_TOKEN_FEATURES = process.env.HIDE_TOKEN_FEATURES === "true"
 export const USE_UPDATED_SIGNING_UI =
   process.env.USE_UPDATED_SIGNING_UI === "true"
