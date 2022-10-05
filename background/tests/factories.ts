@@ -1,9 +1,15 @@
 import { keccak256 } from "ethers/lib/utils"
 import { AccountBalance, AddressOnNetwork } from "../accounts"
 import { ETH, ETHEREUM, OPTIMISM } from "../constants"
-import { AnyEVMTransaction, LegacyEVMTransactionRequest } from "../networks"
+import {
+  AnyEVMTransaction,
+  LegacyEVMTransactionRequest,
+  AnyEVMBlock,
+  BlockPrices,
+} from "../networks"
 import {
   ChainService,
+  IndexingService,
   KeyringService,
   LedgerService,
   NameService,
@@ -45,6 +51,19 @@ export async function createNameService(overrides?: {
   return NameService.create(
     overrides?.chainService ?? createChainService({ preferenceService }),
     preferenceService
+  )
+}
+
+export async function createIndexingService(overrides?: {
+  chainService?: Promise<ChainService>
+  preferenceService?: Promise<PreferenceService>
+}): Promise<IndexingService> {
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+
+  return IndexingService.create(
+    preferenceService,
+    overrides?.chainService ?? createChainService({ preferenceService })
   )
 }
 
@@ -116,6 +135,20 @@ export const createAnyEVMTransaction = (
   }
 }
 
+export const createAnyEVMBlock = (
+  overrides: Partial<AnyEVMBlock> = {}
+): AnyEVMBlock => {
+  return {
+    hash: createRandom0xHash(),
+    parentHash: createRandom0xHash(),
+    difficulty: 1000000000000n,
+    blockHeight: 15547463,
+    timestamp: Date.now(),
+    network: OPTIMISM,
+    ...overrides,
+  }
+}
+
 export const createAccountBalance = (
   overrides: Partial<AccountBalance> = {}
 ): AccountBalance => ({
@@ -144,6 +177,25 @@ export const createAddressOnNetwork = (
   overrides: Partial<AddressOnNetwork> = {}
 ): AddressOnNetwork => ({
   address: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+  network: ETHEREUM,
+  ...overrides,
+})
+
+export const createBlockPrices = (
+  overrides: Partial<BlockPrices> = {}
+): BlockPrices => ({
+  baseFeePerGas: 0n,
+  blockNumber: 25639147,
+  dataSource: "local",
+  estimatedPrices: [
+    {
+      confidence: 99,
+      maxFeePerGas: 0n,
+      maxPriorityFeePerGas: 0n,
+      price: 1001550n,
+    },
+  ],
+  estimatedTransactionCount: null,
   network: ETHEREUM,
   ...overrides,
 })

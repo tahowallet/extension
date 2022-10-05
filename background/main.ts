@@ -4,6 +4,7 @@ import deepDiff from "webext-redux/lib/strategies/deepDiff/diff"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
+import { debounce } from "lodash"
 
 import {
   decodeJSON,
@@ -98,7 +99,7 @@ import {
   signDataRequest,
 } from "./redux-slices/signing"
 
-import { SignTypedDataRequest, SignDataRequest } from "./utils/signing"
+import { SignTypedDataRequest, MessageSigningRequest } from "./utils/signing"
 import {
   emitter as earnSliceEmitter,
   setVaultsAsStale,
@@ -108,7 +109,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { ETHEREUM, GOERLI, OPTIMISM, POLYGON } from "./constants"
+import { ARBITRUM_ONE, ETHEREUM, GOERLI, OPTIMISM, POLYGON } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   SignatureResponse,
@@ -147,9 +148,7 @@ const devToolsSanitizer = (input: unknown) => {
   }
 }
 
-const reduxCache: Middleware = (store) => (next) => (action) => {
-  const result = next(action)
-  const state = store.getState()
+const persistStoreFn = <T>(state: T) => {
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
@@ -158,7 +157,18 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
       version: REDUX_STATE_VERSION,
     })
   }
+}
 
+const persistStoreState = debounce(persistStoreFn, 50, {
+  trailing: true,
+  maxWait: 50,
+})
+
+const reduxCache: Middleware = (store) => (next) => (action) => {
+  const result = next(action)
+  const state = store.getState()
+
+  persistStoreState(state)
   return result
 }
 
@@ -607,11 +617,15 @@ export default class Main extends BaseService<never> {
           )
 
         const { annotation } =
-          await this.enrichmentService.enrichTransactionSignature(
-            network,
-            populatedRequest,
-            2 /* TODO desiredDecimals should be configurable */
-          )
+          // Respect a prepopulated annotation. For now, this short-circuits
+          // the usual enrichment process.
+          populatedRequest.annotation === undefined
+            ? await this.enrichmentService.enrichTransactionSignature(
+                network,
+                populatedRequest,
+                2 /* TODO desiredDecimals should be configurable */
+              )
+            : { annotation: populatedRequest.annotation }
 
         const enrichedPopulatedRequest: EnrichedEVMTransactionRequest = {
           ...populatedRequest,
@@ -732,6 +746,10 @@ export default class Main extends BaseService<never> {
           filterTransactionPropsForUI<AnyEVMTransaction>(transactionInfo)
         )
       )
+    })
+
+    uiSliceEmitter.on("userActivityEncountered", (addressOnNetwork) => {
+      this.chainService.markNetworkActivity(addressOnNetwork.network.chainID)
     })
   }
 
@@ -1026,10 +1044,13 @@ export default class Main extends BaseService<never> {
         resolver,
         rejecter,
       }: {
-        payload: SignDataRequest
+        payload: MessageSigningRequest
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
+        this.chainService.pollBlockPricesForNetwork(
+          payload.account.network.chainID
+        )
         this.store.dispatch(signDataRequest(payload))
 
         const clear = () => {
@@ -1100,6 +1121,13 @@ export default class Main extends BaseService<never> {
     )
 
     this.providerBridgeService.emitter.on(
+      "dappOpenedOnChain",
+      async (chainID: string) => {
+        this.chainService.markNetworkActivity(chainID)
+      }
+    )
+
+    this.providerBridgeService.emitter.on(
       "setClaimReferrer",
       async (referral: string) => {
         const isAddress = isProbablyEVMAddress(referral)
@@ -1134,12 +1162,15 @@ export default class Main extends BaseService<never> {
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await Promise.all(
-        [ETHEREUM, POLYGON, OPTIMISM, GOERLI].map(async (network) => {
-          await this.providerBridgeService.grantPermission({
-            ...permission,
-            chainID: network.chainID,
-          })
-        })
+        // TODO: replace this with this.chainService.supportedNetworks when removing the chain feature flags
+        [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE].map(
+          async (network) => {
+            await this.providerBridgeService.grantPermission({
+              ...permission,
+              chainID: network.chainID,
+            })
+          }
+        )
       )
     })
 

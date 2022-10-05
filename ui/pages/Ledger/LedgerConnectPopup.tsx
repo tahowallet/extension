@@ -1,17 +1,21 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
 
 export default function LedgerConnectPopup(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "ledger.onboarding",
+  })
   return (
     <>
       <LedgerPanelContainer indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg" />
       <div className="help select_device_help">
         <div className="arrow upward_arrow" />
-        <div className="main">Select the device</div>
+        <div className="main">{t("selectDevice")}</div>
       </div>
       <div className="help click_connect_help">
         <div className="arrow downward_arrow" />
-        <div className="main">Click connect</div>
+        <div className="main">{t("clickConnect")}</div>
       </div>
       <style jsx>{`
         .help {

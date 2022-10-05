@@ -1,31 +1,71 @@
 import { AssetSwap } from "@tallyho/tally-background/services/enrichment"
 import React, { ReactElement } from "react"
+import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import {
+  getAssetsState,
+  selectMainCurrencySymbol,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
 import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryProps"
 import SharedAssetIcon from "../../../../Shared/SharedAssetIcon"
+import { useBackgroundSelector } from "../../../../../hooks"
+import SigningDataTransactionSummaryBody from "./TransactionSignatureSummaryBody"
+import SharedAddress from "../../../../Shared/SharedAddress"
 
 export default function SwapAssetSummary({
-  annotation: { fromAssetAmount },
+  annotation: { fromAssetAmount, toAssetAmount },
+  transactionRequest: { to },
 }: TransactionSignatureSummaryProps<AssetSwap>): ReactElement {
+  const assets = useBackgroundSelector(getAssetsState)
+
+  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
+  const fromAssetPricePoint = selectAssetPricePoint(
+    assets,
+    fromAssetAmount.asset.symbol,
+    mainCurrencySymbol
+  )
+  const localizedFromMainCurrencyAmount =
+    enrichAssetAmountWithMainCurrencyValues(
+      fromAssetAmount,
+      fromAssetPricePoint,
+      2
+    ).localizedMainCurrencyAmount ?? "-"
+
   return (
     <>
       <h1 className="serif_header title">Swap assets</h1>
-      <span className="site">Uniswap</span>
-      <span className="pre_post_label">Spend amount</span>
-      <span className="spend_amount">
-        {fromAssetAmount.localizedDecimalAmount} {fromAssetAmount.asset.symbol}
-      </span>
-      <span className="pre_post_label">$1413.11</span>
-      <div className="asset_items_wrap">
-        <div className="asset_item">
-          <SharedAssetIcon size="small" />
-          <span className="asset_name">ETH</span>
+      <SigningDataTransactionSummaryBody>
+        <span className="site">
+          <SharedAddress address={to ?? "-"} />
+        </span>
+        <span className="pre_post_label">Spend amount</span>
+        <span className="spend_amount">
+          {fromAssetAmount.localizedDecimalAmount}{" "}
+          {fromAssetAmount.asset.symbol}
+        </span>
+        <span className="pre_post_label">
+          {localizedFromMainCurrencyAmount}
+        </span>
+        <div className="asset_items_wrap">
+          <div className="asset_item">
+            <SharedAssetIcon
+              size="small"
+              symbol={fromAssetAmount.asset.symbol}
+              logoURL={fromAssetAmount.asset.metadata?.logoURL}
+            />
+            <span className="asset_name">{fromAssetAmount.asset.symbol}</span>
+          </div>
+          <div className="icon_switch" />
+          <div className="asset_item">
+            <span className="asset_name">{toAssetAmount.asset.symbol}</span>
+            <SharedAssetIcon
+              size="small"
+              symbol={toAssetAmount.asset.symbol}
+              logoURL={toAssetAmount.asset.metadata?.logoURL}
+            />
+          </div>
         </div>
-        <div className="icon_switch" />
-        <div className="asset_item">
-          <span className="asset_name">ETH</span>
-          <SharedAssetIcon size="small" />
-        </div>
-      </div>
+      </SigningDataTransactionSummaryBody>
       <style jsx>{`
             .title {
               color: var(--trophy-gold);

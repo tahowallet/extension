@@ -28,11 +28,11 @@ import {
   SECOND,
   NETWORK_BY_CHAIN_ID,
   EIP_1559_COMPLIANT_CHAIN_IDS,
+  MINUTE,
 } from "../../constants"
 import {
   SUPPORT_ARBITRUM,
   SUPPORT_GOERLI,
-  SUPPORT_OPTIMISM,
   USE_MAINNET_FORK,
 } from "../../features"
 import PreferenceService from "../preferences"
@@ -85,6 +85,8 @@ const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 // asset transfers. This is important to allow nodes like Erigon and
 // OpenEthereum with tracing to catch up to where we are.
 const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
+
+const NETWORK_POLLING_TIMEOUT = MINUTE * 5
 
 // The number of milliseconds after a request to look up a transaction was
 // first seen to continue looking in case the transaction fails to be found
@@ -139,6 +141,10 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork
     provider: SerialFallbackProvider
   }[]
+
+  private lastUserActivityOnNetwork: {
+    [chainID: string]: UNIXTime
+  }
 
   /**
    * For each chain id, track an address's last seen nonce. The tracked nonce
@@ -207,6 +213,14 @@ export default class ChainService extends BaseService<Events> {
           this.handleRecentIncomingAssetTransferAlarm()
         },
       },
+      forceRecentAssetTransfers: {
+        schedule: {
+          periodInMinutes: (HOUR * 12) / 1e3,
+        },
+        handler: () => {
+          this.handleRecentAssetTransferAlarm(true)
+        },
+      },
       recentAssetTransfers: {
         schedule: {
           periodInMinutes: 15,
@@ -218,19 +232,10 @@ export default class ChainService extends BaseService<Events> {
       blockPrices: {
         runAtStart: false,
         schedule: {
-          periodInMinutes:
-            Number(process.env.GAS_PRICE_POLLING_FREQUENCY ?? "120") / 60,
+          periodInMinutes: MINUTE / 1e3 / 4, // Every 15 seconds
         },
         handler: () => {
           this.pollBlockPrices()
-        },
-      },
-      latestBlocks: {
-        schedule: {
-          periodInMinutes: 0.25, // every 15 seconds
-        },
-        handler: () => {
-          this.getLatestBlocks()
         },
       },
     })
@@ -238,12 +243,17 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks = [
       ETHEREUM,
       POLYGON,
+      OPTIMISM,
       ...(SUPPORT_GOERLI ? [GOERLI] : []),
       ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
-      ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
     ]
 
     this.activeNetworks = []
+
+    this.lastUserActivityOnNetwork =
+      Object.fromEntries(
+        this.supportedNetworks.map((network) => [network.chainID, Date.now()])
+      ) || {}
 
     this.providers = {
       evm: Object.fromEntries(
@@ -268,13 +278,6 @@ export default class ChainService extends BaseService<Events> {
     const activeNetworks = await this.getActiveNetworks()
 
     // get the latest blocks and subscribe for all active networks
-    // TODO revisit whether we actually want to subscribe to new heads
-    // if a user isn't tracking a relevant addressOnNetwork
-    activeNetworks.forEach(async (network) => {
-      this.subscribeToNetworkEvents(network).catch((e) => {
-        logger.error("Error getting block number or new head", e)
-      })
-    })
 
     Promise.allSettled(
       accounts
@@ -342,11 +345,11 @@ export default class ChainService extends BaseService<Events> {
     // with active accounts
     const networksToTrack = await this.getNetworksToTrack()
 
-    await Promise.allSettled([
+    await Promise.allSettled(
       networksToTrack.map(async (network) =>
         this.activateNetworkOrThrow(network.chainID)
-      ),
-    ])
+      )
+    )
 
     return this.activeNetworks
   }
@@ -375,6 +378,7 @@ export default class ChainService extends BaseService<Events> {
       logger.warn(
         `${activeNetwork.name} already active - no need to activate it`
       )
+      this.markNetworkActivity(activeNetwork.chainID)
       return activeNetwork
     }
 
@@ -405,6 +409,7 @@ export default class ChainService extends BaseService<Events> {
       })
     }
 
+    this.markNetworkActivity(networkToActivate.chainID)
     return networkToActivate
   }
 
@@ -601,7 +606,7 @@ export default class ChainService extends BaseService<Events> {
     partialRequest: EnrichedEVMTransactionSignatureRequest,
     defaults: { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }
   ): Promise<{
-    transactionRequest: TransactionRequest
+    transactionRequest: EnrichedEVMTransactionRequest
     gasEstimationError: string | undefined
   }> {
     if (EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)) {
@@ -1019,17 +1024,53 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
+  async markNetworkActivity(chainID: string): Promise<void> {
+    const now = Date.now()
+    const deactivatesAt = this.lastUserActivityOnNetwork[chainID]
+    this.lastUserActivityOnNetwork[chainID] = now
+    if (now - NETWORK_POLLING_TIMEOUT > deactivatesAt) {
+      // Reactivating a potentially deactivated network
+      this.handleRecentAssetTransferAlarm()
+      this.pollBlockPricesForNetwork(chainID)
+    }
+  }
+
   /*
    * Periodically fetch block prices and emit an event whenever new data is received
    * Write block prices to IndexedDB so we have them for later
    */
   async pollBlockPrices(): Promise<void> {
     await Promise.allSettled(
-      this.subscribedNetworks.map(async ({ network, provider }) => {
-        const blockPrices = await getBlockPrices(network, provider)
-        this.emitter.emit("blockPrices", { blockPrices, network })
-      })
+      this.subscribedNetworks.map(async ({ network }) =>
+        this.pollBlockPricesForNetwork(network.chainID)
+      )
     )
+  }
+
+  async pollBlockPricesForNetwork(chainID: string): Promise<void> {
+    if (!this.isCurrentlyActiveChainID(chainID)) {
+      return
+    }
+
+    const subscription = this.subscribedNetworks.find(
+      ({ network }) => toHexChainID(network.chainID) === toHexChainID(chainID)
+    )
+
+    if (!subscription) {
+      logger.warn(
+        `Can't fetch block prices for unsubscribed chainID ${chainID}`
+      )
+      return
+    }
+
+    const blockPrices = await getBlockPrices(
+      subscription.network,
+      subscription.provider
+    )
+    this.emitter.emit("blockPrices", {
+      blockPrices,
+      network: subscription.network,
+    })
   }
 
   /*
@@ -1047,17 +1088,6 @@ export default class ChainService extends BaseService<Events> {
     this.emitter.emit("block", block)
     // TODO if it matches a known blockheight and the difficulty is higher,
     // emit a reorg event
-  }
-
-  /*
-   * Poll for latest blocks on all networks
-   */
-  private async getLatestBlocks(): Promise<void> {
-    await Promise.allSettled(
-      this.subscribedNetworks.map(async ({ network, provider }) => {
-        this.pollLatestBlock(network, provider)
-      })
-    )
   }
 
   async send(
@@ -1186,22 +1216,46 @@ export default class ChainService extends BaseService<Events> {
   /**
    * Check for any incoming asset transfers involving tracked accounts.
    */
-  private async handleRecentIncomingAssetTransferAlarm(): Promise<void> {
+  private async handleRecentIncomingAssetTransferAlarm(
+    forceUpdate = false
+  ): Promise<void> {
     const accountsToTrack = await this.db.getAccountsToTrack()
-
     await Promise.allSettled(
-      accountsToTrack.map((an) => this.loadRecentAssetTransfers(an, true))
+      accountsToTrack
+        .filter(
+          (addressNetwork) =>
+            forceUpdate ||
+            this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
+        )
+        .map(async (addressNetwork) => {
+          return this.loadRecentAssetTransfers(addressNetwork, true)
+        })
+    )
+  }
+
+  private isCurrentlyActiveChainID(chainID: string): boolean {
+    return (
+      Date.now() <
+      this.lastUserActivityOnNetwork[chainID] + NETWORK_POLLING_TIMEOUT
     )
   }
 
   /**
    * Check for any incoming or outgoing asset transfers involving tracked accounts.
    */
-  private async handleRecentAssetTransferAlarm(): Promise<void> {
+  private async handleRecentAssetTransferAlarm(
+    forceUpdate = false
+  ): Promise<void> {
     const accountsToTrack = await this.db.getAccountsToTrack()
 
     await Promise.allSettled(
-      accountsToTrack.map((an) => this.loadRecentAssetTransfers(an))
+      accountsToTrack
+        .filter(
+          (addressNetwork) =>
+            forceUpdate ||
+            this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
+        )
+        .map((addressNetwork) => this.loadRecentAssetTransfers(addressNetwork))
     )
   }
 

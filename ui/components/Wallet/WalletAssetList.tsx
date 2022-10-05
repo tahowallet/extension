@@ -2,6 +2,7 @@
 //
 import React, { ReactElement } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { useTranslation } from "react-i18next"
 import WalletAssetListItem from "./WalletAssetListItem"
 
 interface Props {
@@ -10,6 +11,9 @@ interface Props {
 }
 
 export default function WalletAssetList(props: Props): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet.activities",
+  })
   const { assetAmounts, initializationLoadingTimeExpired } = props
   if (!assetAmounts) return <></>
   return (
@@ -22,7 +26,7 @@ export default function WalletAssetList(props: Props): ReactElement {
         />
       ))}
       {!initializationLoadingTimeExpired && (
-        <li className="loading">Digging deeper...</li>
+        <li className="loading">{t("loadingActivities")}</li>
       )}
       <style jsx>{`
         .loading {
