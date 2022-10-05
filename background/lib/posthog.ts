@@ -31,11 +31,7 @@ export function posthogEvent(eventName:string) {
   chrome.cookies.get({ url: 'http://localhost:8000', name: 'UUID' },
    function (cookie) {
      if (cookie) {
-       console.log("UUID: ",cookie.value);
        createEvent(eventName, cookie.value)
-     }
-     else {
-       console.log('No UUID found!');
      }
  });
 }
@@ -69,14 +65,11 @@ export async function createEvent(eventName:string, userID:string): Promise<HogR
       throw new Error(`Error! status: ${response.status}`)
     }
     const result = (await response.json()) as HogResponse
-    // eslint-disable-next-line no-console
-    console.log("data: ", JSON.stringify(result, null, 4))
 
     return result
   } catch (error) {
     if (error instanceof Error) {
       return Promise.reject(error.message)
     } // eslint-disable-next-line no-console
-    return Promise.reject(console.log("unexpected error: "))
   }
 }

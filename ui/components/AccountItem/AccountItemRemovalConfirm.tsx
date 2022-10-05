@@ -109,7 +109,6 @@ export default function AccountItemRemovalConfirm({
                   accountsData.evm[network.chainID]
                 ).find((accountAddress) => accountAddress !== address)
                 if (newAddress) {
-                  posthogEvent("Wallet Removed");
                   dispatch(
                     setNewSelectedAccount({
                       address: newAddress,
