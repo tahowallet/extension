@@ -2,3 +2,7 @@
 23545c8ed87d8e9b1661ab02dfaefddaf3725f3e
 # Impose prettier formatting on JSON and Markdown.
 8a90e88658795d569ca525ecb7bced875922c59c
+# Automated fixes to align code with @thesis-co/eslint-config
+50f490236249cfe3bebaf7f82cbf4f1f98c21d02
+# Manual fixes to align code with @thesis-co/eslint-config
+ecf04f58d03532e5327b65212815fc10dc9de28c
