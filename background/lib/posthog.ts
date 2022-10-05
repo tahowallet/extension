@@ -1,5 +1,3 @@
-import toggleCollectAnalytics from '../../../ui/pages/Settings/SettingsAnalytics'
-
 export const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY
 
 function getCookie(name: string)

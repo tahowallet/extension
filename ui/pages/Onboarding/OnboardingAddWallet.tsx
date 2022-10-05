@@ -3,7 +3,7 @@ import { useHistory } from "react-router-dom"
 import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
-import { posthogEvent } from "../../../background/services/analytics/posthog"
+import { posthogEvent } from "../../../background/lib/posthog"
 
 const accountCreateButtonInfos = [
   {

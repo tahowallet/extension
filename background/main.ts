@@ -4,7 +4,7 @@ import deepDiff from "webext-redux/lib/strategies/deepDiff/diff"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
-import { posthogEvent } from "./services/analytics/posthog"
+import { posthogEvent } from "./lib/posthog"
 
 import {
   decodeJSON,

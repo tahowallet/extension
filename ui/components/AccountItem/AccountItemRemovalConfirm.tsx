@@ -14,7 +14,7 @@ import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import { useAreKeyringsUnlocked, useBackgroundSelector } from "../../hooks"
 import AccountItemActionHeader from "./AccountItemActionHeader"
-import { posthogEvent } from "../../../background/services/analytics/posthog"
+import { posthogEvent } from "../../../background/lib/posthog"
 
 interface AccountItemRemovalConfirmProps {
   account: AccountTotal
