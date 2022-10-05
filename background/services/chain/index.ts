@@ -1133,6 +1133,7 @@ export default class ChainService extends BaseService<Events> {
       (await this.getBlockHeight(addressNetwork.network)) -
       BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY
     const fromBlock = blockHeight - BLOCKS_FOR_TRANSACTION_HISTORY
+
     try {
       return await this.loadAssetTransfers(
         addressNetwork,
