@@ -67,10 +67,10 @@ export default function SettingsAnalytics(): ReactElement {
             }}
           />
         </div>
-        <p className="toggle_description simple_text">{t(`toggleDesc`)}</p>
+        <p className="toggle_description simple_text">{t("toggleDesc")}</p>
       </section>
       <section>
-        <h2 className="title_success">{t(`recordTitle`)}</h2>
+        <h2 className="title_success">{t("recordTitle")}</h2>
         <ul className="list">
           {analyticsRecordedItems.map((value) => (
             <li key={value} className="list_item simple_text">
@@ -78,7 +78,7 @@ export default function SettingsAnalytics(): ReactElement {
             </li>
           ))}
         </ul>
-        <h2 className="title_error">{t(`noRecordTitle`)}</h2>
+        <h2 className="title_error">{t("noRecordTitle")}</h2>
         <ul className="list">
           {analyticsNotRecordedItems.map((value) => (
             <li key={value} className="list_item simple_text">
@@ -97,7 +97,7 @@ export default function SettingsAnalytics(): ReactElement {
             window.open(`${WEBSITE_ORIGIN}/privacy/`, "_blank")?.focus()
           }
         >
-          {t(`policyBtn`)}
+          {t("policyBtn")}
         </SharedButton>
         <SharedButton
           type="tertiaryError"
@@ -107,7 +107,7 @@ export default function SettingsAnalytics(): ReactElement {
           isDisabled={!collectAnalytics}
           onClick={() => setShowDeleteMenu(true)}
         >
-          {t(`deleteBtn`)}
+          {t("deleteBtn")}
         </SharedButton>
       </section>
       <AnalyticsSlideUpMenu

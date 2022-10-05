@@ -32,13 +32,8 @@ export default class DoggoService extends BaseService<Events> {
     Events,
     DoggoService,
     [Promise<ChainService>, Promise<IndexingService>]
-  > = async (chainService, indexingService) => {
-    return new this(
-      await getOrCreateDB(),
-      await chainService,
-      await indexingService
-    )
-  }
+  > = async (chainService, indexingService) =>
+    new this(await getOrCreateDB(), await chainService, await indexingService)
 
   private constructor(
     private db: DoggoDatabase,

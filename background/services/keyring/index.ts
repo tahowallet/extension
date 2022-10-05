@@ -95,9 +95,7 @@ export default class KeyringService extends BaseService<Events> {
   lastOutsideActivity: UNIXTime | undefined
 
   static create: ServiceCreatorFunction<Events, KeyringService, []> =
-    async () => {
-      return new this()
-    }
+    async () => new this()
 
   private constructor() {
     super({

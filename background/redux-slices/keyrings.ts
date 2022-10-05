@@ -102,19 +102,15 @@ const keyringsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(importKeyring.pending, (state) => {
-        return {
-          ...state,
-          importing: "pending",
-        }
-      })
-      .addCase(importKeyring.fulfilled, (state) => {
-        return {
-          ...state,
-          importing: "done",
-          keyringToVerify: null,
-        }
-      })
+      .addCase(importKeyring.pending, (state) => ({
+        ...state,
+        importing: "pending",
+      }))
+      .addCase(importKeyring.fulfilled, (state) => ({
+        ...state,
+        importing: "done",
+        keyringToVerify: null,
+      }))
   },
 })
 

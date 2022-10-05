@@ -25,13 +25,13 @@ export default function NFTsWallet(): ReactElement {
     )
   }, [address, currentNetwork, dispatch])
 
-  const currentOwnedNFTsList = useMemo(() => {
-    return (
+  const currentOwnedNFTsList = useMemo(
+    () =>
       NFTs &&
       NFTs.evm[currentNetwork.chainID] &&
-      NFTs.evm[currentNetwork.chainID][normalizeEVMAddress(address)]
-    )
-  }, [NFTs, currentNetwork.chainID, address])
+      NFTs.evm[currentNetwork.chainID][normalizeEVMAddress(address)],
+    [NFTs, currentNetwork.chainID, address]
+  )
 
   return (
     <>

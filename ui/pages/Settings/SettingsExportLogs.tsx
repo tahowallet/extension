@@ -29,7 +29,7 @@ export default function SettingsExportLogs(): ReactElement {
           iconSmall="discord"
           iconPosition="left"
           onClick={() => {
-            window.open(`https://chat.tally.cash/`, "_blank")?.focus()
+            window.open("https://chat.tally.cash/", "_blank")?.focus()
           }}
         >
           {t("settings.exportLogs.discordBtn")}

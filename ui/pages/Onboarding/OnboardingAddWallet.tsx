@@ -145,29 +145,27 @@ export default function OnboardingStartTheHunt({
         )}
       </div>
       <div className="button_sections_wrap">
-        {accountCreateButtonInfos.map((creationSection) => {
-          return (
-            <section>
-              <h2>{creationSection.title}</h2>
-              <ul>
-                {creationSection.items.map(
-                  ({ label, icon, url, isAvailable, onClick }) =>
-                    isAvailable ? (
-                      <AddWalletRow
-                        icon={icon}
-                        url={url}
-                        onClick={embedded ? undefined : onClick}
-                      >
-                        {label}
-                      </AddWalletRow>
-                    ) : (
-                      <></>
-                    )
-                )}
-              </ul>
-            </section>
-          )
-        })}
+        {accountCreateButtonInfos.map((creationSection) => (
+          <section>
+            <h2>{creationSection.title}</h2>
+            <ul>
+              {creationSection.items.map(
+                ({ label, icon, url, isAvailable, onClick }) =>
+                  isAvailable ? (
+                    <AddWalletRow
+                      icon={icon}
+                      url={url}
+                      onClick={embedded ? undefined : onClick}
+                    >
+                      {label}
+                    </AddWalletRow>
+                  ) : (
+                    <></>
+                  )
+              )}
+            </ul>
+          </section>
+        ))}
       </div>
 
       <style jsx>
@@ -181,7 +179,7 @@ export default function OnboardingStartTheHunt({
           }
           .start_wrap {
             padding-top: ${embedded ? "83.5px" : "15px"};
-            ${embedded ? "" : `background-color: var(--hunter-green);`}
+            ${embedded ? "" : "background-color: var(--hunter-green);"}
           }
           .button_sections_wrap {
             height: 500px;

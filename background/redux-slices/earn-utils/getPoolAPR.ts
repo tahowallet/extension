@@ -46,9 +46,7 @@ function numberFormatter(num: number, digits: number) {
   const item = lookup
     .slice()
     .reverse()
-    .find(function check(item1) {
-      return num >= item1.value
-    })
+    .find((item1) => num >= item1.value)
   return item ? (num / item.value).toFixed(digits) + item.symbol : "0"
 }
 
@@ -91,10 +89,10 @@ const getPoolAPR = async ({
   // Cannot calculate APR if no one has staked tokens
   if (tokensStakedValue.lte(BigNumber.from("0")))
     return {
-      totalAPR: `New`,
-      low: `New`,
-      mid: `New`,
-      high: `New`,
+      totalAPR: "New",
+      low: "New",
+      mid: "New",
+      high: "New",
       yearnAPY: `${numberFormatter(yearnVaultAPYPercent, 1)}%`,
     }
   // How long will the rewards be distributed for in seconds

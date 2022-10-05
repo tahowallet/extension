@@ -37,8 +37,8 @@ export class PreferenceDatabase extends Dexie {
       .stores({
         preferences: "++id,savedAt,currency,tokenLists,defaultWallet",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
@@ -50,7 +50,7 @@ export class PreferenceDatabase extends Dexie {
                 DEFAULT_PREFERENCES.defaultWallet
             }
           })
-      })
+      )
 
     // TBD @Antonio: Implemented database versioning and population according to the Dexie docs
     // https://dexie.org/docs/Tutorial/Design#database-versioning
@@ -65,8 +65,8 @@ export class PreferenceDatabase extends Dexie {
       .stores({
         preferences: "++id",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
@@ -82,15 +82,15 @@ export class PreferenceDatabase extends Dexie {
                 DEFAULT_PREFERENCES.selectedAccount
             }
           })
-      })
+      )
 
     // Add the new default token list
     this.version(5)
       .stores({
         preferences: "++id",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
@@ -103,15 +103,15 @@ export class PreferenceDatabase extends Dexie {
               ],
             }
           })
-      })
+      )
 
     // Add the new default token list
     this.version(6)
       .stores({
         preferences: "++id",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
@@ -133,15 +133,15 @@ export class PreferenceDatabase extends Dexie {
               urls: newURLs,
             }
           })
-      })
+      )
 
     // Add the Polygon, Optimism, and Arbitrum token lists
     this.version(7)
       .stores({
         preferences: "++id",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
@@ -156,15 +156,15 @@ export class PreferenceDatabase extends Dexie {
               ],
             }
           })
-      })
+      )
 
     // Update .eth.link token lists urls to .eth.limo fallback
     this.version(8)
       .stores({
         preferences: "++id",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
@@ -177,7 +177,7 @@ export class PreferenceDatabase extends Dexie {
               urls: updatedURLs,
             }
           })
-      })
+      )
 
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)

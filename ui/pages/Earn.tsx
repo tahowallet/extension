@@ -35,28 +35,28 @@ export default function Earn(): ReactElement {
   }, [dispatch])
 
   const totalTVL = vaultsWithLockedValues
-    ?.map((item) => {
-      return typeof item.numberValueTotalDeposited !== "undefined"
+    ?.map((item) =>
+      typeof item.numberValueTotalDeposited !== "undefined"
         ? item.numberValueTotalDeposited
         : 0
-    })
+    )
     .reduce((prev, curr) => prev + curr, 0)
 
   const userTVL = vaultsWithLockedValues
-    ?.map((item) => {
-      return typeof item.numberValueUserDeposited !== "undefined"
+    ?.map((item) =>
+      typeof item.numberValueUserDeposited !== "undefined"
         ? item.numberValueUserDeposited
         : 0
-    })
+    )
     .reduce((prev, curr) => prev + curr, 0)
 
   const userPendingRewards = vaultsWithLockedValues
-    ?.map((item) => {
-      return fromFixedPointNumber(
+    ?.map((item) =>
+      fromFixedPointNumber(
         { amount: item.pendingRewards, decimals: DOGGO.decimals },
         2
       )
-    })
+    )
     .reduce((prev, curr) => prev + curr, 0)
     .toFixed(2)
 

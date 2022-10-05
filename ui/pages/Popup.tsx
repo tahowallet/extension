@@ -203,22 +203,18 @@ export function Main(): ReactElement {
                     {/* @ts-expect-error TODO: fix the typing when the feature works */}
                     <Switch location={transformedLocation}>
                       {pageList.map(
-                        ({ path, Component, hasTopBar, hasTabBar }) => {
-                          return (
-                            <Route path={path} key={path}>
-                              <CorePage
-                                hasTopBar={hasTopBar}
-                                hasTabBar={hasTabBar}
-                              >
-                                <ErrorBoundary
-                                  FallbackComponent={ErrorFallback}
-                                >
-                                  <Component location={transformedLocation} />
-                                </ErrorBoundary>
-                              </CorePage>
-                            </Route>
-                          )
-                        }
+                        ({ path, Component, hasTopBar, hasTabBar }) => (
+                          <Route path={path} key={path}>
+                            <CorePage
+                              hasTopBar={hasTopBar}
+                              hasTabBar={hasTabBar}
+                            >
+                              <ErrorBoundary FallbackComponent={ErrorFallback}>
+                                <Component location={transformedLocation} />
+                              </ErrorBoundary>
+                            </CorePage>
+                          </Route>
+                        )
                       )}
                     </Switch>
                   </div>

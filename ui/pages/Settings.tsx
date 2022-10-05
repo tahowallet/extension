@@ -211,7 +211,7 @@ export default function Settings(): ReactElement {
             iconMedium="discord"
             iconPosition="left"
             onClick={() => {
-              window.open(`https://chat.tally.cash/`, "_blank")?.focus()
+              window.open("https://chat.tally.cash/", "_blank")?.focus()
             }}
           >
             {t("settings.joinBtn")}

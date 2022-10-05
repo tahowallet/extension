@@ -92,13 +92,8 @@ export default class SigningService extends BaseService<Events> {
     Events,
     SigningService,
     [Promise<KeyringService>, Promise<LedgerService>, Promise<ChainService>]
-  > = async (keyringService, ledgerService, chainService) => {
-    return new this(
-      await keyringService,
-      await ledgerService,
-      await chainService
-    )
-  }
+  > = async (keyringService, ledgerService, chainService) =>
+    new this(await keyringService, await ledgerService, await chainService)
 
   private constructor(
     private keyringService: KeyringService,

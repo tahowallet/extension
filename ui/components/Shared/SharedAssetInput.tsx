@@ -122,8 +122,8 @@ function SelectAssetMenuContent<T extends AnyAsset>(
   const filteredAssets =
     searchTerm.trim() === ""
       ? assets
-      : assets.filter(({ asset }) => {
-          return (
+      : assets.filter(
+          ({ asset }) =>
             asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
             ("contractAddress" in asset &&
               searchTerm.startsWith("0x") &&
@@ -134,8 +134,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
                 normalizeEVMAddress(searchTerm).replace(/^0x0?/, "0x")
               ) &&
               asset.contractAddress.length >= searchTerm.length)
-          )
-        })
+        )
 
   const sortedFilteredAssets = filteredAssets.sort(
     searchTerm.trim() === ""

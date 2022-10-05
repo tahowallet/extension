@@ -20,9 +20,7 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
     ServiceLifecycleEvents,
     TelemetryService,
     []
-  > = async () => {
-    return new this()
-  }
+  > = async () => new this()
 
   private constructor() {
     super({

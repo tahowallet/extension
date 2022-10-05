@@ -145,17 +145,15 @@ export default function ClaimReferral(props: {
         {`Select a Project/DAO to share the bonus with! You each receive ${amountWithBonus} DOGGO!`}
       </div>
       <div className="options">
-        {DAOs.map(({ address, name, avatar }) => {
-          return (
-            <DAOButton
-              address={address}
-              name={name}
-              avatar={avatar}
-              isActive={selectedForBonus?.name === name}
-              onSelect={selectDAO}
-            />
-          )
-        })}
+        {DAOs.map(({ address, name, avatar }) => (
+          <DAOButton
+            address={address}
+            name={name}
+            avatar={avatar}
+            isActive={selectedForBonus?.name === name}
+            onSelect={selectDAO}
+          />
+        ))}
       </div>
       <div className="input_wrap">
         <SharedAddressInput

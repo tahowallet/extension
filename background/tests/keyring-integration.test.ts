@@ -132,9 +132,8 @@ describe("KeyringService when uninitialized", () => {
 
     it.each(validMnemonics.metamask)(
       "will import mnemonic '%s'",
-      async (mnemonic) => {
-        return expect(service.importKeyring(mnemonic, "import")).resolves
-      }
+      async (mnemonic) =>
+        expect(service.importKeyring(mnemonic, "import")).resolves
     )
 
     it("will create multiple distinct BIP-39 S256 accounts and expose mnemonics", async () => {

@@ -122,7 +122,7 @@ export default function OnboardingViewOnlyWallet({
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            ${embedded ? "" : `background-color: var(--hunter-green);`}
+            ${embedded ? "" : "background-color: var(--hunter-green);"}
           }
           .subtitle {
             color: var(--green-60);

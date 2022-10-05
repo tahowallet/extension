@@ -118,9 +118,7 @@ function SeedVerification({
     if (!active) return
 
     setRemainingWords(
-      remainingWords.filter((word: string) => {
-        return word !== selectedWord
-      })
+      remainingWords.filter((word: string) => word !== selectedWord)
     )
     setSelectedWords((list) => {
       let updated = false

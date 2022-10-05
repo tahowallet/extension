@@ -30,7 +30,7 @@ export default class InjectWindowProvider {
             assets[PROVIDER_BRIDGE_FILENAME] = new sources.RawSource(
               providerBridgeSource.replace(
                 // eslint-disable-next-line no-useless-escape
-                `\"@@@WINDOW_PROVIDER@@@\"`,
+                '"@@@WINDOW_PROVIDER@@@"',
                 windowProviderSource
               )
             )

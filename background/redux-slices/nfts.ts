@@ -89,7 +89,7 @@ export const fetchThenUpdateNFTsByNetwork = createBackgroundAsyncThunk(
       await dispatch(NFTsSlice.actions.updateNFTs(fetchedNFTs))
     } catch (error) {
       logger.error("NFTs fetch failed:", error)
-      dispatch(setSnackbarMessage(`Couldn't load NFTs`))
+      dispatch(setSnackbarMessage("Couldn't load NFTs"))
     }
   }
 )

@@ -9,15 +9,12 @@ export default function OnboardingInterstitialCreatePhrase(): ReactElement {
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
 
-  const generateThenContinue = useCallback(
-    async function generateThenContinue() {
-      if (areKeyringsUnlocked) {
-        await dispatch(generateNewKeyring())
-        history.push("/onboarding/save-seed")
-      }
-    },
-    [areKeyringsUnlocked, dispatch, history]
-  )
+  const generateThenContinue = useCallback(async () => {
+    if (areKeyringsUnlocked) {
+      await dispatch(generateNewKeyring())
+      history.push("/onboarding/save-seed")
+    }
+  }, [areKeyringsUnlocked, dispatch, history])
 
   useEffect(() => {
     generateThenContinue()

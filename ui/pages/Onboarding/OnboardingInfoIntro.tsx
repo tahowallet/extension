@@ -13,7 +13,7 @@ const steps = HIDE_TOKEN_FEATURES
           width: 273,
           height: 245.06,
           fileName: "illustration_onboarding_welcome",
-          extraStyles: `margin-top: 25px;`,
+          extraStyles: "margin-top: 25px;",
         },
         title: "Welcome to Tally Ho!",
         body: "The community owned & operated wallet.",
@@ -24,10 +24,10 @@ const steps = HIDE_TOKEN_FEATURES
           width: 267,
           height: 251,
           fileName: "illustration_onboarding_dao",
-          extraStyles: `margin-top: 21px;`,
+          extraStyles: "margin-top: 21px;",
         },
         title: "Tally Ho! is a DAO",
-        body: `That means Tally Ho is owned by our users. And all profits go straight to the community.`,
+        body: "That means Tally Ho is owned by our users. And all profits go straight to the community.",
         buttonCopy: "Continue",
       },
     ]
@@ -37,7 +37,7 @@ const steps = HIDE_TOKEN_FEATURES
           width: 384,
           height: 336,
           fileName: "onboarding/graphic_different",
-          extraStyles: ``,
+          extraStyles: "",
         },
         title: "Tally Ho! is different",
         body: "Tally Ho! is the first community-owned wallet for Web3 and DeFi. If you own $DOGGO tokens, you are an owner. ",
@@ -48,10 +48,10 @@ const steps = HIDE_TOKEN_FEATURES
           width: 384,
           height: 336,
           fileName: "onboarding/graphic_token",
-          extraStyles: ``,
+          extraStyles: "",
         },
         title: "The $DOGGO token",
-        body: `You can earn $DOGGO in many ways! Check out the Earn and Swap tabs.`,
+        body: "You can earn $DOGGO in many ways! Check out the Earn and Swap tabs.",
         buttonCopy: "Continue",
       },
       {
@@ -59,10 +59,10 @@ const steps = HIDE_TOKEN_FEATURES
           width: 384,
           height: 336,
           fileName: "onboarding/graphic_drop",
-          extraStyles: ``,
+          extraStyles: "",
         },
         title: "$DOGGO token drop",
-        body: `If you used Defi in the past, there is a chance you are part of the drop. Check by adding an existing account!`,
+        body: "If you used Defi in the past, there is a chance you are part of the drop. Check by adding an existing account!",
         buttonCopy: "Get started",
       },
     ]
@@ -150,7 +150,7 @@ export default function OnboardingInfoIntro({
             margin: 12px 0px 0px 0px;
           }
           .forest {
-            ${embedded ? "" : `background: url("./images/dark_forest@2x.png");`}
+            ${embedded ? "" : 'background: url("./images/dark_forest@2x.png");'}
             /*  */
             background-size: cover;
             width: 384px;

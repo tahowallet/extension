@@ -60,13 +60,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
     Events,
     ProviderBridgeService,
     [Promise<InternalEthereumProviderService>, Promise<PreferenceService>]
-  > = async (internalEthereumProviderService, preferenceService) => {
-    return new this(
+  > = async (internalEthereumProviderService, preferenceService) =>
+    new this(
       await getOrCreateDB(),
       await internalEthereumProviderService,
       await preferenceService
     )
-  }
 
   private constructor(
     private db: ProviderBridgeServiceDatabase,
@@ -157,7 +156,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     } else if (event.request.method === "tally_setClaimReferrer") {
       const referrer = event.request.params[0]
       if (origin !== WEBSITE_ORIGIN || typeof referrer !== "string") {
-        logger.warn(`invalid 'setClaimReferrer' request`)
+        logger.warn("invalid 'setClaimReferrer' request")
         return
       }
 

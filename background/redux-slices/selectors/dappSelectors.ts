@@ -14,16 +14,14 @@ export const selectPermissionRequests = createSelector(
 
 export const selectPendingPermissionRequests = createSelector(
   selectPermissionRequests,
-  (permissionRequests) => {
-    return permissionRequests.filter((p) => p.state === "request")
-  }
+  (permissionRequests) =>
+    permissionRequests.filter((p) => p.state === "request")
 )
 
 export const selectCurrentPendingPermission = createSelector(
   selectPendingPermissionRequests,
-  (permissionRequests) => {
-    return permissionRequests.length > 0 ? permissionRequests[0] : undefined
-  }
+  (permissionRequests) =>
+    permissionRequests.length > 0 ? permissionRequests[0] : undefined
 )
 
 export const selectAllowedPages = createSelector(

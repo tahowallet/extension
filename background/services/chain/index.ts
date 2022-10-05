@@ -175,9 +175,8 @@ export default class ChainService extends BaseService<Events> {
     Events,
     ChainService,
     [Promise<PreferenceService>, Promise<KeyringService>]
-  > = async (preferenceService, keyringService) => {
-    return new this(createDB(), await preferenceService, await keyringService)
-  }
+  > = async (preferenceService, keyringService) =>
+    new this(createDB(), await preferenceService, await keyringService)
 
   supportedNetworks: EVMNetwork[]
 
@@ -1244,9 +1243,9 @@ export default class ChainService extends BaseService<Events> {
             forceUpdate ||
             this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
         )
-        .map(async (addressNetwork) => {
-          return this.loadRecentAssetTransfers(addressNetwork, true)
-        })
+        .map(async (addressNetwork) =>
+          this.loadRecentAssetTransfers(addressNetwork, true)
+        )
     )
   }
 
@@ -1431,9 +1430,7 @@ export default class ChainService extends BaseService<Events> {
             sameEVMAddress(finalTransaction.from, address) ||
             sameEVMAddress(finalTransaction.to, address)
         )
-        .map(({ address }) => {
-          return normalizeEVMAddress(address)
-        })
+        .map(({ address }) => normalizeEVMAddress(address))
 
       // emit in a separate try so outside services still get the tx
       this.emitter.emit("transaction", {

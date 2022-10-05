@@ -14,8 +14,8 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
     }
   },
   selectCurrentNetwork,
-  ({ currentAccountActivities }, network) => {
-    return currentAccountActivities?.[network.chainID]?.ids.map(
+  ({ currentAccountActivities }, network) =>
+    currentAccountActivities?.[network.chainID]?.ids.map(
       (id: EntityId): ActivityItem => {
         const activityItem =
           // Guaranteed by the fact that we got the id from the ids collection.
@@ -27,7 +27,6 @@ export const selectCurrentAccountActivitiesWithTimestamps = createSelector(
         }
       }
     )
-  }
 )
 
 export default selectCurrentAccountActivitiesWithTimestamps

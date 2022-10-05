@@ -292,7 +292,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   ): Promise<void> {
     if (this.evmNetwork.chainID !== network.chainID) {
       logger.error(
-        `Tried to subscribe to pending transactions for chain id ` +
+        "Tried to subscribe to pending transactions for chain id " +
           `${network.chainID} but provider was on ` +
           `${this.evmNetwork.chainID}`
       )
@@ -528,9 +528,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       if (this.subscriptions.length > 0) {
         logger.warn(
           `Cannot resubscribe ${this.subscriptions.length} subscription(s) ` +
-            `as the current provider is not a WebSocket provider; waiting ` +
-            `until a WebSocket provider connects to restore subscriptions ` +
-            `properly.`
+            "as the current provider is not a WebSocket provider; waiting " +
+            "until a WebSocket provider connects to restore subscriptions " +
+            "properly."
         )
         // Intentionally not awaited - This starts off a recursive reconnect loop
         // that keeps trying to reconnect until successful.

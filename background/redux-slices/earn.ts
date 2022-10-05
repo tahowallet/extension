@@ -348,31 +348,25 @@ const earnSlice = createSlice({
     currentlyApproving: (immerState, { payload }: { payload: boolean }) => {
       immerState.currentlyApproving = payload
     },
-    inputAmount: (state, { payload }: { payload: string }) => {
-      return {
-        ...state,
-        inputAmount: payload,
-      }
-    },
-    setVaultsAsStale: (state) => {
-      return {
-        ...state,
-        isVaultDataStale: true,
-      }
-    },
-    updateVaultsStats: (state, { payload }: { payload: AvailableVault[] }) => {
-      return {
-        ...state,
-        isVaultDataStale: false,
-        availableVaults: state.availableVaults.map((availableVault) => {
-          const currentVault = payload.find(
-            (updatedVault) =>
-              availableVault.vaultAddress === updatedVault.vaultAddress
-          )
-          return currentVault || availableVault
-        }),
-      }
-    },
+    inputAmount: (state, { payload }: { payload: string }) => ({
+      ...state,
+      inputAmount: payload,
+    }),
+    setVaultsAsStale: (state) => ({
+      ...state,
+      isVaultDataStale: true,
+    }),
+    updateVaultsStats: (state, { payload }: { payload: AvailableVault[] }) => ({
+      ...state,
+      isVaultDataStale: false,
+      availableVaults: state.availableVaults.map((availableVault) => {
+        const currentVault = payload.find(
+          (updatedVault) =>
+            availableVault.vaultAddress === updatedVault.vaultAddress
+        )
+        return currentVault || availableVault
+      }),
+    }),
     depositError: (immerState, { payload }: { payload: boolean }) => {
       immerState.depositError = payload
     },

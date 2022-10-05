@@ -15,9 +15,9 @@ export default function VerifySeed({
 }): ReactElement {
   const [verificationStep, setVerificationStep] =
     useState<VerificationStep>("verification")
-  const mnemonic = useBackgroundSelector((state) => {
-    return state.keyrings.keyringToVerify?.mnemonic
-  })
+  const mnemonic = useBackgroundSelector(
+    (state) => state.keyrings.keyringToVerify?.mnemonic
+  )
 
   if (!mnemonic) return <span>Recovery phrase not created</span>
 

@@ -153,16 +153,14 @@ export default function WalletActivityDetails(
       </div>
       <ul>
         {Object.entries(activityItem.infoRows).map(
-          ([key, { label, value }]) => {
-            return (
-              <DetailRowItem
-                key={key}
-                label={label}
-                value={value}
-                valueDetail=""
-              />
-            )
-          }
+          ([key, { label, value }]) => (
+            <DetailRowItem
+              key={key}
+              label={label}
+              value={value}
+              valueDetail=""
+            />
+          )
         )}
         <DetailRowItem
           label="Timestamp"

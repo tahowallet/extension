@@ -306,8 +306,8 @@ const getTotalBalance = (
   accountBalances: { [assetSymbol: string]: AccountBalance },
   assets: AssetsState,
   mainCurrencySymbol: string
-) => {
-  return Object.values(accountBalances)
+) =>
+  Object.values(accountBalances)
     .map(({ assetAmount }) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
@@ -331,7 +331,6 @@ const getTotalBalance = (
       return assetAmountToDesiredDecimals(convertedAmount, desiredDecimals)
     })
     .reduce((total, assetBalance) => total + assetBalance, 0)
-}
 
 export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
   getAccountState,
@@ -349,10 +348,8 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
     sourcesByAddress,
     mainCurrencySymbol,
     currentNetwork
-  ): CategorizedAccountTotals => {
-    return Object.entries(
-      accounts.accountsData.evm[currentNetwork.chainID] ?? {}
-    )
+  ): CategorizedAccountTotals =>
+    Object.entries(accounts.accountsData.evm[currentNetwork.chainID] ?? {})
       .filter(([, accountData]) => typeof accountData !== "undefined")
       .map(([address, accountData]): AccountTotal => {
         const shortenedAddress = truncateAddress(address)
@@ -404,7 +401,6 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
         }),
         {}
       )
-  }
 )
 
 export type AccountTotalList = {

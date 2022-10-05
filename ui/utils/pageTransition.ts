@@ -82,7 +82,7 @@ export function animationStyles(
 
       .page-transition-enter {
         opacity: 0.3;
-        transform: ${isDirectionRight ? `translateX(-7px)` : `translateX(7px)`};
+        transform: ${isDirectionRight ? "translateX(-7px)" : "translateX(7px)"};
       }
       .page-transition-enter-active {
         opacity: 1;
@@ -96,14 +96,14 @@ export function animationStyles(
       }
       .page-transition-exit-active {
         opacity: 0;
-        transform: ${isDirectionRight ? `translateX(-7px)` : `translateX(7px)`};
+        transform: ${isDirectionRight ? "translateX(-7px)" : "translateX(7px)"};
         transition: transform cubic-bezier(0.25, 0.4, 0.55, 1.4) 250ms,
           opacity 250ms;
       }
 
       .page-transition-enter .anti_animation {
         transform: ${
-          !isDirectionRight ? `translateX(-7px)` : `translateX(7px)`
+          !isDirectionRight ? "translateX(-7px)" : "translateX(7px)"
         };
       }
       .page-transition-enter-active .anti_animation {
@@ -116,7 +116,7 @@ export function animationStyles(
       .page-transition-exit-active .anti_animation {
         opacity: 1;
         transform: ${
-          !isDirectionRight ? `translateX(-7px)` : `translateX(7px)`
+          !isDirectionRight ? "translateX(-7px)" : "translateX(7px)"
         };
         transition: transform cubic-bezier(0.25, 0.4, 0.55, 1.4) 250ms;
       }

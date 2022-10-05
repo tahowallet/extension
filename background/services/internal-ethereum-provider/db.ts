@@ -18,11 +18,11 @@ export class InternalEthereumProviderDatabase extends Dexie {
       activeNetwork: "&origin,chainId,network, address",
     })
 
-    this.on("populate", (tx) => {
-      return tx.db
+    this.on("populate", (tx) =>
+      tx.db
         .table("activeNetwork")
         .add({ origin: TALLY_INTERNAL_ORIGIN, network: ETHEREUM })
-    })
+    )
   }
 
   async setActiveChainIdForOrigin(

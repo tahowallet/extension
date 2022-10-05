@@ -103,59 +103,57 @@ export default function ClaimDelegate(props: {
         </div>
         {panelNumber === 0 ? (
           <ul className="delegates">
-            {delegates.map((delegate) => {
-              return (
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      dispatch(chooseDelegate(delegate))
-                    }}
-                  >
-                    <div className="delegate">
-                      <input
-                        type="radio"
-                        name="delegate"
-                        id={delegate.address}
-                        className="radio"
-                        checked={delegate.address === selectedDelegate.address}
-                        readOnly
+            {delegates.map((delegate) => (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    dispatch(chooseDelegate(delegate))
+                  }}
+                >
+                  <div className="delegate">
+                    <input
+                      type="radio"
+                      name="delegate"
+                      id={delegate.address}
+                      className="radio"
+                      checked={delegate.address === selectedDelegate.address}
+                      readOnly
+                    />
+                    <label
+                      className="delegate_details"
+                      htmlFor={delegate.ensName}
+                    >
+                      <SharedAddressAvatar
+                        address={delegate.address ?? ""}
+                        url={delegate?.avatar}
                       />
-                      <label
-                        className="delegate_details"
-                        htmlFor={delegate.ensName}
-                      >
-                        <SharedAddressAvatar
-                          address={delegate.address ?? ""}
-                          url={delegate?.avatar}
-                        />
-                        <div className="delegate_info">
-                          <div className="name ellipsis">
-                            {delegate.ensName && delegate.ensName.length > 0
-                              ? delegate.ensName
-                              : delegate.truncatedAddress}
-                          </div>
-                          {/* <span className="count">123 Votes</span> */}
-                          <div className="pitch">
-                            <SharedButton
-                              type="tertiaryGray"
-                              size="small"
-                              onClick={() => {
-                                window
-                                  .open(delegate.applicationLink, "_blank")
-                                  ?.focus()
-                              }}
-                            >
-                              See pitch
-                            </SharedButton>
-                          </div>
+                      <div className="delegate_info">
+                        <div className="name ellipsis">
+                          {delegate.ensName && delegate.ensName.length > 0
+                            ? delegate.ensName
+                            : delegate.truncatedAddress}
                         </div>
-                      </label>
-                    </div>
-                  </button>
-                </li>
-              )
-            })}
+                        {/* <span className="count">123 Votes</span> */}
+                        <div className="pitch">
+                          <SharedButton
+                            type="tertiaryGray"
+                            size="small"
+                            onClick={() => {
+                              window
+                                .open(delegate.applicationLink, "_blank")
+                                ?.focus()
+                            }}
+                          >
+                            See pitch
+                          </SharedButton>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </button>
+              </li>
+            ))}
           </ul>
         ) : (
           <CustomDelegatePanel selectedDelegate={selectedDelegate} />

@@ -101,13 +101,8 @@ export default class IndexingService extends BaseService<Events> {
     Events,
     IndexingService,
     [Promise<PreferenceService>, Promise<ChainService>]
-  > = async (preferenceService, chainService) => {
-    return new this(
-      await getOrCreateDB(),
-      await preferenceService,
-      await chainService
-    )
-  }
+  > = async (preferenceService, chainService) =>
+    new this(await getOrCreateDB(), await preferenceService, await chainService)
 
   private constructor(
     private db: IndexingDatabase,

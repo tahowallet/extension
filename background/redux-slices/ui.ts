@@ -103,12 +103,10 @@ const uiSlice = createSlice({
     setSnackbarMessage: (
       state,
       { payload: snackbarMessage }: { payload: string }
-    ): UIState => {
-      return {
-        ...state,
-        snackbarMessage,
-      }
-    },
+    ): UIState => ({
+      ...state,
+      snackbarMessage,
+    }),
     clearSnackbarMessage: (state): UIState => ({
       ...state,
       snackbarMessage: "",

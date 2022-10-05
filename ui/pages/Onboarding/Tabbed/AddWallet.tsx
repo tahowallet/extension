@@ -116,25 +116,22 @@ export default function AddWallet(): ReactElement {
   return (
     <>
       <div className="button_sections_wrap">
-        {accountCreateButtonInfos.map((creationSection) => {
-          return (
-            <section>
-              <h2>{creationSection.title}</h2>
-              <ul>
-                {creationSection.items.map(
-                  ({ label, icon, url, isAvailable }) =>
-                    isAvailable ? (
-                      <AddWalletRow icon={icon} url={url}>
-                        {label}
-                      </AddWalletRow>
-                    ) : (
-                      <></>
-                    )
-                )}
-              </ul>
-            </section>
-          )
-        })}
+        {accountCreateButtonInfos.map((creationSection) => (
+          <section>
+            <h2>{creationSection.title}</h2>
+            <ul>
+              {creationSection.items.map(({ label, icon, url, isAvailable }) =>
+                isAvailable ? (
+                  <AddWalletRow icon={icon} url={url}>
+                    {label}
+                  </AddWalletRow>
+                ) : (
+                  <></>
+                )
+              )}
+            </ul>
+          </section>
+        ))}
       </div>
 
       <style jsx>

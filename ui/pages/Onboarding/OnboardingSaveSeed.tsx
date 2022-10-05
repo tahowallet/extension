@@ -60,9 +60,9 @@ function WarningMessage({ onAccept }: { onAccept: () => void }): ReactElement {
 function SeedContainer(): ReactElement {
   const dispatch = useDispatch()
 
-  const freshMnemonic = useBackgroundSelector((state) => {
-    return state.keyrings.keyringToVerify?.mnemonic
-  })
+  const freshMnemonic = useBackgroundSelector(
+    (state) => state.keyrings.keyringToVerify?.mnemonic
+  )
 
   return (
     <>
@@ -74,14 +74,12 @@ function SeedContainer(): ReactElement {
               <div className="column numbers">1 2 3 4 5 6 7 8 9 10 11 12</div>
               <div className="column dashes">- - - - - - - - - - - -</div>
               <div className="column words">
-                {freshMnemonic?.slice(0, 12).map((word) => {
-                  return (
-                    <React.Fragment key={word}>
-                      {word}
-                      <br />
-                    </React.Fragment>
-                  )
-                })}
+                {freshMnemonic?.slice(0, 12).map((word) => (
+                  <React.Fragment key={word}>
+                    {word}
+                    <br />
+                  </React.Fragment>
+                ))}
               </div>
             </div>
             <div className="column_wrap">
@@ -90,14 +88,12 @@ function SeedContainer(): ReactElement {
               </div>
               <div className="column dashes">- - - - - - - - - - - -</div>
               <div className="column words">
-                {freshMnemonic?.slice(12, 24).map((word) => {
-                  return (
-                    <React.Fragment key={word}>
-                      {word}
-                      <br />
-                    </React.Fragment>
-                  )
-                })}
+                {freshMnemonic?.slice(12, 24).map((word) => (
+                  <React.Fragment key={word}>
+                    {word}
+                    <br />
+                  </React.Fragment>
+                ))}
               </div>
             </div>
           </>
