@@ -263,7 +263,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         )
         if (supportedNetwork) {
           const { address } = await this.preferenceService.getSelectedAccount()
-          await this.chainService.markAddressActivity({
+          await this.chainService.markAccountActivity({
             address,
             network: supportedNetwork,
           })

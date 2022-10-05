@@ -1042,7 +1042,7 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
-  async markAddressActivity({
+  async markAccountActivity({
     address,
     network,
   }: AddressOnNetwork): Promise<void> {

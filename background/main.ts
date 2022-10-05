@@ -749,7 +749,7 @@ export default class Main extends BaseService<never> {
     })
 
     uiSliceEmitter.on("userActivityEncountered", (addressOnNetwork) => {
-      this.chainService.markAddressActivity(addressOnNetwork)
+      this.chainService.markAccountActivity(addressOnNetwork)
     })
   }
 
@@ -1123,7 +1123,7 @@ export default class Main extends BaseService<never> {
     this.providerBridgeService.emitter.on(
       "dappOpenedOnChain",
       async (addressOnNetwork: AddressOnNetwork) => {
-        this.chainService.markAddressActivity(addressOnNetwork)
+        this.chainService.markAccountActivity(addressOnNetwork)
       }
     )
 
