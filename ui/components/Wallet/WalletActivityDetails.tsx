@@ -205,48 +205,6 @@ export default function WalletActivityDetails(
             flex-grow: 1;
             flex-shrink: 0;
           }
-          .activity_log_title {
-            height: 24px;
-            color: #ffffff;
-            font-size: 18px;
-            font-weight: 600;
-            line-height: 24px;
-            margin-top: 27px;
-            margin-bottom: 6px;
-          }
-          .activity_log_item {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            height: 24px;
-            color: var(--green-40);
-            font-size: 16px;
-            font-weight: 400;
-            line-height: 24px;
-            margin-bottom: 13px;
-          }
-          .activity_log_icon {
-            mask-size: 12px 12px;
-            width: 12px;
-            height: 12px;
-            margin-right: 8px;
-            background-color: var(--green-60);
-          }
-          .plus {
-            mask-image: url("./images/plus@2x.png");
-            mask-size: cover;
-            width: 17px;
-            height: 17px;
-            transform: translateX(-2.5px);
-            margin-right: 3px;
-          }
-          .arrow {
-            mask-image: url("./images/send@2x.png");
-          }
-          .check {
-            mask-image: url("./images/check@2x.png");
-            background-color: var(--success);
-          }
         `}
       </style>
     </div>
