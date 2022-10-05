@@ -3,12 +3,17 @@ import ChainService from ".."
 import { ETHEREUM, MINUTE, OPTIMISM, POLYGON } from "../../../constants"
 import { EVMNetwork } from "../../../networks"
 import * as gas from "../../../lib/gas"
-import { createBlockPrices, createChainService } from "../../../tests/factories"
+import {
+  createAddressOnNetwork,
+  createBlockPrices,
+  createChainService,
+} from "../../../tests/factories"
 import { UNIXTime } from "../../../types"
 import {
   EnrichedEIP1559TransactionSignatureRequest,
   EnrichedLegacyTransactionSignatureRequest,
 } from "../../enrichment"
+import { AddressOnNetwork } from "../../../accounts"
 
 type ChainServiceExternalized = Omit<ChainService, ""> & {
   populatePartialEIP1559TransactionRequest: () => void
@@ -17,6 +22,13 @@ type ChainServiceExternalized = Omit<ChainService, ""> & {
   lastUserActivityOnNetwork: {
     [chainID: string]: UNIXTime
   }
+  lastUserActivityOnAddress: {
+    [chainID: string]: UNIXTime
+  }
+  loadRecentAssetTransfers: (
+    addressNetwork: AddressOnNetwork,
+    incomingOnly: boolean
+  ) => Promise<void>
 }
 
 describe("Chain Service", () => {
@@ -122,18 +134,44 @@ describe("Chain Service", () => {
       await chainService.markNetworkActivity(ETHEREUM.chainID)
       expect(getBlockPricesStub.called).toEqual(true)
     })
+  })
 
-    it("should get block prices if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
+  describe("markAccountActivity", () => {
+    beforeEach(async () => {
+      sandbox.stub(chainService, "supportedNetworks").value([ETHEREUM])
+      await chainService.startService()
+    })
+
+    it("should call markNetworkActivity with the correct network", async () => {
+      const stub = sandbox
+        .stub(chainService, "markNetworkActivity")
+        .callsFake(async () => {})
+
+      chainService.markAccountActivity(
+        createAddressOnNetwork({ network: ETHEREUM })
+      )
+
+      expect(stub.calledWith(ETHEREUM.chainID)).toEqual(true)
+    })
+
+    it.only("should call loadRecentAssetTransfers if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
+      const account = createAddressOnNetwork({ network: ETHEREUM })
+
       // Set last activity time to 10 minutes ago
       ;(
         chainService as unknown as ChainServiceExternalized
-      ).lastUserActivityOnNetwork[ETHEREUM.chainID] = Date.now() - 10 * MINUTE
-      const getBlockPricesStub = sandbox
-        .stub(gas, "default")
-        .callsFake(async () => createBlockPrices())
+      ).lastUserActivityOnAddress[account.address] = Date.now() - 10 * MINUTE
+      const stub = sandbox
+        .stub(
+          chainService as unknown as ChainServiceExternalized,
+          "loadRecentAssetTransfers"
+        )
+        .callsFake(async () => {})
 
-      await chainService.markNetworkActivity(ETHEREUM.chainID)
-      expect(getBlockPricesStub.called).toEqual(true)
+      await chainService.markAccountActivity(
+        createAddressOnNetwork({ network: ETHEREUM })
+      )
+      expect(stub.called).toEqual(true)
     })
   })
 

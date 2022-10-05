@@ -1048,7 +1048,7 @@ export default class ChainService extends BaseService<Events> {
   }: AddressOnNetwork): Promise<void> {
     this.markNetworkActivity(network.chainID)
     const now = Date.now()
-    const inactiveAt = this.lastUserActivityOnNetwork[address]
+    const inactiveAt = this.lastUserActivityOnAddress[address]
     this.lastUserActivityOnAddress[address] = now
     if (now - NETWORK_POLLING_TIMEOUT > inactiveAt) {
       // Reactivating a potentially deactivated address
