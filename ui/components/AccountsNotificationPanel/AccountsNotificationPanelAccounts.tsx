@@ -439,6 +439,7 @@ export default function AccountsNotificationPanelAccounts({
             display: flex;
             align-items: center;
             gap: 5px;
+            transition: color 0.2s;
           }
           .signing_btn:hover {
             color: var(--${keyringData.color});
