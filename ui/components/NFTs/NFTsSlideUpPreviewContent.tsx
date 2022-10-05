@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import {
   ARBITRUM_ONE,
   ETHEREUM,
+  NETWORK_BY_CHAIN_ID,
   OPTIMISM,
   POLYGON,
 } from "@tallyho/tally-background/constants"
@@ -22,7 +23,7 @@ function getPreviewLink(nft: NFT) {
 
   const chainID = Number(nft.network.chainID)
   const parsedTokenID = BigInt(tokenID).toString()
-  const previewURL = {
+  const previewURL: { [chainID: keyof typeof NETWORK_BY_CHAIN_ID]: string } = {
     [POLYGON.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
     [ETHEREUM.chainID]: `/nft/${contractAddress}/${parsedTokenID}`,
     [OPTIMISM.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
