@@ -163,13 +163,13 @@ describe("Chain Database ", () => {
     it("should return a block if that block is in indexedDB", async () => {
       const block = createAnyEVMBlock()
       await db.addBlock(block)
-      const getBlock = await db.getBlock(block.network, block.hash)
-      expect(getBlock).toBeTruthy()
+      const persistedBlock = await db.getBlock(block.network, block.hash)
+      expect(persistedBlock?.hash).toEqual(block.hash)
     })
     it("should not return a block if that block is not in indexedDB", async () => {
       const block2 = createAnyEVMBlock()
-      const getBlock = await db.getBlock(block2.network, block2.hash)
-      expect(getBlock).toBeFalsy()
+      const persistedBlock = await db.getBlock(block2.network, block2.hash)
+      expect(persistedBlock).toEqual(null)
     })
   })
   describe("getChainIdsToTrack", () => {
@@ -189,11 +189,20 @@ describe("Chain Database ", () => {
     it("should retrieve the most recent account balance corresponding to a given address, network, & asset persisted in indexedDB", async () => {
       const accountBalance = createAccountBalance({
         assetAmount: {
-          asset: { name: "Ether", symbol: "ETH", decimals: 18 },
+          asset: ETH,
           amount: 4n,
         },
       })
+
+      const accountBalance2 = createAccountBalance({
+        assetAmount: {
+          asset: ETH,
+          amount: 10n,
+        },
+        retrievedAt: Date.now() - 10_000,
+      })
       await db.addBalance(accountBalance)
+      await db.addBalance(accountBalance2)
       const latest = await db.getLatestAccountBalance(
         accountBalance.address,
         accountBalance.network,
@@ -203,6 +212,7 @@ describe("Chain Database ", () => {
     })
     it("should return null if no account balances are found", async () => {
       const accountBalance = createAccountBalance()
+      // Explicitly don't save to DB
       const latest = await db.getLatestAccountBalance(
         accountBalance.address,
         accountBalance.network,
@@ -212,15 +222,12 @@ describe("Chain Database ", () => {
     })
   })
   describe("getLatestBlock", () => {
-    const block = createAnyEVMBlock()
+    const block = createAnyEVMBlock({
+      network: OPTIMISM,
+    })
     it("should retrieve the most recent block for a given network", async () => {
       await db.addBlock(block)
       expect(await db.getLatestBlock(OPTIMISM)).toBeTruthy()
-    })
-    it("should return null if the most recent block is older than 86 seconds", async () => {
-      // Database has this query working
-      const blocks = await db.getLatestBlock(OPTIMISM)
-      if (!blocks) expect(blocks).toBeNull()
     })
   })
   describe("getNetworkPendingTransactions", () => {
@@ -278,18 +285,18 @@ describe("Chain Database ", () => {
   })
   describe("getNewestAccountAssetTransferLookup", () => {
     it("should correctly return the most recent asset transfer for a given addressNetwork", async () => {
-      await db.recordAccountAssetTransferLookup(account1, 1n, 1n)
-      await db.recordAccountAssetTransferLookup(account1, 2n, 1n)
-      await db.recordAccountAssetTransferLookup(account1, 3n, 1n)
+      await db.recordAccountAssetTransferLookup(account1, 1n, 100n)
+      await db.recordAccountAssetTransferLookup(account1, 101n, 200n)
+      await db.recordAccountAssetTransferLookup(account1, 201n, 300n)
       const newest = await db.getNewestAccountAssetTransferLookup(account1)
-      expect(newest).toEqual(3n)
+      expect(newest?.toString()).toBe("300")
     })
   })
   describe("getOldestAccountAssetTransferLookup", () => {
     it("should correctly return the oldest asset transfer for a given addressNetwork", async () => {
-      await db.recordAccountAssetTransferLookup(account2, 1n, 1n)
-      await db.recordAccountAssetTransferLookup(account2, 2n, 1n)
-      await db.recordAccountAssetTransferLookup(account2, 3n, 1n)
+      await db.recordAccountAssetTransferLookup(account2, 1n, 100n)
+      await db.recordAccountAssetTransferLookup(account2, 101n, 200n)
+      await db.recordAccountAssetTransferLookup(account2, 201n, 300n)
       const oldest = await db.getOldestAccountAssetTransferLookup(account2)
       expect(oldest).toEqual(1n)
     })
@@ -300,12 +307,12 @@ describe("Chain Database ", () => {
       const block2 = createAnyEVMBlock()
       it("should return a block if that block is in indexedDB", async () => {
         await db.addBlock(block)
-        const getBlock = await db.getBlock(block.network, block.hash)
-        expect(getBlock).toBeTruthy()
+        const persistedBlock = await db.getBlock(block.network, block.hash)
+        expect(persistedBlock?.hash).toEqual(block.hash)
       })
       it("should not return a block if that block is not in indexedDB", async () => {
-        const getBlock = await db.getBlock(block2.network, block2.hash)
-        expect(getBlock).toBeFalsy()
+        const persistedBlock = await db.getBlock(block2.network, block2.hash)
+        expect(persistedBlock).toEqual(null)
       })
     })
   })
