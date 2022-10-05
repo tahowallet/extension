@@ -100,7 +100,7 @@ describe("Chain Service", () => {
         chainService as unknown as ChainServiceExternalized
       ).lastUserActivityOnNetwork[ETHEREUM.chainID]
 
-      await new Promise((r) => setTimeout(r, 1))
+      await new Promise((r) => setTimeout(r, 10))
 
       chainService.markNetworkActivity(ETHEREUM.chainID)
 
@@ -134,22 +134,6 @@ describe("Chain Service", () => {
 
       await chainService.markNetworkActivity(ETHEREUM.chainID)
       expect(getBlockPricesStub.called).toEqual(true)
-    })
-
-    it("should query recent transfers if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
-      // Set last activity time to 10 minutes ago
-      ;(
-        chainService as unknown as ChainServiceExternalized
-      ).lastUserActivityOnNetwork[ETHEREUM.chainID] = Date.now() - 10 * MINUTE
-      const handleRecentAssetTransferAlarmStub = sandbox
-        .stub(
-          chainService as unknown as ChainServiceExternalized,
-          "handleRecentAssetTransferAlarm"
-        )
-        .callsFake(async () => {})
-
-      await chainService.markNetworkActivity(ETHEREUM.chainID)
-      expect(handleRecentAssetTransferAlarmStub.called).toEqual(true)
     })
   })
 
