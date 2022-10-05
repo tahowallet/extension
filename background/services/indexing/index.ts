@@ -26,7 +26,7 @@ import {
 import PreferenceService from "../preferences"
 import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { getOrCreateDB, IndexingDatabase } from "./db"
+import { getOrCreateDb, IndexingDatabase } from "./db"
 import BaseService from "../base"
 import { EnrichedEVMTransaction } from "../enrichment/types"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
@@ -101,9 +101,9 @@ export default class IndexingService extends BaseService<Events> {
     Events,
     IndexingService,
     [Promise<PreferenceService>, Promise<ChainService>]
-  > = async (preferenceService, chainService) => {
+  > = async (preferenceService, chainService, DexieOptions) => {
     return new this(
-      await getOrCreateDB(),
+      await getOrCreateDb(DexieOptions),
       await preferenceService,
       await chainService
     )
