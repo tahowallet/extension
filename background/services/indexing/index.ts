@@ -101,9 +101,9 @@ export default class IndexingService extends BaseService<Events> {
     Events,
     IndexingService,
     [Promise<PreferenceService>, Promise<ChainService>]
-  > = async (preferenceService, chainService, DexieOptions) => {
+  > = async (preferenceService, chainService, dexieOptions) => {
     return new this(
-      await getOrCreateDb(DexieOptions),
+      await getOrCreateDb(dexieOptions),
       await preferenceService,
       await chainService
     )
