@@ -36,7 +36,7 @@ export function posthogEvent(eventName:string) {
        createEvent(eventName, cookie.value)
      }
      else {
-       console.log('No UUID found stored in localstorage');
+       console.log('No UUID found!');
      }
  });
 }
@@ -55,7 +55,7 @@ export async function createEvent(eventName:string, userID:string): Promise<HogR
         event: posthogEvent,
         properties: {
           distinct_id: userID,
-          data:  "This is a test to storing event data into posthog",
+          data:  "This adds posthog events to Tally extension",
           current_url: window.location.href,
           $lib: window.location.href,
         },
