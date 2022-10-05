@@ -12,12 +12,7 @@ import logger from "../../lib/logger"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
-import {
-  EVMNetwork,
-  SignedTransaction,
-  toHexChainID,
-  TransactionRequest,
-} from "../../networks"
+import { EVMNetwork, SignedTransaction, toHexChainID } from "../../networks"
 import {
   ethersTransactionFromSignedTransaction,
   transactionRequestFromEthersTransactionRequest,
@@ -30,7 +25,6 @@ import {
   MessageSigningRequest,
   parseSigningData,
 } from "../../utils/signing"
-import { SUPPORT_OPTIMISM } from "../../features"
 import {
   ActiveNetwork,
   getOrCreateDB,
@@ -38,6 +32,11 @@ import {
 } from "./db"
 import { TALLY_INTERNAL_ORIGIN } from "./constants"
 import { ETHEREUM } from "../../constants"
+import {
+  EnrichedEVMTransactionRequest,
+  TransactionAnnotation,
+} from "../enrichment"
+import { decodeJSON } from "../../lib/utils"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -50,9 +49,14 @@ import { ETHEREUM } from "../../constants"
 // data in, but older clients may provide `data` instead. Ethers transmits `data`
 // rather than `input` when used as a JSON-RPC client, and expects it as the
 // `EthersTransactionRequest` field for that info.
+//
+// Additionally, internal provider requests can include an explicit
+// JSON-serialized annotation field provided by the wallet. The internal
+// provider disallows this field from non-internal sources.
 type JsonRpcTransactionRequest = Omit<EthersTransactionRequest, "gasLimit"> & {
   gas?: string
   input?: string
+  annotation?: string
 }
 
 // https://eips.ethereum.org/EIPS/eip-3326
@@ -68,7 +72,10 @@ type DAppRequestEvent<T, E> = {
 
 type Events = ServiceLifecycleEvents & {
   transactionSignatureRequest: DAppRequestEvent<
-    Partial<TransactionRequest> & { from: string; network: EVMNetwork },
+    Partial<EnrichedEVMTransactionRequest> & {
+      from: string
+      network: EVMNetwork
+    },
     SignedTransaction
   >
   signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
@@ -246,14 +253,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       // will just switch to a chain if we already support it - but not add a new one
       case "wallet_addEthereumChain":
       case "wallet_switchEthereumChain": {
-        if (
-          !SUPPORT_OPTIMISM &&
-          toHexChainID((params[0] as SwitchEthereumChainParameter).chainId) ===
-            toHexChainID(10)
-        ) {
-          // Prevent users from accidentally switching to Optimism
-          throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
-        }
         const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
         const supportedNetwork = await this.getActiveNetworkByChainId(
           newChainId
@@ -311,6 +310,14 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     transactionRequest: JsonRpcTransactionRequest,
     origin: string
   ): Promise<SignedTransaction> {
+    const annotation =
+      origin === TALLY_INTERNAL_ORIGIN &&
+      "annotation" in transactionRequest &&
+      transactionRequest.annotation !== undefined
+        ? // We use  `as` here as we know it's from a trusted source.
+          (decodeJSON(transactionRequest.annotation) as TransactionAnnotation)
+        : undefined
+
     const { from, ...convertedRequest } =
       transactionRequestFromEthersTransactionRequest({
         // Convert input -> data if necessary; if transactionRequest uses data
@@ -334,6 +341,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           ...convertedRequest,
           from,
           network: activeNetwork,
+          annotation,
         },
         resolver: resolve,
         rejecter: reject,
