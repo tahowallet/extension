@@ -1,5 +1,7 @@
 import toggleCollectAnalytics from '../../../ui/pages/Settings/SettingsAnalytics'
 
+export const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY
+
 function getCookie(name: string)
  {
    var re = new RegExp(name + "=([^;]+)");
@@ -50,7 +52,7 @@ export async function createEvent(eventName:string, userID:string): Promise<HogR
       body: JSON.stringify({
         // this is a safe public write only api key
         // roll this key for demo
-        api_key: "phc_VzveyNxrn2xyiKDYn7XjrgaqELGeUilDZGiBVh6jNmh",
+        api_key: POSTHOG_API_KEY,
         event: posthogEvent,
         properties: {
           distinct_id: userID,
