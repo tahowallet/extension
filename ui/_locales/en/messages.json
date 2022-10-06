@@ -179,7 +179,7 @@
       "invalidLimit": "Gas Limit must be a number",
       "lowGas": "Low"
     },
-    "optimismOrArbitrum": {
+    "optimism": {
       "title": "Network fees",
       "header": "Gas fees on {{name}} work differently from Ethereum.",
       "transactionFee": "Transaction fee",
