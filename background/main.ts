@@ -1121,7 +1121,7 @@ export default class Main extends BaseService<never> {
     )
 
     this.providerBridgeService.emitter.on(
-      "dappOpenedOnChain",
+      "dappOpened",
       async (addressOnNetwork: AddressOnNetwork) => {
         this.chainService.markAccountActivity(addressOnNetwork)
       }

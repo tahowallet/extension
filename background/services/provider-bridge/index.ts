@@ -34,7 +34,7 @@ type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
   initializeAllowedPages: PermissionMap
   setClaimReferrer: string
-  dappOpenedOnChain: AddressOnNetwork
+  dappOpened: AddressOnNetwork
 }
 
 /**
@@ -137,7 +137,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     if (event.request.method === "eth_requestAccounts") {
       // This is analogous to "User opened a dapp on chain X"
       const { address } = await this.preferenceService.getSelectedAccount()
-      this.emitter.emit("dappOpenedOnChain", { address, network })
+      this.emitter.emit("dappOpened", { address, network })
     }
 
     const originPermission = await this.checkPermission(origin, network.chainID)
