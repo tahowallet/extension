@@ -12,18 +12,14 @@ import {
 import {
   SUPPORT_ANALYTICS,
   SUPPORT_GOERLI,
-  SUPPORT_KEYRING_LOCKING,
   SUPPORT_MULTIPLE_LANGUAGES,
 } from "@tallyho/tally-background/features"
-import { useHistory } from "react-router-dom"
-import { lockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
 import { getLanguage, setLanguage } from "../_locales/i18n"
 import SettingButton from "./Settings/SettingButton"
-import { useAreKeyringsUnlocked } from "../hooks/signing-hooks"
 
 function SettingRow(props: {
   title: string
@@ -58,11 +54,9 @@ function SettingRow(props: {
 export default function Settings(): ReactElement {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const history = useHistory()
   const hideDust = useSelector(selectHideDust)
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))
@@ -73,14 +67,6 @@ export default function Settings(): ReactElement {
 
   const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
     dispatch(toggleTestNetworks(defaultWalletValue))
-  }
-
-  const toggleKeyringStatus = async () => {
-    if (!areKeyringsUnlocked) {
-      history.push("/keyring/unlock")
-    } else {
-      await dispatch(lockKeyrings())
-    }
   }
 
   const hideSmallAssetBalance = {
@@ -177,22 +163,7 @@ export default function Settings(): ReactElement {
   return (
     <>
       <section className="standard_width_padded">
-        <div className="main_menu_wrap">
-          <h1>{t("settings.mainMenu")}</h1>
-          {SUPPORT_KEYRING_LOCKING && (
-            <div className="signing_wrap">
-              <SharedButton
-                type="tertiaryInvertedGold"
-                size="medium"
-                iconMedium={areKeyringsUnlocked ? "un-lock" : "lock"}
-                iconPosition="right"
-                onClick={toggleKeyringStatus}
-              >
-                {t("settings.signing")}
-              </SharedButton>
-            </div>
-          )}
-        </div>
+        <h1>{t("settings.mainMenu")}</h1>
         <ul>
           {settings.general.map((setting) => (
             <SettingRow
@@ -233,16 +204,6 @@ export default function Settings(): ReactElement {
             flex-flow: column;
             height: 544px;
             background-color: var(--hunter-green);
-          }
-          .main_menu_wrap {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-          }
-          .signing_wrap {
-            height: 100%;
-            display: flex;
-            align-items: end;
           }
           .community_cta_wrap {
             width: 100vw;

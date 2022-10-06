@@ -270,8 +270,8 @@ export class ChainDatabase extends Dexie {
       .toArray()
     return lookups.reduce(
       (newestBlock: bigint | null, lookup) =>
-        newestBlock === null || lookup.startBlock > newestBlock
-          ? lookup.startBlock
+        newestBlock === null || lookup.endBlock > newestBlock
+          ? lookup.endBlock
           : newestBlock,
       null
     )
