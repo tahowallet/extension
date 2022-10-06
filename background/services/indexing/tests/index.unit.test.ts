@@ -11,8 +11,6 @@ import ChainService from "../../chain"
 import PreferenceService from "../../preferences"
 import { getOrCreateDB as getIndexingDB } from "../db"
 
-const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
-
 describe("IndexingService", () => {
   const sandbox = sinon.createSandbox()
   let indexingService: IndexingService
@@ -94,10 +92,11 @@ describe("IndexingService", () => {
         tokenList
       )
 
+      const delay = sinon.promise<void>()
       window.fetch = async () =>
         Promise.resolve({
           json: () =>
-            wait(20).then(() => ({
+            delay.then(() => ({
               ...tokenList,
               tokens: [
                 {
@@ -128,14 +127,18 @@ describe("IndexingService", () => {
             .map((assets) => assets.symbol)
         ).toEqual(["ETH", "USDC", "TEST"])
       })
+
+      delay.resolve(undefined)
     })
 
     it("should update cache once token lists load", async () => {
       const cacheSpy = jest.spyOn(indexingService, "cacheAssetsForNetwork")
 
+      const delay = sinon.promise<void>()
+
       window.fetch = async () =>
         Promise.resolve({
-          json: () => wait(10).then(() => tokenList),
+          json: () => delay.then(() => tokenList),
           ok: true,
         }) as Promise<Response>
 
@@ -151,6 +154,8 @@ describe("IndexingService", () => {
             .map((assets) => assets.symbol)
         ).toEqual(["ETH"])
       })
+
+      delay.resolve(undefined)
 
       await indexingService.emitter.once("assets").then(() => {
         /* Caches assets for every supported network + 1 active network */

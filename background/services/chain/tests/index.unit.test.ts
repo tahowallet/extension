@@ -96,11 +96,13 @@ describe("Chain Service", () => {
     })
 
     it("should correctly update lastUserActivityOnNetwork", async () => {
+      jest.useFakeTimers()
+
       const lastUserActivity = (
         chainService as unknown as ChainServiceExternalized
       ).lastUserActivityOnNetwork[ETHEREUM.chainID]
 
-      await new Promise((r) => setTimeout(r, 1))
+      jest.advanceTimersByTime(100)
 
       chainService.markNetworkActivity(ETHEREUM.chainID)
 
@@ -108,6 +110,8 @@ describe("Chain Service", () => {
         (chainService as unknown as ChainServiceExternalized)
           .lastUserActivityOnNetwork[ETHEREUM.chainID]
       )
+
+      jest.useRealTimers()
     })
 
     it("should get block prices if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
