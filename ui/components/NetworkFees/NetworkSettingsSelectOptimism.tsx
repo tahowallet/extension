@@ -9,9 +9,9 @@ import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 
-export default function NetworkSettingsOptimismAndArbitrum(): ReactElement {
+export default function NetworkSettingsOptimism(): ReactElement {
   const { t } = useTranslation("translation", {
-    keyPrefix: "networkFees.optimismOrArbitrum",
+    keyPrefix: "networkFees.optimism",
   })
 
   const transactionData = useBackgroundSelector(selectTransactionData)
