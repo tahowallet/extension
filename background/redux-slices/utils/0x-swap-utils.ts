@@ -79,7 +79,7 @@ export function getPriceImpact(
   sellCurrencyAmount: number | undefined
 ): number | undefined {
   if (buyCurrencyAmount && sellCurrencyAmount) {
-    return +(buyCurrencyAmount / sellCurrencyAmount - 1).toFixed(2)
+    return +((buyCurrencyAmount / sellCurrencyAmount - 1) * 100).toFixed(2)
   }
   return undefined
 }
