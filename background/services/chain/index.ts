@@ -1044,22 +1044,35 @@ export default class ChainService extends BaseService<Events> {
     address,
     network,
   }: AddressOnNetwork): Promise<void> {
+    const addressIsInactive = this.addressIsInactive(address)
+    const networkIsInactive = this.networkIsInactive(network.chainID)
     this.markNetworkActivity(network.chainID)
-    const now = Date.now()
-    const inactiveAt = this.lastUserActivityOnAddress[address]
-    this.lastUserActivityOnAddress[address] = now
-    if (now - NETWORK_POLLING_TIMEOUT > inactiveAt) {
+    this.lastUserActivityOnAddress[address] = Date.now()
+    if (addressIsInactive || networkIsInactive) {
       // Reactivating a potentially deactivated address
       this.loadRecentAssetTransfers({ address, network })
       this.getLatestBaseAccountBalance({ address, network })
     }
   }
 
+  addressIsInactive(address: string): boolean {
+    return (
+      Date.now() - NETWORK_POLLING_TIMEOUT >
+      this.lastUserActivityOnAddress[address]
+    )
+  }
+
+  networkIsInactive(chainID: string): boolean {
+    return (
+      Date.now() - NETWORK_POLLING_TIMEOUT >
+      this.lastUserActivityOnNetwork[chainID]
+    )
+  }
+
   async markNetworkActivity(chainID: string): Promise<void> {
-    const now = Date.now()
-    const deactivatesAt = this.lastUserActivityOnNetwork[chainID]
-    this.lastUserActivityOnNetwork[chainID] = now
-    if (now - NETWORK_POLLING_TIMEOUT > deactivatesAt) {
+    const networkIsInactive = this.networkIsInactive(chainID)
+    this.lastUserActivityOnNetwork[chainID] = Date.now()
+    if (networkIsInactive) {
       // Reactivating a potentially deactivated network
       this.pollBlockPricesForNetwork(chainID)
     }
