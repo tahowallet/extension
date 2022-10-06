@@ -1044,14 +1044,23 @@ export default class ChainService extends BaseService<Events> {
     address,
     network,
   }: AddressOnNetwork): Promise<void> {
-    const addressIsInactive = this.addressIsInactive(address)
-    const networkIsInactive = this.networkIsInactive(network.chainID)
+    const addressWasInactive = this.addressIsInactive(address)
+    const networkWasInactive = this.networkIsInactive(network.chainID)
     this.markNetworkActivity(network.chainID)
     this.lastUserActivityOnAddress[address] = Date.now()
-    if (addressIsInactive || networkIsInactive) {
+    if (addressWasInactive || networkWasInactive) {
       // Reactivating a potentially deactivated address
       this.loadRecentAssetTransfers({ address, network })
       this.getLatestBaseAccountBalance({ address, network })
+    }
+  }
+
+  async markNetworkActivity(chainID: string): Promise<void> {
+    const networkWasInactive = this.networkIsInactive(chainID)
+    this.lastUserActivityOnNetwork[chainID] = Date.now()
+    if (networkWasInactive) {
+      // Reactivating a potentially deactivated network
+      this.pollBlockPricesForNetwork(chainID)
     }
   }
 
@@ -1067,15 +1076,6 @@ export default class ChainService extends BaseService<Events> {
       Date.now() - NETWORK_POLLING_TIMEOUT >
       this.lastUserActivityOnNetwork[chainID]
     )
-  }
-
-  async markNetworkActivity(chainID: string): Promise<void> {
-    const networkIsInactive = this.networkIsInactive(chainID)
-    this.lastUserActivityOnNetwork[chainID] = Date.now()
-    if (networkIsInactive) {
-      // Reactivating a potentially deactivated network
-      this.pollBlockPricesForNetwork(chainID)
-    }
   }
 
   /*
