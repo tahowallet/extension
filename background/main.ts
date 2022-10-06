@@ -1290,11 +1290,13 @@ export default class Main extends BaseService<never> {
 }
 
 // Redirect user after uninstalling extension
-if(browser.runtime.setUninstallURL) {
-  browser.runtime.setUninstallURL('https://localhost:8000');
-};
+if (browser.runtime.setUninstallURL) {
+  browser.runtime.setUninstallURL("https://localhost:8000")
+}
 
 // Fire analytics event when extension is installed
-browser.runtime.onInstalled.addListener(details => {
-  posthogEvent("Extension installed");
-});
+browser.runtime.onInstalled.addListener((details) => {
+  if (details.reason === "install") {
+    posthogEvent("Extension installed")
+  }
+})

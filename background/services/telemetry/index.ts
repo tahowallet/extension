@@ -57,7 +57,6 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
       )
     }
     logger.debug(...output)
-
   }
 
   private static formatBytes(bytes: number | undefined) {

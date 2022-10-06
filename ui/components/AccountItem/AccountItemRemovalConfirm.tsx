@@ -97,7 +97,7 @@ export default function AccountItemRemovalConfirm({
             e.stopPropagation()
             // don't prompt for unlock if removing read-only account.
             if (readOnlyAccount || areKeyringsUnlocked) {
-              posthogEvent("Wallet Removed");
+              posthogEvent("Wallet Removed")
               dispatch(
                 removeAccount({
                   addressOnNetwork: { address, network },

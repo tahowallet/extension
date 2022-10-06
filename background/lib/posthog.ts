@@ -1,13 +1,4 @@
-export const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY
-
-function getCookie(name: string)
- {
-   var re = new RegExp(name + "=([^;]+)");
-   var value = re.exec(document.cookie);
-   return (value != null) ? unescape(value[1]) : null;
- }
-
-var retrievedUUID = getCookie("UUID");
+export const { POSTHOG_API_KEY } = process.env.POSTHOG_API_KEY
 
 interface HogEventProp {
   distinct_id: string
@@ -26,20 +17,12 @@ type HogResponse = {
   data: string
 }
 
-export function posthogEvent(eventName:string) {
-
-  chrome.cookies.get({ url: 'http://localhost:8000', name: 'UUID' },
-   function (cookie) {
-     if (cookie) {
-       createEvent(eventName, cookie.value)
-     }
- });
-}
-
-export async function createEvent(eventName:string, userID:string): Promise<HogResponse> {
+export async function createEvent(
+  eventName: string,
+  userID: string
+): Promise<HogResponse> {
   try {
-
-    var posthogEvent = eventName;
+    const posthogEventId = eventName
 
     const response = await fetch("https://app.posthog.com/capture/", {
       method: "POST",
@@ -47,10 +30,10 @@ export async function createEvent(eventName:string, userID:string): Promise<HogR
         // this is a safe public write only api key
         // roll this key for demo
         api_key: POSTHOG_API_KEY,
-        event: posthogEvent,
+        event: posthogEventId,
         properties: {
           distinct_id: userID,
-          data:  "This adds posthog events to Tally extension",
+          data: "This adds posthog events to Tally extension",
           current_url: window.location.href,
           $lib: window.location.href,
         },
@@ -71,5 +54,18 @@ export async function createEvent(eventName:string, userID:string): Promise<HogR
     if (error instanceof Error) {
       return Promise.reject(error.message)
     } // eslint-disable-next-line no-console
+    return Promise.reject()
   }
+}
+
+export function posthogEvent(eventName: string) {
+  chrome.cookies.get(
+    { url: "http://localhost:8000", name: "UUID" },
+
+    function (cookie) {
+      if (cookie) {
+        createEvent(eventName, cookie.value)
+      }
+    }
+  )
 }
