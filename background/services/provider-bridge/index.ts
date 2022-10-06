@@ -130,7 +130,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
 
     const { chainID } =
-      await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+      await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
         origin
       )
 
@@ -283,7 +283,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
       const { chainID } =
-        await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+        await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
           origin
         )
       if (await this.checkPermission(origin, chainID)) {

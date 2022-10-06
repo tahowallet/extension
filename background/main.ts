@@ -517,13 +517,13 @@ export default class Main extends BaseService<never> {
       address: string
     }>
   ): Promise<void> {
-    const activeNetworks = await this.chainService.getActiveNetworks()
+    const trackedNetworks = await this.chainService.getTrackedNetworks()
     await Promise.all(
       accounts.map(async ({ path, address }) => {
         await this.ledgerService.saveAddress(path, address)
 
         await Promise.all(
-          activeNetworks.map(async (network) => {
+          trackedNetworks.map(async (network) => {
             const addressNetwork = {
               address,
               network,
@@ -538,7 +538,7 @@ export default class Main extends BaseService<never> {
       setNewSelectedAccount({
         address: accounts[0].address,
         network:
-          await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+          await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
             TALLY_INTERNAL_ORIGIN
           ),
       })
@@ -873,8 +873,8 @@ export default class Main extends BaseService<never> {
     })
 
     this.keyringService.emitter.on("address", async (address) => {
-      const activeNetworks = await this.chainService.getActiveNetworks()
-      activeNetworks.forEach((network) => {
+      const trackedNetworks = await this.chainService.getTrackedNetworks()
+      trackedNetworks.forEach((network) => {
         // Mark as loading and wire things up.
         this.store.dispatch(
           loadAccount({
