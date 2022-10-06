@@ -169,7 +169,7 @@ describe("Chain Service", () => {
       sandbox
         .stub(
           chainService as unknown as ChainServiceExternalized,
-          "activateNetworkOrThrow"
+          "startTrackingNetworkOrThrow"
         )
         .onFirstCall()
         .callsFake(() => {
@@ -184,7 +184,7 @@ describe("Chain Service", () => {
         resolvesWithPolygon.resolve(POLYGON)
       }, 30)
 
-      await chainService.getActiveNetworks()
+      await chainService.getTrackedNetworks()
 
       expect(activeNetworksMock).toEqual([ETHEREUM, POLYGON])
     })
