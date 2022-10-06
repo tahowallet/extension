@@ -1227,6 +1227,8 @@ export default class Main extends BaseService<never> {
 
       this.store.dispatch(setVaultsAsStale())
 
+      await this.chainService.markAccountActivity(addressNetwork)
+
       const referrerStats = await this.doggoService.getReferrerStats(
         addressNetwork
       )
