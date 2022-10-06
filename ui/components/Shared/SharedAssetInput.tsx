@@ -532,7 +532,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
                 <div className="simple_text price_impact_wrap">
                   {amountMainCurrency === "0.00" && "<"}$
                   {amountMainCurrency || "0.00"}
-                  {priceImpact && (
+                  {priceImpact !== undefined && priceImpact !== 0 && (
                     <span className="price_impact_percent">
                       ({priceImpact}%
                       <SharedTooltip

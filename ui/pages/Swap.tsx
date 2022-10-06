@@ -7,13 +7,15 @@ import React, {
 } from "react"
 import { useTranslation } from "react-i18next"
 import {
-  fetchSwapPrice,
   clearSwapQuote,
   approveTransfer,
   selectLatestQuoteRequest,
   selectInProgressApprovalContract,
   SwapQuoteRequest,
   fetchSwapQuote,
+  fetchSwapPrice,
+  selectPriceDetails,
+  setPriceDetails,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import {
   HIDE_SWAP_REWARDS,
@@ -24,7 +26,6 @@ import {
   selectCurrentAccountBalances,
   selectCurrentAccountSigner,
   selectCurrentNetwork,
-  selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
@@ -32,11 +33,7 @@ import {
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
-import {
-  convertFixedPointNumber,
-  fixedPointNumberToString,
-  parseToFixedPointNumber,
-} from "@tallyho/tally-background/lib/fixed-point"
+import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import logger from "@tallyho/tally-background/lib/logger"
 import { useLocation } from "react-router-dom"
@@ -45,13 +42,9 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
-import {
-  enrichAssetAmountWithMainCurrencyValues,
-  isNetworkBaseAsset,
-} from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
-import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -110,6 +103,10 @@ export default function Swap(): ReactElement {
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
   const isReadOnlyAccount = currentAccountSigner === ReadOnlyAccountSigner
+
+  const assets = useBackgroundSelector(getAssetsState)
+
+  const priceDetails = useBackgroundSelector(selectPriceDetails)
 
   // TODO We're special-casing ETH here in an odd way. Going forward, we should
   // filter by current chain and better handle network-native base assets
@@ -336,6 +333,7 @@ export default function Swap(): ReactElement {
         typeof quoteBuyAsset === "undefined" ||
         amount.trim() === ""
       ) {
+        dispatch(setPriceDetails(undefined))
         return
       }
 
@@ -387,7 +385,7 @@ export default function Swap(): ReactElement {
       latestQuoteRequest.current = quoteRequest
 
       const { quote, needsApproval: quoteNeedsApproval } = ((await dispatch(
-        fetchSwapPrice(quoteRequest)
+        fetchSwapPrice({ quoteRequest, assets })
       )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapPrice>) ?? {
         quote: undefined,
         needsApproval: false,
@@ -442,7 +440,14 @@ export default function Swap(): ReactElement {
         }
       }
     },
-    [buyAsset, dispatch, sellAsset, swapTransactionSettings, selectedNetwork]
+    [
+      sellAsset,
+      buyAsset,
+      swapTransactionSettings,
+      selectedNetwork,
+      dispatch,
+      assets,
+    ]
   )
 
   const updateSellAsset = useCallback(
@@ -502,51 +507,6 @@ export default function Swap(): ReactElement {
     //   status in the UI.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [swapTransactionSettings, isApprovalInProgress])
-
-  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
-  const assets = useBackgroundSelector(getAssetsState)
-
-  const getAssetAmount = (
-    asset: SmartContractFungibleAsset | FungibleAsset,
-    amount: string
-  ) => {
-    const fixedPointAmount = parseToFixedPointNumber(amount.toString())
-    if (typeof fixedPointAmount === "undefined") {
-      return undefined
-    }
-    const decimalMatched = convertFixedPointNumber(
-      fixedPointAmount,
-      asset.decimals
-    )
-
-    const assetPricePoint = selectAssetPricePoint(
-      assets,
-      asset?.symbol,
-      mainCurrencySymbol
-    )
-
-    return enrichAssetAmountWithMainCurrencyValues(
-      {
-        asset,
-        amount: decimalMatched.amount,
-      },
-      assetPricePoint,
-      2
-    )
-  }
-
-  const assetSellAmount = sellAsset && getAssetAmount(sellAsset, sellAmount)
-  const assetBuyAmount = buyAsset && getAssetAmount(buyAsset, buyAmount)
-
-  const getPriceImpact = (): number | undefined => {
-    const buyCurrencyAmount = assetBuyAmount?.mainCurrencyAmount
-    const sellCurrencyAmount = assetSellAmount?.mainCurrencyAmount
-
-    if (buyCurrencyAmount && sellCurrencyAmount) {
-      return +(buyCurrencyAmount / sellCurrencyAmount - 1).toFixed(2)
-    }
-    return undefined
-  }
 
   return (
     <>
@@ -609,9 +569,7 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
                 amount={sellAmount}
-                amountMainCurrency={
-                  assetSellAmount?.localizedMainCurrencyAmount
-                }
+                amountMainCurrency={priceDetails?.sellCurrencyAmount}
                 showCurrencyAmount
                 assetsAndAmounts={sellAssetAmounts}
                 selectedAsset={sellAsset}
@@ -632,9 +590,9 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
                 amount={buyAmount}
-                amountMainCurrency={assetBuyAmount?.localizedMainCurrencyAmount}
+                amountMainCurrency={priceDetails?.buyCurrencyAmount}
                 showCurrencyAmount
-                priceImpact={getPriceImpact()}
+                priceImpact={priceDetails?.priceImpact}
                 // FIXME Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
                 selectedAsset={buyAsset}

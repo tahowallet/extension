@@ -28,7 +28,16 @@ import {
 } from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
-import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
+import {
+  enrichAssetAmountWithDecimalValues,
+  enrichAssetAmountWithMainCurrencyValues,
+} from "./utils/asset-utils"
+import {
+  convertFixedPointNumber,
+  fixedPointNumberToString,
+  parseToFixedPointNumber,
+} from "../lib/fixed-point"
+import { AssetsState, selectAssetPricePoint } from "./assets"
 
 // This is how 0x represents native token addresses
 const ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS =
@@ -71,10 +80,17 @@ export type SwapQuoteRequest = {
 export type ZrxPrice = ValidatedType<typeof isValidSwapPriceResponse>
 export type ZrxQuote = ValidatedType<typeof isValidSwapQuoteResponse>
 
+export type PriceDetails = {
+  priceImpact: number | undefined
+  buyCurrencyAmount: string | undefined
+  sellCurrencyAmount: string | undefined
+}
+
 export interface SwapState {
   latestQuoteRequest?: SwapQuoteRequest | undefined
   finalQuote?: ZrxQuote | undefined
   inProgressApprovalContract?: string
+  priceDetails?: PriceDetails | undefined
 }
 
 export const initialState: SwapState = {
@@ -119,6 +135,14 @@ const swapSlice = createSlice({
       finalQuote: undefined,
       latestQuoteRequest: undefined,
     }),
+
+    setPriceDetails: (
+      state,
+      { payload: priceDetails }: { payload: PriceDetails | undefined }
+    ) => ({
+      ...state,
+      priceDetails,
+    }),
   },
 })
 
@@ -131,6 +155,7 @@ export const {
   setFinalSwapQuote,
   clearSwapQuote,
   clearInProgressApprovalContract: clearApprovalInProgress,
+  setPriceDetails,
 } = swapSlice.actions
 
 export default swapSlice.reducer
@@ -312,6 +337,86 @@ const parseAndNotifyOnZeroExApiError = (
   }
 }
 
+const getAssetAmount = (
+  assets: AssetsState,
+  asset: SmartContractFungibleAsset | FungibleAsset,
+  amount: string
+) => {
+  const mainCurrencySymbol = "USD"
+
+  const fixedPointAmount = parseToFixedPointNumber(amount.toString())
+  if (typeof fixedPointAmount === "undefined") {
+    return undefined
+  }
+  const decimalMatched = convertFixedPointNumber(
+    fixedPointAmount,
+    asset.decimals
+  )
+
+  const assetPricePoint = selectAssetPricePoint(
+    assets,
+    asset?.symbol,
+    mainCurrencySymbol
+  )
+  return enrichAssetAmountWithMainCurrencyValues(
+    {
+      asset,
+      amount: decimalMatched.amount,
+    },
+    assetPricePoint,
+    2
+  )
+}
+
+const getPriceImpact = (
+  buyCurrencyAmount: number | undefined,
+  sellCurrencyAmount: number | undefined
+): number | undefined => {
+  if (buyCurrencyAmount && sellCurrencyAmount) {
+    return +(buyCurrencyAmount / sellCurrencyAmount - 1).toFixed(2)
+  }
+  return undefined
+}
+
+const calculatePriceDetails = (
+  quoteRequest: SwapQuoteRequest,
+  assets: AssetsState,
+  sellAmount: string,
+  buyAmount: string,
+  dispatch: ThunkDispatch<unknown, unknown, AnyAction>
+) => {
+  const assetSellAmount = getAssetAmount(
+    assets,
+    quoteRequest.assets.sellAsset,
+    fixedPointNumberToString({
+      amount: BigInt(sellAmount),
+      decimals: quoteRequest.assets.sellAsset.decimals,
+    })
+  )
+
+  const assetBuyAmount = getAssetAmount(
+    assets,
+    quoteRequest.assets.buyAsset,
+    fixedPointNumberToString({
+      amount: BigInt(buyAmount),
+      decimals: quoteRequest.assets.buyAsset.decimals,
+    })
+  )
+
+  const priceImpact = getPriceImpact(
+    assetBuyAmount?.mainCurrencyAmount,
+    assetSellAmount?.mainCurrencyAmount
+  )
+
+  const data: PriceDetails = {
+    buyCurrencyAmount: assetBuyAmount?.localizedMainCurrencyAmount,
+    sellCurrencyAmount: assetSellAmount?.localizedMainCurrencyAmount,
+    priceImpact,
+  }
+
+  dispatch(setPriceDetails(data))
+}
+
 /**
  * This async thunk fetches an indicative RFQ-T price for a swap. The quote
  * request specifies the swap assets as well as one end of the swap, and the
@@ -323,7 +428,13 @@ const parseAndNotifyOnZeroExApiError = (
 export const fetchSwapPrice = createBackgroundAsyncThunk(
   "0x-swap/fetchPrice",
   async (
-    quoteRequest: SwapQuoteRequest,
+    {
+      quoteRequest,
+      assets,
+    }: {
+      quoteRequest: SwapQuoteRequest
+      assets: AssetsState
+    },
     { dispatch }
   ): Promise<{ quote: ZrxPrice; needsApproval: boolean } | undefined> => {
     const signer = getProvider().getSigner()
@@ -372,6 +483,14 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
       }
 
       dispatch(setLatestQuoteRequest(quoteRequest))
+
+      calculatePriceDetails(
+        quoteRequest,
+        assets,
+        quote.sellAmount,
+        quote.buyAmount,
+        dispatch
+      )
 
       return { quote, needsApproval }
     } catch (error) {
@@ -491,4 +610,9 @@ export const selectLatestQuoteRequest = createSelector(
 export const selectInProgressApprovalContract = createSelector(
   (state: { swap: SwapState }) => state.swap.inProgressApprovalContract,
   (approvalInProgress) => approvalInProgress
+)
+
+export const selectPriceDetails = createSelector(
+  (state: { swap: SwapState }) => state.swap.priceDetails,
+  (priceDetails) => priceDetails
 )
