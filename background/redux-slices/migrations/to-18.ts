@@ -1,4 +1,5 @@
-import { PriceDetails, SwapQuoteRequest, ZrxQuote } from "../0x-swap"
+import { ZrxQuote } from "../0x-swap"
+import { PriceDetails, SwapQuoteRequest } from "../utils/0x-swap-utils"
 
 type OldState = {
   swap: {
