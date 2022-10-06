@@ -1,6 +1,3 @@
-// It's necessary to have an object w/ the function on it so we can use spyOn
-import * as ethers from "@ethersproject/web" // << THIS IS THE IMPORTANT TRICK
-
 import logger from "../lib/logger"
 import { BTC, ETH, FIAT_CURRENCIES, USD } from "../constants"
 import { CoinGeckoAsset } from "../assets"
@@ -8,6 +5,15 @@ import { getPrice, getPrices } from "../lib/prices"
 import { isValidCoinGeckoPriceResponse } from "../lib/validate"
 
 const dateNow = 1634911514834
+
+const mockFetch = <T>(value: T) => {
+  const mock = jest
+    .fn()
+    .mockResolvedValue({ json: jest.fn().mockResolvedValue(value) })
+
+  window.fetch = mock
+  return mock
+}
 
 describe("lib/prices.ts", () => {
   beforeAll(() => {
@@ -17,6 +23,7 @@ describe("lib/prices.ts", () => {
     // just to keep the output nice and tidy
     jest.spyOn(logger, "warn").mockImplementation()
   })
+
   describe("CoinGecko Price response validation", () => {
     it("passes for correct simple price response", () => {
       const apiResponse = {
@@ -130,11 +137,13 @@ describe("lib/prices.ts", () => {
       expect(validationResult).toBeFalsy()
     })
   })
+
   describe("getPrice", () => {
     beforeEach(() => {
       // Important to clean up the internal mock variables between tests
       jest.clearAllMocks()
     })
+
     it("should return correct price if the data exist", async () => {
       const response = {
         ethereum: {
@@ -143,12 +152,14 @@ describe("lib/prices.ts", () => {
         },
       }
 
-      jest.spyOn(ethers, "fetchJson").mockResolvedValue(response)
+      const fetchMock = mockFetch(response)
+
       await expect(getPrice("ethereum", "usd")).resolves.toEqual(
         response.ethereum.usd
       )
-      expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
+      expect(fetchMock).toHaveBeenCalledTimes(1)
     })
+
     it("should return null if the data DOESN'T exist", async () => {
       const response = {
         ethereum: {
@@ -156,19 +167,22 @@ describe("lib/prices.ts", () => {
         },
       }
 
-      jest.spyOn(ethers, "fetchJson").mockResolvedValue(response)
+      const fetchMock = mockFetch(response)
+
       await expect(getPrice("ethereum", "usd")).resolves.toBeNull()
-      expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
+      expect(fetchMock).toHaveBeenCalledTimes(1)
     })
+
     it("should return null if the api response does not fit the schema", async () => {
       const response = "Na na na na na na na na na na na na ... BATMAN!"
 
-      jest.spyOn(ethers, "fetchJson").mockResolvedValue(response)
+      const fetchMock = mockFetch(response)
 
       await expect(getPrice("ethereum", "usd")).resolves.toBeNull()
-      expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
+      expect(fetchMock).toHaveBeenCalledTimes(1)
     })
   })
+
   describe("getPrices", () => {
     beforeEach(() => {
       // Important to clean up the internal mock variables between tests
@@ -205,13 +219,14 @@ describe("lib/prices.ts", () => {
         },
       ]
 
-      jest.spyOn(ethers, "fetchJson").mockResolvedValue(fetchJsonResponse)
+      const fetchMock = mockFetch(fetchJsonResponse)
 
       await expect(
         getPrices([BTC, ETH] as CoinGeckoAsset[], FIAT_CURRENCIES)
       ).resolves.toEqual(getPricesResponse)
-      expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
+      expect(fetchMock).toHaveBeenCalledTimes(1)
     })
+
     it("should filter out invalid pairs if the data DOESN'T exist", async () => {
       const currencies = [
         USD,
@@ -248,21 +263,23 @@ describe("lib/prices.ts", () => {
         },
       ]
 
-      jest.spyOn(ethers, "fetchJson").mockResolvedValue(fetchJsonResponse)
+      const fetchMock = mockFetch(fetchJsonResponse)
+
       await expect(
         getPrices([ETH, FAKE_COIN] as CoinGeckoAsset[], currencies)
       ).resolves.toEqual(getPricesResponse)
-      expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
+      expect(fetchMock).toHaveBeenCalledTimes(1)
     })
+
     it("should return [] if the api response does not fit the schema", async () => {
       const response = "Na na na na na na na na na na na na ... BATMAN!"
 
-      jest.spyOn(ethers, "fetchJson").mockResolvedValue(response)
+      const fetchMock = mockFetch(response)
 
       await expect(
         getPrices([ETH] as CoinGeckoAsset[], FIAT_CURRENCIES)
       ).resolves.toEqual([])
-      expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
+      expect(fetchMock).toHaveBeenCalledTimes(1)
     })
   })
 })
