@@ -1051,6 +1051,7 @@ export default class ChainService extends BaseService<Events> {
     if (now - NETWORK_POLLING_TIMEOUT > inactiveAt) {
       // Reactivating a potentially deactivated address
       this.loadRecentAssetTransfers({ address, network })
+      this.getLatestBaseAccountBalance({ address, network })
     }
   }
 
