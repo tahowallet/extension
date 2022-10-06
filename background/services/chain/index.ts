@@ -260,7 +260,7 @@ export default class ChainService extends BaseService<Events> {
 
     this.lastUserActivityOnNetwork =
       Object.fromEntries(
-        this.supportedNetworks.map((network) => [network.chainID, Date.now()])
+        this.supportedNetworks.map((network) => [network.chainID, 0])
       ) || {}
 
     this.providers = {
