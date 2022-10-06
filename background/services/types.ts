@@ -1,3 +1,4 @@
+import { DexieOptions } from "dexie"
 import Emittery from "emittery"
 
 export interface ServiceLifecycleEvents {
@@ -108,4 +109,4 @@ export type ServiceCreatorFunction<
   EventsType extends ServiceLifecycleEvents,
   ServiceType extends Service<EventsType>,
   Deps extends Promise<Service<ServiceLifecycleEvents>>[]
-> = (...serviceDependencies: Deps) => Promise<ServiceType>
+> = (...serviceDependencies: [...Deps, DexieOptions?]) => Promise<ServiceType>
