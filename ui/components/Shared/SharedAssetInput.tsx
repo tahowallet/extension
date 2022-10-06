@@ -432,7 +432,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
         switch (true) {
           case value < -5:
             return "error"
-          case value <= 1 && value >= -5:
+          case value < 0 && value >= -5:
             return "attention"
           default:
             return "green-40"
@@ -532,7 +532,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
                 <div className="simple_text price_impact_wrap">
                   {amountMainCurrency === "0.00" && "<"}$
                   {amountMainCurrency || "0.00"}
-                  {priceImpact !== undefined && priceImpact !== 0 && (
+                  {priceImpact !== undefined && priceImpact < 0 && (
                     <span className="price_impact_percent">
                       ({priceImpact}%
                       <SharedTooltip
