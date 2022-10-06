@@ -386,7 +386,6 @@ export default class ChainService extends BaseService<Events> {
       logger.warn(
         `${trackedNetwork.name} already being tracked - no need to activate it`
       )
-      this.markNetworkActivity(trackedNetwork.chainID)
       return trackedNetwork
     }
 
@@ -417,7 +416,6 @@ export default class ChainService extends BaseService<Events> {
       })
     }
 
-    this.markNetworkActivity(networkToTrack.chainID)
     return networkToTrack
   }
 
