@@ -11,6 +11,20 @@ import ChainService from "../../chain"
 import PreferenceService from "../../preferences"
 import { getOrCreateDB as getIndexingDB } from "../db"
 
+jest.mock("@ethersproject/web", () => {
+  const actual =
+    jest.requireActual<typeof import("@ethersproject/web")>(
+      "@ethersproject/web"
+    )
+
+  const fetchJson = async () => {
+    // Empty get prices response
+    return {}
+  }
+
+  return { ...actual, fetchJson }
+})
+
 describe("IndexingService", () => {
   const sandbox = sinon.createSandbox()
   let indexingService: IndexingService
