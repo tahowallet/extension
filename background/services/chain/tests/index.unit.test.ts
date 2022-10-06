@@ -154,7 +154,7 @@ describe("Chain Service", () => {
       expect(stub.calledWith(ETHEREUM.chainID)).toEqual(true)
     })
 
-    it.only("should call loadRecentAssetTransfers if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
+    it("should call loadRecentAssetTransfers if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
       const account = createAddressOnNetwork({ network: ETHEREUM })
 
       // Set last activity time to 10 minutes ago
