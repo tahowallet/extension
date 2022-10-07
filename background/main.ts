@@ -99,7 +99,7 @@ import {
   signDataRequest,
 } from "./redux-slices/signing"
 
-import { SignTypedDataRequest, SignDataRequest } from "./utils/signing"
+import { SignTypedDataRequest, MessageSigningRequest } from "./utils/signing"
 import {
   emitter as earnSliceEmitter,
   setVaultsAsStale,
@@ -517,13 +517,13 @@ export default class Main extends BaseService<never> {
       address: string
     }>
   ): Promise<void> {
-    const activeNetworks = await this.chainService.getActiveNetworks()
+    const trackedNetworks = await this.chainService.getTrackedNetworks()
     await Promise.all(
       accounts.map(async ({ path, address }) => {
         await this.ledgerService.saveAddress(path, address)
 
         await Promise.all(
-          activeNetworks.map(async (network) => {
+          trackedNetworks.map(async (network) => {
             const addressNetwork = {
               address,
               network,
@@ -538,7 +538,7 @@ export default class Main extends BaseService<never> {
       setNewSelectedAccount({
         address: accounts[0].address,
         network:
-          await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+          await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
             TALLY_INTERNAL_ORIGIN
           ),
       })
@@ -617,11 +617,15 @@ export default class Main extends BaseService<never> {
           )
 
         const { annotation } =
-          await this.enrichmentService.enrichTransactionSignature(
-            network,
-            populatedRequest,
-            2 /* TODO desiredDecimals should be configurable */
-          )
+          // Respect a prepopulated annotation. For now, this short-circuits
+          // the usual enrichment process.
+          populatedRequest.annotation === undefined
+            ? await this.enrichmentService.enrichTransactionSignature(
+                network,
+                populatedRequest,
+                2 /* TODO desiredDecimals should be configurable */
+              )
+            : { annotation: populatedRequest.annotation }
 
         const enrichedPopulatedRequest: EnrichedEVMTransactionRequest = {
           ...populatedRequest,
@@ -869,8 +873,8 @@ export default class Main extends BaseService<never> {
     })
 
     this.keyringService.emitter.on("address", async (address) => {
-      const activeNetworks = await this.chainService.getActiveNetworks()
-      activeNetworks.forEach((network) => {
+      const trackedNetworks = await this.chainService.getTrackedNetworks()
+      trackedNetworks.forEach((network) => {
         // Mark as loading and wire things up.
         this.store.dispatch(
           loadAccount({
@@ -1040,7 +1044,7 @@ export default class Main extends BaseService<never> {
         resolver,
         rejecter,
       }: {
-        payload: SignDataRequest
+        payload: MessageSigningRequest
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {

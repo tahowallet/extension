@@ -27,6 +27,7 @@ import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
 import { PermissionMap } from "./utils"
 import { toHexChainID } from "../../networks"
+import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -129,7 +130,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
 
     const { chainID } =
-      await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+      await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
         origin
       )
 
@@ -139,7 +140,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
 
     const originPermission = await this.checkPermission(origin, chainID)
-    if (isTallyConfigPayload(event.request)) {
+    if (origin === TALLY_INTERNAL_ORIGIN) {
+      // Explicitly disallow anyone who has managed to pretend to be the
+      // internal provider.
+      response.result = new EIP1193Error(
+        EIP1193_ERROR_CODES.unauthorized
+      ).toJSON()
+    } else if (isTallyConfigPayload(event.request)) {
       // let's start with the internal communication
       response.id = "tallyHo"
       response.result = {
@@ -276,7 +283,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
       const { chainID } =
-        await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+        await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
           origin
         )
       if (await this.checkPermission(origin, chainID)) {

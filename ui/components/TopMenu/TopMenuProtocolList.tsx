@@ -9,7 +9,6 @@ import {
 import {
   SUPPORT_ARBITRUM,
   SUPPORT_GOERLI,
-  SUPPORT_OPTIMISM,
 } from "@tallyho/tally-background/features"
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
@@ -28,20 +27,10 @@ const productionNetworks = [
     network: POLYGON,
     info: i18n.t("protocol.l2"),
   },
-  ...(SUPPORT_OPTIMISM
-    ? [
-        {
-          network: OPTIMISM,
-          info: i18n.t("protocol.l2"),
-        },
-      ]
-    : [
-        {
-          network: OPTIMISM,
-          info: i18n.t("comingSoon"),
-          isDisabled: true,
-        },
-      ]),
+  {
+    network: OPTIMISM,
+    info: i18n.t("protocol.l2"),
+  },
   ...(SUPPORT_ARBITRUM
     ? [
         {

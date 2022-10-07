@@ -24,7 +24,12 @@
         "readOnly": "Preview",
         "ledger": "Hardware wallets",
         "others": "Imported & generated"
-      }
+      },
+      "signing": {
+        "lock": "Lock signing",
+        "unlock": "Unlock signing"
+      },
+      "snackbar": "Signing locked"
     }
   },
   "viewAddressOnBlockExplorer": "View address on {{blockExplorer}}",
@@ -69,12 +74,14 @@
     },
     "unlock": {
       "title": "Unlock signing",
+      "subtitle": "Enter your signing password to continue",
       "submitBtn": "Unlock",
       "signingPassword": "Signing password",
       "forgotPassword": "Forgot password?",
       "error": {
         "incorrect": "Incorrect password"
-      }
+      },
+      "snackbar": "Signing unlocked"
     }
   },
   "ledger": {
@@ -172,7 +179,7 @@
       "invalidLimit": "Gas Limit must be a number",
       "lowGas": "Low"
     },
-    "optimismOrArbitrum": {
+    "optimism": {
       "title": "Network fees",
       "header": "Gas fees on {{name}} work differently from Ethereum.",
       "transactionFee": "Transaction fee",
