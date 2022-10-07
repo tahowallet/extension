@@ -2,8 +2,8 @@ import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 
-export default function ErrorScreen(): ReactElement {
-  const { t } = useTranslation("translation", { keyPrefix: "errorScreen" })
+export default function GlobalError(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "globalError" })
 
   return (
     <section className="standard_width">

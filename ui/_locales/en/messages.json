@@ -513,7 +513,7 @@
       "toggleTitle": "Use Tally Ho as default wallet"
     }
   },
-  "errorScreen": {
+  "globalError": {
     "title": "Ups, nothing to see here",
     "desc": "Looks like you encountered an empty bowl, try refreshing the page to see if something appears",
     "submitBtn": "Refresh page"

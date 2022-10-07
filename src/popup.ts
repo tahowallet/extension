@@ -1,11 +1,23 @@
-import { attachPopupUIToRootElement } from "@tallyho/tally-ui"
+import {
+  attachPopupUIToRootElement,
+  attachUIToRootElement,
+} from "@tallyho/tally-ui"
+import GlobalError from "@tallyho/tally-ui/components/GlobalError/GlobalError"
 
-setTimeout(() => {
-  const isAppRendered = !!document.getElementsByClassName("top_menu_wrap_decoy")
-    .length
+let counter = 0
 
-  if (!isAppRendered) {
-    window.location.reload()
+const timerId = setInterval(() => {
+  counter += 1
+  if (counter > 2) {
+    clearInterval(timerId)
+    attachUIToRootElement(GlobalError)
+  } else {
+    const isAppRendered = !!document.getElementsByClassName(
+      "top_menu_wrap_decoy"
+    ).length
+    if (isAppRendered) {
+      clearInterval(timerId)
+    }
   }
 }, 1000)
 
