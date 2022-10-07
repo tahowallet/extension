@@ -333,9 +333,10 @@ export default function Swap(): ReactElement {
         typeof quoteBuyAsset === "undefined" ||
         amount.trim() === ""
       ) {
-        dispatch(setPriceDetails(undefined))
         return
       }
+
+      dispatch(setPriceDetails(undefined))
 
       const quoteRequest: SwapQuoteRequest = {
         assets: {
