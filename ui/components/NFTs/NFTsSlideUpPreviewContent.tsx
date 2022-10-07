@@ -1,5 +1,6 @@
 import React, { ReactElement } from "react"
 import {
+  ARBITRUM_ONE,
   ETHEREUM,
   OPTIMISM,
   POLYGON,
@@ -25,6 +26,7 @@ function getPreviewLink(nft: NFT) {
     [POLYGON.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
     [ETHEREUM.chainID]: `/nft/${contractAddress}/${parsedTokenID}`,
     [OPTIMISM.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
+    [ARBITRUM_ONE.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
   }
 
   return `${scanWebsite[chainID].url}${previewURL[chainID]}`

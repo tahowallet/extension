@@ -9,7 +9,7 @@ import {
 } from "../../../tests/factories"
 import ChainService from "../../chain"
 import PreferenceService from "../../preferences"
-import { getOrCreateDB as getIndexingDB } from "../db"
+import { getOrCreateDb as getIndexingDB } from "../db"
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
@@ -33,9 +33,12 @@ describe("IndexingService", () => {
 
     sandbox.stub(chainService, "supportedNetworks").value([ETHEREUM, OPTIMISM])
 
+    indexedDB = new IDBFactory()
+
     indexingService = await createIndexingService({
       chainService: Promise.resolve(chainService),
       preferenceService: Promise.resolve(preferenceService),
+      dexieOptions: { indexedDB },
     })
   })
 
@@ -152,14 +155,14 @@ describe("IndexingService", () => {
         ).toEqual(["ETH"])
       })
 
-      await wait(20)
+      await indexingService.emitter.once("assets").then(() => {
+        /* Caches assets for every supported network + 1 active network */
+        expect(cacheSpy).toHaveBeenCalledTimes(5)
 
-      /* Caches assets for every supported network + 1 active network */
-      expect(cacheSpy).toHaveBeenCalledTimes(3)
-
-      expect(
-        indexingService.getCachedAssets(ETHEREUM).map((asset) => asset.symbol)
-      ).toEqual(["ETH", "TEST"])
+        expect(
+          indexingService.getCachedAssets(ETHEREUM).map((asset) => asset.symbol)
+        ).toEqual(["ETH", "TEST"])
+      })
     })
 
     it("should update cache when adding a custom asset", async () => {
