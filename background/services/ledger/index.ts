@@ -424,7 +424,7 @@ export default class LedgerService extends BaseService<Events> {
           throw new Error("Transaction doesn't appear to have been signed.")
         }
 
-        if (!isKnownTxType(tx.type)) {
+        if (tx.type !== null && !isKnownTxType(tx.type)) {
           throw new Error(`Unknown transaction type ${tx.type}`)
         }
 
