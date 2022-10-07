@@ -78,6 +78,19 @@ The following diagram describes the flow of data and events at a high level:
 └────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Terminology
+
+#### Networks
+
+Network communication is central to the functionality of a web3 wallet. Due
+to the complexity of handling multiple concurrent network connections, we
+try to attribute networks (through variable and method naming) in the following way:
+
+- Supported Network: A network that the extension is able to track
+- Tracked Network: A network that the extension is tracking or has ever tracked.
+- Active Network: A network that the extension is actively tracking / listening to.
+- Current Network: The network that a given dapp (or the internal wallet) is connected to.
+
 ## Public API
 
 The only public API of the Tally Ho Background package is what is exported directly on
