@@ -60,7 +60,7 @@ export async function createEvent(
 
 export function posthogEvent(eventName: string) {
   chrome.cookies.get(
-    { url: "http://localhost:8000", name: "UUID" },
+    { url: "https://tally.cash/", name: "UUID" },
 
     function (cookie) {
       if (cookie) {
