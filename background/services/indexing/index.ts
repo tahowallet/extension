@@ -26,7 +26,7 @@ import {
 import PreferenceService from "../preferences"
 import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { getOrCreateDB, IndexingDatabase } from "./db"
+import { getOrCreateDb, IndexingDatabase } from "./db"
 import BaseService from "../base"
 import { EnrichedEVMTransaction } from "../enrichment/types"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
@@ -101,9 +101,9 @@ export default class IndexingService extends BaseService<Events> {
     Events,
     IndexingService,
     [Promise<PreferenceService>, Promise<ChainService>]
-  > = async (preferenceService, chainService) => {
+  > = async (preferenceService, chainService, dexieOptions) => {
     return new this(
-      await getOrCreateDB(),
+      await getOrCreateDb(dexieOptions),
       await preferenceService,
       await chainService
     )
@@ -144,10 +144,10 @@ export default class IndexingService extends BaseService<Events> {
     this.connectChainServiceEvents()
 
     this.chainService.emitter.once("serviceStarted").then(async () => {
-      const activeNetworks = await this.chainService.getActiveNetworks()
+      const trackedNetworks = await this.chainService.getTrackedNetworks()
 
       // Push any assets we have cached in the db for all active networks
-      activeNetworks.forEach(async (network) => {
+      trackedNetworks.forEach(async (network) => {
         await this.cacheAssetsForNetwork(network)
         this.emitter.emit("assets", this.cachedAssets[network.chainID])
       })
@@ -608,13 +608,15 @@ export default class IndexingService extends BaseService<Events> {
 
     // get the prices of all assets to track and save them
     const assetsToTrack = await this.db.getAssetsToTrack()
-    const activeNetworks = await this.chainService.getActiveNetworks()
+    const trackedNetworks = await this.chainService.getTrackedNetworks()
 
     // Filter all assets based on supported networks
     const activeAssetsToTrack = assetsToTrack.filter(
       (asset) =>
         asset.symbol === "ETH" ||
-        activeNetworks.map((n) => n.chainID).includes(asset.homeNetwork.chainID)
+        trackedNetworks
+          .map((n) => n.chainID)
+          .includes(asset.homeNetwork.chainID)
     )
 
     try {
@@ -622,7 +624,7 @@ export default class IndexingService extends BaseService<Events> {
 
       const allActiveAssetsByAddress = getAssetsByAddress(activeAssetsToTrack)
 
-      const activeAssetsByNetwork = activeNetworks.map((network) => ({
+      const activeAssetsByNetwork = trackedNetworks.map((network) => ({
         activeAssetsByAddress: getActiveAssetsByAddressForNetwork(
           network,
           activeAssetsToTrack
@@ -732,11 +734,11 @@ export default class IndexingService extends BaseService<Events> {
     this.fetchAndCacheTokenLists()
 
     const assetsToTrack = await this.db.getAssetsToTrack()
-    const activeNetworks = await this.chainService.getActiveNetworks()
+    const trackedNetworks = await this.chainService.getTrackedNetworks()
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
     const activeAssetsToTrack = assetsToTrack.filter((asset) =>
-      activeNetworks.map((n) => n.chainID).includes(asset.homeNetwork.chainID)
+      trackedNetworks.map((n) => n.chainID).includes(asset.homeNetwork.chainID)
     )
 
     // wait on balances being written to the db, don't wait on event emission
