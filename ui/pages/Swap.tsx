@@ -239,6 +239,10 @@ export default function Swap(): ReactElement {
     }
   }, [sellAsset, sellAssetAmounts])
 
+  useEffect(() => {
+    dispatch(setPriceDetails(undefined))
+  }, [sellAsset, buyAsset, dispatch])
+
   const inProgressApprovalContract = useBackgroundSelector(
     selectInProgressApprovalContract
   )
@@ -335,8 +339,6 @@ export default function Swap(): ReactElement {
       ) {
         return
       }
-
-      dispatch(setPriceDetails(undefined))
 
       const quoteRequest: SwapQuoteRequest = {
         assets: {
@@ -577,6 +579,7 @@ export default function Swap(): ReactElement {
                 isDisabled={sellAmountLoading}
                 onAssetSelect={updateSellAsset}
                 onAmountChange={(newAmount, error) => {
+                  dispatch(setPriceDetails(undefined))
                   setSellAmount(newAmount)
                   if (typeof error === "undefined") {
                     updateSwapData("sell", newAmount)
@@ -601,6 +604,7 @@ export default function Swap(): ReactElement {
                 showMaxButton={false}
                 onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount, error) => {
+                  dispatch(setPriceDetails(undefined))
                   setBuyAmount(newAmount)
                   if (typeof error === "undefined") {
                     updateSwapData("buy", newAmount)
