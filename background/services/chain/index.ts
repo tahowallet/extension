@@ -809,6 +809,7 @@ export default class ChainService extends BaseService<Events> {
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.db.addAccountToTrack(addressNetwork)
     this.emitter.emit("newAccountToTrack", addressNetwork)
+    this.emitSavedTransactions(addressNetwork)
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
       logger.error(
         "chainService/addAccountToTrack: Error subscribing to account transactions",
@@ -1478,9 +1479,7 @@ export default class ChainService extends BaseService<Events> {
             sameEVMAddress(finalTransaction.from, address) ||
             sameEVMAddress(finalTransaction.to, address)
         )
-        .map(({ address }) => {
-          return normalizeEVMAddress(address)
-        })
+        .map(({ address }) => normalizeEVMAddress(address))
 
       // emit in a separate try so outside services still get the tx
       this.emitter.emit("transaction", {

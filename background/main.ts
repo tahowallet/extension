@@ -133,6 +133,7 @@ import {
 } from "./redux-slices/activities"
 import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
 import { getActivityDetails } from "./redux-slices/utils/activities-utils"
+import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -488,7 +489,6 @@ export default class Main extends BaseService<never> {
 
   async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.chainService.addAccountToTrack(addressNetwork)
-    await this.chainService.emitSavedTransactions(addressNetwork)
   }
 
   addOrEditAddressName({
@@ -577,6 +577,7 @@ export default class Main extends BaseService<never> {
   }
 
   async enrichActivities(addressNetwork: AddressOnNetwork): Promise<void> {
+    const accountsToTrack = await this.chainService.getAccountsToTrack()
     const activitiesToEnrich = selectActivitesHashesForEnrichment(
       this.store.getState()
     )
@@ -592,7 +593,10 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(
         addActivity({
           transaction: enrichedTransaction,
-          forAccounts: [addressNetwork.address],
+          forAccounts: getRelevantTransactionAddresses(
+            enrichedTransaction,
+            accountsToTrack
+          ),
         })
       )
     })

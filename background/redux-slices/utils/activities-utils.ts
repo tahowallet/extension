@@ -8,6 +8,7 @@ import {
 } from "../../lib/utils"
 import { Transaction } from "../../services/chain/db"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
+import { getRecipient, getSender } from "../../services/enrichment/utils"
 import { HexString } from "../../types"
 
 enum TxStatus {
@@ -89,54 +90,6 @@ function getTimestamp(blockTimestamp: number | undefined) {
   return blockTimestamp
     ? new Date(blockTimestamp * 1000).toLocaleString()
     : "(Unknown)"
-}
-
-function getRecipient(transaction: EnrichedEVMTransaction): {
-  address?: HexString
-  name?: string
-} {
-  const { annotation } = transaction
-
-  switch (annotation?.type) {
-    case "asset-transfer":
-      return {
-        address: annotation.recipient?.address,
-        name: annotation.recipient?.annotation.nameRecord?.resolved
-          .nameOnNetwork.name,
-      }
-    case "contract-interaction":
-      return {
-        address: transaction.to,
-        name: annotation.contractInfo?.annotation.nameRecord?.resolved
-          .nameOnNetwork.name,
-      }
-    case "asset-approval":
-      return {
-        address: annotation.spender.address,
-        name: annotation.spender.annotation?.nameRecord?.resolved.nameOnNetwork
-          .name,
-      }
-    default:
-      return { address: transaction.to }
-  }
-}
-
-function getSender(transaction: EnrichedEVMTransaction): {
-  address?: HexString
-  name?: string
-} {
-  const { annotation } = transaction
-
-  switch (annotation?.type) {
-    case "asset-transfer":
-      return {
-        address: annotation.sender.address,
-        name: annotation.sender?.annotation.nameRecord?.resolved.nameOnNetwork
-          .name,
-      }
-    default:
-      return { address: transaction.from }
-  }
 }
 
 const getAssetSymbol = (transaction: EnrichedEVMTransaction) => {
