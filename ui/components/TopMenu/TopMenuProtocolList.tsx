@@ -5,6 +5,7 @@ import {
   GOERLI,
   OPTIMISM,
   POLYGON,
+  RSK,
 } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { sameNetwork } from "@tallyho/tally-background/networks"
@@ -42,6 +43,14 @@ const productionNetworks = [
           isDisabled: true,
         },
       ]),
+  ...(isEnabled(FeatureFlags.SUPPORT_RSK)
+    ? [
+        {
+          network: RSK,
+          info: i18n.t("protocol.mainnet"),
+        },
+      ]
+    : []),
   // {
   //   name: "Binance Smart Chain",
   //   info: i18n.t("protocol.compatibleChain"),

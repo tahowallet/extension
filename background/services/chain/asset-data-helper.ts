@@ -19,7 +19,7 @@ import logger from "../../lib/logger"
 import { EVMNetwork, SmartContract } from "../../networks"
 import { getBalance, getMetadata as getERC20Metadata } from "../../lib/erc20"
 import { FeatureFlags, isEnabled } from "../../features"
-import { DOGGO, FORK } from "../../constants"
+import { DOGGO, FORK, RSK } from "../../constants"
 
 interface ProviderManager {
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined
@@ -48,6 +48,28 @@ export default class AssetDataHelper {
     }
 
     try {
+      // Using rpc provider for RSK instead of AlchemyProvider
+      if (
+        addressOnNetwork.network.chainID === RSK.chainID &&
+        smartContractAddresses
+      ) {
+        const balances = smartContractAddresses.map(async (token) => {
+          const balance = await getBalance(
+            provider,
+            token,
+            addressOnNetwork.address
+          )
+          return {
+            smartContract: {
+              contractAddress: token,
+              homeNetwork: RSK,
+            },
+            amount: BigInt(balance.toString()),
+          }
+        })
+        const resolvedBalances = Promise.all(balances)
+        return await resolvedBalances
+      }
       // FIXME Allow arbitrary providers?
       if (
         provider.currentProvider instanceof AlchemyWebSocketProvider ||

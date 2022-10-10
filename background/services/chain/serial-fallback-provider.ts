@@ -7,7 +7,7 @@ import {
   WebSocketProvider,
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
-import { MINUTE, SECOND } from "../../constants"
+import { MINUTE, SECOND, RSK } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
 import { AddressOnNetwork } from "../../accounts"
@@ -117,7 +117,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // Functions that will create and initialize a new provider, in priority
   // order.
   private providerCreators: [
-    () => WebSocketProvider,
+    () => WebSocketProvider | JsonRpcProvider,
     ...(() => JsonRpcProvider)[]
   ]
 
@@ -158,7 +158,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     // Internal network type useful for helper calls, but not exposed to avoid
     // clashing with Ethers's own `network` stuff.
     private evmNetwork: EVMNetwork,
-    firstProviderCreator: () => WebSocketProvider,
+    firstProviderCreator: () => WebSocketProvider | JsonRpcProvider,
     ...remainingProviderCreators: (() => JsonRpcProvider)[]
   ) {
     const firstProvider = firstProviderCreator()
@@ -673,10 +673,15 @@ export function makeSerialFallbackProvider(
   return new SerialFallbackProvider(
     network,
     () =>
-      new AlchemyWebSocketProvider(
-        getNetwork(Number(network.chainID)),
-        ALCHEMY_KEY
-      ),
-    () => new AlchemyProvider(getNetwork(Number(network.chainID)), ALCHEMY_KEY)
+      network.chainID === RSK.chainID
+        ? new JsonRpcProvider("https://public-node.rsk.co")
+        : new AlchemyWebSocketProvider(
+            getNetwork(Number(network.chainID)),
+            ALCHEMY_KEY
+          ),
+    () =>
+      network.chainID === RSK.chainID
+        ? new JsonRpcProvider("https://public-node.rsk.co")
+        : new AlchemyProvider(getNetwork(Number(network.chainID)), ALCHEMY_KEY)
   )
 }
