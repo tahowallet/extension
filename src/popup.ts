@@ -26,7 +26,7 @@ setTimeout(() => {
     reloadCount = 0
     window.history.replaceState(state, "", document.URL)
   }
-  if (reloadCount > 1) {
+  if (reloadCount > 2) {
     attachUIToRootElement(GlobalError)
     delete state.reloadCount
     reloadCount = 0
