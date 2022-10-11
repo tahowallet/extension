@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useTranslation } from "react-i18next"
 import {
@@ -14,12 +14,58 @@ import {
   SUPPORT_GOERLI,
   SUPPORT_MULTIPLE_LANGUAGES,
 } from "@tallyho/tally-background/features"
+import { useHistory } from "react-router-dom"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
 import { getLanguage, setLanguage } from "../_locales/i18n"
 import SettingButton from "./Settings/SettingButton"
+
+const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
+
+function Version(): ReactElement {
+  const { t } = useTranslation()
+  const history = useHistory()
+  const [clickCounter, setClickCounter] = useState(0)
+  const [hoverVersion, setHoverVersion] = useState(false)
+
+  useEffect(() => {
+    if (clickCounter === NUMBER_OF_CLICKS_FOR_DEV_PANEL && hoverVersion) {
+      setClickCounter(0)
+      history.push("/dev-panel")
+    }
+  }, [clickCounter, history, hoverVersion])
+
+  return (
+    <div className="version">
+      <button
+        type="button"
+        onMouseEnter={() => setHoverVersion(true)}
+        onMouseLeave={() => setHoverVersion(false)}
+        onClick={() => setClickCounter((prevState) => prevState + 1)}
+      >
+        {t("settings.versionLabel", {
+          version: process.env.VERSION ?? t("settings.unknownVersionOrCommit"),
+        })}
+        {process.env.COMMIT_SHA?.slice(0, 7) ??
+          t("settings.unknownVersionOrCommit")}
+      </button>
+      <style jsx>
+        {`
+          .version {
+            margin: 16px 0;
+            color: var(--green-40);
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0 auto;
+            padding: 16px 0px;
+          }
+        `}
+      </style>
+    </div>
+  )
+}
 
 function SettingRow(props: {
   title: string
@@ -188,14 +234,7 @@ export default function Settings(): ReactElement {
             {t("settings.joinBtn")}
           </SharedButton>
         </div>
-        <div className="version">
-          {t("settings.versionLabel", {
-            version:
-              process.env.VERSION ?? t("settings.unknownVersionOrCommit"),
-          })}
-          {process.env.COMMIT_SHA?.slice(0, 7) ??
-            t("settings.unknownVersionOrCommit")}
-        </div>
+        <Version />
       </section>
       <style jsx>
         {`
@@ -252,14 +291,6 @@ export default function Settings(): ReactElement {
           }
           .mega_discord_chat_bubble_button:hover {
             opacity: 0.8;
-          }
-          .version {
-            margin: 16px 0;
-            color: var(--green-40);
-            font-size: 16px;
-            font-weight: 500;
-            margin: 0 auto;
-            padding: 16px 0px;
           }
         `}
       </style>

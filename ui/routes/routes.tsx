@@ -24,6 +24,7 @@ import Eligible from "../pages/Claiming/Eligible"
 import SettingsExportLogs from "../pages/Settings/SettingsExportLogs"
 import SettingsAnalytics from "../pages/Settings/SettingsAnalytics"
 import SettingsConnectedWebsites from "../pages/Settings/SettingsConnectedWebsites"
+import HiddenDevPanel from "../components/HiddenDevPanel/HiddenDevPanel"
 
 interface PageList {
   path: string
@@ -201,6 +202,13 @@ const pageList: PageList[] = [
   {
     path: "/eligible",
     Component: Eligible,
+    hasTabBar: false,
+    hasTopBar: false,
+    persistOnClose: true,
+  },
+  {
+    path: "/dev-panel",
+    Component: HiddenDevPanel,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: true,
