@@ -1,4 +1,4 @@
-import Dexie, { DexieOptions, IndexableTypeArray } from "dexie"
+import Dexie, { Collection, DexieOptions, IndexableTypeArray } from "dexie"
 
 import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -173,11 +173,14 @@ export class ChainDatabase extends Dexie {
     return this.chainTransactions.toArray()
   }
 
+  async getTransactionsForNetworkQuery(
+    network: Network
+  ): Promise<Collection<Transaction, [string, string]>> {
+    return this.chainTransactions.where("network.name").equals(network.name)
+  }
+
   async getTransactionsForNetwork(network: Network): Promise<Transaction[]> {
-    return this.chainTransactions
-      .where("network.name")
-      .equals(network.name)
-      .toArray()
+    return (await this.getTransactionsForNetworkQuery(network)).toArray()
   }
 
   /**
@@ -186,12 +189,14 @@ export class ChainDatabase extends Dexie {
   async getNetworkPendingTransactions(
     network: Network
   ): Promise<(AnyEVMTransaction & { firstSeen: UNIXTime })[]> {
-    const transactions = await this.getTransactionsForNetwork(network)
-    return transactions.filter(
-      (transaction) =>
-        !("status" in transaction) &&
-        (transaction.blockHash === null || transaction.blockHeight === null)
-    )
+    const transactions = await this.getTransactionsForNetworkQuery(network)
+    return transactions
+      .filter(
+        (transaction) =>
+          !("status" in transaction) &&
+          (transaction.blockHash === null || transaction.blockHeight === null)
+      )
+      .toArray()
   }
 
   async getBlock(
