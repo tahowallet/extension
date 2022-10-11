@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import { assetAmountToDesiredDecimals } from "../../assets"
 import {
   convertToEth,
