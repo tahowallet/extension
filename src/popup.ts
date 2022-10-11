@@ -14,6 +14,8 @@ enum NavigationTimingType {
 setTimeout(() => {
   const state = window.history?.state || {}
   let reloadCount = state?.reloadCount || 0
+  // Check if the website was reloaded, using getEntriesByType method from the Performance interface for navigation.
+  // This method return interface which provides information about browser's document navigation events.
   const navigationItem = performance.getEntriesByType(
     "navigation"
   )[0] as PerformanceEntry & { type: NavigationTimingType }
