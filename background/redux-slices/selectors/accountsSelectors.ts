@@ -511,13 +511,15 @@ export const getNetworkCountForOverview = createSelector(
 
 export const getTotalBalanceForOverview = createSelector(
   selectAccountTotalsForOverview,
-  (accountsTotal) =>
-    Object.values(accountsTotal)
-      .reduce(
+  selectMainCurrencySymbol,
+  (accountsTotal, currencySymbol) =>
+    formatCurrencyAmount(
+      currencySymbol,
+      Object.values(accountsTotal).reduce(
         (total, { totals }) =>
           Object.values(totals).reduce((sum, balance) => sum + balance) + total,
         0
-      )
-      .toFixed(2)
-      .toString()
+      ),
+      2
+    )
 )
