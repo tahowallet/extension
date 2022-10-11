@@ -28,12 +28,13 @@ import { WEBSITE_ORIGIN } from "../../constants/website"
 import { PermissionMap } from "./utils"
 import { toHexChainID } from "../../networks"
 import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
+import { AddressOnNetwork } from "../../accounts"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
   initializeAllowedPages: PermissionMap
   setClaimReferrer: string
-  dappOpenedOnChain: string
+  dappOpened: AddressOnNetwork
 }
 
 /**
@@ -128,18 +129,18 @@ export default class ProviderBridgeService extends BaseService<Events> {
       jsonrpc: "2.0",
       result: [],
     }
-
-    const { chainID } =
-      await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+    const network =
+      await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
         origin
       )
 
     if (event.request.method === "eth_requestAccounts") {
       // This is analogous to "User opened a dapp on chain X"
-      this.emitter.emit("dappOpenedOnChain", chainID)
+      const { address } = await this.preferenceService.getSelectedAccount()
+      this.emitter.emit("dappOpened", { address, network })
     }
 
-    const originPermission = await this.checkPermission(origin, chainID)
+    const originPermission = await this.checkPermission(origin, network.chainID)
     if (origin === TALLY_INTERNAL_ORIGIN) {
       // Explicitly disallow anyone who has managed to pretend to be the
       // internal provider.
@@ -152,7 +153,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       response.result = {
         method: event.request.method,
         defaultWallet: await this.preferenceService.getDefaultWallet(),
-        chainId: toHexChainID(chainID),
+        chainId: toHexChainID(network.chainID),
       }
     } else if (event.request.method === "tally_setClaimReferrer") {
       const referrer = event.request.params[0]
@@ -283,7 +284,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
       const { chainID } =
-        await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+        await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
           origin
         )
       if (await this.checkPermission(origin, chainID)) {

@@ -148,16 +148,17 @@ describe("IndexingService", () => {
       ])
 
       await indexingService.emitter.once("assets").then(() => {
-        expect(
-          indexingService
-            .getCachedAssets(ETHEREUM)
-            .map((assets) => assets.symbol)
-        ).toEqual(["ETH"])
+        // The order in which assets are emitted is non-deterministic
+        // since the `emit` function gets called as part of an unawaited
+        // series of promises (trackedNetworks.forEach in "internalStartService")
+        // Since we expect two asset emissions and we don't know which will
+        // be emitted first - we make our test assertions after the second
+        // emission in the event handler below this one.
       })
 
       await indexingService.emitter.once("assets").then(() => {
         /* Caches assets for every supported network + 1 active network */
-        expect(cacheSpy).toHaveBeenCalledTimes(3)
+        expect(cacheSpy).toHaveBeenCalledTimes(5)
 
         expect(
           indexingService.getCachedAssets(ETHEREUM).map((asset) => asset.symbol)
