@@ -28,7 +28,7 @@ type ActivitiesState = {
   activities: Activities
 }
 
-const ACTIVITIES_MAX_COUNT = 25
+const ACTIVITIES_MAX_COUNT = 50
 
 const cleanActivitiesArray = (activitiesArray: Activity[] = []) => {
   activitiesArray.sort(sortActivities)
