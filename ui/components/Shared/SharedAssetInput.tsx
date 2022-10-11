@@ -22,6 +22,8 @@ import SharedAssetItem, {
 } from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 import { useBackgroundSelector } from "../../hooks"
+import SharedIcon from "./SharedIcon"
+import SharedTooltip from "./SharedTooltip"
 
 // List of symbols we want to display first.  Lower array index === higher priority.
 // For now we just prioritize somewhat popular assets that we are able to load an icon for.
@@ -284,10 +286,13 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   label: string
   selectedAsset: AssetType | undefined
   amount: string
+  amountMainCurrency?: string
+  priceImpact?: number
   isAssetOptionsLocked: boolean
   disableDropdown: boolean
   showMaxButton: boolean
   isDisabled?: boolean
+  showCurrencyAmount?: boolean
   onAssetSelect?: (asset: AssetType) => void
   onAmountChange?: (value: string, errorMessage: string | undefined) => void
 }
@@ -321,10 +326,13 @@ export default function SharedAssetInput<T extends AnyAsset>(
     label,
     selectedAsset,
     amount,
+    amountMainCurrency,
+    priceImpact,
     isAssetOptionsLocked,
     disableDropdown,
     showMaxButton,
     isDisabled,
+    showCurrencyAmount,
     onAssetSelect,
     onAmountChange,
   } = props
@@ -359,34 +367,44 @@ export default function SharedAssetInput<T extends AnyAsset>(
     showMaxButton &&
     selectedAssetAndAmount?.asset.symbol !== currentNetwork.baseAsset.symbol
 
-  const getErrorMessage = (givenAmount: string): string | undefined => {
-    if (
-      givenAmount.trim() === "" ||
-      typeof selectedAssetAndAmount === "undefined" ||
-      !hasAmounts(selectedAssetAndAmount) ||
-      !("decimals" in selectedAssetAndAmount.asset)
-    ) {
+  const [errorMessage, setErrorMessage] = useState("")
+
+  const getErrorMessage = useCallback(
+    (givenAmount: string): string | undefined => {
+      if (
+        givenAmount.trim() === "" ||
+        typeof selectedAssetAndAmount === "undefined" ||
+        !hasAmounts(selectedAssetAndAmount) ||
+        !("decimals" in selectedAssetAndAmount.asset)
+      ) {
+        return undefined
+      }
+
+      const parsedGivenAmount = parseToFixedPointNumber(givenAmount.trim())
+      if (typeof parsedGivenAmount === "undefined") {
+        return t("assetInput.error.invalidAmount")
+      }
+
+      const decimalMatched = convertFixedPointNumber(
+        parsedGivenAmount,
+        selectedAssetAndAmount.asset.decimals
+      )
+      if (
+        decimalMatched.amount > selectedAssetAndAmount.amount ||
+        selectedAssetAndAmount.amount <= 0
+      ) {
+        return t("assetInput.error.insufficientBalance")
+      }
+
       return undefined
-    }
+    },
+    [selectedAssetAndAmount, t]
+  )
 
-    const parsedGivenAmount = parseToFixedPointNumber(givenAmount.trim())
-    if (typeof parsedGivenAmount === "undefined") {
-      return t("assetInput.error.invalidAmount")
-    }
-
-    const decimalMatched = convertFixedPointNumber(
-      parsedGivenAmount,
-      selectedAssetAndAmount.asset.decimals
-    )
-    if (
-      decimalMatched.amount > selectedAssetAndAmount.amount ||
-      selectedAssetAndAmount.amount <= 0
-    ) {
-      return t("assetInput.error.insufficientBalance")
-    }
-
-    return undefined
-  }
+  useEffect(() => {
+    const error = getErrorMessage(amount)
+    setErrorMessage(error ?? "")
+  }, [amount, getErrorMessage])
 
   const setMaxBalance = () => {
     if (
@@ -407,6 +425,23 @@ export default function SharedAssetInput<T extends AnyAsset>(
 
     onAmountChange?.(fixedPointString, getErrorMessage(fixedPointString))
   }
+
+  const getPriceImpactColor = useCallback(
+    (value: number | undefined): string => {
+      if (value) {
+        switch (true) {
+          case value < -5:
+            return "error"
+          case value < 0 && value >= -5:
+            return "attention"
+          default:
+            return "green-40"
+        }
+      }
+      return "green-40"
+    },
+    []
+  )
 
   return (
     <>
@@ -473,25 +508,64 @@ export default function SharedAssetInput<T extends AnyAsset>(
             </SharedButton>
           )}
         </div>
-
-        <input
-          id={`asset_amount_input${inputId}`}
-          className="input_amount"
-          type="number"
-          step="any"
-          placeholder="0.0"
-          min="0"
-          disabled={isDisabled}
-          value={amount}
-          spellCheck={false}
-          onChange={(event) =>
-            onAmountChange?.(
-              event.target.value,
-              getErrorMessage(event.target.value)
-            )
-          }
-        />
-        <div className="error_message">{getErrorMessage(amount)}</div>
+        <div className="input_amount_wrap">
+          <input
+            id={`asset_amount_input${inputId}`}
+            className="input_amount"
+            type="number"
+            step="any"
+            placeholder="0.0"
+            min="0"
+            disabled={isDisabled}
+            value={amount}
+            spellCheck={false}
+            onChange={(event) =>
+              onAmountChange?.(
+                event.target.value,
+                getErrorMessage(event.target.value)
+              )
+            }
+          />
+          {showCurrencyAmount &&
+            (!errorMessage ? (
+              <>
+                <div className="simple_text price_impact_wrap">
+                  {amountMainCurrency === "0.00" && "<"}$
+                  {amountMainCurrency || "0.00"}
+                  {priceImpact !== undefined && priceImpact < 0 && (
+                    <span className="price_impact_percent">
+                      ({priceImpact}%
+                      <SharedTooltip
+                        width={180}
+                        height={27}
+                        horizontalPosition="left"
+                        IconComponent={() => (
+                          <SharedIcon
+                            width={16}
+                            icon="icons/m/info.svg"
+                            color={`var(--${getPriceImpactColor(priceImpact)})`}
+                            customStyles="margin-left: -5px;"
+                          />
+                        )}
+                      >
+                        <div>
+                          {t("assetInput.priceImpactTooltip.firstLine")}
+                          <br />
+                          {t("assetInput.priceImpactTooltip.secondLine")}
+                        </div>
+                      </SharedTooltip>
+                      )
+                    </span>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="error_message">{errorMessage}</div>
+            ))}
+        </div>
+        {errorMessage && !showCurrencyAmount && (
+          <div className="error_message error_message_wrap">{errorMessage}</div>
+        )}
       </div>
       <style jsx>
         {`
@@ -546,6 +620,10 @@ export default function SharedAssetInput<T extends AnyAsset>(
             color: var(--green-40);
             opacity: 1;
           }
+          .input_amount_wrap {
+            display: flex;
+            flex-direction: column;
+          }
           .input_amount::placeholder {
             color: var(--green-40);
             opacity: 1;
@@ -572,19 +650,33 @@ export default function SharedAssetInput<T extends AnyAsset>(
             cursor: default;
             color: var(--green-40);
           }
+          .price_impact_wrap {
+            font-size: 14px;
+            display: flex;
+            flex-direction: row;
+            justify-content: end;
+            gap: 2px;
+          }
+          .price_impact_percent {
+            color: var(--${getPriceImpactColor(priceImpact)});
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 2px;
+          }
           .error_message {
             color: var(--error);
-            position: absolute;
             font-weight: 500;
             font-size: 14px;
-            line-height: 20px;
+            line-height: 24px;
+          }
+          .error_message_wrap {
+            position: absolute;
+            width: 150px;
+            margin-left: 172px;
             transform: translateY(-3px);
             align-self: flex-end;
             text-align: end;
-            width: 150px;
-            background-color: var(--green-95);
-            margin-left: 172px;
-            z-index: 1;
           }
         `}
       </style>
