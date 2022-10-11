@@ -342,6 +342,7 @@
     }
   },
   "shared": {
+    "tallyHo": "Tally Ho",
     "cancelBtn": "Cancel",
     "gwei": "Gwei",
     "send": "Send",
@@ -510,7 +511,13 @@
       "NFTs": "NFTs",
       "activity": "Activity"
     },
-    "NFTPricingComingSoon": "Coming soon: NFT price + sending"
+    "NFTPricingComingSoon": "Coming soon: NFT price + sending",
+    "defaultToggle": {
+      "snackbar": "You can change this in Settings later",
+      "isDefault": "is now your default wallet",
+      "notDefault": "is not your default wallet",
+      "tooltip": "Setting Tally Ho as your default wallet means that everytime you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
+    }
   },
   "dAppConnect": {
     "switchWallet":{
@@ -519,5 +526,10 @@
       "descSecondPart": "at any time.",
       "toggleTitle": "Use Tally Ho as default wallet"
     }
+  },
+  "globalError": {
+    "title": "Ups, nothing to see here",
+    "desc": "Looks like you encountered an empty bowl, try refreshing the page to see if something appears",
+    "submitBtn": "Refresh page"
   }
 }
