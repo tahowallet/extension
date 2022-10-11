@@ -749,7 +749,7 @@ export default class Main extends BaseService<never> {
     })
 
     uiSliceEmitter.on("userActivityEncountered", (addressOnNetwork) => {
-      this.chainService.markNetworkActivity(addressOnNetwork.network.chainID)
+      this.chainService.markAccountActivity(addressOnNetwork)
     })
   }
 
@@ -1121,9 +1121,9 @@ export default class Main extends BaseService<never> {
     )
 
     this.providerBridgeService.emitter.on(
-      "dappOpenedOnChain",
-      async (chainID: string) => {
-        this.chainService.markNetworkActivity(chainID)
+      "dappOpened",
+      async (addressOnNetwork: AddressOnNetwork) => {
+        this.chainService.markAccountActivity(addressOnNetwork)
       }
     )
 
@@ -1226,6 +1226,8 @@ export default class Main extends BaseService<never> {
       this.doggoService.getEligibility(addressNetwork.address)
 
       this.store.dispatch(setVaultsAsStale())
+
+      await this.chainService.markAccountActivity(addressNetwork)
 
       const referrerStats = await this.doggoService.getReferrerStats(
         addressNetwork

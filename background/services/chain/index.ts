@@ -150,6 +150,10 @@ export default class ChainService extends BaseService<Events> {
     [chainID: string]: UNIXTime
   }
 
+  private lastUserActivityOnAddress: {
+    [address: HexString]: UNIXTime
+  } = {}
+
   /**
    * For each chain id, track an address's last seen nonce. The tracked nonce
    * should generally not be allocated to a new transaction, nor should any
@@ -214,7 +218,7 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: 1.5,
         },
         handler: () => {
-          this.handleRecentIncomingAssetTransferAlarm()
+          this.handleRecentIncomingAssetTransferAlarm(true)
         },
       },
       forceRecentAssetTransfers: {
@@ -222,7 +226,7 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: (HOUR * 12) / 1e3,
         },
         handler: () => {
-          this.handleRecentAssetTransferAlarm(true)
+          this.handleRecentAssetTransferAlarm()
         },
       },
       recentAssetTransfers: {
@@ -230,7 +234,7 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: 15,
         },
         handler: () => {
-          this.handleRecentAssetTransferAlarm()
+          this.handleRecentAssetTransferAlarm(true)
         },
       },
       blockPrices: {
@@ -382,7 +386,6 @@ export default class ChainService extends BaseService<Events> {
       logger.warn(
         `${trackedNetwork.name} already being tracked - no need to activate it`
       )
-      this.markNetworkActivity(trackedNetwork.chainID)
       return trackedNetwork
     }
 
@@ -413,7 +416,6 @@ export default class ChainService extends BaseService<Events> {
       })
     }
 
-    this.markNetworkActivity(networkToTrack.chainID)
     return networkToTrack
   }
 
@@ -741,8 +743,18 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
-  async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
-    return this.db.getAccountsToTrack()
+  async getAccountsToTrack(
+    onlyActiveAccounts = false
+  ): Promise<AddressOnNetwork[]> {
+    const accounts = await this.db.getAccountsToTrack()
+    if (onlyActiveAccounts) {
+      return accounts.filter(
+        ({ address, network }) =>
+          this.isCurrentlyActiveAddress(address) &&
+          this.isCurrentlyActiveChainID(network.chainID)
+      )
+    }
+    return accounts
   }
 
   async getNetworksToTrack(): Promise<EVMNetwork[]> {
@@ -1028,15 +1040,42 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
+  async markAccountActivity({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<void> {
+    const addressWasInactive = this.addressIsInactive(address)
+    const networkWasInactive = this.networkIsInactive(network.chainID)
+    this.markNetworkActivity(network.chainID)
+    this.lastUserActivityOnAddress[address] = Date.now()
+    if (addressWasInactive || networkWasInactive) {
+      // Reactivating a potentially deactivated address
+      this.loadRecentAssetTransfers({ address, network })
+      this.getLatestBaseAccountBalance({ address, network })
+    }
+  }
+
   async markNetworkActivity(chainID: string): Promise<void> {
-    const now = Date.now()
-    const deactivatesAt = this.lastUserActivityOnNetwork[chainID]
-    this.lastUserActivityOnNetwork[chainID] = now
-    if (now - NETWORK_POLLING_TIMEOUT > deactivatesAt) {
+    const networkWasInactive = this.networkIsInactive(chainID)
+    this.lastUserActivityOnNetwork[chainID] = Date.now()
+    if (networkWasInactive) {
       // Reactivating a potentially deactivated network
-      this.handleRecentAssetTransferAlarm()
       this.pollBlockPricesForNetwork(chainID)
     }
+  }
+
+  addressIsInactive(address: string): boolean {
+    return (
+      Date.now() - NETWORK_POLLING_TIMEOUT >
+      this.lastUserActivityOnAddress[address]
+    )
+  }
+
+  networkIsInactive(chainID: string): boolean {
+    return (
+      Date.now() - NETWORK_POLLING_TIMEOUT >
+      this.lastUserActivityOnNetwork[chainID]
+    )
   }
 
   /*
@@ -1234,19 +1273,13 @@ export default class ChainService extends BaseService<Events> {
    * Check for any incoming asset transfers involving tracked accounts.
    */
   private async handleRecentIncomingAssetTransferAlarm(
-    forceUpdate = false
+    onlyActiveAccounts = false
   ): Promise<void> {
-    const accountsToTrack = await this.db.getAccountsToTrack()
+    const accountsToTrack = await this.getAccountsToTrack(onlyActiveAccounts)
     await Promise.allSettled(
-      accountsToTrack
-        .filter(
-          (addressNetwork) =>
-            forceUpdate ||
-            this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
-        )
-        .map(async (addressNetwork) => {
-          return this.loadRecentAssetTransfers(addressNetwork, true)
-        })
+      accountsToTrack.map(async (addressNetwork) => {
+        return this.loadRecentAssetTransfers(addressNetwork, true)
+      })
     )
   }
 
@@ -1257,27 +1290,30 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
+  private isCurrentlyActiveAddress(address: HexString): boolean {
+    return (
+      Date.now() <
+      this.lastUserActivityOnAddress[address] + NETWORK_POLLING_TIMEOUT
+    )
+  }
+
   /**
    * Check for any incoming or outgoing asset transfers involving tracked accounts.
    */
   private async handleRecentAssetTransferAlarm(
-    forceUpdate = false
+    onlyActiveAccounts = false
   ): Promise<void> {
-    const accountsToTrack = await this.db.getAccountsToTrack()
+    const accountsToTrack = await this.getAccountsToTrack(onlyActiveAccounts)
 
     await Promise.allSettled(
-      accountsToTrack
-        .filter(
-          (addressNetwork) =>
-            forceUpdate ||
-            this.isCurrentlyActiveChainID(addressNetwork.network.chainID)
-        )
-        .map((addressNetwork) => this.loadRecentAssetTransfers(addressNetwork))
+      accountsToTrack.map((addressNetwork) =>
+        this.loadRecentAssetTransfers(addressNetwork)
+      )
     )
   }
 
   private async handleHistoricAssetTransferAlarm(): Promise<void> {
-    const accountsToTrack = await this.db.getAccountsToTrack()
+    const accountsToTrack = await this.getAccountsToTrack()
 
     await Promise.allSettled(
       accountsToTrack.map((an) => this.loadHistoricAssetTransfers(an))
