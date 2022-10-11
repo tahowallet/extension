@@ -11,11 +11,13 @@ enum NavigationTimingType {
   "prerender",
 }
 
+// Prevents from the green screen. The solution checks if the first top-level element is rendered.
+// If this does not happen then reload the UI thread.  To prevent an infinity loop
+// the restart will be done max 3 times then a global error screen will be shown.
+
 setTimeout(() => {
   const state = window.history?.state || {}
   let reloadCount = state?.reloadCount || 0
-  // Check if the website was reloaded, using getEntriesByType method from the Performance interface for navigation.
-  // This method return interface which provides information about browser's document navigation events.
   const navigationItem = performance.getEntriesByType(
     "navigation"
   )[0] as PerformanceEntry & { type: NavigationTimingType }
