@@ -1,3 +1,7 @@
+// Disable parameter reassign rule to be able to modify the activities object freely
+// that way we can avoid nested object iteration and we can initialize object fields
+/* eslint-disable no-param-reassign */
+
 import { createSlice } from "@reduxjs/toolkit"
 import { AddressOnNetwork } from "../accounts"
 import {
@@ -28,7 +32,7 @@ type ActivitiesState = {
   activities: Activities
 }
 
-const ACTIVITIES_MAX_COUNT = 50
+const ACTIVITIES_MAX_COUNT = 25
 
 const cleanActivitiesArray = (activitiesArray: Activity[] = []) => {
   activitiesArray.sort(sortActivities)
@@ -45,15 +49,15 @@ const addActivityToState =
     const activity = getActivity(transaction)
     const normalizedAddress = normalizeEVMAddress(address)
 
-    activities[normalizedAddress] ??= {} // eslint-disable-line no-param-reassign
-    activities[normalizedAddress][chainID] ??= [] // eslint-disable-line no-param-reassign
+    activities[normalizedAddress] ??= {}
+    activities[normalizedAddress][chainID] ??= []
 
     const exisistingIndex = activities[normalizedAddress][chainID].findIndex(
       (tx) => tx.hash === transaction.hash
     )
 
     if (exisistingIndex !== -1) {
-      activities[normalizedAddress][chainID][exisistingIndex] = activity // eslint-disable-line no-param-reassign
+      activities[normalizedAddress][chainID][exisistingIndex] = activity
     } else {
       activities[normalizedAddress][chainID].push(activity)
     }
