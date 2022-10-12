@@ -1,4 +1,4 @@
-import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
+import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
 
 const tabs: string[] = [
   "portfolio",
@@ -7,7 +7,7 @@ const tabs: string[] = [
   "earn",
   "settings",
 ].filter((tab) => {
-  if (tab === "earn" && HIDE_TOKEN_FEATURES) {
+  if (tab === "earn" && isEnabled(FeatureFlagTypes.HIDE_TOKEN_FEATURES)) {
     return false
   }
   return true

@@ -7,7 +7,7 @@ import {
   MAX_FEE_MULTIPLIER,
   REGULAR,
 } from "../constants/network-fees"
-import { USE_MAINNET_FORK } from "../features"
+import { FeatureFlagTypes, isEnabled } from "../features"
 
 import {
   BlockEstimate,
@@ -157,7 +157,7 @@ export const signTransaction = createBackgroundAsyncThunk(
       EIP1559TransactionRequest | LegacyEVMTransactionRequest
     >
   ) => {
-    if (USE_MAINNET_FORK) {
+    if (isEnabled(FeatureFlagTypes.USE_MAINNET_FORK)) {
       request.request.chainID = FORK.chainID
     }
 

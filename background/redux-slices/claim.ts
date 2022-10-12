@@ -17,7 +17,7 @@ import { HexString } from "../types"
 import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 
 import { DOGGO, HOUR } from "../constants"
-import { HIDE_TOKEN_FEATURES, USE_MAINNET_FORK } from "../features"
+import { FeatureFlagTypes, isEnabled } from "../features"
 import { ERC2612_INTERFACE } from "../lib/erc20"
 import { ReferrerStats } from "../services/doggo/db"
 import { fromFixedPointNumber } from "../lib/fixed-point"
@@ -202,7 +202,7 @@ export default claimingSlice.reducer
 export const checkAlreadyClaimed = createBackgroundAsyncThunk(
   "claim/checkAlreadyClaimed",
   async ({ claimState }: { claimState: ClaimingState }, { dispatch }) => {
-    if (HIDE_TOKEN_FEATURES) {
+    if (isEnabled(FeatureFlagTypes.HIDE_TOKEN_FEATURES)) {
       return false
     }
     const { eligibility } = claimState
@@ -298,7 +298,7 @@ export const claimRewards = createBackgroundAsyncThunk(
         )
     }
     if (claimTransaction) {
-      if (USE_MAINNET_FORK) {
+      if (isEnabled(FeatureFlagTypes.USE_MAINNET_FORK)) {
         claimTransaction.gasLimit = BigNumber.from(350000) // for mainnet fork only
       }
       try {

@@ -1,4 +1,4 @@
-import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
+import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
 import {
   getAccountTotal,
   selectCurrentAccountSigner,
@@ -52,7 +52,7 @@ export default function SignData(): ReactElement {
 
   const isLocked = useIsSignerLocked(currentAccountSigner)
 
-  if (USE_UPDATED_SIGNING_UI) {
+  if (isEnabled(FeatureFlagTypes.USE_UPDATED_SIGNING_UI)) {
     if (currentAccountSigner === null || typedDataRequest === undefined) {
       return <></>
     }

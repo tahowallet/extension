@@ -10,7 +10,7 @@ import {
   selectSigningData,
 } from "@tallyho/tally-background/redux-slices/signing"
 import { useHistory } from "react-router-dom"
-import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
+import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useTranslation } from "react-i18next"
 import { SigningDataType } from "@tallyho/tally-background/utils/signing"
@@ -53,7 +53,7 @@ export default function PersonalSignData(): ReactElement {
   const isLocked = useIsSignerLocked(currentAccountSigner)
   if (isLocked) return <></>
 
-  if (USE_UPDATED_SIGNING_UI) {
+  if (isEnabled(FeatureFlagTypes.USE_UPDATED_SIGNING_UI)) {
     if (currentAccountSigner === null || signingDataRequest === undefined) {
       return <></>
     }

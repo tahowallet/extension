@@ -1,10 +1,10 @@
 import React, { ReactElement, useState } from "react"
 import { useRouteMatch, Redirect } from "react-router-dom"
-import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
+import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
 import SharedButton from "../../../components/Shared/SharedButton"
 import SharedProgressIndicator from "../../../components/Shared/SharedProgressIndicator"
 
-const steps = HIDE_TOKEN_FEATURES
+const steps = isEnabled(FeatureFlagTypes.HIDE_TOKEN_FEATURES)
   ? [
       {
         image: {

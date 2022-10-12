@@ -39,7 +39,7 @@ import {
   TEST_NETWORK_BY_CHAIN_ID,
 } from "../../constants"
 import { DOGGO } from "../../constants/assets"
-import { HIDE_TOKEN_FEATURES } from "../../features"
+import { FeatureFlagTypes, isEnabled } from "../../features"
 import {
   AccountSigner,
   ReadOnlyAccountSigner,
@@ -62,7 +62,8 @@ const shouldForciblyDisplayAsset = (
   }
 
   const isDoggo =
-    !HIDE_TOKEN_FEATURES && assetAmount.asset.symbol === DOGGO.symbol
+    !isEnabled(FeatureFlagTypes.HIDE_TOKEN_FEATURES) &&
+    assetAmount.asset.symbol === DOGGO.symbol
 
   return isDoggo || isNetworkBaseAsset(baseAsset, network)
 }

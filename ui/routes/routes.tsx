@@ -25,6 +25,7 @@ import SettingsExportLogs from "../pages/Settings/SettingsExportLogs"
 import SettingsAnalytics from "../pages/Settings/SettingsAnalytics"
 import SettingsConnectedWebsites from "../pages/Settings/SettingsConnectedWebsites"
 import HiddenDevPanel from "../components/HiddenDevPanel/HiddenDevPanel"
+import FeatureFlagsPanel from "../components/HiddenDevPanel/FeatureFlagsPanel"
 
 interface PageList {
   path: string
@@ -207,7 +208,14 @@ const pageList: PageList[] = [
     persistOnClose: true,
   },
   {
-    path: "/dev-panel",
+    path: "/dev/feature-flags",
+    Component: FeatureFlagsPanel,
+    hasTabBar: false,
+    hasTopBar: false,
+    persistOnClose: true,
+  },
+  {
+    path: "/dev",
     Component: HiddenDevPanel,
     hasTabBar: false,
     hasTopBar: false,

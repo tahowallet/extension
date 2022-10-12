@@ -5,7 +5,7 @@ import { useDispatch } from "react-redux"
 import { refreshBackgroundPage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectCurrentAccountSigner } from "@tallyho/tally-background/redux-slices/selectors"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
-import { USE_BALANCE_RELOADER } from "@tallyho/tally-background/features"
+import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundSelector, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
@@ -124,7 +124,9 @@ export default function WalletAccountBalanceControl(
             <span className="balance">
               <span className="dollar_sign">$</span>
               {balance ?? 0}
-              {USE_BALANCE_RELOADER && <BalanceReloader />}
+              {isEnabled(FeatureFlagTypes.USE_BALANCE_RELOADER) && (
+                <BalanceReloader />
+              )}
             </span>
           </span>
         </SharedSkeletonLoader>

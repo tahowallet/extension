@@ -22,7 +22,7 @@ import {
 import { clearSignature } from "@tallyho/tally-background/redux-slices/earn"
 import { resetClaimFlow } from "@tallyho/tally-background/redux-slices/claim"
 import { useTranslation } from "react-i18next"
-import { SUPPORT_KEYRING_LOCKING } from "@tallyho/tally-background/features"
+import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
@@ -267,7 +267,7 @@ export default function AccountsNotificationPanelAccounts({
                   <p className="category_title">
                     {walletTypeDetails[accountType].category}
                   </p>
-                  {SUPPORT_KEYRING_LOCKING &&
+                  {isEnabled(FeatureFlagTypes.SUPPORT_KEYRING_LOCKING) &&
                     (accountType === AccountType.Imported ||
                       accountType === AccountType.Internal) && (
                       <button

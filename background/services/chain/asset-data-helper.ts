@@ -18,7 +18,7 @@ import { HexString } from "../../types"
 import logger from "../../lib/logger"
 import { EVMNetwork, SmartContract } from "../../networks"
 import { getBalance, getMetadata as getERC20Metadata } from "../../lib/erc20"
-import { USE_MAINNET_FORK } from "../../features"
+import { FeatureFlagTypes, isEnabled } from "../../features"
 import { DOGGO, FORK } from "../../constants"
 
 interface ProviderManager {
@@ -68,7 +68,7 @@ export default class AssetDataHelper {
     }
 
     // Load balances of tokens on the mainnet fork
-    if (USE_MAINNET_FORK) {
+    if (isEnabled(FeatureFlagTypes.USE_MAINNET_FORK)) {
       const tokens = [
         "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", // AAVE
         "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", // UNI

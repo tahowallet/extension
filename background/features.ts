@@ -1,22 +1,21 @@
-export const HIDE_IMPORT_DERIVATION_PATH =
-  process.env.HIDE_IMPORT_DERIVATION_PATH === "true"
-export const USE_MAINNET_FORK = process.env.USE_MAINNET_FORK === "true"
-export const HIDE_SWAP_REWARDS = process.env.HIDE_SWAP_REWARDS === "true"
-export const RESOLVE_RNS_NAMES = process.env.RESOLVE_RNS_NAMES === "true"
-export const SUPPORT_GOERLI = process.env.SUPPORT_GOERLI === "true"
-export const SUPPORT_ARBITRUM = process.env.SUPPORT_ARBITRUM === "true"
-export const HIDE_TOKEN_FEATURES = process.env.HIDE_TOKEN_FEATURES === "true"
-export const USE_UPDATED_SIGNING_UI =
-  process.env.USE_UPDATED_SIGNING_UI === "true"
-export const USE_BALANCE_RELOADER = process.env.USE_BALANCE_RELOADER === "true"
-export const SUPPORT_MULTIPLE_LANGUAGES =
-  process.env.SUPPORT_MULTIPLE_LANGUAGES === "true"
-export const SUPPORT_ANALYTICS = process.env.SUPPORT_ANALYTICS === "true"
-export const SUPPORT_TABBED_ONBOARDING =
-  process.env.SUPPORT_TABBED_ONBOARDING === "true"
-export const SUPPORT_KEYRING_LOCKING =
-  process.env.SUPPORT_KEYRING_LOCKING === "true"
-export const SUPPORT_FORGOT_PASSWORD =
-  process.env.SUPPORT_FORGOT_PASSWORD === "true"
-export const ENABLE_ACHIEVEMENTS_TAB =
-  process.env.ENABLE_ACHIEVEMENTS_TAB === "true"
+export enum FeatureFlagTypes {
+  HIDE_IMPORT_DERIVATION_PATH,
+  USE_MAINNET_FORK,
+  HIDE_SWAP_REWARDS,
+  RESOLVE_RNS_NAMES,
+  SUPPORT_GOERLI,
+  SUPPORT_ARBITRUM,
+  HIDE_TOKEN_FEATURES,
+  USE_UPDATED_SIGNING_UI,
+  USE_BALANCE_RELOADER,
+  SUPPORT_MULTIPLE_LANGUAGES,
+  SUPPORT_ANALYTICS,
+  SUPPORT_TABBED_ONBOARDING,
+  SUPPORT_KEYRING_LOCKING,
+  SUPPORT_FORGOT_PASSWORD,
+  ENABLE_ACHIEVEMENTS_TAB,
+}
+
+export const isEnabled = (type: FeatureFlagTypes): boolean =>
+  (localStorage.getItem(FeatureFlagTypes[type]) ||
+    (process.env[FeatureFlagTypes[type]] ?? "false")) === "true"

@@ -3,7 +3,7 @@ import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
-import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features"
+import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
@@ -182,7 +182,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
               />
             </div>
 
-            {!HIDE_IMPORT_DERIVATION_PATH && (
+            {!isEnabled(FeatureFlagTypes.HIDE_IMPORT_DERIVATION_PATH) && (
               <div className="select_wrapper">
                 <OnboardingDerivationPathSelect onChange={setPath} />
               </div>
@@ -190,14 +190,18 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           </div>
           <div className="portion bottom">
             <SharedButton
-              size={HIDE_IMPORT_DERIVATION_PATH ? "medium" : "large"}
+              size={
+                isEnabled(FeatureFlagTypes.HIDE_IMPORT_DERIVATION_PATH)
+                  ? "medium"
+                  : "large"
+              }
               type="primary"
               isDisabled={isImporting}
               onClick={importWallet}
             >
               {t("importAccount")}
             </SharedButton>
-            {!HIDE_IMPORT_DERIVATION_PATH && (
+            {!isEnabled(FeatureFlagTypes.HIDE_IMPORT_DERIVATION_PATH) && (
               <button
                 className="help_button"
                 type="button"
@@ -238,8 +242,14 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         .bottom {
           justify-content: space-between;
           flex-direction: column;
-          margin-bottom: ${HIDE_IMPORT_DERIVATION_PATH ? "24px" : "16px"};
-          margin-top: ${HIDE_IMPORT_DERIVATION_PATH ? "35px" : "24px"};
+          margin-bottom: ${isEnabled(
+            FeatureFlagTypes.HIDE_IMPORT_DERIVATION_PATH
+          )
+            ? "24px"
+            : "16px"};
+          margin-top: ${isEnabled(FeatureFlagTypes.HIDE_IMPORT_DERIVATION_PATH)
+            ? "35px"
+            : "24px"};
         }
         .illustration_import {
           background: url("./images/illustration_import_seed@2x.png");

@@ -9,11 +9,7 @@ import {
   selectShowTestNetworks,
   toggleTestNetworks,
 } from "@tallyho/tally-background/redux-slices/ui"
-import {
-  SUPPORT_ANALYTICS,
-  SUPPORT_GOERLI,
-  SUPPORT_MULTIPLE_LANGUAGES,
-} from "@tallyho/tally-background/features"
+import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
@@ -24,25 +20,26 @@ import SettingButton from "./Settings/SettingButton"
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
 
-function Version(): ReactElement {
+function VersionLabel(): ReactElement {
   const { t } = useTranslation()
   const history = useHistory()
   const [clickCounter, setClickCounter] = useState(0)
-  const [hoverVersion, setHoverVersion] = useState(false)
+  const [isHover, setIsHover] = useState(false)
 
   useEffect(() => {
-    if (clickCounter === NUMBER_OF_CLICKS_FOR_DEV_PANEL && hoverVersion) {
+    if (clickCounter === NUMBER_OF_CLICKS_FOR_DEV_PANEL && isHover) {
+      setIsHover(false)
       setClickCounter(0)
-      history.push("/dev-panel")
+      history.push("/dev")
     }
-  }, [clickCounter, history, hoverVersion])
+  }, [clickCounter, history, isHover])
 
   return (
     <div className="version">
       <button
         type="button"
-        onMouseEnter={() => setHoverVersion(true)}
-        onMouseLeave={() => setHoverVersion(false)}
+        onMouseEnter={() => setIsHover(true)}
+        onMouseLeave={() => setIsHover(false)}
         onClick={() => setClickCounter((prevState) => prevState + 1)}
       >
         {t("settings.versionLabel", {
@@ -195,11 +192,13 @@ export default function Settings(): ReactElement {
   const generalList = [
     setAsDefault,
     hideSmallAssetBalance,
-    ...(SUPPORT_MULTIPLE_LANGUAGES ? [languages] : []),
-    ...(SUPPORT_GOERLI ? [enableTestNetworks] : []),
+    ...(isEnabled(FeatureFlagTypes.SUPPORT_MULTIPLE_LANGUAGES)
+      ? [languages]
+      : []),
+    ...(isEnabled(FeatureFlagTypes.SUPPORT_GOERLI) ? [enableTestNetworks] : []),
     dAppsSettings,
     bugReport,
-    ...(SUPPORT_ANALYTICS ? [analytics] : []),
+    ...(isEnabled(FeatureFlagTypes.SUPPORT_ANALYTICS) ? [analytics] : []),
   ]
 
   const settings = {
@@ -234,7 +233,7 @@ export default function Settings(): ReactElement {
             {t("settings.joinBtn")}
           </SharedButton>
         </div>
-        <Version />
+        <VersionLabel />
       </section>
       <style jsx>
         {`

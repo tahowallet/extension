@@ -30,11 +30,7 @@ import {
   EIP_1559_COMPLIANT_CHAIN_IDS,
   MINUTE,
 } from "../../constants"
-import {
-  SUPPORT_ARBITRUM,
-  SUPPORT_GOERLI,
-  USE_MAINNET_FORK,
-} from "../../features"
+import { FeatureFlagTypes, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { createDB, ChainDatabase } from "./db"
@@ -248,8 +244,8 @@ export default class ChainService extends BaseService<Events> {
       ETHEREUM,
       POLYGON,
       OPTIMISM,
-      ...(SUPPORT_GOERLI ? [GOERLI] : []),
-      ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
+      ...(isEnabled(FeatureFlagTypes.SUPPORT_GOERLI) ? [GOERLI] : []),
+      ...(isEnabled(FeatureFlagTypes.SUPPORT_ARBITRUM) ? [ARBITRUM_ONE] : []),
     ]
 
     this.trackedNetworks = []
@@ -329,7 +325,7 @@ export default class ChainService extends BaseService<Events> {
    * provider exists.
    */
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
-    return USE_MAINNET_FORK
+    return isEnabled(FeatureFlagTypes.USE_MAINNET_FORK)
       ? this.providers.evm[ETHEREUM.chainID]
       : this.providers.evm[network.chainID]
   }
@@ -916,7 +912,7 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transactionRequest: TransactionRequest
   ): Promise<bigint> {
-    if (USE_MAINNET_FORK) {
+    if (isEnabled(FeatureFlagTypes.USE_MAINNET_FORK)) {
       return 350000n
     }
     const estimate = await this.providerForNetworkOrThrow(network).estimateGas(

@@ -2,7 +2,7 @@ import React, { ReactElement, useState, useEffect, useCallback } from "react"
 import { browser } from "@tallyho/tally-background"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selectors"
-import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
+import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp"
 import { useTranslation } from "react-i18next"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
@@ -141,7 +141,7 @@ export default function TopMenu(): ReactElement {
                 }}
               />
             )}
-            {!HIDE_TOKEN_FEATURES && (
+            {!isEnabled(FeatureFlagTypes.HIDE_TOKEN_FEATURES) && (
               <button
                 type="button"
                 aria-label={t("rewardsProgram")}

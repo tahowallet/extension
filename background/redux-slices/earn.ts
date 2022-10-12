@@ -5,7 +5,7 @@ import { parseUnits } from "ethers/lib/utils"
 import Emittery from "emittery"
 
 import { AnyAsset } from "../assets"
-import { USE_MAINNET_FORK } from "../features"
+import { FeatureFlagTypes, isEnabled } from "../features"
 import { ERC20_ABI } from "../lib/erc20"
 import { fromFixedPointNumber } from "../lib/fixed-point"
 import VAULT_ABI from "../lib/vault"
@@ -540,7 +540,7 @@ export const vaultDeposit = createBackgroundAsyncThunk(
         signature.r,
         signature.s
       )
-    if (USE_MAINNET_FORK) {
+    if (isEnabled(FeatureFlagTypes.USE_MAINNET_FORK)) {
       depositTransactionData.gasLimit = BigNumber.from(850000) // for mainnet fork only
     }
     dispatch(clearInput())
@@ -601,7 +601,7 @@ export const approveApprovalTarget = createBackgroundAsyncThunk(
         ethers.constants.MaxUint256
       )
     try {
-      if (USE_MAINNET_FORK) {
+      if (isEnabled(FeatureFlagTypes.USE_MAINNET_FORK)) {
         approvalTransactionData.gasLimit = BigNumber.from(350000) // for mainnet fork only
       }
       const tx = await signer.sendTransaction(approvalTransactionData)
@@ -681,7 +681,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
     }
     const domain = {
       name: "ApprovalTarget",
-      chainId: USE_MAINNET_FORK ? 1337 : chainID,
+      chainId: isEnabled(FeatureFlagTypes.USE_MAINNET_FORK) ? 1337 : chainID,
       version: "1",
       verifyingContract: APPROVAL_TARGET_CONTRACT_ADDRESS,
     }
