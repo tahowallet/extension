@@ -22,6 +22,11 @@ const cleanTokenListResponse = (json: any, url: string) => {
       const { tags, ...cleanedJson } = json
       return cleanedJson
     }
+  } else if (url.includes("meta.yearn.finance/api/tokens/list")) {
+    if (typeof json === "object" && json !== null && "$schema" in json) {
+      const { $schema, ...cleanedJson } = json
+      return cleanedJson
+    }
   }
   return json
 }
