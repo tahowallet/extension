@@ -250,9 +250,16 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       case "wallet_addEthereumChain":
       case "wallet_switchEthereumChain": {
         const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
-        const trackedNetwork = await this.getTrackedNetworkByChainId(newChainId)
-        if (trackedNetwork) {
-          await this.db.setCurrentChainIdForOrigin(origin, trackedNetwork)
+        const supportedNetwork = await this.getTrackedNetworkByChainId(
+          newChainId
+        )
+        if (supportedNetwork) {
+          const { address } = await this.preferenceService.getSelectedAccount()
+          await this.chainService.markAccountActivity({
+            address,
+            network: supportedNetwork,
+          })
+          await this.db.setCurrentChainIdForOrigin(origin, supportedNetwork)
           return null
         }
         throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
@@ -363,14 +370,12 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       (network) => toHexChainID(network.chainID) === toHexChainID(chainID)
     )
     if (trackedNetwork) {
-      this.chainService.markNetworkActivity(trackedNetwork.chainID)
       return trackedNetwork
     }
 
     try {
       const newlyTrackedNetwork =
         await this.chainService.startTrackingNetworkOrThrow(chainID)
-      this.chainService.markNetworkActivity(chainID)
       return newlyTrackedNetwork
     } catch (e) {
       logger.warn(e)

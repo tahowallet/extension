@@ -29,6 +29,12 @@ import {
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
 import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
+import { AssetsState } from "./assets"
+import {
+  calculatePriceDetails,
+  PriceDetails,
+  SwapQuoteRequest,
+} from "./utils/0x-swap-utils"
 
 // This is how 0x represents native token addresses
 const ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS =
@@ -47,27 +53,6 @@ type ZeroExValidationError = {
   reason: string
 }
 
-interface SwapAssets {
-  sellAsset: SmartContractFungibleAsset | FungibleAsset
-  buyAsset: SmartContractFungibleAsset | FungibleAsset
-}
-
-type SwapAmount =
-  | {
-      sellAmount: string
-    }
-  | {
-      buyAmount: string
-    }
-
-export type SwapQuoteRequest = {
-  assets: SwapAssets
-  amount: SwapAmount
-  slippageTolerance: number
-  gasPrice: bigint
-  network: EVMNetwork
-}
-
 export type ZrxPrice = ValidatedType<typeof isValidSwapPriceResponse>
 export type ZrxQuote = ValidatedType<typeof isValidSwapQuoteResponse>
 
@@ -75,6 +60,7 @@ export interface SwapState {
   latestQuoteRequest?: SwapQuoteRequest | undefined
   finalQuote?: ZrxQuote | undefined
   inProgressApprovalContract?: string
+  priceDetails?: PriceDetails | undefined
 }
 
 export const initialState: SwapState = {
@@ -119,6 +105,14 @@ const swapSlice = createSlice({
       finalQuote: undefined,
       latestQuoteRequest: undefined,
     }),
+
+    setPriceDetails: (
+      state,
+      { payload: priceDetails }: { payload: PriceDetails | undefined }
+    ) => ({
+      ...state,
+      priceDetails,
+    }),
   },
 })
 
@@ -131,6 +125,7 @@ export const {
   setFinalSwapQuote,
   clearSwapQuote,
   clearInProgressApprovalContract: clearApprovalInProgress,
+  setPriceDetails,
 } = swapSlice.actions
 
 export default swapSlice.reducer
@@ -323,7 +318,13 @@ const parseAndNotifyOnZeroExApiError = (
 export const fetchSwapPrice = createBackgroundAsyncThunk(
   "0x-swap/fetchPrice",
   async (
-    quoteRequest: SwapQuoteRequest,
+    {
+      quoteRequest,
+      assets,
+    }: {
+      quoteRequest: SwapQuoteRequest
+      assets: AssetsState
+    },
     { dispatch }
   ): Promise<{ quote: ZrxPrice; needsApproval: boolean } | undefined> => {
     const signer = getProvider().getSigner()
@@ -372,6 +373,15 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
       }
 
       dispatch(setLatestQuoteRequest(quoteRequest))
+
+      const priceDetails = calculatePriceDetails(
+        quoteRequest,
+        assets,
+        quote.sellAmount,
+        quote.buyAmount
+      )
+
+      dispatch(setPriceDetails(priceDetails))
 
       return { quote, needsApproval }
     } catch (error) {
@@ -491,4 +501,9 @@ export const selectLatestQuoteRequest = createSelector(
 export const selectInProgressApprovalContract = createSelector(
   (state: { swap: SwapState }) => state.swap.inProgressApprovalContract,
   (approvalInProgress) => approvalInProgress
+)
+
+export const selectPriceDetails = createSelector(
+  (state: { swap: SwapState }) => state.swap.priceDetails,
+  (priceDetails) => priceDetails
 )

@@ -7,7 +7,7 @@ import "./_locales/i18n"
 import Popup from "./pages/Popup"
 import Tab from "./pages/Tab"
 
-async function attachUIToRootElement(
+export async function attachUIToRootElement(
   component: ComponentType<{ store: Store }>,
   store?: Store
 ): Promise<void> {
