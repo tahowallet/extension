@@ -576,6 +576,13 @@ export default class Main extends BaseService<never> {
     return accountBalance.assetAmount.amount
   }
 
+  async enrichActivitiesForSelectedAccount(): Promise<void> {
+    const addressNetwork = this.store.getState().ui.selectedAccount
+    if (addressNetwork) {
+      await this.enrichActivities(addressNetwork)
+    }
+  }
+
   async enrichActivities(addressNetwork: AddressOnNetwork): Promise<void> {
     const accountsToTrack = await this.chainService.getAccountsToTrack()
     const activitiesToEnrich = selectActivitesHashesForEnrichment(
@@ -603,23 +610,20 @@ export default class Main extends BaseService<never> {
   }
 
   async connectChainService(): Promise<void> {
-    this.chainService.emitter.on("initializeActivities", (payload) => {
+    // Initialize activities for all accounts once on and then
+    // initialize for each account when it is needed
+    this.chainService.emitter.on("initializeActivities", async (payload) => {
       this.store.dispatch(initializeActivities(payload))
-      const addressNetwork = this.store.getState().ui.selectedAccount
-      if (addressNetwork) {
-        this.enrichActivities(addressNetwork)
-      }
-    })
-    this.chainService.emitter.on(
-      "initializeActivitiesForAccount",
-      (payload) => {
-        this.store.dispatch(initializeActivitiesForAccount(payload))
-        const addressNetwork = this.store.getState().ui.selectedAccount
-        if (addressNetwork) {
-          this.enrichActivities(addressNetwork)
+      await this.enrichActivitiesForSelectedAccount()
+
+      this.chainService.emitter.on(
+        "initializeActivitiesForAccount",
+        async (payloadForAccount) => {
+          this.store.dispatch(initializeActivitiesForAccount(payloadForAccount))
+          await this.enrichActivitiesForSelectedAccount()
         }
-      }
-    )
+      )
+    })
 
     // Wire up chain service to account slice.
     this.chainService.emitter.on(
