@@ -34,7 +34,6 @@ import { getOrCreateDb, IndexingDatabase } from "./db"
 import BaseService from "../base"
 import { EnrichedEVMTransaction } from "../enrichment/types"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
-import { getTokenBalances } from "../../lib/erc20"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -463,24 +462,10 @@ export default class IndexingService extends BaseService<Events> {
     addressNetwork: AddressOnNetwork,
     smartContractAssets?: SmartContractFungibleAsset[]
   ): Promise<SmartContractAmount[]> {
-    const provider = await this.chainService.providerForNetworkOrThrow(
-      addressNetwork.network
+    const balances = await this.chainService.assetData.getTokenBalances(
+      addressNetwork,
+      smartContractAssets?.map(({ contractAddress }) => contractAddress)
     )
-
-    const providerSupportsAlchemy =
-      provider instanceof AlchemyProvider ||
-      provider instanceof AlchemyWebSocketProvider
-
-    const balances = providerSupportsAlchemy
-      ? await this.chainService.assetData.getTokenBalances(
-          addressNetwork,
-          smartContractAssets?.map(({ contractAddress }) => contractAddress)
-        )
-      : await getTokenBalances(
-          addressNetwork,
-          await this.db.getAllKnownTokensForNetwork(addressNetwork.network),
-          provider
-        )
 
     const listedAssetByAddress = (smartContractAssets ?? []).reduce<{
       [contractAddress: string]: SmartContractFungibleAsset
@@ -772,7 +757,24 @@ export default class IndexingService extends BaseService<Events> {
       (
         await this.chainService.getAccountsToTrack(onlyActiveAccounts)
       ).map(async (addressOnNetwork) => {
-        await this.retrieveTokenBalances(addressOnNetwork, activeAssetsToTrack)
+        const provider = await this.chainService.providerForNetworkOrThrow(
+          addressOnNetwork.network
+        )
+        const isAlchemyProvider =
+          provider instanceof AlchemyProvider ||
+          provider instanceof AlchemyWebSocketProvider
+
+        if (isAlchemyProvider) {
+          await this.retrieveTokenBalances(
+            addressOnNetwork,
+            activeAssetsToTrack
+          )
+        } else {
+          await this.retrieveTokenBalances(
+            addressOnNetwork,
+            await this.db.getAllKnownAssetsForNetwork(addressOnNetwork.network)
+          )
+        }
         await this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
       })
     )

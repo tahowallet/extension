@@ -182,14 +182,12 @@ export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
     .filter((info): info is ERC20TransferLog => typeof info !== "undefined")
 }
 
-const makeTokenGroups = (
-  allTokens: { address: HexString }[]
-): { address: HexString }[][] => {
+const makeTokenGroups = (tokenAddresses: HexString[]): HexString[][] => {
   const maxPerMulticall = 500 // items per chunk
 
-  const tokenGroups: Array<{ address: HexString }[]> = []
+  const tokenGroups: Array<HexString[]> = []
 
-  allTokens.forEach((item, index) => {
+  tokenAddresses.forEach((item, index) => {
     const groupIndex = Math.floor(index / maxPerMulticall)
 
     if (!tokenGroups[groupIndex]) {
@@ -254,10 +252,10 @@ const formatMulticallBalanceOfResults = (
 
 export async function getTokenBalances(
   { address, network }: AddressOnNetwork,
-  allTokens: { address: HexString }[],
+  tokenAddresses: HexString[],
   provider: Provider
 ): Promise<SmartContractAmount[]> {
-  const tokenGroups = makeTokenGroups(allTokens)
+  const tokenGroups = makeTokenGroups(tokenAddresses)
 
   const multicall = new Multicall({
     // fixes a type mismatch here because ethereum-multicall is using an older version of ethers than we are
@@ -268,11 +266,11 @@ export async function getTokenBalances(
 
   const toReturn: SmartContractAmount[] = []
   await Promise.all(
-    tokenGroups.map(async (tokens) => {
+    tokenGroups.map(async (tokenAddressGroup) => {
       const contractCallContext: ContractCallContext[] = []
-      tokens.forEach((token) => {
+      tokenAddressGroup.forEach((tokenAddress) => {
         contractCallContext.push(
-          makeBalanceOfCallContext(token.address, address)
+          makeBalanceOfCallContext(tokenAddress, address)
         )
       })
       const results = await multicall.call(contractCallContext)

@@ -237,12 +237,20 @@ export class IndexingDatabase extends Dexie {
     await this.balances.bulkAdd(accountBalances)
   }
 
-  async getAllKnownTokensForNetwork(network: EVMNetwork): Promise<TokenInfo[]> {
+  async getAllKnownAssetsForNetwork(
+    network: EVMNetwork
+  ): Promise<SmartContractFungibleAsset[]> {
     const allLists = await this.tokenLists.toArray()
     const tokens = allLists.flatMap((list) => list.list.tokens)
-    return tokens.filter(
-      (token) => toHexChainID(token.chainId) === toHexChainID(network.chainID)
-    )
+    return tokens
+      .filter(
+        (token) => toHexChainID(token.chainId) === toHexChainID(network.chainID)
+      )
+      .map((token) => ({
+        ...token,
+        homeNetwork: network,
+        contractAddress: token.address,
+      }))
   }
 
   async getLatestTokenList(url: string): Promise<CachedTokenList | null> {
