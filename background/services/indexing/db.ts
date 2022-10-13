@@ -1,5 +1,5 @@
 import Dexie, { DexieOptions } from "dexie"
-import { TokenInfo, TokenList } from "@uniswap/token-lists"
+import { TokenList } from "@uniswap/token-lists"
 
 import { AccountBalance } from "../../accounts"
 import { EVMNetwork, Network, toHexChainID } from "../../networks"
@@ -237,7 +237,7 @@ export class IndexingDatabase extends Dexie {
     await this.balances.bulkAdd(accountBalances)
   }
 
-  async getAllKnownAssetsForNetwork(
+  async getAllKnownTokensForNetwork(
     network: EVMNetwork
   ): Promise<SmartContractFungibleAsset[]> {
     const allLists = await this.tokenLists.toArray()

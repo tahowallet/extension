@@ -772,7 +772,7 @@ export default class IndexingService extends BaseService<Events> {
         } else {
           await this.retrieveTokenBalances(
             addressOnNetwork,
-            await this.db.getAllKnownAssetsForNetwork(addressOnNetwork.network)
+            await this.db.getAllKnownTokensForNetwork(addressOnNetwork.network)
           )
         }
         await this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
