@@ -1,4 +1,4 @@
-import Dexie from "dexie"
+import Dexie, { DexieOptions } from "dexie"
 import { TokenList } from "@uniswap/token-lists"
 
 import { AccountBalance } from "../../accounts"
@@ -126,8 +126,8 @@ export class IndexingDatabase extends Dexie {
    */
   private assetsToTrack!: Dexie.Table<SmartContractFungibleAsset, number>
 
-  constructor() {
-    super("tally/indexing")
+  constructor(options?: DexieOptions) {
+    super("tally/indexing", options)
     this.version(1).stores({
       migrations: "++id,appliedAt",
       prices: "++id,time,[asset1ID+asset2ID]",
@@ -296,8 +296,8 @@ export class IndexingDatabase extends Dexie {
   }
 }
 
-export async function getOrCreateDB(): Promise<IndexingDatabase> {
-  const db = new IndexingDatabase()
-
-  return db
+export async function getOrCreateDb(
+  options?: DexieOptions
+): Promise<IndexingDatabase> {
+  return new IndexingDatabase(options)
 }

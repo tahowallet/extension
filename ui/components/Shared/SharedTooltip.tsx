@@ -76,7 +76,6 @@ export default function SharedTooltip(props: Props): ReactElement {
             position: relative;
             padding: 5px 0;
             margin: -5px 0 -5px 8px;
-            z-index: 20;
           }
           .info_icon {
             background: url("./images/info@2x.png");
@@ -97,6 +96,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             line-height: 20px;
             border-radius: 3px;
             padding: 12px;
+            z-index: 20;
             ${getVerticalPosition(verticalPosition, height)}
             ${getHorizontalPosition(horizontalPosition, width)}
           }

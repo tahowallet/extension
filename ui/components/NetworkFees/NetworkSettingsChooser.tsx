@@ -11,7 +11,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "./NetworkSettingsSelect"
-import NetworkSettingsOptimismAndArbitrum from "./NetworkSettingsSelectOptimismAndArbitrum"
+import NetworkSettingsOptimism from "./NetworkSettingsSelectOptimism"
 import NetworkSettingsSelectLegacy from "./NetworkSettingsSelectLegacy"
 
 interface NetworkSettingsChooserProps {
@@ -38,7 +38,7 @@ export default function NetworkSettingsChooser({
   function networkSettingsSelectorFinder() {
     if (transactionDetails) {
       if (transactionDetails.network.name === "Optimism") {
-        return <NetworkSettingsOptimismAndArbitrum />
+        return <NetworkSettingsOptimism />
       }
       if (transactionDetails.network.name === "Arbitrum") {
         return (
