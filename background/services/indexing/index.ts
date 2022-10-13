@@ -1,5 +1,8 @@
+import {
+  AlchemyProvider,
+  AlchemyWebSocketProvider,
+} from "@ethersproject/providers"
 import logger from "../../lib/logger"
-
 import { HexString } from "../../types"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -31,6 +34,7 @@ import { getOrCreateDb, IndexingDatabase } from "./db"
 import BaseService from "../base"
 import { EnrichedEVMTransaction } from "../enrichment/types"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
+import { getTokenBalances } from "../../lib/erc20"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -459,10 +463,24 @@ export default class IndexingService extends BaseService<Events> {
     addressNetwork: AddressOnNetwork,
     smartContractAssets?: SmartContractFungibleAsset[]
   ): Promise<SmartContractAmount[]> {
-    const balances = await this.chainService.assetData.getTokenBalances(
-      addressNetwork,
-      smartContractAssets?.map(({ contractAddress }) => contractAddress)
+    const provider = await this.chainService.providerForNetworkOrThrow(
+      addressNetwork.network
     )
+
+    const providerSupportsAlchemy =
+      provider instanceof AlchemyProvider ||
+      provider instanceof AlchemyWebSocketProvider
+
+    const balances = providerSupportsAlchemy
+      ? await this.chainService.assetData.getTokenBalances(
+          addressNetwork,
+          smartContractAssets?.map(({ contractAddress }) => contractAddress)
+        )
+      : await getTokenBalances(
+          addressNetwork,
+          await this.db.getAllKnownTokensForNetwork(addressNetwork.network),
+          provider
+        )
 
     const listedAssetByAddress = (smartContractAssets ?? []).reduce<{
       [contractAddress: string]: SmartContractFungibleAsset
