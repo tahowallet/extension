@@ -32,7 +32,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
-import { AnyEVMTransaction, SignedTransaction } from "./networks"
+import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -44,7 +44,6 @@ import {
   updateAccountName,
   updateENSAvatar,
 } from "./redux-slices/accounts"
-import { activityEncountered } from "./redux-slices/activities"
 import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   setEligibility,
@@ -124,11 +123,17 @@ import {
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 import { deleteNFts } from "./redux-slices/nfts"
-import { filterTransactionPropsForUI } from "./utils/view-model-transformer"
+import { EnrichedEVMTransactionRequest } from "./services/enrichment"
 import {
-  EnrichedEVMTransaction,
-  EnrichedEVMTransactionRequest,
-} from "./services/enrichment"
+  ActivityDetail,
+  addActivity,
+  initializeActivities,
+  initializeActivitiesForAccount,
+  removeActivities,
+} from "./redux-slices/activities"
+import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
+import { getActivityDetails } from "./redux-slices/utils/activities-utils"
+import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -503,6 +508,7 @@ export default class Main extends BaseService<never> {
     signerType?: SignerType
   ): Promise<void> {
     this.store.dispatch(deleteAccount(address))
+    this.store.dispatch(removeActivities(address))
     this.store.dispatch(deleteNFts(address))
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))
@@ -570,7 +576,55 @@ export default class Main extends BaseService<never> {
     return accountBalance.assetAmount.amount
   }
 
+  async enrichActivitiesForSelectedAccount(): Promise<void> {
+    const addressNetwork = this.store.getState().ui.selectedAccount
+    if (addressNetwork) {
+      await this.enrichActivities(addressNetwork)
+    }
+  }
+
+  async enrichActivities(addressNetwork: AddressOnNetwork): Promise<void> {
+    const accountsToTrack = await this.chainService.getAccountsToTrack()
+    const activitiesToEnrich = selectActivitesHashesForEnrichment(
+      this.store.getState()
+    )
+
+    activitiesToEnrich.forEach(async (txHash) => {
+      const transaction = await this.chainService.getTransaction(
+        addressNetwork.network,
+        txHash
+      )
+      const enrichedTransaction =
+        await this.enrichmentService.enrichTransaction(transaction, 2)
+
+      this.store.dispatch(
+        addActivity({
+          transaction: enrichedTransaction,
+          forAccounts: getRelevantTransactionAddresses(
+            enrichedTransaction,
+            accountsToTrack
+          ),
+        })
+      )
+    })
+  }
+
   async connectChainService(): Promise<void> {
+    // Initialize activities for all accounts once on and then
+    // initialize for each account when it is needed
+    this.chainService.emitter.on("initializeActivities", async (payload) => {
+      this.store.dispatch(initializeActivities(payload))
+      await this.enrichActivitiesForSelectedAccount()
+
+      this.chainService.emitter.on(
+        "initializeActivitiesForAccount",
+        async (payloadForAccount) => {
+          this.store.dispatch(initializeActivitiesForAccount(payloadForAccount))
+          await this.enrichActivitiesForSelectedAccount()
+        }
+      )
+    })
+
     // Wire up chain service to account slice.
     this.chainService.emitter.on(
       "accountsWithBalances",
@@ -741,11 +795,7 @@ export default class Main extends BaseService<never> {
     // Report on transactions for basic activity. Fancier stuff is handled via
     // connectEnrichmentService
     this.chainService.emitter.on("transaction", async (transactionInfo) => {
-      this.store.dispatch(
-        activityEncountered(
-          filterTransactionPropsForUI<AnyEVMTransaction>(transactionInfo)
-        )
-      )
+      this.store.dispatch(addActivity(transactionInfo))
     })
 
     uiSliceEmitter.on("userActivityEncountered", (addressOnNetwork) => {
@@ -818,11 +868,7 @@ export default class Main extends BaseService<never> {
         this.indexingService.notifyEnrichedTransaction(
           transactionData.transaction
         )
-        this.store.dispatch(
-          activityEncountered(
-            filterTransactionPropsForUI<EnrichedEVMTransaction>(transactionData)
-          )
-        )
+        this.store.dispatch(addActivity(transactionData))
       }
     )
   }
@@ -1239,6 +1285,10 @@ export default class Main extends BaseService<never> {
       )
     })
 
+    uiSliceEmitter.on("newSelectedAccountSwitched", async (addressNetwork) => {
+      this.enrichActivities(addressNetwork)
+    })
+
     uiSliceEmitter.on(
       "newDefaultWalletValue",
       async (newDefaultWalletValue) => {
@@ -1293,6 +1343,20 @@ export default class Main extends BaseService<never> {
   connectTelemetryService(): void {
     // Pass the redux store to the telemetry service so we can analyze its size
     this.telemetryService.connectReduxStore(this.store)
+  }
+
+  async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
+    const addressNetwork = this.store.getState().ui.selectedAccount
+    const transaction = await this.chainService.getTransaction(
+      addressNetwork.network,
+      txHash
+    )
+    const enrichedTransaction = await this.enrichmentService.enrichTransaction(
+      transaction,
+      2
+    )
+
+    return getActivityDetails(enrichedTransaction)
   }
 
   async resolveNameOnNetwork(

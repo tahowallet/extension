@@ -1,5 +1,5 @@
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
-import { ETHEREUM, POLYGON, SECOND } from "../../../constants"
+import { ETHEREUM, MINUTE, POLYGON } from "../../../constants"
 import { ALCHEMY_KEY } from "../../../lib/alchemy"
 import { isDefined } from "../../../lib/utils/type-guards"
 import { sameNetwork } from "../../../networks"
@@ -7,7 +7,7 @@ import { makeFetchWithTimeout } from "../../../utils/fetching"
 import { NameResolver } from "../name-resolver"
 
 // Time until response is stale
-const RESPONSE_TTL = 5 * SECOND
+const RESPONSE_TTL = 2 * MINUTE
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const cacheAsyncResults = <F extends (...args: any[]) => Promise<any>>(

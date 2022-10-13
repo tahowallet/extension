@@ -37,7 +37,7 @@ import {
 } from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { createDB, ChainDatabase } from "./db"
+import { createDB, ChainDatabase, Transaction } from "./db"
 import BaseService from "../base"
 import {
   blockFromEthersBlock,
@@ -99,6 +99,14 @@ const GAS_POLLS_PER_PERIOD = 4 // 4 times per minute
 const GAS_POLLING_PERIOD = 1 // 1 minute
 
 interface Events extends ServiceLifecycleEvents {
+  initializeActivities: {
+    transactions: Transaction[]
+    accounts: AddressOnNetwork[]
+  }
+  initializeActivitiesForAccount: {
+    transactions: Transaction[]
+    account: AddressOnNetwork
+  }
   newAccountToTrack: AddressOnNetwork
   accountsWithBalances: AccountBalance[]
   transactionSend: HexString
@@ -284,6 +292,9 @@ export default class ChainService extends BaseService<Events> {
 
     const accounts = await this.getAccountsToTrack()
     const trackedNetworks = await this.getTrackedNetworks()
+    const transactions = await this.db.getAllTransactions()
+
+    this.emitter.emit("initializeActivities", { transactions, accounts })
 
     // get the latest blocks and subscribe for all active networks
 
@@ -798,6 +809,7 @@ export default class ChainService extends BaseService<Events> {
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.db.addAccountToTrack(addressNetwork)
     this.emitter.emit("newAccountToTrack", addressNetwork)
+    this.emitSavedTransactions(addressNetwork)
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
       logger.error(
         "chainService/addAccountToTrack: Error subscribing to account transactions",
@@ -1467,9 +1479,7 @@ export default class ChainService extends BaseService<Events> {
             sameEVMAddress(finalTransaction.from, address) ||
             sameEVMAddress(finalTransaction.to, address)
         )
-        .map(({ address }) => {
-          return normalizeEVMAddress(address)
-        })
+        .map(({ address }) => normalizeEVMAddress(address))
 
       // emit in a separate try so outside services still get the tx
       this.emitter.emit("transaction", {
@@ -1483,6 +1493,24 @@ export default class ChainService extends BaseService<Events> {
     if (error) {
       throw error
     }
+  }
+
+  async emitSavedTransactions(account: AddressOnNetwork): Promise<void> {
+    const { address, network } = account
+    const transactionsForNetwork = await this.db.getTransactionsForNetwork(
+      network
+    )
+
+    const transactions = transactionsForNetwork.filter(
+      (transaction) =>
+        sameEVMAddress(transaction.from, address) ||
+        sameEVMAddress(transaction.to, address)
+    )
+
+    this.emitter.emit("initializeActivitiesForAccount", {
+      transactions,
+      account,
+    })
   }
 
   /**
