@@ -1295,8 +1295,3 @@ browser.runtime.onInstalled.addListener((details) => {
     posthogEvent("Extension installed")
   }
 })
-
-// Fire analytics event when extension is uninstalled
-browser.management.onUninstalled.addListener(() => {
-  posthogEvent("Extension uninstalled")
-})

@@ -34,7 +34,6 @@
   },
   "permissions": [
     "alarms",
-    "management",
     "unlimitedStorage",
     "activeTab",
     "cookies",
