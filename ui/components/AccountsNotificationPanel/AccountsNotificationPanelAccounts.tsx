@@ -1,6 +1,12 @@
-import React, { ReactElement, useEffect, useState } from "react"
-import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
-import { deriveAddress } from "@tallyho/tally-background/redux-slices/keyrings"
+import React, { ReactElement, useEffect, useRef, useState } from "react"
+import {
+  setNewSelectedAccount,
+  setSnackbarMessage,
+} from "@tallyho/tally-background/redux-slices/ui"
+import {
+  deriveAddress,
+  lockKeyrings,
+} from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   AccountTotal,
   selectCurrentNetworkAccountTotalsByCategory,
@@ -16,6 +22,7 @@ import {
 import { clearSignature } from "@tallyho/tally-background/redux-slices/earn"
 import { resetClaimFlow } from "@tallyho/tally-background/redux-slices/claim"
 import { useTranslation } from "react-i18next"
+import { SUPPORT_KEYRING_LOCKING } from "@tallyho/tally-background/features"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
@@ -25,6 +32,7 @@ import {
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import AccountItemOptionsMenu from "../AccountItem/AccountItemOptionsMenu"
 import { i18n } from "../../_locales/i18n"
+import SharedIcon from "../Shared/SharedIcon"
 
 type WalletTypeInfo = {
   title: string
@@ -162,7 +170,10 @@ export default function AccountsNotificationPanelAccounts({
 }: Props): ReactElement {
   const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
+  const history = useHistory()
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const isMounted = useRef(false)
 
   const accountTotals = useBackgroundSelector(
     selectCurrentNetworkAccountTotalsByCategory
@@ -193,6 +204,29 @@ export default function AccountsNotificationPanelAccounts({
       setPendingSelectedAddress("")
     }
   }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccountAddress])
+
+  const keyringData = {
+    color: areKeyringsUnlocked ? "error" : "success",
+    icon: areKeyringsUnlocked ? "lock" : "unlock",
+  }
+
+  useEffect(() => {
+    // Prevents notifications from displaying when the component is not yet mounted
+    if (!isMounted.current) {
+      isMounted.current = true
+    } else if (!areKeyringsUnlocked) {
+      dispatch(setSnackbarMessage(t("accounts.notificationPanel.snackbar")))
+    }
+  }, [history, areKeyringsUnlocked, dispatch, t])
+
+  const toggleKeyringStatus = async () => {
+    if (!areKeyringsUnlocked) {
+      history.push("/keyring/unlock")
+    } else {
+      await dispatch(lockKeyrings())
+      onCurrentAddressChange("")
+    }
+  }
 
   const accountTypes = [
     AccountType.Internal,
@@ -229,10 +263,31 @@ export default function AccountsNotificationPanelAccounts({
                 accountType === AccountType.Imported &&
                 (accountTotals[AccountType.Internal]?.length ?? 0)
               ) && (
-                <div className="category_wrap">
-                  <p className="simple_text category_title">
+                <div className="category_wrap simple_text">
+                  <p className="category_title">
                     {walletTypeDetails[accountType].category}
                   </p>
+                  {SUPPORT_KEYRING_LOCKING &&
+                    (accountType === AccountType.Imported ||
+                      accountType === AccountType.Internal) && (
+                      <button
+                        type="button"
+                        className="signing_btn"
+                        onClick={toggleKeyringStatus}
+                      >
+                        {t(
+                          `accounts.notificationPanel.signing.${
+                            areKeyringsUnlocked ? "lock" : "unlock"
+                          }`
+                        )}
+                        <SharedIcon
+                          icon={`icons/m/${keyringData.icon}.svg`}
+                          width={25}
+                          color="var(--green-40)"
+                          hoverColor={`var(--${keyringData.color})`}
+                        />
+                      </button>
+                    )}
                 </div>
               )}
               {Object.values(accountTotalsByType).map(
@@ -369,12 +424,32 @@ export default function AccountsNotificationPanelAccounts({
             overflow-y: scroll;
           }
           .category_wrap {
+            display: flex;
+            justify-content: space-between;
             background-color: var(--hunter-green);
             padding: 8px 10px 8px 24px;
           }
           .category_title {
-            margin: 0;
             color: var(--green-60);
+          }
+          p {
+            margin: 0;
+          }
+          .signing_btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.2s;
+          }
+          .signing_btn:hover {
+            color: var(--${keyringData.color});
+          }
+        `}
+      </style>
+      <style global jsx>
+        {`
+          .signing_btn:hover button {
+            background-color: var(--${keyringData.color});
           }
         `}
       </style>

@@ -1,4 +1,4 @@
-import Dexie, { DexieOptions, IndexableTypeArray } from "dexie"
+import Dexie, { Collection, DexieOptions, IndexableTypeArray } from "dexie"
 
 import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -6,7 +6,7 @@ import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
 import { FungibleAsset } from "../../assets"
 import { GOERLI, POLYGON } from "../../constants"
 
-type Transaction = AnyEVMTransaction & {
+export type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
   firstSeen: UNIXTime
 }
@@ -169,15 +169,28 @@ export class ChainDatabase extends Dexie {
     return this.chainTransactions.orderBy("hash").keys()
   }
 
+  async getAllTransactions(): Promise<Transaction[]> {
+    return this.chainTransactions.toArray()
+  }
+
+  async getTransactionsForNetworkQuery(
+    network: Network
+  ): Promise<Collection<Transaction, [string, string]>> {
+    return this.chainTransactions.where("network.name").equals(network.name)
+  }
+
+  async getTransactionsForNetwork(network: Network): Promise<Transaction[]> {
+    return (await this.getTransactionsForNetworkQuery(network)).toArray()
+  }
+
   /**
    * Looks up and returns all pending transactions for the given network.
    */
   async getNetworkPendingTransactions(
     network: Network
   ): Promise<(AnyEVMTransaction & { firstSeen: UNIXTime })[]> {
-    return this.chainTransactions
-      .where("network.name")
-      .equals(network.name)
+    const transactions = await this.getTransactionsForNetworkQuery(network)
+    return transactions
       .filter(
         (transaction) =>
           !("status" in transaction) &&

@@ -1,3 +1,5 @@
+import { SUPPORT_KEYRING_LOCKING } from "@tallyho/tally-background/features"
+import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   selectCurrentAccount,
   selectCurrentAccountTotal,
@@ -17,7 +19,7 @@ export default function TopMenuProfileButton(props: {
 }): ReactElement {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const { name, avatarURL, address } =
+  const { name, avatarURL, address, accountType } =
     useBackgroundSelector(selectCurrentAccountTotal) ?? {}
 
   const { truncatedAddress } = useBackgroundSelector(selectCurrentAccount) ?? {}
@@ -67,6 +69,11 @@ export default function TopMenuProfileButton(props: {
               name={name}
               avatarURL={avatarURL}
               showHoverStyle
+              showKeyring={
+                SUPPORT_KEYRING_LOCKING &&
+                (accountType === AccountType.Imported ||
+                  accountType === AccountType.Internal)
+              }
             />
           </>
         )}

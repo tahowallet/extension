@@ -1,3 +1,4 @@
+import { DexieOptions } from "dexie"
 import { keccak256 } from "ethers/lib/utils"
 import { AccountBalance, AddressOnNetwork } from "../accounts"
 import { ETH, ETHEREUM, OPTIMISM } from "../constants"
@@ -57,13 +58,15 @@ export async function createNameService(overrides?: {
 export async function createIndexingService(overrides?: {
   chainService?: Promise<ChainService>
   preferenceService?: Promise<PreferenceService>
+  dexieOptions?: DexieOptions
 }): Promise<IndexingService> {
   const preferenceService =
     overrides?.preferenceService ?? createPreferenceService()
 
   return IndexingService.create(
     preferenceService,
-    overrides?.chainService ?? createChainService({ preferenceService })
+    overrides?.chainService ?? createChainService({ preferenceService }),
+    overrides?.dexieOptions
   )
 }
 

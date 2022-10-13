@@ -24,7 +24,12 @@
         "readOnly": "Preview",
         "ledger": "Hardware wallets",
         "others": "Imported & generated"
-      }
+      },
+      "signing": {
+        "lock": "Lock signing",
+        "unlock": "Unlock signing"
+      },
+      "snackbar": "Signing locked"
     }
   },
   "viewAddressOnBlockExplorer": "View address on {{blockExplorer}}",
@@ -37,6 +42,10 @@
     "error": {
       "invalidAmount": "Invalid amount",
       "insufficientBalance": "Insufficient balance"
+    },
+    "priceImpactTooltip": {
+      "firstLine": "Price difference between assets is high.",
+      "secondLine": "This is due to low liquidity of the swap pair."
     }
   },
   "comingSoon": "Coming soon",
@@ -69,12 +78,14 @@
     },
     "unlock": {
       "title": "Unlock signing",
+      "subtitle": "Enter your signing password to continue",
       "submitBtn": "Unlock",
       "signingPassword": "Signing password",
       "forgotPassword": "Forgot password?",
       "error": {
         "incorrect": "Incorrect password"
-      }
+      },
+      "snackbar": "Signing unlocked"
     }
   },
   "ledger": {
@@ -172,7 +183,7 @@
       "invalidLimit": "Gas Limit must be a number",
       "lowGas": "Low"
     },
-    "optimismOrArbitrum": {
+    "optimism": {
       "title": "Network fees",
       "header": "Gas fees on {{name}} work differently from Ethereum.",
       "transactionFee": "Transaction fee",
@@ -335,6 +346,7 @@
     }
   },
   "shared": {
+    "tallyHo": "Tally Ho",
     "cancelBtn": "Cancel",
     "gwei": "Gwei",
     "send": "Send",
@@ -503,7 +515,13 @@
       "NFTs": "NFTs",
       "activity": "Activity"
     },
-    "NFTPricingComingSoon": "Coming soon: NFT price + sending"
+    "NFTPricingComingSoon": "Coming soon: NFT price + sending",
+    "defaultToggle": {
+      "snackbar": "You can change this in Settings later",
+      "isDefault": "is now your default wallet",
+      "notDefault": "is not your default wallet",
+      "tooltip": "Setting Tally Ho as your default wallet means that everytime you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
+    }
   },
   "dAppConnect": {
     "switchWallet":{
@@ -512,5 +530,10 @@
       "descSecondPart": "at any time.",
       "toggleTitle": "Use Tally Ho as default wallet"
     }
+  },
+  "globalError": {
+    "title": "Ups, nothing to see here",
+    "desc": "Looks like you encountered an empty bowl, try refreshing the page to see if something appears",
+    "submitBtn": "Refresh page"
   }
 }

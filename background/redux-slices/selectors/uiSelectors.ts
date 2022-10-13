@@ -19,7 +19,7 @@ export const selectCurrentAccount = createSelector(
 )
 
 export const selectShowingActivityDetail = createSelector(
-  (state: RootState) => state.activities,
+  (state: RootState) => state.activities.activities,
   selectCurrentAccount,
   (state: RootState) => state.ui.showingActivityDetailID,
   (activities, currentAccountOnNetwork, showingActivityDetailID) => {
@@ -27,9 +27,11 @@ export const selectShowingActivityDetail = createSelector(
       return null
     }
 
-    return activities[currentAccountOnNetwork.address][
-      currentAccountOnNetwork.network.chainID
-    ].entities[showingActivityDetailID]
+    return (
+      activities[currentAccountOnNetwork.address]?.[
+        currentAccountOnNetwork.network.chainID
+      ]?.find((activity) => activity.hash === showingActivityDetailID) ?? null
+    )
   }
 )
 

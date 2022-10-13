@@ -2,7 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { Redirect } from "react-router-dom"
 import {
   getAddressCount,
-  selectCurrentAccountActivitiesWithTimestamps,
+  selectCurrentAccountActivities,
   selectCurrentAccountBalances,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
@@ -18,6 +18,7 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
 import NFTsWallet from "../components/NFTs/NFTsWallet"
 import SharedBanner from "../components/Shared/SharedBanner"
+import WalletDefaultToggle from "../components/Wallet/WalletDefaultToggle"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "wallet" })
@@ -47,7 +48,7 @@ export default function Wallet(): ReactElement {
   }
 
   const currentAccountActivities = useBackgroundSelector(
-    selectCurrentAccountActivitiesWithTimestamps
+    selectCurrentAccountActivities
   )
 
   const initializationLoadingTimeExpired = useBackgroundSelector(
@@ -64,6 +65,7 @@ export default function Wallet(): ReactElement {
   return (
     <>
       <div className="page_content">
+        <WalletDefaultToggle />
         <div className="section">
           <WalletAccountBalanceControl
             balance={totalMainCurrencyValue}

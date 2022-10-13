@@ -7,19 +7,21 @@ import React, {
 } from "react"
 import { useTranslation } from "react-i18next"
 import {
-  fetchSwapPrice,
   clearSwapQuote,
   approveTransfer,
   selectLatestQuoteRequest,
   selectInProgressApprovalContract,
-  SwapQuoteRequest,
   fetchSwapQuote,
+  fetchSwapPrice,
+  selectPriceDetails,
+  setPriceDetails,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import {
   HIDE_SWAP_REWARDS,
   HIDE_TOKEN_FEATURES,
 } from "@tallyho/tally-background/features"
 import {
+  getAssetsState,
   selectCurrentAccountBalances,
   selectCurrentAccountSigner,
   selectCurrentNetwork,
@@ -42,6 +44,7 @@ import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/
 import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
+import { SwapQuoteRequest } from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -100,6 +103,10 @@ export default function Swap(): ReactElement {
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
   const isReadOnlyAccount = currentAccountSigner === ReadOnlyAccountSigner
+
+  const assets = useBackgroundSelector(getAssetsState)
+
+  const priceDetails = useBackgroundSelector(selectPriceDetails)
 
   // TODO We're special-casing ETH here in an odd way. Going forward, we should
   // filter by current chain and better handle network-native base assets
@@ -231,6 +238,10 @@ export default function Swap(): ReactElement {
       }
     }
   }, [sellAsset, sellAssetAmounts])
+
+  useEffect(() => {
+    dispatch(setPriceDetails(undefined))
+  }, [sellAsset, buyAsset, dispatch])
 
   const inProgressApprovalContract = useBackgroundSelector(
     selectInProgressApprovalContract
@@ -377,7 +388,7 @@ export default function Swap(): ReactElement {
       latestQuoteRequest.current = quoteRequest
 
       const { quote, needsApproval: quoteNeedsApproval } = ((await dispatch(
-        fetchSwapPrice(quoteRequest)
+        fetchSwapPrice({ quoteRequest, assets })
       )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapPrice>) ?? {
         quote: undefined,
         needsApproval: false,
@@ -432,7 +443,14 @@ export default function Swap(): ReactElement {
         }
       }
     },
-    [buyAsset, dispatch, sellAsset, swapTransactionSettings, selectedNetwork]
+    [
+      sellAsset,
+      buyAsset,
+      swapTransactionSettings,
+      selectedNetwork,
+      dispatch,
+      assets,
+    ]
   )
 
   const updateSellAsset = useCallback(
@@ -554,11 +572,14 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
                 amount={sellAmount}
+                amountMainCurrency={priceDetails?.sellCurrencyAmount}
+                showCurrencyAmount
                 assetsAndAmounts={sellAssetAmounts}
                 selectedAsset={sellAsset}
                 isDisabled={sellAmountLoading}
                 onAssetSelect={updateSellAsset}
                 onAmountChange={(newAmount, error) => {
+                  dispatch(setPriceDetails(undefined))
                   setSellAmount(newAmount)
                   if (typeof error === "undefined") {
                     updateSwapData("sell", newAmount)
@@ -573,6 +594,9 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
                 amount={buyAmount}
+                amountMainCurrency={priceDetails?.buyCurrencyAmount}
+                showCurrencyAmount
+                priceImpact={priceDetails?.priceImpact}
                 // FIXME Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
                 selectedAsset={buyAsset}
@@ -580,6 +604,7 @@ export default function Swap(): ReactElement {
                 showMaxButton={false}
                 onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount, error) => {
+                  dispatch(setPriceDetails(undefined))
                   setBuyAmount(newAmount)
                   if (typeof error === "undefined") {
                     updateSwapData("buy", newAmount)
