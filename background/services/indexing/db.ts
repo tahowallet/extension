@@ -1,8 +1,8 @@
 import Dexie, { DexieOptions } from "dexie"
-import { TokenList } from "@uniswap/token-lists"
+import { TokenInfo, TokenList } from "@uniswap/token-lists"
 
 import { AccountBalance } from "../../accounts"
-import { Network } from "../../networks"
+import { EVMNetwork, Network, toHexChainID } from "../../networks"
 import {
   AnyAsset,
   FungibleAsset,
@@ -235,6 +235,14 @@ export class IndexingDatabase extends Dexie {
 
   async addBalances(accountBalances: AccountBalance[]): Promise<void> {
     await this.balances.bulkAdd(accountBalances)
+  }
+
+  async getAllKnownTokensForNetwork(network: EVMNetwork): Promise<TokenInfo[]> {
+    const allLists = await this.tokenLists.toArray()
+    const tokens = allLists.flatMap((list) => list.list.tokens)
+    return tokens.filter(
+      (token) => toHexChainID(token.chainId) === toHexChainID(network.chainID)
+    )
   }
 
   async getLatestTokenList(url: string): Promise<CachedTokenList | null> {
