@@ -1,7 +1,11 @@
 import { BaseProvider, Provider } from "@ethersproject/providers"
 import { BigNumber, ethers } from "ethers"
 
-import { Multicall, ContractCallContext } from "ethereum-multicall"
+import {
+  Multicall,
+  ContractCallContext,
+  ContractCallResults,
+} from "ethereum-multicall"
 
 import {
   EventFragment,
@@ -10,7 +14,7 @@ import {
   TransactionDescription,
 } from "ethers/lib/utils"
 import { SmartContractAmount, SmartContractFungibleAsset } from "../assets"
-import { EVMLog, SmartContract } from "../networks"
+import { EVMLog, EVMNetwork, SmartContract } from "../networks"
 import { HexString } from "../types"
 import { AddressOnNetwork } from "../accounts"
 
@@ -177,6 +181,76 @@ export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
     })
     .filter((info): info is ERC20TransferLog => typeof info !== "undefined")
 }
+
+const makeTokenGroups = (
+  allTokens: { address: HexString }[]
+): { address: HexString }[][] => {
+  const maxPerMulticall = 500 // items per chunk
+
+  const tokenGroups: Array<{ address: HexString }[]> = []
+
+  allTokens.forEach((item, index) => {
+    const groupIndex = Math.floor(index / maxPerMulticall)
+
+    if (!tokenGroups[groupIndex]) {
+      tokenGroups[groupIndex] = [] // start a new chunk
+    }
+
+    tokenGroups[groupIndex].push(item)
+  })
+
+  return tokenGroups
+}
+
+const makeBalanceOfCallContext = (
+  tokenAddress: HexString,
+  accountAddress: HexString
+) => ({
+  reference: tokenAddress,
+  contractAddress: tokenAddress,
+  abi: [
+    {
+      name: "balanceOf",
+      type: "function",
+      inputs: [{ name: "address", type: "address" }],
+      outputs: [{ name: "balance", type: "uint256" }],
+      stateMutability: "view",
+    },
+  ],
+  calls: [
+    {
+      reference: "balanceOf",
+      methodName: "balanceOf",
+      methodParameters: [accountAddress],
+    },
+  ],
+})
+
+const formatMulticallBalanceOfResults = (
+  results: ContractCallResults,
+  network: EVMNetwork
+) =>
+  Object.entries(results.results).flatMap(([contractAddress, result]) => {
+    if (result.callsReturnContext[0].success === false) {
+      // ignore unsuccessful calls
+      return []
+    }
+    const balanceOfResponse: { type: "BigNumber"; hex: HexString } =
+      result.callsReturnContext[0].returnValues[0]
+
+    if (balanceOfResponse.hex === "0x00") {
+      // ignore 0 balances
+      return []
+    }
+
+    return {
+      amount: BigInt(BigNumber.from(balanceOfResponse.hex).toString()),
+      smartContract: {
+        contractAddress,
+        homeNetwork: network,
+      },
+    }
+  })
 
 export async function getTokenBalances(
   { address, network }: AddressOnNetwork,
