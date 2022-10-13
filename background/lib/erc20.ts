@@ -1,14 +1,18 @@
-import { BaseProvider } from "@ethersproject/providers"
+import { BaseProvider, Provider } from "@ethersproject/providers"
 import { BigNumber, ethers } from "ethers"
+
+import { Multicall, ContractCallContext } from "ethereum-multicall"
+
 import {
   EventFragment,
   Fragment,
   FunctionFragment,
   TransactionDescription,
 } from "ethers/lib/utils"
-import { SmartContractFungibleAsset } from "../assets"
+import { SmartContractAmount, SmartContractFungibleAsset } from "../assets"
 import { EVMLog, SmartContract } from "../networks"
 import { HexString } from "../types"
+import { AddressOnNetwork } from "../accounts"
 
 export const ERC20_FUNCTIONS = {
   allowance: FunctionFragment.from(
@@ -172,4 +176,36 @@ export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
       }
     })
     .filter((info): info is ERC20TransferLog => typeof info !== "undefined")
+}
+
+export async function getTokenBalances(
+  { address, network }: AddressOnNetwork,
+  allTokens: { address: HexString }[],
+  provider: Provider
+): Promise<SmartContractAmount[]> {
+  const tokenGroups = makeTokenGroups(allTokens)
+
+  const multicall = new Multicall({
+    // fixes a type mismatch here because ethereum-multicall is using an older version of ethers than we are
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ethersProvider: provider as any,
+    tryAggregate: true,
+  })
+
+  const toReturn: SmartContractAmount[] = []
+  await Promise.all(
+    tokenGroups.map(async (tokens) => {
+      const contractCallContext: ContractCallContext[] = []
+      tokens.forEach((token) => {
+        contractCallContext.push(
+          makeBalanceOfCallContext(token.address, address)
+        )
+      })
+      const results = await multicall.call(contractCallContext)
+      const amounts = formatMulticallBalanceOfResults(results, network)
+      toReturn.push(...amounts)
+    })
+  )
+
+  return toReturn
 }
