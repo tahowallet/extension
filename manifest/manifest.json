@@ -39,7 +39,7 @@
     "activeTab",
     "cookies",
     "storage",
-    "<all_urls>"
+    "*://tally.cash"
   ],
   "background": {
     "persistent": true,
