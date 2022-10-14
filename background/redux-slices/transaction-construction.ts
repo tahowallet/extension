@@ -196,18 +196,21 @@ const transactionSlice = createSlice({
         isEIP1559TransactionRequest(newState.transactionRequest) &&
         isEIP1559TransactionRequest(transactionRequest)
       ) {
+        const feeType = state.feeTypeSelected
+        const { chainID } = transactionRequest.network
         const estimatedMaxFeePerGas =
-          state.estimatedFeesPerGas?.[transactionRequest.network.chainID]?.[
-            state.feeTypeSelected
-          ]?.maxFeePerGas
+          feeType === NetworkFeeTypeChosen.Custom
+            ? state.customFeesPerGas?.maxFeePerGas
+            : state.estimatedFeesPerGas?.[chainID]?.[feeType]?.maxFeePerGas
 
         newState.transactionRequest.maxFeePerGas =
           estimatedMaxFeePerGas ?? transactionRequest.maxFeePerGas
 
         const estimatedMaxPriorityFeePerGas =
-          state.estimatedFeesPerGas?.[transactionRequest.network.chainID]?.[
-            state.feeTypeSelected
-          ]?.maxPriorityFeePerGas
+          feeType === NetworkFeeTypeChosen.Custom
+            ? state.customFeesPerGas?.maxPriorityFeePerGas
+            : state.estimatedFeesPerGas?.[chainID]?.[feeType]
+                ?.maxPriorityFeePerGas
 
         newState.transactionRequest.maxPriorityFeePerGas =
           estimatedMaxPriorityFeePerGas ??
@@ -251,30 +254,6 @@ const transactionSlice = createSlice({
       { payload }: { payload: NetworkFeeTypeChosen }
     ) => {
       immerState.feeTypeSelected = payload
-
-      if (immerState.transactionRequest) {
-        const selectedFeesPerGas =
-          immerState.estimatedFeesPerGas?.[
-            immerState.transactionRequest.network.chainID
-          ]?.[immerState.feeTypeSelected] ?? immerState.customFeesPerGas
-
-        immerState.transactionRequest = {
-          ...immerState.transactionRequest,
-        }
-
-        if (
-          immerState.transactionRequest &&
-          isEIP1559TransactionRequest(immerState.transactionRequest)
-        ) {
-          immerState.transactionRequest.maxFeePerGas =
-            selectedFeesPerGas?.maxFeePerGas ??
-            immerState.transactionRequest.maxFeePerGas
-
-          immerState.transactionRequest.maxFeePerGas =
-            selectedFeesPerGas?.maxPriorityFeePerGas ??
-            immerState.transactionRequest.maxPriorityFeePerGas
-        }
-      }
     },
 
     signed: (state, { payload }: { payload: SignedTransaction }) => ({
