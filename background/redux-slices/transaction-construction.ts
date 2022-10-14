@@ -324,6 +324,18 @@ const transactionSlice = createSlice({
     clearCustomGas: (immerState) => {
       immerState.customFeesPerGas = defaultCustomGas
     },
+    setCustomGasLimit: (
+      immerState,
+      { payload: gasLimit }: { payload: bigint | undefined }
+    ) => {
+      if (
+        typeof gasLimit !== "undefined" &&
+        immerState.transactionRequest &&
+        isEIP1559TransactionRequest(immerState.transactionRequest)
+      ) {
+        immerState.transactionRequest.gasLimit = gasLimit
+      }
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(updateTransactionData.pending, (immerState) => {
@@ -344,6 +356,7 @@ export const {
   setCustomGas,
   clearCustomGas,
   updateRollupEstimates,
+  setCustomGasLimit,
 } = transactionSlice.actions
 
 export default transactionSlice.reducer
