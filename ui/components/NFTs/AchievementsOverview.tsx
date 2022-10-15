@@ -37,6 +37,7 @@ export default function AchievementsOverview(): ReactElement {
         {`
           .achievement_overview {
             margin: 0 16px;
+            width: calc(100% - 32px);
           }
         `}
       </style>

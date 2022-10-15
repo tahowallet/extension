@@ -15,7 +15,11 @@ import {
   PartialTransactionRequestWithFrom,
 } from "./types"
 import { SignTypedDataRequest } from "../../utils/signing"
-import { enrichEIP2612SignTypedDataRequest, isEIP2612TypedData } from "./utils"
+import {
+  enrichEIP2612SignTypedDataRequest,
+  getRelevantTransactionAddresses,
+  isEIP2612TypedData,
+} from "./utils"
 import { ETHEREUM } from "../../constants"
 
 import resolveTransactionAnnotation from "./transactions"
@@ -77,18 +81,18 @@ export default class EnrichmentService extends BaseService<Events> {
   }
 
   private async connectChainServiceEvents(): Promise<void> {
-    this.chainService.emitter.on(
-      "transaction",
-      async ({ transaction, forAccounts }) => {
-        this.emitter.emit("enrichedEVMTransaction", {
-          transaction: await this.enrichTransaction(
-            transaction,
-            2 /* TODO desiredDecimals should be configurable */
-          ),
-          forAccounts,
-        })
-      }
-    )
+    this.chainService.emitter.on("transaction", async ({ transaction }) => {
+      const accounts = await this.chainService.getAccountsToTrack()
+      const enrichedTransaction = await this.enrichTransaction(transaction, 2)
+
+      this.emitter.emit("enrichedEVMTransaction", {
+        transaction: enrichedTransaction,
+        forAccounts: getRelevantTransactionAddresses(
+          enrichedTransaction,
+          accounts
+        ),
+      })
+    })
   }
 
   async enrichTransactionSignature(
