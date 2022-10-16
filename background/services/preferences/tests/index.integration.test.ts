@@ -10,6 +10,10 @@ describe("Preference Service Integration", () => {
     await preferenceService.startService()
   })
 
+  afterEach(async () => {
+    await preferenceService.stopService()
+  })
+
   describe("setSelectedAccount", () => {
     it("should correctly set selectedAccount in indexedDB", async () => {
       // Should match default account prior to interaction

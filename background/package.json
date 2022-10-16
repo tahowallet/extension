@@ -67,8 +67,6 @@
     "crypto-browserify": "^3.12.0",
     "fake-indexeddb": "^4.0.0",
     "jest-webextension-mock": "^3.7.22",
-    "mockzilla": "^0.12.0",
-    "mockzilla-webextension": "^0.13.0",
     "redux": "^4.1.1",
     "sqlite3": "5.1.1",
     "ts-node": "^10.4.0",

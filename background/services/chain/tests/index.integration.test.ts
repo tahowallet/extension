@@ -33,6 +33,10 @@ describe("ChainService", () => {
     await chainService.startService()
   })
 
+  afterEach(async () => {
+    await chainService.stopService()
+  })
+
   describe("internalStartService", () => {
     it("should not add duplicate networks on startup", async () => {
       // Startup is simulated in the `beforeEach`
