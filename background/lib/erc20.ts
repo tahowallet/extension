@@ -2,21 +2,20 @@ import { BaseProvider, Provider } from "@ethersproject/providers"
 import { BigNumber, ethers } from "ethers"
 
 import {
-  Multicall,
-  ContractCallContext,
-  ContractCallResults,
-} from "ethereum-multicall"
-
-import {
   EventFragment,
   Fragment,
   FunctionFragment,
   TransactionDescription,
 } from "ethers/lib/utils"
 import { SmartContractAmount, SmartContractFungibleAsset } from "../assets"
-import { EVMLog, EVMNetwork, SmartContract } from "../networks"
+import { EVMLog, SmartContract } from "../networks"
 import { HexString } from "../types"
 import { AddressOnNetwork } from "../accounts"
+import {
+  AggregateContractResponse,
+  MULTICALL_ABI,
+  MULTICALL_CONTRACT_ADDRESS,
+} from "./multicall"
 
 export const ERC20_FUNCTIONS = {
   allowance: FunctionFragment.from(
@@ -182,102 +181,51 @@ export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
     .filter((info): info is ERC20TransferLog => typeof info !== "undefined")
 }
 
-const makeTokenGroups = (tokenAddresses: HexString[]): HexString[][] => {
-  const maxPerMulticall = 500 // items per chunk
-
-  const tokenGroups: Array<HexString[]> = []
-
-  tokenAddresses.forEach((item, index) => {
-    const groupIndex = Math.floor(index / maxPerMulticall)
-
-    if (!tokenGroups[groupIndex]) {
-      tokenGroups[groupIndex] = [] // start a new chunk
-    }
-
-    tokenGroups[groupIndex].push(item)
-  })
-
-  return tokenGroups
-}
-
-const makeBalanceOfCallContext = (
-  tokenAddress: HexString,
-  accountAddress: HexString
-) => ({
-  reference: tokenAddress,
-  contractAddress: tokenAddress,
-  abi: [
-    {
-      name: "balanceOf",
-      type: "function",
-      inputs: [{ name: "address", type: "address" }],
-      outputs: [{ name: "balance", type: "uint256" }],
-      stateMutability: "view",
-    },
-  ],
-  calls: [
-    {
-      reference: "balanceOf",
-      methodName: "balanceOf",
-      methodParameters: [accountAddress],
-    },
-  ],
-})
-
-const formatMulticallBalanceOfResults = (
-  results: ContractCallResults,
-  network: EVMNetwork
-) =>
-  Object.entries(results.results).flatMap(([contractAddress, result]) => {
-    if (result.callsReturnContext[0].success === false) {
-      // ignore unsuccessful calls
-      return []
-    }
-    const balanceOfResponse: { type: "BigNumber"; hex: HexString } =
-      result.callsReturnContext[0].returnValues[0]
-
-    if (balanceOfResponse.hex === "0x00") {
-      // ignore 0 balances
-      return []
-    }
-
-    return {
-      amount: BigInt(BigNumber.from(balanceOfResponse.hex).toString()),
-      smartContract: {
-        contractAddress,
-        homeNetwork: network,
-      },
-    }
-  })
-
-export async function getTokenBalances(
+export const getTokenBalances = async (
   { address, network }: AddressOnNetwork,
   tokenAddresses: HexString[],
   provider: Provider
-): Promise<SmartContractAmount[]> {
-  const tokenGroups = makeTokenGroups(tokenAddresses)
-
-  const multicall = new Multicall({
-    // fixes a type mismatch here because ethereum-multicall is using an older version of ethers than we are
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ethersProvider: provider as any,
-    tryAggregate: true,
-  })
-
-  const toReturn: SmartContractAmount[] = []
-  await Promise.all(
-    tokenGroups.map(async (tokenAddressGroup) => {
-      const contractCallContext: ContractCallContext[] = []
-      tokenAddressGroup.forEach((tokenAddress) => {
-        contractCallContext.push(
-          makeBalanceOfCallContext(tokenAddress, address)
-        )
-      })
-      const results = await multicall.call(contractCallContext)
-      const amounts = formatMulticallBalanceOfResults(results, network)
-      toReturn.push(...amounts)
-    })
+): Promise<SmartContractAmount[]> => {
+  const contract = new ethers.Contract(
+    MULTICALL_CONTRACT_ADDRESS,
+    MULTICALL_ABI,
+    provider
   )
 
-  return toReturn
+  const balanceOfCallData = ERC20_INTERFACE.encodeFunctionData("balanceOf", [
+    address,
+  ])
+
+  // eslint-disable-next-line no-useless-catch
+  try {
+    const response = (await contract.callStatic.tryBlockAndAggregate(
+      false,
+      tokenAddresses.map((tokenAddress) => ({
+        target: tokenAddress,
+        callData: balanceOfCallData,
+      }))
+    )) as AggregateContractResponse
+
+    return response.returnData.flatMap((data, i) => {
+      if (data.success !== true) {
+        return []
+      }
+
+      if (data.returnData === "0x00") {
+        return []
+      }
+
+      return {
+        amount: BigInt(BigNumber.from(data.returnData).toString()),
+        smartContract: {
+          contractAddress: tokenAddresses[i],
+          homeNetwork: network,
+        },
+      }
+    })
+  } catch (e) {
+    // @TODO Handle failure case here for networks that don't have multicall deployed
+    // (e.g. local hardhat networks, brand new networks, etc..)
+    throw e
+  }
 }
