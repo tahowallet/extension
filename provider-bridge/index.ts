@@ -67,6 +67,8 @@ export function connectProviderBridge(): void {
 }
 
 export function injectTallyWindowProvider(): void {
+  if (document.contentType !== "text/html") return
+
   try {
     const container = document.head || document.documentElement
     const scriptTag = document.createElement("script")
