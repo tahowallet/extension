@@ -7,10 +7,7 @@ import {
   selectIsTransactionLoaded,
   selectTransactionData,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import {
-  getAccountTotal,
-  selectCurrentNetwork,
-} from "@tallyho/tally-background/redux-slices/selectors"
+import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import {
@@ -28,7 +25,6 @@ import SignTransactionLoader from "../components/SignTransaction/SignTransaction
 export default function SignTransaction(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
@@ -38,7 +34,7 @@ export default function SignTransaction(): ReactElement {
     if (typeof transactionDetails !== "undefined") {
       return getAccountTotal(state, {
         address: transactionDetails.from,
-        network: currentNetwork,
+        network: transactionDetails.network,
       })
     }
     return undefined
