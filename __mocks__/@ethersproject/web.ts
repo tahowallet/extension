@@ -1,3 +1,6 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
+import sinon from "sinon"
+
 const mock =
   jest.createMockFromModule<typeof import("@ethersproject/web")>(
     "@ethersproject/web"
@@ -6,10 +9,10 @@ const mock =
 const actual =
   jest.requireActual<typeof import("@ethersproject/web")>("@ethersproject/web")
 
-const fetchJson: typeof actual["fetchJson"] = async (connection) => {
-  const url = typeof connection === "string" ? connection : connection.url
+const fetchJson = sinon.stub()
 
-  return fetch(url).then((res) => res.json())
+module.exports = {
+  ...mock,
+  ...actual,
+  fetchJson,
 }
-
-module.exports = { ...mock, ...actual, fetchJson }

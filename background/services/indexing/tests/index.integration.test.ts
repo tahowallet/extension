@@ -1,4 +1,5 @@
-import sinon from "sinon"
+import { fetchJson } from "@ethersproject/web"
+import sinon, { SinonStub } from "sinon"
 import IndexingService from ".."
 import { SmartContractFungibleAsset } from "../../../assets"
 import { ETHEREUM, OPTIMISM } from "../../../constants"
@@ -11,19 +12,16 @@ import ChainService from "../../chain"
 import PreferenceService from "../../preferences"
 import { getOrCreateDb as getIndexingDB } from "../db"
 
-jest.mock("@ethersproject/web", () => {
-  const actual =
-    jest.requireActual<typeof import("@ethersproject/web")>(
-      "@ethersproject/web"
-    )
+const fetchJsonStub: SinonStub<
+  Parameters<typeof fetchJson>,
+  ReturnType<typeof fetchJson>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+> = fetchJson as any
 
-  const fetchJson = async () => {
-    // Empty get prices response
-    return {}
-  }
+// Default to an empty response
+beforeEach(() => fetchJsonStub.callsFake(async () => ({})))
 
-  return { ...actual, fetchJson }
-})
+afterEach(() => fetchJsonStub.resetBehavior())
 
 describe("IndexingService", () => {
   const sandbox = sinon.createSandbox()
@@ -117,25 +115,27 @@ describe("IndexingService", () => {
       )
 
       const delay = sinon.promise<void>()
-      window.fetch = async () =>
-        Promise.resolve({
-          json: () =>
-            delay.then(() => ({
-              ...tokenList,
-              tokens: [
-                {
-                  chainId: 1,
-                  address: "0x1000000000000000000000000000000000000000",
-                  name: "Some Token",
-                  decimals: 18,
-                  symbol: "DOGGO",
-                  logoURI: "/logo.svg",
-                  tags: ["earn"],
-                },
-              ],
-            })),
-          ok: true,
-        }) as Promise<Response>
+      fetchJsonStub
+        .withArgs({
+          url: "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
+          timeout: 10_000,
+        })
+        .returns(
+          delay.then(() => ({
+            ...tokenList,
+            tokens: [
+              {
+                chainId: 1,
+                address: "0x1000000000000000000000000000000000000000",
+                name: "Some Token",
+                decimals: 18,
+                symbol: "DOGGO",
+                logoURI: "/logo.svg",
+                tags: ["earn"],
+              },
+            ],
+          }))
+        )
 
       await Promise.all([
         chainService.startService(),
@@ -160,11 +160,12 @@ describe("IndexingService", () => {
 
       const delay = sinon.promise<void>()
 
-      window.fetch = async () =>
-        Promise.resolve({
-          json: () => delay.then(() => tokenList),
-          ok: true,
-        }) as Promise<Response>
+      fetchJsonStub
+        .withArgs({
+          url: "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
+          timeout: 10_000,
+        })
+        .returns(delay.then(() => tokenList))
 
       await Promise.all([
         chainService.startService(),
@@ -195,11 +196,12 @@ describe("IndexingService", () => {
     it("should update cache when adding a custom asset", async () => {
       const cacheSpy = jest.spyOn(indexingService, "cacheAssetsForNetwork")
 
-      window.fetch = async () =>
-        Promise.resolve({
-          json: () => Promise.resolve(tokenList),
-          ok: true,
-        }) as Promise<Response>
+      fetchJsonStub
+        .withArgs({
+          url: "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
+          timeout: 10_000,
+        })
+        .resolves(tokenList)
 
       await Promise.all([
         chainService.startService(),
