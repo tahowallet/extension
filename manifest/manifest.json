@@ -38,7 +38,7 @@
     "unlimitedStorage",
     "activeTab",
     "cookies",
-    "https://localhost:8001/"
+    "*://deploy-preview-113--tally-cash.netlify.app/"
   ],
   "background": {
     "persistent": true,
