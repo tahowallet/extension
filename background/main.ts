@@ -656,8 +656,8 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on(
       "updateTransaction",
-      async (options) => {
-        const { network } = options
+      async ({ transaction, forceEnrichment = false }) => {
+        const { network } = transaction
 
         const {
           values: { maxFeePerGas, maxPriorityFeePerGas },
@@ -666,14 +666,14 @@ export default class Main extends BaseService<never> {
         const { transactionRequest: populatedRequest, gasEstimationError } =
           await this.chainService.populatePartialTransactionRequest(
             network,
-            { ...options },
+            { ...transaction },
             { maxFeePerGas, maxPriorityFeePerGas }
           )
 
         const { annotation } =
           // Respect a prepopulated annotation. For now, this short-circuits
           // the usual enrichment process.
-          populatedRequest.annotation === undefined
+          forceEnrichment || populatedRequest.annotation === undefined
             ? await this.enrichmentService.enrichTransactionSignature(
                 network,
                 populatedRequest,
@@ -990,7 +990,7 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
-        this.store.dispatch(updateTransactionData(payload))
+        this.store.dispatch(updateTransactionData({ transaction: payload }))
 
         const clear = () => {
           // Mutual dependency to handleAndClear.

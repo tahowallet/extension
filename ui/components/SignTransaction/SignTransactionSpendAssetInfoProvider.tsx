@@ -12,7 +12,7 @@ import { updateTransactionData } from "@tallyho/tally-background/redux-slices/tr
 import { AssetApproval } from "@tallyho/tally-background/services/enrichment"
 import { ethers } from "ethers"
 import { hexlify } from "ethers/lib/utils"
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
@@ -45,21 +45,14 @@ export default function SignTransactionSpendAssetInfoProvider({
     assetAmount: { asset, amount: approvalLimit },
     spender,
   } = annotation
-  // `null` means no limit
-  const approvalLimitString = isMaxUint256(approvalLimit)
-    ? null
-    : fixedPointNumberToString({
-        amount: approvalLimit,
-        decimals: asset.decimals,
-      })
-
-  const approvalLimitDisplayValue = `${
-    approvalLimitString ?? t("infinite")
-  } ${asset.symbol.toUpperCase()}`
-
   const [approvalLimitInput, setApprovalLimitInput] = useState<string | null>(
     null
   )
+
+  const [approvalLimitString, setApprovalLimitString] = useState<string | null>(
+    null
+  )
+  const [isLoading, setIsLoading] = useState(false)
 
   const [hasError, setHasError] = useState(false)
 
@@ -71,9 +64,12 @@ export default function SignTransactionSpendAssetInfoProvider({
 
   const handleCancelClick = () => {
     setApprovalLimitInput(null)
+    setIsLoading(false)
   }
 
   const handleSaveClick = () => {
+    setIsLoading(false)
+
     if (!changing) return
 
     if (
@@ -92,6 +88,7 @@ export default function SignTransactionSpendAssetInfoProvider({
       setHasError(true)
       return
     }
+    setIsLoading(true)
 
     const bigintAmount =
       decimalAmount === null
@@ -104,13 +101,29 @@ export default function SignTransactionSpendAssetInfoProvider({
       ERC20_FUNCTIONS.approve,
       [spender.address, hexlify(bigintAmount)]
     )
+
     dispatch(
       updateTransactionData({
-        ...transactionDetails,
-        input: updatedInput,
+        transaction: {
+          ...transactionDetails,
+          input: updatedInput,
+        },
+        forceEnrichment: true, // approval limit can change so we need to recalculate annotations
       })
     )
   }
+
+  useEffect(() => {
+    setApprovalLimitString(
+      isMaxUint256(approvalLimit)
+        ? null
+        : fixedPointNumberToString({
+            amount: approvalLimit,
+            decimals: asset.decimals,
+          })
+    )
+    setIsLoading(false)
+  }, [approvalLimit, asset.decimals])
 
   return (
     <SignTransactionBaseInfoProvider
@@ -197,13 +210,21 @@ export default function SignTransactionSpendAssetInfoProvider({
               </div>
             ) : (
               <>
-                <span
-                  className={classNames("spend_amount", {
-                    has_error: approvalLimitString === null,
-                  })}
+                <SharedSkeletonLoader
+                  isLoaded={!isLoading}
+                  width={60}
+                  height={24}
                 >
-                  {approvalLimitDisplayValue}
-                </span>
+                  <span
+                    className={classNames("spend_amount", {
+                      has_error: approvalLimitString === null,
+                    })}
+                  >
+                    {`${
+                      approvalLimitString ?? t("infinite")
+                    } ${asset.symbol.toUpperCase()}`}
+                  </span>
+                </SharedSkeletonLoader>
                 <SharedButton
                   size="small"
                   isFormSubmit
