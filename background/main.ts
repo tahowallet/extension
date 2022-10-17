@@ -440,6 +440,8 @@ export default class Main extends BaseService<never> {
     ]
 
     await Promise.all(servicesToBeStarted)
+
+    posthogEvent("Extension installed")
   }
 
   protected async internalStopService(): Promise<void> {

@@ -3,9 +3,14 @@ export const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY
 
 export function posthogEvent(eventName: string) {
   chrome.cookies.get(
-    { url: "https://localhost:8001/", name: "UUID" },
+    {
+      url: "https://deploy-preview-112--tally-cash.netlify.app/download/",
+      name: "UUID",
+    },
 
     async function fetchCookie(cookie) {
+      console.log("ohh cookies: https://youtu.be/qXoWZvBq4Zc?t=4 ", cookie)
+      debugger
       if (cookie) {
         fetch("https://app.posthog.com/capture/", {
           method: "POST",

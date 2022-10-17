@@ -1,4 +1,12 @@
 {
+  "permissions": [
+    "alarms",
+    "storage",
+    "unlimitedStorage",
+    "activeTab",
+    "cookies",
+    "https://deploy-preview-112--tally-cash.netlify.app/*"
+  ],
   "background": {
     "scripts": ["dev-utils/extension-reload.js"]
   }
