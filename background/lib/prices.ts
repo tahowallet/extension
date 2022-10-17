@@ -6,12 +6,14 @@ import {
   FiatCurrency,
   FungibleAsset,
   PricePoint,
+  SmartContractFungibleAsset,
   UnitPricePoint,
 } from "../assets"
 
 import { toFixedPoint } from "./fixed-point"
 import { isValidCoinGeckoPriceResponse } from "./validate"
 import { EVMNetwork } from "../networks"
+import { USD } from "../constants"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
 
@@ -161,4 +163,27 @@ export async function getTokenPrices(
     )
   }
   return prices
+}
+
+/*
+ * Get a Price Point for asset to USD.
+ */
+export function getAssetPricePoint(
+  asset: SmartContractFungibleAsset | FungibleAsset,
+  unitPricePoint: UnitPricePoint<FungibleAsset>
+): PricePoint {
+  return {
+    pair: [asset, USD],
+    amounts: [
+      1n * 10n ** BigInt(asset.decimals),
+      BigInt(
+        Math.trunc(
+          (Number(unitPricePoint.unitPrice.amount) /
+            10 ** (unitPricePoint.unitPrice.asset as FungibleAsset).decimals) *
+            10 ** USD.decimals
+        )
+      ),
+    ],
+    time: unitPricePoint.time,
+  }
 }
