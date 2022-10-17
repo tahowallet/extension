@@ -5,6 +5,7 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { debounce } from "lodash"
+import { posthogEvent } from "./lib/posthog"
 
 import {
   decodeJSON,
@@ -1385,3 +1386,10 @@ export default class Main extends BaseService<never> {
     this.store.dispatch(rejectDataSignature())
   }
 }
+
+// Fire analytics event when extension is installed
+browser.runtime.onInstalled.addListener((details) => {
+  if (details.reason === "install") {
+    posthogEvent("Extension installed")
+  }
+})
