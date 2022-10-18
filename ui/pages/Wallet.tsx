@@ -19,6 +19,7 @@ import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOp
 import NFTsWallet from "../components/NFTs/NFTsWallet"
 import SharedBanner from "../components/Shared/SharedBanner"
 import WalletDefaultToggle from "../components/Wallet/WalletDefaultToggle"
+import WalletBanner from "../components/Wallet/WalletBanner"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "wallet" })
@@ -72,6 +73,7 @@ export default function Wallet(): ReactElement {
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           />
         </div>
+        <WalletBanner />
         {!HIDE_TOKEN_FEATURES && <OnboardingOpenClaimFlowBanner />}
         <div className="section">
           <SharedPanelSwitcher
