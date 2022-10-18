@@ -1,17 +1,20 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 // import { useTranslation } from "react-i18next"
 import SharedBanner from "../Shared/SharedBanner"
 import SharedButton from "../Shared/SharedButton"
 import SharedIcon from "../Shared/SharedIcon"
+import WalletBannerSlideup from "./WalletBannerSlideup"
 
 export default function WalletBanner(): ReactElement {
   //   const { t } = useTranslation()
+  const [showDismissSlideup, setShowDismissSlideup] = useState(true)
 
   return (
     <div className="wallet_banner_container">
       <SharedBanner>
         <div className="wallet_banner">
           <SharedIcon
+            onClick={() => setShowDismissSlideup(true)}
             icon="icons/s/close.svg"
             ariaLabel="close"
             width={16}
@@ -54,6 +57,10 @@ export default function WalletBanner(): ReactElement {
           </div>
         </div>
       </SharedBanner>
+      <WalletBannerSlideup
+        isOpen={showDismissSlideup}
+        onClose={() => setShowDismissSlideup(false)}
+      />
       <style jsx>{`
         img {
           width: 64px;
