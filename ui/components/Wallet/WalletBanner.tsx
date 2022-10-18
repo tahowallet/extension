@@ -1,17 +1,101 @@
 import { selectHideBanners } from "@tallyho/tally-background/redux-slices/ui"
+import { fetchWithTimeout } from "@tallyho/tally-background/utils/fetching"
 import classNames from "classnames"
-import React, { ReactElement, useState } from "react"
-import { useSelector } from "react-redux"
+import React, { ReactElement, useEffect, useState } from "react"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+
 // import { useTranslation } from "react-i18next"
 import SharedBanner from "../Shared/SharedBanner"
 import SharedButton from "../Shared/SharedButton"
 import SharedIcon from "../Shared/SharedIcon"
 import WalletBannerSlideup from "./WalletBannerSlideup"
 
+enum AchievementStatus {
+  Draft = "Draft",
+  Active = "Active",
+  NotStarted = "NotStarted",
+  Expired = "Expired",
+  CapReached = "CapReached",
+  Deleted = "Deleted",
+}
+
+type Achievement = {
+  id: string
+  name: string
+  status: AchievementStatus
+  description: string
+  thumbnail: string
+  startTime: number
+  endTime: number
+}
+
+async function getActiveAchievement(): Promise<Achievement | null> {
+  try {
+    const {
+      data: {
+        space: {
+          campaigns: { list: achievements = [] },
+        },
+      },
+    } = (await (
+      await fetchWithTimeout("https://graphigo.prd.galaxy.eco/query", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          variables: {},
+          operationName: "ArbitrumCampaigns",
+          query: `
+          query ArbitrumCampaigns {
+            space(alias: "arbitrum") {
+              campaigns(input: {
+                chains: [ARBITRUM]
+              }) {
+                list {
+                  id
+                  name
+                  status
+                  description
+                  thumbnail
+                  startTime
+                  endTime
+                }
+              }
+            }
+          }
+        `,
+        }),
+      })
+    ).json()) as { data: { space: { campaigns: { list: Achievement[] } } } }
+
+    const activeAchievements = achievements
+      .filter((item) => item.status === AchievementStatus.Active)
+      .sort((item1, item2) => item1.startTime - item2.startTime)
+
+    return activeAchievements[0] ?? null
+  } catch (error) {
+    return null
+  }
+}
+
 export default function WalletBanner(): ReactElement {
   //   const { t } = useTranslation()
-  const hideBanners = useSelector(selectHideBanners)
+  const dispatch = useBackgroundDispatch()
+  const hideBanners = useBackgroundSelector(selectHideBanners)
   const [showDismissSlideup, setShowDismissSlideup] = useState(false)
+  const [achievement, setAchievement] = useState<Achievement | null>(null)
+
+  useEffect(() => {
+    const fetchAchievement = async () => {
+      const active = await getActiveAchievement()
+      setAchievement(active)
+    }
+
+    fetchAchievement()
+  }, [dispatch])
+
+  const thumbnail = achievement?.thumbnail // TODO: add fallback thumbnail
 
   return (
     <div
@@ -34,7 +118,7 @@ export default function WalletBanner(): ReactElement {
               right: 0;
             `}
           />
-          <img src="./images/avatars/atos@2x.png" alt="Notification campaign" />
+          <img src={thumbnail} alt="Notification campaign" />
           <div className="wallet_banner_content">
             <h3>Odyssey week 8 is live!</h3>
             <p>Featuring 1inch.</p>
@@ -90,7 +174,6 @@ export default function WalletBanner(): ReactElement {
           line-height: 24px;
           color: var(--green-40);
         }
-
         .wallet_banner {
           position: relative;
           display: flex;
