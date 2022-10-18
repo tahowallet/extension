@@ -1,11 +1,17 @@
-import { FungibleAsset, SmartContractFungibleAsset } from "../../assets"
+import {
+  FungibleAsset,
+  PricePoint,
+  SmartContractFungibleAsset,
+} from "../../assets"
+import { USD } from "../../constants"
 import {
   convertFixedPointNumber,
   fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "../../lib/fixed-point"
+import { getPricePoint, getTokenPrices } from "../../lib/prices"
 import { EVMNetwork } from "../../networks"
-import { AssetsState, selectAssetPricePoint } from "../assets"
+import { AssetsState, selectAssetPricePoint, SingleAssetState } from "../assets"
 import {
   AssetMainCurrencyAmount,
   enrichAssetAmountWithMainCurrencyValues,
@@ -38,16 +44,44 @@ export type PriceDetails = {
   sellCurrencyAmount: string | undefined
 }
 
-export function getAssetAmount(
+export async function getAssetPricePoint(
+  asset: SmartContractFungibleAsset | FungibleAsset,
+  assets: AssetsState,
+  network: EVMNetwork
+): Promise<PricePoint> {
+  const assetPricesNetworks = assets
+    .filter(
+      (assetItem) =>
+        "contractAddress" in assetItem &&
+        assetItem.contractAddress &&
+        assetItem.symbol === asset.symbol
+    )
+    .map((assetItem) => {
+      const { contractAddress } = assetItem as SingleAssetState & {
+        contractAddress: string
+      }
+      return contractAddress
+    })
+
+  const unitPricePoint = Object.values(
+    await getTokenPrices(assetPricesNetworks, USD, network)
+  )[0]
+
+  return getPricePoint(asset, unitPricePoint)
+}
+
+export async function getAssetAmount(
   assets: AssetsState,
   asset: SmartContractFungibleAsset | FungibleAsset,
-  amount: string
-):
+  amount: string,
+  network: EVMNetwork
+): Promise<
   | ({
       asset: FungibleAsset | SmartContractFungibleAsset
       amount: bigint
     } & AssetMainCurrencyAmount)
-  | undefined {
+  | undefined
+> {
   const mainCurrencySymbol = "USD"
 
   const fixedPointAmount = parseToFixedPointNumber(amount.toString())
@@ -64,12 +98,13 @@ export function getAssetAmount(
     asset?.symbol,
     mainCurrencySymbol
   )
+
   return enrichAssetAmountWithMainCurrencyValues(
     {
       asset,
       amount: decimalMatched.amount,
     },
-    assetPricePoint,
+    assetPricePoint ?? (await getAssetPricePoint(asset, assets, network)),
     2
   )
 }
@@ -84,28 +119,30 @@ export function getPriceImpact(
   return undefined
 }
 
-export function calculatePriceDetails(
+export async function calculatePriceDetails(
   quoteRequest: SwapQuoteRequest,
   assets: AssetsState,
   sellAmount: string,
   buyAmount: string
-): PriceDetails {
-  const assetSellAmount = getAssetAmount(
+): Promise<PriceDetails> {
+  const assetSellAmount = await getAssetAmount(
     assets,
     quoteRequest.assets.sellAsset,
     fixedPointNumberToString({
       amount: BigInt(sellAmount),
       decimals: quoteRequest.assets.sellAsset.decimals,
-    })
+    }),
+    quoteRequest.network
   )
 
-  const assetBuyAmount = getAssetAmount(
+  const assetBuyAmount = await getAssetAmount(
     assets,
     quoteRequest.assets.buyAsset,
     fixedPointNumberToString({
       amount: BigInt(buyAmount),
       decimals: quoteRequest.assets.buyAsset.decimals,
-    })
+    }),
+    quoteRequest.network
   )
 
   const priceImpact = getPriceImpact(

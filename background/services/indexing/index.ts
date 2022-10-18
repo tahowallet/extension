@@ -18,7 +18,7 @@ import {
   NETWORK_BY_CHAIN_ID,
   USD,
 } from "../../constants"
-import { getPrices, getTokenPrices } from "../../lib/prices"
+import { getPrices, getTokenPrices, getPricePoint } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
   mergeAssets,
@@ -656,22 +656,7 @@ export default class IndexingService extends BaseService<Events> {
               allActiveAssetsByAddress[contractAddress.toLowerCase()]
             if (asset) {
               // TODO look up fiat currency
-              const pricePoint = {
-                pair: [asset, USD],
-                amounts: [
-                  1n * 10n ** BigInt(asset.decimals),
-                  BigInt(
-                    Math.trunc(
-                      (Number(unitPricePoint.unitPrice.amount) /
-                        10 **
-                          (unitPricePoint.unitPrice.asset as FungibleAsset)
-                            .decimals) *
-                        10 ** USD.decimals
-                    )
-                  ),
-                ], // TODO not a big fan of this lost precision
-                time: unitPricePoint.time,
-              } as PricePoint
+              const pricePoint = getPricePoint(asset, unitPricePoint)
               this.emitter.emit("price", pricePoint)
               // TODO move the "coingecko" data source elsewhere
               this.db
