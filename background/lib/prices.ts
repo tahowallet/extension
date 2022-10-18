@@ -168,7 +168,7 @@ export async function getTokenPrices(
 /*
  * Get a Price Point for asset to USD.
  */
-export function getAssetPricePoint(
+export function getPricePoint(
   asset: SmartContractFungibleAsset | FungibleAsset,
   unitPricePoint: UnitPricePoint<FungibleAsset>
 ): PricePoint {

@@ -9,7 +9,7 @@ import {
   fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "../../lib/fixed-point"
-import { getAssetPricePoint, getTokenPrices } from "../../lib/prices"
+import { getPricePoint, getTokenPrices } from "../../lib/prices"
 import { EVMNetwork } from "../../networks"
 import { AssetsState, selectAssetPricePoint, SingleAssetState } from "../assets"
 import {
@@ -44,7 +44,7 @@ export type PriceDetails = {
   sellCurrencyAmount: string | undefined
 }
 
-export async function getPricePoint(
+export async function getAssetPricePoint(
   asset: SmartContractFungibleAsset | FungibleAsset,
   assets: AssetsState,
   network: EVMNetwork
@@ -67,7 +67,7 @@ export async function getPricePoint(
     await getTokenPrices(assetPricesNetworks, USD, network)
   )[0]
 
-  return getAssetPricePoint(asset, unitPricePoint)
+  return getPricePoint(asset, unitPricePoint)
 }
 
 export async function getAssetAmount(
@@ -104,7 +104,7 @@ export async function getAssetAmount(
       asset,
       amount: decimalMatched.amount,
     },
-    assetPricePoint ?? (await getPricePoint(asset, assets, network)),
+    assetPricePoint ?? (await getAssetPricePoint(asset, assets, network)),
     2
   )
 }

@@ -18,7 +18,7 @@ import {
   NETWORK_BY_CHAIN_ID,
   USD,
 } from "../../constants"
-import { getPrices, getTokenPrices, getAssetPricePoint } from "../../lib/prices"
+import { getPrices, getTokenPrices, getPricePoint } from "../../lib/prices"
 import {
   fetchAndValidateTokenList,
   mergeAssets,
@@ -656,7 +656,7 @@ export default class IndexingService extends BaseService<Events> {
               allActiveAssetsByAddress[contractAddress.toLowerCase()]
             if (asset) {
               // TODO look up fiat currency
-              const pricePoint = getAssetPricePoint(asset, unitPricePoint)
+              const pricePoint = getPricePoint(asset, unitPricePoint)
               this.emitter.emit("price", pricePoint)
               // TODO move the "coingecko" data source elsewhere
               this.db
