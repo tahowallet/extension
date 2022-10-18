@@ -1,4 +1,9 @@
+import {
+  setSnackbarMessage,
+  toggleHideBanners,
+} from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement } from "react"
+import { useBackgroundDispatch } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 
@@ -7,6 +12,13 @@ export default function WalletBannerSlideup(props: {
   onClose: () => void
 }): ReactElement {
   const { isOpen, onClose } = props
+  const dispatch = useBackgroundDispatch()
+
+  const dismiss = () => {
+    dispatch(toggleHideBanners(true))
+    dispatch(setSnackbarMessage("You can turn notification back from Settings"))
+    onClose()
+  }
   return (
     <SharedSlideUpMenu
       size="custom"
@@ -21,10 +33,10 @@ export default function WalletBannerSlideup(props: {
           every week that you can dismiss.
         </p>
         <div className="wallet_banner_slideup_buttons">
-          <SharedButton type="primary" size="medium" onClick={() => {}}>
+          <SharedButton type="primary" size="medium" onClick={dismiss}>
             Yes, show notification
           </SharedButton>
-          <SharedButton type="tertiary" size="medium" onClick={() => {}}>
+          <SharedButton type="tertiary" size="medium" onClick={dismiss}>
             No thanks
           </SharedButton>
         </div>

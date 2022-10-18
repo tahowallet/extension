@@ -1,4 +1,7 @@
+import { selectHideBanners } from "@tallyho/tally-background/redux-slices/ui"
+import classNames from "classnames"
 import React, { ReactElement, useState } from "react"
+import { useSelector } from "react-redux"
 // import { useTranslation } from "react-i18next"
 import SharedBanner from "../Shared/SharedBanner"
 import SharedButton from "../Shared/SharedButton"
@@ -7,10 +10,15 @@ import WalletBannerSlideup from "./WalletBannerSlideup"
 
 export default function WalletBanner(): ReactElement {
   //   const { t } = useTranslation()
-  const [showDismissSlideup, setShowDismissSlideup] = useState(true)
+  const hideBanners = useSelector(selectHideBanners)
+  const [showDismissSlideup, setShowDismissSlideup] = useState(false)
 
   return (
-    <div className="wallet_banner_container">
+    <div
+      className={classNames("wallet_banner_container", {
+        hide: hideBanners,
+      })}
+    >
       <SharedBanner>
         <div className="wallet_banner">
           <SharedIcon
@@ -82,9 +90,7 @@ export default function WalletBanner(): ReactElement {
           line-height: 24px;
           color: var(--green-40);
         }
-        .wallet_banner_container {
-          margin: 10px 0 25px;
-        }
+
         .wallet_banner {
           position: relative;
           display: flex;
@@ -98,15 +104,26 @@ export default function WalletBanner(): ReactElement {
           line-height: 24px;
           color: var(--green-40);
         }
-        .wallet_banner_content {
-          width: 100%;
-        }
         .wallet_banner_buttons {
           display: flex;
           width: 100%;
           align-items: center;
           justify-content: space-between;
           margin-top: 5px;
+        }
+        .wallet_banner_content {
+          width: 100%;
+        }
+        .wallet_banner_container {
+          margin: 10px 0 25px;
+          max-height: 200px;
+        }
+        .wallet_banner_container.hide {
+          max-height: 0;
+          margin: 0;
+          pointer-events: none;
+          opacity: 0;
+          transition: all 500ms ease;
         }
       `}</style>
     </div>

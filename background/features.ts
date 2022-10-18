@@ -20,3 +20,5 @@ export const SUPPORT_FORGOT_PASSWORD =
   process.env.SUPPORT_FORGOT_PASSWORD === "true"
 export const ENABLE_ACHIEVEMENTS_TAB =
   process.env.ENABLE_ACHIEVEMENTS_TAB === "true"
+export const SUPPORT_ACHIEVEMENTS_BANNER =
+  process.env.SUPPORT_ACHIEVEMENTS_BANNER === "true"
