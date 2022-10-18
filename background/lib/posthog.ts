@@ -28,11 +28,6 @@ export function posthogEvent(eventName: string) {
               Accept: "application/json",
             },
           })
-          // eslint-disable-next-line no-console
-          console.log("UUID: ", cookie.value)
-        } else {
-          // eslint-disable-next-line no-console
-          console.log("No UUID Present")
         }
       }
     )
