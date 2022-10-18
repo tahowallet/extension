@@ -2,7 +2,6 @@ import React, { ReactElement, useState } from "react"
 import {
   getAccountTotal,
   selectCurrentAccountSigner,
-  selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   rejectDataSignature,
@@ -31,17 +30,13 @@ const TITLE: Record<SigningDataType, string> = {
 export default function PersonalSignData(): ReactElement {
   const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const signingDataRequest = useBackgroundSelector(selectSigningData)
 
   const history = useHistory()
 
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof signingDataRequest !== "undefined") {
-      return getAccountTotal(state, {
-        address: signingDataRequest.account.address,
-        network: currentNetwork,
-      })
+      return getAccountTotal(state, signingDataRequest.account)
     }
     return undefined
   })

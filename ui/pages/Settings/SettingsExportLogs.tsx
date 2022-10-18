@@ -1,13 +1,16 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import dayjs from "dayjs"
+import { serializeLogs } from "@tallyho/tally-background/lib/logger"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 
 export default function SettingsExportLogs(): ReactElement {
   const { t } = useTranslation()
-  const base64LogContent = Buffer.from(
-    `${window.navigator.userAgent}\n\n\n${localStorage.getItem("logs")}` || ""
+
+  const serializedLogs = serializeLogs()
+  const base64LogData = Buffer.from(
+    `${window.navigator.userAgent}\n\n\n${serializedLogs}` || ""
   ).toString("base64")
 
   const logFileName = `logs_v${(process.env.VERSION || "").replace(
@@ -39,7 +42,7 @@ export default function SettingsExportLogs(): ReactElement {
         <h2>{t("settings.exportLogs.logTitle")}</h2>
         <p className="simple_text">{t("settings.exportLogs.logDesc")}</p>
         <a
-          href={`data:application/octet-stream;charset=utf-16le;base64,${base64LogContent}`}
+          href={`data:application/octet-stream;charset=utf-16le;base64,${base64LogData}`}
           download={logFileName}
         >
           <SharedButton
@@ -47,6 +50,7 @@ export default function SettingsExportLogs(): ReactElement {
             size="medium"
             iconSmall="download"
             iconPosition="left"
+            isLoading={base64LogData === undefined}
           >
             {t("settings.exportLogs.logBtn")}
           </SharedButton>

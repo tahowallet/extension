@@ -1224,12 +1224,14 @@ export default class Main extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await Promise.all(
-          [ETHEREUM, POLYGON, OPTIMISM, GOERLI].map(async (network) => {
-            await this.providerBridgeService.denyOrRevokePermission({
-              ...permission,
-              chainID: network.chainID,
-            })
-          })
+          [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE].map(
+            async (network) => {
+              await this.providerBridgeService.denyOrRevokePermission({
+                ...permission,
+                chainID: network.chainID,
+              })
+            }
+          )
         )
       }
     )
