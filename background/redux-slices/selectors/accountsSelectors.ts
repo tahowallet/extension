@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { selectHideDust } from "../ui"
 import { RootState } from ".."
-import { AccountType, CompleteAssetAmount } from "../accounts"
+import { AccountState, AccountType, CompleteAssetAmount } from "../accounts"
 import { AssetsState, selectAssetPricePoint } from "../assets"
 import {
   enrichAssetAmountWithDecimalValues,
@@ -333,7 +333,70 @@ const getTotalBalance = (
     .reduce((total, assetBalance) => total + assetBalance, 0)
 }
 
-export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
+function getNetworkAccountTotalsByCategory(
+  accounts: AccountState,
+  assets: AssetsState,
+  accountSignersByAddress: ReturnType<typeof selectAccountSignersByAddress>,
+  keyringsByAddresses: ReturnType<typeof selectKeyringsByAddresses>,
+  sourcesByAddress: ReturnType<typeof selectSourcesByAddress>,
+  mainCurrencySymbol: ReturnType<typeof selectMainCurrencySymbol>,
+  network: EVMNetwork
+): CategorizedAccountTotals {
+  return Object.entries(accounts.accountsData.evm[network.chainID] ?? {})
+    .filter(([, accountData]) => typeof accountData !== "undefined")
+    .map(([address, accountData]): AccountTotal => {
+      const shortenedAddress = truncateAddress(address)
+
+      const accountSigner =
+        accountSignersByAddress[address] ?? ReadOnlyAccountSigner
+      const keyringId = keyringsByAddresses[address]?.id
+
+      const accountType = getAccountType(
+        address,
+        accountSigner,
+        sourcesByAddress
+      )
+
+      if (accountData === "loading") {
+        return {
+          address,
+          network,
+          shortenedAddress,
+          accountType,
+          keyringId,
+          accountSigner,
+        }
+      }
+
+      return {
+        address,
+        network,
+        shortenedAddress,
+        accountType,
+        keyringId,
+        accountSigner,
+        name: accountData.ens.name ?? accountData.defaultName,
+        avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
+        localizedTotalMainCurrencyAmount: formatCurrencyAmount(
+          mainCurrencySymbol,
+          getTotalBalance(accountData.balances, assets, mainCurrencySymbol),
+          desiredDecimals
+        ),
+      }
+    })
+    .reduce<CategorizedAccountTotals>(
+      (seenTotalsByType, accountTotal) => ({
+        ...seenTotalsByType,
+        [accountTotal.accountType]: [
+          ...(seenTotalsByType[accountTotal.accountType] ?? []),
+          accountTotal,
+        ],
+      }),
+      {}
+    )
+}
+
+const selectNetworkAccountTotalsByCategoryResolver = createSelector(
   getAccountState,
   getAssetsState,
   selectAccountSignersByAddress,
@@ -347,63 +410,30 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
     accountSignersByAddress,
     keyringsByAddresses,
     sourcesByAddress,
-    mainCurrencySymbol,
+    mainCurrencySymbol
+  ): ((network: EVMNetwork) => CategorizedAccountTotals) => {
+    return (network: EVMNetwork) => {
+      return getNetworkAccountTotalsByCategory(
+        accounts,
+        assets,
+        accountSignersByAddress,
+        keyringsByAddresses,
+        sourcesByAddress,
+        mainCurrencySymbol,
+        network
+      )
+    }
+  }
+)
+
+export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
+  selectNetworkAccountTotalsByCategoryResolver,
+  selectCurrentNetwork,
+  (
+    selectNetworkAccountTotalsByCategory,
     currentNetwork
   ): CategorizedAccountTotals => {
-    return Object.entries(
-      accounts.accountsData.evm[currentNetwork.chainID] ?? {}
-    )
-      .filter(([, accountData]) => typeof accountData !== "undefined")
-      .map(([address, accountData]): AccountTotal => {
-        const shortenedAddress = truncateAddress(address)
-
-        const accountSigner =
-          accountSignersByAddress[address] ?? ReadOnlyAccountSigner
-        const keyringId = keyringsByAddresses[address]?.id
-
-        const accountType = getAccountType(
-          address,
-          accountSigner,
-          sourcesByAddress
-        )
-
-        if (accountData === "loading") {
-          return {
-            address,
-            network: currentNetwork,
-            shortenedAddress,
-            accountType,
-            keyringId,
-            accountSigner,
-          }
-        }
-
-        return {
-          address,
-          network: currentNetwork,
-          shortenedAddress,
-          accountType,
-          keyringId,
-          accountSigner,
-          name: accountData.ens.name ?? accountData.defaultName,
-          avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
-          localizedTotalMainCurrencyAmount: formatCurrencyAmount(
-            mainCurrencySymbol,
-            getTotalBalance(accountData.balances, assets, mainCurrencySymbol),
-            desiredDecimals
-          ),
-        }
-      })
-      .reduce<CategorizedAccountTotals>(
-        (seenTotalsByType, accountTotal) => ({
-          ...seenTotalsByType,
-          [accountTotal.accountType]: [
-            ...(seenTotalsByType[accountTotal.accountType] ?? []),
-            accountTotal,
-          ],
-        }),
-        {}
-      )
+    return selectNetworkAccountTotalsByCategory(currentNetwork)
   }
 )
 
@@ -471,7 +501,9 @@ export const getAccountTotal = (
   accountAddressOnNetwork: AddressOnNetwork
 ): AccountTotal | undefined =>
   findAccountTotal(
-    selectCurrentNetworkAccountTotalsByCategory(state),
+    selectNetworkAccountTotalsByCategoryResolver(state)(
+      accountAddressOnNetwork.network
+    ),
     accountAddressOnNetwork
   )
 
