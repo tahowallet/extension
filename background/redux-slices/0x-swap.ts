@@ -488,6 +488,14 @@ export const executeSwap = createBackgroundAsyncThunk(
         type: "asset-swap",
         fromAssetAmount: sellAssetAmount,
         toAssetAmount: buyAssetAmount,
+        sources: quote.sources
+          .map(({ name, proportion }) => {
+            return {
+              name,
+              proportion: parseFloat(proportion),
+            }
+          })
+          .filter(({ proportion }) => proportion > 0),
         timestamp: Date.now(),
         blockTimestamp: undefined,
       },

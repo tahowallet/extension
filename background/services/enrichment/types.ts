@@ -74,6 +74,7 @@ export type AssetSwap = BaseTransactionAnnotation & {
   type: "asset-swap"
   fromAssetAmount: AnyAssetAmount<FungibleAsset> & AssetDecimalAmount
   toAssetAmount: AnyAssetAmount<FungibleAsset> & AssetDecimalAmount
+  sources: { name: string; proportion: number }[]
   swapContractInfo?: EnrichedAddressOnNetwork
 }
 
