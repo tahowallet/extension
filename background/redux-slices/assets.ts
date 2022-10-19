@@ -17,7 +17,7 @@ import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
 import { BASE_ASSETS_BY_SYMBOL, FIAT_CURRENCIES_SYMBOL } from "../constants"
 
-type SingleAssetState = AnyAsset & {
+export type SingleAssetState = AnyAsset & {
   recentPrices: {
     [assetSymbol: string]: PricePoint
   }

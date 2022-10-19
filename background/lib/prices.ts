@@ -6,35 +6,16 @@ import {
   FiatCurrency,
   FungibleAsset,
   PricePoint,
+  SmartContractFungibleAsset,
   UnitPricePoint,
 } from "../assets"
 
 import { toFixedPoint } from "./fixed-point"
 import { isValidCoinGeckoPriceResponse } from "./validate"
 import { EVMNetwork } from "../networks"
+import { USD } from "../constants"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
-
-export async function getPrice(
-  coingeckoCoinId = "ethereum",
-  currencySymbol = "usd"
-): Promise<number | null> {
-  const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coingeckoCoinId}&vs_currencies=${currencySymbol}&include_last_updated_at=true`
-
-  const json = await fetchJson(url)
-
-  if (!isValidCoinGeckoPriceResponse(json)) {
-    logger.warn(
-      "CoinGecko price response didn't validate, did the API change?",
-      json,
-      isValidCoinGeckoPriceResponse.errors
-    )
-
-    return null
-  }
-
-  return json?.[coingeckoCoinId]?.[currencySymbol] || null
-}
 
 export async function getPrices(
   assets: (AnyAsset & CoinGeckoAsset)[],
@@ -161,4 +142,27 @@ export async function getTokenPrices(
     )
   }
   return prices
+}
+
+/*
+ * Get a Price Point for asset to USD.
+ */
+export function getPricePoint(
+  asset: SmartContractFungibleAsset | FungibleAsset,
+  unitPricePoint: UnitPricePoint<FungibleAsset>
+): PricePoint {
+  return {
+    pair: [asset, USD],
+    amounts: [
+      1n * 10n ** BigInt(asset.decimals),
+      BigInt(
+        Math.trunc(
+          (Number(unitPricePoint.unitPrice.amount) /
+            10 ** (unitPricePoint.unitPrice.asset as FungibleAsset).decimals) *
+            10 ** USD.decimals
+        )
+      ),
+    ],
+    time: unitPricePoint.time,
+  }
 }

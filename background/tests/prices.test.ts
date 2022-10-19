@@ -4,7 +4,7 @@ import * as ethers from "@ethersproject/web" // << THIS IS THE IMPORTANT TRICK
 import logger from "../lib/logger"
 import { BTC, ETH, FIAT_CURRENCIES, USD } from "../constants"
 import { CoinGeckoAsset } from "../assets"
-import { getPrice, getPrices } from "../lib/prices"
+import { getPrices } from "../lib/prices"
 import { isValidCoinGeckoPriceResponse } from "../lib/validate"
 
 const dateNow = 1634911514834
@@ -128,45 +128,6 @@ describe("lib/prices.ts", () => {
 
       expect(isValidCoinGeckoPriceResponse.errors).toMatchObject(error)
       expect(validationResult).toBeFalsy()
-    })
-  })
-  describe("getPrice", () => {
-    beforeEach(() => {
-      // Important to clean up the internal mock variables between tests
-      jest.clearAllMocks()
-    })
-    it("should return correct price if the data exist", async () => {
-      const response = {
-        ethereum: {
-          usd: 3832.26,
-          last_updated_at: 1634671650,
-        },
-      }
-
-      jest.spyOn(ethers, "fetchJson").mockResolvedValue(response)
-      await expect(getPrice("ethereum", "usd")).resolves.toEqual(
-        response.ethereum.usd
-      )
-      expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
-    })
-    it("should return null if the data DOESN'T exist", async () => {
-      const response = {
-        ethereum: {
-          last_updated_at: 1634671650,
-        },
-      }
-
-      jest.spyOn(ethers, "fetchJson").mockResolvedValue(response)
-      await expect(getPrice("ethereum", "usd")).resolves.toBeNull()
-      expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
-    })
-    it("should return null if the api response does not fit the schema", async () => {
-      const response = "Na na na na na na na na na na na na ... BATMAN!"
-
-      jest.spyOn(ethers, "fetchJson").mockResolvedValue(response)
-
-      await expect(getPrice("ethereum", "usd")).resolves.toBeNull()
-      expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
     })
   })
   describe("getPrices", () => {
