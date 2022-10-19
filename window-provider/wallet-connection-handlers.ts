@@ -13,6 +13,18 @@ const observeMutations = (handler: (node: Node) => void) => {
 }
 
 const findAndReplaceUniswapInjectedOption = (addedNode: Node): void => {
+  if (
+    window.ethereum &&
+    Array.isArray(window.ethereum.providers) &&
+    window.ethereum.providers.length > 1
+  ) {
+    // If the user has more than 1 wallet installed
+    if (!window.ethereum.tallySetAsDefault) {
+      // And Tally is not set as the default - return
+      return
+    }
+  }
+
   // Detect which version of web3-react
   const maybeButton = addedNode?.childNodes?.[2]?.childNodes?.[0]
     ?.childNodes?.[0]?.childNodes?.[0] as Element
@@ -41,7 +53,23 @@ const findAndReplaceUniswapInjectedOption = (addedNode: Node): void => {
   }
 }
 
-const findAndReplaceGMXMetamaskOption = (addedNode: Node): void => {
+function findAndReplaceGMXMetamaskOption(addedNode: Node): void {
+  if (
+    window.ethereum &&
+    Array.isArray(window.ethereum.providers) &&
+    window.ethereum.providers.length > 1
+  ) {
+    // If the user has more than 1 wallet installed
+    if (!window.ethereum.tallySetAsDefault) {
+      // And Tally is not set as the default - return
+      return
+    }
+  }
+
+  // Otherwise - if the user only has tally installed - or if they have multiple
+  // wallets installed and have Tally as their default wallet - replace
+  // the MetaMask connection button with a Tally Ho connection button
+
   if (
     addedNode.textContent?.includes("MetaMask") &&
     (addedNode as Element).classList.contains("Connect-wallet-modal")
