@@ -17,27 +17,6 @@ import { USD } from "../constants"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
 
-export async function getPrice(
-  coingeckoCoinId = "ethereum",
-  currencySymbol = "usd"
-): Promise<number | null> {
-  const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coingeckoCoinId}&vs_currencies=${currencySymbol}&include_last_updated_at=true`
-
-  const json = await fetchJson(url)
-
-  if (!isValidCoinGeckoPriceResponse(json)) {
-    logger.warn(
-      "CoinGecko price response didn't validate, did the API change?",
-      json,
-      isValidCoinGeckoPriceResponse.errors
-    )
-
-    return null
-  }
-
-  return json?.[coingeckoCoinId]?.[currencySymbol] || null
-}
-
 export async function getPrices(
   assets: (AnyAsset & CoinGeckoAsset)[],
   vsCurrencies: FiatCurrency[]
