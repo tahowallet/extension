@@ -67,14 +67,14 @@ function SigningLoaded<T extends SignOperationType>({
             background-color: var(--green-95);
             z-index: 5;
           }
-          section :global(.title) {
+          section :global(h1.title) {
             color: var(--trophy-gold);
             font-size: 36px;
             font-weight: 500;
             line-height: 42px;
             text-align: center;
           }
-          section :global(footer) {
+          section > :global(footer) {
             position: fixed;
             bottom: 0px;
             display: flex;
