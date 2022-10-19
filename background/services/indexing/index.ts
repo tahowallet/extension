@@ -16,6 +16,7 @@ import {
   FIAT_CURRENCIES,
   HOUR,
   NETWORK_BY_CHAIN_ID,
+  SECOND,
   USD,
 } from "../../constants"
 import { getPrices, getTokenPrices, getPricePoint } from "../../lib/prices"
@@ -83,6 +84,8 @@ export default class IndexingService extends BaseService<Events> {
    * account had a transaction confirmed.
    */
   private scheduledTokenRefresh = false
+
+  private lastPriceAlarmTime = 0
 
   private cachedAssets: Record<EVMNetwork["chainID"], AnyAsset[]> =
     Object.fromEntries(
@@ -584,6 +587,13 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   private async handlePriceAlarm(): Promise<void> {
+    if (Date.now() < this.lastPriceAlarmTime + 5 * SECOND) {
+      // If this is quickly called multiple times (for example when
+      // using a network for the first time with a wallet loaded
+      // with many accounts) only fetch prices once.
+      return
+    }
+    this.lastPriceAlarmTime = Date.now()
     // TODO refactor for multiple price sources
     try {
       // TODO include user-preferred currencies
