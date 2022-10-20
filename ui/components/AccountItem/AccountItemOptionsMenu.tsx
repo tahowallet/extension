@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { useOnClickOutside } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import AccountItemEditName from "./AccountItemEditName"
-import AccountitemOptionLabel from "./AccountItemOptionLabel"
+import AccountItemOptionLabel from "./AccountItemOptionLabel"
 import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
 
 type AccountItemOptionsMenuProps = {
@@ -28,7 +28,7 @@ export default function AccountItemOptionsMenu({
   })
 
   return (
-    <div className="options_menu_warp">
+    <div className="options_menu_wrap">
       <SharedSlideUpMenu
         size="custom"
         customSize="304px"
@@ -88,66 +88,66 @@ export default function AccountItemOptionsMenu({
 
       {showOptionsMenu && (
         // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-        <ul
-          ref={optionsMenuRef}
+        <dialog
           className="options"
+          ref={optionsMenuRef}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
           onMouseOver={(e) => e.stopPropagation()}
           onFocus={(e) => e.stopPropagation()}
         >
-          <li className="option">
-            <button
-              className="remove_address_button"
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowOptionsMenu(false)
-                setShowEditName(true)
-              }}
-            >
-              <AccountitemOptionLabel
-                icon="icons/s/edit.svg"
-                label={t("editName")}
-                hoverable
-              />
-            </button>
-            <button
-              type="button"
-              className="close_button"
-              aria-label="Close"
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowOptionsMenu(false)
-              }}
-            >
-              <div className="icon_close" />
-            </button>
-          </li>
-          <li className="option">
-            <button
-              className="remove_address_button"
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowOptionsMenu(false)
-                setShowAddressRemoveConfirm(true)
-              }}
-            >
-              <AccountitemOptionLabel
-                icon="garbage@2x.png"
-                label={t("removeAddress")}
-                hoverable
-                color="var(--error)"
-                hoverColor="var(--error-80)"
-              />
-            </button>
-          </li>
-        </ul>
+          <button
+            type="button"
+            className="close_button"
+            aria-label="Close"
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowOptionsMenu(false)
+            }}
+          >
+            <div className="icon_close" />
+          </button>
+          <ul className="options">
+            <li className="option">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowOptionsMenu(false)
+                  setShowEditName(true)
+                }}
+              >
+                <AccountItemOptionLabel
+                  icon="icons/s/edit.svg"
+                  label={t("editName")}
+                  hoverable
+                />
+              </button>
+            </li>
+            <li className="option">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowOptionsMenu(false)
+                  setShowAddressRemoveConfirm(true)
+                }}
+              >
+                <AccountItemOptionLabel
+                  icon="garbage@2x.png"
+                  label={t("removeAddress")}
+                  hoverable
+                  color="var(--error)"
+                  hoverColor="var(--error-80)"
+                />
+              </button>
+            </li>
+          </ul>
+        </dialog>
       )}
       <style jsx>
         {`
-          .options_menu_warp {
+          .options_menu_wrap {
             position: relative;
           }
           .icon_settings {
@@ -163,28 +163,46 @@ export default function AccountItemOptionsMenu({
           .icon_settings:hover {
             background-color: var(--green-40);
           }
-          .remove_address_button {
-            flex-grow: 2;
-          }
-          .options {
+          dialog.options {
             position: absolute;
-            right: 6px;
+            transform: translateX(calc(-100% + 20px));
             top: -6px;
+            display: block;
+
+            margin: 0;
+            padding: 0;
+
             cursor: default;
-            border-radius: 4px;
             background-color: var(--green-120);
+            width: 212px;
+            border-radius: 4px;
+            z-index: 1;
+
+            box-shadow: 0px 2px 4px 0px #00141357,
+                        0px 6px 8px 0px #0014133D,
+                        0px 16px 16px 0px #00141324;
+          }
+          ul.options {
             display: flex;
             align-items: center;
             flex-direction: column;
             justify-content: space-between;
-            width: 212px;
-            border-radius: 4px;
-            z-index: 1;
+          }
+          .close_button {
+            position: absolute;
+            top: 20px;
+            right: 12px;
+          }
+          .option:first-of-type {
+            padding-top: 14px;
+          }
+          .option:last-of-type {
+            padding-bottom: 14px;
           }
           .option {
             display: flex;
             line-height: 24px;
-            padding: 14px;
+            padding: 7px;
             flex-direction: row;
             width: 90%;
             align-items: center;
@@ -195,7 +213,7 @@ export default function AccountItemOptionsMenu({
           .icon_close {
             mask-image: url("./images/close.svg");
             mask-size: cover;
-            margin-right -2px;
+            margin-right 2px;
             width: 11px;
             height: 11px;
             background-color: var(--green-40);
