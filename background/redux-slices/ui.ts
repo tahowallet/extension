@@ -206,13 +206,6 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
   }
 )
 
-export const refreshBackgroundPage = createBackgroundAsyncThunk(
-  "ui/refreshBackgroundPage",
-  async () => {
-    await emitter.emit("refreshBackgroundPage", null)
-  }
-)
-
 export const selectUI = createSelector(
   (state: { ui: UIState }): UIState => state.ui,
   (uiState) => uiState
