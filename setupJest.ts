@@ -48,3 +48,12 @@ browser.tabs.getCurrent = jest.fn(() =>
 Object.defineProperty(Dexie.dependencies, "indexedDB", {
   get: () => indexedDB,
 })
+
+// Stub fetch calls
+Object.defineProperty(window, "fetch", {
+  writable: true,
+  value: (url: string) => {
+    // eslint-disable-next-line no-console
+    console.warn("Uncaught fetch call to: \n", url)
+  },
+})

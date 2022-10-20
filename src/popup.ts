@@ -4,13 +4,6 @@ import {
 } from "@tallyho/tally-ui"
 import GlobalError from "@tallyho/tally-ui/components/GlobalError/GlobalError"
 
-enum NavigationTimingType {
-  "navigate",
-  "reload",
-  "back_forward",
-  "prerender",
-}
-
 // Prevents from the green screen. The solution checks if the first top-level element is rendered.
 // If this does not happen then reload the UI thread.  To prevent an infinity loop
 // the restart will be done max 3 times then a global error screen will be shown.
@@ -20,7 +13,8 @@ setTimeout(() => {
   let reloadCount = state?.reloadCount || 0
   const navigationItem = performance.getEntriesByType(
     "navigation"
-  )[0] as PerformanceEntry & { type: NavigationTimingType }
+  )[0] as PerformanceNavigationTiming
+
   if ((navigationItem?.type).toString() === "reload") {
     reloadCount += 1
     state.reloadCount = reloadCount
