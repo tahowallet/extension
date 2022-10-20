@@ -34,7 +34,11 @@ export type Activity = {
   assetLogoUrl?: string
 }
 
-export type ActivityDetail = { label: string; value: string }
+export type ActivityDetail = {
+  assetIconUrl?: string
+  label: string
+  value: string
+}
 
 const ACTIVITY_DECIMALS = 2
 
