@@ -74,6 +74,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
           align-items: center;
           margin: 0 auto;
           height: 52px;
+          min-width: 0; // Allow collapsing if account name is too long.
         }
         .summary {
           display: flex;
@@ -93,6 +94,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
           width: 48px;
           height: 48px;
           border-radius: 12px;
+          flex-shrink: 0;
         }
         .avatar_selected_outline {
           width: 52px;
