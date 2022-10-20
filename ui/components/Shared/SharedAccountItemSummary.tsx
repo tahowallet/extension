@@ -15,6 +15,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
   const { isSelected, accountTotal, children } = props
   const { t } = useTranslation()
   const {
+    address,
     shortenedAddress,
     name,
     avatarURL,
@@ -22,7 +23,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
   } = accountTotal
 
   return (
-    <li className="standard_width">
+    <div className="item-summary standard_width">
       <div className="summary">
         <div className="left">
           {isSelected ? (
@@ -34,10 +35,16 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
           )}
 
           <div className="info">
-            <div className="address_name">
+            <div
+              className="address_name"
+              title={typeof name === "undefined" ? address : name}
+            >
               {typeof name === "undefined" ? shortenedAddress : name}{" "}
             </div>
-            <div className="address">
+            <div
+              className="address"
+              title={typeof name === "undefined" ? "" : address}
+            >
               {typeof name !== "undefined" ? shortenedAddress : ""}
             </div>
           </div>
@@ -61,7 +68,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
       {children}
 
       <style jsx>{`
-        li {
+        .item-summary {
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -75,6 +82,8 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
           margin: 0 auto;
           flex-grow: 2;
           height: 52px;
+          padding: 5px 0;
+          overflow: hidden;
         }
         .avatar {
           background: url("${avatarURL ?? "./images/avatar@2x.png"}") center
@@ -100,15 +109,14 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
           display: flex;
           align-items: center;
           padding-left: 4px;
+          overflow: hidden;
         }
         .address_name {
           color: #fff;
           font-size: 18px;
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          justify-content: space-between;
           font-weight: 600;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .address {
           color: var(--green-40);
@@ -127,7 +135,8 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
           text-align: right;
         }
         .info {
-          margin-left: 16px;
+          margin: 0 5px 0 16px;
+          overflow: hidden;
         }
         .right {
           display: flex;
@@ -135,7 +144,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
           padding-right: 4px;
         }
       `}</style>
-    </li>
+    </div>
   )
 }
 
