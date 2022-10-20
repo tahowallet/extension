@@ -85,13 +85,17 @@ export default function TopMenuProfileButton(props: {
         {`
           .profile_wrapper {
             position: relative;
+
+            // Allow the account address/name to collapse to an ellipsis.
+            display: flex;
+            min-width: 0;
           }
           .profile_button {
-            flex-shrink: 0;
             height: 64px;
             display: flex;
             align-items: center;
             user-select: none;
+            min-width: 0; // Allow the account address/name to collapse to an ellipsis.
           }
         `}
       </style>

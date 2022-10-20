@@ -169,6 +169,7 @@ export default function TopMenu(): ReactElement {
               align-items: center;
               justify-content: space-between;
               padding-right: 0;
+              gap: 8px;
             }
             .nav_wrap {
               width: 100%;
@@ -179,6 +180,7 @@ export default function TopMenu(): ReactElement {
             .profile_group {
               display: flex;
               align-items: center;
+              min-width: 0; // Allow the account address/name to collapse to an ellipsis.
             }
             button {
               border-radius: 12px;
@@ -193,6 +195,7 @@ export default function TopMenu(): ReactElement {
             .connection_button {
               background: url("./images/bolt@2x.png") center no-repeat;
               background-size: 10px 20px;
+              flex-shrink: 0;
             }
             .gift_button {
               background: url("./images/gift@2x.png") center no-repeat;
