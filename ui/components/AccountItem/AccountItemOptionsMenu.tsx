@@ -1,7 +1,8 @@
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, useRef, useState } from "react"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
+import React, { ReactElement, useCallback, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useOnClickOutside } from "../../hooks"
+import { useBackgroundDispatch, useOnClickOutside } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import AccountItemEditName from "./AccountItemEditName"
 import AccountItemOptionLabel from "./AccountItemOptionLabel"
@@ -17,6 +18,7 @@ export default function AccountItemOptionsMenu({
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem",
   })
+  const dispatch = useBackgroundDispatch()
   const { address, network } = accountTotal
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
@@ -26,6 +28,11 @@ export default function AccountItemOptionsMenu({
   useOnClickOutside(optionsMenuRef, () => {
     setShowOptionsMenu(false)
   })
+
+  const copyAddress = useCallback(() => {
+    navigator.clipboard.writeText(address)
+    dispatch(setSnackbarMessage("Address copied to clipboard"))
+  }, [address, dispatch])
 
   return (
     <div className="options_menu_wrap">
@@ -120,6 +127,22 @@ export default function AccountItemOptionsMenu({
                 <AccountItemOptionLabel
                   icon="icons/s/edit.svg"
                   label={t("editName")}
+                  hoverable
+                />
+              </button>
+            </li>
+            <li className="option">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  copyAddress()
+                  setShowOptionsMenu(false)
+                }}
+              >
+                <AccountItemOptionLabel
+                  icon="icons/s/copy.svg"
+                  label={t("copyAddress")}
                   hoverable
                 />
               </button>

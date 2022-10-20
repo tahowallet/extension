@@ -10,6 +10,7 @@
       "loudWarningTitle": "Removing this address will remove its associated account from the UI.",
       "loudWarningBody": "Are you sure you want to proceed?",
       "removeAddress": "Remove address",
+      "copyAddress": "Copy address",
       "removeConfirm": "Yes, I want to remove it"
     },
     "notificationPanel": {
