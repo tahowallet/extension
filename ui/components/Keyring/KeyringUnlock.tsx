@@ -3,7 +3,7 @@ import { useHistory } from "react-router-dom"
 import { unlockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
 import { rejectTransactionSignature } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { useTranslation } from "react-i18next"
-import { SUPPORT_FORGOT_PASSWORD } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import {
   useBackgroundDispatch,
@@ -93,7 +93,7 @@ export default function KeyringUnlock(): ReactElement {
             </SharedButton>
           </div>
         </div>
-        {SUPPORT_FORGOT_PASSWORD && (
+        {isEnabled(FeatureFlags.SUPPORT_FORGOT_PASSWORD) && (
           <SharedButton type="tertiaryGray" size="small" onClick={() => {}}>
             {t("forgotPassword")}
           </SharedButton>
