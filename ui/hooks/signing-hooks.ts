@@ -1,4 +1,4 @@
-import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { useEffect } from "react"
@@ -41,7 +41,7 @@ export const useAreKeyringsUnlocked = (redirectIfNot: boolean): boolean => {
 }
 
 export function useIsSignerLocked(signer: AccountSigner | null): boolean {
-  const needsKeyrings = isEnabled(FeatureFlagTypes.USE_UPDATED_SIGNING_UI)
+  const needsKeyrings = isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI)
     ? false
     : signer?.type === "keyring"
   const areKeyringsUnlocked = useAreKeyringsUnlocked(needsKeyrings)

@@ -9,7 +9,7 @@ import {
   selectShowTestNetworks,
   toggleTestNetworks,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
@@ -27,7 +27,11 @@ function VersionLabel(): ReactElement {
   const [isHover, setIsHover] = useState(false)
 
   useEffect(() => {
-    if (clickCounter === NUMBER_OF_CLICKS_FOR_DEV_PANEL && isHover) {
+    if (
+      isEnabled(FeatureFlags.SWITCH_RUNTIME_FLAGS) &&
+      clickCounter === NUMBER_OF_CLICKS_FOR_DEV_PANEL &&
+      isHover
+    ) {
       setIsHover(false)
       setClickCounter(0)
       history.push("/dev")
@@ -192,13 +196,11 @@ export default function Settings(): ReactElement {
   const generalList = [
     setAsDefault,
     hideSmallAssetBalance,
-    ...(isEnabled(FeatureFlagTypes.SUPPORT_MULTIPLE_LANGUAGES)
-      ? [languages]
-      : []),
-    ...(isEnabled(FeatureFlagTypes.SUPPORT_GOERLI) ? [enableTestNetworks] : []),
+    ...(isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) ? [languages] : []),
+    ...(isEnabled(FeatureFlags.SUPPORT_GOERLI) ? [enableTestNetworks] : []),
     dAppsSettings,
     bugReport,
-    ...(isEnabled(FeatureFlagTypes.SUPPORT_ANALYTICS) ? [analytics] : []),
+    ...(isEnabled(FeatureFlags.SUPPORT_ANALYTICS) ? [analytics] : []),
   ]
 
   const settings = {

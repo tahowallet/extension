@@ -210,16 +210,16 @@ const pageList: PageList[] = [
   {
     path: "/dev/feature-flags",
     Component: FeatureFlagsPanel,
-    hasTabBar: false,
+    hasTabBar: true,
     hasTopBar: false,
-    persistOnClose: true,
+    persistOnClose: false,
   },
   {
     path: "/dev",
     Component: HiddenDevPanel,
-    hasTabBar: false,
+    hasTabBar: true,
     hasTopBar: false,
-    persistOnClose: true,
+    persistOnClose: false,
   },
   {
     path: "/",

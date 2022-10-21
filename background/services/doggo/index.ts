@@ -14,7 +14,7 @@ import { HexString } from "../../types"
 import { AddressOnNetwork } from "../../accounts"
 import { DoggoDatabase, getOrCreateDB, ReferrerStats } from "./db"
 import { normalizeEVMAddress } from "../../lib/utils"
-import { FeatureFlagTypes, isEnabled } from "../../features"
+import { FeatureFlags, isEnabled } from "../../features"
 
 interface Events extends ServiceLifecycleEvents {
   newEligibility: Eligible
@@ -60,7 +60,7 @@ export default class DoggoService extends BaseService<Events> {
       )
     }
 
-    if (!isEnabled(FeatureFlagTypes.HIDE_TOKEN_FEATURES)) {
+    if (!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES)) {
       // Make sure the hunting ground assets are being tracked.
       huntingGrounds.forEach(({ network, asset }) => {
         this.indexingService.addAssetToTrack({ ...asset, homeNetwork: network })

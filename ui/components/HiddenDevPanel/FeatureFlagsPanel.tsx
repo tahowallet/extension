@@ -1,5 +1,5 @@
 import {
-  FeatureFlagTypes,
+  FeatureFlags,
   isEnabled,
   RuntimeFlag,
 } from "@tallyho/tally-background/features"
@@ -15,7 +15,7 @@ function FeatureFlag(props: { name: string }): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "devPanel.featureFlags.flags",
   })
-  const [value, setValue] = useState(isEnabled(FeatureFlagTypes[name]))
+  const [value, setValue] = useState(isEnabled(FeatureFlags[name]))
 
   useEffect(() => {
     setLocalStorageItem(name, String(value))

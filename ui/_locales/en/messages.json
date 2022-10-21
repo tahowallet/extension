@@ -551,7 +551,7 @@
         "SUPPORT_ANALYTICS": "Show Analytics page on the settings page",
         "SUPPORT_KEYRING_LOCKING": "Enable to lock/unlock accounts ",
         "SUPPORT_FORGOT_PASSWORD": "Enable to forgot password",
-        "ENABLE_ACHIEVEMENTS_TAB": "Show a Achievements tab on the overview page",
+        "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ARBITRUM": "Enable Arbitrum network",
         "SUPPORT_GOERLI": "Enable test networks"

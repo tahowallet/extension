@@ -1,4 +1,4 @@
-import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   selectCurrentAccount,
@@ -70,7 +70,7 @@ export default function TopMenuProfileButton(props: {
               avatarURL={avatarURL}
               showHoverStyle
               showKeyring={
-                isEnabled(FeatureFlagTypes.SUPPORT_KEYRING_LOCKING) &&
+                isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
                 (accountType === AccountType.Imported ||
                   accountType === AccountType.Internal)
               }

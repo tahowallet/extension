@@ -7,7 +7,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
 
-import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
@@ -72,7 +72,7 @@ export default function Wallet(): ReactElement {
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           />
         </div>
-        {!isEnabled(FeatureFlagTypes.HIDE_TOKEN_FEATURES) && (
+        {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
           <OnboardingOpenClaimFlowBanner />
         )}
         <div className="section">

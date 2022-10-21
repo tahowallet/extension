@@ -23,7 +23,7 @@ import {
   isKnownTxType,
   KnownTxTypes,
 } from "../../../networks"
-import { FeatureFlagTypes, isEnabled } from "../../../features"
+import { FeatureFlags, isEnabled } from "../../../features"
 import { FORK } from "../../../constants"
 import type { PartialTransactionRequestWithFrom } from "../../enrichment"
 
@@ -214,7 +214,7 @@ export function unsignedTransactionFromEVMTransaction(
     data: tx.input || "",
     value: BigNumber.from(tx.value),
     chainId: parseInt(
-      isEnabled(FeatureFlagTypes.USE_MAINNET_FORK)
+      isEnabled(FeatureFlags.USE_MAINNET_FORK)
         ? FORK.chainID
         : tx.network.chainID,
       10
@@ -243,7 +243,7 @@ export function ethersTransactionFromSignedTransaction(
     gasPrice: tx.gasPrice ? BigNumber.from(tx.gasPrice) : undefined,
     type: tx.type,
     chainId: parseInt(
-      isEnabled(FeatureFlagTypes.USE_MAINNET_FORK)
+      isEnabled(FeatureFlags.USE_MAINNET_FORK)
         ? FORK.chainID
         : tx.network.chainID,
       10

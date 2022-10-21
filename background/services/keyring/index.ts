@@ -18,7 +18,7 @@ import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
 import BaseService from "../base"
 import { FORK, MINUTE } from "../../constants"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
-import { FeatureFlagTypes, isEnabled } from "../../features"
+import { FeatureFlags, isEnabled } from "../../features"
 import { AddressOnNetwork } from "../../accounts"
 import logger from "../../lib/logger"
 
@@ -536,7 +536,7 @@ export default class KeyringService extends BaseService<Events> {
         blockHash: null,
         blockHeight: null,
         asset: network.baseAsset,
-        network: isEnabled(FeatureFlagTypes.USE_MAINNET_FORK) ? FORK : network,
+        network: isEnabled(FeatureFlags.USE_MAINNET_FORK) ? FORK : network,
       }
       return signedTx
     }
@@ -560,7 +560,7 @@ export default class KeyringService extends BaseService<Events> {
       blockHash: null,
       blockHeight: null,
       asset: network.baseAsset,
-      network: isEnabled(FeatureFlagTypes.USE_MAINNET_FORK) ? FORK : network,
+      network: isEnabled(FeatureFlags.USE_MAINNET_FORK) ? FORK : network,
     }
 
     return signedTx

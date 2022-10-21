@@ -3,7 +3,7 @@ import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
-import { FeatureFlagTypes, isEnabled } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import SharedButton from "../../../components/Shared/SharedButton"
 import OnboardingDerivationPathSelect from "../../../components/Onboarding/OnboardingDerivationPathSelect"
 import {
@@ -173,7 +173,7 @@ export default function ImportSeed(props: Props): ReactElement {
               />
             </div>
 
-            {!isEnabled(FeatureFlagTypes.HIDE_IMPORT_DERIVATION_PATH) && (
+            {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
               <div className="select_wrapper">
                 <OnboardingDerivationPathSelect onChange={setPath} />
               </div>
@@ -182,7 +182,7 @@ export default function ImportSeed(props: Props): ReactElement {
           <div className="portion bottom">
             <SharedButton
               size={
-                isEnabled(FeatureFlagTypes.HIDE_IMPORT_DERIVATION_PATH)
+                isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
                   ? "medium"
                   : "large"
               }
@@ -192,7 +192,7 @@ export default function ImportSeed(props: Props): ReactElement {
             >
               Import account
             </SharedButton>
-            {!isEnabled(FeatureFlagTypes.HIDE_IMPORT_DERIVATION_PATH) && (
+            {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
               <button
                 className="help_button"
                 type="button"
@@ -228,12 +228,10 @@ export default function ImportSeed(props: Props): ReactElement {
         .bottom {
           justify-content: space-between;
           flex-direction: column;
-          margin-top: ${isEnabled(FeatureFlagTypes.HIDE_IMPORT_DERIVATION_PATH)
+          margin-top: ${isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
             ? "35px"
             : "24px"};
-          margin-bottom: ${isEnabled(
-            FeatureFlagTypes.HIDE_IMPORT_DERIVATION_PATH
-          )
+          margin-bottom: ${isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
             ? "24px"
             : "16px"};
         }

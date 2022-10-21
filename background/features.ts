@@ -30,7 +30,7 @@ export const RuntimeFlag: Record<string, boolean> = {
 /**
  * Object with all feature flags. The key is the same as the value.
  */
-export const FeatureFlagTypes: Record<string, string> = Object.keys({
+export const FeatureFlags: Record<string, string> = Object.keys({
   ...BuildTimeFlag,
   ...RuntimeFlag,
 }).reduce((types, flagName) => ({ ...types, [flagName]: flagName }), {})
@@ -48,7 +48,7 @@ export const isEnabled = (flagName: string): boolean => {
   }
   if (BuildTimeFlag.SWITCH_RUNTIME_FLAGS) {
     const state = localStorage.getItem(flagName)
-    return state ? state === "true" : RuntimeFlag[flagName]
+    return state !== null ? state === "true" : RuntimeFlag[flagName]
   }
   return RuntimeFlag[flagName]
 }
