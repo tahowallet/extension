@@ -12,29 +12,14 @@ const observeMutations = (handler: (node: Node) => void) => {
   })
 }
 
-const findAndReplaceUniswapInjectedOption = (addedNode: Node): void => {
-  if (
-    window.ethereum &&
-    Array.isArray(window.ethereum.providers) &&
-    window.ethereum.providers.length > 1
-  ) {
-    // If the user has more than 1 wallet installed
-    if (!window.ethereum.tallySetAsDefault) {
-      // And Tally is not set as the default - return
-      return
-    }
-  }
-
-  // Detect which version of web3-react
-  const maybeButton = addedNode?.childNodes?.[2]?.childNodes?.[0]
-    ?.childNodes?.[0]?.childNodes?.[0] as Element
+const findAndReplaceUniswapInjectedOption = (): void => {
+  const maybeButton = document.getElementById("injected")
   if (
     !!maybeButton &&
-    maybeButton.id === "injected" &&
     maybeButton.parentElement?.getAttribute("data-testid") === "option-grid"
   ) {
     // Even though we can be reasonably sure that we've correctly identified
-    // a change related to web3-react.  It never hurts to double check.
+    // a change related to the uniswap connect modal.  It never hurts to double check.
     const iconAndTextDiv = maybeButton?.children?.[0]?.children?.[0]
 
     if (iconAndTextDiv && iconAndTextDiv.innerHTML.includes("Injected")) {
@@ -56,6 +41,8 @@ const findAndReplaceUniswapInjectedOption = (addedNode: Node): void => {
 function findAndReplaceGMXMetamaskOption(addedNode: Node): void {
   if (
     window.ethereum &&
+    // OK to use window.ethereum.providers here since we don't strip
+    // it out for gmx.io in cachedWindowEthereumProxy.
     Array.isArray(window.ethereum.providers) &&
     window.ethereum.providers.length > 1
   ) {
