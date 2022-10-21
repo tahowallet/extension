@@ -7,6 +7,7 @@ import {
   createAddressOnNetwork,
   createBlockPrices,
   createChainService,
+  makeSerialFallbackProvider,
 } from "../../../tests/factories"
 import { UNIXTime } from "../../../types"
 import {
@@ -14,6 +15,7 @@ import {
   EnrichedLegacyTransactionSignatureRequest,
 } from "../../enrichment"
 import { AddressOnNetwork } from "../../../accounts"
+import * as serialFallbackProvider from "../serial-fallback-provider"
 
 type ChainServiceExternalized = Omit<ChainService, ""> & {
   populatePartialEIP1559TransactionRequest: () => void
@@ -36,6 +38,11 @@ describe("Chain Service", () => {
   let chainService: ChainService
   beforeEach(async () => {
     sandbox.restore()
+    sandbox
+      .stub(serialFallbackProvider, "makeSerialFallbackProvider")
+      .callsFake(() => {
+        return makeSerialFallbackProvider() as any
+      })
     chainService = await createChainService()
   })
 
