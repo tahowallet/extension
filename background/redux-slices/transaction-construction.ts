@@ -7,7 +7,7 @@ import {
   MAX_FEE_MULTIPLIER,
   REGULAR,
 } from "../constants/network-fees"
-import { USE_MAINNET_FORK } from "../features"
+import { FeatureFlags, isEnabled } from "../features"
 
 import {
   BlockEstimate,
@@ -145,8 +145,8 @@ const makeBlockEstimate = (
 // Async thunk to pass transaction options from the store to the background via an event
 export const updateTransactionData = createBackgroundAsyncThunk(
   "transaction-construction/update-transaction",
-  async (options: EnrichedEVMTransactionSignatureRequest) => {
-    await emitter.emit("updateTransaction", options)
+  async (payload: EnrichedEVMTransactionSignatureRequest) => {
+    await emitter.emit("updateTransaction", payload)
   }
 )
 
@@ -157,7 +157,7 @@ export const signTransaction = createBackgroundAsyncThunk(
       EIP1559TransactionRequest | LegacyEVMTransactionRequest
     >
   ) => {
-    if (USE_MAINNET_FORK) {
+    if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
       request.request.chainID = FORK.chainID
     }
 

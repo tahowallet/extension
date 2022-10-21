@@ -16,10 +16,7 @@ import {
   selectPriceDetails,
   setPriceDetails,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
-import {
-  HIDE_SWAP_REWARDS,
-  HIDE_TOKEN_FEATURES,
-} from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
   getAssetsState,
   selectCurrentAccountBalances,
@@ -538,10 +535,10 @@ export default function Swap(): ReactElement {
           <div className="header">
             <SharedActivityHeader label={t("swap.title")} activity="swap" />
             <ReadOnlyNotice isLite />
-            {HIDE_TOKEN_FEATURES ? (
+            {isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) ? (
               <></>
             ) : (
-              !HIDE_SWAP_REWARDS && (
+              !isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) && (
                 // TODO: Add onClick function after design is ready
                 <SharedIcon
                   icon="cog@2x.png"
@@ -553,10 +550,10 @@ export default function Swap(): ReactElement {
               )
             )}
           </div>
-          {HIDE_TOKEN_FEATURES ? (
+          {isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) ? (
             <></>
           ) : (
-            HIDE_SWAP_REWARDS && (
+            isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) && (
               <SharedBanner
                 id="swap_rewards"
                 canBeClosed
@@ -614,7 +611,9 @@ export default function Swap(): ReactElement {
               />
             </div>
             <div className="settings_wrap">
-              {!HIDE_SWAP_REWARDS ? <SwapRewardsCard /> : null}
+              {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
+                <SwapRewardsCard />
+              ) : null}
             </div>
             <div className="footer standard_width_padded">
               {

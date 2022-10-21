@@ -7,8 +7,8 @@ import AccountItem from "./AccountItem"
 const getAccountsList = (accountsTotal: AccountTotalList) => {
   let totalsSum = 0
 
-  const list = Object.values(accountsTotal).map(
-    ({ ensName, totals, shortenedAddress }) => {
+  const list = Object.entries(accountsTotal).map(
+    ([address, { ensName, totals, shortenedAddress }]) => {
       const total = Object.values(totals).reduce(
         (sum, current) => sum + current,
         0
@@ -18,6 +18,7 @@ const getAccountsList = (accountsTotal: AccountTotalList) => {
 
       return {
         name: ensName ?? shortenedAddress,
+        address,
         total,
         percent: 0,
       }
@@ -84,10 +85,11 @@ export default function AccountList({
         </div>
         <div>
           {(!isCollapsible || isOpen ? accounts : accounts.slice(0, 3)).map(
-            ({ name, total, percent }) => (
+            ({ address, name, total, percent }) => (
               <AccountItem
                 key={name}
                 name={name}
+                address={address}
                 total={total}
                 percent={percent}
               />
