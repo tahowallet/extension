@@ -1,6 +1,7 @@
 import { TokenList } from "@uniswap/token-lists"
 
 import { memoize } from "lodash"
+import { fetchJson } from "@ethersproject/web"
 import {
   FungibleAsset,
   SmartContractFungibleAsset,
@@ -12,7 +13,7 @@ import {
   findClosestAssetIndex,
   prioritizedAssetSimilarityKeys,
 } from "./asset-similarity"
-import { fetchWithTimeout } from "../utils/fetching"
+import { SECOND } from "../constants"
 
 // We allow `any` here because we don't know what we'll get back from a 3rd party api.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,12 +30,15 @@ const cleanTokenListResponse = (json: any, url: string) => {
 export async function fetchAndValidateTokenList(
   url: string
 ): Promise<TokenListAndReference> {
-  const response = await fetchWithTimeout(url)
-  if (!response.ok) {
+  let ok = true
+  const response = await fetchJson({ url, timeout: 10 * SECOND }).catch(() => {
+    ok = false
+  })
+
+  if (!ok) {
     throw new Error(`Error resolving token list at ${url}`)
   }
-  const json = await response.json()
-  const cleanedJSON = cleanTokenListResponse(json, url)
+  const cleanedJSON = cleanTokenListResponse(response, url)
 
   if (!isValidUniswapTokenListResponse(cleanedJSON)) {
     throw new Error(`Invalid token list at ${url}`)
