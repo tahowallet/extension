@@ -2,7 +2,7 @@ import React, { ReactElement, useState, useEffect, useCallback } from "react"
 import { browser } from "@tallyho/tally-background"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selectors"
-import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp"
 import { useTranslation } from "react-i18next"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
@@ -141,7 +141,7 @@ export default function TopMenu(): ReactElement {
                 }}
               />
             )}
-            {!HIDE_TOKEN_FEATURES && (
+            {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
               <button
                 type="button"
                 aria-label={t("rewardsProgram")}
@@ -169,6 +169,7 @@ export default function TopMenu(): ReactElement {
               align-items: center;
               justify-content: space-between;
               padding-right: 0;
+              gap: 8px;
             }
             .nav_wrap {
               width: 100%;
@@ -179,6 +180,7 @@ export default function TopMenu(): ReactElement {
             .profile_group {
               display: flex;
               align-items: center;
+              min-width: 0; // Allow the account address/name to collapse to an ellipsis.
             }
             button {
               border-radius: 12px;
@@ -193,6 +195,7 @@ export default function TopMenu(): ReactElement {
             .connection_button {
               background: url("./images/bolt@2x.png") center no-repeat;
               background-size: 10px 20px;
+              flex-shrink: 0;
             }
             .gift_button {
               background: url("./images/gift@2x.png") center no-repeat;

@@ -10,13 +10,21 @@ import SharedAddress from "../Shared/SharedAddress"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { scanWebsite } from "../../utils/constants"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
+import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 function DetailRowItem(props: ActivityDetail): ReactElement {
-  const { label, value } = props
+  const { assetIconUrl, label, value } = props
 
   return (
     <li>
-      {label}
+      <div className="label">
+        {assetIconUrl === undefined ? (
+          <></>
+        ) : (
+          <SharedAssetIcon symbol={label} logoURL={assetIconUrl} size={24} />
+        )}
+        {label}
+      </div>
       <div className="right">{value}</div>
       <style jsx>
         {`
@@ -28,6 +36,11 @@ function DetailRowItem(props: ActivityDetail): ReactElement {
             padding: 7px 0px;
             height: 24px;
             align-items: center;
+          }
+          .label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
           }
           .right {
             float: right;
@@ -158,16 +171,25 @@ export default function WalletActivityDetails(
         />
       </div>
       <ul>
-        {details.length
-          ? null
-          : Array.from({ length: 7 }).map(() => (
-              <SharedSkeletonLoader
-                height={24}
-                customStyles="margin: 10px 0 15px;"
-              />
-            ))}
-        {details.map(({ label, value }) => {
-          return <DetailRowItem key={label} label={label} value={value} />
+        {details.length ? (
+          <></>
+        ) : (
+          Array.from({ length: 7 }).map(() => (
+            <SharedSkeletonLoader
+              height={24}
+              customStyles="margin: 10px 0 15px;"
+            />
+          ))
+        )}
+        {details.map(({ assetIconUrl, label, value }) => {
+          return (
+            <DetailRowItem
+              key={label}
+              assetIconUrl={assetIconUrl}
+              label={label}
+              value={value}
+            />
+          )
         })}
       </ul>
       <style jsx>

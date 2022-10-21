@@ -351,5 +351,5 @@ Tally currently only support English as the default language. We distil english 
 For other languages, we will use language code defined in [Support locales](https://developer.chrome.com/docs/webstore/i18n/#choosing-locales-to-support). We will use [weblate](https://hosted.weblate.org/projects/tallycash/extension/) for crowd translation, and will commit back to the github periodically after these translations are QA'ed.
 
 <a href="https://hosted.weblate.org/engage/tallycash/">
-<img src="https://hosted.weblate.org/widgets/tallycash/-/extension/multi-auto.svg" alt="Translation status" />
+<img src="https://hosted.weblate.org/widgets/tallycash/-/svg-badge.svg" alt="Translation status" />
 </a>

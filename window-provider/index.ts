@@ -32,6 +32,8 @@ const impersonateMetamaskWhitelist = [
   "kwenta.io",
   "stargate.finance",
   "etherscan.io",
+  "swapr.eth.link",
+  "apex.exchange",
 ]
 
 export default class TallyWindowProvider extends EventEmitter {
