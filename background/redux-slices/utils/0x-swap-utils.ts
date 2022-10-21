@@ -48,7 +48,7 @@ export async function getAssetPricePoint(
   asset: SmartContractFungibleAsset | FungibleAsset,
   assets: AssetsState,
   network: EVMNetwork
-): Promise<PricePoint> {
+): Promise<PricePoint | undefined> {
   const assetPricesNetworks = assets
     .filter(
       (assetItem) =>
@@ -63,11 +63,11 @@ export async function getAssetPricePoint(
       return contractAddress
     })
 
-  const unitPricePoint = Object.values(
+  const [unitPricePoint] = Object.values(
     await getTokenPrices(assetPricesNetworks, USD, network)
-  )[0]
+  )
 
-  return getPricePoint(asset, unitPricePoint)
+  return (unitPricePoint && getPricePoint(asset, unitPricePoint)) || undefined
 }
 
 export async function getAssetAmount(
