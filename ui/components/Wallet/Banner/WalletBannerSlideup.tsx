@@ -9,12 +9,17 @@ import SharedSlideUpMenu from "../../Shared/SharedSlideUpMenu"
 
 export default function WalletBannerSlideup(props: {
   isOpen: boolean
+  onDismiss: () => void
   onClose: () => void
 }): ReactElement {
-  const { isOpen, onClose } = props
+  const { isOpen, onClose, onDismiss } = props
   const dispatch = useBackgroundDispatch()
 
   const dismiss = () => {
+    onDismiss()
+    onClose()
+  }
+  const toggleSettings = () => {
     dispatch(toggleHideBanners(true))
     dispatch(setSnackbarMessage("You can turn notification back from Settings"))
     onClose()
@@ -36,7 +41,7 @@ export default function WalletBannerSlideup(props: {
           <SharedButton type="primary" size="medium" onClick={dismiss}>
             Yes, show notification
           </SharedButton>
-          <SharedButton type="tertiary" size="medium" onClick={dismiss}>
+          <SharedButton type="tertiary" size="medium" onClick={toggleSettings}>
             No thanks
           </SharedButton>
         </div>

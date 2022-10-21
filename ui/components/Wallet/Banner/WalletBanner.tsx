@@ -2,7 +2,7 @@ import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/sel
 import { selectHideBanners } from "@tallyho/tally-background/redux-slices/ui"
 import classNames from "classnames"
 import React, { ReactElement, useState } from "react"
-import { useBackgroundSelector } from "../../../hooks"
+import { useBackgroundSelector, useLocalStorage } from "../../../hooks"
 
 import SharedBanner from "../../Shared/SharedBanner"
 import SharedButton from "../../Shared/SharedButton"
@@ -18,15 +18,27 @@ export default function WalletBanner(): ReactElement {
   const arbitrumCampaign = useArbitrumCampaigns()
   const campaignDetails = useBannerCampaigns(currentNetwork.chainID)
   const thumbnail = arbitrumCampaign?.thumbnail // TODO: add fallback thumbnail
+  const [dismissedCampaignId, setDismissedCampaignId] = useLocalStorage(
+    "dismissedCampaignBanner",
+    ""
+  )
 
-  if (!campaignDetails) return <></>
+  const isHidden =
+    hideBanners ||
+    !campaignDetails ||
+    dismissedCampaignId === campaignDetails?.id
 
-  const { title, description, buttons } = campaignDetails
+  const {
+    id: campaignId = "",
+    title = "",
+    description,
+    buttons,
+  } = campaignDetails ?? {}
 
   return (
     <div
       className={classNames("wallet_banner_container", {
-        hide: hideBanners,
+        hide: isHidden,
       })}
     >
       <SharedBanner>
@@ -57,6 +69,7 @@ export default function WalletBanner(): ReactElement {
                     type="tertiary"
                     iconSmall="new-tab"
                     onClick={() => {
+                      setDismissedCampaignId(campaignId)
                       window.open(buttons.primary?.link, "_blank")?.focus()
                     }}
                   >
@@ -70,7 +83,7 @@ export default function WalletBanner(): ReactElement {
                     type="tertiaryGray"
                     iconSmall="new-tab"
                     onClick={() => {
-                      window.open(buttons.secondary?.link, "_blank")?.focus() // TODO: this should be changed when the explainer is created
+                      window.open(buttons.secondary?.link, "_blank")?.focus()
                     }}
                   >
                     {buttons.secondary.title}
@@ -83,6 +96,7 @@ export default function WalletBanner(): ReactElement {
       </SharedBanner>
       <WalletBannerSlideup
         isOpen={showDismissSlideup}
+        onDismiss={() => setDismissedCampaignId(campaignId)}
         onClose={() => setShowDismissSlideup(false)}
       />
       <style jsx>{`

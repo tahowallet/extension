@@ -64,7 +64,7 @@ async function getActiveCampaign(): Promise<Campaign | null> {
       .filter((item) => item.status === CampaignStatus.Active)
       .sort((item1, item2) => item1.startTime - item2.startTime)
 
-    return activeCampaign[0] ?? null
+    return activeCampaign.reverse()[0] ?? null
   } catch (error) {
     return null
   }
