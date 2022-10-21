@@ -99,11 +99,8 @@ export default function SpendApprovalSummary({
     )
     dispatch(
       updateTransactionData({
-        transaction: {
-          ...transactionRequest,
-          input: updatedInput,
-        },
-        forceEnrichment: true, // approval limit can change so we need to recalculate annotations
+        ...transactionRequest,
+        input: updatedInput,
       })
     )
   }

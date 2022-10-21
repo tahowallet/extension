@@ -55,7 +55,7 @@ export default function SignTransactionDetailPanel({
   // dispatching setFeeType, for example, inside NetworkSettingsChooser.
   useEffect(() => {
     if (transactionDetails) {
-      dispatch(updateTransactionData({ transaction: transactionDetails }))
+      dispatch(updateTransactionData(transactionDetails))
     }
     // Should trigger only on gas updates. If `transactionDetails` is a dependency, this will run constantly.
     // eslint-disable-next-line react-hooks/exhaustive-deps

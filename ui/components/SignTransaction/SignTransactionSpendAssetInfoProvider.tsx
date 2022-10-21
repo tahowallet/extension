@@ -104,11 +104,8 @@ export default function SignTransactionSpendAssetInfoProvider({
 
     dispatch(
       updateTransactionData({
-        transaction: {
-          ...transactionDetails,
-          input: updatedInput,
-        },
-        forceEnrichment: true, // approval limit can change so we need to recalculate annotations
+        ...transactionDetails,
+        input: updatedInput,
       })
     )
   }

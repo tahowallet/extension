@@ -90,10 +90,7 @@ export const initialState: TransactionConstruction = {
 }
 
 export type Events = {
-  updateTransaction: {
-    transaction: EnrichedEVMTransactionSignatureRequest
-    forceEnrichment?: boolean
-  }
+  updateTransaction: EnrichedEVMTransactionSignatureRequest
   requestSignature: SignOperation<TransactionRequest>
   signatureRejected: never
   broadcastSignedTransaction: SignedTransaction
@@ -148,10 +145,7 @@ const makeBlockEstimate = (
 // Async thunk to pass transaction options from the store to the background via an event
 export const updateTransactionData = createBackgroundAsyncThunk(
   "transaction-construction/update-transaction",
-  async (payload: {
-    transaction: EnrichedEVMTransactionSignatureRequest
-    forceEnrichment?: boolean
-  }) => {
+  async (payload: EnrichedEVMTransactionSignatureRequest) => {
     await emitter.emit("updateTransaction", payload)
   }
 )

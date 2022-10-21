@@ -13,7 +13,7 @@ import SigningDataTransactionSummaryBody from "./TransactionSignatureSummaryBody
 import SharedAddress from "../../../../Shared/SharedAddress"
 
 export default function SwapAssetSummary({
-  annotation: { fromAssetAmount, toAssetAmount },
+  annotation: { fromAssetAmount, toAssetAmount, swapContractInfo },
   transactionRequest: { to },
 }: TransactionSignatureSummaryProps<AssetSwap>): ReactElement {
   const assets = useBackgroundSelector(getAssetsState)
@@ -36,7 +36,17 @@ export default function SwapAssetSummary({
       <h1 className="serif_header title">Swap assets</h1>
       <SigningDataTransactionSummaryBody>
         <span className="site">
-          <SharedAddress address={to ?? "-"} />
+          {swapContractInfo !== undefined ? (
+            <SharedAddress
+              address={swapContractInfo.address}
+              name={
+                swapContractInfo.annotation?.nameRecord?.resolved?.nameOnNetwork
+                  ?.name
+              }
+            />
+          ) : (
+            <SharedAddress address={to ?? "-"} />
+          )}
         </span>
         <span className="pre_post_label">Spend amount</span>
         <span className="spend_amount">

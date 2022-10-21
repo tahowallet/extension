@@ -656,7 +656,7 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on(
       "updateTransaction",
-      async ({ transaction, forceEnrichment = false }) => {
+      async (transaction) => {
         const { network } = transaction
 
         const {
@@ -671,15 +671,11 @@ export default class Main extends BaseService<never> {
           )
 
         const { annotation } =
-          // Respect a prepopulated annotation. For now, this short-circuits
-          // the usual enrichment process.
-          forceEnrichment || populatedRequest.annotation === undefined
-            ? await this.enrichmentService.enrichTransactionSignature(
-                network,
-                populatedRequest,
-                2 /* TODO desiredDecimals should be configurable */
-              )
-            : { annotation: populatedRequest.annotation }
+          await this.enrichmentService.enrichTransactionSignature(
+            network,
+            populatedRequest,
+            2 /* TODO desiredDecimals should be configurable */
+          )
 
         const enrichedPopulatedRequest: EnrichedEVMTransactionRequest = {
           ...populatedRequest,
@@ -990,7 +986,7 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
-        this.store.dispatch(updateTransactionData({ transaction: payload }))
+        this.store.dispatch(updateTransactionData(payload))
 
         const clear = () => {
           // Mutual dependency to handleAndClear.
