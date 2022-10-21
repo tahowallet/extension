@@ -3,9 +3,9 @@ import {
   toggleHideBanners,
 } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement } from "react"
-import { useBackgroundDispatch } from "../../hooks"
-import SharedButton from "../Shared/SharedButton"
-import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import { useBackgroundDispatch } from "../../../hooks"
+import SharedButton from "../../Shared/SharedButton"
+import SharedSlideUpMenu from "../../Shared/SharedSlideUpMenu"
 
 export default function WalletBannerSlideup(props: {
   isOpen: boolean

@@ -22,7 +22,7 @@ import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOp
 import NFTsWallet from "../components/NFTs/NFTsWallet"
 import SharedBanner from "../components/Shared/SharedBanner"
 import WalletDefaultToggle from "../components/Wallet/WalletDefaultToggle"
-import WalletBanner from "../components/Wallet/WalletBanner"
+import WalletBanner from "../components/Wallet/Banner/WalletBanner"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "wallet" })
