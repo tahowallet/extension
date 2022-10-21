@@ -285,6 +285,7 @@ export default function AccountsNotificationPanelAccounts({
                           width={25}
                           color="var(--green-40)"
                           hoverColor={`var(--${keyringData.color})`}
+                          transitionHoverTime="0.2s"
                         />
                       </button>
                     )}
