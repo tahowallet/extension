@@ -12,7 +12,7 @@ import { updateTransactionData } from "@tallyho/tally-background/redux-slices/tr
 import { AssetApproval } from "@tallyho/tally-background/services/enrichment"
 import { ethers } from "ethers"
 import { hexlify } from "ethers/lib/utils"
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
 import classNames from "classnames"
 import { Trans, useTranslation } from "react-i18next"
@@ -23,6 +23,7 @@ import SharedTooltip from "../../../../Shared/SharedTooltip"
 import SharedAddress from "../../../../Shared/SharedAddress"
 import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryProps"
 import TransactionSignatureSummaryBody from "./TransactionSignatureSummaryBody"
+import SharedSkeletonLoader from "../../../../Shared/SharedSkeletonLoader"
 
 export default function SpendApprovalSummary({
   transactionRequest,
@@ -39,21 +40,15 @@ export default function SpendApprovalSummary({
     assetAmount: { asset, amount: approvalLimit },
     spender: { address: spenderAddress },
   } = annotation
-  // `null` means no limit
-  const approvalLimitString = isMaxUint256(approvalLimit)
-    ? null
-    : fixedPointNumberToString({
-        amount: approvalLimit,
-        decimals: asset.decimals,
-      })
 
-  const approvalLimitDisplayValue = `${
-    approvalLimitString ?? "Infinite"
-  } ${asset.symbol.toUpperCase()}`
+  const [approvalLimitString, setApprovalLimitString] = useState<string | null>(
+    null
+  )
 
   const [approvalLimitInput, setApprovalLimitInput] = useState<string | null>(
     null
   )
+  const [isLoading, setIsLoading] = useState(false)
 
   const [hasError, setHasError] = useState(false)
 
@@ -64,10 +59,12 @@ export default function SpendApprovalSummary({
   }
 
   const handleCancelClick = () => {
+    setIsLoading(false)
     setApprovalLimitInput(null)
   }
 
   const handleSaveClick = () => {
+    setIsLoading(false)
     if (!changing) return
 
     if (
@@ -87,6 +84,8 @@ export default function SpendApprovalSummary({
       return
     }
 
+    setIsLoading(true)
+
     const bigintAmount =
       decimalAmount === null
         ? ethers.constants.MaxUint256.toBigInt()
@@ -105,6 +104,18 @@ export default function SpendApprovalSummary({
       })
     )
   }
+
+  useEffect(() => {
+    setApprovalLimitString(
+      isMaxUint256(approvalLimit)
+        ? null
+        : fixedPointNumberToString({
+            amount: approvalLimit,
+            decimals: asset.decimals,
+          })
+    )
+    setIsLoading(false)
+  }, [approvalLimit, asset.decimals])
 
   return (
     <>
@@ -189,13 +200,21 @@ export default function SpendApprovalSummary({
             </div>
           ) : (
             <>
-              <span
-                className={classNames("spend_amount", {
-                  has_error: approvalLimitString === null,
-                })}
+              <SharedSkeletonLoader
+                isLoaded={!isLoading}
+                width={60}
+                height={24}
               >
-                {approvalLimitDisplayValue}
-              </span>
+                <span
+                  className={classNames("spend_amount", {
+                    has_error: approvalLimitString === null,
+                  })}
+                >
+                  {`${
+                    approvalLimitString ?? "Infinite"
+                  } ${asset.symbol.toUpperCase()}`}
+                </span>
+              </SharedSkeletonLoader>
               <SharedButton
                 size="small"
                 isFormSubmit

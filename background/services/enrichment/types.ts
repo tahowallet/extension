@@ -1,4 +1,8 @@
-import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
+import {
+  AnyAssetAmount,
+  FungibleAsset,
+  SmartContractFungibleAsset,
+} from "../../assets"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyEVMTransaction,
@@ -68,8 +72,9 @@ export type AssetTransfer = BaseTransactionAnnotation & {
 
 export type AssetSwap = BaseTransactionAnnotation & {
   type: "asset-swap"
-  fromAssetAmount: AnyAssetAmount & AssetDecimalAmount
-  toAssetAmount: AnyAssetAmount & AssetDecimalAmount
+  fromAssetAmount: AnyAssetAmount<FungibleAsset> & AssetDecimalAmount
+  toAssetAmount: AnyAssetAmount<FungibleAsset> & AssetDecimalAmount
+  swapContractInfo?: EnrichedAddressOnNetwork
 }
 
 export type TransactionAnnotation =

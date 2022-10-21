@@ -145,8 +145,8 @@ const makeBlockEstimate = (
 // Async thunk to pass transaction options from the store to the background via an event
 export const updateTransactionData = createBackgroundAsyncThunk(
   "transaction-construction/update-transaction",
-  async (options: EnrichedEVMTransactionSignatureRequest) => {
-    await emitter.emit("updateTransaction", options)
+  async (payload: EnrichedEVMTransactionSignatureRequest) => {
+    await emitter.emit("updateTransaction", payload)
   }
 )
 
