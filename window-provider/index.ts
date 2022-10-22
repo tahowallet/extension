@@ -34,6 +34,8 @@ const impersonateMetamaskWhitelist = [
   "apex.exchange",
 ]
 
+const impersonateWeb3Whitelist = ["meshswap.fi"]
+
 export default class TallyWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
   // onboard.js relies on this, or uses a deprecated api. It seemed to be a reasonable workaround for now.
@@ -47,7 +49,7 @@ export default class TallyWindowProvider extends EventEmitter {
 
   isMetaMask = false
 
-  isWeb3 = true
+  isWeb3 = false
 
   bridgeListeners = new Map()
 
@@ -98,6 +100,12 @@ export default class TallyWindowProvider extends EventEmitter {
           )
         ) {
           this.isMetaMask = result.defaultWallet
+        } else if (
+          impersonateWeb3Whitelist.some((host) =>
+            window.location.host.includes(host)
+          )
+        ) {
+          this.isWeb3 = true
         }
         if (result.chainId && result.chainId !== this.chainId) {
           this.handleChainIdChange.bind(this)(result.chainId)
