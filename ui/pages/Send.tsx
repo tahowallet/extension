@@ -337,7 +337,7 @@ export default function Send(): ReactElement {
             background-color: var(--green-95);
             padding: 0px 16px;
 
-            transition: padding-bottom 300ms;
+            transition: padding-bottom 0.2s;
           }
           input#send_address::placeholder {
             color: var(--green-40);
@@ -373,10 +373,13 @@ export default function Send(): ReactElement {
             margin-left: 16px;
             margin-bottom: 5px;
 
-            transition: color 300ms;
+            transition: color 0.2s;
           }
           input#send_address ~ .address:hover {
             color: var(--gold-80);
+          }
+          input#send_address ~ .address > :global(.icon) {
+            transition: background-color 0.2s;
           }
           input#send_address ~ .address:hover > :global(.icon) {
             background-color: var(--gold-80);
