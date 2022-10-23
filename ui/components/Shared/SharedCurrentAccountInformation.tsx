@@ -22,7 +22,9 @@ export default function SharedCurrentAccountInformation({
   const icon = areKeyringsUnlocked ? "unlock" : "lock"
   return (
     <div className={classNames("account_info_wrap", { hover: showHoverStyle })}>
-      <span className="account_info_label">{name ?? shortenedAddress}</span>
+      <span className="account_info_label ellipsis">
+        {name ?? shortenedAddress}
+      </span>
       <div className="avatar" />
       {showKeyring && (
         <div className="keyring_icon_wrap">
@@ -41,6 +43,7 @@ export default function SharedCurrentAccountInformation({
             align-items: center;
             font-weight: 500;
             position: relative;
+            min-width: 0; // Allow the account address/name to collapse to an ellipsis.
           }
           .avatar {
             border-radius: 12px;
@@ -50,6 +53,7 @@ export default function SharedCurrentAccountInformation({
             background: url("${avatarURL ?? "./images/portrait.png"}");
             background-color: var(--green-40);
             background-size: cover;
+            flex-shrink: 0;
           }
           .hover:hover .account_info_label {
             color: var(--trophy-gold);

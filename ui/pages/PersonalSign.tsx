@@ -2,7 +2,6 @@ import React, { ReactElement, useState } from "react"
 import {
   getAccountTotal,
   selectCurrentAccountSigner,
-  selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   rejectDataSignature,
@@ -10,7 +9,7 @@ import {
   selectSigningData,
 } from "@tallyho/tally-background/redux-slices/signing"
 import { useHistory } from "react-router-dom"
-import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useTranslation } from "react-i18next"
 import { SigningDataType } from "@tallyho/tally-background/utils/signing"
@@ -31,17 +30,13 @@ const TITLE: Record<SigningDataType, string> = {
 export default function PersonalSignData(): ReactElement {
   const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const signingDataRequest = useBackgroundSelector(selectSigningData)
 
   const history = useHistory()
 
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof signingDataRequest !== "undefined") {
-      return getAccountTotal(state, {
-        address: signingDataRequest.account.address,
-        network: currentNetwork,
-      })
+      return getAccountTotal(state, signingDataRequest.account)
     }
     return undefined
   })
@@ -53,7 +48,7 @@ export default function PersonalSignData(): ReactElement {
   const isLocked = useIsSignerLocked(currentAccountSigner)
   if (isLocked) return <></>
 
-  if (USE_UPDATED_SIGNING_UI) {
+  if (isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI)) {
     if (currentAccountSigner === null || signingDataRequest === undefined) {
       return <></>
     }

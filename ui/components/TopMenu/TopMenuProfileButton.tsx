@@ -1,4 +1,4 @@
-import { SUPPORT_KEYRING_LOCKING } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   selectCurrentAccount,
@@ -70,7 +70,7 @@ export default function TopMenuProfileButton(props: {
               avatarURL={avatarURL}
               showHoverStyle
               showKeyring={
-                SUPPORT_KEYRING_LOCKING &&
+                isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
                 (accountType === AccountType.Imported ||
                   accountType === AccountType.Internal)
               }
@@ -85,13 +85,17 @@ export default function TopMenuProfileButton(props: {
         {`
           .profile_wrapper {
             position: relative;
+
+            // Allow the account address/name to collapse to an ellipsis.
+            display: flex;
+            min-width: 0;
           }
           .profile_button {
-            flex-shrink: 0;
             height: 64px;
             display: flex;
             align-items: center;
             user-select: none;
+            min-width: 0; // Allow the account address/name to collapse to an ellipsis.
           }
         `}
       </style>

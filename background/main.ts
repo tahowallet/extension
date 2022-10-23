@@ -656,8 +656,8 @@ export default class Main extends BaseService<never> {
 
     transactionConstructionSliceEmitter.on(
       "updateTransaction",
-      async (options) => {
-        const { network } = options
+      async (transaction) => {
+        const { network } = transaction
 
         const {
           values: { maxFeePerGas, maxPriorityFeePerGas },
@@ -666,20 +666,16 @@ export default class Main extends BaseService<never> {
         const { transactionRequest: populatedRequest, gasEstimationError } =
           await this.chainService.populatePartialTransactionRequest(
             network,
-            { ...options },
+            { ...transaction },
             { maxFeePerGas, maxPriorityFeePerGas }
           )
 
         const { annotation } =
-          // Respect a prepopulated annotation. For now, this short-circuits
-          // the usual enrichment process.
-          populatedRequest.annotation === undefined
-            ? await this.enrichmentService.enrichTransactionSignature(
-                network,
-                populatedRequest,
-                2 /* TODO desiredDecimals should be configurable */
-              )
-            : { annotation: populatedRequest.annotation }
+          await this.enrichmentService.enrichTransactionSignature(
+            network,
+            populatedRequest,
+            2 /* TODO desiredDecimals should be configurable */
+          )
 
         const enrichedPopulatedRequest: EnrichedEVMTransactionRequest = {
           ...populatedRequest,
@@ -1224,12 +1220,14 @@ export default class Main extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await Promise.all(
-          [ETHEREUM, POLYGON, OPTIMISM, GOERLI].map(async (network) => {
-            await this.providerBridgeService.denyOrRevokePermission({
-              ...permission,
-              chainID: network.chainID,
-            })
-          })
+          [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE].map(
+            async (network) => {
+              await this.providerBridgeService.denyOrRevokePermission({
+                ...permission,
+                chainID: network.chainID,
+              })
+            }
+          )
         )
       }
     )

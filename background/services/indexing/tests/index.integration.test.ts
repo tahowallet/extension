@@ -1,4 +1,5 @@
-import sinon from "sinon"
+import { fetchJson } from "@ethersproject/web"
+import sinon, { SinonStub } from "sinon"
 import IndexingService from ".."
 import { SmartContractFungibleAsset } from "../../../assets"
 import { ETHEREUM, OPTIMISM } from "../../../constants"
@@ -11,7 +12,16 @@ import ChainService from "../../chain"
 import PreferenceService from "../../preferences"
 import { getOrCreateDb as getIndexingDB } from "../db"
 
-const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+const fetchJsonStub: SinonStub<
+  Parameters<typeof fetchJson>,
+  ReturnType<typeof fetchJson>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+> = fetchJson as any
+
+// Default to an empty response
+beforeEach(() => fetchJsonStub.callsFake(async () => ({})))
+
+afterEach(() => fetchJsonStub.resetBehavior())
 
 describe("IndexingService", () => {
   const sandbox = sinon.createSandbox()
@@ -104,25 +114,28 @@ describe("IndexingService", () => {
         tokenList
       )
 
-      window.fetch = async () =>
-        Promise.resolve({
-          json: () =>
-            wait(20).then(() => ({
-              ...tokenList,
-              tokens: [
-                {
-                  chainId: 1,
-                  address: "0x1000000000000000000000000000000000000000",
-                  name: "Some Token",
-                  decimals: 18,
-                  symbol: "DOGGO",
-                  logoURI: "/logo.svg",
-                  tags: ["earn"],
-                },
-              ],
-            })),
-          ok: true,
-        }) as Promise<Response>
+      const delay = sinon.promise<void>()
+      fetchJsonStub
+        .withArgs({
+          url: "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
+          timeout: 10_000,
+        })
+        .returns(
+          delay.then(() => ({
+            ...tokenList,
+            tokens: [
+              {
+                chainId: 1,
+                address: "0x1000000000000000000000000000000000000000",
+                name: "Some Token",
+                decimals: 18,
+                symbol: "DOGGO",
+                logoURI: "/logo.svg",
+                tags: ["earn"],
+              },
+            ],
+          }))
+        )
 
       await Promise.all([
         chainService.startService(),
@@ -138,16 +151,21 @@ describe("IndexingService", () => {
             .map((assets) => assets.symbol)
         ).toEqual(["ETH", "USDC", "TEST"])
       })
+
+      delay.resolve(undefined)
     })
 
     it("should update cache once token lists load", async () => {
       const cacheSpy = jest.spyOn(indexingService, "cacheAssetsForNetwork")
 
-      window.fetch = async () =>
-        Promise.resolve({
-          json: () => wait(10).then(() => tokenList),
-          ok: true,
-        }) as Promise<Response>
+      const delay = sinon.promise<void>()
+
+      fetchJsonStub
+        .withArgs({
+          url: "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
+          timeout: 10_000,
+        })
+        .returns(delay.then(() => tokenList))
 
       await Promise.all([
         chainService.startService(),
@@ -163,6 +181,8 @@ describe("IndexingService", () => {
         // emission in the event handler below this one.
       })
 
+      delay.resolve(undefined)
+
       await indexingService.emitter.once("assets").then(() => {
         /* Caches assets for every supported network + 1 active network */
         expect(cacheSpy).toHaveBeenCalledTimes(5)
@@ -176,11 +196,12 @@ describe("IndexingService", () => {
     it("should update cache when adding a custom asset", async () => {
       const cacheSpy = jest.spyOn(indexingService, "cacheAssetsForNetwork")
 
-      window.fetch = async () =>
-        Promise.resolve({
-          json: () => Promise.resolve(tokenList),
-          ok: true,
-        }) as Promise<Response>
+      fetchJsonStub
+        .withArgs({
+          url: "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
+          timeout: 10_000,
+        })
+        .resolves(tokenList)
 
       await Promise.all([
         chainService.startService(),

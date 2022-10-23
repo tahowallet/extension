@@ -7,7 +7,7 @@ import {
   selectAccountTotalsForOverview,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
-import { ENABLE_ACHIEVEMENTS_TAB } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../hooks"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -20,7 +20,7 @@ import AchievementsOverview from "../components/NFTs/AchievementsOverview"
 
 const panelNames = ["Assets", "NFTs"]
 
-if (ENABLE_ACHIEVEMENTS_TAB) {
+if (isEnabled(FeatureFlags.ENABLE_ACHIEVEMENTS_TAB)) {
   panelNames.push("Achievements")
 }
 

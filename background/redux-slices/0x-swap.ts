@@ -374,7 +374,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
 
       dispatch(setLatestQuoteRequest(quoteRequest))
 
-      const priceDetails = calculatePriceDetails(
+      const priceDetails = await calculatePriceDetails(
         quoteRequest,
         assets,
         quote.sellAmount,
