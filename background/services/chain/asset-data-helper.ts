@@ -67,8 +67,16 @@ export default class AssetDataHelper {
             amount: BigInt(balance.toString()),
           }
         })
-        const resolvedBalances = Promise.all(balances)
-        return await resolvedBalances
+
+        const resolvedBalances = await Promise.allSettled(balances)
+        const fullfilledBalances = resolvedBalances.filter(
+          (value) => value.status === "fulfilled"
+        )
+
+        return fullfilledBalances.map(
+          (balance) =>
+            (balance as PromiseFulfilledResult<SmartContractAmount>).value
+        )
       }
       // FIXME Allow arbitrary providers?
       if (
