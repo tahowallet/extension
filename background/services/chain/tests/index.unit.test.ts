@@ -36,6 +36,7 @@ describe("Chain Service", () => {
   let chainService: ChainService
   beforeEach(async () => {
     sandbox.restore()
+
     chainService = await createChainService()
   })
 
@@ -111,6 +112,10 @@ describe("Chain Service", () => {
       await chainService.startService()
     })
 
+    afterEach(async () => {
+      await chainService.stopService()
+    })
+
     it("should correctly update lastUserActivityOnNetwork", async () => {
       jest.useFakeTimers()
 
@@ -148,6 +153,10 @@ describe("Chain Service", () => {
     beforeEach(async () => {
       sandbox.stub(chainService, "supportedNetworks").value([ETHEREUM])
       await chainService.startService()
+    })
+
+    afterEach(async () => {
+      await chainService.stopService()
     })
 
     it("should call markNetworkActivity with the correct network", async () => {

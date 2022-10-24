@@ -6,6 +6,7 @@ type Props = {
   height?: number
   color?: string
   hoverColor?: string
+  transitionHoverTime: string
   customStyles?: string
   ariaLabel?: string
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
@@ -18,6 +19,7 @@ export default function SharedIcon(props: Props): ReactElement {
     height = width,
     color = "transparent",
     hoverColor = color,
+    transitionHoverTime,
     customStyles = "",
     ariaLabel,
     onClick,
@@ -39,6 +41,7 @@ export default function SharedIcon(props: Props): ReactElement {
           cursor: ${onClick ? "pointer" : "auto"};
           background-color: ${color};
           ${customStyles};
+          transition: background-color ${transitionHoverTime};
         }
         .icon:hover {
           background-color: ${hoverColor};
@@ -46,4 +49,8 @@ export default function SharedIcon(props: Props): ReactElement {
       `}</style>
     </button>
   )
+}
+
+SharedIcon.defaultProps = {
+  transitionHoverTime: "0",
 }
