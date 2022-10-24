@@ -4,9 +4,16 @@
   "description": "The community owned and operated Web3 wallet.",
   "homepage_url": "https://tally.cash",
   "author": "https://tally.cash",
-  "manifest_version": 2,
-  "content_security_policy": "object-src 'self'; script-src 'self';",
-  "web_accessible_resources": ["*.js", "*.json"],
+  "manifest_version": 3,
+  "content_security_policy": {
+    "extension_pages": "object-src 'self'; script-src 'self';"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["window-provider.js"],
+      "matches": ["https://*/*"]
+    }
+  ],
   "content_scripts": [
     {
       "matches": ["file://*/*", "http://localhost/*", "https://*/*"],
@@ -28,13 +35,12 @@
   "icons": {
     "128": "icon-128.png"
   },
-  "browser_action": {
+  "action": {
     "default_title": "Tally Ho",
     "default_popup": "popup.html"
   },
   "permissions": ["alarms", "storage", "unlimitedStorage", "activeTab"],
   "background": {
-    "persistent": true,
-    "scripts": ["background.js", "background-ui.js"]
+    "service_worker": "background.js"
   }
 }
