@@ -20,7 +20,7 @@ export default function SignTransactionNetworkAccountInfoTopBar({
 
   return (
     <div className="top_bar_wrap standard_width">
-      <div className="row_part">
+      <div className="row_part network">
         <div className="network_icon_wrap">
           <div className="network_icon" />
         </div>
@@ -28,7 +28,7 @@ export default function SignTransactionNetworkAccountInfoTopBar({
           {networkName ?? t("signTransaction.unknownNetwork")}
         </span>
       </div>
-      <div className="row_part">
+      <div className="row_part account">
         <SharedCurrentAccountInformation
           shortenedAddress={shortenedAddress}
           name={name}
@@ -43,19 +43,16 @@ export default function SignTransactionNetworkAccountInfoTopBar({
             margin-bottom: 16px;
             display: flex;
             justify-content: space-between;
+            gap: 5px;
+          }
+          .network {
+            flex-shrink: 0;
           }
           .network_name {
             color: var(--green-20);
             font-size: 16px;
             font-weight: 500;
             line-height: 24px;
-          }
-          .account_name {
-            color: #fff;
-            font-size: 16px;
-            font-weight: 500;
-            line-height: 24px;
-            text-align: right;
           }
           .row_part {
             display: flex;
@@ -88,6 +85,9 @@ export default function SignTransactionNetworkAccountInfoTopBar({
             align-items: center;
             justify-content: center;
             margin-right: 5px;
+          }
+          .account {
+            min-width: 0;
           }
         `}
       </style>

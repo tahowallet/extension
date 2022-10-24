@@ -7,10 +7,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
 
-import {
-  HIDE_TOKEN_FEATURES,
-  SUPPORT_ACHIEVEMENTS_BANNER,
-} from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
@@ -76,8 +73,12 @@ export default function Wallet(): ReactElement {
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           />
         </div>
-        {SUPPORT_ACHIEVEMENTS_BANNER && <WalletBanner />}
-        {!HIDE_TOKEN_FEATURES && <OnboardingOpenClaimFlowBanner />}
+        {isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && (
+          <WalletBanner />
+        )}
+        {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
+          <OnboardingOpenClaimFlowBanner />
+        )}
         <div className="section">
           <SharedPanelSwitcher
             setPanelNumber={setPanelNumber}
