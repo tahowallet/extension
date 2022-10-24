@@ -440,7 +440,9 @@ export default class ChainService extends BaseService<Events> {
         "expected",
         this.trackedNetworks
       )
-      throw new Error(`Unexpected network ${network}`)
+      throw new Error(
+        `Unexpected network ${network.name}, id: ${network.chainID}`
+      )
     }
     return provider
   }
