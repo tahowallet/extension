@@ -1,3 +1,6 @@
+const TALLY_ICON_URL =
+  "https://tally.cash/icons/icon-144x144.png?v=41306c4d4e6795cdeaecc31bd794f68e"
+
 const observeMutations = (handler: (node: Node) => void) => {
   document.addEventListener("DOMContentLoaded", () => {
     const observer = new MutationObserver(function monitorMutations(mutations) {
@@ -10,6 +13,23 @@ const observeMutations = (handler: (node: Node) => void) => {
       childList: true,
     })
   })
+}
+
+const moreThanOneWalletInstalledAndTallyIsNotDefault = (): boolean => {
+  if (
+    window.ethereum &&
+    // OK to use window.ethereum.providers here since we don't strip
+    // it out for gmx.io in cachedWindowEthereumProxy.
+    Array.isArray(window.ethereum.providers) &&
+    window.ethereum.providers.length > 1
+  ) {
+    // If the user has more than 1 wallet installed
+    if (!window.ethereum.tallySetAsDefault) {
+      // And Tally is not set as the default - return
+      return true
+    }
+  }
+  return false
 }
 
 const findAndReplaceUniswapInjectedOption = (): void => {
@@ -26,7 +46,7 @@ const findAndReplaceUniswapInjectedOption = (): void => {
       // Replace the arrow icon with the Tally Ho icon
       iconAndTextDiv.innerHTML = iconAndTextDiv.innerHTML.replace(
         /\ssrc="(.+)"\s/,
-        ' src="https://tally.cash/icons/icon-144x144.png?v=41306c4d4e6795cdeaecc31bd794f68e" '
+        ` src="${TALLY_ICON_URL}" `
       )
 
       // Replace the `Injected` text with `Tally Ho`
@@ -39,18 +59,8 @@ const findAndReplaceUniswapInjectedOption = (): void => {
 }
 
 function findAndReplaceGMXMetamaskOption(addedNode: Node): void {
-  if (
-    window.ethereum &&
-    // OK to use window.ethereum.providers here since we don't strip
-    // it out for gmx.io in cachedWindowEthereumProxy.
-    Array.isArray(window.ethereum.providers) &&
-    window.ethereum.providers.length > 1
-  ) {
-    // If the user has more than 1 wallet installed
-    if (!window.ethereum.tallySetAsDefault) {
-      // And Tally is not set as the default - return
-      return
-    }
+  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+    return
   }
 
   // Otherwise - if the user only has tally installed - or if they have multiple
@@ -75,16 +85,73 @@ function findAndReplaceGMXMetamaskOption(addedNode: Node): void {
         // Replace metamask icon with Tally icon
         option.innerHTML = option.innerHTML.replace(
           /\ssrc="(.+)"\s/,
-          ' src="https://tally.cash/icons/icon-144x144.png?v=41306c4d4e6795cdeaecc31bd794f68e" '
+          ` src="${TALLY_ICON_URL}" `
         )
       }
     }
   }
 }
 
+const findYieldProtocolMetamaskContainer = (node: Node): Element | undefined =>
+  // Container if user has not checked Terms of Service yet
+  (node as HTMLElement)?.children?.[0]?.children?.[1]?.children?.[4]
+    ?.children?.[0]?.children?.[0]?.children?.[0] ||
+  // Container if user has checked Terms of Service
+  (node as HTMLElement)?.children?.[0]?.children?.[1]?.children?.[2]
+    ?.children?.[0]?.children?.[0]?.children?.[0] ||
+  // Container right after user has checked Terms of service
+  // Its important that this check is last as it is the least specific
+  (node as HTMLElement)?.children?.[0]?.children?.[0]?.children?.[0]
+
+function findAndReplaceYieldProtocolMetamaskOption(addedNode: Node): void {
+  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+    return
+  }
+
+  // Otherwise - if the user only has tally installed - or if they have multiple
+  // wallets installed and have Tally as their default wallet - replace
+  // the MetaMask connection button with a Tally Ho connection button
+
+  if (addedNode.textContent?.includes("Metamask")) {
+    const container = findYieldProtocolMetamaskContainer(addedNode)
+
+    if (!container) {
+      return
+    }
+    const metamaskText = container?.children?.[0]
+
+    if (
+      !metamaskText ||
+      (metamaskText as HTMLElement).innerText !== "Metamask"
+    ) {
+      return
+    }
+
+    metamaskText.innerHTML = metamaskText.innerHTML.replace(
+      "Metamask",
+      "Tally Ho"
+    )
+
+    const metamaskIcon = container?.children?.[2]
+
+    if (!metamaskIcon) {
+      return
+    }
+
+    metamaskIcon.removeChild(metamaskIcon.children[0])
+    const tallyIcon = document.createElement("img")
+    tallyIcon.src = TALLY_ICON_URL
+    metamaskIcon.appendChild(tallyIcon)
+
+    // connectionOptions is an `Iterator` without a `forEach` equivalent method.
+    // eslint-disable-next-line no-restricted-syntax
+  }
+}
+
 const hostnameToHandler = {
   "uniswap.org": findAndReplaceUniswapInjectedOption,
   "gmx.io": findAndReplaceGMXMetamaskOption,
+  "app.yieldprotocol.com": findAndReplaceYieldProtocolMetamaskOption,
 } as const
 
 export default function monitorForWalletConnectionPrompts(): void {
