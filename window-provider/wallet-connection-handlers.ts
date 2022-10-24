@@ -25,10 +25,12 @@ const moreThanOneWalletInstalledAndTallyIsNotDefault = (): boolean => {
   ) {
     // If the user has more than 1 wallet installed
     if (!window.ethereum.tallySetAsDefault) {
-      // And Tally is not set as the default - return
+      // And Tally is not set as the default - return true
       return true
     }
   }
+  // Otherwise - if the user only has tally installed - or if they have multiple
+  // wallets installed and have Tally as their default wallet - return false
   return false
 }
 
@@ -62,10 +64,6 @@ function findAndReplaceGMXMetamaskOption(addedNode: Node): void {
   if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
     return
   }
-
-  // Otherwise - if the user only has tally installed - or if they have multiple
-  // wallets installed and have Tally as their default wallet - replace
-  // the MetaMask connection button with a Tally Ho connection button
 
   if (
     addedNode.textContent?.includes("MetaMask") &&
@@ -108,10 +106,6 @@ function findAndReplaceYieldProtocolMetamaskOption(addedNode: Node): void {
     return
   }
 
-  // Otherwise - if the user only has tally installed - or if they have multiple
-  // wallets installed and have Tally as their default wallet - replace
-  // the MetaMask connection button with a Tally Ho connection button
-
   if (addedNode.textContent?.includes("Metamask")) {
     const container = findYieldProtocolMetamaskContainer(addedNode)
 
@@ -142,9 +136,6 @@ function findAndReplaceYieldProtocolMetamaskOption(addedNode: Node): void {
     const tallyIcon = document.createElement("img")
     tallyIcon.src = TALLY_ICON_URL
     metamaskIcon.appendChild(tallyIcon)
-
-    // connectionOptions is an `Iterator` without a `forEach` equivalent method.
-    // eslint-disable-next-line no-restricted-syntax
   }
 }
 
