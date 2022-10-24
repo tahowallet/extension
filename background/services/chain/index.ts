@@ -256,7 +256,7 @@ export default class ChainService extends BaseService<Events> {
       ETHEREUM,
       POLYGON,
       OPTIMISM,
-      ...(isEnabled(FeatureFlags.SUPPORT_GOERLI) ? [GOERLI] : []),
+      GOERLI,
       ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM) ? [ARBITRUM_ONE] : []),
     ]
 
@@ -440,7 +440,9 @@ export default class ChainService extends BaseService<Events> {
         "expected",
         this.trackedNetworks
       )
-      throw new Error(`Unexpected network ${network}`)
+      throw new Error(
+        `Unexpected network ${network.name}, id: ${network.chainID}`
+      )
     }
     return provider
   }

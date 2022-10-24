@@ -117,7 +117,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // Functions that will create and initialize a new provider, in priority
   // order.
   private providerCreators: [
-    () => WebSocketProvider,
+    () => WebSocketProvider | JsonRpcProvider,
     ...(() => JsonRpcProvider)[]
   ]
 
@@ -158,7 +158,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     // Internal network type useful for helper calls, but not exposed to avoid
     // clashing with Ethers's own `network` stuff.
     private evmNetwork: EVMNetwork,
-    firstProviderCreator: () => WebSocketProvider,
+    firstProviderCreator: () => WebSocketProvider | JsonRpcProvider,
     ...remainingProviderCreators: (() => JsonRpcProvider)[]
   ) {
     const firstProvider = firstProviderCreator()
