@@ -197,7 +197,7 @@ export default function Settings(): ReactElement {
     setAsDefault,
     hideSmallAssetBalance,
     ...(isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) ? [languages] : []),
-    ...(isEnabled(FeatureFlags.SUPPORT_GOERLI) ? [enableTestNetworks] : []),
+    enableTestNetworks,
     dAppsSettings,
     bugReport,
     ...(isEnabled(FeatureFlags.SUPPORT_ANALYTICS) ? [analytics] : []),
