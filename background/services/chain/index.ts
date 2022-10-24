@@ -257,7 +257,7 @@ export default class ChainService extends BaseService<Events> {
       ETHEREUM,
       POLYGON,
       OPTIMISM,
-      ...(isEnabled(FeatureFlags.SUPPORT_GOERLI) ? [GOERLI] : []),
+      GOERLI,
       ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [RSK] : []),
       ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM) ? [ARBITRUM_ONE] : []),
     ]

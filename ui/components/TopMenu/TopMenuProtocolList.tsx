@@ -66,15 +66,11 @@ const productionNetworks = [
 ]
 
 const testNetworks = [
-  ...(isEnabled(FeatureFlags.SUPPORT_GOERLI)
-    ? [
-        {
-          network: GOERLI,
-          info: i18n.t("protocol.testnet"),
-          isDisabled: false,
-        },
-      ]
-    : []),
+  {
+    network: GOERLI,
+    info: i18n.t("protocol.testnet"),
+    isDisabled: false,
+  },
 ]
 
 interface TopMenuProtocolListProps {
