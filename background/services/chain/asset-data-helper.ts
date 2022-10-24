@@ -17,7 +17,11 @@ import { AddressOnNetwork } from "../../accounts"
 import { HexString } from "../../types"
 import logger from "../../lib/logger"
 import { EVMNetwork, SmartContract } from "../../networks"
-import { getBalance, getMetadata as getERC20Metadata } from "../../lib/erc20"
+import {
+  getBalance,
+  getMetadata as getERC20Metadata,
+  getTokenBalances,
+} from "../../lib/erc20"
 import { FeatureFlags, isEnabled } from "../../features"
 import { DOGGO, FORK, RSK } from "../../constants"
 
@@ -89,10 +93,14 @@ export default class AssetDataHelper {
           smartContractAddresses
         )
       }
+      return await getTokenBalances(
+        addressOnNetwork,
+        smartContractAddresses || [],
+        provider
+      )
     } catch (error) {
       logger.debug(
-        "Problem resolving asset balances via Alchemy helper; network " +
-          "may not support it.",
+        "Problem resolving asset balances; network may not support it.",
         error
       )
     }

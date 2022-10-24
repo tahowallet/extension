@@ -1,5 +1,8 @@
+import {
+  AlchemyProvider,
+  AlchemyWebSocketProvider,
+} from "@ethersproject/providers"
 import logger from "../../lib/logger"
-
 import { HexString } from "../../types"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -749,7 +752,24 @@ export default class IndexingService extends BaseService<Events> {
       (
         await this.chainService.getAccountsToTrack(onlyActiveAccounts)
       ).map(async (addressOnNetwork) => {
-        await this.retrieveTokenBalances(addressOnNetwork, activeAssetsToTrack)
+        const provider = await this.chainService.providerForNetworkOrThrow(
+          addressOnNetwork.network
+        )
+        const isAlchemyProvider =
+          provider instanceof AlchemyProvider ||
+          provider instanceof AlchemyWebSocketProvider
+
+        if (isAlchemyProvider) {
+          await this.retrieveTokenBalances(
+            addressOnNetwork,
+            activeAssetsToTrack
+          )
+        } else {
+          await this.retrieveTokenBalances(
+            addressOnNetwork,
+            await this.db.getAllKnownTokensForNetwork(addressOnNetwork.network)
+          )
+        }
         await this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
       })
     )

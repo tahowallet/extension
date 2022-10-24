@@ -228,9 +228,20 @@ export default class NameService extends BaseService<Events> {
       resolver.canAttemptNameResolution({ address, network })
     )
 
-    const firstMatchingResolution = (
+    const localResolvers = [...workingResolvers].filter(
+      (resolver) =>
+        resolver.type === "tally-address-book" ||
+        resolver.type === "tally-known-contracts"
+    )
+    const remoteResolvers = [...workingResolvers].filter(
+      (resolver) =>
+        resolver.type !== "tally-address-book" &&
+        resolver.type !== "tally-known-contracts"
+    )
+
+    let firstMatchingResolution = (
       await Promise.allSettled(
-        workingResolvers.map(async (resolver) => ({
+        localResolvers.map(async (resolver) => ({
           type: resolver.type,
           resolved: await resolver.lookUpNameForAddress({ address, network }),
         }))
@@ -238,6 +249,19 @@ export default class NameService extends BaseService<Events> {
     )
       .filter(isFulfilledPromise)
       .find(({ value: { resolved } }) => resolved !== undefined)?.value
+
+    if (!firstMatchingResolution) {
+      firstMatchingResolution = (
+        await Promise.allSettled(
+          remoteResolvers.map(async (resolver) => ({
+            type: resolver.type,
+            resolved: await resolver.lookUpNameForAddress({ address, network }),
+          }))
+        )
+      )
+        .filter(isFulfilledPromise)
+        .find(({ value: { resolved } }) => resolved !== undefined)?.value
+    }
 
     if (
       firstMatchingResolution === undefined ||
