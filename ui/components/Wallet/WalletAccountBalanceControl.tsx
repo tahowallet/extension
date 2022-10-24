@@ -2,14 +2,12 @@ import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { selectCurrentAccountSigner } from "@tallyho/tally-background/redux-slices/selectors"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
 import ReadOnlyNotice from "../Shared/ReadOnlyNotice"
-import BalanceReloader from "../BalanceReloader/BalanceReloader"
 
 interface Props {
   balance?: string
@@ -53,9 +51,6 @@ export default function WalletAccountBalanceControl(
             <span className="balance">
               <span className="dollar_sign">$</span>
               {balance ?? 0}
-              {isEnabled(FeatureFlags.USE_BALANCE_RELOADER) && (
-                <BalanceReloader />
-              )}
             </span>
           </span>
         </SharedSkeletonLoader>

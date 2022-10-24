@@ -547,7 +547,6 @@
         "HIDE_IMPORT_DERIVATION_PATH": "Hide import derivation path",
         "HIDE_SWAP_REWARDS": "Hide swap rewards",
         "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
-        "USE_BALANCE_RELOADER": "Enable to reload background",
         "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
         "SUPPORT_ANALYTICS": "Show Analytics page on the settings page",
         "SUPPORT_KEYRING_LOCKING": "Enable to lock/unlock accounts ",
