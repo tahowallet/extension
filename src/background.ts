@@ -4,6 +4,7 @@ import {
   isEnabled,
   RuntimeFlag,
 } from "@tallyho/tally-background/features"
+import localStorageShim from "@tallyho/tally-background/utils/local-storage-shim"
 
 browser.runtime.onInstalled.addListener((obj) => {
   if (
@@ -22,7 +23,7 @@ browser.runtime.onInstalled.addListener((obj) => {
     !isEnabled(FeatureFlags.SWITCH_RUNTIME_FLAGS)
   ) {
     Object.keys(RuntimeFlag).forEach((flagName) =>
-      localStorage.removeItem(flagName)
+      localStorageShim.removeItem(flagName)
     )
   }
 })

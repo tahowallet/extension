@@ -3,20 +3,7 @@
 /* eslint-disable no-console */
 
 import browser from "webextension-polyfill"
-
-// This shim is to mimic the old localStorage api meanwhile using
-// the new async api.
-//
-// Note: We cheat and mix sync save with async writes. The `saveLog` is async
-// and is used from the sync `genericLogger`. The reasonable assumption here is
-// that the write operation won't fail and we don't need to wait for it.
-const localStorageShim = {
-  getAllItems: async () => browser.storage.local.get(),
-  getItem: async (key: string) => (await browser.storage.local.get(key))[key],
-  setItem: (key: string, val: unknown) =>
-    browser.storage.local.set({ [key]: val }),
-  removeItem: (keys: string) => browser.storage.local.remove(keys),
-}
+import localStorageShim from "../utils/local-storage-shim"
 
 // Clear all localStorage logs on load, which were used in older versions of
 // the extension.
@@ -267,7 +254,7 @@ const logDateRegExp = new RegExp(
 )
 
 type StoredLogData = {
-  -readonly [level in keyof typeof LogLevel]: string
+  -readonly [level in keyof typeof LogLevel]: string | undefined
 }
 
 export async function serializeLogs(): Promise<string> {
