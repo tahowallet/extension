@@ -23,7 +23,7 @@ import {
   getTokenBalances,
 } from "../../lib/erc20"
 import { FeatureFlags, isEnabled } from "../../features"
-import { DOGGO, FORK, RSK } from "../../constants"
+import { DOGGO, FORK } from "../../constants"
 
 interface ProviderManager {
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined
@@ -52,36 +52,6 @@ export default class AssetDataHelper {
     }
 
     try {
-      // Using rpc provider for RSK instead of AlchemyProvider
-      if (
-        addressOnNetwork.network.chainID === RSK.chainID &&
-        smartContractAddresses
-      ) {
-        const balances = smartContractAddresses.map(async (token) => {
-          const balance = await getBalance(
-            provider,
-            token,
-            addressOnNetwork.address
-          )
-          return {
-            smartContract: {
-              contractAddress: token,
-              homeNetwork: RSK,
-            },
-            amount: BigInt(balance.toString()),
-          }
-        })
-
-        const resolvedBalances = await Promise.allSettled(balances)
-        const fullfilledBalances = resolvedBalances.filter(
-          (value) => value.status === "fulfilled"
-        )
-
-        return fullfilledBalances.map(
-          (balance) =>
-            (balance as PromiseFulfilledResult<SmartContractAmount>).value
-        )
-      }
       // FIXME Allow arbitrary providers?
       if (
         provider.currentProvider instanceof AlchemyWebSocketProvider ||
