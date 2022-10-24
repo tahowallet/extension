@@ -21,7 +21,10 @@ export const internalProviderPort = {
   removeEventListener(toRemove: (message: any) => unknown): void {
     this.listeners = this.listeners.filter((listener) => listener !== toRemove)
   },
-  origin: window.location.origin,
+
+  // Service workers don't have access to DOM elements like window, so need to use self or globalThis
+  // eslint-disable-next-line no-restricted-globals
+  origin: self.location.origin,
   postMessage(message: any): void {
     this.emitter.emit("message", message)
   },
