@@ -4,9 +4,23 @@
 
 import browser from "webextension-polyfill"
 
+// This shim is to mimic the old localStorage api meanwhile using
+// the new async api.
+//
+// Note: We cheat and mix sync save with async writes. The `saveLog` is async
+// and is used from the sync `genericLogger`. The reasonable assumption here is
+// that the write operation won't fail and we don't need to wait for it.
+const localStorageShim = {
+  getAllItems: async () => browser.storage.local.get(),
+  getItem: async (key: string) => (await browser.storage.local.get(key))[key],
+  setItem: (key: string, val: unknown) =>
+    browser.storage.local.set({ [key]: val }),
+  removeItem: (keys: string) => browser.storage.local.remove(keys),
+}
+
 // Clear all localStorage logs on load, which were used in older versions of
 // the extension.
-localStorage.removeItem("logs")
+localStorageShim.removeItem("logs")
 
 enum LogLevel {
   debug = "debug",
@@ -75,13 +89,8 @@ function purgeSensitiveFailSafe(log: string): string {
   )
 }
 
-const isBackgroundLogger = browser.extension.getBackgroundPage() === window
-// isPopupLogger will briefly be true even if we're in a tab, but should
-// quickly resolve to false.
-//
-// Note that as of this comment's writing the content scripts do not use the
-// logger, so defaulting to true should generally always produce the correct
-// result even if the following check never completes.
+// window is not defined in a worker context
+const isBackgroundLogger = typeof window !== "undefined"
 let isPopupLogger = !isBackgroundLogger
 browser.tabs.getCurrent().then((value) => {
   isPopupLogger = !isBackgroundLogger && value === undefined
@@ -119,7 +128,7 @@ async function saveLog(
     .join("\n    ")
 
   const logKey = `logs-${level}`
-  const existingLogs = localStorage.getItem(logKey) ?? ""
+  const existingLogs = (await localStorageShim.getItem(logKey)) ?? ""
 
   const backgroundPrefix = isBackgroundLogger ? "BG" : ""
   const popupPrefix = isPopupLogger ? "POPUP" : ""
@@ -137,7 +146,7 @@ async function saveLog(
       // usage.
       .substring(0, 50000)
 
-  localStorage.setItem(logKey, updatedLogs)
+  await localStorageShim.setItem(logKey, updatedLogs)
 }
 
 const BLINK_PREFIX = "    at "
@@ -261,13 +270,13 @@ type StoredLogData = {
   -readonly [level in keyof typeof LogLevel]: string
 }
 
-export function serializeLogs(): string {
+export async function serializeLogs(): Promise<string> {
   const logs: StoredLogData = {
-    debug: localStorage.getItem("logs-debug") ?? "",
-    log: localStorage.getItem("logs-log") ?? "",
-    info: localStorage.getItem("logs-info") ?? "",
-    warn: localStorage.getItem("logs-warn") ?? "",
-    error: localStorage.getItem("logs-error") ?? "",
+    debug: (await localStorageShim.getItem("logs-debug")) ?? "",
+    log: (await localStorageShim.getItem("logs-log")) ?? "",
+    info: (await localStorageShim.getItem("logs-info")) ?? "",
+    warn: (await localStorageShim.getItem("logs-warn")) ?? "",
+    error: (await localStorageShim.getItem("logs-error")) ?? "",
   }
 
   if (Object.values(logs).every((entry) => entry === "")) {
