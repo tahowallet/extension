@@ -111,3 +111,27 @@ export const NETWORK_BY_CHAIN_ID = {
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(
   [GOERLI].map((network) => network.chainID)
 )
+
+export const NETWORKS_SUPPORTING_SWAPS = [
+  ETHEREUM.chainID,
+  POLYGON.chainID,
+  ARBITRUM_ONE.chainID,
+  OPTIMISM.chainID,
+  ROPSTEN.chainID,
+  RINKEBY.chainID,
+  GOERLI.chainID,
+  KOVAN.chainID,
+  FORK.chainID,
+]
+
+export const NETWORKS_SUPPORTING_NFTS = [
+  ETHEREUM.chainID,
+  POLYGON.chainID,
+  ARBITRUM_ONE.chainID,
+  OPTIMISM.chainID,
+  ROPSTEN.chainID,
+  RINKEBY.chainID,
+  GOERLI.chainID,
+  KOVAN.chainID,
+  FORK.chainID,
+]
