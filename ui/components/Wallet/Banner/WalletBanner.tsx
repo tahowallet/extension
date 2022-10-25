@@ -17,7 +17,7 @@ export default function WalletBanner(): ReactElement {
   const [showDismissSlideup, setShowDismissSlideup] = useState(false)
   const arbitrumCampaign = useArbitrumCampaigns()
   const campaignDetails = useBannerCampaigns(currentNetwork.chainID)
-  const thumbnail = arbitrumCampaign?.thumbnail // TODO: add fallback thumbnail
+  const thumbnail = arbitrumCampaign?.thumbnail
   const [dismissedCampaignId, setDismissedCampaignId] = useLocalStorage(
     "dismissedCampaignBanner",
     ""
@@ -56,7 +56,7 @@ export default function WalletBanner(): ReactElement {
               right: 0;
             `}
           />
-          <img src={thumbnail} alt="Notification campaign" />
+          <div className="thumbnail" />
           <div className="wallet_banner_content">
             <h3>{title}</h3>
             {description && <p>{description}</p>}
@@ -100,11 +100,17 @@ export default function WalletBanner(): ReactElement {
         onClose={() => setShowDismissSlideup(false)}
       />
       <style jsx>{`
-        img {
+        .thumbnail {
+          flex-shrink: 0;
           width: 64px;
           height: 64px;
           border-radius: 8px;
           margin: 0 15px 0 5px;
+          align-self: flex-start;
+          background: url(${thumbnail}), url("./images/banner_thumbnail.png");
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
         }
         h3 {
           margin: 0 0 5px;
