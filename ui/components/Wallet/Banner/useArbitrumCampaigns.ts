@@ -70,8 +70,10 @@ async function getActiveCampaign(): Promise<Campaign | null> {
   }
 }
 
-export default (): Campaign | null => {
-  const [campaign, setCampaign] = useState<Campaign | null>(null)
+export default (): Campaign | null | undefined => {
+  const [campaign, setCampaign] = useState<Campaign | null | undefined>(
+    undefined
+  )
 
   useEffect(() => {
     const fetchCampaign = async () => {

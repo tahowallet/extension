@@ -1,7 +1,7 @@
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectHideBanners } from "@tallyho/tally-background/redux-slices/ui"
 import classNames from "classnames"
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useBackgroundSelector, useLocalStorage } from "../../../hooks"
 
 import SharedBanner from "../../Shared/SharedBanner"
@@ -17,11 +17,20 @@ export default function WalletBanner(): ReactElement {
   const [showDismissSlideup, setShowDismissSlideup] = useState(false)
   const arbitrumCampaign = useArbitrumCampaigns()
   const campaignDetails = useBannerCampaigns(currentNetwork.chainID)
-  const thumbnail = arbitrumCampaign?.thumbnail
+  const [thumbnail, setThumbnail] = useState("")
   const [dismissedCampaignId, setDismissedCampaignId] = useLocalStorage(
     "dismissedCampaignBanner",
     ""
   )
+
+  useEffect(() => {
+    // don't show any thumbnail while fetching campaign
+    if (typeof arbitrumCampaign !== "undefined") {
+      setThumbnail(
+        arbitrumCampaign?.thumbnail || "./images/banner_thumbnail.png"
+      )
+    }
+  }, [arbitrumCampaign])
 
   const isHidden =
     hideBanners ||
@@ -56,7 +65,11 @@ export default function WalletBanner(): ReactElement {
               right: 0;
             `}
           />
-          <div className="thumbnail" />
+          <div
+            className={classNames("thumbnail", {
+              hidden: !thumbnail,
+            })}
+          />
           <div className="wallet_banner_content">
             <h3>{title}</h3>
             {description && <p>{description}</p>}
@@ -107,10 +120,15 @@ export default function WalletBanner(): ReactElement {
           border-radius: 8px;
           margin: 0 15px 0 5px;
           align-self: flex-start;
-          background: url(${thumbnail}), url("./images/banner_thumbnail.png");
+          background: url(${thumbnail});
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
+          opacity: 1;
+          transition: opacity 200ms ease-in;
+        }
+        .thumbnail.hidden {
+          opacity: 0;
         }
         h3 {
           margin: 0 0 5px;
