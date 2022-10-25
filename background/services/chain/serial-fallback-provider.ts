@@ -7,7 +7,7 @@ import {
   WebSocketProvider,
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
-import { MINUTE, SECOND } from "../../constants"
+import { MINUTE, SECOND, RSK } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
 import { AddressOnNetwork } from "../../accounts"
@@ -673,10 +673,15 @@ export function makeSerialFallbackProvider(
   return new SerialFallbackProvider(
     network,
     () =>
-      new AlchemyWebSocketProvider(
-        getNetwork(Number(network.chainID)),
-        ALCHEMY_KEY
-      ),
-    () => new AlchemyProvider(getNetwork(Number(network.chainID)), ALCHEMY_KEY)
+      network.chainID === RSK.chainID
+        ? new JsonRpcProvider("https://public-node.rsk.co")
+        : new AlchemyWebSocketProvider(
+            getNetwork(Number(network.chainID)),
+            ALCHEMY_KEY
+          ),
+    () =>
+      network.chainID === RSK.chainID
+        ? new JsonRpcProvider("https://public-node.rsk.co")
+        : new AlchemyProvider(getNetwork(Number(network.chainID)), ALCHEMY_KEY)
   )
 }

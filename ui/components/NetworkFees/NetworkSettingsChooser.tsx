@@ -12,6 +12,7 @@ import {
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "./NetworkSettingsSelect"
 import NetworkSettingsOptimism from "./NetworkSettingsSelectOptimism"
+import NetworkSettingsRSK from "./NetworkSettingsSelectRSK"
 import NetworkSettingsSelectLegacy from "./NetworkSettingsSelectLegacy"
 
 interface NetworkSettingsChooserProps {
@@ -39,6 +40,9 @@ export default function NetworkSettingsChooser({
     if (transactionDetails) {
       if (transactionDetails.network.name === "Optimism") {
         return <NetworkSettingsOptimism />
+      }
+      if (transactionDetails.network.name === "RSK") {
+        return <NetworkSettingsRSK />
       }
       if (transactionDetails.network.name === "Arbitrum") {
         return (

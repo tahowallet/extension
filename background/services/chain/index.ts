@@ -20,6 +20,7 @@ import { AssetTransfer } from "../../assets"
 import {
   HOUR,
   ETHEREUM,
+  RSK,
   POLYGON,
   ARBITRUM_ONE,
   OPTIMISM,
@@ -256,7 +257,8 @@ export default class ChainService extends BaseService<Events> {
       ETHEREUM,
       POLYGON,
       OPTIMISM,
-      ...(isEnabled(FeatureFlags.SUPPORT_GOERLI) ? [GOERLI] : []),
+      GOERLI,
+      ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [RSK] : []),
       ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM) ? [ARBITRUM_ONE] : []),
     ]
 
@@ -440,7 +442,9 @@ export default class ChainService extends BaseService<Events> {
         "expected",
         this.trackedNetworks
       )
-      throw new Error(`Unexpected network ${network}`)
+      throw new Error(
+        `Unexpected network ${network.name}, id: ${network.chainID}`
+      )
     }
     return provider
   }
@@ -1231,7 +1235,7 @@ export default class ChainService extends BaseService<Events> {
     incomingOnly = false
   ): Promise<void> {
     if (
-      [ETHEREUM, POLYGON, OPTIMISM, ARBITRUM_ONE, GOERLI].every(
+      [ETHEREUM, POLYGON, OPTIMISM, ARBITRUM_ONE, GOERLI, RSK].every(
         (network) => network.chainID !== addressOnNetwork.network.chainID
       )
     ) {

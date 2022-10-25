@@ -16,7 +16,6 @@ export const RuntimeFlag: Record<string, boolean> = {
     process.env.HIDE_IMPORT_DERIVATION_PATH === "true",
   HIDE_SWAP_REWARDS: process.env.HIDE_SWAP_REWARDS === "true",
   USE_UPDATED_SIGNING_UI: process.env.USE_UPDATED_SIGNING_UI === "true",
-  USE_BALANCE_RELOADER: process.env.USE_BALANCE_RELOADER === "true",
   SUPPORT_MULTIPLE_LANGUAGES: process.env.SUPPORT_MULTIPLE_LANGUAGES === "true",
   SUPPORT_ANALYTICS: process.env.SUPPORT_ANALYTICS === "true",
   SUPPORT_KEYRING_LOCKING: process.env.SUPPORT_KEYRING_LOCKING === "true",
@@ -24,7 +23,7 @@ export const RuntimeFlag: Record<string, boolean> = {
   ENABLE_ACHIEVEMENTS_TAB: process.env.ENABLE_ACHIEVEMENTS_TAB === "true",
   HIDE_TOKEN_FEATURES: process.env.HIDE_TOKEN_FEATURES === "true",
   SUPPORT_ARBITRUM: process.env.SUPPORT_ARBITRUM === "true",
-  SUPPORT_GOERLI: process.env.SUPPORT_GOERLI === "true",
+  SUPPORT_RSK: process.env.SUPPORT_RSK === "true",
 }
 
 /**
