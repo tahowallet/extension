@@ -112,6 +112,30 @@ const modeConfigs: {
         // FIXME version refed in @types/copy-webpack-plugin and our local
         // FIXME webpack version.
       }) as unknown as WebpackPluginInstance,
+      new CopyPlugin({
+        patterns: [
+          {
+            from: "node_modules/@tallyho/tally-ui/public/",
+            force: true,
+            priority: 1,
+            transform: (content, fileName) => {
+              if (fileName.endsWith("popup.html")) {
+                return content
+                  .toString("utf8")
+                  .replace(
+                    "<!-- INSERT_REACT_DEV_TOOLS_HERE -->",
+                    `<script src="http://localhost:8097"></script>`
+                  )
+              }
+
+              return content
+            },
+          },
+        ],
+        // FIXME Forced cast below due to an incompatibility between the webpack
+        // FIXME version refed in @types/copy-webpack-plugin and our local
+        // FIXME webpack version.
+      }) as unknown as WebpackPluginInstance,
     ],
     optimization: {
       minimizer: [
