@@ -25,7 +25,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
-import { ETHEREUM } from "../../constants"
+import { NETWORK_FOR_LEDGER_SIGNING } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { AddressOnNetwork } from "../../accounts"
 
@@ -534,7 +534,11 @@ export default class LedgerService extends BaseService<Events> {
     { address, network }: AddressOnNetwork,
     hexDataToSign: HexString
   ): Promise<string> {
-    if (!sameNetwork(network, ETHEREUM)) {
+    if (
+      !NETWORK_FOR_LEDGER_SIGNING.find((supportedNetwork) =>
+        sameNetwork(network, supportedNetwork)
+      )
+    ) {
       throw new Error("Unsupported network for Ledger signing")
     }
 
