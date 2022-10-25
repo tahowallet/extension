@@ -5,14 +5,17 @@ import {
 } from "@tallyho/tally-background/lib/utils"
 import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import {
+  heuristicDesiredDecimalsForUnitPrice,
+  enrichAssetAmountWithMainCurrencyValues,
+} from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import {
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectTransactionData,
   selectTransactionMainCurrencyPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import { EVM_ROLLUP_CHAIN_IDS } from "@tallyho/tally-background/constants"
+import { EVM_ROLLUP_CHAIN_IDS, RSK } from "@tallyho/tally-background/constants"
 import {
   EVMNetwork,
   isEIP1559EnrichedTransactionRequest,
@@ -84,9 +87,21 @@ const estimateGweiAmount = (options: {
       transactionData.estimatedRollupGwei
   }
 
+  let desiredDecimals = 0
+
+  if (RSK.chainID === network.chainID) {
+    estimatedSpendPerGas = networkSettings.values.gasPrice ?? 0n
+    desiredDecimals = 2
+  }
+
+  const estimatedSpendPerGasInGwei = weiToGwei(estimatedSpendPerGas ?? 0n)
+  const decimalLength = heuristicDesiredDecimalsForUnitPrice(
+    desiredDecimals,
+    Number(estimatedSpendPerGasInGwei)
+  )
   const estimatedGweiAmount = truncateDecimalAmount(
-    weiToGwei(estimatedSpendPerGas ?? 0n),
-    0
+    estimatedSpendPerGasInGwei,
+    decimalLength
   )
 
   return estimatedGweiAmount

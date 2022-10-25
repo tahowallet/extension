@@ -4,6 +4,7 @@ import {
   GOERLI,
   OPTIMISM,
   POLYGON,
+  RSK,
 } from "@tallyho/tally-background/constants"
 import { NetworkFeeTypeChosen } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { i18n } from "../_locales/i18n"
@@ -12,6 +13,7 @@ export const doggoTokenDecimalDigits = 18
 
 export const scanWebsite = {
   [ETHEREUM.chainID]: { title: "Etherscan", url: "https://etherscan.io" },
+  [RSK.chainID]: { title: "RSKExplorer", url: "https://explorer.rsk.co" },
   [OPTIMISM.chainID]: {
     title: "Etherscan",
     url: "https://optimistic.etherscan.io",
