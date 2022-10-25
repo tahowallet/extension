@@ -91,7 +91,6 @@ function AddWalletRow({
         .icon {
           width: 32px;
           height: 32px;
-          background-color: var(--gold-20);
           border-radius: 8px;
           margin-right: 10px;
         }
@@ -133,12 +132,23 @@ export default function AddWallet(): ReactElement {
 
       <style jsx>
         {`
-          section,
+          section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+          }
           ul {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            background-color: var(--green-95);
+            border-radius: 1em;
+            padding: 1em;
+          }
+          li {
+            border-top: 1px solid black;
           }
           .button_sections_wrap {
             height: 500px;
@@ -159,7 +169,7 @@ export default function AddWallet(): ReactElement {
             font-weight: 500;
             font-size: 46px;
             line-height: 42px;
-            margin: 12px 0px 0px 0px;
+            margin: 1em auto;
           }
           h2 {
             width: 100%;
@@ -176,12 +186,32 @@ export default function AddWallet(): ReactElement {
             mask-size: cover;
             width: 11px;
             height: 11px;
-            background-color: var(--green-40);
             margin-right: 10px;
             margin-top: 2px;
           }
           .icon_close:hover {
             background-color: var(--green-20);
+          }
+          .illustration {
+            background: url("./images/doggo_gold@2x.png");
+            background-size: cover;
+            width: 120px;
+            height: 120px;
+            flex-shrink: 0;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
+            margin-top: 0;
+            position: absolute;
+            animation: fadeIn ease 0.5s;
+          }
+          .forest {
+            background-size: cover;
+            width: 384px;
+            height: 141px;
+            align-self: flex-end;
+            justify-self: flex-end;
+            z-index: 1;
           }
         `}
       </style>

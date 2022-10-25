@@ -47,13 +47,16 @@ export default function SharedBackButton({
       {!withoutBackText && t("shared.backButtonText")}
       <style jsx>{`
         button {
-          color: var(--green-40);
-          font-size: 12px;
+          color: var(--green-120);
           font-weight: 500;
           line-height: 16px;
           display: flex;
           margin-bottom: 10px;
           margin-top: 2px;
+          background: var(--green-60);
+          padding: 1em 0.75em;
+          border-radius: 190px;
+          font-size: 1em;
         }
         button:hover {
           color: #fff;
@@ -64,7 +67,7 @@ export default function SharedBackButton({
           width: 15px;
           height: 8px;
           margin-top: 2px;
-          background-color: var(--green-40);
+          background-color: var(--green-120);
           transform: rotate(90deg);
         }
         button:hover .icon_chevron_left {

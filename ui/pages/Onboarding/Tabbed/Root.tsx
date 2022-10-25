@@ -25,6 +25,7 @@ function Navigation({ children }: Props): ReactElement {
             width: 100%;
           }
           .left_container {
+            position: relative;
             width: 50%;
             height: 100%;
             float: left;
@@ -37,6 +38,7 @@ function Navigation({ children }: Props): ReactElement {
             );
           }
           .right_container {
+            position: relative;
             width: 50%;
             height: 100%;
             float: right;
@@ -50,7 +52,8 @@ function Navigation({ children }: Props): ReactElement {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            margin-bottom: 40px;
+            margin-bottom: 90px;
+            padding: 2em;
           }
           .onboarding_container {
             height: 100%;
@@ -67,6 +70,13 @@ function Navigation({ children }: Props): ReactElement {
             width: 100%;
             padding: 2em 0;
           }
+          .back_button button {
+            background: var(--green-60);
+            padding: 1em 0.75em;
+            border-radius: 190px;
+            font-size: 1em;
+            margin: 2em;
+          }
         `}
       </style>
       <div className="left_container">
@@ -78,8 +88,8 @@ function Navigation({ children }: Props): ReactElement {
         </div>
       </div>
       <div className="right_container">
-        <div className="top">
-          <SharedBackButton />
+        <div className="top back_button">
+          <SharedBackButton withoutBackText />
         </div>
         {children}
       </div>

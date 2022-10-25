@@ -27,14 +27,14 @@ export default function Intro(): ReactElement {
             size="large"
             linkTo={`${path}/add-wallet`}
           >
-            Use existing wallet
+            <div className="option standard_width">Use existing wallet</div>
           </SharedButton>
           <SharedButton
             type="secondary"
             size="large"
             linkTo={`${path}/new-seed/set-password`}
           >
-            Create new wallet
+            <div className="option standard_width">Create new wallet</div>
           </SharedButton>
         </div>
       </div>
@@ -49,12 +49,9 @@ export default function Intro(): ReactElement {
           .button_container {
             border-radius: 1em;
             background: var(--green-95);
-            padding: 2em;
+            padding: 1em;
             margin: 3em 0;
             width: 100%;
-          }
-          button {
-            margin: 1em;
           }
           .illustration_section {
             height: 180px;
@@ -74,14 +71,6 @@ export default function Intro(): ReactElement {
             font-size: 46px;
             line-height: 42px;
             margin: 12px 0px 0px 0px;
-          }
-          .forest {
-            background-size: cover;
-            width: 384px;
-            height: 141px;
-            align-self: flex-end;
-            justify-self: flex-end;
-            z-index: 1;
           }
           p {
             font-size: 16px;
@@ -114,6 +103,14 @@ export default function Intro(): ReactElement {
             margin-top: 0;
             position: absolute;
             animation: fadeIn ease 0.5s;
+          }
+          .forest {
+            background-size: cover;
+            width: 384px;
+            height: 141px;
+            align-self: flex-end;
+            justify-self: flex-end;
+            z-index: 1;
           }
           @keyframes fadeIn {
             0% {
