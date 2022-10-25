@@ -13,7 +13,6 @@ import {
   useAreKeyringsUnlocked,
   useBackgroundSelector,
 } from "../../../hooks"
-import titleStyle from "../../../components/Onboarding/titleStyle"
 import SharedButton from "../../../components/Shared/SharedButton"
 import SharedBanner from "../../../components/Shared/SharedBanner"
 import SharedToggleButton from "../../../components/Shared/SharedToggleButton"
@@ -147,9 +146,11 @@ export default function SetPassword({
             right: 0px;
             margin: 0 auto;
           }
-          ${titleStyle}
+          form {
+            background: transparent;
+          }
           .serif_header {
-            width: 335px;
+            width: 100%;
             margin-bottom: 7px;
           }
           .input_wrap {

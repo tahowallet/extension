@@ -32,7 +32,15 @@
     "default_title": "Tally Ho",
     "default_popup": "popup.html"
   },
-  "permissions": ["alarms", "storage", "unlimitedStorage", "activeTab", "cookies", "storage", "<all_urls>"],
+  "permissions": [
+    "alarms",
+    "storage",
+    "unlimitedStorage",
+    "activeTab",
+    "cookies",
+    "storage",
+    "<all_urls>"
+  ],
   "background": {
     "persistent": true,
     "scripts": ["background.js", "background-ui.js"]

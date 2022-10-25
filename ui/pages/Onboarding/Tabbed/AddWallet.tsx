@@ -5,7 +5,6 @@ import SharedIcon from "../../../components/Shared/SharedIcon"
 
 const accountCreateButtonInfos = [
   {
-    title: "Add existing accounts",
     items: [
       {
         label: "Import recovery phrase",
@@ -23,17 +22,6 @@ const accountCreateButtonInfos = [
         label: "Read-only address",
         icon: "./images/add_wallet/preview.svg",
         url: "/onboarding/view-only-wallet",
-        isAvailable: true,
-      },
-    ],
-  },
-  {
-    title: "Add new recovery phrase",
-    items: [
-      {
-        label: "Create new wallet",
-        icon: "./images/add_wallet/create_tally.svg",
-        url: "/onboarding/new-seed/set-password",
         isAvailable: true,
       },
     ],
@@ -90,7 +78,7 @@ function AddWalletRow({
           align-items: center;
           padding: 16px;
           box-sizing: border-box;
-          margin-bottom: 24px;
+          margin-bottom: 0px;
           color: var(--green-40);
           font-size: 18px;
           font-weight: 600;
@@ -119,7 +107,13 @@ export default function AddWallet(): ReactElement {
         {accountCreateButtonInfos.map((creationSection) => {
           return (
             <section>
-              <h2>{creationSection.title}</h2>
+              <div className="illustration_section">
+                <div className="illustration" />
+                <div className="forest" />
+              </div>
+              <div className="bottom_content">
+                <h1 className="bottom_title">Use existing wallet</h1>
+              </div>
               <ul>
                 {creationSection.items.map(
                   ({ label, icon, url, isAvailable }) =>
@@ -161,10 +155,11 @@ export default function AddWallet(): ReactElement {
             padding-top: 68.5px;
           }
           h1 {
-            color: #fff;
-            font-size: 22px;
+            font-family: "Quincy CF";
             font-weight: 500;
-            line-height: 32px;
+            font-size: 46px;
+            line-height: 42px;
+            margin: 12px 0px 0px 0px;
           }
           h2 {
             width: 100%;

@@ -2,18 +2,17 @@ import React, { ReactElement, useState } from "react"
 import { useRouteMatch, Redirect } from "react-router-dom"
 import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
 import SharedButton from "../../../components/Shared/SharedButton"
-import SharedProgressIndicator from "../../../components/Shared/SharedProgressIndicator"
 
 const steps = HIDE_TOKEN_FEATURES
   ? [
       {
         image: {
-          width: 273,
-          height: 245.06,
-          fileName: "illustration_onboarding_welcome",
+          width: 120,
+          height: 120,
+          fileName: "doggo_grey",
           extraStyles: `margin-top: 25px;`,
         },
-        title: "Welcome to Tally Ho!",
+        title: "Let's get you setup!",
         body: "The community owned & operated wallet.",
         buttonCopy: "Continue",
       },
@@ -77,8 +76,7 @@ const steps = HIDE_TOKEN_FEATURES
     ]
 
 export default function Intro(): ReactElement {
-  const [activeStep, setActiveStep] = useState(1)
-  const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
+  const [redirectToAddWallet] = useState(false)
 
   const { path } = useRouteMatch()
 
@@ -94,29 +92,24 @@ export default function Intro(): ReactElement {
       </div>
       <div className="bottom_part">
         <div className="bottom_content">
-          <SharedProgressIndicator
-            numberOfSteps={steps.length}
-            activeStep={activeStep}
-            onProgressStepClicked={(step) => {
-              setActiveStep(step)
-            }}
-          />
-          <h1 className="bottom_title">{steps[activeStep - 1].title} </h1>
-          <p>{steps[activeStep - 1].body}</p>
+          <h1 className="bottom_title">Let&apos;s get you setup!</h1>
         </div>
-        <SharedButton
-          type="primary"
-          size="large"
-          onClick={() => {
-            if (activeStep < steps.length) {
-              setActiveStep(activeStep + 1)
-            } else {
-              setRedirectToAddWallet(true)
-            }
-          }}
-        >
-          {steps[activeStep - 1].buttonCopy}
-        </SharedButton>
+        <div className="button_container">
+          <SharedButton
+            type="primary"
+            size="large"
+            linkTo={`${path}/add-wallet`}
+          >
+            Use existing wallet
+          </SharedButton>
+          <SharedButton
+            type="secondary"
+            size="large"
+            linkTo={`${path}/new-seed/set-password`}
+          >
+            Create new wallet
+          </SharedButton>
+        </div>
       </div>
       <style jsx>
         {`
@@ -126,10 +119,21 @@ export default function Intro(): ReactElement {
             flex-direction: column;
             align-items: center;
           }
+          .button_container {
+            border-radius: 1em;
+            background: var(--green-95);
+            padding: 2em;
+            margin: 3em 0;
+            width: 100%;
+          }
+          button {
+            margin: 1em;
+          }
           .illustration_section {
-            height: 380px;
+            height: 180px;
             display: flex;
             padding-top: 68.5px;
+            position: relative;
           }
           section {
             display: flex;
@@ -140,7 +144,7 @@ export default function Intro(): ReactElement {
           h1 {
             font-family: "Quincy CF";
             font-weight: 500;
-            font-size: 36px;
+            font-size: 46px;
             line-height: 42px;
             margin: 12px 0px 0px 0px;
           }
