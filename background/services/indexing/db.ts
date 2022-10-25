@@ -1,8 +1,8 @@
-import Dexie from "dexie"
+import Dexie, { DexieOptions } from "dexie"
 import { TokenList } from "@uniswap/token-lists"
 
 import { AccountBalance } from "../../accounts"
-import { Network } from "../../networks"
+import { EVMNetwork, Network, toHexChainID } from "../../networks"
 import {
   AnyAsset,
   FungibleAsset,
@@ -126,8 +126,8 @@ export class IndexingDatabase extends Dexie {
    */
   private assetsToTrack!: Dexie.Table<SmartContractFungibleAsset, number>
 
-  constructor() {
-    super("tally/indexing")
+  constructor(options?: DexieOptions) {
+    super("tally/indexing", options)
     this.version(1).stores({
       migrations: "++id,appliedAt",
       prices: "++id,time,[asset1ID+asset2ID]",
@@ -237,6 +237,22 @@ export class IndexingDatabase extends Dexie {
     await this.balances.bulkAdd(accountBalances)
   }
 
+  async getAllKnownTokensForNetwork(
+    network: EVMNetwork
+  ): Promise<SmartContractFungibleAsset[]> {
+    const allLists = await this.tokenLists.toArray()
+    const tokens = allLists.flatMap((list) => list.list.tokens)
+    return tokens
+      .filter(
+        (token) => toHexChainID(token.chainId) === toHexChainID(network.chainID)
+      )
+      .map((token) => ({
+        ...token,
+        homeNetwork: network,
+        contractAddress: token.address,
+      }))
+  }
+
   async getLatestTokenList(url: string): Promise<CachedTokenList | null> {
     const candidateLists = await this.tokenLists
       .where("url")
@@ -296,8 +312,8 @@ export class IndexingDatabase extends Dexie {
   }
 }
 
-export async function getOrCreateDB(): Promise<IndexingDatabase> {
-  const db = new IndexingDatabase()
-
-  return db
+export async function getOrCreateDb(
+  options?: DexieOptions
+): Promise<IndexingDatabase> {
+  return new IndexingDatabase(options)
 }

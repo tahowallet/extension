@@ -1,3 +1,5 @@
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   selectCurrentAccount,
   selectCurrentAccountTotal,
@@ -17,7 +19,7 @@ export default function TopMenuProfileButton(props: {
 }): ReactElement {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const { name, avatarURL, address } =
+  const { name, avatarURL, address, accountType } =
     useBackgroundSelector(selectCurrentAccountTotal) ?? {}
 
   const { truncatedAddress } = useBackgroundSelector(selectCurrentAccount) ?? {}
@@ -67,6 +69,11 @@ export default function TopMenuProfileButton(props: {
               name={name}
               avatarURL={avatarURL}
               showHoverStyle
+              showKeyring={
+                isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
+                (accountType === AccountType.Imported ||
+                  accountType === AccountType.Internal)
+              }
             />
           </>
         )}
@@ -78,13 +85,17 @@ export default function TopMenuProfileButton(props: {
         {`
           .profile_wrapper {
             position: relative;
+
+            // Allow the account address/name to collapse to an ellipsis.
+            display: flex;
+            min-width: 0;
           }
           .profile_button {
-            flex-shrink: 0;
             height: 64px;
             display: flex;
             align-items: center;
             user-select: none;
+            min-width: 0; // Allow the account address/name to collapse to an ellipsis.
           }
         `}
       </style>

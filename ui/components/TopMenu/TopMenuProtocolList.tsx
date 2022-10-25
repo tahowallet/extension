@@ -5,12 +5,9 @@ import {
   GOERLI,
   OPTIMISM,
   POLYGON,
+  RSK,
 } from "@tallyho/tally-background/constants"
-import {
-  SUPPORT_ARBITRUM,
-  SUPPORT_GOERLI,
-  SUPPORT_OPTIMISM,
-} from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectShowTestNetworks } from "@tallyho/tally-background/redux-slices/ui"
@@ -28,21 +25,11 @@ const productionNetworks = [
     network: POLYGON,
     info: i18n.t("protocol.l2"),
   },
-  ...(SUPPORT_OPTIMISM
-    ? [
-        {
-          network: OPTIMISM,
-          info: i18n.t("protocol.l2"),
-        },
-      ]
-    : [
-        {
-          network: OPTIMISM,
-          info: i18n.t("comingSoon"),
-          isDisabled: true,
-        },
-      ]),
-  ...(SUPPORT_ARBITRUM
+  {
+    network: OPTIMISM,
+    info: i18n.t("protocol.l2"),
+  },
+  ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM)
     ? [
         {
           network: ARBITRUM_ONE,
@@ -56,6 +43,14 @@ const productionNetworks = [
           isDisabled: true,
         },
       ]),
+  ...(isEnabled(FeatureFlags.SUPPORT_RSK)
+    ? [
+        {
+          network: RSK,
+          info: i18n.t("protocol.mainnet"),
+        },
+      ]
+    : []),
   // {
   //   name: "Binance Smart Chain",
   //   info: i18n.t("protocol.compatibleChain"),
@@ -71,15 +66,11 @@ const productionNetworks = [
 ]
 
 const testNetworks = [
-  ...(SUPPORT_GOERLI
-    ? [
-        {
-          network: GOERLI,
-          info: i18n.t("protocol.testnet"),
-          isDisabled: false,
-        },
-      ]
-    : []),
+  {
+    network: GOERLI,
+    info: i18n.t("protocol.testnet"),
+    isDisabled: false,
+  },
 ]
 
 interface TopMenuProtocolListProps {

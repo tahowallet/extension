@@ -21,7 +21,7 @@ import {
 } from "./resolvers"
 import PreferenceService from "../preferences"
 import { isFulfilledPromise } from "../../lib/utils/type-guards"
-import { RESOLVE_RNS_NAMES } from "../../features"
+import { FeatureFlags, isEnabled } from "../../features"
 
 export { NameResolverSystem }
 
@@ -124,7 +124,7 @@ export default class NameService extends BaseService<Events> {
       // for the given resource.
       ensResolverFor(chainService),
       unsResolver(),
-      ...(RESOLVE_RNS_NAMES ? [rnsResolver()] : []),
+      ...(isEnabled(FeatureFlags.RESOLVE_RNS_NAMES) ? [rnsResolver()] : []),
     ]
 
     preferenceService.emitter.on(
@@ -228,9 +228,20 @@ export default class NameService extends BaseService<Events> {
       resolver.canAttemptNameResolution({ address, network })
     )
 
-    const firstMatchingResolution = (
+    const localResolvers = [...workingResolvers].filter(
+      (resolver) =>
+        resolver.type === "tally-address-book" ||
+        resolver.type === "tally-known-contracts"
+    )
+    const remoteResolvers = [...workingResolvers].filter(
+      (resolver) =>
+        resolver.type !== "tally-address-book" &&
+        resolver.type !== "tally-known-contracts"
+    )
+
+    let firstMatchingResolution = (
       await Promise.allSettled(
-        workingResolvers.map(async (resolver) => ({
+        localResolvers.map(async (resolver) => ({
           type: resolver.type,
           resolved: await resolver.lookUpNameForAddress({ address, network }),
         }))
@@ -238,6 +249,19 @@ export default class NameService extends BaseService<Events> {
     )
       .filter(isFulfilledPromise)
       .find(({ value: { resolved } }) => resolved !== undefined)?.value
+
+    if (!firstMatchingResolution) {
+      firstMatchingResolution = (
+        await Promise.allSettled(
+          remoteResolvers.map(async (resolver) => ({
+            type: resolver.type,
+            resolved: await resolver.lookUpNameForAddress({ address, network }),
+          }))
+        )
+      )
+        .filter(isFulfilledPromise)
+        .find(({ value: { resolved } }) => resolved !== undefined)?.value
+    }
 
     if (
       firstMatchingResolution === undefined ||

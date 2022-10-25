@@ -20,6 +20,7 @@ import { AssetTransfer } from "../../assets"
 import {
   HOUR,
   ETHEREUM,
+  RSK,
   POLYGON,
   ARBITRUM_ONE,
   OPTIMISM,
@@ -28,16 +29,12 @@ import {
   SECOND,
   NETWORK_BY_CHAIN_ID,
   EIP_1559_COMPLIANT_CHAIN_IDS,
+  MINUTE,
 } from "../../constants"
-import {
-  SUPPORT_ARBITRUM,
-  SUPPORT_GOERLI,
-  SUPPORT_OPTIMISM,
-  USE_MAINNET_FORK,
-} from "../../features"
+import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { createDB, ChainDatabase } from "./db"
+import { createDB, ChainDatabase, Transaction } from "./db"
 import BaseService from "../base"
 import {
   blockFromEthersBlock,
@@ -86,13 +83,27 @@ const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 // OpenEthereum with tracing to catch up to where we are.
 const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
 
+const NETWORK_POLLING_TIMEOUT = MINUTE * 5
+
 // The number of milliseconds after a request to look up a transaction was
 // first seen to continue looking in case the transaction fails to be found
 // for either internal (request failure) or external (transaction dropped from
 // mempool) reasons.
 const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
 
+const GAS_POLLS_PER_PERIOD = 4 // 4 times per minute
+
+const GAS_POLLING_PERIOD = 1 // 1 minute
+
 interface Events extends ServiceLifecycleEvents {
+  initializeActivities: {
+    transactions: Transaction[]
+    accounts: AddressOnNetwork[]
+  }
+  initializeActivitiesForAccount: {
+    transactions: Transaction[]
+    account: AddressOnNetwork
+  }
   newAccountToTrack: AddressOnNetwork
   accountsWithBalances: AccountBalance[]
   transactionSend: HexString
@@ -140,6 +151,14 @@ export default class ChainService extends BaseService<Events> {
     provider: SerialFallbackProvider
   }[]
 
+  private lastUserActivityOnNetwork: {
+    [chainID: string]: UNIXTime
+  }
+
+  private lastUserActivityOnAddress: {
+    [address: HexString]: UNIXTime
+  } = {}
+
   /**
    * For each chain id, track an address's last seen nonce. The tracked nonce
    * should generally not be allocated to a new transaction, nor should any
@@ -171,7 +190,7 @@ export default class ChainService extends BaseService<Events> {
 
   supportedNetworks: EVMNetwork[]
 
-  private activeNetworks: EVMNetwork[]
+  private trackedNetworks: EVMNetwork[]
 
   assetData: AssetDataHelper
 
@@ -204,7 +223,15 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: 1.5,
         },
         handler: () => {
-          this.handleRecentIncomingAssetTransferAlarm()
+          this.handleRecentIncomingAssetTransferAlarm(true)
+        },
+      },
+      forceRecentAssetTransfers: {
+        schedule: {
+          periodInMinutes: (HOUR * 12) / 1e3,
+        },
+        handler: () => {
+          this.handleRecentAssetTransferAlarm()
         },
       },
       recentAssetTransfers: {
@@ -212,25 +239,16 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: 15,
         },
         handler: () => {
-          this.handleRecentAssetTransferAlarm()
+          this.handleRecentAssetTransferAlarm(true)
         },
       },
       blockPrices: {
         runAtStart: false,
         schedule: {
-          periodInMinutes:
-            Number(process.env.GAS_PRICE_POLLING_FREQUENCY ?? "120") / 60,
+          periodInMinutes: GAS_POLLING_PERIOD,
         },
         handler: () => {
           this.pollBlockPrices()
-        },
-      },
-      latestBlocks: {
-        schedule: {
-          periodInMinutes: 0.25, // every 15 seconds
-        },
-        handler: () => {
-          this.getLatestBlocks()
         },
       },
     })
@@ -238,12 +256,18 @@ export default class ChainService extends BaseService<Events> {
     this.supportedNetworks = [
       ETHEREUM,
       POLYGON,
-      ...(SUPPORT_GOERLI ? [GOERLI] : []),
-      ...(SUPPORT_ARBITRUM ? [ARBITRUM_ONE] : []),
-      ...(SUPPORT_OPTIMISM ? [OPTIMISM] : []),
+      OPTIMISM,
+      GOERLI,
+      ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [RSK] : []),
+      ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM) ? [ARBITRUM_ONE] : []),
     ]
 
-    this.activeNetworks = []
+    this.trackedNetworks = []
+
+    this.lastUserActivityOnNetwork =
+      Object.fromEntries(
+        this.supportedNetworks.map((network) => [network.chainID, 0])
+      ) || {}
 
     this.providers = {
       evm: Object.fromEntries(
@@ -265,16 +289,12 @@ export default class ChainService extends BaseService<Events> {
     await super.internalStartService()
 
     const accounts = await this.getAccountsToTrack()
-    const activeNetworks = await this.getActiveNetworks()
+    const trackedNetworks = await this.getTrackedNetworks()
+    const transactions = await this.db.getAllTransactions()
+
+    this.emitter.emit("initializeActivities", { transactions, accounts })
 
     // get the latest blocks and subscribe for all active networks
-    // TODO revisit whether we actually want to subscribe to new heads
-    // if a user isn't tracking a relevant addressOnNetwork
-    activeNetworks.forEach(async (network) => {
-      this.subscribeToNetworkEvents(network).catch((e) => {
-        logger.error("Error getting block number or new head", e)
-      })
-    })
 
     Promise.allSettled(
       accounts
@@ -292,7 +312,7 @@ export default class ChainService extends BaseService<Events> {
           // Schedule any stored unconfirmed transactions for
           // retrieval---either to confirm they no longer exist, or to
           // read/monitor their status.
-          activeNetworks.map((network) =>
+          trackedNetworks.map((network) =>
             this.db
               .getNetworkPendingTransactions(network)
               .then((pendingTransactions) => {
@@ -322,33 +342,33 @@ export default class ChainService extends BaseService<Events> {
    * provider exists.
    */
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
-    return USE_MAINNET_FORK
+    return isEnabled(FeatureFlags.USE_MAINNET_FORK)
       ? this.providers.evm[ETHEREUM.chainID]
       : this.providers.evm[network.chainID]
   }
 
   /**
-   * Pulls the list of active networks from memory or indexedDB.
+   * Pulls the list of tracked networks from memory or indexedDB.
    * Defaults to ethereum in the case that neither exist.
    */
-  async getActiveNetworks(): Promise<EVMNetwork[]> {
-    if (this.activeNetworks.length > 0) {
-      return this.activeNetworks
+  async getTrackedNetworks(): Promise<EVMNetwork[]> {
+    if (this.trackedNetworks.length > 0) {
+      return this.trackedNetworks
     }
 
-    // Since activeNetworks will be an empty array at extension load (or reload time)
+    // Since trackedNetworks will be an empty array at extension load (or reload time)
     // we need a durable way to track which networks an extension is tracking.
     // The below code should only be called once per extension reload for extensions
     // with active accounts
     const networksToTrack = await this.getNetworksToTrack()
 
-    await Promise.allSettled([
+    await Promise.allSettled(
       networksToTrack.map(async (network) =>
-        this.activateNetworkOrThrow(network.chainID)
-      ),
-    ])
+        this.startTrackingNetworkOrThrow(network.chainID)
+      )
+    )
 
-    return this.activeNetworks
+    return this.trackedNetworks
   }
 
   private async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
@@ -366,46 +386,46 @@ export default class ChainService extends BaseService<Events> {
   /**
    * Adds a supported network to list of active networks.
    */
-  async activateNetworkOrThrow(chainID: string): Promise<EVMNetwork> {
-    const activeNetwork = this.activeNetworks.find(
+  async startTrackingNetworkOrThrow(chainID: string): Promise<EVMNetwork> {
+    const trackedNetwork = this.trackedNetworks.find(
       (ntwrk) => toHexChainID(ntwrk.chainID) === toHexChainID(chainID)
     )
 
-    if (activeNetwork) {
+    if (trackedNetwork) {
       logger.warn(
-        `${activeNetwork.name} already active - no need to activate it`
+        `${trackedNetwork.name} already being tracked - no need to activate it`
       )
-      return activeNetwork
+      return trackedNetwork
     }
 
-    const networkToActivate = this.supportedNetworks.find(
+    const networkToTrack = this.supportedNetworks.find(
       (ntwrk) => toHexChainID(ntwrk.chainID) === toHexChainID(chainID)
     )
-    if (!networkToActivate) {
+    if (!networkToTrack) {
       throw new Error(`Network with chainID ${chainID} is not supported`)
     }
 
-    this.activeNetworks.push(networkToActivate)
+    this.trackedNetworks.push(networkToTrack)
 
     const existingSubscription = this.subscribedNetworks.find(
       (networkSubscription) =>
-        networkSubscription.network.chainID === networkToActivate.chainID
+        networkSubscription.network.chainID === networkToTrack.chainID
     )
 
     if (!existingSubscription) {
-      this.subscribeToNetworkEvents(networkToActivate)
+      this.subscribeToNetworkEvents(networkToTrack)
       const addressesToTrack = new Set(
         (await this.getAccountsToTrack()).map((account) => account.address)
       )
       addressesToTrack.forEach((address) => {
         this.addAccountToTrack({
           address,
-          network: networkToActivate,
+          network: networkToTrack,
         })
       })
     }
 
-    return networkToActivate
+    return networkToTrack
   }
 
   /**
@@ -420,9 +440,11 @@ export default class ChainService extends BaseService<Events> {
         "Request received for operation on an inactive network",
         network,
         "expected",
-        this.activeNetworks
+        this.trackedNetworks
       )
-      throw new Error(`Unexpected network ${network}`)
+      throw new Error(
+        `Unexpected network ${network.name}, id: ${network.chainID}`
+      )
     }
     return provider
   }
@@ -601,7 +623,7 @@ export default class ChainService extends BaseService<Events> {
     partialRequest: EnrichedEVMTransactionSignatureRequest,
     defaults: { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint }
   ): Promise<{
-    transactionRequest: TransactionRequest
+    transactionRequest: EnrichedEVMTransactionRequest
     gasEstimationError: string | undefined
   }> {
     if (EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)) {
@@ -732,8 +754,18 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
-  async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
-    return this.db.getAccountsToTrack()
+  async getAccountsToTrack(
+    onlyActiveAccounts = false
+  ): Promise<AddressOnNetwork[]> {
+    const accounts = await this.db.getAccountsToTrack()
+    if (onlyActiveAccounts) {
+      return accounts.filter(
+        ({ address, network }) =>
+          this.isCurrentlyActiveAddress(address) &&
+          this.isCurrentlyActiveChainID(network.chainID)
+      )
+    }
+    return accounts
   }
 
   async getNetworksToTrack(): Promise<EVMNetwork[]> {
@@ -777,6 +809,7 @@ export default class ChainService extends BaseService<Events> {
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.db.addAccountToTrack(addressNetwork)
     this.emitter.emit("newAccountToTrack", addressNetwork)
+    this.emitSavedTransactions(addressNetwork)
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
       logger.error(
         "chainService/addAccountToTrack: Error subscribing to account transactions",
@@ -907,7 +940,7 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     transactionRequest: TransactionRequest
   ): Promise<bigint> {
-    if (USE_MAINNET_FORK) {
+    if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
       return 350000n
     }
     const estimate = await this.providerForNetworkOrThrow(network).estimateGas(
@@ -1019,17 +1052,92 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
+  async markAccountActivity({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<void> {
+    const addressWasInactive = this.addressIsInactive(address)
+    const networkWasInactive = this.networkIsInactive(network.chainID)
+    this.markNetworkActivity(network.chainID)
+    this.lastUserActivityOnAddress[address] = Date.now()
+    if (addressWasInactive || networkWasInactive) {
+      // Reactivating a potentially deactivated address
+      this.loadRecentAssetTransfers({ address, network })
+      this.getLatestBaseAccountBalance({ address, network })
+    }
+  }
+
+  async markNetworkActivity(chainID: string): Promise<void> {
+    const networkWasInactive = this.networkIsInactive(chainID)
+    this.lastUserActivityOnNetwork[chainID] = Date.now()
+    if (networkWasInactive) {
+      // Reactivating a potentially deactivated network
+      this.pollBlockPricesForNetwork(chainID)
+    }
+  }
+
+  addressIsInactive(address: string): boolean {
+    return (
+      Date.now() - NETWORK_POLLING_TIMEOUT >
+      this.lastUserActivityOnAddress[address]
+    )
+  }
+
+  networkIsInactive(chainID: string): boolean {
+    return (
+      Date.now() - NETWORK_POLLING_TIMEOUT >
+      this.lastUserActivityOnNetwork[chainID]
+    )
+  }
+
   /*
    * Periodically fetch block prices and emit an event whenever new data is received
    * Write block prices to IndexedDB so we have them for later
    */
   async pollBlockPrices(): Promise<void> {
+    // Schedule next N polls at even interval
+    for (let i = 1; i < GAS_POLLS_PER_PERIOD; i += 1) {
+      setTimeout(async () => {
+        await Promise.allSettled(
+          this.subscribedNetworks.map(async ({ network }) =>
+            this.pollBlockPricesForNetwork(network.chainID)
+          )
+        )
+      }, (GAS_POLLING_PERIOD / GAS_POLLS_PER_PERIOD) * (GAS_POLLING_PERIOD * MINUTE) * i)
+    }
+
+    // Immediately run the first poll
     await Promise.allSettled(
-      this.subscribedNetworks.map(async ({ network, provider }) => {
-        const blockPrices = await getBlockPrices(network, provider)
-        this.emitter.emit("blockPrices", { blockPrices, network })
-      })
+      this.subscribedNetworks.map(async ({ network }) =>
+        this.pollBlockPricesForNetwork(network.chainID)
+      )
     )
+  }
+
+  async pollBlockPricesForNetwork(chainID: string): Promise<void> {
+    if (!this.isCurrentlyActiveChainID(chainID)) {
+      return
+    }
+
+    const subscription = this.subscribedNetworks.find(
+      ({ network }) => toHexChainID(network.chainID) === toHexChainID(chainID)
+    )
+
+    if (!subscription) {
+      logger.warn(
+        `Can't fetch block prices for unsubscribed chainID ${chainID}`
+      )
+      return
+    }
+
+    const blockPrices = await getBlockPrices(
+      subscription.network,
+      subscription.provider
+    )
+    this.emitter.emit("blockPrices", {
+      blockPrices,
+      network: subscription.network,
+    })
   }
 
   /*
@@ -1047,17 +1155,6 @@ export default class ChainService extends BaseService<Events> {
     this.emitter.emit("block", block)
     // TODO if it matches a known blockheight and the difficulty is higher,
     // emit a reorg event
-  }
-
-  /*
-   * Poll for latest blocks on all networks
-   */
-  private async getLatestBlocks(): Promise<void> {
-    await Promise.allSettled(
-      this.subscribedNetworks.map(async ({ network, provider }) => {
-        this.pollLatestBlock(network, provider)
-      })
-    )
   }
 
   async send(
@@ -1087,6 +1184,7 @@ export default class ChainService extends BaseService<Events> {
       (await this.getBlockHeight(addressNetwork.network)) -
       BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY
     const fromBlock = blockHeight - BLOCKS_FOR_TRANSACTION_HISTORY
+
     try {
       return await this.loadAssetTransfers(
         addressNetwork,
@@ -1137,7 +1235,7 @@ export default class ChainService extends BaseService<Events> {
     incomingOnly = false
   ): Promise<void> {
     if (
-      [ETHEREUM, POLYGON, OPTIMISM, ARBITRUM_ONE, GOERLI].every(
+      [ETHEREUM, POLYGON, OPTIMISM, ARBITRUM_ONE, GOERLI, RSK].every(
         (network) => network.chainID !== addressOnNetwork.network.chainID
       )
     ) {
@@ -1186,27 +1284,48 @@ export default class ChainService extends BaseService<Events> {
   /**
    * Check for any incoming asset transfers involving tracked accounts.
    */
-  private async handleRecentIncomingAssetTransferAlarm(): Promise<void> {
-    const accountsToTrack = await this.db.getAccountsToTrack()
-
+  private async handleRecentIncomingAssetTransferAlarm(
+    onlyActiveAccounts = false
+  ): Promise<void> {
+    const accountsToTrack = await this.getAccountsToTrack(onlyActiveAccounts)
     await Promise.allSettled(
-      accountsToTrack.map((an) => this.loadRecentAssetTransfers(an, true))
+      accountsToTrack.map(async (addressNetwork) => {
+        return this.loadRecentAssetTransfers(addressNetwork, true)
+      })
+    )
+  }
+
+  private isCurrentlyActiveChainID(chainID: string): boolean {
+    return (
+      Date.now() <
+      this.lastUserActivityOnNetwork[chainID] + NETWORK_POLLING_TIMEOUT
+    )
+  }
+
+  private isCurrentlyActiveAddress(address: HexString): boolean {
+    return (
+      Date.now() <
+      this.lastUserActivityOnAddress[address] + NETWORK_POLLING_TIMEOUT
     )
   }
 
   /**
    * Check for any incoming or outgoing asset transfers involving tracked accounts.
    */
-  private async handleRecentAssetTransferAlarm(): Promise<void> {
-    const accountsToTrack = await this.db.getAccountsToTrack()
+  private async handleRecentAssetTransferAlarm(
+    onlyActiveAccounts = false
+  ): Promise<void> {
+    const accountsToTrack = await this.getAccountsToTrack(onlyActiveAccounts)
 
     await Promise.allSettled(
-      accountsToTrack.map((an) => this.loadRecentAssetTransfers(an))
+      accountsToTrack.map((addressNetwork) =>
+        this.loadRecentAssetTransfers(addressNetwork)
+      )
     )
   }
 
   private async handleHistoricAssetTransferAlarm(): Promise<void> {
-    const accountsToTrack = await this.db.getAccountsToTrack()
+    const accountsToTrack = await this.getAccountsToTrack()
 
     await Promise.allSettled(
       accountsToTrack.map((an) => this.loadHistoricAssetTransfers(an))
@@ -1360,9 +1479,7 @@ export default class ChainService extends BaseService<Events> {
             sameEVMAddress(finalTransaction.from, address) ||
             sameEVMAddress(finalTransaction.to, address)
         )
-        .map(({ address }) => {
-          return normalizeEVMAddress(address)
-        })
+        .map(({ address }) => normalizeEVMAddress(address))
 
       // emit in a separate try so outside services still get the tx
       this.emitter.emit("transaction", {
@@ -1376,6 +1493,24 @@ export default class ChainService extends BaseService<Events> {
     if (error) {
       throw error
     }
+  }
+
+  async emitSavedTransactions(account: AddressOnNetwork): Promise<void> {
+    const { address, network } = account
+    const transactionsForNetwork = await this.db.getTransactionsForNetwork(
+      network
+    )
+
+    const transactions = transactionsForNetwork.filter(
+      (transaction) =>
+        sameEVMAddress(transaction.from, address) ||
+        sameEVMAddress(transaction.to, address)
+    )
+
+    this.emitter.emit("initializeActivitiesForAccount", {
+      transactions,
+      account,
+    })
   }
 
   /**
@@ -1530,6 +1665,4 @@ export default class ChainService extends BaseService<Events> {
       "alchemy"
     )
   }
-
-  // TODO removing an account to track
 }

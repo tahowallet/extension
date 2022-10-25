@@ -19,6 +19,7 @@ import NameService from "../name"
 import {
   TransactionAnnotation,
   PartialTransactionRequestWithFrom,
+  EnrichedEVMTransactionRequest,
 } from "./types"
 import {
   getDistinctRecipentAddressesFromERC20Logs,
@@ -41,7 +42,7 @@ async function annotationsFromLogs(
   resolvedTime: number,
   block: AnyEVMBlock | undefined
 ): Promise<TransactionAnnotation[]> {
-  const assets = await indexingService.getCachedAssets(network)
+  const assets = indexingService.getCachedAssets(network)
 
   const accountAddresses = (await chainService.getAccountsToTrack()).map(
     (account) => account.address
@@ -156,15 +157,29 @@ export default async function resolveTransactionAnnotation(
     | AnyEVMTransaction
     | (PartialTransactionRequestWithFrom & {
         blockHash?: string
+      })
+    | (EnrichedEVMTransactionRequest & {
+        blockHash?: string
       }),
   desiredDecimals: number
 ): Promise<TransactionAnnotation> {
-  // By default, annotate all requests as contract interactions
-  let txAnnotation: TransactionAnnotation = {
-    blockTimestamp: undefined,
-    timestamp: Date.now(),
-    type: "contract-deployment",
-  }
+  const assets = await indexingService.getCachedAssets(network)
+
+  // By default, annotate all requests as contract interactions, unless they
+  // already carry additional metadata.
+  let txAnnotation: TransactionAnnotation =
+    "annotation" in transaction && transaction.annotation !== undefined
+      ? transaction.annotation
+      : {
+          blockTimestamp: undefined,
+          timestamp: Date.now(),
+          type: "contract-deployment",
+          transactionLogoURL: assets.find(
+            (asset) =>
+              asset.metadata?.logoURL &&
+              asset.symbol === transaction.network.baseAsset.symbol
+          )?.metadata?.logoURL,
+        }
 
   let block: AnyEVMBlock | undefined
 
@@ -208,13 +223,38 @@ export default async function resolveTransactionAnnotation(
   // If the tx has a recipient, its a contract interaction or another tx type
   // rather than a deployment.
   if (typeof transaction.to !== "undefined") {
-    txAnnotation = {
-      ...txAnnotation,
-      type: "contract-interaction",
-      contractInfo: await enrichAddressOnNetwork(chainService, nameService, {
+    const contractInfo = await enrichAddressOnNetwork(
+      chainService,
+      nameService,
+      {
         address: transaction.to,
         network,
-      }),
+      }
+    )
+
+    txAnnotation =
+      txAnnotation.type === "contract-deployment"
+        ? {
+            ...txAnnotation,
+            type: "contract-interaction",
+            contractInfo: await enrichAddressOnNetwork(
+              chainService,
+              nameService,
+              {
+                address: transaction.to,
+                network,
+              }
+            ),
+          }
+        : // Don't replace prepopulated annotations.
+          txAnnotation
+
+    // For prepopulated swap annotations, resolve the swap contract info.
+    if (txAnnotation.type === "asset-swap") {
+      txAnnotation = {
+        ...txAnnotation,
+        swapContractInfo: contractInfo,
+      }
     }
 
     if (
@@ -225,7 +265,7 @@ export default async function resolveTransactionAnnotation(
       // If the tx has no data, it's either a simple ETH send, or it's relying
       // on a contract that's `payable` to execute code
 
-      const recipient = txAnnotation.contractInfo
+      const recipient = contractInfo
       const sender = await enrichAddressOnNetwork(chainService, nameService, {
         address: transaction.from,
         network,
@@ -270,7 +310,7 @@ export default async function resolveTransactionAnnotation(
         }
       }
     } else {
-      const assets = await indexingService.getCachedAssets(network)
+      const erc20Tx = parseERC20Tx(transaction.input)
 
       // See if the address matches a fungible asset.
       const matchingFungibleAsset = assets.find(
@@ -280,8 +320,6 @@ export default async function resolveTransactionAnnotation(
       )
 
       const transactionLogoURL = matchingFungibleAsset?.metadata?.logoURL
-
-      const erc20Tx = parseERC20Tx(transaction.input)
 
       // TODO handle the case where we don't have asset metadata already
       if (
@@ -366,15 +404,6 @@ export default async function resolveTransactionAnnotation(
             },
             desiredDecimals
           ),
-        }
-      } else {
-        // Fall back on a standard contract interaction.
-        txAnnotation = {
-          ...txAnnotation,
-          // Include the logo URL if we resolve it even if the interaction is
-          // non-specific; the UI can choose to use it or not, but if we know the
-          // address has an associated logo it's worth passing on.
-          transactionLogoURL,
         }
       }
     }

@@ -1,4 +1,8 @@
-import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
+import {
+  AnyAssetAmount,
+  FungibleAsset,
+  SmartContractFungibleAsset,
+} from "../../assets"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyEVMTransaction,
@@ -68,8 +72,9 @@ export type AssetTransfer = BaseTransactionAnnotation & {
 
 export type AssetSwap = BaseTransactionAnnotation & {
   type: "asset-swap"
-  fromAssetAmount: AnyAssetAmount & AssetDecimalAmount
-  toAssetAmount: AnyAssetAmount & AssetDecimalAmount
+  fromAssetAmount: AnyAssetAmount<FungibleAsset> & AssetDecimalAmount
+  toAssetAmount: AnyAssetAmount<FungibleAsset> & AssetDecimalAmount
+  swapContractInfo?: EnrichedAddressOnNetwork
 }
 
 export type TransactionAnnotation =
@@ -142,16 +147,10 @@ export type EIP2612SignTypedDataAnnotation = {
   }
 }
 
-export type UnrecognizedSignTypedDataAnnotation = {
-  type: "unrecognized"
-}
-
-export type SignTypedDataAnnotation =
-  | EIP2612SignTypedDataAnnotation
-  | UnrecognizedSignTypedDataAnnotation
+export type SignTypedDataAnnotation = EIP2612SignTypedDataAnnotation
 
 export type EnrichedSignTypedDataRequest = SignTypedDataRequest & {
-  annotation: SignTypedDataAnnotation
+  annotation?: SignTypedDataAnnotation
 }
 
 export type AddressOnNetworkAnnotation = {

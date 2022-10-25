@@ -1,36 +1,41 @@
 import React, { ReactElement, useEffect, useRef, useState } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
-import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 import {
-  isMaxUint256,
   sameEVMAddress,
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
 import { HexString } from "@tallyho/tally-background/types"
-import { getRecipient } from "@tallyho/tally-background/redux-slices/utils/activity-utils"
+import { useTranslation } from "react-i18next"
+import {
+  Activity,
+  INFINITE_VALUE,
+} from "@tallyho/tally-background/redux-slices/activities"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
   onClick: () => void
-  activity: ActivityItem
+  activity: Activity
   asAccount: string
 }
 
-function isReceiveActivity(activity: ActivityItem, account: string): boolean {
+function isReceiveActivity(activity: Activity, account: string): boolean {
   return (
-    activity.annotation?.type === "asset-transfer" &&
-    sameEVMAddress(activity.annotation?.recipient?.address, account)
+    activity.type === "asset-transfer" &&
+    sameEVMAddress(activity.recipient?.address, account)
   )
 }
 
-function isSendActivity(activity: ActivityItem, account: string): boolean {
-  return activity.annotation?.type === "asset-transfer"
-    ? sameEVMAddress(activity.annotation?.sender?.address, account)
+function isSendActivity(activity: Activity, account: string): boolean {
+  return activity.type === "asset-transfer"
+    ? sameEVMAddress(activity.sender?.address, account)
     : true
 }
 
 export default function WalletActivityListItem(props: Props): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet.activities",
+  })
   const { onClick, activity, asAccount } = props
   const outcomeRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -51,74 +56,61 @@ export default function WalletActivityListItem(props: Props): ReactElement {
 
   // TODO Replace this with better conditional rendering.
   let renderDetails: {
-    iconClass: string | undefined
+    iconClass?: string
     label: string
     recipient: {
-      address: HexString | undefined
-      name?: string | undefined
+      address?: HexString
+      name?: string
     }
-    assetLogoURL: string | undefined
+    assetLogoURL?: string
     assetSymbol: string
     assetValue: string
   } = {
     iconClass: undefined,
-    label: "Contract interaction",
-    recipient: getRecipient(activity),
-    assetLogoURL: undefined,
-    assetSymbol: activity.asset.symbol,
-    assetValue: activity.localizedDecimalValue,
+    label: t("contractInteraction"),
+    recipient: activity.recipient,
+    assetLogoURL: activity.assetLogoUrl,
+    assetSymbol: activity.assetSymbol,
+    assetValue: activity.value,
   }
 
-  switch (activity.annotation?.type) {
+  switch (activity.type) {
     case "asset-transfer":
       renderDetails = {
         ...renderDetails,
-        label: isReceiveActivity(activity, asAccount) ? "Received" : "Send",
+        label: isReceiveActivity(activity, asAccount)
+          ? t("tokenReceived")
+          : t("tokenSent"),
         iconClass: isReceiveActivity(activity, asAccount)
           ? "receive_icon"
           : "send_icon",
-        assetLogoURL: activity.annotation.transactionLogoURL,
-        assetSymbol: activity.annotation.assetAmount.asset.symbol,
-        assetValue: activity.annotation.assetAmount.localizedDecimalAmount,
       }
       break
     case "asset-approval":
       renderDetails = {
-        label: "Token approval",
+        ...renderDetails,
+        label: t("tokenApproved"),
         iconClass: "approve_icon",
-        recipient: {
-          address: activity.annotation.spender.address,
-          name: activity.annotation.spender.annotation?.nameRecord?.resolved
-            .nameOnNetwork.name,
-        },
-        assetLogoURL: activity.annotation.transactionLogoURL,
-        assetSymbol: activity.annotation.assetAmount.asset.symbol,
-        assetValue: isMaxUint256(activity.annotation.assetAmount.amount)
-          ? "Infinite"
-          : activity.annotation.assetAmount.localizedDecimalAmount,
+        assetValue:
+          activity.value === INFINITE_VALUE
+            ? t("infiniteApproval")
+            : activity.value,
       }
       break
     case "asset-swap":
       renderDetails = {
+        ...renderDetails,
         iconClass: "swap_icon",
-        label: "Swap",
-        recipient: getRecipient(activity),
-        assetLogoURL: activity.annotation.transactionLogoURL,
-        assetSymbol: activity.asset.symbol,
-        assetValue: activity.localizedDecimalValue,
+        label: t("tokenSwapped"),
       }
       break
     case "contract-deployment":
     case "contract-interaction":
     default:
       renderDetails = {
+        ...renderDetails,
         iconClass: "contract_interaction_icon",
-        label: "Contract Interaction",
-        recipient: getRecipient(activity),
-        // TODO fall back to the asset URL we have in metadata
-        assetLogoURL: activity.annotation?.transactionLogoURL,
-        assetSymbol: activity.asset.symbol,
-        assetValue: activity.localizedDecimalValue,
+        label: t("contractInteraction"),
       }
   }
 
@@ -134,26 +126,26 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             {"status" in activity &&
             activity.blockHash !== null &&
             activity.status !== 1 ? (
-              <div className="status failed">Failed</div>
+              <div className="status failed">{t("transactionFailed")}</div>
             ) : (
               <></>
             )}
             {"status" in activity &&
             activity.blockHash === null &&
             activity.status === 0 ? (
-              <div className="status dropped">Dropped</div>
+              <div className="status dropped">{t("transactionDropped")}</div>
             ) : (
               <></>
             )}
             {!("status" in activity) && activity.blockHash === null ? (
-              <div className="status pending">Pending...</div>
+              <div className="status pending">{t("transactionPending")}</div>
             ) : (
               <></>
             )}
           </div>
           <div className="right">
-            {activity.annotation?.blockTimestamp &&
-              dayjs.unix(activity.annotation?.blockTimestamp).format("MMM D")}
+            {activity.blockTimestamp &&
+              dayjs.unix(activity.blockTimestamp).format("MMM D")}
           </div>
         </div>
         <div ref={bottomRef} className="bottom">
@@ -180,18 +172,18 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           <div ref={outcomeRef} className="right">
             {isSendActivity(activity, asAccount) ? (
               <div className="outcome" title={renderDetails.recipient.address}>
-                To:
+                {t("transactionTo")}
                 {` ${
                   renderDetails.recipient.name ??
                   (renderDetails.recipient.address === undefined
-                    ? "(Contract creation)"
+                    ? t("contractCreation")
                     : truncateAddress(renderDetails.recipient.address))
                 }`}
               </div>
             ) : (
               <div className="outcome" title={activity.from}>
-                From:
-                {` ${activity.fromTruncated}`}
+                {t("transactionFrom")}
+                {` ${truncateAddress(activity.from)}`}
               </div>
             )}
           </div>

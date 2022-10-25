@@ -2,6 +2,7 @@ import { selectTypedData } from "@tallyho/tally-background/redux-slices/signing"
 import { EnrichedSignTypedDataRequest } from "@tallyho/tally-background/services/enrichment"
 import classNames from "classnames"
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import SharedSkeletonLoader from "../components/Shared/SharedSkeletonLoader"
 import SignTypedDataInfo from "../components/SignData/SignTypedDataInfo"
 import { useBackgroundSelector } from "../hooks"
@@ -14,7 +15,7 @@ const getSourceLabel = (
     annotation,
     typedData: { domain },
   } = typedDataRequest
-  if (annotation.type !== "unrecognized") {
+  if (annotation !== undefined) {
     return capitalize(annotation.source)
   }
 
@@ -63,6 +64,7 @@ function SignDataMessage({
 }
 
 export default function SignDataDetailPanel(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "signing" })
   const typedDataRequest = useBackgroundSelector(selectTypedData)
 
   /* TODO: should be `true` if the request originates from within the wallet */
@@ -77,9 +79,7 @@ export default function SignDataDetailPanel(): ReactElement {
           })}
         >
           <div className="label header">
-            {isInternal
-              ? "Your signature is required"
-              : "A dapp is requesting your signature"}
+            {isInternal ? t("signatureRequired") : t("dappSignatureRequest")}
           </div>
           <div className="divider" />
           <SharedSkeletonLoader

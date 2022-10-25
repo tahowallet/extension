@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react"
 import { useLocation } from "react-router-dom"
 import {
-  selectCurrentAccountActivitiesWithTimestamps,
+  selectCurrentAccountActivities,
   selectCurrentAccountBalances,
   selectCurrentAccountSigner,
   selectCurrentNetwork,
@@ -12,6 +12,7 @@ import {
   isSmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
+import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -21,6 +22,7 @@ import SharedTooltip from "../components/Shared/SharedTooltip"
 import { scanWebsite } from "../utils/constants"
 
 export default function SingleAsset(): ReactElement {
+  const { t } = useTranslation()
   const location = useLocation<AnyAsset>()
   const locationAsset = location.state
   const { symbol } = locationAsset
@@ -33,30 +35,29 @@ export default function SingleAsset(): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const filteredActivities = useBackgroundSelector((state) =>
-    (selectCurrentAccountActivitiesWithTimestamps(state) ?? []).filter(
-      (activity) => {
-        if (
-          typeof contractAddress !== "undefined" &&
-          contractAddress === activity.to
-        ) {
-          return true
-        }
-        switch (activity.annotation?.type) {
-          case "asset-transfer":
-          case "asset-approval":
-            return activity.annotation.assetAmount.asset.symbol === symbol
-          case "asset-swap":
-            return (
-              activity.annotation.fromAssetAmount.asset.symbol === symbol ||
-              activity.annotation.toAssetAmount.asset.symbol === symbol
-            )
-          case "contract-interaction":
-          case "contract-deployment":
-          default:
-            return false
-        }
+    (selectCurrentAccountActivities(state) ?? []).filter((activity) => {
+      if (
+        typeof contractAddress !== "undefined" &&
+        contractAddress === activity.to
+      ) {
+        return true
       }
-    )
+      switch (activity?.type) {
+        case "asset-transfer":
+        case "asset-approval":
+          return activity.assetSymbol === symbol
+        case "asset-swap":
+          return (
+            // TODO: this should recognize both assets of the swap but it is
+            // ignored right now as swaps are recognized as contract interactions
+            activity.assetSymbol === symbol
+          )
+        case "contract-interaction":
+        case "contract-deployment":
+        default:
+          return false
+      }
+    })
   )
 
   const { asset, localizedMainCurrencyAmount, localizedDecimalAmount } =
@@ -115,7 +116,9 @@ export default function SingleAsset(): ReactElement {
                     </a>
                   )}
                 >
-                  View asset on {scanWebsite[currentNetwork.chainID].title}
+                  {t("assets.viewAsset", {
+                    sitetitle: scanWebsite[currentNetwork.chainID].title,
+                  })}
                 </SharedTooltip>
               ) : (
                 <></>
@@ -140,7 +143,7 @@ export default function SingleAsset(): ReactElement {
                     state: asset,
                   }}
                 >
-                  Send
+                  {t("shared.send")}
                 </SharedButton>
                 <SharedButton
                   type="primary"
@@ -151,7 +154,7 @@ export default function SingleAsset(): ReactElement {
                     state: asset,
                   }}
                 >
-                  Swap
+                  {t("shared.swap")}
                 </SharedButton>
               </>
             ) : (
@@ -160,30 +163,11 @@ export default function SingleAsset(): ReactElement {
           </div>
         </div>
       )}
-      <div className="sub_info_separator_wrap standard_width_padded">
-        <div className="left">Asset is on: Arbitrum</div>
-        <div className="right">Move to Ethereum</div>
-      </div>
       <WalletActivityList activities={filteredActivities} />
       <style jsx>
         {`
           .back_button_wrap {
             margin-bottom: 4px;
-          }
-          .sub_info_separator_wrap {
-            display: none; // TODO asset network location and transfer for later
-            border: 1px solid var(--green-120);
-            border-left: 0px;
-            border-right: 0px;
-            padding-top: 8px;
-            padding-bottom: 8px;
-            box-sizing: border-box;
-            color: var(--green-60);
-            font-size: 14px;
-            line-height: 16px;
-            justify-content: space-between;
-            margin-top: 23px;
-            margin-bottom: 16px;
           }
           .header {
             display: flex;

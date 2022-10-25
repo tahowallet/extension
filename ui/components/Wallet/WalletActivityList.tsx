@@ -5,7 +5,8 @@ import {
   selectCurrentNetwork,
   selectShowingActivityDetail,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
+import { useTranslation } from "react-i18next"
+import { Activity } from "@tallyho/tally-background/redux-slices/activities"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import WalletActivityDetails from "./WalletActivityDetails"
@@ -14,12 +15,15 @@ import { scanWebsite } from "../../utils/constants"
 import SharedButton from "../Shared/SharedButton"
 
 type Props = {
-  activities: ActivityItem[]
+  activities: Activity[]
 }
 
 export default function WalletActivityList({
   activities,
 }: Props): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet.activities",
+  })
   const dispatch = useBackgroundDispatch()
   const showingActivityDetail = useBackgroundSelector(
     selectShowingActivityDetail
@@ -49,7 +53,7 @@ export default function WalletActivityList({
   }, [network.chainID, currentAccount])
 
   const handleOpen = useCallback(
-    (activityItem: ActivityItem) => {
+    (activityItem: Activity) => {
       setInstantlyHideActivityDetails(false)
       dispatch(setShowingActivityDetail(activityItem.hash))
     },
@@ -63,9 +67,7 @@ export default function WalletActivityList({
   if (!activities || activities.length === 0)
     return (
       <span>
-        Tally Ho will populate your historical activity over time; this may take
-        an hour or more for accounts that have been active for a long time. For
-        new accounts, new activity will show up here.
+        {t("historicalActivityExplainer")}
         <style jsx>{`
           span {
             width: 316px;
@@ -114,9 +116,9 @@ export default function WalletActivityList({
       </ul>
       <span>
         <div className="hand">✋</div>
-        <div>You have reached the end of activity list.</div>
+        <div>{t("endOfList")}</div>
         <div className="row">
-          For more history visit
+          {t("moreHistory")}
           <SharedButton
             type="tertiary"
             size="small"

@@ -13,7 +13,12 @@ describe("NameService", () => {
     await nameService.startService()
   })
 
+  afterEach(async () => {
+    await nameService.stopService()
+  })
+
   it("Looks up and returns names from built-in contracts", async () => {
+    sandbox.stub(nameService, "lookUpAvatar").callsFake(async () => undefined)
     const nameRecord = await nameService.lookUpName({
       address: "0x52ec2f3d7c5977a8e558c8d9c6000b615098e8fc",
       network: ETHEREUM,

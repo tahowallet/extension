@@ -1,6 +1,7 @@
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { NameResolverSystem } from "@tallyho/tally-background/services/name"
+import classNames from "classnames"
 import React, { ReactElement, useCallback } from "react"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedTooltip from "./SharedTooltip"
@@ -8,6 +9,7 @@ import SharedTooltip from "./SharedTooltip"
 type SharedAddressProps = {
   address: string
   name?: string | undefined
+  elide: boolean
   nameResolverSystem?: NameResolverSystem
   alwaysShowAddress: boolean
 }
@@ -30,6 +32,7 @@ type SharedAddressProps = {
 export default function SharedAddress({
   name,
   address,
+  elide,
   nameResolverSystem,
   alwaysShowAddress,
 }: SharedAddressProps): ReactElement {
@@ -47,8 +50,9 @@ export default function SharedAddress({
       type="button"
       onClick={copyAddress}
       title={`Copy to clipboard:\n${address}`}
+      className={classNames({ ellipsis: elide })}
     >
-      <p>
+      <p className={classNames({ ellipsis: elide })}>
         {primaryText}
         {name === undefined || nameResolverSystem === undefined ? (
           <></>
@@ -98,4 +102,5 @@ export default function SharedAddress({
 
 SharedAddress.defaultProps = {
   alwaysShowAddress: false,
+  elide: false,
 }

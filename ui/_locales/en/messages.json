@@ -6,10 +6,11 @@
       "saveName": "Save name",
       "typeNewName": "Type new name",
       "cancel": "Cancel",
-      "regularWarning": "Removing this address doesn&apos;t delete your recovery phrase or any private keys. Instead it just hides it from the extension and you won&apos;t be able to use it until you add it back.",
+      "regularWarning": "Removing this address doesn't delete your recovery phrase or any private keys. Instead it just hides it from the extension and you won't be able to use it until you add it back.",
       "loudWarningTitle": "Removing this address will remove its associated account from the UI.",
       "loudWarningBody": "Are you sure you want to proceed?",
       "removeAddress": "Remove address",
+      "copyAddress": "Copy address",
       "removeConfirm": "Yes, I want to remove it"
     },
     "notificationPanel": {
@@ -17,10 +18,24 @@
       "addWallet": "Add Wallet",
       "addAddress": "Add address",
       "readOnly": "Read-only",
-      "import":"Import",
-      "internal":"Tally Ho",
-      "ledger":"Full access via Ledger"
+      "import": "Import",
+      "internal": "Tally Ho",
+      "ledger": "Ledger",
+      "category": {
+        "readOnly": "Preview",
+        "ledger": "Hardware wallets",
+        "others": "Imported & generated"
+      },
+      "signing": {
+        "lock": "Lock signing",
+        "unlock": "Unlock signing"
+      },
+      "snackbar": "Signing locked"
     }
+  },
+  "viewAddressOnBlockExplorer": "View address on {{blockExplorer}}",
+  "assets": {
+    "viewAsset": "View asset on {{siteTitle}}"
   },
   "assetInput": {
     "search": "Search by name or address",
@@ -28,9 +43,26 @@
     "error": {
       "invalidAmount": "Invalid amount",
       "insufficientBalance": "Insufficient balance"
+    },
+    "priceImpactTooltip": {
+      "firstLine": "Price difference between assets is high.",
+      "secondLine": "This is due to low liquidity of the swap pair."
     }
   },
   "comingSoon": "Coming soon",
+  "dappConnection": {
+    "connectToDapp": "Connect to dApp",
+    "dappPermissionListTitle": "dApp would get permission to:",
+    "viewAddressPermission": "View address of connected account",
+    "createTransactionPermission": "Create but not sign transactions for you",
+    "rejectConnection": "Reject",
+    "acceptConnection": "Connect"
+  },
+  "genericPages": {
+    "pageDoesNotExist": "This page does not exist. That's all we know.",
+    "errorPageTitle": "Unexpected Error",
+    "returnHome": "Return Home"
+  },
   "keyring": {
     "setPassword": {
       "title": "Set unlock signing password",
@@ -47,22 +79,94 @@
     },
     "unlock": {
       "title": "Unlock signing",
+      "subtitle": "Enter your signing password to continue",
       "submitBtn": "Unlock",
       "signingPassword": "Signing password",
       "forgotPassword": "Forgot password?",
       "error": {
         "incorrect": "Incorrect password"
-      }
+      },
+      "snackbar": "Signing unlocked"
     }
   },
   "ledger": {
+    "checkLedger": "Check Ledger",
+    "onlyRejectFromLedger": "Tx can only be Rejected from Ledger",
+    "onboarding": {
+      "prepare": {
+        "continueButton": "Continue",
+        "tryAgainButton": "Try Again",
+        "subheadingWord1": "start",
+        "subheadingWord2": "retry",
+        "subheading": "Make sure you take these 3 steps before we {{subheadingWord}}",
+        "initialScreenHeader": "Before we get started",
+        "header": "Check your Ledger",
+        "noLedgerConnected": "No Ledger device is connected",
+        "multipleLedgersConnected": "Multiple Ledgers are connected",
+        "stepsExplainer": "Please follow the steps below and click on Try Again!",
+        "step1": "Plug in a single Ledger",
+        "step2": "Enter pin to unlock",
+        "step3": "Open Ethereum App"
+      },
+      "selectDevice": "Select the device",
+      "clickConnect": "Click connect",
+      "previous": "Previous",
+      "next": "Next",
+      "selectLedgeraccounts": "Select Ledger accounts",
+      "multipleLedgersDescriptor": "You can select as many as you want",
+      "connectSelectedLedger": "Connect selected",
+      "doneMessageOne": "Congratulations!",
+      "doneMessageTwo": "You can open Tally Ho now.",
+      "onboardingSuccessful": "Selected accounts were succesfully connected.",
+      "closeTab": "Close tab"
+    },
+    "connectionStatus": {
+      "availableButNoSigning": "Ledger is connected but cannot sign",
+      "readyToSign": "Ledger is ready to sign",
+      "disconnected": "Ledger is disconnected",
+      "wrongLedger": "Wrong Ledger connected",
+      "multipleLedgers": "Multiple ledgers connected",
+      "busy": "Ledger is busy"
+    },
+    "activation": {
+      "title": "Activate blind signing",
+      "helpMessage": "Take the following steps:",
+      "step1": "Open Ethereum app on Ledger",
+      "step2": "Navigate to Settings",
+      "step3": "Enable blind signing"
+    },
+    "busy": {
+      "title": "Ledger is busy",
+      "helpMessage": "Looks like your Ledger has another signature in progress.",
+      "step1": "Accept or Reject transaction on device",
+      "step2": "Refresh page"
+    },
+    "notConnected": {
+      "title": "Connect to Ledger",
+      "helpMessage": "Take the following steps:",
+      "step1": "Plug in Ledger",
+      "step2": "Enter PIN to unlock",
+      "step3": "Open Ethereum app"
+    },
+    "multipleLedgersConnected": {
+      "title": "Multiple Ledgers are connected",
+      "helpMessage": "Take the following steps:",
+      "step1": "Remove all Ledgers but one",
+      "step2": "Enter PIN to unlock",
+      "step3": "Open Ethereum app"
+    },
+    "wrongLedger": {
+      "title": "Wrong Ledger",
+      "helpMessage": "Looks like you are using the wrong Ledger.",
+      "connectLedger": "Connect the Ledger containing this account:",
+      "refresh": "Refresh the page"
+    },
     "derivationPaths": {
       "ledgerLive": "Ledger Live",
       "bip44": "BIP 44 (Trezor, 🦊)",
       "ethTestnet": "Ethereum Testnet",
       "ledgerLegacy": "Ledger Legacy",
-      "rsk": "RSK",
-      "rskTestnet": "RSK Tetnet"
+      "rsk": "RSK"
     }
   },
   "networkFees": {
@@ -70,6 +174,7 @@
     "toBeDetermined": "TBD",
     "settingsTitle": "Network fees (Gwei)",
     "gasLimit": "Gas limit",
+    "estimatedNetworkFee": "Estimated network fee",
     "insufficientBaseAsset": "Not enough {{symbol}} for network fees",
     "totalMax": "Total Max",
     "saveSettings": "Save settings",
@@ -80,13 +185,25 @@
     },
     "optimism": {
       "title": "Network fees",
-      "header": "Gas fees on Optimism work differently from Ethereum.",
+      "header": "Gas fees on {{name}} work differently from Ethereum.",
       "transactionFee": "Transaction fee",
       "rollUp": "Roll-up",
       "estimatedGas": "Estimated Gas",
-      "explainerOne": "The estimated gas cost for Optimism transactions includes an Optimism fee + an Ethereum roll-up fee (the fee to register transaction on Ethereum chain).",
-      "explainerTwo": "Tally Ho stays in sync with the current Optimism and Ethereum network fees to estimate the fee for a given transaction.",
+      "explainerOne": "The estimated gas cost for {{name}} transactions includes an {{name}} fee + an Ethereum roll-up fee (the fee to register transaction on Ethereum chain).",
+      "explainerTwo": "Tally Ho stays in sync with the current {{name}} and Ethereum network fees to estimate the fee for a given transaction.",
       "explainerThree": "Only in rare cases will the actual fee you pay change by more than 25% from the estimate.",
+      "learnMore": "Learn More"
+    },
+    "rsk": {
+      "title": "Network fees",
+      "header": "Gas fees on RSK work differently from Ethereum.",
+      "minGasPrice": "Minimum Gas Price",
+      "multiplier": "10%",
+      "percentage": "percentage",
+      "estimatedGas": "Estimated Gas",
+      "explainerOne": "The estimated gas price for RSK transactions is calculated by adding 10% to the Minimum Gas Price obtained from the latest mined block.",
+      "explainerTwo": "Tally Ho stays in sync with the current RSK and Ethereum network fees to estimate the fee for a given transaction.",
+      "explainerThree": "Only in rare cases will the actual fee you pay change by more than 10% from the estimate.",
       "learnMore": "Learn More"
     },
     "miner": "Miner:",
@@ -105,14 +222,46 @@
     }
   },
   "nfts": {
-    "empty":"Looks like you don&apos;t have any NFTs yet? Get some and view them here!",
+    "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title"
+  },
+  "achievements": {
+    "empty": "Nothing to see here",
+    "startWith": "You can start with the Tally Ho collection!",
+    "collection": "Tally Ho collection"
   },
   "onboarding": {
     "steps": {
       "create": "Create",
       "save": "Save",
       "verify": "Verify"
+    },
+    "seedVerification": {
+      "seedIsInWrongOrder": "Wrong Order",
+      "seedMismatchExplainer": "We are sorry, the recovery phrase you entered did not match.You can try to re-order them, but make sure you have them written down.",
+      "createNewWallet": "If you prefer you can <1><0>create a new wallet.<0></1>",
+      "retryVerification": "Try again",
+      "verifySeedPrompt": "Verify recovery phrase",
+      "successMessage": "Congratulations!",
+      "successExplainer": "Secret recovery phrase is correct and you can now start using your new wallet.",
+      "successButton": "Take me to my wallet"
+    },
+    "addWallet": {
+      "addExistingAccount": "Add existing accounts",
+      "importWallet": "Import recovery phrase",
+      "addLedger": "Connect to Ledger",
+      "addReadOnly": "Read-only address",
+      "addNewAccount": "Add new recovery phrase",
+      "createNewWallet": "Create new wallet",
+      "addAccounts": "Add accounts",
+      "importExistingWallet": {
+        "pasteRecoveryPhrase": "Paste recovery phrase",
+        "phraseLengthError": "Must be a 12 or 24 word recovery phrase",
+        "invalidPhraseError": "Invalid recovery phrase",
+        "importAccount": "Import account",
+        "enterPhrasePrompt": "Copy paste or write down a 12 or 24 word secret recovery phrase.",
+        "helpFindPhrase": "How do I find the recovery phrase?"
+      }
     },
     "derivationPath": "Derivation path",
     "addDerivationPath": "Add derivation path",
@@ -161,6 +310,8 @@
     "joinTitle": "Join our community",
     "joinDesc": "Join our Discord to give us feedback!",
     "joinBtn": "Join and give feedback",
+    "versionLabel": "Version {{version}}",
+    "unknownVersionOrCommit": "<unknown>",
     "exportLogs": {
       "title": "Bug report",
       "discordTitle": "1. Join #bug-reports on Discord",
@@ -207,19 +358,101 @@
     }
   },
   "shared": {
+    "tallyHo": "Tally Ho",
     "cancelBtn": "Cancel",
     "gwei": "Gwei",
+    "send": "Send",
+    "swap": "Swap",
     "showPasswordHint": "Show Password",
     "hidePasswordHint": "Hide Password",
     "close": "Close",
     "accountItemSummary": {
       "connectedStatus": "Connected"
+    },
+    "selectToken": "Select token",
+    "backButtonText": "Back",
+    "saveBtn": "Save",
+    "closeWindow": "Close window"
+  },
+  "signing": {
+    "signatureRequired": "Your signature is required",
+    "dappSignatureRequest": "A dapp is requesting your signature",
+    "message": "Message",
+    "signed": "Signed,",
+    "type": "Type",
+    "EIP4361": {
+      "subtext1": "Wants you to sign in with your",
+      "subtext2": "Ethereum account:",
+      "statement": "Statement",
+      "nonce": "Nonce",
+      "version": "Version",
+      "chainID": "Chain ID",
+      "expiration": "Expiration"
+    }
+  },
+  "signTransaction": {
+    "title": "Sign transaction",
+    "awaitingHardwareSignature": "Awaiting hardware wallet signature",
+    "reject": "Reject",
+    "noSigning": "Read-only accounts cannot sign",
+    "contractCreation": "Contract creation",
+    "unknownNetwork": "Unknown Network",
+    "detailPanelName": "Details",
+    "rawDataPanelName": "Raw data",
+    "rawDataCopyMsg": "Raw data copied to clipboard",
+    "copyRawData": "Copy hex",
+    "spendAmount": "Spend Amount",
+    "help": "I need help",
+    "refresh": "Refresh",
+    "confirmButtonLabel": "Sign",
+    "spendApproval": {
+      "title": "Approve asset spend",
+      "approveSpender": "Approve <spenderAddress></spenderAddress>",
+      "spendAmount": "Spend {{assetSymbol}} tokens",
+      "approve": "Approve",
+      "infinite": "Infinite",
+      "spend": "Spend",
+      "tokens": "tokens",
+      "spendLimit": "Spend limit",
+      "tooltip1": "Spend limit is the amount of funds from a particular asset that you allow a contract to spend.",
+      "tooltip2": "Infinite tx has the drawback that if the contract is malicious, it can steal all your funds.",
+      "changeLimit": "Change limit",
+      "invalidAmount": "Invalid amount"
+    },
+    "assetTransfer": {
+      "title": "Transfer",
+      "sendTo": "Send to",
+      "spendAmountLabel": "Spend Amount"
+    },
+    "contractInteraction": {
+      "title": "Contract interaction",
+      "interactingWithLabel": "Interacting with",
+      "newlyCreatedContract": "Newly created contract"
+    },
+    "signTypedData": {
+      "authorizeDeposit": "Authorize Deposit",
+      "signMessage": "Sign {{messageType}}",
+      "confirmButtonLabel": "Confirm"
     }
   },
   "swap": {
     "title": "Swap Assets",
     "from": "Swap from:",
     "to": "Swap to:",
+    "sellAsset": "You pay",
+    "buyAsset": "You receive",
+    "approveAsset": "Approve Asset",
+    "waitingForApproval": "Waiting for approval transaction...",
+    "switchAssets": "Switch Assets",
+    "swapRewardsTeaser": "Swap rewards coming soon",
+    "continueSwap": "Continue Swap",
+    "exchangeRoute": "Exchange route",
+    "rewards": {
+      "header": "Swap rewards for community",
+      "body": "This week, 240,000 DOGGO tokens will be equally shared as Swap Rewards.",
+      "tooltip": "Tally Ho rewards it's users that use swap every week. A council decides weekly prizes and who is eligible.",
+      "detailButton": "Details"
+    },
     "error": {
       "noSellAsset": "Attempting to approve transfer without a sell asset.",
       "noApprovalTarget": "Attempting to approve transfer without an approval target.",
@@ -233,6 +466,15 @@
       "estimatedFee": "Estimated network fee",
       "daoFee": "DAO fee"
     }
+  },
+  "switchWallet": {
+    "title": "Want to use another wallet instead?",
+    "tooltip": "You are seeing this because Tally Ho! is set as default wallet, you can change this option in the main menu.",
+    "confirmSwitchWallet": "Yes, switch wallet",
+    "notDefaultWalletMessage": "Tally Ho not Default",
+    "disableWalletExplainer": "We disabled Tally Ho as the default wallet for you. You can always re-enable it from Menu ☰ at any time.",
+    "useTallyHoAsDefaultPrompt": "Use Tally Ho as default wallet",
+    "closeButton": "Close window"
   },
   "toggle": {
     "collapse": "Collapse",
@@ -252,6 +494,24 @@
     }
   },
   "wallet": {
+    "activities": {
+      "historicalActivityExplainer": "Tally Ho will populate your historical activity over time; this may take an hour or more for accounts that have been active for a long time. For new accounts, new activity will show up here.",
+      "endOfList": "You have reached the end of activity list.",
+      "moreHistory": "For more history visit",
+      "tokenApproved": "Token approval",
+      "contractInteraction": "Contract Interaction",
+      "tokenReceived": "Received",
+      "tokenSent": "Send",
+      "infiniteApproval": "Infinite",
+      "tokenSwapped": "Swap",
+      "transactionFailed": "Failed",
+      "transactionDropped": "Dropped",
+      "transactionPending": "Pending...",
+      "contractCreation": "(Contract creation)",
+      "transactionTo": "To:",
+      "transactionFrom": "From:",
+      "loadingActivities": "Digging deeper..."
+    },
     "totalAccountBalance": "Total account balance",
     "send": "Send",
     "receive": "Receive",
@@ -261,6 +521,51 @@
     "sendTo": "Send To:",
     "sendButton": "Continue",
     "receiveAddress": "Receive address",
-    "sendToContractWarning": "This is a contract address, sending assets could result in loss of funds."
+    "sendToContractWarning": "This is a contract address, sending assets could result in loss of funds.",
+    "pages": {
+      "assets": "Assets",
+      "NFTs": "NFTs",
+      "activity": "Activity"
+    },
+    "NFTPricingComingSoon": "Coming soon: NFT price + sending",
+    "defaultToggle": {
+      "snackbar": "You can change this in Settings later",
+      "isDefault": "is now your default wallet",
+      "notDefault": "is not your default wallet",
+      "tooltip": "Setting Tally Ho as your default wallet means that everytime you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
+    }
+  },
+  "dAppConnect": {
+    "switchWallet":{
+      "title": "Tally Ho not Default",
+      "descFirstPart": "We disabled Tally as default wallet for you. You can always enable it back from Settings",
+      "descSecondPart": "at any time.",
+      "toggleTitle": "Use Tally Ho as default wallet"
+    }
+  },
+  "globalError": {
+    "title": "Ups, nothing to see here",
+    "desc": "Looks like you encountered an empty bowl, try refreshing the page to see if something appears",
+    "submitBtn": "Refresh page"
+  },
+  "devPanel": {
+    "title": "Developer Panel",
+    "featureFlags": {
+      "title": "Feature flags",
+      "flags": {
+        "USE_MAINNET_FORK": "Use mainnet fork",
+        "RESOLVE_RNS_NAMES": "Resolve RNS names",
+        "HIDE_IMPORT_DERIVATION_PATH": "Hide import derivation path",
+        "HIDE_SWAP_REWARDS": "Hide swap rewards",
+        "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
+        "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
+        "SUPPORT_ANALYTICS": "Show Analytics page on the settings page",
+        "SUPPORT_KEYRING_LOCKING": "Enable to lock/unlock accounts ",
+        "SUPPORT_FORGOT_PASSWORD": "Enable to forgot password",
+        "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
+        "HIDE_TOKEN_FEATURES": "Hide token features",
+        "SUPPORT_ARBITRUM": "Enable Arbitrum network"
+      }
+    }
   }
 }

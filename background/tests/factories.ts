@@ -1,15 +1,26 @@
+/* eslint-disable class-methods-use-this */
+import { Block, FeeData } from "@ethersproject/abstract-provider"
+import { DexieOptions } from "dexie"
+import { BigNumber } from "ethers"
 import { keccak256 } from "ethers/lib/utils"
 import { AccountBalance, AddressOnNetwork } from "../accounts"
 import { ETH, ETHEREUM, OPTIMISM } from "../constants"
-import { AnyEVMTransaction, LegacyEVMTransactionRequest } from "../networks"
+import {
+  AnyEVMTransaction,
+  LegacyEVMTransactionRequest,
+  AnyEVMBlock,
+  BlockPrices,
+} from "../networks"
 import {
   ChainService,
+  IndexingService,
   KeyringService,
   LedgerService,
   NameService,
   PreferenceService,
   SigningService,
 } from "../services"
+import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 
 const createRandom0xHash = () =>
   keccak256(Buffer.from(Math.random().toString()))
@@ -45,6 +56,21 @@ export async function createNameService(overrides?: {
   return NameService.create(
     overrides?.chainService ?? createChainService({ preferenceService }),
     preferenceService
+  )
+}
+
+export async function createIndexingService(overrides?: {
+  chainService?: Promise<ChainService>
+  preferenceService?: Promise<PreferenceService>
+  dexieOptions?: DexieOptions
+}): Promise<IndexingService> {
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+
+  return IndexingService.create(
+    preferenceService,
+    overrides?.chainService ?? createChainService({ preferenceService }),
+    overrides?.dexieOptions
   )
 }
 
@@ -116,6 +142,20 @@ export const createAnyEVMTransaction = (
   }
 }
 
+export const createAnyEVMBlock = (
+  overrides: Partial<AnyEVMBlock> = {}
+): AnyEVMBlock => {
+  return {
+    hash: createRandom0xHash(),
+    parentHash: createRandom0xHash(),
+    difficulty: 1000000000000n,
+    blockHeight: 15547463,
+    timestamp: Date.now(),
+    network: OPTIMISM,
+    ...overrides,
+  }
+}
+
 export const createAccountBalance = (
   overrides: Partial<AccountBalance> = {}
 ): AccountBalance => ({
@@ -147,3 +187,76 @@ export const createAddressOnNetwork = (
   network: ETHEREUM,
   ...overrides,
 })
+
+export const createBlockPrices = (
+  overrides: Partial<BlockPrices> = {}
+): BlockPrices => ({
+  baseFeePerGas: 0n,
+  blockNumber: 25639147,
+  dataSource: "local",
+  estimatedPrices: [
+    {
+      confidence: 99,
+      maxFeePerGas: 0n,
+      maxPriorityFeePerGas: 0n,
+      price: 1001550n,
+    },
+  ],
+  estimatedTransactionCount: null,
+  network: ETHEREUM,
+  ...overrides,
+})
+
+export const makeEthersBlock = (overrides?: Partial<Block>): Block => {
+  return {
+    hash: "0x20567436620bf18c07cf34b3ec4af3e530d7a2391d7a87fb0661565186f4e834",
+    parentHash:
+      "0x9b97cacd4900848628fb9efcc25da51e56c08f27604b5947151ccf6401b915c6",
+    number: 30639839,
+    timestamp: 1666373439,
+    nonce: "0x0000000000000000",
+    difficulty: 2,
+    gasLimit: BigNumber.from(15000000),
+    gasUsed: BigNumber.from(295345),
+    miner: "0x0000000000000000000000000000000000000000",
+    extraData:
+      "0xd98301090a846765746889676f312e31352e3133856c696e75780000000000006028a2a4a8d227a5f0b51f8c71096d9b86374a7831ec6928f00d296eac6a42850d332d31c15b6f71509708a252f1af3317c35b137d6411710b13f90a0a1148e900",
+    transactions: [
+      "0x2fe683d3a72693e9c338f430e9af68a3b69d449ab04f191d5eff9010c4e94da0",
+    ],
+    _difficulty: BigNumber.from(2),
+    ...overrides,
+  }
+}
+
+export const makeEthersFeeData = (overrides?: Partial<FeeData>): FeeData => {
+  return {
+    maxFeePerGas: BigNumber.from(123274909666),
+    maxPriorityFeePerGas: BigNumber.from(2500000000),
+    gasPrice: BigNumber.from(91426599419),
+    ...overrides,
+  }
+}
+
+export const makeSerialFallbackProvider =
+  (): Partial<SerialFallbackProvider> => {
+    class MockSerialFallbackProvider {
+      async getBlock() {
+        return makeEthersBlock()
+      }
+
+      async getBlockNumber() {
+        return 1
+      }
+
+      async getBalance() {
+        return BigNumber.from(100)
+      }
+
+      async getFeeData() {
+        return makeEthersFeeData()
+      }
+    }
+
+    return new MockSerialFallbackProvider()
+  }

@@ -1,8 +1,10 @@
 import {
+  ARBITRUM_ONE,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
   POLYGON,
+  RSK,
 } from "@tallyho/tally-background/constants"
 import { NetworkFeeTypeChosen } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { i18n } from "../_locales/i18n"
@@ -11,12 +13,17 @@ export const doggoTokenDecimalDigits = 18
 
 export const scanWebsite = {
   [ETHEREUM.chainID]: { title: "Etherscan", url: "https://etherscan.io" },
+  [RSK.chainID]: { title: "RSKExplorer", url: "https://explorer.rsk.co" },
   [OPTIMISM.chainID]: {
     title: "Etherscan",
     url: "https://optimistic.etherscan.io",
   },
   [POLYGON.chainID]: { title: "Polygonscan", url: "https://polygonscan.com" },
   [GOERLI.chainID]: { title: "Etherscan", url: "https://goerli.etherscan.io/" },
+  [ARBITRUM_ONE.chainID]: {
+    title: "Arbiscan",
+    url: "https://arbiscan.io/",
+  },
 }
 
 export const ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL: {

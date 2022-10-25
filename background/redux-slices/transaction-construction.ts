@@ -7,7 +7,7 @@ import {
   MAX_FEE_MULTIPLIER,
   REGULAR,
 } from "../constants/network-fees"
-import { USE_MAINNET_FORK } from "../features"
+import { FeatureFlags, isEnabled } from "../features"
 
 import {
   BlockEstimate,
@@ -145,8 +145,8 @@ const makeBlockEstimate = (
 // Async thunk to pass transaction options from the store to the background via an event
 export const updateTransactionData = createBackgroundAsyncThunk(
   "transaction-construction/update-transaction",
-  async (options: EnrichedEVMTransactionSignatureRequest) => {
-    await emitter.emit("updateTransaction", options)
+  async (payload: EnrichedEVMTransactionSignatureRequest) => {
+    await emitter.emit("updateTransaction", payload)
   }
 )
 
@@ -157,7 +157,7 @@ export const signTransaction = createBackgroundAsyncThunk(
       EIP1559TransactionRequest | LegacyEVMTransactionRequest
     >
   ) => {
-    if (USE_MAINNET_FORK) {
+    if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
       request.request.chainID = FORK.chainID
     }
 
@@ -196,18 +196,21 @@ const transactionSlice = createSlice({
         isEIP1559TransactionRequest(newState.transactionRequest) &&
         isEIP1559TransactionRequest(transactionRequest)
       ) {
+        const feeType = state.feeTypeSelected
+        const { chainID } = transactionRequest.network
         const estimatedMaxFeePerGas =
-          state.estimatedFeesPerGas?.[transactionRequest.network.chainID]?.[
-            state.feeTypeSelected
-          ]?.maxFeePerGas
+          feeType === NetworkFeeTypeChosen.Custom
+            ? state.customFeesPerGas?.maxFeePerGas
+            : state.estimatedFeesPerGas?.[chainID]?.[feeType]?.maxFeePerGas
 
         newState.transactionRequest.maxFeePerGas =
           estimatedMaxFeePerGas ?? transactionRequest.maxFeePerGas
 
         const estimatedMaxPriorityFeePerGas =
-          state.estimatedFeesPerGas?.[transactionRequest.network.chainID]?.[
-            state.feeTypeSelected
-          ]?.maxPriorityFeePerGas
+          feeType === NetworkFeeTypeChosen.Custom
+            ? state.customFeesPerGas?.maxPriorityFeePerGas
+            : state.estimatedFeesPerGas?.[chainID]?.[feeType]
+                ?.maxPriorityFeePerGas
 
         newState.transactionRequest.maxPriorityFeePerGas =
           estimatedMaxPriorityFeePerGas ??
@@ -251,30 +254,6 @@ const transactionSlice = createSlice({
       { payload }: { payload: NetworkFeeTypeChosen }
     ) => {
       immerState.feeTypeSelected = payload
-
-      if (immerState.transactionRequest) {
-        const selectedFeesPerGas =
-          immerState.estimatedFeesPerGas?.[
-            immerState.transactionRequest.network.chainID
-          ]?.[immerState.feeTypeSelected] ?? immerState.customFeesPerGas
-
-        immerState.transactionRequest = {
-          ...immerState.transactionRequest,
-        }
-
-        if (
-          immerState.transactionRequest &&
-          isEIP1559TransactionRequest(immerState.transactionRequest)
-        ) {
-          immerState.transactionRequest.maxFeePerGas =
-            selectedFeesPerGas?.maxFeePerGas ??
-            immerState.transactionRequest.maxFeePerGas
-
-          immerState.transactionRequest.maxFeePerGas =
-            selectedFeesPerGas?.maxPriorityFeePerGas ??
-            immerState.transactionRequest.maxPriorityFeePerGas
-        }
-      }
     },
 
     signed: (state, { payload }: { payload: SignedTransaction }) => ({
@@ -345,6 +324,18 @@ const transactionSlice = createSlice({
     clearCustomGas: (immerState) => {
       immerState.customFeesPerGas = defaultCustomGas
     },
+    setCustomGasLimit: (
+      immerState,
+      { payload: gasLimit }: { payload: bigint | undefined }
+    ) => {
+      if (
+        typeof gasLimit !== "undefined" &&
+        immerState.transactionRequest &&
+        isEIP1559TransactionRequest(immerState.transactionRequest)
+      ) {
+        immerState.transactionRequest.gasLimit = gasLimit
+      }
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(updateTransactionData.pending, (immerState) => {
@@ -365,6 +356,7 @@ export const {
   setCustomGas,
   clearCustomGas,
   updateRollupEstimates,
+  setCustomGasLimit,
 } = transactionSlice.actions
 
 export default transactionSlice.reducer

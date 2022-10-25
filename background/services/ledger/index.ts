@@ -14,6 +14,7 @@ import {
 } from "ethers/lib/utils"
 import {
   isEIP1559TransactionRequest,
+  isKnownTxType,
   sameNetwork,
   SignedTransaction,
   TransactionRequestWithNonce,
@@ -24,7 +25,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
-import { ETHEREUM } from "../../constants"
+import { NETWORK_FOR_LEDGER_SIGNING } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { AddressOnNetwork } from "../../accounts"
 
@@ -57,9 +58,30 @@ const TestedProductId = (productId: number): boolean => {
   )
 }
 
+/**
+ * Metadata details about the display of a given Ledger device.
+ */
+export type DisplayDetails = {
+  /**
+   * When confirming a message for signing, the length of the message that the
+   * Ledger will display before cutting it off.
+   */
+  messageSigningDisplayLength: number
+}
+
+const DisplayDetailsByLedgerType: {
+  [ledgerType in LedgerType]: DisplayDetails
+} = {
+  [LedgerType.UNKNOWN]: { messageSigningDisplayLength: 0 },
+  [LedgerType.LEDGER_NANO_S]: { messageSigningDisplayLength: 99 },
+  [LedgerType.LEDGER_NANO_X]: { messageSigningDisplayLength: 255 },
+  [LedgerType.LEDGER_NANO_S_PLUS]: { messageSigningDisplayLength: 255 },
+}
+
 type MetaData = {
   ethereumVersion: string
   isArbitraryDataSigningEnabled: boolean
+  displayDetails: DisplayDetails
 }
 
 export type ConnectedDevice = {
@@ -205,6 +227,7 @@ export default class LedgerService extends BaseService<Events> {
         metadata: {
           ethereumVersion: appData.version,
           isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
+          displayDetails: DisplayDetailsByLedgerType[type],
         },
       })
 
@@ -220,6 +243,7 @@ export default class LedgerService extends BaseService<Events> {
           metadata: {
             ethereumVersion: appData.version,
             isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
+            displayDetails: DisplayDetailsByLedgerType[type],
           },
         })
       }
@@ -400,12 +424,7 @@ export default class LedgerService extends BaseService<Events> {
           throw new Error("Transaction doesn't appear to have been signed.")
         }
 
-        if (
-          tx.type !== 0 &&
-          tx.type !== 1 &&
-          tx.type !== 2 &&
-          tx.type !== null
-        ) {
+        if (tx.type !== null && !isKnownTxType(tx.type)) {
           throw new Error(`Unknown transaction type ${tx.type}`)
         }
 
@@ -515,7 +534,11 @@ export default class LedgerService extends BaseService<Events> {
     { address, network }: AddressOnNetwork,
     hexDataToSign: HexString
   ): Promise<string> {
-    if (!sameNetwork(network, ETHEREUM)) {
+    if (
+      !NETWORK_FOR_LEDGER_SIGNING.find((supportedNetwork) =>
+        sameNetwork(network, supportedNetwork)
+      )
+    ) {
       throw new Error("Unsupported network for Ledger signing")
     }
 

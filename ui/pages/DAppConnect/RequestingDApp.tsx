@@ -10,8 +10,12 @@ export default function RequestingDAppBlock(props: {
     <div className="request_wrap">
       <div className="dapp_favicon" />
       <div className="info">
-        <div className="dapp_title">{title}</div>
-        <div className="dapp_url">{url}</div>
+        <div className="dapp_title ellipsis_multiline" title={title}>
+          {title}
+        </div>
+        <div className="dapp_url" title={url}>
+          {url}
+        </div>
       </div>
       <style jsx>{`
         .request_wrap {
@@ -37,9 +41,13 @@ export default function RequestingDAppBlock(props: {
         .dapp_url {
           color: var(--green-40);
           font-size: 16px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .info {
           margin-left: 16px;
+          width: calc(100% - 48px - 16px);
         }
       `}</style>
     </div>

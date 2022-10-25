@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import React, { ReactElement, useState } from "react"
 import {
   EstimatedFeesPerGas,
@@ -8,10 +9,11 @@ import {
   selectDefaultNetworkFeeSettings,
   selectTransactionData,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "./NetworkSettingsSelect"
 import NetworkSettingsOptimism from "./NetworkSettingsSelectOptimism"
+import NetworkSettingsRSK from "./NetworkSettingsSelectRSK"
+import NetworkSettingsSelectLegacy from "./NetworkSettingsSelectLegacy"
 
 interface NetworkSettingsChooserProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
@@ -34,21 +36,40 @@ export default function NetworkSettingsChooser({
     onNetworkSettingsSave(networkSettings)
   }
 
-  return (
-    <>
-      <div className="wrapper">
-        {transactionDetails &&
-        EIP_1559_COMPLIANT_CHAIN_IDS.has(transactionDetails.network.chainID) ? (
-          <NetworkSettingsSelect
+  function networkSettingsSelectorFinder() {
+    if (transactionDetails) {
+      if (transactionDetails.network.name === "Optimism") {
+        return <NetworkSettingsOptimism />
+      }
+      if (transactionDetails.network.name === "RSK") {
+        return <NetworkSettingsRSK />
+      }
+      if (transactionDetails.network.name === "Arbitrum") {
+        return (
+          <NetworkSettingsSelectLegacy
             estimatedFeesPerGas={estimatedFeesPerGas}
             networkSettings={networkSettings}
             onNetworkSettingsChange={setNetworkSettings}
             onSave={saveNetworkSettings}
           />
-        ) : (
-          <NetworkSettingsOptimism />
-        )}
-      </div>
+        )
+      }
+      return (
+        <NetworkSettingsSelect
+          estimatedFeesPerGas={estimatedFeesPerGas}
+          networkSettings={networkSettings}
+          onNetworkSettingsChange={setNetworkSettings}
+          onSave={saveNetworkSettings}
+        />
+      )
+    }
+
+    return <></>
+  }
+
+  return (
+    <>
+      <div className="wrapper">{networkSettingsSelectorFinder()}</div>
       <style jsx>
         {`
           .wrapper {

@@ -15,11 +15,13 @@ import {
   isTallyAccountPayload,
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
+import monitorForWalletConnectionPrompts from "./wallet-connection-handlers"
 
 // TODO: we don't want to impersonate MetaMask everywhere to not break existing integrations,
 //       so let's do this only on the websites that need this feature
 const impersonateMetamaskWhitelist = [
   "opensea.io",
+  "gmx.io",
   "app.lyra.finance",
   "matcha.xyz",
   "bridge.umbria.network",
@@ -29,6 +31,9 @@ const impersonateMetamaskWhitelist = [
   "app.euler.finance",
   "kwenta.io",
   "stargate.finance",
+  "etherscan.io",
+  "swapr.eth.link",
+  "apex.exchange",
 ]
 
 export default class TallyWindowProvider extends EventEmitter {
@@ -43,6 +48,8 @@ export default class TallyWindowProvider extends EventEmitter {
   isTally = true
 
   isMetaMask = false
+
+  tallySetAsDefault = false
 
   isWeb3 = true
 
@@ -106,6 +113,7 @@ export default class TallyWindowProvider extends EventEmitter {
           )
         ) {
           this.isMetaMask = result.defaultWallet
+          this.tallySetAsDefault = result.defaultWallet
         }
         if (result.chainId && result.chainId !== this.chainId) {
           this.handleChainIdChange(result.chainId)
@@ -115,6 +123,7 @@ export default class TallyWindowProvider extends EventEmitter {
       }
     }
 
+    monitorForWalletConnectionPrompts()
     this.transport.addEventListener(internalListener)
     this.transport.addEventListener(this.internalBridgeListener.bind(this))
   }

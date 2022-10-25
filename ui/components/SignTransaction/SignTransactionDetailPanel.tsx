@@ -7,6 +7,7 @@ import {
 import { updateTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import type {
   EnrichedEIP1559TransactionRequest,
+  EnrichedEVMTransactionRequest,
   EnrichedLegacyTransactionRequest,
 } from "@tallyho/tally-background/services/enrichment"
 import { useTranslation } from "react-i18next"
@@ -22,21 +23,28 @@ export type PanelState = {
 }
 
 type SignTransactionDetailPanelProps = {
-  panelState: PanelState
-  setPanelState: React.Dispatch<React.SetStateAction<PanelState>>
+  transactionRequest?: EnrichedEVMTransactionRequest
+  defaultPanelState?: PanelState
 }
 
-export default function SignTransactionDetailPanel(
-  props: SignTransactionDetailPanelProps
-): ReactElement {
-  const { panelState, setPanelState } = props
+// FIXME Move all of this into TransactionSignatureDetails/DetailsPanel once
+// FIXME the new signature flow is enabled.
+export default function SignTransactionDetailPanel({
+  transactionRequest,
+  defaultPanelState,
+}: SignTransactionDetailPanelProps): ReactElement {
+  const [panelState, setPanelState] = useState(
+    defaultPanelState ?? { dismissedWarnings: [] }
+  )
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
   const [updateNum, setUpdateNum] = useState(0)
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
-  const transactionDetails = useBackgroundSelector(selectTransactionData)
+  const reduxTransactionData = useBackgroundSelector(selectTransactionData)
+  // If a transaction request is passed directly, prefer it over Redux.
+  const transactionDetails = transactionRequest ?? reduxTransactionData
 
   const dispatch = useBackgroundDispatch()
 
@@ -99,7 +107,9 @@ export default function SignTransactionDetailPanel(
       {hasInsufficientFundsWarning && (
         <span className="detail_item">
           <SignTransactionDetailWarning
-            message={`Not enough ${transactionDetails.network.baseAsset.symbol} for network fees`}
+            message={t("networkFees.insufficientBaseAsset", {
+              symbol: transactionDetails.network.baseAsset.symbol,
+            })}
           />
         </span>
       )}
@@ -122,7 +132,7 @@ export default function SignTransactionDetailPanel(
           </span>
         )}
       <span className="detail_item">
-        Estimated network fee
+        {t("networkFees.estimatedNetworkFee")}
         <FeeSettingsButton onClick={() => setNetworkSettingsModalOpen(true)} />
       </span>
       <style jsx>

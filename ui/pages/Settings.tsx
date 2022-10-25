@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useTranslation } from "react-i18next"
 import {
@@ -9,22 +9,64 @@ import {
   selectShowTestNetworks,
   toggleTestNetworks,
 } from "@tallyho/tally-background/redux-slices/ui"
-import {
-  SUPPORT_ANALYTICS,
-  SUPPORT_GOERLI,
-  SUPPORT_KEYRING_LOCKING,
-  SUPPORT_MANAGE_DAPPS,
-  SUPPORT_MULTIPLE_LANGUAGES,
-} from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
-import { lockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
 import { getLanguage, setLanguage } from "../_locales/i18n"
 import SettingButton from "./Settings/SettingButton"
-import { useAreKeyringsUnlocked } from "../hooks/signing-hooks"
+
+const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
+
+function VersionLabel(): ReactElement {
+  const { t } = useTranslation()
+  const history = useHistory()
+  const [clickCounter, setClickCounter] = useState(0)
+  const [isHover, setIsHover] = useState(false)
+
+  useEffect(() => {
+    if (
+      isEnabled(FeatureFlags.SWITCH_RUNTIME_FLAGS) &&
+      clickCounter === NUMBER_OF_CLICKS_FOR_DEV_PANEL &&
+      isHover
+    ) {
+      setIsHover(false)
+      setClickCounter(0)
+      history.push("/dev")
+    }
+  }, [clickCounter, history, isHover])
+
+  return (
+    <div className="version">
+      <button
+        type="button"
+        onMouseEnter={() => setIsHover(true)}
+        onMouseLeave={() => setIsHover(false)}
+        onClick={() => setClickCounter((prevState) => prevState + 1)}
+      >
+        {t("settings.versionLabel", {
+          version: process.env.VERSION ?? t("settings.unknownVersionOrCommit"),
+        })}
+        {process.env.COMMIT_SHA?.slice(0, 7) ??
+          t("settings.unknownVersionOrCommit")}
+      </button>
+      <style jsx>
+        {`
+          .version {
+            margin: 16px 0;
+            color: var(--green-40);
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0 auto;
+            padding: 16px 0px;
+          }
+        `}
+      </style>
+    </div>
+  )
+}
 
 function SettingRow(props: {
   title: string
@@ -59,11 +101,9 @@ function SettingRow(props: {
 export default function Settings(): ReactElement {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const history = useHistory()
   const hideDust = useSelector(selectHideDust)
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))
@@ -74,14 +114,6 @@ export default function Settings(): ReactElement {
 
   const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
     dispatch(toggleTestNetworks(defaultWalletValue))
-  }
-
-  const toggleKeyringStatus = async () => {
-    if (!areKeyringsUnlocked) {
-      history.push("/keyring/unlock")
-    } else {
-      await dispatch(lockKeyrings())
-    }
   }
 
   const hideSmallAssetBalance = {
@@ -162,13 +194,13 @@ export default function Settings(): ReactElement {
   }
 
   const generalList = [
-    hideSmallAssetBalance,
     setAsDefault,
-    ...(SUPPORT_MULTIPLE_LANGUAGES ? [languages] : []),
-    ...(SUPPORT_GOERLI ? [enableTestNetworks] : []),
-    ...(SUPPORT_MANAGE_DAPPS ? [dAppsSettings] : []),
+    hideSmallAssetBalance,
+    ...(isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) ? [languages] : []),
+    enableTestNetworks,
+    dAppsSettings,
     bugReport,
-    ...(SUPPORT_ANALYTICS ? [analytics] : []),
+    ...(isEnabled(FeatureFlags.SUPPORT_ANALYTICS) ? [analytics] : []),
   ]
 
   const settings = {
@@ -178,22 +210,7 @@ export default function Settings(): ReactElement {
   return (
     <>
       <section className="standard_width_padded">
-        <div className="main_menu_wrap">
-          <h1>{t("settings.mainMenu")}</h1>
-          {SUPPORT_KEYRING_LOCKING && (
-            <div className="signing_wrap">
-              <SharedButton
-                type="tertiaryInvertedGold"
-                size="medium"
-                iconMedium={areKeyringsUnlocked ? "un-lock" : "lock"}
-                iconPosition="right"
-                onClick={toggleKeyringStatus}
-              >
-                {t("settings.signing")}
-              </SharedButton>
-            </div>
-          )}
-        </div>
+        <h1>{t("settings.mainMenu")}</h1>
         <ul>
           {settings.general.map((setting) => (
             <SettingRow
@@ -218,10 +235,7 @@ export default function Settings(): ReactElement {
             {t("settings.joinBtn")}
           </SharedButton>
         </div>
-        <div className="version">
-          Version: {process.env.VERSION ?? `<unknown>`}_
-          {process.env.COMMIT_SHA?.slice(0, 7) ?? `<unknown>`}
-        </div>
+        <VersionLabel />
       </section>
       <style jsx>
         {`
@@ -231,19 +245,9 @@ export default function Settings(): ReactElement {
             height: 544px;
             background-color: var(--hunter-green);
           }
-          .main_menu_wrap {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-          }
-          .signing_wrap {
-            height: 100%;
-            display: flex;
-            align-items: end;
-          }
           .community_cta_wrap {
             width: 100vw;
-            margin-top: auto;
+            margin-top: 20px;
             margin-left: -21px;
             background-color: var(--green-95);
             text-align: center;
@@ -288,14 +292,6 @@ export default function Settings(): ReactElement {
           }
           .mega_discord_chat_bubble_button:hover {
             opacity: 0.8;
-          }
-          .version {
-            margin: 16px 0;
-            color: var(--green-40);
-            font-size: 16px;
-            font-weight: 500;
-            margin: 0 auto;
-            padding: 16px 0px;
           }
         `}
       </style>

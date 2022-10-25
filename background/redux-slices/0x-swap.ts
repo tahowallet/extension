@@ -18,15 +18,24 @@ import {
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 import {
+  ARBITRUM_ONE,
   COMMUNITY_MULTISIG_ADDRESS,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
   OPTIMISTIC_ETH,
   POLYGON,
+  RSK,
 } from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
+import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
+import { AssetsState } from "./assets"
+import {
+  calculatePriceDetails,
+  PriceDetails,
+  SwapQuoteRequest,
+} from "./utils/0x-swap-utils"
 
 // This is how 0x represents native token addresses
 const ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS =
@@ -45,27 +54,6 @@ type ZeroExValidationError = {
   reason: string
 }
 
-interface SwapAssets {
-  sellAsset: SmartContractFungibleAsset | FungibleAsset
-  buyAsset: SmartContractFungibleAsset | FungibleAsset
-}
-
-type SwapAmount =
-  | {
-      sellAmount: string
-    }
-  | {
-      buyAmount: string
-    }
-
-export type SwapQuoteRequest = {
-  assets: SwapAssets
-  amount: SwapAmount
-  slippageTolerance: number
-  gasPrice: bigint
-  network: EVMNetwork
-}
-
 export type ZrxPrice = ValidatedType<typeof isValidSwapPriceResponse>
 export type ZrxQuote = ValidatedType<typeof isValidSwapQuoteResponse>
 
@@ -73,6 +61,7 @@ export interface SwapState {
   latestQuoteRequest?: SwapQuoteRequest | undefined
   finalQuote?: ZrxQuote | undefined
   inProgressApprovalContract?: string
+  priceDetails?: PriceDetails | undefined
 }
 
 export const initialState: SwapState = {
@@ -117,6 +106,14 @@ const swapSlice = createSlice({
       finalQuote: undefined,
       latestQuoteRequest: undefined,
     }),
+
+    setPriceDetails: (
+      state,
+      { payload: priceDetails }: { payload: PriceDetails | undefined }
+    ) => ({
+      ...state,
+      priceDetails,
+    }),
   },
 })
 
@@ -129,6 +126,7 @@ export const {
   setFinalSwapQuote,
   clearSwapQuote,
   clearInProgressApprovalContract: clearApprovalInProgress,
+  setPriceDetails,
 } = swapSlice.actions
 
 export default swapSlice.reducer
@@ -137,9 +135,11 @@ export const SWAP_FEE = 0.005
 
 const chainIdTo0xApiBase: { [chainID: string]: string | undefined } = {
   [ETHEREUM.chainID]: "api.0x.org",
+  [RSK.chainID]: "", // Rsk not supported by 0x.org. Empty value here means swap screen options will be disabled for Rsk and user will not be able to perform any action.
   [POLYGON.chainID]: "polygon.api.0x.org",
   [OPTIMISM.chainID]: "optimism.api.0x.org",
   [GOERLI.chainID]: "goerli.api.0x.org",
+  [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
 }
 
 const get0xApiBase = (network: EVMNetwork) => {
@@ -301,7 +301,7 @@ const parseAndNotifyOnZeroExApiError = (
           (e) => e.reason === "INSUFFICIENT_ASSET_LIQUIDITY"
         )
       ) {
-        dispatch(setSnackbarMessage("Price Impact Too High"))
+        dispatch(setSnackbarMessage("Insufficient liquidity for this trade."))
       }
     }
   } catch (e) {
@@ -320,7 +320,13 @@ const parseAndNotifyOnZeroExApiError = (
 export const fetchSwapPrice = createBackgroundAsyncThunk(
   "0x-swap/fetchPrice",
   async (
-    quoteRequest: SwapQuoteRequest,
+    {
+      quoteRequest,
+      assets,
+    }: {
+      quoteRequest: SwapQuoteRequest
+      assets: AssetsState
+    },
     { dispatch }
   ): Promise<{ quote: ZrxPrice; needsApproval: boolean } | undefined> => {
     const signer = getProvider().getSigner()
@@ -369,6 +375,15 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
       }
 
       dispatch(setLatestQuoteRequest(quoteRequest))
+
+      const priceDetails = await calculatePriceDetails(
+        quoteRequest,
+        assets,
+        quote.sellAmount,
+        quote.buyAmount
+      )
+
+      dispatch(setPriceDetails(priceDetails))
 
       return { quote, needsApproval }
     } catch (error) {
@@ -436,9 +451,27 @@ export const approveTransfer = createBackgroundAsyncThunk(
  */
 export const executeSwap = createBackgroundAsyncThunk(
   "0x-swap/executeSwap",
-  async (quote: ZrxQuote, { dispatch }) => {
+  async (
+    quote: ZrxQuote & { sellAsset: FungibleAsset; buyAsset: FungibleAsset },
+    { dispatch }
+  ) => {
     const provider = getProvider()
     const signer = provider.getSigner()
+
+    const sellAssetAmount = enrichAssetAmountWithDecimalValues(
+      {
+        asset: quote.sellAsset,
+        amount: BigInt(quote.sellAmount),
+      },
+      2
+    )
+    const buyAssetAmount = enrichAssetAmountWithDecimalValues(
+      {
+        asset: quote.buyAsset,
+        amount: BigInt(quote.buyAmount),
+      },
+      2
+    )
 
     // Clear the swap quote, then request signature + broadcast.
     dispatch(clearSwapQuote())
@@ -451,6 +484,13 @@ export const executeSwap = createBackgroundAsyncThunk(
       to: quote.to,
       value: BigNumber.from(quote.value),
       type: 1 as const,
+      annotation: {
+        type: "asset-swap",
+        fromAssetAmount: sellAssetAmount,
+        toAssetAmount: buyAssetAmount,
+        timestamp: Date.now(),
+        blockTimestamp: undefined,
+      },
     })
   }
 )
@@ -463,4 +503,9 @@ export const selectLatestQuoteRequest = createSelector(
 export const selectInProgressApprovalContract = createSelector(
   (state: { swap: SwapState }) => state.swap.inProgressApprovalContract,
   (approvalInProgress) => approvalInProgress
+)
+
+export const selectPriceDetails = createSelector(
+  (state: { swap: SwapState }) => state.swap.priceDetails,
+  (priceDetails) => priceDetails
 )

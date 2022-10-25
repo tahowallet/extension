@@ -3,7 +3,8 @@ import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
-import { HIDE_IMPORT_DERIVATION_PATH } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import OnboardingDerivationPathSelect from "../../components/Onboarding/OnboardingDerivationPathSelect"
@@ -22,6 +23,9 @@ function TextArea({
   onChange: (value: string) => void
   errorMessage: string
 }) {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.addWallet.importExistingWallet",
+  })
   return (
     <>
       <textarea
@@ -33,7 +37,7 @@ function TextArea({
         onChange={(event) => onChange(event.target.value)}
         value={value}
       />
-      <label htmlFor="recovery_phrase">Paste recovery phrase</label>
+      <label htmlFor="recovery_phrase">{t("pasteRecoveryPhrase")}</label>
       {errorMessage && <div className="error_message">{errorMessage}</div>}
       <style jsx>{`
         textarea {
@@ -97,6 +101,9 @@ type Props = {
 }
 
 export default function OnboardingImportMetamask(props: Props): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.addWallet.importExistingWallet",
+  })
   const { nextPage } = props
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
@@ -130,7 +137,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
       splitTrimmedRecoveryPhrase.length !== 12 &&
       splitTrimmedRecoveryPhrase.length !== 24
     ) {
-      setErrorMessage("Must be a 12 or 24 word recovery phrase")
+      setErrorMessage(t("phraseLengthError"))
     } else if (isValidMnemonic(plainRecoveryPhrase)) {
       setIsImporting(true)
       dispatch(
@@ -141,9 +148,9 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         })
       )
     } else {
-      setErrorMessage("Invalid recovery phrase")
+      setErrorMessage(t("invalidPhraseError"))
     }
-  }, [dispatch, recoveryPhrase, path])
+  }, [dispatch, recoveryPhrase, path, t])
 
   if (!areKeyringsUnlocked) return <></>
 
@@ -161,10 +168,8 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         >
           <div className="portion top">
             <div className="illustration_import" />
-            <h1 className="serif_header">Import account</h1>
-            <div className="info">
-              Copy paste or write down a 12 or 24 word secret recovery phrase.
-            </div>
+            <h1 className="serif_header">{t("importAccount")}</h1>
+            <div className="info">{t("enterPhrasePrompt")}</div>
             <div>
               <TextArea
                 value={recoveryPhrase}
@@ -177,7 +182,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
               />
             </div>
 
-            {!HIDE_IMPORT_DERIVATION_PATH && (
+            {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
               <div className="select_wrapper">
                 <OnboardingDerivationPathSelect onChange={setPath} />
               </div>
@@ -185,21 +190,25 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           </div>
           <div className="portion bottom">
             <SharedButton
-              size={HIDE_IMPORT_DERIVATION_PATH ? "medium" : "large"}
+              size={
+                isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
+                  ? "medium"
+                  : "large"
+              }
               type="primary"
               isDisabled={isImporting}
               onClick={importWallet}
             >
-              Import account
+              {t("importAccount")}
             </SharedButton>
-            {!HIDE_IMPORT_DERIVATION_PATH && (
+            {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
               <button
                 className="help_button"
                 type="button"
                 // TODO External link or information modal?
                 onClick={() => {}}
               >
-                How do I find the recovery phrase?
+                {t("helpFindPhrase")}
               </button>
             )}
           </div>
@@ -233,8 +242,12 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
         .bottom {
           justify-content: space-between;
           flex-direction: column;
-          margin-bottom: ${HIDE_IMPORT_DERIVATION_PATH ? "24px" : "16px"};
-          margin-top: ${HIDE_IMPORT_DERIVATION_PATH ? "35px" : "24px"};
+          margin-bottom: ${isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
+            ? "24px"
+            : "16px"};
+          margin-top: ${isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
+            ? "35px"
+            : "24px"};
         }
         .illustration_import {
           background: url("./images/illustration_import_seed@2x.png");

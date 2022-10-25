@@ -1,7 +1,9 @@
 import { setNewDefaultWalletValue } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useDispatch } from "react-redux"
 import SharedButton from "../../components/Shared/SharedButton"
+import SharedIcon from "../../components/Shared/SharedIcon"
 import SharedToggleButton from "../../components/Shared/SharedToggleButton"
 
 export default function SwitchWalletPage({
@@ -9,6 +11,10 @@ export default function SwitchWalletPage({
 }: {
   close: () => Promise<void>
 }): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "dAppConnect.switchWallet",
+  })
+  const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
   const dispatch = useDispatch()
   const [toggleState, setToggleState] = useState(false)
 
@@ -27,13 +33,20 @@ export default function SwitchWalletPage({
   return (
     <div className="page">
       <section className="standard_width">
-        <h1 className="serif_header">Tally Ho not Default</h1>
+        <h1 className="serif_header"> {t("title")}</h1>
         <p>
-          We disabled Tally as default wallet for you. You can always enable it
-          back from Menu ☰ at any time.
+          {t("descFirstPart")}
+          <span className="icon_wrap">
+            <SharedIcon
+              icon="icons/s/settings.svg"
+              width={16}
+              color="var(--green-40)"
+            />
+          </span>
+          {t("descSecondPart")}
         </p>
         <div className="toggle_default">
-          <span>Use Tally Ho as default wallet</span>
+          <span>{t("toggleTitle")}</span>
           <SharedToggleButton
             onChange={(value) => toggleDefaultWallet(value)}
             value={toggleState}
@@ -41,7 +54,7 @@ export default function SwitchWalletPage({
         </div>
         <div className="button_wrap">
           <SharedButton type="primary" size="large" onClick={close}>
-            Close window
+            {tShared("closeWindow")}
           </SharedButton>
         </div>
       </section>
@@ -71,8 +84,10 @@ export default function SwitchWalletPage({
           font-size: 16px;
           line-height: 24px;
           font-weight: 500;
-          width: 335px;
+          width: 100%;
           margin: 0 0 37px;
+          padding: 0 8px;
+          box-sizing: border-box;
         }
         .toggle_default {
           background: var(--hunter-green);
@@ -89,6 +104,9 @@ export default function SwitchWalletPage({
         .button_wrap {
           display: flex;
           justify-content: center;
+        }
+        .icon_wrap {
+          vertical-align: middle;
         }
       `}</style>
     </div>
