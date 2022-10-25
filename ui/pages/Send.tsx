@@ -196,9 +196,11 @@ export default function Send(): ReactElement {
               selectedAsset={selectedAsset}
               amount={amount}
             />
-            <div className="value">
-              ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
-            </div>
+            {!hasError && (
+              <div className="value">
+                ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
+              </div>
+            )}
           </div>
           <div className="form_input send_to_field">
             <label htmlFor="send_address">{t("wallet.sendTo")}</label>
