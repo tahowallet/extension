@@ -195,6 +195,18 @@
       "explainerThree": "Only in rare cases will the actual fee you pay change by more than 25% from the estimate.",
       "learnMore": "Learn More"
     },
+    "rsk": {
+      "title": "Network fees",
+      "header": "Gas fees on RSK work differently from Ethereum.",
+      "minGasPrice": "Minimum Gas Price",
+      "multiplier": "10%",
+      "percentage": "percentage",
+      "estimatedGas": "Estimated Gas",
+      "explainerOne": "The estimated gas price for RSK transactions is calculated by adding 10% to the Minimum Gas Price obtained from the latest mined block.",
+      "explainerTwo": "Tally Ho stays in sync with the current RSK and Ethereum network fees to estimate the fee for a given transaction.",
+      "explainerThree": "Only in rare cases will the actual fee you pay change by more than 10% from the estimate.",
+      "learnMore": "Learn More"
+    },
     "miner": "Miner:",
     "maxBase": "Max Base:",
     "speeds": {
@@ -557,7 +569,6 @@
         "HIDE_IMPORT_DERIVATION_PATH": "Hide import derivation path",
         "HIDE_SWAP_REWARDS": "Hide swap rewards",
         "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
-        "USE_BALANCE_RELOADER": "Enable to reload background",
         "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
         "SUPPORT_ANALYTICS": "Show Analytics page on the settings page",
         "SUPPORT_KEYRING_LOCKING": "Enable to lock/unlock accounts ",
