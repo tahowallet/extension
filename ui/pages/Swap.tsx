@@ -510,7 +510,7 @@ export default function Swap(): ReactElement {
   }, [swapTransactionSettings, isApprovalInProgress])
 
   const isSwapSupportedByNetwork = () => {
-    return NETWORKS_SUPPORTING_SWAPS.includes(selectedNetwork.chainID)
+    return NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID)
   }
 
   if (!isSwapSupportedByNetwork()) {

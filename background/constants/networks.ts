@@ -112,26 +112,36 @@ export const TEST_NETWORK_BY_CHAIN_ID = new Set(
   [GOERLI].map((network) => network.chainID)
 )
 
-export const NETWORKS_SUPPORTING_SWAPS = [
-  ETHEREUM.chainID,
-  POLYGON.chainID,
-  ARBITRUM_ONE.chainID,
-  OPTIMISM.chainID,
-  ROPSTEN.chainID,
-  RINKEBY.chainID,
-  GOERLI.chainID,
-  KOVAN.chainID,
-  FORK.chainID,
-]
+export const NETWORKS_SUPPORTING_SWAPS = new Set(
+  [
+    ETHEREUM,
+    POLYGON,
+    ARBITRUM_ONE,
+    OPTIMISM,
+    ROPSTEN,
+    RINKEBY,
+    GOERLI,
+    KOVAN,
+    FORK,
+  ].map((network) => network.chainID)
+)
 
-export const NETWORKS_SUPPORTING_NFTS = [
-  ETHEREUM.chainID,
-  POLYGON.chainID,
-  ARBITRUM_ONE.chainID,
-  OPTIMISM.chainID,
-  ROPSTEN.chainID,
-  RINKEBY.chainID,
-  GOERLI.chainID,
-  KOVAN.chainID,
-  FORK.chainID,
-]
+export const NETWORKS_SUPPORTING_NFTS = new Set(
+  [
+    ETHEREUM,
+    POLYGON,
+    ARBITRUM_ONE,
+    OPTIMISM,
+    ROPSTEN,
+    RINKEBY,
+    GOERLI,
+    KOVAN,
+    FORK,
+  ].map((network) => network.chainID)
+)
+
+export const ALCHEMY_SUPPORTED_NETWORKS = new Set(
+  [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, GOERLI].map(
+    (network) => network.chainID
+  )
+)
