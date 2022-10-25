@@ -4,14 +4,14 @@ import OnboardingStepsIndicator from "../../../components/Onboarding/OnboardingS
 import { useBackgroundSelector } from "../../../hooks"
 import {
   OnboardingBox,
-  OnboardingHeader,
   OnboardingSubheader,
   OnboardingMessageHeader,
 } from "../styles"
 
 function WarningMessage({ onAccept }: { onAccept: () => void }): ReactElement {
   return (
-    <>
+    <div className="seed_section">
+      <h1 className="serif_header center_text">Before you start</h1>
       <div className="onboarding_box">
         <div className="message_header">
           <img
@@ -19,7 +19,6 @@ function WarningMessage({ onAccept }: { onAccept: () => void }): ReactElement {
             src="./images/message_warning.png"
             alt="warning"
           />
-          <span>Before you start</span>
         </div>
         <p>
           It&apos;s important to write down your secret recovery phrase and
@@ -47,8 +46,15 @@ function WarningMessage({ onAccept }: { onAccept: () => void }): ReactElement {
           height: 54px;
           margin-right: 20px;
         }
+        .serif_header {
+          font-family: "Quincy CF";
+          font-weight: 500;
+          font-size: 46px;
+          line-height: 42px;
+          margin: 1em auto;
+        }
       `}</style>
-    </>
+    </div>
   )
 }
 
@@ -59,7 +65,9 @@ function SeedContainer(): ReactElement {
 
   return (
     <>
-      <h3 className="subtitle">This is the only way to restore your wallet</h3>
+      <h1 className="serif_header center_text">
+        Save and store your recovery phrase
+      </h1>
       <div className="words_group">
         {freshMnemonic && (
           <>
@@ -155,6 +163,13 @@ function SeedContainer(): ReactElement {
           flex-direction: column;
           justify-content: space-between;
         }
+        .serif_header {
+          font-family: "Quincy CF";
+          font-weight: 500;
+          font-size: 46px;
+          line-height: 42px;
+          margin: 1em auto;
+        }
       `}</style>
     </>
   )
@@ -164,11 +179,9 @@ export default function SaveSeed(): ReactElement {
   const [revealSeed, setRevealSeed] = useState(false)
 
   return (
-    <>
+    <div className="steps_section">
       <OnboardingStepsIndicator activeStep={1} />
-      <h1 className="serif_header center_text">
-        Save and store your recovery phrase
-      </h1>
+
       {revealSeed ? (
         <SeedContainer />
       ) : (
@@ -177,10 +190,19 @@ export default function SaveSeed(): ReactElement {
       <style jsx>
         {`
           .serif_header {
-            ${OnboardingHeader}
+            font-family: "Quincy CF";
+            font-weight: 500;
+            font-size: 46px;
+            line-height: 42px;
+            margin: 1em auto;
+          }
+          .steps_section {
+            text-align: center;
+            width: 50%;
+            margin: auto;
           }
         `}
       </style>
-    </>
+    </div>
   )
 }

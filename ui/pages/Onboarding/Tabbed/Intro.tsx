@@ -56,7 +56,6 @@ export default function Intro(): ReactElement {
           .illustration_section {
             height: 180px;
             display: flex;
-            padding-top: 68.5px;
             position: relative;
           }
           section {

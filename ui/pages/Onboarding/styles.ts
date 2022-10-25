@@ -1,5 +1,5 @@
 export const OnboardingBox = `
-    border: 1px solid var(--green-60);
+    background: var(--green-95);
     border-radius: 8px;
     font-weight: 600;
     color: var(--green-20);

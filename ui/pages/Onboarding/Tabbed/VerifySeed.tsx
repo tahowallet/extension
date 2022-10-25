@@ -1,7 +1,7 @@
 import React, { ReactElement, useState } from "react"
 import OnboardingStepsIndicator from "../../../components/Onboarding/OnboardingStepsIndicator"
 import SeedVerification from "../VerifySeed/SeedVerification"
-import { OnboardingHeader, OnboardingSubheader } from "../styles"
+import { OnboardingSubheader } from "../styles"
 import VerifySeedSuccess from "../VerifySeed/VerifySeedSuccess"
 import VerifySeedError from "../VerifySeed/VerifySeedError"
 import { useBackgroundSelector } from "../../../hooks"
@@ -22,7 +22,7 @@ export default function VerifySeed({
   if (!mnemonic) return <span>Recovery phrase not created</span>
 
   return (
-    <>
+    <div className="verify_section">
       <OnboardingStepsIndicator activeStep={2} />
       <h1 className="serif_header center_text">
         Verify secret recovery phrase
@@ -40,7 +40,11 @@ export default function VerifySeed({
       <style jsx>
         {`
           .serif_header {
-            ${OnboardingHeader}
+            font-family: "Quincy CF";
+            font-weight: 500;
+            font-size: 46px;
+            line-height: 42px;
+            margin: 1em auto;
           }
           .subtitle {
             ${OnboardingSubheader}
@@ -51,8 +55,13 @@ export default function VerifySeed({
             width: 100%;
             height: 47px;
           }
+          .verify_section {
+            text-align: center;
+            width: 50%;
+            margin: auto;
+          }
         `}
       </style>
-    </>
+    </div>
   )
 }
