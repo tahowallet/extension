@@ -27,8 +27,8 @@ function WarningMessage({ onAccept }: { onAccept: () => void }): ReactElement {
         <p>This is the only way to recover your accounts and funds.</p>
         <p>You will not be able to export your recovery phrase later.</p>
       </div>
-      <SharedButton type="primary" size="medium" onClick={onAccept}>
-        Reveal my secret recovery phrase
+      <SharedButton type="primary" size="large" onClick={onAccept}>
+        Create recovery phrase
       </SharedButton>
       <style jsx>{`
         .onboarding_box {
@@ -44,7 +44,7 @@ function WarningMessage({ onAccept }: { onAccept: () => void }): ReactElement {
         }
         .message_icon {
           height: 54px;
-          margin-right: 20px;
+          margin: 10px auto;
         }
         .serif_header {
           font-family: "Quincy CF";
@@ -52,6 +52,10 @@ function WarningMessage({ onAccept }: { onAccept: () => void }): ReactElement {
           font-size: 46px;
           line-height: 42px;
           margin: 1em auto;
+        }
+        ul {
+          width: 200px;
+          margin: auto;
         }
       `}</style>
     </div>
@@ -180,8 +184,9 @@ export default function SaveSeed(): ReactElement {
 
   return (
     <div className="steps_section">
-      <OnboardingStepsIndicator activeStep={1} />
-
+      <div className="steps_indicator">
+        <OnboardingStepsIndicator activeStep={1} />
+      </div>
       {revealSeed ? (
         <SeedContainer />
       ) : (
@@ -199,6 +204,10 @@ export default function SaveSeed(): ReactElement {
           .steps_section {
             text-align: center;
             width: 50%;
+            margin: auto;
+          }
+          .steps_indicator {
+            width: 200px;
             margin: auto;
           }
         `}

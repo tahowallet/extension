@@ -23,7 +23,9 @@ export default function VerifySeed({
 
   return (
     <div className="verify_section">
-      <OnboardingStepsIndicator activeStep={2} />
+      <div className="steps_indicator">
+        <OnboardingStepsIndicator activeStep={2} />
+      </div>
       <h1 className="serif_header center_text">
         Verify secret recovery phrase
       </h1>
@@ -58,6 +60,10 @@ export default function VerifySeed({
           .verify_section {
             text-align: center;
             width: 50%;
+            margin: auto;
+          }
+          .steps_indicator {
+            width: 200px;
             margin: auto;
           }
         `}
