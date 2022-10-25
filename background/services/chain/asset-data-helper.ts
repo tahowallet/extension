@@ -17,8 +17,12 @@ import { AddressOnNetwork } from "../../accounts"
 import { HexString } from "../../types"
 import logger from "../../lib/logger"
 import { EVMNetwork, SmartContract } from "../../networks"
-import { getBalance, getMetadata as getERC20Metadata } from "../../lib/erc20"
-import { USE_MAINNET_FORK } from "../../features"
+import {
+  getBalance,
+  getMetadata as getERC20Metadata,
+  getTokenBalances,
+} from "../../lib/erc20"
+import { FeatureFlags, isEnabled } from "../../features"
 import { DOGGO, FORK } from "../../constants"
 
 interface ProviderManager {
@@ -59,16 +63,20 @@ export default class AssetDataHelper {
           smartContractAddresses
         )
       }
+      return await getTokenBalances(
+        addressOnNetwork,
+        smartContractAddresses || [],
+        provider
+      )
     } catch (error) {
       logger.debug(
-        "Problem resolving asset balances via Alchemy helper; network " +
-          "may not support it.",
+        "Problem resolving asset balances; network may not support it.",
         error
       )
     }
 
     // Load balances of tokens on the mainnet fork
-    if (USE_MAINNET_FORK) {
+    if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
       const tokens = [
         "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", // AAVE
         "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", // UNI

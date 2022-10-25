@@ -1,54 +1,62 @@
 import React, { ReactElement } from "react"
 import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { OPTIMISM } from "@tallyho/tally-background/constants"
+import {
+  ARBITRUM_ONE,
+  NETWORK_BY_CHAIN_ID,
+  OPTIMISM,
+} from "@tallyho/tally-background/constants"
+import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 
 export default function NetworkSettingsOptimism(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "networkFees.optimism",
+  })
+
   const transactionData = useBackgroundSelector(selectTransactionData)
-  if (transactionData?.network.chainID !== OPTIMISM.chainID) {
+
+  const { name, chainID } =
+    NETWORK_BY_CHAIN_ID[transactionData?.network.chainID ?? 1]
+  if (chainID !== OPTIMISM.chainID && chainID !== ARBITRUM_ONE.chainID) {
     throw new Error(
-      "NetworkSettingsSelect mismatch - expected an Optimism transaction"
+      "NetworkSettingsSelect mismatch - expected an Optimism or Arbitrum transaction"
     )
   }
 
   return (
     <div className="fees standard_width">
-      <div className="title">Network Fees</div>
-      <div className="simple_text">
-        Gas fees on Optimism work differently from Ethereum.
-      </div>
+      <div className="title">{t("title")}</div>
+      <div className="simple_text">{t("header", { name })}</div>
 
       <div className="fees_chart">
         <div className="fees_chart_item">
-          <div className="fees_icon icon_optimism" />
-          <span>Transaction fee</span>
+          {name === "Optimism" ? (
+            <div className="fees_icon icon_optimism" />
+          ) : (
+            <div className="fees_icon icon_arbitrum" />
+          )}
+          <span>{t("transactionFee")}</span>
         </div>
         <div className="fee_chart_sign">+</div>
         <div className="fees_chart_item">
           <div className="fees_icon icon_ethereum" />
-          <span>Roll-up</span>
+          <span>{t("rollUp")}</span>
         </div>
         <div className="fee_chart_sign">=</div>
 
         <div className="fees_chart_item">
           <div className="fees_icon icon_gas" />
-          <span>Estimated Gas</span>
+          <span>{t("estimatedGas")}</span>
         </div>
       </div>
 
-      <div className="simple_text">
-        The estimated gas cost for Optimism transactions includes an Optimism
-        fee + an Ethereum roll-up fee (the fee to register transaction on
-        Ethereum chain).
-      </div>
+      <div className="simple_text">{t("explainerOne", { name })}</div>
 
       <div className="simple_text">
-        Tally Ho stays in sync with the current Optimism and Ethereum network
-        fees to estimate the fee for a given transaction.
+        {t("explainerTwo", { name })}
         <br />
-        Only in rare cases will the actual fee you pay change by more than 25%
-        from the estimate.
+        {t("explainerThree")}
       </div>
 
       <SharedButton
@@ -58,13 +66,15 @@ export default function NetworkSettingsOptimism(): ReactElement {
         onClick={() => {
           window
             .open(
-              "https://help.optimism.io/hc/en-us/articles/4411895794715-Transaction-fees",
+              name === "Optimism"
+                ? "https://help.optimism.io/hc/en-us/articles/4411895794715-Transaction-fees"
+                : "https://developer.arbitrum.io/arbos/gas",
               "_blank"
             )
             ?.focus()
         }}
       >
-        Learn More
+        {t("learnMore")}
       </SharedButton>
       <style jsx>
         {`
@@ -101,6 +111,9 @@ export default function NetworkSettingsOptimism(): ReactElement {
           }
           .fees_icon.icon_optimism {
             background-image: url("/images/networks/optimism@2x.png");
+          }
+          .fees_icon.icon_arbitrum {
+            background-image: url("/images/networks/arbitrum_icon_small@2x.png");
           }
           .fees_icon.icon_ethereum {
             background-image: url("/images/ethereum-background@2x.png");

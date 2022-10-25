@@ -9,6 +9,10 @@ describe("Preference Service Unit", () => {
     await preferenceService.startService()
   })
 
+  afterEach(async () => {
+    await preferenceService.stopService()
+  })
+
   describe("addOrEditNameInAddressBook", () => {
     it("should emit an addressBookEntryModified event when called", async () => {
       const spy = jest.spyOn(preferenceService.emitter, "emit")

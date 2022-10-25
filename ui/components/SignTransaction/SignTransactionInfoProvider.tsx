@@ -6,7 +6,6 @@ import SignTransactionLoader from "./SignTransactionLoader"
 import SignTransactionSignInfoProvider from "./SignTransactionSignInfoProvider"
 import SignTransactionContractInteractionProvider from "./SignTransactionContractInteractionProvider"
 import SignTransactionSpendAssetInfoProvider from "./SignTransactionSpendAssetInfoProvider"
-import SignTransactionSwapAssetInfoProvider from "./SignTransactionSwapAssetInfoProvider"
 import SignTransactionTransferInfoProvider from "./SignTransactionTransferInfoProvider"
 
 /**
@@ -27,14 +26,6 @@ export default function SignTransactionInfoProvider({
       : undefined
 
   switch (annotation?.type) {
-    case "asset-swap":
-      return (
-        <SignTransactionSwapAssetInfoProvider
-          inner={children}
-          transactionDetails={transactionDetails}
-          annotation={annotation}
-        />
-      )
     case "asset-approval":
       return (
         <SignTransactionSpendAssetInfoProvider
@@ -69,6 +60,7 @@ export default function SignTransactionInfoProvider({
           )}
         </>
       )
+    case "asset-swap":
     default:
       return (
         <SignTransactionSignInfoProvider

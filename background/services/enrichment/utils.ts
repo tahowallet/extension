@@ -1,12 +1,13 @@
 import dayjs from "dayjs"
-import { EIP2612SignTypedDataAnnotation } from "./types"
+import { EIP2612SignTypedDataAnnotation, EnrichedEVMTransaction } from "./types"
 import { ETHEREUM } from "../../constants"
 import { SmartContractFungibleAsset } from "../../assets"
 import NameService from "../name"
-import { EIP712TypedData } from "../../types"
+import { EIP712TypedData, HexString } from "../../types"
 import { EIP2612TypedData } from "../../utils/signing"
 import { ERC20TransferLog } from "../../lib/erc20"
-import { normalizeEVMAddress } from "../../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
+import { AddressOnNetwork } from "../../accounts"
 
 export function isEIP2612TypedData(
   typedData: EIP712TypedData
@@ -60,7 +61,7 @@ export async function enrichEIP2612SignTypedDataRequest(
         false
       ),
     ])
-  ).map((nameOnNetwork) => nameOnNetwork?.name)
+  ).map((nameOnNetwork) => nameOnNetwork?.resolved?.nameOnNetwork.name)
 
   return {
     type: "EIP-2612",
@@ -94,4 +95,68 @@ export const getERC20LogsForAddresses = (
       relevantAddresses.has(normalizeEVMAddress(log.recipientAddress)) ||
       relevantAddresses.has(normalizeEVMAddress(log.senderAddress))
   )
+}
+
+export function getRecipient(transaction: EnrichedEVMTransaction): {
+  address?: HexString
+  name?: string
+} {
+  const { annotation } = transaction
+
+  switch (annotation?.type) {
+    case "asset-transfer":
+      return {
+        address: annotation.recipient?.address,
+        name: annotation.recipient?.annotation.nameRecord?.resolved
+          .nameOnNetwork.name,
+      }
+    case "contract-interaction":
+      return {
+        address: transaction.to,
+        name: annotation.contractInfo?.annotation.nameRecord?.resolved
+          .nameOnNetwork.name,
+      }
+    case "asset-approval":
+      return {
+        address: annotation.spender.address,
+        name: annotation.spender.annotation?.nameRecord?.resolved.nameOnNetwork
+          .name,
+      }
+    default:
+      return { address: transaction.to }
+  }
+}
+
+export function getSender(transaction: EnrichedEVMTransaction): {
+  address?: HexString
+  name?: string
+} {
+  const { annotation } = transaction
+
+  switch (annotation?.type) {
+    case "asset-transfer":
+      return {
+        address: annotation.sender.address,
+        name: annotation.sender?.annotation.nameRecord?.resolved.nameOnNetwork
+          .name,
+      }
+    default:
+      return { address: transaction.from }
+  }
+}
+
+export function getRelevantTransactionAddresses(
+  transaction: EnrichedEVMTransaction,
+  trackedAccounts: AddressOnNetwork[]
+): string[] {
+  const { address: recipientAddress } = getRecipient(transaction)
+  const { address: senderAddress } = getSender(transaction)
+
+  return trackedAccounts
+    .filter(
+      ({ address }) =>
+        sameEVMAddress(recipientAddress, address) ||
+        sameEVMAddress(senderAddress, address)
+    )
+    .map(({ address }) => normalizeEVMAddress(address))
 }

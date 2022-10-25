@@ -20,8 +20,10 @@ import {
   TransactionRequest,
   isEIP1559SignedTransaction,
   SignedTransaction,
+  isKnownTxType,
+  KnownTxTypes,
 } from "../../../networks"
-import { USE_MAINNET_FORK } from "../../../features"
+import { FeatureFlags, isEnabled } from "../../../features"
 import { FORK } from "../../../constants"
 import type { PartialTransactionRequestWithFrom } from "../../enrichment"
 
@@ -136,7 +138,7 @@ function eip1559TransactionRequestFromEthersTransactionRequest(
     to: transaction.to,
     input: transaction.data?.toString() ?? null,
     from: transaction.from,
-    type: transaction.type as 1 | 2,
+    type: transaction.type as KnownTxTypes,
     nonce:
       typeof transaction.nonce !== "undefined"
         ? parseInt(transaction.nonce.toString(), 16)
@@ -211,7 +213,12 @@ export function unsignedTransactionFromEVMTransaction(
     gasLimit: BigNumber.from(tx.gasLimit),
     data: tx.input || "",
     value: BigNumber.from(tx.value),
-    chainId: parseInt(USE_MAINNET_FORK ? FORK.chainID : tx.network.chainID, 10),
+    chainId: parseInt(
+      isEnabled(FeatureFlags.USE_MAINNET_FORK)
+        ? FORK.chainID
+        : tx.network.chainID,
+      10
+    ),
     type: tx.type,
   }
 
@@ -235,7 +242,12 @@ export function ethersTransactionFromSignedTransaction(
     data: tx.input || "",
     gasPrice: tx.gasPrice ? BigNumber.from(tx.gasPrice) : undefined,
     type: tx.type,
-    chainId: parseInt(USE_MAINNET_FORK ? FORK.chainID : tx.network.chainID, 10),
+    chainId: parseInt(
+      isEnabled(FeatureFlags.USE_MAINNET_FORK)
+        ? FORK.chainID
+        : tx.network.chainID,
+      10
+    ),
     value: BigNumber.from(tx.value),
     gasLimit: BigNumber.from(tx.gasLimit),
   }
@@ -308,14 +320,14 @@ export function transactionFromEthersTransaction(
   if (tx.hash === undefined) {
     throw new Error("Malformed transaction")
   }
-  if (tx.type !== 0 && tx.type !== 1 && tx.type !== 2) {
+  if (!isKnownTxType(tx.type)) {
     throw new Error(`Unknown transaction type ${tx.type}`)
   }
 
   const newTx = {
     hash: tx.hash,
     from: tx.from,
-    to: tx.to,
+    to: tx.to ?? undefined,
     nonce: parseInt(tx.nonce.toString(), 10),
     gasLimit: tx.gasLimit.toBigInt(),
     gasPrice: tx.gasPrice ? tx.gasPrice.toBigInt() : null,

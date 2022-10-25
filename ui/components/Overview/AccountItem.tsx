@@ -2,13 +2,16 @@ import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
+import SharedAddress from "../Shared/SharedAddress"
 
 export default function AccountItem({
   name,
+  address,
   percent,
   total,
 }: {
   name: string
+  address: string
   percent: number
   total: number
 }): ReactElement {
@@ -18,13 +21,11 @@ export default function AccountItem({
   return (
     <>
       <div className="account_item">
-        <span className="account_value account_name" title={name}>
-          {name}
-        </span>
-        <span className="account_value" title={percentText}>
+        <SharedAddress address={address} name={name} elide />
+        <span className="account_value ellipsis" title={percentText}>
           {percentText}
         </span>
-        <span className="account_value" title={`$${balance}`}>
+        <span className="account_value ellipsis" title={`$${balance}`}>
           ${balance}
         </span>
       </div>
@@ -41,15 +42,9 @@ export default function AccountItem({
           padding: 2px 6px;
           display: flex;
         }
-        .account_value {
-          display: block;
-          text-align: right;
-          overflow: hidden;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-        }
-        .account_value:nth-child(1) {
+        .account_item > :global(:nth-child(1)) {
           width: 45%;
+          text-align: left;
         }
         .account_value:nth-child(2) {
           width: 15%;

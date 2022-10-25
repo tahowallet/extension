@@ -25,8 +25,8 @@ export default function ConnectedWebsitesListItem(
 
   const dispatch = useBackgroundDispatch()
 
-  const handleDisconnect = useCallback(() => {
-    dispatch(denyOrRevokePermission({ ...permission, state: "deny" }))
+  const handleDisconnect = useCallback(async () => {
+    await dispatch(denyOrRevokePermission({ ...permission, state: "deny" }))
 
     dispatch(setSnackbarMessage(t("connectedWebsitesSettings.disconnected")))
   }, [dispatch, permission, t])
@@ -36,8 +36,12 @@ export default function ConnectedWebsitesListItem(
       <div className="connected-website-item">
         <img className="logo" src={icon} width={32} alt={title} />
         <div className="connected-website-details">
-          <span className="title">{title}</span>
-          <span className="host">{host}</span>
+          <span className="title ellipsis" title={title}>
+            {title}
+          </span>
+          <span className="host ellipsis" title={host}>
+            {host}
+          </span>
         </div>
         <SharedIcon
           color="var(--green-40)"
@@ -45,6 +49,7 @@ export default function ConnectedWebsitesListItem(
           width={24}
           icon="icons/m/disconnect.svg"
           onClick={handleDisconnect}
+          customStyles="flex-shrink: 0;"
         />
       </div>
       <style jsx>{`
@@ -69,6 +74,7 @@ export default function ConnectedWebsitesListItem(
           flex-direction: column;
           margin-right: auto;
           line-height: 1.5;
+          max-width: 250px;
         }
 
         .title {

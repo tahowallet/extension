@@ -35,19 +35,6 @@ const BUILT_IN_CONTRACTS = [
   },
   {
     network: ETHEREUM,
-    // https://etherscan.io/address/0x52ec2f3d7c5977a8e558c8d9c6000b615098e8fc
-    address: normalizeEVMAddress("0x52ec2f3d7c5977a8e558c8d9c6000b615098e8fc"),
-    name: "🔴 Optimism Teleportr",
-  },
-
-  {
-    network: OPTIMISM,
-    // https://optimistic.etherscan.io/address/0x4200000000000000000000000000000000000010
-    address: normalizeEVMAddress("0x4200000000000000000000000000000000000010"),
-    name: "🔴 Optimism Teleportr",
-  },
-  {
-    network: ETHEREUM,
     // Uniswap v3 Router
     address: normalizeEVMAddress("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"),
     name: "🦄 Uniswap",
@@ -63,6 +50,39 @@ const BUILT_IN_CONTRACTS = [
     // Uniswap v3 Router
     address: normalizeEVMAddress("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"),
     name: "🦄 Uniswap",
+  },
+  {
+    network: ETHEREUM,
+    // Optimism's custodial Teleportr bridge
+    // https://etherscan.io/address/0x52ec2f3d7c5977a8e558c8d9c6000b615098e8fc
+    address: normalizeEVMAddress("0x52ec2f3d7c5977a8e558c8d9c6000b615098e8fc"),
+    name: "🔴 Optimism Teleportr",
+  },
+  {
+    network: OPTIMISM,
+    // https://optimistic.etherscan.io/address/0x4200000000000000000000000000000000000010
+    address: normalizeEVMAddress("0x4200000000000000000000000000000000000010"),
+    name: "🔴 Optimism Teleportr",
+  },
+  {
+    network: ETHEREUM,
+    // Optimism's non-custodial Gateway bridge
+    address: normalizeEVMAddress("0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1"),
+    name: "🔴 Optimism Gateway",
+  },
+  {
+    network: ETHEREUM,
+    // Arbitrum's Delayed Inbox
+    // https://etherscan.io/address/0x4dbd4fc535ac27206064b68ffcf827b0a60bab3f
+    address: normalizeEVMAddress("0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f"),
+    name: "🔵 Arbitrum bridge",
+  },
+  {
+    network: ETHEREUM,
+    // Arbitrum's old bridge contract
+    // https://etherscan.io/address/0x011b6e24ffb0b5f5fcc564cf4183c5bbbc96d515
+    address: normalizeEVMAddress("0x011B6E24FfB0B5f5fCc564cf4183C5BBBc96D515"),
+    name: "🔵 Arbitrum Old Bridge",
   },
 ]
 

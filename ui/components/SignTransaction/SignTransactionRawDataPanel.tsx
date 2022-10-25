@@ -2,10 +2,12 @@ import React, { ReactElement } from "react"
 import { useDispatch } from "react-redux"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundSelector } from "../../hooks"
 
 export default function SignTransactionRawDataPanel(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
   const dispatch = useDispatch()
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
@@ -15,7 +17,7 @@ export default function SignTransactionRawDataPanel(): ReactElement {
 
   const copyData = () => {
     navigator.clipboard.writeText(input ?? "")
-    dispatch(setSnackbarMessage("Raw data copied to clipboard"))
+    dispatch(setSnackbarMessage(t("rawDataCopyMsg")))
   }
 
   return (
@@ -27,7 +29,7 @@ export default function SignTransactionRawDataPanel(): ReactElement {
         iconPosition="left"
         onClick={copyData}
       >
-        Copy hex
+        {t("copyRawData")}
       </SharedButton>
       <div className="raw_data_text">{input} </div>
       <style jsx>{`

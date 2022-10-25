@@ -77,7 +77,7 @@ function BonusProgramModalContent(): ReactElement {
       <div className="link_cta_wrap">
         <div className="link_line">
           <span className="link_title">Your link:</span>
-          <span className="link" title={referralLink.shortLink}>
+          <span className="link ellipsis" title={referralLink.shortLink}>
             {referralLink.shortLink}
           </span>
         </div>
@@ -189,9 +189,6 @@ function BonusProgramModalContent(): ReactElement {
           }
           .link {
             color: var(--green-40);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
           }
           .bottom {
             display: flex;

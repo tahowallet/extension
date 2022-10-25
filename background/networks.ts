@@ -113,12 +113,7 @@ export type EVMTransaction = {
   blockHeight: number | null
   asset: NetworkBaseAsset
   network: EVMNetwork
-  /*
-   * 0 - plain jane
-   * 1 - EIP-2930
-   * 2 - EIP-1559 transactions
-   */
-  type: 0 | 1 | 2 | null
+  type: KnownTxTypes | null
 }
 
 /**
@@ -166,13 +161,33 @@ export type LegacyEVMTransactionRequest = Pick<
 }
 
 /**
+ * Transaction types attributes are expanded in the https://eips.ethereum.org/EIPS/eip-2718 standard which
+ * is backward compatible. This means that it's enough for us to expand only the accepted tx types.
+ * On the other hand we have yet to find other types from the range being used, so let's be restrictive,
+ * and we can expand the range afterwards. Types we have encountered so far:
+ * 0 - plain jane
+ * 1 - EIP-2930
+ * 2 - EIP-1559 transactions
+ * 100 - EIP-2718 on Arbitrum
+ */
+export const KNOWN_TX_TYPES = [0, 1, 2, 100] as const
+export type KnownTxTypes = typeof KNOWN_TX_TYPES[number]
+export function isKnownTxType(arg: unknown): arg is KnownTxTypes {
+  return (
+    arg !== undefined &&
+    arg !== null &&
+    (KNOWN_TX_TYPES as unknown as number[]).includes(Number(arg))
+  )
+}
+
+/**
  * An EIP1559 EVM transaction, whose type is set to `1` or `2` per EIP1559 and
  * whose EIP1559-related fields are required, while `gasPrice` (pre-EIP1559) is
  * mandated to be `null`.
  */
 export type EIP1559Transaction = EVMTransaction & {
   gasPrice: null
-  type: 1 | 2
+  type: KnownTxTypes
   maxFeePerGas: bigint
   maxPriorityFeePerGas: bigint
 }
@@ -362,7 +377,7 @@ export function sameNetwork(
  */
 export function toHexChainID(chainID: string | number): string {
   if (typeof chainID === "string" && chainID.startsWith("0x")) {
-    return chainID
+    return chainID.toLowerCase()
   }
   return `0x${BigInt(chainID).toString(16)}`
 }

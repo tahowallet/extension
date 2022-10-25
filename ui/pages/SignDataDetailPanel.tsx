@@ -2,6 +2,7 @@ import { selectTypedData } from "@tallyho/tally-background/redux-slices/signing"
 import { EnrichedSignTypedDataRequest } from "@tallyho/tally-background/services/enrichment"
 import classNames from "classnames"
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import SharedSkeletonLoader from "../components/Shared/SharedSkeletonLoader"
 import SignTypedDataInfo from "../components/SignData/SignTypedDataInfo"
 import { useBackgroundSelector } from "../hooks"
@@ -14,7 +15,7 @@ const getSourceLabel = (
     annotation,
     typedData: { domain },
   } = typedDataRequest
-  if (annotation.type !== "unrecognized") {
+  if (annotation !== undefined) {
     return capitalize(annotation.source)
   }
 
@@ -39,14 +40,31 @@ function SignDataMessage({
       {keys.map((key) => (
         <div className="single_message">
           <div className="key">{capitalize(key)}</div>
-          <div className="light">{`${message[key]}`}</div>
+          <div className="light ellipsis">{`${message[key]}`}</div>
         </div>
       ))}
+      <style jsx>{`
+        .single_message {
+          display: flex;
+          justify-content: space-between;
+          text-align: left;
+          margin: 16px;
+          width: 80%;
+        }
+        .light {
+          color: #ccd3d3;
+        }
+        .key {
+          color: var(--green-40);
+          margin-right: 8px;
+        }
+      `}</style>
     </>
   )
 }
 
 export default function SignDataDetailPanel(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "signing" })
   const typedDataRequest = useBackgroundSelector(selectTypedData)
 
   /* TODO: should be `true` if the request originates from within the wallet */
@@ -61,9 +79,7 @@ export default function SignDataDetailPanel(): ReactElement {
           })}
         >
           <div className="label header">
-            {isInternal
-              ? "Your signature is required"
-              : "A dapp is requesting your signature"}
+            {isInternal ? t("signatureRequired") : t("dappSignatureRequest")}
           </div>
           <div className="divider" />
           <SharedSkeletonLoader
@@ -121,26 +137,6 @@ export default function SignDataDetailPanel(): ReactElement {
           overflow-wrap: anywhere;
           max-width: 220px;
           text-align: right;
-        }
-        .light {
-          color: #ccd3d3;
-        }
-        .key {
-          color: var(--green-40);
-        }
-        .divider {
-          width: 80%;
-          height: 2px;
-          opacity: 60%;
-          background-color: var(--green-120);
-        }
-        .single_message {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-          text-align: left;
-          padding: 16px;
-          width: 80%;
         }
         .divider {
           width: 80%;

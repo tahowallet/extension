@@ -60,7 +60,7 @@ export default function Eligible(): ReactElement {
   }
 
   if (Object.keys(accountData).length === 0) {
-    return <Redirect to="/overview" />
+    return <Redirect to="/portfolio" />
   }
 
   function setStep(newStep: number) {

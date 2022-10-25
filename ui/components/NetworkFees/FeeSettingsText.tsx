@@ -5,19 +5,23 @@ import {
 } from "@tallyho/tally-background/lib/utils"
 import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import {
+  heuristicDesiredDecimalsForUnitPrice,
+  enrichAssetAmountWithMainCurrencyValues,
+} from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import {
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectTransactionData,
   selectTransactionMainCurrencyPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import { EVM_ROLLUP_CHAIN_IDS } from "@tallyho/tally-background/constants"
+import { EVM_ROLLUP_CHAIN_IDS, RSK } from "@tallyho/tally-background/constants"
 import {
   EVMNetwork,
   isEIP1559EnrichedTransactionRequest,
   isEIP1559TransactionRequest,
 } from "@tallyho/tally-background/networks"
+import { useTranslation } from "react-i18next"
 import {
   PricePoint,
   unitPricePointForPricePoint,
@@ -83,9 +87,21 @@ const estimateGweiAmount = (options: {
       transactionData.estimatedRollupGwei
   }
 
+  let desiredDecimals = 0
+
+  if (RSK.chainID === network.chainID) {
+    estimatedSpendPerGas = networkSettings.values.gasPrice ?? 0n
+    desiredDecimals = 2
+  }
+
+  const estimatedSpendPerGasInGwei = weiToGwei(estimatedSpendPerGas ?? 0n)
+  const decimalLength = heuristicDesiredDecimalsForUnitPrice(
+    desiredDecimals,
+    Number(estimatedSpendPerGasInGwei)
+  )
   const estimatedGweiAmount = truncateDecimalAmount(
-    weiToGwei(estimatedSpendPerGas ?? 0n),
-    0
+    estimatedSpendPerGasInGwei,
+    decimalLength
   )
 
   return estimatedGweiAmount
@@ -96,6 +112,7 @@ export default function FeeSettingsText({
 }: {
   customNetworkSetting?: NetworkFeeSettings
 }): ReactElement {
+  const { t } = useTranslation()
   const transactionData = useBackgroundSelector(selectTransactionData)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const currentNetwork = transactionData?.network || selectedNetwork
@@ -124,7 +141,8 @@ export default function FeeSettingsText({
     networkSettings.values.gasPrice ||
     baseFeePerGas + networkSettings.values.maxPriorityFeePerGas
 
-  if (typeof estimatedFeesPerGas === "undefined") return <div>Unknown</div>
+  if (typeof estimatedFeesPerGas === "undefined")
+    return <div>{t("networkFees.unknownFee")}</div>
 
   const estimatedRollupFee =
     transactionData &&
@@ -146,7 +164,7 @@ export default function FeeSettingsText({
   return (
     <div>
       {!gasLimit ? (
-        <>TBD</>
+        <>{t("networkFees.toBeDetermined")}</>
       ) : (
         <>
           ~${dollarValue}

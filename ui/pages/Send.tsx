@@ -29,6 +29,8 @@ import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-backgrou
 import { useHistory, useLocation } from "react-router-dom"
 import classNames from "classnames"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
+import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
@@ -39,6 +41,7 @@ import {
 } from "../hooks"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
+import SharedIcon from "../components/Shared/SharedIcon"
 
 export default function Send(): ReactElement {
   const { t } = useTranslation()
@@ -140,13 +143,30 @@ export default function Send(): ReactElement {
     history.push("/singleAsset", assetAmount.asset)
   }, [assetAmount, currentAccount, destinationAddress, dispatch, history])
 
+  const copyAddress = useCallback(() => {
+    if (destinationAddress === undefined) {
+      return
+    }
+
+    navigator.clipboard.writeText(destinationAddress)
+    dispatch(setSnackbarMessage("Address copied to clipboard"))
+  }, [destinationAddress, dispatch])
+
   const {
+    rawValue: userAddressValue,
     errorMessage: addressErrorMessage,
     isValidating: addressIsValidating,
     handleInputChange: handleAddressChange,
   } = useAddressOrNameValidation((value) =>
     setDestinationAddress(value?.address)
   )
+
+  // True if the user input a valid name (ENS, address book, etc) that we
+  // resolved to an address.
+  const resolvedNameToAddress =
+    addressErrorMessage === undefined &&
+    destinationAddress !== undefined &&
+    !sameEVMAddress(destinationAddress, userAddressValue)
 
   return (
     <>
@@ -190,12 +210,29 @@ export default function Send(): ReactElement {
               onChange={(event) => handleAddressChange(event.target.value)}
               className={classNames({
                 error: addressErrorMessage !== undefined,
+                resolved_address: resolvedNameToAddress,
               })}
             />
             {addressIsValidating ? (
               <p className="validating">
                 <SharedLoadingSpinner />
               </p>
+            ) : (
+              <></>
+            )}
+            {resolvedNameToAddress ? (
+              <button
+                type="button"
+                className="address"
+                onClick={() => copyAddress()}
+              >
+                <SharedIcon
+                  icon="icons/s/copy.svg"
+                  width={14}
+                  color="var(--green-60)"
+                />
+                {destinationAddress}
+              </button>
             ) : (
               <></>
             )}
@@ -299,9 +336,16 @@ export default function Send(): ReactElement {
             border-radius: 4px;
             background-color: var(--green-95);
             padding: 0px 16px;
+
+            transition: padding-bottom 0.2s;
           }
           input#send_address::placeholder {
             color: var(--green-40);
+          }
+          input#send_address.resolved_address {
+            font-size: 18px;
+            font-weight: 600;
+            padding-bottom: 16px;
           }
           input#send_address ~ .error {
             color: var(--error);
@@ -313,6 +357,32 @@ export default function Send(): ReactElement {
             margin-top: -25px;
             margin-right: 15px;
             margin-bottom: 5px;
+          }
+          input#send_address ~ .address {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+
+            color: var(--green-60);
+            font-weight: 500;
+            font-size: 12px;
+            line-height: 20px;
+            align-self: flex-start;
+            text-align: start;
+            margin-top: -30px;
+            margin-left: 16px;
+            margin-bottom: 5px;
+
+            transition: color 0.2s;
+          }
+          input#send_address ~ .address:hover {
+            color: var(--gold-80);
+          }
+          input#send_address ~ .address > :global(.icon) {
+            transition: background-color 0.2s;
+          }
+          input#send_address ~ .address:hover > :global(.icon) {
+            background-color: var(--gold-80);
           }
           input#send_address ~ .validating {
             margin-top: -50px;

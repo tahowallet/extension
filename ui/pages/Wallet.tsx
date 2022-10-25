@@ -2,13 +2,16 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { Redirect } from "react-router-dom"
 import {
   getAddressCount,
-  selectCurrentAccountActivitiesWithTimestamps,
+  selectCurrentAccountActivities,
   selectCurrentAccountBalances,
+  selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
 
-import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
+import { useTranslation } from "react-i18next"
+import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/constants/networks"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -17,8 +20,10 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
 import NFTsWallet from "../components/NFTs/NFTsWallet"
 import SharedBanner from "../components/Shared/SharedBanner"
+import WalletDefaultToggle from "../components/Wallet/WalletDefaultToggle"
 
 export default function Wallet(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "wallet" })
   const [panelNumber, setPanelNumber] = useState(0)
 
   const dispatch = useBackgroundDispatch()
@@ -30,6 +35,7 @@ export default function Wallet(): ReactElement {
   //  accountLoading, hasWalletErrorCode
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
   const claimState = useBackgroundSelector((state) => state.claim)
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   useEffect(() => {
     dispatch(
@@ -39,13 +45,20 @@ export default function Wallet(): ReactElement {
     )
   }, [claimState, dispatch])
 
+  useEffect(() => {
+    // On network switch from top menu reset ui back to assets tab
+    if (!NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID)) {
+      setPanelNumber(0)
+    }
+  }, [selectedNetwork.chainID])
+
   const { assetAmounts, totalMainCurrencyValue } = accountData ?? {
     assetAmounts: [],
     totalMainCurrencyValue: undefined,
   }
 
   const currentAccountActivities = useBackgroundSelector(
-    selectCurrentAccountActivitiesWithTimestamps
+    selectCurrentAccountActivities
   )
 
   const initializationLoadingTimeExpired = useBackgroundSelector(
@@ -57,18 +70,27 @@ export default function Wallet(): ReactElement {
     return <Redirect to="/onboarding/info-intro" />
   }
 
-  const panelNames = ["Assets", "NFTs", "Activity"]
+  const panelNames = [t("pages.assets")]
+
+  if (NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID)) {
+    panelNames.push(t("pages.NFTs"))
+  }
+
+  panelNames.push(t("pages.activity"))
 
   return (
     <>
       <div className="page_content">
+        <WalletDefaultToggle />
         <div className="section">
           <WalletAccountBalanceControl
             balance={totalMainCurrencyValue}
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           />
         </div>
-        {!HIDE_TOKEN_FEATURES && <OnboardingOpenClaimFlowBanner />}
+        {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
+          <OnboardingOpenClaimFlowBanner />
+        )}
         <div className="section">
           <SharedPanelSwitcher
             setPanelNumber={setPanelNumber}
@@ -88,21 +110,25 @@ export default function Wallet(): ReactElement {
                 }
               />
             )}
-            {panelNumber === 1 && (
-              <>
-                <SharedBanner
-                  icon="notif-announcement"
-                  iconColor="var(--link)"
-                  canBeClosed
-                  id="nft_soon"
-                  customStyles="margin: 8px 0;"
-                >
-                  Coming soon: NFT price + sending
-                </SharedBanner>
-                <NFTsWallet />
-              </>
-            )}
-            {panelNumber === 2 && (
+            {panelNumber === 1 &&
+              NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID) && (
+                <>
+                  <SharedBanner
+                    icon="notif-announcement"
+                    iconColor="var(--link)"
+                    canBeClosed
+                    id="nft_soon"
+                    customStyles="margin: 8px 0;"
+                  >
+                    {t("NFTPricingComingSoon")}
+                  </SharedBanner>
+                  <NFTsWallet />
+                </>
+              )}
+            {panelNumber ===
+              (NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID)
+                ? 2
+                : 1) && (
               <WalletActivityList activities={currentAccountActivities ?? []} />
             )}
           </div>

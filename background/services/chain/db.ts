@@ -1,4 +1,4 @@
-import Dexie, { DexieOptions, IndexableTypeArray } from "dexie"
+import Dexie, { Collection, DexieOptions, IndexableTypeArray } from "dexie"
 
 import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -6,7 +6,7 @@ import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
 import { FungibleAsset } from "../../assets"
 import { GOERLI, POLYGON } from "../../constants"
 
-type Transaction = AnyEVMTransaction & {
+export type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
   firstSeen: UNIXTime
 }
@@ -137,15 +137,18 @@ export class ChainDatabase extends Dexie {
     )
   }
 
-  async getLatestBlock(network: Network): Promise<AnyEVMBlock> {
+  async getLatestBlock(network: Network): Promise<AnyEVMBlock | null> {
     return (
-      await this.blocks
-        .where("[network.name+timestamp]")
-        .aboveOrEqual([network.name, Date.now() - 60 * 60 * 24])
-        .and((block) => block.network.name === network.name)
-        .reverse()
-        .sortBy("timestamp")
-    )[0]
+      (
+        await this.blocks
+          .where("[network.name+timestamp]")
+          // Only query blocks from the last 86 seconds
+          .aboveOrEqual([network.name, Date.now() - 60 * 60 * 24])
+          .and((block) => block.network.name === network.name)
+          .reverse()
+          .sortBy("timestamp")
+      )[0] || null
+    )
   }
 
   async getTransaction(
@@ -166,15 +169,28 @@ export class ChainDatabase extends Dexie {
     return this.chainTransactions.orderBy("hash").keys()
   }
 
+  async getAllTransactions(): Promise<Transaction[]> {
+    return this.chainTransactions.toArray()
+  }
+
+  async getTransactionsForNetworkQuery(
+    network: Network
+  ): Promise<Collection<Transaction, [string, string]>> {
+    return this.chainTransactions.where("network.name").equals(network.name)
+  }
+
+  async getTransactionsForNetwork(network: Network): Promise<Transaction[]> {
+    return (await this.getTransactionsForNetworkQuery(network)).toArray()
+  }
+
   /**
    * Looks up and returns all pending transactions for the given network.
    */
   async getNetworkPendingTransactions(
     network: Network
   ): Promise<(AnyEVMTransaction & { firstSeen: UNIXTime })[]> {
-    return this.chainTransactions
-      .where("network.name")
-      .equals(network.name)
+    const transactions = await this.getTransactionsForNetworkQuery(network)
+    return transactions
       .filter(
         (transaction) =>
           !("status" in transaction) &&
@@ -267,8 +283,8 @@ export class ChainDatabase extends Dexie {
       .toArray()
     return lookups.reduce(
       (newestBlock: bigint | null, lookup) =>
-        newestBlock === null || lookup.startBlock > newestBlock
-          ? lookup.startBlock
+        newestBlock === null || lookup.endBlock > newestBlock
+          ? lookup.endBlock
           : newestBlock,
       null
     )
@@ -314,7 +330,5 @@ export class ChainDatabase extends Dexie {
 }
 
 export function createDB(options?: DexieOptions): ChainDatabase {
-  const db = new ChainDatabase(options)
-
-  return db
+  return new ChainDatabase(options)
 }

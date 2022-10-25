@@ -1,4 +1,4 @@
-import { DomainName, HexString, UNIXTime } from "../../types"
+import { HexString, UNIXTime } from "../../types"
 import { normalizeAddressOnNetwork } from "../../lib/utils"
 import { getTokenMetadata } from "../../lib/erc721"
 import { storageGatewayURL } from "../../lib/storage-gateway"
@@ -21,21 +21,19 @@ import {
 } from "./resolvers"
 import PreferenceService from "../preferences"
 import { isFulfilledPromise } from "../../lib/utils/type-guards"
-import { RESOLVE_RNS_NAMES } from "../../features"
+import { FeatureFlags, isEnabled } from "../../features"
 
 export { NameResolverSystem }
 
-type ResolvedAddressRecord = {
-  from: {
-    name: DomainName
-  }
+export type ResolvedAddressRecord = {
+  from: NameOnNetwork
   resolved: {
     addressOnNetwork: AddressOnNetwork
   }
   system: NameResolverSystem
 }
 
-type ResolvedNameRecord = {
+export type ResolvedNameRecord = {
   from: {
     addressOnNetwork: AddressOnNetwork
   }
@@ -126,7 +124,7 @@ export default class NameService extends BaseService<Events> {
       // for the given resource.
       ensResolverFor(chainService),
       unsResolver(),
-      ...(RESOLVE_RNS_NAMES ? [rnsResolver()] : []),
+      ...(isEnabled(FeatureFlags.RESOLVE_RNS_NAMES) ? [rnsResolver()] : []),
     ]
 
     preferenceService.emitter.on(
@@ -163,7 +161,7 @@ export default class NameService extends BaseService<Events> {
 
   async lookUpEthereumAddress(
     nameOnNetwork: NameOnNetwork
-  ): Promise<AddressOnNetwork | undefined> {
+  ): Promise<ResolvedAddressRecord | undefined> {
     const workingResolvers = this.resolvers.filter((resolver) =>
       resolver.canAttemptAddressResolution(nameOnNetwork)
     )
@@ -192,19 +190,21 @@ export default class NameService extends BaseService<Events> {
     // TODO cache name resolution and TTL
     const normalizedAddressOnNetwork =
       normalizeAddressOnNetwork(addressOnNetwork)
-    this.emitter.emit("resolvedAddress", {
+
+    const resolvedRecord = {
       from: nameOnNetwork,
       resolved: { addressOnNetwork: normalizedAddressOnNetwork },
       system: resolverType,
-    })
+    }
+    this.emitter.emit("resolvedAddress", resolvedRecord)
 
-    return normalizedAddressOnNetwork
+    return resolvedRecord
   }
 
   async lookUpName(
     addressOnNetwork: AddressOnNetwork,
     checkCache = true
-  ): Promise<NameOnNetwork | undefined> {
+  ): Promise<ResolvedNameRecord | undefined> {
     const { address, network } = normalizeAddressOnNetwork(addressOnNetwork)
 
     if (!this.cachedResolvedNames[network.family][network.chainID]) {
@@ -216,11 +216,11 @@ export default class NameService extends BaseService<Events> {
 
     if (checkCache && cachedResolvedNameRecord) {
       const {
-        resolved: { nameOnNetwork, expiresAt },
+        resolved: { expiresAt },
       } = cachedResolvedNameRecord
 
       if (expiresAt >= Date.now()) {
-        return nameOnNetwork
+        return cachedResolvedNameRecord
       }
     }
 
@@ -228,9 +228,20 @@ export default class NameService extends BaseService<Events> {
       resolver.canAttemptNameResolution({ address, network })
     )
 
-    const firstMatchingResolution = (
+    const localResolvers = [...workingResolvers].filter(
+      (resolver) =>
+        resolver.type === "tally-address-book" ||
+        resolver.type === "tally-known-contracts"
+    )
+    const remoteResolvers = [...workingResolvers].filter(
+      (resolver) =>
+        resolver.type !== "tally-address-book" &&
+        resolver.type !== "tally-known-contracts"
+    )
+
+    let firstMatchingResolution = (
       await Promise.allSettled(
-        workingResolvers.map(async (resolver) => ({
+        localResolvers.map(async (resolver) => ({
           type: resolver.type,
           resolved: await resolver.lookUpNameForAddress({ address, network }),
         }))
@@ -238,6 +249,19 @@ export default class NameService extends BaseService<Events> {
     )
       .filter(isFulfilledPromise)
       .find(({ value: { resolved } }) => resolved !== undefined)?.value
+
+    if (!firstMatchingResolution) {
+      firstMatchingResolution = (
+        await Promise.allSettled(
+          remoteResolvers.map(async (resolver) => ({
+            type: resolver.type,
+            resolved: await resolver.lookUpNameForAddress({ address, network }),
+          }))
+        )
+      )
+        .filter(isFulfilledPromise)
+        .find(({ value: { resolved } }) => resolved !== undefined)?.value
+    }
 
     if (
       firstMatchingResolution === undefined ||
@@ -270,7 +294,7 @@ export default class NameService extends BaseService<Events> {
       this.emitter.emit("resolvedName", nameRecord)
     }
 
-    return nameOnNetwork
+    return nameRecord
   }
 
   clearNameCacheEntry(chainId: string, address: HexString): void {

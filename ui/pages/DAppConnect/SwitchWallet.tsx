@@ -1,5 +1,6 @@
 import { selectDefaultWallet } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedTooltip from "../../components/Shared/SharedTooltip"
 import { useBackgroundSelector } from "../../hooks"
@@ -9,6 +10,9 @@ export default function SwitchWallet({
 }: {
   switchWallet: () => void
 }): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "switchWallet",
+  })
   const isDefaultWallet = useBackgroundSelector(selectDefaultWallet)
 
   if (!isDefaultWallet) return <></>
@@ -16,15 +20,14 @@ export default function SwitchWallet({
   return (
     <div className="switch_wallet">
       <div className="switch_wallet_row">
-        <span>🦊 Want to use another wallet instead?</span>
+        <span>🦊 {t("title")}</span>
         <SharedTooltip width={200} horizontalPosition="left">
-          You are seeing this because TallyHo! is set as default wallet, you can
-          change this option in the main menu.
+          {t("tooltip")}
         </SharedTooltip>
       </div>
       <div className="switch_wallet_button">
         <SharedButton size="medium" type="tertiary" onClick={switchWallet}>
-          Yes, switch wallet
+          {t("confirmSwitchWallet")}
         </SharedButton>
       </div>
       <style jsx>{`

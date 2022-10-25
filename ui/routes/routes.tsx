@@ -24,6 +24,8 @@ import Eligible from "../pages/Claiming/Eligible"
 import SettingsExportLogs from "../pages/Settings/SettingsExportLogs"
 import SettingsAnalytics from "../pages/Settings/SettingsAnalytics"
 import SettingsConnectedWebsites from "../pages/Settings/SettingsConnectedWebsites"
+import HiddenDevPanel from "../components/HiddenDevPanel/HiddenDevPanel"
+import FeatureFlagsPanel from "../components/HiddenDevPanel/FeatureFlagsPanel"
 
 interface PageList {
   path: string
@@ -108,7 +110,7 @@ const pageList: PageList[] = [
     persistOnClose: true,
   },
   {
-    path: "/overview",
+    path: "/portfolio",
     Component: Overview,
     hasTabBar: true,
     hasTopBar: false,
@@ -204,6 +206,20 @@ const pageList: PageList[] = [
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: true,
+  },
+  {
+    path: "/dev/feature-flags",
+    Component: FeatureFlagsPanel,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: false,
+  },
+  {
+    path: "/dev",
+    Component: HiddenDevPanel,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: false,
   },
   {
     path: "/",

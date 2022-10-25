@@ -3,7 +3,8 @@ import { useHistory } from "react-router-dom"
 import { unlockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
 import { rejectTransactionSignature } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { useTranslation } from "react-i18next"
-import { SUPPORT_FORGOT_PASSWORD } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import {
   useBackgroundDispatch,
   useAreKeyringsUnlocked,
@@ -30,8 +31,9 @@ export default function KeyringUnlock(): ReactElement {
   useEffect(() => {
     if (areKeyringsUnlocked) {
       history.goBack()
+      dispatch(setSnackbarMessage(t("snackbar")))
     }
-  }, [history, areKeyringsUnlocked])
+  }, [history, areKeyringsUnlocked, dispatch, t])
 
   const dispatchUnlockWallet = async (
     event: React.FormEvent<HTMLFormElement>
@@ -70,6 +72,7 @@ export default function KeyringUnlock(): ReactElement {
         <div className="illustration_unlock" />
       </div>
       <h1 className="serif_header">{t("title")}</h1>
+      <div className="simple_text subtitle">{t("subtitle")}</div>
       <form onSubmit={dispatchUnlockWallet}>
         <div className="signing_wrap">
           <div className="input_wrap">
@@ -90,7 +93,7 @@ export default function KeyringUnlock(): ReactElement {
             </SharedButton>
           </div>
         </div>
-        {SUPPORT_FORGOT_PASSWORD && (
+        {isEnabled(FeatureFlags.SUPPORT_FORGOT_PASSWORD) && (
           <SharedButton type="tertiaryGray" size="small" onClick={() => {}}>
             {t("forgotPassword")}
           </SharedButton>
@@ -114,7 +117,12 @@ export default function KeyringUnlock(): ReactElement {
             align-items: center;
             width: 100%;
             height: 100%;
-            gap: 25px;
+            gap: 16px;
+          }
+          .subtitle {
+            width: 55%;
+            text-align: center;
+            box-sizing: border-box;
           }
           form {
             display: flex;

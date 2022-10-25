@@ -1,28 +1,32 @@
 import React, { ReactElement } from "react"
 import {
+  ARBITRUM_ONE,
   ETHEREUM,
   OPTIMISM,
   POLYGON,
 } from "@tallyho/tally-background/constants"
 import { NFT } from "@tallyho/tally-background/redux-slices/nfts"
+import { useTranslation } from "react-i18next"
 import SharedIcon from "../Shared/SharedIcon"
 import NFTsImage from "./NFTsImage"
 import { scanWebsite } from "../../utils/constants"
 
-function getPreviewLink({
-  chainID,
-  contractAddress,
-  tokenID,
-}: {
-  chainID: number
-  contractAddress: string
-  tokenID: string
-}) {
+function getPreviewLink(nft: NFT) {
+  const {
+    contract: { address: contractAddress },
+    tokenID,
+    achievementUrl,
+  } = nft
+
+  if (achievementUrl) return achievementUrl
+
+  const chainID = Number(nft.network.chainID)
   const parsedTokenID = BigInt(tokenID).toString()
   const previewURL = {
     [POLYGON.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
     [ETHEREUM.chainID]: `/nft/${contractAddress}/${parsedTokenID}`,
     [OPTIMISM.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
+    [ARBITRUM_ONE.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
   }
 
   return `${scanWebsite[chainID].url}${previewURL[chainID]}`
@@ -33,35 +37,21 @@ export default function NFTsSlideUpPreviewContent({
 }: {
   nft: NFT
 }): ReactElement {
-  const {
-    name,
-    media,
-    tokenID,
-    network: { chainID },
-    contract: { address: contractAddress },
-  } = nft
+  const { t } = useTranslation()
+  const { name, media } = nft
   const src = media[0]?.url ?? ""
 
   return (
     <>
       <header>
-        <h1>{name || "No title"}</h1>
+        <h1>{name || t("nfts.noTitle")}</h1>
         <SharedIcon
           icon="icons/s/new-tab.svg"
           width={16}
           color="var(--green-40)"
           hoverColor="var(--trophy-gold)"
           onClick={() => {
-            window
-              .open(
-                getPreviewLink({
-                  chainID: Number(chainID),
-                  contractAddress,
-                  tokenID,
-                }),
-                "_blank"
-              )
-              ?.focus()
+            window.open(getPreviewLink(nft), "_blank")?.focus()
           }}
         />
       </header>

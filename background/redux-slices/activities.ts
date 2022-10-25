@@ -1,65 +1,158 @@
-import { createEntityAdapter, createSlice, EntityState } from "@reduxjs/toolkit"
-import { keysMap, adaptForUI, ActivityItem } from "./utils/activity-utils"
-import { truncateAddress } from "../lib/utils"
+// Disable parameter reassign rule to be able to modify the activities object freely
+// that way we can avoid nested object iteration and we can initialize object fields
+/* eslint-disable no-param-reassign */
 
-import { assetAmountToDesiredDecimals } from "../assets"
+import { createSlice } from "@reduxjs/toolkit"
+import { AddressOnNetwork } from "../accounts"
+import {
+  normalizeAddressOnNetwork,
+  normalizeEVMAddress,
+  sameEVMAddress,
+} from "../lib/utils"
+import { Transaction } from "../services/chain/db"
 import { EnrichedEVMTransaction } from "../services/enrichment"
+import { HexString } from "../types"
+import { createBackgroundAsyncThunk } from "./utils"
+import {
+  sortActivities,
+  getActivity,
+  Activity,
+  ActivityDetail,
+  INFINITE_VALUE,
+} from "./utils/activities-utils"
 
-export { ActivityItem }
-
-const desiredDecimals = 2 /* TODO Make desired decimals configurable? */
-
-const activitiesAdapter = createEntityAdapter<ActivityItem>({
-  selectId: (activityItem) => activityItem.hash,
-  sortComparer: (a, b) => {
-    if (
-      (a.blockHeight === null ||
-        b.blockHeight === null ||
-        a.blockHeight === b.blockHeight) &&
-      a.network.name === b.network.name
-    ) {
-      // Sort dropped transactions after their corresponding successful ones.
-      if (a.nonce === b.nonce) {
-        if (a.blockHeight === null) {
-          return 1
-        }
-        if (b.blockHeight === null) {
-          return -1
-        }
-      }
-      // Sort by nonce if a block height is missing or equal between two
-      // transactions, as long as the two activities are on the same network;
-      // otherwise, sort as before.
-      return b.nonce - a.nonce
-    }
-    // null means pending or dropped, these are always sorted above everything
-    // if networks don't match.
-    if (a.blockHeight === null && b.blockHeight === null) {
-      return 0
-    }
-    if (a.blockHeight === null) {
-      return -1
-    }
-    if (b.blockHeight === null) {
-      return 1
-    }
-    return b.blockHeight - a.blockHeight
-  },
-})
-
-export type ActivitiesState = {
+export { Activity, ActivityDetail, INFINITE_VALUE }
+export type Activities = {
   [address: string]: {
-    [chainId: string]: EntityState<ActivityItem>
+    [chainID: string]: Activity[]
   }
 }
 
-export const initialState: ActivitiesState = {}
+type ActivitiesState = {
+  activities: Activities
+}
+
+const ACTIVITIES_MAX_COUNT = 25
+
+const cleanActivitiesArray = (activitiesArray: Activity[] = []) => {
+  activitiesArray.sort(sortActivities)
+  activitiesArray.splice(ACTIVITIES_MAX_COUNT)
+}
+
+const addActivityToState =
+  (activities: Activities) =>
+  (
+    address: string,
+    chainID: string,
+    transaction: Transaction | EnrichedEVMTransaction
+  ) => {
+    const activity = getActivity(transaction)
+    const normalizedAddress = normalizeEVMAddress(address)
+
+    activities[normalizedAddress] ??= {}
+    activities[normalizedAddress][chainID] ??= []
+
+    const exisistingIndex = activities[normalizedAddress][chainID].findIndex(
+      (tx) => tx.hash === transaction.hash
+    )
+
+    if (exisistingIndex !== -1) {
+      activities[normalizedAddress][chainID][exisistingIndex] = activity
+    } else {
+      activities[normalizedAddress][chainID].push(activity)
+    }
+  }
+
+const initializeActivitiesFromTransactions = ({
+  transactions,
+  accounts,
+}: {
+  transactions: Transaction[]
+  accounts: AddressOnNetwork[]
+}): Activities => {
+  const activities: {
+    [address: string]: {
+      [chainID: string]: Activity[]
+    }
+  } = {}
+
+  const addActivity = addActivityToState(activities)
+
+  const normalizedAccounts = accounts.map((account) =>
+    normalizeAddressOnNetwork(account)
+  )
+
+  // Add transactions
+  transactions.forEach((transaction) => {
+    const { to, from, network } = transaction
+    const isTrackedTo = normalizedAccounts.some(
+      ({ address, network: activeNetwork }) =>
+        network.chainID === activeNetwork.chainID && sameEVMAddress(to, address)
+    )
+    const isTrackedFrom = normalizedAccounts.some(
+      ({ address, network: activeNetwork }) =>
+        network.chainID === activeNetwork.chainID &&
+        sameEVMAddress(from, address)
+    )
+
+    if (to && isTrackedTo) {
+      addActivity(to, network.chainID, transaction)
+    }
+    if (from && isTrackedFrom) {
+      addActivity(from, network.chainID, transaction)
+    }
+  })
+
+  // Sort and reduce # of transactions
+  normalizedAccounts.forEach(({ address, network }) =>
+    cleanActivitiesArray(activities[address]?.[network.chainID])
+  )
+
+  return activities
+}
+
+const initialState: ActivitiesState = {
+  activities: {},
+}
 
 const activitiesSlice = createSlice({
   name: "activities",
   initialState,
   reducers: {
-    activityEncountered: (
+    initializeActivities: (
+      immerState,
+      {
+        payload,
+      }: {
+        payload: { transactions: Transaction[]; accounts: AddressOnNetwork[] }
+      }
+    ) => ({
+      activities: initializeActivitiesFromTransactions(payload),
+    }),
+    initializeActivitiesForAccount: (
+      immerState,
+      {
+        payload: { transactions, account },
+      }: { payload: { transactions: Transaction[]; account: AddressOnNetwork } }
+    ) => {
+      const {
+        address,
+        network: { chainID },
+      } = account
+      transactions.forEach((transaction) =>
+        addActivityToState(immerState.activities)(address, chainID, transaction)
+      )
+      cleanActivitiesArray(
+        immerState.activities[normalizeEVMAddress(address)]?.[chainID]
+      )
+    },
+    removeActivities: (
+      immerState,
+      { payload: address }: { payload: HexString }
+    ) => {
+      immerState.activities[address] = {}
+    },
+    addActivity: (
       immerState,
       {
         payload: { transaction, forAccounts },
@@ -70,48 +163,29 @@ const activitiesSlice = createSlice({
         }
       }
     ) => {
-      const infoRows = adaptForUI(keysMap, transaction)
-
-      forAccounts.forEach((account) => {
-        const address = account.toLowerCase()
-
-        const activityItem = {
-          ...transaction,
-          infoRows,
-          localizedDecimalValue: assetAmountToDesiredDecimals(
-            {
-              asset: transaction.asset,
-              amount: transaction.value,
-            },
-            desiredDecimals
-          ).toLocaleString("default", {
-            maximumFractionDigits: desiredDecimals,
-          }),
-          fromTruncated: truncateAddress(transaction.from),
-          toTruncated: truncateAddress(transaction.to ?? ""),
-        }
-
-        immerState[address] ??= {}
-
-        if (
-          typeof immerState[address][activityItem.network.chainID] ===
-          "undefined"
-        ) {
-          immerState[address][activityItem.network.chainID] =
-            activitiesAdapter.setOne(
-              activitiesAdapter.getInitialState(),
-              activityItem
-            )
-        } else {
-          activitiesAdapter.upsertOne(
-            immerState[address][activityItem.network.chainID],
-            activityItem
-          )
-        }
+      const { chainID } = transaction.network
+      forAccounts.forEach((address) => {
+        addActivityToState(immerState.activities)(address, chainID, transaction)
+        cleanActivitiesArray(
+          immerState.activities[normalizeEVMAddress(address)]?.[chainID]
+        )
       })
     },
   },
 })
 
-export const { activityEncountered } = activitiesSlice.actions
+export const {
+  initializeActivities,
+  addActivity,
+  removeActivities,
+  initializeActivitiesForAccount,
+} = activitiesSlice.actions
+
 export default activitiesSlice.reducer
+
+export const fetchSelectedActivityDetails = createBackgroundAsyncThunk(
+  "activities/fetchSelectedActivityDetails",
+  async (activityHash: string, { extra: { main } }) => {
+    return main.getActivityDetails(activityHash)
+  }
+)

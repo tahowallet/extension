@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 
 export default function TopMenuConnectedDAppInfo(props: {
   title: string
@@ -7,6 +8,7 @@ export default function TopMenuConnectedDAppInfo(props: {
   close: () => void
   disconnect: () => void
 }): ReactElement {
+  const { t } = useTranslation()
   const { title, url, close, faviconUrl, disconnect } = props
   return (
     <div className="bg">
@@ -14,13 +16,17 @@ export default function TopMenuConnectedDAppInfo(props: {
         <button
           type="button"
           className="icon_close"
-          aria-label="Close"
+          aria-label={t("shared.close")}
           onClick={close}
         />
-        <h1>Account connected to</h1>
+        <h1>{t("topMenu.connectedDappInfo.dAppTitle")}</h1>
         <div className="favicon" />
-        <div className="title">{title}</div>
-        <div className="url">{url}</div>
+        <div className="title text ellipsis" title={title}>
+          {title}
+        </div>
+        <div className="url text ellipsis" title={url}>
+          {url}
+        </div>
         <button
           aria-label="disconnect"
           type="button"
@@ -29,7 +35,7 @@ export default function TopMenuConnectedDAppInfo(props: {
         />
       </div>
       <button
-        aria-label="Background close"
+        aria-label={t("topMenu.connectedDappInfo.modalClose")}
         type="button"
         className="void_space"
         onClick={close}
@@ -92,17 +98,22 @@ export default function TopMenuConnectedDAppInfo(props: {
           height: 48px;
           border-radius: 12px;
           margin-top: 5px;
+          flex-shrink: 0;
         }
         .title {
           color: #fff;
-          font-size: 16px;
           font-weight: 500;
           margin-top: 10px;
         }
         .url {
           color: var(--green-40);
-          font-size: 16px;
           margin-top: 5px;
+        }
+        .text {
+          font-size: 16px;
+          width: calc(100% - 16px);
+          padding: 0 8px;
+          text-align: center;
         }
         .disconnect_icon {
           background: url("./images/disconnect@2x.png");

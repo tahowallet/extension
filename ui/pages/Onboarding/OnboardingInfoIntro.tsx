@@ -1,12 +1,12 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { getAddressCount } from "@tallyho/tally-background/redux-slices/selectors"
-import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedProgressIndicator from "../../components/Shared/SharedProgressIndicator"
 
-const steps = HIDE_TOKEN_FEATURES
+const steps = isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES)
   ? [
       {
         image: {
@@ -29,17 +29,6 @@ const steps = HIDE_TOKEN_FEATURES
         title: "Tally Ho! is a DAO",
         body: `That means Tally Ho is owned by our users. And all profits go straight to the community.`,
         buttonCopy: "Continue",
-      },
-      {
-        image: {
-          width: 267,
-          height: 236.6,
-          fileName: "illustration_onboarding_default",
-          extraStyles: `margin-top: 21px;`,
-        },
-        title: "Tally Ho set as default",
-        body: `Tally Ho will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
-        buttonCopy: "Get started",
       },
     ]
   : [

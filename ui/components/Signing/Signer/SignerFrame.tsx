@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
 import SignerKeyringFrame from "./SignerKeyring/SignerKeyringFrame"
+import SignerLedgerFrame from "./SignerLedger/SignerLedgerFrame"
 import SignerReadOnlyFrame from "./SignerReadOnly/SignerReadOnlyFrame"
 import { SignerFrameProps } from "."
 
@@ -24,7 +25,7 @@ export default function SignerFrame<T extends SignOperationType>(
     case "keyring":
       return <SignerKeyringFrame {...props} />
     case "ledger":
-      return <></>
+      return <SignerLedgerFrame {...props} />
     case "read-only":
       return <SignerReadOnlyFrame {...props} />
     default:
