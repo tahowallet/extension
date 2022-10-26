@@ -4,7 +4,6 @@ import {
   EventType,
   JsonRpcProvider,
   Listener,
-  Network,
   WebSocketProvider,
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
