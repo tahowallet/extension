@@ -42,12 +42,14 @@ async function getActiveCampaign(): Promise<Campaign | null> {
               space(alias: "arbitrum") {
                 campaigns(input: {
                   chains: [ARBITRUM]
+                  statuses: [Active]
+                  permissions: [PUBLIC]
+                  listType: Newest
                 }) {
                   list {
                     id
                     name
                     status
-                    description
                     thumbnail
                     startTime
                     endTime
@@ -60,11 +62,7 @@ async function getActiveCampaign(): Promise<Campaign | null> {
       })
     ).json()) as { data: { space: { campaigns: { list: Campaign[] } } } }
 
-    const activeCampaign = achievements
-      .filter((item) => item.status === CampaignStatus.Active)
-      .sort((item1, item2) => item1.startTime - item2.startTime)
-
-    return activeCampaign.reverse()[0] ?? null
+    return achievements[0] ?? null
   } catch (error) {
     return null
   }
