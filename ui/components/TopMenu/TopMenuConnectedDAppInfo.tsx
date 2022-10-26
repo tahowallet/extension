@@ -1,41 +1,87 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
+import SharedAccordion from "../Shared/SharedAccordion"
+
+function ConnectionDAppGuideline({
+  isConnected,
+}: {
+  isConnected: boolean
+}): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "topMenu.connectedDappInfo.guideline",
+  })
+
+  return (
+    <>
+      <SharedAccordion
+        contentHeight={231}
+        style={{
+          width: 288,
+          padding: 16,
+          borderRadius: 8,
+          background: "var(--green-120)",
+        }}
+        defaultState={!isConnected}
+        headerElement={<span className="title">{t("title")}</span>}
+        contentElement={<span>content</span>}
+      />
+      <style jsx>{`
+        .title {
+          font-weight: 600;
+          font-size: 18px;
+          line-height: 24px;
+        }
+      `}</style>
+    </>
+  )
+}
 
 export default function TopMenuConnectedDAppInfo(props: {
   title: string
   url: string
   faviconUrl: string
+  isConnected: boolean
   close: () => void
   disconnect: () => void
 }): ReactElement {
-  const { t } = useTranslation()
-  const { title, url, close, faviconUrl, disconnect } = props
+  const { t } = useTranslation("translation", {
+    keyPrefix: "topMenu.connectedDappInfo",
+  })
+  const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
+  const { title, url, close, faviconUrl, disconnect, isConnected } = props
   return (
     <div className="bg">
       <div className="window">
         <button
           type="button"
           className="icon_close"
-          aria-label={t("shared.close")}
+          aria-label={tShared("close")}
           onClick={close}
         />
-        <h1>{t("topMenu.connectedDappInfo.dAppTitle")}</h1>
-        <div className="favicon" />
-        <div className="title text ellipsis" title={title}>
-          {title}
+        <div>
+          <h1>{t(`${isConnected ? "dAppTitle" : "dappConnections"}`)}</h1>
+          {isConnected && (
+            <>
+              <div className="favicon" />
+              <div className="title text ellipsis" title={title}>
+                {title}
+              </div>
+              <div className="url text ellipsis" title={url}>
+                {url}
+              </div>
+              <button
+                aria-label="disconnect"
+                type="button"
+                className="disconnect_icon"
+                onClick={disconnect}
+              />
+            </>
+          )}
         </div>
-        <div className="url text ellipsis" title={url}>
-          {url}
-        </div>
-        <button
-          aria-label="disconnect"
-          type="button"
-          className="disconnect_icon"
-          onClick={disconnect}
-        />
+        <ConnectionDAppGuideline isConnected={isConnected} />
       </div>
       <button
-        aria-label={t("topMenu.connectedDappInfo.modalClose")}
+        aria-label={t("modalClose")}
         type="button"
         className="void_space"
         onClick={close}
@@ -53,7 +99,7 @@ export default function TopMenuConnectedDAppInfo(props: {
         }
         .window {
           width: 352px;
-          height: 204px;
+          height: 301px;
           box-shadow: 0 10px 12px rgba(0, 20, 19, 0.34),
             0 14px 16px rgba(0, 20, 19, 0.24), 0 24px 24px rgba(0, 20, 19, 0.14);
           border-radius: 8px;
@@ -83,7 +129,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           z-index: -1;
         }
         h1 {
-          color: var(--success);
+          color: var(--${isConnected ? "success" : "green-20"});
           font-size: 16px;
           font-weight: 400;
           line-height: 24px;
