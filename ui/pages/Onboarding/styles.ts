@@ -1,5 +1,5 @@
 export const OnboardingBox = `
-    border: 1px solid var(--green-60);
+    background: var(--green-95);
     border-radius: 8px;
     font-weight: 600;
     color: var(--green-20);
@@ -7,15 +7,16 @@ export const OnboardingBox = `
     margin: 15px 0 24px;
     display: flex;
     flex-direction: column;
-    width: 280px;
 `
 export const OnboardingContainer = `
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    justify-content: top;
     padding: 24px;
+    width: 100%;
+    height: 100%;
 `
+
 export const OnboardingHeader = `
     font-size: 36px;
     margin-top: 24px;

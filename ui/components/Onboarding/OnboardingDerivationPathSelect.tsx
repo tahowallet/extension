@@ -35,6 +35,10 @@ const initialDerivationPaths: Option[] = [
     value: "m/44'/137'/0'/0",
     label: i18n.t("ledger.derivationPaths.rsk"),
   },
+  {
+    value: "m/44'/37310'/0'/0",
+    label: i18n.t("ledger.derivationPaths.rskTestnet"),
+  },
 ]
 
 const initialCustomPath = {

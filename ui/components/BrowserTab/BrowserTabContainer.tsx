@@ -11,10 +11,11 @@ export default function BrowserTabContainer({
       <style jsx>{`
         .container {
           height: 100%;
-          background: no-repeat 2rem 2rem / 205px auto
-              url("/images/logo_horizontal.svg"),
-            no-repeat bottom / cover url("/images/tab_background.svg"),
-            linear-gradient(to top, #10322f, var(--hunter-green) 100%);
+          background: radial-gradient(
+            ellipse at right top,
+            rgba(36, 107, 103, 0.5) 0%,
+            rgba(0, 20, 19, 1) 100%
+          );
           display: flex;
           flex-direction: column;
           align-items: center;

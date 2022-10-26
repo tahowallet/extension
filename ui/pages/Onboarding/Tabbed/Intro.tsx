@@ -1,73 +1,9 @@
 import React, { ReactElement, useState } from "react"
 import { useRouteMatch, Redirect } from "react-router-dom"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import SharedButton from "../../../components/Shared/SharedButton"
-import SharedProgressIndicator from "../../../components/Shared/SharedProgressIndicator"
-
-const steps = isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES)
-  ? [
-      {
-        image: {
-          width: 273,
-          height: 245.06,
-          fileName: "illustration_onboarding_welcome",
-          extraStyles: `margin-top: 25px;`,
-        },
-        title: "Welcome to Tally Ho!",
-        body: "The community owned & operated wallet.",
-        buttonCopy: "Continue",
-      },
-      {
-        image: {
-          width: 267,
-          height: 251,
-          fileName: "illustration_onboarding_dao",
-          extraStyles: `margin-top: 21px;`,
-        },
-        title: "Tally Ho! is a DAO",
-        body: `That means Tally Ho is owned by our users. And all profits go straight to the community.`,
-        buttonCopy: "Continue",
-      },
-    ]
-  : [
-      {
-        image: {
-          width: 384,
-          height: 336,
-          fileName: "onboarding/graphic_different",
-          extraStyles: ``,
-        },
-        title: "Tally Ho! is different",
-        body: "Tally Ho! is the first community-owned wallet for Web3 and DeFi. If you own $DOGGO tokens, you are an owner. ",
-        buttonCopy: "Continue",
-      },
-      {
-        image: {
-          width: 384,
-          height: 336,
-          fileName: "onboarding/graphic_token",
-          extraStyles: ``,
-        },
-        title: "The $DOGGO token",
-        body: `You can earn $DOGGO in many ways! Check out the Earn and Swap tabs.`,
-        buttonCopy: "Continue",
-      },
-      {
-        image: {
-          width: 384,
-          height: 336,
-          fileName: "onboarding/graphic_drop",
-          extraStyles: ``,
-        },
-        title: "$DOGGO token drop",
-        body: `If you used Defi in the past, there is a chance you are part of the drop. Check by adding an existing account!`,
-        buttonCopy: "Get started",
-      },
-    ]
 
 export default function Intro(): ReactElement {
-  const [activeStep, setActiveStep] = useState(1)
-  const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
+  const [redirectToAddWallet] = useState(false)
 
   const { path } = useRouteMatch()
 
@@ -83,29 +19,24 @@ export default function Intro(): ReactElement {
       </div>
       <div className="bottom_part">
         <div className="bottom_content">
-          <SharedProgressIndicator
-            numberOfSteps={steps.length}
-            activeStep={activeStep}
-            onProgressStepClicked={(step) => {
-              setActiveStep(step)
-            }}
-          />
-          <h1 className="bottom_title">{steps[activeStep - 1].title} </h1>
-          <p>{steps[activeStep - 1].body}</p>
+          <h1 className="bottom_title">Let&apos;s get you setup!</h1>
         </div>
-        <SharedButton
-          type="primary"
-          size="large"
-          onClick={() => {
-            if (activeStep < steps.length) {
-              setActiveStep(activeStep + 1)
-            } else {
-              setRedirectToAddWallet(true)
-            }
-          }}
-        >
-          {steps[activeStep - 1].buttonCopy}
-        </SharedButton>
+        <div className="button_container">
+          <SharedButton
+            type="primary"
+            size="large"
+            linkTo={`${path}/add-wallet`}
+          >
+            <div className="option standard_width">Use existing wallet</div>
+          </SharedButton>
+          <SharedButton
+            type="secondary"
+            size="large"
+            linkTo={`${path}/new-seed/set-password`}
+          >
+            <div className="option standard_width">Create new wallet</div>
+          </SharedButton>
+        </div>
       </div>
       <style jsx>
         {`
@@ -115,10 +46,17 @@ export default function Intro(): ReactElement {
             flex-direction: column;
             align-items: center;
           }
+          .button_container {
+            border-radius: 1em;
+            background: var(--green-95);
+            padding: 1em;
+            margin: 3em 0;
+            width: 100%;
+          }
           .illustration_section {
-            height: 380px;
+            height: 180px;
             display: flex;
-            padding-top: 68.5px;
+            position: relative;
           }
           section {
             display: flex;
@@ -129,17 +67,9 @@ export default function Intro(): ReactElement {
           h1 {
             font-family: "Quincy CF";
             font-weight: 500;
-            font-size: 36px;
+            font-size: 46px;
             line-height: 42px;
             margin: 12px 0px 0px 0px;
-          }
-          .forest {
-            background-size: cover;
-            width: 384px;
-            height: 141px;
-            align-self: flex-end;
-            justify-self: flex-end;
-            z-index: 1;
           }
           p {
             font-size: 16px;
@@ -161,11 +91,10 @@ export default function Intro(): ReactElement {
             z-index: 1;
           }
           .illustration {
-            background: url("./images/${steps[activeStep - 1].image
-              .fileName}@2x.png");
+            background: url("./images/doggo_grey@2x.png");
             background-size: cover;
-            width: ${steps[activeStep - 1].image.width}px;
-            height: ${steps[activeStep - 1].image.height}px;
+            width: 120px;
+            height: 120px;
             flex-shrink: 0;
             left: 0;
             right: 0;
@@ -173,7 +102,14 @@ export default function Intro(): ReactElement {
             margin-top: 0;
             position: absolute;
             animation: fadeIn ease 0.5s;
-            ${steps[activeStep - 1].image.extraStyles}
+          }
+          .forest {
+            background-size: cover;
+            width: 384px;
+            height: 141px;
+            align-self: flex-end;
+            justify-self: flex-end;
+            z-index: 1;
           }
           @keyframes fadeIn {
             0% {

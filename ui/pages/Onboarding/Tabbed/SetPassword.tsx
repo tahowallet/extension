@@ -13,9 +13,7 @@ import {
   useAreKeyringsUnlocked,
   useBackgroundSelector,
 } from "../../../hooks"
-import titleStyle from "../../../components/Onboarding/titleStyle"
 import SharedButton from "../../../components/Shared/SharedButton"
-import SharedBanner from "../../../components/Shared/SharedBanner"
 import SharedToggleButton from "../../../components/Shared/SharedToggleButton"
 import PasswordStrengthBar from "../../../components/Password/PasswordStrengthBar"
 import PasswordInput from "../../../components/Shared/PasswordInput"
@@ -72,125 +70,126 @@ export default function SetPassword({
 
   return (
     <>
-      <h1 className="serif_header center_text">
-        First, let&apos;s secure your wallet
-      </h1>
+      <div className="password_section">
+        <h1 className="center_text">First, let&apos;s secure your wallet</h1>
 
-      <div className="warning_wrap">
-        <SharedBanner
-          icon="notif-attention"
-          iconColor="var(--attention)"
-          iconAriaLabel="password attention"
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            dispatchCreatePassword()
+          }}
         >
-          <div className="warning_content">
-            You will NOT be able to change this password for now
+          <div className="input_wrap">
+            <PasswordInput
+              label="Password"
+              onChange={handleInputChange(setPassword)}
+              errorMessage={passwordErrorMessage}
+            />
           </div>
-        </SharedBanner>
+          <div className="strength_bar_wrap">
+            {!passwordErrorMessage && (
+              <PasswordStrengthBar password={password} />
+            )}
+          </div>
+          <div className="input_wrap repeat_password_wrap">
+            <PasswordInput
+              label="Repeat Password"
+              onChange={handleInputChange(setPasswordConfirmation)}
+              errorMessage={passwordErrorMessage}
+            />
+          </div>
+          <div className="set_as_default_ask">
+            Set Tally Ho as default wallet
+            <SharedToggleButton
+              onChange={(toggleValue) => {
+                dispatch(setNewDefaultWalletValue(toggleValue))
+              }}
+              value={defaultWallet}
+            />
+          </div>
+          <SharedButton
+            type="primary"
+            size="large"
+            onClick={dispatchCreatePassword}
+            showLoadingOnClick={!passwordErrorMessage}
+            isFormSubmit
+          >
+            Begin the hunt
+          </SharedButton>
+        </form>
+        <div className="restore">
+          <SharedButton type="tertiary" size="medium">
+            Restoring account?
+          </SharedButton>
+        </div>
+        <style jsx>
+          {`
+            .wordmark {
+              background: url("./images/wordmark@2x.png");
+              background-size: cover;
+              width: 95px;
+              height: 25px;
+              position: absolute;
+              left: 0px;
+              right: 0px;
+              margin: 0 auto;
+            }
+            form {
+              background: transparent;
+              width: 50%;
+            }
+            h1 {
+              font-family: "Quincy CF";
+              font-weight: 500;
+              font-size: 46px;
+              line-height: 42px;
+              margin: 1em;
+            }
+            .input_wrap {
+              width: 100%;
+            }
+            .strength_bar_wrap {
+              width: 211px;
+              height: 26px;
+              box-sizing: border-box;
+              padding-top: 10px;
+            }
+            .repeat_password_wrap {
+              margin-bottom: 25px;
+              margin-top: 10px;
+            }
+            .set_as_default_ask {
+              display: flex;
+              width: 262px;
+              justify-content: space-between;
+              align-items: center;
+              color: var(--green-20);
+              font-weight: 500;
+              margin-bottom: 40px;
+            }
+            .restore {
+              display: none; // TODO Implement account restoration.
+              position: fixed;
+              bottom: 26px;
+            }
+            .warning_wrap {
+              margin-top: 16px;
+              margin-bottom: 24px;
+            }
+            .warning_content {
+              color: var(--attention);
+              font-weight: 500;
+              font-size: 16px;
+              line-height: 24px;
+            }
+            .password_section {
+              text-align: center;
+              width: 50%;
+              margin: auto;
+            }
+          `}
+        </style>
       </div>
-
-      <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          dispatchCreatePassword()
-        }}
-      >
-        <div className="input_wrap">
-          <PasswordInput
-            label="Password"
-            onChange={handleInputChange(setPassword)}
-            errorMessage={passwordErrorMessage}
-          />
-        </div>
-        <div className="strength_bar_wrap">
-          {!passwordErrorMessage && <PasswordStrengthBar password={password} />}
-        </div>
-        <div className="input_wrap repeat_password_wrap">
-          <PasswordInput
-            label="Repeat Password"
-            onChange={handleInputChange(setPasswordConfirmation)}
-            errorMessage={passwordErrorMessage}
-          />
-        </div>
-        <div className="set_as_default_ask">
-          Set Tally Ho as default wallet
-          <SharedToggleButton
-            onChange={(toggleValue) => {
-              dispatch(setNewDefaultWalletValue(toggleValue))
-            }}
-            value={defaultWallet}
-          />
-        </div>
-        <SharedButton
-          type="primary"
-          size="large"
-          onClick={dispatchCreatePassword}
-          showLoadingOnClick={!passwordErrorMessage}
-          isFormSubmit
-        >
-          Begin the hunt
-        </SharedButton>
-      </form>
-      <div className="restore">
-        <SharedButton type="tertiary" size="medium">
-          Restoring account?
-        </SharedButton>
-      </div>
-      <style jsx>
-        {`
-          .wordmark {
-            background: url("./images/wordmark@2x.png");
-            background-size: cover;
-            width: 95px;
-            height: 25px;
-            position: absolute;
-            left: 0px;
-            right: 0px;
-            margin: 0 auto;
-          }
-          ${titleStyle}
-          .serif_header {
-            width: 335px;
-            margin-bottom: 7px;
-          }
-          .input_wrap {
-            width: 211px;
-          }
-          .strength_bar_wrap {
-            width: 211px;
-            height: 26px;
-            box-sizing: border-box;
-            padding-top: 10px;
-          }
-          .repeat_password_wrap {
-            margin-bottom: 25px;
-            margin-top: 10px;
-          }
-          .set_as_default_ask {
-            display: flex;
-            width: 262px;
-            justify-content: space-between;
-            align-items: center;
-            color: var(--green-20);
-            font-weight: 500;
-            margin-bottom: 40px;
-          }
-          .restore {
-            display: none; // TODO Implement account restoration.
-            position: fixed;
-            bottom: 26px;
-          }
-          .warning_wrap {
-            margin-top: 16px;
-            margin-bottom: 24px;
-          }
-          .warning_content {
-            color: var(--attention);
-            font-weight: 500;
-            font-size: 16px;
-            line-height: 24px;
-          }
-        `}
-      </style>
     </>
   )
 }

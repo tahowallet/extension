@@ -215,7 +215,7 @@ export default function ImportSeed(props: Props): ReactElement {
         }
         .content {
           animation: fadeIn ease 200ms;
-          width: inherit;
+          width: 100%;
         }
         h1 {
           margin: unset;
