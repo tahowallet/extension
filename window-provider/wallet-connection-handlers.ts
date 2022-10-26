@@ -171,11 +171,39 @@ function findAndReplaceTofuNftMetamaskOption(addedNode: Node): void {
   }
 }
 
+function findAndReplaceAboardMetamaskOption(addedNode: Node): void {
+  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+    return
+  }
+
+  const maybeIconsContainer = (addedNode as HTMLElement)?.children?.[0]
+    ?.children?.[0]?.children?.[0]?.children?.[1]?.children?.[1]
+
+  if (
+    !maybeIconsContainer ||
+    !maybeIconsContainer.classList.contains("wallets-wrapper")
+  ) {
+    return
+  }
+
+  // children are `HTMLCollection`'s without array methods.
+  // eslint-disable-next-line no-restricted-syntax
+  for (const child of maybeIconsContainer.children?.[0]?.children) {
+    if (child.innerHTML.includes("img/metamask")) {
+      child.innerHTML = child.innerHTML.replace(
+        /\ssrc="(.+)"\s/,
+        ` src="${TALLY_ICON_URL}" `
+      )
+    }
+  }
+}
+
 const hostnameToHandler = {
   "uniswap.org": findAndReplaceUniswapInjectedOption,
   "gmx.io": findAndReplaceGMXMetamaskOption,
   "app.yieldprotocol.com": findAndReplaceYieldProtocolMetamaskOption,
   "tofunft.com": findAndReplaceTofuNftMetamaskOption,
+  "aboard.exchange": findAndReplaceAboardMetamaskOption,
 } as const
 
 export default function monitorForWalletConnectionPrompts(): void {
