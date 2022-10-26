@@ -4,6 +4,7 @@ import {
   EventType,
   JsonRpcProvider,
   Listener,
+  Network,
   WebSocketProvider,
 } from "@ethersproject/providers"
 import { getNetwork } from "@ethersproject/networks"
@@ -167,6 +168,21 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
     this.currentProvider = firstProvider
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
+  }
+
+  /**
+   * Since our architecture follows a pattern of using distinct provider instances
+   * per network - and we know that a given provider will never switch its network
+   * (rather - we will switch the provider the extension is using) - we can avoid
+   * eth_chainId RPC calls once the initial call is made and cached.
+   */
+  async getNetwork(): Promise<Network> {
+    // eslint-disable-next-line no-underscore-dangle
+    if (this._network) {
+      // eslint-disable-next-line no-underscore-dangle
+      return Promise.resolve(this._network)
+    }
+    return super.getNetwork()
   }
 
   /**
