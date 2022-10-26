@@ -74,7 +74,7 @@ export default class EnrichmentService extends BaseService<Events> {
     super({})
   }
 
-  async internalStartService(): Promise<void> {
+  override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
     await this.connectChainServiceEvents()

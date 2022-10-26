@@ -285,7 +285,7 @@ export default class ChainService extends BaseService<Events> {
     this.assetData = new AssetDataHelper(this)
   }
 
-  async internalStartService(): Promise<void> {
+  override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
     const accounts = await this.getAccountsToTrack()

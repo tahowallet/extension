@@ -425,7 +425,7 @@ export default class Main extends BaseService<never> {
     this.initializeRedux()
   }
 
-  protected async internalStartService(): Promise<void> {
+  protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
     this.indexingService.started().then(async () => this.chainService.started())
@@ -448,7 +448,7 @@ export default class Main extends BaseService<never> {
     await Promise.all(servicesToBeStarted)
   }
 
-  protected async internalStopService(): Promise<void> {
+  protected override async internalStopService(): Promise<void> {
     const servicesToBeStopped = [
       this.preferenceService.stopService(),
       this.chainService.stopService(),

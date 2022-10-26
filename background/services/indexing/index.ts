@@ -152,7 +152,7 @@ export default class IndexingService extends BaseService<Events> {
     })
   }
 
-  async internalStartService(): Promise<void> {
+  override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
     this.connectChainServiceEvents()

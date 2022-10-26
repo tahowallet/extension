@@ -176,7 +176,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * (rather - we will switch the provider the extension is using) - we can avoid
    * eth_chainId RPC calls once the initial call is made and cached.
    */
-  async getNetwork(): Promise<Network> {
+  override async getNetwork(): Promise<Network> {
     // eslint-disable-next-line no-underscore-dangle
     if (this._network) {
       // eslint-disable-next-line no-underscore-dangle
@@ -192,7 +192,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * WebSocket disconnects, and restores subscriptions where
    * possible/necessary.
    */
-  async send(method: string, params: unknown): Promise<unknown> {
+  override async send(method: string, params: unknown): Promise<unknown> {
     try {
       if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
         // Detect disconnected WebSocket and immediately throw.
@@ -349,7 +349,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * event subscription so that an underlying provider failure will not prevent
    * it from firing.
    */
-  on(eventName: EventType, listener: Listener): this {
+  override on(eventName: EventType, listener: Listener): this {
     this.eventSubscriptions.push({
       eventName,
       listener,
@@ -366,7 +366,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * the event subscription so that an underlying provider failure will not
    * prevent it from firing.
    */
-  once(eventName: EventType, listener: Listener): this {
+  override once(eventName: EventType, listener: Listener): this {
     const adjustedListener = this.listenerWithCleanup(eventName, listener)
 
     this.eventSubscriptions.push({
@@ -385,7 +385,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    *
    * Ensures these will not be restored during a reconnect.
    */
-  off(eventName: EventType, listenerToRemove?: Listener): this {
+  override off(eventName: EventType, listenerToRemove?: Listener): this {
     this.eventSubscriptions = this.eventSubscriptions.filter(
       ({ eventName: savedEventName, listener: savedListener }) => {
         if (savedEventName === eventName) {
