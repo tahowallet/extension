@@ -346,7 +346,7 @@ Firefox requires to upload source code if minifier is used and to be able to com
 
 ## Localization
 
-Tally currently only support English as the default language. We distil english strings to [\_locales](https://github.com/tallycash/extension/blob/main/ui/_locales/en/messages.json) to prepare for localization.
+Tally currently only supports English as the default language. We distill english strings to [\_locales](https://github.com/tallycash/extension/blob/main/ui/_locales/en/messages.json) to prepare for localization.
 
 For other languages, we will use language code defined in [Support locales](https://developer.chrome.com/docs/webstore/i18n/#choosing-locales-to-support). We will use [weblate](https://hosted.weblate.org/projects/tallycash/extension/) for crowd translation, and will commit back to the github periodically after these translations are QA'ed.
 

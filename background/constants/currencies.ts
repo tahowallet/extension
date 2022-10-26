@@ -25,6 +25,18 @@ export const ETH: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   },
 }
 
+export const RBTC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
+  name: "RSK Token",
+  symbol: "RBTC",
+  decimals: 18,
+  coinType: coinTypesByAssetSymbol.RBTC,
+  metadata: {
+    coinGeckoID: "rootstock",
+    tokenLists: [],
+    websiteURL: "https://www.rsk.co/",
+  },
+}
+
 export const OPTIMISTIC_ETH: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset =
   {
     name: "Ether",
@@ -63,7 +75,7 @@ export const BTC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   },
 }
 
-export const BASE_ASSETS = [ETH, BTC, MATIC, OPTIMISTIC_ETH]
+export const BASE_ASSETS = [ETH, BTC, MATIC, RBTC, OPTIMISTIC_ETH]
 
 export const BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce<{
   [assetSymbol: string]: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset

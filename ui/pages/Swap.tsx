@@ -32,7 +32,7 @@ import {
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import logger from "@tallyho/tally-background/lib/logger"
-import { useLocation } from "react-router-dom"
+import { Redirect, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { sameNetwork } from "@tallyho/tally-background/networks"
@@ -42,6 +42,7 @@ import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
 import { SwapQuoteRequest } from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
+import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants/networks"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -507,6 +508,14 @@ export default function Swap(): ReactElement {
     //   status in the UI.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [swapTransactionSettings, isApprovalInProgress])
+
+  const isSwapSupportedByNetwork = () => {
+    return NETWORKS_SUPPORTING_SWAPS.includes(selectedNetwork.chainID)
+  }
+
+  if (!isSwapSupportedByNetwork()) {
+    return <Redirect to="/" />
+  }
 
   return (
     <>
