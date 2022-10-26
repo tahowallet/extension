@@ -140,8 +140,27 @@ export const NETWORKS_SUPPORTING_NFTS = new Set(
   ].map((network) => network.chainID)
 )
 
-export const ALCHEMY_SUPPORTED_NETWORKS = new Set(
+export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
   [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, GOERLI].map(
     (network) => network.chainID
   )
 )
+
+export const CHAIN_ID_TO_RPC_URLS: {
+  [chainId: string]: Array<string> | undefined
+} = {
+  [RSK.chainID]: ["https://public-node.rsk.co"],
+  [POLYGON.chainID]: ["https://polygon-rpc.com"],
+  [OPTIMISM.chainID]: [
+    "https://rpc.ankr.com/optimism",
+    "https://optimism-mainnet.public.blastapi.io",
+  ],
+  [ETHEREUM.chainID]: ["https://rpc.ankr.com/eth"],
+  // @TODO Figure out why calling multicall with more than 1 argument returns
+  // {
+  //   jsonrpc: "2.0",
+  //   error: { code: 0, message: "we can't execute this request" },
+  // }
+  // [ARBITRUM_ONE.chainID]: ["https://rpc.ankr.com/arbitrum"],
+  [GOERLI.chainID]: ["https://ethereum-goerli-rpc.allthatnode.com"],
+}
