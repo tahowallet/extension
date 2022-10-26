@@ -18,9 +18,39 @@ import { useBackgroundSelector } from "../../hooks"
 import SharedToggleButton from "../Shared/SharedToggleButton"
 import SharedTooltip from "../Shared/SharedTooltip"
 
-export default function WalletDefaultToggle(): ReactElement {
-  const { t } = useTranslation()
+export function WalletDefaultToggle(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet.defaultToggle",
+  })
   const dispatch = useDispatch()
+  const isDefaultWallet = useBackgroundSelector(selectDefaultWallet)
+
+  const toggleDefaultWallet = (defaultWalletValue: boolean) => {
+    dispatch(setNewDefaultWalletValue(defaultWalletValue))
+    if (defaultWalletValue) {
+      dispatch(setSnackbarMessage(t("snackbar")))
+    }
+  }
+
+  return (
+    <>
+      <SharedTooltip width={200}>{t("tooltip")}</SharedTooltip>
+      <div className="toggle">
+        <SharedToggleButton
+          onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
+          value={isDefaultWallet}
+        />
+      </div>
+      <style jsx>{`
+        .toggle {
+          margin-left: auto;
+        }
+      `}</style>
+    </>
+  )
+}
+export default function WalletDefaultBanner(): ReactElement {
+  const { t } = useTranslation()
   const isDefaultWallet = useBackgroundSelector(selectDefaultWallet)
   const [isHidden, setIsHidden] = useState(isDefaultWallet)
   const timeout = useRef<number | undefined>()
@@ -29,13 +59,6 @@ export default function WalletDefaultToggle(): ReactElement {
     clearTimeout(timeout.current)
     timeout.current = undefined
   }, [])
-
-  const toggleDefaultWallet = (defaultWalletValue: boolean) => {
-    dispatch(setNewDefaultWalletValue(defaultWalletValue))
-    if (defaultWalletValue) {
-      dispatch(setSnackbarMessage(t("wallet.defaultToggle.snackbar")))
-    }
-  }
 
   useEffect(() => {
     resetTimeout()
@@ -57,15 +80,7 @@ export default function WalletDefaultToggle(): ReactElement {
             ? t("wallet.defaultToggle.isDefault")
             : t("wallet.defaultToggle.notDefault")}
         </div>
-        <SharedTooltip width={200}>
-          {t("wallet.defaultToggle.tooltip")}
-        </SharedTooltip>
-        <div className="toggle">
-          <SharedToggleButton
-            onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
-            value={isDefaultWallet}
-          />
-        </div>
+        <WalletDefaultToggle />
       </div>
       <style jsx>{`
         .default_toggle {
@@ -91,9 +106,6 @@ export default function WalletDefaultToggle(): ReactElement {
           margin-bottom: 0;
           pointer-events: none;
           transition: all 500ms;
-        }
-        .toggle {
-          margin-left: auto;
         }
         .highlight {
           color: var(--trophy-gold);
