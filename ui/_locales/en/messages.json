@@ -575,7 +575,6 @@
         "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ARBITRUM": "Enable Arbitrum network",
-        "SUPPORT_GOERLI": "Enable test networks",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner"
       }
     }
