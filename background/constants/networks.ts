@@ -112,6 +112,8 @@ export const TEST_NETWORK_BY_CHAIN_ID = new Set(
   [GOERLI].map((network) => network.chainID)
 )
 
+export const NETWORK_FOR_LEDGER_SIGNING = [ETHEREUM, POLYGON]
+
 export const NETWORKS_SUPPORTING_SWAPS = new Set(
   [
     ETHEREUM,
