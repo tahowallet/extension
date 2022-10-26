@@ -193,8 +193,7 @@ export async function getTokenBalances(
       // as effectively undefined.
       .filter(
         ({ tokenBalance }) =>
-          tokenBalance !==
-          "0x0000000000000000000000000000000000000000000000000000000000000000"
+          Number(tokenBalance) !== 0
       )
       .map((tokenBalance) => {
         let balance = tokenBalance.tokenBalance
