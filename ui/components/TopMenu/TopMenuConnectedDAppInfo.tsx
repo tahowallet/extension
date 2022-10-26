@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import SharedAccordion from "../Shared/SharedAccordion"
+import { WalletDefaultToggle } from "../Wallet/WalletDefaultBanner"
 
 function ConnectionDAppGuideline({
   isConnected,
@@ -19,17 +20,48 @@ function ConnectionDAppGuideline({
           width: 288,
           padding: 16,
           borderRadius: 8,
+          marginTop: 8,
           background: "var(--green-120)",
         }}
         defaultState={!isConnected}
         headerElement={<span className="title">{t("title")}</span>}
-        contentElement={<span>content</span>}
+        contentElement={
+          <ol className="steps">
+            <li>
+              {t("step1")}
+              <WalletDefaultToggle />
+            </li>
+            <li>{t("step2")}</li>
+            <li>{t("step3")}</li>
+          </ol>
+        }
       />
       <style jsx>{`
         .title {
           font-weight: 600;
           font-size: 18px;
           line-height: 24px;
+        }
+        .steps {
+          margin: 0;
+          padding: 0;
+          display: flex;
+          flex-flow: column;
+          list-style: none;
+          counter-reset: step;
+          color: var(--green-40);
+        }
+        .steps > li {
+          display: flex;
+          align-items: center;
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 40px;
+        }
+        .steps > li::before {
+          content: counter(step) ".";
+          counter-increment: step;
+          padding-right: 4px;
         }
       `}</style>
     </>
