@@ -25,6 +25,7 @@ import {
   OPTIMISM,
   OPTIMISTIC_ETH,
   POLYGON,
+  RSK,
 } from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
@@ -134,6 +135,7 @@ export const SWAP_FEE = 0.005
 
 const chainIdTo0xApiBase: { [chainID: string]: string | undefined } = {
   [ETHEREUM.chainID]: "api.0x.org",
+  [RSK.chainID]: "", // Rsk not supported by 0x.org. Empty value here means swap screen options will be disabled for Rsk and user will not be able to perform any action.
   [POLYGON.chainID]: "polygon.api.0x.org",
   [OPTIMISM.chainID]: "optimism.api.0x.org",
   [GOERLI.chainID]: "goerli.api.0x.org",

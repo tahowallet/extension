@@ -37,6 +37,7 @@ jobs:
       env:
         ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
+        UNS_API_KEY: ${{ secrets.UNS_API_KEY }}
         SIMPLE_HASH_API_KEY: ${{ secrets.SIMPLE_HASH_API_KEY }}
         ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}
         COMMIT_SHA: ${{ github.sha }}

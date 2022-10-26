@@ -1,5 +1,5 @@
 import { EVMNetwork, Network } from "../networks"
-import { BTC, ETH, MATIC, OPTIMISTIC_ETH } from "./currencies"
+import { BTC, ETH, MATIC, OPTIMISTIC_ETH, RBTC } from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
   name: "Ethereum",
@@ -7,6 +7,14 @@ export const ETHEREUM: EVMNetwork = {
   chainID: "1",
   family: "EVM",
   coingeckoPlatformID: "ethereum",
+}
+
+export const RSK: EVMNetwork = {
+  name: "RSK",
+  baseAsset: RBTC,
+  chainID: "30",
+  family: "EVM",
+  coingeckoPlatformID: "rootstock",
 }
 
 export const POLYGON: EVMNetwork = {
@@ -90,6 +98,7 @@ export const EVM_ROLLUP_CHAIN_IDS = new Set(
 export const NETWORK_BY_CHAIN_ID = {
   [ETHEREUM.chainID]: ETHEREUM,
   [POLYGON.chainID]: POLYGON,
+  [RSK.chainID]: RSK,
   [ARBITRUM_ONE.chainID]: ARBITRUM_ONE,
   [OPTIMISM.chainID]: OPTIMISM,
   [ROPSTEN.chainID]: ROPSTEN,
@@ -102,3 +111,29 @@ export const NETWORK_BY_CHAIN_ID = {
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(
   [GOERLI].map((network) => network.chainID)
 )
+
+export const NETWORK_FOR_LEDGER_SIGNING = [ETHEREUM, POLYGON]
+
+export const NETWORKS_SUPPORTING_SWAPS = [
+  ETHEREUM.chainID,
+  POLYGON.chainID,
+  ARBITRUM_ONE.chainID,
+  OPTIMISM.chainID,
+  ROPSTEN.chainID,
+  RINKEBY.chainID,
+  GOERLI.chainID,
+  KOVAN.chainID,
+  FORK.chainID,
+]
+
+export const NETWORKS_SUPPORTING_NFTS = [
+  ETHEREUM.chainID,
+  POLYGON.chainID,
+  ARBITRUM_ONE.chainID,
+  OPTIMISM.chainID,
+  ROPSTEN.chainID,
+  RINKEBY.chainID,
+  GOERLI.chainID,
+  KOVAN.chainID,
+  FORK.chainID,
+]

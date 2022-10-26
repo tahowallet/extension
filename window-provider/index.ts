@@ -35,6 +35,7 @@ const impersonateMetamaskWhitelist = [
   "swapr.eth.link",
   "apex.exchange",
   "app.yieldprotocol.com",
+  "portal.zksync.io",
 ]
 
 export default class TallyWindowProvider extends EventEmitter {
