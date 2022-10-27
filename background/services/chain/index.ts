@@ -1054,6 +1054,7 @@ export default class ChainService extends BaseService<Events> {
               { ...transaction, status: 0, error: error.toString() },
               "alchemy"
             )
+            // the reject here will release the nonce in the following catch
             return Promise.reject(error)
           }),
         this.subscribeToTransactionConfirmation(
