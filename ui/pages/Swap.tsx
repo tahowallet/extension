@@ -40,9 +40,11 @@ import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux
 import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
 import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
-import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
+import {
+  CHAIN_ID_TO_0X_API_BASE,
+  EIP_1559_COMPLIANT_CHAIN_IDS,
+} from "@tallyho/tally-background/constants"
 import { SwapQuoteRequest } from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
-import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants/networks"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -510,7 +512,9 @@ export default function Swap(): ReactElement {
   }, [swapTransactionSettings, isApprovalInProgress])
 
   const isSwapSupportedByNetwork = () => {
-    return NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID)
+    return Object.keys(CHAIN_ID_TO_0X_API_BASE).includes(
+      selectedNetwork.chainID
+    )
   }
 
   if (!isSwapSupportedByNetwork()) {
