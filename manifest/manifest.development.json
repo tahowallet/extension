@@ -1,4 +1,5 @@
 {
+  "content_security_policy": "object-src 'self'; script-src 'self' http://localhost:*;",
   "background": {
     "scripts": ["dev-utils/extension-reload.js"]
   }

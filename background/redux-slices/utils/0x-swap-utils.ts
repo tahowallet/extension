@@ -67,7 +67,9 @@ export async function getAssetPricePoint(
     await getTokenPrices(assetPricesNetworks, USD, network)
   )
 
-  return (unitPricePoint && getPricePoint(asset, unitPricePoint)) || undefined
+  return unitPricePoint === undefined
+    ? undefined
+    : getPricePoint(asset, unitPricePoint)
 }
 
 export async function getAssetAmount(

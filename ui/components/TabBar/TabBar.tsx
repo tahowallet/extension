@@ -1,16 +1,29 @@
 import React, { ReactElement } from "react"
 
 import { useLocation } from "react-router-dom"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants/networks"
 import TabBarIcon from "./TabBarIcon"
 import tabs from "../../utils/tabs"
+import { useBackgroundSelector } from "../../hooks"
 
 export default function TabBar(): ReactElement {
   const location = useLocation()
   const activeTabName = location?.pathname?.split("/")[1] || "wallet"
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+
+  const isTabSupportedByNetwork = (tab: string) => {
+    switch (tab) {
+      case "swap":
+        return NETWORKS_SUPPORTING_SWAPS.includes(selectedNetwork.chainID)
+      default:
+        return true
+    }
+  }
 
   return (
     <nav>
-      {tabs.map((tabName) => {
+      {tabs.filter(isTabSupportedByNetwork).map((tabName) => {
         return (
           <TabBarIcon
             key={tabName}
