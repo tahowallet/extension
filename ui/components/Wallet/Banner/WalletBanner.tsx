@@ -2,6 +2,7 @@ import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/sel
 import { selectHideBanners } from "@tallyho/tally-background/redux-slices/ui"
 import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useBackgroundSelector, useLocalStorage } from "../../../hooks"
 
 import SharedBanner from "../../Shared/SharedBanner"
@@ -12,12 +13,18 @@ import useBannerCampaigns from "./useBannerCampaigns"
 import WalletBannerSlideup from "./WalletBannerSlideup"
 
 export default function WalletBanner(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet.banner",
+  })
   const hideBanners = useBackgroundSelector(selectHideBanners)
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const [showDismissSlideup, setShowDismissSlideup] = useState(false)
-  const arbitrumCampaign = useArbitrumCampaigns()
+
+  const arbitrumCampaigns = useArbitrumCampaigns()
   const campaignDetails = useBannerCampaigns(currentNetwork.chainID)
-  const [thumbnail, setThumbnail] = useState("")
+
+  const [showDismissSlideup, setShowDismissSlideup] = useState(false)
+  const [thumbnails, setThumbnails] = useState<string[]>([])
+  const [currentCampaignId, setCurrentCampaignId] = useState("")
   const [dismissedCampaignId, setDismissedCampaignId] = useLocalStorage(
     "dismissedCampaignBanner",
     ""
@@ -25,24 +32,37 @@ export default function WalletBanner(): ReactElement {
 
   useEffect(() => {
     // don't show any thumbnail while fetching campaign
-    if (typeof arbitrumCampaign !== "undefined") {
-      setThumbnail(
-        arbitrumCampaign?.thumbnail || "./images/banner_thumbnail.png"
-      )
+    if (typeof arbitrumCampaigns !== "undefined") {
+      if (arbitrumCampaigns) {
+        const id = `${arbitrumCampaigns[0]?.id ?? ""}_${
+          arbitrumCampaigns[1]?.id ?? ""
+        }`
+        setCurrentCampaignId(id)
+        setThumbnails(arbitrumCampaigns.map((campaign) => campaign.thumbnail))
+      } else {
+        setThumbnails(["./images/banner_thumbnail.png"])
+      }
     }
-  }, [arbitrumCampaign])
+  }, [arbitrumCampaigns])
+
+  useEffect(() => {
+    if (
+      dismissedCampaignId &&
+      currentCampaignId &&
+      currentCampaignId !== dismissedCampaignId
+    ) {
+      setDismissedCampaignId("")
+    }
+  }, [currentCampaignId, dismissedCampaignId, setDismissedCampaignId])
 
   const isHidden =
     hideBanners ||
     !campaignDetails ||
-    dismissedCampaignId === campaignDetails?.id
+    (currentCampaignId
+      ? dismissedCampaignId === currentCampaignId
+      : !!dismissedCampaignId)
 
-  const {
-    id: campaignId = "",
-    title = "",
-    description,
-    buttons,
-  } = campaignDetails ?? {}
+  const { buttons } = campaignDetails ?? {}
 
   return (
     <div
@@ -66,13 +86,37 @@ export default function WalletBanner(): ReactElement {
             `}
           />
           <div
-            className={classNames("thumbnail", {
-              hidden: !thumbnail,
+            className={classNames("thumbnail_container", {
+              hidden: !thumbnails.length,
             })}
-          />
+          >
+            <div
+              className={classNames("thumbnail thumbnail_back", {
+                hidden: !thumbnails[1],
+              })}
+            />
+            <div
+              className={classNames("thumbnail thumbnail_front", {
+                hidden: !thumbnails[0],
+                centered: thumbnails.length === 1,
+              })}
+            />
+          </div>
           <div className="wallet_banner_content">
-            <h3>{title}</h3>
-            {description && <p>{description}</p>}
+            <h3>{t("bannerTitle")}</h3>
+            <ul
+              className={classNames({
+                hidden: typeof arbitrumCampaigns === "undefined",
+              })}
+            >
+              {arbitrumCampaigns === null ? (
+                <li>{t("emptyBannerContent")}</li>
+              ) : (
+                arbitrumCampaigns?.map(({ name }) => (
+                  <li className="ellipsis">{name}</li>
+                ))
+              )}
+            </ul>
             {buttons && (
               <div className="wallet_banner_buttons">
                 {buttons.primary && (
@@ -82,7 +126,7 @@ export default function WalletBanner(): ReactElement {
                     type="tertiary"
                     iconSmall="new-tab"
                     onClick={() => {
-                      setDismissedCampaignId(campaignId)
+                      setDismissedCampaignId(currentCampaignId)
                       window.open(buttons.primary?.link, "_blank")?.focus()
                     }}
                   >
@@ -109,25 +153,43 @@ export default function WalletBanner(): ReactElement {
       </SharedBanner>
       <WalletBannerSlideup
         isOpen={showDismissSlideup}
-        onDismiss={() => setDismissedCampaignId(campaignId)}
+        onDismiss={() => setDismissedCampaignId(currentCampaignId)}
         onClose={() => setShowDismissSlideup(false)}
       />
       <style jsx>{`
+        .thumbnail_container {
+          position: relative;
+          height: 106px;
+          width: 84px;
+        }
+        .thumbnail_front {
+          background: url(${thumbnails[0]});
+          top: 12px;
+        }
+        .thumbnail_front.centered {
+          top: 0;
+        }
+        .thumbnail_back {
+          background: url(${thumbnails[1]});
+          left: 7px;
+        }
         .thumbnail {
+          position: absolute;
           flex-shrink: 0;
-          width: 64px;
-          height: 64px;
+          width: 58px;
+          height: 58px;
           border-radius: 8px;
           margin: 0 15px 0 5px;
           align-self: flex-start;
-          background: url(${thumbnail});
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
           opacity: 1;
           transition: opacity 200ms ease-in;
         }
-        .thumbnail.hidden {
+        ul.hidden,
+        .thumbnail.hidden,
+        .thubmnails_container.hidden {
           opacity: 0;
         }
         h3 {
@@ -136,13 +198,20 @@ export default function WalletBanner(): ReactElement {
           font-size: 18px;
           line-height: 24px;
           margin-right: 25px;
+          color: var(--success);
         }
-        p {
-          margin: 0;
+        ul {
+          width: 100%;
+          height: 48px;
+          display: flex;
+          flex-direction: column;
+          transition: opacity 200ms ease-in;
+        }
+        li {
           font-size: 16px;
           font-weight: 500;
           line-height: 24px;
-          color: var(--green-40);
+          color: var(--green-20);
         }
         .wallet_banner {
           position: relative;
@@ -165,7 +234,7 @@ export default function WalletBanner(): ReactElement {
           margin-top: 5px;
         }
         .wallet_banner_content {
-          width: 100%;
+          width: calc(100% - 84px);
         }
         .wallet_banner_container {
           margin: 10px 0 25px;

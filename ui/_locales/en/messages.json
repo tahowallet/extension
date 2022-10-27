@@ -514,6 +514,8 @@
       "loadingActivities": "Digging deeper..."
     },
     "banner": {
+      "bannerTitle": "New Odyssey week!",
+      "emptyBannerContent": "Check out Arbitrum Odyssey campaign",
       "notificationTitle": "Odyssey notifications",
       "notificationDismissInfo":"Want to receive future Odyssey notifications? We will show you one every week that you can dismiss.",
       "showNotifications": "Yes, show notification",

@@ -14,13 +14,10 @@ type Campaign = {
   id: string
   name: string
   status: CampaignStatus
-  description: string
   thumbnail: string
-  startTime: number
-  endTime: number
 }
 
-async function getActiveCampaign(): Promise<Campaign | null> {
+async function getLatestCampaigns(): Promise<Campaign[] | null> {
   try {
     const {
       data: {
@@ -42,7 +39,6 @@ async function getActiveCampaign(): Promise<Campaign | null> {
               space(alias: "arbitrum") {
                 campaigns(input: {
                   chains: [ARBITRUM]
-                  statuses: [Active]
                   permissions: [PUBLIC]
                   listType: Newest
                 }) {
@@ -51,8 +47,6 @@ async function getActiveCampaign(): Promise<Campaign | null> {
                     name
                     status
                     thumbnail
-                    startTime
-                    endTime
                   }
                 }
               }
@@ -62,25 +56,26 @@ async function getActiveCampaign(): Promise<Campaign | null> {
       })
     ).json()) as { data: { space: { campaigns: { list: Campaign[] } } } }
 
-    return achievements[0] ?? null
+    const latest = achievements.slice(0, 2)
+    return latest.length ? latest : null
   } catch (error) {
     return null
   }
 }
 
-export default (): Campaign | null | undefined => {
-  const [campaign, setCampaign] = useState<Campaign | null | undefined>(
+export default (): Campaign[] | null | undefined => {
+  const [campaigns, setCampaigns] = useState<Campaign[] | null | undefined>(
     undefined
   )
 
   useEffect(() => {
     const fetchCampaign = async () => {
-      const active = await getActiveCampaign()
-      setCampaign(active)
+      const active = await getLatestCampaigns()
+      setCampaigns(active)
     }
 
     fetchCampaign()
   }, [])
 
-  return campaign
+  return campaigns
 }
