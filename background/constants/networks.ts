@@ -41,34 +41,10 @@ export const OPTIMISM: EVMNetwork = {
   coingeckoPlatformID: "optimistic-ethereum",
 }
 
-export const ROPSTEN: EVMNetwork = {
-  name: "Ropsten",
-  baseAsset: ETH,
-  chainID: "3",
-  family: "EVM",
-  coingeckoPlatformID: "ethereum",
-}
-
-export const RINKEBY: EVMNetwork = {
-  name: "Rinkeby",
-  baseAsset: ETH,
-  chainID: "4",
-  family: "EVM",
-  coingeckoPlatformID: "ethereum",
-}
-
 export const GOERLI: EVMNetwork = {
   name: "Goerli",
   baseAsset: ETH,
   chainID: "5",
-  family: "EVM",
-  coingeckoPlatformID: "ethereum",
-}
-
-export const KOVAN: EVMNetwork = {
-  name: "Kovan",
-  baseAsset: ETH,
-  chainID: "42",
   family: "EVM",
   coingeckoPlatformID: "ethereum",
 }
@@ -94,20 +70,15 @@ export const EIP_1559_COMPLIANT_CHAIN_IDS = new Set(
 export const EVM_ROLLUP_CHAIN_IDS = new Set(
   [OPTIMISM].map((network) => network.chainID)
 )
-
 export const NETWORK_BY_CHAIN_ID = {
   [ETHEREUM.chainID]: ETHEREUM,
   [POLYGON.chainID]: POLYGON,
   [RSK.chainID]: RSK,
   [ARBITRUM_ONE.chainID]: ARBITRUM_ONE,
   [OPTIMISM.chainID]: OPTIMISM,
-  [ROPSTEN.chainID]: ROPSTEN,
-  [RINKEBY.chainID]: RINKEBY,
   [GOERLI.chainID]: GOERLI,
-  [KOVAN.chainID]: KOVAN,
   [FORK.chainID]: FORK,
 }
-
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(
   [GOERLI].map((network) => network.chainID)
 )
@@ -115,31 +86,15 @@ export const TEST_NETWORK_BY_CHAIN_ID = new Set(
 export const NETWORK_FOR_LEDGER_SIGNING = [ETHEREUM, POLYGON]
 
 export const NETWORKS_SUPPORTING_SWAPS = new Set(
-  [
-    ETHEREUM,
-    POLYGON,
-    ARBITRUM_ONE,
-    OPTIMISM,
-    ROPSTEN,
-    RINKEBY,
-    GOERLI,
-    KOVAN,
-    FORK,
-  ].map((network) => network.chainID)
+  [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, GOERLI, FORK].map(
+    (network) => network.chainID
+  )
 )
 
 export const NETWORKS_SUPPORTING_NFTS = new Set(
-  [
-    ETHEREUM,
-    POLYGON,
-    ARBITRUM_ONE,
-    OPTIMISM,
-    ROPSTEN,
-    RINKEBY,
-    GOERLI,
-    KOVAN,
-    FORK,
-  ].map((network) => network.chainID)
+  [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, GOERLI, FORK].map(
+    (network) => network.chainID
+  )
 )
 
 export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
