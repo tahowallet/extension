@@ -76,7 +76,7 @@ const lookupUNSDomain = async (domain: string) => {
     headers: {
       Authorization: `Bearer ${UNS_API_KEY}`,
     },
-    timeout: 10_000,
+    timeout: 3_000,
   })
 
   return response
@@ -93,7 +93,7 @@ const reverseLookupAddress = cacheAsyncResults(
       headers: {
         Authorization: `Bearer ${UNS_API_KEY}`,
       },
-      timeout: 10_000,
+      timeout: 3_000,
     })
 
     return response
