@@ -14,6 +14,7 @@ import CopyPlugin, { ObjectPattern } from "copy-webpack-plugin"
 import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin"
 import WebExtensionArchivePlugin from "./build-utils/web-extension-archive-webpack-plugin"
 import InjectWindowProvider from "./build-utils/inject-window-provider"
+import "dotenv-defaults/config"
 
 const supportedBrowsers = ["chrome"]
 
@@ -108,6 +109,32 @@ const modeConfigs: {
       new LiveReloadPlugin({}),
       new CopyPlugin({
         patterns: ["dev-utils/*.js"],
+        // FIXME Forced cast below due to an incompatibility between the webpack
+        // FIXME version refed in @types/copy-webpack-plugin and our local
+        // FIXME webpack version.
+      }) as unknown as WebpackPluginInstance,
+      new CopyPlugin({
+        patterns: [
+          {
+            from: "node_modules/@tallyho/tally-ui/public/",
+            force: true,
+            priority: 1,
+            transform: (content, fileName) => {
+              if (fileName.endsWith("popup.html")) {
+                const port = process.env.REACT_DEVTOOLS_DEFAULT_PORT
+
+                return content
+                  .toString("utf8")
+                  .replace(
+                    "<!-- INSERT_REACT_DEV_TOOLS_HERE -->",
+                    `<script src="http://localhost:${port}"></script>`
+                  )
+              }
+
+              return content
+            },
+          },
+        ],
         // FIXME Forced cast below due to an incompatibility between the webpack
         // FIXME version refed in @types/copy-webpack-plugin and our local
         // FIXME webpack version.
