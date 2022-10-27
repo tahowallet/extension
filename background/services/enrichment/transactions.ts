@@ -26,7 +26,7 @@ import {
   getERC20LogsForAddresses,
 } from "./utils"
 import { enrichAddressOnNetwork } from "./addresses"
-import { EVM_ROLLUP_CHAIN_IDS } from "../../constants"
+import { OPTIMISM } from "../../constants"
 import { parseLogsForWrappedDepositsAndWithdrawals } from "../../lib/wrappedAsset"
 import { parseERC20Tx, parseLogsForERC20Transfers } from "../../lib/erc20"
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
@@ -192,12 +192,13 @@ export default async function resolveTransactionAnnotation(
 
   const { gasLimit, blockHash } = transaction
 
-  const additionalL1Gas = EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
-    ? await chainService.estimateL1RollupFee(
-        network,
-        unsignedTransactionFromEVMTransaction(transaction)
-      )
-    : 0n
+  const additionalL1Gas =
+    network.chainID === OPTIMISM.chainID
+      ? await chainService.estimateL1RollupFeeForOptimism(
+          network,
+          unsignedTransactionFromEVMTransaction(transaction)
+        )
+      : 0n
 
   const gasFee: bigint = isEIP1559TransactionRequest(transaction)
     ? (transaction?.maxFeePerGas ?? 0n) * (gasLimit ?? 0n) + additionalL1Gas
