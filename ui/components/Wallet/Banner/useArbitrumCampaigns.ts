@@ -36,9 +36,8 @@ async function getLatestCampaigns(): Promise<Campaign[] | null> {
           operationName: "ArbitrumCampaigns",
           query: `
             query ArbitrumCampaigns {
-              space(alias: "arbitrum") {
+              space(alias: "tallyho") {
                 campaigns(input: {
-                  chains: [ARBITRUM]
                   permissions: [PUBLIC]
                   listType: Newest
                 }) {

@@ -22,7 +22,7 @@ type Campaign = {
 const bannerCampaigns: Campaign[] = [
   {
     id: "Odyssey",
-    startDate: new Date("2022-11-07T04:00:00Z"),
+    startDate: new Date("2022-10-07T04:00:00Z"),
     endDate: new Date("2022-12-26T04:00:00Z"),
     chains: [ARBITRUM_ONE.chainID],
     buttons: {
