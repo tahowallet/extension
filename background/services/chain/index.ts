@@ -677,10 +677,11 @@ export default class ChainService extends BaseService<Events> {
     const provider = this.providerForNetworkOrThrow(network)
 
     // https://docs.ethers.io/v5/single-page/#/v5/api/providers/provider/-%23-Provider-getTransactionCount
-    let knownNextNonce = await provider.getTransactionCount(
+    const chainTransactionCount = await provider.getTransactionCount(
       transactionRequest.from,
       "latest"
     )
+    let knownNextNonce
 
     // existingNonce handling only needed when there is a chance for it to
     // be different from the onchain nonce. This can only happen if a chain has
@@ -688,7 +689,7 @@ export default class ChainService extends BaseService<Events> {
     if (CHAINS_WITH_MEMPOOL.has(chainID)) {
       // @TODO: Update this implementation to handle pending txs and also be more
       //        resilient against missing nonce in the mempool.
-      const chainNonce = knownNextNonce - 1
+      const chainNonce = chainTransactionCount - 1
 
       const existingNonce =
         this.evmChainLastSeenNoncesByNormalizedAddress[chainID]?.[
@@ -726,7 +727,7 @@ export default class ChainService extends BaseService<Events> {
 
     return {
       ...transactionRequest,
-      nonce: knownNextNonce,
+      nonce: knownNextNonce ?? chainTransactionCount,
     }
   }
 
