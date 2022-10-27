@@ -1,10 +1,6 @@
 import sinon from "sinon"
 import ChainService from ".."
-import {
-  EIP_1559_COMPLIANT_CHAIN_IDS,
-  ETHEREUM,
-  OPTIMISM,
-} from "../../../constants"
+import { CHAINS_WITH_MEMPOOL, ETHEREUM, OPTIMISM } from "../../../constants"
 import {
   AnyEVMTransaction,
   TransactionRequest,
@@ -98,7 +94,7 @@ describe("ChainService", () => {
 
     // on EIP-1559 chains we are not using evmChainLastSeenNoncesByNormalizedAddress
     // but rely on nonce that we got from chain
-    if (!EIP_1559_COMPLIANT_CHAIN_IDS.has(chainID)) {
+    if (!CHAINS_WITH_MEMPOOL.has(chainID)) {
       return
     }
 

@@ -28,8 +28,9 @@ import {
   GOERLI,
   SECOND,
   NETWORK_BY_CHAIN_ID,
-  EIP_1559_COMPLIANT_CHAIN_IDS,
   MINUTE,
+  CHAINS_WITH_MEMPOOL,
+  EIP_1559_COMPLIANT_CHAIN_IDS,
 } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
@@ -684,7 +685,7 @@ export default class ChainService extends BaseService<Events> {
     // existingNonce handling only needed when there is a chance for it to
     // be different from the onchain nonce. This can only happen if a chain has
     // mempool or in other words implements EIP-1559.
-    if (EIP_1559_COMPLIANT_CHAIN_IDS.has(chainID)) {
+    if (CHAINS_WITH_MEMPOOL.has(chainID)) {
       // @TODO: Update this implementation to handle pending txs and also be more
       //        resilient against missing nonce in the mempool.
       const chainNonce = knownNextNonce - 1
@@ -742,7 +743,7 @@ export default class ChainService extends BaseService<Events> {
       "chainID" in transactionRequest
         ? transactionRequest.chainID
         : transactionRequest.network.chainID
-    if (EIP_1559_COMPLIANT_CHAIN_IDS.has(chainID)) {
+    if (CHAINS_WITH_MEMPOOL.has(chainID)) {
       const { nonce } = transactionRequest
       const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
       const lastSeenNonce =
