@@ -293,6 +293,7 @@ export default function Send(): ReactElement {
             margin-top: 30px;
           }
           .form_input {
+            position: relative;
             margin-bottom: 14px;
           }
           .form {
@@ -307,8 +308,8 @@ export default function Send(): ReactElement {
           .value {
             display: flex;
             justify-content: flex-end;
-            position: relative;
-            top: -24px;
+            position: absolute;
+            bottom: 8px;
             right: 16px;
             color: var(--green-60);
             font-size: 12px;
