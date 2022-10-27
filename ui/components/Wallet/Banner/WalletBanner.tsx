@@ -113,7 +113,9 @@ export default function WalletBanner(): ReactElement {
                 <li>{t("emptyBannerContent")}</li>
               ) : (
                 arbitrumCampaigns?.map(({ name }) => (
-                  <li className="ellipsis">{name}</li>
+                  <li className="list_item">
+                    <div className="ellipsis">{name}</div>
+                  </li>
                 ))
               )}
             </ul>
@@ -212,6 +214,12 @@ export default function WalletBanner(): ReactElement {
           font-weight: 500;
           line-height: 24px;
           color: var(--green-20);
+        }
+        .list_item {
+          list-style-type: disc;
+          position: relative;
+          display: list-item;
+          margin-left: 20px;
         }
         .wallet_banner {
           position: relative;
