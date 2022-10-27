@@ -11,6 +11,7 @@ function ConnectionDAppGuideline({
   const { t } = useTranslation("translation", {
     keyPrefix: "topMenu.connectedDappInfo.guideline",
   })
+  const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
 
   return (
     <>
@@ -26,14 +27,29 @@ function ConnectionDAppGuideline({
         defaultState={!isConnected}
         headerElement={<span className="title">{t("title")}</span>}
         contentElement={
-          <ol className="steps">
-            <li>
-              {t("step1")}
-              <WalletDefaultToggle />
-            </li>
-            <li>{t("step2")}</li>
-            <li>{t("step3")}</li>
-          </ol>
+          <div className="content_wrap">
+            <ol className="steps">
+              <li>
+                {t("step1")}
+                <WalletDefaultToggle />
+              </li>
+              <li>{t("step2")}</li>
+              <li>{t("step3")}</li>
+            </ol>
+            <div className="list_wrap">
+              <span className="item a">
+                <img src="./images/tally_token.svg" alt="Tally token" />
+                {tShared("tallyHo")}
+              </span>
+              <span className="item">
+                <img src="./images/icons/s/arrow-right.svg" alt="Arrow right" />
+                {tShared("injected")}
+              </span>
+              <span className="item">
+                <span className="fox">🦊</span> {tShared("metaMask")}
+              </span>
+            </div>
+          </div>
         }
       />
       <style jsx>{`
@@ -41,6 +57,12 @@ function ConnectionDAppGuideline({
           font-weight: 600;
           font-size: 18px;
           line-height: 24px;
+        }
+        .content_wrap {
+          height: 85%;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
         }
         .steps {
           margin: 0;
@@ -62,6 +84,33 @@ function ConnectionDAppGuideline({
           content: counter(step) ".";
           counter-increment: step;
           padding-right: 4px;
+        }
+        .list_wrap {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        img {
+          width: 16px;
+        }
+        .fox {
+          font-size: 12px;
+        }
+        .item {
+          font-weight: 500;
+          line-height: 24px;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .item:after {
+          content: "/";
+          color: var(--green-60);
+        }
+        .item:last-child:after {
+          display: none;
         }
       `}</style>
     </>

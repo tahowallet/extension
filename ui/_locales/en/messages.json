@@ -359,6 +359,8 @@
   },
   "shared": {
     "tallyHo": "Tally Ho",
+    "metaMask": "MetaMask",
+    "injected": "Injected",
     "cancelBtn": "Cancel",
     "gwei": "Gwei",
     "send": "Send",
