@@ -1,6 +1,10 @@
 import sinon from "sinon"
 import ChainService from ".."
-import { ETHEREUM, OPTIMISM } from "../../../constants"
+import {
+  EIP_1559_COMPLIANT_CHAIN_IDS,
+  ETHEREUM,
+  OPTIMISM,
+} from "../../../constants"
 import {
   AnyEVMTransaction,
   TransactionRequest,
@@ -65,6 +69,8 @@ describe("ChainService", () => {
       )
 
     const transactionRequestWithoutNonce = createLegacyTransactionRequest({
+      network: OPTIMISM,
+      chainID: OPTIMISM.chainID,
       nonce: undefined,
     })
 
@@ -75,14 +81,9 @@ describe("ChainService", () => {
 
     const { chainID, from, network } = transactionRequestWithoutNonce
     expect(providerForNetworkOrThrow.called).toBe(true)
-    expect(
-      chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
-        chainID
-      ][from]
-    ).toBe(CHAIN_NONCE)
 
     const validOptimismEVMTransaction = createAnyEVMTransaction({
-      nonce: 101,
+      nonce: CHAIN_NONCE + 1,
       from,
       network,
     })
@@ -90,16 +91,29 @@ describe("ChainService", () => {
     await chainServiceExternalized.handlePendingTransaction(
       validOptimismEVMTransaction
     )
+
+    // provider.once should be called inside of subscribeToTransactionConfirmation
+    // with the transaction hash
+    expect(onceSpy.called).toBe(true)
+
+    // on EIP-1559 chains we are not using evmChainLastSeenNoncesByNormalizedAddress
+    // but rely on nonce that we got from chain
+    if (!EIP_1559_COMPLIANT_CHAIN_IDS.has(chainID)) {
+      return
+    }
+
+    expect(
+      chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+        chainID
+      ][from]
+    ).toBe(CHAIN_NONCE + 1)
+
     // Handling a pending transaction should update the last seem EVM transaction nonce
     expect(
       chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
         chainID
       ][validOptimismEVMTransaction.from]
     ).toBe(validOptimismEVMTransaction.nonce)
-
-    // provider.once should be called inside of subscribeToTransactionConfirmation
-    // with the transaction hash
-    expect(onceSpy.called).toBe(true)
 
     // Transaction should be persisted to the db
     expect(
