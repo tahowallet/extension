@@ -1052,7 +1052,6 @@ export default class ChainService extends BaseService<Events> {
               { ...transaction, status: 0, error: error.toString() },
               "alchemy"
             )
-            this.releaseEVMTransactionNonce(transaction)
             return Promise.reject(error)
           }),
         this.subscribeToTransactionConfirmation(
