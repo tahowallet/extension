@@ -41,8 +41,8 @@ import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/
 import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import {
-  CHAIN_ID_TO_0X_API_BASE,
   EIP_1559_COMPLIANT_CHAIN_IDS,
+  NETWORKS_SUPPORTING_SWAPS,
 } from "@tallyho/tally-background/constants"
 import { SwapQuoteRequest } from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
 import CorePage from "../components/Core/CorePage"
@@ -511,11 +511,8 @@ export default function Swap(): ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [swapTransactionSettings, isApprovalInProgress])
 
-  const isSwapSupportedByNetwork = () => {
-    return Object.keys(CHAIN_ID_TO_0X_API_BASE).includes(
-      selectedNetwork.chainID
-    )
-  }
+  const isSwapSupportedByNetwork = () =>
+    NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID)
 
   if (!isSwapSupportedByNetwork()) {
     return <Redirect to="/" />

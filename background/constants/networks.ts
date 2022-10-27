@@ -85,14 +85,21 @@ export const TEST_NETWORK_BY_CHAIN_ID = new Set(
 
 export const NETWORK_FOR_LEDGER_SIGNING = [ETHEREUM, POLYGON]
 
+// Networks that are not added to this struct will
+// not have an in-wallet NFT tab
+export const CHAIN_ID_TO_NFT_METADATA_PROVIDER = {
+  [ETHEREUM.chainID]: "alchemy" as const,
+  [POLYGON.chainID]: "alchemy" as const,
+  [OPTIMISM.chainID]: "simplehash" as const,
+  [ARBITRUM_ONE.chainID]: "simplehash" as const,
+}
+
 export const NETWORKS_SUPPORTING_NFTS = new Set(
-  [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, GOERLI, FORK].map(
-    (network) => network.chainID
-  )
+  Object.keys(CHAIN_ID_TO_NFT_METADATA_PROVIDER)
 )
 
 // Networks that are not added to this struct will
-// no have an in-wallet Swap page
+// not have an in-wallet Swap page
 export const CHAIN_ID_TO_0X_API_BASE: {
   [chainID: string]: string | undefined
 } = {
@@ -102,6 +109,10 @@ export const CHAIN_ID_TO_0X_API_BASE: {
   [GOERLI.chainID]: "goerli.api.0x.org",
   [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
 }
+
+export const NETWORKS_SUPPORTING_SWAPS = new Set(
+  Object.keys(CHAIN_ID_TO_0X_API_BASE)
+)
 
 export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
   [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, GOERLI].map(
