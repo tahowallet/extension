@@ -6,17 +6,17 @@ export default function SharedAccordion({
   headerElement,
   contentElement,
   contentHeight,
-  defaultState = false,
+  isInitiallyOpen = false,
   style,
 }: {
   headerElement: ReactElement
   contentElement: ReactElement
   contentHeight?: number
-  defaultState?: boolean
+  isInitiallyOpen?: boolean
   style?: React.CSSProperties
 }): ReactElement {
   const contentRef = useRef<HTMLDivElement>(null)
-  const [isOpen, setIsOpen] = useState(defaultState)
+  const [isOpen, setIsOpen] = useState(isInitiallyOpen)
   const [height, setHeight] = useState(0)
 
   const toggle = () => setIsOpen((open) => !open)

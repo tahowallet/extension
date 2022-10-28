@@ -20,7 +20,7 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
 import NFTsWallet from "../components/NFTs/NFTsWallet"
 import SharedBanner from "../components/Shared/SharedBanner"
-import WalletDefaultBanner from "../components/Wallet/WalletDefaultBanner"
+import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultBanner"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "wallet" })
@@ -81,7 +81,7 @@ export default function Wallet(): ReactElement {
   return (
     <>
       <div className="page_content">
-        <WalletDefaultBanner />
+        <WalletToggleDefaultBanner />
         <div className="section">
           <WalletAccountBalanceControl
             balance={totalMainCurrencyValue}

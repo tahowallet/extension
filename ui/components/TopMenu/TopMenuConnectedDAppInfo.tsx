@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import SharedAccordion from "../Shared/SharedAccordion"
-import { WalletDefaultToggle } from "../Wallet/WalletDefaultBanner"
+import { WalletDefaultToggle } from "../Wallet/WalletToggleDefaultBanner"
 
 function ConnectionDAppGuideline({
   isConnected,
@@ -24,7 +24,7 @@ function ConnectionDAppGuideline({
           marginTop: 8,
           background: "var(--green-120)",
         }}
-        defaultState={!isConnected}
+        isInitiallyOpen={!isConnected}
         headerElement={<span className="title">{t("title")}</span>}
         contentElement={
           <div className="content_wrap">

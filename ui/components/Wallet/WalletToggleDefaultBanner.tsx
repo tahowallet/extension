@@ -49,7 +49,7 @@ export function WalletDefaultToggle(): ReactElement {
     </>
   )
 }
-export default function WalletDefaultBanner(): ReactElement {
+export default function WalletToggleDefaultBanner(): ReactElement {
   const { t } = useTranslation()
   const isDefaultWallet = useBackgroundSelector(selectDefaultWallet)
   const [isHidden, setIsHidden] = useState(isDefaultWallet)
