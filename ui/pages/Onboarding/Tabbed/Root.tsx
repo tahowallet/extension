@@ -30,7 +30,7 @@ function Navigation({ children }: Props): ReactElement {
             height: 100%;
             float: left;
             text-align: center;
-            padding-top: 6em;
+            padding-top: 3em;
             background: radial-gradient(
               ellipse at right top,
               rgba(36, 107, 103, 0.5) 0%,
@@ -52,7 +52,6 @@ function Navigation({ children }: Props): ReactElement {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            margin-bottom: 90px;
             padding: 2em;
           }
           .onboarding_container {

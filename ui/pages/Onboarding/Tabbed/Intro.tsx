@@ -15,7 +15,6 @@ export default function Intro(): ReactElement {
     <section>
       <div className="illustration_section">
         <div className="illustration" />
-        <div className="forest" />
       </div>
       <div className="bottom_part">
         <div className="bottom_content">
@@ -53,11 +52,6 @@ export default function Intro(): ReactElement {
             margin: 3em 0;
             width: 100%;
           }
-          .illustration_section {
-            height: 180px;
-            display: flex;
-            position: relative;
-          }
           section {
             display: flex;
             flex-direction: column;
@@ -90,26 +84,20 @@ export default function Intro(): ReactElement {
             text-align: center;
             z-index: 1;
           }
+          .illustration_section {
+            height: 180px;
+            display: flex;
+            position: relative;
+          }
           .illustration {
             background: url("./images/doggo_grey@2x.png");
             background-size: cover;
             width: 120px;
             height: 120px;
             flex-shrink: 0;
-            left: 0;
-            right: 0;
             margin: 0 auto;
             margin-top: 0;
-            position: absolute;
             animation: fadeIn ease 0.5s;
-          }
-          .forest {
-            background-size: cover;
-            width: 384px;
-            height: 141px;
-            align-self: flex-end;
-            justify-self: flex-end;
-            z-index: 1;
           }
           @keyframes fadeIn {
             0% {

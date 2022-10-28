@@ -70,6 +70,29 @@ export default function SetPassword({
 
   return (
     <>
+      <div className="illustration_section">
+        <div className="illustration" />
+        <style jsx>
+          {`
+            .illustration_section {
+              height: 140px;
+              display: flex;
+              position: relative;
+            }
+            .illustration {
+              background: url("./images/doggo_secure.svg") no-repeat;
+              background-size: 100%;
+              width: 120px;
+              height: 140px;
+              flex-shrink: 0;
+              margin: 0 auto;
+              margin-top: 0;
+              animation: fadeIn ease 0.5s;
+            }
+          `}
+        </style>
+      </div>
+
       <div className="password_section">
         <h1 className="center_text">First, let&apos;s secure your wallet</h1>
 
@@ -136,7 +159,7 @@ export default function SetPassword({
             }
             form {
               background: transparent;
-              width: 50%;
+              width: 65%;
             }
             h1 {
               font-family: "Quincy CF";
@@ -149,10 +172,11 @@ export default function SetPassword({
               width: 100%;
             }
             .strength_bar_wrap {
-              width: 211px;
+              width: 100%;
               height: 26px;
               box-sizing: border-box;
               padding-top: 10px;
+              margin-bottom: 25px;
             }
             .repeat_password_wrap {
               margin-bottom: 25px;
@@ -160,7 +184,7 @@ export default function SetPassword({
             }
             .set_as_default_ask {
               display: flex;
-              width: 262px;
+              width: 100%;
               justify-content: space-between;
               align-items: center;
               color: var(--green-20);
@@ -184,7 +208,8 @@ export default function SetPassword({
             }
             .password_section {
               text-align: center;
-              width: 50%;
+              width: 100%;
+              max-width: 500px;
               margin: auto;
             }
           `}
