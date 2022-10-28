@@ -61,14 +61,18 @@ function Navigation({ children }: Props): ReactElement {
             overflow: hidden;
           }
           .onboarding_branding {
-            width: 30%;
-            padding: 4em;
+            width: 100%;
+            max-width: 300px;
+            padding: 3em 0;
             border-bottom: 1px solid black;
             margin: 2em auto;
           }
+          .onboarding_branding img {
+            max-width: 100%;
+          }
           .onboarding_facts {
             width: 100%;
-            padding: 2em 0;
+            padding: 1em 0;
           }
           .onboarding_chains {
             position: absolute;
@@ -83,6 +87,14 @@ function Navigation({ children }: Props): ReactElement {
             border-radius: 190px;
             font-size: 1em;
             margin: 2em;
+          }
+          @media (max-width: 980px) {
+            .left_container {
+              display: none;
+            }
+            .right_container {
+              width: 100%;
+            }
           }
         `}
       </style>
