@@ -201,6 +201,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           padding-bottom: 16px;
         }
         .content {
+          width: 100%;
           display: flex;
           flex-direction: column;
           align-items: center;
