@@ -70,6 +70,13 @@ function Navigation({ children }: Props): ReactElement {
             width: 100%;
             padding: 2em 0;
           }
+          .onboarding_chains {
+            position: absolute;
+            bottom: 140px;
+            left: 0px;
+            width: 100%;
+            text-align: center;
+          }
           .back_button button {
             background: var(--green-60);
             padding: 1em 0.75em;
@@ -85,6 +92,12 @@ function Navigation({ children }: Props): ReactElement {
         </div>
         <div className="onboarding_facts">
           <img src="./images/onboarding/perks.svg" alt="Onboarding perks" />
+        </div>
+        <div className="onboarding_chains">
+          <img
+            src="./images/onboarding/supported_chains.png"
+            alt="Supported chains"
+          />
         </div>
       </div>
       <div className="right_container">
