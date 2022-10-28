@@ -3,7 +3,6 @@ import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/sel
 import {
   ActivityDetail,
   Activity,
-  fetchSelectedActivityDetails,
 } from "@tallyho/tally-background/redux-slices/activities"
 import SharedButton from "../Shared/SharedButton"
 import SharedAddress from "../Shared/SharedAddress"
@@ -11,6 +10,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { scanWebsite } from "../../utils/constants"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
+import sendRequest from "../../utils/sendRequest"
 
 function DetailRowItem(props: ActivityDetail): ReactElement {
   const { assetIconUrl, label, value } = props
@@ -135,11 +135,11 @@ export default function WalletActivityDetails(
   useEffect(() => {
     const fetchDetails = async () => {
       if (activityItem?.hash) {
-        setDetails(
-          (await dispatch(
-            fetchSelectedActivityDetails(activityItem.hash)
-          )) as unknown as ActivityDetail[]
-        )
+        const data = await sendRequest("activities/getActivityDetails", [
+          activityItem.hash,
+        ])
+
+        setDetails(data)
       }
     }
     fetchDetails()

@@ -8,6 +8,8 @@ import Main from "./main"
 import { encodeJSON, decodeJSON } from "./lib/utils"
 
 import { RootState } from "./redux-slices"
+import { configureBackend } from "./routers/lib"
+import mainRouter from "./routers"
 
 export { browser }
 
@@ -42,6 +44,11 @@ export async function newProxyStore(): Promise<
  */
 export async function startMain(): Promise<Main> {
   const mainService = await Main.create()
+
+  configureBackend({
+    routes: mainRouter,
+    injectedDependencies: { main: mainService },
+  })
 
   mainService.startService()
 
