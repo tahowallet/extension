@@ -42,7 +42,7 @@ function SeedWord(
           line-height: 24px;
           display: inline-flex;
           margin-bottom: 24px;
-          width: 50%;
+          width: 45%;
         }
         .word_index {
           width: 15px;
@@ -267,7 +267,6 @@ function SeedVerification({
             flex-wrap: wrap;
             height: 300px;
             justify-content: flex-start;
-            padding-bottom: 0;
           }
         `}
       </style>

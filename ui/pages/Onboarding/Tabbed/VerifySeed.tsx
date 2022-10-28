@@ -65,7 +65,8 @@ export default function VerifySeed({
           }
           .verify_section {
             text-align: center;
-            width: 50%;
+            width: 100%;
+            max-width: 500px;
             margin: auto;
           }
           .steps_indicator {
