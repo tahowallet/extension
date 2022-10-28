@@ -15,7 +15,7 @@ import {
   selectTransactionMainCurrencyPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { EVM_ROLLUP_CHAIN_IDS, RSK } from "@tallyho/tally-background/constants"
+import { OPTIMISM, RSK } from "@tallyho/tally-background/constants"
 import {
   EVMNetwork,
   isEIP1559EnrichedTransactionRequest,
@@ -80,7 +80,7 @@ const estimateGweiAmount = (options: {
   if (
     transactionData &&
     !isEIP1559EnrichedTransactionRequest(transactionData) &&
-    EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
+    network.chainID === OPTIMISM.chainID
   ) {
     estimatedSpendPerGas =
       (networkSettings.values.gasPrice || estimatedSpendPerGas) +
@@ -146,7 +146,7 @@ export default function FeeSettingsText({
 
   const estimatedRollupFee =
     transactionData &&
-    EVM_ROLLUP_CHAIN_IDS.has(transactionData.network.chainID) &&
+    transactionData.network.chainID === OPTIMISM.chainID &&
     !isEIP1559TransactionRequest(transactionData)
       ? transactionData.estimatedRollupFee
       : 0n
