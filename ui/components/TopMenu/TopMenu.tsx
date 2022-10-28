@@ -79,7 +79,6 @@ export default function TopMenu(): ReactElement {
         })
       )
     }
-    window.close()
   }, [dispatch, currentPermission, allowedPages])
 
   return (
