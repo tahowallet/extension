@@ -32,7 +32,7 @@ function SeedWord(
       >
         <span className="word_index">{index + 1}</span>
         <span className="dash">-</span>
-        {word || <div className="word_box" />}
+        <div className="word_box">{word}</div>
       </div>
       <style jsx>{`
         .word_container {
@@ -40,27 +40,42 @@ function SeedWord(
           color: var(--green-60);
           font-size: 18px;
           line-height: 24px;
-          display: flex;
+          display: inline-flex;
           margin-bottom: 24px;
-          width: 140px;
+          width: 50%;
         }
         .word_index {
           width: 15px;
+          background: var(--green-95);
+          padding: 0.25em;
         }
         .word_container.is_active {
           color: var(--trophy-gold);
         }
         .word_container.is_filled {
-          color: var(--green-20);
+          color: var(--green-40);
+        }
+        .word_container.is_filled .word_box {
+          background: var(--green-60);
+          border-color: var(--green-60);
+          background-image: url("./images/icons/s/close.svg");
+          background-position: right 5px bottom 5px;
+          background-size: 15%;
+          background-repeat: no-repeat;
+          padding-right: 20px;
         }
         .word_box {
           border: 1px solid;
           border-radius: 4px;
-          width: 70px;
+          width: 100px;
           height: 22px;
+          padding: 0.25em 0.5em;
+          text-align: left;
         }
         .dash {
-          margin: 0 11px 0 8px;
+          padding: 0.25em;
+          margin-right: 5px;
+          background: var(--green-95);
         }
       `}</style>
     </>
@@ -250,8 +265,8 @@ function SeedVerification({
           .onboarding_box {
             ${OnboardingBox}
             flex-wrap: wrap;
-            height: 226px;
-            justify-content: space-between;
+            height: 300px;
+            justify-content: flex-start;
             padding-bottom: 0;
           }
         `}

@@ -26,10 +26,10 @@ export default function VerifySeed({
       <div className="steps_indicator">
         <OnboardingStepsIndicator activeStep={2} />
       </div>
-      <h1 className="serif_header center_text">
-        Verify secret recovery phrase
-      </h1>
-      <div className="subtitle">Add the missing words in order</div>
+      <h1 className="serif_header center_text">Verify recovery phrase</h1>
+      <div className="subtitle">
+        Click on each word in the order that you are asked to
+      </div>
 
       {verificationStep === "verification" && (
         <SeedVerification setStep={setVerificationStep} mnemonic={mnemonic} />
@@ -47,9 +47,15 @@ export default function VerifySeed({
             font-size: 46px;
             line-height: 42px;
             margin: 1em auto;
+            margin-bottom: 0px;
           }
           .subtitle {
             ${OnboardingSubheader}
+            margin-top: 1em;
+            margin-bottom: 3em;
+          }
+          .onboarding_box {
+            padding: 2em;
           }
           .top {
             display: flex;
