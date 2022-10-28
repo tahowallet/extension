@@ -267,6 +267,8 @@ function SeedVerification({
             flex-wrap: wrap;
             height: 300px;
             justify-content: flex-start;
+            padding: 3em;
+            padding-bottom: 0;
           }
         `}
       </style>
