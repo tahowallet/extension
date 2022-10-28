@@ -24,7 +24,6 @@ import {
   POLYGON,
   ARBITRUM_ONE,
   OPTIMISM,
-  EVM_ROLLUP_CHAIN_IDS,
   GOERLI,
   SECOND,
   NETWORK_BY_CHAIN_ID,
@@ -483,17 +482,19 @@ export default class ChainService extends BaseService<Events> {
       chainID: network.chainID,
       nonce,
       annotation,
-      estimatedRollupGwei: EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
-        ? await this.estimateL1RollupGasPrice(network)
-        : 0n,
+      estimatedRollupGwei:
+        network.chainID === OPTIMISM.chainID
+          ? await this.estimateL1RollupGasPrice(network)
+          : 0n,
       estimatedRollupFee: 0n,
     }
 
-    if (EVM_ROLLUP_CHAIN_IDS.has(network.chainID)) {
-      transactionRequest.estimatedRollupFee = await this.estimateL1RollupFee(
-        network,
-        unsignedTransactionFromEVMTransaction(transactionRequest)
-      )
+    if (network.chainID === OPTIMISM.chainID) {
+      transactionRequest.estimatedRollupFee =
+        await this.estimateL1RollupFeeForOptimism(
+          network,
+          unsignedTransactionFromEVMTransaction(transactionRequest)
+        )
     }
 
     // Always estimate gas to decide whether the transaction will likely fail.
@@ -963,7 +964,7 @@ export default class ChainService extends BaseService<Events> {
     throw new Error(`Cannot estimate rollup gas for ${network.name}`)
   }
 
-  async estimateL1RollupFee(
+  async estimateL1RollupFeeForOptimism(
     network: EVMNetwork,
     transaction: UnsignedTransaction | EnrichedEVMTransactionRequest
   ): Promise<bigint> {
