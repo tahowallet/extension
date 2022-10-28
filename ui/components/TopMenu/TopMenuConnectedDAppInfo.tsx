@@ -30,14 +30,16 @@ function ConnectionDAppGuideline({
           <div className="content_wrap">
             <ol className="steps">
               <li>
-                {t("step1")}
-                <WalletDefaultToggle />
+                <span className="wallet_toggle_wrap">
+                  {t("step1")}
+                  <WalletDefaultToggle />
+                </span>
               </li>
               <li>{t("step2")}</li>
               <li>{t("step3")}</li>
             </ol>
             <div className="list_wrap">
-              <span className="item a">
+              <span className="item">
                 <img src="./images/tally_token.svg" alt="Tally token" />
                 {tShared("tallyHo")}
               </span>
@@ -64,6 +66,12 @@ function ConnectionDAppGuideline({
           flex-direction: column;
           justify-content: space-between;
         }
+        .wallet_toggle_wrap {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+        }
         .steps {
           margin: 0;
           padding: 0;
@@ -75,7 +83,7 @@ function ConnectionDAppGuideline({
         }
         .steps > li {
           display: flex;
-          align-items: center;
+          align-items: start;
           font-weight: 500;
           font-size: 16px;
           line-height: 40px;
@@ -139,7 +147,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           aria-label={tShared("close")}
           onClick={close}
         />
-        <div>
+        <div className="content">
           <h1>{t(`${isConnected ? "dAppTitle" : "dappConnections"}`)}</h1>
           {isConnected && (
             <>
@@ -180,7 +188,7 @@ export default function TopMenuConnectedDAppInfo(props: {
         }
         .window {
           width: 352px;
-          height: 301px;
+          max-height: 433px;
           box-shadow: 0 10px 12px rgba(0, 20, 19, 0.34),
             0 14px 16px rgba(0, 20, 19, 0.24), 0 24px 24px rgba(0, 20, 19, 0.14);
           border-radius: 8px;
@@ -189,6 +197,13 @@ export default function TopMenuConnectedDAppInfo(props: {
           flex-direction: column;
           align-items: center;
           margin: 0 auto;
+          justify-content: space-between;
+          padding-bottom: 16px;
+        }
+        .content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
         .icon_close {
           mask-image: url("./images/close.svg");
@@ -247,7 +262,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           background-size: cover;
           width: 16px;
           height: 18px;
-          margin-top: 16px;
+          margin: 16px 0 32px;
         }
       `}</style>
     </div>
