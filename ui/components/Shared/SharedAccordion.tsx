@@ -51,13 +51,15 @@ export default function SharedAccordion({
           `}
         />
       </div>
-      <div
-        className={classNames("accordion_content", {
-          visible: isOpen,
-        })}
-      >
-        <div ref={contentRef}>{contentElement}</div>
-      </div>
+      {isOpen && (
+        <div
+          className={classNames("accordion_content", {
+            visible: isOpen,
+          })}
+        >
+          <div ref={contentRef}>{contentElement}</div>
+        </div>
+      )}
       <style jsx>{`
         .accordion {
           background-color: ${isOpen ? "var(--green-120)" : ""};
@@ -74,7 +76,6 @@ export default function SharedAccordion({
         .accordion_content {
           max-height: 0;
           transition: max-height 250ms ease-out;
-          overflow: hidden;
           padding: 0 8px;
         }
         .accordion_content.visible {
