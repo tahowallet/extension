@@ -120,6 +120,7 @@ const isValidUNSDomainName = (s: string): boolean => {
       ".dao",
       ".zil",
       ".x",
+      ".blockchain",
     ]
 
     if (supportedUNSDomains.includes(domainExtension)) {
