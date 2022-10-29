@@ -106,6 +106,7 @@ const FadeIn = ({
   )
 }
 
+// TODO: Use Portals
 function Content({ children }: ContentProps): ReactElement {
   const { isOpen, styles, toggle } = useDropdownContext()
 

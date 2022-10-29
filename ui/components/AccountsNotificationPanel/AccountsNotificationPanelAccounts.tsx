@@ -33,6 +33,7 @@ import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import AccountItemOptionsMenu from "../AccountItem/AccountItemOptionsMenu"
 import { i18n } from "../../_locales/i18n"
 import SharedIcon from "../Shared/SharedIcon"
+import { DropdownMenu } from "../Shared/SharedDropDown"
 
 type WalletTypeInfo = {
   title: string
@@ -76,7 +77,6 @@ function WalletTypeHeader({
   const { title, icon } = walletTypeDetails[accountType]
   const history = useHistory()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
-
   return (
     <>
       <header className="wallet_title">
@@ -86,26 +86,30 @@ function WalletTypeHeader({
           </div>
           {title} {accountType !== AccountType.ReadOnly ? walletNumber : null}
         </h2>
-        {onClickAddAddress ? (
-          <div className="right">
-            <SharedButton
-              type="tertiaryGray"
-              size="small"
-              iconSmall="add"
-              onClick={() => {
+        <DropdownMenu
+          toggler={
+            <SharedIcon
+              color="var(--green-40)"
+              width={24}
+              icon="settings.svg"
+            />
+          }
+          options={[
+            { key: "edit", icon: "icons/s/edit.svg", label: "Edit name" },
+            onClickAddAddress && {
+              key: "addAddress",
+              onClick: () => {
                 if (areKeyringsUnlocked) {
                   onClickAddAddress()
                 } else {
                   history.push("/keyring/unlock")
                 }
-              }}
-            >
-              {t("accounts.notificationPanel.addAddress")}
-            </SharedButton>
-          </div>
-        ) : (
-          <></>
-        )}
+              },
+              icon: "icons/s/add.svg",
+              label: t("accounts.notificationPanel.addAddress"),
+            },
+          ]}
+        />
       </header>
       <style jsx>{`
         .wallet_title {
@@ -113,6 +117,7 @@ function WalletTypeHeader({
           align-items: center;
           justify-content: space-between;
           padding-top: 16px;
+          padding-right: 4px;
         }
         .wallet_title > h2 {
           color: var(--green-40);
