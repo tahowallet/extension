@@ -38,6 +38,7 @@ export type KeyringAccountSigner = {
 
 export interface KeyringMetadata {
   source: "import" | "internal"
+  customName?: string
 }
 
 interface SerializedKeyringData {

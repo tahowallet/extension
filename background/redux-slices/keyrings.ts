@@ -7,7 +7,9 @@ import { Keyring, KeyringMetadata } from "../services/keyring/index"
 
 type KeyringsState = {
   keyrings: Keyring[]
-  keyringMetadata: { [keyringId: string]: { source: "import" | "internal" } }
+  keyringMetadata: {
+    [keyringId: string]: KeyringMetadata
+  }
   importing: false | "pending" | "done"
   status: "locked" | "unlocked" | "uninitialized"
   keyringToVerify: {
@@ -99,6 +101,16 @@ const keyringsSlice = createSlice({
       ...state,
       keyringToVerify: payload,
     }),
+    updateKeyringCustomName: (
+      state,
+      { payload: [id, name] }: { payload: [string, string] }
+    ) => {
+      const { keyringMetadata } = state
+
+      keyringMetadata[id].customName = name
+
+      return state
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -120,6 +132,7 @@ const keyringsSlice = createSlice({
 
 export const {
   updateKeyrings,
+  updateKeyringCustomName,
   keyringLocked,
   keyringUnlocked,
   setKeyringToVerify,

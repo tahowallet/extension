@@ -1,4 +1,10 @@
-import React, { ReactElement, useEffect, useRef, useState } from "react"
+import React, {
+  ReactElement,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import {
   setNewSelectedAccount,
   setSnackbarMessage,
@@ -6,6 +12,7 @@ import {
 import {
   deriveAddress,
   lockKeyrings,
+  updateKeyringCustomName,
 } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   AccountTotal,
@@ -34,6 +41,9 @@ import AccountItemOptionsMenu from "../AccountItem/AccountItemOptionsMenu"
 import { i18n } from "../../_locales/i18n"
 import SharedIcon from "../Shared/SharedIcon"
 import { DropdownMenu } from "../Shared/SharedDropDown"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import SharedInput from "../Shared/SharedInput"
+import AccountItemActionHeader from "../AccountItem/AccountItemActionHeader"
 
 type WalletTypeInfo = {
   title: string
@@ -64,52 +74,272 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   },
 }
 
+const EditSectionForm = ({
+  onSubmit: onSubmitCallback,
+  accountType,
+  currentName,
+}: {
+  onSubmit: (name: string | null) => void
+  accountType: AccountType
+  currentName: string
+}): ReactElement => {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "accounts.accountItem",
+  })
+  const [newName, setNewName] = useState("")
+  const [error, setError] = useState("")
+  const [touched, setTouched] = useState(false)
+
+  const callbackRef = useRef(onSubmitCallback)
+  callbackRef.current = onSubmitCallback
+
+  useEffect(() => {
+    if (touched && newName.trim() === "") {
+      setError(t("noNameError"))
+    } else {
+      setError("")
+    }
+  }, [newName, error, touched, t])
+
+  const onSubmit = React.useCallback(
+    (
+      event:
+        | React.FormEvent<HTMLFormElement>
+        | React.MouseEvent<HTMLButtonElement, MouseEvent>
+    ) => {
+      event.preventDefault()
+      if (!newName) {
+        setTouched(true)
+        setError(t("noNameError"))
+      }
+      if (error) {
+        return
+      }
+
+      callbackRef.current(newName)
+    },
+    [error, newName, t]
+  )
+
+  return (
+    <div
+      className="edit_address_name"
+      role="none"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="header">
+        <AccountItemActionHeader
+          label={t("editName")}
+          icon="icons/s/edit.svg"
+          color="#fff"
+        />
+      </div>
+      <div className="wallet_title">
+        <h2 className="left">
+          <div className="icon_wrap">
+            <div className="icon" />
+          </div>
+          {currentName}
+        </h2>
+      </div>
+      <div className="details" role="presentation">
+        <form onSubmit={onSubmit}>
+          <SharedInput
+            label=""
+            placeholder={t("typeNewName")}
+            errorMessage={error}
+            onChange={(value) => {
+              if (!touched) {
+                setTouched(true)
+              }
+              setNewName(value)
+            }}
+          />
+        </form>
+      </div>
+      <div className="button_container">
+        <SharedButton
+          type="secondary"
+          size="medium"
+          onClick={() => {
+            onSubmitCallback(null)
+          }}
+        >
+          {t("cancel")}
+        </SharedButton>
+        <SharedButton type="primaryGreen" size="medium" onClick={onSubmit}>
+          {t("saveName")}
+        </SharedButton>
+      </div>
+      <style jsx>{`
+        .icon_wrap {
+          background-color: var(--green-60);
+          margin: 0 7px 0 0;
+          border-radius: 4px;
+        }
+        .icon {
+          mask-image: url("${walletTypeDetails[accountType].icon}");
+          mask-size: cover;
+          background-color: var(--green-20);
+          width: 24px;
+          height: 24px;
+        }
+
+        .wallet_title {
+          width: 100%;
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background-color: var(--hunter-green);
+          border-radius: 4px;
+          padding: 8px;
+          margin-top: 24px;
+        }
+
+        .account_container {
+          margin: 0 auto;
+          width: 336px;
+          height: 52px;
+          margin-top: 15px;
+        }
+
+        .wallet_title > h2 {
+          display: flex;
+          align-items: center;
+          color: var(--green-40);
+          font-size: 18px;
+          font-weight: 600;
+          line-height: 24px;
+          margin: 0;
+        }
+
+        .header {
+          height: 24px;
+        }
+
+        .edit_address_name {
+          margin-left: 20px;
+          margin-right: 20px;
+          display: flex;
+          flex-direction: column;
+          height: 95%;
+        }
+        form {
+          margin-top: 0px;
+        }
+        .details {
+          display: flex;
+          flex-direction: column;
+          line-height: 24px;
+          font-size: 16px;
+          margin-top: 16px;
+        }
+        .button_container {
+          margin-top: 32px;
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+        }
+      `}</style>
+    </div>
+  )
+}
+
 function WalletTypeHeader({
   accountType,
   onClickAddAddress,
   walletNumber,
+  keyringId,
 }: {
   accountType: AccountType
   onClickAddAddress?: () => void
   walletNumber?: number
+  keyringId: string | null
 }) {
   const { t } = useTranslation()
   const { title, icon } = walletTypeDetails[accountType]
+  const dispatch = useBackgroundDispatch()
+  const keyringMetadata = useBackgroundSelector(
+    (state) => state.keyrings.keyringMetadata
+  )
+
+  const sectionCustomName = keyringId
+    ? keyringMetadata[keyringId].customName
+    : undefined
+
+  const sectionTitle = useMemo(() => {
+    if (accountType === AccountType.ReadOnly) return title
+
+    if (sectionCustomName) return sectionCustomName
+
+    return `${title} ${walletNumber}`
+  }, [accountType, title, sectionCustomName, walletNumber])
+
   const history = useHistory()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const [showEditMenu, setShowEditMenu] = useState(false)
   return (
     <>
+      {keyringId && (
+        <SharedSlideUpMenu
+          size="small"
+          isOpen={showEditMenu}
+          close={(e) => {
+            e.stopPropagation()
+            setShowEditMenu(false)
+          }}
+        >
+          <EditSectionForm
+            onSubmit={(newName) => {
+              if (newName) {
+                dispatch(updateKeyringCustomName([keyringId, newName]))
+              }
+              setShowEditMenu(false)
+            }}
+            accountType={accountType}
+            currentName={sectionTitle}
+          />
+        </SharedSlideUpMenu>
+      )}
       <header className="wallet_title">
         <h2 className="left">
           <div className="icon_wrap">
             <div className="icon" />
           </div>
-          {title} {accountType !== AccountType.ReadOnly ? walletNumber : null}
+          {sectionTitle}
         </h2>
-        <DropdownMenu
-          toggler={
-            <SharedIcon
-              color="var(--green-40)"
-              width={24}
-              icon="settings.svg"
-            />
-          }
-          options={[
-            { key: "edit", icon: "icons/s/edit.svg", label: "Edit name" },
-            onClickAddAddress && {
-              key: "addAddress",
-              onClick: () => {
-                if (areKeyringsUnlocked) {
-                  onClickAddAddress()
-                } else {
-                  history.push("/keyring/unlock")
-                }
+        {accountType !== AccountType.ReadOnly && (
+          <DropdownMenu
+            toggler={
+              <SharedIcon
+                color="var(--green-40)"
+                width={24}
+                icon="settings.svg"
+              />
+            }
+            options={[
+              {
+                key: "edit",
+                icon: "icons/s/edit.svg",
+                label: "Edit name",
+                onClick: () => setShowEditMenu(true),
               },
-              icon: "icons/s/add.svg",
-              label: t("accounts.notificationPanel.addAddress"),
-            },
-          ]}
-        />
+              onClickAddAddress && {
+                key: "addAddress",
+                onClick: () => {
+                  if (areKeyringsUnlocked) {
+                    onClickAddAddress()
+                  } else {
+                    history.push("/keyring/unlock")
+                  }
+                },
+                icon: "icons/s/add.svg",
+                label: t("accounts.notificationPanel.addAddress"),
+              },
+            ]}
+          />
+        )}
       </header>
       <style jsx>{`
         .wallet_title {
@@ -303,6 +533,7 @@ export default function AccountsNotificationPanelAccounts({
                       <WalletTypeHeader
                         accountType={accountType}
                         walletNumber={idx + 1}
+                        keyringId={accountTotalsByKeyringId[0].keyringId}
                         onClickAddAddress={
                           accountType === "imported" ||
                           accountType === "internal"
