@@ -8,10 +8,19 @@ type DropdownContextValue = {
   styles: React.CSSProperties
 }
 
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-const DropdownContext = React.createContext<DropdownContextValue>(null!)
+const DropdownContext = React.createContext<DropdownContextValue | null>(null)
 
-const useDropdownContext = () => React.useContext(DropdownContext)
+const useDropdownContext = () => {
+  const value = React.useContext(DropdownContext)
+
+  if (!value) {
+    throw new Error(
+      "Dropdown context is only available inside a Dropdown container"
+    )
+  }
+
+  return value
+}
 
 type DropdownContainerProps = { children: React.ReactNode }
 
@@ -74,13 +83,13 @@ function Toggler({ children }: TogglerProps): ReactElement {
   )
 }
 
-const FadeIn = ({
+function FadeIn({
   isOpen,
   children,
 }: {
   isOpen: boolean
   children: React.ReactNode
-}) => {
+}): ReactElement {
   const [shouldRender, setShouldRender] = useState(isOpen)
 
   if (isOpen && !shouldRender) {
@@ -125,6 +134,8 @@ function Content({ children }: ContentProps): ReactElement {
   )
 }
 
+const Dropdown = { Container, Toggler, Content }
+
 type DropdownOption = {
   key: string
   onClick?: (e: React.MouseEvent) => void
@@ -134,14 +145,17 @@ type DropdownOption = {
   hoverColor?: string
 }
 
-export const DropdownMenu: React.FC<{
+export default function SharedDropdown({
+  options,
+  toggler,
+}: {
   toggler: React.ReactElement
   options: Array<DropdownOption | undefined>
-}> = ({ options, toggler }): React.ReactElement => {
+}): React.ReactElement {
   return (
-    <Container>
-      <Toggler>{toggler}</Toggler>
-      <Content>
+    <Dropdown.Container>
+      <Dropdown.Toggler>{toggler}</Dropdown.Toggler>
+      <Dropdown.Content>
         {({ toggle }) => (
           <div style={{ position: "relative" }}>
             <div className="options">
@@ -154,8 +168,12 @@ export const DropdownMenu: React.FC<{
                 <div className="icon_close" />
               </button>
               <ul className="options">
-                {(options.filter(Boolean) as DropdownOption[]).map(
-                  ({ key, onClick, icon, label, color, hoverColor }) => (
+                {options
+                  .filter(
+                    (option): option is DropdownOption =>
+                      typeof option !== "undefined"
+                  )
+                  .map(({ key, onClick, icon, label, color, hoverColor }) => (
                     <li key={key} className="option">
                       <button
                         type="button"
@@ -173,8 +191,7 @@ export const DropdownMenu: React.FC<{
                         />
                       </button>
                     </li>
-                  )
-                )}
+                  ))}
               </ul>
               <style jsx>
                 {`
@@ -247,9 +264,7 @@ export const DropdownMenu: React.FC<{
             </div>
           </div>
         )}
-      </Content>
-    </Container>
+      </Dropdown.Content>
+    </Dropdown.Container>
   )
 }
-
-export default { Container, Toggler, Content }

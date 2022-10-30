@@ -3,7 +3,7 @@ import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch } from "../../hooks"
-import { DropdownMenu } from "../Shared/SharedDropDown"
+import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import AccountItemEditName from "./AccountItemEditName"
 import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
@@ -72,7 +72,7 @@ export default function AccountItemOptionsMenu({
           />
         </div>
       </SharedSlideUpMenu>
-      <DropdownMenu
+      <SharedDropdown
         toggler={
           <button
             type="button"
@@ -85,7 +85,7 @@ export default function AccountItemOptionsMenu({
           {
             key: "edit",
             icon: "icons/s/edit.svg",
-            label: "Edit name",
+            label: t("editName"),
             onClick: () => {
               setShowEditName(true)
             },

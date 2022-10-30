@@ -40,10 +40,9 @@ import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import AccountItemOptionsMenu from "../AccountItem/AccountItemOptionsMenu"
 import { i18n } from "../../_locales/i18n"
 import SharedIcon from "../Shared/SharedIcon"
-import { DropdownMenu } from "../Shared/SharedDropDown"
+import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import SharedInput from "../Shared/SharedInput"
-import AccountItemActionHeader from "../AccountItem/AccountItemActionHeader"
+import EditSectionForm from "./EditSectionForm"
 
 type WalletTypeInfo = {
   title: string
@@ -51,7 +50,7 @@ type WalletTypeInfo = {
   category: string
 }
 
-const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
+export const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   [AccountType.ReadOnly]: {
     title: i18n.t("accounts.notificationPanel.readOnly"),
     icon: "./images/eye@2x.png",
@@ -72,178 +71,6 @@ const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
     icon: "./images/ledger_icon.svg",
     category: i18n.t("accounts.notificationPanel.category.ledger"),
   },
-}
-
-const EditSectionForm = ({
-  onSubmit: onSubmitCallback,
-  accountType,
-  currentName,
-}: {
-  onSubmit: (name: string | null) => void
-  accountType: AccountType
-  currentName: string
-}): ReactElement => {
-  const { t } = useTranslation("translation", {
-    keyPrefix: "accounts.accountItem",
-  })
-  const [newName, setNewName] = useState("")
-  const [error, setError] = useState("")
-  const [touched, setTouched] = useState(false)
-
-  const callbackRef = useRef(onSubmitCallback)
-  callbackRef.current = onSubmitCallback
-
-  useEffect(() => {
-    if (touched && newName.trim() === "") {
-      setError(t("noNameError"))
-    } else {
-      setError("")
-    }
-  }, [newName, error, touched, t])
-
-  const onSubmit = React.useCallback(
-    (
-      event:
-        | React.FormEvent<HTMLFormElement>
-        | React.MouseEvent<HTMLButtonElement, MouseEvent>
-    ) => {
-      event.preventDefault()
-      if (!newName) {
-        setTouched(true)
-        setError(t("noNameError"))
-      }
-      if (error) {
-        return
-      }
-
-      callbackRef.current(newName)
-    },
-    [error, newName, t]
-  )
-
-  return (
-    <div
-      className="edit_address_name"
-      role="none"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="header">
-        <AccountItemActionHeader
-          label={t("editName")}
-          icon="icons/s/edit.svg"
-          color="#fff"
-        />
-      </div>
-      <div className="wallet_title">
-        <h2 className="left">
-          <div className="icon_wrap">
-            <div className="icon" />
-          </div>
-          {currentName}
-        </h2>
-      </div>
-      <div className="details" role="presentation">
-        <form onSubmit={onSubmit}>
-          <SharedInput
-            label=""
-            placeholder={t("typeNewName")}
-            errorMessage={error}
-            onChange={(value) => {
-              if (!touched) {
-                setTouched(true)
-              }
-              setNewName(value)
-            }}
-          />
-        </form>
-      </div>
-      <div className="button_container">
-        <SharedButton
-          type="secondary"
-          size="medium"
-          onClick={() => {
-            onSubmitCallback(null)
-          }}
-        >
-          {t("cancel")}
-        </SharedButton>
-        <SharedButton type="primaryGreen" size="medium" onClick={onSubmit}>
-          {t("saveName")}
-        </SharedButton>
-      </div>
-      <style jsx>{`
-        .icon_wrap {
-          background-color: var(--green-60);
-          margin: 0 7px 0 0;
-          border-radius: 4px;
-        }
-        .icon {
-          mask-image: url("${walletTypeDetails[accountType].icon}");
-          mask-size: cover;
-          background-color: var(--green-20);
-          width: 24px;
-          height: 24px;
-        }
-
-        .wallet_title {
-          width: 100%;
-          box-sizing: border-box;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          background-color: var(--hunter-green);
-          border-radius: 4px;
-          padding: 8px;
-          margin-top: 24px;
-        }
-
-        .account_container {
-          margin: 0 auto;
-          width: 336px;
-          height: 52px;
-          margin-top: 15px;
-        }
-
-        .wallet_title > h2 {
-          display: flex;
-          align-items: center;
-          color: var(--green-40);
-          font-size: 18px;
-          font-weight: 600;
-          line-height: 24px;
-          margin: 0;
-        }
-
-        .header {
-          height: 24px;
-        }
-
-        .edit_address_name {
-          margin-left: 20px;
-          margin-right: 20px;
-          display: flex;
-          flex-direction: column;
-          height: 95%;
-        }
-        form {
-          margin-top: 0px;
-        }
-        .details {
-          display: flex;
-          flex-direction: column;
-          line-height: 24px;
-          font-size: 16px;
-          margin-top: 16px;
-        }
-        .button_container {
-          margin-top: 32px;
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-        }
-      `}</style>
-    </div>
-  )
 }
 
 function WalletTypeHeader({
@@ -297,7 +124,8 @@ function WalletTypeHeader({
               }
               setShowEditMenu(false)
             }}
-            accountType={accountType}
+            onCancel={() => setShowEditMenu(false)}
+            accountTypeIcon={walletTypeDetails[accountType].icon}
             currentName={sectionTitle}
           />
         </SharedSlideUpMenu>
@@ -310,10 +138,11 @@ function WalletTypeHeader({
           {sectionTitle}
         </h2>
         {accountType !== AccountType.ReadOnly && (
-          <DropdownMenu
+          <SharedDropdown
             toggler={
               <SharedIcon
                 color="var(--green-40)"
+                customStyles="cursor: pointer;"
                 width={24}
                 icon="settings.svg"
               />
@@ -322,7 +151,7 @@ function WalletTypeHeader({
               {
                 key: "edit",
                 icon: "icons/s/edit.svg",
-                label: "Edit name",
+                label: t("accounts.accountItem.editName"),
                 onClick: () => setShowEditMenu(true),
               },
               onClickAddAddress && {
