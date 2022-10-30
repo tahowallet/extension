@@ -1,4 +1,7 @@
-import { TransactionReceipt } from "@ethersproject/providers"
+import {
+  TransactionReceipt,
+  TransactionResponse,
+} from "@ethersproject/providers"
 import { ethers, utils } from "ethers"
 import { Logger, UnsignedTransaction } from "ethers/lib/utils"
 import logger from "../../lib/logger"
@@ -740,7 +743,10 @@ export default class ChainService extends BaseService<Events> {
    * available for reuse all intervening nonces.
    */
   releaseEVMTransactionNonce(
-    transactionRequest: TransactionRequestWithNonce | SignedTransaction
+    transactionRequest:
+      | TransactionRequestWithNonce
+      | SignedTransaction
+      | AnyEVMTransaction
   ): void {
     const chainID =
       "chainID" in transactionRequest
@@ -749,6 +755,16 @@ export default class ChainService extends BaseService<Events> {
     if (CHAINS_WITH_MEMPOOL.has(chainID)) {
       const { nonce } = transactionRequest
       const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
+
+      if (
+        !this.evmChainLastSeenNoncesByNormalizedAddress[chainID] ||
+        !this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
+          normalizedAddress
+        ]
+      ) {
+        return
+      }
+
       const lastSeenNonce =
         this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
           normalizedAddress
@@ -1187,6 +1203,63 @@ export default class ChainService extends BaseService<Events> {
     return this.providerForNetworkOrThrow(network).send(method, params)
   }
 
+  /**
+   * Retrieves a confirmed or unconfirmed transaction's details from chain.
+   * If found, then returns the transaction result received from chain.
+   * If the tx hash is not found on chain, then remove it from the lookup queue
+   * and mark it as dropped in the db. This will filter and fix those situations
+   * when our records differ from what the chain/mempool sees. This can happen in
+   * case of unstable networking conditions.
+   *
+   * @param network
+   * @param hash
+   */
+  async getOrCancelTransaction(
+    network: EVMNetwork,
+    hash: string
+  ): Promise<TransactionResponse | null | undefined> {
+    const result = await this.providerForNetworkOrThrow(network).getTransaction(
+      hash
+    )
+
+    if (!result) {
+      logger.warn(
+        `Tx has ${hash} is found in our local registry but not on chain.`
+      )
+
+      if (
+        this.transactionsToRetrieve.some((queuedTx) => queuedTx.hash === hash)
+      ) {
+        // Let's clean up the tx queue if the hash is present.
+        // The pending tx hash should be on chain as soon as it's broadcasted.
+        this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
+          (queuedTx) => queuedTx.hash !== hash
+        )
+      }
+
+      const savedTx = await this.db.getTransaction(network, hash)
+      if (savedTx && !("status" in savedTx)) {
+        // Let's see if we have the tx in the db, and if yes let's mark it as dropped.
+        this.saveTransaction(
+          {
+            ...savedTx,
+            status: 0, // dropped status
+            error:
+              "Transaction was in our local db but was not found on chain.",
+            blockHash: null,
+            blockHeight: null,
+          },
+          "alchemy"
+        )
+
+        // Let's also release the nonce from our bookkeeping.
+        await this.releaseEVMTransactionNonce(savedTx)
+      }
+    }
+
+    return result
+  }
+
   /* *****************
    * PRIVATE METHODS *
    * **************** */
@@ -1405,16 +1478,22 @@ export default class ChainService extends BaseService<Events> {
     firstSeen: number
   ): Promise<void> {
     try {
-      const result = await this.providerForNetworkOrThrow(
-        network
-      ).getTransaction(hash)
+      const result = await this.getOrCancelTransaction(network, hash)
+
+      if (!result) {
+        throw new Error(`Tx hash: ${hash} was not found on ${network.name}`)
+      }
 
       const transaction = transactionFromEthersTransaction(result, network)
 
       // TODO make this provider type specific
       await this.saveTransaction(transaction, "alchemy")
 
-      if (!transaction.blockHash && !transaction.blockHeight) {
+      if (
+        !("status" in transaction) && // if status field is present then it's not a pending tx anymore.
+        !transaction.blockHash &&
+        !transaction.blockHeight
+      ) {
         this.subscribeToTransactionConfirmation(
           transaction.network,
           transaction
