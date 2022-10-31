@@ -57,6 +57,7 @@
     "@types/react-dom": "^17.0.9",
     "@types/react-transition-group": "^4.4.4",
     "@types/zxcvbn": "^4.4.1",
+    "babel-jest": "^29.2.2",
     "webext-redux": "^2.1.7"
   }
 }

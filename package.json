@@ -11,12 +11,13 @@
     "setupFiles": [
       "fake-indexeddb/auto",
       "jest-webextension-mock",
+      "@testing-library/react",
       "./setupJest.ts"
     ],
     "setupFilesAfterEnv": [
       "./setupJest.env.ts"
     ],
-    "testEnvironment": "jsdom"
+    "testEnvironment": "jest-environment-jsdom"
   },
   "keywords": [
     "ethereum",
