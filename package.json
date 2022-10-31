@@ -14,7 +14,8 @@
       "./setupJest.ts"
     ],
     "setupFilesAfterEnv": [
-      "./setupJest.env.ts"
+      "./setupJest.env.ts",
+      "./ui/setupJest.env.ts"
     ],
     "testEnvironment": "jsdom"
   },
