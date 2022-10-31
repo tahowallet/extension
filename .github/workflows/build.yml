@@ -45,7 +45,7 @@ jobs:
       if: ${{ !startsWith(github.ref, 'refs/tags/') }}
       uses: actions/upload-artifact@v3
       with:
-        name: extension-builds
+        name: extension-builds-${{ github.event.number || github.event.head_commit }}
         path: dist/*.zip
     - name: Create Release and Upload Artifacts
       uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # v1
