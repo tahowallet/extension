@@ -6,13 +6,17 @@ export default function SharedAccordion({
   headerElement,
   contentElement,
   contentHeight,
+  isInitiallyOpen = false,
+  style,
 }: {
   headerElement: ReactElement
   contentElement: ReactElement
   contentHeight?: number
+  isInitiallyOpen?: boolean
+  style?: React.CSSProperties
 }): ReactElement {
   const contentRef = useRef<HTMLDivElement>(null)
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(isInitiallyOpen)
   const [height, setHeight] = useState(0)
 
   const toggle = () => setIsOpen((open) => !open)
@@ -22,7 +26,7 @@ export default function SharedAccordion({
   }, [contentRef, contentElement, contentHeight])
 
   return (
-    <div className="accordion">
+    <div className="accordion" style={style}>
       <div
         className="accordion_header"
         role="button"
@@ -47,20 +51,24 @@ export default function SharedAccordion({
           `}
         />
       </div>
-      <div
-        className={classNames("accordion_content", {
-          visible: isOpen,
-        })}
-      >
-        <div ref={contentRef}>{contentElement}</div>
-      </div>
+      {isOpen && (
+        <div
+          className={classNames("accordion_content", {
+            visible: isOpen,
+          })}
+        >
+          <div ref={contentRef}>{contentElement}</div>
+        </div>
+      )}
       <style jsx>{`
+        .accordion {
+          background-color: ${isOpen ? "var(--green-120)" : ""};
+        }
         .accordion_header {
           display: flex;
           align-items: center;
           padding: 4px 8px;
           cursor: pointer;
-          background-color: ${isOpen ? "#041414" : ""};
         }
         .accordion_header_content {
           flex: 1 0 auto;
@@ -68,9 +76,7 @@ export default function SharedAccordion({
         .accordion_content {
           max-height: 0;
           transition: max-height 250ms ease-out;
-          overflow: hidden;
           padding: 0 8px;
-          background-color: ${isOpen ? "#041414" : ""};
         }
         .accordion_content.visible {
           max-height: ${height + 10}px;

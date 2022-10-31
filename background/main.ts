@@ -777,7 +777,7 @@ export default class Main extends BaseService<never> {
             // If there is a currently pending transaction request on Optimism,
             // we need to update its L1 rollup fee as well as the current estimated fees per gas
             const estimatedRollupFee =
-              await this.chainService.estimateL1RollupFee(
+              await this.chainService.estimateL1RollupFeeForOptimism(
                 currentTransactionRequest.network,
                 currentTransactionRequest
               )
