@@ -55,7 +55,7 @@ export default function LedgerPrepare({
           list-style: none;
           padding: 0.5rem;
           counter-reset: step;
-          background-color: var(--hunter-green);
+          background: transparent;
         }
 
         .steps > li {

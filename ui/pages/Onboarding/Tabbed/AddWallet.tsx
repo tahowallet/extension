@@ -15,7 +15,7 @@ const accountCreateButtonInfos = [
       {
         label: "Connect to Ledger",
         icon: "./images/add_wallet/ledger.svg",
-        url: "/ledger",
+        url: "/onboarding/ledger",
         isAvailable: isLedgerSupported,
       },
       {
