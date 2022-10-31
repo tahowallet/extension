@@ -191,7 +191,10 @@ export async function getTokenBalances(
       // A hex value of 0x without any subsequent numbers generally means "no
       // value" (as opposed to 0) in Ethereum implementations, so filter it out
       // as effectively undefined.
-      .filter(({ tokenBalance }) => Number(tokenBalance) !== 0)
+      .filter(
+        ({ tokenBalance }) =>
+          tokenBalance !== "0x" && Number(tokenBalance) !== 0
+      )
       .map((tokenBalance) => {
         let balance = tokenBalance.tokenBalance
         if (balance.length > 66) {
