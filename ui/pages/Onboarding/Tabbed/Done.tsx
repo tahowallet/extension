@@ -68,6 +68,9 @@ export default function Done(): ReactElement {
         </>
       }
     >
+      <div className="confetti">
+        <img src="./images/confetti.svg" alt="Confetti" />
+      </div>
       <div className="wallet_shortcut">
         <span>Try this shortcut to open the wallet.</span>
         <img
@@ -117,6 +120,14 @@ export default function Done(): ReactElement {
         }
         .wallet_shortcut > span {
           text-align: center;
+        }
+        .confetti {
+          position: absolute;
+          z-index: 1;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
         }
       `}</style>
     </LedgerPanelContainer>
