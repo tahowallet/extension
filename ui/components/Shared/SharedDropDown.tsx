@@ -1,11 +1,12 @@
 import React, { ReactElement, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useOnClickOutside } from "../../hooks"
 import AccountitemOptionLabel from "../AccountItem/AccountItemOptionLabel"
+import SharedIcon from "./SharedIcon"
 
 type DropdownContextValue = {
   isOpen: boolean
   toggle: (value?: boolean) => void
-  styles: React.CSSProperties
 }
 
 const DropdownContext = React.createContext<DropdownContextValue | null>(null)
@@ -34,27 +35,14 @@ type ContentProps = {
       }) => React.ReactNode)
 }
 
-function Container({ children }: DropdownContainerProps): ReactElement {
+function DropdownContainer({ children }: DropdownContainerProps): ReactElement {
   const [isOpen, setIsOpen] = useState(false)
-
-  const styles: React.CSSProperties = {
-    position: "absolute",
-    top: 0,
-    left: "100%",
-    transform: "translateX(calc(-100%)",
-    width: "max-content",
-    zIndex: 10,
-    padding: 0,
-    background: "none",
-    border: "none",
-    display: "block",
-  }
 
   const contextValue: DropdownContextValue = {
     isOpen,
     toggle: (value) => setIsOpen(value ?? ((p) => !p)),
-    styles,
   }
+
   return (
     <DropdownContext.Provider value={contextValue}>
       <div
@@ -68,7 +56,7 @@ function Container({ children }: DropdownContainerProps): ReactElement {
   )
 }
 
-function Toggler({ children }: TogglerProps): ReactElement {
+function DropdownToggler({ children }: TogglerProps): ReactElement {
   const { toggle } = useDropdownContext()
 
   return (
@@ -116,8 +104,8 @@ function FadeIn({
 }
 
 // TODO: Use Portals
-function Content({ children }: ContentProps): ReactElement {
-  const { isOpen, styles, toggle } = useDropdownContext()
+function DropdownContent({ children }: ContentProps): ReactElement {
+  const { isOpen, toggle } = useDropdownContext()
 
   const wrapperRef = useRef<HTMLDialogElement>(null)
 
@@ -126,15 +114,29 @@ function Content({ children }: ContentProps): ReactElement {
   return (
     <FadeIn isOpen={isOpen}>
       <div role="presentation" onClick={(e) => e.stopPropagation()}>
-        <dialog ref={wrapperRef} open={isOpen} style={styles}>
+        <dialog ref={wrapperRef} open={isOpen} className="dropdown-left">
           {typeof children === "function" ? children({ toggle }) : children}
         </dialog>
       </div>
+      <style jsx>
+        {`
+          .dropdown-left {
+            position: absolute;
+            top: 0;
+            left: 100%;
+            transform: translateX(calc(-100%));
+            width: max-content;
+            z-index: 10;
+            padding: 0;
+            background: none;
+            border: none;
+            display: block;
+          }
+        `}
+      </style>
     </FadeIn>
   )
 }
-
-const Dropdown = { Container, Toggler, Content }
 
 type DropdownOption = {
   key: string
@@ -152,21 +154,29 @@ export default function SharedDropdown({
   toggler: React.ReactElement
   options: Array<DropdownOption | undefined>
 }): React.ReactElement {
+  const { t } = useTranslation()
+
   return (
-    <Dropdown.Container>
-      <Dropdown.Toggler>{toggler}</Dropdown.Toggler>
-      <Dropdown.Content>
+    <DropdownContainer>
+      <DropdownToggler>{toggler}</DropdownToggler>
+      <DropdownContent>
         {({ toggle }) => (
           <div style={{ position: "relative" }}>
             <div className="options">
-              <button
-                type="button"
-                className="close_button"
-                aria-label="Close"
+              <SharedIcon
+                ariaLabel={t("shared.close")}
+                color="var(--green-40)"
+                hoverColor="var(--green-20)"
+                customStyles={`
+                  position: absolute;
+                  top: 16px;
+                  right: 12px;
+                  cursor: pointer;
+                `}
+                width={12}
                 onClick={() => toggle()}
-              >
-                <div className="icon_close" />
-              </button>
+                icon="close.svg"
+              />
               <ul className="options">
                 {options
                   .filter(
@@ -195,76 +205,58 @@ export default function SharedDropdown({
               </ul>
               <style jsx>
                 {`
-             .icon_settings {
-               mask-image: url("./images/more_dots@2x.png");
-               mask-repeat: no-repeat;
-               mask-position: center;
-               background-color: var(--green-60);
-               mask-size: 20%;
-               width: 4px;
-               height: 20px;
-               border: 10px solid transparent;
-             }
-             .icon_settings:hover {
-               background-color: var(--green-40);
-             }
-             div.options {
-               display: block;
-   
-               margin: 0;
-               padding: 0;
-   
-               cursor: default;
-               background-color: var(--green-120);
-               width: 212px;
-               border-radius: 4px;
-               z-index: 1;
-   
-               box-shadow: 0px 2px 4px 0px #00141357,
-                           0px 6px 8px 0px #0014133D,
-                           0px 16px 16px 0px #00141324;
-             }
-             ul.options {
-               display: flex;
-               padding: 7px 0;
-               align-items: center;
-               flex-direction: column;
-               justify-content: space-between;
-             }
-             .close_button {
-               position: absolute;
-               top: 16px;
-               right: 12px;
-             }
-             .option {
-               display: flex;
-               line-height: 24px;
-               padding: 7px;
-               flex-direction: row;
-               width: 90%;
-               align-items: center;
-               height: 100%;
-               cursor: default;
-               justify-content: space-between;
-             }
-             .icon_close {
-               mask-image: url("./images/close.svg");
-               mask-size: cover;
-               margin-right 2px;
-               width: 11px;
-               height: 11px;
-               background-color: var(--green-40);
-               z-index: 1;
-             }
-             .icon_close:hover {
-               background-color: var(--green-20);
-             }
-           `}
+                  .icon_settings {
+                    mask-image: url("./images/more_dots@2x.png");
+                    mask-repeat: no-repeat;
+                    mask-position: center;
+                    background-color: var(--green-60);
+                    mask-size: 20%;
+                    width: 4px;
+                    height: 20px;
+                    border: 10px solid transparent;
+                  }
+                  .icon_settings:hover {
+                    background-color: var(--green-40);
+                  }
+                  div.options {
+                    display: block;
+
+                    margin: 0;
+                    padding: 0;
+
+                    cursor: default;
+                    background-color: var(--green-120);
+                    width: 212px;
+                    border-radius: 4px;
+                    z-index: 1;
+
+                    box-shadow: 0px 2px 4px 0px #00141357,
+                      0px 6px 8px 0px #0014133d, 0px 16px 16px 0px #00141324;
+                  }
+                  ul.options {
+                    display: flex;
+                    padding: 7px 0;
+                    align-items: center;
+                    flex-direction: column;
+                    justify-content: space-between;
+                  }
+                  .option {
+                    display: flex;
+                    line-height: 24px;
+                    padding: 7px;
+                    flex-direction: row;
+                    width: 90%;
+                    align-items: center;
+                    height: 100%;
+                    cursor: default;
+                    justify-content: space-between;
+                  }
+                `}
               </style>
             </div>
           </div>
         )}
-      </Dropdown.Content>
-    </Dropdown.Container>
+      </DropdownContent>
+    </DropdownContainer>
   )
 }
