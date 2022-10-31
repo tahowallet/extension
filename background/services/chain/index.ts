@@ -323,13 +323,7 @@ export default class ChainService extends BaseService<Events> {
                   logger.debug(
                     `Queuing pending transaction ${hash} for status lookup.`
                   )
-                  this.queueTransactionHashToRetrieve(
-                    network,
-                    hash,
-                    firstSeen
-                  ).catch((e) => {
-                    logger.error(e)
-                  })
+                  this.queueTransactionHashToRetrieve(network, hash, firstSeen)
                 })
               })
               .catch((e) => {
@@ -957,16 +951,33 @@ export default class ChainService extends BaseService<Events> {
    *        seen; used to treat transactions as dropped after a certain amount
    *        of time.
    */
-  async queueTransactionHashToRetrieve(
+  queueTransactionHashToRetrieve(
     network: EVMNetwork,
     txHash: HexString,
     firstSeen: UNIXTime
-  ): Promise<void> {
+  ): void {
     const seen = this.transactionsToRetrieve.some(({ hash }) => hash === txHash)
 
     if (!seen) {
       // @TODO Interleave initial transaction retrieval by network
       this.transactionsToRetrieve.push({ hash: txHash, network, firstSeen })
+    }
+  }
+
+  removeTransactionHashFromQueue(network: EVMNetwork, hash: HexString): void {
+    const seen = this.transactionsToRetrieve.some(
+      (queuedTx) => queuedTx.hash === hash
+    )
+
+    if (seen) {
+      // Let's clean up the tx queue if the hash is present.
+      // The pending tx hash should be on chain as soon as it's broadcasted.
+      this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
+        (queuedTx) => queuedTx.hash !== hash
+      )
+
+      // Let's clean up the subscriptions
+      this.providerForNetwork(network)?.off(hash)
     }
   }
 
@@ -1218,24 +1229,15 @@ export default class ChainService extends BaseService<Events> {
     network: EVMNetwork,
     hash: string
   ): Promise<TransactionResponse | null | undefined> {
-    const result = await this.providerForNetworkOrThrow(network).getTransaction(
-      hash
-    )
+    const provider = this.providerForNetworkOrThrow(network)
+    const result = await provider.getTransaction(hash)
 
     if (!result) {
       logger.warn(
         `Tx has ${hash} is found in our local registry but not on chain.`
       )
 
-      if (
-        this.transactionsToRetrieve.some((queuedTx) => queuedTx.hash === hash)
-      ) {
-        // Let's clean up the tx queue if the hash is present.
-        // The pending tx hash should be on chain as soon as it's broadcasted.
-        this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
-          (queuedTx) => queuedTx.hash !== hash
-        )
-      }
+      this.removeTransactionHashFromQueue(network, hash)
 
       const savedTx = await this.db.getTransaction(network, hash)
       if (savedTx && !("status" in savedTx)) {
@@ -1429,8 +1431,6 @@ export default class ChainService extends BaseService<Events> {
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
     const fetchedByNetwork: { [chainID: string]: number } = {}
-    const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
-    let queue = Promise.resolve()
 
     // Drop all transactions that weren't retrieved from the queue.
     this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
@@ -1449,13 +1449,10 @@ export default class ChainService extends BaseService<Events> {
         // retrieve the transaction, and drop from the updated queue.
         fetchedByNetwork[network.chainID] += 1
 
-        // Do not request all transactions and their related data at once
-        queue = queue.finally(() =>
-          this.retrieveTransaction(network, hash, firstSeen)
-            // Only wait if call doesn't throw
-            .then(() => wait(2.5 * SECOND))
-        )
-
+        // Note: this starts retrieving TRANSACTIONS_RETRIEVED_PER_ALARM * networks at the same time
+        // another queue solution should come here, but one that's editable runtime. Haven't found
+        // a solution yet that seemed to worth the complexity.
+        this.retrieveTransaction({ network, hash, firstSeen })
         return false
       }
     )
@@ -1472,16 +1469,20 @@ export default class ChainService extends BaseService<Events> {
    * @param network the EVM network we're interested in
    * @param transaction the confirmed transaction we're interested in
    */
-  private async retrieveTransaction(
-    network: EVMNetwork,
-    hash: string,
+  private async retrieveTransaction({
+    network,
+    hash,
+    firstSeen,
+  }: {
+    network: EVMNetwork
+    hash: string
     firstSeen: number
-  ): Promise<void> {
+  }): Promise<void> {
     try {
       const result = await this.getOrCancelTransaction(network, hash)
 
       if (!result) {
-        throw new Error(`Tx hash: ${hash} was not found on ${network.name}`)
+        return
       }
 
       const transaction = transactionFromEthersTransaction(result, network)
@@ -1746,7 +1747,13 @@ export default class ChainService extends BaseService<Events> {
         enrichTransactionWithReceipt(transaction, confirmedReceipt),
         "alchemy"
       )
+
+      this.removeTransactionHashFromQueue(network, transaction.hash)
     })
+
+    // Let's add the transaction to the queued lookup. If the transaction is dropped
+    // because of wrong nonce on chain the event will never arrive.
+    this.queueTransactionHashToRetrieve(network, transaction.hash, Date.now())
   }
 
   /**
