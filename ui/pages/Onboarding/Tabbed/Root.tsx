@@ -11,6 +11,7 @@ import SaveSeed from "./SaveSeed"
 import VerifySeed from "./VerifySeed"
 import InfoIntro from "./Intro"
 import ViewOnlyWallet from "./ViewOnlyWallet"
+import Ledger from "./Ledger"
 
 type Props = {
   children: ReactElement
@@ -31,11 +32,13 @@ function Navigation({ children }: Props): ReactElement {
             float: left;
             text-align: center;
             padding-top: 3em;
+            animation: rotate;
             background: radial-gradient(
               ellipse at right top,
               rgba(36, 107, 103, 0.5) 0%,
               rgba(0, 20, 19, 1) 100%
             );
+            transition: all 0.2s ease-in-out;
           }
           .right_container {
             position: relative;
@@ -87,6 +90,22 @@ function Navigation({ children }: Props): ReactElement {
             font-size: 1em;
             margin: 2em;
           }
+          @keyframes rotate {
+            0% {
+              background: radial-gradient(
+                ellipse at right top,
+                rgba(36, 107, 103, 0.5) 0%,
+                rgba(0, 20, 19, 1) 100%
+              );
+            }
+            100% {
+              background: radial-gradient(
+                ellipse at left bottom,
+                rgba(36, 107, 103, 0.5) 0%,
+                rgba(0, 20, 19, 1) 100%
+              );
+            }
+          }
           @media (max-width: 980px) {
             .left_container {
               display: none;
@@ -132,6 +151,9 @@ export default function Root(): ReactElement {
         </Route>
         <Route path={`${path}/add-wallet`}>
           <AddWallet />
+        </Route>
+        <Route path={`${path}/ledger`}>
+          <Ledger />
         </Route>
         <Route path={`${path}/import-seed/set-password`}>
           <SetPassword nextPage={`${path}/import-seed`} />
