@@ -1,8 +1,6 @@
 name: Post build link
 
 on:
-  push:
-    branches: [link-me-up] # For initial testing.
   workflow_dispatch:
     inputs:
       workflow_run_id:
