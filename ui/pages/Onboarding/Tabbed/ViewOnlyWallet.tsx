@@ -51,10 +51,13 @@ export default function ViewOnlyWallet(): ReactElement {
   return (
     <>
       <div className="content">
-        <h1 className="serif_header">Explore Tally Ho!</h1>
+        <div className="illustration_section">
+          <div className="illustration" />
+        </div>
+        <h1 className="serif_header">Read-only address</h1>
         <div className="subtitle">
-          Add an Ethereum address, ENS or UNS name to view an existing wallet in
-          Tally Ho.
+          Add an Ethereum address or ENS name to view an existing wallet in
+          Tally Ho!
         </div>
         <form
           onSubmit={(event) => {
@@ -73,7 +76,7 @@ export default function ViewOnlyWallet(): ReactElement {
             showLoadingOnClick
             isFormSubmit
           >
-            Explore Tally Ho!
+            Preview Tally Ho!
           </SharedButton>
         </form>
       </div>
@@ -100,6 +103,21 @@ export default function ViewOnlyWallet(): ReactElement {
           .input_wrap {
             width: 320px;
             margin-bottom: 24px;
+          }
+          .illustration_section {
+            height: 140px;
+            display: flex;
+            position: relative;
+          }
+          .illustration {
+            background: url("./images/doggo_readonly.svg") no-repeat;
+            background-size: 100%;
+            width: 120px;
+            height: 140px;
+            flex-shrink: 0;
+            margin: 0 auto;
+            margin-top: 0;
+            animation: fadeIn ease 0.5s;
           }
         `}
       </style>
