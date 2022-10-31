@@ -37,7 +37,7 @@ export default function SignerKeyringSigning({
     return <KeyringSetPassword />
   }
   if (keyringStatus === "locked") {
-    return <KeyringUnlock />
+    return <KeyringUnlock displayCancelButton={false} />
   }
 
   // If the keyring is ready, we don't render anything as signing should be

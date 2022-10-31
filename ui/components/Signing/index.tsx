@@ -59,13 +59,17 @@ function SigningLoaded<T extends SignOperationType>({
         {`
           section {
             width: 100%;
-            height: calc(100% - 80px);
+            min-height: 100%;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             align-items: center;
             background-color: var(--green-95);
             z-index: 5;
+          }
+          section:has(footer) {
+            /* Make room for the footer. */
+            height: calc(100% - 80px);
           }
           section :global(h1.title) {
             color: var(--trophy-gold);
