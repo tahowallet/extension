@@ -4,9 +4,9 @@ import {
   EventType,
   JsonRpcProvider,
   Listener,
-  Network,
   WebSocketProvider,
 } from "@ethersproject/providers"
+import { utils } from "ethers"
 import { getNetwork } from "@ethersproject/networks"
 import { MINUTE, SECOND, RSK } from "../../constants"
 import logger from "../../lib/logger"
@@ -126,6 +126,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // currentProviderIndex.
   currentProvider: JsonRpcProvider
 
+  /**
+   * Since our architecture follows a pattern of using distinct provider instances
+   * per network - and we know that a given provider will never switch its network
+   * (rather - we will switch the provider the extension is using) - we can avoid
+   * eth_chainId RPC calls.
+   */
+  private cachedChainId: string
+
   // The index of the provider creator that created the current provider. Used
   // for reconnects when relevant.
   private currentProviderIndex = 0
@@ -167,22 +175,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     super(firstProvider.connection, firstProvider.network)
 
     this.currentProvider = firstProvider
+    this.cachedChainId = utils.hexlify(Number(evmNetwork.chainID))
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
-  }
-
-  /**
-   * Since our architecture follows a pattern of using distinct provider instances
-   * per network - and we know that a given provider will never switch its network
-   * (rather - we will switch the provider the extension is using) - we can avoid
-   * eth_chainId RPC calls once the initial call is made and cached.
-   */
-  override async getNetwork(): Promise<Network> {
-    // eslint-disable-next-line no-underscore-dangle
-    if (this._network) {
-      // eslint-disable-next-line no-underscore-dangle
-      return Promise.resolve(this._network)
-    }
-    return super.getNetwork()
   }
 
   /**
@@ -193,6 +187,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * possible/necessary.
    */
   override async send(method: string, params: unknown): Promise<unknown> {
+    if (method === "eth_chainId") {
+      return this.cachedChainId
+    }
     try {
       if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
         // Detect disconnected WebSocket and immediately throw.
