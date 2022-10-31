@@ -39,6 +39,7 @@ import { Eligible } from "./services/doggo/types"
 import rootReducer from "./redux-slices"
 import {
   deleteAccount,
+  deleteAccountSignerSettings,
   loadAccount,
   updateAccountBalance,
   updateAccountName,
@@ -118,8 +119,8 @@ import {
 } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
+  AccountSigner,
   SignatureResponse,
-  SignerType,
   TXSignatureResponse,
 } from "./services/signing"
 import { ReferrerStats } from "./services/doggo/db"
@@ -512,16 +513,23 @@ export default class Main extends BaseService<never> {
 
   async removeAccount(
     address: HexString,
-    signerType?: SignerType
+    signer: AccountSigner,
+    lastAddressInAccount: boolean
   ): Promise<void> {
     this.store.dispatch(deleteAccount(address))
+
+    if (signer.type !== "read-only" && lastAddressInAccount) {
+      this.store.dispatch(deleteAccountSignerSettings(signer))
+    }
+
     this.store.dispatch(removeActivities(address))
     this.store.dispatch(deleteNFts(address))
+
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))
     await this.providerBridgeService.revokePermissionsForAddress(address)
     // TODO Adjust to handle specific network.
-    await this.signingService.removeAccount(address, signerType)
+    await this.signingService.removeAccount(address, signer.type)
   }
 
   async importLedgerAccounts(

@@ -12,7 +12,6 @@ import {
 import {
   deriveAddress,
   lockKeyrings,
-  updateKeyringCustomName,
 } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   AccountTotal,
@@ -21,7 +20,10 @@ import {
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useHistory } from "react-router-dom"
-import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
+import {
+  AccountType,
+  updateSignerSettings,
+} from "@tallyho/tally-background/redux-slices/accounts"
 import {
   normalizeEVMAddress,
   sameEVMAddress,
@@ -30,6 +32,7 @@ import { clearSignature } from "@tallyho/tally-background/redux-slices/earn"
 import { resetClaimFlow } from "@tallyho/tally-background/redux-slices/claim"
 import { useTranslation } from "react-i18next"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
@@ -77,23 +80,38 @@ function WalletTypeHeader({
   accountType,
   onClickAddAddress,
   walletNumber,
-  keyringId,
+  accountSigner,
 }: {
   accountType: AccountType
   onClickAddAddress?: () => void
+  accountSigner: AccountSigner
   walletNumber?: number
-  keyringId: string | null
 }) {
   const { t } = useTranslation()
   const { title, icon } = walletTypeDetails[accountType]
   const dispatch = useBackgroundDispatch()
-  const keyringMetadata = useBackgroundSelector(
-    (state) => state.keyrings.keyringMetadata
-  )
 
-  const sectionCustomName = keyringId
-    ? keyringMetadata[keyringId].customName
-    : undefined
+  const settingsBySigner = useBackgroundSelector(
+    (state) => state.account.settingsBySigner
+  )
+  const signerSettings = settingsBySigner.find(({ signer }) => {
+    const currentSigner = accountSigner
+
+    if (currentSigner.type !== signer.type) return false
+
+    switch (signer.type) {
+      case "keyring":
+        return signer.keyringID === (currentSigner as typeof signer).keyringID
+
+      case "ledger":
+        return signer.deviceID === (currentSigner as typeof signer).deviceID
+
+      default:
+        return false
+    }
+  })
+
+  const sectionCustomName = signerSettings?.title
 
   const sectionTitle = useMemo(() => {
     if (accountType === AccountType.ReadOnly) return title
@@ -108,7 +126,7 @@ function WalletTypeHeader({
   const [showEditMenu, setShowEditMenu] = useState(false)
   return (
     <>
-      {keyringId && (
+      {accountSigner.type !== "read-only" && (
         <SharedSlideUpMenu
           size="small"
           isOpen={showEditMenu}
@@ -120,7 +138,7 @@ function WalletTypeHeader({
           <EditSectionForm
             onSubmit={(newName) => {
               if (newName) {
-                dispatch(updateKeyringCustomName([keyringId, newName]))
+                dispatch(updateSignerSettings([accountSigner, newName]))
               }
               setShowEditMenu(false)
             }}
@@ -362,7 +380,9 @@ export default function AccountsNotificationPanelAccounts({
                       <WalletTypeHeader
                         accountType={accountType}
                         walletNumber={idx + 1}
-                        keyringId={accountTotalsByKeyringId[0].keyringId}
+                        accountSigner={
+                          accountTotalsByKeyringId[0].accountSigner
+                        }
                         onClickAddAddress={
                           accountType === "imported" ||
                           accountType === "internal"
