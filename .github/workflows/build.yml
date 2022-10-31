@@ -24,9 +24,19 @@ jobs:
         node-version: "${{ steps.nvm.outputs.NVMRC }}"
         cache: "yarn"
     - run: yarn install --frozen-lockfile
+    - name: Detect env block
+      id: env-block
+      if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const detectEnvBlock = require("./.github/workflows/builds/detect-env-block.js")
+          return await detectEnvBlock({ github, context })
     - name: Dev build
       if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
-      run: yarn build
+      run: |
+        echo ${{ steps.env-block.outputs.result }} > .env
+        yarn build
       env:
         ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
         BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
