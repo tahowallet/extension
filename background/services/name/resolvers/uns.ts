@@ -1,10 +1,12 @@
+import { fetchJson } from "@ethersproject/web"
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import { ETHEREUM, MINUTE, POLYGON } from "../../../constants"
-import { ALCHEMY_KEY } from "../../../lib/alchemy"
 import { isDefined } from "../../../lib/utils/type-guards"
 import { sameNetwork } from "../../../networks"
-import { makeFetchWithTimeout } from "../../../utils/fetching"
 import { NameResolver } from "../name-resolver"
+
+// eslint-disable-next-line prefer-destructuring
+const UNS_API_KEY = process.env.UNS_API_KEY
 
 // Time until response is stale
 const RESPONSE_TTL = 2 * MINUTE
@@ -63,26 +65,21 @@ const cacheAsyncResults = <F extends (...args: any[]) => Promise<any>>(
   }) as F
 }
 
-const fetchWithTimeout = makeFetchWithTimeout(3_000)
-
 const UNS_SUPPORTED_NETWORKS = [ETHEREUM, POLYGON]
 
 /**
  * Lookup a UNS domain name and fetch the owners address
  */
 const lookupUNSDomain = async (domain: string) => {
-  const response = await fetchWithTimeout(
-    `https://unstoppabledomains.g.alchemy.com/domains/${domain}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${ALCHEMY_KEY?.trim()}`,
-      },
-    }
-  )
-  const data = await response.json()
+  const response = await fetchJson({
+    url: `https://resolve.unstoppabledomains.com/domains/${domain}`,
+    headers: {
+      Authorization: `Bearer ${UNS_API_KEY}`,
+    },
+    timeout: 3_000,
+  })
 
-  return data
+  return response
 }
 
 /**
@@ -91,18 +88,15 @@ const lookupUNSDomain = async (domain: string) => {
 const reverseLookupAddress = cacheAsyncResults(
   RESPONSE_TTL,
   async (address: string) => {
-    const response = await fetchWithTimeout(
-      `https://unstoppabledomains.g.alchemy.com/domains/?owners=${address}&sortBy=id&sortDirection=ASC`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${process.env.ALCHEMY_KEY?.trim()}`,
-        },
-      }
-    )
-    const data = await response.json()
+    const response = await fetchJson({
+      url: `https://resolve.unstoppabledomains.com/domains/?owners=${address}&sortBy=id&sortDirection=ASC`,
+      headers: {
+        Authorization: `Bearer ${UNS_API_KEY}`,
+      },
+      timeout: 3_000,
+    })
 
-    return data
+    return response
   },
   ([address]) => address
 )

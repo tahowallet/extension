@@ -196,9 +196,11 @@ export default function Send(): ReactElement {
               selectedAsset={selectedAsset}
               amount={amount}
             />
-            <div className="value">
-              ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
-            </div>
+            {!hasError && (
+              <div className="value">
+                ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
+              </div>
+            )}
           </div>
           <div className="form_input send_to_field">
             <label htmlFor="send_address">{t("wallet.sendTo")}</label>
@@ -291,6 +293,7 @@ export default function Send(): ReactElement {
             margin-top: 30px;
           }
           .form_input {
+            position: relative;
             margin-bottom: 14px;
           }
           .form {
@@ -305,8 +308,8 @@ export default function Send(): ReactElement {
           .value {
             display: flex;
             justify-content: flex-end;
-            position: relative;
-            top: -24px;
+            position: absolute;
+            bottom: 8px;
             right: 16px;
             color: var(--green-60);
             font-size: 12px;
