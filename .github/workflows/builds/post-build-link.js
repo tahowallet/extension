@@ -86,7 +86,7 @@ module.exports = async function postBuildLink({ github, context }) {
     `Detected artifact ${matchArtifact.name} at ${artifactUrl}, posting...`
   )
 
-  const updatedBody = `${body.replace(
+  const updatedBody = `${(body ?? "").replace(
     /\s+Latest build: [^\n]*/,
     ""
   )}\n\nLatest build: [${matchArtifact.name}](${artifactUrl}) (as of ${new Date(
