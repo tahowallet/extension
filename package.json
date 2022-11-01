@@ -44,7 +44,7 @@
     "test": "yarn run test:unit && yarn run test:integration && yarn run test:components",
     "test:integration": "echo \"> Running Integration Tests\" && jest \"integration.test.ts\" --forceExit --runInBand",
     "test:unit": "echo \"> Running Unit Tests\" && jest \"unit.test.ts\" --forceExit",
-    "test:components": "echo \"> Running Components Tests\" && jest \"ui\" --forceExit",
+    "test:ui": "echo \"> Running UI Tests\" && jest \"ui\" --forceExit",
     "preversion": "(which jq &>1 && which yq &>1) || (echo 'You must install jq and yq; scripts/macos-setup.sh for macOS.' && exit 1)",
     "version": "scripts/update-version.sh",
     "postversion": "git push --tags origin release-$npm_package_version",
