@@ -32,7 +32,7 @@ const bannerCampaigns: Campaign[] = [
       },
       secondary: {
         title: i18n.t("wallet.banner.learnMore"),
-        link: "https://galxe.com/arbitrum", // TODO will change - blogpost link
+        link: "https://blog.tally.cash/dogyssey-launch/?utm_campaign=arbitrum-support&utm_medium=in-wallet&utm_source=dogyssey-banner",
       },
     },
   },
