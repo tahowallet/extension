@@ -1,13 +1,13 @@
 type OldState = {
-  account: {
+  ui: {
     [sliceKey: string]: unknown
   }
   [otherSlice: string]: unknown
 }
 
 type NewState = {
-  account: {
-    settingsBySigner: Array<{
+  ui: {
+    accountSignerSettings: Array<{
       signer: unknown
       title?: string
     }>
@@ -19,7 +19,7 @@ type NewState = {
 export default (oldState: Record<string, unknown>): NewState => {
   const prevState = oldState as OldState
 
-  const { account } = prevState
+  const { ui } = prevState
 
-  return { ...prevState, account: { ...account, settingsBySigner: [] } }
+  return { ...prevState, ui: { ...ui, accountSignerSettings: [] } }
 }

@@ -1,9 +1,12 @@
 import Dexie, { Transaction } from "dexie"
 
+import { isEqual } from "lodash"
 import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork } from "../../accounts"
 
 import DEFAULT_PREFERENCES from "./defaults"
+import { AccountSignerSettings } from "../../ui"
+import type { AccountSigner } from "../signing"
 
 // The idea is to use this interface to describe the data structure stored in indexedDb
 // In the future this might also have a runtime type check capability, but it's good enough for now.
@@ -15,6 +18,7 @@ export interface Preferences {
   defaultWallet: boolean
   currentAddress?: string
   selectedAccount: AddressOnNetwork
+  accountSignersSettings: AccountSignerSettings[]
 }
 
 export class PreferenceDatabase extends Dexie {
@@ -208,6 +212,20 @@ export class PreferenceDatabase extends Dexie {
           })
       })
 
+    this.version(10)
+      .stores({
+        preferences: "++id",
+      })
+      .upgrade((tx) => {
+        return tx
+          .table("preferences")
+          .toCollection()
+          .modify((storedPreferences: Preferences) => {
+            // eslint-disable-next-line no-param-reassign
+            storedPreferences.accountSignersSettings = []
+          })
+      })
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
@@ -232,6 +250,43 @@ export class PreferenceDatabase extends Dexie {
     await this.preferences
       .toCollection()
       .modify({ selectedAccount: addressNetwork })
+  }
+
+  async updateSignerSettings(
+    signer: Exclude<AccountSigner, { type: "read-only" }>,
+    title: string
+  ): Promise<AccountSignerSettings[]> {
+    const { accountSignersSettings } = await this.getPreferences()
+
+    const signerUISettings = accountSignersSettings.find(
+      ({ signer: storedSigner }) => isEqual(storedSigner, signer)
+    )
+
+    if (signerUISettings) {
+      signerUISettings.title = title
+    } else {
+      accountSignersSettings.push({ signer, title })
+    }
+
+    await this.preferences.toCollection().modify({ accountSignersSettings })
+
+    return accountSignersSettings
+  }
+
+  async deleteAccountSignerSettings(
+    signer: Exclude<AccountSigner, { type: "read-only" }>
+  ): Promise<AccountSignerSettings[]> {
+    const { accountSignersSettings } = await this.getPreferences()
+
+    const updatedSettingsBySigner = accountSignersSettings.filter(
+      ({ signer: storedSigner }) => !isEqual(storedSigner, signer)
+    )
+
+    await this.preferences
+      .toCollection()
+      .modify({ accountSignersSettings: updatedSettingsBySigner })
+
+    return updatedSettingsBySigner
   }
 }
 

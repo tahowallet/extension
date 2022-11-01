@@ -8,6 +8,7 @@ import React, {
 import {
   setNewSelectedAccount,
   setSnackbarMessage,
+  updateSignerSettings,
 } from "@tallyho/tally-background/redux-slices/ui"
 import {
   deriveAddress,
@@ -20,10 +21,7 @@ import {
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useHistory } from "react-router-dom"
-import {
-  AccountType,
-  updateSignerSettings,
-} from "@tallyho/tally-background/redux-slices/accounts"
+import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   normalizeEVMAddress,
   sameEVMAddress,
@@ -92,7 +90,7 @@ function WalletTypeHeader({
   const dispatch = useBackgroundDispatch()
 
   const settingsBySigner = useBackgroundSelector(
-    (state) => state.account.settingsBySigner
+    (state) => state.ui.accountSignerSettings
   )
   const signerSettings = settingsBySigner.find(({ signer }) => {
     const currentSigner = accountSigner

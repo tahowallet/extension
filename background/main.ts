@@ -39,7 +39,6 @@ import { Eligible } from "./services/doggo/types"
 import rootReducer from "./redux-slices"
 import {
   deleteAccount,
-  deleteAccountSignerSettings,
   loadAccount,
   updateAccountBalance,
   updateAccountName,
@@ -67,6 +66,7 @@ import {
   setSelectedAccount,
   setNewSelectedAccount,
   setSnackbarMessage,
+  setAccountsSignerSettings,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -120,6 +120,7 @@ import {
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
+  ReadOnlyAccountSigner,
   SignatureResponse,
   TXSignatureResponse,
 } from "./services/signing"
@@ -519,7 +520,7 @@ export default class Main extends BaseService<never> {
     this.store.dispatch(deleteAccount(address))
 
     if (signer.type !== "read-only" && lastAddressInAccount) {
-      this.store.dispatch(deleteAccountSignerSettings(signer))
+      await this.preferenceService.deleteAccountSignerSettings(signer)
     }
 
     this.store.dispatch(removeActivities(address))
@@ -1277,6 +1278,13 @@ export default class Main extends BaseService<never> {
       }
     )
 
+    this.preferenceService.emitter.on(
+      "updatedSignerSettings",
+      (accountSignerSettings) => {
+        this.store.dispatch(setAccountsSignerSettings(accountSignerSettings))
+      }
+    )
+
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
 
@@ -1370,6 +1378,13 @@ export default class Main extends BaseService<never> {
     )
 
     return getActivityDetails(enrichedTransaction)
+  }
+
+  async updateSignerSettings(
+    signer: Exclude<AccountSigner, typeof ReadOnlyAccountSigner>,
+    title: string
+  ): Promise<void> {
+    return this.preferenceService.updateAccountSignerSettings(signer, title)
   }
 
   async resolveNameOnNetwork(

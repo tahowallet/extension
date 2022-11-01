@@ -3,6 +3,8 @@ import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
+import { AccountSigner, ReadOnlyAccountSigner } from "../services/signing"
+import { AccountSignerSettings } from "../ui"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 
@@ -32,6 +34,7 @@ export type UIState = {
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
   slippageTolerance: number
+  accountSignerSettings: AccountSignerSettings[]
 }
 
 export type Events = {
@@ -56,6 +59,7 @@ export const initialState: UIState = {
   settings: defaultSettings,
   snackbarMessage: "",
   slippageTolerance: 0.01,
+  accountSignerSettings: [],
 }
 
 const uiSlice = createSlice({
@@ -138,6 +142,12 @@ const uiSlice = createSlice({
       ...state,
       slippageTolerance,
     }),
+    setAccountsSignerSettings: (
+      state,
+      { payload }: { payload: AccountSignerSettings[] }
+    ) => {
+      return { ...state, accountSignerSettings: payload }
+    },
   },
 })
 
@@ -153,6 +163,7 @@ export const {
   clearSnackbarMessage,
   setRouteHistoryEntries,
   setSlippageTolerance,
+  setAccountsSignerSettings,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -176,6 +187,19 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
     dispatch(uiSlice.actions.setSelectedAccount(addressNetwork))
     // Do async work needed after the account is switched
     await emitter.emit("newSelectedAccountSwitched", addressNetwork)
+  }
+)
+
+export const updateSignerSettings = createBackgroundAsyncThunk(
+  "ui/updateSignerSettings",
+  async (
+    [signer, title]: [
+      Exclude<AccountSigner, typeof ReadOnlyAccountSigner>,
+      string
+    ],
+    { extra: { main } }
+  ) => {
+    return main.updateSignerSettings(signer, title)
   }
 )
 

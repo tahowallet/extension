@@ -1,5 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { isEqual } from "lodash"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../accounts"
 import { EVMNetwork, Network } from "../networks"
@@ -10,7 +9,7 @@ import {
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
-import { AccountSigner, ReadOnlyAccountSigner } from "../services/signing"
+import { AccountSigner } from "../services/signing"
 import { TEST_NETWORK_BY_CHAIN_ID } from "../constants"
 
 /**
@@ -63,10 +62,6 @@ export type AccountState = {
     evm: AccountsByChainID
   }
   combinedData: CombinedAccountData
-  settingsBySigner: Array<{
-    signer: Exclude<AccountSigner, typeof ReadOnlyAccountSigner>
-    title?: string
-  }>
 }
 
 export type CombinedAccountData = {
@@ -96,7 +91,6 @@ export const initialState: AccountState = {
     totalMainCurrencyValue: "",
     assets: [],
   },
-  settingsBySigner: [],
 }
 
 function newAccountData(
@@ -359,51 +353,15 @@ const accountSlice = createSlice({
         ens: { ...baseAccountData.ens, avatarURL: avatar },
       }
     },
-    updateSignerSettings: (
-      state,
-      {
-        payload: [signer, title],
-      }: { payload: [Exclude<AccountSigner, { type: "read-only" }>, string] }
-    ) => {
-      const { settingsBySigner } = state
-
-      const signerUISettings = settingsBySigner.find(
-        ({ signer: storedSigner }) => isEqual(storedSigner, signer)
-      )
-
-      if (signerUISettings) {
-        signerUISettings.title = title
-      } else {
-        settingsBySigner.push({ signer, title })
-      }
-
-      return state
-    },
-    deleteAccountSignerSettings: (
-      state,
-      {
-        payload: signer,
-      }: { payload: Exclude<AccountSigner, { type: "read-only" }> }
-    ) => {
-      const { settingsBySigner } = state
-
-      const updatedSettingsBySigner = settingsBySigner.filter(
-        ({ signer: storedSigner }) => !isEqual(storedSigner, signer)
-      )
-
-      return { ...state, settingsBySigner: updatedSettingsBySigner }
-    },
   },
 })
 
 export const {
   deleteAccount,
-  deleteAccountSignerSettings,
   loadAccount,
   updateAccountBalance,
   updateAccountName,
   updateENSAvatar,
-  updateSignerSettings,
 } = accountSlice.actions
 
 export default accountSlice.reducer
