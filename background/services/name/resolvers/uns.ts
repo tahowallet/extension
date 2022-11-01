@@ -72,7 +72,7 @@ const UNS_SUPPORTED_NETWORKS = [ETHEREUM, POLYGON]
  */
 const lookupUNSDomain = async (domain: string) => {
   const response = await fetchJson({
-    url: `https://unstoppabledomains.g.alchemy.com/domains/${domain}`,
+    url: `https://resolve.unstoppabledomains.com/domains/${domain}`,
     headers: {
       Authorization: `Bearer ${UNS_API_KEY}`,
     },
