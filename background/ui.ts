@@ -1,6 +1,6 @@
-import type { AccountSigner, ReadOnlyAccountSigner } from "./services/signing"
+import { AccountSignerWithId } from "./signing"
 
 export type AccountSignerSettings = {
-  signer: Exclude<AccountSigner, typeof ReadOnlyAccountSigner>
+  signer: AccountSignerWithId
   title?: string
 }

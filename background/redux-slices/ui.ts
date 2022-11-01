@@ -3,7 +3,7 @@ import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
-import { AccountSigner, ReadOnlyAccountSigner } from "../services/signing"
+import { AccountSignerWithId } from "../signing"
 import { AccountSignerSettings } from "../ui"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
@@ -190,16 +190,13 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
   }
 )
 
-export const updateSignerSettings = createBackgroundAsyncThunk(
-  "ui/updateSignerSettings",
+export const updateSignerTitle = createBackgroundAsyncThunk(
+  "ui/updateSignerTitle",
   async (
-    [signer, title]: [
-      Exclude<AccountSigner, typeof ReadOnlyAccountSigner>,
-      string
-    ],
+    [signer, title]: [AccountSignerWithId, string],
     { extra: { main } }
   ) => {
-    return main.updateSignerSettings(signer, title)
+    return main.updateSignerTitle(signer, title)
   }
 )
 

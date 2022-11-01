@@ -9,8 +9,8 @@ import { normalizeEVMAddress } from "../../lib/utils"
 import { ETHEREUM, OPTIMISM, ARBITRUM_ONE } from "../../constants"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString } from "../../types"
-import type { AccountSigner } from "../signing"
 import { AccountSignerSettings } from "../../ui"
+import { AccountSignerWithId } from "../../signing"
 
 type AddressBookEntry = {
   network: EVMNetwork
@@ -195,7 +195,7 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   async deleteAccountSignerSettings(
-    signer: Exclude<AccountSigner, { type: "read-only" }>
+    signer: AccountSignerWithId
   ): Promise<void> {
     const updatedSignerSettings = await this.db.deleteAccountSignerSettings(
       signer
@@ -204,11 +204,11 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit("updatedSignerSettings", updatedSignerSettings)
   }
 
-  async updateAccountSignerSettings(
-    signer: Exclude<AccountSigner, { type: "read-only" }>,
+  async updateAccountSignerTitle(
+    signer: AccountSignerWithId,
     title: string
   ): Promise<void> {
-    const updatedSignerSettings = this.db.updateSignerSettings(signer, title)
+    const updatedSignerSettings = this.db.updateSignerTitle(signer, title)
 
     this.emitter.emit("updatedSignerSettings", await updatedSignerSettings)
   }

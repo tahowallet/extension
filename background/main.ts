@@ -120,7 +120,6 @@ import {
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
-  ReadOnlyAccountSigner,
   SignatureResponse,
   TXSignatureResponse,
 } from "./services/signing"
@@ -143,6 +142,7 @@ import {
 import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
 import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
+import { AccountSignerWithId } from "./signing"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1380,11 +1380,11 @@ export default class Main extends BaseService<never> {
     return getActivityDetails(enrichedTransaction)
   }
 
-  async updateSignerSettings(
-    signer: Exclude<AccountSigner, typeof ReadOnlyAccountSigner>,
+  async updateSignerTitle(
+    signer: AccountSignerWithId,
     title: string
   ): Promise<void> {
-    return this.preferenceService.updateAccountSignerSettings(signer, title)
+    return this.preferenceService.updateAccountSignerTitle(signer, title)
   }
 
   async resolveNameOnNetwork(

@@ -1,12 +1,12 @@
 import Dexie, { Transaction } from "dexie"
 
-import { isEqual } from "lodash"
 import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork } from "../../accounts"
 
 import DEFAULT_PREFERENCES from "./defaults"
 import { AccountSignerSettings } from "../../ui"
-import type { AccountSigner } from "../signing"
+import { AccountSignerWithId } from "../../signing"
+import { isSameAccountSignerWithId } from "../../utils/signing"
 
 // The idea is to use this interface to describe the data structure stored in indexedDb
 // In the future this might also have a runtime type check capability, but it's good enough for now.
@@ -252,14 +252,15 @@ export class PreferenceDatabase extends Dexie {
       .modify({ selectedAccount: addressNetwork })
   }
 
-  async updateSignerSettings(
-    signer: Exclude<AccountSigner, { type: "read-only" }>,
+  async updateSignerTitle(
+    signer: AccountSignerWithId,
     title: string
   ): Promise<AccountSignerSettings[]> {
     const { accountSignersSettings } = await this.getPreferences()
 
     const signerUISettings = accountSignersSettings.find(
-      ({ signer: storedSigner }) => isEqual(storedSigner, signer)
+      ({ signer: storedSigner }) =>
+        isSameAccountSignerWithId(storedSigner, signer)
     )
 
     if (signerUISettings) {
@@ -274,12 +275,13 @@ export class PreferenceDatabase extends Dexie {
   }
 
   async deleteAccountSignerSettings(
-    signer: Exclude<AccountSigner, { type: "read-only" }>
+    signer: AccountSignerWithId
   ): Promise<AccountSignerSettings[]> {
     const { accountSignersSettings } = await this.getPreferences()
 
     const updatedSettingsBySigner = accountSignersSettings.filter(
-      ({ signer: storedSigner }) => !isEqual(storedSigner, signer)
+      ({ signer: storedSigner }) =>
+        !isSameAccountSignerWithId(storedSigner, signer)
     )
 
     await this.preferences

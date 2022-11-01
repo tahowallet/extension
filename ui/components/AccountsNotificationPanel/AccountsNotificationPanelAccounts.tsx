@@ -8,7 +8,7 @@ import React, {
 import {
   setNewSelectedAccount,
   setSnackbarMessage,
-  updateSignerSettings,
+  updateSignerTitle,
 } from "@tallyho/tally-background/redux-slices/ui"
 import {
   deriveAddress,
@@ -31,6 +31,7 @@ import { resetClaimFlow } from "@tallyho/tally-background/redux-slices/claim"
 import { useTranslation } from "react-i18next"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
+import { isSameAccountSignerWithId } from "@tallyho/tally-background/utils/signing"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
@@ -92,22 +93,12 @@ function WalletTypeHeader({
   const settingsBySigner = useBackgroundSelector(
     (state) => state.ui.accountSignerSettings
   )
-  const signerSettings = settingsBySigner.find(({ signer }) => {
-    const currentSigner = accountSigner
-
-    if (currentSigner.type !== signer.type) return false
-
-    switch (signer.type) {
-      case "keyring":
-        return signer.keyringID === (currentSigner as typeof signer).keyringID
-
-      case "ledger":
-        return signer.deviceID === (currentSigner as typeof signer).deviceID
-
-      default:
-        return false
-    }
-  })
+  const signerSettings =
+    accountSigner.type !== "read-only"
+      ? settingsBySigner.find(({ signer }) =>
+          isSameAccountSignerWithId(signer, accountSigner)
+        )
+      : undefined
 
   const sectionCustomName = signerSettings?.title
 
@@ -136,7 +127,7 @@ function WalletTypeHeader({
           <EditSectionForm
             onSubmit={(newName) => {
               if (newName) {
-                dispatch(updateSignerSettings([accountSigner, newName]))
+                dispatch(updateSignerTitle([accountSigner, newName]))
               }
               setShowEditMenu(false)
             }}
