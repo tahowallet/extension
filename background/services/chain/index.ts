@@ -258,8 +258,8 @@ export default class ChainService extends BaseService<Events> {
       POLYGON,
       OPTIMISM,
       GOERLI,
+      ARBITRUM_ONE,
       ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [RSK] : []),
-      ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM) ? [ARBITRUM_ONE] : []),
     ]
 
     this.trackedNetworks = []
