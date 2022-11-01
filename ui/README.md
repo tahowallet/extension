@@ -53,6 +53,9 @@ Load the unpacked extension for your web browser via the `/build` directory. Cur
 usually is named the same as the group. All components here are prefixed
 by the folder they're in.
 
+/components/GroupName/__tests__/GroupNameComponentNam.test.tsx
+# The tests are grouped in the __tests__ folder, which is located at the level of the component that is being tested.
+
 /public
 # Static assets like fonts and images
 ```
