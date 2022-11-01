@@ -1,6 +1,6 @@
 import sinon from "sinon"
 import ChainService from ".."
-import { CHAINS_WITH_MEMPOOL, ETHEREUM, OPTIMISM } from "../../../constants"
+import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"
 import {
   AnyEVMTransaction,
   TransactionRequest,
@@ -48,7 +48,7 @@ describe("ChainService", () => {
     })
   })
 
-  it("handlePendingTransactions should update nonce tracking, subscribe to transaction confirmations, and persist the transaction to indexedDB", async () => {
+  it("handlePendingTransactions on chains without mempool should subscribe to transaction confirmations, and persist the transaction to indexedDB", async () => {
     const chainServiceExternalized =
       chainService as unknown as ChainServiceExternalized
     const CHAIN_NONCE = 100
@@ -75,6 +75,50 @@ describe("ChainService", () => {
       transactionRequestWithoutNonce
     )
 
+    const { from, network } = transactionRequestWithoutNonce
+    expect(providerForNetworkOrThrow.called).toBe(true)
+
+    const validOptimismEVMTransaction = createAnyEVMTransaction({
+      nonce: CHAIN_NONCE + 1,
+      from,
+      network,
+    })
+
+    await chainServiceExternalized.handlePendingTransaction(
+      validOptimismEVMTransaction
+    )
+
+    // provider.once should be called inside of subscribeToTransactionConfirmation
+    // with the transaction hash
+    expect(onceSpy.called).toBe(true)
+  })
+  it("handlePendingTransactions on chains with mempool should update nonce tracking, subscribe to transaction confirmations, and persist the transaction to indexedDB", async () => {
+    const chainServiceExternalized =
+      chainService as unknown as ChainServiceExternalized
+    const CHAIN_NONCE = 100
+    // Return a fake provider
+    const onceSpy = sandbox.spy()
+    const providerForNetworkOrThrow = sandbox
+      .stub(chainServiceExternalized, "providerForNetworkOrThrow")
+      .callsFake(
+        () =>
+          ({
+            getTransactionCount: async () => CHAIN_NONCE,
+            once: onceSpy,
+          } as unknown as SerialFallbackProvider)
+      )
+
+    const transactionRequestWithoutNonce = createLegacyTransactionRequest({
+      network: POLYGON,
+      chainID: POLYGON.chainID,
+      nonce: undefined,
+    })
+
+    // Populate EVM Transaction Nonce
+    await chainServiceExternalized.populateEVMTransactionNonce(
+      transactionRequestWithoutNonce
+    )
+
     const { chainID, from, network } = transactionRequestWithoutNonce
     expect(providerForNetworkOrThrow.called).toBe(true)
 
@@ -92,12 +136,6 @@ describe("ChainService", () => {
     // with the transaction hash
     expect(onceSpy.called).toBe(true)
 
-    // on EIP-1559 chains we are not using evmChainLastSeenNoncesByNormalizedAddress
-    // but rely on nonce that we got from chain
-    if (!CHAINS_WITH_MEMPOOL.has(chainID)) {
-      return
-    }
-
     expect(
       chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
         chainID
@@ -114,7 +152,7 @@ describe("ChainService", () => {
     // Transaction should be persisted to the db
     expect(
       await chainServiceExternalized.getTransaction(
-        OPTIMISM,
+        POLYGON,
         validOptimismEVMTransaction.hash
       )
     ).toBeTruthy()
