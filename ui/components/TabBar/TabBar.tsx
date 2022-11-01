@@ -15,7 +15,7 @@ export default function TabBar(): ReactElement {
   const isTabSupportedByNetwork = (tab: string) => {
     switch (tab) {
       case "swap":
-        return NETWORKS_SUPPORTING_SWAPS.includes(selectedNetwork.chainID)
+        return NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID)
       default:
         return true
     }
