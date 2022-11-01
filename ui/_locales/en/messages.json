@@ -360,6 +360,8 @@
   },
   "shared": {
     "tallyHo": "Tally Ho",
+    "metaMask": "MetaMask",
+    "injected": "Injected",
     "cancelBtn": "Cancel",
     "gwei": "Gwei",
     "send": "Send",
@@ -491,7 +493,14 @@
     },
     "connectedDappInfo": {
       "modalClose": "Background close",
-      "dAppTitle": "Account connected to"
+      "dAppTitle": "Account connected to",
+      "dappConnections": "Dapp connections",
+      "guideline": {
+        "title": "How to connect to dapps",
+        "step1": "Set Tally Ho as default",
+        "step2": "Click “connect to wallet” in a dapp",
+        "step3": "Select one similar to these"
+      }
     }
   },
   "wallet": {
