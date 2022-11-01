@@ -2,7 +2,7 @@ import { BigNumber, ethers, utils } from "ethers"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import { HexString } from "../../types"
 import { EVMNetwork } from "../../networks"
-import { ETHEREUM, ROPSTEN, RINKEBY, GOERLI, KOVAN } from "../../constants"
+import { ETHEREUM, GOERLI } from "../../constants"
 import { AddressOnNetwork } from "../../accounts"
 
 export function normalizeEVMAddress(address: string | Buffer): HexString {
@@ -102,20 +102,8 @@ export function decodeJSON(input: string): unknown {
 export function getEthereumNetwork(): EVMNetwork {
   const ethereumNetwork = process.env.ETHEREUM_NETWORK?.toUpperCase()
 
-  if (ethereumNetwork === "ROPSTEN") {
-    return ROPSTEN
-  }
-
-  if (ethereumNetwork === "RINKEBY") {
-    return RINKEBY
-  }
-
   if (ethereumNetwork === "GOERLI") {
     return GOERLI
-  }
-
-  if (ethereumNetwork === "KOVAN") {
-    return KOVAN
   }
 
   // Default to mainnet
