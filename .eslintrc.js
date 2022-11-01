@@ -100,6 +100,7 @@ module.exports = {
     "extension-reload.js",
     "**/validate/*.js",
     "**/local-chain/**",
+    "!.github",
   ],
   parser: "@typescript-eslint/parser",
   parserOptions: {
