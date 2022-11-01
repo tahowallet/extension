@@ -60,7 +60,6 @@ export type TransactionConstruction = {
   transactionLikelyFails: boolean
   estimatedFeesPerGas: { [chainID: string]: EstimatedFeesPerGas | undefined }
   customFeesPerGas?: EstimatedFeesPerGas["custom"]
-  lastGasEstimatesRefreshed: number
   feeTypeSelected: NetworkFeeTypeChosen
 }
 
@@ -86,7 +85,6 @@ export const initialState: TransactionConstruction = {
   estimatedFeesPerGas: {},
   transactionLikelyFails: false,
   customFeesPerGas: defaultCustomGas,
-  lastGasEstimatesRefreshed: Date.now(),
 }
 
 export type Events = {
@@ -234,7 +232,6 @@ const transactionSlice = createSlice({
       { payload }: { payload: TransactionConstructionStatus }
     ) => ({
       estimatedFeesPerGas: state.estimatedFeesPerGas,
-      lastGasEstimatesRefreshed: state.lastGasEstimatesRefreshed,
       status: payload,
       feeTypeSelected: state.feeTypeSelected ?? NetworkFeeTypeChosen.Regular,
       broadcastOnSign: false,
@@ -311,8 +308,6 @@ const transactionSlice = createSlice({
           },
         }
       }
-
-      immerState.lastGasEstimatesRefreshed = Date.now()
     },
     setCustomGas: (
       immerState,

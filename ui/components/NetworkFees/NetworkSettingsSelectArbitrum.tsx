@@ -1,8 +1,5 @@
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import {
-  selectLastGasEstimatesRefreshTime,
-  selectTransactionMainCurrencyPricePoint,
-} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { selectTransactionMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   EstimatedFeesPerGas,
   NetworkFeeSettings,
@@ -70,34 +67,6 @@ const gasOptionFromEstimate = (
     estimatedFeePerGas: baseFeePerGas,
     gasPrice: price ?? 0n,
   }
-}
-
-function EstimateRefreshCountdownDivider() {
-  const [timeRemaining, setTimeRemaining] = useState(0)
-  const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
-
-  const getSecondsTillGasUpdate = useCallback(() => {
-    const now = Date.now()
-    setTimeRemaining(Number((120 - (now - gasTime) / 1000).toFixed()))
-  }, [gasTime])
-
-  useEffect(() => {
-    getSecondsTillGasUpdate()
-    const interval = setTimeout(getSecondsTillGasUpdate, 1000)
-    return () => {
-      clearTimeout(interval)
-    }
-  })
-
-  return (
-    <div className="divider">
-      <div className="divider-background" />
-      <div
-        className="divider-cover"
-        style={{ left: -384 + (384 - timeRemaining * (384 / 120)) }}
-      />
-    </div>
-  )
 }
 
 export default function NetworkSettingsSelectArbitrum({
@@ -205,8 +174,6 @@ export default function NetworkSettingsSelectArbitrum({
     <div className="fees standard_width">
       <div className="title">Network Fees</div>
 
-      <EstimateRefreshCountdownDivider />
-
       {gasOptions.map((option, i) => {
         return (
           <button
@@ -270,6 +237,9 @@ export default function NetworkSettingsSelectArbitrum({
       </div>
       <style jsx>
         {`
+          .title {
+            margin-bottom: 16px;
+          }
           .option {
             width: 100%;
             display: flex;
