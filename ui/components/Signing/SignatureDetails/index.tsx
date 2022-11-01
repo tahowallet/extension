@@ -32,7 +32,15 @@ export type ResolvedSignatureDetails = {
   signer: AccountSigner
   signingAddress: AddressOnNetwork
   renderedSigningData: ReactElement
-  signingActionLabel: string
+  /**
+   * A string that represents what signing this data will achieve. Some
+   * signers may ignore this string, others may use it for their confirmation
+   * button.
+   */
+  signingActionLabelI18nKey:
+    | "signTransaction.confirmButtonLabel"
+    // FIXME Move out of signTransaction once old flow is removed???
+    | "signTransaction.signTypedData.confirmButtonLabel"
   signActionCreator: () => AnyAction
   rejectActionCreator: () => AnyAction
 }
@@ -44,7 +52,7 @@ export function resolveTransactionSignatureDetails({
   return {
     signer: accountSigner,
     signingAddress: { address: request.from, network: request.network },
-    signingActionLabel: "Sign",
+    signingActionLabelI18nKey: "signTransaction.confirmButtonLabel",
     renderedSigningData: (
       <TransactionSignatureDetails transactionRequest={request} />
     ),
@@ -59,7 +67,7 @@ export function resolveDataSignatureDetails({
   return {
     signer: accountSigner,
     signingAddress: request.account,
-    signingActionLabel: "Sign Data",
+    signingActionLabelI18nKey: "signTransaction.confirmButtonLabel",
     renderedSigningData: (
       <MessageDataSignatureDetails messageRequest={request} />
     ),
@@ -75,7 +83,8 @@ export function resolveTypedDataSignatureDetails({
   return {
     signer: accountSigner,
     signingAddress: request.account,
-    signingActionLabel: "Sign Data",
+    signingActionLabelI18nKey:
+      "signTransaction.signTypedData.confirmButtonLabel",
     renderedSigningData: (
       <TypedDataSignatureDetails typedDataRequest={request} />
     ),
