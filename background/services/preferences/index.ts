@@ -117,7 +117,7 @@ export default class PreferenceService extends BaseService<Events> {
     super()
   }
 
-  protected async internalStartService(): Promise<void> {
+  protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
     this.emitter.emit("initializeDefaultWallet", await this.getDefaultWallet())
@@ -127,7 +127,7 @@ export default class PreferenceService extends BaseService<Events> {
     )
   }
 
-  protected async internalStopService(): Promise<void> {
+  protected override async internalStopService(): Promise<void> {
     this.db.close()
 
     await super.internalStopService()

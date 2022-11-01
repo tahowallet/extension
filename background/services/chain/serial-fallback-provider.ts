@@ -6,6 +6,7 @@ import {
   Listener,
   WebSocketProvider,
 } from "@ethersproject/providers"
+import { utils } from "ethers"
 import { getNetwork } from "@ethersproject/networks"
 import {
   MINUTE,
@@ -130,6 +131,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // currentProviderIndex.
   currentProvider: JsonRpcProvider
 
+  /**
+   * Since our architecture follows a pattern of using distinct provider instances
+   * per network - and we know that a given provider will never switch its network
+   * (rather - we will switch the provider the extension is using) - we can avoid
+   * eth_chainId RPC calls.
+   */
+  private cachedChainId: string
+
   // The index of the provider creator that created the current provider. Used
   // for reconnects when relevant.
   private currentProviderIndex = 0
@@ -173,6 +182,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     super(firstProvider.connection, firstProvider.network)
 
     this.currentProvider = firstProvider
+    this.cachedChainId = utils.hexlify(Number(evmNetwork.chainID))
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
   }
 
@@ -183,7 +193,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * WebSocket disconnects, and restores subscriptions where
    * possible/necessary.
    */
-  async send(method: string, params: unknown): Promise<unknown> {
+  override async send(method: string, params: unknown): Promise<unknown> {
+    if (method === "eth_chainId") {
+      return this.cachedChainId
+    }
     try {
       if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
         // Detect disconnected WebSocket and immediately throw.
@@ -340,7 +353,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * event subscription so that an underlying provider failure will not prevent
    * it from firing.
    */
-  on(eventName: EventType, listener: Listener): this {
+  override on(eventName: EventType, listener: Listener): this {
     this.eventSubscriptions.push({
       eventName,
       listener,
@@ -357,7 +370,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * the event subscription so that an underlying provider failure will not
    * prevent it from firing.
    */
-  once(eventName: EventType, listener: Listener): this {
+  override once(eventName: EventType, listener: Listener): this {
     const adjustedListener = this.listenerWithCleanup(eventName, listener)
 
     this.eventSubscriptions.push({
@@ -376,7 +389,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    *
    * Ensures these will not be restored during a reconnect.
    */
-  off(eventName: EventType, listenerToRemove?: Listener): this {
+  override off(eventName: EventType, listenerToRemove?: Listener): this {
     this.eventSubscriptions = this.eventSubscriptions.filter(
       ({ eventName: savedEventName, listener: savedListener }) => {
         if (savedEventName === eventName) {
