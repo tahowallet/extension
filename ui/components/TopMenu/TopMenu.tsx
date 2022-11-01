@@ -79,12 +79,11 @@ export default function TopMenu(): ReactElement {
         })
       )
     }
-    window.close()
   }, [dispatch, currentPermission, allowedPages])
 
   return (
     <>
-      {isConnectedToDApp && isActiveDAppConnectionInfoOpen ? (
+      {isActiveDAppConnectionInfoOpen ? (
         <TopMenuConnectedDAppInfo
           title={currentPermission.title}
           url={currentPermission.origin}
@@ -93,6 +92,7 @@ export default function TopMenu(): ReactElement {
             setIsActiveDAppConnectionInfoOpen(false)
           }}
           disconnect={deny}
+          isConnected={isConnectedToDApp}
         />
       ) : null}
       <BonusProgramModal
@@ -129,18 +129,18 @@ export default function TopMenu(): ReactElement {
             onClick={() => setIsProtocolListOpen(true)}
           />
           <div className="profile_group">
-            {isConnectedToDApp && (
-              <button
-                type="button"
-                aria-label={t("showCurrentDappConnection")}
-                className="connection_button"
-                onClick={() => {
-                  setIsActiveDAppConnectionInfoOpen(
-                    !isActiveDAppConnectionInfoOpen
-                  )
-                }}
-              />
-            )}
+            <button
+              type="button"
+              aria-label={t("showCurrentDappConnection")}
+              className="connection_button"
+              onClick={() => {
+                setIsActiveDAppConnectionInfoOpen(
+                  !isActiveDAppConnectionInfoOpen
+                )
+              }}
+            >
+              <div className="connection_img" />
+            </button>
             {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
               <button
                 type="button"
@@ -192,10 +192,24 @@ export default function TopMenu(): ReactElement {
             button:hover {
               background-color: var(--green-80);
             }
+            .connection_button:hover .connection_img {
+              background-color: var(--success);
+            }
             .connection_button {
-              background: url("./images/bolt@2x.png") center no-repeat;
-              background-size: 10px 20px;
-              flex-shrink: 0;
+              width: 32px;
+              height: 32px;
+            }
+            .connection_img {
+              mask-image: url("./images/bolt@2x.png");
+              mask-repeat: no-repeat;
+              mask-position: center;
+              mask-size: cover;
+              mask-size: 35%;
+              width: 32px;
+              height: 32px;
+              background-color: var(
+                --${isConnectedToDApp ? "success" : "green-20"}
+              );
             }
             .gift_button {
               background: url("./images/gift@2x.png") center no-repeat;
