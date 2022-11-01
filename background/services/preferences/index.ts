@@ -214,7 +214,7 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
-    return (await this.db.getPreferences()).accountSignersSettings
+    return this.db.getAccountSignerSettings()
   }
 
   async getCurrency(): Promise<FiatCurrency> {

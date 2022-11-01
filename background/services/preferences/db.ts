@@ -6,7 +6,17 @@ import { AddressOnNetwork } from "../../accounts"
 import DEFAULT_PREFERENCES from "./defaults"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
-import { isSameAccountSignerWithId } from "../../utils/signing"
+
+/**
+ * Returns a unique id for an account signer
+ * in the form of "signerType/someId" e.g. "ledger/deviceId"
+ */
+const getSignerRecordId = (
+  signer: AccountSignerWithId
+): `${AccountSignerWithId["type"]}/${string}` => {
+  const id = signer.type === "keyring" ? signer.keyringID : signer.deviceID
+  return `${signer.type}/${id}`
+}
 
 // The idea is to use this interface to describe the data structure stored in indexedDb
 // In the future this might also have a runtime type check capability, but it's good enough for now.
@@ -18,11 +28,15 @@ export interface Preferences {
   defaultWallet: boolean
   currentAddress?: string
   selectedAccount: AddressOnNetwork
-  accountSignersSettings: AccountSignerSettings[]
 }
 
 export class PreferenceDatabase extends Dexie {
   private preferences!: Dexie.Table<Preferences, number>
+
+  private signersSettings!: Dexie.Table<
+    AccountSignerSettings & { id: `${"ledger" | "keyring"}/${string}` },
+    string
+  >
 
   constructor() {
     super("tally/preferences")
@@ -212,19 +226,10 @@ export class PreferenceDatabase extends Dexie {
           })
       })
 
-    this.version(10)
-      .stores({
-        preferences: "++id",
-      })
-      .upgrade((tx) => {
-        return tx
-          .table("preferences")
-          .toCollection()
-          .modify((storedPreferences: Preferences) => {
-            // eslint-disable-next-line no-param-reassign
-            storedPreferences.accountSignersSettings = []
-          })
-      })
+    this.version(10).stores({
+      preferences: "++id",
+      signersSettings: "&id",
+    })
 
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
@@ -252,43 +257,27 @@ export class PreferenceDatabase extends Dexie {
       .modify({ selectedAccount: addressNetwork })
   }
 
+  async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
+    return this.signersSettings.toArray()
+  }
+
   async updateSignerTitle(
     signer: AccountSignerWithId,
     title: string
   ): Promise<AccountSignerSettings[]> {
-    const { accountSignersSettings } = await this.getPreferences()
-
-    const signerUISettings = accountSignersSettings.find(
-      ({ signer: storedSigner }) =>
-        isSameAccountSignerWithId(storedSigner, signer)
-    )
-
-    if (signerUISettings) {
-      signerUISettings.title = title
-    } else {
-      accountSignersSettings.push({ signer, title })
-    }
-
-    await this.preferences.toCollection().modify({ accountSignersSettings })
-
-    return accountSignersSettings
+    await this.signersSettings.put({
+      id: getSignerRecordId(signer),
+      signer,
+      title,
+    })
+    return this.signersSettings.toArray()
   }
 
   async deleteAccountSignerSettings(
     signer: AccountSignerWithId
   ): Promise<AccountSignerSettings[]> {
-    const { accountSignersSettings } = await this.getPreferences()
-
-    const updatedSettingsBySigner = accountSignersSettings.filter(
-      ({ signer: storedSigner }) =>
-        !isSameAccountSignerWithId(storedSigner, signer)
-    )
-
-    await this.preferences
-      .toCollection()
-      .modify({ accountSignersSettings: updatedSettingsBySigner })
-
-    return updatedSettingsBySigner
+    await this.signersSettings.delete(getSignerRecordId(signer))
+    return this.signersSettings.toArray()
   }
 }
 
