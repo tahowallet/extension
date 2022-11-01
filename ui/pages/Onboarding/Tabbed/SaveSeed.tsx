@@ -82,7 +82,7 @@ function SeedContainer(): ReactElement {
                 {freshMnemonic?.slice(0, 12).map((word) => {
                   return (
                     <React.Fragment key={word}>
-                      {word}
+                      <input type="password" placeholder={word} disabled />
                       <br />
                     </React.Fragment>
                   )
@@ -98,7 +98,7 @@ function SeedContainer(): ReactElement {
                 {freshMnemonic?.slice(12, 24).map((word) => {
                   return (
                     <React.Fragment key={word}>
-                      {word}
+                      <input type="password" placeholder={word} disabled />
                       <br />
                     </React.Fragment>
                   )

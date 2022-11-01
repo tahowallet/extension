@@ -23,9 +23,10 @@ function TextArea({
 }) {
   return (
     <>
-      <textarea
+      <input
+        type="password"
         id="recovery_phrase"
-        placeholder=" "
+        placeholder={value}
         className={classNames("wrap center_horizontal", {
           error: errorMessage,
         })}
@@ -35,7 +36,7 @@ function TextArea({
       <label htmlFor="recovery_phrase">Paste recovery phrase</label>
       {errorMessage && <div className="error_message">{errorMessage}</div>}
       <style jsx>{`
-        textarea {
+        #recovery_phrase {
           width: 320px;
           height: 97px;
           border-radius: 4px;
