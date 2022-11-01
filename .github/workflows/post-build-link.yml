@@ -1,0 +1,26 @@
+name: Post build link
+
+on:
+  workflow_dispatch:
+    inputs:
+      workflow_run_id:
+        type: string
+        description: "The id of a workflow run to dispatch off of."
+        required: true
+  workflow_run:
+    workflows:
+      - Build
+    types:
+      - completed
+
+jobs:
+  post-link:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Post artifact link to PR if available
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const postBuildLink = require("./.github/workflows/builds/post-build-link.js")
+            await postBuildLink({ github, context })
