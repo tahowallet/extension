@@ -92,7 +92,7 @@ export default function NetworkSettingsSelectArbitrum({
       onNetworkSettingsChange({
         feeType: gasOptions[activeFeeIndex].type,
         values: {
-          maxFeePerGas: gasOptions[activeFeeIndex].gasPrice,
+          maxFeePerGas: 0n,
           maxPriorityFeePerGas: 0n,
           gasPrice: gasOptions[activeFeeIndex].gasPrice,
         },
@@ -114,7 +114,7 @@ export default function NetworkSettingsSelectArbitrum({
     onNetworkSettingsChange({
       feeType: gasOptions[index].type,
       values: {
-        maxFeePerGas: gasOptions[index].gasPrice,
+        maxFeePerGas: 0n,
         maxPriorityFeePerGas: 0n,
         gasPrice: gasOptions[index].gasPrice,
       },
