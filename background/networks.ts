@@ -319,10 +319,6 @@ export type BlockPrices = {
   blockNumber: number
   baseFeePerGas: bigint
   /**
-   * An estimate of how many transactions will be included in the next block.
-   */
-  estimatedTransactionCount: number | null
-  /**
    * A choice of gas price parameters with associated confidence that a
    * transaction using those parameters will be included in the next block.
    */
