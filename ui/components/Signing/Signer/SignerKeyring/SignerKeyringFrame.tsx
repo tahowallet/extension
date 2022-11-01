@@ -1,5 +1,6 @@
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement, useCallback, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { SignerFrameProps } from ".."
 import { useBackgroundDispatch } from "../../../../hooks"
 import SignerBaseFrame from "../SignerBaseFrame"
@@ -9,8 +10,10 @@ export default function SignerKeyringFrame<T extends SignOperationType>({
   children,
   signActionCreator,
   rejectActionCreator,
-  signingActionLabel,
+  signingActionLabelI18nKey,
 }: SignerFrameProps<T>): ReactElement {
+  const { t } = useTranslation()
+
   const [isSigning, setIsSigning] = useState(false)
   const dispatch = useBackgroundDispatch()
 
@@ -24,7 +27,7 @@ export default function SignerKeyringFrame<T extends SignOperationType>({
 
   return (
     <SignerBaseFrame
-      signingActionLabel={signingActionLabel}
+      signingActionLabel={t(signingActionLabelI18nKey)}
       onReject={() => dispatch(rejectActionCreator())}
       onConfirm={handleConfirm}
     >

@@ -117,7 +117,7 @@ export default function SingleAsset(): ReactElement {
                   )}
                 >
                   {t("assets.viewAsset", {
-                    sitetitle: scanWebsite[currentNetwork.chainID].title,
+                    siteTitle: scanWebsite[currentNetwork.chainID].title,
                   })}
                 </SharedTooltip>
               ) : (

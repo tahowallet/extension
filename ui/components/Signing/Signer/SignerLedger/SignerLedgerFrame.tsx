@@ -15,10 +15,11 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
   request,
   signer,
   signingAddress,
-  signingActionLabel,
+  signingActionLabelI18nKey,
   signActionCreator,
   rejectActionCreator,
 }: SignerFrameProps<T>): ReactElement {
+  const { t: globalT } = useTranslation()
   const { t } = useTranslation("translation", { keyPrefix: "ledger" })
   const { t: tSigning } = useTranslation("translation", {
     keyPrefix: "signTransaction",
@@ -127,7 +128,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
                 onClick={handleConfirm}
                 showLoadingOnClick
               >
-                {signingActionLabel}
+                {globalT(signingActionLabelI18nKey)}
               </SharedButton>
             )}
           </footer>

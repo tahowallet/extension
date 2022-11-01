@@ -29,20 +29,11 @@ const productionNetworks = [
     network: OPTIMISM,
     info: i18n.t("protocol.l2"),
   },
-  ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM)
-    ? [
-        {
-          network: ARBITRUM_ONE,
-          info: i18n.t("protocol.l2"),
-        },
-      ]
-    : [
-        {
-          network: ARBITRUM_ONE,
-          info: i18n.t("comingSoon"),
-          isDisabled: true,
-        },
-      ]),
+  {
+    network: ARBITRUM_ONE,
+    info: i18n.t("protocol.l2"),
+    isDisabled: false,
+  },
   ...(isEnabled(FeatureFlags.SUPPORT_RSK)
     ? [
         {

@@ -449,7 +449,7 @@ export default function AccountsNotificationPanelAccounts({
       </style>
       <style global jsx>
         {`
-          .signing_btn:hover button {
+          .signing_btn:hover .icon {
             background-color: var(--${keyringData.color});
           }
         `}

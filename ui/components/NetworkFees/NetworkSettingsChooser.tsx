@@ -13,7 +13,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "./NetworkSettingsSelect"
 import NetworkSettingsOptimism from "./NetworkSettingsSelectOptimism"
 import NetworkSettingsRSK from "./NetworkSettingsSelectRSK"
-import NetworkSettingsSelectLegacy from "./NetworkSettingsSelectLegacy"
+import NetworkSettingsSelectArbitrum from "./NetworkSettingsSelectArbitrum"
 
 interface NetworkSettingsChooserProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
@@ -46,7 +46,7 @@ export default function NetworkSettingsChooser({
       }
       if (transactionDetails.network.name === "Arbitrum") {
         return (
-          <NetworkSettingsSelectLegacy
+          <NetworkSettingsSelectArbitrum
             estimatedFeesPerGas={estimatedFeesPerGas}
             networkSettings={networkSettings}
             onNetworkSettingsChange={setNetworkSettings}
