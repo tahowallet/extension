@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import { FORK, OPTIMISM } from "../constants"
+import { ARBITRUM_ONE, FORK, OPTIMISM } from "../constants"
 import {
   EXPRESS,
   INSTANT,
@@ -189,6 +189,8 @@ const transactionSlice = createSlice({
         },
         transactionLikelyFails,
       }
+      const feeType = state.feeTypeSelected
+      const { chainID } = transactionRequest.network
 
       if (
         // We use two guards here to satisfy the compiler but due to the spread
@@ -196,8 +198,6 @@ const transactionSlice = createSlice({
         isEIP1559TransactionRequest(newState.transactionRequest) &&
         isEIP1559TransactionRequest(transactionRequest)
       ) {
-        const feeType = state.feeTypeSelected
-        const { chainID } = transactionRequest.network
         const estimatedMaxFeePerGas =
           feeType === NetworkFeeTypeChosen.Custom
             ? state.customFeesPerGas?.maxFeePerGas
@@ -215,6 +215,16 @@ const transactionSlice = createSlice({
         newState.transactionRequest.maxPriorityFeePerGas =
           estimatedMaxPriorityFeePerGas ??
           transactionRequest.maxPriorityFeePerGas
+      }
+
+      if (
+        !isEIP1559TransactionRequest(transactionRequest) &&
+        !isEIP1559TransactionRequest(newState.transactionRequest) &&
+        chainID === ARBITRUM_ONE.chainID
+      ) {
+        newState.transactionRequest.gasPrice =
+          state.estimatedFeesPerGas?.[chainID]?.[feeType]?.price ??
+          transactionRequest.gasPrice
       }
 
       return newState

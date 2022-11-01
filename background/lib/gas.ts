@@ -5,8 +5,9 @@ import logger from "./logger"
 import Blocknative, {
   BlocknativeNetworkIds,
 } from "../third-party-data/blocknative"
-import { BlockPrices, EVMNetwork } from "../networks"
+import { /* BlockEstimate, */ BlockPrices, EVMNetwork } from "../networks"
 import {
+  ARBITRUM_ONE,
   EIP_1559_COMPLIANT_CHAIN_IDS,
   ETHEREUM,
   POLYGON,
@@ -32,6 +33,16 @@ type PolygonGasResponse = {
   blockTime: number
   blockNumber: number
 }
+
+// type ArbitrumFeeDetails = {
+//   price: number // gwei
+// }
+
+// type ArbitrumGasResponse = {
+//   fast: ArbitrumFeeDetails
+//   normal: ArbitrumFeeDetails
+//   slow: ArbitrumFeeDetails
+// }
 
 // Not perfect but works most of the time.  Our fallback method does not work at all for polygon.
 // This is because the baseFeePerGas on polygon can be so small (oftentimes sub 100 wei (not gwei)) that
@@ -80,6 +91,73 @@ const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
   }
 }
 
+const getArbitrumPrices = async (
+  baseFeePerGas: bigint,
+  blockNumber: number
+): Promise<BlockPrices> => {
+  // let estimatedPrices: BlockEstimate[]
+  // try {
+  //   // TODO: this is not good enough - low rate limit
+  //   const { data: gasEstimates } = (await fetchJson(
+  //     "https://api.debank.com/chain/gas_price_dict_v2?chain=arb"
+  //   )) as { data: ArbitrumGasResponse }
+  //   estimatedPrices = [
+  //     {
+  //       confidence: 99,
+  //       maxPriorityFeePerGas: 0n, // priority fee doesn't make sense for Arbitrum
+  //       maxFeePerGas: 0n, // max fee doesn't make sense for Arbitrum
+  //       price: gweiToWei(Math.ceil(gasEstimates.fast.price)),
+  //     },
+  //     {
+  //       confidence: 95,
+  //       maxPriorityFeePerGas: 0n,
+  //       maxFeePerGas: 0n,
+  //       price: gweiToWei(Math.ceil(gasEstimates.normal.price)),
+  //     },
+  //     {
+  //       confidence: 70,
+  //       maxPriorityFeePerGas: 0n,
+  //       maxFeePerGas: 0n,
+  //       price: gweiToWei(Math.ceil(gasEstimates.slow.price)),
+  //     },
+  //   ]
+  //   throw Error("No Arbitrum oracle")
+  // } catch (e) {
+  //   logger.warn(
+  //     "Error getting block prices from Arbitrum, fallback to manual calculation",
+  //     e
+  //   )
+  // }
+
+  return {
+    network: ARBITRUM_ONE,
+    blockNumber,
+    baseFeePerGas,
+    estimatedTransactionCount: null,
+    estimatedPrices: [
+      {
+        confidence: 99,
+        maxPriorityFeePerGas: 0n, // priority fee doesn't make sense for Arbitrum
+        maxFeePerGas: 0n, // max fee doesn't make sense for Arbitrum
+        price: baseFeePerGas * 3n,
+      },
+      {
+        confidence: 95,
+        maxPriorityFeePerGas: 0n,
+        maxFeePerGas: 0n,
+        price: baseFeePerGas * 2n,
+      },
+      {
+        confidence: 70,
+        maxPriorityFeePerGas: 0n,
+        maxFeePerGas: 0n,
+        price: baseFeePerGas,
+      },
+    ],
+    dataSource: "local",
+  }
+}
+
 export default async function getBlockPrices(
   network: EVMNetwork,
   provider: Provider
@@ -118,6 +196,10 @@ export default async function getBlockPrices(
     } catch (e) {
       logger.error("Error getting block prices from Polygon", e)
     }
+  }
+
+  if (network.chainID === ARBITRUM_ONE.chainID) {
+    return getArbitrumPrices(baseFeePerGas ?? 0n, currentBlock.number)
   }
 
   // otherwise, we're going it alone!
