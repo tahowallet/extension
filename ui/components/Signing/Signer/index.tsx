@@ -12,12 +12,6 @@ export type SignerFrameProps<T extends SignOperationType> =
     request: T
     signer: AccountSigner
     /**
-     * A string that represents what signing this data will achieve. Some
-     * signers may ignore this string, others may use it for their confirmation
-     * button.
-     */
-    signingActionLabel: string
-    /**
      * The children a signer frame should render to present the user with
      * additional information about the data being signed.
      */

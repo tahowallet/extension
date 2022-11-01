@@ -7,6 +7,7 @@ import Blocknative, {
 } from "../third-party-data/blocknative"
 import { BlockPrices, EVMNetwork } from "../networks"
 import {
+  ARBITRUM_ONE,
   EIP_1559_COMPLIANT_CHAIN_IDS,
   ETHEREUM,
   POLYGON,
@@ -49,7 +50,6 @@ const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
     network: POLYGON,
     blockNumber: gasEstimates.blockNumber,
     baseFeePerGas,
-    estimatedTransactionCount: null,
     estimatedPrices: [
       {
         confidence: 99,
@@ -74,6 +74,38 @@ const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
         ),
         maxFeePerGas: gweiToWei(Math.ceil(gasEstimates.safeLow.maxFee)),
         price,
+      },
+    ],
+    dataSource: "local",
+  }
+}
+
+const getArbitrumPrices = async (
+  baseFeePerGas: bigint,
+  blockNumber: number
+): Promise<BlockPrices> => {
+  return {
+    network: ARBITRUM_ONE,
+    blockNumber,
+    baseFeePerGas,
+    estimatedPrices: [
+      {
+        confidence: 99,
+        maxPriorityFeePerGas: 0n, // priority fee doesn't make sense for Arbitrum
+        maxFeePerGas: 0n, // max fee doesn't make sense for Arbitrum
+        price: baseFeePerGas * 3n,
+      },
+      {
+        confidence: 95,
+        maxPriorityFeePerGas: 0n,
+        maxFeePerGas: 0n,
+        price: baseFeePerGas * 2n,
+      },
+      {
+        confidence: 70,
+        maxPriorityFeePerGas: 0n,
+        maxFeePerGas: 0n,
+        price: baseFeePerGas,
       },
     ],
     dataSource: "local",
@@ -120,6 +152,10 @@ export default async function getBlockPrices(
     }
   }
 
+  if (network.chainID === ARBITRUM_ONE.chainID) {
+    return getArbitrumPrices(baseFeePerGas ?? 0n, currentBlock.number)
+  }
+
   // otherwise, we're going it alone!
 
   if (feeData.gasPrice === null) {
@@ -133,7 +169,6 @@ export default async function getBlockPrices(
       network,
       blockNumber: currentBlock.number,
       baseFeePerGas,
-      estimatedTransactionCount: null,
       estimatedPrices: [
         {
           confidence: 99,
@@ -176,7 +211,6 @@ export default async function getBlockPrices(
     network,
     blockNumber: currentBlock.number,
     baseFeePerGas: (maxFeePerGas - maxPriorityFeePerGas) / 2n,
-    estimatedTransactionCount: null,
     estimatedPrices: [
       {
         confidence: 99,
