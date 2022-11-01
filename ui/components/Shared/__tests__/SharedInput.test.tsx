@@ -11,7 +11,7 @@ describe("SharedInput", () => {
     cleanup()
   })
 
-  test("should render password input element", () => {
+  test("should render input element", () => {
     const ui = render(<SharedInput placeholder={text} onChange={onChange} />)
     const inputElement = ui.getByPlaceholderText(text)
     expect(inputElement).toBeInTheDocument()
