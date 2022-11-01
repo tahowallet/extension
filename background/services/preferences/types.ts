@@ -1,5 +1,6 @@
 import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork } from "../../accounts"
+import { AccountSignerSettings } from "../../ui"
 
 export interface TokenListPreferences {
   autoUpdate: boolean
@@ -11,4 +12,5 @@ export interface Preferences {
   currency: FiatCurrency
   defaultWallet: boolean
   selectedAccount: AddressOnNetwork
+  accountSignersSettings: AccountSignerSettings[]
 }

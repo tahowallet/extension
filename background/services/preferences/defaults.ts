@@ -28,6 +28,7 @@ const defaultPreferences: Preferences = {
     address: "",
     network: ETHEREUM,
   },
+  accountSignersSettings: [],
 }
 
 export default defaultPreferences
