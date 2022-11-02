@@ -15,9 +15,7 @@ module.exports = async function postBuildLink({ github, context }) {
 
   if (workflowLookupStatus !== 200) {
     throw new Error(
-      "Failed to fetch workflow :( Status",
-      workflowLookupStatus,
-      "."
+      `Failed to fetch workflow :( Status ${workflowLookupStatus}.`
     )
   }
 
@@ -32,9 +30,7 @@ module.exports = async function postBuildLink({ github, context }) {
 
   if (artifactLookupStatus !== 200) {
     throw new Error(
-      "Failed to fetch workflow artifacts :( Status",
-      artifactLookupStatus,
-      "."
+      `Failed to fetch workflow artifacts :( Status ${artifactLookupStatus}.`
     )
   }
 
@@ -44,8 +40,9 @@ module.exports = async function postBuildLink({ github, context }) {
 
   if (matchArtifact === undefined || matchArtifact === null) {
     throw new Error(
-      "Failed to find extension artifact :( Artifacts were",
-      JSON.strignify(allArtifacts)
+      `Failed to find extension artifact :( Artifacts were ${JSON.strignify(
+        allArtifacts
+      )}`
     )
   }
 
