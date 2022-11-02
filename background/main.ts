@@ -1395,6 +1395,18 @@ export default class Main extends BaseService<never> {
 
   async connectAnalyticsService(): Promise<void> {
     this.analyticsService.sendAnalyticsEvent("Background start")
+
+    // ⚠️ Note: We NEVER send addresses to analytics!
+    this.chainService.emitter.on("newAccountToTrack", () => {
+      this.analyticsService.sendAnalyticsEvent("Account added to tracking", {
+        description: `
+            This event is fired when any address is added for tracking. This can mean: 
+            imported recovery phrase, new keyring created, ledger connected or a read-only address is imported
+
+            Note: This is fired on every address addition.
+            `,
+      })
+    })
   }
 
   async updateSignerTitle(
