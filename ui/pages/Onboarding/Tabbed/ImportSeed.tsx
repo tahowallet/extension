@@ -2,7 +2,6 @@ import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
-import classNames from "classnames"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import SharedButton from "../../../components/Shared/SharedButton"
 import OnboardingDerivationPathSelect from "../../../components/Onboarding/OnboardingDerivationPathSelect"
@@ -11,86 +10,7 @@ import {
   useBackgroundSelector,
   useAreKeyringsUnlocked,
 } from "../../../hooks"
-
-function TextArea({
-  value,
-  onChange,
-  errorMessage,
-}: {
-  value: string
-  onChange: (value: string) => void
-  errorMessage: string
-}) {
-  return (
-    <>
-      <input
-        type="password"
-        id="recovery_phrase"
-        placeholder={value}
-        className={classNames("wrap center_horizontal", {
-          error: errorMessage,
-        })}
-        onChange={(event) => onChange(event.target.value)}
-        value={value}
-      />
-      <label htmlFor="recovery_phrase">Paste recovery phrase</label>
-      {errorMessage && <div className="error_message">{errorMessage}</div>}
-      <style jsx>{`
-        #recovery_phrase {
-          width: 320px;
-          height: 97px;
-          border-radius: 4px;
-          border: 2px solid var(--green-60);
-          padding: 12px 16px;
-          box-sizing: border-box;
-        }
-        .error {
-          border-color: var(--trophy-gold);
-        }
-        .error_message {
-          color: var(--error);
-          font-weight: 500;
-          font-size: 14px;
-          line-height: 20px;
-          align-self: flex-start;
-          height: 20px;
-          margin-top: 3px;
-        }
-        label {
-          position: absolute;
-          pointer-events: none;
-          display: flex;
-          width: fit-content;
-          margin-left: 16px;
-          transform: translateY(-80px);
-          background-color: var(--hunter-green);
-          border-radius: 5px;
-          box-sizing: border-box;
-          color: var(--green-40);
-          transition: font-size 0.2s ease, transform 0.2s ease,
-            font-weight 0.2s ease, padding 0.2s ease;
-        }
-        textarea:focus {
-          border-color: var(--trophy-gold);
-        }
-        textarea:focus ~ label {
-          color: var(--trophy-gold);
-        }
-        textarea:focus ~ label,
-        textarea:not(:placeholder-shown) ~ label {
-          transform: translateY(-103px) translateX(-5px);
-          font-size: 12px;
-          font-weight: 500;
-          padding: 0px 6px;
-        }
-        .error ~ label,
-        textarea.error:focus ~ label {
-          color: var(--error);
-        }
-      `}</style>
-    </>
-  )
-}
+import PasswordInput from "../../../components/Shared/PasswordInput"
 
 type Props = {
   nextPage: string
@@ -163,7 +83,7 @@ export default function ImportSeed(props: Props): ReactElement {
               Copy paste or write down a 12 or 24 word secret recovery phrase.
             </div>
             <div>
-              <TextArea
+              <PasswordInput
                 value={recoveryPhrase}
                 onChange={(value) => {
                   // Clear error message on change
