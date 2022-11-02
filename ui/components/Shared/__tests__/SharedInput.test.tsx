@@ -44,7 +44,7 @@ describe("SharedInput", () => {
 
     await userEvent.click(inputElement)
     await userEvent.type(inputElement, text)
-    await waitFor(() => expect(inputElement).toHaveValue(null))
+    await waitFor(() => expect(inputElement).not.toHaveValue())
     expect(inputElement).toHaveAttribute("type", "number")
   })
 
@@ -103,7 +103,7 @@ describe("SharedInput", () => {
     const errorElement = ui.queryByText(errorMessage)
 
     expect(inputElement).toHaveValue("")
-    expect(errorElement).toBeNull()
+    expect(errorElement).not.toBeInTheDocument()
   })
 
   test("should not be able to type more than 1 character into input", async () => {
@@ -120,7 +120,7 @@ describe("SharedInput", () => {
     )
   })
 
-  test("should be focused by default", () => {
+  test("should work with autofocus", () => {
     const ui = render(<SharedInput id={id} label={label} autoFocus />)
     const inputElement = ui.getByLabelText(label)
 
