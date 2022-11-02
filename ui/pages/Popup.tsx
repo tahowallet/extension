@@ -1,11 +1,16 @@
 import React, { ReactElement, useState, useEffect } from "react"
-import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
+import {
+  MemoryRouter as Router,
+  Switch,
+  Route,
+  Redirect,
+  matchPath,
+} from "react-router-dom"
 import { ErrorBoundary } from "react-error-boundary"
 
 import classNames from "classnames"
 import {
   setRouteHistoryEntries,
-  Location,
   userActivityEncountered,
 } from "@tallyho/tally-background/redux-slices/ui"
 
@@ -17,11 +22,13 @@ import { runtime } from "webextension-polyfill"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
 import {
+  getAddressCount,
   selectCurrentAccountSigner,
   selectCurrentAddressNetwork,
   selectKeyringStatus,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { Location } from "history"
 import {
   useIsDappPopup,
   useBackgroundDispatch,
@@ -129,6 +136,9 @@ export function Main(): ReactElement {
   )
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
   const keyringStatus = useBackgroundSelector(selectKeyringStatus)
+  const hasAccounts = useBackgroundSelector(
+    (state) => getAddressCount(state) > 0
+  )
 
   const needsKeyringUnlock =
     isTransactionPendingSignature &&
@@ -200,8 +210,16 @@ export function Main(): ReactElement {
                     >
                       <TopMenu />
                     </div>
-                    {/* @ts-expect-error TODO: fix the typing when the feature works */}
                     <Switch location={transformedLocation}>
+                      {
+                        // If an account doesn't exist, display onboarding
+                        // (if we're not there already)
+                        !hasAccounts &&
+                          !matchPath(transformedLocation.pathname, {
+                            path: "/onboarding",
+                            exact: false,
+                          }) && <Redirect to="/onboarding/info-intro" />
+                      }
                       {pageList.map(
                         ({ path, Component, hasTopBar, hasTabBar }) => {
                           return (
