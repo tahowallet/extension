@@ -19,7 +19,11 @@ export default function WalletBanner(): ReactElement {
   const hideBanners = useBackgroundSelector(selectHideBanners)
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
-  const arbitrumCampaigns = useArbitrumCampaigns()
+  const {
+    campaigns: arbitrumCampaigns,
+    loading,
+    error,
+  } = useArbitrumCampaigns()
   const campaignDetails = useBannerCampaigns(currentNetwork.chainID)
 
   const [showDismissSlideup, setShowDismissSlideup] = useState(false)
@@ -32,18 +36,18 @@ export default function WalletBanner(): ReactElement {
 
   useEffect(() => {
     // don't show any thumbnail while fetching campaign
-    if (typeof arbitrumCampaigns !== "undefined") {
-      if (arbitrumCampaigns) {
+    if (!loading) {
+      if (error) {
+        setThumbnails(["./images/banner_thumbnail.png"])
+      } else {
         const id = `${arbitrumCampaigns[0]?.id ?? ""}_${
           arbitrumCampaigns[1]?.id ?? ""
         }`
         setCurrentCampaignId(id)
         setThumbnails(arbitrumCampaigns.map((campaign) => campaign.thumbnail))
-      } else {
-        setThumbnails(["./images/banner_thumbnail.png"])
       }
     }
-  }, [arbitrumCampaigns])
+  }, [arbitrumCampaigns, loading, error])
 
   useEffect(() => {
     if (
@@ -106,10 +110,10 @@ export default function WalletBanner(): ReactElement {
             <h3>{t("bannerTitle")}</h3>
             <ul
               className={classNames({
-                hidden: typeof arbitrumCampaigns === "undefined",
+                hidden: loading,
               })}
             >
-              {arbitrumCampaigns === null ? (
+              {error ? (
                 <li>{t("emptyBannerContent")}</li>
               ) : (
                 arbitrumCampaigns?.map(({ name }) => (
