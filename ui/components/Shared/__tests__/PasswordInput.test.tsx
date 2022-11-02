@@ -17,7 +17,7 @@ describe("PasswordInput", () => {
     await waitFor(() => expect(inputElement).toHaveValue(value))
   })
 
-  test("should be able to change the type of input from password to text", async () => {
+  test("should allow previewing the password", async () => {
     const ui = render(<PasswordInput id={id} label={label} />)
     const inputElement = ui.getByLabelText(label)
     const buttonElement = ui.getByRole("switch", { checked: false })
