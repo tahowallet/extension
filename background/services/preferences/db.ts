@@ -7,13 +7,13 @@ import DEFAULT_PREFERENCES from "./defaults"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
 
+type SignerRecordId = `${AccountSignerWithId["type"]}/${string}`
+
 /**
  * Returns a unique id for an account signer
  * in the form of "signerType/someId" e.g. "ledger/deviceId"
  */
-const getSignerRecordId = (
-  signer: AccountSignerWithId
-): `${AccountSignerWithId["type"]}/${string}` => {
+const getSignerRecordId = (signer: AccountSignerWithId): SignerRecordId => {
   const id = signer.type === "keyring" ? signer.keyringID : signer.deviceID
   return `${signer.type}/${id}`
 }
@@ -34,7 +34,7 @@ export class PreferenceDatabase extends Dexie {
   private preferences!: Dexie.Table<Preferences, number>
 
   private signersSettings!: Dexie.Table<
-    AccountSignerSettings & { id: `${"ledger" | "keyring"}/${string}` },
+    AccountSignerSettings & { id: SignerRecordId },
     string
   >
 

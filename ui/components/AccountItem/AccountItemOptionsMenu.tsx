@@ -73,14 +73,15 @@ export default function AccountItemOptionsMenu({
         </div>
       </SharedSlideUpMenu>
       <SharedDropdown
-        toggler={
+        toggler={(toggle) => (
           <button
             type="button"
             className="icon_settings"
             role="menu"
+            onClick={() => toggle()}
             tabIndex={0}
           />
-        }
+        )}
         options={[
           {
             key: "edit",
