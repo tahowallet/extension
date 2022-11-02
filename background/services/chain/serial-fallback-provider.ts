@@ -242,7 +242,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       const stringifiedError = String(error)
 
       if (
-        stringifiedError.match(/WebSocket is already in CLOSING|bad response/)
+        stringifiedError.match(
+          /WebSocket is already in CLOSING|bad response|missing response/
+        )
       ) {
         const backoff = this.backoffFor(this.currentProviderIndex)
         if (typeof backoff === "undefined") {
