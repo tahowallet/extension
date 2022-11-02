@@ -8,7 +8,11 @@ describe("SharedDropdown", () => {
     const itemAction = jest.fn()
     const ui = render(
       <SharedDropdown
-        toggler={<button type="button">hello</button>}
+        toggler={(toggle) => (
+          <button type="button" onClick={() => toggle()}>
+            toggle dropdown
+          </button>
+        )}
         options={[
           {
             key: "test",
@@ -20,7 +24,7 @@ describe("SharedDropdown", () => {
       />
     )
 
-    const toggler = await ui.findByText("hello")
+    const toggler = await ui.findByText("toggle dropdown")
     expect(toggler).toBeInTheDocument()
 
     expect(ui.queryByText("First Item")).not.toBeInTheDocument()
@@ -34,7 +38,11 @@ describe("SharedDropdown", () => {
     const itemAction = jest.fn()
     const ui = render(
       <SharedDropdown
-        toggler={<button type="button">hello</button>}
+        toggler={(toggle) => (
+          <button type="button" onClick={() => toggle()}>
+            toggle dropdown
+          </button>
+        )}
         options={[
           {
             key: "test",
@@ -46,7 +54,7 @@ describe("SharedDropdown", () => {
       />
     )
 
-    const toggler = await ui.findByText("hello")
+    const toggler = await ui.findByText("toggle dropdown")
     expect(toggler).toBeInTheDocument()
 
     await userEvent.click(toggler)
