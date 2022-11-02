@@ -25,7 +25,9 @@ const useDropdownContext = () => {
 
 type DropdownContainerProps = { children: React.ReactNode }
 
-type TogglerProps = { children: React.ReactNode }
+type TogglerProps = {
+  children: (toggle: DropdownContextValue["toggle"]) => React.ReactNode
+}
 
 type ContentProps = {
   children:
@@ -59,16 +61,7 @@ function DropdownContainer({ children }: DropdownContainerProps): ReactElement {
 function DropdownToggler({ children }: TogglerProps): ReactElement {
   const { toggle } = useDropdownContext()
 
-  return (
-    <div
-      role="button"
-      tabIndex={-1}
-      onClick={() => toggle(true)}
-      onKeyUp={() => toggle(true)}
-    >
-      {children}
-    </div>
-  )
+  return <div role="presentation">{children(toggle)}</div>
 }
 
 function FadeIn({
@@ -151,7 +144,7 @@ export default function SharedDropdown({
   options,
   toggler,
 }: {
-  toggler: React.ReactElement
+  toggler: (toggle: DropdownContextValue["toggle"]) => React.ReactElement
   options: Array<DropdownOption | undefined>
 }): React.ReactElement {
   const { t } = useTranslation()
