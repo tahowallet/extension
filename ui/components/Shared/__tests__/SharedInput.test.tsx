@@ -88,7 +88,7 @@ describe("SharedInput", () => {
     expect(errorElement).toBeInTheDocument()
   })
 
-  test("should hide content when needed and not display an error message", () => {
+  test("should hide content based on isEmpty attribute and not display an error message", () => {
     const errorMessage = "Error Message"
     const ui = render(
       <SharedInput
