@@ -14,12 +14,9 @@ module.exports = async function postBuildLink({ github, context }) {
   })
 
   if (workflowLookupStatus !== 200) {
-    console.warn(
-      "Failed to fetch workflow :( Status",
-      workflowLookupStatus,
-      "."
+    throw new Error(
+      `Failed to fetch workflow :( Status ${workflowLookupStatus}.`
     )
-    return
   }
 
   const {
@@ -32,12 +29,9 @@ module.exports = async function postBuildLink({ github, context }) {
   })
 
   if (artifactLookupStatus !== 200) {
-    console.error(
-      "Failed to fetch workflow artifacts :( Status",
-      artifactLookupStatus,
-      "."
+    throw new Error(
+      `Failed to fetch workflow artifacts :( Status ${artifactLookupStatus}.`
     )
-    return
   }
 
   const matchArtifact = allArtifacts.filter((artifact) => {
@@ -45,20 +39,28 @@ module.exports = async function postBuildLink({ github, context }) {
   })[0]
 
   if (matchArtifact === undefined || matchArtifact === null) {
-    console.error(
-      "Failed to find extension artifact :( Artifacts were",
-      JSON.strignify(allArtifacts)
+    throw new Error(
+      `Failed to find extension artifact :( Artifacts were ${JSON.strignify(
+        allArtifacts
+      )}`
     )
-    return
   }
 
   const prNumber = matchArtifact.name.match(/extension-builds-(.*)/)?.[1]
 
   if (prNumber === undefined) {
-    console.error(
+    throw new Error(
       `Could not extract PR number from extension artifact filename (${matchArtifact.name}) :(`
     )
+  } else if (prNumber.match(/^[a-f0-9]+$/ && !prNumber.match(/^[0-9]+$/))) {
+    console.log(
+      "Workflow was for a merge commit rather than a PR, skipping build link."
+    )
     return
+  } else if (!prNumber.match(/^[0-9]+$/)) {
+    throw new Error(
+      `Could not extract PR number from extension artifact filename (${matchArtifact.name}) :(`
+    )
   }
 
   const {
@@ -71,8 +73,7 @@ module.exports = async function postBuildLink({ github, context }) {
   })
 
   if (pullLookupStatus !== 200) {
-    console.error("Failed to fetch PR body :( Status", pullLookupStatus, ".")
-    return
+    throw new Error("Failed to fetch PR body :( Status", pullLookupStatus, ".")
   }
 
   const baseUrl = context.payload.repository.html_url
@@ -82,7 +83,7 @@ module.exports = async function postBuildLink({ github, context }) {
     `Detected artifact ${matchArtifact.name} at ${artifactUrl}, posting...`
   )
 
-  const updatedBody = `${body.replace(
+  const updatedBody = `${(body ?? "").replace(
     /\s+Latest build: [^\n]*/,
     ""
   )}\n\nLatest build: [${matchArtifact.name}](${artifactUrl}) (as of ${new Date(
