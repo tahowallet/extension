@@ -38,7 +38,7 @@ const bannerCampaigns: Campaign[] = [
   },
 ]
 
-export default (chainID: string): Campaign | null => {
+export default function useBannerCampaigns(chainID: string): Campaign | null {
   const [currentCampaign, setCurrentCampaign] = useState<Campaign | null>(null)
 
   useEffect(() => {

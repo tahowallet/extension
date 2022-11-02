@@ -63,7 +63,7 @@ async function getLatestCampaigns(): Promise<Campaign[] | null> {
   }
 }
 
-export default (): Campaign[] | null | undefined => {
+export default function useArbitrumCampaigns(): Campaign[] | null | undefined {
   const [campaigns, setCampaigns] = useState<Campaign[] | null | undefined>(
     undefined
   )
