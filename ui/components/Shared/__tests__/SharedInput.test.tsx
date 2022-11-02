@@ -48,7 +48,7 @@ describe("SharedInput", () => {
     expect(inputElement).toHaveAttribute("type", "number")
   })
 
-  test("should be able to type into input when type is password ", async () => {
+  test("should be able to type into input when type is password", async () => {
     const ui = render(<SharedInput id={id} label={label} type="password" />)
     const inputElement = ui.getByLabelText(label)
 
@@ -73,7 +73,7 @@ describe("SharedInput", () => {
     expect(errorElement).toBeInTheDocument()
   })
 
-  test("should display an warning message", () => {
+  test("should display a warning message", () => {
     const warningMessage = "Warning Message"
     const ui = render(
       <SharedInput
@@ -120,7 +120,7 @@ describe("SharedInput", () => {
     )
   })
 
-  test("should be focus by default", () => {
+  test("should be focused by default", () => {
     const ui = render(<SharedInput id={id} label={label} autoFocus />)
     const inputElement = ui.getByLabelText(label)
 
