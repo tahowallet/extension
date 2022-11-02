@@ -48,7 +48,7 @@ export default function Wallet(): ReactElement {
 
   useEffect(() => {
     // On network switch from top menu reset ui back to assets tab
-    if (!NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID)) {
+    if (!NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
       setPanelNumber(0)
     }
   }, [selectedNetwork.chainID])
@@ -73,7 +73,7 @@ export default function Wallet(): ReactElement {
 
   const panelNames = [t("pages.assets")]
 
-  if (NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID)) {
+  if (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
     panelNames.push(t("pages.NFTs"))
   }
 
@@ -115,7 +115,7 @@ export default function Wallet(): ReactElement {
               />
             )}
             {panelNumber === 1 &&
-              NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID) && (
+              NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) && (
                 <>
                   <SharedBanner
                     icon="notif-announcement"
@@ -130,7 +130,7 @@ export default function Wallet(): ReactElement {
                 </>
               )}
             {panelNumber ===
-              (NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID)
+              (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)
                 ? 2
                 : 1) && (
               <WalletActivityList activities={currentAccountActivities ?? []} />

@@ -17,24 +17,23 @@ type Campaign = {
   thumbnail: string
 }
 
-async function getLatestCampaigns(): Promise<Campaign[] | null> {
-  try {
-    const {
-      data: {
-        space: {
-          campaigns: { list: achievements = [] },
-        },
+async function getLatestCampaigns(): Promise<Campaign[]> {
+  const {
+    data: {
+      space: {
+        campaigns: { list: achievements = [] },
       },
-    } = (await (
-      await fetchWithTimeout("https://graphigo.prd.galaxy.eco/query", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          variables: {},
-          operationName: "ArbitrumCampaigns",
-          query: `
+    },
+  } = (await (
+    await fetchWithTimeout("https://graphigo.prd.galaxy.eco/query", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        variables: {},
+        operationName: "ArbitrumCampaigns",
+        query: `
             query ArbitrumCampaigns {
               space(alias: "tallyho") {
                 campaigns(input: {
@@ -51,30 +50,35 @@ async function getLatestCampaigns(): Promise<Campaign[] | null> {
               }
             }
           `,
-        }),
-      })
-    ).json()) as { data: { space: { campaigns: { list: Campaign[] } } } }
+      }),
+    })
+  ).json()) as { data: { space: { campaigns: { list: Campaign[] } } } }
 
-    const latest = achievements.slice(0, 2)
-    return latest.length ? latest : null
-  } catch (error) {
-    return null
-  }
+  return achievements.slice(0, 2)
 }
 
-export default (): Campaign[] | null | undefined => {
-  const [campaigns, setCampaigns] = useState<Campaign[] | null | undefined>(
-    undefined
-  )
+export default function useArbitrumCampaigns(): {
+  campaigns: Campaign[]
+  loading: boolean
+  error: boolean
+} {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     const fetchCampaign = async () => {
       const active = await getLatestCampaigns()
+      setError(!active.length)
       setCampaigns(active)
     }
 
+    setLoading(true)
+
     fetchCampaign()
+      .catch(() => setError(true))
+      .finally(() => setLoading(false))
   }, [])
 
-  return campaigns
+  return { campaigns, loading, error }
 }

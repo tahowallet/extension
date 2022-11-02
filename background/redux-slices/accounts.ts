@@ -9,7 +9,7 @@ import {
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
-import { SignerType } from "../services/signing"
+import { AccountSigner } from "../services/signing"
 import { TEST_NETWORK_BY_CHAIN_ID } from "../constants"
 
 /**
@@ -85,13 +85,13 @@ export type CompleteAssetAmount<T extends AnyAsset = AnyAsset> =
 export type CompleteSmartContractFungibleAssetAmount =
   CompleteAssetAmount<SmartContractFungibleAsset>
 
-export const initialState = {
+export const initialState: AccountState = {
   accountsData: { evm: {} },
   combinedData: {
     totalMainCurrencyValue: "",
     assets: [],
   },
-} as AccountState
+}
 
 function newAccountData(
   address: HexString,
@@ -410,13 +410,14 @@ export const removeAccount = createBackgroundAsyncThunk(
   async (
     payload: {
       addressOnNetwork: AddressOnNetwork
-      signerType?: SignerType
+      signer: AccountSigner
+      lastAddressInAccount: boolean
     },
     { extra: { main } }
   ) => {
-    const { addressOnNetwork, signerType } = payload
+    const { addressOnNetwork, signer, lastAddressInAccount } = payload
     const normalizedAddress = normalizeEVMAddress(addressOnNetwork.address)
 
-    await main.removeAccount(normalizedAddress, signerType)
+    await main.removeAccount(normalizedAddress, signer, lastAddressInAccount)
   }
 )

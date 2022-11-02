@@ -112,7 +112,7 @@ export default class KeyringService extends BaseService<Events> {
     })
   }
 
-  async internalStartService(): Promise<void> {
+  override async internalStartService(): Promise<void> {
     // Emit locked status on startup. Should always be locked, but the main
     // goal is to have external viewers synced to internal state no matter what
     // it is. Don't emit if there are no keyrings to unlock.
@@ -122,7 +122,7 @@ export default class KeyringService extends BaseService<Events> {
     }
   }
 
-  async internalStopService(): Promise<void> {
+  override async internalStopService(): Promise<void> {
     await this.lock()
 
     await super.internalStopService()
