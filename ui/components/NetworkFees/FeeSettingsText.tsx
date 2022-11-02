@@ -15,7 +15,11 @@ import {
   selectTransactionMainCurrencyPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { OPTIMISM, RSK } from "@tallyho/tally-background/constants"
+import {
+  ARBITRUM_ONE,
+  OPTIMISM,
+  RSK,
+} from "@tallyho/tally-background/constants"
 import {
   EVMNetwork,
   isEIP1559EnrichedTransactionRequest,
@@ -73,7 +77,6 @@ const estimateGweiAmount = (options: {
   transactionData?: EnrichedEVMTransactionRequest
 }): string => {
   const { network, networkSettings, baseFeePerGas, transactionData } = options
-
   let estimatedSpendPerGas =
     baseFeePerGas + networkSettings.values.maxPriorityFeePerGas
 
@@ -91,6 +94,11 @@ const estimateGweiAmount = (options: {
 
   if (RSK.chainID === network.chainID) {
     estimatedSpendPerGas = networkSettings.values.gasPrice ?? 0n
+    desiredDecimals = 2
+  }
+
+  if (network.chainID === ARBITRUM_ONE.chainID) {
+    estimatedSpendPerGas = baseFeePerGas
     desiredDecimals = 2
   }
 

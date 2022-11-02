@@ -22,7 +22,6 @@ export const RuntimeFlag: Record<string, boolean> = {
   SUPPORT_FORGOT_PASSWORD: process.env.SUPPORT_FORGOT_PASSWORD === "true",
   ENABLE_ACHIEVEMENTS_TAB: process.env.ENABLE_ACHIEVEMENTS_TAB === "true",
   HIDE_TOKEN_FEATURES: process.env.HIDE_TOKEN_FEATURES === "true",
-  SUPPORT_ARBITRUM: process.env.SUPPORT_ARBITRUM === "true",
   SUPPORT_RSK: process.env.SUPPORT_RSK === "true",
   SUPPORT_ACHIEVEMENTS_BANNER:
     process.env.SUPPORT_ACHIEVEMENTS_BANNER === "true",
