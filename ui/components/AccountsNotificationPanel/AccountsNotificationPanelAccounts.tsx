@@ -146,14 +146,15 @@ function WalletTypeHeader({
         </h2>
         {accountType !== AccountType.ReadOnly && (
           <SharedDropdown
-            toggler={
+            toggler={(toggle) => (
               <SharedIcon
                 color="var(--green-40)"
                 customStyles="cursor: pointer;"
                 width={24}
+                onClick={() => toggle()}
                 icon="settings.svg"
               />
-            }
+            )}
             options={[
               {
                 key: "edit",
