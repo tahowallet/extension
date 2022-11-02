@@ -1,7 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { Redirect } from "react-router-dom"
 import {
-  getAddressCount,
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
   selectCurrentNetwork,
@@ -27,10 +25,6 @@ export default function Wallet(): ReactElement {
   const [panelNumber, setPanelNumber] = useState(0)
 
   const dispatch = useBackgroundDispatch()
-
-  const hasAccounts = useBackgroundSelector(
-    (state) => getAddressCount(state) > 0
-  )
 
   //  accountLoading, hasWalletErrorCode
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
@@ -64,11 +58,6 @@ export default function Wallet(): ReactElement {
   const initializationLoadingTimeExpired = useBackgroundSelector(
     (background) => background.ui?.initializationLoadingTimeExpired
   )
-
-  // If an account doesn't exist, display onboarding
-  if (!hasAccounts) {
-    return <Redirect to="/onboarding/info-intro" />
-  }
 
   const panelNames = [t("pages.assets")]
 
