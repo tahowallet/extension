@@ -129,7 +129,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   // The currently-used provider, produced by the provider-creator at
   // currentProviderIndex.
-  currentProvider: JsonRpcProvider
+  private currentProvider: JsonRpcProvider
+
+  private alchemyProvider: JsonRpcProvider | undefined
+
+  supportsAlchemy = false
 
   /**
    * Since our architecture follows a pattern of using distinct provider instances
@@ -182,6 +186,18 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     super(firstProvider.connection, firstProvider.network)
 
     this.currentProvider = firstProvider
+
+    const alchemyProviderCreator = providerCreators.find(
+      (creator) =>
+        creator instanceof AlchemyWebSocketProvider ||
+        creator instanceof AlchemyProvider
+    )
+
+    if (alchemyProviderCreator) {
+      this.supportsAlchemy = true
+      this.alchemyProvider = alchemyProviderCreator()
+    }
+
     this.cachedChainId = utils.hexlify(Number(evmNetwork.chainID))
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
   }
@@ -196,6 +212,16 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   override async send(method: string, params: unknown): Promise<unknown> {
     if (method === "eth_chainId") {
       return this.cachedChainId
+    }
+
+    if (method.startsWith("alchemy_")) {
+      if (this.alchemyProvider) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return this.alchemyProvider.send(method, params as any)
+      }
+      throw new Error(
+        `Calling ${method} is not supported on ${this.currentProvider.network.name}`
+      )
     }
     try {
       if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
@@ -710,7 +736,7 @@ export function makeSerialFallbackProvider(
 
   return new SerialFallbackProvider(network, [
     // Prefer alchemy as the primary provider when available
-    ...alchemyProviderCreators,
     ...genericProviders,
+    ...alchemyProviderCreators,
   ])
 }
