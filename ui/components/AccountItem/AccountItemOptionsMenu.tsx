@@ -1,11 +1,11 @@
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
-import React, { ReactElement, useCallback, useRef, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useBackgroundDispatch, useOnClickOutside } from "../../hooks"
+import { useBackgroundDispatch } from "../../hooks"
+import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import AccountItemEditName from "./AccountItemEditName"
-import AccountItemOptionLabel from "./AccountItemOptionLabel"
 import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
 
 type AccountItemOptionsMenuProps = {
@@ -20,14 +20,9 @@ export default function AccountItemOptionsMenu({
   })
   const dispatch = useBackgroundDispatch()
   const { address, network } = accountTotal
-  const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
     useState(false)
   const [showEditName, setShowEditName] = useState(false)
-  const optionsMenuRef = useRef(null)
-  useOnClickOutside(optionsMenuRef, () => {
-    setShowOptionsMenu(false)
-  })
 
   const copyAddress = useCallback(() => {
     navigator.clipboard.writeText(address)
@@ -77,102 +72,47 @@ export default function AccountItemOptionsMenu({
           />
         </div>
       </SharedSlideUpMenu>
-      <button
-        type="button"
-        className="icon_settings"
-        role="menu"
-        tabIndex={0}
-        onKeyPress={(e) => {
-          if (e.key === "enter") {
-            setShowOptionsMenu(true)
-          }
-        }}
-        onClick={(e) => {
-          e.stopPropagation()
-          setShowOptionsMenu(true)
-        }}
-      />
-
-      {showOptionsMenu && (
-        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-        <dialog
-          className="options"
-          ref={optionsMenuRef}
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-          onMouseOver={(e) => e.stopPropagation()}
-          onFocus={(e) => e.stopPropagation()}
-        >
+      <SharedDropdown
+        toggler={
           <button
             type="button"
-            className="close_button"
-            aria-label="Close"
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowOptionsMenu(false)
-            }}
-          >
-            <div className="icon_close" />
-          </button>
-          <ul className="options">
-            <li className="option">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowOptionsMenu(false)
-                  setShowEditName(true)
-                }}
-              >
-                <AccountItemOptionLabel
-                  icon="icons/s/edit.svg"
-                  label={t("editName")}
-                  hoverable
-                />
-              </button>
-            </li>
-            <li className="option">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  copyAddress()
-                  setShowOptionsMenu(false)
-                }}
-              >
-                <AccountItemOptionLabel
-                  icon="icons/s/copy.svg"
-                  label={t("copyAddress")}
-                  hoverable
-                />
-              </button>
-            </li>
-            <li className="option">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowOptionsMenu(false)
-                  setShowAddressRemoveConfirm(true)
-                }}
-              >
-                <AccountItemOptionLabel
-                  icon="garbage@2x.png"
-                  label={t("removeAddress")}
-                  hoverable
-                  color="var(--error)"
-                  hoverColor="var(--error-80)"
-                />
-              </button>
-            </li>
-          </ul>
-        </dialog>
-      )}
+            className="icon_settings"
+            role="menu"
+            tabIndex={0}
+          />
+        }
+        options={[
+          {
+            key: "edit",
+            icon: "icons/s/edit.svg",
+            label: t("editName"),
+            onClick: () => {
+              setShowEditName(true)
+            },
+          },
+          {
+            key: "copy",
+            icon: "icons/s/copy.svg",
+            label: t("copyAddress"),
+            onClick: () => {
+              copyAddress()
+            },
+          },
+          {
+            key: "remove",
+            icon: "garbage@2x.png",
+            label: t("removeAddress"),
+            onClick: () => {
+              setShowAddressRemoveConfirm(true)
+            },
+            color: "var(--error)",
+            hoverColor: "var(--error-80)",
+          },
+        ]}
+      />
+
       <style jsx>
         {`
-          .options_menu_wrap {
-            position: relative;
-          }
           .icon_settings {
             mask-image: url("./images/more_dots@2x.png");
             mask-repeat: no-repeat;
@@ -185,65 +125,6 @@ export default function AccountItemOptionsMenu({
           }
           .icon_settings:hover {
             background-color: var(--green-40);
-          }
-          dialog.options {
-            position: absolute;
-            transform: translateX(calc(-100% + 20px));
-            top: -6px;
-            display: block;
-
-            margin: 0;
-            padding: 0;
-
-            cursor: default;
-            background-color: var(--green-120);
-            width: 212px;
-            border-radius: 4px;
-            z-index: 1;
-
-            box-shadow: 0px 2px 4px 0px #00141357,
-                        0px 6px 8px 0px #0014133D,
-                        0px 16px 16px 0px #00141324;
-          }
-          ul.options {
-            display: flex;
-            align-items: center;
-            flex-direction: column;
-            justify-content: space-between;
-          }
-          .close_button {
-            position: absolute;
-            top: 20px;
-            right: 12px;
-          }
-          .option:first-of-type {
-            padding-top: 14px;
-          }
-          .option:last-of-type {
-            padding-bottom: 14px;
-          }
-          .option {
-            display: flex;
-            line-height: 24px;
-            padding: 7px;
-            flex-direction: row;
-            width: 90%;
-            align-items: center;
-            height: 100%;
-            cursor: default;
-            justify-content: space-between;
-          }
-          .icon_close {
-            mask-image: url("./images/close.svg");
-            mask-size: cover;
-            margin-right 2px;
-            width: 11px;
-            height: 11px;
-            background-color: var(--green-40);
-            z-index: 1;
-          }
-          .icon_close:hover {
-            background-color: var(--green-20);
           }
         `}
       </style>

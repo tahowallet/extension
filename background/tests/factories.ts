@@ -202,7 +202,6 @@ export const createBlockPrices = (
       price: 1001550n,
     },
   ],
-  estimatedTransactionCount: null,
   network: ETHEREUM,
   ...overrides,
 })

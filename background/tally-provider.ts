@@ -28,11 +28,13 @@ export default class TallyWeb3Provider extends Web3Provider {
     ])
   }
 
-  getSigner(addressOrIndex?: string | number): TallyInternalJsonRpcSigner {
+  override getSigner(
+    addressOrIndex?: string | number
+  ): TallyInternalJsonRpcSigner {
     return super.getSigner(addressOrIndex)
   }
 
-  static hexlifyTransaction(
+  static override hexlifyTransaction(
     transaction: TransactionRequest & { annotation?: TransactionAnnotation },
     allowExtra?: { [key: string]: boolean }
   ): { [key: string]: string | AccessList } {

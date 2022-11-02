@@ -97,12 +97,6 @@ export const selectTransactionMainCurrencyPricePoint = createSelector(
   }
 )
 
-export const selectLastGasEstimatesRefreshTime = createSelector(
-  (state: { transactionConstruction: TransactionConstruction }) =>
-    state.transactionConstruction.lastGasEstimatesRefreshed,
-  (updateTime) => updateTime
-)
-
 export const selectTransactionData = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.transactionRequest,
