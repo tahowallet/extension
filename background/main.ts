@@ -143,6 +143,7 @@ import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
 import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
+import AnalyticsService from "./services/analytics"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -278,6 +279,8 @@ export default class Main extends BaseService<never> {
       chainService
     )
 
+    const analyticsService = AnalyticsService.create()
+
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
@@ -316,7 +319,8 @@ export default class Main extends BaseService<never> {
       await doggoService,
       await telemetryService,
       await ledgerService,
-      await signingService
+      await signingService,
+      await analyticsService
     )
   }
 
@@ -386,7 +390,13 @@ export default class Main extends BaseService<never> {
      * A promise to the signing service which will route operations between the UI
      * and the exact signing services.
      */
-    private signingService: SigningService
+    private signingService: SigningService,
+
+    /**
+     * A promise to the analytics service which will be responsible for listening
+     * to events and dispatching to our analytics backend
+     */
+    private analyticsService: AnalyticsService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -445,6 +455,7 @@ export default class Main extends BaseService<never> {
       this.telemetryService.startService(),
       this.ledgerService.startService(),
       this.signingService.startService(),
+      this.analyticsService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -464,6 +475,7 @@ export default class Main extends BaseService<never> {
       this.telemetryService.stopService(),
       this.ledgerService.stopService(),
       this.signingService.stopService(),
+      this.analyticsService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -482,6 +494,7 @@ export default class Main extends BaseService<never> {
     this.connectTelemetryService()
     this.connectLedgerService()
     this.connectSigningService()
+    this.connectAnalyticsService()
 
     await this.connectChainService()
 
@@ -1380,6 +1393,10 @@ export default class Main extends BaseService<never> {
     return getActivityDetails(enrichedTransaction)
   }
 
+  async connectAnalyticsService(): Promise<void> {
+    this.analyticsService.sendAnalyticsEvent("Background start")
+  }
+
   async updateSignerTitle(
     signer: AccountSignerWithId,
     title: string
@@ -1402,6 +1419,8 @@ export default class Main extends BaseService<never> {
   private connectPopupMonitor() {
     runtime.onConnect.addListener((port) => {
       if (port.name !== popupMonitorPortName) return
+
+      this.analyticsService.sendAnalyticsEvent("UI open")
       port.onDisconnect.addListener(() => {
         this.onPopupDisconnected()
       })
