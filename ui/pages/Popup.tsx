@@ -216,7 +216,7 @@ export function Main(): ReactElement {
                         // (if we're not there already)
                         !hasAccounts &&
                           !matchPath(transformedLocation.pathname, {
-                            path: "/onboarding",
+                            path: ["/onboarding", "/keyring/unlock"],
                             exact: false,
                           }) && <Redirect to="/onboarding/info-intro" />
                       }
