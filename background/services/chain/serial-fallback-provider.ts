@@ -38,6 +38,8 @@ const PRIMARY_PROVIDER_RECONNECT_INTERVAL = 15 * SECOND
 const WAIT_BEFORE_SUBSCRIBING = 2 * SECOND
 // Wait 100ms before attempting another send if a websocket provider is still connecting.
 const WAIT_BEFORE_SEND_AGAIN = 100
+// Percentage of .send calls to route to alchemy
+const ALCHEMY_RPC_CALL_PERCENTAGE = 0.5
 /**
  * Wait the given number of ms, then run the provided function. Returns a
  * promise that will resolve after the delay has elapsed and the passed
@@ -176,10 +178,13 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     // Internal network type useful for helper calls, but not exposed to avoid
     // clashing with Ethers's own `network` stuff.
     private evmNetwork: EVMNetwork,
-    providerCreators: Array<() => WebSocketProvider | JsonRpcProvider>
+    providerCreators: Array<{
+      type: "alchemy" | "generic"
+      creator: () => WebSocketProvider | JsonRpcProvider
+    }>
   ) {
     const [firstProviderCreator, ...remainingProviderCreators] =
-      providerCreators
+      providerCreators.map((pc) => pc.creator)
 
     const firstProvider = firstProviderCreator()
 
@@ -188,14 +193,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.currentProvider = firstProvider
 
     const alchemyProviderCreator = providerCreators.find(
-      (creator) =>
-        creator instanceof AlchemyWebSocketProvider ||
-        creator instanceof AlchemyProvider
+      (creator) => creator.type === "alchemy"
     )
 
     if (alchemyProviderCreator) {
       this.supportsAlchemy = true
-      this.alchemyProvider = alchemyProviderCreator()
+      this.alchemyProvider = alchemyProviderCreator.creator()
     }
 
     setInterval(() => {
@@ -204,6 +207,18 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
     this.cachedChainId = utils.hexlify(Number(evmNetwork.chainID))
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
+  }
+
+  private async routeRpcCall(
+    method: string,
+    params: unknown
+  ): Promise<unknown> {
+    if (this.alchemyProvider && Math.random() < ALCHEMY_RPC_CALL_PERCENTAGE) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return this.alchemyProvider.send(method, params as any)
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return this.currentProvider.send(method, params as any)
   }
 
   /**
@@ -239,8 +254,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           this.send(method, params)
         )
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await this.currentProvider.send(method, params as any)
+      return await this.routeRpcCall(method, params)
     } catch (error) {
       // Awful, but what can ya do.
       const stringifiedError = String(error)
@@ -712,18 +726,30 @@ export function makeSerialFallbackProvider(
     network.chainID
   )
     ? [
-        () =>
-          new AlchemyWebSocketProvider(
-            getNetwork(Number(network.chainID)),
-            ALCHEMY_KEY
-          ),
-        () =>
-          new AlchemyProvider(getNetwork(Number(network.chainID)), ALCHEMY_KEY),
+        {
+          type: "alchemy" as const,
+          creator: () =>
+            new AlchemyProvider(
+              getNetwork(Number(network.chainID)),
+              ALCHEMY_KEY
+            ),
+        },
+        {
+          type: "alchemy" as const,
+          creator: () =>
+            new AlchemyWebSocketProvider(
+              getNetwork(Number(network.chainID)),
+              ALCHEMY_KEY
+            ),
+        },
       ]
     : []
 
   const genericProviders = (CHAIN_ID_TO_RPC_URLS[network.chainID] || []).map(
-    (rpcUrl) => () => new JsonRpcProvider(rpcUrl)
+    (rpcUrl) => ({
+      type: "generic" as const,
+      creator: () => new JsonRpcProvider(rpcUrl),
+    })
   )
 
   return new SerialFallbackProvider(network, [
