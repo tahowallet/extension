@@ -319,11 +319,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     processFunc: (result: unknown) => void
   ): Promise<void> {
     const subscription = { tag, param, processFunc }
-    this.subscriptions.push(subscription)
 
     if (this.currentProvider instanceof WebSocketProvider) {
       // eslint-disable-next-line no-underscore-dangle
       await this.currentProvider._subscribe(tag, param, processFunc)
+      this.subscriptions.push(subscription)
     } else {
       logger.warn(
         "Current provider is not a WebSocket provider; subscription " +
