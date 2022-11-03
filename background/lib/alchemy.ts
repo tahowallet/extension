@@ -193,7 +193,7 @@ export async function getTokenBalances(
       // as effectively undefined.
       .filter(
         ({ tokenBalance }) =>
-          tokenBalance !== "0x" && Number(tokenBalance) !== 0
+          tokenBalance !== "0x" && BigInt(tokenBalance) !== 0n
       )
       .map((tokenBalance) => {
         let balance = tokenBalance.tokenBalance
