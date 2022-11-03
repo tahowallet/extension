@@ -307,6 +307,7 @@
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
     "analytics": "Analytics",
+    "showBanners": "Show achievement banners",
     "joinTitle": "Join our community",
     "joinDesc": "Join our Discord to give us feedback!",
     "joinBtn": "Join and give feedback",
@@ -521,6 +522,17 @@
       "transactionFrom": "From:",
       "loadingActivities": "Digging deeper..."
     },
+    "banner": {
+      "bannerTitle": "New Odyssey week!",
+      "emptyBannerContent": "Check out Arbitrum Odyssey campaign",
+      "notificationTitle": "Odyssey notifications",
+      "notificationDismissInfo":"Want to receive future Odyssey notifications? We will show you one every week that you can dismiss.",
+      "showNotifications": "Yes, show notification",
+      "dontShowNotifications": "No thanks",
+      "startNow": "Start now",
+      "learnMore": "Learn More",
+      "snackbar": "You can turn notification back from Settings"
+    },
     "totalAccountBalance": "Total account balance",
     "send": "Send",
     "receive": "Receive",
@@ -572,7 +584,8 @@
         "SUPPORT_KEYRING_LOCKING": "Enable to lock/unlock accounts ",
         "SUPPORT_FORGOT_PASSWORD": "Enable to forgot password",
         "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
-        "HIDE_TOKEN_FEATURES": "Hide token features"
+        "HIDE_TOKEN_FEATURES": "Hide token features",
+        "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner"
       }
     }
   }
