@@ -198,6 +198,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.alchemyProvider = alchemyProviderCreator()
     }
 
+    setInterval(() => {
+      this.attemptToReconnectToPrimaryProvider()
+    }, PRIMARY_PROVIDER_RECONNECT_INTERVAL)
+
     this.cachedChainId = utils.hexlify(Number(evmNetwork.chainID))
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
   }
@@ -544,6 +548,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return false
     }
 
+    if (!provider.network) {
+      return false
+    }
+
     if (provider instanceof WebSocketProvider) {
       const websocketProvider = provider as WebSocketProvider
 
@@ -592,29 +600,25 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   private async attemptToReconnectToPrimaryProvider(): Promise<unknown> {
-    // Attempt to reconnect to primary provider every 15 seconds
-    return waitAnd(PRIMARY_PROVIDER_RECONNECT_INTERVAL, async () => {
-      if (this.currentProviderIndex === 0) {
-        // If we are already connected to the primary provider - don't resubscribe
-        // and stop attempting to reconnect.
-        return null
+    if (this.currentProviderIndex === 0) {
+      // If we are already connected to the primary provider - don't resubscribe
+      // and stop attempting to reconnect.
+      return null
+    }
+    const primaryProvider = this.providerCreators[0]()
+    // We need to wait before attempting to resubscribe of the primaryProvider's
+    // websocket connection will almost always still be in a CONNECTING state when
+    // resubscribing.
+    return waitAnd(WAIT_BEFORE_SUBSCRIBING, async (): Promise<unknown> => {
+      const subscriptionsSuccessful = await this.resubscribe(primaryProvider)
+      if (!subscriptionsSuccessful) {
+        return
       }
-      const primaryProvider = this.providerCreators[0]()
-      // We need to wait before attempting to resubscribe of the primaryProvider's
-      // websocket connection will almost always still be in a CONNECTING state when
-      // resubscribing.
-      return waitAnd(WAIT_BEFORE_SUBSCRIBING, async (): Promise<unknown> => {
-        const subscriptionsSuccessful = await this.resubscribe(primaryProvider)
-        if (!subscriptionsSuccessful) {
-          await this.attemptToReconnectToPrimaryProvider()
-          return
-        }
-        // Cleanup the subscriptions on the backup provider.
-        await this.disconnectCurrentProvider()
-        // only set if subscriptions are successful
-        this.currentProvider = primaryProvider
-        this.currentProviderIndex = 0
-      })
+      // Cleanup the subscriptions on the backup provider.
+      await this.disconnectCurrentProvider()
+      // only set if subscriptions are successful
+      this.currentProvider = primaryProvider
+      this.currentProviderIndex = 0
     })
   }
 
