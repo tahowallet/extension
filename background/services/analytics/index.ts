@@ -1,15 +1,10 @@
 import { v4 as uuidv4 } from "uuid"
-import { logger } from "ethers"
 
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 
 import BaseService from "../base"
 import { AnalyticsDatabase, getOrCreateDB } from "./db"
-import {
-  createAnalyticsPayloadForFetch,
-  POSTHOG_URL,
-  shouldSendAnalyticsEvents,
-} from "../../lib/analytics"
+import { sendPosthogEvent } from "../../lib/posthog"
 
 interface Events extends ServiceLifecycleEvents {
   placeHolderEventForTypingPurposes: string
@@ -49,23 +44,7 @@ export default class AnalyticsService extends BaseService<Events> {
     eventName: string,
     payload?: Record<string, unknown>
   ): Promise<void> {
-    if (!shouldSendAnalyticsEvents()) {
-      return
-    }
-
-    try {
-      // fetchJson works only with GET requests
-      fetch(
-        POSTHOG_URL,
-        createAnalyticsPayloadForFetch(
-          await this.getOrCreateAnalyticsUUID(),
-          eventName,
-          payload
-        )
-      )
-    } catch (e) {
-      logger.debug("Sending analytics event failed with error: ", e)
-    }
+    sendPosthogEvent(await this.getOrCreateAnalyticsUUID(), eventName, payload)
   }
 
   private async getOrCreateAnalyticsUUID(): Promise<string> {
