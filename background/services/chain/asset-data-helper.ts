@@ -48,7 +48,6 @@ export default class AssetDataHelper {
     }
 
     try {
-      // FIXME Allow arbitrary providers?
       if (provider.supportsAlchemy) {
         return await getAlchemyTokenBalances(
           provider,
