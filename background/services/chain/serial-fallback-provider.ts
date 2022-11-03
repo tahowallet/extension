@@ -580,20 +580,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         provider.on(eventName, listener)
       }
     })
-    if (!(provider instanceof WebSocketProvider)) {
-      if (this.subscriptions.length > 0) {
-        logger.warn(
-          `Cannot resubscribe ${this.subscriptions.length} subscription(s) ` +
-            `as the current provider is not a WebSocket provider; waiting ` +
-            `until a WebSocket provider connects to restore subscriptions ` +
-            `properly.`
-        )
-        // Intentionally not awaited - This starts off a recursive reconnect loop
-        // that keeps trying to reconnect until successful.
-        this.attemptToReconnectToPrimaryProvider()
-      }
-      return false
-    }
 
     logger.debug("Subscriptions resubscribed...")
     return true
