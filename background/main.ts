@@ -144,6 +144,7 @@ import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import AnalyticsService from "./services/analytics"
+import { shouldSendAnalyticsEvents } from "./lib/analytics"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1394,19 +1395,21 @@ export default class Main extends BaseService<never> {
   }
 
   async connectAnalyticsService(): Promise<void> {
-    this.analyticsService.sendAnalyticsEvent("Background start")
+    if (shouldSendAnalyticsEvents()) {
+      this.analyticsService.sendAnalyticsEvent("Background start")
 
-    // ⚠️ Note: We NEVER send addresses to analytics!
-    this.chainService.emitter.on("newAccountToTrack", () => {
-      this.analyticsService.sendAnalyticsEvent("Account added to tracking", {
-        description: `
+      // ⚠️ Note: We NEVER send addresses to analytics!
+      this.chainService.emitter.on("newAccountToTrack", () => {
+        this.analyticsService.sendAnalyticsEvent("Account added to tracking", {
+          description: `
             This event is fired when any address is added for tracking. This can mean: 
             imported recovery phrase, new keyring created, ledger connected or a read-only address is imported
 
             Note: This is fired on every address addition.
             `,
+        })
       })
-    })
+    }
   }
 
   async updateSignerTitle(
@@ -1432,7 +1435,10 @@ export default class Main extends BaseService<never> {
     runtime.onConnect.addListener((port) => {
       if (port.name !== popupMonitorPortName) return
 
-      this.analyticsService.sendAnalyticsEvent("UI open")
+      if (shouldSendAnalyticsEvents()) {
+        this.analyticsService.sendAnalyticsEvent("UI open")
+      }
+
       port.onDisconnect.addListener(() => {
         this.onPopupDisconnected()
       })
