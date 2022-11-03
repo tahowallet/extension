@@ -1,7 +1,7 @@
 import React from "react"
 import { render, waitFor, fireEvent } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import SharedDropdown from "./SharedDropDown"
+import SharedDropdown from "../SharedDropDown"
 
 describe("SharedDropdown", () => {
   test("should display and hide content on clicking the toggler", async () => {
