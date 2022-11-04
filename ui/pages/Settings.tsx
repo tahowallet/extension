@@ -200,7 +200,7 @@ export default function Settings(): ReactElement {
     enableTestNetworks,
     dAppsSettings,
     bugReport,
-    ...(isEnabled(FeatureFlags.SUPPORT_ANALYTICS) ? [analytics] : []),
+    ...(isEnabled(FeatureFlags.SHOW_ANALYTIC_MENU) ? [analytics] : []),
   ]
 
   const settings = {
