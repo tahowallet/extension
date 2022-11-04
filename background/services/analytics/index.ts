@@ -42,7 +42,9 @@ export default class AnalyticsService extends BaseService<Events> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    this.connectEventListeners()
+    this.sendAnalyticsEvent("Background start")
+
+    this.initializeListeners()
   }
 
   protected override async internalStopService(): Promise<void> {
@@ -60,6 +62,7 @@ export default class AnalyticsService extends BaseService<Events> {
     const { isEnabled } = await this.preferenceService.getAnalyticsSettings()
     if (isEnabled) {
       const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
+
       if (isNew) {
         sendPosthogEvent(uuid, "New install", payload)
       }
@@ -68,7 +71,7 @@ export default class AnalyticsService extends BaseService<Events> {
     }
   }
 
-  private connectEventListeners() {
+  private initializeListeners() {
     // ⚠️ Note: We NEVER send addresses to analytics!
     this.chainService.emitter.on("newAccountToTrack", () => {
       this.sendAnalyticsEvent("Address added to tracking on network", {
