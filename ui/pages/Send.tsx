@@ -10,6 +10,7 @@ import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
   selectCurrentAccountSigner,
+  selectCurrentNetwork,
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -47,6 +48,7 @@ export default function Send(): ReactElement {
   const { t } = useTranslation()
   const isMounted = useRef(false)
   const location = useLocation<FungibleAsset>()
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
@@ -182,6 +184,7 @@ export default function Send(): ReactElement {
         <div className="form">
           <div className="form_input">
             <SharedAssetInput
+              currentNetwork={currentNetwork}
               label={t("wallet.assetAmount")}
               onAssetSelect={setSelectedAsset}
               assetsAndAmounts={fungibleAssetAmounts}
