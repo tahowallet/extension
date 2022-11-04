@@ -13,6 +13,7 @@ const defaultSettings = {
   defaultWallet: false,
   showTestNetworks: false,
   collectAnalytics: false,
+  hideBanners: false,
 }
 
 export interface Location {
@@ -30,6 +31,7 @@ export type UIState = {
     defaultWallet: boolean
     showTestNetworks: boolean
     collectAnalytics: boolean
+    hideBanners: boolean
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
@@ -86,6 +88,16 @@ const uiSlice = createSlice({
       settings: {
         ...state.settings,
         collectAnalytics,
+      },
+    }),
+    toggleHideBanners: (
+      state,
+      { payload: hideBanners }: { payload: boolean }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        hideBanners,
       },
     }),
     setShowingActivityDetail: (
@@ -157,6 +169,7 @@ export const {
   toggleHideDust,
   toggleTestNetworks,
   toggleCollectAnalytics,
+  toggleHideBanners,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
@@ -274,4 +287,9 @@ export const selectShowTestNetworks = createSelector(
 export const selectCollectAnalytics = createSelector(
   selectSettings,
   (settings) => settings?.collectAnalytics
+)
+
+export const selectHideBanners = createSelector(
+  selectSettings,
+  (settings) => settings?.hideBanners
 )

@@ -54,6 +54,7 @@ export default function SharedTooltip(props: Props): ReactElement {
 
   return (
     <div
+      data-testid="tooltip_wrap"
       className="tooltip_wrap"
       onMouseEnter={() => {
         setIsShowingTooltip(true)
