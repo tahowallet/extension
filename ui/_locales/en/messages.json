@@ -9,6 +9,8 @@
       "regularWarning": "Removing this address doesn't delete your recovery phrase or any private keys. Instead it just hides it from the extension and you won't be able to use it until you add it back.",
       "loudWarningTitle": "Removing this address will remove its associated account from the UI.",
       "loudWarningBody": "Are you sure you want to proceed?",
+      "lastAccountWarningTitle": "Once this account is removed you won't be able to use the wallet until you complete onboarding again.",
+      "lastAccountWarningBody": "Are you sure you want to proceed?",
       "removeAddress": "Remove address",
       "copyAddress": "Copy address",
       "removeConfirm": "Yes, I want to remove it"
@@ -545,7 +547,7 @@
     }
   },
   "dAppConnect": {
-    "switchWallet":{
+    "switchWallet": {
       "title": "Tally Ho not Default",
       "descFirstPart": "We disabled Tally as default wallet for you. You can always enable it back from Settings",
       "descSecondPart": "at any time.",
