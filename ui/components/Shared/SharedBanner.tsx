@@ -44,6 +44,7 @@ function Banner(props: BannerProps): ReactElement {
           }
           .banner_content {
             margin: 2px 0;
+            width: 100%;
           }
         `}
       </style>
