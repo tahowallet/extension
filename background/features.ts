@@ -19,6 +19,7 @@ export const RuntimeFlag: Record<string, boolean> = {
   SUPPORT_MULTIPLE_LANGUAGES: process.env.SUPPORT_MULTIPLE_LANGUAGES === "true",
   SUPPORT_ANALYTICS: process.env.SUPPORT_ANALYTICS === "true",
   SHOW_ANALYTIC_MENU: process.env.SHOW_ANALYTIC_MENU === "true",
+  SHOW_DELETE_DATA_BUTTON: process.env.SHOW_DELETE_DATA_BUTTON === "true",
   SUPPORT_KEYRING_LOCKING: process.env.SUPPORT_KEYRING_LOCKING === "true",
   SUPPORT_FORGOT_PASSWORD: process.env.SUPPORT_FORGOT_PASSWORD === "true",
   ENABLE_ACHIEVEMENTS_TAB: process.env.ENABLE_ACHIEVEMENTS_TAB === "true",
