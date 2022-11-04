@@ -6,8 +6,14 @@ import {
   Listener,
   WebSocketProvider,
 } from "@ethersproject/providers"
+import { utils } from "ethers"
 import { getNetwork } from "@ethersproject/networks"
-import { MINUTE, SECOND, RSK } from "../../constants"
+import {
+  MINUTE,
+  SECOND,
+  CHAIN_ID_TO_RPC_URLS,
+  ALCHEMY_SUPPORTED_CHAIN_IDS,
+} from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
 import { AddressOnNetwork } from "../../accounts"
@@ -125,6 +131,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // currentProviderIndex.
   currentProvider: JsonRpcProvider
 
+  /**
+   * Since our architecture follows a pattern of using distinct provider instances
+   * per network - and we know that a given provider will never switch its network
+   * (rather - we will switch the provider the extension is using) - we can avoid
+   * eth_chainId RPC calls.
+   */
+  private cachedChainId: string
+
   // The index of the provider creator that created the current provider. Used
   // for reconnects when relevant.
   private currentProviderIndex = 0
@@ -158,14 +172,17 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     // Internal network type useful for helper calls, but not exposed to avoid
     // clashing with Ethers's own `network` stuff.
     private evmNetwork: EVMNetwork,
-    firstProviderCreator: () => WebSocketProvider | JsonRpcProvider,
-    ...remainingProviderCreators: (() => JsonRpcProvider)[]
+    providerCreators: Array<() => WebSocketProvider | JsonRpcProvider>
   ) {
+    const [firstProviderCreator, ...remainingProviderCreators] =
+      providerCreators
+
     const firstProvider = firstProviderCreator()
 
     super(firstProvider.connection, firstProvider.network)
 
     this.currentProvider = firstProvider
+    this.cachedChainId = utils.hexlify(Number(evmNetwork.chainID))
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
   }
 
@@ -176,7 +193,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * WebSocket disconnects, and restores subscriptions where
    * possible/necessary.
    */
-  async send(method: string, params: unknown): Promise<unknown> {
+  override async send(method: string, params: unknown): Promise<unknown> {
+    if (method === "eth_chainId") {
+      return this.cachedChainId
+    }
     try {
       if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
         // Detect disconnected WebSocket and immediately throw.
@@ -333,7 +353,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * event subscription so that an underlying provider failure will not prevent
    * it from firing.
    */
-  on(eventName: EventType, listener: Listener): this {
+  override on(eventName: EventType, listener: Listener): this {
     this.eventSubscriptions.push({
       eventName,
       listener,
@@ -350,7 +370,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * the event subscription so that an underlying provider failure will not
    * prevent it from firing.
    */
-  once(eventName: EventType, listener: Listener): this {
+  override once(eventName: EventType, listener: Listener): this {
     const adjustedListener = this.listenerWithCleanup(eventName, listener)
 
     this.eventSubscriptions.push({
@@ -369,7 +389,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    *
    * Ensures these will not be restored during a reconnect.
    */
-  off(eventName: EventType, listenerToRemove?: Listener): this {
+  override off(eventName: EventType, listenerToRemove?: Listener): this {
     this.eventSubscriptions = this.eventSubscriptions.filter(
       ({ eventName: savedEventName, listener: savedListener }) => {
         if (savedEventName === eventName) {
@@ -670,18 +690,27 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 export function makeSerialFallbackProvider(
   network: EVMNetwork
 ): SerialFallbackProvider {
-  return new SerialFallbackProvider(
-    network,
-    () =>
-      network.chainID === RSK.chainID
-        ? new JsonRpcProvider("https://public-node.rsk.co")
-        : new AlchemyWebSocketProvider(
+  const alchemyProviderCreators = ALCHEMY_SUPPORTED_CHAIN_IDS.has(
+    network.chainID
+  )
+    ? [
+        () =>
+          new AlchemyWebSocketProvider(
             getNetwork(Number(network.chainID)),
             ALCHEMY_KEY
           ),
-    () =>
-      network.chainID === RSK.chainID
-        ? new JsonRpcProvider("https://public-node.rsk.co")
-        : new AlchemyProvider(getNetwork(Number(network.chainID)), ALCHEMY_KEY)
+        () =>
+          new AlchemyProvider(getNetwork(Number(network.chainID)), ALCHEMY_KEY),
+      ]
+    : []
+
+  const genericProviders = (CHAIN_ID_TO_RPC_URLS[network.chainID] || []).map(
+    (rpcUrl) => () => new JsonRpcProvider(rpcUrl)
   )
+
+  return new SerialFallbackProvider(network, [
+    // Prefer alchemy as the primary provider when available
+    ...alchemyProviderCreators,
+    ...genericProviders,
+  ])
 }

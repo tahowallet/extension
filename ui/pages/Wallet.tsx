@@ -21,6 +21,7 @@ import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOp
 import NFTsWallet from "../components/NFTs/NFTsWallet"
 import SharedBanner from "../components/Shared/SharedBanner"
 import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultBanner"
+import WalletBanner from "../components/Wallet/Banner/WalletBanner"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "wallet" })
@@ -47,7 +48,7 @@ export default function Wallet(): ReactElement {
 
   useEffect(() => {
     // On network switch from top menu reset ui back to assets tab
-    if (!NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID)) {
+    if (!NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
       setPanelNumber(0)
     }
   }, [selectedNetwork.chainID])
@@ -72,7 +73,7 @@ export default function Wallet(): ReactElement {
 
   const panelNames = [t("pages.assets")]
 
-  if (NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID)) {
+  if (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
     panelNames.push(t("pages.NFTs"))
   }
 
@@ -88,6 +89,9 @@ export default function Wallet(): ReactElement {
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           />
         </div>
+        {isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && (
+          <WalletBanner />
+        )}
         {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
           <OnboardingOpenClaimFlowBanner />
         )}
@@ -111,7 +115,7 @@ export default function Wallet(): ReactElement {
               />
             )}
             {panelNumber === 1 &&
-              NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID) && (
+              NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) && (
                 <>
                   <SharedBanner
                     icon="notif-announcement"
@@ -126,7 +130,7 @@ export default function Wallet(): ReactElement {
                 </>
               )}
             {panelNumber ===
-              (NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID)
+              (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)
                 ? 2
                 : 1) && (
               <WalletActivityList activities={currentAccountActivities ?? []} />

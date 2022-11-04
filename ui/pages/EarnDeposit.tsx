@@ -2,6 +2,7 @@ import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
+  selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   ApprovalTargetAllowance,
@@ -49,6 +50,7 @@ export default function EarnDeposit(): ReactElement {
   const storedInput = useBackgroundSelector(selectEarnInputAmount)
   const account = useBackgroundSelector(selectCurrentAccount)
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const [panelNumber, setPanelNumber] = useState(0)
   const [amount, setAmount] = useState(storedInput)
@@ -344,6 +346,7 @@ export default function EarnDeposit(): ReactElement {
       {panelNumber === 0 ? (
         <div className="deposit_wrap">
           <SharedAssetInput
+            currentNetwork={currentNetwork}
             assetsAndAmounts={accountBalances?.assetAmounts}
             label="Deposit asset"
             onAmountChange={(value, errorMessage) =>

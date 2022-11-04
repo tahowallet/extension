@@ -8,7 +8,8 @@
     "jsx": "react-jsx",
     "strict": true,
     "resolveJsonModule": true,
-    "noEmit": true
+    "noEmit": true,
+    "noImplicitOverride": true
   },
   "exclude": ["dev-utils"]
 }

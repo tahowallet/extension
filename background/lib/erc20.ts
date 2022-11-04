@@ -196,36 +196,27 @@ export const getTokenBalances = async (
     address,
   ])
 
-  // eslint-disable-next-line no-useless-catch
-  try {
-    const response = (await contract.callStatic.tryBlockAndAggregate(
-      false,
-      tokenAddresses.map((tokenAddress) => ({
-        target: tokenAddress,
-        callData: balanceOfCallData,
-      }))
-    )) as AggregateContractResponse
+  const response = (await contract.callStatic.tryBlockAndAggregate(
+    // false === don't require all calls to succeed
+    false,
+    tokenAddresses.map((tokenAddress) => [tokenAddress, balanceOfCallData])
+  )) as AggregateContractResponse
 
-    return response.returnData.flatMap((data, i) => {
-      if (data.success !== true) {
-        return []
-      }
+  return response.returnData.flatMap((data, i) => {
+    if (data.success !== true) {
+      return []
+    }
 
-      if (data.returnData === "0x00") {
-        return []
-      }
+    if (data.returnData === "0x00" || data.returnData === "0x") {
+      return []
+    }
 
-      return {
-        amount: BigInt(BigNumber.from(data.returnData).toString()),
-        smartContract: {
-          contractAddress: tokenAddresses[i],
-          homeNetwork: network,
-        },
-      }
-    })
-  } catch (e) {
-    // @TODO Handle failure case here for networks that don't have multicall deployed
-    // (e.g. local hardhat networks, brand new networks, etc..)
-    throw e
-  }
+    return {
+      amount: BigInt(BigNumber.from(data.returnData).toString()),
+      smartContract: {
+        contractAddress: tokenAddresses[i],
+        homeNetwork: network,
+      },
+    }
+  })
 }

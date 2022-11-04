@@ -104,7 +104,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
-  protected async internalStartService(): Promise<void> {
+  protected override async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
     this.emitter.emit(

@@ -1,14 +1,10 @@
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import {
-  selectLastGasEstimatesRefreshTime,
-  selectTransactionMainCurrencyPricePoint,
-} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { selectTransactionMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   EstimatedFeesPerGas,
   NetworkFeeSettings,
   NetworkFeeTypeChosen,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/network-fees"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
@@ -30,11 +26,8 @@ type GasOption = {
   confidence: string
   type: NetworkFeeTypeChosen
   estimatedGwei: string
-  maxGwei: string
   dollarValue: string
   estimatedFeePerGas: bigint
-  maxFeePerGas: bigint
-  maxPriorityFeePerGas: bigint
   gasPrice: bigint
 }
 
@@ -43,7 +36,7 @@ const gasOptionFromEstimate = (
   mainCurrencyPricePoint: PricePoint | undefined,
   baseFeePerGas: bigint,
   gasLimit: bigint | undefined,
-  { confidence, maxFeePerGas, maxPriorityFeePerGas, price }: BlockEstimate
+  { confidence, price }: BlockEstimate
 ): GasOption => {
   const feeOptionData: {
     [confidence: number]: NetworkFeeTypeChosen
@@ -58,7 +51,7 @@ const gasOptionFromEstimate = (
       ? enrichAssetAmountWithMainCurrencyValues(
           {
             asset: ETH,
-            amount: (maxFeePerGas + maxPriorityFeePerGas) * gasLimit,
+            amount: baseFeePerGas * gasLimit,
           },
           mainCurrencyPricePoint,
           2
@@ -69,48 +62,14 @@ const gasOptionFromEstimate = (
   return {
     confidence: `${confidence}`,
     type: feeOptionData[confidence],
-    estimatedGwei: weiToGwei(
-      (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
-    ).split(".")[0],
-    maxGwei: weiToGwei(maxFeePerGas).split(".")[0],
+    estimatedGwei: weiToGwei(baseFeePerGas),
     dollarValue: dollarValue ? `$${dollarValue}` : "-",
-    estimatedFeePerGas:
-      (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
-    maxFeePerGas,
-    maxPriorityFeePerGas,
+    estimatedFeePerGas: baseFeePerGas,
     gasPrice: price ?? 0n,
   }
 }
 
-function EstimateRefreshCountdownDivider() {
-  const [timeRemaining, setTimeRemaining] = useState(0)
-  const gasTime = useBackgroundSelector(selectLastGasEstimatesRefreshTime)
-
-  const getSecondsTillGasUpdate = useCallback(() => {
-    const now = Date.now()
-    setTimeRemaining(Number((120 - (now - gasTime) / 1000).toFixed()))
-  }, [gasTime])
-
-  useEffect(() => {
-    getSecondsTillGasUpdate()
-    const interval = setTimeout(getSecondsTillGasUpdate, 1000)
-    return () => {
-      clearTimeout(interval)
-    }
-  })
-
-  return (
-    <div className="divider">
-      <div className="divider-background" />
-      <div
-        className="divider-cover"
-        style={{ left: -384 + (384 - timeRemaining * (384 / 120)) }}
-      />
-    </div>
-  )
-}
-
-export default function NetworkSettingsSelectLegacy({
+export default function NetworkSettingsSelectArbitrum({
   // FIXME Map this to GasOption[] in a selector.
   estimatedFeesPerGas,
   networkSettings,
@@ -133,8 +92,8 @@ export default function NetworkSettingsSelectLegacy({
       onNetworkSettingsChange({
         feeType: gasOptions[activeFeeIndex].type,
         values: {
-          maxFeePerGas: gasOptions[activeFeeIndex].maxFeePerGas,
-          maxPriorityFeePerGas: gasOptions[activeFeeIndex].maxPriorityFeePerGas,
+          maxFeePerGas: 0n,
+          maxPriorityFeePerGas: 0n,
           gasPrice: gasOptions[activeFeeIndex].gasPrice,
         },
         gasLimit: networkSettings.gasLimit,
@@ -155,9 +114,9 @@ export default function NetworkSettingsSelectLegacy({
     onNetworkSettingsChange({
       feeType: gasOptions[index].type,
       values: {
-        maxFeePerGas: gasOptions[index].maxFeePerGas,
-        maxPriorityFeePerGas: gasOptions[index].maxPriorityFeePerGas,
-        gasPrice: gasOptions[activeFeeIndex].gasPrice,
+        maxFeePerGas: 0n,
+        maxPriorityFeePerGas: 0n,
+        gasPrice: gasOptions[index].gasPrice,
       },
       gasLimit: networkSettings.gasLimit,
       suggestedGasLimit: networkSettings.suggestedGasLimit,
@@ -180,7 +139,7 @@ export default function NetworkSettingsSelectLegacy({
         const updatedGasOptions = basePrices.map((option) =>
           gasOptionFromEstimate(
             mainCurrencyPricePoint,
-            estimatedFeesPerGas.baseFeePerGas ?? 0n,
+            option.price ?? 0n,
             gasLimit,
             option
           )
@@ -215,8 +174,6 @@ export default function NetworkSettingsSelectLegacy({
     <div className="fees standard_width">
       <div className="title">Network Fees</div>
 
-      <EstimateRefreshCountdownDivider />
-
       {gasOptions.map((option, i) => {
         return (
           <button
@@ -230,7 +187,7 @@ export default function NetworkSettingsSelectLegacy({
               <div className="subtext">Probability: {option.confidence}%</div>
             </div>
             <div className="option_right">
-              <div className="price ellipsis">{`~${option.estimatedGwei} Gwei`}</div>
+              <div className="price ellipsis">{`${option.estimatedGwei} Gwei`}</div>
               <div className="subtext">{option.dollarValue}</div>
             </div>
           </button>
@@ -269,7 +226,7 @@ export default function NetworkSettingsSelectLegacy({
         <div className="max_fee">
           <span className="max_label">Max Fee</span>
           <div className="price ellipsis">
-            {gasOptions?.[activeFeeIndex]?.maxGwei} Gwei
+            {gasOptions?.[activeFeeIndex]?.estimatedGwei} Gwei
           </div>
         </div>
       </div>
@@ -280,6 +237,9 @@ export default function NetworkSettingsSelectLegacy({
       </div>
       <style jsx>
         {`
+          .title {
+            margin-bottom: 16px;
+          }
           .option {
             width: 100%;
             display: flex;
