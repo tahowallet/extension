@@ -52,12 +52,7 @@ export default function SignData(): ReactElement {
       return <></>
     }
 
-    return (
-      <Signing
-        accountSigner={currentAccountSigner}
-        request={typedDataRequest}
-      />
-    )
+    return <Signing request={typedDataRequest} />
   }
 
   if (isLocked) return <></>

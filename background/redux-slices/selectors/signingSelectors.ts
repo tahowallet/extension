@@ -56,21 +56,20 @@ export const selectAccountSignersByAddress = createSelector(
         .filter((address) => !allAccountsSeen.has(address))
         .map((address) => [address, ReadOnlyAccountSigner])
 
-    const allEntries: [string, AccountSigner][] = [
+    const entriesByPriority: [string, AccountSigner][] = [
+      ...readOnlyEntries,
       ...ledgerEntries,
       // Give priority to keyring over Ledger, if an address is signable by
       // both.
       ...keyringEntries,
-      ...readOnlyEntries,
     ]
 
-    return Object.fromEntries(allEntries)
+    return Object.fromEntries(entriesByPriority)
   }
 )
 
 export const selectCurrentAccountSigner = createSelector(
   selectAccountSignersByAddress,
   selectCurrentAccount,
-  (signingAccounts, selectedAccount) =>
-    signingAccounts[selectedAccount.address] ?? ReadOnlyAccountSigner
+  (signingAccounts, selectedAccount) => signingAccounts[selectedAccount.address]
 )
