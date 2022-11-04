@@ -212,7 +212,7 @@ export function Main(): ReactElement {
                     </div>
                     <Switch location={transformedLocation}>
                       {
-                        // If an account doesn't exist, display onboarding
+                        // If there are no existing accounts, display onboarding
                         // (if we're not there already)
                         !hasAccounts &&
                           !matchPath(transformedLocation.pathname, {
