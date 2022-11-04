@@ -120,6 +120,7 @@ export default function AccountItemRemovalConfirm({
                 lastAccountInTallyWallet &&
                 isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING)
               ) {
+                window.open("/tab.html#onboarding")
                 window.close()
                 return
               }

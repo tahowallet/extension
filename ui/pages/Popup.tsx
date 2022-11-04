@@ -215,12 +215,9 @@ export function Main(): ReactElement {
                         // If there are no existing accounts, display onboarding
                         // (if we're not there already)
                         //
-                        // TODO: FeatureFlags.SUPPORT_TABBED_ONBOARDING
                         //
-                        // This will become dead code once
-                        // tabbed onboarding is the default
-                        //
-                        !hasAccounts &&
+                        !isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING) &&
+                          !hasAccounts &&
                           !matchPath(transformedLocation.pathname, {
                             path: ["/onboarding", "/keyring/unlock"],
                             exact: false,
