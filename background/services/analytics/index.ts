@@ -40,17 +40,7 @@ export default class AnalyticsService extends BaseService<Events> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    // ⚠️ Note: We NEVER send addresses to analytics!
-    this.chainService.emitter.on("newAccountToTrack", () => {
-      this.sendAnalyticsEvent("Address added to tracking on network", {
-        description: `
-            This event is fired when any address on a network is added to the tracked list. 
-            
-            Note: this does not track recovery phrase(ish) import! But when an address is used 
-            on a network for the first time (read-only or recovery phrase/ledger/keyring).
-            `,
-      })
-    })
+    this.connectEventListeners()
   }
 
   protected override async internalStopService(): Promise<void> {
@@ -71,6 +61,20 @@ export default class AnalyticsService extends BaseService<Events> {
     }
 
     sendPosthogEvent(uuid, eventName, payload)
+  }
+
+  private connectEventListeners() {
+    // ⚠️ Note: We NEVER send addresses to analytics!
+    this.chainService.emitter.on("newAccountToTrack", () => {
+      this.sendAnalyticsEvent("Address added to tracking on network", {
+        description: `
+            This event is fired when any address on a network is added to the tracked list. 
+            
+            Note: this does not track recovery phrase(ish) import! But when an address is used 
+            on a network for the first time (read-only or recovery phrase/ledger/keyring).
+            `,
+      })
+    })
   }
 
   private async getOrCreateAnalyticsUUID(): Promise<{
