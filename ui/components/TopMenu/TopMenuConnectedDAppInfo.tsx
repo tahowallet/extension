@@ -1,3 +1,4 @@
+import classNames from "classnames"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import SharedAccordion from "../Shared/SharedAccordion"
@@ -149,23 +150,25 @@ export default function TopMenuConnectedDAppInfo(props: {
         />
         <div className="content">
           <h1>{t(`${isConnected ? "dAppTitle" : "dappConnections"}`)}</h1>
-          {isConnected && (
-            <>
-              <div className="favicon" />
-              <div className="title text ellipsis" title={title}>
-                {title}
-              </div>
-              <div className="url text ellipsis" title={url}>
-                {url}
-              </div>
-              <button
-                aria-label="disconnect"
-                type="button"
-                className="disconnect_icon"
-                onClick={disconnect}
-              />
-            </>
-          )}
+          <div
+            className={classNames("dAppInfo_wrap", {
+              visible: isConnected,
+            })}
+          >
+            <div className="favicon" />
+            <div className="title text ellipsis" title={title}>
+              {title}
+            </div>
+            <div className="url text ellipsis" title={url}>
+              {url}
+            </div>
+            <button
+              aria-label="disconnect"
+              type="button"
+              className="disconnect_icon"
+              onClick={disconnect}
+            />
+          </div>
         </div>
         <ConnectionDAppGuideline isConnected={isConnected} />
       </div>
@@ -264,6 +267,18 @@ export default function TopMenuConnectedDAppInfo(props: {
           width: 16px;
           height: 18px;
           margin: 16px 0 32px;
+        }
+        .dAppInfo_wrap {
+          display: flex;
+          flex-flow: column;
+          align-items: center;
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 250ms ease-out;
+        }
+        .dAppInfo_wrap.visible {
+          max-height: 200px;
+          transition: max-height 250ms ease-in;
         }
       `}</style>
     </div>

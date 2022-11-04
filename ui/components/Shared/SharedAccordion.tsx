@@ -2,6 +2,8 @@ import classNames from "classnames"
 import React, { ReactElement, useEffect, useRef, useState } from "react"
 import SharedIcon from "./SharedIcon"
 
+const delay = 250
+
 export default function SharedAccordion({
   headerElement,
   contentElement,
@@ -17,13 +19,28 @@ export default function SharedAccordion({
 }): ReactElement {
   const contentRef = useRef<HTMLDivElement>(null)
   const [isOpen, setIsOpen] = useState(isInitiallyOpen)
+  const [isVisible, setIsVisible] = useState(isInitiallyOpen)
+  const [withTransition, setWithTransition] = useState(!isInitiallyOpen)
   const [height, setHeight] = useState(0)
 
-  const toggle = () => setIsOpen((open) => !open)
+  const toggle = () => {
+    setWithTransition(true)
+    setIsOpen((open) => !open)
+  }
 
   useEffect(() => {
     setHeight(contentHeight ?? contentRef.current?.clientHeight ?? 600)
   }, [contentRef, contentElement, contentHeight])
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        setIsVisible(true)
+      }, delay)
+    } else {
+      setIsVisible(false)
+    }
+  }, [isOpen])
 
   return (
     <div className="accordion" style={style}>
@@ -51,15 +68,13 @@ export default function SharedAccordion({
           `}
         />
       </div>
-      {isOpen && (
-        <div
-          className={classNames("accordion_content", {
-            visible: isOpen,
-          })}
-        >
-          <div ref={contentRef}>{contentElement}</div>
-        </div>
-      )}
+      <div
+        className={classNames("accordion_content", {
+          visible: isOpen,
+        })}
+      >
+        <div ref={contentRef}>{contentElement}</div>
+      </div>
       <style jsx>{`
         .accordion {
           background-color: ${isOpen ? "var(--green-120)" : ""};
@@ -75,11 +90,14 @@ export default function SharedAccordion({
         }
         .accordion_content {
           max-height: 0;
-          transition: max-height 250ms ease-out;
+          overflow: hidden;
+          transition: max-height ${delay}ms ease-out;
           padding: 0 8px;
         }
         .accordion_content.visible {
           max-height: ${height + 10}px;
+          transition: max-height ${withTransition ? delay : 0}ms ease-in;
+          overflow: ${isVisible ? "visible" : "hidden"};
         }
       `}</style>
     </div>
