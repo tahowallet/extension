@@ -8,6 +8,8 @@ import {
   toggleHideDust,
   selectShowTestNetworks,
   toggleTestNetworks,
+  toggleHideBanners,
+  selectHideBanners,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
@@ -102,6 +104,7 @@ export default function Settings(): ReactElement {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const hideDust = useSelector(selectHideDust)
+  const hideBanners = useSelector(selectHideBanners)
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
 
@@ -114,6 +117,10 @@ export default function Settings(): ReactElement {
 
   const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
     dispatch(toggleTestNetworks(defaultWalletValue))
+  }
+
+  const toggleHideNotificationBanners = (toggleValue: boolean) => {
+    dispatch(toggleHideBanners(!toggleValue))
   }
 
   const hideSmallAssetBalance = {
@@ -193,6 +200,16 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const notificationBanner = {
+    title: t("settings.showBanners"),
+    component: () => (
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleHideNotificationBanners(toggleValue)}
+        value={!hideBanners}
+      />
+    ),
+  }
+
   const generalList = [
     setAsDefault,
     hideSmallAssetBalance,
@@ -201,6 +218,9 @@ export default function Settings(): ReactElement {
     dAppsSettings,
     bugReport,
     ...(isEnabled(FeatureFlags.SHOW_ANALYTIC_MENU) ? [analytics] : []),
+    ...(isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER)
+      ? [notificationBanner]
+      : []),
   ]
 
   const settings = {
