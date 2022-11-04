@@ -163,7 +163,7 @@ export default async function resolveTransactionAnnotation(
       }),
   desiredDecimals: number
 ): Promise<TransactionAnnotation> {
-  const assets = await indexingService.getCachedAssets(network)
+  const assets = indexingService.getCachedAssets(network)
 
   // By default, annotate all requests as contract interactions, unless they
   // already carry additional metadata.
