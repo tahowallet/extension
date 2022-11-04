@@ -73,6 +73,7 @@
     "webextension-polyfill": "^0.7.0"
   },
   "devDependencies": {
+    "@actions/github": "^5.1.1",
     "@babel/core": "^7.13.1",
     "@babel/preset-env": "^7.15.0",
     "@babel/preset-react": "^7.12.13",

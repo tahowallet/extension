@@ -1,12 +1,22 @@
 // @ts-check
 /* Allow console output for debug information in Actions output. */
 /* eslint-disable no-console */
-module.exports = async function postBuildLink({ github, context }) {
-  /** @type {string | undefined} */
-  const workflowRunId =
-    context.payload?.workflow_run?.id ?? context.inputs?.workflow_run_id
 
-  /** @type {{ status: number, data: { check_suite_id: number, updated_at: string }}} */
+/**
+ * @param {object} ctx Context
+ * @param {ReturnType<import("@actions/github")["getOctokit"]>} ctx.github
+ * @param {import("@actions/github")["context"] & {inputs?: Record<string,unknown>}} ctx.context
+ * @returns {Promise<void>}
+ */
+module.exports = async function postBuildLink({ github, context }) {
+  const workflowRunId = Number(
+    context.payload?.workflow_run?.id ?? context.inputs?.workflow_run_id
+  )
+
+  if (Number.isNaN(workflowRunId)) {
+    throw new Error(`Failed to get workflow run id`)
+  }
+
   const {
     status: workflowLookupStatus,
     data: { check_suite_id: checkSuiteId, updated_at: workflowUpdatedAt },
@@ -73,14 +83,14 @@ module.exports = async function postBuildLink({ github, context }) {
   } = await github.rest.pulls.get({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    pull_number: prNumber,
+    pull_number: Number(prNumber),
   })
 
   if (pullLookupStatus !== 200) {
     throw new Error(`Failed to fetch PR body :( Status ${pullLookupStatus}.`)
   }
 
-  const baseUrl = context.payload.repository.html_url
+  const baseUrl = context.payload?.repository?.html_url
   const artifactUrl = `${baseUrl}/suites/${checkSuiteId}/artifacts/${matchArtifact?.name}`
 
   console.log(
@@ -97,7 +107,7 @@ module.exports = async function postBuildLink({ github, context }) {
   await github.rest.pulls.update({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    pull_number: prNumber,
+    pull_number: Number(prNumber),
     body: updatedBody,
   })
 }
