@@ -578,6 +578,7 @@ export default function Swap(): ReactElement {
           <div className="form">
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
+                currentNetwork={currentNetwork}
                 amount={sellAmount}
                 amountMainCurrency={priceDetails?.sellCurrencyAmount}
                 showCurrencyAmount
@@ -600,6 +601,7 @@ export default function Swap(): ReactElement {
             </button>
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
+                currentNetwork={currentNetwork}
                 amount={buyAmount}
                 amountMainCurrency={priceDetails?.buyCurrencyAmount}
                 showCurrencyAmount

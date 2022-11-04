@@ -13,7 +13,7 @@ import {
   fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem, {
@@ -21,7 +21,6 @@ import SharedAssetItem, {
   hasAmounts,
 } from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
-import { useBackgroundSelector } from "../../hooks"
 import SharedIcon from "./SharedIcon"
 import SharedTooltip from "./SharedTooltip"
 
@@ -282,6 +281,7 @@ SelectedAssetButton.defaultProps = {
 }
 
 interface SharedAssetInputProps<AssetType extends AnyAsset> {
+  currentNetwork: EVMNetwork
   assetsAndAmounts: AnyAssetWithOptionalAmount<AssetType>[]
   label: string
   selectedAsset: AssetType | undefined
@@ -322,6 +322,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
 ): ReactElement {
   const { t } = useTranslation()
   const {
+    currentNetwork,
     assetsAndAmounts,
     label,
     selectedAsset,
@@ -336,8 +337,6 @@ export default function SharedAssetInput<T extends AnyAsset>(
     onAssetSelect,
     onAmountChange,
   } = props
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
-
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
 
   // TODO: use https://reactjs.org/docs/hooks-reference.html#useid once we update to version 18
