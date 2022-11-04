@@ -63,19 +63,29 @@ export default class AnalyticsService extends BaseService<Events> {
     eventName: string,
     payload?: Record<string, unknown>
   ): Promise<void> {
-    sendPosthogEvent(await this.getOrCreateAnalyticsUUID(), eventName, payload)
+    // @TODO: implement batching
+
+    const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
+    if (isNew) {
+      sendPosthogEvent(uuid, "New install", payload)
+    }
+
+    sendPosthogEvent(uuid, eventName, payload)
   }
 
-  private async getOrCreateAnalyticsUUID(): Promise<string> {
+  private async getOrCreateAnalyticsUUID(): Promise<{
+    uuid: string
+    isNew: boolean
+  }> {
     const uuid = await this.db.getAnalyticsUUID()
 
     if (uuid === undefined) {
       const newUUID = uuidv4()
       await this.db.setAnalyticsUUID(newUUID)
 
-      return newUUID
+      return { uuid: newUUID, isNew: true }
     }
 
-    return uuid
+    return { uuid, isNew: false }
   }
 }
