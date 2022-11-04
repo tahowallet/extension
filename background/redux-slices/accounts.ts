@@ -10,7 +10,7 @@ import {
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
 import { AccountSigner } from "../services/signing"
-import { TEST_NETWORK_BY_CHAIN_ID } from "../constants"
+import { NETWORK_BY_CHAIN_ID, TEST_NETWORK_BY_CHAIN_ID } from "../constants"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -309,8 +309,6 @@ const accountSlice = createSlice({
       immerState.accountsData.evm[network.chainID] ??= {}
 
       const baseAccountData = getOrCreateAccountData(
-        // TODO Figure out the best way to handle default name assignment
-        // TODO across networks.
         immerState,
         normalizedAddress,
         network
@@ -320,6 +318,37 @@ const accountSlice = createSlice({
         ...baseAccountData,
         ens: { ...baseAccountData.ens, name },
       }
+    },
+    updateAccountLocalName: (
+      immerState,
+      {
+        payload: { address, name },
+      }: { payload: { address: string; name: DomainName } }
+    ) => {
+      const normalizedAddress = normalizeEVMAddress(address)
+
+      Object.keys(immerState.accountsData.evm).forEach((chainID) => {
+        if (
+          immerState.accountsData.evm[chainID]?.[normalizedAddress] ===
+          undefined
+        ) {
+          return
+        }
+
+        immerState.accountsData.evm[chainID] ??= {}
+
+        const network = NETWORK_BY_CHAIN_ID[chainID]
+        const baseAccountData = getOrCreateAccountData(
+          immerState,
+          normalizedAddress,
+          network
+        )
+
+        immerState.accountsData.evm[chainID][normalizedAddress] = {
+          ...baseAccountData,
+          ens: { ...baseAccountData.ens, name },
+        }
+      })
     },
     updateENSAvatar: (
       immerState,
@@ -361,6 +390,7 @@ export const {
   loadAccount,
   updateAccountBalance,
   updateAccountName,
+  updateAccountLocalName,
   updateENSAvatar,
 } = accountSlice.actions
 
