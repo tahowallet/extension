@@ -44,7 +44,7 @@ module.exports = async function postBuildLink({ github, context }) {
 
   if (matchArtifact === undefined || matchArtifact === null) {
     throw new Error(
-      `Failed to find extension artifact :( Artifacts were ${JSON.strignify(
+      `Failed to find extension artifact :( Artifacts were ${JSON.stringify(
         allArtifacts
       )}`
     )
@@ -77,11 +77,11 @@ module.exports = async function postBuildLink({ github, context }) {
   })
 
   if (pullLookupStatus !== 200) {
-    throw new Error("Failed to fetch PR body :( Status", pullLookupStatus, ".")
+    throw new Error(`Failed to fetch PR body :( Status ${pullLookupStatus}.`)
   }
 
   const baseUrl = context.payload.repository.html_url
-  const artifactUrl = `${baseUrl}/suites/${checkSuiteId}/artifacts/${matchArtifact.id}`
+  const artifactUrl = `${baseUrl}/suites/${checkSuiteId}/artifacts/${matchArtifact?.name}`
 
   console.log(
     `Detected artifact ${matchArtifact.name} at ${artifactUrl}, posting...`
