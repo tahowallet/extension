@@ -1,7 +1,7 @@
 import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import {
   selectCollectAnalytics,
-  toggleCollectAnalytics,
+  updateAnalyticsPreferences,
 } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -28,14 +28,14 @@ export default function SettingsAnalytics(): ReactElement {
 
   const handleToggleChange = (toggleValue: boolean) => {
     if (toggleValue) {
-      dispatch(toggleCollectAnalytics(true))
+      dispatch(updateAnalyticsPreferences(true))
     } else {
       setShowAnalyticsMenu(true)
     }
   }
 
   const handleCollectAnalyticsSubmit = () => {
-    dispatch(toggleCollectAnalytics(false))
+    dispatch(updateAnalyticsPreferences(false))
     setShowAnalyticsMenu(false)
   }
 

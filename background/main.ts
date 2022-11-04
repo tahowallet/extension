@@ -67,6 +67,7 @@ import {
   setNewSelectedAccount,
   setSnackbarMessage,
   setAccountsSignerSettings,
+  toggleCollectAnalytics,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -144,6 +145,7 @@ import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import AnalyticsService from "./services/analytics"
+import { AnalyticsPreferences } from "./services/preferences/types"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -279,7 +281,10 @@ export default class Main extends BaseService<never> {
       chainService
     )
 
-    const analyticsService = AnalyticsService.create(chainService)
+    const analyticsService = AnalyticsService.create(
+      chainService,
+      preferenceService
+    )
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -1395,6 +1400,29 @@ export default class Main extends BaseService<never> {
 
   async connectAnalyticsService(): Promise<void> {
     this.analyticsService.sendAnalyticsEvent("Background start")
+
+    this.preferenceService.emitter.on(
+      "updateAnalyticsPreferences",
+      async (analyticsPreferences: AnalyticsPreferences) => {
+        // This event is used on initialization and data change
+        this.store.dispatch(
+          toggleCollectAnalytics(
+            // we are using only this field on the UI atm
+            // it's expected that more detailed analytics settings will come
+            analyticsPreferences.isEnabled
+          )
+        )
+      }
+    )
+
+    uiSliceEmitter.on(
+      "updateAnalyticsPreferences",
+      async (analyticsPreferences: AnalyticsPreferences) => {
+        await this.preferenceService.updateAnalyticsPreferences(
+          analyticsPreferences
+        )
+      }
+    )
   }
 
   async updateSignerTitle(

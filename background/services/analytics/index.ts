@@ -6,6 +6,7 @@ import BaseService from "../base"
 import { AnalyticsDatabase, getOrCreateDB } from "./db"
 import { sendPosthogEvent } from "../../lib/posthog"
 import ChainService from "../chain"
+import PreferenceService from "../preferences"
 
 interface Events extends ServiceLifecycleEvents {
   placeHolderEventForTypingPurposes: string
@@ -23,16 +24,17 @@ export default class AnalyticsService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     AnalyticsService,
-    [Promise<ChainService>]
-  > = async (chainService) => {
+    [Promise<ChainService>, Promise<PreferenceService>]
+  > = async (chainService, preferenceService) => {
     const db = await getOrCreateDB()
 
-    return new this(db, await chainService)
+    return new this(db, await chainService, await preferenceService)
   }
 
   private constructor(
     private db: AnalyticsDatabase,
-    private chainService: ChainService
+    private chainService: ChainService,
+    private preferenceService: PreferenceService
   ) {
     super()
   }
@@ -53,14 +55,17 @@ export default class AnalyticsService extends BaseService<Events> {
     eventName: string,
     payload?: Record<string, unknown>
   ): Promise<void> {
-    // @TODO: implement batching
+    // @TODO: implement event batching
 
-    const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
-    if (isNew) {
-      sendPosthogEvent(uuid, "New install", payload)
+    const { isEnabled } = await this.preferenceService.getAnalyticsSettings()
+    if (isEnabled) {
+      const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
+      if (isNew) {
+        sendPosthogEvent(uuid, "New install", payload)
+      }
+
+      sendPosthogEvent(uuid, eventName, payload)
     }
-
-    sendPosthogEvent(uuid, eventName, payload)
   }
 
   private connectEventListeners() {
