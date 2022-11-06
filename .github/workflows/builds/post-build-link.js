@@ -4,13 +4,16 @@
 
 /**
  * @param {object} ctx Context
- * @param {ReturnType<import("@actions/github")["getOctokit"]>} ctx.github
- * @param {import("@actions/github")["context"] & {inputs?: Record<string,unknown>}} ctx.context
+ * @param {InstanceType<import("@actions/github/lib/utils")["GitHub"]>} ctx.github
+ * @param {import("@actions/github")["context"]} ctx.context
  * @returns {Promise<void>}
  */
 module.exports = async function postBuildLink({ github, context }) {
+  // @ts-expect-error this is available on manual workflow runs
+  const manualWorkFlowId = context?.inputs?.workflow_run_id
+
   const workflowRunId = Number(
-    context.payload?.workflow_run?.id ?? context.inputs?.workflow_run_id
+    context.payload?.workflow_run?.id ?? manualWorkFlowId
   )
 
   if (Number.isNaN(workflowRunId)) {
@@ -32,7 +35,6 @@ module.exports = async function postBuildLink({ github, context }) {
     )
   }
 
-  /** @type {{ status: number, data: { artifacts: { name: string }[] }}} */
   const {
     status: artifactLookupStatus,
     data: { artifacts: allArtifacts },
@@ -91,7 +93,7 @@ module.exports = async function postBuildLink({ github, context }) {
   }
 
   const baseUrl = context.payload?.repository?.html_url
-  const artifactUrl = `${baseUrl}/suites/${checkSuiteId}/artifacts/${matchArtifact?.name}`
+  const artifactUrl = `${baseUrl}/suites/${checkSuiteId}/artifacts/${matchArtifact.id}`
 
   console.log(
     `Detected artifact ${matchArtifact.name} at ${artifactUrl}, posting...`
