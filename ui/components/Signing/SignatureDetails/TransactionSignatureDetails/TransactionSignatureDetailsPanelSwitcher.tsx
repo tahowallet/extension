@@ -3,6 +3,7 @@ import React, { ReactElement } from "react"
 import { useSwitchablePanels } from "../../../../hooks"
 import DetailsPanel from "./DetailsPanel"
 import RawDataPanel from "./RawDataPanel"
+import SimulationPanel from "./SimulationPanel"
 
 export default function TransactionDataPanelSwitcher({
   transactionRequest,
@@ -14,6 +15,12 @@ export default function TransactionDataPanelSwitcher({
       name: "Details",
       panelElement: () => (
         <DetailsPanel transactionRequest={transactionRequest} />
+      ),
+    },
+    {
+      name: "Simulation",
+      panelElement: () => (
+        <SimulationPanel transactionRequest={transactionRequest} />
       ),
     },
     {
