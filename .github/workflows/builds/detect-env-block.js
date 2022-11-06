@@ -4,8 +4,8 @@
 
 /**
  * @param {object} ctx Context
- * @param {ReturnType<import("@actions/github")["getOctokit"]>} ctx.github
- * @param {import("@actions/github")["context"] & {inputs?: Record<string,unknown>}} ctx.context
+ * @param {InstanceType<import("@actions/github/lib/utils")["GitHub"]>} ctx.github
+ * @param {import("@actions/github")["context"]} ctx.context
  * @returns {Promise<string>}
  */
 module.exports = async function detectEnvBlock({ github, context }) {
