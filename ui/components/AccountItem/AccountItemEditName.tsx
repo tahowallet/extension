@@ -83,6 +83,7 @@ export default function AccountItemEditName({
           <SharedInput
             label=""
             placeholder={t("typeNewName")}
+            autoSelect
             errorMessage={error}
             onChange={(value) => {
               if (!touched) {
@@ -125,8 +126,6 @@ export default function AccountItemEditName({
           margin-top: 0px;
         }
         .details {
-          display: flex;
-          flex-direction: column;
           line-height: 24px;
           font-size: 16px;
           margin-top: 21px;
