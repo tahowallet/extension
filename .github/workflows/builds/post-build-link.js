@@ -1,9 +1,12 @@
+// @ts-check
 /* Allow console output for debug information in Actions output. */
 /* eslint-disable no-console */
 module.exports = async function postBuildLink({ github, context }) {
+  /** @type {string | undefined} */
   const workflowRunId =
     context.payload?.workflow_run?.id ?? context.inputs?.workflow_run_id
 
+  /** @type {{ status: number, data: { check_suite_id: number, updated_at: string }}} */
   const {
     status: workflowLookupStatus,
     data: { check_suite_id: checkSuiteId, updated_at: workflowUpdatedAt },
@@ -19,6 +22,7 @@ module.exports = async function postBuildLink({ github, context }) {
     )
   }
 
+  /** @type {{ status: number, data: { artifacts: { name: string }[] }}} */
   const {
     status: artifactLookupStatus,
     data: { artifacts: allArtifacts },
@@ -52,7 +56,7 @@ module.exports = async function postBuildLink({ github, context }) {
     throw new Error(
       `Could not extract PR number from extension artifact filename (${matchArtifact.name}) :(`
     )
-  } else if (prNumber.match(/^[a-f0-9]+$/ && !prNumber.match(/^[0-9]+$/))) {
+  } else if (prNumber.match(/^[a-f0-9]+$/) && !prNumber.match(/^[0-9]+$/)) {
     console.log(
       "Workflow was for a merge commit rather than a PR, skipping build link."
     )
