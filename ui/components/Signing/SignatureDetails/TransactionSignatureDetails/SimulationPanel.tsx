@@ -1,11 +1,9 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { useDispatch } from "react-redux"
 import { fetchJson } from "@ethersproject/web"
-import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { EnrichedEVMTransactionRequest } from "@tallyho/tally-background/services/enrichment"
-import { useTranslation } from "react-i18next"
+import logger from "@tallyho/tally-background/lib/logger"
 import { formatUnits } from "@ethersproject/units"
-import SharedButton from "../../../Shared/SharedButton"
+import SharedAddress from "../../../Shared/SharedAddress"
 
 type StateChange = {
   type: string
@@ -44,6 +42,39 @@ const chainIDToNetworkName = {
   592: "astar",
 }
 
+function StateChangeRow(
+  stateChange: StateChange,
+  index: number,
+  relevantAddresses: RelevantAddress[]
+): ReactElement {
+  const {
+    summary: { text },
+  } = stateChange
+  const addresses = relevantAddresses.reduce<Record<string, RelevantAddress>>(
+    (acc, addressInfo) => {
+      return {
+        [addressInfo.address]: addressInfo,
+        ...acc,
+      }
+    },
+    {}
+  )
+  const splitSummary = text.split(/(0x[a-fA-F0-9]*)/g)
+  return (
+    <li key={index}>
+      <p>
+        {splitSummary.map((s) => {
+          const name = addresses[s]?.ens?.name
+          if (s.match(/^0x[0-9a-fA-F]*$/)) {
+            return <SharedAddress address={s.trim()} name={name} />
+          }
+          return <span>{s}</span>
+        })}
+      </p>
+    </li>
+  )
+}
+
 export default function SimulationPanel({
   transactionRequest,
 }: {
@@ -73,14 +104,18 @@ export default function SimulationPanel({
               transactionRequest.chainID
             ) as keyof typeof chainIDToNetworkName
           ]
-        setSimulation(
-          (await fetchJson(
-            {
-              url: `https://trykoi.com/api/v1/${network}/tx/simulate`,
-            },
-            JSON.stringify(simRequest, undefined, 2)
-          )) as KoiSimulation
-        )
+        try {
+          setSimulation(
+            (await fetchJson(
+              {
+                url: `https://trykoi.com/api/v1/${network}/tx/simulate`,
+              },
+              JSON.stringify(simRequest)
+            )) as KoiSimulation
+          )
+        } catch {
+          logger.error("Error simulating transaction")
+        }
       }
     }
 
@@ -89,32 +124,17 @@ export default function SimulationPanel({
     return () => {
       active = false
     }
-  })
-
-  const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
-  const dispatch = useDispatch()
-
-  const { input } = transactionRequest
-
-  const copyData = () => {
-    navigator.clipboard.writeText(input ?? "")
-    dispatch(setSnackbarMessage(t("rawDataCopyMsg")))
-  }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="raw_data_wrap standard_width_padded">
-      <SharedButton
-        type="tertiary"
-        iconMedium="copy"
-        size="medium"
-        iconPosition="left"
-        onClick={copyData}
-      >
-        {t("copyRawData")}
-      </SharedButton>
-      <div className="raw_data_text">
-        {simulation ? JSON.stringify(simulation) : null}{" "}
-      </div>
+      <ul className="raw_data_text">
+        {simulation &&
+          simulation.stateChanges &&
+          simulation.stateChanges.map((sc, i) =>
+            StateChangeRow(sc, i, simulation.relevantAddresses || [])
+          )}
+      </ul>
       <style jsx>{`
         .raw_data_wrap {
           margin-top: 15px;
@@ -122,8 +142,6 @@ export default function SimulationPanel({
         .raw_data_text {
           margin: 5px 0;
           padding: 24px;
-          border-radius: 4px;
-          background-color: var(--hunter-green);
           color: var(--green-40);
           overflow-wrap: break-word;
         }
