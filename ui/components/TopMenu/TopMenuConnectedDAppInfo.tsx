@@ -269,6 +269,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           margin: 16px 0 32px;
         }
         .dAppInfo_wrap {
+          width: 100%;
           display: flex;
           flex-flow: column;
           align-items: center;
