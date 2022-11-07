@@ -836,8 +836,8 @@ export default class ChainService extends BaseService<Events> {
       // Skip save, emit and savedTransaction emission on resubmission
       await this.db.addAccountToTrack(addressNetwork)
       this.emitter.emit("newAccountToTrack", addressNetwork)
-      this.emitSavedTransactions(addressNetwork)
     }
+    this.emitSavedTransactions(addressNetwork)
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
       logger.error(
         "chainService/addAccountToTrack: Error subscribing to account transactions",
