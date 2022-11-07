@@ -67,13 +67,9 @@ function SigningLoaded<T extends SignOperationType>({
             background-color: var(--green-95);
             z-index: 5;
           }
-          section:has(footer) {
-            /* Make room for the footer. */
-            height: calc(100% - 80px);
-          }
           section :global(h1.title) {
             color: var(--trophy-gold);
-            font-size: 36px;
+            font-size: ;
             font-weight: 500;
             line-height: 42px;
             text-align: center;
