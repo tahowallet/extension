@@ -54,7 +54,7 @@ const desiredDecimals = {
 }
 
 // List of assets by symbol that should be displayed with more decimal places
-const EXCEPTION_ASSETS_BY_SYMBOL = ["BTC", "sBTC", "WBTC"]
+const EXCEPTION_ASSETS_BY_SYMBOL = ["BTC", "SBTC", "WBTC"]
 
 // TODO Make this a setting.
 const userValueDustThreshold = 2
@@ -109,7 +109,9 @@ const computeCombinedAssetAmountsData = (
       const fullyEnrichedAssetAmount = enrichAssetAmountWithDecimalValues(
         mainCurrencyEnrichedAssetAmount,
         heuristicDesiredDecimalsForUnitPrice(
-          EXCEPTION_ASSETS_BY_SYMBOL.includes(assetAmount.asset.symbol)
+          EXCEPTION_ASSETS_BY_SYMBOL.includes(
+            assetAmount.asset.symbol.toUpperCase()
+          )
             ? desiredDecimals.greater
             : desiredDecimals.default,
           mainCurrencyEnrichedAssetAmount.unitPrice
