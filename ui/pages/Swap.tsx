@@ -352,6 +352,8 @@ export default function Swap(): ReactElement {
   const [amountInputHasFocus, setAmountInputHasFocus] = useState(false)
 
   useInterval(() => {
+    if (!isEnabled(FeatureFlags.SUPPORT_SWAP_QUOTE_REFRESH)) return
+
     const isRecentQuote =
       quote &&
       // Time passed since last quote

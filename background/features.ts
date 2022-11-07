@@ -35,6 +35,7 @@ export const RuntimeFlag = {
     process.env.SUPPORT_ACHIEVEMENTS_BANNER === "true",
   SUPPORT_NFT_TAB: process.env.SUPPORT_NFT_TAB === "true",
   SUPPORT_WALLET_CONNECT: process.env.SUPPORT_WALLET_CONNECT === "true",
+  SUPPORT_SWAP_QUOTE_REFRESH: process.env.SUPPORT_SWAP_QUOTE_REFRESH === "true",
 } as const
 
 type BuildTimeFlagType = keyof typeof BuildTimeFlag

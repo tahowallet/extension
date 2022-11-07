@@ -652,7 +652,8 @@
         "SUPPORT_AVALANCHE": "Enable Avalanche network",
         "SUPPORT_BINANCE_SMART_CHAIN": "Enable Binance Smart Chain network",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
-        "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab"
+        "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab",
+        "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates"
       }
     }
   },
