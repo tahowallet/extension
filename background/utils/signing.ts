@@ -2,6 +2,7 @@ import { TypedDataField } from "@ethersproject/abstract-signer"
 import { hexlify, toUtf8Bytes, toUtf8String } from "ethers/lib/utils"
 import { SiweMessage } from "siwe"
 import { AddressOnNetwork } from "../accounts"
+import { AccountSignerWithId } from "../signing"
 
 import { EIP191Data, EIP712TypedData, HexString } from "../types"
 
@@ -135,5 +136,23 @@ export function parseSigningData(signingData: string): MessageSigningData {
   return {
     messageType: "eip191",
     signingData: normalizedData,
+  }
+}
+
+export const isSameAccountSignerWithId = (
+  signerA: AccountSignerWithId,
+  signerB: AccountSignerWithId
+): boolean => {
+  if (signerA.type !== signerB.type) return false
+
+  switch (signerB.type) {
+    case "keyring":
+      return signerB.keyringID === (signerA as typeof signerB).keyringID
+
+    case "ledger":
+      return signerB.deviceID === (signerA as typeof signerB).deviceID
+
+    default:
+      return false
   }
 }

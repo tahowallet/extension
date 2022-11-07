@@ -41,34 +41,10 @@ export const OPTIMISM: EVMNetwork = {
   coingeckoPlatformID: "optimistic-ethereum",
 }
 
-export const ROPSTEN: EVMNetwork = {
-  name: "Ropsten",
-  baseAsset: ETH,
-  chainID: "3",
-  family: "EVM",
-  coingeckoPlatformID: "ethereum",
-}
-
-export const RINKEBY: EVMNetwork = {
-  name: "Rinkeby",
-  baseAsset: ETH,
-  chainID: "4",
-  family: "EVM",
-  coingeckoPlatformID: "ethereum",
-}
-
 export const GOERLI: EVMNetwork = {
   name: "Goerli",
   baseAsset: ETH,
   chainID: "5",
-  family: "EVM",
-  coingeckoPlatformID: "ethereum",
-}
-
-export const KOVAN: EVMNetwork = {
-  name: "Kovan",
-  baseAsset: ETH,
-  chainID: "42",
   family: "EVM",
   coingeckoPlatformID: "ethereum",
 }
@@ -102,39 +78,65 @@ export const NETWORK_BY_CHAIN_ID = {
   [RSK.chainID]: RSK,
   [ARBITRUM_ONE.chainID]: ARBITRUM_ONE,
   [OPTIMISM.chainID]: OPTIMISM,
-  [ROPSTEN.chainID]: ROPSTEN,
-  [RINKEBY.chainID]: RINKEBY,
   [GOERLI.chainID]: GOERLI,
-  [KOVAN.chainID]: KOVAN,
   [FORK.chainID]: FORK,
 }
-
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(
   [GOERLI].map((network) => network.chainID)
 )
 
 export const NETWORK_FOR_LEDGER_SIGNING = [ETHEREUM, POLYGON]
 
-export const NETWORKS_SUPPORTING_SWAPS = [
-  ETHEREUM.chainID,
-  POLYGON.chainID,
-  ARBITRUM_ONE.chainID,
-  OPTIMISM.chainID,
-  ROPSTEN.chainID,
-  RINKEBY.chainID,
-  GOERLI.chainID,
-  KOVAN.chainID,
-  FORK.chainID,
-]
+// Networks that are not added to this struct will
+// not have an in-wallet NFT tab
+export const CHAIN_ID_TO_NFT_METADATA_PROVIDER = {
+  [ETHEREUM.chainID]: "alchemy" as const,
+  [POLYGON.chainID]: "alchemy" as const,
+  [OPTIMISM.chainID]: "simplehash" as const,
+  [ARBITRUM_ONE.chainID]: "simplehash" as const,
+}
 
-export const NETWORKS_SUPPORTING_NFTS = [
-  ETHEREUM.chainID,
-  POLYGON.chainID,
-  ARBITRUM_ONE.chainID,
-  OPTIMISM.chainID,
-  ROPSTEN.chainID,
-  RINKEBY.chainID,
-  GOERLI.chainID,
-  KOVAN.chainID,
-  FORK.chainID,
-]
+export const NETWORKS_SUPPORTING_NFTS = new Set(
+  Object.keys(CHAIN_ID_TO_NFT_METADATA_PROVIDER)
+)
+
+// Networks that are not added to this struct will
+// not have an in-wallet Swap page
+export const CHAIN_ID_TO_0X_API_BASE: {
+  [chainID: string]: string | undefined
+} = {
+  [ETHEREUM.chainID]: "api.0x.org",
+  [POLYGON.chainID]: "polygon.api.0x.org",
+  [OPTIMISM.chainID]: "optimism.api.0x.org",
+  [GOERLI.chainID]: "goerli.api.0x.org",
+  [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
+}
+
+export const NETWORKS_SUPPORTING_SWAPS = new Set(
+  Object.keys(CHAIN_ID_TO_0X_API_BASE)
+)
+
+export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
+  [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, GOERLI].map(
+    (network) => network.chainID
+  )
+)
+
+export const CHAIN_ID_TO_RPC_URLS: {
+  [chainId: string]: Array<string> | undefined
+} = {
+  [RSK.chainID]: ["https://public-node.rsk.co"],
+  [POLYGON.chainID]: ["https://polygon-rpc.com"],
+  [OPTIMISM.chainID]: [
+    "https://rpc.ankr.com/optimism",
+    "https://optimism-mainnet.public.blastapi.io",
+  ],
+  [ETHEREUM.chainID]: ["https://rpc.ankr.com/eth"],
+  // @TODO Figure out why calling multicall with more than 1 argument returns
+  // {
+  //   jsonrpc: "2.0",
+  //   error: { code: 0, message: "we can't execute this request" },
+  // }
+  // [ARBITRUM_ONE.chainID]: ["https://rpc.ankr.com/arbitrum"],
+  [GOERLI.chainID]: ["https://ethereum-goerli-rpc.allthatnode.com"],
+}

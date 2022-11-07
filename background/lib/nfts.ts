@@ -1,6 +1,9 @@
 import { AddressOnNetwork } from "../accounts"
 import { EVMNetwork } from "../networks"
-import { NETWORK_BY_CHAIN_ID } from "../constants"
+import {
+  CHAIN_ID_TO_NFT_METADATA_PROVIDER,
+  NETWORK_BY_CHAIN_ID,
+} from "../constants"
 import { getNFTs as alchemyGetNFTs, AlchemyNFTItem } from "./alchemy"
 import { getNFTs as simpleHashGetNFTs, SimpleHashNFTModel } from "./simple-hash"
 
@@ -93,10 +96,24 @@ export async function getNFTs({
   address,
   network,
 }: AddressOnNetwork): Promise<NFT[]> {
-  if (["Polygon", "Ethereum"].includes(network.name)) {
+  const chainIdsToNftProvider = Object.entries(
+    CHAIN_ID_TO_NFT_METADATA_PROVIDER
+  )
+
+  if (
+    chainIdsToNftProvider.find(
+      ([chainId, nftProvider]) =>
+        chainId === network.chainID && nftProvider === "alchemy"
+    )
+  ) {
     return (await alchemyGetNFTs({ address, network })).map(alchemyNFTtoNFT)
   }
-  if (["Arbitrum", "Optimism"].includes(network.name)) {
+  if (
+    chainIdsToNftProvider.find(
+      ([chainId, nftProvider]) =>
+        chainId === network.chainID && nftProvider === "simplehash"
+    )
+  ) {
     return (await simpleHashGetNFTs({ address, network })).map(
       simpleHashNFTModelToNFT
     )

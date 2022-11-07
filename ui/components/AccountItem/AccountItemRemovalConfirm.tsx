@@ -10,6 +10,7 @@ import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui
 import { useHistory } from "react-router-dom"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { useTranslation } from "react-i18next"
+import { selectLedgerDeviceByAddresses } from "@tallyho/tally-background/redux-slices/selectors/ledgerSelectors"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import { useAreKeyringsUnlocked, useBackgroundSelector } from "../../hooks"
@@ -55,7 +56,18 @@ export default function AccountItemRemovalConfirm({
   const accountSigners = useBackgroundSelector(selectAccountSignersByAddress)
   const readOnlyAccount = typeof keyring === "undefined"
   const lastAddressInKeyring = keyring?.addresses.length === 1
-  const showLoudWarning = readOnlyAccount || lastAddressInKeyring
+
+  const ledgerDeviceByAddress = useBackgroundSelector(
+    selectLedgerDeviceByAddresses
+  )
+
+  const lastAddressInLedger =
+    accountSigners[address]?.type === "ledger" &&
+    Object.values(ledgerDeviceByAddress[address].accounts).length === 1
+
+  const lastAddressInAccount = lastAddressInKeyring || lastAddressInLedger
+
+  const showLoudWarning = readOnlyAccount || lastAddressInAccount
   return (
     <div className="remove_address_option">
       <div className="header">
@@ -99,7 +111,8 @@ export default function AccountItemRemovalConfirm({
               dispatch(
                 removeAccount({
                   addressOnNetwork: { address, network },
-                  signerType: accountSigners[address]?.type,
+                  signer: accountSigners[address],
+                  lastAddressInAccount,
                 })
               )
               if (sameEVMAddress(selectedAddress, address)) {

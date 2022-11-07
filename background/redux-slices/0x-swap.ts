@@ -18,14 +18,11 @@ import {
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 import {
-  ARBITRUM_ONE,
+  CHAIN_ID_TO_0X_API_BASE,
   COMMUNITY_MULTISIG_ADDRESS,
   ETHEREUM,
-  GOERLI,
   OPTIMISM,
   OPTIMISTIC_ETH,
-  POLYGON,
-  RSK,
 } from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
@@ -133,15 +130,6 @@ export default swapSlice.reducer
 
 export const SWAP_FEE = 0.005
 
-const chainIdTo0xApiBase: { [chainID: string]: string | undefined } = {
-  [ETHEREUM.chainID]: "api.0x.org",
-  [RSK.chainID]: "", // Rsk not supported by 0x.org. Empty value here means swap screen options will be disabled for Rsk and user will not be able to perform any action.
-  [POLYGON.chainID]: "polygon.api.0x.org",
-  [OPTIMISM.chainID]: "optimism.api.0x.org",
-  [GOERLI.chainID]: "goerli.api.0x.org",
-  [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
-}
-
 const get0xApiBase = (network: EVMNetwork) => {
   // Use gated features if there is an API key available in the build.
   const prefix =
@@ -151,7 +139,7 @@ const get0xApiBase = (network: EVMNetwork) => {
       ? "gated."
       : ""
 
-  const base = chainIdTo0xApiBase[network.chainID]
+  const base = CHAIN_ID_TO_0X_API_BASE[network.chainID]
   if (!base) {
     logger.error(`0x swaps are not supported on ${network.name}`)
     return null
@@ -488,6 +476,14 @@ export const executeSwap = createBackgroundAsyncThunk(
         type: "asset-swap",
         fromAssetAmount: sellAssetAmount,
         toAssetAmount: buyAssetAmount,
+        sources: quote.sources
+          .map(({ name, proportion }) => {
+            return {
+              name,
+              proportion: parseFloat(proportion),
+            }
+          })
+          .filter(({ proportion }) => proportion > 0),
         timestamp: Date.now(),
         blockTimestamp: undefined,
       },
