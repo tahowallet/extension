@@ -61,7 +61,6 @@ function EditSectionForm({
         <AccountItemActionHeader
           label={t("editName")}
           icon="icons/s/edit.svg"
-          color="#fff"
         />
       </div>
       <div className="wallet_title">

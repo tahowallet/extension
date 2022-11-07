@@ -3,7 +3,7 @@ import React, { ReactElement } from "react"
 interface AccountItemActionHeaderProps {
   label: string
   icon: string
-  color?: string
+  color: string
 }
 
 export default function AccountItemActionHeader({
@@ -19,14 +19,14 @@ export default function AccountItemActionHeader({
           .icon {
             mask-image: url("./images/${icon}");
             mask-size: cover;
-            background-color: ${color || "#fff"};
+            background-color: ${color};
             width: 16px;
             margin-right: 5px;
             height: 16px;
           }
           .action_header {
             display: flex;
-            color: ${color || "#fff"};
+            color: ${color};
             flexDirection: row;
             align-items: center;
             font-size: 18px;
@@ -38,4 +38,8 @@ export default function AccountItemActionHeader({
         `}</style>
     </div>
   )
+}
+
+AccountItemActionHeader.defaultProps = {
+  color: "var(--white)",
 }
