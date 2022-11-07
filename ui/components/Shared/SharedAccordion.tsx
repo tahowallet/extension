@@ -39,15 +39,13 @@ export default function SharedAccordion({
   }, [contentRef, contentElement, contentHeight])
 
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => {
-        setIsVisible(true)
-      }, 140)
-    } else {
-      setTimeout(() => {
-        setIsVisible(false)
-      }, 50)
-    }
+    const timeout = setTimeout(
+      () => {
+        setIsVisible(isOpen)
+      },
+      isOpen ? 140 : 50
+    )
+    return () => clearTimeout(timeout)
   }, [isOpen])
 
   return (
