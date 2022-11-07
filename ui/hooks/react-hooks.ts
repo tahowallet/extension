@@ -24,3 +24,37 @@ export function useValueRef<T>(value: T): React.MutableRefObject<T> {
   valueRef.current = value
   return valueRef
 }
+
+/**
+ * Runs a callback on mount, if the callback returns a function,
+ * it will be called on unmount
+ */
+export function useOnMount<Fn extends (...args: unknown[]) => unknown>(
+  callback: Fn
+): void {
+  const callbackRef = useRef(callback)
+
+  useEffect(() => {
+    const result = callbackRef.current()
+
+    return () => {
+      if (typeof result === "function") {
+        result()
+      }
+    }
+  }, [])
+}
+
+/**
+ * Returns a value lagging by one render, starts
+ * with the initially passed value
+ */
+export function usePrevious<T>(value: T): T {
+  const valueRef = useRef(value)
+
+  useEffect(() => {
+    valueRef.current = value
+  }, [value])
+
+  return valueRef.current
+}

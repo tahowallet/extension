@@ -44,6 +44,7 @@ import SharedBanner from "../components/Shared/SharedBanner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
 import ApproveQuoteBtn from "./ApproveQuoteBtn"
 import { isSameAsset, useSwapQuote } from "../utils/swap"
+import { useOnMount, usePrevious } from "../hooks/react-hooks"
 
 export default function Swap(): ReactElement {
   const { t } = useTranslation()
@@ -97,6 +98,7 @@ export default function Swap(): ReactElement {
   const [confirmationMenu, setConfirmationMenu] = useState(false)
 
   const savedQuoteRequest = useBackgroundSelector(selectLatestQuoteRequest)
+
   const {
     assets: { sellAsset: savedSellAsset, buyAsset: savedBuyAsset },
     amount: savedSwapAmount,
@@ -117,6 +119,18 @@ export default function Swap(): ReactElement {
       ? savedSwapAmount.buyAmount
       : ""
   )
+
+  const previousChainId = usePrevious(currentNetwork.chainID)
+
+  if (
+    previousChainId !== currentNetwork.chainID &&
+    (sourceAsset || targetAsset)
+  ) {
+    setSourceAsset(undefined)
+    setTargetAsset(undefined)
+    setSourceAmount("")
+    setTargetAmount("")
+  }
 
   const buyAssets = useBackgroundSelector((state) => {
     // Some type massaging needed to remind TypeScript how these types fit
@@ -335,7 +349,7 @@ export default function Swap(): ReactElement {
     }
   }
 
-  useEffect(() => {
+  useOnMount(() => {
     // Request a quote on mount
     if (sourceAsset && targetAsset && sourceAmount) {
       requestQuoteUpdate({
@@ -345,8 +359,7 @@ export default function Swap(): ReactElement {
         targetAsset,
       })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  })
 
   const isSwapSupportedByNetwork = () =>
     NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID)
