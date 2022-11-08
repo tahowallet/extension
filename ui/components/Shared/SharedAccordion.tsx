@@ -27,7 +27,9 @@ export default function SharedAccordion({
   const [isVisible, setIsVisible] = useState(isInitiallyOpen)
   /* If the accordion is open by default, the first opening should be without a transition. */
   const [withTransition, setWithTransition] = useState(!isInitiallyOpen)
-  const [height, setHeight] = useState(0)
+  const [height, setHeight] = useState(
+    isInitiallyOpen && contentHeight ? contentHeight : 0
+  )
 
   const toggle = () => {
     setWithTransition(true)
