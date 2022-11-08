@@ -91,6 +91,7 @@ export default function ImportSeed(props: Props): ReactElement {
                   setRecoveryPhrase(e.currentTarget.innerText)
                 }}
               />
+              <p>{errorMessage}</p>
             </div>
             <SharedButton
               size={
