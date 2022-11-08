@@ -70,8 +70,6 @@ export default function AccountItemRemovalConfirm({
 
   const lastAddressInAccount = lastAddressInKeyring || lastAddressInLedger
 
-  const showWarning =
-    lastAccountInTallyWallet || readOnlyAccount || lastAddressInAccount
   return (
     <div className="remove_address_option">
       <div className="header">
@@ -92,13 +90,11 @@ export default function AccountItemRemovalConfirm({
         </li>
       </ul>
       <div className="remove_address_details">
-        {showWarning && (
-          <RemoveAccountWarning
-            isReadOnlyAccount={readOnlyAccount}
-            lastAddressInAccount={lastAddressInAccount}
-            lastAccountInTallyWallet={lastAccountInTallyWallet}
-          />
-        )}
+        <RemoveAccountWarning
+          isReadOnlyAccount={readOnlyAccount}
+          lastAddressInAccount={lastAddressInAccount}
+          lastAccountInTallyWallet={lastAccountInTallyWallet}
+        />
       </div>
       <div className="button_container">
         <SharedButton
