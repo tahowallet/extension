@@ -314,13 +314,21 @@ function AdditionalInformation(
     []
   )
 
-  return (
-    <div className="simple_text content_wrap">
-      {showCurrencyAmount && (
+  const renderAmountMainCurrency = () => (
+    <>
+      {priceDetails !== undefined && amountMainCurrency === undefined ? (
+        t("noAssetPrice")
+      ) : (
         <>
           {amountMainCurrency === "0.00" && "<"}${amountMainCurrency || "0.00"}
         </>
       )}
+    </>
+  )
+
+  return (
+    <div className="simple_text content_wrap">
+      {showCurrencyAmount && renderAmountMainCurrency()}
       {showPriceImpact &&
         priceDetails?.priceImpact !== undefined &&
         priceDetails?.priceImpact < 0 && (

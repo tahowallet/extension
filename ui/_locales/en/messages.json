@@ -47,7 +47,8 @@
     "priceImpactTooltip": {
       "firstLine": "Price difference between assets is high.",
       "secondLine": "This is due to low liquidity of the swap pair."
-    }
+    },
+    "noAssetPrice": "No price information"
   },
   "comingSoon": "Coming soon",
   "dappConnection": {
