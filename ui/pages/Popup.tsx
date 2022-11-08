@@ -220,8 +220,8 @@ export function Main(): ReactElement {
                           !matchPath(transformedLocation.pathname, {
                             path: [
                               "/onboarding",
-                              // need to unlock keyring to import an account
-                              "/keyring/unlock",
+                              // need to unlock or set new password to import an account
+                              "/keyring",
                               // this route has it's own error message
                               "/dapp-permission",
                             ],
