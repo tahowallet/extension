@@ -2,7 +2,7 @@ import classNames from "classnames"
 import React, { ReactElement, useEffect, useRef, useState } from "react"
 import SharedIcon from "./SharedIcon"
 
-const delay = 250
+const DELAY = 250
 
 export default function SharedAccordion({
   headerElement,
@@ -97,12 +97,12 @@ export default function SharedAccordion({
         .accordion_content {
           max-height: 0;
           overflow: hidden;
-          transition: max-height ${delay}ms ease-out;
+          transition: max-height ${DELAY}ms ease-out;
           padding: 0 8px;
         }
         .accordion_content.visible {
           max-height: ${height + 10}px;
-          transition: max-height ${withTransition ? delay : 0}ms ease-in;
+          transition: max-height ${withTransition ? DELAY : 0}ms ease-in;
           overflow: ${isVisible ? "visible" : "hidden"};
         }
       `}</style>
