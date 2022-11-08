@@ -21,6 +21,7 @@ import { getLanguageIndex, getAvalableLanguages } from "../_locales"
 import { getLanguage, setLanguage } from "../_locales/i18n"
 import SettingButton from "./Settings/SettingButton"
 import { useBackgroundSelector } from "../hooks"
+import CorePage from "../components/Core/CorePage"
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
 
@@ -234,7 +235,7 @@ export default function Settings(): ReactElement {
   }
 
   return (
-    <>
+    <CorePage hasTabBar>
       <section className="standard_width_padded">
         <h1>{t("settings.mainMenu")}</h1>
         <ul>
@@ -321,6 +322,6 @@ export default function Settings(): ReactElement {
           }
         `}
       </style>
-    </>
+    </CorePage>
   )
 }

@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useEffect } from "react"
 import {
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
@@ -7,24 +7,25 @@ import {
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
 
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
-import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
-import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
+import {
+  useBackgroundDispatch,
+  useBackgroundSelector,
+  useSwitchablePanels,
+} from "../hooks"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
 import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
 import NFTsWallet from "../components/NFTs/NFTsWallet"
-import SharedBanner from "../components/Shared/SharedBanner"
 import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultBanner"
 import WalletBanner from "../components/Wallet/Banner/WalletBanner"
+import CorePage from "../components/Core/CorePage"
 import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "wallet" })
-  const [panelNumber, setPanelNumber] = useState(0)
 
   const dispatch = useBackgroundDispatch()
 
@@ -44,7 +45,7 @@ export default function Wallet(): ReactElement {
   useEffect(() => {
     // On network switch from top menu reset ui back to assets tab
     if (!NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
-      setPanelNumber(0)
+      // setPanelNumber(0)
     }
   }, [selectedNetwork.chainID])
 
@@ -61,74 +62,53 @@ export default function Wallet(): ReactElement {
     (background) => background.ui?.initializationLoadingTimeExpired
   )
 
-  const panelNames = [t("pages.assets")]
-
-  if (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
-    panelNames.push(t("pages.NFTs"))
-  }
-
-  panelNames.push(t("pages.activity"))
-
-  return (
-    <>
-      <div className="page_content">
-        <WalletToggleDefaultBanner />
-        <WalletAnalyticsNotificationBanner />
-        <div className="section">
-          <WalletAccountBalanceControl
-            balance={totalMainCurrencyValue}
+  const panels = useSwitchablePanels([
+    ...[
+      {
+        name: t("pages.assets"),
+        panelElement: () => (
+          <WalletAssetList
+            assetAmounts={assetAmounts}
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           />
-        </div>
-        {isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && (
-          <WalletBanner />
-        )}
-        {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
-          <OnboardingOpenClaimFlowBanner />
-        )}
-        <div className="section">
-          <SharedPanelSwitcher
-            setPanelNumber={setPanelNumber}
-            panelNumber={panelNumber}
-            panelNames={panelNames}
-          />
-          <div
-            className={classNames("panel standard_width", {
-              no_padding: panelNumber === 1,
-            })}
-          >
-            {panelNumber === 0 && (
-              <WalletAssetList
-                assetAmounts={assetAmounts}
-                initializationLoadingTimeExpired={
-                  initializationLoadingTimeExpired
-                }
-              />
-            )}
-            {panelNumber === 1 &&
-              NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) && (
-                <>
-                  <SharedBanner
-                    icon="notif-announcement"
-                    iconColor="var(--link)"
-                    canBeClosed
-                    id="nft_soon"
-                    customStyles="margin: 8px 0;"
-                  >
-                    {t("NFTPricingComingSoon")}
-                  </SharedBanner>
-                  <NFTsWallet />
-                </>
-              )}
-            {panelNumber ===
-              (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)
-                ? 2
-                : 1) && (
-              <WalletActivityList activities={currentAccountActivities ?? []} />
-            )}
-          </div>
-        </div>
-      </div>
+        ),
+      },
+    ],
+    ...(NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)
+      ? [
+          {
+            name: t("pages.NFTs"),
+            panelElement: () => (
+              <>
+                <NFTsWallet />
+              </>
+            ),
+          },
+        ]
+      : []),
+    ...[
+      {
+        name: t("pages.activity"),
+        panelElement: () => (
+          <WalletActivityList activities={currentAccountActivities ?? []} />
+        ),
+      },
+    ],
+  ])
+
+  return (
+    <CorePage hasTabBar hasTopBar handleScrolling={false}>
+      <WalletToggleDefaultBanner />
+      <WalletAnalyticsNotificationBanner />
+      <WalletAccountBalanceControl
+        balance={totalMainCurrencyValue}
+        initializationLoadingTimeExpired={initializationLoadingTimeExpired}
+      />
+      {isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && <WalletBanner />}
+      {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
+        <OnboardingOpenClaimFlowBanner />
+      )}
+      <div className="panels">{panels}</div>
       <style jsx>
         {`
           .page_content {
@@ -139,25 +119,20 @@ export default function Wallet(): ReactElement {
             align-items: center;
             justify-content: space-between;
           }
-          .section {
+          .panels {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
+            overflow: hidden;
+
+            padding-top: 35px;
           }
-          .panel {
-            padding-top: 16px;
-            box-sizing: border-box;
-            height: 302px;
-          }
-          .panel::-webkit-scrollbar {
-            display: none;
-          }
-          .no_padding {
-            padding-top: 0;
+          .panels > :global(nav + *) {
+            overflow-y: auto;
           }
         `}
       </style>
-    </>
+    </CorePage>
   )
 }

@@ -18,6 +18,12 @@ const defaultSettings = {
   hideBanners: false,
 }
 
+export interface Location {
+  pathname: string
+  key?: string
+  hash: string
+}
+
 export type UIState = {
   selectedAccount: AddressOnNetwork
   showingActivityDetailID: string | null

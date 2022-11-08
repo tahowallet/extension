@@ -166,6 +166,7 @@ export default function SharedButton(
             background-color: var(--hunter-green);
             display: inline-block;
             margin-top: -1px;
+            transition: background-color 0.2s;
           }
           .large {
             height: 48px;

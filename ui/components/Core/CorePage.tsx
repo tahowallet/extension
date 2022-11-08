@@ -1,54 +1,52 @@
 import React, { ReactElement } from "react"
 import Snackbar from "../Snackbar/Snackbar"
+import TabBar from "../TabBar/TabBar"
+import TopMenu from "../TopMenu/TopMenu"
 
 interface Props {
   children: React.ReactNode
-  hasTopBar?: boolean
-  hasTabBar?: boolean
+  hasTopBar: boolean
+  hasTabBar: boolean
+  /**
+   * Indicates whether the page component should handle scrolling, or whether
+   * children will handle it instead.
+   */
+  handleScrolling: boolean
 }
 
 export default function CorePage(props: Props): ReactElement {
-  const { children, hasTopBar, hasTabBar } = props
-
-  let barSpace = 0
-  if (hasTabBar) {
-    // Tab bar is given 56px of height
-    barSpace += 56
-  }
-  if (hasTopBar) {
-    // Top bar is given 64px of height
-    barSpace += 64
-  }
+  const { children, hasTopBar, hasTabBar, handleScrolling } = props
 
   return (
-    <main>
-      {children}
-      <Snackbar />
+    <>
+      {hasTopBar ? <TopMenu /> : <></>}
+      <main>
+        {children}
+        <Snackbar />
+      </main>
+      {hasTabBar ? <TabBar /> : <></>}
       <style jsx>
         {`
           main {
             width: 100%;
-            overflow-y: auto;
+            ${handleScrolling
+              ? "overflow-y: auto"
+              : "height: 100%; overflow: hidden;"};
             display: flex;
             flex-direction: column;
             flex-grow: 1;
             margin: 0 auto;
             align-items: center;
             background-color: var(--hunter-green);
-            z-index: 10;
-            height: calc(100vh - ${barSpace}px);
-            margin-top: ${hasTopBar ? "0px" : "-64px"};
-          }
-          .top_menu_wrap {
-            z-index: 10;
-            cursor: default;
           }
         `}
       </style>
-    </main>
+    </>
   )
 }
 
 CorePage.defaultProps = {
-  hasTopBar: true,
+  hasTopBar: false,
+  hasTabBar: false,
+  handleScrolling: true,
 }

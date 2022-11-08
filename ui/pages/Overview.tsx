@@ -17,6 +17,7 @@ import BalanceHeader from "../components/Overview/BalanceHeader"
 import NetworksChart from "../components/Overview/NetworksChart"
 import AccountList from "../components/Overview/AccountList"
 import AchievementsOverview from "../components/NFTs/AchievementsOverview"
+import CorePage from "../components/Core/CorePage"
 
 const panelNames = ["Assets", "NFTs"]
 
@@ -39,7 +40,7 @@ export default function Overview(): ReactElement {
   )
 
   return (
-    <>
+    <CorePage hasTabBar>
       <section className="stats">
         <BalanceHeader
           balance={balance}
@@ -93,6 +94,6 @@ export default function Overview(): ReactElement {
           }
         `}
       </style>
-    </>
+    </CorePage>
   )
 }

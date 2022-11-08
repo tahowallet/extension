@@ -15,13 +15,6 @@ export default function setAnimationConditions(
       pathname: string
     }
   },
-  pagePreferences: {
-    [path: string]: {
-      hasTabBar: boolean
-      hasTopBar: boolean
-    }
-  },
-  setShouldDisplayDecoy: (choice: boolean) => void,
   setIsDirectionRight: (choice: boolean) => void
 ): void {
   const { entries } = routeProps.history
@@ -31,13 +24,6 @@ export default function setAnimationConditions(
       entries[entries.length - 2] &&
       entries[entries.length - 2].pathname.split("/")[1]) ||
     ""
-
-  const isDecoyNeeded =
-    pagePreferences[`/${prevLocationName === "wallet" ? "" : prevLocationName}`]
-      ?.hasTopBar &&
-    pagePreferences[`/${locationName === "wallet" ? "" : locationName}`]
-      ?.hasTopBar
-  setShouldDisplayDecoy(isDecoyNeeded)
 
   const isGoingBetweenTabs =
     tabs.includes(locationName) && tabs.includes(prevLocationName)
@@ -64,22 +50,8 @@ export default function setAnimationConditions(
   }
 }
 
-export function animationStyles(
-  shouldDisplayDecoy: boolean,
-  isDirectionRight: boolean
-): string {
+export function animationStyles(isDirectionRight: boolean): string {
   return `
-      .top_menu_wrap_decoy {
-        position: absolute;
-        top: -6px;
-        left: 0px;
-        right: 0px;
-        margin: 0 auto;
-        width: max-content;
-        z-index: -1;
-        opacity: ${!shouldDisplayDecoy ? "0" : "1"};
-      }
-
       .page-transition-enter {
         opacity: 0.3;
         transform: ${isDirectionRight ? `translateX(-7px)` : `translateX(7px)`};

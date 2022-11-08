@@ -23,13 +23,13 @@ export default function CommonAssetListItem({
       : undefined
 
   return (
-    <Link
-      to={{
-        pathname: "/singleAsset",
-        state: assetAmount.asset,
-      }}
-    >
-      <div className="asset_list_item">
+    <>
+      <Link
+        to={{
+          pathname: "/singleAsset",
+          state: assetAmount.asset,
+        }}
+      >
         <div className="asset_left">
           <SharedAssetIcon
             logoURL={assetAmount?.asset?.metadata?.logoURL}
@@ -55,24 +55,26 @@ export default function CommonAssetListItem({
             )}
           </div>
         </div>
-        <div className="asset_right">
-          <>
-            <SharedIconRouterLink
-              path="/send"
-              state={assetAmount.asset}
-              iconClass="asset_icon_send"
-            />
-            <SharedIconRouterLink
-              path="/swap"
-              state={{
-                symbol: assetAmount.asset.symbol,
-                contractAddress,
-              }}
-              iconClass="asset_icon_swap"
-            />
-          </>
-        </div>
-      </div>
+      </Link>
+      <ul className="asset_right quick_links">
+        <li>
+          <SharedIconRouterLink
+            path="/send"
+            state={assetAmount.asset}
+            iconClass="asset_icon_send"
+          />
+        </li>
+        <li>
+          <SharedIconRouterLink
+            path="/swap"
+            state={{
+              symbol: assetAmount.asset.symbol,
+              contractAddress,
+            }}
+            iconClass="asset_icon_swap"
+          />
+        </li>
+      </ul>
       <style jsx>{`
         ${styles}
         .price {
@@ -85,6 +87,6 @@ export default function CommonAssetListItem({
           line-height: 16px;
         }
       `}</style>
-    </Link>
+    </>
   )
 }

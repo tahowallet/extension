@@ -1,5 +1,6 @@
 export default `
-  .asset_list_item {
+  .asset_list_item > a {
+    display: block;
     height: 72px;
     width: 100%;
     border-radius: 16px;
@@ -11,7 +12,10 @@ export default `
     justify-content: space-between;
     align-items: center;
   }
-  .asset_list_item:hover {
+  .asset_list_item:last-of-type > a {
+    margin-bottom: 0;
+  }
+  .asset_list_item:hover > a {
     background-color: var(--green-80);
   }
   .asset_left {
@@ -23,10 +27,20 @@ export default `
     justify-content: center;
     margin-left: 16px;
   }
-  .asset_right {
+
+  .asset_list_item {
+     position: relative; /* for positioning quick_links */
+  }
+  .quick_links {
+    position: absolute;
+    top: calc(50% - 14px /* 1/2 of icon height */);
+    right: 4px;
     display: flex;
     justify-content: flex-end;
     margin-right: 16px;
+  }
+  .quick_links a {
+    display: block;
   }
   .asset_amount {
     height: 17px;

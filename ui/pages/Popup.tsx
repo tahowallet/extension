@@ -1,4 +1,4 @@
-import React, { ReactElement, useState, useEffect } from "react"
+import React, { ReactElement, useEffect } from "react"
 import {
   MemoryRouter as Router,
   Switch,
@@ -8,15 +8,15 @@ import {
 } from "react-router-dom"
 import { ErrorBoundary } from "react-error-boundary"
 
-import classNames from "classnames"
+import { Location as RouterLocation } from "history"
 import {
   setRouteHistoryEntries,
   userActivityEncountered,
+  Location,
 } from "@tallyho/tally-background/redux-slices/ui"
 
 import { Store } from "webext-redux"
 import { Provider } from "react-redux"
-import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { runtime } from "webextension-polyfill"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
@@ -28,20 +28,12 @@ import {
   selectKeyringStatus,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { Location } from "history"
 import {
   useIsDappPopup,
   useBackgroundDispatch,
   useBackgroundSelector,
 } from "../hooks"
 
-import setAnimationConditions, {
-  animationStyles,
-} from "../utils/pageTransition"
-
-import TabBar from "../components/TabBar/TabBar"
-import TopMenu from "../components/TopMenu/TopMenu"
-import CorePage from "../components/Core/CorePage"
 import ErrorFallback from "./ErrorFallback"
 
 import pageList from "../routes/routes"
@@ -54,11 +46,11 @@ const pagePreferences = Object.fromEntries(
 )
 
 function transformLocation(
-  inputLocation: Location,
+  inputLocation: RouterLocation,
   isTransactionPendingSignature: boolean,
   needsKeyringUnlock: boolean,
   hasAccounts: boolean
-): Location {
+): RouterLocation {
   // The inputLocation is not populated with the actual query string — even though it should be
   // so I need to grab it from the window
   const params = new URLSearchParams(window.location.search)
@@ -108,9 +100,6 @@ export function Main(): ReactElement {
   }, [])
 
   const isDappPopup = useIsDappPopup()
-  const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)
-  const [isDirectionRight, setIsDirectionRight] = useState(true)
-  const [showTabBar, setShowTabBar] = useState(true)
 
   const routeHistoryEntries = useBackgroundSelector(
     (state) => state.ui.routeHistoryEntries
@@ -151,9 +140,6 @@ export function Main(): ReactElement {
 
   return (
     <>
-      <div className="top_menu_wrap_decoy">
-        <TopMenu />
-      </div>
       <Router initialEntries={routeHistoryEntries}>
         <Route
           render={(routeProps) => {
@@ -180,87 +166,47 @@ export function Main(): ReactElement {
               pagePreferences[normalizedPathname]?.persistOnClose === true &&
               routeProps.history.action === "PUSH"
             ) {
-              // @ts-expect-error TODO: fix the typing
-              saveHistoryEntries(routeProps.history.entries)
+              saveHistoryEntries(
+                // WARNING: `entries` is not exported by our known types; it is
+                // an internal implementation detail of *memory* history that
+                // we are relying on here.
+                (routeProps.history as unknown as { entries: RouterLocation[] })
+                  .entries
+              )
             }
 
-            setAnimationConditions(
-              routeProps,
-              pagePreferences,
-              setShouldDisplayDecoy,
-              setIsDirectionRight
-            )
-            setShowTabBar(pagePreferences[normalizedPathname].hasTabBar)
-
             return (
-              <TransitionGroup>
-                <CSSTransition
-                  timeout={300}
-                  classNames="page-transition"
-                  key={
-                    routeProps.location.pathname.includes("onboarding") ||
-                    routeProps.location.pathname.includes("keyring")
-                      ? ""
-                      : transformedLocation.key
-                  }
-                >
-                  <div>
-                    <div
-                      className={classNames("top_menu_wrap", {
-                        anti_animation: shouldDisplayDecoy,
-                        hide: !pagePreferences[normalizedPathname].hasTopBar,
-                      })}
-                    >
-                      <TopMenu />
-                    </div>
-                    <Switch location={transformedLocation}>
-                      {
-                        // If there are no existing accounts, display onboarding
-                        // (if we're not there already)
-                        //
-                        !isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING) &&
-                          !hasAccounts &&
-                          !matchPath(transformedLocation.pathname, {
-                            path: [
-                              "/onboarding",
-                              // need to unlock or set new password to import an account
-                              "/keyring",
-                              // this route has it's own error message
-                              "/dapp-permission",
-                            ],
-                            exact: false,
-                          }) && <Redirect to="/onboarding/info-intro" />
-                      }
-                      {pageList.map(
-                        ({ path, Component, hasTopBar, hasTabBar }) => {
-                          return (
-                            <Route path={path} key={path}>
-                              <CorePage
-                                hasTopBar={hasTopBar}
-                                hasTabBar={hasTabBar}
-                              >
-                                <ErrorBoundary
-                                  FallbackComponent={ErrorFallback}
-                                >
-                                  <Component location={transformedLocation} />
-                                </ErrorBoundary>
-                              </CorePage>
-                            </Route>
-                          )
-                        }
-                      )}
-                    </Switch>
-                  </div>
-                </CSSTransition>
-              </TransitionGroup>
+              <Switch location={transformedLocation}>
+                {
+                  // If there are no existing accounts, display onboarding
+                  // (if we're not there already)
+                  //
+                  !isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING) &&
+                    !hasAccounts &&
+                    !matchPath(transformedLocation.pathname, {
+                      path: [
+                        "/onboarding",
+                        // need to unlock or set new password to import an account
+                        "/keyring",
+                        // this route has it's own error message
+                        "/dapp-permission",
+                      ],
+                      exact: false,
+                    }) && <Redirect to="/onboarding/info-intro" />
+                }
+                {pageList.map(({ path, Component }) => {
+                  return (
+                    <Route path={path} key={path}>
+                      <ErrorBoundary FallbackComponent={ErrorFallback}>
+                        <Component location={transformedLocation} />
+                      </ErrorBoundary>
+                    </Route>
+                  )
+                })}
+              </Switch>
             )
           }}
         />
-        {showTabBar && (
-          <div className="tab_bar_wrap">
-            <TabBar />
-          </div>
-        )}
       </Router>
       <>
         <style jsx global>
@@ -269,23 +215,9 @@ export function Main(): ReactElement {
               width: 0px;
               background: transparent;
             }
-
-            ${animationStyles(shouldDisplayDecoy, isDirectionRight)}
-            .tab_bar_wrap {
-              position: fixed;
-              bottom: 0px;
-              width: 100%;
-            }
-            .top_menu_wrap {
-              margin: 0 auto;
-              width: max-content;
-              display: block;
-              justify-content: center;
-              z-index: 0;
-              margin-top: 5px;
-            }
-            .hide {
-              opacity: 0;
+            :global(#tally-root) {
+              display: flex;
+              flex-direction: column;
             }
           `}
         </style>

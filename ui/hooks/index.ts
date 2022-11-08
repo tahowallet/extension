@@ -88,8 +88,11 @@ type PanelDescriptor = {
  * return <>{switchablePanels}</>
  * ```
  */
-export function useSwitchablePanels(panels: PanelDescriptor[]): ReactNode {
-  const [panelNumber, setPanelNumber] = useState(0)
+export function useSwitchablePanels(
+  panels: PanelDescriptor[],
+  selectedPanel = 0
+): ReactNode {
+  const [panelNumber, setPanelNumber] = useState(selectedPanel)
 
   return [
     SharedPanelSwitcher({

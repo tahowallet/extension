@@ -86,7 +86,7 @@ export default function WalletActivityList({
     )
 
   return (
-    <>
+    <section>
       {!instantlyHideActivityDetails && (
         <SharedSlideUpMenu isOpen={!!showingActivityDetail} close={handleClose}>
           {showingActivityDetail ? (
@@ -97,7 +97,7 @@ export default function WalletActivityList({
         </SharedSlideUpMenu>
       )}
 
-      <ul>
+      <ul className="activites">
         {activities.map((activityItem) => {
           if (activityItem) {
             return (
@@ -129,33 +129,38 @@ export default function WalletActivityList({
             {scanWebsite[network.chainID].title}
           </SharedButton>
         </div>
-        <style jsx>{`
-          span {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--green-20);
-            font-size: 16px;
-            font-weight: 400;
-            line-height: 24px;
-            text-align: center;
-          }
-          .row {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 8px;
-          }
-          .hand {
-            margin: 10px 0px;
-            font-size: 22px;
-          }
-          div:last-child {
-            margin-bottom: 40px;
-          }
-        `}</style>
       </span>
-    </>
+      <style jsx>{`
+        section {
+          box-sizing: border-box;
+          width: 100%;
+          padding: 15px;
+        }
+        span {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          color: var(--green-20);
+          font-size: 16px;
+          font-weight: 400;
+          line-height: 24px;
+          text-align: center;
+        }
+        .row {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 8px;
+        }
+        .hand {
+          margin: 10px 0px;
+          font-size: 22px;
+        }
+        div:last-child {
+          margin-bottom: 40px;
+        }
+      `}</style>
+    </section>
   )
 }

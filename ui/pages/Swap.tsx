@@ -392,6 +392,7 @@ export default function Swap(): ReactElement {
       }
 
       latestQuoteRequest.current = quoteRequest
+
       const {
         quote,
         needsApproval: quoteNeedsApproval,
@@ -529,143 +530,126 @@ export default function Swap(): ReactElement {
   }
 
   return (
-    <>
-      <CorePage>
-        <SharedSlideUpMenu
-          isOpen={typeof finalQuote !== "undefined"}
-          close={() => {
-            dispatch(clearSwapQuote())
-          }}
-          size="large"
-        >
-          {typeof sellAsset !== "undefined" &&
-          typeof buyAsset !== "undefined" &&
-          typeof finalQuote !== "undefined" ? (
-            <SwapQuote
-              sellAsset={sellAsset}
-              buyAsset={buyAsset}
-              finalQuote={finalQuote}
-              swapTransactionSettings={swapTransactionSettings}
-            />
-          ) : (
-            <></>
-          )}
-        </SharedSlideUpMenu>
-        <div className="standard_width swap_wrap">
-          <div className="header">
-            <SharedActivityHeader label={t("swap.title")} activity="swap" />
-            <ReadOnlyNotice isLite />
-            {isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) ? (
-              <></>
-            ) : (
-              !isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) && (
-                // TODO: Add onClick function after design is ready
-                <SharedIcon
-                  icon="cog@2x.png"
-                  width={20}
-                  color="var(--green-60)"
-                  hoverColor="#fff"
-                  customStyles="margin: 17px 0 25px;"
-                />
-              )
-            )}
-          </div>
+    <CorePage hasTabBar hasTopBar>
+      <SharedSlideUpMenu
+        isOpen={typeof finalQuote !== "undefined"}
+        close={() => {
+          dispatch(clearSwapQuote())
+        }}
+        size="large"
+      >
+        {typeof sellAsset !== "undefined" &&
+        typeof buyAsset !== "undefined" &&
+        typeof finalQuote !== "undefined" ? (
+          <SwapQuote
+            sellAsset={sellAsset}
+            buyAsset={buyAsset}
+            finalQuote={finalQuote}
+            swapTransactionSettings={swapTransactionSettings}
+          />
+        ) : (
+          <></>
+        )}
+      </SharedSlideUpMenu>
+      <div className="standard_width swap_wrap">
+        <div className="header">
+          <SharedActivityHeader label={t("swap.title")} activity="swap" />
+          <ReadOnlyNotice isLite />
           {isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) ? (
             <></>
           ) : (
-            isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) && (
-              <SharedBanner
-                id="swap_rewards"
-                canBeClosed
-                icon="notif-announcement"
-                iconColor="var(--link)"
-                customStyles="margin-bottom: 16px"
-              >
-                {t("swap.swapRewardsTeaser")}
-              </SharedBanner>
+            !isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) && (
+              // TODO: Add onClick function after design is ready
+              <SharedIcon
+                icon="cog@2x.png"
+                width={20}
+                color="var(--green-60)"
+                hoverColor="#fff"
+                customStyles="margin: 17px 0 25px;"
+              />
             )
           )}
-          <div className="form">
-            <div className="form_input">
-              <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
-                currentNetwork={currentNetwork}
-                amount={sellAmount}
-                amountMainCurrency={priceDetails?.sellCurrencyAmount}
-                showPriceDetails
-                isPriceDetailsLoading={!priceDetails}
-                assetsAndAmounts={sellAssetAmounts}
-                selectedAsset={sellAsset}
-                isDisabled={sellAmountLoading}
-                mainCurrencySign={mainCurrencySign}
-                onAssetSelect={updateSellAsset}
-                onAmountChange={(newAmount, error) => {
-                  setPriceDetails(undefined)
-                  setSellAmount(newAmount)
-                  if (typeof error === "undefined") {
-                    updateSwapData("sell", newAmount)
-                  }
-                }}
-                label={t("swap.from")}
-              />
-            </div>
-            <button className="icon_change" type="button" onClick={flipSwap}>
-              {t("swap.switchAssets")}
-            </button>
-            <div className="form_input">
-              <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
-                currentNetwork={currentNetwork}
-                amount={buyAmount}
-                amountMainCurrency={priceDetails?.buyCurrencyAmount}
-                priceImpact={priceDetails?.priceImpact}
-                isPriceDetailsLoading={!priceDetails}
-                showPriceDetails
-                // FIXME Merge master asset list with account balances.
-                assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
-                selectedAsset={buyAsset}
-                isDisabled={buyAmountLoading}
-                showMaxButton={false}
-                mainCurrencySign={mainCurrencySign}
-                onAssetSelect={updateBuyAsset}
-                onAmountChange={(newAmount, error) => {
-                  setPriceDetails(undefined)
-                  setBuyAmount(newAmount)
-                  if (typeof error === "undefined") {
-                    updateSwapData("buy", newAmount)
-                  }
-                }}
-                label={t("swap.to")}
-              />
-            </div>
-            <div className="settings_wrap">
-              {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
-                <SwapRewardsCard />
-              ) : null}
-            </div>
-            <div className="footer standard_width_padded">
-              {
-                // Would welcome an alternative here---this is pretty gnarly.
-                // eslint-disable-next-line no-nested-ternary
-                needsApproval ? (
-                  isApprovalInProgress ? (
-                    <SharedButton type="primary" size="large" isDisabled>
-                      {t("swap.waitingForApproval")}
-                    </SharedButton>
-                  ) : (
-                    <SharedButton
-                      type="primary"
-                      size="large"
-                      isDisabled={
-                        isReadOnlyAccount ||
-                        typeof latestQuoteRequest.current === "undefined" ||
-                        sellAmountLoading ||
-                        buyAmountLoading
-                      }
-                      onClick={approveAsset}
-                      showLoadingOnClick={!confirmationMenu}
-                    >
-                      {t("swap.approveAsset")}
-                    </SharedButton>
-                  )
+        </div>
+        {isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) ? (
+          <></>
+        ) : (
+          isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) && (
+            <SharedBanner
+              id="swap_rewards"
+              canBeClosed
+              icon="notif-announcement"
+              iconColor="var(--link)"
+              customStyles="margin-bottom: 16px"
+            >
+              {t("swap.swapRewardsTeaser")}
+            </SharedBanner>
+          )
+        )}
+        <div className="form">
+          <div className="form_input">
+            <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
+              currentNetwork={currentNetwork}
+              amount={sellAmount}
+              amountMainCurrency={priceDetails?.sellCurrencyAmount}
+              showPriceDetails
+              isPriceDetailsLoading={!priceDetails}
+              assetsAndAmounts={sellAssetAmounts}
+              selectedAsset={sellAsset}
+              isDisabled={sellAmountLoading}
+              mainCurrencySign={mainCurrencySign}
+              onAssetSelect={updateSellAsset}
+              onAmountChange={(newAmount, error) => {
+                setPriceDetails(undefined)
+                setSellAmount(newAmount)
+                if (typeof error === "undefined") {
+                  updateSwapData("sell", newAmount)
+                }
+              }}
+              label={t("swap.from")}
+            />
+          </div>
+          <button className="icon_change" type="button" onClick={flipSwap}>
+            {t("swap.switchAssets")}
+          </button>
+          <div className="form_input">
+            <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
+              currentNetwork={currentNetwork}
+              amount={buyAmount}
+              amountMainCurrency={priceDetails?.buyCurrencyAmount}
+              priceImpact={priceDetails?.priceImpact}
+              isPriceDetailsLoading={!priceDetails}
+              showPriceDetails
+              // FIXME Merge master asset list with account balances.
+              assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
+              selectedAsset={buyAsset}
+              isDisabled={buyAmountLoading}
+              showMaxButton={false}
+              mainCurrencySign={mainCurrencySign}
+              onAssetSelect={updateBuyAsset}
+              onAmountChange={(newAmount, error) => {
+                setPriceDetails(undefined)
+                setBuyAmount(newAmount)
+                if (typeof error === "undefined") {
+                  updateSwapData("buy", newAmount)
+                }
+              }}
+              label={t("swap.to")}
+            />
+          </div>
+          <div className="settings_wrap">
+            {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
+              <SwapRewardsCard />
+            ) : null}
+          </div>
+          <div className="footer standard_width_padded">
+            {
+              // Would welcome an alternative here---this is pretty gnarly.
+              // eslint-disable-next-line no-nested-ternary
+              needsApproval ? (
+                isApprovalInProgress ? (
+                  <SharedButton type="primary" size="large" isDisabled>
+                    {t("swap.waitingForApproval")}
+                  </SharedButton>
                 ) : (
                   <SharedButton
                     type="primary"
@@ -674,23 +658,38 @@ export default function Swap(): ReactElement {
                       isReadOnlyAccount ||
                       typeof latestQuoteRequest.current === "undefined" ||
                       sellAmountLoading ||
-                      buyAmountLoading ||
-                      !sellAsset ||
-                      !sellAmount ||
-                      !buyAsset ||
-                      !buyAmount
+                      buyAmountLoading
                     }
-                    onClick={getFinalQuote}
+                    onClick={approveAsset}
                     showLoadingOnClick={!confirmationMenu}
                   >
-                    {t("swap.getFinalQuote")}
+                    {t("swap.approveAsset")}
                   </SharedButton>
                 )
-              }
-            </div>
+              ) : (
+                <SharedButton
+                  type="primary"
+                  size="large"
+                  isDisabled={
+                    isReadOnlyAccount ||
+                    typeof latestQuoteRequest.current === "undefined" ||
+                    sellAmountLoading ||
+                    buyAmountLoading ||
+                    !sellAsset ||
+                    !sellAmount ||
+                    !buyAsset ||
+                    !buyAmount
+                  }
+                  onClick={getFinalQuote}
+                  showLoadingOnClick={!confirmationMenu}
+                >
+                  {t("swap.getFinalQuote")}
+                </SharedButton>
+              )
+            }
           </div>
         </div>
-      </CorePage>
+      </div>
       <style jsx>
         {`
           .swap_wrap {
@@ -757,6 +756,6 @@ export default function Swap(): ReactElement {
           }
         `}
       </style>
-    </>
+    </CorePage>
   )
 }

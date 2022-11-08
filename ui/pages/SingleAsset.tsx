@@ -20,6 +20,7 @@ import WalletActivityList from "../components/Wallet/WalletActivityList"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 import { scanWebsite } from "../utils/constants"
+import CorePage from "../components/Core/CorePage"
 
 export default function SingleAsset(): ReactElement {
   const { t } = useTranslation()
@@ -85,7 +86,7 @@ export default function SingleAsset(): ReactElement {
     }
 
   return (
-    <>
+    <CorePage hasTopBar hasTabBar>
       <div className="back_button_wrap standard_width_padded">
         <SharedBackButton path="/" />
       </div>
@@ -227,6 +228,6 @@ export default function SingleAsset(): ReactElement {
           }
         `}
       </style>
-    </>
+    </CorePage>
   )
 }

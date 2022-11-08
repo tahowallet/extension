@@ -29,6 +29,12 @@ export default function WalletAssetList(props: Props): ReactElement {
         <li className="loading">{t("loadingActivities")}</li>
       )}
       <style jsx>{`
+        ul {
+          box-sizing: border-box;
+
+          width: 100%;
+          padding: 15px;
+        }
         .loading {
           display: flex;
           justify-content: center;

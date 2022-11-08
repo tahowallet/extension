@@ -30,9 +30,7 @@ setTimeout(() => {
     reloadCount = 0
     window.history.replaceState(state, "", document.URL)
   } else {
-    const isAppRendered = !!document.getElementsByClassName(
-      "top_menu_wrap_decoy"
-    ).length
+    const isAppRendered = document.getElementsByTagName("main").length > 0
     if (!isAppRendered) {
       window.location.reload()
     }
