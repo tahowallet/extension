@@ -45,11 +45,6 @@ import {
   ReadOnlyAccountSigner,
   SignerType,
 } from "../../services/signing"
-import getAccountState from "./accounts/getAccountState"
-import getAllAddresses from "./accounts/getAllAddresses"
-
-export { default as getAccountState } from "./accounts/getAccountState"
-export { default as getAllAddresses } from "./accounts/getAllAddresses"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -190,6 +185,7 @@ const computeCombinedAssetAmountsData = (
   return { combinedAssetAmounts, totalMainCurrencyAmount }
 }
 
+const getAccountState = (state: RootState) => state.account
 const getCurrentAccountState = (state: RootState) => {
   const { address, network } = state.ui.selectedAccount
   return state.account.accountsData.evm[network.chainID]?.[
@@ -496,6 +492,14 @@ export const selectCurrentAccountTotal = createSelector(
   (categorizedAccountTotals, currentAccount): AccountTotal | undefined =>
     findAccountTotal(categorizedAccountTotals, currentAccount)
 )
+
+export const getAllAddresses = createSelector(getAccountState, (account) => [
+  ...new Set(
+    Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
+      Object.keys(chainAddresses)
+    )
+  ),
+])
 
 export const getAddressCount = createSelector(
   getAllAddresses,

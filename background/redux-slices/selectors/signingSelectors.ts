@@ -5,9 +5,20 @@ import { KeyringAccountSigner } from "../../services/keyring"
 import { LedgerAccountSigner } from "../../services/ledger"
 import { AccountSigner, ReadOnlyAccountSigner } from "../../services/signing"
 import { HexString } from "../../types"
-import getAllAddresses from "./accounts/getAllAddresses"
 import { selectKeyringsByAddresses } from "./keyringsSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
+
+// FIXME: This has a duplicate in `accountSelectors.ts`, but importing causes a dependency cycle
+const getAllAddresses = createSelector(
+  (state: RootState) => state.account,
+  (account) => [
+    ...new Set(
+      Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
+        Object.keys(chainAddresses)
+      )
+    ),
+  ]
+)
 
 export const selectAccountSignersByAddress = createSelector(
   getAllAddresses,
