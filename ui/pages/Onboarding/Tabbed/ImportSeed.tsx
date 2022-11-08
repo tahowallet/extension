@@ -3,6 +3,7 @@ import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { Redirect, useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { DEFAULT_DERIVATION_PATH } from "@tallyho/tally-background/constants"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedButton from "../../../components/Shared/SharedButton"
@@ -28,7 +29,7 @@ export default function ImportSeed(props: Props): ReactElement {
   const [recoveryPhrase, setRecoveryPhrase] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
   const [path, setPath] = useState<string>(
-    selectedNetwork.derivationPath ?? "m/44'/60'/0'/0"
+    selectedNetwork.derivationPath ?? DEFAULT_DERIVATION_PATH
   )
   const [isImporting, setIsImporting] = useState(false)
 

@@ -1,7 +1,11 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import LedgerContinueButton from "../../components/Ledger/LedgerContinueButton"
 import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
+import SharedIcon from "../../components/Shared/SharedIcon"
+import { useBackgroundSelector } from "../../hooks"
+import LedgerSelectNetwork from "../../components/Ledger/LedgerSelectNetwork"
 
 export default function LedgerPrepare({
   onContinue,
@@ -15,12 +19,19 @@ export default function LedgerPrepare({
   const { t } = useTranslation("translation", {
     keyPrefix: "ledger.onboarding.prepare",
   })
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const buttonLabel = initialScreen ? t("continueButton") : t("tryAgainButton")
   const subHeadingWord = initialScreen
     ? t("subheadingWord1")
     : t("subheadingWord2")
   const warningText =
     deviceCount === 0 ? t("noLedgerConnected") : t("multipleLedgersConnected")
+  const [isNetworkSelected, setIsNetworkSelected] = useState(false)
+
+  if (!isNetworkSelected) {
+    return <LedgerSelectNetwork onContinue={() => setIsNetworkSelected(true)} />
+  }
+
   return (
     <LedgerPanelContainer
       indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
@@ -29,6 +40,23 @@ export default function LedgerPrepare({
         subheadingWord: subHeadingWord,
       })}
     >
+      {isNetworkSelected && (
+        <SharedIcon
+          icon="icons/s/back.svg"
+          width={30}
+          height={30}
+          color="var(--green-40)"
+          onClick={(e) => {
+            e.stopPropagation()
+            setIsNetworkSelected(false)
+          }}
+          customStyles={`
+                position: absolute;
+                top: 45px;
+                left: -45px;
+              `}
+        />
+      )}
       {!initialScreen && deviceCount !== 1 ? (
         <div className="steps">
           <div className="box error">
@@ -45,7 +73,7 @@ export default function LedgerPrepare({
       <ol className="steps">
         <li>{t("step1")}</li>
         <li>{t("step2")}</li>
-        <li>{t("step3")}</li>
+        <li>{t("step3", { network: selectedNetwork.name })}</li>
       </ol>
       <LedgerContinueButton onClick={onContinue}>
         {buttonLabel}

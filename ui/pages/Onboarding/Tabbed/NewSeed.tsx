@@ -10,6 +10,7 @@ import {
   useHistory,
   useRouteMatch,
 } from "react-router-dom"
+import { DEFAULT_DERIVATION_PATH } from "@tallyho/tally-background/constants"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import OnboardingStepsIndicator from "../../../components/Onboarding/OnboardingStepsIndicator"
 import {
@@ -70,7 +71,9 @@ export default function NewSeed(): ReactElement {
 
   const showNewSeedPhrase = () => {
     dispatch(
-      generateNewKeyring(selectedNetwork.derivationPath ?? "m/44'/60'/0'/0")
+      generateNewKeyring(
+        selectedNetwork.derivationPath ?? DEFAULT_DERIVATION_PATH
+      )
     ).then(() => history.push(NewSeedRoutes.REVIEW_SEED))
   }
 

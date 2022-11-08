@@ -104,6 +104,13 @@
     "onlyRejectFromLedger": "Tx can only be Rejected from Ledger",
     "onboarding": {
       "connecting": "Connecting...",
+      "selectLedgerApp": {
+        "initialScreenHeader": "Select Ledger Live App",
+        "ecosystem": "{{network}} ecosystem",
+        "includes": "Includes",
+        "subheading": "Select which app you would like to start with",
+        "continueButton": "Continue"
+      },
       "prepare": {
         "continueButton": "Continue",
         "tryAgainButton": "Try Again",
@@ -117,8 +124,9 @@
         "stepsExplainer": "Please follow the steps below and click on Try Again!",
         "step1": "Plug in a single Ledger",
         "step2": "Enter pin to unlock",
-        "step3": "Open Ethereum App",
-        "tip": "After clicking continue, select device and click connect"
+        "step3": "Open {{network}} App",
+        "tip": "After clicking continue, select device and click connect",
+        "derivationPath": "Select derivation path to connect with Ledger"
       },
       "selectDevice": "Select the device",
       "clickConnect": "Click connect",

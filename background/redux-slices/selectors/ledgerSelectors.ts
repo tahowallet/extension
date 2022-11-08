@@ -20,4 +20,9 @@ export const selectLedgerDeviceByAddresses = createSelector(
   }
 )
 
+export const selectLedgerDerivationPath = createSelector(
+  (state: RootState) => state.ledger.derivationPath,
+  (path) => path
+)
+
 export default {}

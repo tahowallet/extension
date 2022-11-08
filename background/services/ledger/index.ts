@@ -1,5 +1,6 @@
 import Transport from "@ledgerhq/hw-transport"
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb"
+import { toChecksumAddress } from "@tallyho/hd-keyring"
 import Eth from "@ledgerhq/hw-app-eth"
 import { DeviceModelId } from "@ledgerhq/devices"
 import {
@@ -25,7 +26,11 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
-import { NETWORK_FOR_LEDGER_SIGNING } from "../../constants"
+import {
+  NETWORK_SUPPORTED_BY_LEDGER,
+  ROOTSTOCK,
+  DEFAULT_DERIVATION_PATH as idDerivationPath,
+} from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { AddressOnNetwork } from "../../accounts"
 
@@ -111,17 +116,25 @@ type Events = ServiceLifecycleEvents & {
   usbDeviceCount: number
 }
 
-export const idDerivationPath = "44'/60'/0'/0/0"
-
 async function deriveAddressOnLedger(path: string, eth: Eth) {
   const derivedIdentifiers = await eth.getAddress(path)
+
+  if (
+    ROOTSTOCK.derivationPath &&
+    path.includes(ROOTSTOCK.derivationPath.slice(0, 8))
+  ) {
+    // ethersGetAddress rejects Rootstock addresses so using toChecksumAddress
+    return toChecksumAddress(derivedIdentifiers.address, +ROOTSTOCK.chainID)
+  }
+
   const address = ethersGetAddress(derivedIdentifiers.address)
   return address
 }
 
 async function generateLedgerId(
   transport: Transport,
-  eth: Eth
+  eth: Eth,
+  derivationPath: string
 ): Promise<[string | undefined, LedgerType]> {
   let extensionDeviceType = LedgerType.UNKNOWN
 
@@ -147,7 +160,7 @@ async function generateLedgerId(
     return [undefined, extensionDeviceType]
   }
 
-  const address = await deriveAddressOnLedger(idDerivationPath, eth)
+  const address = await deriveAddressOnLedger(derivationPath, eth)
 
   return [address, extensionDeviceType]
 }
@@ -171,6 +184,8 @@ async function generateLedgerId(
  */
 export default class LedgerService extends BaseService<Events> {
   #currentLedgerId: string | null = null
+
+  #derivationPath: string = idDerivationPath
 
   transport: Transport | undefined = undefined
 
@@ -209,7 +224,11 @@ export default class LedgerService extends BaseService<Events> {
 
       const eth = new Eth(this.transport)
 
-      const [id, type] = await generateLedgerId(this.transport, eth)
+      const [id, type] = await generateLedgerId(
+        this.transport,
+        eth,
+        this.#derivationPath
+      )
 
       if (!id) {
         throw new Error("Can't derive meaningful identification address!")
@@ -239,7 +258,7 @@ export default class LedgerService extends BaseService<Events> {
         this.emitter.emit("ledgerAdded", {
           id: this.#currentLedgerId,
           type,
-          accountIDs: [idDerivationPath],
+          accountIDs: [this.#derivationPath],
           metadata: {
             ethereumVersion: appData.version,
             isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
@@ -248,6 +267,10 @@ export default class LedgerService extends BaseService<Events> {
         })
       }
     })
+  }
+
+  setDefaultDerivationPath(path: string): void {
+    this.#derivationPath = path
   }
 
   #handleUSBConnect = async (event: USBConnectionEvent): Promise<void> => {
@@ -540,7 +563,7 @@ export default class LedgerService extends BaseService<Events> {
     hexDataToSign: HexString
   ): Promise<string> {
     if (
-      !NETWORK_FOR_LEDGER_SIGNING.find((supportedNetwork) =>
+      !NETWORK_SUPPORTED_BY_LEDGER.find((supportedNetwork) =>
         sameNetwork(network, supportedNetwork)
       )
     ) {

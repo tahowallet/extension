@@ -10,11 +10,11 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { useTranslation } from "react-i18next"
+import { DEFAULT_DERIVATION_PATH } from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import SharedButton from "../../../../components/Shared/SharedButton"
 import LedgerContinueButton from "../../../../components/Ledger/LedgerContinueButton"
 import LedgerPanelContainer from "../../../../components/Ledger/LedgerPanelContainer"
-import OnboardingDerivationPathSelectAlt from "../../../../components/Onboarding/OnboardingDerivationPathSelect"
 import { scanWebsite } from "../../../../utils/constants"
 
 const addressesPerPage = 6
@@ -370,7 +370,8 @@ export default function LedgerImportAccounts({
   const { t } = useTranslation("translation", {
     keyPrefix: "ledger.onboarding",
   })
-  const [parentPath, setParentPath] = useState<string | null>(null)
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const parentPath = selectedNetwork.derivationPath ?? DEFAULT_DERIVATION_PATH
 
   return (
     <>
@@ -379,13 +380,6 @@ export default function LedgerImportAccounts({
         heading={t("selectLedgeraccounts")}
         subHeading={t("connectSelectedLedger")}
       >
-        <div className="derivation_path">
-          <OnboardingDerivationPathSelectAlt
-            onChange={(value) => {
-              setParentPath(value)
-            }}
-          />
-        </div>
         {parentPath !== null && (
           <LedgerAccountList
             device={device}
@@ -394,14 +388,6 @@ export default function LedgerImportAccounts({
           />
         )}
       </LedgerPanelContainer>
-      <style jsx>{`
-        .derivation_path {
-          margin: 0.5rem 0;
-          padding: 1rem 1.5rem;
-          border-radius: 4px;
-          background: var(--green-95);
-        }
-      `}</style>
     </>
   )
 }

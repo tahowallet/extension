@@ -31,6 +31,7 @@ export type LedgerState = {
   /** Devices by ID */
   devices: Record<string, LedgerDeviceState>
   usbDeviceCount: number
+  derivationPath?: string
 }
 
 export type Events = {
@@ -94,6 +95,12 @@ const ledgerSlice = createSlice({
     ) => {
       if (!(deviceID in immerState.devices)) return
       immerState.currentDeviceID = deviceID
+    },
+    setDerivationPath: (
+      immerState,
+      { payload: derivationPath }: { payload: string }
+    ) => {
+      immerState.derivationPath = derivationPath
     },
     setDeviceConnectionStatus: (
       immerState,
@@ -224,6 +231,7 @@ export const {
   addLedgerAccount,
   setUsbDeviceCount,
   removeDevice,
+  setDerivationPath,
 } = ledgerSlice.actions
 
 export default ledgerSlice.reducer
