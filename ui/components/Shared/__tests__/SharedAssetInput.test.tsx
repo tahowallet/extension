@@ -1,9 +1,9 @@
 import React, { useState } from "react"
-import { render } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { ETHEREUM } from "@tallyho/tally-background/constants"
 import { FungibleAsset } from "@tallyho/tally-background/assets"
 import SharedAssetInput from "../SharedAssetInput"
+import { renderWithProviders } from "../../../utils/test-utils"
 
 const label = "Test label"
 const asset: FungibleAsset = {
@@ -49,7 +49,7 @@ function SharedAssetInputWithState() {
 
 describe("SharedAssetInput", () => {
   test("should render component", async () => {
-    const ui = render(
+    const ui = renderWithProviders(
       <SharedAssetInput
         currentNetwork={ETHEREUM}
         selectedAsset={undefined}
@@ -63,14 +63,14 @@ describe("SharedAssetInput", () => {
   })
 
   test("should display predefined asset", () => {
-    const ui = render(<SharedAssetInputWithState />)
+    const ui = renderWithProviders(<SharedAssetInputWithState />)
 
     expect(ui.getByText("FAKE")).toBeInTheDocument()
     expect(ui.getByText("Balance: 1")).toBeInTheDocument()
   })
 
   test("should allow to open assets selector", async () => {
-    const ui = render(<SharedAssetInputWithState />)
+    const ui = renderWithProviders(<SharedAssetInputWithState />)
 
     const assetButton = ui.getByText("FAKE")
 
@@ -79,7 +79,7 @@ describe("SharedAssetInput", () => {
   })
 
   test("should allow to search for assets with a searchbox", async () => {
-    const ui = render(<SharedAssetInputWithState />)
+    const ui = renderWithProviders(<SharedAssetInputWithState />)
     const assetButton = ui.getByText("FAKE")
 
     await userEvent.click(assetButton)
@@ -97,7 +97,7 @@ describe("SharedAssetInput", () => {
   })
 
   test("should allow to select different asset", async () => {
-    const ui = render(<SharedAssetInputWithState />)
+    const ui = renderWithProviders(<SharedAssetInputWithState />)
     const assetButton = ui.getByText("FAKE")
     await userEvent.click(assetButton)
 
@@ -110,13 +110,13 @@ describe("SharedAssetInput", () => {
   })
 
   test("should display asset balance", () => {
-    const ui = render(<SharedAssetInputWithState />)
+    const ui = renderWithProviders(<SharedAssetInputWithState />)
 
     expect(ui.queryByText("Balance: 1")).toBeInTheDocument()
   })
 
   test("should allow to select max amount of the asset", async () => {
-    const ui = render(<SharedAssetInputWithState />)
+    const ui = renderWithProviders(<SharedAssetInputWithState />)
     const inputElement = ui.getByLabelText(label)
     const maxButton = ui.getByText("Max")
 
@@ -126,7 +126,7 @@ describe("SharedAssetInput", () => {
   })
 
   test("should be able to type asset amount", async () => {
-    const ui = render(<SharedAssetInputWithState />)
+    const ui = renderWithProviders(<SharedAssetInputWithState />)
     const inputElement = ui.getByLabelText(label)
 
     expect(inputElement).toHaveDisplayValue("")
@@ -135,13 +135,13 @@ describe("SharedAssetInput", () => {
   })
 
   test("should display asset price", () => {
-    const ui = render(<SharedAssetInputWithState />)
+    const ui = renderWithProviders(<SharedAssetInputWithState />)
 
     expect(ui.getByText("$1")).toBeVisible()
   })
 
   test("should show insufficient balance error", async () => {
-    const ui = render(<SharedAssetInputWithState />)
+    const ui = renderWithProviders(<SharedAssetInputWithState />)
     const inputElement = ui.getByLabelText(label)
 
     await userEvent.type(inputElement, "10")
@@ -151,7 +151,7 @@ describe("SharedAssetInput", () => {
   })
 
   test("should be able to disable assets selector", async () => {
-    const ui = render(
+    const ui = renderWithProviders(
       <SharedAssetInput
         currentNetwork={ETHEREUM}
         selectedAsset={asset}

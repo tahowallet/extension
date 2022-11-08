@@ -231,7 +231,16 @@ const initializeStore = (preloadedState = {}, main: Main) =>
         : [],
   })
 
-type ReduxStoreType = ReturnType<typeof initializeStore>
+export type ReduxStoreType = ReturnType<typeof initializeStore>
+
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export const initializeStoreTest = (preloadedState = {}) =>
+  configureStore({
+    reducer: rootReducer,
+    preloadedState,
+  })
+
+export type ReduxStoreTypeTest = ReturnType<typeof initializeStoreTest>
 
 export const popupMonitorPortName = "popup-monitor"
 
