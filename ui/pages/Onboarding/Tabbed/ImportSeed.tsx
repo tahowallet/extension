@@ -10,7 +10,6 @@ import {
   useBackgroundSelector,
   useAreKeyringsUnlocked,
 } from "../../../hooks"
-import PasswordInput from "../../../components/Shared/PasswordInput"
 
 type Props = {
   nextPage: string
@@ -82,18 +81,29 @@ export default function ImportSeed(props: Props): ReactElement {
             <div className="info">
               Copy paste or write down a 12 or 24 word secret recovery phrase.
             </div>
+
             <div>
-              <PasswordInput
-                value={recoveryPhrase}
-                onChange={(value) => {
-                  // Clear error message on change
-                  setErrorMessage("")
-                  setRecoveryPhrase(value)
+              <p>Enter your passphrase below</p>
+              <div
+                id="recovery_phrase"
+                contentEditable
+                onInput={(e) => {
+                  setRecoveryPhrase(e.currentTarget.innerText)
                 }}
-                errorMessage={errorMessage}
               />
             </div>
-
+            <SharedButton
+              size={
+                isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
+                  ? "medium"
+                  : "large"
+              }
+              type="primary"
+              isDisabled={isImporting}
+              onClick={importWallet}
+            >
+              Import account
+            </SharedButton>
             {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
               <div className="select_wrapper">
                 <OnboardingDerivationPathSelect onChange={setPath} />
@@ -192,6 +202,18 @@ export default function ImportSeed(props: Props): ReactElement {
         .select_wrapper {
           margin-top: ${errorMessage ? "4px" : "15px"};
           width: 320px;
+        }
+        #recovery_phrase {
+          margin: 30px auto;
+          width: 320px;
+          height: 200px;
+          border-radius: 4px;
+          border: 2px solid var(--green-60);
+          padding: 12px 16px;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          color: white;
+          font-family: inherit;
         }
       `}</style>
     </>
