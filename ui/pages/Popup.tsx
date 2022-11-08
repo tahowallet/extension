@@ -215,11 +215,16 @@ export function Main(): ReactElement {
                         // If there are no existing accounts, display onboarding
                         // (if we're not there already)
                         //
-                        //
                         !isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING) &&
                           !hasAccounts &&
                           !matchPath(transformedLocation.pathname, {
-                            path: ["/onboarding", "/keyring/unlock"],
+                            path: [
+                              "/onboarding",
+                              // need to unlock keyring to import an account
+                              "/keyring/unlock",
+                              // this route has it's own error message
+                              "/dapp-permission",
+                            ],
                             exact: false,
                           }) && <Redirect to="/onboarding/info-intro" />
                       }
