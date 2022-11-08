@@ -605,7 +605,7 @@ export default function Swap(): ReactElement {
                 amount={buyAmount}
                 amountMainCurrency={priceDetails?.buyCurrencyAmount}
                 showCurrencyAmount
-                priceImpact={priceDetails?.priceImpact}
+                showPriceImpact
                 // FIXME Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
                 selectedAsset={buyAsset}
