@@ -1,6 +1,7 @@
 import { removeAccount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   AccountTotal,
+  getAllAddresses,
   selectAccountSignersByAddress,
   selectKeyringByAddress,
 } from "@tallyho/tally-background/redux-slices/selectors"
@@ -44,6 +45,7 @@ export default function AccountItemRemovalConfirm({
     selectedAddress: state.ui.selectedAccount.address,
     accountsData: state.account.accountsData,
   }))
+
   const accountSigners = useBackgroundSelector(selectAccountSignersByAddress)
   const readOnlyAccount = typeof keyring === "undefined"
   const lastAddressInKeyring = keyring?.addresses.length === 1
@@ -52,11 +54,19 @@ export default function AccountItemRemovalConfirm({
     selectLedgerDeviceByAddresses
   )
 
-  const lastAddressInLedger =
-    accountSigners[address]?.type === "ledger" &&
-    Object.values(ledgerDeviceByAddress[address].accounts).length === 1
+  const allAddresses = useBackgroundSelector(getAllAddresses)
 
-  const lastAccountInTallyWallet = Object.keys(accountSigners).length === 1
+  const signer = accountSigners[address]
+
+  const lastAddressInLedger =
+    signer.type === "ledger" &&
+    !allAddresses.some(
+      (otherAddress: string) =>
+        address !== otherAddress &&
+        ledgerDeviceByAddress[otherAddress]?.id === signer.deviceID
+    )
+
+  const lastAccountInTallyWallet = Object.keys(allAddresses).length === 1
 
   const lastAddressInAccount = lastAddressInKeyring || lastAddressInLedger
 
