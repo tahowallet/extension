@@ -9,6 +9,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/dapp"
 
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { Redirect } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import DAppConnectPage from "./DAppConnect/DAppConnectPage"
 import SwitchWalletPage from "./DAppConnect/SwitchWalletPage"
@@ -60,11 +61,7 @@ export default function DAppConnectRequest(): ReactElement {
   ) {
     // FIXME What do we do if we end up in a weird state here? Dismiss the
     // FIXME popover? Show an error?
-    return (
-      <div>
-        You do not seem to have an account, which is sad for a wallet :(
-      </div>
-    )
+    return <Redirect to="/onboarding/info-intro" />
   }
 
   return (
