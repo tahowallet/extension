@@ -105,6 +105,7 @@ import {
   setVaultsAsStale,
 } from "./redux-slices/earn"
 import {
+  removeDevice,
   resetLedgerState,
   setDeviceConnectionStatus,
   setUsbDeviceCount,
@@ -521,6 +522,10 @@ export default class Main extends BaseService<never> {
 
     if (signer.type !== "read-only" && lastAddressInAccount) {
       await this.preferenceService.deleteAccountSignerSettings(signer)
+    }
+
+    if (signer.type === "ledger" && lastAddressInAccount) {
+      this.store.dispatch(removeDevice(signer.deviceID))
     }
 
     this.store.dispatch(removeActivities(address))

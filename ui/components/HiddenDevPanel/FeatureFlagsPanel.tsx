@@ -2,6 +2,7 @@ import {
   FeatureFlags,
   isEnabled,
   RuntimeFlag,
+  RuntimeFlagType,
 } from "@tallyho/tally-background/features"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -10,7 +11,7 @@ import BalanceReloader from "../BalanceReloader/BalanceReloader"
 import SharedPageHeader from "../Shared/SharedPageHeader"
 import SharedToggleButton from "../Shared/SharedToggleButton"
 
-function FeatureFlag(props: { name: string }): ReactElement {
+function FeatureFlag(props: { name: RuntimeFlagType }): ReactElement {
   const { name } = props
   const { t } = useTranslation("translation", {
     keyPrefix: "devPanel.featureFlags.flags",
@@ -57,7 +58,7 @@ export default function FeatureFlagsPanel(): ReactElement {
         {t("title")} <BalanceReloader />
       </SharedPageHeader>
       <ul className="flags_wrap">
-        {Object.keys(RuntimeFlag).map((flagName) => (
+        {(Object.keys(RuntimeFlag) as RuntimeFlagType[]).map((flagName) => (
           <FeatureFlag key={flagName} name={flagName} />
         ))}
       </ul>
