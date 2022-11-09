@@ -217,11 +217,13 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.alchemyProvider &&
       Math.random() < ALCHEMY_RPC_CALL_PERCENTAGE / 100
     ) {
+      // Cast `unknown` to `any` - which is the type that the send method expects.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return this.alchemyProvider.send(method, params as any)
+      return this.alchemyProvider.send(method, params as Array<any>)
     }
+    // Cast `unknown` to `any` - which is the type that the send method expects.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this.currentProvider.send(method, params as any)
+    return this.currentProvider.send(method, params as Array<any>)
   }
 
   /**
