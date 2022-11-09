@@ -2,7 +2,7 @@ import React, { useState } from "react"
 import userEvent from "@testing-library/user-event"
 import { ETHEREUM } from "@tallyho/tally-background/constants"
 import { FungibleAsset } from "@tallyho/tally-background/assets"
-import SharedAssetInput from "../SharedAssetInput"
+import SharedAssetInput, { AdditionalInformation } from "../SharedAssetInput"
 import { renderWithProviders } from "../../../utils/test-utils"
 
 const label = "Test label"
@@ -166,5 +166,131 @@ describe("SharedAssetInput", () => {
     expect(assetButton).toHaveAttribute("disabled")
     await userEvent.click(assetButton)
     expect(ui.queryByText("Select token")).not.toBeInTheDocument()
+  })
+})
+
+const currencySymbol = "$"
+
+const getPreloadedState = (priceImpact: number | undefined) => ({
+  swap: {
+    priceDetails: {
+      priceImpact,
+      buyCurrencyAmount: undefined,
+      sellCurrencyAmount: undefined,
+    },
+  },
+})
+
+describe("AdditionalInformation for SharedAssetInput", () => {
+  test("should display amount main currency", () => {
+    const amount = "1"
+    const ui = renderWithProviders(
+      <AdditionalInformation
+        amountMainCurrency={amount}
+        showCurrencyAmount
+        showPriceImpact
+      />
+    )
+    expect(ui.getByText(`${currencySymbol}${amount}`)).toBeVisible()
+  })
+
+  test("should display that amount is lower than 0", () => {
+    const amount = "0.00"
+    const ui = renderWithProviders(
+      <AdditionalInformation
+        amountMainCurrency={amount}
+        showCurrencyAmount
+        showPriceImpact
+      />
+    )
+    expect(ui.getByText(`<${currencySymbol}${amount}`)).toBeVisible()
+  })
+
+  test("should display 0.00 when amount is undefined", () => {
+    const amount = "0.00"
+    const ui = renderWithProviders(
+      <AdditionalInformation
+        amountMainCurrency={undefined}
+        showCurrencyAmount
+        showPriceImpact
+      />
+    )
+    expect(ui.getByText(`${currencySymbol}${amount}`)).toBeVisible()
+  })
+
+  test("should not display amount main currency", () => {
+    const amount = "0.00"
+    const ui = renderWithProviders(
+      <AdditionalInformation
+        amountMainCurrency={amount}
+        showCurrencyAmount={false}
+        showPriceImpact
+      />
+    )
+    expect(ui.queryByText(`${currencySymbol}${amount}`)).toBeNull()
+  })
+
+  test("should display price impact", () => {
+    const amount = "2"
+    const priceImpact = -1
+
+    const ui = renderWithProviders(
+      <AdditionalInformation
+        amountMainCurrency={amount}
+        showCurrencyAmount
+        showPriceImpact
+      />,
+      { preloadedState: getPreloadedState(priceImpact) }
+    )
+
+    expect(ui.getByText(`(${priceImpact}%)`)).toBeVisible()
+  })
+
+  test("should not display price impact when value is greater than 0", () => {
+    const amount = "2"
+    const priceImpact = 2
+
+    const ui = renderWithProviders(
+      <AdditionalInformation
+        amountMainCurrency={amount}
+        showCurrencyAmount
+        showPriceImpact
+      />,
+      { preloadedState: getPreloadedState(priceImpact) }
+    )
+
+    expect(ui.queryByTestId("price_impact_percent")).not.toBeInTheDocument()
+  })
+
+  test("should not display price impact", () => {
+    const amount = "2"
+    const priceImpact = -1
+
+    const ui = renderWithProviders(
+      <AdditionalInformation
+        amountMainCurrency={amount}
+        showCurrencyAmount
+        showPriceImpact={false}
+      />,
+      { preloadedState: getPreloadedState(priceImpact) }
+    )
+
+    expect(ui.queryByTestId("price_impact_percent")).not.toBeInTheDocument()
+  })
+
+  test("should not display price impact when is undefined", () => {
+    const amount = "2"
+    const priceImpact = undefined
+
+    const ui = renderWithProviders(
+      <AdditionalInformation
+        amountMainCurrency={amount}
+        showCurrencyAmount
+        showPriceImpact={false}
+      />,
+      { preloadedState: getPreloadedState(priceImpact) }
+    )
+
+    expect(ui.queryByTestId("price_impact_percent")).not.toBeInTheDocument()
   })
 })

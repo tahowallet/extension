@@ -288,7 +288,9 @@ interface AdditionalInformationProps {
   showPriceImpact: boolean
 }
 
-function AdditionalInformation(
+const currencySymbol = "$"
+
+export function AdditionalInformation(
   props: AdditionalInformationProps
 ): ReactElement {
   const { amountMainCurrency, showCurrencyAmount, showPriceImpact } = props
@@ -320,7 +322,9 @@ function AdditionalInformation(
         t("noAssetPrice")
       ) : (
         <>
-          {amountMainCurrency === "0.00" && "<"}${amountMainCurrency || "0.00"}
+          {amountMainCurrency === "0.00" && "<"}
+          {currencySymbol}
+          {amountMainCurrency || "0.00"}
         </>
       )}
     </>
@@ -332,7 +336,10 @@ function AdditionalInformation(
       {showPriceImpact &&
         priceDetails?.priceImpact !== undefined &&
         priceDetails?.priceImpact < 0 && (
-          <span className="price_impact_percent">
+          <span
+            data-testid="price_impact_percent"
+            className="price_impact_percent"
+          >
             ({priceDetails.priceImpact}%
             <SharedTooltip
               width={180}
