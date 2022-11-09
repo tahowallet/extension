@@ -760,7 +760,9 @@ export default class IndexingService extends BaseService<Events> {
         } else {
           await this.retrieveTokenBalances(
             addressOnNetwork,
-            await this.db.getAllKnownTokensForNetwork(addressOnNetwork.network)
+            this.cachedAssets[addressOnNetwork.network.chainID].filter(
+              isSmartContractFungibleAsset
+            )
           )
         }
         await this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
