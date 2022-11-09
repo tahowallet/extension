@@ -68,6 +68,7 @@ import {
   setSnackbarMessage,
   setAccountsSignerSettings,
   toggleCollectAnalytics,
+  setShowAnalyticsNotification,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -148,6 +149,7 @@ import { AccountSignerWithId } from "./signing"
 import AnalyticsService from "./services/analytics"
 import { AnalyticsPreferences } from "./services/preferences/types"
 import { isSmartContractFungibleAsset } from "./assets"
+import { FeatureFlags, isEnabled } from "./features"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1414,6 +1416,21 @@ export default class Main extends BaseService<never> {
   }
 
   async connectAnalyticsService(): Promise<void> {
+    const { hasDefaultOnBeenTurnedOn } =
+      await this.preferenceService.getAnalyticsPreferences()
+
+    if (
+      isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) &&
+      !hasDefaultOnBeenTurnedOn
+    ) {
+      // TODO: Remove this in the next release after we switch on
+      //       analytics by default
+      await this.preferenceService.updateAnalyticsPreferences({
+        isEnabled: true,
+        hasDefaultOnBeenTurnedOn: true,
+      })
+      this.store.dispatch(setShowAnalyticsNotification(true))
+    }
     this.preferenceService.emitter.on(
       "updateAnalyticsPreferences",
       async (analyticsPreferences: AnalyticsPreferences) => {
@@ -1430,7 +1447,7 @@ export default class Main extends BaseService<never> {
 
     uiSliceEmitter.on(
       "updateAnalyticsPreferences",
-      async (analyticsPreferences: AnalyticsPreferences) => {
+      async (analyticsPreferences: Partial<AnalyticsPreferences>) => {
         await this.preferenceService.updateAnalyticsPreferences(
           analyticsPreferences
         )

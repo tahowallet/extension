@@ -1,4 +1,5 @@
 import { ETHEREUM, USD } from "../../constants"
+import { FeatureFlags, isEnabled } from "../../features"
 import { storageGatewayURL } from "../../lib/storage-gateway"
 import { Preferences } from "./types"
 
@@ -30,7 +31,10 @@ const defaultPreferences: Preferences = {
   },
   accountSignersSettings: [],
   analytics: {
-    isEnabled: false,
+    isEnabled: isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON),
+    hasDefaultOnBeenTurnedOn: isEnabled(
+      FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON
+    ),
   },
 }
 
