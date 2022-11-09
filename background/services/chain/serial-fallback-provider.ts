@@ -39,7 +39,7 @@ const WAIT_BEFORE_SUBSCRIBING = 2 * SECOND
 // Wait 100ms before attempting another send if a websocket provider is still connecting.
 const WAIT_BEFORE_SEND_AGAIN = 100
 // Percentage of .send calls to route to alchemy
-const ALCHEMY_RPC_CALL_PERCENTAGE = 0.5
+const ALCHEMY_RPC_CALL_PERCENTAGE = 50
 /**
  * Wait the given number of ms, then run the provided function. Returns a
  * promise that will resolve after the delay has elapsed and the passed
@@ -213,7 +213,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     method: string,
     params: unknown
   ): Promise<unknown> {
-    if (this.alchemyProvider && Math.random() < ALCHEMY_RPC_CALL_PERCENTAGE) {
+    if (
+      this.alchemyProvider &&
+      Math.random() < ALCHEMY_RPC_CALL_PERCENTAGE / 100
+    ) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return this.alchemyProvider.send(method, params as any)
     }
