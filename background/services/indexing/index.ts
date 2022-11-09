@@ -251,20 +251,21 @@ export default class IndexingService extends BaseService<Events> {
    * @param network - the home network of the asset
    * @param contractAddress - the address of the asset on its home network
    */
-  async getKnownSmartContractAsset(
+  getKnownSmartContractAsset(
     network: EVMNetwork,
     contractAddress: HexString
-  ): Promise<SmartContractFungibleAsset> {
+  ): SmartContractFungibleAsset | undefined {
     const knownAssets = this.cachedAssets[network.chainID]
-    const found = knownAssets.find(
-      (asset) =>
-        "decimals" in asset &&
-        "homeNetwork" in asset &&
-        "contractAddress" in asset &&
+
+    const searchResult = knownAssets.find(
+      (asset): asset is SmartContractFungibleAsset =>
+        isSmartContractFungibleAsset(asset) &&
         asset.homeNetwork.name === network.name &&
-        asset.contractAddress === contractAddress
+        normalizeEVMAddress(asset.contractAddress) ===
+          normalizeEVMAddress(contractAddress)
     )
-    return found as SmartContractFungibleAsset
+
+    return searchResult
   }
 
   /* *****************
@@ -320,10 +321,10 @@ export default class IndexingService extends BaseService<Events> {
         // (e.g. via a previously baseline-trusted interaction or via a token
         // list) OR the sender is a tracked address.
         const baselineTrustedAsset =
-          typeof (await this.getKnownSmartContractAsset(
+          typeof this.getKnownSmartContractAsset(
             enrichedEVMTransaction.network,
             asset.contractAddress
-          )) !== "undefined" ||
+          ) !== "undefined" ||
           (await this.db.isTrackingAsset(asset)) ||
           (
             await this.chainService.filterTrackedAddressesOnNetworks([
@@ -482,10 +483,10 @@ export default class IndexingService extends BaseService<Events> {
       balances.map(async ({ smartContract: { contractAddress }, amount }) => {
         const knownAsset =
           listedAssetByAddress[normalizeEVMAddress(contractAddress)] ??
-          (await this.getKnownSmartContractAsset(
+          this.getKnownSmartContractAsset(
             addressNetwork.network,
             contractAddress
-          ))
+          )
 
         if (amount > 0) {
           if (knownAsset) {
