@@ -1,12 +1,25 @@
 // @ts-check
 /* Allow console output for debug information in Actions output. */
 /* eslint-disable no-console */
-module.exports = async function postBuildLink({ github, context }) {
-  /** @type {string | undefined} */
-  const workflowRunId =
-    context.payload?.workflow_run?.id ?? context.inputs?.workflow_run_id
 
-  /** @type {{ status: number, data: { check_suite_id: number, updated_at: string }}} */
+/**
+ * @param {object} ctx Context
+ * @param {InstanceType<import("@actions/github/lib/utils")["GitHub"]>} ctx.github
+ * @param {import("@actions/github")["context"]} ctx.context
+ * @returns {Promise<void>}
+ */
+module.exports = async function postBuildLink({ github, context }) {
+  // @ts-expect-error this is available on manual workflow runs
+  const manualWorkFlowId = context?.inputs?.workflow_run_id
+
+  const workflowRunId = Number(
+    context.payload?.workflow_run?.id ?? manualWorkFlowId
+  )
+
+  if (Number.isNaN(workflowRunId)) {
+    throw new Error(`Failed to get workflow run id`)
+  }
+
   const {
     status: workflowLookupStatus,
     data: { check_suite_id: checkSuiteId, updated_at: workflowUpdatedAt },
@@ -22,7 +35,6 @@ module.exports = async function postBuildLink({ github, context }) {
     )
   }
 
-  /** @type {{ status: number, data: { artifacts: { name: string }[] }}} */
   const {
     status: artifactLookupStatus,
     data: { artifacts: allArtifacts },
@@ -44,7 +56,7 @@ module.exports = async function postBuildLink({ github, context }) {
 
   if (matchArtifact === undefined || matchArtifact === null) {
     throw new Error(
-      `Failed to find extension artifact :( Artifacts were ${JSON.strignify(
+      `Failed to find extension artifact :( Artifacts were ${JSON.stringify(
         allArtifacts
       )}`
     )
@@ -73,14 +85,14 @@ module.exports = async function postBuildLink({ github, context }) {
   } = await github.rest.pulls.get({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    pull_number: prNumber,
+    pull_number: Number(prNumber),
   })
 
   if (pullLookupStatus !== 200) {
-    throw new Error("Failed to fetch PR body :( Status", pullLookupStatus, ".")
+    throw new Error(`Failed to fetch PR body :( Status ${pullLookupStatus}.`)
   }
 
-  const baseUrl = context.payload.repository.html_url
+  const baseUrl = context.payload?.repository?.html_url
   const artifactUrl = `${baseUrl}/suites/${checkSuiteId}/artifacts/${matchArtifact.id}`
 
   console.log(
@@ -97,7 +109,7 @@ module.exports = async function postBuildLink({ github, context }) {
   await github.rest.pulls.update({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    pull_number: prNumber,
+    pull_number: Number(prNumber),
     body: updatedBody,
   })
 }
