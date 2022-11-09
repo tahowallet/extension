@@ -17,7 +17,6 @@ import {
 import {
   BASE_ASSETS,
   FIAT_CURRENCIES,
-  HOUR,
   NETWORK_BY_CHAIN_ID,
   SECOND,
   USD,
@@ -128,13 +127,6 @@ export default class IndexingService extends BaseService<Events> {
         },
         handler: () => this.handleBalanceAlarm(true),
       },
-      forceBalance: {
-        runAtStart: true,
-        schedule: {
-          periodInMinutes: (HOUR / 1e3) * 12,
-        },
-        handler: () => this.handleBalanceAlarm(),
-      },
       balanceRefresh: {
         schedule: {
           periodInMinutes: 1,
@@ -157,6 +149,9 @@ export default class IndexingService extends BaseService<Events> {
 
     this.connectChainServiceEvents()
 
+    // Kick off token list fetching in the background
+    const tokenListLoad = this.fetchAndCacheTokenLists()
+
     this.chainService.emitter.once("serviceStarted").then(async () => {
       const trackedNetworks = await this.chainService.getTrackedNetworks()
 
@@ -165,10 +160,10 @@ export default class IndexingService extends BaseService<Events> {
         await this.cacheAssetsForNetwork(network)
         this.emitter.emit("assets", this.cachedAssets[network.chainID])
       })
-    })
 
-    // Kick off token list fetching in the background
-    this.fetchAndCacheTokenLists()
+      // Force a balance refresh on service start
+      tokenListLoad.then(() => this.handleBalanceAlarm())
+    })
   }
 
   /**
