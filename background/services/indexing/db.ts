@@ -10,6 +10,7 @@ import {
   SmartContractFungibleAsset,
   TokenListCitation,
 } from "../../assets"
+import { normalizeEVMAddress } from "../../lib/utils"
 
 /*
  * IndexedPricePoint extends PricePoint to expose each asset's ID directly for
@@ -142,6 +143,58 @@ export class IndexingDatabase extends Dexie {
 
     this.version(2).stores({
       migrations: null,
+    })
+
+    this.version(3).upgrade(async (tx) => {
+      const seenAddresses = new Set<string>()
+
+      const selectInvalidOrDuplicateRecords = (
+        record: SmartContractFungibleAsset & {
+          chainId?: unknown
+          address?: string
+        }
+      ) => {
+        const normalizedAddress = normalizeEVMAddress(record.contractAddress)
+        const isInvalidRecord =
+          typeof record.chainId !== "undefined" &&
+          typeof record.address !== "undefined"
+
+        if (isInvalidRecord || seenAddresses.has(normalizedAddress)) {
+          return true
+        }
+
+        seenAddresses.add(normalizedAddress)
+
+        return false
+      }
+
+      // Remove invalid records
+      await tx
+        .table("assetsToTrack")
+        .filter(selectInvalidOrDuplicateRecords)
+        .delete()
+
+      await tx
+        .table("customAssets")
+        .filter(selectInvalidOrDuplicateRecords)
+        .delete()
+
+      const normalizeAssetAddress = (record: SmartContractFungibleAsset) => {
+        Object.assign(record, {
+          contractAddress: normalizeEVMAddress(record.contractAddress),
+        })
+      }
+
+      // Normalize addresses
+      await tx
+        .table("assetsToTrack")
+        .toCollection()
+        .modify(normalizeAssetAddress)
+
+      await tx
+        .table("customAssets")
+        .toCollection()
+        .modify(normalizeAssetAddress)
     })
   }
 
