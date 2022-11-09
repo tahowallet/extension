@@ -551,28 +551,25 @@ export default class IndexingService extends BaseService<Events> {
     addressOnNetwork: AddressOnNetwork,
     contractAddress: string
   ): Promise<void> {
+    const normalizedAddress = normalizeEVMAddress(contractAddress)
     const { network } = addressOnNetwork
-    const knownAssets = this.cachedAssets[network.chainID]
-    const found = knownAssets.find(
-      (asset) =>
-        "decimals" in asset &&
-        "homeNetwork" in asset &&
-        asset.homeNetwork.name === network.name &&
-        "contractAddress" in asset &&
-        asset.contractAddress === contractAddress
+    const knownAsset = this.getKnownSmartContractAsset(
+      addressOnNetwork.network,
+      normalizedAddress
     )
-    if (found) {
-      this.addAssetToTrack(found as SmartContractFungibleAsset)
+
+    if (knownAsset) {
+      this.addAssetToTrack(knownAsset)
     } else {
       let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
         network,
-        contractAddress
+        normalizedAddress
       )
       if (!customAsset) {
         // pull metadata from Alchemy
         customAsset =
           (await this.chainService.assetData.getTokenMetadata({
-            contractAddress,
+            contractAddress: normalizedAddress,
             homeNetwork: network,
           })) || undefined
 
