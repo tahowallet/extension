@@ -1,5 +1,13 @@
+// @ts-check
 /* Allow console output for debug information in Actions output. */
 /* eslint-disable no-console */
+
+/**
+ * @param {object} ctx Context
+ * @param {InstanceType<import("@actions/github/lib/utils")["GitHub"]>} ctx.github
+ * @param {import("@actions/github")["context"]} ctx.context
+ * @returns {Promise<string>}
+ */
 module.exports = async function detectEnvBlock({ github, context }) {
   const {
     status,
