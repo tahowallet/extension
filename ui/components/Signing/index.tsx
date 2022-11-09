@@ -1,9 +1,8 @@
 import React, { ReactElement } from "react"
-import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import {
-  AccountSigner,
-  ReadOnlyAccountSigner,
-} from "@tallyho/tally-background/services/signing"
+  getAccountTotal,
+  selectCurrentAccountSigner,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import { useBackgroundSelector } from "../../hooks"
 import SignTransactionNetworkAccountInfoTopBar from "../SignTransaction/SignTransactionNetworkAccountInfoTopBar"
@@ -99,7 +98,6 @@ function SigningLoaded<T extends SignOperationType>({
 
 type SigningProps<T extends SignOperationType> = {
   request: T | undefined
-  accountSigner: AccountSigner | undefined
 }
 
 /**
@@ -110,16 +108,14 @@ type SigningProps<T extends SignOperationType> = {
  */
 export default function Signing<T extends SignOperationType>({
   request,
-  accountSigner,
 }: SigningProps<T>): ReactElement {
+  const accountSigner = useBackgroundSelector(selectCurrentAccountSigner)
   const signatureDetails = useResolvedSignatureDetails(
     request === undefined
       ? undefined
       : {
           request,
-          // FIXME Move defaulting to selectCurrentAccountSigner when removing feature
-          // FIXME flag.
-          accountSigner: accountSigner ?? ReadOnlyAccountSigner,
+          accountSigner,
         }
   )
 

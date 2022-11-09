@@ -1,15 +1,15 @@
 /**
  * Feature flags which are set at build time.
  */
-const BuildTimeFlag: Record<string, boolean> = {
+const BuildTimeFlag = {
   SUPPORT_TABBED_ONBOARDING: process.env.SUPPORT_TABBED_ONBOARDING === "true",
   SWITCH_RUNTIME_FLAGS: process.env.SWITCH_RUNTIME_FLAGS === "true",
-}
+} as const
 
 /**
  * Feature flags which are set at runtime.
  */
-export const RuntimeFlag: Record<string, boolean> = {
+export const RuntimeFlag = {
   USE_MAINNET_FORK: process.env.USE_MAINNET_FORK === "true",
   RESOLVE_RNS_NAMES: process.env.RESOLVE_RNS_NAMES === "true",
   HIDE_IMPORT_DERIVATION_PATH:
@@ -25,15 +25,23 @@ export const RuntimeFlag: Record<string, boolean> = {
   SUPPORT_RSK: process.env.SUPPORT_RSK === "true",
   SUPPORT_ACHIEVEMENTS_BANNER:
     process.env.SUPPORT_ACHIEVEMENTS_BANNER === "true",
-}
+} as const
+
+type BuildTimeFlagType = keyof typeof BuildTimeFlag
+
+export type RuntimeFlagType = keyof typeof RuntimeFlag
+
+type FeatureFlagType = RuntimeFlagType | BuildTimeFlagType
 
 /**
  * Object with all feature flags. The key is the same as the value.
  */
-export const FeatureFlags: Record<string, string> = Object.keys({
+export const FeatureFlags = Object.keys({
   ...BuildTimeFlag,
   ...RuntimeFlag,
-}).reduce((types, flagName) => ({ ...types, [flagName]: flagName }), {})
+}).reduce((types, flagName) => ({ ...types, [flagName]: flagName }), {}) as {
+  [Flag in FeatureFlagType]: Flag
+}
 
 /**
  * Checks the status of the feature flag.
@@ -42,13 +50,19 @@ export const FeatureFlags: Record<string, string> = Object.keys({
  * If value is not exist then is read from environment variables.
  * The value for the build time flag is read from environment variables.
  */
-export const isEnabled = (flagName: string): boolean => {
-  if (flagName in BuildTimeFlag) {
+export const isEnabled = (flagName: FeatureFlagType): boolean => {
+  // Guard to narrow flag type
+  const isBuildTimeFlag = (flag: string): flag is BuildTimeFlagType =>
+    flag in BuildTimeFlag
+
+  if (isBuildTimeFlag(flagName)) {
     return BuildTimeFlag[flagName]
   }
+
   if (BuildTimeFlag.SWITCH_RUNTIME_FLAGS) {
     const state = localStorage.getItem(flagName)
     return state !== null ? state === "true" : RuntimeFlag[flagName]
   }
+
   return RuntimeFlag[flagName]
 }

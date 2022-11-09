@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { selectHideDust } from "../ui"
 import { RootState } from ".."
-import { AccountState, AccountType, CompleteAssetAmount } from "../accounts"
+import { AccountType, CompleteAssetAmount } from "../accounts"
 import { AssetsState, selectAssetPricePoint } from "../assets"
 import {
   enrichAssetAmountWithDecimalValues,
@@ -351,21 +351,22 @@ const getTotalBalance = (
 }
 
 function getNetworkAccountTotalsByCategory(
-  accounts: AccountState,
-  assets: AssetsState,
-  accountSignersByAddress: ReturnType<typeof selectAccountSignersByAddress>,
-  keyringsByAddresses: ReturnType<typeof selectKeyringsByAddresses>,
-  sourcesByAddress: ReturnType<typeof selectSourcesByAddress>,
-  mainCurrencySymbol: ReturnType<typeof selectMainCurrencySymbol>,
+  state: RootState,
   network: EVMNetwork
 ): CategorizedAccountTotals {
+  const accounts = getAccountState(state)
+  const assets = getAssetsState(state)
+  const accountSignersByAddress = selectAccountSignersByAddress(state)
+  const keyringsByAddresses = selectKeyringsByAddresses(state)
+  const sourcesByAddress = selectSourcesByAddress(state)
+  const mainCurrencySymbol = selectMainCurrencySymbol(state)
+
   return Object.entries(accounts.accountsData.evm[network.chainID] ?? {})
     .filter(([, accountData]) => typeof accountData !== "undefined")
     .map(([address, accountData]): AccountTotal => {
       const shortenedAddress = truncateAddress(address)
 
-      const accountSigner =
-        accountSignersByAddress[address] ?? ReadOnlyAccountSigner
+      const accountSigner = accountSignersByAddress[address]
       const keyringId = keyringsByAddresses[address]?.id
 
       const accountType = getAccountType(
@@ -414,32 +415,9 @@ function getNetworkAccountTotalsByCategory(
 }
 
 const selectNetworkAccountTotalsByCategoryResolver = createSelector(
-  getAccountState,
-  getAssetsState,
-  selectAccountSignersByAddress,
-  selectKeyringsByAddresses,
-  selectSourcesByAddress,
-  selectMainCurrencySymbol,
-  selectCurrentNetwork,
-  (
-    accounts,
-    assets,
-    accountSignersByAddress,
-    keyringsByAddresses,
-    sourcesByAddress,
-    mainCurrencySymbol
-  ): ((network: EVMNetwork) => CategorizedAccountTotals) => {
-    return (network: EVMNetwork) => {
-      return getNetworkAccountTotalsByCategory(
-        accounts,
-        assets,
-        accountSignersByAddress,
-        keyringsByAddresses,
-        sourcesByAddress,
-        mainCurrencySymbol,
-        network
-      )
-    }
+  (state: RootState) => state,
+  (state) => (network: EVMNetwork) => {
+    return getNetworkAccountTotalsByCategory(state, network)
   }
 )
 
