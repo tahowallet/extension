@@ -135,6 +135,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   private alchemyProvider: JsonRpcProvider | undefined
 
+  private alchemyProviderCreator:
+    | (() => WebSocketProvider | JsonRpcProvider)
+    | undefined
+
   supportsAlchemy = false
 
   /**
@@ -198,11 +202,13 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
     if (alchemyProviderCreator) {
       this.supportsAlchemy = true
-      this.alchemyProvider = alchemyProviderCreator.creator()
+      this.alchemyProviderCreator = alchemyProviderCreator.creator
+      this.alchemyProvider = this.alchemyProviderCreator()
     }
 
     setInterval(() => {
       this.attemptToReconnectToPrimaryProvider()
+      this.attemptToReconnectToAlchemyProvider()
     }, PRIMARY_PROVIDER_RECONNECT_INTERVAL)
 
     this.cachedChainId = utils.hexlify(Number(evmNetwork.chainID))
@@ -604,10 +610,21 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     return true
   }
 
+  private async attemptToReconnectToAlchemyProvider(): Promise<void> {
+    if (
+      this.alchemyProvider &&
+      this.alchemyProviderCreator &&
+      isClosedOrClosingWebSocketProvider(this.alchemyProvider)
+    ) {
+      // Always reconnect without resubscribing - since subscriptions
+      // should live on the currentProvider
+      this.alchemyProvider = this.alchemyProviderCreator()
+    }
+  }
+
   private async attemptToReconnectToPrimaryProvider(): Promise<unknown> {
     if (this.currentProviderIndex === 0) {
       // If we are already connected to the primary provider - don't resubscribe
-      // and stop attempting to reconnect.
       return null
     }
     const primaryProvider = this.providerCreators[0]()
