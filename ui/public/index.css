@@ -16,7 +16,7 @@
   --gold-40: #f5dab7;
   --gold-20: #fbedda;
   --gold-5: #fdf6ed;
-  --white: #ffffff;
+  --white: #D6EAE9;
 
   --error: #ec3137;
   --error-80: #ae383b;
@@ -52,10 +52,15 @@ body {
   background-color: var(--hunter-green);
 }
 
+html, body, #tally-root {
+  height: 100%;
+}
+
 body.popup {
   width: 384px;
-  height: 594px;
+  min-height: 594px;
   scrollbar-width: none;
+  overflow: hidden; /* all scrolling is done internally */
 }
 
 a {
