@@ -1,7 +1,6 @@
 import React, { useEffect, useState, ReactElement } from "react"
 import browser from "webextension-polyfill"
 import LedgerPanelContainer from "../../../components/Ledger/LedgerPanelContainer"
-import SharedButton from "../../../components/Shared/SharedButton"
 
 export default function Done(): ReactElement {
   const [os, setOS] = useState("windows")
@@ -88,17 +87,6 @@ export default function Done(): ReactElement {
           }
           alt={os === "mac" ? "option + T" : "alt + T"}
         />
-      </div>
-      <div className="button_container">
-        <SharedButton
-          size="medium"
-          iconSmall="close"
-          iconPosition="right"
-          type="tertiary"
-          onClick={() => window.close()}
-        >
-          Close tab
-        </SharedButton>
       </div>
       <style jsx>{`
         .button_container {

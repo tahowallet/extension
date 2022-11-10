@@ -43,6 +43,7 @@ function Navigation({ children }: Props): ReactElement {
           }
           .right_container {
             position: relative;
+            padding-top: 80px;
             width: 50%;
             height: 100%;
             float: right;
@@ -56,7 +57,9 @@ function Navigation({ children }: Props): ReactElement {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            padding: 2em;
+            padding: 3em 6em;
+            position: absolute;
+            z-index: 999;
           }
           .onboarding_container {
             height: 100%;

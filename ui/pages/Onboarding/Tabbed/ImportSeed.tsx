@@ -77,21 +77,22 @@ export default function ImportSeed(props: Props): ReactElement {
         >
           <div className="portion top">
             <div className="illustration_import" />
-            <h1 className="serif_header">Import account</h1>
+            <h1 className="serif_header">Import secret recovery phrase</h1>
             <div className="info">
               Copy paste or write down a 12 or 24 word secret recovery phrase.
             </div>
-
-            <div>
-              <p>Enter your passphrase below</p>
-              <div
-                id="recovery_phrase"
-                contentEditable
-                onInput={(e) => {
-                  setRecoveryPhrase(e.currentTarget.innerText)
-                }}
-              />
-              <p>{errorMessage}</p>
+            <div className="input_wrap">
+              <div className="wrapper">
+                <div
+                  id="recovery_phrase"
+                  contentEditable
+                  placeholder="test font here"
+                  onInput={(e) => {
+                    setRecoveryPhrase(e.currentTarget.innerText)
+                  }}
+                />
+                <p>{errorMessage}</p>
+              </div>
             </div>
             <SharedButton
               size={
@@ -100,7 +101,7 @@ export default function ImportSeed(props: Props): ReactElement {
                   : "large"
               }
               type="primary"
-              isDisabled={isImporting}
+              isDisabled={!recoveryPhrase}
               onClick={importWallet}
             >
               Import account
@@ -168,7 +169,7 @@ export default function ImportSeed(props: Props): ReactElement {
             : "16px"};
         }
         .illustration_import {
-          background: url("./images/illustration_import_seed@2x.png");
+          background: url("./images/doggo_import.svg");
           background-size: cover;
           width: 106.5px;
           height: 103.5px;
@@ -204,6 +205,13 @@ export default function ImportSeed(props: Props): ReactElement {
           margin-top: ${errorMessage ? "4px" : "15px"};
           width: 320px;
         }
+        .input_wrap {
+          position: relative;
+        }
+        .recovery_label {
+          position: absolute;
+          opacity: 0.5;
+        }
         #recovery_phrase {
           margin: 30px auto;
           width: 320px;
@@ -215,6 +223,20 @@ export default function ImportSeed(props: Props): ReactElement {
           word-wrap: break-word;
           color: white;
           font-family: inherit;
+        }
+        #recovery_phrase:focus .recovery_label {
+          top: 20px;
+          opacity: 0;
+        }
+        #recovery_phrase:focus {
+          border: 2px solid var(--trophy-gold);
+          outline: 0;
+        }
+        #recovery_phrase [contenteditable][placeholder]:empty:before {
+          content: attr(placeholder);
+          position: absolute;
+          color: gray;
+          background-color: transparent;
         }
       `}</style>
     </>

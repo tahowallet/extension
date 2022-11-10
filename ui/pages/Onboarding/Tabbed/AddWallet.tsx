@@ -86,7 +86,10 @@ function AddWalletRow({
           justify-content: space-between;
         }
         .option:hover {
-          background-color: var(--green-80);
+          color: var(--trophy-gold);
+        }
+        .option:hover img {
+          fill: var(--trophy-gold);
         }
         .icon {
           width: 32px;
@@ -193,7 +196,7 @@ export default function AddWallet(): ReactElement {
             background-color: var(--green-20);
           }
           .illustration {
-            background: url("./images/doggo_gold@2x.png");
+            background: url("./images/doggo_gold.svg");
             background-size: cover;
             width: 120px;
             height: 120px;

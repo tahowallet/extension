@@ -171,7 +171,7 @@ export default function SharedButton(
             height: 48px;
             border-radius: 8px;
             padding: 0 24px;
-            margin: 1em auto;
+            margin: 24px auto;
           }
           .icon_secondary_medium {
             width: 16px;

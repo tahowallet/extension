@@ -40,7 +40,6 @@ export default function Intro(): ReactElement {
       <style jsx>
         {`
           .bottom_content {
-            margin-top: 28px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -51,6 +50,9 @@ export default function Intro(): ReactElement {
             padding: 1em;
             margin: 3em 0;
             width: 100%;
+          }
+          .top {
+            display: none;
           }
           section {
             display: flex;
@@ -90,7 +92,7 @@ export default function Intro(): ReactElement {
             position: relative;
           }
           .illustration {
-            background: url("./images/doggo_grey@2x.png");
+            background: url("./images/doggo_intro.svg");
             background-size: cover;
             width: 120px;
             height: 120px;

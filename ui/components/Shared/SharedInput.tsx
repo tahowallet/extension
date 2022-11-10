@@ -112,6 +112,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             border: 2px solid var(--green-60);
             padding: 0px 16px;
             box-sizing: border-box;
+            text-align: left;
           }
           input::placeholder {
             color: var(--green-40);
