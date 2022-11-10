@@ -15,10 +15,12 @@ export function fixPolygonWETHIssue(tokensParam: TokenInfo[]): TokenInfo[] {
     (token) => token.address === wethToWethPOSAddress
   )
 
-  tokens[tokenToRenameIndex] = {
-    ...tokens[tokenToRenameIndex],
-    name: "PoS - Wrapped ETH (old)",
-    symbol: "PoS - Wrapped ETH (old)",
+  if (tokenToRenameIndex !== -1) {
+    tokens[tokenToRenameIndex] = {
+      ...tokens[tokenToRenameIndex],
+      name: "PoS - Wrapped ETH (old)",
+      symbol: "PoS - Wrapped ETH (old)",
+    }
   }
 
   const ethPOSToWethAddress = "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
@@ -27,11 +29,13 @@ export function fixPolygonWETHIssue(tokensParam: TokenInfo[]): TokenInfo[] {
     (token) => token.address === ethPOSToWethAddress
   )
 
-  tokens[tokenToRenameIndex] = {
-    ...tokens[tokenToRenameIndex],
-    name: "Wrapped Ether",
-    symbol: "WETH",
-    logoURI: "https://wallet-asset.matic.network/img/tokens/weth.svg",
+  if (tokenToRenameIndex !== -1) {
+    tokens[tokenToRenameIndex] = {
+      ...tokens[tokenToRenameIndex],
+      name: "Wrapped Ether",
+      symbol: "WETH",
+      logoURI: "https://wallet-asset.matic.network/img/tokens/weth.svg",
+    }
   }
 
   return tokens
