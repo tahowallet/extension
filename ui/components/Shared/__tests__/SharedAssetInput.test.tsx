@@ -175,7 +175,11 @@ describe("PriceDetails for SharedAssetInput", () => {
   test("should display amount main currency", () => {
     const amount = "1"
     const ui = render(
-      <PriceDetails amountMainCurrency={amount} priceImpact={undefined} />
+      <PriceDetails
+        amountMainCurrency={amount}
+        priceImpact={undefined}
+        isPriceDetailsLoaded
+      />
     )
     expect(ui.getByText(`${currencySymbol}${amount}`)).toBeVisible()
   })
@@ -183,15 +187,23 @@ describe("PriceDetails for SharedAssetInput", () => {
   test("should display that amount is lower than 0", () => {
     const amount = "0.00"
     const ui = render(
-      <PriceDetails amountMainCurrency={amount} priceImpact={undefined} />
+      <PriceDetails
+        amountMainCurrency={amount}
+        priceImpact={undefined}
+        isPriceDetailsLoaded
+      />
     )
     expect(ui.getByText(`<${currencySymbol}${amount}`)).toBeVisible()
   })
 
-  test("should display 0.00 when amount is undefined", () => {
+  test("should display 0.00 when price is loading", () => {
     const amount = "0.00"
     const ui = render(
-      <PriceDetails amountMainCurrency={undefined} priceImpact={undefined} />
+      <PriceDetails
+        amountMainCurrency={undefined}
+        priceImpact={undefined}
+        isPriceDetailsLoaded={false}
+      />
     )
     expect(ui.getByText(`${currencySymbol}${amount}`)).toBeVisible()
   })
@@ -200,7 +212,11 @@ describe("PriceDetails for SharedAssetInput", () => {
     const priceImpact = 1
 
     const ui = render(
-      <PriceDetails amountMainCurrency={undefined} priceImpact={priceImpact} />
+      <PriceDetails
+        amountMainCurrency={undefined}
+        priceImpact={priceImpact}
+        isPriceDetailsLoaded
+      />
     )
 
     expect(ui.getByText(`(${priceImpact}%)`)).toBeVisible()
@@ -208,7 +224,11 @@ describe("PriceDetails for SharedAssetInput", () => {
 
   test("should not display price impact when is undefined", () => {
     const ui = render(
-      <PriceDetails amountMainCurrency={undefined} priceImpact={undefined} />
+      <PriceDetails
+        amountMainCurrency={undefined}
+        priceImpact={undefined}
+        isPriceDetailsLoaded
+      />
     )
 
     expect(ui.queryByTestId("price_impact_percent")).not.toBeInTheDocument()
@@ -216,9 +236,25 @@ describe("PriceDetails for SharedAssetInput", () => {
 
   test("should not display price impact when is 0", () => {
     const ui = render(
-      <PriceDetails amountMainCurrency={undefined} priceImpact={0} />
+      <PriceDetails
+        amountMainCurrency={undefined}
+        priceImpact={0}
+        isPriceDetailsLoaded
+      />
     )
 
     expect(ui.queryByTestId("price_impact_percent")).not.toBeInTheDocument()
+  })
+
+  test("should display info when price is unknown", () => {
+    const ui = render(
+      <PriceDetails
+        amountMainCurrency={undefined}
+        priceImpact={0}
+        isPriceDetailsLoaded
+      />
+    )
+
+    expect(ui.getByText("No price information")).toBeVisible()
   })
 })

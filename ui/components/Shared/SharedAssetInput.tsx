@@ -285,10 +285,11 @@ const currencySymbol = "$"
 interface PriceDetailsProps {
   amountMainCurrency: string | undefined
   priceImpact: number | undefined
+  isPriceDetailsLoaded: boolean | undefined
 }
 
 export function PriceDetails(props: PriceDetailsProps): ReactElement {
-  const { amountMainCurrency, priceImpact } = props
+  const { amountMainCurrency, priceImpact, isPriceDetailsLoaded } = props
   const { t } = useTranslation("translation", {
     keyPrefix: "assetInput",
   })
@@ -317,9 +318,15 @@ export function PriceDetails(props: PriceDetailsProps): ReactElement {
 
   return (
     <div className="simple_text content_wrap">
-      {amountMainCurrency === "0.00" && "<"}
-      {currencySymbol}
-      {amountMainCurrency || "0.00"}
+      {isPriceDetailsLoaded && amountMainCurrency === undefined ? (
+        t("noAssetPrice")
+      ) : (
+        <>
+          {amountMainCurrency === "0.00" && "<"}
+          {currencySymbol}
+          {amountMainCurrency || "0.00"}
+        </>
+      )}
       {!!priceImpact && (
         <span
           data-testid="price_impact_percent"
@@ -380,6 +387,7 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   disableDropdown: boolean
   showMaxButton: boolean
   isDisabled?: boolean
+  isPriceDetailsLoaded?: boolean
   showPriceDetails?: boolean
   onAssetSelect?: (asset: AssetType) => void
   onAmountChange?: (value: string, errorMessage: string | undefined) => void
@@ -422,6 +430,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
     showMaxButton,
     isDisabled,
     showPriceDetails,
+    isPriceDetailsLoaded,
     onAssetSelect,
     onAmountChange,
   } = props
@@ -601,6 +610,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
               <PriceDetails
                 amountMainCurrency={amountMainCurrency}
                 priceImpact={priceImpact}
+                isPriceDetailsLoaded={isPriceDetailsLoaded}
               />
             ) : (
               <div className="error_message">{errorMessage}</div>
