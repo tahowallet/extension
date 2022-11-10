@@ -39,4 +39,6 @@ setTimeout(() => {
   }
 }, 1000)
 
+window.resizeBy(0, window.outerHeight - window.innerHeight)
+
 attachPopupUIToRootElement()

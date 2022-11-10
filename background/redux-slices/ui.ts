@@ -3,6 +3,8 @@ import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
+import { AccountSignerWithId } from "../signing"
+import { AccountSignerSettings } from "../ui"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 
@@ -11,12 +13,7 @@ const defaultSettings = {
   defaultWallet: false,
   showTestNetworks: false,
   collectAnalytics: false,
-}
-
-export interface Location {
-  pathname: string
-  key?: string
-  hash: string
+  hideBanners: false,
 }
 
 export type UIState = {
@@ -28,10 +25,12 @@ export type UIState = {
     defaultWallet: boolean
     showTestNetworks: boolean
     collectAnalytics: boolean
+    hideBanners: boolean
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
   slippageTolerance: number
+  accountSignerSettings: AccountSignerSettings[]
 }
 
 export type Events = {
@@ -56,6 +55,7 @@ export const initialState: UIState = {
   settings: defaultSettings,
   snackbarMessage: "",
   slippageTolerance: 0.01,
+  accountSignerSettings: [],
 }
 
 const uiSlice = createSlice({
@@ -82,6 +82,16 @@ const uiSlice = createSlice({
       settings: {
         ...state.settings,
         collectAnalytics,
+      },
+    }),
+    toggleHideBanners: (
+      state,
+      { payload: hideBanners }: { payload: boolean }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        hideBanners,
       },
     }),
     setShowingActivityDetail: (
@@ -138,6 +148,12 @@ const uiSlice = createSlice({
       ...state,
       slippageTolerance,
     }),
+    setAccountsSignerSettings: (
+      state,
+      { payload }: { payload: AccountSignerSettings[] }
+    ) => {
+      return { ...state, accountSignerSettings: payload }
+    },
   },
 })
 
@@ -147,12 +163,14 @@ export const {
   toggleHideDust,
   toggleTestNetworks,
   toggleCollectAnalytics,
+  toggleHideBanners,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
   clearSnackbarMessage,
   setRouteHistoryEntries,
   setSlippageTolerance,
+  setAccountsSignerSettings,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -176,6 +194,16 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
     dispatch(uiSlice.actions.setSelectedAccount(addressNetwork))
     // Do async work needed after the account is switched
     await emitter.emit("newSelectedAccountSwitched", addressNetwork)
+  }
+)
+
+export const updateSignerTitle = createBackgroundAsyncThunk(
+  "ui/updateSignerTitle",
+  async (
+    [signer, title]: [AccountSignerWithId, string],
+    { extra: { main } }
+  ) => {
+    return main.updateSignerTitle(signer, title)
   }
 )
 
@@ -253,4 +281,9 @@ export const selectShowTestNetworks = createSelector(
 export const selectCollectAnalytics = createSelector(
   selectSettings,
   (settings) => settings?.collectAnalytics
+)
+
+export const selectHideBanners = createSelector(
+  selectSettings,
+  (settings) => settings?.hideBanners
 )

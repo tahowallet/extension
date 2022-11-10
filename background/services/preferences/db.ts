@@ -4,6 +4,19 @@ import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork } from "../../accounts"
 
 import DEFAULT_PREFERENCES from "./defaults"
+import { AccountSignerSettings } from "../../ui"
+import { AccountSignerWithId } from "../../signing"
+
+type SignerRecordId = `${AccountSignerWithId["type"]}/${string}`
+
+/**
+ * Returns a unique id for an account signer
+ * in the form of "signerType/someId" e.g. "ledger/deviceId"
+ */
+const getSignerRecordId = (signer: AccountSignerWithId): SignerRecordId => {
+  const id = signer.type === "keyring" ? signer.keyringID : signer.deviceID
+  return `${signer.type}/${id}`
+}
 
 // The idea is to use this interface to describe the data structure stored in indexedDb
 // In the future this might also have a runtime type check capability, but it's good enough for now.
@@ -19,6 +32,11 @@ export interface Preferences {
 
 export class PreferenceDatabase extends Dexie {
   private preferences!: Dexie.Table<Preferences, number>
+
+  private signersSettings!: Dexie.Table<
+    AccountSignerSettings & { id: SignerRecordId },
+    string
+  >
 
   constructor() {
     super("tally/preferences")
@@ -208,6 +226,11 @@ export class PreferenceDatabase extends Dexie {
           })
       })
 
+    this.version(10).stores({
+      preferences: "++id",
+      signersSettings: "&id",
+    })
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
@@ -232,6 +255,29 @@ export class PreferenceDatabase extends Dexie {
     await this.preferences
       .toCollection()
       .modify({ selectedAccount: addressNetwork })
+  }
+
+  async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
+    return this.signersSettings.toArray()
+  }
+
+  async updateSignerTitle(
+    signer: AccountSignerWithId,
+    title: string
+  ): Promise<AccountSignerSettings[]> {
+    await this.signersSettings.put({
+      id: getSignerRecordId(signer),
+      signer,
+      title,
+    })
+    return this.signersSettings.toArray()
+  }
+
+  async deleteAccountSignerSettings(
+    signer: AccountSignerWithId
+  ): Promise<AccountSignerSettings[]> {
+    await this.signersSettings.delete(getSignerRecordId(signer))
+    return this.signersSettings.toArray()
   }
 }
 

@@ -66,6 +66,7 @@ import {
   setSelectedAccount,
   setNewSelectedAccount,
   setSnackbarMessage,
+  setAccountsSignerSettings,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -104,6 +105,7 @@ import {
   setVaultsAsStale,
 } from "./redux-slices/earn"
 import {
+  removeDevice,
   resetLedgerState,
   setDeviceConnectionStatus,
   setUsbDeviceCount,
@@ -118,8 +120,8 @@ import {
 } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
+  AccountSigner,
   SignatureResponse,
-  SignerType,
   TXSignatureResponse,
 } from "./services/signing"
 import { ReferrerStats } from "./services/doggo/db"
@@ -141,6 +143,7 @@ import {
 import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
 import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
+import { AccountSignerWithId } from "./signing"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -512,16 +515,27 @@ export default class Main extends BaseService<never> {
 
   async removeAccount(
     address: HexString,
-    signerType?: SignerType
+    signer: AccountSigner,
+    lastAddressInAccount: boolean
   ): Promise<void> {
     this.store.dispatch(deleteAccount(address))
+
+    if (signer.type !== "read-only" && lastAddressInAccount) {
+      await this.preferenceService.deleteAccountSignerSettings(signer)
+    }
+
+    if (signer.type === "ledger" && lastAddressInAccount) {
+      this.store.dispatch(removeDevice(signer.deviceID))
+    }
+
     this.store.dispatch(removeActivities(address))
     this.store.dispatch(deleteNFts(address))
+
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))
     await this.providerBridgeService.revokePermissionsForAddress(address)
     // TODO Adjust to handle specific network.
-    await this.signingService.removeAccount(address, signerType)
+    await this.signingService.removeAccount(address, signer.type)
   }
 
   async importLedgerAccounts(
@@ -1269,6 +1283,13 @@ export default class Main extends BaseService<never> {
       }
     )
 
+    this.preferenceService.emitter.on(
+      "updatedSignerSettings",
+      (accountSignerSettings) => {
+        this.store.dispatch(setAccountsSignerSettings(accountSignerSettings))
+      }
+    )
+
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
 
@@ -1362,6 +1383,13 @@ export default class Main extends BaseService<never> {
     )
 
     return getActivityDetails(enrichedTransaction)
+  }
+
+  async updateSignerTitle(
+    signer: AccountSignerWithId,
+    title: string
+  ): Promise<void> {
+    return this.preferenceService.updateAccountSignerTitle(signer, title)
   }
 
   async resolveNameOnNetwork(

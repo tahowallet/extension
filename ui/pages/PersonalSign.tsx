@@ -53,12 +53,7 @@ export default function PersonalSignData(): ReactElement {
       return <></>
     }
 
-    return (
-      <Signing
-        accountSigner={currentAccountSigner}
-        request={signingDataRequest}
-      />
-    )
+    return <Signing request={signingDataRequest} />
   }
 
   if (

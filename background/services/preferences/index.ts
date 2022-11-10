@@ -9,6 +9,8 @@ import { normalizeEVMAddress } from "../../lib/utils"
 import { ETHEREUM, OPTIMISM, ARBITRUM_ONE } from "../../constants"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString } from "../../types"
+import { AccountSignerSettings } from "../../ui"
+import { AccountSignerWithId } from "../../signing"
 
 type AddressBookEntry = {
   network: EVMNetwork
@@ -91,6 +93,7 @@ interface Events extends ServiceLifecycleEvents {
   initializeDefaultWallet: boolean
   initializeSelectedAccount: AddressOnNetwork
   addressBookEntryModified: AddressBookEntry
+  updatedSignerSettings: AccountSignerSettings[]
 }
 
 /*
@@ -189,6 +192,29 @@ export default class PreferenceService extends BaseService<Events> {
         sameNetwork(network, entryNetwork) &&
         normalizeEVMAddress(address) === normalizeEVMAddress(entryAddress)
     )
+  }
+
+  async deleteAccountSignerSettings(
+    signer: AccountSignerWithId
+  ): Promise<void> {
+    const updatedSignerSettings = await this.db.deleteAccountSignerSettings(
+      signer
+    )
+
+    this.emitter.emit("updatedSignerSettings", updatedSignerSettings)
+  }
+
+  async updateAccountSignerTitle(
+    signer: AccountSignerWithId,
+    title: string
+  ): Promise<void> {
+    const updatedSignerSettings = this.db.updateSignerTitle(signer, title)
+
+    this.emitter.emit("updatedSignerSettings", await updatedSignerSettings)
+  }
+
+  async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
+    return this.db.getAccountSignerSettings()
   }
 
   async getCurrency(): Promise<FiatCurrency> {

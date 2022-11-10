@@ -38,6 +38,7 @@ const impersonateMetamaskWhitelist = [
   "tofunft.com",
   "aboard.exchange",
   "portal.zksync.io",
+  "blur.io",
 ]
 
 export default class TallyWindowProvider extends EventEmitter {

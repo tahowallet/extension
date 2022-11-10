@@ -1,7 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { Redirect } from "react-router-dom"
 import {
-  getAddressCount,
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
   selectCurrentNetwork,
@@ -21,16 +19,13 @@ import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOp
 import NFTsWallet from "../components/NFTs/NFTsWallet"
 import SharedBanner from "../components/Shared/SharedBanner"
 import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultBanner"
+import WalletBanner from "../components/Wallet/Banner/WalletBanner"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "wallet" })
   const [panelNumber, setPanelNumber] = useState(0)
 
   const dispatch = useBackgroundDispatch()
-
-  const hasAccounts = useBackgroundSelector(
-    (state) => getAddressCount(state) > 0
-  )
 
   //  accountLoading, hasWalletErrorCode
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
@@ -65,11 +60,6 @@ export default function Wallet(): ReactElement {
     (background) => background.ui?.initializationLoadingTimeExpired
   )
 
-  // If an account doesn't exist, display onboarding
-  if (!hasAccounts) {
-    return <Redirect to="/onboarding/info-intro" />
-  }
-
   const panelNames = [t("pages.assets")]
 
   if (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
@@ -88,6 +78,9 @@ export default function Wallet(): ReactElement {
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           />
         </div>
+        {isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && (
+          <WalletBanner />
+        )}
         {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
           <OnboardingOpenClaimFlowBanner />
         )}
