@@ -42,7 +42,7 @@ import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
-import ApproveQuoteBtn from "./ApproveQuoteBtn"
+import ApproveQuoteBtn from "../components/Swap/ApproveQuoteButton"
 import { isSameAsset, useSwapQuote } from "../utils/swap"
 import { useOnMount, usePrevious } from "../hooks/react-hooks"
 
