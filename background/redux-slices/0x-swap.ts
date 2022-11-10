@@ -359,7 +359,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
 
       const priceDetails = {
         priceImpact: quote.estimatedPriceImpact
-          ? +quote.estimatedPriceImpact * 100
+          ? +quote.estimatedPriceImpact
           : 0,
         ...(await getCurrencyAmounts(
           quoteRequest,

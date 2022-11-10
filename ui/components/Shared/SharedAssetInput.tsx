@@ -280,27 +280,23 @@ SelectedAssetButton.defaultProps = {
   toggleIsAssetMenuOpen: null,
 }
 
-interface AdditionalInformationProps {
-  amountMainCurrency: string | undefined
-  priceImpact: number | undefined
-  showCurrencyAmount: boolean
-  showPriceImpact: boolean
-}
-
 const currencySymbol = "$"
 
-export function AdditionalInformation(
-  props: AdditionalInformationProps
-): ReactElement {
-  const {
-    amountMainCurrency,
-    priceImpact,
-    showCurrencyAmount,
-    showPriceImpact,
-  } = props
+interface PriceDetailsProps {
+  amountMainCurrency: string | undefined
+  priceImpact: number | undefined
+}
+
+export function PriceDetails(props: PriceDetailsProps): ReactElement {
+  const { amountMainCurrency, priceImpact } = props
   const { t } = useTranslation("translation", {
     keyPrefix: "assetInput",
   })
+
+  const formatPriceImpact = useCallback(
+    (value: number): number => Math.round(value * 100) / 100,
+    []
+  )
 
   const getPriceImpactColor = useCallback(
     (value: number | undefined): string => {
@@ -319,29 +315,17 @@ export function AdditionalInformation(
     []
   )
 
-  const renderAmountMainCurrency = () => (
-    <>
-      {priceImpact !== undefined && amountMainCurrency === undefined ? (
-        t("noAssetPrice")
-      ) : (
-        <>
-          {amountMainCurrency === "0.00" && "<"}
-          {currencySymbol}
-          {amountMainCurrency || "0.00"}
-        </>
-      )}
-    </>
-  )
-
   return (
     <div className="simple_text content_wrap">
-      {showCurrencyAmount && renderAmountMainCurrency()}
-      {showPriceImpact && priceImpact !== undefined && (
+      {amountMainCurrency === "0.00" && "<"}
+      {currencySymbol}
+      {amountMainCurrency || "0.00"}
+      {!!priceImpact && (
         <span
           data-testid="price_impact_percent"
           className="price_impact_percent"
         >
-          ({priceImpact.toFixed(2)}%
+          ({formatPriceImpact(priceImpact)}%
           <SharedTooltip
             width={180}
             height={27}
@@ -396,8 +380,7 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   disableDropdown: boolean
   showMaxButton: boolean
   isDisabled?: boolean
-  showCurrencyAmount?: boolean
-  showPriceImpact?: boolean
+  showPriceDetails?: boolean
   onAssetSelect?: (asset: AssetType) => void
   onAmountChange?: (value: string, errorMessage: string | undefined) => void
 }
@@ -438,8 +421,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
     disableDropdown,
     showMaxButton,
     isDisabled,
-    showCurrencyAmount,
-    showPriceImpact,
+    showPriceDetails,
     onAssetSelect,
     onAmountChange,
   } = props
@@ -614,19 +596,17 @@ export default function SharedAssetInput<T extends AnyAsset>(
               )
             }
           />
-          {(showCurrencyAmount || showPriceImpact) &&
+          {showPriceDetails &&
             (!errorMessage ? (
-              <AdditionalInformation
+              <PriceDetails
                 amountMainCurrency={amountMainCurrency}
                 priceImpact={priceImpact}
-                showCurrencyAmount={!!showCurrencyAmount}
-                showPriceImpact={!!showPriceImpact}
               />
             ) : (
               <div className="error_message">{errorMessage}</div>
             ))}
         </div>
-        {errorMessage && !showCurrencyAmount && !showPriceImpact && (
+        {errorMessage && !showPriceDetails && (
           <div className="error_message error_message_wrap">{errorMessage}</div>
         )}
       </div>
