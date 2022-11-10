@@ -29,7 +29,7 @@ import { setSnackbarMessage } from "./ui"
 import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
 import { AssetsState } from "./assets"
 import {
-  getCurrencyAmounts,
+  checkCurrencyAmount,
   PriceDetails,
   SwapQuoteRequest,
 } from "./utils/0x-swap-utils"
@@ -361,12 +361,20 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
         priceImpact: quote.estimatedPriceImpact
           ? +quote.estimatedPriceImpact
           : 0,
-        ...(await getCurrencyAmounts(
-          quoteRequest,
+        buyCurrencyAmount: await checkCurrencyAmount(
+          +quote.buyTokenToEthRate,
+          quoteRequest.assets.buyAsset,
+          assets,
+          quote.buyAmount,
+          quoteRequest.network
+        ),
+        sellCurrencyAmount: await checkCurrencyAmount(
+          +quote.sellTokenToEthRate,
+          quoteRequest.assets.sellAsset,
           assets,
           quote.sellAmount,
-          quote.buyAmount
-        )),
+          quoteRequest.network
+        ),
       }
 
       return { quote, needsApproval, priceDetails }

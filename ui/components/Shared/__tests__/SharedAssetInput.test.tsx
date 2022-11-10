@@ -213,7 +213,7 @@ describe("PriceDetails for SharedAssetInput", () => {
 
     const ui = render(
       <PriceDetails
-        amountMainCurrency={undefined}
+        amountMainCurrency="1"
         priceImpact={priceImpact}
         isPriceDetailsLoaded
       />
@@ -256,5 +256,6 @@ describe("PriceDetails for SharedAssetInput", () => {
     )
 
     expect(ui.getByText("No price information")).toBeVisible()
+    expect(ui.queryByTestId("price_impact_percent")).not.toBeInTheDocument()
   })
 })

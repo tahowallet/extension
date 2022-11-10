@@ -110,34 +110,40 @@ export async function getAssetAmount(
   )
 }
 
-export async function getCurrencyAmounts(
-  quoteRequest: SwapQuoteRequest,
+export async function getCurrencyAmount(
+  asset: FungibleAsset | SmartContractFungibleAsset,
   assets: AssetsState,
-  sellAmount: string,
-  buyAmount: string
-): Promise<PriceDetails> {
-  const assetSellAmount = await getAssetAmount(
+  amount: string,
+  network: EVMNetwork
+): Promise<string | undefined> {
+  const assetAmount = await getAssetAmount(
     assets,
-    quoteRequest.assets.sellAsset,
+    asset,
     fixedPointNumberToString({
-      amount: BigInt(sellAmount),
-      decimals: quoteRequest.assets.sellAsset.decimals,
+      amount: BigInt(amount),
+      decimals: asset.decimals,
     }),
-    quoteRequest.network
+    network
   )
+  return assetAmount?.localizedMainCurrencyAmount
+}
 
-  const assetBuyAmount = await getAssetAmount(
-    assets,
-    quoteRequest.assets.buyAsset,
-    fixedPointNumberToString({
-      amount: BigInt(buyAmount),
-      decimals: quoteRequest.assets.buyAsset.decimals,
-    }),
-    quoteRequest.network
-  )
+/**
+ * If the tokenToEthRate of a is less than 1
+ * we will probably not get information about the price of the asset.
+ * The goal is to reduce the number of price requests sent to CoinGecko.
+ */
+export async function checkCurrencyAmount(
+  tokenToEthRate: number,
+  asset: FungibleAsset | SmartContractFungibleAsset,
+  assets: AssetsState,
+  amount: string,
+  network: EVMNetwork
+): Promise<string | undefined> {
+  const currencyAmount =
+    tokenToEthRate >= 1
+      ? await getCurrencyAmount(asset, assets, amount, network)
+      : undefined
 
-  return {
-    buyCurrencyAmount: assetBuyAmount?.localizedMainCurrencyAmount,
-    sellCurrencyAmount: assetSellAmount?.localizedMainCurrencyAmount,
-  }
+  return currencyAmount
 }
