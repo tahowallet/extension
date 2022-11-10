@@ -50,6 +50,7 @@ const symbolPriority = Object.fromEntries(
   ])
 )
 interface SelectAssetMenuContentProps<AssetType extends AnyAsset> {
+  currentNetwork: EVMNetwork
   assets: AnyAssetWithOptionalAmount<AssetType>[]
   setSelectedAssetAndClose: (
     asset: AnyAssetWithOptionalAmount<AssetType>
@@ -116,7 +117,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
   props: SelectAssetMenuContentProps<T>
 ): ReactElement {
   const { t } = useTranslation()
-  const { setSelectedAssetAndClose, assets } = props
+  const { setSelectedAssetAndClose, assets, currentNetwork } = props
   const [searchTerm, setSearchTerm] = useState("")
   const searchInput = useRef<HTMLInputElement | null>(null)
 
@@ -177,6 +178,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
               }
               assetAndAmount={assetWithOptionalAmount}
               onClick={() => setSelectedAssetAndClose(assetWithOptionalAmount)}
+              currentNetwork={currentNetwork}
             />
           )
         })}
@@ -561,6 +563,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
       >
         {assetsAndAmounts && (
           <SelectAssetMenuContent
+            currentNetwork={currentNetwork}
             assets={assetsAndAmounts}
             setSelectedAssetAndClose={setSelectedAssetAndClose}
           />
