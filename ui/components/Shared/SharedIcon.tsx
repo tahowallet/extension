@@ -59,6 +59,7 @@ export default function SharedIcon(props: Props): ReactElement {
     <i className="icon">
       <style jsx>{`
         .icon {
+          display: inline-block;
           mask-image: url("./images/${icon}");
           mask-size: cover;
           width: ${width}px;

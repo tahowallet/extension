@@ -8,7 +8,10 @@ import {
   selectTransactionData,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import { getAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  getAccountTotal,
+  selectCurrentAccountSigner,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import {
   useBackgroundDispatch,
@@ -42,17 +45,12 @@ export default function SignTransaction(): ReactElement {
 
   const [isTransactionSigning, setIsTransactionSigning] = useState(false)
 
-  const accountSigner = signerAccountTotal?.accountSigner ?? null
+  const accountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
   const isLocked = useIsSignerLocked(accountSigner)
 
   if (isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI)) {
-    return (
-      <Signing
-        accountSigner={accountSigner ?? undefined}
-        request={transactionDetails}
-      />
-    )
+    return <Signing request={transactionDetails} />
   }
 
   if (
