@@ -28,13 +28,11 @@ import { WEBSITE_ORIGIN } from "../../constants/website"
 import { PermissionMap } from "./utils"
 import { toHexChainID } from "../../networks"
 import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
-import { AddressOnNetwork } from "../../accounts"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
   initializeAllowedPages: PermissionMap
   setClaimReferrer: string
-  dappOpened: AddressOnNetwork
 }
 
 /**
@@ -133,12 +131,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
       await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
         origin
       )
-
-    if (event.request.method === "eth_requestAccounts") {
-      // This is analogous to "User opened a dapp on chain X"
-      const { address } = await this.preferenceService.getSelectedAccount()
-      this.emitter.emit("dappOpened", { address, network })
-    }
 
     const originPermission = await this.checkPermission(origin, network.chainID)
     if (origin === TALLY_INTERNAL_ORIGIN) {
