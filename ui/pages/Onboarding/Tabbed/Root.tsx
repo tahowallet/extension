@@ -32,13 +32,14 @@ function Navigation({ children }: Props): ReactElement {
             float: left;
             text-align: center;
             padding-top: 3em;
-            animation: rotate;
             background: radial-gradient(
-              ellipse at right top,
-              rgba(36, 107, 103, 0.5) 0%,
-              rgba(0, 20, 19, 1) 100%
+              circle,
+              rgba(36, 107, 103, 1) 0%,
+              rgba(12, 47, 44, 1) 50%,
+              rgba(4, 20, 20, 1) 100%
             );
-            transition: all 0.2s ease-in-out;
+            background-size: 140% 200%;
+            animation: gradient 20s ease infinite;
           }
           .right_container {
             position: relative;
@@ -90,20 +91,15 @@ function Navigation({ children }: Props): ReactElement {
             font-size: 1em;
             margin: 2em;
           }
-          @keyframes rotate {
+          @keyframes gradient {
             0% {
-              background: radial-gradient(
-                ellipse at right top,
-                rgba(36, 107, 103, 0.5) 0%,
-                rgba(0, 20, 19, 1) 100%
-              );
+              background-position: 100% 100%;
+            }
+            50% {
+              background-position: 25% 50%;
             }
             100% {
-              background: radial-gradient(
-                ellipse at left bottom,
-                rgba(36, 107, 103, 0.5) 0%,
-                rgba(0, 20, 19, 1) 100%
-              );
+              background-position: 100% 100%;
             }
           }
           @media (max-width: 980px) {
