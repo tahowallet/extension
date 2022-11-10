@@ -16,6 +16,7 @@ import {
   AssetMainCurrencyAmount,
   enrichAssetAmountWithMainCurrencyValues,
 } from "./asset-utils"
+import { hardcodedMainCurrencySymbol } from "./constants"
 
 interface SwapAssets {
   sellAsset: SmartContractFungibleAsset | FungibleAsset
@@ -39,9 +40,9 @@ export type SwapQuoteRequest = {
 }
 
 export type PriceDetails = {
-  priceImpact: number | undefined
-  buyCurrencyAmount: string | undefined
-  sellCurrencyAmount: string | undefined
+  priceImpact?: number | undefined
+  buyCurrencyAmount?: string | undefined
+  sellCurrencyAmount?: string | undefined
 }
 
 export async function getAssetPricePoint(
@@ -84,8 +85,6 @@ export async function getAssetAmount(
     } & AssetMainCurrencyAmount)
   | undefined
 > {
-  const mainCurrencySymbol = "USD"
-
   const fixedPointAmount = parseToFixedPointNumber(amount.toString())
   if (typeof fixedPointAmount === "undefined") {
     return undefined
@@ -98,7 +97,7 @@ export async function getAssetAmount(
   const assetPricePoint = selectAssetPricePoint(
     assets,
     asset?.symbol,
-    mainCurrencySymbol
+    hardcodedMainCurrencySymbol
   )
 
   return enrichAssetAmountWithMainCurrencyValues(
@@ -111,17 +110,7 @@ export async function getAssetAmount(
   )
 }
 
-export function getPriceImpact(
-  buyCurrencyAmount: number | undefined,
-  sellCurrencyAmount: number | undefined
-): number | undefined {
-  if (buyCurrencyAmount && sellCurrencyAmount) {
-    return +((buyCurrencyAmount / sellCurrencyAmount - 1) * 100).toFixed(2)
-  }
-  return undefined
-}
-
-export async function calculatePriceDetails(
+export async function getCurrencyAmounts(
   quoteRequest: SwapQuoteRequest,
   assets: AssetsState,
   sellAmount: string,
@@ -147,14 +136,8 @@ export async function calculatePriceDetails(
     quoteRequest.network
   )
 
-  const priceImpact = getPriceImpact(
-    assetBuyAmount?.mainCurrencyAmount,
-    assetSellAmount?.mainCurrencyAmount
-  )
-
   return {
     buyCurrencyAmount: assetBuyAmount?.localizedMainCurrencyAmount,
     sellCurrencyAmount: assetSellAmount?.localizedMainCurrencyAmount,
-    priceImpact,
   }
 }

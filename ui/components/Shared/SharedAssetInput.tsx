@@ -14,7 +14,6 @@ import {
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
-import { selectPriceDetails } from "@tallyho/tally-background/redux-slices/0x-swap"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem, {
@@ -24,7 +23,6 @@ import SharedAssetItem, {
 import SharedAssetIcon from "./SharedAssetIcon"
 import SharedIcon from "./SharedIcon"
 import SharedTooltip from "./SharedTooltip"
-import { useBackgroundSelector } from "../../hooks"
 
 // List of symbols we want to display first.  Lower array index === higher priority.
 // For now we just prioritize somewhat popular assets that we are able to load an icon for.
@@ -284,6 +282,7 @@ SelectedAssetButton.defaultProps = {
 
 interface AdditionalInformationProps {
   amountMainCurrency: string | undefined
+  priceImpact: number | undefined
   showCurrencyAmount: boolean
   showPriceImpact: boolean
 }
@@ -293,11 +292,15 @@ const currencySymbol = "$"
 export function AdditionalInformation(
   props: AdditionalInformationProps
 ): ReactElement {
-  const { amountMainCurrency, showCurrencyAmount, showPriceImpact } = props
+  const {
+    amountMainCurrency,
+    priceImpact,
+    showCurrencyAmount,
+    showPriceImpact,
+  } = props
   const { t } = useTranslation("translation", {
     keyPrefix: "assetInput",
   })
-  const priceDetails = useBackgroundSelector(selectPriceDetails)
 
   const getPriceImpactColor = useCallback(
     (value: number | undefined): string => {
@@ -318,7 +321,7 @@ export function AdditionalInformation(
 
   const renderAmountMainCurrency = () => (
     <>
-      {priceDetails !== undefined && amountMainCurrency === undefined ? (
+      {priceImpact !== undefined && amountMainCurrency === undefined ? (
         t("noAssetPrice")
       ) : (
         <>
@@ -333,38 +336,34 @@ export function AdditionalInformation(
   return (
     <div className="simple_text content_wrap">
       {showCurrencyAmount && renderAmountMainCurrency()}
-      {showPriceImpact &&
-        priceDetails?.priceImpact !== undefined &&
-        priceDetails?.priceImpact < 0 && (
-          <span
-            data-testid="price_impact_percent"
-            className="price_impact_percent"
+      {showPriceImpact && priceImpact !== undefined && (
+        <span
+          data-testid="price_impact_percent"
+          className="price_impact_percent"
+        >
+          ({priceImpact.toFixed(2)}%
+          <SharedTooltip
+            width={180}
+            height={27}
+            horizontalPosition="left"
+            IconComponent={() => (
+              <SharedIcon
+                width={16}
+                icon="icons/m/info.svg"
+                color={`var(--${getPriceImpactColor(priceImpact)})`}
+                customStyles="margin-left: -5px;"
+              />
+            )}
           >
-            ({priceDetails.priceImpact}%
-            <SharedTooltip
-              width={180}
-              height={27}
-              horizontalPosition="left"
-              IconComponent={() => (
-                <SharedIcon
-                  width={16}
-                  icon="icons/m/info.svg"
-                  color={`var(--${getPriceImpactColor(
-                    priceDetails?.priceImpact
-                  )})`}
-                  customStyles="margin-left: -5px;"
-                />
-              )}
-            >
-              <div>
-                {t("priceImpactTooltip.firstLine")}
-                <br />
-                {t("priceImpactTooltip.secondLine")}
-              </div>
-            </SharedTooltip>
-            )
-          </span>
-        )}
+            <div>
+              {t("priceImpactTooltip.firstLine")}
+              <br />
+              {t("priceImpactTooltip.secondLine")}
+            </div>
+          </SharedTooltip>
+          )
+        </span>
+      )}
       <style jsx>{`
         .content_wrap {
           font-size: 14px;
@@ -374,7 +373,7 @@ export function AdditionalInformation(
           gap: 2px;
         }
         .price_impact_percent {
-          color: var(--${getPriceImpactColor(priceDetails?.priceImpact)});
+          color: var(--${getPriceImpactColor(priceImpact)});
           display: flex;
           flex-direction: row;
           align-items: center;
@@ -392,6 +391,7 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   selectedAsset: AssetType | undefined
   amount: string
   amountMainCurrency?: string
+  priceImpact?: number
   isAssetOptionsLocked: boolean
   disableDropdown: boolean
   showMaxButton: boolean
@@ -433,6 +433,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
     selectedAsset,
     amount,
     amountMainCurrency,
+    priceImpact,
     isAssetOptionsLocked,
     disableDropdown,
     showMaxButton,
@@ -617,6 +618,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             (!errorMessage ? (
               <AdditionalInformation
                 amountMainCurrency={amountMainCurrency}
+                priceImpact={priceImpact}
                 showCurrencyAmount={!!showCurrencyAmount}
                 showPriceImpact={!!showPriceImpact}
               />

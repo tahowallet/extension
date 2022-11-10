@@ -29,7 +29,7 @@ import { setSnackbarMessage } from "./ui"
 import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
 import { AssetsState } from "./assets"
 import {
-  calculatePriceDetails,
+  getCurrencyAmounts,
   PriceDetails,
   SwapQuoteRequest,
 } from "./utils/0x-swap-utils"
@@ -58,7 +58,6 @@ export interface SwapState {
   latestQuoteRequest?: SwapQuoteRequest | undefined
   finalQuote?: ZrxQuote | undefined
   inProgressApprovalContract?: string
-  priceDetails?: PriceDetails | undefined
 }
 
 export const initialState: SwapState = {
@@ -103,14 +102,6 @@ const swapSlice = createSlice({
       finalQuote: undefined,
       latestQuoteRequest: undefined,
     }),
-
-    setPriceDetails: (
-      state,
-      { payload: priceDetails }: { payload: PriceDetails | undefined }
-    ) => ({
-      ...state,
-      priceDetails,
-    }),
   },
 })
 
@@ -123,7 +114,6 @@ export const {
   setFinalSwapQuote,
   clearSwapQuote,
   clearInProgressApprovalContract: clearApprovalInProgress,
-  setPriceDetails,
 } = swapSlice.actions
 
 export default swapSlice.reducer
@@ -316,7 +306,10 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
       assets: AssetsState
     },
     { dispatch }
-  ): Promise<{ quote: ZrxPrice; needsApproval: boolean } | undefined> => {
+  ): Promise<
+    | { quote: ZrxPrice; needsApproval: boolean; priceDetails: PriceDetails }
+    | undefined
+  > => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
 
@@ -364,16 +357,19 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
 
       dispatch(setLatestQuoteRequest(quoteRequest))
 
-      const priceDetails = await calculatePriceDetails(
-        quoteRequest,
-        assets,
-        quote.sellAmount,
-        quote.buyAmount
-      )
+      const priceDetails = {
+        priceImpact: quote.estimatedPriceImpact
+          ? +quote.estimatedPriceImpact * 100
+          : 0,
+        ...(await getCurrencyAmounts(
+          quoteRequest,
+          assets,
+          quote.sellAmount,
+          quote.buyAmount
+        )),
+      }
 
-      dispatch(setPriceDetails(priceDetails))
-
-      return { quote, needsApproval }
+      return { quote, needsApproval, priceDetails }
     } catch (error) {
       logger.warn("Swap price API call threw an error!", apiData, error)
       parseAndNotifyOnZeroExApiError(error, dispatch)
@@ -499,9 +495,4 @@ export const selectLatestQuoteRequest = createSelector(
 export const selectInProgressApprovalContract = createSelector(
   (state: { swap: SwapState }) => state.swap.inProgressApprovalContract,
   (approvalInProgress) => approvalInProgress
-)
-
-export const selectPriceDetails = createSelector(
-  (state: { swap: SwapState }) => state.swap.priceDetails,
-  (priceDetails) => priceDetails
 )
