@@ -1,6 +1,9 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { AnyAsset, AnyAssetAmount } from "@tallyho/tally-background/assets"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
 import SharedAssetIcon from "./SharedAssetIcon"
+import SharedIcon from "./SharedIcon"
+import { scanWebsite } from "../../utils/constants"
 
 export type AnyAssetWithOptionalAmount<T extends AnyAsset> =
   | {
@@ -23,6 +26,7 @@ export function hasAmounts<T extends AnyAsset>(
 }
 
 interface Props<T extends AnyAsset> {
+  currentNetwork: EVMNetwork
   assetAndAmount: AnyAssetWithOptionalAmount<T>
   onClick?: (asset: T) => void
 }
@@ -30,12 +34,22 @@ interface Props<T extends AnyAsset> {
 export default function SharedAssetItem<T extends AnyAsset>(
   props: Props<T>
 ): ReactElement {
-  const { onClick, assetAndAmount } = props
+  const { onClick, assetAndAmount, currentNetwork } = props
   const { asset } = assetAndAmount
+  const [contractLink, setContractLink] = useState("")
 
   function handleClick() {
     onClick?.(asset)
   }
+
+  useEffect(() => {
+    const baseLink = scanWebsite[currentNetwork.chainID]?.url
+    if ("contractAddress" in asset && baseLink) {
+      setContractLink(`${baseLink}/token/${asset.contractAddress}`)
+    } else {
+      setContractLink("")
+    }
+  }, [asset, currentNetwork])
 
   return (
     <li>
@@ -53,13 +67,24 @@ export default function SharedAssetItem<T extends AnyAsset>(
             </div>
           </div>
 
-          {hasAmounts(assetAndAmount) ? (
-            <div className="amount">
-              {assetAndAmount.localizedDecimalAmount}
-            </div>
-          ) : (
-            <></>
-          )}
+          <div className="right_content">
+            {hasAmounts(assetAndAmount) && (
+              <div className="amount">
+                {assetAndAmount.localizedDecimalAmount}
+              </div>
+            )}
+            {contractLink && (
+              <SharedIcon
+                icon="icons/s/new-tab.svg"
+                width={16}
+                color="var(--green-40)"
+                hoverColor="var(--trophy-gold)"
+                onClick={() => {
+                  window.open(contractLink, "_blank")?.focus()
+                }}
+              />
+            )}
+          </div>
         </div>
       </button>
       <style jsx>
@@ -79,6 +104,14 @@ export default function SharedAssetItem<T extends AnyAsset>(
             height: 41px;
             justify-content: space-between;
             margin-left: 16px;
+          }
+          .right_content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+          }
+          .amount {
+            color: var(--green-40);
           }
           .token_group {
             display: flex;
