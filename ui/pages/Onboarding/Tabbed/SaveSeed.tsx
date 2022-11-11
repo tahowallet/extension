@@ -174,6 +174,9 @@ function SeedContainer(): ReactElement {
           line-height: 42px;
           margin: 1em auto;
         }
+        input:disabled {
+          color: white;
+        }
       `}</style>
     </>
   )

@@ -72,11 +72,11 @@ function AddWalletRow({
         }
         .option {
           display: flex;
-          height: 64px;
-          border-radius: 16px;
+          height: auto;
+          border-radius: 0;
           background-color: var(--green-95);
           align-items: center;
-          padding: 16px;
+          padding: 20px 0;
           box-sizing: border-box;
           margin-bottom: 0px;
           color: var(--green-40);
@@ -88,8 +88,12 @@ function AddWalletRow({
         .option:hover {
           color: var(--trophy-gold);
         }
-        .option:hover img {
-          fill: var(--trophy-gold);
+        .option:hover button {
+          background-color: var(--trophy-gold) !important;
+        }
+        li:nth-of-type(2) .option {
+          border-top: 1px solid black;
+          border-bottom: 1px solid black;
         }
         .icon {
           width: 32px;

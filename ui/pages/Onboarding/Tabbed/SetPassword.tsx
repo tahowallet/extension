@@ -86,7 +86,7 @@ export default function SetPassword({
               height: 140px;
               flex-shrink: 0;
               margin: 0 auto;
-              margin-top: 0;
+              margin-top: -8px;
               animation: fadeIn ease 0.5s;
             }
           `}

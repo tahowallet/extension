@@ -24,6 +24,7 @@ export default function ImportSeed(props: Props): ReactElement {
   const [errorMessage, setErrorMessage] = useState("")
   const [path, setPath] = useState<string>("m/44'/60'/0'/0")
   const [isImporting, setIsImporting] = useState(false)
+  const [isActive, setActive] = useState(false)
 
   const dispatch = useBackgroundDispatch()
   const keyringImport = useBackgroundSelector(
@@ -66,6 +67,13 @@ export default function ImportSeed(props: Props): ReactElement {
 
   if (!areKeyringsUnlocked) return <></>
 
+  // eslint-disable-next-line
+  const activeBox = (event: React.MouseEvent<HTMLInputElement>) => {
+    if (!isActive) {
+      setActive((current) => !current)
+    }
+  }
+
   return (
     <>
       <div className="content">
@@ -82,16 +90,19 @@ export default function ImportSeed(props: Props): ReactElement {
               Copy paste or write down a 12 or 24 word secret recovery phrase.
             </div>
             <div className="input_wrap">
-              <div className="wrapper">
-                <div
+              <div>
+                <p
                   id="recovery_phrase"
                   contentEditable
-                  placeholder="test font here"
+                  className={isActive ? "is-active" : ""}
+                  onMouseDown={activeBox}
                   onInput={(e) => {
                     setRecoveryPhrase(e.currentTarget.innerText)
                   }}
+                  role="presentation"
                 />
-                <p>{errorMessage}</p>
+                <div className="recovery_label">Enter your passphrase</div>
+                <p className="error">{errorMessage}</p>
               </div>
             </div>
             <SharedButton
@@ -211,6 +222,9 @@ export default function ImportSeed(props: Props): ReactElement {
         .recovery_label {
           position: absolute;
           opacity: 0.5;
+          top: 40px;
+          left: 10px;
+          transition: all 0.2s ease-in-out;
         }
         #recovery_phrase {
           margin: 30px auto;
@@ -224,19 +238,44 @@ export default function ImportSeed(props: Props): ReactElement {
           color: white;
           font-family: inherit;
         }
-        #recovery_phrase:focus .recovery_label {
+        #recovery_phrase p,
+        #recovery_phrase * {
+          color: white;
+          word-wrap: break-word;
+          color: white;
+          font-family: inherit;
+        }
+        #recovery_phrase:focus ~ .recovery_label {
+          display: block;
+          opacity: 1;
           top: 20px;
-          opacity: 0;
+          left: 20px;
+          font-size: 14px;
+          padding: 0 6px;
+          color: var(--trophy-gold);
+          background: var(--hunter-green);
+          transition: all 0.2s ease-in-out;
+          z-index: 999;
+        }
+        .is-active {
+          background: var(--hunter-green);
+        }
+        .is-active ~ .recovery_label {
+          display: none;
         }
         #recovery_phrase:focus {
           border: 2px solid var(--trophy-gold);
           outline: 0;
+          background: var(--hunter-green);
         }
         #recovery_phrase [contenteditable][placeholder]:empty:before {
           content: attr(placeholder);
           position: absolute;
           color: gray;
           background-color: transparent;
+        }
+        .error {
+          color: red;
         }
       `}</style>
     </>

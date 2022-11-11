@@ -78,7 +78,20 @@ function Navigation({ children }: Props): ReactElement {
           }
           .onboarding_facts {
             width: 100%;
+            max-width: 300px;
+            margin: auto;
             padding: 1em 0;
+          }
+          .onboarding_facts p {
+            text-align: left;
+            font-size: 18px;
+            margin: 25px 0;
+          }
+          .onboarding_facts p::before {
+            content: url("./images/check.svg");
+            width: 15px;
+            height: 15px;
+            padding: 15px;
           }
           .onboarding_chains {
             position: absolute;
@@ -86,6 +99,15 @@ function Navigation({ children }: Props): ReactElement {
             left: 0px;
             width: 100%;
             text-align: center;
+            opacity: 0.8;
+          }
+          .onboarding_chains p {
+            font-size: 12px;
+          }
+          .onboarding_chains img {
+            display: inline-block;
+            height: 25px;
+            margin: 10px;
           }
           .back_button button {
             background: var(--green-60);
@@ -120,13 +142,16 @@ function Navigation({ children }: Props): ReactElement {
           <img src="./images/logo_onboarding.svg" alt="Onboarding logo" />
         </div>
         <div className="onboarding_facts">
-          <img src="./images/onboarding/perks.svg" alt="Onboarding perks" />
+          <p>Fully owned by the community</p>
+          <p>Accessible to everyone</p>
+          <p>100% open source</p>
         </div>
         <div className="onboarding_chains">
-          <img
-            src="./images/onboarding/supported_chains.png"
-            alt="Supported chains"
-          />
+          <p>Supported Chains</p>
+          <img src="./images/eth@2x.png" alt="Ethereum" />
+          <img src="./images/optimism@2x.png" alt="Optimism" />
+          <img src="./images/arbitrum@2x.png" alt="Arbitrum One" />
+          <img src="./images/polygon@2x.png" alt="Polygon Mainnet" />
         </div>
       </div>
       <div className="right_container">

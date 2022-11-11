@@ -67,9 +67,6 @@ export default function Done(): ReactElement {
         </>
       }
     >
-      <div className="confetti">
-        <img src="./images/confetti.svg" alt="Confetti" />
-      </div>
       <div className="wallet_shortcut">
         <span>Try this shortcut to open the wallet.</span>
         <img
