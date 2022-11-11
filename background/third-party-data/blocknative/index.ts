@@ -120,7 +120,6 @@ export default class Blocknative {
       network: ETHEREUM,
       blockNumber: currentBlock.blockNumber,
       baseFeePerGas: gweiToWei(currentBlock.baseFeePerGas),
-      estimatedTransactionCount: currentBlock.estimatedTransactionCount,
       estimatedPrices: currentBlock.estimatedPrices.map(
         (estimate: BlockEstimate) => {
           return {

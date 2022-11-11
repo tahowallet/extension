@@ -1,9 +1,29 @@
 import { BigNumber, ethers, utils } from "ethers"
-import { normalizeHexAddress } from "@tallyho/hd-keyring"
+import { normalizeHexAddress, toChecksumAddress } from "@tallyho/hd-keyring"
 import { HexString } from "../../types"
 import { EVMNetwork } from "../../networks"
-import { ETHEREUM, ROPSTEN, RINKEBY, GOERLI, KOVAN } from "../../constants"
+import { ETHEREUM, GOERLI } from "../../constants"
 import { AddressOnNetwork } from "../../accounts"
+
+export function isValidChecksumAddress(
+  address: string,
+  chainId?: number
+): boolean {
+  return toChecksumAddress(address, chainId) === address
+}
+
+export function isMixedCaseAddress(address: string): boolean {
+  let addressValue = address
+  // If address is uppercase then convert 0X prefix to lowercase
+  if (address.slice(0, 2) === "0X") {
+    addressValue = `0x${address.slice(2)}`
+  }
+
+  return !(
+    addressValue.match(/^(0x)?[0-9A-F]{40}$/) ||
+    addressValue.match(/^(0x)?[0-9a-f]{40}$/)
+  )
+}
 
 export function normalizeEVMAddress(address: string | Buffer): HexString {
   return normalizeHexAddress(address)
@@ -102,20 +122,8 @@ export function decodeJSON(input: string): unknown {
 export function getEthereumNetwork(): EVMNetwork {
   const ethereumNetwork = process.env.ETHEREUM_NETWORK?.toUpperCase()
 
-  if (ethereumNetwork === "ROPSTEN") {
-    return ROPSTEN
-  }
-
-  if (ethereumNetwork === "RINKEBY") {
-    return RINKEBY
-  }
-
   if (ethereumNetwork === "GOERLI") {
     return GOERLI
-  }
-
-  if (ethereumNetwork === "KOVAN") {
-    return KOVAN
   }
 
   // Default to mainnet

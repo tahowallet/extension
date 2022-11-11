@@ -13,7 +13,7 @@ import {
   fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem, {
@@ -21,7 +21,6 @@ import SharedAssetItem, {
   hasAmounts,
 } from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
-import { useBackgroundSelector } from "../../hooks"
 import SharedIcon from "./SharedIcon"
 import SharedTooltip from "./SharedTooltip"
 
@@ -51,6 +50,7 @@ const symbolPriority = Object.fromEntries(
   ])
 )
 interface SelectAssetMenuContentProps<AssetType extends AnyAsset> {
+  currentNetwork: EVMNetwork
   assets: AnyAssetWithOptionalAmount<AssetType>[]
   setSelectedAssetAndClose: (
     asset: AnyAssetWithOptionalAmount<AssetType>
@@ -117,7 +117,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
   props: SelectAssetMenuContentProps<T>
 ): ReactElement {
   const { t } = useTranslation()
-  const { setSelectedAssetAndClose, assets } = props
+  const { setSelectedAssetAndClose, assets, currentNetwork } = props
   const [searchTerm, setSearchTerm] = useState("")
   const searchInput = useRef<HTMLInputElement | null>(null)
 
@@ -178,6 +178,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
               }
               assetAndAmount={assetWithOptionalAmount}
               onClick={() => setSelectedAssetAndClose(assetWithOptionalAmount)}
+              currentNetwork={currentNetwork}
             />
           )
         })}
@@ -282,6 +283,7 @@ SelectedAssetButton.defaultProps = {
 }
 
 interface SharedAssetInputProps<AssetType extends AnyAsset> {
+  currentNetwork: EVMNetwork
   assetsAndAmounts: AnyAssetWithOptionalAmount<AssetType>[]
   label: string
   selectedAsset: AssetType | undefined
@@ -322,6 +324,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
 ): ReactElement {
   const { t } = useTranslation()
   const {
+    currentNetwork,
     assetsAndAmounts,
     label,
     selectedAsset,
@@ -336,8 +339,6 @@ export default function SharedAssetInput<T extends AnyAsset>(
     onAssetSelect,
     onAmountChange,
   } = props
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
-
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
 
   // TODO: use https://reactjs.org/docs/hooks-reference.html#useid once we update to version 18
@@ -482,6 +483,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
       >
         {assetsAndAmounts && (
           <SelectAssetMenuContent
+            currentNetwork={currentNetwork}
             assets={assetsAndAmounts}
             setSelectedAssetAndClose={setSelectedAssetAndClose}
           />

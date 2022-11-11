@@ -10,6 +10,8 @@ import {
   SmartContractFungibleAsset,
   TokenListCitation,
 } from "../../assets"
+import { DeepWriteable } from "../../types"
+import { fixPolygonWETHIssue, polygonTokenListURL } from "./token-list-edit"
 
 /*
  * IndexedPricePoint extends PricePoint to expose each asset's ID directly for
@@ -142,6 +144,21 @@ export class IndexingDatabase extends Dexie {
 
     this.version(2).stores({
       migrations: null,
+    })
+
+    this.version(3).upgrade((tx) => {
+      return tx
+        .table("tokenLists")
+        .toCollection()
+        .modify((storedTokenList: DeepWriteable<CachedTokenList>) => {
+          if (storedTokenList.url === polygonTokenListURL) {
+            // This is how migrations are expected to work
+            // eslint-disable-next-line no-param-reassign
+            storedTokenList.list.tokens = fixPolygonWETHIssue(
+              storedTokenList.list.tokens
+            )
+          }
+        })
     })
   }
 

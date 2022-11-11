@@ -2,6 +2,8 @@ import classNames from "classnames"
 import React, { ReactElement, useEffect, useRef, useState } from "react"
 import SharedIcon from "./SharedIcon"
 
+const DELAY = 250
+
 export default function SharedAccordion({
   headerElement,
   contentElement,
@@ -17,13 +19,36 @@ export default function SharedAccordion({
 }): ReactElement {
   const contentRef = useRef<HTMLDivElement>(null)
   const [isOpen, setIsOpen] = useState(isInitiallyOpen)
-  const [height, setHeight] = useState(0)
+  /**
+   * Accordion content has an overflow hidden property when it is closed.
+   * The overflow property is changed to visible after a delay when the content is visible.
+   * The goal is to display the tooltip message correctly.
+   */
+  const [isVisible, setIsVisible] = useState(isInitiallyOpen)
+  /* If the accordion is open by default, the first opening should be without a transition. */
+  const [withTransition, setWithTransition] = useState(!isInitiallyOpen)
+  const [height, setHeight] = useState(
+    isInitiallyOpen && contentHeight ? contentHeight : 0
+  )
 
-  const toggle = () => setIsOpen((open) => !open)
+  const toggle = () => {
+    setWithTransition(true)
+    setIsOpen((open) => !open)
+  }
 
   useEffect(() => {
     setHeight(contentHeight ?? contentRef.current?.clientHeight ?? 600)
   }, [contentRef, contentElement, contentHeight])
+
+  useEffect(() => {
+    const timeout = setTimeout(
+      () => {
+        setIsVisible(isOpen)
+      },
+      isOpen ? 140 : 50
+    )
+    return () => clearTimeout(timeout)
+  }, [isOpen])
 
   return (
     <div className="accordion" style={style}>
@@ -51,15 +76,13 @@ export default function SharedAccordion({
           `}
         />
       </div>
-      {isOpen && (
-        <div
-          className={classNames("accordion_content", {
-            visible: isOpen,
-          })}
-        >
-          <div ref={contentRef}>{contentElement}</div>
-        </div>
-      )}
+      <div
+        className={classNames("accordion_content", {
+          visible: isOpen,
+        })}
+      >
+        <div ref={contentRef}>{contentElement}</div>
+      </div>
       <style jsx>{`
         .accordion {
           background-color: ${isOpen ? "var(--green-120)" : ""};
@@ -75,11 +98,14 @@ export default function SharedAccordion({
         }
         .accordion_content {
           max-height: 0;
-          transition: max-height 250ms ease-out;
+          overflow: hidden;
+          transition: max-height ${DELAY}ms ease-out;
           padding: 0 8px;
         }
         .accordion_content.visible {
           max-height: ${height + 10}px;
+          transition: max-height ${withTransition ? DELAY : 0}ms ease-in;
+          overflow: ${isVisible ? "visible" : "hidden"};
         }
       `}</style>
     </div>

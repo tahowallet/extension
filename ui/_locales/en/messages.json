@@ -9,6 +9,8 @@
       "regularWarning": "Removing this address doesn't delete your recovery phrase or any private keys. Instead it just hides it from the extension and you won't be able to use it until you add it back.",
       "loudWarningTitle": "Removing this address will remove its associated account from the UI.",
       "loudWarningBody": "Are you sure you want to proceed?",
+      "lastAccountWarningTitle": "Once this account is removed you won't be able to use the wallet until you complete onboarding again.",
+      "lastAccountWarningBody": "Are you sure you want to proceed?",
       "removeAddress": "Remove address",
       "copyAddress": "Copy address",
       "removeConfirm": "Yes, I want to remove it"
@@ -307,6 +309,7 @@
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
     "analytics": "Analytics",
+    "showBanners": "Show achievement banners",
     "joinTitle": "Join our community",
     "joinDesc": "Join our Discord to give us feedback!",
     "joinBtn": "Join and give feedback",
@@ -521,6 +524,17 @@
       "transactionFrom": "From:",
       "loadingActivities": "Digging deeper..."
     },
+    "banner": {
+      "bannerTitle": "New Odyssey week!",
+      "emptyBannerContent": "Check out Arbitrum Odyssey campaign",
+      "notificationTitle": "Odyssey notifications",
+      "notificationDismissInfo":"Want to receive future Odyssey notifications? We will show you one every week that you can dismiss.",
+      "showNotifications": "Yes, show notification",
+      "dontShowNotifications": "No thanks",
+      "startNow": "Start now",
+      "learnMore": "Learn More",
+      "snackbar": "You can turn notification back from Settings"
+    },
     "totalAccountBalance": "Total account balance",
     "send": "Send",
     "receive": "Receive",
@@ -545,7 +559,7 @@
     }
   },
   "dAppConnect": {
-    "switchWallet":{
+    "switchWallet": {
       "title": "Tally Ho not Default",
       "descFirstPart": "We disabled Tally as default wallet for you. You can always enable it back from Settings",
       "descSecondPart": "at any time.",
@@ -573,7 +587,7 @@
         "SUPPORT_FORGOT_PASSWORD": "Enable to forgot password",
         "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
-        "SUPPORT_ARBITRUM": "Enable Arbitrum network"
+        "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner"
       }
     }
   }
