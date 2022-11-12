@@ -5,6 +5,7 @@ import {
 } from "@tallyho/tally-background/assets"
 import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
+import logger from "@tallyho/tally-background/lib/logger"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { fetchSwapPrice } from "@tallyho/tally-background/redux-slices/0x-swap"
@@ -241,6 +242,8 @@ export function useSwapQuote(useSwapConfig: {
         })
 
         if (!mountedRef.current) return
+      } catch (error) {
+        logger.error("Error fetching quote!", error)
       } finally {
         const hasPendingRequests = requestId.current !== id
 
