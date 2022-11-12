@@ -330,7 +330,15 @@ export default function Swap(): ReactElement {
 
   // Update if quote changes
 
-  if (quote && !loadingQuote && quoteAppliesToCurrentAssets && quote.quote) {
+  const prevQuoteTimestamp = usePrevious(quote?.timestamp)
+
+  if (
+    quote &&
+    !loadingQuote &&
+    quote.timestamp !== prevQuoteTimestamp &&
+    quoteAppliesToCurrentAssets &&
+    quote.quote
+  ) {
     const { quote: newAmount, type } = quote
 
     if (type === "getSourceAmount" && newAmount !== sourceAmount) {

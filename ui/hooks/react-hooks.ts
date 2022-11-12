@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react"
+import { useRef, useEffect, useState, useCallback } from "react"
 
 /**
  * Useful when checking if a component is still mounted after an asynchronous
@@ -57,4 +57,29 @@ export function usePrevious<T>(value: T): T {
   }, [value])
 
   return valueRef.current
+}
+
+/**
+ * Useful for "batching" state changes, Similar API to the old Component.setState
+ */
+export function useSetState<S extends Record<string, unknown>>(
+  state: S
+): readonly [S, typeof setter] {
+  const [value, setValue] = useState<S>(state)
+
+  const setter = useCallback(
+    <K extends keyof S>(
+      newValue: ((prev: Readonly<S>) => S) | (Pick<S, K> | S)
+    ) =>
+      setValue((prevState) => {
+        if (typeof newValue === "function") {
+          return newValue(prevState)
+        }
+
+        return { ...prevState, ...newValue }
+      }),
+    []
+  )
+
+  return [value, setter] as const
 }

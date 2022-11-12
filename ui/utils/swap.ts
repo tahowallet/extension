@@ -18,7 +18,7 @@ import {
 import { debounce, DebouncedFunc } from "lodash"
 import { useState, useRef, useCallback } from "react"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
-import { useValueRef, useIsMounted } from "../hooks/react-hooks"
+import { useValueRef, useIsMounted, useSetState } from "../hooks/react-hooks"
 
 const UPDATE_SWAP_QUOTE_DEBOUNCE_TIME = 500
 
@@ -177,8 +177,14 @@ export function useSwapQuote(useSwapConfig: {
   )
 
   // Quoted amounts
-  const [quoteRequestState, setQuoteRequestState] =
-    useState<QuoteUpdate | null>(null)
+  const [quoteRequestState, setQuoteRequestState] = useSetState<{
+    quote: QuoteUpdate | null
+    loading: boolean
+    loadingType?: QuoteType
+  }>({
+    quote: null,
+    loading: false,
+  })
 
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
@@ -190,7 +196,6 @@ export function useSwapQuote(useSwapConfig: {
   const mountedRef = useIsMounted()
 
   const requestId = useRef(0)
-  const [loading, setLoading] = useState<QuoteType | boolean>()
 
   const requestQuoteUpdate = useCallback(
     async (config: RequestQuoteUpdateConfig) => {
@@ -213,14 +218,16 @@ export function useSwapQuote(useSwapConfig: {
         return
       }
 
-      setLoading(type)
+      setQuoteRequestState({ loading: true, loadingType: type })
 
       const id = requestId.current + 1
+
+      let result: QuoteUpdate | null = null
 
       try {
         requestId.current = id
 
-        const result = await fetchQuote({
+        result = await fetchQuote({
           type,
           amount,
           sourceAsset,
@@ -234,16 +241,19 @@ export function useSwapQuote(useSwapConfig: {
         })
 
         if (!mountedRef.current) return
-
-        setQuoteRequestState(result)
       } finally {
-        // Finish loading once the last quote is fulfilled
-        if (requestId.current === id) {
-          setLoading(false)
-        }
+        const hasPendingRequests = requestId.current !== id
+
+        setQuoteRequestState({
+          quote: result,
+          // Finish loading once the last quote is fulfilled
+          ...(hasPendingRequests
+            ? { loading: true }
+            : { loading: false, loadingType: undefined }),
+        })
       }
     },
-    [dispatch, requestContextRef, mountedRef]
+    [dispatch, requestContextRef, mountedRef, setQuoteRequestState]
   )
 
   const [debouncedRequest] = useState(() => {
@@ -259,12 +269,14 @@ export function useSwapQuote(useSwapConfig: {
     return debouncedFn
   })
 
-  const loadingSourceAmount = loading === "getSourceAmount"
-  const loadingTargetAmount = loading === "getTargetAmount"
+  const loadingSourceAmount =
+    quoteRequestState.loadingType === "getSourceAmount"
+  const loadingTargetAmount =
+    quoteRequestState.loadingType === "getTargetAmount"
 
   return {
-    quote: quoteRequestState,
-    loading: !!loading,
+    quote: quoteRequestState.quote,
+    loading: quoteRequestState.loading,
     loadingSourceAmount,
     loadingTargetAmount,
     requestQuoteUpdate: debouncedRequest,
