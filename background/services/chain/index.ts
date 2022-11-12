@@ -105,6 +105,9 @@ interface Events extends ServiceLifecycleEvents {
     account: AddressOnNetwork
   }
   newAccountToTrack: AddressOnNetwork
+  /**
+   * Account balance for the network's base asset
+   */
   accountsWithBalances: AccountBalance[]
   transactionSend: HexString
   transactionSendFailure: undefined
@@ -817,7 +820,8 @@ export default class ChainService extends BaseService<Events> {
       address,
       network,
       assetAmount: {
-        asset: network.baseAsset,
+        // Data stored in chain db for network base asset might be stale
+        asset: NETWORK_BY_CHAIN_ID[network.chainID].baseAsset,
         amount: balance.toBigInt(),
       },
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)

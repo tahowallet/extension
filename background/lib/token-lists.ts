@@ -70,7 +70,12 @@ function tokenListToFungibleAssetsForNetwork(
   }
 
   return tokenList.tokens
-    .filter(({ chainId }) => chainId === networkChainID)
+    .filter(
+      ({ chainId, symbol }) =>
+        chainId === networkChainID &&
+        // Filter out assets with the same symbol as the network base asset
+        symbol !== network.baseAsset.symbol
+    )
     .map((tokenMetadata) => {
       return {
         metadata: {
@@ -124,6 +129,7 @@ export function mergeAssets<T extends FungibleAsset>(
         updatedSeenAssetsBySimilarityKey[referenceKey][matchingAssetIndex]
 
       updatedSeenAssetsBySimilarityKey[referenceKey][matchingAssetIndex] = {
+        ...asset,
         ...matchingAsset,
         metadata: {
           ...matchingAsset.metadata,
