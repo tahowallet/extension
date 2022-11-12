@@ -1,6 +1,11 @@
 import { TokenList } from "@uniswap/token-lists"
 import { UNIXTime, HexString } from "./types"
-import { NetworkSpecific, SmartContract, Network } from "./networks"
+import {
+  NetworkSpecific,
+  SmartContract,
+  Network,
+  NetworkBaseAsset,
+} from "./networks"
 import { fromFixedPoint } from "./lib/fixed-point"
 
 /**
@@ -115,6 +120,11 @@ export type AnyAsset =
   | FiatCurrency
   | FungibleAsset
   | SmartContractFungibleAsset
+
+/**
+ * An asset that can be swapped with our current providers
+ */
+export type SwappableAsset = SmartContractFungibleAsset | NetworkBaseAsset
 
 /**
  * An amount associated with a smart contract; used to carry information like

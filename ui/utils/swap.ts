@@ -1,8 +1,7 @@
 import {
   AnyAsset,
-  FungibleAsset,
   isSmartContractFungibleAsset,
-  SmartContractFungibleAsset,
+  SwappableAsset,
 } from "@tallyho/tally-background/assets"
 import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
@@ -33,13 +32,13 @@ export type QuoteUpdate = {
     slippageTolerance: number
     networkSettings: NetworkFeeSettings
   }
-  sourceAsset: FungibleAsset | SmartContractFungibleAsset
-  targetAsset: FungibleAsset | SmartContractFungibleAsset
+  sourceAsset: SwappableAsset
+  targetAsset: SwappableAsset
   quoteRequest: SwapQuoteRequest
   timestamp: number
 }
 
-export const fetchQuoteUpdate = async ({
+export const fetchQuote = async ({
   type,
   amount,
   sourceAsset,
@@ -50,8 +49,8 @@ export const fetchQuoteUpdate = async ({
 }: {
   type: "getSourceAmount" | "getTargetAmount"
   amount: string
-  sourceAsset: FungibleAsset | SmartContractFungibleAsset
-  targetAsset: FungibleAsset | SmartContractFungibleAsset
+  sourceAsset: SwappableAsset
+  targetAsset: SwappableAsset
   settings: {
     slippageTolerance: number
     networkSettings: NetworkFeeSettings
@@ -96,13 +95,10 @@ export const fetchQuoteUpdate = async ({
     if (
       settings.networkSettings.gasLimit !== BigInt(updatedQuoteData.quote.gas)
     ) {
-      requestResult.swapTransactionSettings = {
-        ...requestResult.swapTransactionSettings,
-        networkSettings: {
-          ...requestResult.swapTransactionSettings.networkSettings,
-          gasLimit: BigInt(updatedQuoteData.quote.gas),
-          suggestedGasLimit: BigInt(updatedQuoteData.quote.estimatedGas),
-        },
+      requestResult.swapTransactionSettings.networkSettings = {
+        ...requestResult.swapTransactionSettings.networkSettings,
+        gasLimit: BigInt(updatedQuoteData.quote.gas),
+        suggestedGasLimit: BigInt(updatedQuoteData.quote.estimatedGas),
       }
     }
 
@@ -158,15 +154,13 @@ export function isSameAsset(asset1: AnyAsset, asset2: AnyAsset): boolean {
 type RequestQuoteUpdateConfig = {
   type: "getSourceAmount" | "getTargetAmount"
   amount: string
-  sourceAsset?: FungibleAsset | SmartContractFungibleAsset
-  targetAsset?: FungibleAsset | SmartContractFungibleAsset
+  sourceAsset?: SwappableAsset
+  targetAsset?: SwappableAsset
   transactionSettings?: QuoteUpdate["swapTransactionSettings"]
 }
 
 export function useSwapQuote(useSwapConfig: {
   savedQuoteRequest?: SwapQuoteRequest
-  initialSourceAsset?: FungibleAsset | SmartContractFungibleAsset
-  initialTargetAsset?: FungibleAsset | SmartContractFungibleAsset
   initialSwapSettings: QuoteUpdate["swapTransactionSettings"]
 }): {
   quote: QuoteUpdate | null
@@ -225,7 +219,8 @@ export function useSwapQuote(useSwapConfig: {
 
       try {
         requestId.current = id
-        const result = await fetchQuoteUpdate({
+
+        const result = await fetchQuote({
           type,
           amount,
           sourceAsset,

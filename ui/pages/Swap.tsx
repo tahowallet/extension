@@ -16,9 +16,8 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
-  FungibleAsset,
   isSmartContractFungibleAsset,
-  SmartContractFungibleAsset,
+  SwappableAsset,
 } from "@tallyho/tally-background/assets"
 import logger from "@tallyho/tally-background/lib/logger"
 import { Redirect, useLocation } from "react-router-dom"
@@ -69,11 +68,7 @@ export default function Swap(): ReactElement {
   // filter by current chain and better handle network-native base assets
   const ownedSellAssetAmounts =
     accountBalances?.assetAmounts.filter(
-      (
-        assetAmount
-      ): assetAmount is CompleteAssetAmount<
-        SmartContractFungibleAsset | FungibleAsset
-      > =>
+      (assetAmount): assetAmount is CompleteAssetAmount<SwappableAsset> =>
         isSmartContractFungibleAsset(assetAmount.asset) ||
         assetAmount.asset.symbol === currentNetwork.baseAsset.symbol
     ) ?? []
@@ -136,27 +131,25 @@ export default function Swap(): ReactElement {
     // Some type massaging needed to remind TypeScript how these types fit
     // together.
     const knownAssets: AnyAsset[] = state.assets
-    return knownAssets.filter(
-      (asset): asset is SmartContractFungibleAsset | FungibleAsset => {
-        // We don't want to buy the same asset we're selling.
-        if (asset.symbol === sourceAsset?.symbol) {
-          return false
-        }
-
-        if (isSmartContractFungibleAsset(asset)) {
-          if (sameNetwork(asset.homeNetwork, currentNetwork)) {
-            return true
-          }
-        }
-        if (
-          // Explicitly add a network's base asset.
-          isNetworkBaseAsset(asset, currentNetwork)
-        ) {
-          return true
-        }
+    return knownAssets.filter((asset): asset is SwappableAsset => {
+      // We don't want to buy the same asset we're selling.
+      if (asset.symbol === sourceAsset?.symbol) {
         return false
       }
-    )
+
+      if (isSmartContractFungibleAsset(asset)) {
+        if (sameNetwork(asset.homeNetwork, currentNetwork)) {
+          return true
+        }
+      }
+      if (
+        // Explicitly add a network's base asset.
+        isNetworkBaseAsset(asset, currentNetwork)
+      ) {
+        return true
+      }
+      return false
+    })
   })
 
   const sellAssetAmounts = (
@@ -205,8 +198,6 @@ export default function Swap(): ReactElement {
     quote,
     requestQuoteUpdate,
   } = useSwapQuote({
-    initialSourceAsset: sourceAsset,
-    initialTargetAsset: targetAsset,
     initialSwapSettings: {
       slippageTolerance: useBackgroundSelector(selectSlippageTolerance),
       networkSettings: useBackgroundSelector(selectDefaultNetworkFeeSettings),
@@ -269,7 +260,7 @@ export default function Swap(): ReactElement {
   }
 
   const updateSourceAsset = useCallback(
-    (newSourceAsset: SmartContractFungibleAsset | FungibleAsset) => {
+    (newSourceAsset: SwappableAsset) => {
       setSourceAsset(newSourceAsset)
       setSourceAmount("")
 
@@ -289,7 +280,7 @@ export default function Swap(): ReactElement {
   )
 
   const updateTargetAsset = useCallback(
-    (newTargetAsset: SmartContractFungibleAsset | FungibleAsset) => {
+    (newTargetAsset: SwappableAsset) => {
       setTargetAsset(newTargetAsset)
       setTargetAmount("")
 
@@ -426,7 +417,7 @@ export default function Swap(): ReactElement {
           )}
           <div className="form">
             <div className="form_input">
-              <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
+              <SharedAssetInput<SwappableAsset>
                 currentNetwork={currentNetwork}
                 amount={sourceAmount}
                 amountMainCurrency={
@@ -465,7 +456,7 @@ export default function Swap(): ReactElement {
               {t("swap.switchAssets")}
             </button>
             <div className="form_input">
-              <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
+              <SharedAssetInput<SwappableAsset>
                 currentNetwork={currentNetwork}
                 amount={targetAmount}
                 amountMainCurrency={
@@ -476,7 +467,7 @@ export default function Swap(): ReactElement {
                 priceImpact={quote?.priceDetails?.priceImpact}
                 isPriceDetailsLoading={loadingTargetAmount}
                 showPriceDetails
-                // FIXME Merge master asset list with account balances.
+                // FIXME: Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
                 selectedAsset={targetAsset}
                 isDisabled={loadingTargetAmount}

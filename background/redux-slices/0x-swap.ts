@@ -8,7 +8,7 @@ import { fetchJson } from "@ethersproject/web"
 import { BigNumber, ethers, utils } from "ethers"
 
 import { createBackgroundAsyncThunk } from "./utils"
-import { FungibleAsset, SmartContractFungibleAsset } from "../assets"
+import { SwappableAsset } from "../assets"
 import logger from "../lib/logger"
 import {
   isValidSwapPriceResponse,
@@ -151,10 +151,7 @@ const gatedHeaders: { [header: string]: string } =
       }
     : {}
 
-const get0xAssetName = (
-  asset: SmartContractFungibleAsset | FungibleAsset,
-  network: EVMNetwork
-) => {
+const get0xAssetName = (asset: SwappableAsset, network: EVMNetwork) => {
   // 0x Does not support trading MATIC by contract address on polygon
   if (network.name === "Polygon" && asset.symbol === "MATIC") {
     return "MATIC"
@@ -166,7 +163,10 @@ const get0xAssetName = (
   ) {
     return ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS
   }
-  return "contractAddress" in asset ? asset.contractAddress : asset.symbol
+
+  return "contractAddress" in asset && asset.contractAddress
+    ? asset.contractAddress
+    : asset.symbol
 }
 
 // Helper to build a URL to the 0x API for a given swap quote request. Usable
@@ -443,7 +443,7 @@ export const approveTransfer = createBackgroundAsyncThunk(
 export const executeSwap = createBackgroundAsyncThunk(
   "0x-swap/executeSwap",
   async (
-    quote: ZrxQuote & { sellAsset: FungibleAsset; buyAsset: FungibleAsset },
+    quote: ZrxQuote & { sellAsset: SwappableAsset; buyAsset: SwappableAsset },
     { dispatch }
   ) => {
     const provider = getProvider()
