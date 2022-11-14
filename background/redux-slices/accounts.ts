@@ -275,7 +275,7 @@ const accountSlice = createSlice({
         updatedBalancesSymbols.add(network.baseAsset.symbol)
 
         const existing = immerState.accountsData.evm[network.chainID][address]
-        if (existing !== "loading") {
+        if (existing !== undefined && existing !== "loading") {
           Object.keys(existing.balances).forEach((symbol) => {
             if (!updatedBalancesSymbols.has(symbol)) {
               delete existing.balances[symbol]
