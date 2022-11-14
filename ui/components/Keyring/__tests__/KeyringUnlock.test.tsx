@@ -1,26 +1,25 @@
 import React from "react"
 import userEvent from "@testing-library/user-event"
+import { initialState } from "@tallyho/tally-background/redux-slices/keyrings"
 import { renderWithProviders } from "../../../utils/test-utils"
 import KeyringUnlock from "../KeyringUnlock"
 
-const password = "TestPassword"
+const password = "password"
 const label = "Signing password"
+const error = "Incorrect password"
+
+const getPreloadedState = (status: "locked" | "unlocked") => ({
+  keyrings: {
+    ...initialState,
+    status,
+  },
+})
 
 describe("KeyringUnlock", () => {
-  test("should ", async () => {
+  test("should not unlock the wallet", async () => {
     const ui = renderWithProviders(
       <KeyringUnlock displayCancelButton={false} />,
-      {
-        preloadedState: {
-          keyrings: {
-            keyrings: [],
-            keyringMetadata: {},
-            importing: false,
-            status: "locked",
-            keyringToVerify: null,
-          },
-        },
-      }
+      { preloadedState: getPreloadedState("locked") }
     )
     const inputElement = ui.getByLabelText(label)
     const submitBtnElement = ui.getByRole("button")
@@ -29,6 +28,6 @@ describe("KeyringUnlock", () => {
     await userEvent.type(inputElement, password)
     await userEvent.click(submitBtnElement)
 
-    expect(ui.queryByText("Incorrect password")).toBeInTheDocument()
+    expect(ui.queryByText(error)).toBeInTheDocument()
   })
 })
