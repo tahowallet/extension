@@ -1,9 +1,9 @@
+import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
+import { useBackgroundSelector } from "../../hooks"
 import SharedIcon from "./SharedIcon"
 import SharedTooltip from "./SharedTooltip"
-
-const currencySymbol = "$"
 
 function formatPriceImpact(value: number): number {
   return Math.round(value * 100) / 100
@@ -31,6 +31,7 @@ interface PriceDetailsProps {
 
 export default function PriceDetails(props: PriceDetailsProps): ReactElement {
   const { amountMainCurrency, priceImpact, isPriceDetailsLoaded } = props
+  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
   const { t } = useTranslation("translation", {
     keyPrefix: "priceDetails",
   })
@@ -42,7 +43,7 @@ export default function PriceDetails(props: PriceDetailsProps): ReactElement {
       ) : (
         <>
           {amountMainCurrency === "0.00" && "<"}
-          {currencySymbol}
+          {mainCurrencySign}
           {amountMainCurrency || "0.00"}
           {!!priceImpact && priceImpact > 1 && (
             <span
