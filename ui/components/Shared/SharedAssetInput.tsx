@@ -21,8 +21,7 @@ import SharedAssetItem, {
   hasAmounts,
 } from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
-import SharedIcon from "./SharedIcon"
-import SharedTooltip from "./SharedTooltip"
+import PriceDetails from "./PriceDetails"
 
 // List of symbols we want to display first.  Lower array index === higher priority.
 // For now we just prioritize somewhat popular assets that we are able to load an icon for.
@@ -280,101 +279,6 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
 
 SelectedAssetButton.defaultProps = {
   toggleIsAssetMenuOpen: null,
-}
-
-const currencySymbol = "$"
-
-interface PriceDetailsProps {
-  amountMainCurrency: string | undefined
-  priceImpact: number | undefined
-  isPriceDetailsLoaded: boolean | undefined
-}
-
-export function PriceDetails(props: PriceDetailsProps): ReactElement {
-  const { amountMainCurrency, priceImpact, isPriceDetailsLoaded } = props
-  const { t } = useTranslation("translation", {
-    keyPrefix: "assetInput",
-  })
-
-  const formatPriceImpact = useCallback(
-    (value: number): number => Math.round(value * 100) / 100,
-    []
-  )
-
-  const getPriceImpactColor = useCallback(
-    (value: number | undefined): string => {
-      if (value) {
-        switch (true) {
-          case value < -5:
-            return "error"
-          case value < 0 && value >= -5:
-            return "attention"
-          default:
-            return "green-40"
-        }
-      }
-      return "green-40"
-    },
-    []
-  )
-
-  return (
-    <div className="simple_text content_wrap">
-      {isPriceDetailsLoaded && amountMainCurrency === undefined ? (
-        t("noAssetPrice")
-      ) : (
-        <>
-          {amountMainCurrency === "0.00" && "<"}
-          {currencySymbol}
-          {amountMainCurrency || "0.00"}
-          {!!priceImpact && (
-            <span
-              data-testid="price_impact_percent"
-              className="price_impact_percent"
-            >
-              ({formatPriceImpact(priceImpact)}%
-              <SharedTooltip
-                width={180}
-                height={27}
-                horizontalPosition="left"
-                IconComponent={() => (
-                  <SharedIcon
-                    width={16}
-                    icon="icons/m/info.svg"
-                    color={`var(--${getPriceImpactColor(priceImpact)})`}
-                    customStyles="margin-left: -5px;"
-                  />
-                )}
-              >
-                <div>
-                  {t("priceImpactTooltip.firstLine")}
-                  <br />
-                  {t("priceImpactTooltip.secondLine")}
-                </div>
-              </SharedTooltip>
-              )
-            </span>
-          )}
-        </>
-      )}
-      <style jsx>{`
-        .content_wrap {
-          font-size: 14px;
-          display: flex;
-          flex-direction: row;
-          justify-content: end;
-          gap: 2px;
-        }
-        .price_impact_percent {
-          color: var(--${getPriceImpactColor(priceImpact)});
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          gap: 2px;
-        }
-      `}</style>
-    </div>
-  )
 }
 
 interface SharedAssetInputProps<AssetType extends AnyAsset> {
