@@ -63,6 +63,18 @@ export const MATIC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   },
 }
 
+export const AVAX: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
+  name: "Avalanche",
+  symbol: "AVAX",
+  decimals: 18,
+  coinType: coinTypesByAssetSymbol.AVAX,
+  metadata: {
+    coinGeckoID: "avalanche-2",
+    tokenLists: [],
+    websiteURL: "https://avax.network/",
+  },
+}
+
 export const BTC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   name: "Bitcoin",
   symbol: "BTC",
@@ -75,7 +87,7 @@ export const BTC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   },
 }
 
-export const BASE_ASSETS = [ETH, BTC, MATIC, RBTC, OPTIMISTIC_ETH]
+export const BASE_ASSETS = [ETH, BTC, MATIC, RBTC, OPTIMISTIC_ETH, AVAX]
 
 export const BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce<{
   [assetSymbol: string]: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset
