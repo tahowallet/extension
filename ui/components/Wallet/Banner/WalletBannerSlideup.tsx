@@ -25,7 +25,7 @@ export default function WalletBannerSlideup(props: {
   }
   const toggleSettings = () => {
     dispatch(toggleHideBanners(true))
-    dispatch(setSnackbarMessage("You can turn notification back from Settings"))
+    dispatch(setSnackbarMessage(t("snackbar")))
     onClose()
   }
   return (

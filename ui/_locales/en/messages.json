@@ -508,7 +508,8 @@
       "showNotifications": "Yes, show notification",
       "dontShowNotifications": "No thanks",
       "startNow": "Start now",
-      "learnMore": "Learn More"
+      "learnMore": "Learn More",
+      "snackbar": "You can turn notification back from Settings"
     },
     "totalAccountBalance": "Total account balance",
     "send": "Send",
