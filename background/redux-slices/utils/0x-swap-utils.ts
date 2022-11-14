@@ -40,9 +40,9 @@ export type SwapQuoteRequest = {
 }
 
 export type PriceDetails = {
-  priceImpact?: number | undefined
-  buyCurrencyAmount?: string | undefined
-  sellCurrencyAmount?: string | undefined
+  priceImpact: number
+  buyCurrencyAmount: string | undefined
+  sellCurrencyAmount: string | undefined
 }
 
 export async function getAssetPricePoint(
