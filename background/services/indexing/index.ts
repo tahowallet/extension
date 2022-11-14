@@ -45,7 +45,16 @@ const FAST_TOKEN_REFRESH_BLOCK_RANGE = 10
 const ACCELERATED_TOKEN_REFRESH_TIMEOUT = 300
 
 interface Events extends ServiceLifecycleEvents {
-  accountsWithBalances: AccountBalance[]
+  accountsWithBalances: {
+    /**
+     * Retrieved token balances
+     */
+    balances: AccountBalance[]
+    /**
+     * The respective address and network for these balances
+     */
+    addressOnNetwork: AddressOnNetwork
+  }
   price: PricePoint
   assets: AnyAsset[]
 }
@@ -528,7 +537,10 @@ export default class IndexingService extends BaseService<Events> {
     )
 
     await this.db.addBalances(accountBalances)
-    this.emitter.emit("accountsWithBalances", accountBalances)
+    this.emitter.emit("accountsWithBalances", {
+      balances: accountBalances,
+      addressOnNetwork: addressNetwork,
+    })
 
     return balances
   }
@@ -750,8 +762,13 @@ export default class IndexingService extends BaseService<Events> {
     const trackedNetworks = await this.chainService.getTrackedNetworks()
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
+
+    const trackedChainIds = new Set(
+      trackedNetworks.map((network) => network.chainID)
+    )
+
     const activeAssetsToTrack = assetsToTrack.filter((asset) =>
-      trackedNetworks.map((n) => n.chainID).includes(asset.homeNetwork.chainID)
+      trackedChainIds.has(asset.homeNetwork.chainID)
     )
 
     // wait on balances being written to the db, don't wait on event emission
