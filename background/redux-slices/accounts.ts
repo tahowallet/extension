@@ -261,6 +261,7 @@ const accountSlice = createSlice({
         }
       }
     ) => {
+      // TODO: Figure out how to detect base asset balances once we add custom networks
       const isBaseAssetBalance =
         balances.length === 1 && "coinType" in balances[0].assetAmount.asset
 
@@ -271,7 +272,7 @@ const accountSlice = createSlice({
 
         const { network, address } = addressOnNetwork
 
-        // REVIEW: Don't delete base asset balance
+        // Don't delete base asset balance
         updatedBalancesSymbols.add(network.baseAsset.symbol)
 
         const existing = immerState.accountsData.evm[network.chainID][address]

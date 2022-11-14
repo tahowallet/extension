@@ -34,7 +34,11 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDb, IndexingDatabase } from "./db"
 import BaseService from "../base"
 import { EnrichedEVMTransaction } from "../enrichment/types"
-import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
+import {
+  normalizeAddressOnNetwork,
+  normalizeEVMAddress,
+  sameEVMAddress,
+} from "../../lib/utils"
 import { fixPolygonWETHIssue, polygonTokenListURL } from "./token-list-edit"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
@@ -472,9 +476,11 @@ export default class IndexingService extends BaseService<Events> {
    * @param contractAddresses
    */
   private async retrieveTokenBalances(
-    addressNetwork: AddressOnNetwork,
+    unsafeAddressNetwork: AddressOnNetwork,
     smartContractAssets?: SmartContractFungibleAsset[]
   ): Promise<SmartContractAmount[]> {
+    const addressNetwork = normalizeAddressOnNetwork(unsafeAddressNetwork)
+
     const balances = await this.chainService.assetData.getTokenBalances(
       addressNetwork,
       smartContractAssets?.map(({ contractAddress }) => contractAddress)

@@ -853,12 +853,7 @@ export default class Main extends BaseService<never> {
           trackedAccounts.map((account) => account.address)
         )
 
-        if (
-          !allTrackedAddresses.has(
-            // REVIEW: Address emitted from indexing service might not be normalized
-            normalizeEVMAddress(addressOnNetwork.address)
-          )
-        ) {
+        if (!allTrackedAddresses.has(addressOnNetwork.address)) {
           return
         }
 
