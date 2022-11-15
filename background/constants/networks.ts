@@ -10,7 +10,7 @@ export const ETHEREUM: EVMNetwork = {
 }
 
 export const RSK: EVMNetwork = {
-  name: "RSK",
+  name: "Rootstock",
   baseAsset: RBTC,
   chainID: "30",
   family: "EVM",
