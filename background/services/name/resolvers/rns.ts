@@ -1,7 +1,7 @@
 import { JsonRpcProvider } from "@ethersproject/providers"
 import { Contract, utils, constants } from "ethers"
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
-import { RSK } from "../../../constants"
+import { ROOTSTOCK } from "../../../constants"
 import { sameNetwork } from "../../../networks"
 import { NameResolver } from "../name-resolver"
 import logger from "../../../lib/logger"
@@ -43,7 +43,7 @@ export default function rnsResolver(): NameResolver<"RNS"> {
       return false
     },
     canAttemptAddressResolution({ name, network }: NameOnNetwork): boolean {
-      return sameNetwork(network, RSK) && name.endsWith(".rsk")
+      return sameNetwork(network, ROOTSTOCK) && name.endsWith(".rsk")
     },
 
     async lookUpAddressForName({
