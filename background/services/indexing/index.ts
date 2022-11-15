@@ -55,7 +55,9 @@ interface Events extends ServiceLifecycleEvents {
      */
     balances: AccountBalance[]
     /**
-     * The respective address and network for these balances
+     * The respective address and network for these balances,
+     * useful for identifying which account has no balances left
+     * when the balances array is empty
      */
     addressOnNetwork: AddressOnNetwork
   }
