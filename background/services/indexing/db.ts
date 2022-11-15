@@ -10,6 +10,8 @@ import {
   SmartContractFungibleAsset,
   TokenListCitation,
 } from "../../assets"
+import { DeepWriteable } from "../../types"
+import { fixPolygonWETHIssue, polygonTokenListURL } from "./token-list-edit"
 import { normalizeEVMAddress } from "../../lib/utils"
 
 /*
@@ -145,7 +147,22 @@ export class IndexingDatabase extends Dexie {
       migrations: null,
     })
 
-    this.version(3).upgrade(async (tx) => {
+    this.version(3).upgrade((tx) => {
+      return tx
+        .table("tokenLists")
+        .toCollection()
+        .modify((storedTokenList: DeepWriteable<CachedTokenList>) => {
+          if (storedTokenList.url === polygonTokenListURL) {
+            // This is how migrations are expected to work
+            // eslint-disable-next-line no-param-reassign
+            storedTokenList.list.tokens = fixPolygonWETHIssue(
+              storedTokenList.list.tokens
+            )
+          }
+        })
+    })
+
+    this.version(4).upgrade(async (tx) => {
       const seenAddresses = new Set<string>()
 
       const selectInvalidOrDuplicateRecords = (
