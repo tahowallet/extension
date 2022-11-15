@@ -25,6 +25,7 @@ export const RuntimeFlag = {
   SUPPORT_RSK: process.env.SUPPORT_RSK === "true",
   SUPPORT_ACHIEVEMENTS_BANNER:
     process.env.SUPPORT_ACHIEVEMENTS_BANNER === "true",
+  HIDE_NFTS: process.env.HIDE_NFTS === "true",
 } as const
 
 type BuildTimeFlagType = keyof typeof BuildTimeFlag

@@ -23,6 +23,7 @@ import WalletBanner from "../components/Wallet/Banner/WalletBanner"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "wallet" })
+  const { t: tNFTs } = useTranslation("translation", { keyPrefix: "nfts" })
   const [panelNumber, setPanelNumber] = useState(0)
 
   const dispatch = useBackgroundDispatch()
@@ -113,7 +114,7 @@ export default function Wallet(): ReactElement {
                     id="nft_soon"
                     customStyles="margin: 8px 0;"
                   >
-                    {t("NFTPricingComingSoon")}
+                    {tNFTs("NFTPricingComingSoon")}
                   </SharedBanner>
                   <NFTsWallet />
                 </>

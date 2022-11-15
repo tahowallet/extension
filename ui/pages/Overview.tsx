@@ -8,6 +8,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../hooks"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -25,6 +26,9 @@ if (isEnabled(FeatureFlags.ENABLE_ACHIEVEMENTS_TAB)) {
 }
 
 export default function Overview(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "nfts",
+  })
   const [panelNumber, setPanelNumber] = useState(0)
   const accountsTotal = useBackgroundSelector(selectAccountTotalsForOverview)
   const balance = useBackgroundSelector(getTotalBalanceForOverview)
@@ -76,7 +80,7 @@ export default function Overview(): ReactElement {
             id="nft_soon"
             customStyles="margin: 8px 0;"
           >
-            Coming soon: NFT price + sending
+            {t("NFTPricingComingSoon")}
           </SharedBanner>
           <NFTsOverview />
         </>
