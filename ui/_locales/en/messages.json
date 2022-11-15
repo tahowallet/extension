@@ -168,7 +168,7 @@
       "bip44": "BIP 44 (Trezor, 🦊)",
       "ethTestnet": "Ethereum Testnet",
       "ledgerLegacy": "Ledger Legacy",
-      "rsk": "RSK"
+      "rsk": "Rootstock"
     }
   },
   "networkFees": {
