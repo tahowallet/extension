@@ -20,7 +20,7 @@ import { AssetTransfer } from "../../assets"
 import {
   HOUR,
   ETHEREUM,
-  RSK,
+  ROOTSTOCK,
   POLYGON,
   ARBITRUM_ONE,
   OPTIMISM,
@@ -268,7 +268,7 @@ export default class ChainService extends BaseService<Events> {
       OPTIMISM,
       GOERLI,
       ARBITRUM_ONE,
-      ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [RSK] : []),
+      ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [ROOTSTOCK] : []),
     ]
 
     this.trackedNetworks = []
@@ -1286,7 +1286,7 @@ export default class ChainService extends BaseService<Events> {
     incomingOnly = false
   ): Promise<void> {
     if (
-      [ETHEREUM, POLYGON, OPTIMISM, ARBITRUM_ONE, GOERLI, RSK].every(
+      [ETHEREUM, POLYGON, OPTIMISM, ARBITRUM_ONE, GOERLI, ROOTSTOCK].every(
         (network) => network.chainID !== addressOnNetwork.network.chainID
       )
     ) {
