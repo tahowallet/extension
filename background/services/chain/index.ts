@@ -231,7 +231,7 @@ export default class ChainService extends BaseService<Events> {
       },
       forceRecentAssetTransfers: {
         schedule: {
-          periodInMinutes: (HOUR * 12) / 1e3,
+          periodInMinutes: (12 * HOUR) / MINUTE,
         },
         handler: () => {
           this.handleRecentAssetTransferAlarm()

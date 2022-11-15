@@ -17,6 +17,8 @@ import {
 import {
   BASE_ASSETS,
   FIAT_CURRENCIES,
+  HOUR,
+  MINUTE,
   NETWORK_BY_CHAIN_ID,
   SECOND,
   USD,
@@ -126,6 +128,12 @@ export default class IndexingService extends BaseService<Events> {
           periodInMinutes: 1,
         },
         handler: () => this.handleBalanceAlarm(true),
+      },
+      forceBalance: {
+        schedule: {
+          periodInMinutes: (12 * HOUR) / MINUTE,
+        },
+        handler: () => this.handleBalanceAlarm(),
       },
       balanceRefresh: {
         schedule: {
