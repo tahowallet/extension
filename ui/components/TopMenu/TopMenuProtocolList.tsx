@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import {
   ARBITRUM_ONE,
+  AVALANCHE,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
@@ -42,6 +43,11 @@ const productionNetworks = [
         },
       ]
     : []),
+  {
+    network: AVALANCHE,
+    info: i18n.t("protocol.compatibleChain"),
+    isDisabled: false,
+  },
   // {
   //   name: "Binance Smart Chain",
   //   info: i18n.t("protocol.compatibleChain"),
