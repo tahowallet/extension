@@ -193,7 +193,9 @@ export async function getTokenBalances(
       // as effectively undefined.
       .filter(
         ({ tokenBalance }) =>
-          tokenBalance !== "0x" && BigInt(tokenBalance) !== 0n
+          // Do not filter out 0-balances here to account for cases when a users
+          // spends all of their tokens (swap MAX of a token, bridge all tokens, etc..)
+          tokenBalance !== "0x"
       )
       .map((tokenBalance) => {
         let balance = tokenBalance.tokenBalance

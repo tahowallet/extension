@@ -273,6 +273,12 @@ const accountSlice = createSlice({
         }
 
         if (existingAccountData !== "loading") {
+          if (
+            updatedAccountBalance.assetAmount.amount === 0n &&
+            existingAccountData.balances[updatedAssetSymbol] === undefined
+          ) {
+            return
+          }
           existingAccountData.balances[updatedAssetSymbol] =
             updatedAccountBalance
         } else {
