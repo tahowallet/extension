@@ -116,7 +116,7 @@ import {
   GOERLI,
   OPTIMISM,
   POLYGON,
-  RSK,
+  ROOTSTOCK,
 } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
@@ -1226,7 +1226,7 @@ export default class Main extends BaseService<never> {
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await Promise.all(
         // TODO: replace this with this.chainService.supportedNetworks when removing the chain feature flags
-        [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, RSK].map(
+        [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, ROOTSTOCK].map(
           async (network) => {
             await this.providerBridgeService.grantPermission({
               ...permission,
@@ -1241,7 +1241,7 @@ export default class Main extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await Promise.all(
-          [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, RSK].map(
+          [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, ROOTSTOCK].map(
             async (network) => {
               await this.providerBridgeService.denyOrRevokePermission({
                 ...permission,

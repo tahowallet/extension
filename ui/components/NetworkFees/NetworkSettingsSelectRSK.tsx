@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
 import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { RSK } from "@tallyho/tally-background/constants"
+import { ROOTSTOCK } from "@tallyho/tally-background/constants"
 import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
@@ -11,7 +11,7 @@ export default function NetworkSettingsRSK(): ReactElement {
   })
   const transactionData = useBackgroundSelector(selectTransactionData)
 
-  if (transactionData?.network.chainID !== RSK.chainID) {
+  if (transactionData?.network.chainID !== ROOTSTOCK.chainID) {
     throw new Error(
       "NetworkSettingsSelect mismatch - expected an RSK transaction"
     )

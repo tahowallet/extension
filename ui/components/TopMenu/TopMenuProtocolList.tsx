@@ -5,7 +5,7 @@ import {
   GOERLI,
   OPTIMISM,
   POLYGON,
-  RSK,
+  ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { sameNetwork } from "@tallyho/tally-background/networks"
@@ -37,7 +37,7 @@ const productionNetworks = [
   ...(isEnabled(FeatureFlags.SUPPORT_RSK)
     ? [
         {
-          network: RSK,
+          network: ROOTSTOCK,
           info: i18n.t("protocol.mainnet"),
         },
       ]

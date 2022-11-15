@@ -12,7 +12,7 @@ import {
 import {
   ARBITRUM_ONE,
   OPTIMISM,
-  RSK,
+  ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "./NetworkSettingsSelect"
@@ -46,7 +46,7 @@ export default function NetworkSettingsChooser({
       if (transactionDetails.network.name === OPTIMISM.name) {
         return <NetworkSettingsOptimism />
       }
-      if (transactionDetails.network.name === RSK.name) {
+      if (transactionDetails.network.name === ROOTSTOCK.name) {
         return <NetworkSettingsRSK />
       }
       if (transactionDetails.network.name === ARBITRUM_ONE.name) {
