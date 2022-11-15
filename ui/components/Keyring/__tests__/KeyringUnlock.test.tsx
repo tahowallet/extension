@@ -1,10 +1,10 @@
 import React from "react"
 import userEvent from "@testing-library/user-event"
 import { initialState } from "@tallyho/tally-background/redux-slices/keyrings"
-import { renderWithProviders } from "../../../utils/test-utils"
+import { renderWithProviders } from "../../../tests/test-utils"
 import KeyringUnlock from "../KeyringUnlock"
 
-const password = "password"
+const password = "an_invalid_password"
 const label = "Signing password"
 const error = "Incorrect password"
 
@@ -16,7 +16,7 @@ const getPreloadedState = (status: "locked" | "unlocked") => ({
 })
 
 describe("KeyringUnlock", () => {
-  test("should not unlock the wallet", async () => {
+  test("should not unlock the wallet when an incorrect password is submitted", async () => {
     const ui = renderWithProviders(
       <KeyringUnlock displayCancelButton={false} />,
       { preloadedState: getPreloadedState("locked") }

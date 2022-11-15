@@ -4,10 +4,7 @@ import type { RenderOptions } from "@testing-library/react"
 import type { PreloadedState } from "@reduxjs/toolkit"
 import { Provider } from "react-redux"
 import { RootState } from "@tallyho/tally-background"
-import {
-  ReduxStoreTypeForTest,
-  initializeStoreForTest,
-} from "@tallyho/tally-background/main"
+import { initializeStoreForTest, ReduxStoreTypeForTest } from "./store"
 
 interface ExtendedRenderOptions extends Omit<RenderOptions, "queries"> {
   preloadedState?: PreloadedState<RootState>

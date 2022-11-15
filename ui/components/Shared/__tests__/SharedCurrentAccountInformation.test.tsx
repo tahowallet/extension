@@ -1,10 +1,10 @@
 import React from "react"
 import { initialState } from "@tallyho/tally-background/redux-slices/keyrings"
 import SharedCurrentAccountInformation from "../SharedCurrentAccountInformation"
-import { renderWithProviders } from "../../../utils/test-utils"
+import { renderWithProviders } from "../../../tests/test-utils"
 
 const name = "Name"
-const shortenedAddress = "Shortened Address"
+const shortenedAddress = "0x208e…090cd"
 const keyringId = "keyring"
 const lock = "lock"
 const unlock = "unlock"
