@@ -1,5 +1,5 @@
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
-import { RSK } from "@tallyho/tally-background/constants"
+import { ROOTSTOCK } from "@tallyho/tally-background/constants"
 import {
   isProbablyEVMAddress,
   normalizeEVMAddress,
@@ -165,7 +165,7 @@ export const useAddressOrNameValidation: AsyncValidationHook<
       } else if (isProbablyEVMAddress(trimmed)) {
         // Apply checksum validation only for RSK network
         if (
-          RSK.chainID === network.chainID &&
+          ROOTSTOCK.chainID === network.chainID &&
           isMixedCaseAddress(trimmed) &&
           !isValidChecksumAddress(trimmed, +network.chainID)
         ) {
