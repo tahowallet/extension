@@ -41,7 +41,7 @@ export default function NetworkSettingsChooser({
       if (transactionDetails.network.name === "Optimism") {
         return <NetworkSettingsOptimism />
       }
-      if (transactionDetails.network.name === "RSK") {
+      if (transactionDetails.network.name === "Rootstock") {
         return <NetworkSettingsRSK />
       }
       if (transactionDetails.network.name === "Arbitrum") {
