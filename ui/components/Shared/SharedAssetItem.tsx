@@ -1,7 +1,7 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { AnyAsset, AnyAssetAmount } from "@tallyho/tally-background/assets"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
-import { RSK } from "@tallyho/tally-background/constants"
+import { ROOTSTOCK } from "@tallyho/tally-background/constants"
 import SharedAssetIcon from "./SharedAssetIcon"
 import SharedIcon from "./SharedIcon"
 import { scanWebsite } from "../../utils/constants"
@@ -47,7 +47,7 @@ export default function SharedAssetItem<T extends AnyAsset>(
     const baseLink = scanWebsite[currentNetwork.chainID]?.url
     if ("contractAddress" in asset && baseLink) {
       const contractBase =
-        currentNetwork.chainID === RSK.chainID ? "address" : "token"
+        currentNetwork.chainID === ROOTSTOCK.chainID ? "address" : "token"
       setContractLink(`${baseLink}/${contractBase}/${asset.contractAddress}`)
     } else {
       setContractLink("")
