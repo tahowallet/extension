@@ -9,6 +9,11 @@ import {
   selectDefaultNetworkFeeSettings,
   selectTransactionData,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import {
+  ARBITRUM_ONE,
+  OPTIMISM,
+  RSK,
+} from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "./NetworkSettingsSelect"
 import NetworkSettingsOptimism from "./NetworkSettingsSelectOptimism"
@@ -38,13 +43,13 @@ export default function NetworkSettingsChooser({
 
   function networkSettingsSelectorFinder() {
     if (transactionDetails) {
-      if (transactionDetails.network.name === "Optimism") {
+      if (transactionDetails.network.name === OPTIMISM.name) {
         return <NetworkSettingsOptimism />
       }
-      if (transactionDetails.network.name === "Rootstock") {
+      if (transactionDetails.network.name === RSK.name) {
         return <NetworkSettingsRSK />
       }
-      if (transactionDetails.network.name === "Arbitrum") {
+      if (transactionDetails.network.name === ARBITRUM_ONE.name) {
         return (
           <NetworkSettingsSelectArbitrum
             estimatedFeesPerGas={estimatedFeesPerGas}
