@@ -768,7 +768,7 @@ export default class IndexingService extends BaseService<Events> {
         } else {
           await this.retrieveTokenBalances(
             addressOnNetwork,
-            this.cachedAssets[addressOnNetwork.network.chainID].filter(
+            this.getCachedAssets(addressOnNetwork.network).filter(
               isSmartContractFungibleAsset
             )
           )
