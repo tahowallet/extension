@@ -30,6 +30,7 @@ import {
   MINUTE,
   CHAINS_WITH_MEMPOOL,
   EIP_1559_COMPLIANT_CHAIN_IDS,
+  AVALANCHE,
 } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
@@ -269,6 +270,8 @@ export default class ChainService extends BaseService<Events> {
       GOERLI,
       ARBITRUM_ONE,
       ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [ROOTSTOCK] : []),
+      // TODO: FEATURE FLAG
+      AVALANCHE,
     ]
 
     this.trackedNetworks = []
@@ -1291,9 +1294,15 @@ export default class ChainService extends BaseService<Events> {
     incomingOnly = false
   ): Promise<void> {
     if (
-      [ETHEREUM, POLYGON, OPTIMISM, ARBITRUM_ONE, GOERLI, ROOTSTOCK].every(
-        (network) => network.chainID !== addressOnNetwork.network.chainID
-      )
+      [
+        ETHEREUM,
+        POLYGON,
+        OPTIMISM,
+        ARBITRUM_ONE,
+        GOERLI,
+        ROOTSTOCK,
+        AVALANCHE,
+      ].every((network) => network.chainID !== addressOnNetwork.network.chainID)
     ) {
       logger.error(
         `Asset transfer check not supported on network ${JSON.stringify(
