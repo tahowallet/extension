@@ -12,6 +12,7 @@ import {
 } from "../../assets"
 import { DeepWriteable } from "../../types"
 import { fixPolygonWETHIssue, polygonTokenListURL } from "./token-list-edit"
+import { normalizeEVMAddress } from "../../lib/utils"
 
 /*
  * IndexedPricePoint extends PricePoint to expose each asset's ID directly for
@@ -266,7 +267,7 @@ export class IndexingDatabase extends Dexie {
       .map((token) => ({
         ...token,
         homeNetwork: network,
-        contractAddress: token.address,
+        contractAddress: normalizeEVMAddress(token.address),
       }))
   }
 

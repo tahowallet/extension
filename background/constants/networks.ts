@@ -10,7 +10,7 @@ export const ETHEREUM: EVMNetwork = {
 }
 
 export const RSK: EVMNetwork = {
-  name: "RSK",
+  name: "Rootstock",
   baseAsset: RBTC,
   chainID: "30",
   family: "EVM",
@@ -89,11 +89,13 @@ export const NETWORK_FOR_LEDGER_SIGNING = [ETHEREUM, POLYGON]
 
 // Networks that are not added to this struct will
 // not have an in-wallet NFT tab
-export const CHAIN_ID_TO_NFT_METADATA_PROVIDER = {
-  [ETHEREUM.chainID]: "alchemy" as const,
-  [POLYGON.chainID]: "alchemy" as const,
-  [OPTIMISM.chainID]: "simplehash" as const,
-  [ARBITRUM_ONE.chainID]: "simplehash" as const,
+export const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
+  [chainID: string]: ("alchemy" | "simplehash" | "poap")[]
+} = {
+  [ETHEREUM.chainID]: ["alchemy", "poap"],
+  [POLYGON.chainID]: ["alchemy"],
+  [OPTIMISM.chainID]: ["simplehash"],
+  [ARBITRUM_ONE.chainID]: ["simplehash"],
 }
 
 export const NETWORKS_SUPPORTING_NFTS = new Set(
