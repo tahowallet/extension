@@ -38,7 +38,7 @@ const productionNetworks = [
     ? [
         {
           network: ROOTSTOCK,
-          info: i18n.t("protocol.mainnet"),
+          info: i18n.t("protocol.beta"),
         },
       ]
     : []),
