@@ -1201,13 +1201,6 @@ export default class Main extends BaseService<never> {
     )
 
     this.providerBridgeService.emitter.on(
-      "dappOpened",
-      async (addressOnNetwork: AddressOnNetwork) => {
-        this.chainService.markAccountActivity(addressOnNetwork)
-      }
-    )
-
-    this.providerBridgeService.emitter.on(
       "setClaimReferrer",
       async (referral: string) => {
         const isAddress = isProbablyEVMAddress(referral)
