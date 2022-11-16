@@ -122,7 +122,7 @@ import {
   GOERLI,
   OPTIMISM,
   POLYGON,
-  RSK,
+  ROOTSTOCK,
 } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
@@ -150,6 +150,7 @@ import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
 import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
+import { isSmartContractFungibleAsset } from "./assets"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -865,27 +866,43 @@ export default class Main extends BaseService<never> {
   async connectIndexingService(): Promise<void> {
     this.indexingService.emitter.on(
       "accountsWithBalances",
-      async (accountsWithBalances) => {
+      async ({ balances, addressOnNetwork }) => {
         const assetsToTrack = await this.indexingService.getAssetsToTrack()
+        const trackedAccounts = await this.chainService.getAccountsToTrack()
+        const allTrackedAddresses = new Set(
+          trackedAccounts.map((account) => account.address)
+        )
+
+        if (!allTrackedAddresses.has(addressOnNetwork.address)) {
+          return
+        }
 
         const filteredBalancesToDispatch: AccountBalance[] = []
 
-        accountsWithBalances.forEach((balance) => {
+        balances.forEach((balance) => {
           // TODO support multi-network assets
-          const doesThisBalanceHaveAnAlreadyTrackedAsset =
-            !!assetsToTrack.filter(
-              (t) => t.symbol === balance.assetAmount.asset.symbol
-            )[0]
+          const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
+            (tracked) =>
+              tracked.symbol === balance.assetAmount.asset.symbol &&
+              isSmartContractFungibleAsset(balance.assetAmount.asset) &&
+              normalizeEVMAddress(tracked.contractAddress) ===
+                normalizeEVMAddress(balance.assetAmount.asset.contractAddress)
+          )
 
           if (
             balance.assetAmount.amount > 0 ||
-            doesThisBalanceHaveAnAlreadyTrackedAsset
+            balanceHasAnAlreadyTrackedAsset
           ) {
             filteredBalancesToDispatch.push(balance)
           }
         })
 
-        this.store.dispatch(updateAccountBalance(filteredBalancesToDispatch))
+        this.store.dispatch(
+          updateAccountBalance({
+            balances: filteredBalancesToDispatch,
+            addressOnNetwork,
+          })
+        )
       }
     )
 
@@ -1204,13 +1221,6 @@ export default class Main extends BaseService<never> {
     )
 
     this.providerBridgeService.emitter.on(
-      "dappOpened",
-      async (addressOnNetwork: AddressOnNetwork) => {
-        this.chainService.markAccountActivity(addressOnNetwork)
-      }
-    )
-
-    this.providerBridgeService.emitter.on(
       "setClaimReferrer",
       async (referral: string) => {
         const isAddress = isProbablyEVMAddress(referral)
@@ -1246,7 +1256,7 @@ export default class Main extends BaseService<never> {
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await Promise.all(
         // TODO: replace this with this.chainService.supportedNetworks when removing the chain feature flags
-        [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, RSK].map(
+        [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, ROOTSTOCK].map(
           async (network) => {
             await this.providerBridgeService.grantPermission({
               ...permission,
@@ -1261,7 +1271,7 @@ export default class Main extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await Promise.all(
-          [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, RSK].map(
+          [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, ROOTSTOCK].map(
             async (network) => {
               await this.providerBridgeService.denyOrRevokePermission({
                 ...permission,
