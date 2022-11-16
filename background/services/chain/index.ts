@@ -858,8 +858,13 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
-    await this.db.addAccountToTrack(addressNetwork)
-    this.emitter.emit("newAccountToTrack", addressNetwork)
+    const isAccountOnNetworkAlreadyTracked =
+      await this.db.getTrackedAccountOnNetwork(addressNetwork)
+    if (!isAccountOnNetworkAlreadyTracked) {
+      // Skip save, emit and savedTransaction emission on resubmission
+      await this.db.addAccountToTrack(addressNetwork)
+      this.emitter.emit("newAccountToTrack", addressNetwork)
+    }
     this.emitSavedTransactions(addressNetwork)
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
       logger.error(

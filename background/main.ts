@@ -67,6 +67,7 @@ import {
   setNewSelectedAccount,
   setSnackbarMessage,
   setAccountsSignerSettings,
+  toggleCollectAnalytics,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -144,6 +145,8 @@ import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
 import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
+import AnalyticsService from "./services/analytics"
+import { AnalyticsPreferences } from "./services/preferences/types"
 import { isSmartContractFungibleAsset } from "./assets"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -280,6 +283,11 @@ export default class Main extends BaseService<never> {
       chainService
     )
 
+    const analyticsService = AnalyticsService.create(
+      chainService,
+      preferenceService
+    )
+
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
@@ -318,7 +326,8 @@ export default class Main extends BaseService<never> {
       await doggoService,
       await telemetryService,
       await ledgerService,
-      await signingService
+      await signingService,
+      await analyticsService
     )
   }
 
@@ -388,7 +397,13 @@ export default class Main extends BaseService<never> {
      * A promise to the signing service which will route operations between the UI
      * and the exact signing services.
      */
-    private signingService: SigningService
+    private signingService: SigningService,
+
+    /**
+     * A promise to the analytics service which will be responsible for listening
+     * to events and dispatching to our analytics backend
+     */
+    private analyticsService: AnalyticsService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -447,6 +462,7 @@ export default class Main extends BaseService<never> {
       this.telemetryService.startService(),
       this.ledgerService.startService(),
       this.signingService.startService(),
+      this.analyticsService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -466,6 +482,7 @@ export default class Main extends BaseService<never> {
       this.telemetryService.stopService(),
       this.ledgerService.stopService(),
       this.signingService.stopService(),
+      this.analyticsService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -484,6 +501,7 @@ export default class Main extends BaseService<never> {
     this.connectTelemetryService()
     this.connectLedgerService()
     this.connectSigningService()
+    this.connectAnalyticsService()
 
     await this.connectChainService()
 
@@ -1395,6 +1413,31 @@ export default class Main extends BaseService<never> {
     return getActivityDetails(enrichedTransaction)
   }
 
+  async connectAnalyticsService(): Promise<void> {
+    this.preferenceService.emitter.on(
+      "updateAnalyticsPreferences",
+      async (analyticsPreferences: AnalyticsPreferences) => {
+        // This event is used on initialization and data change
+        this.store.dispatch(
+          toggleCollectAnalytics(
+            // we are using only this field on the UI atm
+            // it's expected that more detailed analytics settings will come
+            analyticsPreferences.isEnabled
+          )
+        )
+      }
+    )
+
+    uiSliceEmitter.on(
+      "updateAnalyticsPreferences",
+      async (analyticsPreferences: AnalyticsPreferences) => {
+        await this.preferenceService.updateAnalyticsPreferences(
+          analyticsPreferences
+        )
+      }
+    )
+  }
+
   async updateSignerTitle(
     signer: AccountSignerWithId,
     title: string
@@ -1417,6 +1460,8 @@ export default class Main extends BaseService<never> {
   private connectPopupMonitor() {
     runtime.onConnect.addListener((port) => {
       if (port.name !== popupMonitorPortName) return
+      this.analyticsService.sendAnalyticsEvent("UI open")
+
       port.onDisconnect.addListener(() => {
         this.onPopupDisconnected()
       })
