@@ -607,7 +607,19 @@ export default function Swap(): ReactElement {
                 showCurrencyAmount
                 priceImpact={priceDetails?.priceImpact}
                 // FIXME Merge master asset list with account balances.
-                assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
+                assetsAndAmounts={buyAssets.map((asset) => {
+                  const ownedAssetWithBalance = ownedSellAssetAmounts.find(
+                    (completeAsset) =>
+                      typeof asset !== "undefined" &&
+                      isSameAsset(asset, completeAsset.asset)
+                  )
+                  return {
+                    asset,
+                    localizedDecimalAmount:
+                      ownedAssetWithBalance?.localizedDecimalAmount,
+                    amount: ownedAssetWithBalance?.amount,
+                  }
+                })}
                 selectedAsset={buyAsset}
                 isDisabled={buyAmountLoading}
                 showMaxButton={false}
