@@ -20,6 +20,7 @@ import monitorForWalletConnectionPrompts from "./wallet-connection-handlers"
 // TODO: we don't want to impersonate MetaMask everywhere to not break existing integrations,
 //       so let's do this only on the websites that need this feature
 const impersonateMetamaskWhitelist = [
+  "transferto.xyz",
   "opensea.io",
   "gmx.io",
   "app.lyra.finance",
@@ -38,6 +39,7 @@ const impersonateMetamaskWhitelist = [
   "tofunft.com",
   "aboard.exchange",
   "portal.zksync.io",
+  "blur.io",
 ]
 
 export default class TallyWindowProvider extends EventEmitter {

@@ -18,7 +18,7 @@ import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/sel
 import {
   ARBITRUM_ONE,
   OPTIMISM,
-  RSK,
+  ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
 import {
   EVMNetwork,
@@ -92,7 +92,7 @@ const estimateGweiAmount = (options: {
 
   let desiredDecimals = 0
 
-  if (RSK.chainID === network.chainID) {
+  if (ROOTSTOCK.chainID === network.chainID) {
     estimatedSpendPerGas = networkSettings.values.gasPrice ?? 0n
     desiredDecimals = 2
   }

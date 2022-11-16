@@ -14,6 +14,7 @@ import {
   prioritizedAssetSimilarityKeys,
 } from "./asset-similarity"
 import { SECOND } from "../constants"
+import { DeepWriteable } from "../types"
 
 // We allow `any` here because we don't know what we'll get back from a 3rd party api.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,7 +30,7 @@ const cleanTokenListResponse = (json: any, url: string) => {
 
 export async function fetchAndValidateTokenList(
   url: string
-): Promise<TokenListAndReference> {
+): Promise<DeepWriteable<TokenListAndReference>> {
   let ok = true
   const response = await fetchJson({ url, timeout: 10 * SECOND }).catch(() => {
     ok = false

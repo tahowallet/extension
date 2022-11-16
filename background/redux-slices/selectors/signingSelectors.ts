@@ -1,19 +1,37 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { isDefined } from "../../lib/utils/type-guards"
+import { KeyringAccountSigner } from "../../services/keyring"
+import { LedgerAccountSigner } from "../../services/ledger"
 import { AccountSigner, ReadOnlyAccountSigner } from "../../services/signing"
 import { HexString } from "../../types"
 import { selectKeyringsByAddresses } from "./keyringsSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
 
+// FIXME: This has a duplicate in `accountSelectors.ts`, but importing causes a dependency cycle
+const getAllAddresses = createSelector(
+  (state: RootState) => state.account,
+  (account) => [
+    ...new Set(
+      Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
+        Object.keys(chainAddresses)
+      )
+    ),
+  ]
+)
+
 export const selectAccountSignersByAddress = createSelector(
+  getAllAddresses,
   (state: RootState) => state.ledger.devices,
   selectKeyringsByAddresses,
-  (ledgerDevices, keyringsByAddress) => {
+  (allAddresses, ledgerDevices, keyringsByAddress) => {
+    const allAccountsSeen = new Set<string>()
     const ledgerEntries = Object.values(ledgerDevices).flatMap((device) =>
       Object.values(device.accounts).flatMap(
-        (account): [[HexString, AccountSigner]] | [] => {
+        (account): [[HexString, LedgerAccountSigner]] | [] => {
           if (account.address === null) return []
+
+          allAccountsSeen.add(account.address)
           return [
             [
               account.address,
@@ -25,31 +43,44 @@ export const selectAccountSignersByAddress = createSelector(
     )
 
     const keyringEntries = Object.entries(keyringsByAddress)
-      .map(([address, keyring]): [HexString, AccountSigner] | undefined =>
-        keyring.id === null
-          ? undefined
-          : [
-              address,
-              {
-                type: "keyring",
-                keyringID: keyring.id,
-              },
-            ]
+      .map(
+        ([address, keyring]): [HexString, KeyringAccountSigner] | undefined => {
+          if (keyring.id === null) {
+            return undefined
+          }
+
+          allAccountsSeen.add(address)
+
+          return [
+            address,
+            {
+              type: "keyring",
+              keyringID: keyring.id,
+            },
+          ]
+        }
       )
       .filter(isDefined)
 
-    return Object.fromEntries([
+    const readOnlyEntries: [string, typeof ReadOnlyAccountSigner][] =
+      allAddresses
+        .filter((address) => !allAccountsSeen.has(address))
+        .map((address) => [address, ReadOnlyAccountSigner])
+
+    const entriesByPriority: [string, AccountSigner][] = [
+      ...readOnlyEntries,
       ...ledgerEntries,
       // Give priority to keyring over Ledger, if an address is signable by
       // both.
       ...keyringEntries,
-    ])
+    ]
+
+    return Object.fromEntries(entriesByPriority)
   }
 )
 
 export const selectCurrentAccountSigner = createSelector(
   selectAccountSignersByAddress,
   selectCurrentAccount,
-  (signingAccounts, selectedAccount) =>
-    signingAccounts[selectedAccount.address] ?? ReadOnlyAccountSigner
+  (signingAccounts, selectedAccount) => signingAccounts[selectedAccount.address]
 )

@@ -1,39 +1,31 @@
 import { removeAccount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   AccountTotal,
+  getAllAddresses,
   selectAccountSignersByAddress,
   selectKeyringByAddress,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
-import { useDispatch } from "react-redux"
 import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { useTranslation } from "react-i18next"
 import { selectLedgerDeviceByAddresses } from "@tallyho/tally-background/redux-slices/selectors/ledgerSelectors"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
-import { useAreKeyringsUnlocked, useBackgroundSelector } from "../../hooks"
+import {
+  useAreKeyringsUnlocked,
+  useBackgroundDispatch,
+  useBackgroundSelector,
+} from "../../hooks"
 import AccountItemActionHeader from "./AccountItemActionHeader"
+import RemoveAccountWarning from "./RemoveAccountWarning"
 
 interface AccountItemRemovalConfirmProps {
   account: AccountTotal
   close: () => void
-}
-
-const RegularWarning = () => {
-  const { t } = useTranslation()
-  return <span>{t("accounts.accountItem.regularWarning")}</span>
-}
-
-const LoudWarning = () => {
-  const { t } = useTranslation()
-  return (
-    <span>
-      <h3>{t("accounts.accountItem.loudWarningTitle")}</h3>
-      {t("accounts.accountItem.loudWarningBody")}
-    </span>
-  )
 }
 
 export default function AccountItemRemovalConfirm({
@@ -45,7 +37,7 @@ export default function AccountItemRemovalConfirm({
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem",
   })
-  const dispatch = useDispatch()
+  const dispatch = useBackgroundDispatch()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
   const history = useHistory()
   const keyring = useBackgroundSelector(selectKeyringByAddress(address))
@@ -53,6 +45,7 @@ export default function AccountItemRemovalConfirm({
     selectedAddress: state.ui.selectedAccount.address,
     accountsData: state.account.accountsData,
   }))
+
   const accountSigners = useBackgroundSelector(selectAccountSignersByAddress)
   const readOnlyAccount = typeof keyring === "undefined"
   const lastAddressInKeyring = keyring?.addresses.length === 1
@@ -61,13 +54,22 @@ export default function AccountItemRemovalConfirm({
     selectLedgerDeviceByAddresses
   )
 
+  const allAddresses = useBackgroundSelector(getAllAddresses)
+
+  const signer = accountSigners[address]
+
   const lastAddressInLedger =
-    accountSigners[address]?.type === "ledger" &&
-    Object.values(ledgerDeviceByAddress[address].accounts).length === 1
+    signer.type === "ledger" &&
+    !allAddresses.some(
+      (otherAddress: string) =>
+        address !== otherAddress &&
+        ledgerDeviceByAddress[otherAddress]?.id === signer.deviceID
+    )
+
+  const lastAccountInTallyWallet = Object.keys(allAddresses).length === 1
 
   const lastAddressInAccount = lastAddressInKeyring || lastAddressInLedger
 
-  const showLoudWarning = readOnlyAccount || lastAddressInAccount
   return (
     <div className="remove_address_option">
       <div className="header">
@@ -88,7 +90,11 @@ export default function AccountItemRemovalConfirm({
         </li>
       </ul>
       <div className="remove_address_details">
-        {showLoudWarning ? <LoudWarning /> : <RegularWarning />}
+        <RemoveAccountWarning
+          isReadOnlyAccount={readOnlyAccount}
+          lastAddressInAccount={lastAddressInAccount}
+          lastAccountInTallyWallet={lastAccountInTallyWallet}
+        />
       </div>
       <div className="button_container">
         <SharedButton
@@ -115,6 +121,16 @@ export default function AccountItemRemovalConfirm({
                   lastAddressInAccount,
                 })
               )
+
+              if (
+                lastAccountInTallyWallet &&
+                isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING)
+              ) {
+                window.open("/tab.html#onboarding")
+                window.close()
+                return
+              }
+
               if (sameEVMAddress(selectedAddress, address)) {
                 const newAddress = Object.keys(
                   accountsData.evm[network.chainID]

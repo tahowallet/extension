@@ -54,6 +54,7 @@ jobs:
           SIMPLE_HASH_API_KEY: ${{ secrets.SIMPLE_HASH_API_KEY }}
           ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}
           COMMIT_SHA: ${{ github.sha }}
+          POAP_API_KEY: ${{ secrets.POAP_API_KEY }}
       - name: Upload build asset
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         uses: actions/upload-artifact@v3
