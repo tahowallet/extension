@@ -6,24 +6,19 @@ import SharedAssetIcon from "./SharedAssetIcon"
 import SharedIcon from "./SharedIcon"
 import { scanWebsite } from "../../utils/constants"
 
-export type AnyAssetWithOptionalAmount<T extends AnyAsset> =
-  | {
-      asset: T
-    }
-  | {
-      asset: T
-      amount: bigint
-      localizedDecimalAmount: string
-    }
+export type AnyAssetWithOptionalAmount<T extends AnyAsset> = {
+  asset: T
+  amount?: bigint
+  localizedDecimalAmount?: string
+}
 
 export function hasAmounts<T extends AnyAsset>(
   assetWithOptionalAmount: AnyAssetWithOptionalAmount<T>
 ): assetWithOptionalAmount is AnyAssetAmount<T> & {
   localizedDecimalAmount: string
 } {
-  // The types on AnyAssetWithOptionalAmount ensures that if amount exists, so
-  // does localizedDecimalAmount.
-  return "amount" in assetWithOptionalAmount
+  // Make sure if localizedDecimalAmount exists and isnt empty/undefined
+  return !!assetWithOptionalAmount?.localizedDecimalAmount
 }
 
 interface Props<T extends AnyAsset> {

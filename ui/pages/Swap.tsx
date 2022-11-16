@@ -617,7 +617,6 @@ export default function Swap(): ReactElement {
                     asset,
                     localizedDecimalAmount:
                       ownedAssetWithBalance?.localizedDecimalAmount,
-                    amount: ownedAssetWithBalance?.amount,
                   }
                 })}
                 selectedAsset={buyAsset}
