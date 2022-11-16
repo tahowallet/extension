@@ -317,6 +317,20 @@ export class ChainDatabase extends Dexie {
     return this.accountsToTrack.toArray()
   }
 
+  async getTrackedAccountOnNetwork({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<AddressOnNetwork | null> {
+    return (
+      (
+        await this.accountsToTrack
+          .where("[address+network.name+network.chainID]")
+          .equals([address, network.name, network.chainID])
+          .toArray()
+      )[0] ?? null
+    )
+  }
+
   async getChainIDsToTrack(): Promise<Set<string>> {
     const chainIDs = await this.accountsToTrack
       .orderBy("network.chainID")

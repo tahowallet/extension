@@ -3,6 +3,7 @@ import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
+import { AnalyticsPreferences } from "../services/preferences/types"
 import { AccountSignerWithId } from "../signing"
 import { AccountSignerSettings } from "../ui"
 import { AccountState, addAddressNetwork } from "./accounts"
@@ -41,6 +42,7 @@ export type Events = {
   newSelectedAccountSwitched: AddressOnNetwork
   userActivityEncountered: AddressOnNetwork
   newSelectedNetwork: EVMNetwork
+  updateAnalyticsPreferences: AnalyticsPreferences
 }
 
 export const emitter = new Emittery<Events>()
@@ -174,6 +176,15 @@ export const {
 } = uiSlice.actions
 
 export default uiSlice.reducer
+
+export const updateAnalyticsPreferences = createBackgroundAsyncThunk(
+  "ui/updateAnalyticsPreferences",
+  async (collectAnalytics: boolean) => {
+    await emitter.emit("updateAnalyticsPreferences", {
+      isEnabled: collectAnalytics,
+    })
+  }
+)
 
 // Async thunk to bubble the setNewDefaultWalletValue action from  store to emitter.
 export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
