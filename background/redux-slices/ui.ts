@@ -287,6 +287,11 @@ export const selectDefaultWallet = createSelector(
   (settings) => settings?.defaultWallet
 )
 
+export const selectShowAnalyticsNotification = createSelector(
+  selectSettings,
+  (settings) => settings?.showAnalyticsNotification
+)
+
 export const selectSlippageTolerance = createSelector(
   selectUI,
   (ui) => ui.slippageTolerance
