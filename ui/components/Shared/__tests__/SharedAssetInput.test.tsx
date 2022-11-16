@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { ETHEREUM } from "@tallyho/tally-background/constants"
 import { FungibleAsset } from "@tallyho/tally-background/assets"
 import SharedAssetInput from "../SharedAssetInput"
-import { renderWithProviders } from "../../../utils/test-utils"
+import { renderWithProviders } from "../../../tests/test-utils"
 
 const label = "Test label"
 const asset: FungibleAsset = {

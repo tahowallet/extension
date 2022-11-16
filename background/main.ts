@@ -1,13 +1,7 @@
 import browser, { runtime } from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
 import deepDiff from "webext-redux/lib/strategies/deepDiff/diff"
-import {
-  CombinedState,
-  configureStore,
-  EnhancedStore,
-  isPlain,
-  Middleware,
-} from "@reduxjs/toolkit"
+import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { debounce } from "lodash"
@@ -42,7 +36,7 @@ import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
-import rootReducer, { RootState } from "./redux-slices"
+import rootReducer from "./redux-slices"
 import {
   deleteAccount,
   loadAccount,
@@ -240,20 +234,6 @@ const initializeStore = (preloadedState = {}, main: Main) =>
   })
 
 type ReduxStoreType = ReturnType<typeof initializeStore>
-
-export const initializeStoreForTest = (
-  preloadedState = {}
-): EnhancedStore<CombinedState<RootState>> =>
-  configureStore({
-    reducer: rootReducer,
-    preloadedState,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        serializableCheck: false,
-      }),
-  })
-
-export type ReduxStoreTypeForTest = ReturnType<typeof initializeStoreForTest>
 
 export const popupMonitorPortName = "popup-monitor"
 

@@ -1,7 +1,7 @@
 import React from "react"
 import { hardcodedMainCurrencySign } from "@tallyho/tally-background/redux-slices/utils/constants"
 import PriceDetails from "../PriceDetails"
-import { renderWithProviders } from "../../../utils/test-utils"
+import { renderWithProviders } from "../../../tests/test-utils"
 
 describe("PriceDetails", () => {
   test("should display amount main currency", () => {
