@@ -1,7 +1,8 @@
 import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
   selectCollectAnalytics,
-  toggleCollectAnalytics,
+  updateAnalyticsPreferences,
 } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -28,14 +29,14 @@ export default function SettingsAnalytics(): ReactElement {
 
   const handleToggleChange = (toggleValue: boolean) => {
     if (toggleValue) {
-      dispatch(toggleCollectAnalytics(true))
+      dispatch(updateAnalyticsPreferences(true))
     } else {
       setShowAnalyticsMenu(true)
     }
   }
 
   const handleCollectAnalyticsSubmit = () => {
-    dispatch(toggleCollectAnalytics(false))
+    dispatch(updateAnalyticsPreferences(false))
     setShowAnalyticsMenu(false)
   }
 
@@ -99,16 +100,18 @@ export default function SettingsAnalytics(): ReactElement {
         >
           {t(`policyBtn`)}
         </SharedButton>
-        <SharedButton
-          type="tertiaryError"
-          size="medium"
-          iconSmall="garbage"
-          iconPosition="left"
-          isDisabled={!collectAnalytics}
-          onClick={() => setShowDeleteMenu(true)}
-        >
-          {t(`deleteBtn`)}
-        </SharedButton>
+        {isEnabled(FeatureFlags.SHOW_DELETE_DATA_BUTTON) && (
+          <SharedButton
+            type="tertiaryError"
+            size="medium"
+            iconSmall="garbage"
+            iconPosition="left"
+            isDisabled={!collectAnalytics}
+            onClick={() => setShowDeleteMenu(true)}
+          >
+            {t(`deleteBtn`)}
+          </SharedButton>
+        )}
       </section>
       <AnalyticsSlideUpMenu
         isOpen={showAnalyticsMenu}
