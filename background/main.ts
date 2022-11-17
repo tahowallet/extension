@@ -29,6 +29,7 @@ import {
   DoggoService,
   LedgerService,
   SigningService,
+  NFTsService,
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
@@ -279,6 +280,8 @@ export default class Main extends BaseService<never> {
       chainService
     )
 
+    const nftsService = NFTsService.create(chainService)
+
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
@@ -317,7 +320,8 @@ export default class Main extends BaseService<never> {
       await doggoService,
       await telemetryService,
       await ledgerService,
-      await signingService
+      await signingService,
+      await nftsService
     )
   }
 
@@ -387,7 +391,13 @@ export default class Main extends BaseService<never> {
      * A promise to the signing service which will route operations between the UI
      * and the exact signing services.
      */
-    private signingService: SigningService
+    private signingService: SigningService,
+
+    /**
+     * A promise to the NFTs service which takes care of NFTs data, fetching, updating
+     * details and prices of NFTs for imported accounts.
+     */
+    private nftsService: NFTsService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -446,6 +456,7 @@ export default class Main extends BaseService<never> {
       this.telemetryService.startService(),
       this.ledgerService.startService(),
       this.signingService.startService(),
+      this.nftsService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -465,6 +476,7 @@ export default class Main extends BaseService<never> {
       this.telemetryService.stopService(),
       this.ledgerService.stopService(),
       this.signingService.stopService(),
+      this.nftsService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -483,6 +495,7 @@ export default class Main extends BaseService<never> {
     this.connectTelemetryService()
     this.connectLedgerService()
     this.connectSigningService()
+    this.connectNFTsService()
 
     await this.connectChainService()
 
@@ -1369,6 +1382,10 @@ export default class Main extends BaseService<never> {
   connectTelemetryService(): void {
     // Pass the redux store to the telemetry service so we can analyze its size
     this.telemetryService.connectReduxStore(this.store)
+  }
+
+  connectNFTsService(): void {
+    this.nftsService.emitter.on("initializeNFTs", () => {})
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
