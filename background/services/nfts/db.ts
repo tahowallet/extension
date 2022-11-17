@@ -22,6 +22,10 @@ export class NFTsDatabase extends Dexie {
   async updateCollections(collections: NFTCollection[]): Promise<void> {
     await this.collections.bulkPut(collections)
   }
+
+  async getAllCollections(): Promise<NFTCollection[]> {
+    return this.collections.toArray()
+  }
 }
 
 export async function getOrCreateDB(): Promise<NFTsDatabase> {

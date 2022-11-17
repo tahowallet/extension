@@ -14,6 +14,7 @@ import ledgerReducer from "./ledger"
 import signingReducer from "./signing"
 import earnReducer from "./earn"
 import nftsReducer from "./nfts"
+import nftsUpdateReducer from "./nfts_update"
 
 const mainReducer = combineReducers({
   account: accountsReducer,
@@ -30,6 +31,7 @@ const mainReducer = combineReducers({
   earn: earnReducer,
   ledger: ledgerReducer,
   nfts: nftsReducer,
+  nftsUpdate: nftsUpdateReducer,
 })
 
 export default mainReducer

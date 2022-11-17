@@ -1,5 +1,6 @@
 import { AddressOnNetwork } from "../../accounts"
 import { getNFTCollections, getNFTs } from "../../lib/nfts_update"
+import { NFT, NFTCollection } from "../../nfts"
 import BaseService from "../base"
 import ChainService from "../chain"
 
@@ -7,8 +8,8 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, NFTsDatabase } from "./db"
 
 interface Events extends ServiceLifecycleEvents {
-  initializeNFTs: string // TODO initialize redux from database
-  updateNFTs: string // TODO update redux
+  initializeNFTs: NFTCollection[]
+  updateNFTs: NFT[] // TODO update redux
 }
 
 export default class NFTsService extends BaseService<Events> {
@@ -33,8 +34,6 @@ export default class NFTsService extends BaseService<Events> {
     await super.internalStartService()
 
     this.connectChainServiceEvents()
-
-    this.emitter.emit("initializeNFTs", "TODO")
   }
 
   protected override async internalStopService(): Promise<void> {
@@ -45,7 +44,10 @@ export default class NFTsService extends BaseService<Events> {
 
   private async connectChainServiceEvents(): Promise<void> {
     this.chainService.emitter.once("serviceStarted").then(async () => {
-      this.fetchCollections()
+      await this.fetchCollections()
+
+      const collections = await this.db.getAllCollections()
+      this.emitter.emit("initializeNFTs", collections)
     })
 
     this.chainService.emitter.on(
@@ -58,12 +60,14 @@ export default class NFTsService extends BaseService<Events> {
     const accountsToFetch =
       accounts ?? (await this.chainService.getAccountsToTrack())
 
-    getNFTCollections(accountsToFetch).forEach((request) =>
-      request.then(async (collections) => {
-        await this.db.updateCollections(collections)
+    await Promise.all(
+      getNFTCollections(accountsToFetch).map(async (request) =>
+        request.then(async (collections) => {
+          await this.db.updateCollections(collections)
 
-        this.emitter.emit("updateNFTs", "")
-      })
+          // this.emitter.emit("updateNFTs", "")
+        })
+      )
     )
   }
 
@@ -79,7 +83,7 @@ export default class NFTsService extends BaseService<Events> {
         await this.db.updateNFTs(nfts)
         this.#nextPageUrls.push(...nextPageURLs)
 
-        this.emitter.emit("updateNFTs", "")
+        // this.emitter.emit("updateNFTs", "")
       })
     )
   }
