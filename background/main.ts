@@ -67,6 +67,7 @@ import {
   setNewSelectedAccount,
   setSnackbarMessage,
   setAccountsSignerSettings,
+  toggleCollectAnalytics,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -116,7 +117,7 @@ import {
   GOERLI,
   OPTIMISM,
   POLYGON,
-  RSK,
+  ROOTSTOCK,
 } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
@@ -144,6 +145,9 @@ import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
 import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
+import AnalyticsService from "./services/analytics"
+import { AnalyticsPreferences } from "./services/preferences/types"
+import { isSmartContractFungibleAsset } from "./assets"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -279,6 +283,11 @@ export default class Main extends BaseService<never> {
       chainService
     )
 
+    const analyticsService = AnalyticsService.create(
+      chainService,
+      preferenceService
+    )
+
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
@@ -317,7 +326,8 @@ export default class Main extends BaseService<never> {
       await doggoService,
       await telemetryService,
       await ledgerService,
-      await signingService
+      await signingService,
+      await analyticsService
     )
   }
 
@@ -387,7 +397,13 @@ export default class Main extends BaseService<never> {
      * A promise to the signing service which will route operations between the UI
      * and the exact signing services.
      */
-    private signingService: SigningService
+    private signingService: SigningService,
+
+    /**
+     * A promise to the analytics service which will be responsible for listening
+     * to events and dispatching to our analytics backend
+     */
+    private analyticsService: AnalyticsService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -446,6 +462,7 @@ export default class Main extends BaseService<never> {
       this.telemetryService.startService(),
       this.ledgerService.startService(),
       this.signingService.startService(),
+      this.analyticsService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -465,6 +482,7 @@ export default class Main extends BaseService<never> {
       this.telemetryService.stopService(),
       this.ledgerService.stopService(),
       this.signingService.stopService(),
+      this.analyticsService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -483,6 +501,7 @@ export default class Main extends BaseService<never> {
     this.connectTelemetryService()
     this.connectLedgerService()
     this.connectSigningService()
+    this.connectAnalyticsService()
 
     await this.connectChainService()
 
@@ -845,27 +864,43 @@ export default class Main extends BaseService<never> {
   async connectIndexingService(): Promise<void> {
     this.indexingService.emitter.on(
       "accountsWithBalances",
-      async (accountsWithBalances) => {
+      async ({ balances, addressOnNetwork }) => {
         const assetsToTrack = await this.indexingService.getAssetsToTrack()
+        const trackedAccounts = await this.chainService.getAccountsToTrack()
+        const allTrackedAddresses = new Set(
+          trackedAccounts.map((account) => account.address)
+        )
+
+        if (!allTrackedAddresses.has(addressOnNetwork.address)) {
+          return
+        }
 
         const filteredBalancesToDispatch: AccountBalance[] = []
 
-        accountsWithBalances.forEach((balance) => {
+        balances.forEach((balance) => {
           // TODO support multi-network assets
-          const doesThisBalanceHaveAnAlreadyTrackedAsset =
-            !!assetsToTrack.filter(
-              (t) => t.symbol === balance.assetAmount.asset.symbol
-            )[0]
+          const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
+            (tracked) =>
+              tracked.symbol === balance.assetAmount.asset.symbol &&
+              isSmartContractFungibleAsset(balance.assetAmount.asset) &&
+              normalizeEVMAddress(tracked.contractAddress) ===
+                normalizeEVMAddress(balance.assetAmount.asset.contractAddress)
+          )
 
           if (
             balance.assetAmount.amount > 0 ||
-            doesThisBalanceHaveAnAlreadyTrackedAsset
+            balanceHasAnAlreadyTrackedAsset
           ) {
             filteredBalancesToDispatch.push(balance)
           }
         })
 
-        this.store.dispatch(updateAccountBalance(filteredBalancesToDispatch))
+        this.store.dispatch(
+          updateAccountBalance({
+            balances: filteredBalancesToDispatch,
+            addressOnNetwork,
+          })
+        )
       }
     )
 
@@ -1184,13 +1219,6 @@ export default class Main extends BaseService<never> {
     )
 
     this.providerBridgeService.emitter.on(
-      "dappOpened",
-      async (addressOnNetwork: AddressOnNetwork) => {
-        this.chainService.markAccountActivity(addressOnNetwork)
-      }
-    )
-
-    this.providerBridgeService.emitter.on(
       "setClaimReferrer",
       async (referral: string) => {
         const isAddress = isProbablyEVMAddress(referral)
@@ -1226,7 +1254,7 @@ export default class Main extends BaseService<never> {
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await Promise.all(
         // TODO: replace this with this.chainService.supportedNetworks when removing the chain feature flags
-        [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, RSK].map(
+        [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, ROOTSTOCK].map(
           async (network) => {
             await this.providerBridgeService.grantPermission({
               ...permission,
@@ -1241,7 +1269,7 @@ export default class Main extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await Promise.all(
-          [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, RSK].map(
+          [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, ROOTSTOCK].map(
             async (network) => {
               await this.providerBridgeService.denyOrRevokePermission({
                 ...permission,
@@ -1385,6 +1413,31 @@ export default class Main extends BaseService<never> {
     return getActivityDetails(enrichedTransaction)
   }
 
+  async connectAnalyticsService(): Promise<void> {
+    this.preferenceService.emitter.on(
+      "updateAnalyticsPreferences",
+      async (analyticsPreferences: AnalyticsPreferences) => {
+        // This event is used on initialization and data change
+        this.store.dispatch(
+          toggleCollectAnalytics(
+            // we are using only this field on the UI atm
+            // it's expected that more detailed analytics settings will come
+            analyticsPreferences.isEnabled
+          )
+        )
+      }
+    )
+
+    uiSliceEmitter.on(
+      "updateAnalyticsPreferences",
+      async (analyticsPreferences: AnalyticsPreferences) => {
+        await this.preferenceService.updateAnalyticsPreferences(
+          analyticsPreferences
+        )
+      }
+    )
+  }
+
   async updateSignerTitle(
     signer: AccountSignerWithId,
     title: string
@@ -1407,6 +1460,8 @@ export default class Main extends BaseService<never> {
   private connectPopupMonitor() {
     runtime.onConnect.addListener((port) => {
       if (port.name !== popupMonitorPortName) return
+      this.analyticsService.sendAnalyticsEvent("UI open")
+
       port.onDisconnect.addListener(() => {
         this.onPopupDisconnected()
       })

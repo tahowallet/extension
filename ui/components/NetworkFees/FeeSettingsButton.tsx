@@ -22,7 +22,7 @@ export default function FeeSettingsButton({
             font-size: 16px;
             line-height: 20px;
             border-radius: 4px;
-            padding-left: 4px;
+            padding: 0.3rem;
             border: 1px solid #33514e;
             transition: all 0.3s ease;
           }

@@ -10,10 +10,7 @@ import {
   setSnackbarMessage,
   updateSignerTitle,
 } from "@tallyho/tally-background/redux-slices/ui"
-import {
-  deriveAddress,
-  lockKeyrings,
-} from "@tallyho/tally-background/redux-slices/keyrings"
+import { deriveAddress } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   AccountTotal,
   selectCurrentNetworkAccountTotalsByCategory,
@@ -45,6 +42,7 @@ import SharedIcon from "../Shared/SharedIcon"
 import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import EditSectionForm from "./EditSectionForm"
+import SigningButton from "./SigningButton"
 
 type WalletTypeInfo = {
   title: string
@@ -277,11 +275,6 @@ export default function AccountsNotificationPanelAccounts({
     }
   }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccountAddress])
 
-  const keyringData = {
-    color: areKeyringsUnlocked ? "error" : "success",
-    icon: areKeyringsUnlocked ? "lock" : "unlock",
-  }
-
   useEffect(() => {
     // Prevents notifications from displaying when the component is not yet mounted
     if (!isMounted.current) {
@@ -290,15 +283,6 @@ export default function AccountsNotificationPanelAccounts({
       dispatch(setSnackbarMessage(t("accounts.notificationPanel.snackbar")))
     }
   }, [history, areKeyringsUnlocked, dispatch, t])
-
-  const toggleKeyringStatus = async () => {
-    if (!areKeyringsUnlocked) {
-      history.push("/keyring/unlock")
-    } else {
-      await dispatch(lockKeyrings())
-      onCurrentAddressChange("")
-    }
-  }
 
   const accountTypes = [
     AccountType.Internal,
@@ -342,24 +326,9 @@ export default function AccountsNotificationPanelAccounts({
                   {isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
                     (accountType === AccountType.Imported ||
                       accountType === AccountType.Internal) && (
-                      <button
-                        type="button"
-                        className="signing_btn"
-                        onClick={toggleKeyringStatus}
-                      >
-                        {t(
-                          `accounts.notificationPanel.signing.${
-                            areKeyringsUnlocked ? "lock" : "unlock"
-                          }`
-                        )}
-                        <SharedIcon
-                          icon={`icons/m/${keyringData.icon}.svg`}
-                          width={25}
-                          color="var(--green-40)"
-                          hoverColor={`var(--${keyringData.color})`}
-                          transitionHoverTime="0.2s"
-                        />
-                      </button>
+                      <SigningButton
+                        onCurrentAddressChange={onCurrentAddressChange}
+                      />
                     )}
                 </div>
               )}
@@ -510,22 +479,6 @@ export default function AccountsNotificationPanelAccounts({
           }
           p {
             margin: 0;
-          }
-          .signing_btn {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: color 0.2s;
-          }
-          .signing_btn:hover {
-            color: var(--${keyringData.color});
-          }
-        `}
-      </style>
-      <style global jsx>
-        {`
-          .signing_btn:hover .icon {
-            background-color: var(--${keyringData.color});
           }
         `}
       </style>
