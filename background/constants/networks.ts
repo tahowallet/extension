@@ -9,8 +9,8 @@ export const ETHEREUM: EVMNetwork = {
   coingeckoPlatformID: "ethereum",
 }
 
-export const RSK: EVMNetwork = {
-  name: "RSK",
+export const ROOTSTOCK: EVMNetwork = {
+  name: "Rootstock",
   baseAsset: RBTC,
   chainID: "30",
   family: "EVM",
@@ -75,7 +75,7 @@ export const CHAINS_WITH_MEMPOOL = new Set(
 export const NETWORK_BY_CHAIN_ID = {
   [ETHEREUM.chainID]: ETHEREUM,
   [POLYGON.chainID]: POLYGON,
-  [RSK.chainID]: RSK,
+  [ROOTSTOCK.chainID]: ROOTSTOCK,
   [ARBITRUM_ONE.chainID]: ARBITRUM_ONE,
   [OPTIMISM.chainID]: OPTIMISM,
   [GOERLI.chainID]: GOERLI,
@@ -89,11 +89,13 @@ export const NETWORK_FOR_LEDGER_SIGNING = [ETHEREUM, POLYGON]
 
 // Networks that are not added to this struct will
 // not have an in-wallet NFT tab
-export const CHAIN_ID_TO_NFT_METADATA_PROVIDER = {
-  [ETHEREUM.chainID]: "alchemy" as const,
-  [POLYGON.chainID]: "alchemy" as const,
-  [OPTIMISM.chainID]: "simplehash" as const,
-  [ARBITRUM_ONE.chainID]: "simplehash" as const,
+export const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
+  [chainID: string]: ("alchemy" | "simplehash" | "poap")[]
+} = {
+  [ETHEREUM.chainID]: ["alchemy", "poap"],
+  [POLYGON.chainID]: ["alchemy"],
+  [OPTIMISM.chainID]: ["simplehash"],
+  [ARBITRUM_ONE.chainID]: ["simplehash"],
 }
 
 export const NETWORKS_SUPPORTING_NFTS = new Set(
@@ -125,7 +127,7 @@ export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
 export const CHAIN_ID_TO_RPC_URLS: {
   [chainId: string]: Array<string> | undefined
 } = {
-  [RSK.chainID]: ["https://public-node.rsk.co"],
+  [ROOTSTOCK.chainID]: ["https://public-node.rsk.co"],
   [POLYGON.chainID]: ["https://polygon-rpc.com"],
   [OPTIMISM.chainID]: [
     "https://rpc.ankr.com/optimism",

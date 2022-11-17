@@ -2,7 +2,11 @@ import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
 
-import { Preferences, TokenListPreferences } from "./types"
+import {
+  AnalyticsPreferences,
+  Preferences,
+  TokenListPreferences,
+} from "./types"
 import { getOrCreateDB, PreferenceDatabase } from "./db"
 import BaseService from "../base"
 import { normalizeEVMAddress } from "../../lib/utils"
@@ -92,6 +96,7 @@ interface Events extends ServiceLifecycleEvents {
   preferencesChanges: Preferences
   initializeDefaultWallet: boolean
   initializeSelectedAccount: AddressOnNetwork
+  updateAnalyticsPreferences: AnalyticsPreferences
   addressBookEntryModified: AddressBookEntry
   updatedSignerSettings: AccountSignerSettings[]
 }
@@ -127,6 +132,10 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit(
       "initializeSelectedAccount",
       await this.getSelectedAccount()
+    )
+    this.emitter.emit(
+      "updateAnalyticsPreferences",
+      await this.getAnalyticsPreferences()
     )
   }
 
@@ -211,6 +220,21 @@ export default class PreferenceService extends BaseService<Events> {
     const updatedSignerSettings = this.db.updateSignerTitle(signer, title)
 
     this.emitter.emit("updatedSignerSettings", await updatedSignerSettings)
+  }
+
+  async getAnalyticsPreferences(): Promise<Preferences["analytics"]> {
+    return (await this.db.getPreferences())?.analytics
+  }
+
+  async updateAnalyticsPreferences(
+    analyticsPreferences: Partial<AnalyticsPreferences>
+  ): Promise<void> {
+    await this.db.upsertAnalyticsPreferences(analyticsPreferences)
+    const { analytics } = await this.db.getPreferences()
+
+    // This step is not strictly needed, because the settings can only
+    // be changed from the UI
+    this.emitter.emit("updateAnalyticsPreferences", analytics)
   }
 
   async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {

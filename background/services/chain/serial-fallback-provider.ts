@@ -698,7 +698,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Attempts to subscribe to full pending transactions in an Alchemy-specific
+   * Attempts to subscribe to pending transactions in an Alchemy-specific
    * way. Returns `subscribed` if the subscription succeeded, or `unsupported`
    * if the underlying provider did not support Alchemy-specific subscriptions.
    */
@@ -709,7 +709,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     try {
       await this.subscribe(
         "filteredNewFullPendingTransactionsSubscriptionID",
-        ["alchemy_filteredNewFullPendingTransactions", { address }],
+        [
+          "alchemy_pendingTransactions",
+          { fromAddress: address, toAddress: address },
+        ],
         async (result: unknown) => {
           // TODO use proper provider string
           // handle incoming transactions for an account
