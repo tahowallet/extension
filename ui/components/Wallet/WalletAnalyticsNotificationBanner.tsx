@@ -32,7 +32,6 @@ export default function WalletAnalyticsNotificationBanner(): ReactElement {
         <div className="content_container">
           <SharedIcon
             icon="icons/m/notif-correct.svg"
-            ariaLabel="correct-icon"
             width={24}
             color="var(--success)"
           />
