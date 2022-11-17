@@ -88,21 +88,6 @@ export const TEST_NETWORK_BY_CHAIN_ID = new Set(
 export const NETWORK_FOR_LEDGER_SIGNING = [ETHEREUM, POLYGON]
 
 // Networks that are not added to this struct will
-// not have an in-wallet NFT tab
-export const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
-  [chainID: string]: ("alchemy" | "simplehash" | "poap")[]
-} = {
-  [ETHEREUM.chainID]: ["alchemy", "poap"],
-  [POLYGON.chainID]: ["alchemy"],
-  [OPTIMISM.chainID]: ["simplehash"],
-  [ARBITRUM_ONE.chainID]: ["simplehash"],
-}
-
-export const NETWORKS_SUPPORTING_NFTS = new Set(
-  Object.keys(CHAIN_ID_TO_NFT_METADATA_PROVIDER)
-)
-
-// Networks that are not added to this struct will
 // not have an in-wallet Swap page
 export const CHAIN_ID_TO_0X_API_BASE: {
   [chainID: string]: string | undefined

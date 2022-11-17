@@ -9,7 +9,7 @@ import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/clai
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
-import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/constants/networks"
+import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
