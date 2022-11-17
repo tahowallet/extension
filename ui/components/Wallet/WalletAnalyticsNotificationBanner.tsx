@@ -13,9 +13,7 @@ import SharedButton from "../Shared/SharedButton"
 import SharedIcon from "../Shared/SharedIcon"
 
 export default function WalletAnalyticsNotificationBanner(): ReactElement {
-  const { t } = useTranslation("translation", {
-    keyPrefix: "wallet.analyticsNotification",
-  })
+  const { t } = useTranslation("translation")
   const dispatch = useDispatch()
 
   const showNotification = useBackgroundSelector(
@@ -36,8 +34,8 @@ export default function WalletAnalyticsNotificationBanner(): ReactElement {
             color="var(--success)"
           />
           <div className="content">
-            <h1>{t("title")}</h1>
-            <span>{t("description")}</span>
+            <h1>{t("wallet.analyticsNotification.title")}</h1>
+            <span>{t("wallet.analyticsNotification.description")}</span>
             <SharedButton
               style={{ height: "auto", margin: "8px 0" }}
               size="medium"
@@ -46,13 +44,13 @@ export default function WalletAnalyticsNotificationBanner(): ReactElement {
               iconSmall="settings"
               iconPosition="left"
             >
-              {t("settingsLink")}
+              {t("wallet.analyticsNotification.settingsLink")}
             </SharedButton>
           </div>
           <SharedIcon
             onClick={() => dispatch(setShowAnalyticsNotification(false))}
             icon="icons/s/close.svg"
-            ariaLabel="close"
+            ariaLabel={t("shared.close")}
             width={16}
             color="var(--green-40)"
             hoverColor="var(--green-20)"
