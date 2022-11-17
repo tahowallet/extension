@@ -135,7 +135,7 @@ export default class PreferenceService extends BaseService<Events> {
     )
     this.emitter.emit(
       "updateAnalyticsPreferences",
-      await this.getAnalyticsSettings()
+      await this.getAnalyticsPreferences()
     )
   }
 
@@ -222,14 +222,14 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit("updatedSignerSettings", await updatedSignerSettings)
   }
 
-  async getAnalyticsSettings(): Promise<Preferences["analytics"]> {
+  async getAnalyticsPreferences(): Promise<Preferences["analytics"]> {
     return (await this.db.getPreferences())?.analytics
   }
 
   async updateAnalyticsPreferences(
-    analyticsPreferences: AnalyticsPreferences
+    analyticsPreferences: Partial<AnalyticsPreferences>
   ): Promise<void> {
-    await this.db.updateAnalyticsPreferences(analyticsPreferences)
+    await this.db.upsertAnalyticsPreferences(analyticsPreferences)
     const { analytics } = await this.db.getPreferences()
 
     // This step is not strictly needed, because the settings can only

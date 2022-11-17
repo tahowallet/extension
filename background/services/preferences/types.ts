@@ -15,6 +15,7 @@ export interface Preferences {
   accountSignersSettings: AccountSignerSettings[]
   analytics: {
     isEnabled: boolean
+    hasDefaultOnBeenTurnedOn: boolean
   }
 }
 

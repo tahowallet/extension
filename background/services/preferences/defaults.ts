@@ -31,6 +31,7 @@ const defaultPreferences: Preferences = {
   accountSignersSettings: [],
   analytics: {
     isEnabled: false,
+    hasDefaultOnBeenTurnedOn: false,
   },
 }
 

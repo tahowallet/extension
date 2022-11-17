@@ -100,7 +100,7 @@ export default function SettingsAnalytics(): ReactElement {
         >
           {t(`policyBtn`)}
         </SharedButton>
-        {isEnabled(FeatureFlags.SHOW_DELETE_DATA_BUTTON) && (
+        {isEnabled(FeatureFlags.SHOW_ANALYTICS_DELETE_DATA_BUTTON) && (
           <SharedButton
             type="tertiaryError"
             size="medium"
