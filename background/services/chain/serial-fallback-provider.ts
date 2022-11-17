@@ -751,7 +751,7 @@ export function makeSerialFallbackProvider(
         {
           type: "alchemy" as const,
           creator: () =>
-            new AlchemyWebSocketProvider(
+            new AlchemyProvider(
               getNetwork(Number(network.chainID)),
               ALCHEMY_KEY
             ),
@@ -759,7 +759,7 @@ export function makeSerialFallbackProvider(
         {
           type: "alchemy" as const,
           creator: () =>
-            new AlchemyProvider(
+            new AlchemyWebSocketProvider(
               getNetwork(Number(network.chainID)),
               ALCHEMY_KEY
             ),
