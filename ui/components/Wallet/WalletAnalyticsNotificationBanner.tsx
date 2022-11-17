@@ -64,12 +64,12 @@ export default function WalletAnalyticsNotificationBanner(): ReactElement {
           margin: 0 16px;
           max-height: 200px;
           width: 352px;
+          transition: all 500ms ease;
         }
         .container.hide {
           max-height: 0;
           pointer-events: none;
           opacity: 0;
-          transition: all 500ms ease;
         }
         .content_container {
           display: flex;
