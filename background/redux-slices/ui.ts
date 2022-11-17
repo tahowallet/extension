@@ -14,6 +14,7 @@ const defaultSettings = {
   defaultWallet: false,
   showTestNetworks: false,
   collectAnalytics: false,
+  showAnalyticsNotification: false,
   hideBanners: false,
 }
 
@@ -26,6 +27,7 @@ export type UIState = {
     defaultWallet: boolean
     showTestNetworks: boolean
     collectAnalytics: boolean
+    showAnalyticsNotification: boolean
     hideBanners: boolean
   }
   snackbarMessage: string
@@ -42,7 +44,7 @@ export type Events = {
   newSelectedAccountSwitched: AddressOnNetwork
   userActivityEncountered: AddressOnNetwork
   newSelectedNetwork: EVMNetwork
-  updateAnalyticsPreferences: AnalyticsPreferences
+  updateAnalyticsPreferences: Partial<AnalyticsPreferences>
 }
 
 export const emitter = new Emittery<Events>()
@@ -84,6 +86,16 @@ const uiSlice = createSlice({
       settings: {
         ...state.settings,
         collectAnalytics,
+      },
+    }),
+    setShowAnalyticsNotification: (
+      state,
+      { payload: showAnalyticsNotification }: { payload: boolean }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        showAnalyticsNotification,
       },
     }),
     toggleHideBanners: (
@@ -165,6 +177,7 @@ export const {
   toggleHideDust,
   toggleTestNetworks,
   toggleCollectAnalytics,
+  setShowAnalyticsNotification,
   toggleHideBanners,
   setSelectedAccount,
   setSnackbarMessage,
@@ -272,6 +285,11 @@ export const selectSnackbarMessage = createSelector(
 export const selectDefaultWallet = createSelector(
   selectSettings,
   (settings) => settings?.defaultWallet
+)
+
+export const selectShowAnalyticsNotification = createSelector(
+  selectSettings,
+  (settings) => settings?.showAnalyticsNotification
 )
 
 export const selectSlippageTolerance = createSelector(

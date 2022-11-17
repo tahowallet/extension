@@ -7,6 +7,7 @@ import { AnalyticsDatabase, getOrCreateDB } from "./db"
 import { sendPosthogEvent } from "../../lib/posthog"
 import ChainService from "../chain"
 import PreferenceService from "../preferences"
+import { FeatureFlags, isEnabled as isFeatureFlagEnabled } from "../../features"
 
 interface Events extends ServiceLifecycleEvents {
   placeHolderEventForTypingPurposes: string
@@ -42,6 +43,22 @@ export default class AnalyticsService extends BaseService<Events> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
+    const { hasDefaultOnBeenTurnedOn } =
+      await this.preferenceService.getAnalyticsPreferences()
+
+    if (
+      isFeatureFlagEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) &&
+      !hasDefaultOnBeenTurnedOn
+    ) {
+      // this handles the edge case where we have already shipped analytics
+      // but with default turned off and now we want to turn default on
+      // and show a notification to the user
+      await this.preferenceService.updateAnalyticsPreferences({
+        isEnabled: true,
+        hasDefaultOnBeenTurnedOn: true,
+      })
+    }
+
     this.sendAnalyticsEvent("Background start")
 
     this.initializeListeners()
@@ -59,7 +76,7 @@ export default class AnalyticsService extends BaseService<Events> {
   ): Promise<void> {
     // @TODO: implement event batching
 
-    const { isEnabled } = await this.preferenceService.getAnalyticsSettings()
+    const { isEnabled } = await this.preferenceService.getAnalyticsPreferences()
     if (isEnabled) {
       const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
 
