@@ -43,11 +43,21 @@ const productionNetworks = [
         },
       ]
     : []),
-  {
-    network: AVALANCHE,
-    info: i18n.t("protocol.compatibleChain"),
-    isDisabled: false,
-  },
+  ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE)
+    ? [
+        {
+          network: AVALANCHE,
+          info: i18n.t("protocol.compatibleChain"),
+        },
+      ]
+    : [
+        {
+          network: AVALANCHE,
+          info: i18n.t("comingSoon"),
+          isDisabled: true,
+        },
+      ]),
+
   // {
   //   name: "Binance Smart Chain",
   //   info: i18n.t("protocol.compatibleChain"),

@@ -270,8 +270,7 @@ export default class ChainService extends BaseService<Events> {
       GOERLI,
       ARBITRUM_ONE,
       ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [ROOTSTOCK] : []),
-      // TODO: FEATURE FLAG
-      AVALANCHE,
+      ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE) ? [AVALANCHE] : []),
     ]
 
     this.trackedNetworks = []
