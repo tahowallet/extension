@@ -18,7 +18,7 @@ import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/sel
 import {
   ARBITRUM_ONE,
   OPTIMISM,
-  RSK,
+  ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
 import {
   EVMNetwork,
@@ -92,7 +92,7 @@ const estimateGweiAmount = (options: {
 
   let desiredDecimals = 0
 
-  if (RSK.chainID === network.chainID) {
+  if (ROOTSTOCK.chainID === network.chainID) {
     estimatedSpendPerGas = networkSettings.values.gasPrice ?? 0n
     desiredDecimals = 2
   }
@@ -170,12 +170,12 @@ export default function FeeSettingsText({
   if (!dollarValue) return <div>~{gweiValue}</div>
 
   return (
-    <div>
+    <div className="fee_settings_text_container">
       {!gasLimit ? (
         <>{t("networkFees.toBeDetermined")}</>
       ) : (
         <>
-          ~${dollarValue}
+          <span>~${dollarValue}</span>
           <span className="fee_gwei">({gweiValue})</span>
         </>
       )}
@@ -183,6 +183,11 @@ export default function FeeSettingsText({
         .fee_gwei {
           color: var(--green-60);
           margin-left: 5px;
+        }
+        .fee_settings_text_container {
+          display: flex;
+          justify-content: space-around;
+          flex-wrap: wrap;
         }
       `}</style>
     </div>
