@@ -18,6 +18,7 @@ import {
   BASE_ASSETS,
   FIAT_CURRENCIES,
   HOUR,
+  MINUTE,
   NETWORK_BY_CHAIN_ID,
   SECOND,
   USD,
@@ -145,9 +146,8 @@ export default class IndexingService extends BaseService<Events> {
         handler: () => this.handleBalanceAlarm(true),
       },
       forceBalance: {
-        runAtStart: true,
         schedule: {
-          periodInMinutes: (HOUR / 1e3) * 12,
+          periodInMinutes: (12 * HOUR) / MINUTE,
         },
         handler: () => this.handleBalanceAlarm(),
       },
@@ -173,6 +173,9 @@ export default class IndexingService extends BaseService<Events> {
 
     this.connectChainServiceEvents()
 
+    // Kick off token list fetching in the background
+    const tokenListLoad = this.fetchAndCacheTokenLists()
+
     this.chainService.emitter.once("serviceStarted").then(async () => {
       const trackedNetworks = await this.chainService.getTrackedNetworks()
 
@@ -181,10 +184,10 @@ export default class IndexingService extends BaseService<Events> {
         await this.cacheAssetsForNetwork(network)
         this.emitter.emit("assets", this.cachedAssets[network.chainID])
       })
-    })
 
-    // Kick off token list fetching in the background
-    this.fetchAndCacheTokenLists()
+      // Force a balance refresh on service start
+      tokenListLoad.then(() => this.handleBalanceAlarm())
+    })
   }
 
   /**
@@ -267,20 +270,21 @@ export default class IndexingService extends BaseService<Events> {
    * @param network - the home network of the asset
    * @param contractAddress - the address of the asset on its home network
    */
-  async getKnownSmartContractAsset(
+  getKnownSmartContractAsset(
     network: EVMNetwork,
     contractAddress: HexString
-  ): Promise<SmartContractFungibleAsset> {
+  ): SmartContractFungibleAsset | undefined {
     const knownAssets = this.cachedAssets[network.chainID]
-    const found = knownAssets.find(
-      (asset) =>
-        "decimals" in asset &&
-        "homeNetwork" in asset &&
-        "contractAddress" in asset &&
+
+    const searchResult = knownAssets.find(
+      (asset): asset is SmartContractFungibleAsset =>
+        isSmartContractFungibleAsset(asset) &&
         asset.homeNetwork.name === network.name &&
-        asset.contractAddress === contractAddress
+        normalizeEVMAddress(asset.contractAddress) ===
+          normalizeEVMAddress(contractAddress)
     )
-    return found as SmartContractFungibleAsset
+
+    return searchResult
   }
 
   /* *****************
@@ -336,10 +340,10 @@ export default class IndexingService extends BaseService<Events> {
         // (e.g. via a previously baseline-trusted interaction or via a token
         // list) OR the sender is a tracked address.
         const baselineTrustedAsset =
-          typeof (await this.getKnownSmartContractAsset(
+          typeof this.getKnownSmartContractAsset(
             enrichedEVMTransaction.network,
             asset.contractAddress
-          )) !== "undefined" ||
+          ) !== "undefined" ||
           (await this.db.isTrackingAsset(asset)) ||
           (
             await this.chainService.filterTrackedAddressesOnNetworks([
@@ -500,10 +504,10 @@ export default class IndexingService extends BaseService<Events> {
       balances.map(async ({ smartContract: { contractAddress }, amount }) => {
         const knownAsset =
           listedAssetByAddress[normalizeEVMAddress(contractAddress)] ??
-          (await this.getKnownSmartContractAsset(
+          this.getKnownSmartContractAsset(
             addressNetwork.network,
             contractAddress
-          ))
+          )
 
         if (amount > 0) {
           if (knownAsset) {
@@ -571,28 +575,25 @@ export default class IndexingService extends BaseService<Events> {
     addressOnNetwork: AddressOnNetwork,
     contractAddress: string
   ): Promise<void> {
+    const normalizedAddress = normalizeEVMAddress(contractAddress)
     const { network } = addressOnNetwork
-    const knownAssets = this.cachedAssets[network.chainID]
-    const found = knownAssets.find(
-      (asset) =>
-        "decimals" in asset &&
-        "homeNetwork" in asset &&
-        asset.homeNetwork.name === network.name &&
-        "contractAddress" in asset &&
-        asset.contractAddress === contractAddress
+    const knownAsset = this.getKnownSmartContractAsset(
+      addressOnNetwork.network,
+      normalizedAddress
     )
-    if (found) {
-      this.addAssetToTrack(found as SmartContractFungibleAsset)
+
+    if (knownAsset) {
+      this.addAssetToTrack(knownAsset)
     } else {
       let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
         network,
-        contractAddress
+        normalizedAddress
       )
       if (!customAsset) {
         // pull metadata from Alchemy
         customAsset =
           (await this.chainService.assetData.getTokenMetadata({
-            contractAddress,
+            contractAddress: normalizedAddress,
             homeNetwork: network,
           })) || undefined
 
@@ -799,7 +800,9 @@ export default class IndexingService extends BaseService<Events> {
         } else {
           await this.retrieveTokenBalances(
             addressOnNetwork,
-            await this.db.getAllKnownTokensForNetwork(addressOnNetwork.network)
+            this.getCachedAssets(addressOnNetwork.network).filter(
+              isSmartContractFungibleAsset
+            )
           )
         }
         await this.chainService.getLatestBaseAccountBalance(addressOnNetwork)

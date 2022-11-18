@@ -8,11 +8,11 @@ interface Props {
   symbol: string
 }
 
+const hardcodedIcons = new Set(["ETH", "MATIC", "DOGGO", "RBTC", "AVAX"])
 export default function SharedAssetIcon(props: Props): ReactElement {
   const { size, logoURL, symbol } = props
 
-  const hardcodedIcons = ["ETH", "DOGGO", "RBTC", "AVAX"]
-  const hasHardcodedIcon = hardcodedIcons.includes(symbol)
+  const hasHardcodedIcon = hardcodedIcons.has(symbol)
 
   // Passes IPFS and Arweave through HTTP gateway
   function getAsHttpURL(anyURL: string) {
