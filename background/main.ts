@@ -135,7 +135,6 @@ import {
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 import { deleteNFts } from "./redux-slices/nfts"
-import { EnrichedEVMTransactionRequest } from "./services/enrichment"
 import {
   ActivityDetail,
   addActivity,
