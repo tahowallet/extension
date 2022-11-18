@@ -11,10 +11,10 @@ const tabs: string[] = [
   if (tab === "earn" && isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES)) {
     return false
   }
-  if (tab === "NFTs" && isEnabled(FeatureFlags.HIDE_NFTS)) {
+  if (tab === "NFTs" && !isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
     return false
   }
-  if (tab === "swap" && !isEnabled(FeatureFlags.HIDE_NFTS)) {
+  if (tab === "swap" && isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
     return false
   }
   return true
