@@ -1294,15 +1294,9 @@ export default class ChainService extends BaseService<Events> {
     incomingOnly = false
   ): Promise<void> {
     if (
-      [
-        ETHEREUM,
-        POLYGON,
-        OPTIMISM,
-        ARBITRUM_ONE,
-        GOERLI,
-        ROOTSTOCK,
-        AVALANCHE,
-      ].every((network) => network.chainID !== addressOnNetwork.network.chainID)
+      this.supportedNetworks.every(
+        (network) => network.chainID !== addressOnNetwork.network.chainID
+      )
     ) {
       logger.error(
         `Asset transfer check not supported on network ${JSON.stringify(

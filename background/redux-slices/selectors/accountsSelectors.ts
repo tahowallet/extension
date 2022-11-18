@@ -54,7 +54,7 @@ const desiredDecimals = {
 }
 
 // List of assets by symbol that should be displayed with more decimal places
-const EXCEPTION_ASSETS_BY_SYMBOL = ["BTC", "sBTC", "WBTC", "tBTC", "AVAX"].map(
+const EXCEPTION_ASSETS_BY_SYMBOL = ["BTC", "sBTC", "WBTC", "tBTC"].map(
   (symbol) => symbol.toUpperCase()
 )
 
