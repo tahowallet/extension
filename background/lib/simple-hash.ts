@@ -23,6 +23,7 @@ const CHAIN_ID_TO_NAME = {
   10: "optimism",
   137: "polygon",
   42161: "arbitrum",
+  43114: "avalanche",
 }
 
 /**
