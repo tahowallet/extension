@@ -154,6 +154,18 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   } = {}
 
+  // TEMPORARY cache for if an address has code to reduce number of rpc calls
+  // This is intended as a temporary fix to the burst of account enrichment that
+  // happens when the extension is first loaded up as a result of activity emission
+  // inside of chainService.connectChainService
+  // There is no TTL here as the cache will get reset every time the extension is
+  // reloaded and the property of having code updates quite rarely.
+  private latestHasCodeCache: {
+    [address: string]: {
+      hasCode: boolean
+    }
+  } = {}
+
   // Information on the current backoff state. This is used to ensure retries
   // and reconnects back off exponentially.
   private currentBackoff = {
@@ -219,6 +231,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
     }
 
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getCode" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      if (typeof this.latestHasCodeCache[address] !== "undefined") {
+        return this.latestHasCodeCache[address].hasCode
+      }
+    }
+
     try {
       if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
         // Detect disconnected WebSocket and immediately throw.
@@ -240,6 +260,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         this.latestBalanceCache[address] = {
           balance: result,
           updatedAt: Date.now(),
+        }
+      }
+
+      // @TODO Remove once initial activity load is refactored.
+      if (method === "eth_getCode" && (params as string[])[1] === "latest") {
+        const address = (params as string[])[0]
+        this.latestHasCodeCache[address] = {
+          hasCode: result,
         }
       }
 
