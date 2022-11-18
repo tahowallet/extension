@@ -724,12 +724,14 @@ export default class Main extends BaseService<never> {
           return annotation
         }
 
-        // Wait 10 seconds before discarding enrichment
+        const maybeEnrichedAnnotation = await Promise.race([
+          getAnnotation(),
+          // Wait 10 seconds before discarding enrichment
+          wait(10_000),
+        ])
 
-        const annotation = await Promise.race([getAnnotation(), wait(10_000)])
-
-        if (annotation) {
-          populatedRequest.annotation = annotation
+        if (maybeEnrichedAnnotation) {
+          populatedRequest.annotation = maybeEnrichedAnnotation
         }
 
         if (typeof gasEstimationError === "undefined") {
