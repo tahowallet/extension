@@ -35,7 +35,11 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDb, IndexingDatabase } from "./db"
 import BaseService from "../base"
 import { EnrichedEVMTransaction } from "../enrichment/types"
-import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
+import {
+  normalizeAddressOnNetwork,
+  normalizeEVMAddress,
+  sameEVMAddress,
+} from "../../lib/utils"
 import { fixPolygonWETHIssue, polygonTokenListURL } from "./token-list-edit"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
@@ -46,7 +50,18 @@ const FAST_TOKEN_REFRESH_BLOCK_RANGE = 10
 const ACCELERATED_TOKEN_REFRESH_TIMEOUT = 300
 
 interface Events extends ServiceLifecycleEvents {
-  accountsWithBalances: AccountBalance[]
+  accountsWithBalances: {
+    /**
+     * Retrieved token balances
+     */
+    balances: AccountBalance[]
+    /**
+     * The respective address and network for these balances,
+     * useful for identifying which account has no balances left
+     * when the balances array is empty
+     */
+    addressOnNetwork: AddressOnNetwork
+  }
   price: PricePoint
   assets: AnyAsset[]
 }
@@ -467,9 +482,11 @@ export default class IndexingService extends BaseService<Events> {
    * @param contractAddresses
    */
   private async retrieveTokenBalances(
-    addressNetwork: AddressOnNetwork,
+    unsafeAddressNetwork: AddressOnNetwork,
     smartContractAssets?: SmartContractFungibleAsset[]
   ): Promise<SmartContractAmount[]> {
+    const addressNetwork = normalizeAddressOnNetwork(unsafeAddressNetwork)
+
     const balances = await this.chainService.assetData.getTokenBalances(
       addressNetwork,
       smartContractAssets?.map(({ contractAddress }) => contractAddress)
@@ -532,7 +549,10 @@ export default class IndexingService extends BaseService<Events> {
     )
 
     await this.db.addBalances(accountBalances)
-    this.emitter.emit("accountsWithBalances", accountBalances)
+    this.emitter.emit("accountsWithBalances", {
+      balances: accountBalances,
+      addressOnNetwork: addressNetwork,
+    })
 
     return balances
   }
@@ -751,8 +771,13 @@ export default class IndexingService extends BaseService<Events> {
     const trackedNetworks = await this.chainService.getTrackedNetworks()
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
+
+    const trackedChainIds = new Set(
+      trackedNetworks.map((network) => network.chainID)
+    )
+
     const activeAssetsToTrack = assetsToTrack.filter((asset) =>
-      trackedNetworks.map((n) => n.chainID).includes(asset.homeNetwork.chainID)
+      trackedChainIds.has(asset.homeNetwork.chainID)
     )
 
     // wait on balances being written to the db, don't wait on event emission

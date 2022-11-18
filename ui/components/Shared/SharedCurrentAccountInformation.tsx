@@ -27,7 +27,7 @@ export default function SharedCurrentAccountInformation({
       </span>
       <div className="avatar" />
       {showKeyring && (
-        <div className="keyring_icon_wrap">
+        <div data-testid="keyring" className="keyring_icon_wrap">
           <SharedIcon
             icon={`icons/s/${icon}-bold.svg`}
             width={16}

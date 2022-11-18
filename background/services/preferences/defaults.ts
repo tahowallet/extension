@@ -29,6 +29,10 @@ const defaultPreferences: Preferences = {
     network: ETHEREUM,
   },
   accountSignersSettings: [],
+  analytics: {
+    isEnabled: false,
+    hasDefaultOnBeenTurnedOn: false,
+  },
 }
 
 export default defaultPreferences

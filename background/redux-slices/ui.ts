@@ -3,6 +3,7 @@ import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
+import { AnalyticsPreferences } from "../services/preferences/types"
 import { AccountSignerWithId } from "../signing"
 import { AccountSignerSettings } from "../ui"
 import { AccountState, addAddressNetwork } from "./accounts"
@@ -13,6 +14,7 @@ const defaultSettings = {
   defaultWallet: false,
   showTestNetworks: false,
   collectAnalytics: false,
+  showAnalyticsNotification: false,
   hideBanners: false,
 }
 
@@ -25,6 +27,7 @@ export type UIState = {
     defaultWallet: boolean
     showTestNetworks: boolean
     collectAnalytics: boolean
+    showAnalyticsNotification: boolean
     hideBanners: boolean
   }
   snackbarMessage: string
@@ -41,6 +44,7 @@ export type Events = {
   newSelectedAccountSwitched: AddressOnNetwork
   userActivityEncountered: AddressOnNetwork
   newSelectedNetwork: EVMNetwork
+  updateAnalyticsPreferences: Partial<AnalyticsPreferences>
 }
 
 export const emitter = new Emittery<Events>()
@@ -82,6 +86,16 @@ const uiSlice = createSlice({
       settings: {
         ...state.settings,
         collectAnalytics,
+      },
+    }),
+    setShowAnalyticsNotification: (
+      state,
+      { payload: showAnalyticsNotification }: { payload: boolean }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        showAnalyticsNotification,
       },
     }),
     toggleHideBanners: (
@@ -163,6 +177,7 @@ export const {
   toggleHideDust,
   toggleTestNetworks,
   toggleCollectAnalytics,
+  setShowAnalyticsNotification,
   toggleHideBanners,
   setSelectedAccount,
   setSnackbarMessage,
@@ -174,6 +189,15 @@ export const {
 } = uiSlice.actions
 
 export default uiSlice.reducer
+
+export const updateAnalyticsPreferences = createBackgroundAsyncThunk(
+  "ui/updateAnalyticsPreferences",
+  async (collectAnalytics: boolean) => {
+    await emitter.emit("updateAnalyticsPreferences", {
+      isEnabled: collectAnalytics,
+    })
+  }
+)
 
 // Async thunk to bubble the setNewDefaultWalletValue action from  store to emitter.
 export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
@@ -261,6 +285,11 @@ export const selectSnackbarMessage = createSelector(
 export const selectDefaultWallet = createSelector(
   selectSettings,
   (settings) => settings?.defaultWallet
+)
+
+export const selectShowAnalyticsNotification = createSelector(
+  selectSettings,
+  (settings) => settings?.showAnalyticsNotification
 )
 
 export const selectSlippageTolerance = createSelector(
