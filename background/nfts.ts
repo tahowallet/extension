@@ -49,14 +49,15 @@ export type NFT = {
 export type NFTCollection = {
   id: string
   name: string
-  nftCount?: number
   owner: string
   network: EVMNetwork
-  floorPrices: {
+  thumbnail?: string
+  nftCount?: number
+  floorPrice?: {
     value: bigint
     token: {
       name: string
       symbol: string
     }
-  }[]
+  }
 }

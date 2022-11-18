@@ -27,7 +27,7 @@ function initializeCollections(collections: NFTCollection[]) {
       nftCount,
       network: { chainID },
       owner,
-      //   floorPrices,
+      floorPrice,
     } = collection
     state[chainID] ??= {}
     state[chainID][owner] ??= {}
@@ -36,6 +36,10 @@ function initializeCollections(collections: NFTCollection[]) {
       name,
       nftCount,
       nfts: [],
+      floorPrice: floorPrice && {
+        value: floorPrice.value,
+        tokenSymbol: floorPrice.token.symbol,
+      },
     }
   })
 

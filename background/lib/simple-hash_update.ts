@@ -92,7 +92,7 @@ function getChainIDsNames(chainIDs: string[]) {
 
 function simpleHashCollectionModelToCollection(
   original: SimpleHashCollectionModel,
-  address: HexString
+  owner: HexString
 ): NFTCollection {
   const {
     id,
@@ -100,30 +100,33 @@ function simpleHashCollectionModelToCollection(
     chain,
     distinct_nfts_owned: nftCount,
     floor_prices: collectionPrices,
+    image_url: thumbnail,
   } = original
-  const floorPrices =
-    collectionPrices?.map(({ value, payment_token }) => ({
+  const floorPrice = collectionPrices
+    ?.map(({ value, payment_token }) => ({
       value,
       token: {
         name: payment_token.name,
         symbol: payment_token.symbol,
       },
-    })) ?? []
+    }))
+    .sort((price1, price2) => Number(price1.value - price2.value))[0]
   const chainID = SIMPLE_HASH_CHAIN_TO_ID[chain]
 
   return {
     id,
     name,
     nftCount,
-    owner: address,
+    owner,
+    thumbnail,
     network: NETWORK_BY_CHAIN_ID[chainID],
-    floorPrices,
+    floorPrice,
   }
 }
 
 function simpleHashNFTModelToNFT(
   original: SimpleHashNFTModel,
-  address: HexString
+  owner: HexString
 ): NFT {
   const {
     nft_id: nftID,
@@ -149,7 +152,7 @@ function simpleHashNFTModelToNFT(
   const chainID = SIMPLE_HASH_CHAIN_TO_ID[chain]
 
   const transferDate = owners.find(({ owner_address }) =>
-    sameEVMAddress(owner_address, address)
+    sameEVMAddress(owner_address, owner)
   )?.last_acquired_date
 
   const attributes =
@@ -167,7 +170,7 @@ function simpleHashNFTModelToNFT(
     attributes,
     collectionID,
     contract: contractAddress,
-    owner: address,
+    owner,
     network: NETWORK_BY_CHAIN_ID[chainID],
     achievement: isAchievement ? { url: nftURL } : null,
   }
@@ -205,7 +208,9 @@ export async function getNFTs(
 
     return {
       nfts:
-        result.nfts?.map((nft) => simpleHashNFTModelToNFT(nft, address)) ?? [],
+        result.nfts
+          .filter((nft) => !!nft.nft_id)
+          .map((nft) => simpleHashNFTModelToNFT(nft, address)) ?? [],
       nextPageURL: result.next,
     }
   } catch (err) {
@@ -244,9 +249,11 @@ export async function getCollections(
       })
     ).json()) as unknown as SimpleHashCollectionsByWalletAPIResponse
 
-    return result.collections.map((collection) =>
-      simpleHashCollectionModelToCollection(collection, address)
-    )
+    return result.collections
+      .filter((collection) => collection.id)
+      .map((collection) =>
+        simpleHashCollectionModelToCollection(collection, address)
+      )
   } catch (err) {
     logger.error("Error retrieving NFTs ", err)
   }

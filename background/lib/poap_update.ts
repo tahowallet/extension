@@ -101,6 +101,7 @@ export async function getCollections(address: string): Promise<NFTCollection> {
     nftCount: undefined, // we don't know at this point how many POAPs this address has
     owner: address,
     network: ETHEREUM,
-    floorPrices: [],
+    floorPrice: undefined, // POAPs don't have floor prices
+    thumbnail: undefined, // TODO: set a thumbnail for POAP collection
   }
 }
