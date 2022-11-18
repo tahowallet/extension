@@ -15,6 +15,7 @@ import signingReducer from "./signing"
 import earnReducer from "./earn"
 import nftsReducer from "./nfts"
 import nftsUpdateReducer from "./nfts_update"
+import { FeatureFlags, isEnabled } from "../features"
 
 const mainReducer = combineReducers({
   account: accountsReducer,
@@ -31,7 +32,9 @@ const mainReducer = combineReducers({
   earn: earnReducer,
   ledger: ledgerReducer,
   nfts: nftsReducer,
-  nftsUpdate: nftsUpdateReducer,
+  ...(isEnabled(FeatureFlags.SUPPORT_NFT_TAB)
+    ? { nftsUpdate: nftsUpdateReducer }
+    : {}),
 })
 
 export default mainReducer

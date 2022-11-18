@@ -1,4 +1,5 @@
 import Dexie from "dexie"
+import { FeatureFlags, isEnabled } from "../../features"
 import { NFT, NFTCollection } from "../../nfts"
 
 export class NFTsDatabase extends Dexie {
@@ -9,10 +10,13 @@ export class NFTsDatabase extends Dexie {
   constructor() {
     super("tally/nfts")
 
-    this.version(1).stores({
-      nfts: "&[id+collectionID+owner+network.chainID],id,collectionID,owner,network.chainID",
-      collections: "&[id+owner+network.chainID],id,owner,network.chainID",
-    })
+    // No tables are created when feature flag is off
+    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+      this.version(1).stores({
+        nfts: "&[id+collectionID+owner+network.chainID],id,collectionID,owner,network.chainID",
+        collections: "&[id+owner+network.chainID],id,owner,network.chainID",
+      })
+    }
   }
 
   async updateNFTs(nfts: NFT[]): Promise<void> {

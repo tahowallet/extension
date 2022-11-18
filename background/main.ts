@@ -518,7 +518,11 @@ export default class Main extends BaseService<never> {
     this.connectLedgerService()
     this.connectSigningService()
     this.connectAnalyticsService()
-    this.connectNFTsService()
+
+    // Nothing else beside creating a service should happen when feature flag is off
+    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+      this.connectNFTsService()
+    }
 
     await this.connectChainService()
 
