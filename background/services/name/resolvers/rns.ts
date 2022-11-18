@@ -5,6 +5,7 @@ import { NameResolver } from "../name-resolver"
 import logger from "../../../lib/logger"
 
 import { normalizeEVMAddress } from "../../../lib/utils"
+import { ROOTSTOCK } from "../../../constants"
 
 export default function rnsResolver(): NameResolver<"RNS"> {
   const rskNetworkProvider = new JsonRpcProvider("https://public-node.rsk.co")
@@ -34,8 +35,8 @@ export default function rnsResolver(): NameResolver<"RNS"> {
 
   return {
     type: "RNS",
-    canAttemptNameResolution(): boolean {
-      return false
+    canAttemptNameResolution({ network }): boolean {
+      return network.chainID === ROOTSTOCK.chainID
     },
     canAttemptAvatarResolution(): boolean {
       return false
