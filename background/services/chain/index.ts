@@ -237,7 +237,7 @@ export default class ChainService extends BaseService<Events> {
       },
       forceRecentAssetTransfers: {
         schedule: {
-          periodInMinutes: (HOUR * 12) / 1e3,
+          periodInMinutes: (12 * HOUR) / MINUTE,
         },
         handler: () => {
           this.handleRecentAssetTransferAlarm()
@@ -834,7 +834,8 @@ export default class ChainService extends BaseService<Events> {
       address: normalizedAddress,
       network,
       assetAmount: {
-        asset: network.baseAsset,
+        // Data stored in chain db for network base asset might be stale
+        asset: NETWORK_BY_CHAIN_ID[network.chainID].baseAsset,
         amount: balance.toBigInt(),
       },
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
