@@ -712,29 +712,37 @@ export default class Main extends BaseService<never> {
             { maxFeePerGas, maxPriorityFeePerGas }
           )
 
-        const { annotation } =
-          await this.enrichmentService.enrichTransactionSignature(
-            network,
-            populatedRequest,
-            2 /* TODO desiredDecimals should be configurable */
-          )
+        // Create promise to pass into Promise.race
+        const getAnnotation = async () => {
+          const { annotation } =
+            await this.enrichmentService.enrichTransactionSignature(
+              network,
+              populatedRequest,
+              2 /* TODO desiredDecimals should be configurable */
+            )
+          return annotation
+        }
 
-        const enrichedPopulatedRequest: EnrichedEVMTransactionRequest = {
-          ...populatedRequest,
-          annotation,
+        // Wait 10 seconds before aborting
+        const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+
+        const annotation = await Promise.race([getAnnotation(), wait(10_000)])
+
+        if (annotation) {
+          populatedRequest.annotation = annotation
         }
 
         if (typeof gasEstimationError === "undefined") {
           this.store.dispatch(
             transactionRequest({
-              transactionRequest: enrichedPopulatedRequest,
+              transactionRequest: populatedRequest,
               transactionLikelyFails: false,
             })
           )
         } else {
           this.store.dispatch(
             transactionRequest({
-              transactionRequest: enrichedPopulatedRequest,
+              transactionRequest: populatedRequest,
               transactionLikelyFails: true,
             })
           )
