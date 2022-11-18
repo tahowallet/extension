@@ -12,6 +12,7 @@ import {
   getEthereumNetwork,
   isProbablyEVMAddress,
   normalizeEVMAddress,
+  wait,
 } from "./lib/utils"
 
 import {
@@ -723,8 +724,7 @@ export default class Main extends BaseService<never> {
           return annotation
         }
 
-        // Wait 10 seconds before aborting
-        const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+        // Wait 10 seconds before discarding enrichment
 
         const annotation = await Promise.race([getAnnotation(), wait(10_000)])
 
