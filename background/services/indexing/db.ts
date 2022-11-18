@@ -172,11 +172,16 @@ export class IndexingDatabase extends Dexie {
         }
       ) => {
         const normalizedAddress = normalizeEVMAddress(record.contractAddress)
-        const isInvalidRecord =
+        // These properties are not included after parsing
+        // external token lists
+        const isInvalidFungibleAssetForNetwork =
           typeof record.chainId !== "undefined" &&
           typeof record.address !== "undefined"
 
-        if (isInvalidRecord || seenAddresses.has(normalizedAddress)) {
+        if (
+          isInvalidFungibleAssetForNetwork ||
+          seenAddresses.has(normalizedAddress)
+        ) {
           return true
         }
 
