@@ -2,7 +2,7 @@ import Dexie, { DexieOptions } from "dexie"
 import { TokenList } from "@uniswap/token-lists"
 
 import { AccountBalance } from "../../accounts"
-import { EVMNetwork, Network, toHexChainID } from "../../networks"
+import { Network } from "../../networks"
 import {
   AnyAsset,
   FungibleAsset,
@@ -161,6 +161,63 @@ export class IndexingDatabase extends Dexie {
           }
         })
     })
+
+    this.version(4).upgrade(async (tx) => {
+      const seenAddresses = new Set<string>()
+
+      const selectInvalidOrDuplicateRecords = (
+        record: SmartContractFungibleAsset & {
+          chainId?: unknown
+          address?: string
+        }
+      ) => {
+        const normalizedAddress = normalizeEVMAddress(record.contractAddress)
+        // These properties are not included after parsing
+        // external token lists
+        const isInvalidFungibleAssetForNetwork =
+          typeof record.chainId !== "undefined" &&
+          typeof record.address !== "undefined"
+
+        if (
+          isInvalidFungibleAssetForNetwork ||
+          seenAddresses.has(normalizedAddress)
+        ) {
+          return true
+        }
+
+        seenAddresses.add(normalizedAddress)
+
+        return false
+      }
+
+      // Remove invalid records
+      await tx
+        .table("assetsToTrack")
+        .filter(selectInvalidOrDuplicateRecords)
+        .delete()
+
+      await tx
+        .table("customAssets")
+        .filter(selectInvalidOrDuplicateRecords)
+        .delete()
+
+      const normalizeAssetAddress = (record: SmartContractFungibleAsset) => {
+        Object.assign(record, {
+          contractAddress: normalizeEVMAddress(record.contractAddress),
+        })
+      }
+
+      // Normalize addresses
+      await tx
+        .table("assetsToTrack")
+        .toCollection()
+        .modify(normalizeAssetAddress)
+
+      await tx
+        .table("customAssets")
+        .toCollection()
+        .modify(normalizeAssetAddress)
+    })
   }
 
   async savePriceMeasurement(
@@ -253,22 +310,6 @@ export class IndexingDatabase extends Dexie {
 
   async addBalances(accountBalances: AccountBalance[]): Promise<void> {
     await this.balances.bulkAdd(accountBalances)
-  }
-
-  async getAllKnownTokensForNetwork(
-    network: EVMNetwork
-  ): Promise<SmartContractFungibleAsset[]> {
-    const allLists = await this.tokenLists.toArray()
-    const tokens = allLists.flatMap((list) => list.list.tokens)
-    return tokens
-      .filter(
-        (token) => toHexChainID(token.chainId) === toHexChainID(network.chainID)
-      )
-      .map((token) => ({
-        ...token,
-        homeNetwork: network,
-        contractAddress: normalizeEVMAddress(token.address),
-      }))
   }
 
   async getLatestTokenList(url: string): Promise<CachedTokenList | null> {

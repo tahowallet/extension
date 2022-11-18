@@ -1,7 +1,7 @@
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import { Slip44CoinType } from "./constants/coin-types"
 import { HexString, UNIXTime } from "./types"
-import type { CoinGeckoAsset } from "./assets"
+import type { CoinGeckoAsset, FungibleAsset } from "./assets"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEIP1559TransactionSignatureRequest,
@@ -18,13 +18,11 @@ export type NetworkFamily = "EVM" | "BTC"
 
 // Should be structurally compatible with FungibleAsset or much code will
 // likely explode.
-export type NetworkBaseAsset = {
-  symbol: string
-  name: string
-  decimals: number
-  contractAddress?: string
-  coinType: Slip44CoinType
-}
+export type NetworkBaseAsset = FungibleAsset &
+  CoinGeckoAsset & {
+    contractAddress?: string
+    coinType: Slip44CoinType
+  }
 
 /**
  * Represents a cryptocurrency network; these can potentially be L1 or L2.

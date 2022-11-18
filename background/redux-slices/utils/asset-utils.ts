@@ -12,6 +12,7 @@ import {
 import { OPTIMISM } from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { AnyNetwork, NetworkBaseAsset } from "../../networks"
+import { hardcodedMainCurrencySign } from "./constants"
 
 /**
  * Adds user-specific amounts based on preferences. This is the combination of
@@ -101,7 +102,7 @@ export function formatCurrencyAmount(
       .format(currencyAmount)
       // FIXME This assumes the assetSymbol passed is USD
       // FIXME Instead, we should use formatToParts.
-      .split("$")[1]
+      .split(hardcodedMainCurrencySign)[1]
   )
 }
 

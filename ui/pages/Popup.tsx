@@ -56,7 +56,8 @@ const pagePreferences = Object.fromEntries(
 function transformLocation(
   inputLocation: Location,
   isTransactionPendingSignature: boolean,
-  needsKeyringUnlock: boolean
+  needsKeyringUnlock: boolean,
+  hasAccounts: boolean
 ): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
   // so I need to grab it from the window
@@ -65,6 +66,7 @@ function transformLocation(
 
   let { pathname } = inputLocation
   if (
+    hasAccounts &&
     isAllowedQueryParamPage(maybePage) &&
     !inputLocation.pathname.includes("/keyring/")
   ) {
@@ -158,7 +160,8 @@ export function Main(): ReactElement {
             const transformedLocation = transformLocation(
               routeProps.location,
               isTransactionPendingSignature,
-              needsKeyringUnlock
+              needsKeyringUnlock,
+              hasAccounts
             )
 
             const normalizedPathname = pagePreferences[
