@@ -2,12 +2,14 @@ import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { selectCurrentAccountSigner } from "@tallyho/tally-background/redux-slices/selectors"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
+import { Redirect } from "react-router-dom"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
 import ReadOnlyNotice from "../Shared/ReadOnlyNotice"
+import SharedSquareButton from "../Shared/SharedSquareButton"
 
 interface Props {
   balance?: string
@@ -17,9 +19,12 @@ interface Props {
 export default function WalletAccountBalanceControl(
   props: Props
 ): ReactElement {
-  const { t } = useTranslation()
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet",
+  })
   const { balance, initializationLoadingTimeExpired } = props
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false)
+  const [linkTo, setLinkTo] = useState("")
 
   // TODO When non-imported accounts are supported, generalize this.
   const hasSavedSeed = true
@@ -32,6 +37,10 @@ export default function WalletAccountBalanceControl(
 
   const shouldIndicateLoading =
     !initializationLoadingTimeExpired && typeof balance === "undefined"
+
+  if (linkTo) {
+    return <Redirect push to={linkTo} />
+  }
 
   return (
     <>
@@ -46,7 +55,7 @@ export default function WalletAccountBalanceControl(
           customStyles="margin: 12px 0"
           isLoaded={!shouldIndicateLoading}
         >
-          <div className="balance_label">{t("wallet.totalAccountBalance")}</div>
+          <div className="balance_label">{t("totalAccountBalance")}</div>
           <span className="balance_area">
             <span className="balance">
               <span className="dollar_sign">$</span>
@@ -65,25 +74,32 @@ export default function WalletAccountBalanceControl(
           {currentAccountSigner !== ReadOnlyAccountSigner && (
             <>
               {hasSavedSeed ? (
-                <div className="send_receive_button_wrap">
-                  <SharedButton
-                    iconSmall="send"
-                    size="medium"
-                    type="tertiary"
-                    linkTo="/send"
-                    iconPosition="left"
+                <div className="actions_button_wrap">
+                  <SharedSquareButton
+                    icon="icons/s/send.svg"
+                    ariaLabel={t("send")}
+                    onClick={() => setLinkTo("/send")}
                   >
-                    {t("wallet.send")}
-                  </SharedButton>
-                  <SharedButton
+                    {t("send")}
+                  </SharedSquareButton>
+                  <SharedSquareButton
+                    icon="icons/s/swap.svg"
+                    ariaLabel={t("swap")}
+                    onClick={() => setLinkTo("/swap")}
+                    iconColor={{
+                      color: "var(--trophy-gold)",
+                      hoverColor: "var(--trophy-gold)",
+                    }}
+                  >
+                    {t("swap")}
+                  </SharedSquareButton>
+                  <SharedSquareButton
+                    icon="icons/s/receive.svg"
+                    ariaLabel={t("receive")}
                     onClick={handleClick}
-                    iconSmall="receive"
-                    size="medium"
-                    type="tertiary"
-                    iconPosition="left"
                   >
-                    {t("wallet.receive")}
-                  </SharedButton>
+                    {t("receive")}
+                  </SharedSquareButton>
                 </div>
               ) : (
                 <div className="save_seed_button_wrap">
@@ -93,7 +109,7 @@ export default function WalletAccountBalanceControl(
                     type="warning"
                     linkTo="/onboarding/2"
                   >
-                    {t("wallet.secureSeed")}
+                    {t("secureSeed")}
                   </SharedButton>
                 </div>
               )}
@@ -122,10 +138,14 @@ export default function WalletAccountBalanceControl(
             display: flex;
             align-items: center;
           }
-          .send_receive_button_wrap {
+          .actions_button_wrap {
             display: flex;
             width: 180px;
             justify-content: space-between;
+            margin: 8px 0 32px;
+          }
+          .button_wrap {
+            width: 50px;
           }
           .balance_actions {
             margin-bottom: 20px;

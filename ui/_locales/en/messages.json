@@ -539,6 +539,7 @@
     },
     "totalAccountBalance": "Total account balance",
     "send": "Send",
+    "swap": "Swap",
     "receive": "Receive",
     "secureSeed": "First, secure your recovery seed",
     "sendAsset": "Send Asset",
