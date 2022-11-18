@@ -20,6 +20,7 @@ import NFTsWallet from "../components/NFTs/NFTsWallet"
 import SharedBanner from "../components/Shared/SharedBanner"
 import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultBanner"
 import WalletBanner from "../components/Wallet/Banner/WalletBanner"
+import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "wallet" })
@@ -73,6 +74,7 @@ export default function Wallet(): ReactElement {
     <>
       <div className="page_content">
         <WalletToggleDefaultBanner />
+        <WalletAnalyticsNotificationBanner />
         <div className="section">
           <WalletAccountBalanceControl
             balance={totalMainCurrencyValue}

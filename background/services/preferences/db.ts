@@ -30,8 +30,8 @@ export interface Preferences {
   currentAddress?: string
   selectedAccount: AddressOnNetwork
   analytics: {
-    // using an embedded object here to support future extra settings
     isEnabled: boolean
+    hasDefaultOnBeenTurnedOn: boolean
   }
 }
 
@@ -262,8 +262,8 @@ export class PreferenceDatabase extends Dexie {
     return this.preferences.reverse().first() as Promise<Preferences>
   }
 
-  async updateAnalyticsPreferences(
-    analyticsPreferences: AnalyticsPreferences
+  async upsertAnalyticsPreferences(
+    analyticsPreferences: Partial<AnalyticsPreferences>
   ): Promise<void> {
     const preferences = await this.getPreferences()
 
