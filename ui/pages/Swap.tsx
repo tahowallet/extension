@@ -13,8 +13,6 @@ import {
   selectInProgressApprovalContract,
   fetchSwapQuote,
   fetchSwapPrice,
-  selectPriceDetails,
-  setPriceDetails,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
@@ -22,6 +20,7 @@ import {
   selectCurrentAccountBalances,
   selectCurrentAccountSigner,
   selectCurrentNetwork,
+  selectMainCurrencySign,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
@@ -44,7 +43,10 @@ import {
   EIP_1559_COMPLIANT_CHAIN_IDS,
   NETWORKS_SUPPORTING_SWAPS,
 } from "@tallyho/tally-background/constants"
-import { SwapQuoteRequest } from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
+import {
+  PriceDetails,
+  SwapQuoteRequest,
+} from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -106,7 +108,11 @@ export default function Swap(): ReactElement {
 
   const assets = useBackgroundSelector(getAssetsState)
 
-  const priceDetails = useBackgroundSelector(selectPriceDetails)
+  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
+
+  const [priceDetails, setPriceDetails] = useState<PriceDetails | undefined>(
+    undefined
+  )
 
   // TODO We're special-casing ETH here in an odd way. Going forward, we should
   // filter by current chain and better handle network-native base assets
@@ -240,7 +246,7 @@ export default function Swap(): ReactElement {
   }, [sellAsset, sellAssetAmounts])
 
   useEffect(() => {
-    dispatch(setPriceDetails(undefined))
+    setPriceDetails(undefined)
   }, [sellAsset, buyAsset, dispatch])
 
   const inProgressApprovalContract = useBackgroundSelector(
@@ -386,8 +392,11 @@ export default function Swap(): ReactElement {
       }
 
       latestQuoteRequest.current = quoteRequest
-
-      const { quote, needsApproval: quoteNeedsApproval } = ((await dispatch(
+      const {
+        quote,
+        needsApproval: quoteNeedsApproval,
+        priceDetails: quotePriceDetails,
+      } = ((await dispatch(
         fetchSwapPrice({ quoteRequest, assets })
       )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapPrice>) ?? {
         quote: undefined,
@@ -423,6 +432,7 @@ export default function Swap(): ReactElement {
         }
         setNeedsApproval(quoteNeedsApproval)
         setApprovalTarget(quote.allowanceTarget)
+        setPriceDetails(quotePriceDetails)
 
         if (requestedQuote === "sell") {
           setBuyAmount(
@@ -581,13 +591,15 @@ export default function Swap(): ReactElement {
                 currentNetwork={currentNetwork}
                 amount={sellAmount}
                 amountMainCurrency={priceDetails?.sellCurrencyAmount}
-                showCurrencyAmount
+                showPriceDetails
+                isPriceDetailsLoading={!priceDetails}
                 assetsAndAmounts={sellAssetAmounts}
                 selectedAsset={sellAsset}
                 isDisabled={sellAmountLoading}
+                mainCurrencySign={mainCurrencySign}
                 onAssetSelect={updateSellAsset}
                 onAmountChange={(newAmount, error) => {
-                  dispatch(setPriceDetails(undefined))
+                  setPriceDetails(undefined)
                   setSellAmount(newAmount)
                   if (typeof error === "undefined") {
                     updateSwapData("sell", newAmount)
@@ -604,16 +616,18 @@ export default function Swap(): ReactElement {
                 currentNetwork={currentNetwork}
                 amount={buyAmount}
                 amountMainCurrency={priceDetails?.buyCurrencyAmount}
-                showCurrencyAmount
                 priceImpact={priceDetails?.priceImpact}
+                isPriceDetailsLoading={!priceDetails}
+                showPriceDetails
                 // FIXME Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
                 selectedAsset={buyAsset}
                 isDisabled={buyAmountLoading}
                 showMaxButton={false}
+                mainCurrencySign={mainCurrencySign}
                 onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount, error) => {
-                  dispatch(setPriceDetails(undefined))
+                  setPriceDetails(undefined)
                   setBuyAmount(newAmount)
                   if (typeof error === "undefined") {
                     updateSwapData("buy", newAmount)

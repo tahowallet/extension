@@ -16,6 +16,7 @@ import {
   AssetMainCurrencyAmount,
   enrichAssetAmountWithMainCurrencyValues,
 } from "./asset-utils"
+import { hardcodedMainCurrencySymbol } from "./constants"
 
 interface SwapAssets {
   sellAsset: SmartContractFungibleAsset | FungibleAsset
@@ -39,9 +40,9 @@ export type SwapQuoteRequest = {
 }
 
 export type PriceDetails = {
-  priceImpact: number | undefined
-  buyCurrencyAmount: string | undefined
-  sellCurrencyAmount: string | undefined
+  priceImpact?: number
+  buyCurrencyAmount?: string
+  sellCurrencyAmount?: string
 }
 
 export async function getAssetPricePoint(
@@ -84,8 +85,6 @@ export async function getAssetAmount(
     } & AssetMainCurrencyAmount)
   | undefined
 > {
-  const mainCurrencySymbol = "USD"
-
   const fixedPointAmount = parseToFixedPointNumber(amount.toString())
   if (typeof fixedPointAmount === "undefined") {
     return undefined
@@ -98,7 +97,7 @@ export async function getAssetAmount(
   const assetPricePoint = selectAssetPricePoint(
     assets,
     asset?.symbol,
-    mainCurrencySymbol
+    hardcodedMainCurrencySymbol
   )
 
   return enrichAssetAmountWithMainCurrencyValues(
@@ -111,50 +110,32 @@ export async function getAssetAmount(
   )
 }
 
-export function getPriceImpact(
-  buyCurrencyAmount: number | undefined,
-  sellCurrencyAmount: number | undefined
-): number | undefined {
-  if (buyCurrencyAmount && sellCurrencyAmount) {
-    return +((buyCurrencyAmount / sellCurrencyAmount - 1) * 100).toFixed(2)
-  }
-  return undefined
-}
-
-export async function calculatePriceDetails(
-  quoteRequest: SwapQuoteRequest,
+/**
+ * If the tokenToEthRate of a is less than 1
+ * we will probably not get information about the price of the asset.
+ * The goal is to reduce the number of price requests sent to CoinGecko.
+ */
+export async function checkCurrencyAmount(
+  tokenToEthRate: number,
+  asset: FungibleAsset | SmartContractFungibleAsset,
   assets: AssetsState,
-  sellAmount: string,
-  buyAmount: string
-): Promise<PriceDetails> {
-  const assetSellAmount = await getAssetAmount(
-    assets,
-    quoteRequest.assets.sellAsset,
-    fixedPointNumberToString({
-      amount: BigInt(sellAmount),
-      decimals: quoteRequest.assets.sellAsset.decimals,
-    }),
-    quoteRequest.network
-  )
+  amount: string,
+  network: EVMNetwork
+): Promise<string | undefined> {
+  const currencyAmount =
+    tokenToEthRate >= 1
+      ? (
+          await getAssetAmount(
+            assets,
+            asset,
+            fixedPointNumberToString({
+              amount: BigInt(amount),
+              decimals: asset.decimals,
+            }),
+            network
+          )
+        )?.localizedMainCurrencyAmount
+      : undefined
 
-  const assetBuyAmount = await getAssetAmount(
-    assets,
-    quoteRequest.assets.buyAsset,
-    fixedPointNumberToString({
-      amount: BigInt(buyAmount),
-      decimals: quoteRequest.assets.buyAsset.decimals,
-    }),
-    quoteRequest.network
-  )
-
-  const priceImpact = getPriceImpact(
-    assetBuyAmount?.mainCurrencyAmount,
-    assetSellAmount?.mainCurrencyAmount
-  )
-
-  return {
-    buyCurrencyAmount: assetBuyAmount?.localizedMainCurrencyAmount,
-    sellCurrencyAmount: assetSellAmount?.localizedMainCurrencyAmount,
-    priceImpact,
-  }
+  return currencyAmount
 }

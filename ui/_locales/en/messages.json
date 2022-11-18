@@ -45,11 +45,14 @@
     "error": {
       "invalidAmount": "Invalid amount",
       "insufficientBalance": "Insufficient balance"
-    },
-    "priceImpactTooltip": {
-      "firstLine": "Price difference between assets is high.",
-      "secondLine": "This is due to low liquidity of the swap pair."
     }
+  },
+  "priceDetails": {
+    "priceImpactTooltip": {
+      "firstLine": "Price impact between assets is high.",
+      "secondLine": "This is due to low liquidity of the swap pair."
+    },
+    "noAssetPrice": "No price information"
   },
   "comingSoon": "Coming soon",
   "dappConnection": {
@@ -168,7 +171,7 @@
       "bip44": "BIP 44 (Trezor, 🦊)",
       "ethTestnet": "Ethereum Testnet",
       "ledgerLegacy": "Ledger Legacy",
-      "rsk": "RSK"
+      "rsk": "Rootstock"
     }
   },
   "networkFees": {
@@ -292,6 +295,7 @@
   "popupEdition": "Community Edition",
   "protocol": {
     "mainnet": "Mainnet",
+    "beta": "Mainnet (beta)",
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
     "compatibleChain": "Ethereum-compatible blockchain",
@@ -556,6 +560,11 @@
       "isDefault": "is now your default wallet",
       "notDefault": "is not your default wallet",
       "tooltip": "Setting Tally Ho as your default wallet means that everytime you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
+    },
+    "analyticsNotification": { 
+      "title": "Analytics are on",
+      "description": "They help us improve the wallet for you",
+      "settingsLink": "Change settings"
     }
   },
   "dAppConnect": {
@@ -587,7 +596,8 @@
         "SUPPORT_FORGOT_PASSWORD": "Enable to forgot password",
         "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
-        "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner"
+        "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
+        "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab"
       }
     }
   }

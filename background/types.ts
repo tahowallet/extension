@@ -68,3 +68,7 @@ export type EIP712TypedData<T = Record<string, unknown>> = {
 }
 
 export type EIP191Data = string
+
+export type Writeable<T> = { -readonly [P in keyof T]: T[P] }
+
+export type DeepWriteable<T> = { -readonly [P in keyof T]: DeepWriteable<T[P]> }

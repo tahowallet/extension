@@ -18,6 +18,7 @@ import {
   BASE_ASSETS,
   FIAT_CURRENCIES,
   HOUR,
+  MINUTE,
   NETWORK_BY_CHAIN_ID,
   SECOND,
   USD,
@@ -34,7 +35,12 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDb, IndexingDatabase } from "./db"
 import BaseService from "../base"
 import { EnrichedEVMTransaction } from "../enrichment/types"
-import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
+import {
+  normalizeAddressOnNetwork,
+  normalizeEVMAddress,
+  sameEVMAddress,
+} from "../../lib/utils"
+import { fixPolygonWETHIssue, polygonTokenListURL } from "./token-list-edit"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -44,7 +50,18 @@ const FAST_TOKEN_REFRESH_BLOCK_RANGE = 10
 const ACCELERATED_TOKEN_REFRESH_TIMEOUT = 300
 
 interface Events extends ServiceLifecycleEvents {
-  accountsWithBalances: AccountBalance[]
+  accountsWithBalances: {
+    /**
+     * Retrieved token balances
+     */
+    balances: AccountBalance[]
+    /**
+     * The respective address and network for these balances,
+     * useful for identifying which account has no balances left
+     * when the balances array is empty
+     */
+    addressOnNetwork: AddressOnNetwork
+  }
   price: PricePoint
   assets: AnyAsset[]
 }
@@ -129,9 +146,8 @@ export default class IndexingService extends BaseService<Events> {
         handler: () => this.handleBalanceAlarm(true),
       },
       forceBalance: {
-        runAtStart: true,
         schedule: {
-          periodInMinutes: (HOUR / 1e3) * 12,
+          periodInMinutes: (12 * HOUR) / MINUTE,
         },
         handler: () => this.handleBalanceAlarm(),
       },
@@ -157,6 +173,9 @@ export default class IndexingService extends BaseService<Events> {
 
     this.connectChainServiceEvents()
 
+    // Kick off token list fetching in the background
+    const tokenListLoad = this.fetchAndCacheTokenLists()
+
     this.chainService.emitter.once("serviceStarted").then(async () => {
       const trackedNetworks = await this.chainService.getTrackedNetworks()
 
@@ -165,10 +184,10 @@ export default class IndexingService extends BaseService<Events> {
         await this.cacheAssetsForNetwork(network)
         this.emitter.emit("assets", this.cachedAssets[network.chainID])
       })
-    })
 
-    // Kick off token list fetching in the background
-    this.fetchAndCacheTokenLists()
+      // Force a balance refresh on service start
+      tokenListLoad.then(() => this.handleBalanceAlarm())
+    })
   }
 
   /**
@@ -251,20 +270,21 @@ export default class IndexingService extends BaseService<Events> {
    * @param network - the home network of the asset
    * @param contractAddress - the address of the asset on its home network
    */
-  async getKnownSmartContractAsset(
+  getKnownSmartContractAsset(
     network: EVMNetwork,
     contractAddress: HexString
-  ): Promise<SmartContractFungibleAsset> {
+  ): SmartContractFungibleAsset | undefined {
     const knownAssets = this.cachedAssets[network.chainID]
-    const found = knownAssets.find(
-      (asset) =>
-        "decimals" in asset &&
-        "homeNetwork" in asset &&
-        "contractAddress" in asset &&
+
+    const searchResult = knownAssets.find(
+      (asset): asset is SmartContractFungibleAsset =>
+        isSmartContractFungibleAsset(asset) &&
         asset.homeNetwork.name === network.name &&
-        asset.contractAddress === contractAddress
+        normalizeEVMAddress(asset.contractAddress) ===
+          normalizeEVMAddress(contractAddress)
     )
-    return found as SmartContractFungibleAsset
+
+    return searchResult
   }
 
   /* *****************
@@ -320,10 +340,10 @@ export default class IndexingService extends BaseService<Events> {
         // (e.g. via a previously baseline-trusted interaction or via a token
         // list) OR the sender is a tracked address.
         const baselineTrustedAsset =
-          typeof (await this.getKnownSmartContractAsset(
+          typeof this.getKnownSmartContractAsset(
             enrichedEVMTransaction.network,
             asset.contractAddress
-          )) !== "undefined" ||
+          ) !== "undefined" ||
           (await this.db.isTrackingAsset(asset)) ||
           (
             await this.chainService.filterTrackedAddressesOnNetworks([
@@ -462,9 +482,11 @@ export default class IndexingService extends BaseService<Events> {
    * @param contractAddresses
    */
   private async retrieveTokenBalances(
-    addressNetwork: AddressOnNetwork,
+    unsafeAddressNetwork: AddressOnNetwork,
     smartContractAssets?: SmartContractFungibleAsset[]
   ): Promise<SmartContractAmount[]> {
+    const addressNetwork = normalizeAddressOnNetwork(unsafeAddressNetwork)
+
     const balances = await this.chainService.assetData.getTokenBalances(
       addressNetwork,
       smartContractAssets?.map(({ contractAddress }) => contractAddress)
@@ -482,10 +504,10 @@ export default class IndexingService extends BaseService<Events> {
       balances.map(async ({ smartContract: { contractAddress }, amount }) => {
         const knownAsset =
           listedAssetByAddress[normalizeEVMAddress(contractAddress)] ??
-          (await this.getKnownSmartContractAsset(
+          this.getKnownSmartContractAsset(
             addressNetwork.network,
             contractAddress
-          ))
+          )
 
         if (amount > 0) {
           if (knownAsset) {
@@ -527,7 +549,10 @@ export default class IndexingService extends BaseService<Events> {
     )
 
     await this.db.addBalances(accountBalances)
-    this.emitter.emit("accountsWithBalances", accountBalances)
+    this.emitter.emit("accountsWithBalances", {
+      balances: accountBalances,
+      addressOnNetwork: addressNetwork,
+    })
 
     return balances
   }
@@ -550,28 +575,25 @@ export default class IndexingService extends BaseService<Events> {
     addressOnNetwork: AddressOnNetwork,
     contractAddress: string
   ): Promise<void> {
+    const normalizedAddress = normalizeEVMAddress(contractAddress)
     const { network } = addressOnNetwork
-    const knownAssets = this.cachedAssets[network.chainID]
-    const found = knownAssets.find(
-      (asset) =>
-        "decimals" in asset &&
-        "homeNetwork" in asset &&
-        asset.homeNetwork.name === network.name &&
-        "contractAddress" in asset &&
-        asset.contractAddress === contractAddress
+    const knownAsset = this.getKnownSmartContractAsset(
+      addressOnNetwork.network,
+      normalizedAddress
     )
-    if (found) {
-      this.addAssetToTrack(found as SmartContractFungibleAsset)
+
+    if (knownAsset) {
+      this.addAssetToTrack(knownAsset)
     } else {
       let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
         network,
-        contractAddress
+        normalizedAddress
       )
       if (!customAsset) {
         // pull metadata from Alchemy
         customAsset =
           (await this.chainService.assetData.getTokenMetadata({
-            contractAddress,
+            contractAddress: normalizedAddress,
             homeNetwork: network,
           })) || undefined
 
@@ -707,6 +729,12 @@ export default class IndexingService extends BaseService<Events> {
         if (!cachedList) {
           try {
             const newListRef = await fetchAndValidateTokenList(url)
+
+            if (url === polygonTokenListURL) {
+              newListRef.tokenList.tokens = fixPolygonWETHIssue(
+                newListRef.tokenList.tokens
+              )
+            }
             await this.db.saveTokenList(url, newListRef.tokenList)
           } catch (err) {
             logger.error(
@@ -743,8 +771,13 @@ export default class IndexingService extends BaseService<Events> {
     const trackedNetworks = await this.chainService.getTrackedNetworks()
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
+
+    const trackedChainIds = new Set(
+      trackedNetworks.map((network) => network.chainID)
+    )
+
     const activeAssetsToTrack = assetsToTrack.filter((asset) =>
-      trackedNetworks.map((n) => n.chainID).includes(asset.homeNetwork.chainID)
+      trackedChainIds.has(asset.homeNetwork.chainID)
     )
 
     // wait on balances being written to the db, don't wait on event emission
@@ -767,7 +800,9 @@ export default class IndexingService extends BaseService<Events> {
         } else {
           await this.retrieveTokenBalances(
             addressOnNetwork,
-            await this.db.getAllKnownTokensForNetwork(addressOnNetwork.network)
+            this.getCachedAssets(addressOnNetwork.network).filter(
+              isSmartContractFungibleAsset
+            )
           )
         }
         await this.chainService.getLatestBaseAccountBalance(addressOnNetwork)

@@ -1,8 +1,9 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-
-// FIXME Make this configurable.
-const hardcodedMainCurrencySymbol = "USD"
+import {
+  hardcodedMainCurrencySign,
+  hardcodedMainCurrencySymbol,
+} from "../utils/constants"
 
 export const selectCurrentNetwork = createSelector(
   (state: RootState) => state.ui.selectedAccount.network,
@@ -43,6 +44,11 @@ export const selectCurrentAddressNetwork = createSelector(
 export const selectMainCurrencySymbol = createSelector(
   () => null,
   () => hardcodedMainCurrencySymbol
+)
+
+export const selectMainCurrencySign = createSelector(
+  () => null,
+  () => hardcodedMainCurrencySign
 )
 
 export const selectMainCurrency = createSelector(
