@@ -110,24 +110,6 @@ export async function getAssetAmount(
   )
 }
 
-export async function getCurrencyAmount(
-  asset: FungibleAsset | SmartContractFungibleAsset,
-  assets: AssetsState,
-  amount: string,
-  network: EVMNetwork
-): Promise<string | undefined> {
-  const assetAmount = await getAssetAmount(
-    assets,
-    asset,
-    fixedPointNumberToString({
-      amount: BigInt(amount),
-      decimals: asset.decimals,
-    }),
-    network
-  )
-  return assetAmount?.localizedMainCurrencyAmount
-}
-
 /**
  * If the tokenToEthRate of a is less than 1
  * we will probably not get information about the price of the asset.
@@ -142,7 +124,17 @@ export async function checkCurrencyAmount(
 ): Promise<string | undefined> {
   const currencyAmount =
     tokenToEthRate >= 1
-      ? await getCurrencyAmount(asset, assets, amount, network)
+      ? (
+          await getAssetAmount(
+            assets,
+            asset,
+            fixedPointNumberToString({
+              amount: BigInt(amount),
+              decimals: asset.decimals,
+            }),
+            network
+          )
+        )?.localizedMainCurrencyAmount
       : undefined
 
   return currencyAmount

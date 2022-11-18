@@ -20,6 +20,7 @@ import {
   selectCurrentAccountBalances,
   selectCurrentAccountSigner,
   selectCurrentNetwork,
+  selectMainCurrencySign,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
@@ -106,6 +107,8 @@ export default function Swap(): ReactElement {
   const isReadOnlyAccount = currentAccountSigner === ReadOnlyAccountSigner
 
   const assets = useBackgroundSelector(getAssetsState)
+
+  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const [priceDetails, setPriceDetails] = useState<PriceDetails | undefined>(
     undefined
@@ -589,10 +592,11 @@ export default function Swap(): ReactElement {
                 amount={sellAmount}
                 amountMainCurrency={priceDetails?.sellCurrencyAmount}
                 showPriceDetails
-                isPriceDetailsLoaded={!!priceDetails}
+                isPriceDetailsLoading={!priceDetails}
                 assetsAndAmounts={sellAssetAmounts}
                 selectedAsset={sellAsset}
                 isDisabled={sellAmountLoading}
+                mainCurrencySign={mainCurrencySign}
                 onAssetSelect={updateSellAsset}
                 onAmountChange={(newAmount, error) => {
                   setPriceDetails(undefined)
@@ -613,13 +617,14 @@ export default function Swap(): ReactElement {
                 amount={buyAmount}
                 amountMainCurrency={priceDetails?.buyCurrencyAmount}
                 priceImpact={priceDetails?.priceImpact}
-                isPriceDetailsLoaded={!!priceDetails}
+                isPriceDetailsLoading={!priceDetails}
                 showPriceDetails
                 // FIXME Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
                 selectedAsset={buyAsset}
                 isDisabled={buyAmountLoading}
                 showMaxButton={false}
+                mainCurrencySign={mainCurrencySign}
                 onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount, error) => {
                   setPriceDetails(undefined)

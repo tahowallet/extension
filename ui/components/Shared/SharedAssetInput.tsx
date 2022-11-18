@@ -293,8 +293,9 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   disableDropdown: boolean
   showMaxButton: boolean
   isDisabled?: boolean
-  isPriceDetailsLoaded?: boolean
+  isPriceDetailsLoading?: boolean
   showPriceDetails?: boolean
+  mainCurrencySign?: string
   onAssetSelect?: (asset: AssetType) => void
   onAmountChange?: (value: string, errorMessage: string | undefined) => void
 }
@@ -336,7 +337,8 @@ export default function SharedAssetInput<T extends AnyAsset>(
     showMaxButton,
     isDisabled,
     showPriceDetails,
-    isPriceDetailsLoaded,
+    isPriceDetailsLoading,
+    mainCurrencySign,
     onAssetSelect,
     onAmountChange,
   } = props
@@ -517,7 +519,8 @@ export default function SharedAssetInput<T extends AnyAsset>(
               <PriceDetails
                 amountMainCurrency={amountMainCurrency}
                 priceImpact={priceImpact}
-                isPriceDetailsLoaded={isPriceDetailsLoaded}
+                isLoading={isPriceDetailsLoading}
+                mainCurrencySign={mainCurrencySign || ""}
               />
             ) : (
               <div className="error_message">{errorMessage}</div>

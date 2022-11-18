@@ -1,16 +1,17 @@
 import React from "react"
 import { hardcodedMainCurrencySign } from "@tallyho/tally-background/redux-slices/utils/constants"
+import { render } from "@testing-library/react"
 import PriceDetails from "../PriceDetails"
-import { renderWithProviders } from "../../../tests/test-utils"
 
 describe("PriceDetails", () => {
   test("should display amount main currency", () => {
     const amount = "1"
-    const ui = renderWithProviders(
+    const ui = render(
       <PriceDetails
         amountMainCurrency={amount}
         priceImpact={undefined}
-        isPriceDetailsLoaded
+        isLoading={false}
+        mainCurrencySign={hardcodedMainCurrencySign}
       />
     )
     expect(ui.getByText(`${hardcodedMainCurrencySign}${amount}`)).toBeVisible()
@@ -18,11 +19,12 @@ describe("PriceDetails", () => {
 
   test("should display that amount is lower than 0", () => {
     const amount = "0.00"
-    const ui = renderWithProviders(
+    const ui = render(
       <PriceDetails
         amountMainCurrency={amount}
         priceImpact={undefined}
-        isPriceDetailsLoaded
+        isLoading={false}
+        mainCurrencySign={hardcodedMainCurrencySign}
       />
     )
     expect(ui.getByText(`<${hardcodedMainCurrencySign}${amount}`)).toBeVisible()
@@ -30,11 +32,12 @@ describe("PriceDetails", () => {
 
   test("should display 0.00 when price is loading", () => {
     const amount = "0.00"
-    const ui = renderWithProviders(
+    const ui = render(
       <PriceDetails
         amountMainCurrency={undefined}
         priceImpact={undefined}
-        isPriceDetailsLoaded={false}
+        isLoading
+        mainCurrencySign={hardcodedMainCurrencySign}
       />,
       {}
     )
@@ -44,11 +47,12 @@ describe("PriceDetails", () => {
   test("should display price impact", () => {
     const priceImpact = 2
 
-    const ui = renderWithProviders(
+    const ui = render(
       <PriceDetails
         amountMainCurrency="1"
         priceImpact={priceImpact}
-        isPriceDetailsLoaded
+        isLoading={false}
+        mainCurrencySign={hardcodedMainCurrencySign}
       />
     )
 
@@ -56,11 +60,12 @@ describe("PriceDetails", () => {
   })
 
   test("should not display price impact when is undefined", () => {
-    const ui = renderWithProviders(
+    const ui = render(
       <PriceDetails
         amountMainCurrency={undefined}
         priceImpact={undefined}
-        isPriceDetailsLoaded
+        isLoading={false}
+        mainCurrencySign={hardcodedMainCurrencySign}
       />
     )
 
@@ -68,11 +73,12 @@ describe("PriceDetails", () => {
   })
 
   test("should not display price impact when is 0", () => {
-    const ui = renderWithProviders(
+    const ui = render(
       <PriceDetails
         amountMainCurrency={undefined}
         priceImpact={0}
-        isPriceDetailsLoaded
+        isLoading={false}
+        mainCurrencySign={hardcodedMainCurrencySign}
       />
     )
 
@@ -80,11 +86,12 @@ describe("PriceDetails", () => {
   })
 
   test("should display info when price is unknown", () => {
-    const ui = renderWithProviders(
+    const ui = render(
       <PriceDetails
         amountMainCurrency={undefined}
         priceImpact={0}
-        isPriceDetailsLoaded
+        isLoading={false}
+        mainCurrencySign={hardcodedMainCurrencySign}
       />
     )
 
@@ -95,11 +102,12 @@ describe("PriceDetails", () => {
   test("should not display price impact when it is below 1%", () => {
     const priceImpact = 1
 
-    const ui = renderWithProviders(
+    const ui = render(
       <PriceDetails
         amountMainCurrency="1"
         priceImpact={priceImpact}
-        isPriceDetailsLoaded
+        isLoading={false}
+        mainCurrencySign={hardcodedMainCurrencySign}
       />
     )
 

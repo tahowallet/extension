@@ -1,7 +1,5 @@
-import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import { useBackgroundSelector } from "../../hooks"
 import SharedIcon from "./SharedIcon"
 import SharedTooltip from "./SharedTooltip"
 
@@ -23,22 +21,22 @@ function getPriceImpactColor(value: number | undefined): string {
   return "green-40"
 }
 
-interface PriceDetailsProps {
+type PriceDetailsProps = {
   amountMainCurrency: string | undefined
   priceImpact: number | undefined
-  isPriceDetailsLoaded: boolean | undefined
+  mainCurrencySign: string
+  isLoading: boolean | undefined
 }
 
 export default function PriceDetails(props: PriceDetailsProps): ReactElement {
-  const { amountMainCurrency, priceImpact, isPriceDetailsLoaded } = props
-  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
+  const { amountMainCurrency, priceImpact, mainCurrencySign, isLoading } = props
   const { t } = useTranslation("translation", {
     keyPrefix: "priceDetails",
   })
 
   return (
     <div className="simple_text content_wrap">
-      {isPriceDetailsLoaded && amountMainCurrency === undefined ? (
+      {!isLoading && amountMainCurrency === undefined ? (
         t("noAssetPrice")
       ) : (
         <>
