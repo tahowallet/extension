@@ -2,7 +2,6 @@ import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { selectCurrentAccountSigner } from "@tallyho/tally-background/redux-slices/selectors"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
-import { Redirect } from "react-router-dom"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
@@ -24,7 +23,6 @@ export default function WalletAccountBalanceControl(
   })
   const { balance, initializationLoadingTimeExpired } = props
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false)
-  const [linkTo, setLinkTo] = useState("")
 
   // TODO When non-imported accounts are supported, generalize this.
   const hasSavedSeed = true
@@ -37,10 +35,6 @@ export default function WalletAccountBalanceControl(
 
   const shouldIndicateLoading =
     !initializationLoadingTimeExpired && typeof balance === "undefined"
-
-  if (linkTo) {
-    return <Redirect push to={linkTo} />
-  }
 
   return (
     <>
@@ -78,14 +72,14 @@ export default function WalletAccountBalanceControl(
                   <SharedSquareButton
                     icon="icons/s/send.svg"
                     ariaLabel={t("send")}
-                    onClick={() => setLinkTo("/send")}
+                    linkTo="/send"
                   >
                     {t("send")}
                   </SharedSquareButton>
                   <SharedSquareButton
                     icon="icons/s/swap.svg"
                     ariaLabel={t("swap")}
-                    onClick={() => setLinkTo("/swap")}
+                    linkTo="/swap"
                     iconColor={{
                       color: "var(--trophy-gold)",
                       hoverColor: "var(--trophy-gold)",
@@ -143,9 +137,6 @@ export default function WalletAccountBalanceControl(
             width: 180px;
             justify-content: space-between;
             margin: 8px 0 32px;
-          }
-          .button_wrap {
-            width: 50px;
           }
           .balance_actions {
             margin-bottom: 20px;

@@ -1,4 +1,6 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
+import { Redirect } from "react-router-dom"
+import { History } from "history"
 
 const SIZE = 32
 const DEFAULT_COLORS: ColorDetails = {
@@ -17,14 +19,30 @@ type Props = {
   textColor: ColorDetails
   ariaLabel?: string
   children: React.ReactNode
+  linkTo?: History.LocationDescriptor<unknown>
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
 export default function SharedSquareButton(props: Props): ReactElement {
-  const { icon, iconColor, textColor, ariaLabel, children, onClick } = props
+  const { icon, iconColor, textColor, ariaLabel, children, linkTo, onClick } =
+    props
+  const [navigateTo, setNavigateTo] = useState<
+    History.LocationDescriptor<unknown> | undefined
+  >(undefined)
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    onClick?.(event)
+    if (linkTo) {
+      setNavigateTo(linkTo)
+    }
+  }
+
+  if (navigateTo && navigateTo === linkTo) {
+    return <Redirect push to={linkTo} />
+  }
 
   return (
-    <button type="button" aria-label={ariaLabel} onClick={onClick}>
+    <button type="button" aria-label={ariaLabel} onClick={handleClick}>
       <div className="content_wrap">
         <div className="icon_wrap">
           <div className="icon" />
