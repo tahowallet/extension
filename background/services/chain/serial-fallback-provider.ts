@@ -698,22 +698,22 @@ export function makeSerialFallbackProvider(
   )
     ? [
         () =>
+          new AlchemyProvider(getNetwork(Number(network.chainID)), ALCHEMY_KEY),
+        () =>
           new AlchemyWebSocketProvider(
             getNetwork(Number(network.chainID)),
             ALCHEMY_KEY
           ),
-        () =>
-          new AlchemyProvider(getNetwork(Number(network.chainID)), ALCHEMY_KEY),
       ]
     : []
 
   const genericProviders = (CHAIN_ID_TO_RPC_URLS[network.chainID] || []).map(
-    (rpcUrl) => () => new JsonRpcProvider(rpcUrl)
+    (rpcUrl) => () => new JsonRpcProvider({ url: rpcUrl, timeout: 1000 })
   )
 
   return new SerialFallbackProvider(network, [
     // Prefer alchemy as the primary provider when available
-    ...alchemyProviderCreators,
     ...genericProviders,
+    ...alchemyProviderCreators,
   ])
 }
