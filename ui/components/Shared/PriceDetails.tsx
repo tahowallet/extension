@@ -22,10 +22,10 @@ function getPriceImpactColor(value: number | undefined): string {
 }
 
 type PriceDetailsProps = {
-  amountMainCurrency: string | undefined
-  priceImpact: number | undefined
+  amountMainCurrency?: string
+  priceImpact?: number
   mainCurrencySign: string
-  isLoading: boolean | undefined
+  isLoading: boolean
 }
 
 export default function PriceDetails(props: PriceDetailsProps): ReactElement {

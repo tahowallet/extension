@@ -519,7 +519,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
               <PriceDetails
                 amountMainCurrency={amountMainCurrency}
                 priceImpact={priceImpact}
-                isLoading={isPriceDetailsLoading}
+                isLoading={!!isPriceDetailsLoading}
                 mainCurrencySign={mainCurrencySign || ""}
               />
             ) : (
