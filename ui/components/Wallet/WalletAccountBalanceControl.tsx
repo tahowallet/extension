@@ -69,31 +69,37 @@ export default function WalletAccountBalanceControl(
             <>
               {hasSavedSeed ? (
                 <div className="actions_button_wrap">
-                  <SharedSquareButton
-                    icon="icons/s/send.svg"
-                    ariaLabel={t("send")}
-                    linkTo="/send"
-                  >
-                    {t("send")}
-                  </SharedSquareButton>
-                  <SharedSquareButton
-                    icon="icons/s/swap.svg"
-                    ariaLabel={t("swap")}
-                    linkTo="/swap"
-                    iconColor={{
-                      color: "var(--trophy-gold)",
-                      hoverColor: "var(--trophy-gold)",
-                    }}
-                  >
-                    {t("swap")}
-                  </SharedSquareButton>
-                  <SharedSquareButton
-                    icon="icons/s/receive.svg"
-                    ariaLabel={t("receive")}
-                    onClick={handleClick}
-                  >
-                    {t("receive")}
-                  </SharedSquareButton>
+                  <div className="button_wrap">
+                    <SharedSquareButton
+                      icon="icons/s/send.svg"
+                      ariaLabel={t("send")}
+                      linkTo="/send"
+                    >
+                      {t("send")}
+                    </SharedSquareButton>
+                  </div>
+                  <div className="button_wrap">
+                    <SharedSquareButton
+                      icon="icons/s/swap.svg"
+                      ariaLabel={t("swap")}
+                      linkTo="/swap"
+                      iconColor={{
+                        color: "var(--trophy-gold)",
+                        hoverColor: "var(--trophy-gold)",
+                      }}
+                    >
+                      {t("swap")}
+                    </SharedSquareButton>
+                  </div>
+                  <div className="button_wrap">
+                    <SharedSquareButton
+                      icon="icons/s/receive.svg"
+                      ariaLabel={t("receive")}
+                      onClick={handleClick}
+                    >
+                      {t("receive")}
+                    </SharedSquareButton>
+                  </div>
                 </div>
               ) : (
                 <div className="save_seed_button_wrap">
@@ -137,6 +143,10 @@ export default function WalletAccountBalanceControl(
             width: 180px;
             justify-content: space-between;
             margin: 8px 0 32px;
+          }
+          .button_wrap {
+            width: 50px;
+            text-align: center;
           }
           .balance_actions {
             margin-bottom: 20px;
