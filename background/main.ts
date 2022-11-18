@@ -628,11 +628,9 @@ export default class Main extends BaseService<never> {
 
   async enrichActivities(addressNetwork: AddressOnNetwork): Promise<void> {
     const accountsToTrack = await this.chainService.getAccountsToTrack()
-    const state = this.store.getState()
-    ;(window as any).store = this.store
-    console.log(state)
-    const activitiesToEnrich = selectActivitesHashesForEnrichment(state)
-    console.log(activitiesToEnrich)
+    const activitiesToEnrich = selectActivitesHashesForEnrichment(
+      this.store.getState()
+    )
 
     activitiesToEnrich.forEach(async (txHash) => {
       const transaction = await this.chainService.getTransaction(
