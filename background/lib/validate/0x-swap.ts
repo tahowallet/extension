@@ -31,6 +31,7 @@ export const swapPriceJTD = {
     allowanceTarget: { type: "string" },
     sellTokenToEthRate: { type: "string" },
     buyTokenToEthRate: { type: "string" },
+    estimatedPriceImpact: { type: "string" },
   },
   // Don't fail if new properties are introduced.
   additionalProperties: true,
