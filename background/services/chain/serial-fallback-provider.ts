@@ -143,6 +143,17 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // for reconnects when relevant.
   private currentProviderIndex = 0
 
+  // TEMPORARY cache for latest account balances to reduce number of rpc calls
+  // This is intended as a temporary fix to the burst of account enrichment that
+  // happens when the extension is first loaded up as a result of activity emission
+  // inside of chainService.connectChainService
+  private latestBalanceCache: {
+    [address: string]: {
+      balance: string
+      updatedAt: number
+    }
+  } = {}
+
   // Information on the current backoff state. This is used to ensure retries
   // and reconnects back off exponentially.
   private currentBackoff = {
@@ -197,6 +208,17 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     if (method === "eth_chainId") {
       return this.cachedChainId
     }
+
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      const now = Date.now()
+      const lastUpdate = this.latestBalanceCache[address]?.updatedAt
+      if (lastUpdate && now < lastUpdate + 1 * SECOND) {
+        return this.latestBalanceCache[address].balance
+      }
+    }
+
     try {
       if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
         // Detect disconnected WebSocket and immediately throw.
@@ -210,7 +232,18 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         )
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await this.currentProvider.send(method, params as any)
+      const result = await this.currentProvider.send(method, params as any)
+
+      // @TODO Remove once initial activity load is refactored.
+      if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
+        const address = (params as string[])[0]
+        this.latestBalanceCache[address] = {
+          balance: result,
+          updatedAt: Date.now(),
+        }
+      }
+
+      return result
     } catch (error) {
       // Awful, but what can ya do.
       const stringifiedError = String(error)

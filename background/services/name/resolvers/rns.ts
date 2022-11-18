@@ -35,7 +35,7 @@ export default function rnsResolver(): NameResolver<"RNS"> {
   return {
     type: "RNS",
     canAttemptNameResolution(): boolean {
-      return true
+      return false
     },
     canAttemptAvatarResolution(): boolean {
       return false
