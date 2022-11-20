@@ -434,7 +434,7 @@ export default function Swap(): ReactElement {
                     : undefined
                 }
                 showPriceDetails
-                isPriceDetailsLoading={loadingSourceAmount}
+                isPriceDetailsLoading={loadingQuote}
                 assetsAndAmounts={sellAssetAmounts}
                 selectedAsset={sourceAsset}
                 isDisabled={loadingSourceAmount}
@@ -473,7 +473,7 @@ export default function Swap(): ReactElement {
                     : undefined
                 }
                 priceImpact={quote?.priceDetails?.priceImpact}
-                isPriceDetailsLoading={loadingTargetAmount}
+                isPriceDetailsLoading={loadingQuote}
                 showPriceDetails
                 // FIXME: Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
