@@ -149,17 +149,17 @@ export default function Swap(): ReactElement {
     amount: savedSwapAmount,
   } = (!locationAsset && savedQuoteRequest) || {
     // ^ If coming from an asset item swap button, let the UI start fresh
-    assets: { sellAsset: locationAsset },
+    assets: { sourceAsset: locationAsset },
   }
 
-  const [sellAsset, setSellAsset] = useState(savedSellAsset)
-  const [buyAsset, setBuyAsset] = useState(savedBuyAsset)
-  const [sellAmount, setSellAmount] = useState(
+  const [sourceAsset, setSellAsset] = useState(savedSellAsset)
+  const [targetAsset, setBuyAsset] = useState(savedBuyAsset)
+  const [sourceAmount, setSourceAmount] = useState(
     typeof savedSwapAmount !== "undefined" && "sellAmount" in savedSwapAmount
       ? savedSwapAmount.sellAmount
       : ""
   )
-  const [buyAmount, setBuyAmount] = useState(
+  const [targetAmount, setTargetAmount] = useState(
     typeof savedSwapAmount !== "undefined" && "buyAmount" in savedSwapAmount
       ? savedSwapAmount.buyAmount
       : ""
@@ -172,8 +172,8 @@ export default function Swap(): ReactElement {
   useSkipFirstRenderEffect(() => {
     setSellAsset(undefined)
     setBuyAsset(undefined)
-    setSellAmount("")
-    setBuyAmount("")
+    setSourceAmount("")
+    setTargetAmount("")
   }, [currentNetwork.chainID, dispatch])
 
   const buyAssets = useBackgroundSelector((state) => {
@@ -183,7 +183,7 @@ export default function Swap(): ReactElement {
     return knownAssets.filter(
       (asset): asset is SmartContractFungibleAsset | FungibleAsset => {
         // We don't want to buy the same asset we're selling.
-        if (asset.symbol === sellAsset?.symbol) {
+        if (asset.symbol === sourceAsset?.symbol) {
           return false
         }
 
@@ -206,15 +206,15 @@ export default function Swap(): ReactElement {
   const sellAssetAmounts = (
     ownedSellAssetAmounts.some(
       ({ asset }) =>
-        typeof sellAsset !== "undefined" && isSameAsset(asset, sellAsset)
+        typeof sourceAsset !== "undefined" && isSameAsset(asset, sourceAsset)
     )
       ? ownedSellAssetAmounts
       : ownedSellAssetAmounts.concat(
-          typeof sellAsset === "undefined"
+          typeof sourceAsset === "undefined"
             ? []
             : [
                 {
-                  asset: sellAsset,
+                  asset: sourceAsset,
                   amount: 0n,
                   decimalAmount: 0,
                   localizedDecimalAmount: "0",
@@ -222,41 +222,41 @@ export default function Swap(): ReactElement {
               ]
         )
   ).filter(
-    (sellAssetAmount) => sellAssetAmount.asset.symbol !== buyAsset?.symbol
+    (sellAssetAmount) => sellAssetAmount.asset.symbol !== targetAsset?.symbol
   )
 
   useEffect(() => {
-    if (typeof sellAsset !== "undefined") {
+    if (typeof sourceAsset !== "undefined") {
       const isSelectedSellAssetInSellAssets = sellAssetAmounts.some(
-        ({ asset }) => isSameAsset(asset, sellAsset)
+        ({ asset }) => isSameAsset(asset, sourceAsset)
       )
 
       if (!isSelectedSellAssetInSellAssets) {
         sellAssetAmounts.push({
-          asset: sellAsset,
+          asset: sourceAsset,
           amount: 0n,
           decimalAmount: 0,
           localizedDecimalAmount: "0",
         })
       }
     }
-  }, [sellAsset, sellAssetAmounts])
+  }, [sourceAsset, sellAssetAmounts])
 
   useEffect(() => {
     setPriceDetails(undefined)
-  }, [sellAsset, buyAsset, dispatch])
+  }, [sourceAsset, targetAsset, dispatch])
 
   const inProgressApprovalContract = useBackgroundSelector(
     selectInProgressApprovalContract
   )
   const isApprovalInProgress =
-    sellAsset &&
-    "contractAddress" in sellAsset &&
+    sourceAsset &&
+    "contractAddress" in sourceAsset &&
     normalizeEVMAddress(inProgressApprovalContract || "0x") ===
-      normalizeEVMAddress(sellAsset?.contractAddress || "0x")
+      normalizeEVMAddress(sourceAsset?.contractAddress || "0x")
 
-  const [sellAmountLoading, setSellAmountLoading] = useState(false)
-  const [buyAmountLoading, setBuyAmountLoading] = useState(false)
+  const [sourceAmountLoading, setSourceAmountLoading] = useState(false)
+  const [targetAmountLoading, setTargetAmountLoading] = useState(false)
 
   const [swapTransactionSettings, setSwapTransactionSettings] = useState({
     slippageTolerance: useBackgroundSelector(selectSlippageTolerance),
@@ -290,7 +290,7 @@ export default function Swap(): ReactElement {
   }
 
   const approveAsset = async () => {
-    if (typeof sellAsset === "undefined") {
+    if (typeof sourceAsset === "undefined") {
       logger.error(t("swap.error.noSellAsset"))
       return
     }
@@ -298,14 +298,14 @@ export default function Swap(): ReactElement {
       logger.error(t("swap.error.noApprovalTarget"))
       return
     }
-    if (!isSmartContractFungibleAsset(sellAsset)) {
-      logger.error(t("swap.error.nonContractAsset"), sellAsset)
+    if (!isSmartContractFungibleAsset(sourceAsset)) {
+      logger.error(t("swap.error.nonContractAsset"), sourceAsset)
       return
     }
 
     await dispatch(
       approveTransfer({
-        assetContractAddress: sellAsset.contractAddress,
+        assetContractAddress: sourceAsset.contractAddress,
         approvalTarget,
       })
     )
@@ -320,19 +320,19 @@ export default function Swap(): ReactElement {
       quoteAsset?: SmartContractFungibleAsset | FungibleAsset | undefined
     ): Promise<void> => {
       if (requestedQuote === "sell") {
-        setBuyAmount("")
+        setTargetAmount("")
       } else {
-        setSellAmount("")
+        setSourceAmount("")
       }
 
       const quoteSellAsset =
         requestedQuote === "buy"
-          ? fixedAsset ?? sellAsset
-          : quoteAsset ?? sellAsset
+          ? fixedAsset ?? sourceAsset
+          : quoteAsset ?? sourceAsset
       const quoteBuyAsset =
         requestedQuote === "sell" && typeof fixedAsset !== "undefined"
-          ? fixedAsset ?? buyAsset
-          : quoteAsset ?? buyAsset
+          ? fixedAsset ?? targetAsset
+          : quoteAsset ?? targetAsset
 
       // Swap amounts can't update unless both sell and buy assets are specified.
       if (
@@ -363,7 +363,7 @@ export default function Swap(): ReactElement {
         "buyAmount" in quoteRequest.amount &&
         Number(quoteRequest.amount.buyAmount) === 0
       ) {
-        setSellAmount("")
+        setSourceAmount("")
         return
       }
 
@@ -371,21 +371,21 @@ export default function Swap(): ReactElement {
         "sellAmount" in quoteRequest.amount &&
         Number(quoteRequest.amount.sellAmount) === 0
       ) {
-        setBuyAmount("")
+        setTargetAmount("")
         return
       }
 
       // If there's a different quote in progress, reset all loading states as
       // we're about to replace it.
       if (latestQuoteRequest.current !== quoteRequest) {
-        setBuyAmountLoading(false)
-        setSellAmountLoading(false)
+        setTargetAmountLoading(false)
+        setSourceAmountLoading(false)
       }
 
       if (requestedQuote === "sell") {
-        setBuyAmountLoading(true)
+        setTargetAmountLoading(true)
       } else {
-        setSellAmountLoading(true)
+        setSourceAmountLoading(true)
       }
 
       latestQuoteRequest.current = quoteRequest
@@ -404,8 +404,8 @@ export default function Swap(): ReactElement {
       if (latestQuoteRequest.current === quoteRequest) {
         if (typeof quote === "undefined") {
           // If there's no quote, clear states and abort.
-          setBuyAmountLoading(false)
-          setSellAmountLoading(false)
+          setTargetAmountLoading(false)
+          setSourceAmountLoading(false)
           setNeedsApproval(false)
           setApprovalTarget(undefined)
           latestQuoteRequest.current = undefined
@@ -432,59 +432,65 @@ export default function Swap(): ReactElement {
         setPriceDetails(quotePriceDetails)
 
         if (requestedQuote === "sell") {
-          setBuyAmount(
+          setTargetAmount(
             fixedPointNumberToString({
               amount: BigInt(quote.buyAmount),
               decimals: quoteBuyAsset.decimals,
             })
           )
-          setBuyAmountLoading(false)
+          setTargetAmountLoading(false)
         } else {
-          setSellAmount(
+          setSourceAmount(
             fixedPointNumberToString({
               amount: BigInt(quote.sellAmount),
               decimals: quoteSellAsset.decimals,
             })
           )
-          setSellAmountLoading(false)
+          setSourceAmountLoading(false)
         }
       }
     },
-    [sellAsset, buyAsset, swapTransactionSettings, selectedNetwork, dispatch]
+    [
+      sourceAsset,
+      targetAsset,
+      swapTransactionSettings,
+      selectedNetwork,
+      dispatch,
+    ]
   )
 
   const updateSellAsset = useCallback(
     (asset: SmartContractFungibleAsset | FungibleAsset) => {
       setSellAsset(asset)
 
-      if (buyAsset && buyAmount !== "") {
+      if (targetAsset && targetAmount !== "") {
         // Updating the sell asset quotes the new sell asset against the existing
         // buy amount.
-        updateSwapData("buy", buyAmount, asset)
+        updateSwapData("buy", targetAmount, asset)
       }
     },
-    [buyAmount, buyAsset, updateSwapData]
+    [targetAmount, targetAsset, updateSwapData]
   )
   const updateBuyAsset = useCallback(
     (asset: SmartContractFungibleAsset | FungibleAsset) => {
       setBuyAsset(asset)
 
-      if (sellAsset && sellAmount !== "") {
+      if (sourceAsset && sourceAmount !== "") {
         // Updating the buy asset quotes the new buy asset against the existing
         // sell amount.
-        updateSwapData("sell", sellAmount, asset)
+        updateSwapData("sell", sourceAmount, asset)
       }
     },
-    [sellAmount, sellAsset, updateSwapData]
+    [sourceAmount, sourceAsset, updateSwapData]
   )
 
   const flipSwap = useCallback(() => {
-    setSellAsset(buyAsset)
-    setBuyAsset(sellAsset)
-    setSellAmount(buyAmount)
+    setSellAsset(targetAsset)
+    setBuyAsset(sourceAsset)
+    setSourceAmount(targetAmount)
 
-    updateSwapData("sell", buyAmount, sellAsset, buyAsset)
-  }, [buyAmount, buyAsset, sellAsset, updateSwapData])
+    updateSwapData("sell", targetAmount, sourceAsset, targetAsset)
+  }, [targetAmount, targetAsset, sourceAsset, updateSwapData])
 
   useEffect(() => {
     if (
@@ -528,12 +534,12 @@ export default function Swap(): ReactElement {
           }}
           size="large"
         >
-          {typeof sellAsset !== "undefined" &&
-          typeof buyAsset !== "undefined" &&
+          {typeof sourceAsset !== "undefined" &&
+          typeof targetAsset !== "undefined" &&
           typeof finalQuote !== "undefined" ? (
             <SwapQuote
-              sellAsset={sellAsset}
-              buyAsset={buyAsset}
+              sellAsset={sourceAsset}
+              buyAsset={targetAsset}
               finalQuote={finalQuote}
               swapTransactionSettings={swapTransactionSettings}
             />
@@ -579,18 +585,18 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
                 currentNetwork={currentNetwork}
-                amount={sellAmount}
+                amount={sourceAmount}
                 amountMainCurrency={priceDetails?.sellCurrencyAmount}
                 showPriceDetails
                 isPriceDetailsLoading={!priceDetails}
                 assetsAndAmounts={sellAssetAmounts}
-                selectedAsset={sellAsset}
-                isDisabled={sellAmountLoading}
+                selectedAsset={sourceAsset}
+                isDisabled={sourceAmountLoading}
                 mainCurrencySign={mainCurrencySign}
                 onAssetSelect={updateSellAsset}
                 onAmountChange={(newAmount, error) => {
                   setPriceDetails(undefined)
-                  setSellAmount(newAmount)
+                  setSourceAmount(newAmount)
                   if (typeof error === "undefined") {
                     updateSwapData("sell", newAmount)
                   }
@@ -604,21 +610,21 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
                 currentNetwork={currentNetwork}
-                amount={buyAmount}
+                amount={targetAmount}
                 amountMainCurrency={priceDetails?.buyCurrencyAmount}
                 priceImpact={priceDetails?.priceImpact}
                 isPriceDetailsLoading={!priceDetails}
                 showPriceDetails
                 // FIXME Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
-                selectedAsset={buyAsset}
-                isDisabled={buyAmountLoading}
+                selectedAsset={targetAsset}
+                isDisabled={targetAmountLoading}
                 showMaxButton={false}
                 mainCurrencySign={mainCurrencySign}
                 onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount, error) => {
                   setPriceDetails(undefined)
-                  setBuyAmount(newAmount)
+                  setTargetAmount(newAmount)
                   if (typeof error === "undefined") {
                     updateSwapData("buy", newAmount)
                   }
@@ -647,8 +653,8 @@ export default function Swap(): ReactElement {
                       isDisabled={
                         isReadOnlyAccount ||
                         typeof latestQuoteRequest.current === "undefined" ||
-                        sellAmountLoading ||
-                        buyAmountLoading
+                        sourceAmountLoading ||
+                        targetAmountLoading
                       }
                       onClick={approveAsset}
                       showLoadingOnClick={!confirmationMenu}
@@ -663,12 +669,12 @@ export default function Swap(): ReactElement {
                     isDisabled={
                       isReadOnlyAccount ||
                       typeof latestQuoteRequest.current === "undefined" ||
-                      sellAmountLoading ||
-                      buyAmountLoading ||
-                      !sellAsset ||
-                      !sellAmount ||
-                      !buyAsset ||
-                      !buyAmount
+                      sourceAmountLoading ||
+                      targetAmountLoading ||
+                      !sourceAsset ||
+                      !sourceAmount ||
+                      !targetAsset ||
+                      !targetAmount
                     }
                     onClick={getFinalQuote}
                     showLoadingOnClick={!confirmationMenu}
