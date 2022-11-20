@@ -1,7 +1,3 @@
-import {
-  AlchemyProvider,
-  AlchemyWebSocketProvider,
-} from "@ethersproject/providers"
 import { BigNumber, utils } from "ethers"
 
 import logger from "./logger"
@@ -17,6 +13,7 @@ import {
   isValidAlchemyTokenBalanceResponse,
   isValidAlchemyTokenMetadataResponse,
 } from "./validate"
+import type SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import { AddressOnNetwork } from "../accounts"
 import { fetchWithTimeout } from "../utils/fetching"
 
@@ -41,7 +38,7 @@ export const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer
  *        to look.
  */
 export async function getAssetTransfers(
-  provider: AlchemyProvider | AlchemyWebSocketProvider,
+  provider: SerialFallbackProvider,
   addressOnNetwork: AddressOnNetwork,
   direction: "incoming" | "outgoing",
   fromBlock: number,
@@ -152,7 +149,7 @@ export async function getAssetTransfers(
  *        tokens on its platform
  */
 export async function getTokenBalances(
-  provider: AlchemyProvider | AlchemyWebSocketProvider,
+  provider: SerialFallbackProvider,
   { address, network }: AddressOnNetwork,
   tokens?: HexString[]
 ): Promise<SmartContractAmount[]> {
@@ -223,7 +220,7 @@ export async function getTokenBalances(
  *        for the same network, or results are undefined.
  */
 export async function getTokenMetadata(
-  provider: AlchemyProvider | AlchemyWebSocketProvider,
+  provider: SerialFallbackProvider,
   { contractAddress, homeNetwork }: SmartContract
 ): Promise<SmartContractFungibleAsset | undefined> {
   const json: unknown = await provider.send("alchemy_getTokenMetadata", [
