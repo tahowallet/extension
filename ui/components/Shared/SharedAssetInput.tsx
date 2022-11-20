@@ -297,6 +297,8 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   showPriceDetails?: boolean
   mainCurrencySign?: string
   onAssetSelect?: (asset: AssetType) => void
+  onFocus?: () => void
+  onBlur?: () => void
   onAmountChange?: (value: string, errorMessage: string | undefined) => void
 }
 
@@ -307,7 +309,7 @@ function isSameAsset(asset1: Asset, asset2: Asset) {
 function assetWithOptionalAmountFromAsset<T extends AnyAsset>(
   asset: T,
   assetsToSearch: AnyAssetWithOptionalAmount<T>[]
-) {
+): AnyAssetWithOptionalAmount<T> {
   return (
     assetsToSearch.find(({ asset: listAsset }) =>
       isSameAsset(asset, listAsset)
@@ -341,6 +343,8 @@ export default function SharedAssetInput<T extends AnyAsset>(
     mainCurrencySign,
     onAssetSelect,
     onAmountChange,
+    onFocus = () => {},
+    onBlur = () => {},
   } = props
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
 
@@ -507,6 +511,16 @@ export default function SharedAssetInput<T extends AnyAsset>(
             disabled={isDisabled}
             value={amount}
             spellCheck={false}
+            onFocus={(e) => {
+              if (e.target === e.currentTarget) {
+                onFocus()
+              }
+            }}
+            onBlur={(e) => {
+              if (e.target === e.currentTarget) {
+                onBlur()
+              }
+            }}
             onChange={(event) =>
               onAmountChange?.(
                 event.target.value,
@@ -600,6 +614,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             line-height: 32px;
             text-align: right;
             text-overflow: ellipsis;
+            transition: color 100ms ease-in;
           }
           input::-webkit-outer-spin-button,
           input::-webkit-inner-spin-button {
