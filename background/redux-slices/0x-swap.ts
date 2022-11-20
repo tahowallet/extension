@@ -300,18 +300,17 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
   async (
     {
       quoteRequest,
-      assets,
     }: {
       quoteRequest: SwapQuoteRequest
-      assets: AssetsState
     },
-    { dispatch }
+    { dispatch, getState }
   ): Promise<
     | { quote: ZrxPrice; needsApproval: boolean; priceDetails: PriceDetails }
     | undefined
   > => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
+    const { assets } = getState() as { assets: AssetsState }
 
     const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest, {
       takerAddress: tradeAddress,

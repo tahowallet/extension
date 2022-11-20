@@ -16,7 +16,6 @@ import {
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
-  getAssetsState,
   selectCurrentAccountBalances,
   selectCurrentAccountSigner,
   selectCurrentNetwork,
@@ -105,8 +104,6 @@ export default function Swap(): ReactElement {
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
   const isReadOnlyAccount = currentAccountSigner === ReadOnlyAccountSigner
-
-  const assets = useBackgroundSelector(getAssetsState)
 
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
@@ -397,7 +394,7 @@ export default function Swap(): ReactElement {
         needsApproval: quoteNeedsApproval,
         priceDetails: quotePriceDetails,
       } = ((await dispatch(
-        fetchSwapPrice({ quoteRequest, assets })
+        fetchSwapPrice({ quoteRequest })
       )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapPrice>) ?? {
         quote: undefined,
         needsApproval: false,
@@ -453,14 +450,7 @@ export default function Swap(): ReactElement {
         }
       }
     },
-    [
-      sellAsset,
-      buyAsset,
-      swapTransactionSettings,
-      selectedNetwork,
-      dispatch,
-      assets,
-    ]
+    [sellAsset, buyAsset, swapTransactionSettings, selectedNetwork, dispatch]
   )
 
   const updateSellAsset = useCallback(
