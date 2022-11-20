@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import { FORK, OPTIMISM } from "../constants"
+import { ARBITRUM_ONE, FORK, OPTIMISM } from "../constants"
 import {
   EXPRESS,
   INSTANT,
@@ -60,7 +60,6 @@ export type TransactionConstruction = {
   transactionLikelyFails: boolean
   estimatedFeesPerGas: { [chainID: string]: EstimatedFeesPerGas | undefined }
   customFeesPerGas?: EstimatedFeesPerGas["custom"]
-  lastGasEstimatesRefreshed: number
   feeTypeSelected: NetworkFeeTypeChosen
 }
 
@@ -86,7 +85,6 @@ export const initialState: TransactionConstruction = {
   estimatedFeesPerGas: {},
   transactionLikelyFails: false,
   customFeesPerGas: defaultCustomGas,
-  lastGasEstimatesRefreshed: Date.now(),
 }
 
 export type Events = {
@@ -189,6 +187,8 @@ const transactionSlice = createSlice({
         },
         transactionLikelyFails,
       }
+      const feeType = state.feeTypeSelected
+      const { chainID } = transactionRequest.network
 
       if (
         // We use two guards here to satisfy the compiler but due to the spread
@@ -196,8 +196,6 @@ const transactionSlice = createSlice({
         isEIP1559TransactionRequest(newState.transactionRequest) &&
         isEIP1559TransactionRequest(transactionRequest)
       ) {
-        const feeType = state.feeTypeSelected
-        const { chainID } = transactionRequest.network
         const estimatedMaxFeePerGas =
           feeType === NetworkFeeTypeChosen.Custom
             ? state.customFeesPerGas?.maxFeePerGas
@@ -217,6 +215,16 @@ const transactionSlice = createSlice({
           transactionRequest.maxPriorityFeePerGas
       }
 
+      if (
+        !isEIP1559TransactionRequest(transactionRequest) &&
+        !isEIP1559TransactionRequest(newState.transactionRequest) &&
+        chainID === ARBITRUM_ONE.chainID
+      ) {
+        newState.transactionRequest.gasPrice =
+          state.estimatedFeesPerGas?.[chainID]?.[feeType]?.price ??
+          transactionRequest.gasPrice
+      }
+
       return newState
     },
     clearTransactionState: (
@@ -224,7 +232,6 @@ const transactionSlice = createSlice({
       { payload }: { payload: TransactionConstructionStatus }
     ) => ({
       estimatedFeesPerGas: state.estimatedFeesPerGas,
-      lastGasEstimatesRefreshed: state.lastGasEstimatesRefreshed,
       status: payload,
       feeTypeSelected: state.feeTypeSelected ?? NetworkFeeTypeChosen.Regular,
       broadcastOnSign: false,
@@ -301,8 +308,6 @@ const transactionSlice = createSlice({
           },
         }
       }
-
-      immerState.lastGasEstimatesRefreshed = Date.now()
     },
     setCustomGas: (
       immerState,

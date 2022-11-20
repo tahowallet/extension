@@ -11,7 +11,7 @@ export default function Done(): ReactElement {
     let active = true
 
     async function loadOS() {
-      if (!active) {
+      if (active) {
         setOS((await browser.runtime.getPlatformInfo()).os)
       }
     }

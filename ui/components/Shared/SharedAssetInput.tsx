@@ -13,7 +13,7 @@ import {
   fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem, {
@@ -21,9 +21,7 @@ import SharedAssetItem, {
   hasAmounts,
 } from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
-import { useBackgroundSelector } from "../../hooks"
-import SharedIcon from "./SharedIcon"
-import SharedTooltip from "./SharedTooltip"
+import PriceDetails from "./PriceDetails"
 
 // List of symbols we want to display first.  Lower array index === higher priority.
 // For now we just prioritize somewhat popular assets that we are able to load an icon for.
@@ -51,6 +49,7 @@ const symbolPriority = Object.fromEntries(
   ])
 )
 interface SelectAssetMenuContentProps<AssetType extends AnyAsset> {
+  currentNetwork: EVMNetwork
   assets: AnyAssetWithOptionalAmount<AssetType>[]
   setSelectedAssetAndClose: (
     asset: AnyAssetWithOptionalAmount<AssetType>
@@ -117,7 +116,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
   props: SelectAssetMenuContentProps<T>
 ): ReactElement {
   const { t } = useTranslation()
-  const { setSelectedAssetAndClose, assets } = props
+  const { setSelectedAssetAndClose, assets, currentNetwork } = props
   const [searchTerm, setSearchTerm] = useState("")
   const searchInput = useRef<HTMLInputElement | null>(null)
 
@@ -178,6 +177,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
               }
               assetAndAmount={assetWithOptionalAmount}
               onClick={() => setSelectedAssetAndClose(assetWithOptionalAmount)}
+              currentNetwork={currentNetwork}
             />
           )
         })}
@@ -282,6 +282,7 @@ SelectedAssetButton.defaultProps = {
 }
 
 interface SharedAssetInputProps<AssetType extends AnyAsset> {
+  currentNetwork: EVMNetwork
   assetsAndAmounts: AnyAssetWithOptionalAmount<AssetType>[]
   label: string
   selectedAsset: AssetType | undefined
@@ -292,7 +293,9 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   disableDropdown: boolean
   showMaxButton: boolean
   isDisabled?: boolean
-  showCurrencyAmount?: boolean
+  isPriceDetailsLoading?: boolean
+  showPriceDetails?: boolean
+  mainCurrencySign?: string
   onAssetSelect?: (asset: AssetType) => void
   onAmountChange?: (value: string, errorMessage: string | undefined) => void
 }
@@ -322,6 +325,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
 ): ReactElement {
   const { t } = useTranslation()
   const {
+    currentNetwork,
     assetsAndAmounts,
     label,
     selectedAsset,
@@ -332,12 +336,12 @@ export default function SharedAssetInput<T extends AnyAsset>(
     disableDropdown,
     showMaxButton,
     isDisabled,
-    showCurrencyAmount,
+    showPriceDetails,
+    isPriceDetailsLoading,
+    mainCurrencySign,
     onAssetSelect,
     onAmountChange,
   } = props
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
-
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
 
   // TODO: use https://reactjs.org/docs/hooks-reference.html#useid once we update to version 18
@@ -426,23 +430,6 @@ export default function SharedAssetInput<T extends AnyAsset>(
     onAmountChange?.(fixedPointString, getErrorMessage(fixedPointString))
   }
 
-  const getPriceImpactColor = useCallback(
-    (value: number | undefined): string => {
-      if (value) {
-        switch (true) {
-          case value < -5:
-            return "error"
-          case value < 0 && value >= -5:
-            return "attention"
-          default:
-            return "green-40"
-        }
-      }
-      return "green-40"
-    },
-    []
-  )
-
   return (
     <>
       <label
@@ -482,6 +469,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
       >
         {assetsAndAmounts && (
           <SelectAssetMenuContent
+            currentNetwork={currentNetwork}
             assets={assetsAndAmounts}
             setSelectedAssetAndClose={setSelectedAssetAndClose}
           />
@@ -526,44 +514,19 @@ export default function SharedAssetInput<T extends AnyAsset>(
               )
             }
           />
-          {showCurrencyAmount &&
+          {showPriceDetails &&
             (!errorMessage ? (
-              <>
-                <div className="simple_text price_impact_wrap">
-                  {amountMainCurrency === "0.00" && "<"}$
-                  {amountMainCurrency || "0.00"}
-                  {priceImpact !== undefined && priceImpact < 0 && (
-                    <span className="price_impact_percent">
-                      ({priceImpact}%
-                      <SharedTooltip
-                        width={180}
-                        height={27}
-                        horizontalPosition="left"
-                        IconComponent={() => (
-                          <SharedIcon
-                            width={16}
-                            icon="icons/m/info.svg"
-                            color={`var(--${getPriceImpactColor(priceImpact)})`}
-                            customStyles="margin-left: -5px;"
-                          />
-                        )}
-                      >
-                        <div>
-                          {t("assetInput.priceImpactTooltip.firstLine")}
-                          <br />
-                          {t("assetInput.priceImpactTooltip.secondLine")}
-                        </div>
-                      </SharedTooltip>
-                      )
-                    </span>
-                  )}
-                </div>
-              </>
+              <PriceDetails
+                amountMainCurrency={amountMainCurrency}
+                priceImpact={priceImpact}
+                isLoading={!!isPriceDetailsLoading}
+                mainCurrencySign={mainCurrencySign || ""}
+              />
             ) : (
               <div className="error_message">{errorMessage}</div>
             ))}
         </div>
-        {errorMessage && !showCurrencyAmount && (
+        {errorMessage && !showPriceDetails && (
           <div className="error_message error_message_wrap">{errorMessage}</div>
         )}
       </div>
@@ -649,20 +612,6 @@ export default function SharedAssetInput<T extends AnyAsset>(
           .input_amount:disabled {
             cursor: default;
             color: var(--green-40);
-          }
-          .price_impact_wrap {
-            font-size: 14px;
-            display: flex;
-            flex-direction: row;
-            justify-content: end;
-            gap: 2px;
-          }
-          .price_impact_percent {
-            color: var(--${getPriceImpactColor(priceImpact)});
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 2px;
           }
           .error_message {
             color: var(--error);

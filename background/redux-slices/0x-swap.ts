@@ -18,21 +18,18 @@ import {
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 import {
-  ARBITRUM_ONE,
+  CHAIN_ID_TO_0X_API_BASE,
   COMMUNITY_MULTISIG_ADDRESS,
   ETHEREUM,
-  GOERLI,
   OPTIMISM,
   OPTIMISTIC_ETH,
-  POLYGON,
-  RSK,
 } from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
 import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
 import { AssetsState } from "./assets"
 import {
-  calculatePriceDetails,
+  checkCurrencyAmount,
   PriceDetails,
   SwapQuoteRequest,
 } from "./utils/0x-swap-utils"
@@ -61,7 +58,6 @@ export interface SwapState {
   latestQuoteRequest?: SwapQuoteRequest | undefined
   finalQuote?: ZrxQuote | undefined
   inProgressApprovalContract?: string
-  priceDetails?: PriceDetails | undefined
 }
 
 export const initialState: SwapState = {
@@ -106,14 +102,6 @@ const swapSlice = createSlice({
       finalQuote: undefined,
       latestQuoteRequest: undefined,
     }),
-
-    setPriceDetails: (
-      state,
-      { payload: priceDetails }: { payload: PriceDetails | undefined }
-    ) => ({
-      ...state,
-      priceDetails,
-    }),
   },
 })
 
@@ -126,21 +114,11 @@ export const {
   setFinalSwapQuote,
   clearSwapQuote,
   clearInProgressApprovalContract: clearApprovalInProgress,
-  setPriceDetails,
 } = swapSlice.actions
 
 export default swapSlice.reducer
 
 export const SWAP_FEE = 0.005
-
-const chainIdTo0xApiBase: { [chainID: string]: string | undefined } = {
-  [ETHEREUM.chainID]: "api.0x.org",
-  [RSK.chainID]: "", // Rsk not supported by 0x.org. Empty value here means swap screen options will be disabled for Rsk and user will not be able to perform any action.
-  [POLYGON.chainID]: "polygon.api.0x.org",
-  [OPTIMISM.chainID]: "optimism.api.0x.org",
-  [GOERLI.chainID]: "goerli.api.0x.org",
-  [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
-}
 
 const get0xApiBase = (network: EVMNetwork) => {
   // Use gated features if there is an API key available in the build.
@@ -151,7 +129,7 @@ const get0xApiBase = (network: EVMNetwork) => {
       ? "gated."
       : ""
 
-  const base = chainIdTo0xApiBase[network.chainID]
+  const base = CHAIN_ID_TO_0X_API_BASE[network.chainID]
   if (!base) {
     logger.error(`0x swaps are not supported on ${network.name}`)
     return null
@@ -328,7 +306,10 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
       assets: AssetsState
     },
     { dispatch }
-  ): Promise<{ quote: ZrxPrice; needsApproval: boolean } | undefined> => {
+  ): Promise<
+    | { quote: ZrxPrice; needsApproval: boolean; priceDetails: PriceDetails }
+    | undefined
+  > => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
 
@@ -376,16 +357,27 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
 
       dispatch(setLatestQuoteRequest(quoteRequest))
 
-      const priceDetails = await calculatePriceDetails(
-        quoteRequest,
-        assets,
-        quote.sellAmount,
-        quote.buyAmount
-      )
+      const priceDetails = {
+        priceImpact: quote.estimatedPriceImpact
+          ? Number(quote.estimatedPriceImpact)
+          : 0,
+        buyCurrencyAmount: await checkCurrencyAmount(
+          Number(quote.buyTokenToEthRate),
+          quoteRequest.assets.buyAsset,
+          assets,
+          quote.buyAmount,
+          quoteRequest.network
+        ),
+        sellCurrencyAmount: await checkCurrencyAmount(
+          Number(quote.sellTokenToEthRate),
+          quoteRequest.assets.sellAsset,
+          assets,
+          quote.sellAmount,
+          quoteRequest.network
+        ),
+      }
 
-      dispatch(setPriceDetails(priceDetails))
-
-      return { quote, needsApproval }
+      return { quote, needsApproval, priceDetails }
     } catch (error) {
       logger.warn("Swap price API call threw an error!", apiData, error)
       parseAndNotifyOnZeroExApiError(error, dispatch)
@@ -488,6 +480,14 @@ export const executeSwap = createBackgroundAsyncThunk(
         type: "asset-swap",
         fromAssetAmount: sellAssetAmount,
         toAssetAmount: buyAssetAmount,
+        sources: quote.sources
+          .map(({ name, proportion }) => {
+            return {
+              name,
+              proportion: parseFloat(proportion),
+            }
+          })
+          .filter(({ proportion }) => proportion > 0),
         timestamp: Date.now(),
         blockTimestamp: undefined,
       },
@@ -503,9 +503,4 @@ export const selectLatestQuoteRequest = createSelector(
 export const selectInProgressApprovalContract = createSelector(
   (state: { swap: SwapState }) => state.swap.inProgressApprovalContract,
   (approvalInProgress) => approvalInProgress
-)
-
-export const selectPriceDetails = createSelector(
-  (state: { swap: SwapState }) => state.swap.priceDetails,
-  (priceDetails) => priceDetails
 )

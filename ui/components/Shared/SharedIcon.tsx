@@ -5,9 +5,9 @@ type Props = {
   width: number
   height?: number
   color?: string
+  customStyles?: string
   hoverColor?: string
   transitionHoverTime: string
-  customStyles?: string
   ariaLabel?: string
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
 }
@@ -18,36 +18,57 @@ export default function SharedIcon(props: Props): ReactElement {
     width,
     height = width,
     color = "transparent",
-    hoverColor = color,
-    transitionHoverTime,
     customStyles = "",
-    ariaLabel,
-    onClick,
   } = props
 
+  if ("onClick" in props) {
+    const {
+      hoverColor = color,
+      transitionHoverTime,
+      ariaLabel,
+      onClick,
+    } = props
+
+    return (
+      <button
+        className="icon"
+        type="button"
+        onClick={onClick}
+        aria-label={ariaLabel}
+      >
+        <style jsx>{`
+          .icon {
+            mask-image: url("./images/${icon}");
+            mask-size: cover;
+            width: ${width}px;
+            height: ${height}px;
+            cursor: pointer;
+            background-color: ${color};
+            transition: background-color ${transitionHoverTime};
+            ${customStyles};
+          }
+          .icon:hover {
+            background-color: ${hoverColor};
+          }
+        `}</style>
+      </button>
+    )
+  }
+
   return (
-    <button
-      className="icon"
-      type="button"
-      onClick={onClick}
-      aria-label={ariaLabel}
-    >
+    <i className="icon">
       <style jsx>{`
         .icon {
+          display: inline-block;
           mask-image: url("./images/${icon}");
           mask-size: cover;
           width: ${width}px;
           height: ${height}px;
-          cursor: ${onClick ? "pointer" : "auto"};
           background-color: ${color};
           ${customStyles};
-          transition: background-color ${transitionHoverTime};
-        }
-        .icon:hover {
-          background-color: ${hoverColor};
         }
       `}</style>
-    </button>
+    </i>
   )
 }
 

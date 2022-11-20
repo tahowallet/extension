@@ -5,7 +5,7 @@ import {
   GOERLI,
   OPTIMISM,
   POLYGON,
-  RSK,
+  ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { sameNetwork } from "@tallyho/tally-background/networks"
@@ -29,25 +29,16 @@ const productionNetworks = [
     network: OPTIMISM,
     info: i18n.t("protocol.l2"),
   },
-  ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM)
-    ? [
-        {
-          network: ARBITRUM_ONE,
-          info: i18n.t("protocol.l2"),
-        },
-      ]
-    : [
-        {
-          network: ARBITRUM_ONE,
-          info: i18n.t("comingSoon"),
-          isDisabled: true,
-        },
-      ]),
+  {
+    network: ARBITRUM_ONE,
+    info: i18n.t("protocol.l2"),
+    isDisabled: false,
+  },
   ...(isEnabled(FeatureFlags.SUPPORT_RSK)
     ? [
         {
-          network: RSK,
-          info: i18n.t("protocol.mainnet"),
+          network: ROOTSTOCK,
+          info: i18n.t("protocol.beta"),
         },
       ]
     : []),

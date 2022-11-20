@@ -280,7 +280,7 @@ export default class LedgerService extends BaseService<Events> {
       this.#currentLedgerId = null
     }
 
-  protected async internalStartService(): Promise<void> {
+  protected override async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
     this.refreshConnectedLedger()
@@ -289,7 +289,7 @@ export default class LedgerService extends BaseService<Events> {
     navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
   }
 
-  protected async internalStopService(): Promise<void> {
+  protected override async internalStopService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
     navigator.usb.removeEventListener("disconnect", this.#handleUSBDisconnect)

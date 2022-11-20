@@ -3,6 +3,9 @@ import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
+import { AnalyticsPreferences } from "../services/preferences/types"
+import { AccountSignerWithId } from "../signing"
+import { AccountSignerSettings } from "../ui"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 
@@ -11,12 +14,8 @@ const defaultSettings = {
   defaultWallet: false,
   showTestNetworks: false,
   collectAnalytics: false,
-}
-
-export interface Location {
-  pathname: string
-  key?: string
-  hash: string
+  showAnalyticsNotification: false,
+  hideBanners: false,
 }
 
 export type UIState = {
@@ -28,10 +27,13 @@ export type UIState = {
     defaultWallet: boolean
     showTestNetworks: boolean
     collectAnalytics: boolean
+    showAnalyticsNotification: boolean
+    hideBanners: boolean
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
   slippageTolerance: number
+  accountSignerSettings: AccountSignerSettings[]
 }
 
 export type Events = {
@@ -42,6 +44,7 @@ export type Events = {
   newSelectedAccountSwitched: AddressOnNetwork
   userActivityEncountered: AddressOnNetwork
   newSelectedNetwork: EVMNetwork
+  updateAnalyticsPreferences: Partial<AnalyticsPreferences>
 }
 
 export const emitter = new Emittery<Events>()
@@ -56,6 +59,7 @@ export const initialState: UIState = {
   settings: defaultSettings,
   snackbarMessage: "",
   slippageTolerance: 0.01,
+  accountSignerSettings: [],
 }
 
 const uiSlice = createSlice({
@@ -82,6 +86,26 @@ const uiSlice = createSlice({
       settings: {
         ...state.settings,
         collectAnalytics,
+      },
+    }),
+    setShowAnalyticsNotification: (
+      state,
+      { payload: showAnalyticsNotification }: { payload: boolean }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        showAnalyticsNotification,
+      },
+    }),
+    toggleHideBanners: (
+      state,
+      { payload: hideBanners }: { payload: boolean }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        hideBanners,
       },
     }),
     setShowingActivityDetail: (
@@ -138,6 +162,12 @@ const uiSlice = createSlice({
       ...state,
       slippageTolerance,
     }),
+    setAccountsSignerSettings: (
+      state,
+      { payload }: { payload: AccountSignerSettings[] }
+    ) => {
+      return { ...state, accountSignerSettings: payload }
+    },
   },
 })
 
@@ -147,15 +177,27 @@ export const {
   toggleHideDust,
   toggleTestNetworks,
   toggleCollectAnalytics,
+  setShowAnalyticsNotification,
+  toggleHideBanners,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
   clearSnackbarMessage,
   setRouteHistoryEntries,
   setSlippageTolerance,
+  setAccountsSignerSettings,
 } = uiSlice.actions
 
 export default uiSlice.reducer
+
+export const updateAnalyticsPreferences = createBackgroundAsyncThunk(
+  "ui/updateAnalyticsPreferences",
+  async (collectAnalytics: boolean) => {
+    await emitter.emit("updateAnalyticsPreferences", {
+      isEnabled: collectAnalytics,
+    })
+  }
+)
 
 // Async thunk to bubble the setNewDefaultWalletValue action from  store to emitter.
 export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
@@ -176,6 +218,16 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
     dispatch(uiSlice.actions.setSelectedAccount(addressNetwork))
     // Do async work needed after the account is switched
     await emitter.emit("newSelectedAccountSwitched", addressNetwork)
+  }
+)
+
+export const updateSignerTitle = createBackgroundAsyncThunk(
+  "ui/updateSignerTitle",
+  async (
+    [signer, title]: [AccountSignerWithId, string],
+    { extra: { main } }
+  ) => {
+    return main.updateSignerTitle(signer, title)
   }
 )
 
@@ -235,6 +287,11 @@ export const selectDefaultWallet = createSelector(
   (settings) => settings?.defaultWallet
 )
 
+export const selectShowAnalyticsNotification = createSelector(
+  selectSettings,
+  (settings) => settings?.showAnalyticsNotification
+)
+
 export const selectSlippageTolerance = createSelector(
   selectUI,
   (ui) => ui.slippageTolerance
@@ -253,4 +310,9 @@ export const selectShowTestNetworks = createSelector(
 export const selectCollectAnalytics = createSelector(
   selectSettings,
   (settings) => settings?.collectAnalytics
+)
+
+export const selectHideBanners = createSelector(
+  selectSettings,
+  (settings) => settings?.hideBanners
 )

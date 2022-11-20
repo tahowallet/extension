@@ -2,13 +2,19 @@ import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
 
-import { Preferences, TokenListPreferences } from "./types"
+import {
+  AnalyticsPreferences,
+  Preferences,
+  TokenListPreferences,
+} from "./types"
 import { getOrCreateDB, PreferenceDatabase } from "./db"
 import BaseService from "../base"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { ETHEREUM, OPTIMISM, ARBITRUM_ONE } from "../../constants"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString } from "../../types"
+import { AccountSignerSettings } from "../../ui"
+import { AccountSignerWithId } from "../../signing"
 
 type AddressBookEntry = {
   network: EVMNetwork
@@ -90,7 +96,9 @@ interface Events extends ServiceLifecycleEvents {
   preferencesChanges: Preferences
   initializeDefaultWallet: boolean
   initializeSelectedAccount: AddressOnNetwork
+  updateAnalyticsPreferences: AnalyticsPreferences
   addressBookEntryModified: AddressBookEntry
+  updatedSignerSettings: AccountSignerSettings[]
 }
 
 /*
@@ -117,7 +125,7 @@ export default class PreferenceService extends BaseService<Events> {
     super()
   }
 
-  protected async internalStartService(): Promise<void> {
+  protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
     this.emitter.emit("initializeDefaultWallet", await this.getDefaultWallet())
@@ -125,9 +133,13 @@ export default class PreferenceService extends BaseService<Events> {
       "initializeSelectedAccount",
       await this.getSelectedAccount()
     )
+    this.emitter.emit(
+      "updateAnalyticsPreferences",
+      await this.getAnalyticsPreferences()
+    )
   }
 
-  protected async internalStopService(): Promise<void> {
+  protected override async internalStopService(): Promise<void> {
     this.db.close()
 
     await super.internalStopService()
@@ -189,6 +201,44 @@ export default class PreferenceService extends BaseService<Events> {
         sameNetwork(network, entryNetwork) &&
         normalizeEVMAddress(address) === normalizeEVMAddress(entryAddress)
     )
+  }
+
+  async deleteAccountSignerSettings(
+    signer: AccountSignerWithId
+  ): Promise<void> {
+    const updatedSignerSettings = await this.db.deleteAccountSignerSettings(
+      signer
+    )
+
+    this.emitter.emit("updatedSignerSettings", updatedSignerSettings)
+  }
+
+  async updateAccountSignerTitle(
+    signer: AccountSignerWithId,
+    title: string
+  ): Promise<void> {
+    const updatedSignerSettings = this.db.updateSignerTitle(signer, title)
+
+    this.emitter.emit("updatedSignerSettings", await updatedSignerSettings)
+  }
+
+  async getAnalyticsPreferences(): Promise<Preferences["analytics"]> {
+    return (await this.db.getPreferences())?.analytics
+  }
+
+  async updateAnalyticsPreferences(
+    analyticsPreferences: Partial<AnalyticsPreferences>
+  ): Promise<void> {
+    await this.db.upsertAnalyticsPreferences(analyticsPreferences)
+    const { analytics } = await this.db.getPreferences()
+
+    // This step is not strictly needed, because the settings can only
+    // be changed from the UI
+    this.emitter.emit("updateAnalyticsPreferences", analytics)
+  }
+
+  async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
+    return this.db.getAccountSignerSettings()
   }
 
   async getCurrency(): Promise<FiatCurrency> {

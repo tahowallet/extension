@@ -1,7 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { Redirect } from "react-router-dom"
 import {
-  getAddressCount,
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
   selectCurrentNetwork,
@@ -20,17 +18,15 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
 import NFTsWallet from "../components/NFTs/NFTsWallet"
 import SharedBanner from "../components/Shared/SharedBanner"
-import WalletDefaultToggle from "../components/Wallet/WalletDefaultToggle"
+import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultBanner"
+import WalletBanner from "../components/Wallet/Banner/WalletBanner"
+import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "wallet" })
   const [panelNumber, setPanelNumber] = useState(0)
 
   const dispatch = useBackgroundDispatch()
-
-  const hasAccounts = useBackgroundSelector(
-    (state) => getAddressCount(state) > 0
-  )
 
   //  accountLoading, hasWalletErrorCode
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
@@ -47,7 +43,7 @@ export default function Wallet(): ReactElement {
 
   useEffect(() => {
     // On network switch from top menu reset ui back to assets tab
-    if (!NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID)) {
+    if (!NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
       setPanelNumber(0)
     }
   }, [selectedNetwork.chainID])
@@ -65,14 +61,9 @@ export default function Wallet(): ReactElement {
     (background) => background.ui?.initializationLoadingTimeExpired
   )
 
-  // If an account doesn't exist, display onboarding
-  if (!hasAccounts) {
-    return <Redirect to="/onboarding/info-intro" />
-  }
-
   const panelNames = [t("pages.assets")]
 
-  if (NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID)) {
+  if (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
     panelNames.push(t("pages.NFTs"))
   }
 
@@ -81,13 +72,17 @@ export default function Wallet(): ReactElement {
   return (
     <>
       <div className="page_content">
-        <WalletDefaultToggle />
+        <WalletToggleDefaultBanner />
+        <WalletAnalyticsNotificationBanner />
         <div className="section">
           <WalletAccountBalanceControl
             balance={totalMainCurrencyValue}
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           />
         </div>
+        {isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && (
+          <WalletBanner />
+        )}
         {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
           <OnboardingOpenClaimFlowBanner />
         )}
@@ -111,7 +106,7 @@ export default function Wallet(): ReactElement {
               />
             )}
             {panelNumber === 1 &&
-              NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID) && (
+              NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) && (
                 <>
                   <SharedBanner
                     icon="notif-announcement"
@@ -126,7 +121,7 @@ export default function Wallet(): ReactElement {
                 </>
               )}
             {panelNumber ===
-              (NETWORKS_SUPPORTING_NFTS.includes(selectedNetwork.chainID)
+              (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)
                 ? 2
                 : 1) && (
               <WalletActivityList activities={currentAccountActivities ?? []} />

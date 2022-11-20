@@ -1,41 +1,179 @@
+import classNames from "classnames"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
+import SharedAccordion from "../Shared/SharedAccordion"
+import { WalletDefaultToggle } from "../Wallet/WalletToggleDefaultBanner"
+
+function ConnectionDAppGuideline({
+  isConnected,
+}: {
+  isConnected: boolean
+}): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "topMenu.connectedDappInfo.guideline",
+  })
+  const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
+
+  return (
+    <>
+      <SharedAccordion
+        contentHeight={231}
+        style={{
+          width: 288,
+          padding: 16,
+          borderRadius: 8,
+          marginTop: 8,
+          background: "var(--green-120)",
+        }}
+        isInitiallyOpen={!isConnected}
+        headerElement={<span className="title">{t("title")}</span>}
+        contentElement={
+          <div className="content_wrap">
+            <ol className="steps">
+              <li>
+                <span className="wallet_toggle_wrap">
+                  {t("step1")}
+                  <WalletDefaultToggle />
+                </span>
+              </li>
+              <li>{t("step2")}</li>
+              <li>{t("step3")}</li>
+            </ol>
+            <div className="list_wrap">
+              <span className="item">
+                <img src="./images/tally_token.svg" alt="Tally token" />
+                {tShared("tallyHo")}
+              </span>
+              <span className="item">
+                <img src="./images/icons/s/arrow-right.svg" alt="Arrow right" />
+                {tShared("injected")}
+              </span>
+              <span className="item">
+                <span className="fox">🦊</span> {tShared("metaMask")}
+              </span>
+            </div>
+          </div>
+        }
+      />
+      <style jsx>{`
+        .title {
+          font-weight: 600;
+          font-size: 18px;
+          line-height: 24px;
+        }
+        .content_wrap {
+          height: 85%;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+        .wallet_toggle_wrap {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+        }
+        .steps {
+          margin: 0;
+          padding: 0;
+          display: flex;
+          flex-flow: column;
+          list-style: none;
+          counter-reset: step;
+          color: var(--green-40);
+        }
+        .steps > li {
+          display: flex;
+          align-items: start;
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 40px;
+        }
+        .steps > li::before {
+          content: counter(step) ".";
+          counter-increment: step;
+          padding-right: 4px;
+        }
+        .list_wrap {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        img {
+          width: 16px;
+        }
+        .fox {
+          font-size: 12px;
+        }
+        .item {
+          font-weight: 500;
+          line-height: 24px;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .item:after {
+          content: "/";
+          color: var(--green-60);
+        }
+        .item:last-child:after {
+          display: none;
+        }
+      `}</style>
+    </>
+  )
+}
 
 export default function TopMenuConnectedDAppInfo(props: {
   title: string
   url: string
   faviconUrl: string
+  isConnected: boolean
   close: () => void
   disconnect: () => void
 }): ReactElement {
-  const { t } = useTranslation()
-  const { title, url, close, faviconUrl, disconnect } = props
+  const { t } = useTranslation("translation", {
+    keyPrefix: "topMenu.connectedDappInfo",
+  })
+  const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
+  const { title, url, close, faviconUrl, disconnect, isConnected } = props
   return (
     <div className="bg">
       <div className="window">
         <button
           type="button"
           className="icon_close"
-          aria-label={t("shared.close")}
+          aria-label={tShared("close")}
           onClick={close}
         />
-        <h1>{t("topMenu.connectedDappInfo.dAppTitle")}</h1>
-        <div className="favicon" />
-        <div className="title text ellipsis" title={title}>
-          {title}
+        <div className="content">
+          <h1>{t(`${isConnected ? "dAppTitle" : "dappConnections"}`)}</h1>
+          <div
+            className={classNames("dAppInfo_wrap", {
+              visible: isConnected,
+            })}
+          >
+            <div className="favicon" />
+            <div className="title text ellipsis" title={title}>
+              {title}
+            </div>
+            <div className="url text ellipsis" title={url}>
+              {url}
+            </div>
+            <button
+              aria-label="disconnect"
+              type="button"
+              className="disconnect_icon"
+              onClick={disconnect}
+            />
+          </div>
         </div>
-        <div className="url text ellipsis" title={url}>
-          {url}
-        </div>
-        <button
-          aria-label="disconnect"
-          type="button"
-          className="disconnect_icon"
-          onClick={disconnect}
-        />
+        <ConnectionDAppGuideline isConnected={isConnected} />
       </div>
       <button
-        aria-label={t("topMenu.connectedDappInfo.modalClose")}
+        aria-label={t("modalClose")}
         type="button"
         className="void_space"
         onClick={close}
@@ -53,7 +191,7 @@ export default function TopMenuConnectedDAppInfo(props: {
         }
         .window {
           width: 352px;
-          height: 204px;
+          max-height: 433px;
           box-shadow: 0 10px 12px rgba(0, 20, 19, 0.34),
             0 14px 16px rgba(0, 20, 19, 0.24), 0 24px 24px rgba(0, 20, 19, 0.14);
           border-radius: 8px;
@@ -62,6 +200,14 @@ export default function TopMenuConnectedDAppInfo(props: {
           flex-direction: column;
           align-items: center;
           margin: 0 auto;
+          justify-content: space-between;
+          padding-bottom: 16px;
+        }
+        .content {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
         .icon_close {
           mask-image: url("./images/close.svg");
@@ -83,7 +229,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           z-index: -1;
         }
         h1 {
-          color: var(--success);
+          color: var(--${isConnected ? "success" : "green-20"});
           font-size: 16px;
           font-weight: 400;
           line-height: 24px;
@@ -120,7 +266,20 @@ export default function TopMenuConnectedDAppInfo(props: {
           background-size: cover;
           width: 16px;
           height: 18px;
-          margin-top: 16px;
+          margin: 16px 0 32px;
+        }
+        .dAppInfo_wrap {
+          width: 100%;
+          display: flex;
+          flex-flow: column;
+          align-items: center;
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 250ms ease-out;
+        }
+        .dAppInfo_wrap.visible {
+          max-height: 200px;
+          transition: max-height 250ms ease-in;
         }
       `}</style>
     </div>

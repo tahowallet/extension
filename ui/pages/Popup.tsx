@@ -1,11 +1,16 @@
 import React, { ReactElement, useState, useEffect } from "react"
-import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
+import {
+  MemoryRouter as Router,
+  Switch,
+  Route,
+  Redirect,
+  matchPath,
+} from "react-router-dom"
 import { ErrorBoundary } from "react-error-boundary"
 
 import classNames from "classnames"
 import {
   setRouteHistoryEntries,
-  Location,
   userActivityEncountered,
 } from "@tallyho/tally-background/redux-slices/ui"
 
@@ -17,11 +22,13 @@ import { runtime } from "webextension-polyfill"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
 import {
+  getAddressCount,
   selectCurrentAccountSigner,
   selectCurrentAddressNetwork,
   selectKeyringStatus,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { Location } from "history"
 import {
   useIsDappPopup,
   useBackgroundDispatch,
@@ -49,7 +56,8 @@ const pagePreferences = Object.fromEntries(
 function transformLocation(
   inputLocation: Location,
   isTransactionPendingSignature: boolean,
-  needsKeyringUnlock: boolean
+  needsKeyringUnlock: boolean,
+  hasAccounts: boolean
 ): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
   // so I need to grab it from the window
@@ -58,6 +66,7 @@ function transformLocation(
 
   let { pathname } = inputLocation
   if (
+    hasAccounts &&
     isAllowedQueryParamPage(maybePage) &&
     !inputLocation.pathname.includes("/keyring/")
   ) {
@@ -129,6 +138,9 @@ export function Main(): ReactElement {
   )
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
   const keyringStatus = useBackgroundSelector(selectKeyringStatus)
+  const hasAccounts = useBackgroundSelector(
+    (state) => getAddressCount(state) > 0
+  )
 
   const needsKeyringUnlock =
     isTransactionPendingSignature &&
@@ -148,7 +160,8 @@ export function Main(): ReactElement {
             const transformedLocation = transformLocation(
               routeProps.location,
               isTransactionPendingSignature,
-              needsKeyringUnlock
+              needsKeyringUnlock,
+              hasAccounts
             )
 
             const normalizedPathname = pagePreferences[
@@ -200,8 +213,24 @@ export function Main(): ReactElement {
                     >
                       <TopMenu />
                     </div>
-                    {/* @ts-expect-error TODO: fix the typing when the feature works */}
                     <Switch location={transformedLocation}>
+                      {
+                        // If there are no existing accounts, display onboarding
+                        // (if we're not there already)
+                        //
+                        !isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING) &&
+                          !hasAccounts &&
+                          !matchPath(transformedLocation.pathname, {
+                            path: [
+                              "/onboarding",
+                              // need to unlock or set new password to import an account
+                              "/keyring",
+                              // this route has it's own error message
+                              "/dapp-permission",
+                            ],
+                            exact: false,
+                          }) && <Redirect to="/onboarding/info-intro" />
+                      }
                       {pageList.map(
                         ({ path, Component, hasTopBar, hasTabBar }) => {
                           return (

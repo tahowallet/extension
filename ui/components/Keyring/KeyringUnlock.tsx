@@ -13,7 +13,13 @@ import {
 import SharedButton from "../Shared/SharedButton"
 import PasswordInput from "../Shared/PasswordInput"
 
-export default function KeyringUnlock(): ReactElement {
+type KeyringUnlockProps = {
+  displayCancelButton: boolean
+}
+
+export default function KeyringUnlock({
+  displayCancelButton,
+}: KeyringUnlockProps): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "keyring.unlock" })
   const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
   const [password, setPassword] = useState("")
@@ -63,11 +69,15 @@ export default function KeyringUnlock(): ReactElement {
 
   return (
     <section className="standard_width">
-      <div className="cancel_btn_wrap">
-        <SharedButton type="tertiaryGray" size="small" onClick={handleCancel}>
-          {tShared("cancelBtn")}
-        </SharedButton>
-      </div>
+      {displayCancelButton ? (
+        <div className="cancel_btn_wrap">
+          <SharedButton type="tertiaryGray" size="small" onClick={handleCancel}>
+            {tShared("cancelBtn")}
+          </SharedButton>
+        </div>
+      ) : (
+        <></>
+      )}
       <div className="img_wrap">
         <div className="illustration_unlock" />
       </div>
@@ -77,6 +87,7 @@ export default function KeyringUnlock(): ReactElement {
         <div className="signing_wrap">
           <div className="input_wrap">
             <PasswordInput
+              id="signing_password"
               label={t("signingPassword")}
               onChange={(value) => {
                 setPassword(value)
@@ -150,4 +161,8 @@ export default function KeyringUnlock(): ReactElement {
       </style>
     </section>
   )
+}
+
+KeyringUnlock.defaultProps = {
+  displayCancelButton: true,
 }

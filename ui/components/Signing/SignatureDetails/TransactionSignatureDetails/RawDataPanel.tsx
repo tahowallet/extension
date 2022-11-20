@@ -17,7 +17,7 @@ export default function RawDataPanel({
 
   const copyData = () => {
     navigator.clipboard.writeText(input ?? "")
-    dispatch(setSnackbarMessage("Raw data copied to clipboard"))
+    dispatch(setSnackbarMessage(t("rawDataCopyMsg")))
   }
 
   return (

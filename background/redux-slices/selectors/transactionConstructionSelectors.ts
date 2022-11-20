@@ -3,7 +3,7 @@ import { PricePoint } from "../../assets"
 import { selectCurrentNetwork } from "."
 import { NetworksState } from "../networks"
 import { LegacyEVMTransactionRequest } from "../../networks"
-import { RSK } from "../../constants/networks"
+import { ROOTSTOCK } from "../../constants/networks"
 import {
   TransactionConstruction,
   NetworkFeeSettings,
@@ -43,7 +43,7 @@ export const selectDefaultNetworkFeeSettings = createSelector(
         maxFeePerGas: selectedFeesPerGas?.maxFeePerGas ?? 0n,
         maxPriorityFeePerGas: selectedFeesPerGas?.maxPriorityFeePerGas ?? 0n,
         gasPrice:
-          currentNetwork.chainID === RSK.chainID
+          currentNetwork.chainID === ROOTSTOCK.chainID
             ? (
                 transactionConstruction.transactionRequest as LegacyEVMTransactionRequest
               )?.gasPrice
@@ -95,12 +95,6 @@ export const selectTransactionMainCurrencyPricePoint = createSelector(
       mainCurrencySymbol
     )
   }
-)
-
-export const selectLastGasEstimatesRefreshTime = createSelector(
-  (state: { transactionConstruction: TransactionConstruction }) =>
-    state.transactionConstruction.lastGasEstimatesRefreshed,
-  (updateTime) => updateTime
 )
 
 export const selectTransactionData = createSelector(

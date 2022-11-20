@@ -1,12 +1,16 @@
-import React, { ReactElement, useEffect, useRef, useState } from "react"
+import React, {
+  ReactElement,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import {
   setNewSelectedAccount,
   setSnackbarMessage,
+  updateSignerTitle,
 } from "@tallyho/tally-background/redux-slices/ui"
-import {
-  deriveAddress,
-  lockKeyrings,
-} from "@tallyho/tally-background/redux-slices/keyrings"
+import { deriveAddress } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   AccountTotal,
   selectCurrentNetworkAccountTotalsByCategory,
@@ -23,6 +27,8 @@ import { clearSignature } from "@tallyho/tally-background/redux-slices/earn"
 import { resetClaimFlow } from "@tallyho/tally-background/redux-slices/claim"
 import { useTranslation } from "react-i18next"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { AccountSigner } from "@tallyho/tally-background/services/signing"
+import { isSameAccountSignerWithId } from "@tallyho/tally-background/utils/signing"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
@@ -33,6 +39,10 @@ import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import AccountItemOptionsMenu from "../AccountItem/AccountItemOptionsMenu"
 import { i18n } from "../../_locales/i18n"
 import SharedIcon from "../Shared/SharedIcon"
+import SharedDropdown from "../Shared/SharedDropDown"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import EditSectionForm from "./EditSectionForm"
+import SigningButton from "./SigningButton"
 
 type WalletTypeInfo = {
   title: string
@@ -40,7 +50,7 @@ type WalletTypeInfo = {
   category: string
 }
 
-const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
+export const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   [AccountType.ReadOnly]: {
     title: i18n.t("accounts.notificationPanel.readOnly"),
     icon: "./images/eye@2x.png",
@@ -67,44 +77,103 @@ function WalletTypeHeader({
   accountType,
   onClickAddAddress,
   walletNumber,
+  accountSigner,
 }: {
   accountType: AccountType
   onClickAddAddress?: () => void
+  accountSigner: AccountSigner
   walletNumber?: number
 }) {
   const { t } = useTranslation()
   const { title, icon } = walletTypeDetails[accountType]
+  const dispatch = useBackgroundDispatch()
+
+  const settingsBySigner = useBackgroundSelector(
+    (state) => state.ui.accountSignerSettings
+  )
+  const signerSettings =
+    accountSigner.type !== "read-only"
+      ? settingsBySigner.find(({ signer }) =>
+          isSameAccountSignerWithId(signer, accountSigner)
+        )
+      : undefined
+
+  const sectionCustomName = signerSettings?.title
+
+  const sectionTitle = useMemo(() => {
+    if (accountType === AccountType.ReadOnly) return title
+
+    if (sectionCustomName) return sectionCustomName
+
+    return `${title} ${walletNumber}`
+  }, [accountType, title, sectionCustomName, walletNumber])
+
   const history = useHistory()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
-
+  const [showEditMenu, setShowEditMenu] = useState(false)
   return (
     <>
+      {accountSigner.type !== "read-only" && (
+        <SharedSlideUpMenu
+          size="small"
+          isOpen={showEditMenu}
+          close={(e) => {
+            e.stopPropagation()
+            setShowEditMenu(false)
+          }}
+        >
+          <EditSectionForm
+            onSubmit={(newName) => {
+              if (newName) {
+                dispatch(updateSignerTitle([accountSigner, newName]))
+              }
+              setShowEditMenu(false)
+            }}
+            onCancel={() => setShowEditMenu(false)}
+            accountTypeIcon={walletTypeDetails[accountType].icon}
+            currentName={sectionTitle}
+          />
+        </SharedSlideUpMenu>
+      )}
       <header className="wallet_title">
         <h2 className="left">
           <div className="icon_wrap">
             <div className="icon" />
           </div>
-          {title} {accountType !== AccountType.ReadOnly ? walletNumber : null}
+          {sectionTitle}
         </h2>
-        {onClickAddAddress ? (
-          <div className="right">
-            <SharedButton
-              type="tertiaryGray"
-              size="small"
-              iconSmall="add"
-              onClick={() => {
-                if (areKeyringsUnlocked) {
-                  onClickAddAddress()
-                } else {
-                  history.push("/keyring/unlock")
-                }
-              }}
-            >
-              {t("accounts.notificationPanel.addAddress")}
-            </SharedButton>
-          </div>
-        ) : (
-          <></>
+        {accountType !== AccountType.ReadOnly && (
+          <SharedDropdown
+            toggler={(toggle) => (
+              <SharedIcon
+                color="var(--green-40)"
+                customStyles="cursor: pointer;"
+                width={24}
+                onClick={() => toggle()}
+                icon="settings.svg"
+              />
+            )}
+            options={[
+              {
+                key: "edit",
+                icon: "icons/s/edit.svg",
+                label: t("accounts.accountItem.editName"),
+                onClick: () => setShowEditMenu(true),
+              },
+              onClickAddAddress && {
+                key: "addAddress",
+                onClick: () => {
+                  if (areKeyringsUnlocked) {
+                    onClickAddAddress()
+                  } else {
+                    history.push("/keyring/unlock")
+                  }
+                },
+                icon: "icons/s/add.svg",
+                label: t("accounts.notificationPanel.addAddress"),
+              },
+            ]}
+          />
         )}
       </header>
       <style jsx>{`
@@ -113,6 +182,7 @@ function WalletTypeHeader({
           align-items: center;
           justify-content: space-between;
           padding-top: 16px;
+          padding-right: 4px;
         }
         .wallet_title > h2 {
           color: var(--green-40);
@@ -205,11 +275,6 @@ export default function AccountsNotificationPanelAccounts({
     }
   }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccountAddress])
 
-  const keyringData = {
-    color: areKeyringsUnlocked ? "error" : "success",
-    icon: areKeyringsUnlocked ? "lock" : "unlock",
-  }
-
   useEffect(() => {
     // Prevents notifications from displaying when the component is not yet mounted
     if (!isMounted.current) {
@@ -218,15 +283,6 @@ export default function AccountsNotificationPanelAccounts({
       dispatch(setSnackbarMessage(t("accounts.notificationPanel.snackbar")))
     }
   }, [history, areKeyringsUnlocked, dispatch, t])
-
-  const toggleKeyringStatus = async () => {
-    if (!areKeyringsUnlocked) {
-      history.push("/keyring/unlock")
-    } else {
-      await dispatch(lockKeyrings())
-      onCurrentAddressChange("")
-    }
-  }
 
   const accountTypes = [
     AccountType.Internal,
@@ -270,24 +326,9 @@ export default function AccountsNotificationPanelAccounts({
                   {isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
                     (accountType === AccountType.Imported ||
                       accountType === AccountType.Internal) && (
-                      <button
-                        type="button"
-                        className="signing_btn"
-                        onClick={toggleKeyringStatus}
-                      >
-                        {t(
-                          `accounts.notificationPanel.signing.${
-                            areKeyringsUnlocked ? "lock" : "unlock"
-                          }`
-                        )}
-                        <SharedIcon
-                          icon={`icons/m/${keyringData.icon}.svg`}
-                          width={25}
-                          color="var(--green-40)"
-                          hoverColor={`var(--${keyringData.color})`}
-                          transitionHoverTime="0.2s"
-                        />
-                      </button>
+                      <SigningButton
+                        onCurrentAddressChange={onCurrentAddressChange}
+                      />
                     )}
                 </div>
               )}
@@ -298,6 +339,9 @@ export default function AccountsNotificationPanelAccounts({
                       <WalletTypeHeader
                         accountType={accountType}
                         walletNumber={idx + 1}
+                        accountSigner={
+                          accountTotalsByKeyringId[0].accountSigner
+                        }
                         onClickAddAddress={
                           accountType === "imported" ||
                           accountType === "internal"
@@ -435,22 +479,6 @@ export default function AccountsNotificationPanelAccounts({
           }
           p {
             margin: 0;
-          }
-          .signing_btn {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: color 0.2s;
-          }
-          .signing_btn:hover {
-            color: var(--${keyringData.color});
-          }
-        `}
-      </style>
-      <style global jsx>
-        {`
-          .signing_btn:hover button {
-            background-color: var(--${keyringData.color});
           }
         `}
       </style>

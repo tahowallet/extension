@@ -9,6 +9,8 @@
       "regularWarning": "Removing this address doesn't delete your recovery phrase or any private keys. Instead it just hides it from the extension and you won't be able to use it until you add it back.",
       "loudWarningTitle": "Removing this address will remove its associated account from the UI.",
       "loudWarningBody": "Are you sure you want to proceed?",
+      "lastAccountWarningTitle": "Once this account is removed you won't be able to use the wallet until you complete onboarding again.",
+      "lastAccountWarningBody": "Are you sure you want to proceed?",
       "removeAddress": "Remove address",
       "copyAddress": "Copy address",
       "removeConfirm": "Yes, I want to remove it"
@@ -43,11 +45,14 @@
     "error": {
       "invalidAmount": "Invalid amount",
       "insufficientBalance": "Insufficient balance"
-    },
-    "priceImpactTooltip": {
-      "firstLine": "Price difference between assets is high.",
-      "secondLine": "This is due to low liquidity of the swap pair."
     }
+  },
+  "priceDetails": {
+    "priceImpactTooltip": {
+      "firstLine": "Price impact between assets is high.",
+      "secondLine": "This is due to low liquidity of the swap pair."
+    },
+    "noAssetPrice": "No price information"
   },
   "comingSoon": "Coming soon",
   "dappConnection": {
@@ -166,7 +171,7 @@
       "bip44": "BIP 44 (Trezor, 🦊)",
       "ethTestnet": "Ethereum Testnet",
       "ledgerLegacy": "Ledger Legacy",
-      "rsk": "RSK"
+      "rsk": "Rootstock"
     }
   },
   "networkFees": {
@@ -290,6 +295,7 @@
   "popupEdition": "Community Edition",
   "protocol": {
     "mainnet": "Mainnet",
+    "beta": "Mainnet (beta)",
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
     "compatibleChain": "Ethereum-compatible blockchain",
@@ -307,6 +313,7 @@
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
     "analytics": "Analytics",
+    "showBanners": "Show achievement banners",
     "joinTitle": "Join our community",
     "joinDesc": "Join our Discord to give us feedback!",
     "joinBtn": "Join and give feedback",
@@ -359,6 +366,8 @@
   },
   "shared": {
     "tallyHo": "Tally Ho",
+    "metaMask": "MetaMask",
+    "injected": "Injected",
     "cancelBtn": "Cancel",
     "gwei": "Gwei",
     "send": "Send",
@@ -490,7 +499,14 @@
     },
     "connectedDappInfo": {
       "modalClose": "Background close",
-      "dAppTitle": "Account connected to"
+      "dAppTitle": "Account connected to",
+      "dappConnections": "Dapp connections",
+      "guideline": {
+        "title": "How to connect to dapps",
+        "step1": "Set Tally Ho as default",
+        "step2": "Click “connect to wallet” in a dapp",
+        "step3": "Select one similar to these"
+      }
     }
   },
   "wallet": {
@@ -511,6 +527,17 @@
       "transactionTo": "To:",
       "transactionFrom": "From:",
       "loadingActivities": "Digging deeper..."
+    },
+    "banner": {
+      "bannerTitle": "New Odyssey week!",
+      "emptyBannerContent": "Check out Arbitrum Odyssey campaign",
+      "notificationTitle": "Odyssey notifications",
+      "notificationDismissInfo":"Want to receive future Odyssey notifications? We will show you one every week that you can dismiss.",
+      "showNotifications": "Yes, show notification",
+      "dontShowNotifications": "No thanks",
+      "startNow": "Start now",
+      "learnMore": "Learn More",
+      "snackbar": "You can turn notification back from Settings"
     },
     "totalAccountBalance": "Total account balance",
     "send": "Send",
@@ -533,10 +560,15 @@
       "isDefault": "is now your default wallet",
       "notDefault": "is not your default wallet",
       "tooltip": "Setting Tally Ho as your default wallet means that everytime you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
+    },
+    "analyticsNotification": { 
+      "title": "Analytics are on",
+      "description": "They help us improve the wallet for you",
+      "settingsLink": "Change settings"
     }
   },
   "dAppConnect": {
-    "switchWallet":{
+    "switchWallet": {
       "title": "Tally Ho not Default",
       "descFirstPart": "We disabled Tally as default wallet for you. You can always enable it back from Settings",
       "descSecondPart": "at any time.",
@@ -564,7 +596,8 @@
         "SUPPORT_FORGOT_PASSWORD": "Enable to forgot password",
         "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
-        "SUPPORT_ARBITRUM": "Enable Arbitrum network"
+        "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
+        "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab"
       }
     }
   }
