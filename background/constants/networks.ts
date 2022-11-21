@@ -155,6 +155,7 @@ export const CHAIN_ID_TO_RPC_URLS: {
   ],
   [ETHEREUM.chainID]: ["https://rpc.ankr.com/eth"],
   [ARBITRUM_ONE.chainID]: ["https://rpc.ankr.com/arbitrum"],
+  [ARBITRUM_NOVA.chainID]: ["https://nova.arbitrum.io/rpc	"],
   [GOERLI.chainID]: ["https://ethereum-goerli-rpc.allthatnode.com"],
   [AVALANCHE.chainID]: ["https://api.avax.network/ext/bc/C/rpc"],
 }
