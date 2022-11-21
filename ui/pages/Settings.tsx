@@ -201,7 +201,7 @@ export default function Settings(): ReactElement {
   }
 
   const notificationBanner = {
-    title: "Show achievement banners",
+    title: t("settings.showBanners"),
     component: () => (
       <SharedToggleButton
         onChange={(toggleValue) => toggleHideNotificationBanners(toggleValue)}

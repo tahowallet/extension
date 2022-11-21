@@ -1,5 +1,6 @@
 import { ARBITRUM_ONE } from "@tallyho/tally-background/constants"
 import { useEffect, useState } from "react"
+import { i18n } from "../../../_locales/i18n"
 
 type Campaign = {
   id: string
@@ -24,11 +25,11 @@ const odysseyProps = {
   chains: [ARBITRUM_ONE.chainID],
   buttons: {
     primary: {
-      title: "Start now",
+      title: i18n.t("wallet.banner.startNow"),
       link: "https://galxe.com/arbitrum",
     },
     secondary: {
-      title: "Learn more",
+      title: i18n.t("wallet.banner.learnMore"),
       link: "https://galxe.com/arbitrum", // TODO will change - blogpost link
     },
   },

@@ -3,6 +3,7 @@ import {
   toggleHideBanners,
 } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch } from "../../../hooks"
 import SharedButton from "../../Shared/SharedButton"
 import SharedSlideUpMenu from "../../Shared/SharedSlideUpMenu"
@@ -13,6 +14,9 @@ export default function WalletBannerSlideup(props: {
   onClose: () => void
 }): ReactElement {
   const { isOpen, onClose, onDismiss } = props
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet.banner",
+  })
   const dispatch = useBackgroundDispatch()
 
   const dismiss = () => {
@@ -32,17 +36,14 @@ export default function WalletBannerSlideup(props: {
       close={onClose}
     >
       <div className="wallet_banner_slideup">
-        <h3>Odyssey notifications</h3>
-        <p>
-          Want to receive future Odyssey notifications? We will show you one
-          every week that you can dismiss.
-        </p>
+        <h3>{t("notificationTitle")}</h3>
+        <p>{t("notificationDismissInfo")}</p>
         <div className="wallet_banner_slideup_buttons">
           <SharedButton type="primary" size="medium" onClick={dismiss}>
-            Yes, show notification
+            {t("showNotifications")}
           </SharedButton>
           <SharedButton type="tertiary" size="medium" onClick={toggleSettings}>
-            No thanks
+            {t("dontShowNotifications")}
           </SharedButton>
         </div>
       </div>
