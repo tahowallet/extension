@@ -1,5 +1,5 @@
 import { EVMNetwork, Network } from "../networks"
-import { AVAX, BTC, ETH, MATIC, OPTIMISTIC_ETH, RBTC } from "./currencies"
+import { AVAX, BNB, BTC, ETH, MATIC, OPTIMISTIC_ETH, RBTC } from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
   name: "Ethereum",
@@ -41,6 +41,14 @@ export const AVALANCHE: EVMNetwork = {
   coingeckoPlatformID: "avalanche",
 }
 
+export const BINANCE_SMART_CHAIN: EVMNetwork = {
+  name: "BNB Smart Chain",
+  baseAsset: BNB,
+  chainID: "56",
+  family: "EVM",
+  coingeckoPlatformID: "binance-smart-chain",
+}
+
 export const OPTIMISM: EVMNetwork = {
   name: "Optimism",
   baseAsset: OPTIMISTIC_ETH,
@@ -73,11 +81,15 @@ export const FORK: EVMNetwork = {
 }
 
 export const EIP_1559_COMPLIANT_CHAIN_IDS = new Set(
-  [ETHEREUM, POLYGON, GOERLI, AVALANCHE].map((network) => network.chainID)
+  [ETHEREUM, POLYGON, GOERLI, AVALANCHE, BINANCE_SMART_CHAIN].map(
+    (network) => network.chainID
+  )
 )
 
 export const CHAINS_WITH_MEMPOOL = new Set(
-  [ETHEREUM, POLYGON, AVALANCHE, GOERLI].map((network) => network.chainID)
+  [ETHEREUM, POLYGON, AVALANCHE, GOERLI, BINANCE_SMART_CHAIN].map(
+    (network) => network.chainID
+  )
 )
 
 export const NETWORK_BY_CHAIN_ID = {
@@ -87,6 +99,7 @@ export const NETWORK_BY_CHAIN_ID = {
   [ARBITRUM_ONE.chainID]: ARBITRUM_ONE,
   [AVALANCHE.chainID]: AVALANCHE,
   [OPTIMISM.chainID]: OPTIMISM,
+  [BINANCE_SMART_CHAIN.chainID]: BINANCE_SMART_CHAIN,
   [GOERLI.chainID]: GOERLI,
   [FORK.chainID]: FORK,
 }
@@ -106,6 +119,7 @@ export const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
   [OPTIMISM.chainID]: ["simplehash"],
   [ARBITRUM_ONE.chainID]: ["simplehash"],
   [AVALANCHE.chainID]: ["simplehash"],
+  [BINANCE_SMART_CHAIN.chainID]: ["simplehash"],
 }
 
 export const NETWORKS_SUPPORTING_NFTS = new Set(
@@ -123,6 +137,7 @@ export const CHAIN_ID_TO_0X_API_BASE: {
   [GOERLI.chainID]: "goerli.api.0x.org",
   [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
   [AVALANCHE.chainID]: "avalanche.api.0x.org",
+  [BINANCE_SMART_CHAIN.chainID]: "bsc.api.0x.org",
 }
 
 export const NETWORKS_SUPPORTING_SWAPS = new Set(
@@ -148,4 +163,5 @@ export const CHAIN_ID_TO_RPC_URLS: {
   [ARBITRUM_ONE.chainID]: ["https://rpc.ankr.com/arbitrum"],
   [GOERLI.chainID]: ["https://ethereum-goerli-rpc.allthatnode.com"],
   [AVALANCHE.chainID]: ["https://api.avax.network/ext/bc/C/rpc"],
+  [BINANCE_SMART_CHAIN.chainID]: ["https://rpc.ankr.com/bsc"],
 }

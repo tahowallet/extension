@@ -1,6 +1,7 @@
 import {
   ARBITRUM_ONE,
   AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
@@ -23,6 +24,10 @@ export const scanWebsite = {
   [GOERLI.chainID]: { title: "Etherscan", url: "https://goerli.etherscan.io/" },
   [ARBITRUM_ONE.chainID]: { title: "Arbiscan", url: "https://arbiscan.io/" },
   [AVALANCHE.chainID]: { title: "Snowtrace", url: "https://snowtrace.io/" },
+  [BINANCE_SMART_CHAIN.chainID]: {
+    title: "BNB Smart Chain",
+    url: "https://bscscan.com",
+  },
 }
 
 export const ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL: {
