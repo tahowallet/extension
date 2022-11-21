@@ -3,6 +3,7 @@ import {
   AlchemyWebSocketProvider,
   EventType,
   JsonRpcProvider,
+  JsonRpcSigner,
   Listener,
   WebSocketProvider,
 } from "@ethersproject/providers"
@@ -475,6 +476,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.currentProvider.off(eventName, listenerToRemove)
 
     return this
+  }
+
+  override getSigner(addressOrIndex?: string | number): JsonRpcSigner {
+    // Prefer alchemy for signing as public rpcs might not be as reliable
+    if (this.supportsAlchemy && this.alchemyProvider) {
+      return this.alchemyProvider.getSigner(addressOrIndex)
+    }
+    return super.getSigner(addressOrIndex)
   }
 
   /**

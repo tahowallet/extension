@@ -145,7 +145,10 @@ export const CHAIN_ID_TO_RPC_URLS: {
     "https://optimism-mainnet.public.blastapi.io",
   ],
   [ETHEREUM.chainID]: ["https://rpc.ankr.com/eth"],
-  [ARBITRUM_ONE.chainID]: ["https://rpc.ankr.com/arbitrum"],
+  [ARBITRUM_ONE.chainID]: [
+    "https://arb1.arbitrum.io/rpc",
+    "https://rpc.ankr.com/arbitrum",
+  ],
   [GOERLI.chainID]: ["https://ethereum-goerli-rpc.allthatnode.com"],
   [AVALANCHE.chainID]: ["https://api.avax.network/ext/bc/C/rpc"],
 }
