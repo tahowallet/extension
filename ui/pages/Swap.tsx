@@ -42,6 +42,7 @@ import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
+import ApproveQuoteBtn from "./ApproveQuoteBtn"
 import { isSameAsset, useSwapQuote } from "../utils/swap"
 
 export default function Swap(): ReactElement {
@@ -493,49 +494,31 @@ export default function Swap(): ReactElement {
               ) : null}
             </div>
             <div className="footer standard_width_padded">
-              {
-                // Would welcome an alternative here---this is pretty gnarly.
-                // eslint-disable-next-line no-nested-ternary
-                quote?.needsApproval ? (
-                  isApprovalInProgress ? (
-                    <SharedButton type="primary" size="large" isDisabled>
-                      {t("swap.waitingForApproval")}
-                    </SharedButton>
-                  ) : (
-                    <SharedButton
-                      type="primary"
-                      size="large"
-                      isDisabled={
-                        isReadOnlyAccount ||
-                        !quote ||
-                        loadingSourceAmount ||
-                        loadingTargetAmount
-                      }
-                      onClick={approveAsset}
-                      showLoadingOnClick={!confirmationMenu}
-                    >
-                      {t("swap.approveAsset")}
-                    </SharedButton>
-                  )
-                ) : (
-                  <SharedButton
-                    type="primary"
-                    size="large"
-                    isDisabled={
-                      isReadOnlyAccount ||
-                      !quote ||
-                      !sourceAsset ||
-                      !sourceAmount ||
-                      !targetAsset ||
-                      !targetAmount
-                    }
-                    onClick={getFinalQuote}
-                    showLoadingOnClick={!confirmationMenu}
-                  >
-                    {t("swap.getFinalQuote")}
-                  </SharedButton>
-                )
-              }
+              {quote?.needsApproval ? (
+                <ApproveQuoteBtn
+                  isApprovalInProgress={!!isApprovalInProgress}
+                  isDisabled={isReadOnlyAccount || !quote}
+                  onApproveClick={approveAsset}
+                  loading={confirmationMenu}
+                />
+              ) : (
+                <SharedButton
+                  type="primary"
+                  size="large"
+                  isDisabled={
+                    isReadOnlyAccount ||
+                    !quote ||
+                    !sourceAsset ||
+                    !sourceAmount ||
+                    !targetAsset ||
+                    !targetAmount
+                  }
+                  onClick={getFinalQuote}
+                  showLoadingOnClick={!confirmationMenu}
+                >
+                  {t("swap.getFinalQuote")}
+                </SharedButton>
+              )}
             </div>
           </div>
         </div>
