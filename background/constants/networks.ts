@@ -41,6 +41,14 @@ export const AVALANCHE: EVMNetwork = {
   coingeckoPlatformID: "avalanche",
 }
 
+export const ARBITRUM_NOVA: EVMNetwork = {
+  name: "Arbitrum Nova",
+  baseAsset: ETH,
+  chainID: "42170",
+  family: "EVM",
+  coingeckoPlatformID: "arbitrum-nova",
+}
+
 export const OPTIMISM: EVMNetwork = {
   name: "Optimism",
   baseAsset: OPTIMISTIC_ETH,
@@ -86,6 +94,7 @@ export const NETWORK_BY_CHAIN_ID = {
   [ROOTSTOCK.chainID]: ROOTSTOCK,
   [ARBITRUM_ONE.chainID]: ARBITRUM_ONE,
   [AVALANCHE.chainID]: AVALANCHE,
+  [ARBITRUM_NOVA.chainID]: ARBITRUM_NOVA,
   [OPTIMISM.chainID]: OPTIMISM,
   [GOERLI.chainID]: GOERLI,
   [FORK.chainID]: FORK,
