@@ -26,6 +26,19 @@ const cleanTokenListResponse = (json: any, url: string) => {
       return cleanedJson
     }
   }
+
+  // Trader joe token list has invalid tags
+  if (url.includes("traderjoe-xyz") && Array.isArray(json?.tokens)) {
+    const tokens = json.tokens.map((token: unknown) => {
+      if (typeof token === "object" && token && "tags" in token) {
+        return { ...token, tags: [] }
+      }
+
+      return token
+    })
+    return { ...json, tokens }
+  }
+
   return json
 }
 
