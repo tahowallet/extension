@@ -1,10 +1,4 @@
-import React, {
-  ReactElement,
-  useCallback,
-  useEffect,
-  useState,
-  useRef,
-} from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
   clearSwapQuote,
@@ -12,7 +6,6 @@ import {
   selectLatestQuoteRequest,
   selectInProgressApprovalContract,
   fetchSwapQuote,
-  fetchSwapPrice,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
@@ -27,8 +20,6 @@ import {
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
-import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
-import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import logger from "@tallyho/tally-background/lib/logger"
 import { Redirect, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
@@ -38,55 +29,20 @@ import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux
 import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
 import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
-import {
-  EIP_1559_COMPLIANT_CHAIN_IDS,
-  NETWORKS_SUPPORTING_SWAPS,
-} from "@tallyho/tally-background/constants"
-import {
-  PriceDetails,
-  SwapQuoteRequest,
-} from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
+import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
+
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import SwapQuote from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
-import {
-  useBackgroundDispatch,
-  useBackgroundSelector,
-  useSkipFirstRenderEffect,
-} from "../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
-
-// FIXME Unify once asset similarity code is unified.
-function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
-  if (typeof asset1 === "undefined" || typeof asset2 === "undefined") {
-    return false
-  }
-
-  if (
-    isSmartContractFungibleAsset(asset1) &&
-    isSmartContractFungibleAsset(asset2)
-  ) {
-    return (
-      normalizeEVMAddress(asset1.contractAddress) ===
-      normalizeEVMAddress(asset2.contractAddress)
-    )
-  }
-
-  if (
-    isSmartContractFungibleAsset(asset1) ||
-    isSmartContractFungibleAsset(asset2)
-  ) {
-    return false
-  }
-
-  return asset1.symbol === asset2.symbol
-}
+import { isSameAsset, useSwapQuote } from "../utils/swap"
 
 export default function Swap(): ReactElement {
   const { t } = useTranslation()
@@ -106,10 +62,6 @@ export default function Swap(): ReactElement {
   const isReadOnlyAccount = currentAccountSigner === ReadOnlyAccountSigner
 
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
-
-  const [priceDetails, setPriceDetails] = useState<PriceDetails | undefined>(
-    undefined
-  )
 
   // TODO We're special-casing ETH here in an odd way. Going forward, we should
   // filter by current chain and better handle network-native base assets
@@ -149,11 +101,11 @@ export default function Swap(): ReactElement {
     amount: savedSwapAmount,
   } = (!locationAsset && savedQuoteRequest) || {
     // ^ If coming from an asset item swap button, let the UI start fresh
-    assets: { sourceAsset: locationAsset },
+    assets: { sellAsset: locationAsset },
   }
 
-  const [sourceAsset, setSellAsset] = useState(savedSellAsset)
-  const [targetAsset, setBuyAsset] = useState(savedBuyAsset)
+  const [sourceAsset, setSourceAsset] = useState(savedSellAsset)
+  const [targetAsset, setTargetAsset] = useState(savedBuyAsset)
   const [sourceAmount, setSourceAmount] = useState(
     typeof savedSwapAmount !== "undefined" && "sellAmount" in savedSwapAmount
       ? savedSwapAmount.sellAmount
@@ -164,17 +116,6 @@ export default function Swap(): ReactElement {
       ? savedSwapAmount.buyAmount
       : ""
   )
-  const [needsApproval, setNeedsApproval] = useState(false)
-  const [approvalTarget, setApprovalTarget] = useState<string | undefined>(
-    undefined
-  )
-
-  useSkipFirstRenderEffect(() => {
-    setSellAsset(undefined)
-    setBuyAsset(undefined)
-    setSourceAmount("")
-    setTargetAmount("")
-  }, [currentNetwork.chainID, dispatch])
 
   const buyAssets = useBackgroundSelector((state) => {
     // Some type massaging needed to remind TypeScript how these types fit
@@ -242,9 +183,20 @@ export default function Swap(): ReactElement {
     }
   }, [sourceAsset, sellAssetAmounts])
 
-  useEffect(() => {
-    setPriceDetails(undefined)
-  }, [sourceAsset, targetAsset, dispatch])
+  const {
+    loading: loadingQuote,
+    loadingSourceAmount,
+    loadingTargetAmount,
+    quote,
+    requestQuoteUpdate,
+  } = useSwapQuote({
+    initialSourceAsset: sourceAsset,
+    initialTargetAsset: targetAsset,
+    initialSwapSettings: {
+      slippageTolerance: useBackgroundSelector(selectSlippageTolerance),
+      networkSettings: useBackgroundSelector(selectDefaultNetworkFeeSettings),
+    },
+  })
 
   const inProgressApprovalContract = useBackgroundSelector(
     selectInProgressApprovalContract
@@ -254,18 +206,6 @@ export default function Swap(): ReactElement {
     "contractAddress" in sourceAsset &&
     normalizeEVMAddress(inProgressApprovalContract || "0x") ===
       normalizeEVMAddress(sourceAsset?.contractAddress || "0x")
-
-  const [sourceAmountLoading, setSourceAmountLoading] = useState(false)
-  const [targetAmountLoading, setTargetAmountLoading] = useState(false)
-
-  const [swapTransactionSettings, setSwapTransactionSettings] = useState({
-    slippageTolerance: useBackgroundSelector(selectSlippageTolerance),
-    networkSettings: useBackgroundSelector(selectDefaultNetworkFeeSettings),
-  })
-
-  const latestQuoteRequest = useRef<SwapQuoteRequest | undefined>(
-    savedQuoteRequest
-  )
 
   const finalQuote = useBackgroundSelector((state) => state.swap.finalQuote)
 
@@ -280,21 +220,23 @@ export default function Swap(): ReactElement {
   const getFinalQuote = async () => {
     // The final quote requires a previous non-final quote having been
     // requested; this is also guarded at the button (by disabling the button).
-    if (typeof latestQuoteRequest.current === "undefined") {
+    if (!quote) {
       return false
     }
 
-    dispatch(fetchSwapQuote(latestQuoteRequest.current))
+    dispatch(fetchSwapQuote(quote.quoteRequest))
 
     return true
   }
 
   const approveAsset = async () => {
+    if (!quote) return
+
     if (typeof sourceAsset === "undefined") {
       logger.error(t("swap.error.noSellAsset"))
       return
     }
-    if (typeof approvalTarget === "undefined") {
+    if (typeof quote.approvalTarget === "undefined") {
       logger.error(t("swap.error.noApprovalTarget"))
       return
     }
@@ -306,216 +248,104 @@ export default function Swap(): ReactElement {
     await dispatch(
       approveTransfer({
         assetContractAddress: sourceAsset.contractAddress,
-        approvalTarget,
+        approvalTarget: quote.approvalTarget,
       })
     )
   }
 
-  const updateSwapData = useCallback(
-    async (
-      requestedQuote: "buy" | "sell",
-      amount: string,
-      // Fixed asset in the swap.
-      fixedAsset?: SmartContractFungibleAsset | FungibleAsset | undefined,
-      quoteAsset?: SmartContractFungibleAsset | FungibleAsset | undefined
-    ): Promise<void> => {
-      if (requestedQuote === "sell") {
-        setTargetAmount("")
-      } else {
-        setSourceAmount("")
-      }
+  const updateSourceAsset = useCallback(
+    (newSourceAsset: SmartContractFungibleAsset | FungibleAsset) => {
+      setSourceAsset(newSourceAsset)
+      setSourceAmount("")
 
-      const quoteSellAsset =
-        requestedQuote === "buy"
-          ? fixedAsset ?? sourceAsset
-          : quoteAsset ?? sourceAsset
-      const quoteBuyAsset =
-        requestedQuote === "sell" && typeof fixedAsset !== "undefined"
-          ? fixedAsset ?? targetAsset
-          : quoteAsset ?? targetAsset
-
-      // Swap amounts can't update unless both sell and buy assets are specified.
-      if (
-        typeof quoteSellAsset === "undefined" ||
-        typeof quoteBuyAsset === "undefined" ||
-        amount.trim() === ""
-      ) {
-        return
-      }
-
-      const quoteRequest: SwapQuoteRequest = {
-        assets: {
-          sellAsset: quoteSellAsset,
-          buyAsset: quoteBuyAsset,
-        },
-        amount:
-          requestedQuote === "sell"
-            ? { sellAmount: amount }
-            : { buyAmount: amount },
-        slippageTolerance: swapTransactionSettings.slippageTolerance,
-        gasPrice: EIP_1559_COMPLIANT_CHAIN_IDS.has(selectedNetwork.chainID)
-          ? swapTransactionSettings.networkSettings.values.maxFeePerGas
-          : swapTransactionSettings.networkSettings.values.gasPrice ?? 0n,
-        network: selectedNetwork,
-      }
-
-      if (
-        "buyAmount" in quoteRequest.amount &&
-        Number(quoteRequest.amount.buyAmount) === 0
-      ) {
-        setSourceAmount("")
-        return
-      }
-
-      if (
-        "sellAmount" in quoteRequest.amount &&
-        Number(quoteRequest.amount.sellAmount) === 0
-      ) {
-        setTargetAmount("")
-        return
-      }
-
-      // If there's a different quote in progress, reset all loading states as
-      // we're about to replace it.
-      if (latestQuoteRequest.current !== quoteRequest) {
-        setTargetAmountLoading(false)
-        setSourceAmountLoading(false)
-      }
-
-      if (requestedQuote === "sell") {
-        setTargetAmountLoading(true)
-      } else {
-        setSourceAmountLoading(true)
-      }
-
-      latestQuoteRequest.current = quoteRequest
-      const {
-        quote,
-        needsApproval: quoteNeedsApproval,
-        priceDetails: quotePriceDetails,
-      } = ((await dispatch(
-        fetchSwapPrice({ quoteRequest })
-      )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapPrice>) ?? {
-        quote: undefined,
-        needsApproval: false,
-      }
-
-      // Only proceed if the quote we just got is the same one we were looking for.
-      if (latestQuoteRequest.current === quoteRequest) {
-        if (typeof quote === "undefined") {
-          // If there's no quote, clear states and abort.
-          setTargetAmountLoading(false)
-          setSourceAmountLoading(false)
-          setNeedsApproval(false)
-          setApprovalTarget(undefined)
-          latestQuoteRequest.current = undefined
-
-          // TODO set an error on the buy or sell state.
-
-          return
-        }
-
-        if (
-          swapTransactionSettings.networkSettings.gasLimit !== BigInt(quote.gas)
-        ) {
-          setSwapTransactionSettings({
-            ...swapTransactionSettings,
-            networkSettings: {
-              ...swapTransactionSettings.networkSettings,
-              gasLimit: BigInt(quote.gas),
-              suggestedGasLimit: BigInt(quote.estimatedGas),
-            },
-          })
-        }
-        setNeedsApproval(quoteNeedsApproval)
-        setApprovalTarget(quote.allowanceTarget)
-        setPriceDetails(quotePriceDetails)
-
-        if (requestedQuote === "sell") {
-          setTargetAmount(
-            fixedPointNumberToString({
-              amount: BigInt(quote.buyAmount),
-              decimals: quoteBuyAsset.decimals,
-            })
-          )
-          setTargetAmountLoading(false)
-        } else {
-          setSourceAmount(
-            fixedPointNumberToString({
-              amount: BigInt(quote.sellAmount),
-              decimals: quoteSellAsset.decimals,
-            })
-          )
-          setSourceAmountLoading(false)
-        }
+      // Updating the source asset quotes the new source asset against the existing
+      // target amount.
+      if (newSourceAsset && targetAsset && targetAmount) {
+        requestQuoteUpdate({
+          type: "getSourceAmount",
+          amount: targetAmount,
+          sourceAsset: newSourceAsset,
+          targetAsset,
+        })
+        requestQuoteUpdate.flush()
       }
     },
-    [
-      sourceAsset,
-      targetAsset,
-      swapTransactionSettings,
-      selectedNetwork,
-      dispatch,
-    ]
+    [requestQuoteUpdate, targetAmount, targetAsset]
   )
 
-  const updateSellAsset = useCallback(
-    (asset: SmartContractFungibleAsset | FungibleAsset) => {
-      setSellAsset(asset)
+  const updateTargetAsset = useCallback(
+    (newTargetAsset: SmartContractFungibleAsset | FungibleAsset) => {
+      setTargetAsset(newTargetAsset)
+      setTargetAmount("")
 
-      if (targetAsset && targetAmount !== "") {
-        // Updating the sell asset quotes the new sell asset against the existing
-        // buy amount.
-        updateSwapData("buy", targetAmount, asset)
+      // Updating the target asset quotes the new target asset against the existing
+      // source amount.
+      if (sourceAsset && newTargetAsset && sourceAmount) {
+        requestQuoteUpdate({
+          type: "getTargetAmount",
+          amount: sourceAmount,
+          sourceAsset,
+          targetAsset: newTargetAsset,
+        })
+        requestQuoteUpdate.flush()
       }
     },
-    [targetAmount, targetAsset, updateSwapData]
-  )
-  const updateBuyAsset = useCallback(
-    (asset: SmartContractFungibleAsset | FungibleAsset) => {
-      setBuyAsset(asset)
-
-      if (sourceAsset && sourceAmount !== "") {
-        // Updating the buy asset quotes the new buy asset against the existing
-        // sell amount.
-        updateSwapData("sell", sourceAmount, asset)
-      }
-    },
-    [sourceAmount, sourceAsset, updateSwapData]
+    [sourceAmount, requestQuoteUpdate, sourceAsset]
   )
 
   const flipSwap = useCallback(() => {
-    setSellAsset(targetAsset)
-    setBuyAsset(sourceAsset)
-    setSourceAmount(targetAmount)
+    const [newSourceAsset, newTargetAsset] = [targetAsset, sourceAsset]
+    const [newSourceAmount, newTargetAmount] = [targetAmount, sourceAmount]
 
-    updateSwapData("sell", targetAmount, sourceAsset, targetAsset)
-  }, [targetAmount, targetAsset, sourceAsset, updateSwapData])
+    setSourceAsset(newSourceAsset)
+    setTargetAsset(newTargetAsset)
+
+    if (newSourceAmount) {
+      setSourceAmount(newSourceAmount)
+    }
+
+    if (newTargetAmount) {
+      setTargetAmount(newTargetAmount)
+    }
+
+    if (newSourceAmount && newSourceAsset && newTargetAsset)
+      requestQuoteUpdate({
+        type: "getTargetAmount",
+        amount: targetAmount,
+        sourceAsset: newSourceAsset,
+        targetAsset: newTargetAsset,
+      })
+  }, [targetAmount, sourceAmount, targetAsset, sourceAsset, requestQuoteUpdate])
+
+  const quoteAppliesToCurrentAssets =
+    quote &&
+    quote.sourceAsset === sourceAsset &&
+    quote.targetAsset === targetAsset
+
+  // Update if quote changes
+
+  if (quote && !loadingQuote && quoteAppliesToCurrentAssets && quote.quote) {
+    const { quote: newAmount, type } = quote
+
+    if (type === "getSourceAmount" && newAmount !== sourceAmount) {
+      setSourceAmount(newAmount)
+    } else if (type === "getTargetAmount" && newAmount !== targetAmount) {
+      setTargetAmount(newAmount)
+    }
+  }
 
   useEffect(() => {
-    if (
-      typeof savedSwapAmount !== "undefined" &&
-      typeof savedBuyAsset !== "undefined" &&
-      typeof savedSellAsset !== "undefined"
-    ) {
-      updateSwapData(
-        "sellAmount" in savedSwapAmount ? "sell" : "buy",
-        "sellAmount" in savedSwapAmount
-          ? savedSwapAmount.sellAmount
-          : savedSwapAmount.buyAmount,
-        "sellAmount" in savedSwapAmount ? savedBuyAsset : savedSellAsset
-      )
-    } else {
-      dispatch(clearSwapQuote())
+    // Request a quote on mount
+    if (sourceAsset && targetAsset && sourceAmount) {
+      requestQuoteUpdate({
+        type: "getTargetAmount",
+        amount: sourceAmount,
+        sourceAsset,
+        targetAsset,
+      })
     }
-    // We want to run this in three cases:
-    // - Once at component load, to make sure the flip of the quote is set
-    //   correctly.
-    // - When swap transaction settings change, to update non-swap details.
-    // - When approval-in-progress status changes, to update the approval
-    //   status in the UI.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [swapTransactionSettings, isApprovalInProgress])
+  }, [])
 
   const isSwapSupportedByNetwork = () =>
     NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID)
@@ -534,18 +364,17 @@ export default function Swap(): ReactElement {
           }}
           size="large"
         >
-          {typeof sourceAsset !== "undefined" &&
-          typeof targetAsset !== "undefined" &&
-          typeof finalQuote !== "undefined" ? (
-            <SwapQuote
-              sellAsset={sourceAsset}
-              buyAsset={targetAsset}
-              finalQuote={finalQuote}
-              swapTransactionSettings={swapTransactionSettings}
-            />
-          ) : (
-            <></>
-          )}
+          {quote &&
+            typeof sourceAsset !== "undefined" &&
+            typeof targetAsset !== "undefined" &&
+            typeof finalQuote !== "undefined" && (
+              <SwapQuote
+                sellAsset={sourceAsset}
+                buyAsset={targetAsset}
+                finalQuote={finalQuote}
+                swapTransactionSettings={quote.swapTransactionSettings}
+              />
+            )}
         </SharedSlideUpMenu>
         <div className="standard_width swap_wrap">
           <div className="header">
@@ -586,47 +415,73 @@ export default function Swap(): ReactElement {
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
                 currentNetwork={currentNetwork}
                 amount={sourceAmount}
-                amountMainCurrency={priceDetails?.sellCurrencyAmount}
+                amountMainCurrency={
+                  sourceAmount
+                    ? quote?.priceDetails?.sellCurrencyAmount
+                    : undefined
+                }
                 showPriceDetails
-                isPriceDetailsLoading={!priceDetails}
+                isPriceDetailsLoading={loadingSourceAmount}
                 assetsAndAmounts={sellAssetAmounts}
                 selectedAsset={sourceAsset}
-                isDisabled={sourceAmountLoading}
+                isDisabled={loadingSourceAmount}
+                onAssetSelect={updateSourceAsset}
                 mainCurrencySign={mainCurrencySign}
-                onAssetSelect={updateSellAsset}
                 onAmountChange={(newAmount, error) => {
-                  setPriceDetails(undefined)
                   setSourceAmount(newAmount)
-                  if (typeof error === "undefined") {
-                    updateSwapData("sell", newAmount)
+
+                  if (!error) {
+                    requestQuoteUpdate({
+                      type: "getTargetAmount",
+                      amount: newAmount,
+                      sourceAsset,
+                      targetAsset,
+                    })
                   }
                 }}
                 label={t("swap.from")}
               />
             </div>
-            <button className="icon_change" type="button" onClick={flipSwap}>
+            <button
+              className="icon_change"
+              type="button"
+              onClick={flipSwap}
+              disabled={loadingQuote}
+            >
               {t("swap.switchAssets")}
             </button>
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
                 currentNetwork={currentNetwork}
                 amount={targetAmount}
-                amountMainCurrency={priceDetails?.buyCurrencyAmount}
-                priceImpact={priceDetails?.priceImpact}
-                isPriceDetailsLoading={!priceDetails}
+                amountMainCurrency={
+                  targetAmount
+                    ? quote?.priceDetails?.buyCurrencyAmount
+                    : undefined
+                }
+                priceImpact={quote?.priceDetails?.priceImpact}
+                isPriceDetailsLoading={loadingTargetAmount}
                 showPriceDetails
                 // FIXME Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
                 selectedAsset={targetAsset}
-                isDisabled={targetAmountLoading}
+                isDisabled={loadingTargetAmount}
                 showMaxButton={false}
                 mainCurrencySign={mainCurrencySign}
-                onAssetSelect={updateBuyAsset}
+                onAssetSelect={updateTargetAsset}
                 onAmountChange={(newAmount, error) => {
-                  setPriceDetails(undefined)
                   setTargetAmount(newAmount)
-                  if (typeof error === "undefined") {
-                    updateSwapData("buy", newAmount)
+                  if (error) {
+                    requestQuoteUpdate.cancel()
+                    return
+                  }
+                  if (newAmount) {
+                    requestQuoteUpdate({
+                      type: "getSourceAmount",
+                      amount: newAmount,
+                      sourceAsset,
+                      targetAsset,
+                    })
                   }
                 }}
                 label={t("swap.to")}
@@ -641,7 +496,7 @@ export default function Swap(): ReactElement {
               {
                 // Would welcome an alternative here---this is pretty gnarly.
                 // eslint-disable-next-line no-nested-ternary
-                needsApproval ? (
+                quote?.needsApproval ? (
                   isApprovalInProgress ? (
                     <SharedButton type="primary" size="large" isDisabled>
                       {t("swap.waitingForApproval")}
@@ -652,9 +507,9 @@ export default function Swap(): ReactElement {
                       size="large"
                       isDisabled={
                         isReadOnlyAccount ||
-                        typeof latestQuoteRequest.current === "undefined" ||
-                        sourceAmountLoading ||
-                        targetAmountLoading
+                        !quote ||
+                        loadingSourceAmount ||
+                        loadingTargetAmount
                       }
                       onClick={approveAsset}
                       showLoadingOnClick={!confirmationMenu}
@@ -668,9 +523,7 @@ export default function Swap(): ReactElement {
                     size="large"
                     isDisabled={
                       isReadOnlyAccount ||
-                      typeof latestQuoteRequest.current === "undefined" ||
-                      sourceAmountLoading ||
-                      targetAmountLoading ||
+                      !quote ||
                       !sourceAsset ||
                       !sourceAmount ||
                       !targetAsset ||
