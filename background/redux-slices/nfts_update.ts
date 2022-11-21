@@ -1,7 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { NFT, NFTCollection } from "../nfts"
 
-type NFTCollectionCached = Pick<NFTCollection, "id" | "name" | "nftCount"> & {
+export type NFTCollectionCached = Pick<
+  NFTCollection,
+  "id" | "name" | "nftCount" | "hasBadges"
+> & {
   floorPrice?: {
     value: bigint
     tokenSymbol: string
@@ -17,8 +20,15 @@ export type NFTsState = {
   }
 }
 
+export type FiltersState = []
+
+export type NFTsSliceState = { nfts: NFTsState; filters: FiltersState }
+
 function initializeCollections(collections: NFTCollection[]) {
-  const state: NFTsState = {}
+  const state: NFTsSliceState = {
+    nfts: {},
+    filters: [],
+  }
 
   collections.forEach((collection) => {
     const {
@@ -28,14 +38,16 @@ function initializeCollections(collections: NFTCollection[]) {
       network: { chainID },
       owner,
       floorPrice,
+      hasBadges,
     } = collection
-    state[chainID] ??= {}
-    state[chainID][owner] ??= {}
-    state[chainID][owner][collection.id] = {
+    state.nfts[chainID] ??= {}
+    state.nfts[chainID][owner] ??= {}
+    state.nfts[chainID][owner][collection.id] = {
       id,
       name,
       nftCount,
       nfts: [],
+      hasBadges,
       floorPrice: floorPrice && {
         value: floorPrice.value,
         tokenSymbol: floorPrice.token.symbol,
@@ -48,7 +60,10 @@ function initializeCollections(collections: NFTCollection[]) {
 
 const NFTsSlice = createSlice({
   name: "nftsUpdate",
-  initialState: {} as NFTsState,
+  initialState: {
+    nfts: {},
+    filters: [],
+  } as NFTsSliceState,
   reducers: {
     initializeNFTs: (
       immerState,

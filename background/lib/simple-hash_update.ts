@@ -121,6 +121,7 @@ function simpleHashCollectionModelToCollection(
     thumbnail,
     network: NETWORK_BY_CHAIN_ID[chainID],
     floorPrice,
+    hasBadges: false, // TODO: check how to discover if this is a Galxe collection
   }
 }
 
@@ -172,7 +173,7 @@ function simpleHashNFTModelToNFT(
     contract: contractAddress,
     owner,
     network: NETWORK_BY_CHAIN_ID[chainID],
-    achievement: isAchievement ? { url: nftURL } : null,
+    badge: isAchievement ? { url: nftURL } : null,
   }
 }
 

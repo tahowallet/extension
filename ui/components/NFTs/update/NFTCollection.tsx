@@ -11,7 +11,7 @@ const fakeItem: NFT = {
   attributes: [],
   contract: "",
   owner: "",
-  achievement: null,
+  badge: null,
 }
 
 export default function NFTCollection(props: {

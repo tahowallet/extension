@@ -49,7 +49,7 @@ export type NFT = {
   contract: string
   owner: string
   network: EVMNetwork
-  achievement: null | {
+  badge: null | {
     url: string
   }
 }
@@ -59,6 +59,7 @@ export type NFTCollection = {
   name: string
   owner: string
   network: EVMNetwork
+  hasBadges: boolean
   thumbnail?: string
   nftCount?: number
   floorPrice?: {
