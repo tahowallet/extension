@@ -253,7 +253,7 @@ const accountSlice = createSlice({
     updateAccountBalance: (
       immerState,
       {
-        payload: { balances, addressOnNetwork },
+        payload: { balances },
       }: {
         payload: {
           balances: AccountBalance[]
@@ -261,30 +261,6 @@ const accountSlice = createSlice({
         }
       }
     ) => {
-      // TODO: Figure out how to detect base asset balances once we add custom networks
-      const isBaseAssetBalance =
-        balances.length === 1 && "coinType" in balances[0].assetAmount.asset
-
-      if (!isBaseAssetBalance) {
-        const updatedBalancesSymbols = new Set(
-          balances.map((balance) => balance.assetAmount.asset.symbol)
-        )
-
-        const { network, address } = addressOnNetwork
-
-        // Don't delete base asset balance
-        updatedBalancesSymbols.add(network.baseAsset.symbol)
-
-        const existing = immerState.accountsData.evm[network.chainID][address]
-        if (existing !== undefined && existing !== "loading") {
-          Object.keys(existing.balances).forEach((symbol) => {
-            if (!updatedBalancesSymbols.has(symbol)) {
-              delete existing.balances[symbol]
-            }
-          })
-        }
-      }
-
       balances.forEach((updatedAccountBalance) => {
         const {
           address,
@@ -304,6 +280,12 @@ const accountSlice = createSlice({
         }
 
         if (existingAccountData !== "loading") {
+          if (
+            updatedAccountBalance.assetAmount.amount === 0n &&
+            existingAccountData.balances[updatedAssetSymbol] === undefined
+          ) {
+            return
+          }
           existingAccountData.balances[updatedAssetSymbol] =
             updatedAccountBalance
         } else {
