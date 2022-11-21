@@ -3,6 +3,7 @@ import {
   ETHEREUM,
   POLYGON,
   OPTIMISM,
+  AVALANCHE,
   ARBITRUM_ONE,
   NETWORK_BY_CHAIN_ID,
 } from "../constants"
@@ -33,6 +34,7 @@ const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
   [POLYGON.chainID]: ["alchemy"],
   [OPTIMISM.chainID]: ["simplehash"],
   [ARBITRUM_ONE.chainID]: ["simplehash"],
+  [AVALANCHE.chainID]: ["simplehash"],
 }
 
 function isGalxeAchievement(url: string | null | undefined) {

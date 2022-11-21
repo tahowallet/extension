@@ -1,4 +1,10 @@
-import { ETHEREUM, POLYGON, OPTIMISM, ARBITRUM_ONE } from "./constants"
+import {
+  ETHEREUM,
+  POLYGON,
+  OPTIMISM,
+  ARBITRUM_ONE,
+  AVALANCHE,
+} from "./constants"
 import { EVMNetwork } from "./networks"
 // Networks that are not added to this struct will
 // not have an in-wallet NFT tab
@@ -9,6 +15,7 @@ export const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
   [POLYGON.chainID]: ["simplehash"],
   [OPTIMISM.chainID]: ["simplehash"],
   [ARBITRUM_ONE.chainID]: ["simplehash"],
+  [AVALANCHE.chainID]: ["simplehash"],
 }
 
 export const NFT_PROVIDER_TO_CHAIN = {
@@ -18,6 +25,7 @@ export const NFT_PROVIDER_TO_CHAIN = {
     POLYGON.chainID,
     OPTIMISM.chainID,
     ARBITRUM_ONE.chainID,
+    AVALANCHE.chainID,
   ],
 }
 
