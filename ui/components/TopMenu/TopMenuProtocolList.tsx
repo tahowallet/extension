@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import {
   ARBITRUM_ONE,
   AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
@@ -57,13 +58,20 @@ const productionNetworks = [
           isDisabled: true,
         },
       ]),
-
-  // {
-  //   name: "Binance Smart Chain",
-  //   info: i18n.t("protocol.compatibleChain"),
-  //   width: 24,
-  //   height: 24,
-  // },
+  ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
+    ? [
+        {
+          network: BINANCE_SMART_CHAIN,
+          info: i18n.t("protocol.compatibleChain"),
+        },
+      ]
+    : [
+        {
+          network: BINANCE_SMART_CHAIN,
+          info: i18n.t("comingSoon"),
+          isDisabled: true,
+        },
+      ]),
   // {
   //   name: "Celo",
   //   info: "Global payments infrastructure",
