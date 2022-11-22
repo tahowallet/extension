@@ -25,7 +25,7 @@ export const scanWebsite = {
   [ARBITRUM_ONE.chainID]: { title: "Arbiscan", url: "https://arbiscan.io/" },
   [AVALANCHE.chainID]: { title: "Snowtrace", url: "https://snowtrace.io/" },
   [BINANCE_SMART_CHAIN.chainID]: {
-    title: "BNB Smart Chain",
+    title: "Bscscan",
     url: "https://bscscan.com",
   },
 }
