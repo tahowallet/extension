@@ -1,16 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { NFT, NFTCollection } from "../nfts"
 
-export type NFTCollectionCached = Pick<
-  NFTCollection,
-  "id" | "name" | "nftCount" | "hasBadges"
-> & {
+export type NFTCollectionCached = {
   floorPrice?: {
     value: bigint
     tokenSymbol: string
   }
   nfts: NFT[]
-}
+} & Omit<NFTCollection, "floorPrice">
 
 export type NFTsState = {
   [chainID: string]: {
@@ -31,15 +28,9 @@ function initializeCollections(collections: NFTCollection[]) {
   }
 
   collections.forEach((collection) => {
-    const {
-      id,
-      name,
-      nftCount,
-      network: { chainID },
-      owner,
-      floorPrice,
-      hasBadges,
-    } = collection
+    const { id, name, nftCount, network, owner, floorPrice, hasBadges } =
+      collection
+    const { chainID } = network
     state.nfts[chainID] ??= {}
     state.nfts[chainID][owner] ??= {}
     state.nfts[chainID][owner][collection.id] = {
@@ -48,6 +39,8 @@ function initializeCollections(collections: NFTCollection[]) {
       nftCount,
       nfts: [],
       hasBadges,
+      network,
+      owner,
       floorPrice: floorPrice && {
         value: floorPrice.value,
         tokenSymbol: floorPrice.token.symbol,

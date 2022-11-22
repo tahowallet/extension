@@ -1,46 +1,31 @@
-import { ETHEREUM } from "@tallyho/tally-background/constants"
-import { NFT } from "@tallyho/tally-background/nfts"
 import React, { ReactElement, useCallback, useState } from "react"
+import { NFT } from "@tallyho/tally-background/nfts"
+import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
 import NFTItem from "./NFTItem"
 
-const fakeItem: NFT = {
-  id: "test",
-  name: "test",
-  network: ETHEREUM,
-  collectionID: "testCollection",
-  attributes: [],
-  contract: "",
-  owner: "",
-  badge: null,
-}
-
 export default function NFTCollection(props: {
+  collection: NFTCollectionCached
   openPreview: (nft: NFT) => void
 }): ReactElement {
-  const { openPreview } = props
+  const { collection, openPreview } = props
   const [isExpanded, setIsExpanded] = useState(false)
 
   const toggleCollection = useCallback(() => setIsExpanded((val) => !val), [])
-  const openPreviewWithNFT = () => openPreview(fakeItem)
+
   return (
-    <div className="nft_collection">
+    <li className="nft_collection">
       <div className="nft_collection_item">
         <NFTItem
-          item={fakeItem}
+          item={collection}
           onClick={toggleCollection}
           isCollection
           isExpanded={isExpanded}
         />
       </div>
-      {isExpanded && (
-        <>
-          <NFTItem item={fakeItem} onClick={openPreviewWithNFT} />
-          <NFTItem item={fakeItem} onClick={openPreviewWithNFT} />
-          <NFTItem item={fakeItem} onClick={openPreviewWithNFT} />
-          <NFTItem item={fakeItem} onClick={openPreviewWithNFT} />
-          <NFTItem item={fakeItem} onClick={openPreviewWithNFT} />
-        </>
-      )}
-    </div>
+      {isExpanded &&
+        collection.nfts.map((nft) => (
+          <NFTItem item={nft} onClick={openPreview} />
+        ))}
+    </li>
   )
 }

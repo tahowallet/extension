@@ -1,10 +1,14 @@
 import { NFT } from "@tallyho/tally-background/nfts"
+import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
 import React, { ReactElement, useState } from "react"
 import SharedSlideUpMenu from "../../Shared/SharedSlideUpMenu"
 import NFTCollection from "./NFTCollection"
 import NFTPreview from "./NFTPreview"
 
-export default function NFTList(): ReactElement {
+export default function NFTList(props: {
+  collections: NFTCollectionCached[]
+}): ReactElement {
+  const { collections } = props
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [currentNFTPreview, setCurrentNFTPreview] = useState<NFT | null>(null)
 
@@ -20,12 +24,15 @@ export default function NFTList(): ReactElement {
 
   return (
     <>
-      <div className="nft_list">
-        <NFTCollection openPreview={openPreview} />
-        <NFTCollection openPreview={openPreview} />
-        <NFTCollection openPreview={openPreview} />
-        <NFTCollection openPreview={openPreview} />
-      </div>
+      <ul className="nft_list">
+        {collections.map((collection) => (
+          <NFTCollection
+            key={collection.id}
+            openPreview={openPreview}
+            collection={collection}
+          />
+        ))}
+      </ul>
       <SharedSlideUpMenu isOpen={isPreviewOpen} close={closePreview}>
         {currentNFTPreview && <NFTPreview nft={currentNFTPreview} />}
       </SharedSlideUpMenu>

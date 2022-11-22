@@ -1,48 +1,35 @@
 import React, { ReactElement } from "react"
-import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { NFT } from "@tallyho/tally-background/nfts"
+import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
 import NFTImage from "./NFTImage"
 import NFTHover from "./NFTHover"
 
-export default function NFTsItem(props: {
-  item: {
-    id: string
-    name?: string
-    network: EVMNetwork
-    thumbnail?: string
-    floorPriceValue?: string
-    count?: number
-  }
+export default function NFTsItem<T extends NFT | NFTCollectionCached>(props: {
+  item: T
   isCollection?: boolean
   isExpanded?: boolean
-  onClick: (id: string) => void
+  onClick: (value: T) => void
 }): ReactElement {
   const { onClick, isCollection = false, isExpanded = false, item } = props
-  const {
-    id,
-    name = "No title",
-    network,
-    thumbnail,
-    floorPriceValue,
-    count = 0,
-  } = item
+  const { name = "No title", network, thumbnail } = item
 
   return (
     <div className="nft_item">
       <div>
         <NFTImage src={thumbnail} alt={name} width={100} />
         <div className="nft_network" />
-        {floorPriceValue && (
-          <div className="nft_item_price">{floorPriceValue}</div>
+        {"floorPrice" in item && (
+          <div className="nft_item_price">{item.floorPrice}</div>
         )}
         <NFTHover
-          onClick={() => onClick(id)}
+          onClick={() => onClick(item)}
           isCollection={isCollection}
           isExpanded={isExpanded}
         />
       </div>
       <div className="nft_item_details">
         <span className="nft_item_name">{name}</span>
-        {count && <span>({count})</span>}
+        {"nfts" in item && <span>({item.nfts.length})</span>}
       </div>
       <style jsx>{`
         .nft_item {
