@@ -257,6 +257,17 @@ export class PreferenceDatabase extends Dexie {
         })
     })
 
+    this.version(13).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          storedPreferences.tokenLists.urls.push(
+            "https://tokens.pancakeswap.finance/pancakeswap-default.json"
+          )
+        })
+    })
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
