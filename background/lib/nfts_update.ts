@@ -15,16 +15,16 @@ import {
 } from "../nfts"
 
 function groupChainsByAddress(accounts: AddressOnNetwork[]) {
-  return accounts.reduce((result, account) => {
+  return accounts.reduce((acc, account) => {
     const {
       address,
       network: { chainID },
     } = account
     if (CHAIN_ID_TO_NFT_METADATA_PROVIDER[chainID]) {
-      result[address] ??= [] // eslint-disable-line no-param-reassign
-      result[address].push(chainID)
+      acc[address] ??= []
+      acc[address].push(chainID)
     }
-    return result
+    return acc
   }, {} as { [address: string]: string[] })
 }
 
