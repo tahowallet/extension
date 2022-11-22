@@ -1,18 +1,15 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
+import SettingsPage from "../../pages/Settings/SettingsPage"
 import SharedButton from "../Shared/SharedButton"
-import SharedPageHeader from "../Shared/SharedPageHeader"
 
 export default function HiddenDevPanel(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "devPanel" })
   const history = useHistory()
 
   return (
-    <section className="standard_width_padded">
-      <SharedPageHeader backPath="/settings" withoutBackText>
-        {t("title")}
-      </SharedPageHeader>
+    <SettingsPage title={t("title")}>
       <div className="buttons_wrap">
         <SharedButton
           type="secondary"
@@ -42,6 +39,6 @@ export default function HiddenDevPanel(): ReactElement {
           margin-top: 16px;
         }
       `}</style>
-    </section>
+    </SettingsPage>
   )
 }

@@ -1,7 +1,7 @@
 import { RouteComponentProps } from "react-router-dom"
 import tabs from "./tabs"
 
-export default function setAnimationConditions(
+export default function getAnimationDirection(
   routeProps: RouteComponentProps & {
     history?: {
       entries?: {
@@ -14,9 +14,8 @@ export default function setAnimationConditions(
     location?: {
       pathname: string
     }
-  },
-  setIsDirectionRight: (choice: boolean) => void
-): void {
+  }
+): "right" | "left" | "none" {
   const { entries } = routeProps.history
   const locationName = routeProps.location.pathname.split("/")[1]
   const prevLocationName =
@@ -37,45 +36,19 @@ export default function setAnimationConditions(
     entries[entries.length - 1] &&
     entries[entries.length - 1]?.state?.isBack === true
 
-  if (isGoingBack) {
-    setIsDirectionRight(true)
-  } else if (isGoingBetweenTabs) {
-    if (isGoingToATabLeftOfTab) {
-      setIsDirectionRight(true)
-    } else if (!isGoingToATabLeftOfTab) {
-      setIsDirectionRight(false)
-    }
-  } else {
-    setIsDirectionRight(false)
+  // Note that these directions are the *animation* directions, which are
+  // opposite of the spatial direction that the content is moving.
+  if (isGoingBack || (isGoingBetweenTabs && isGoingToATabLeftOfTab)) {
+    return "right"
   }
+  return "left"
 }
 
-export function animationStyles(isDirectionRight: boolean): string {
+export function animationStyles(): string {
   return `
-      .page-transition-enter {
-        opacity: 0.3;
-        transform: ${isDirectionRight ? `translateX(-7px)` : `translateX(7px)`};
-      }
-      .page-transition-enter-active {
-        opacity: 1;
-        transform: translateX(0px);
-        transition: transform cubic-bezier(0.25, 0.4, 0.55, 1.4) 250ms,
-          opacity 250ms;
-      }
-      .page-transition-exit {
-        opacity: 1;
-        transform: translateX(0px);
-      }
-      .page-transition-exit-active {
-        opacity: 0;
-        transform: ${isDirectionRight ? `translateX(-7px)` : `translateX(7px)`};
-        transition: transform cubic-bezier(0.25, 0.4, 0.55, 1.4) 250ms,
-          opacity 250ms;
-      }
-
       .page-transition-enter .anti_animation {
         transform: ${
-          !isDirectionRight ? `translateX(-7px)` : `translateX(7px)`
+          /*! isDirectionRight */ false ? `translateX(-7px)` : `translateX(7px)`
         };
       }
       .page-transition-enter-active .anti_animation {
@@ -88,7 +61,7 @@ export function animationStyles(isDirectionRight: boolean): string {
       .page-transition-exit-active .anti_animation {
         opacity: 1;
         transform: ${
-          !isDirectionRight ? `translateX(-7px)` : `translateX(7px)`
+          /*! isDirectionRight */ false ? `translateX(-7px)` : `translateX(7px)`
         };
         transition: transform cubic-bezier(0.25, 0.4, 0.55, 1.4) 250ms;
       }

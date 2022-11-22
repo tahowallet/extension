@@ -124,7 +124,7 @@ export default function TopMenu(): ReactElement {
         />
       </SharedSlideUpMenu>
       <div className="nav_wrap">
-        <nav className="standard_width_padded">
+        <nav id="top_menu" className="standard_width_padded">
           <TopMenuProtocolSwitcher
             onClick={() => setIsProtocolListOpen(true)}
           />

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import dayjs from "dayjs"
 import { serializeLogs } from "@tallyho/tally-background/lib/logger"
 import SharedButton from "../../components/Shared/SharedButton"
-import SharedPageHeader from "../../components/Shared/SharedPageHeader"
+import SettingsPage from "./SettingsPage"
 
 export default function SettingsExportLogs(): ReactElement {
   const { t } = useTranslation()
@@ -19,10 +19,7 @@ export default function SettingsExportLogs(): ReactElement {
   )}__${dayjs().format()}.txt`
 
   return (
-    <div className="standard_width_padded">
-      <SharedPageHeader withoutBackText backPath="/settings">
-        {t("settings.exportLogs.title")}
-      </SharedPageHeader>
+    <SettingsPage title={t("settings.exportLogs.title")}>
       <section>
         <h2>{t("settings.exportLogs.discordTitle")}</h2>
         <p className="simple_text">{t("settings.exportLogs.discordDesc")}</p>
@@ -68,6 +65,6 @@ export default function SettingsExportLogs(): ReactElement {
           margin-bottom: 35px;
         }
       `}</style>
-    </div>
+    </SettingsPage>
   )
 }

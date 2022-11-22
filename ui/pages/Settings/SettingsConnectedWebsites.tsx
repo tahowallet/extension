@@ -1,10 +1,10 @@
 import React, { ReactElement, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selectors"
-import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 import ConnectedWebsitesListItem from "./ConnectedWebsitesListItem"
 import { useBackgroundSelector } from "../../hooks"
 import ConnectedWebsitesListEmpty from "./ConnectedWebsitesListEmpty"
+import SettingsPage from "./SettingsPage"
 
 export default function SettingsConnectedWebsites(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "settings" })
@@ -22,10 +22,7 @@ export default function SettingsConnectedWebsites(): ReactElement {
   }, [allowedPages])
 
   return (
-    <div className="standard_width_padded wrapper">
-      <SharedPageHeader withoutBackText backPath="/settings">
-        {t(`connectedWebsitesSettings.title`)}
-      </SharedPageHeader>
+    <SettingsPage title={t(`connectedWebsitesSettings.title`)}>
       <section>
         {dappsByOrigin.length === 0 ? (
           <ConnectedWebsitesListEmpty />
@@ -40,12 +37,10 @@ export default function SettingsConnectedWebsites(): ReactElement {
         )}
       </section>
       <style jsx>{`
-        .wrapper {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
+        section {
+          align-self: center;
         }
       `}</style>
-    </div>
+    </SettingsPage>
   )
 }

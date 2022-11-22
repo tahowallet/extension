@@ -19,15 +19,14 @@ import { Store } from "webext-redux"
 import { Provider } from "react-redux"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { runtime } from "webextension-polyfill"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
 import {
   getAddressCount,
-  selectCurrentAccountSigner,
   selectCurrentAddressNetwork,
-  selectKeyringStatus,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { TransitionGroup, CSSTransition } from "react-transition-group"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
   useIsDappPopup,
   useBackgroundDispatch,
@@ -37,6 +36,7 @@ import {
 import ErrorFallback from "./ErrorFallback"
 
 import pageList from "../routes/routes"
+import getAnimationDirection from "../utils/pageTransition"
 
 const pagePreferences = Object.fromEntries(
   pageList.map(({ path, hasTabBar, hasTopBar, persistOnClose }) => [
@@ -48,7 +48,6 @@ const pagePreferences = Object.fromEntries(
 function transformLocation(
   inputLocation: RouterLocation,
   isTransactionPendingSignature: boolean,
-  needsKeyringUnlock: boolean,
   hasAccounts: boolean
 ): RouterLocation {
   // The inputLocation is not populated with the actual query string — even though it should be
@@ -66,10 +65,7 @@ function transformLocation(
   }
 
   if (isTransactionPendingSignature) {
-    pathname =
-      !isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI) && needsKeyringUnlock
-        ? "/keyring/unlock"
-        : "/sign-transaction"
+    pathname = "/sign-transaction"
   }
 
   return {
@@ -125,16 +121,9 @@ export function Main(): ReactElement {
   const isTransactionPendingSignature = useBackgroundSelector(
     selectIsTransactionPendingSignature
   )
-  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
-  const keyringStatus = useBackgroundSelector(selectKeyringStatus)
   const hasAccounts = useBackgroundSelector(
     (state) => getAddressCount(state) > 0
   )
-
-  const needsKeyringUnlock =
-    isTransactionPendingSignature &&
-    currentAccountSigner?.type === "keyring" &&
-    keyringStatus !== "unlocked"
 
   useConnectPopupMonitor()
 
@@ -146,15 +135,13 @@ export function Main(): ReactElement {
             const transformedLocation = transformLocation(
               routeProps.location,
               isTransactionPendingSignature,
-              needsKeyringUnlock,
               hasAccounts
             )
 
-            const normalizedPathname = pagePreferences[
-              transformedLocation.pathname
-            ]
-              ? transformedLocation.pathname
-              : "/"
+            const normalizedPathname =
+              transformedLocation.pathname in pagePreferences
+                ? transformedLocation.pathname
+                : "/"
 
             // `initialEntries` needs to be a reversed version of route history
             // entities. Without avoiding the initial load, entries will keep reversing.
@@ -175,35 +162,47 @@ export function Main(): ReactElement {
               )
             }
 
+            const animationDirection = getAnimationDirection(routeProps)
+
             return (
-              <Switch location={transformedLocation}>
-                {
-                  // If there are no existing accounts, display onboarding
-                  // (if we're not there already)
-                  //
-                  !isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING) &&
-                    !hasAccounts &&
-                    !matchPath(transformedLocation.pathname, {
-                      path: [
-                        "/onboarding",
-                        // need to unlock or set new password to import an account
-                        "/keyring",
-                        // this route has it's own error message
-                        "/dapp-permission",
-                      ],
-                      exact: false,
-                    }) && <Redirect to="/onboarding/info-intro" />
-                }
-                {pageList.map(({ path, Component }) => {
-                  return (
-                    <Route path={path} key={path}>
-                      <ErrorBoundary FallbackComponent={ErrorFallback}>
-                        <Component location={transformedLocation} />
-                      </ErrorBoundary>
-                    </Route>
-                  )
-                })}
-              </Switch>
+              <>
+                <TransitionGroup component={null}>
+                  <CSSTransition
+                    timeout={150}
+                    classNames={`page-transition-${animationDirection}`}
+                    key={transformedLocation.key}
+                  >
+                    <Switch location={transformedLocation}>
+                      {
+                        // If there are no existing accounts, display onboarding
+                        // (if we're not there already)
+                        //
+                        !isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING) &&
+                          !hasAccounts &&
+                          !matchPath(transformedLocation.pathname, {
+                            path: [
+                              "/onboarding",
+                              // need to unlock or set new password to import an account
+                              "/keyring",
+                              // this route has it's own error message
+                              "/dapp-permission",
+                            ],
+                            exact: false,
+                          }) && <Redirect to="/onboarding/info-intro" />
+                      }
+                      {pageList.map(({ path, Component }) => {
+                        return (
+                          <Route path={path} key={path}>
+                            <ErrorBoundary FallbackComponent={ErrorFallback}>
+                              <Component location={transformedLocation} />
+                            </ErrorBoundary>
+                          </Route>
+                        )
+                      })}
+                    </Switch>
+                  </CSSTransition>
+                </TransitionGroup>
+              </>
             )
           }}
         />
@@ -215,9 +214,45 @@ export function Main(): ReactElement {
               width: 0px;
               background: transparent;
             }
-            :global(#tally-root) {
-              display: flex;
-              flex-direction: column;
+
+            /*
+             * Page transition styles follow. All animations are targeted not to
+             * the transitioning container, but to the 'main' element in the
+             * transitioning container, generally created by the CorePage component.
+             */
+            .page-transition-right-enter main,
+            .page-transition-left-enter main {
+              opacity: 0.3;
+            }
+            .page-transition-right-enter main {
+              transform: translateX(-7px);
+            }
+            .page-transition-left-enter main {
+              transform: translateX(7px);
+            }
+            .page-transition-right-enter-active main,
+            .page-transition-left-enter-active main {
+              opacity: 1;
+              transform: translateX(0px);
+              transition: transform cubic-bezier(0.25, 0.4, 0.55, 1.4) 250ms,
+                opacity 250ms;
+            }
+            .page-transition-right-exit main,
+            .page-transition-left-exit main {
+              opacity: 1;
+              transform: translateX(0px);
+            }
+            .page-transition-right-exit-active main,
+            .page-transition-left-exit-active main {
+              opacity: 0;
+              transition: transform cubic-bezier(0.25, 0.4, 0.55, 1.4) 250ms,
+                opacity 250ms;
+            }
+            .page-transition-right-exit-active main {
+              transform: translateX(-7px);
+            }
+            .page-transition-left-exit-active main {
+              transform: translateX(7px);
             }
           `}
         </style>

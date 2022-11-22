@@ -9,8 +9,8 @@ import { useTranslation } from "react-i18next"
 import { useDispatch, useSelector } from "react-redux"
 import AnalyticsSlideUpMenu from "../../components/Analytics/AnalyticsSlideUpMenu"
 import SharedButton from "../../components/Shared/SharedButton"
-import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 import SharedToggleButton from "../../components/Shared/SharedToggleButton"
+import SettingsPage from "./SettingsPage"
 
 /* List items */
 
@@ -45,10 +45,7 @@ export default function SettingsAnalytics(): ReactElement {
   }
 
   return (
-    <div className="standard_width_padded analytics_wrapper">
-      <SharedPageHeader withoutBackText backPath="/settings">
-        {t("title")}
-      </SharedPageHeader>
+    <SettingsPage title={t("title")}>
       <section className="toggle_container">
         <div className="header_container">
           <div className="title_container">
@@ -182,6 +179,6 @@ export default function SettingsAnalytics(): ReactElement {
           justify-content: space-between;
         }
       `}</style>
-    </div>
+    </SettingsPage>
   )
 }
