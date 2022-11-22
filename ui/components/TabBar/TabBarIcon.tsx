@@ -1,30 +1,22 @@
 import React, { ReactElement } from "react"
 import classNames from "classnames"
-import { useHistory } from "react-router-dom"
 
-interface Props {
-  name: string
+type TabBarIconProps = {
+  title: string
+  icon: string
   isActive: boolean
+  onClick?: React.MouseEventHandler<HTMLButtonElement>
 }
 
-export default function TabBarIcon(props: Props): ReactElement {
-  const history = useHistory()
-
-  const { name, isActive } = props
+export default function TabBarIcon(props: TabBarIconProps): ReactElement {
+  const { icon, title, isActive, onClick } = props
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => {
-          history.push(`/${name}`)
-        }}
-      >
-        <div className={classNames("tab_bar_icon_wrap", { active: isActive })}>
-          <div className={classNames("icon")} />
-          <span>{name}</span>
-        </div>
-      </button>
+    <button type="button" onClick={onClick}>
+      <div className={classNames("tab_bar_icon_wrap", { active: isActive })}>
+        <div className={classNames("icon")} />
+        <span>{title}</span>
+      </div>
       <style jsx>
         {`
           .tab_bar_icon_wrap {
@@ -39,7 +31,7 @@ export default function TabBarIcon(props: Props): ReactElement {
             will-change: transform;
           }
           .icon {
-            mask-image: url("./images/${name}.svg");
+            mask-image: url("./images/${icon}.svg");
             mask-size: cover;
             width: 24px;
             height: 24px;
@@ -82,7 +74,7 @@ export default function TabBarIcon(props: Props): ReactElement {
           }
         `}
       </style>
-    </>
+    </button>
   )
 }
 
