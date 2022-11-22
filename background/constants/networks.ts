@@ -1,5 +1,5 @@
 import { EVMNetwork, Network } from "../networks"
-import { BTC, ETH, MATIC, OPTIMISTIC_ETH, RBTC } from "./currencies"
+import { AVAX, BTC, ETH, MATIC, OPTIMISTIC_ETH, RBTC } from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
   name: "Ethereum",
@@ -31,6 +31,14 @@ export const ARBITRUM_ONE: EVMNetwork = {
   chainID: "42161",
   family: "EVM",
   coingeckoPlatformID: "arbitrum-one",
+}
+
+export const AVALANCHE: EVMNetwork = {
+  name: "Avalanche",
+  baseAsset: AVAX,
+  chainID: "43114",
+  family: "EVM",
+  coingeckoPlatformID: "avalanche",
 }
 
 export const OPTIMISM: EVMNetwork = {
@@ -65,11 +73,11 @@ export const FORK: EVMNetwork = {
 }
 
 export const EIP_1559_COMPLIANT_CHAIN_IDS = new Set(
-  [ETHEREUM, POLYGON, GOERLI].map((network) => network.chainID)
+  [ETHEREUM, POLYGON, GOERLI, AVALANCHE].map((network) => network.chainID)
 )
 
 export const CHAINS_WITH_MEMPOOL = new Set(
-  [ETHEREUM, POLYGON, GOERLI].map((network) => network.chainID)
+  [ETHEREUM, POLYGON, AVALANCHE, GOERLI].map((network) => network.chainID)
 )
 
 export const NETWORK_BY_CHAIN_ID = {
@@ -77,6 +85,7 @@ export const NETWORK_BY_CHAIN_ID = {
   [POLYGON.chainID]: POLYGON,
   [ROOTSTOCK.chainID]: ROOTSTOCK,
   [ARBITRUM_ONE.chainID]: ARBITRUM_ONE,
+  [AVALANCHE.chainID]: AVALANCHE,
   [OPTIMISM.chainID]: OPTIMISM,
   [GOERLI.chainID]: GOERLI,
   [FORK.chainID]: FORK,
@@ -96,6 +105,7 @@ export const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
   [POLYGON.chainID]: ["alchemy"],
   [OPTIMISM.chainID]: ["simplehash"],
   [ARBITRUM_ONE.chainID]: ["simplehash"],
+  [AVALANCHE.chainID]: ["simplehash"],
 }
 
 export const NETWORKS_SUPPORTING_NFTS = new Set(
@@ -112,6 +122,7 @@ export const CHAIN_ID_TO_0X_API_BASE: {
   [OPTIMISM.chainID]: "optimism.api.0x.org",
   [GOERLI.chainID]: "goerli.api.0x.org",
   [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
+  [AVALANCHE.chainID]: "avalanche.api.0x.org",
 }
 
 export const NETWORKS_SUPPORTING_SWAPS = new Set(
@@ -134,6 +145,10 @@ export const CHAIN_ID_TO_RPC_URLS: {
     "https://optimism-mainnet.public.blastapi.io",
   ],
   [ETHEREUM.chainID]: ["https://rpc.ankr.com/eth"],
-  [ARBITRUM_ONE.chainID]: ["https://rpc.ankr.com/arbitrum"],
+  [ARBITRUM_ONE.chainID]: [
+    // This one is having issues with signing/other endpoints
+    // "https://rpc.ankr.com/arbitrum"
+  ],
   [GOERLI.chainID]: ["https://ethereum-goerli-rpc.allthatnode.com"],
+  [AVALANCHE.chainID]: ["https://api.avax.network/ext/bc/C/rpc"],
 }

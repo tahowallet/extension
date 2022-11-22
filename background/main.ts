@@ -113,14 +113,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import {
-  ARBITRUM_ONE,
-  ETHEREUM,
-  GOERLI,
-  OPTIMISM,
-  POLYGON,
-  ROOTSTOCK,
-} from "./constants"
+import { OPTIMISM } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
@@ -1264,15 +1257,12 @@ export default class Main extends BaseService<never> {
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await Promise.all(
-        // TODO: replace this with this.chainService.supportedNetworks when removing the chain feature flags
-        [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, ROOTSTOCK].map(
-          async (network) => {
-            await this.providerBridgeService.grantPermission({
-              ...permission,
-              chainID: network.chainID,
-            })
-          }
-        )
+        this.chainService.supportedNetworks.map(async (network) => {
+          await this.providerBridgeService.grantPermission({
+            ...permission,
+            chainID: network.chainID,
+          })
+        })
       )
     })
 
@@ -1280,14 +1270,12 @@ export default class Main extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await Promise.all(
-          [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, ROOTSTOCK].map(
-            async (network) => {
-              await this.providerBridgeService.denyOrRevokePermission({
-                ...permission,
-                chainID: network.chainID,
-              })
-            }
-          )
+          this.chainService.supportedNetworks.map(async (network) => {
+            await this.providerBridgeService.denyOrRevokePermission({
+              ...permission,
+              chainID: network.chainID,
+            })
+          })
         )
       }
     )
