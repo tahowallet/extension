@@ -1,7 +1,7 @@
+import { fetchJson } from "@ethersproject/web"
 import { NETWORK_BY_CHAIN_ID } from "../constants"
 import { NFT, NFTCollection, NFTsWithPagesResponse } from "../nfts"
 import { HexString } from "../types"
-import { fetchWithTimeout } from "../utils/fetching"
 import logger from "./logger"
 import { sameEVMAddress } from "./utils"
 
@@ -187,7 +187,7 @@ function simpleHashNFTModelToNFT(
  * @param collectionID collections we are updating
  * @param chainIDs the networks we're querying
  */
-export async function getNFTs(
+export async function getSimpleHashNFTs(
   address: string,
   collectionID: string,
   chainIDs: string[]
@@ -197,15 +197,13 @@ export async function getNFTs(
   requestURL.searchParams.set("wallet_addresses", address)
   requestURL.searchParams.set("collection_id", collectionID)
 
-  const headers = new Headers()
-  headers.set("X-API-KEY", process.env.SIMPLE_HASH_API_KEY ?? "")
-
   try {
-    const result = (await (
-      await fetchWithTimeout(requestURL.toString(), {
-        headers,
-      })
-    ).json()) as unknown as SimpleHashNFTsByWalletAPIResponse
+    const result: SimpleHashNFTsByWalletAPIResponse = await fetchJson({
+      url: requestURL.toString(),
+      headers: {
+        "X-API-KEY": process.env.SIMPLE_HASH_API_KEY ?? "",
+      },
+    })
 
     return {
       nfts:
@@ -230,7 +228,7 @@ export async function getNFTs(
  * @param address address whose NFT Collections we want to query
  * @param chainIDs the networks we're querying
  */
-export async function getCollections(
+export async function getSimpleHashCollections(
   address: string,
   chainIDs: string[]
 ): Promise<NFTCollection[]> {
@@ -240,15 +238,13 @@ export async function getCollections(
   requestURL.searchParams.set("chains", getChainIDsNames(chainIDs))
   requestURL.searchParams.set("wallet_addresses", address)
 
-  const headers = new Headers()
-  headers.set("X-API-KEY", process.env.SIMPLE_HASH_API_KEY ?? "")
-
   try {
-    const result = (await (
-      await fetchWithTimeout(requestURL.toString(), {
-        headers,
-      })
-    ).json()) as unknown as SimpleHashCollectionsByWalletAPIResponse
+    const result: SimpleHashCollectionsByWalletAPIResponse = await fetchJson({
+      url: requestURL.toString(),
+      headers: {
+        "X-API-KEY": process.env.SIMPLE_HASH_API_KEY ?? "",
+      },
+    })
 
     return result.collections
       .filter((collection) => collection.id)

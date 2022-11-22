@@ -21,7 +21,7 @@ export type FiltersState = []
 
 export type NFTsSliceState = { nfts: NFTsState; filters: FiltersState }
 
-function initializeCollections(collections: NFTCollection[]) {
+function initializeCollections(collections: NFTCollection[]): NFTsSliceState {
   const state: NFTsSliceState = {
     nfts: {},
     filters: [],
