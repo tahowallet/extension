@@ -30,6 +30,7 @@ import {
   DoggoService,
   LedgerService,
   SigningService,
+  NFTsService,
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
@@ -143,6 +144,8 @@ import AnalyticsService from "./services/analytics"
 import { AnalyticsPreferences } from "./services/preferences/types"
 import { isSmartContractFungibleAsset } from "./assets"
 import { FeatureFlags, isEnabled } from "./features"
+import { NFTCollection } from "./nfts"
+import { initializeNFTs } from "./redux-slices/nfts_update"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -283,6 +286,8 @@ export default class Main extends BaseService<never> {
       preferenceService
     )
 
+    const nftsService = NFTsService.create(chainService)
+
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
@@ -322,7 +327,8 @@ export default class Main extends BaseService<never> {
       await telemetryService,
       await ledgerService,
       await signingService,
-      await analyticsService
+      await analyticsService,
+      await nftsService
     )
   }
 
@@ -398,7 +404,13 @@ export default class Main extends BaseService<never> {
      * A promise to the analytics service which will be responsible for listening
      * to events and dispatching to our analytics backend
      */
-    private analyticsService: AnalyticsService
+    private analyticsService: AnalyticsService,
+
+    /**
+     * A promise to the NFTs service which takes care of NFTs data, fetching, updating
+     * details and prices of NFTs for imported accounts.
+     */
+    private nftsService: NFTsService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -458,6 +470,7 @@ export default class Main extends BaseService<never> {
       this.ledgerService.startService(),
       this.signingService.startService(),
       this.analyticsService.startService(),
+      this.nftsService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -478,6 +491,7 @@ export default class Main extends BaseService<never> {
       this.ledgerService.stopService(),
       this.signingService.stopService(),
       this.analyticsService.stopService(),
+      this.nftsService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -497,6 +511,11 @@ export default class Main extends BaseService<never> {
     this.connectLedgerService()
     this.connectSigningService()
     this.connectAnalyticsService()
+
+    // Nothing else beside creating a service should happen when feature flag is off
+    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+      this.connectNFTsService()
+    }
 
     await this.connectChainService()
 
@@ -1396,6 +1415,15 @@ export default class Main extends BaseService<never> {
   connectTelemetryService(): void {
     // Pass the redux store to the telemetry service so we can analyze its size
     this.telemetryService.connectReduxStore(this.store)
+  }
+
+  connectNFTsService(): void {
+    this.nftsService.emitter.on(
+      "initializeNFTs",
+      (collections: NFTCollection[]) => {
+        this.store.dispatch(initializeNFTs(collections))
+      }
+    )
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
