@@ -70,18 +70,19 @@ function poapNFTModelToNFT(original: PoapNFTModel, owner: string): NFT {
  * @param address address of account that holds POAPs
  * @returns
  */
-// eslint-disable-next-line import/prefer-default-export
-export async function getNFTs(address: string): Promise<NFTsWithPagesResponse> {
+export async function getPoapNFTs(
+  address: string
+): Promise<NFTsWithPagesResponse> {
   const requestURL = new URL(`https://api.poap.tech/actions/scan/${address}`)
   const headers = new Headers()
   headers.set("X-API-KEY", process.env.POAP_API_KEY ?? "")
 
   try {
-    const result = (await (
+    const result: PoapNFTModel[] = await (
       await fetchWithTimeout(requestURL.toString(), {
         headers,
       })
-    ).json()) as unknown as PoapNFTModel[]
+    ).json()
 
     return {
       nfts: result.map((nft) => poapNFTModelToNFT(nft, address)),
@@ -94,7 +95,9 @@ export async function getNFTs(address: string): Promise<NFTsWithPagesResponse> {
   return { nfts: [], nextPageURL: null }
 }
 
-export async function getCollections(address: string): Promise<NFTCollection> {
+export async function getPoapCollections(
+  address: string
+): Promise<NFTCollection> {
   return {
     id: "POAP", // let's keep POAPs in one collection
     name: "POAP",

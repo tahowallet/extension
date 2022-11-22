@@ -17,7 +17,7 @@ export type NFTsState = {
   }
 }
 
-function initializeCollections(collections: NFTCollection[]) {
+function initializeCollections(collections: NFTCollection[]): NFTsState {
   const state: NFTsState = {}
 
   collections.forEach((collection) => {

@@ -1,12 +1,9 @@
 import { AddressOnNetwork } from "../accounts"
 import {
-  getNFTs as simpleHashGetNFTs,
-  getCollections as simpleHashGetCollections,
+  getSimpleHashCollections,
+  getSimpleHashNFTs,
 } from "./simple-hash_update"
-import {
-  getNFTs as poapGetNFTs,
-  getCollections as poapGetCollections,
-} from "./poap_update"
+import { getPoapNFTs, getPoapCollections } from "./poap_update"
 import {
   NFT,
   CHAIN_ID_TO_NFT_METADATA_PROVIDER,
@@ -15,7 +12,7 @@ import {
 } from "../nfts"
 
 function groupChainsByAddress(accounts: AddressOnNetwork[]) {
-  return accounts.reduce((acc, account) => {
+  return accounts.reduce<{ [address: string]: string[] }>((acc, account) => {
     const {
       address,
       network: { chainID },
@@ -25,7 +22,7 @@ function groupChainsByAddress(accounts: AddressOnNetwork[]) {
       acc[address].push(chainID)
     }
     return acc
-  }, {} as { [address: string]: string[] })
+  }, {})
 }
 
 export function getNFTs(
@@ -39,12 +36,12 @@ export function getNFTs(
       const nfts: NFT[] = []
       const nextPageURLs: string[] = []
 
-      if (
-        chainIDs.filter((chainID) =>
-          NFT_PROVIDER_TO_CHAIN.poap.includes(chainID)
-        ).length
-      ) {
-        const { nfts: poapNFTs } = await poapGetNFTs(address)
+      const poapChains = chainIDs.filter((chainID) =>
+        NFT_PROVIDER_TO_CHAIN.poap.includes(chainID)
+      )
+
+      if (poapChains.length) {
+        const { nfts: poapNFTs } = await getPoapNFTs(address)
         nfts.push(...poapNFTs)
       }
 
@@ -53,10 +50,10 @@ export function getNFTs(
       )
 
       if (simpleHashChains.length) {
-        await Promise.all(
+        await Promise.allSettled(
           collections.map(async (collectionID) => {
             const { nfts: simpleHashNFTs, nextPageURL } =
-              await simpleHashGetNFTs(address, collectionID, simpleHashChains)
+              await getSimpleHashNFTs(address, collectionID, simpleHashChains)
 
             nfts.push(...simpleHashNFTs)
 
@@ -81,12 +78,13 @@ export function getNFTCollections(
   return Object.entries(chainIDsByAddress).flatMap(
     async ([address, chainIDs]) => {
       const collections: NFTCollection[] = []
-      if (
-        chainIDs.filter((chainID) =>
-          NFT_PROVIDER_TO_CHAIN.poap.includes(chainID)
-        ).length
-      ) {
-        collections.push(await poapGetCollections(address))
+
+      const poapChains = chainIDs.filter((chainID) =>
+        NFT_PROVIDER_TO_CHAIN.poap.includes(chainID)
+      )
+
+      if (poapChains.length) {
+        collections.push(await getPoapCollections(address))
       }
 
       const simpleHashChains = chainIDs.filter((chainID) =>
@@ -94,7 +92,7 @@ export function getNFTCollections(
       )
 
       if (simpleHashChains.length) {
-        collections.push(...(await simpleHashGetCollections(address, chainIDs)))
+        collections.push(...(await getSimpleHashCollections(address, chainIDs)))
       }
 
       return collections
