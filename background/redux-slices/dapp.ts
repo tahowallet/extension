@@ -5,6 +5,7 @@ import { createBackgroundAsyncThunk } from "./utils"
 import { keyPermissionsByChainIdAddressOrigin } from "../services/provider-bridge/utils"
 import {
   AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
@@ -131,6 +132,7 @@ const dappSlice = createSlice({
             POLYGON,
             OPTIMISM,
             AVALANCHE,
+            BINANCE_SMART_CHAIN,
             GOERLI,
           ].map((network) => ({
             ...permission,

@@ -31,6 +31,7 @@ import {
   CHAINS_WITH_MEMPOOL,
   EIP_1559_COMPLIANT_CHAIN_IDS,
   AVALANCHE,
+  BINANCE_SMART_CHAIN,
 } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
@@ -271,6 +272,9 @@ export default class ChainService extends BaseService<Events> {
       ARBITRUM_ONE,
       ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [ROOTSTOCK] : []),
       ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE) ? [AVALANCHE] : []),
+      ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
+        ? [BINANCE_SMART_CHAIN]
+        : []),
     ]
 
     this.trackedNetworks = []
