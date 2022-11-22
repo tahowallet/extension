@@ -178,6 +178,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     once: boolean
   }[] = []
 
+  private rpcMethodsForAlchemy = [
+    "alchemy_", // alchemy specific api calls start with this
+    "eth_sendRawTransaction", // broadcast should always go to alchemy
+    "eth_call", // this is causing issues on optimism with ankr and is used heavily by uniswap
+    "eth_subscribe", // generic http providers do not support this, but dapps need this
+    "eth_estimateGas", // just want to be safe, when setting up a transaction
+  ]
+
   constructor(
     // Internal network type useful for helper calls, but not exposed to avoid
     // clashing with Ethers's own `network` stuff.
@@ -244,7 +252,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return this.cachedChainId
     }
 
-    if (method.startsWith("alchemy_")) {
+    if (this.rpcMethodsForAlchemy.some((m) => method.startsWith(m))) {
       if (this.alchemyProvider) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return this.alchemyProvider.send(method, params as any)
