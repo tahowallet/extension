@@ -17,6 +17,7 @@ type Props = {
   icon: string
   iconColor: ColorDetails
   textColor: ColorDetails
+  size: number
   ariaLabel?: string
   children: React.ReactNode
   linkTo?: History.LocationDescriptor<unknown>
@@ -24,8 +25,16 @@ type Props = {
 }
 
 export default function SharedSquareButton(props: Props): ReactElement {
-  const { icon, iconColor, textColor, ariaLabel, children, linkTo, onClick } =
-    props
+  const {
+    icon,
+    iconColor,
+    textColor,
+    size,
+    ariaLabel,
+    children,
+    linkTo,
+    onClick,
+  } = props
   const [navigateTo, setNavigateTo] = useState<
     History.LocationDescriptor<unknown> | undefined
   >(undefined)
@@ -70,8 +79,8 @@ export default function SharedSquareButton(props: Props): ReactElement {
           }
           .icon_wrap {
             border-radius: 12px;
-            width: ${SIZE}px;
-            height: ${SIZE}px;
+            width: ${size}px;
+            height: ${size}px;
             background-color: ${iconColor.color};
             transition: background-color 0.2s;
           }
@@ -84,8 +93,8 @@ export default function SharedSquareButton(props: Props): ReactElement {
             mask-position: center;
             mask-size: cover;
             mask-size: 60%;
-            width: ${SIZE}px;
-            height: ${SIZE}px;
+            width: ${size}px;
+            height: ${size}px;
             background-color: var(--hunter-green);
           }
         `}
@@ -97,4 +106,5 @@ export default function SharedSquareButton(props: Props): ReactElement {
 SharedSquareButton.defaultProps = {
   iconColor: DEFAULT_COLORS,
   textColor: DEFAULT_COLORS,
+  size: SIZE,
 }
