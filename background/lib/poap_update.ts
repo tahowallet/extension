@@ -76,14 +76,12 @@ export async function getPoapNFTs(
   const requestURL = new URL(`https://api.poap.tech/actions/scan/${address}`)
 
   try {
-    const result: PoapNFTModel[] = await (
-      await fetchJson({
-        url: requestURL.toString(),
-        headers: {
-          "X-API-KEY": process.env.POAP_API_KEY ?? "",
-        },
-      })
-    ).json()
+    const result: PoapNFTModel[] = await fetchJson({
+      url: requestURL.toString(),
+      headers: {
+        "X-API-KEY": process.env.POAP_API_KEY ?? "",
+      },
+    })
 
     return {
       nfts: result.map((nft) => poapNFTModelToNFT(nft, address)),

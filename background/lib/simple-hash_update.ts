@@ -197,14 +197,12 @@ export async function getSimpleHashNFTs(
   requestURL.searchParams.set("collection_id", collectionID)
 
   try {
-    const result: SimpleHashNFTsByWalletAPIResponse = await (
-      await fetchJson({
-        url: requestURL.toString(),
-        headers: {
-          "X-API-KEY": process.env.SIMPLE_HASH_API_KEY ?? "",
-        },
-      })
-    ).json()
+    const result: SimpleHashNFTsByWalletAPIResponse = await fetchJson({
+      url: requestURL.toString(),
+      headers: {
+        "X-API-KEY": process.env.SIMPLE_HASH_API_KEY ?? "",
+      },
+    })
 
     return {
       nfts:
@@ -240,14 +238,12 @@ export async function getSimpleHashCollections(
   requestURL.searchParams.set("wallet_addresses", address)
 
   try {
-    const result: SimpleHashCollectionsByWalletAPIResponse = await (
-      await fetchJson({
-        url: requestURL.toString(),
-        headers: {
-          "X-API-KEY": process.env.SIMPLE_HASH_API_KEY ?? "",
-        },
-      })
-    ).json()
+    const result: SimpleHashCollectionsByWalletAPIResponse = await fetchJson({
+      url: requestURL.toString(),
+      headers: {
+        "X-API-KEY": process.env.SIMPLE_HASH_API_KEY ?? "",
+      },
+    })
 
     return result.collections
       .filter((collection) => collection.id)
