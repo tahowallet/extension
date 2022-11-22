@@ -12,6 +12,7 @@ import {
   getEthereumNetwork,
   isProbablyEVMAddress,
   normalizeEVMAddress,
+  wait,
 } from "./lib/utils"
 
 import {
@@ -128,7 +129,6 @@ import {
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 import { deleteNFts } from "./redux-slices/nfts"
-import { EnrichedEVMTransactionRequest } from "./services/enrichment"
 import {
   ActivityDetail,
   addActivity,
@@ -724,29 +724,38 @@ export default class Main extends BaseService<never> {
             { maxFeePerGas, maxPriorityFeePerGas }
           )
 
-        const { annotation } =
-          await this.enrichmentService.enrichTransactionSignature(
-            network,
-            populatedRequest,
-            2 /* TODO desiredDecimals should be configurable */
-          )
+        // Create promise to pass into Promise.race
+        const getAnnotation = async () => {
+          const { annotation } =
+            await this.enrichmentService.enrichTransactionSignature(
+              network,
+              populatedRequest,
+              2 /* TODO desiredDecimals should be configurable */
+            )
+          return annotation
+        }
 
-        const enrichedPopulatedRequest: EnrichedEVMTransactionRequest = {
-          ...populatedRequest,
-          annotation,
+        const maybeEnrichedAnnotation = await Promise.race([
+          getAnnotation(),
+          // Wait 10 seconds before discarding enrichment
+          wait(10_000),
+        ])
+
+        if (maybeEnrichedAnnotation) {
+          populatedRequest.annotation = maybeEnrichedAnnotation
         }
 
         if (typeof gasEstimationError === "undefined") {
           this.store.dispatch(
             transactionRequest({
-              transactionRequest: enrichedPopulatedRequest,
+              transactionRequest: populatedRequest,
               transactionLikelyFails: false,
             })
           )
         } else {
           this.store.dispatch(
             transactionRequest({
-              transactionRequest: enrichedPopulatedRequest,
+              transactionRequest: populatedRequest,
               transactionLikelyFails: true,
             })
           )
