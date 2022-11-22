@@ -1,7 +1,7 @@
+import { fetchJson } from "@ethersproject/web"
 import { NETWORK_BY_CHAIN_ID } from "../constants"
 import { NFT, NFTCollection, NFTsWithPagesResponse } from "../nfts"
 import { HexString } from "../types"
-import { fetchWithTimeout } from "../utils/fetching"
 import logger from "./logger"
 import { sameEVMAddress } from "./utils"
 
@@ -196,13 +196,13 @@ export async function getSimpleHashNFTs(
   requestURL.searchParams.set("wallet_addresses", address)
   requestURL.searchParams.set("collection_id", collectionID)
 
-  const headers = new Headers()
-  headers.set("X-API-KEY", process.env.SIMPLE_HASH_API_KEY ?? "")
-
   try {
     const result: SimpleHashNFTsByWalletAPIResponse = await (
-      await fetchWithTimeout(requestURL.toString(), {
-        headers,
+      await fetchJson({
+        url: requestURL.toString(),
+        headers: {
+          "X-API-KEY": process.env.SIMPLE_HASH_API_KEY ?? "",
+        },
       })
     ).json()
 
@@ -239,13 +239,13 @@ export async function getSimpleHashCollections(
   requestURL.searchParams.set("chains", getChainIDsNames(chainIDs))
   requestURL.searchParams.set("wallet_addresses", address)
 
-  const headers = new Headers()
-  headers.set("X-API-KEY", process.env.SIMPLE_HASH_API_KEY ?? "")
-
   try {
     const result: SimpleHashCollectionsByWalletAPIResponse = await (
-      await fetchWithTimeout(requestURL.toString(), {
-        headers,
+      await fetchJson({
+        url: requestURL.toString(),
+        headers: {
+          "X-API-KEY": process.env.SIMPLE_HASH_API_KEY ?? "",
+        },
       })
     ).json()
 

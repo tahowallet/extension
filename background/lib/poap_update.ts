@@ -1,5 +1,5 @@
+import { fetchJson } from "@ethersproject/web"
 import logger from "./logger"
-import { fetchWithTimeout } from "../utils/fetching"
 import { ETHEREUM } from "../constants"
 import { NFT, NFTCollection, NFTsWithPagesResponse } from "../nfts"
 
@@ -74,13 +74,14 @@ export async function getPoapNFTs(
   address: string
 ): Promise<NFTsWithPagesResponse> {
   const requestURL = new URL(`https://api.poap.tech/actions/scan/${address}`)
-  const headers = new Headers()
-  headers.set("X-API-KEY", process.env.POAP_API_KEY ?? "")
 
   try {
     const result: PoapNFTModel[] = await (
-      await fetchWithTimeout(requestURL.toString(), {
-        headers,
+      await fetchJson({
+        url: requestURL.toString(),
+        headers: {
+          "X-API-KEY": process.env.POAP_API_KEY ?? "",
+        },
       })
     ).json()
 
