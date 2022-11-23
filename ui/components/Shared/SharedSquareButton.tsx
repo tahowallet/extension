@@ -1,6 +1,4 @@
-import React, { ReactElement, useState } from "react"
-import { Redirect } from "react-router-dom"
-import { History } from "history"
+import React, { ReactElement } from "react"
 
 const SIZE = 32
 const DEFAULT_COLORS: ColorDetails = {
@@ -20,44 +18,19 @@ type Props = {
   size: number
   ariaLabel?: string
   children: React.ReactNode
-  linkTo?: History.LocationDescriptor<unknown>
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
 export default function SharedSquareButton(props: Props): ReactElement {
-  const {
-    icon,
-    iconColor,
-    textColor,
-    size,
-    ariaLabel,
-    children,
-    linkTo,
-    onClick,
-  } = props
-  const [navigateTo, setNavigateTo] = useState<
-    History.LocationDescriptor<unknown> | undefined
-  >(undefined)
-
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onClick?.(event)
-    if (linkTo) {
-      setNavigateTo(linkTo)
-    }
-  }
-
-  if (navigateTo && navigateTo === linkTo) {
-    return <Redirect push to={linkTo} />
-  }
+  const { icon, iconColor, textColor, size, ariaLabel, children, onClick } =
+    props
 
   return (
-    <button type="button" aria-label={ariaLabel} onClick={handleClick}>
-      <div className="content_wrap">
-        <div className="icon_wrap">
-          <div className="icon" />
-        </div>
-        <div className="text">{children}</div>
+    <button type="button" aria-label={ariaLabel} onClick={onClick}>
+      <div className="icon_wrap">
+        <div className="icon" />
       </div>
+      <div className="text">{children}</div>
       <style jsx>
         {`
           button {
@@ -67,6 +40,11 @@ export default function SharedSquareButton(props: Props): ReactElement {
             letter-spacing: 0.03em;
             color: ${textColor.color};
             transition: color 0.2s;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
           }
           button:hover {
             color: ${textColor.hoverColor};

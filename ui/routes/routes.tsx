@@ -174,7 +174,7 @@ const pageList: PageList[] = [
     persistOnClose: true,
   },
   {
-    path: "/NFTs",
+    path: "/nfts",
     Component: NFTs,
     hasTabBar: true,
     hasTopBar: false,
