@@ -19,7 +19,7 @@ export default function NFTsItem<T extends NFT | NFTCollectionCached>(props: {
   return (
     <div className="nft_item">
       <div className="nft_image">
-        <NFTImage src={thumbnail} alt={name} width={168} />
+        <NFTImage src={thumbnail} alt={name} width={168} height={168} />
         <div className="nft_image_details">
           <SharedNetworkIcon
             network={network}
@@ -69,6 +69,7 @@ export default function NFTsItem<T extends NFT | NFTCollectionCached>(props: {
           width: calc(100% - 8px);
         }
         .nft_item_details {
+          height: 16px;
           display: flex;
           font-size: 14px;
           font-weight: 500;
