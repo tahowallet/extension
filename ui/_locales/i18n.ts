@@ -34,11 +34,17 @@ declare module "react-i18next" {
   }
 }
 
-type ValidKeys<Dict> = {
+/**
+ * Returns all keys that hold string values
+ */
+type StringValueKeys<Dict> = {
   [k in keyof Dict]: Dict[k] extends string ? k : never
 }[keyof Dict]
 
-export type I18nKey = ValidKeys<{
+/**
+ * All i18n keys that return strings
+ */
+export type I18nKey = StringValueKeys<{
   [k in TFuncKey]: TFuncReturn<"translation", k, null> extends string ? k : null
 }>
 
