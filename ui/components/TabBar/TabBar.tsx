@@ -4,7 +4,8 @@ import { matchPath, useHistory, useLocation } from "react-router-dom"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants/networks"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
-import TabBarIcon from "./TabBarIcon"
+import { useTranslation } from "react-i18next"
+import TabBarIconButton from "./TabBarIconButton"
 import tabs, { defaultTab, TabInfo } from "../../utils/tabs"
 import { useBackgroundSelector } from "../../hooks"
 
@@ -21,6 +22,7 @@ export default function TabBar(): ReactElement {
   const location = useLocation()
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const history = useHistory()
+  const { t } = useTranslation()
 
   const activeTab =
     tabs.find(({ path }) =>
@@ -33,10 +35,10 @@ export default function TabBar(): ReactElement {
         .filter((tab) => isTabSupportedByNetwork(tab, selectedNetwork))
         .map(({ path, title, icon }) => {
           return (
-            <TabBarIcon
+            <TabBarIconButton
               key={path}
               icon={icon}
-              title={title}
+              title={t(title)}
               onClick={() => history.push(path)}
               isActive={activeTab.path === path}
             />

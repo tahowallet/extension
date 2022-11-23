@@ -1,14 +1,16 @@
 import React, { ReactElement } from "react"
 import classNames from "classnames"
 
-type TabBarIconProps = {
+type TabBarIconButtonProps = {
   title: string
   icon: string
   isActive: boolean
   onClick?: React.MouseEventHandler<HTMLButtonElement>
 }
 
-export default function TabBarIcon(props: TabBarIconProps): ReactElement {
+export default function TabBarIconButton(
+  props: TabBarIconButtonProps
+): ReactElement {
   const { icon, title, isActive, onClick } = props
 
   return (
@@ -78,6 +80,6 @@ export default function TabBarIcon(props: TabBarIconProps): ReactElement {
   )
 }
 
-TabBarIcon.defaultProps = {
+TabBarIconButton.defaultProps = {
   isActive: false,
 }

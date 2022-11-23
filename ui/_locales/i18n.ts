@@ -1,5 +1,5 @@
 import i18n from "i18next"
-import { initReactI18next } from "react-i18next"
+import { initReactI18next, TFuncKey, TFuncReturn } from "react-i18next"
 import { resources } from "./index"
 import { getLocalStorageItem, setLocalStorageItem } from "../hooks"
 
@@ -33,6 +33,14 @@ declare module "react-i18next" {
     resources: typeof resources["en"]
   }
 }
+
+type ValidKeys<Dict> = {
+  [k in keyof Dict]: Dict[k] extends string ? k : never
+}[keyof Dict]
+
+export type I18nKey = ValidKeys<{
+  [k in TFuncKey]: TFuncReturn<"translation", k, null> extends string ? k : null
+}>
 
 export { i18n, getLanguage, setLanguage }
 

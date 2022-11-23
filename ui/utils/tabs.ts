@@ -1,40 +1,45 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import { t } from "i18next"
+import { I18nKey } from "../_locales/i18n"
 
 export type TabInfo = {
-  title: string
+  /**
+   * i18n key with the title for this tab
+   */
+  title: I18nKey
   path: string
   icon: string
 }
 
-const tabs: TabInfo[] = [
+const allTabs: (TabInfo & { visible?: boolean })[] = [
   {
     path: "/wallet",
-    title: t("tabs.wallet"),
+    title: "tabs.wallet",
     icon: "wallet",
   },
   {
     path: "/portfolio",
-    title: t("tabs.portfolio"),
+    title: "tabs.portfolio",
     icon: "portfolio",
   },
   {
     path: "/swap",
-    title: t("tabs.swap"),
+    title: "tabs.swap",
     icon: "swap",
   },
   {
     path: "/earn",
-    title: t("tabs.earn"),
+    title: "tabs.earn",
     icon: "earn",
     visible: !isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES),
   },
   {
     path: "/settings",
-    title: t("tabs.settings"),
+    title: "tabs.settings",
     icon: "settings",
   },
 ]
+
+const tabs = allTabs
   .map(({ visible = true, ...tab }) => (visible ? tab : null))
   .filter((tab): tab is TabInfo => tab !== null)
 
