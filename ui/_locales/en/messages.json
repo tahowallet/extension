@@ -229,7 +229,16 @@
   "nfts": {
     "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title",
-    "NFTPricingComingSoon": "Coming soon: NFT price + sending"
+    "NFTPricingComingSoon": "Coming soon: NFT price + sending",
+    "header": {
+      "addAccountCTA": "Add account",
+      "emptyTitle": "No NFTs here",
+      "emptyDesc": "Add more accounts to see your NFTs, you can also just add read-only accounts"
+    },
+    "emptyBannerTitle": {
+      "nfts": "Explore markets",
+      "badge": "Explore badges"
+    }
   },
   "achievements": {
     "empty": "Nothing to see here",
@@ -533,7 +542,7 @@
       "bannerTitle": "New Odyssey week!",
       "emptyBannerContent": "Check out Arbitrum Odyssey campaign",
       "notificationTitle": "Odyssey notifications",
-      "notificationDismissInfo":"Want to receive future Odyssey notifications? We will show you one every week that you can dismiss.",
+      "notificationDismissInfo": "Want to receive future Odyssey notifications? We will show you one every week that you can dismiss.",
       "showNotifications": "Yes, show notification",
       "dontShowNotifications": "No thanks",
       "startNow": "Start now",
@@ -562,7 +571,7 @@
       "notDefault": "is not your default wallet",
       "tooltip": "Setting Tally Ho as your default wallet means that everytime you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
     },
-    "analyticsNotification": { 
+    "analyticsNotification": {
       "title": "Analytics are on",
       "description": "They help us improve the wallet for you",
       "settingsLink": "Change settings"
