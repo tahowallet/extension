@@ -13,6 +13,7 @@ import {
   SECOND,
   CHAIN_ID_TO_RPC_URLS,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
+  RPC_METHOD_PROVIDER_ROUTING,
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
@@ -110,6 +111,27 @@ function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
 }
 
 /**
+ * Return the decision whether a given RPC call should be routed to the alchemy provider
+ * or the generic provider.
+ *
+ * Checking whether is alchemy supported is a non concern for this function!
+ *
+ * @param chainID string chainID to handle chain specific routings
+ * @param method the current RPC method
+ * @returns true | false whether the method on a given network should routed to alchemy or can be sent over the generic provider
+ */
+function alchemyOrDefaultProvider(chainID: string, method: string): boolean {
+  return (
+    RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
+      method.startsWith(m)
+    ) ||
+    !!RPC_METHOD_PROVIDER_ROUTING[Number(chainID)]?.some((m: string) =>
+      method.startsWith(m)
+    )
+  )
+}
+
+/**
  * The SerialFallbackProvider is an Ethers JsonRpcProvider that can fall back
  * through a series of providers in case previous ones fail.
  *
@@ -201,14 +223,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     once: boolean
   }[] = []
 
-  private rpcMethodsForAlchemy = [
-    "alchemy_", // alchemy specific api calls start with this
-    "eth_sendRawTransaction", // broadcast should always go to alchemy
-    "eth_call", // this is causing issues on optimism with ankr and is used heavily by uniswap
-    "eth_subscribe", // generic http providers do not support this, but dapps need this
-    "eth_estimateGas", // just want to be safe, when setting up a transaction
-  ]
-
   constructor(
     // Internal network type useful for helper calls, but not exposed to avoid
     // clashing with Ethers's own `network` stuff.
@@ -293,7 +307,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
     }
 
-    if (this.rpcMethodsForAlchemy.some((m) => method.startsWith(m))) {
+    if (alchemyOrDefaultProvider(this.cachedChainId, method)) {
       if (this.alchemyProvider) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return this.alchemyProvider.send(method, params as any)
