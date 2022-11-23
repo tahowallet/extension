@@ -67,6 +67,7 @@ export type NFTCollection = {
     token: {
       name: string
       symbol: string
+      decimals: number
     }
   }
 }

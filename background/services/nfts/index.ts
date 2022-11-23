@@ -1,7 +1,7 @@
 import { AddressOnNetwork } from "../../accounts"
 import { FeatureFlags, isEnabled } from "../../features"
 import { getNFTCollections, getNFTs } from "../../lib/nfts_update"
-import { NFT, NFTCollection } from "../../nfts"
+import { NFTCollection } from "../../nfts"
 import BaseService from "../base"
 import ChainService from "../chain"
 
@@ -10,7 +10,7 @@ import { getOrCreateDB, NFTsDatabase } from "./db"
 
 interface Events extends ServiceLifecycleEvents {
   initializeNFTs: NFTCollection[]
-  updateNFTs: NFT[] // TODO update redux
+  updateCollections: NFTCollection[]
 }
 
 export default class NFTsService extends BaseService<Events> {
@@ -69,7 +69,10 @@ export default class NFTsService extends BaseService<Events> {
         request.then(async (collections) => {
           await this.db.updateCollections(collections)
 
-          // this.emitter.emit("updateNFTs", "")
+          this.emitter.emit(
+            "updateCollections",
+            await this.db.getAllCollections()
+          )
         })
       )
     )

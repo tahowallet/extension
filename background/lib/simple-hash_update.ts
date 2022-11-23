@@ -23,10 +23,11 @@ type SimpleHashNFTModel = {
     collection_id: string
     name: string
     floor_prices: {
-      value: bigint
+      value: number
       payment_token: {
         name: string
         symbol: string
+        decimals: number
       }
     }[]
   }
@@ -46,10 +47,11 @@ type SimpleHashCollectionModel = {
   distinct_nft_count: number
   total_quantity: number
   floor_prices: {
-    value: bigint
+    value: number
     payment_token: {
       name: string
       symbol: string
+      decimals: number
     }
   }[]
 }
@@ -104,10 +106,11 @@ function simpleHashCollectionModelToCollection(
   } = original
   const floorPrice = collectionPrices
     ?.map(({ value, payment_token }) => ({
-      value,
+      value: BigInt(value),
       token: {
         name: payment_token.name,
         symbol: payment_token.symbol,
+        decimals: payment_token.decimals,
       },
     }))
     .sort((price1, price2) => Number(price1.value - price2.value))[0]
