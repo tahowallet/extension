@@ -228,7 +228,8 @@
   },
   "nfts": {
     "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
-    "noTitle": "No title"
+    "noTitle": "No title",
+    "NFTPricingComingSoon": "Coming soon: NFT price + sending"
   },
   "achievements": {
     "empty": "Nothing to see here",
@@ -541,6 +542,7 @@
     },
     "totalAccountBalance": "Total account balance",
     "send": "Send",
+    "swap": "Swap",
     "receive": "Receive",
     "secureSeed": "First, secure your recovery seed",
     "sendAsset": "Send Asset",
@@ -554,7 +556,6 @@
       "NFTs": "NFTs",
       "activity": "Activity"
     },
-    "NFTPricingComingSoon": "Coming soon: NFT price + sending",
     "defaultToggle": {
       "snackbar": "You can change this in Settings later",
       "isDefault": "is now your default wallet",
@@ -604,6 +605,7 @@
   },
   "tabs": {
     "wallet": "Wallet",
+    "nfts": "NFTs",
     "portfolio": "Portfolio",
     "swap": "Swap",
     "earn": "Earn",
