@@ -4,6 +4,7 @@ import { Redirect, useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedButton from "../../../components/Shared/SharedButton"
 import OnboardingDerivationPathSelect from "../../../components/Onboarding/OnboardingDerivationPathSelect"
 import {
@@ -19,12 +20,14 @@ type Props = {
 
 export default function ImportSeed(props: Props): ReactElement {
   const { nextPage } = props
-
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
 
   const [recoveryPhrase, setRecoveryPhrase] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
-  const [path, setPath] = useState<string>("m/44'/60'/0'/0")
+  const [path, setPath] = useState<string>(
+    selectedNetwork.derivationPath ?? "m/44'/60'/0'/0"
+  )
   const [isImporting, setIsImporting] = useState(false)
 
   const { t } = useTranslation("translation", {
