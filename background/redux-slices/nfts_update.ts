@@ -1,6 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit"
+import Emittery from "emittery"
+import { AddressOnNetwork } from "../accounts"
 import { fromFixedPointNumber } from "../lib/fixed-point"
 import { NFT, NFTCollection } from "../nfts"
+import { createBackgroundAsyncThunk } from "./utils"
 
 export type NFTCollectionCached = {
   floorPrice?: {
@@ -21,6 +24,12 @@ export type NFTsState = {
 export type FiltersState = []
 
 export type NFTsSliceState = { nfts: NFTsState; filters: FiltersState }
+
+export type Events = {
+  fetchNFTs: { collectionID: string; account: AddressOnNetwork }
+}
+
+export const emitter = new Emittery<Events>()
 
 function updateCollection(
   acc: NFTsSliceState,
@@ -90,8 +99,36 @@ const NFTsSlice = createSlice({
         updateCollection(immerState, collection)
       )
     },
+    updateNFTs: (
+      immerState,
+      {
+        payload,
+      }: {
+        payload: {
+          account: AddressOnNetwork
+          collectionID: string
+          nfts: NFT[]
+        }
+      }
+    ) => {
+      const {
+        account: { network, address },
+        collectionID,
+        nfts,
+      } = payload
+
+      immerState.nfts[network.chainID][address][collectionID].nfts = nfts
+    },
   },
 })
 
-export const { initializeNFTs, updateNFTsCollections } = NFTsSlice.actions
+export const { initializeNFTs, updateNFTsCollections, updateNFTs } =
+  NFTsSlice.actions
 export default NFTsSlice.reducer
+
+export const fetchNFTsFromCollection = createBackgroundAsyncThunk(
+  "nfts/fetchNFTsFromCollection",
+  async (payload: { collectionID: string; account: AddressOnNetwork }) => {
+    emitter.emit("fetchNFTs", payload)
+  }
+)
