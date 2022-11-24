@@ -5,12 +5,14 @@ import NFTItem from "./NFTItem"
 
 export default function NFTCollection(props: {
   collection: NFTCollectionCached
-  openPreview: (nft: NFT) => void
+  openPreview: (current: { nft: NFT; collection: NFTCollectionCached }) => void
 }): ReactElement {
   const { collection, openPreview } = props
   const [isExpanded, setIsExpanded] = useState(false)
 
   const toggleCollection = useCallback(() => setIsExpanded((val) => !val), [])
+
+  const onItemClick = (nft: NFT) => openPreview({ nft, collection })
 
   return (
     <li className="nft_collection">
@@ -24,7 +26,7 @@ export default function NFTCollection(props: {
       </div>
       {isExpanded &&
         collection.nfts.map((nft) => (
-          <NFTItem item={nft} onClick={openPreview} />
+          <NFTItem item={nft} onClick={onItemClick} />
         ))}
     </li>
   )

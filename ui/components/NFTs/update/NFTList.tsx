@@ -10,11 +10,17 @@ export default function NFTList(props: {
 }): ReactElement {
   const { collections } = props
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-  const [currentNFTPreview, setCurrentNFTPreview] = useState<NFT | null>(null)
+  const [currentNFTPreview, setCurrentNFTPreview] = useState<{
+    nft: NFT
+    collection: NFTCollectionCached
+  } | null>(null)
 
-  const openPreview = (nft: NFT) => {
+  const openPreview = (current: {
+    nft: NFT
+    collection: NFTCollectionCached
+  }) => {
     setIsPreviewOpen(true)
-    setCurrentNFTPreview(nft)
+    setCurrentNFTPreview(current)
   }
 
   const closePreview = () => {
@@ -34,8 +40,21 @@ export default function NFTList(props: {
         ))}
       </ul>
       <SharedSlideUpMenu isOpen={isPreviewOpen} close={closePreview}>
-        {currentNFTPreview && <NFTPreview nft={currentNFTPreview} />}
+        {currentNFTPreview && (
+          <NFTPreview
+            nft={currentNFTPreview.nft}
+            collection={currentNFTPreview.collection}
+          />
+        )}
       </SharedSlideUpMenu>
+      <style jsx>{`
+        .nft_list {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          margin: 8px 0;
+        }
+      `}</style>
     </>
   )
 }

@@ -21,10 +21,11 @@ import SharedBanner from "../components/Shared/SharedBanner"
 import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultBanner"
 import WalletBanner from "../components/Wallet/Banner/WalletBanner"
 import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
+import NFTListCurrentWallet from "../components/NFTs/update/NFTListCurrentWallet"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "wallet" })
-  const [panelNumber, setPanelNumber] = useState(0)
+  const [panelNumber, setPanelNumber] = useState(1)
 
   const dispatch = useBackgroundDispatch()
 
@@ -106,7 +107,10 @@ export default function Wallet(): ReactElement {
               />
             )}
             {panelNumber === 1 &&
-              NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) && (
+              NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) &&
+              (isEnabled(FeatureFlags.SUPPORT_NFT_TAB) ? (
+                <NFTListCurrentWallet />
+              ) : (
                 <>
                   <SharedBanner
                     icon="notif-announcement"
@@ -119,7 +123,7 @@ export default function Wallet(): ReactElement {
                   </SharedBanner>
                   <NFTsWallet />
                 </>
-              )}
+              ))}
             {panelNumber ===
               (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)
                 ? 2

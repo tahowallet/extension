@@ -46,6 +46,7 @@ export default function NFTsItem<T extends NFT | NFTCollectionCached>(props: {
       <style jsx>{`
         .nft_item {
           width: 168px;
+          margin: 8px 0;
         }
         .nft_item_price {
           background: rgba(1, 56, 52, 0.75); // --green-95
@@ -74,7 +75,7 @@ export default function NFTsItem<T extends NFT | NFTCollectionCached>(props: {
           font-size: 14px;
           font-weight: 500;
           line-height: 16px;
-          margin-top: 8px;
+          margin: 8px 0 4px;
         }
         .nft_item_count {
           flex-shrink: 0;
