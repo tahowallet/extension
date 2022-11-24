@@ -77,6 +77,7 @@ export default function NFTsHeader({
           font-weight: 500;
           line-height: 16px;
           letter-spacing: 0.03em;
+          color: var(--green-20);
         }
 
         .stats_totals {
@@ -100,6 +101,8 @@ export default function NFTsHeader({
           line-height: 24px;
           letter-spacing: 0em;
           color: var(--green-40);
+          align-self: start;
+          margin-top: 7px;
         }
 
         .crypto_total {
