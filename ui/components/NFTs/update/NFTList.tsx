@@ -39,7 +39,12 @@ export default function NFTList(props: {
           />
         ))}
       </ul>
-      <SharedSlideUpMenu isOpen={isPreviewOpen} close={closePreview}>
+      <SharedSlideUpMenu
+        isOpen={isPreviewOpen}
+        close={closePreview}
+        size="large"
+        isFullScreen
+      >
         {currentNFTPreview && (
           <NFTPreview
             nft={currentNFTPreview.nft}

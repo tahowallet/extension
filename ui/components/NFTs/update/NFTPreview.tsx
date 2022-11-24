@@ -1,3 +1,4 @@
+import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { NFT } from "@tallyho/tally-background/nfts"
 import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
 import React, { ReactElement } from "react"
@@ -16,76 +17,197 @@ export default function NFTPreview(props: {
     collection.floorPrice?.value &&
     collection.floorPrice
   return (
-    <div className="preview_wrapper">
-      <div className="preview_image">
-        <NFTImage src={thumbnail} alt={name} />
-        <SharedNetworkIcon network={network} size={24} hasBackground />
-        <div className="preview_details">
-          <div>
-            <span className="preview_details_header">Owner</span>
-            <span className="preview_details_value">{owner}</span>
+    <>
+      <div className="preview_wrapper">
+        <div className="preview_image">
+          <NFTImage src={thumbnail} alt={name} width={384} />
+          <div className="preview_network">
+            <SharedNetworkIcon network={network} size={24} hasBackground />
           </div>
-          <div>
-            <span className="preview_details_header">Floor price</span>
-            <span className="preview_details_value">
-              {floorPrice
-                ? `~${floorPrice.value} ${floorPrice.tokenSymbol}`
-                : "-"}
-            </span>
+          <div className="preview_details">
+            <div className="preview_section_column">
+              <span className="preview_details_header">Owner</span>
+              <span className="preview_details_value">
+                {truncateAddress(owner)}
+              </span>
+            </div>
+            <div className="preview_section_column align_right">
+              <span className="preview_details_header">Floor price</span>
+              <span className="preview_details_value">
+                {floorPrice
+                  ? `~${floorPrice.value} ${floorPrice.tokenSymbol}`
+                  : "-"}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="preview_header">
-        <h1>{name}</h1>
-        <SharedButton
-          type="tertiary"
-          size="small"
-          iconSmall="send"
-          iconPosition="left"
-        >
-          Send
-        </SharedButton>
-      </div>
-
-      <div className="preview_section">
-        <div className="preview_section_header">View on</div>
-        <SharedButton type="secondary" size="small">
-          Looksrare
-        </SharedButton>
-        <SharedButton type="secondary" size="small">
-          Opensea
-        </SharedButton>
-        <SharedButton type="secondary" size="small">
-          Galxe
-        </SharedButton>
-      </div>
-
-      <div className="preview_section">
-        <div className="preview_section_header">Description</div>
-        <p>{description}</p>
-      </div>
-
-      <div className="preview_section preview_section_row">
-        <div className="preview_section_column">
-          <div className="preview_section_header">Items in collection</div>
-          <p>TODO</p>
+        <div className="preview_header">
+          <h1>{name}</h1>
+          <SharedButton
+            type="tertiary"
+            size="small"
+            iconSmall="send"
+            iconPosition="left"
+          >
+            Send
+          </SharedButton>
         </div>
-        <div className="preview_section_column">
-          <div className="preview_section_header">Creator</div>
-          <p>TODO</p>
-        </div>
-      </div>
 
-      <div className="preview_section">
-        <div className="preview_section_header">Properties</div>
-        {attributes.map(({ trait, value }) => (
-          <div className="preview_property">
-            <span className="preview_property_trait">{trait}</span>
-            <span className="preview_property_value">{value}</span>
+        <div className="preview_section">
+          <div className="preview_section_header">View on</div>
+          <div className="preview_section_row">
+            <SharedButton type="secondary" size="small">
+              Looksrare
+            </SharedButton>
+            <SharedButton type="secondary" size="small">
+              Opensea
+            </SharedButton>
+            <SharedButton type="secondary" size="small">
+              Galxe
+            </SharedButton>
           </div>
-        ))}
+        </div>
+
+        {!!description && (
+          <div className="preview_section">
+            <div className="preview_section_header">Description</div>
+            <p>{description}</p>
+          </div>
+        )}
+
+        <div className="preview_section preview_section_row">
+          <div className="preview_section_column">
+            <div className="preview_section_header">Items in collection</div>
+            <p>TODO</p>
+          </div>
+          <div className="preview_section_column align_right">
+            <div className="preview_section_header">Creator</div>
+            <p>TODO</p>
+          </div>
+        </div>
+
+        {!!attributes.length && (
+          <div className="preview_section">
+            <div className="preview_section_header">Properties</div>
+            <div className="preview_property_list preview_section_row">
+              {attributes.map(({ trait, value }) => (
+                <div
+                  key={trait}
+                  className="preview_property preview_section_column"
+                >
+                  <span className="preview_property_trait">{trait}</span>
+                  <span className="preview_property_value">{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+      <style jsx>{`
+        .preview_wrapper {
+          height: 100%;
+          width: 100%;
+          overflow: auto;
+        }
+        .preview_image {
+          position: relative;
+        }
+        .preview_network {
+          position: absolute;
+          top: 16px;
+          left: 16px;
+        }
+        .preview_details {
+          position: absolute;
+          bottom: 14px;
+          display: flex;
+          margin: 0 16px;
+          padding: 4px 8px;
+          width: calc(100% - 48px);
+          justify-content: space-between;
+          background: rgba(0, 20, 19, 0.75); // --green-120
+          backdrop-filter: blur(
+            4px
+          ); // TODO: causes problems with rendering this element!
+          border-radius: 8px;
+        }
+        .preview_details_header {
+          font-weight: 500;
+          font-size: 12px;
+          line-height: 16px;
+        }
+        .preview_details_value {
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
+        }
+        .preview_header {
+          display: flex;
+          justify-content: space-between;
+          margin: 20px 24px;
+        }
+        .preview_header h1 {
+          margin: 0;
+          font-size: 22px;
+          line-height: 32px;
+          font-weight: 500;
+        }
+        .preview_section {
+          margin: 0 24px 24px;
+        }
+        .preview_section p {
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
+          color: var(--green-20);
+          margin: 0;
+        }
+        .preview_section_column {
+          display: flex;
+          flex-direction: column;
+        }
+        .preview_section_row {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+        }
+        .preview_section_column.align_right {
+          text-align: right;
+        }
+        .preview_section_header {
+          font-weight: 500;
+          font-size: 14px;
+          line-height: 16px;
+          color: var(--green-40);
+          margin-bottom: 4px;
+        }
+        .preview_property {
+          box-sizing: border-box;
+          background: var(--green-120);
+          width: 160px;
+          border-radius: 4px;
+          padding: 8px;
+          margin-bottom: 16px;
+          justify-content: center;
+          align-items: center;
+          line-height: 16px;
+          font-weight: 500;
+        }
+        .preview_property_list {
+          flex-wrap: wrap;
+          margin: 8px -4px 0;
+        }
+        .preview_property_trait {
+          color: var(--green-40);
+          font-size: 12px;
+          letter-spacing: 2%;
+        }
+        .preview_property_value {
+          letter-spacing: 3%;
+          font-size: 14px;
+        }
+      `}</style>
+    </>
   )
 }

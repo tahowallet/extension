@@ -47,7 +47,7 @@ export default function NFTCollection(props: {
         />
         {isExpanded &&
           collection.nfts.map((nft) => (
-            <NFTItem item={nft} onClick={onItemClick} />
+            <NFTItem key={nft.id} item={nft} onClick={onItemClick} />
           ))}
       </li>
       <style jsx>{`
