@@ -98,7 +98,8 @@ const computeCombinedAssetAmountsData = (
       const assetPricePoint = selectAssetPricePoint(
         assets,
         assetAmount.asset.symbol,
-        mainCurrencySymbol
+        mainCurrencySymbol,
+        currentNetwork.chainID
       )
 
       const mainCurrencyEnrichedAssetAmount =
@@ -319,14 +320,16 @@ const getAccountType = (
 const getTotalBalance = (
   accountBalances: { [assetSymbol: string]: AccountBalance },
   assets: AssetsState,
-  mainCurrencySymbol: string
+  mainCurrencySymbol: string,
+  chainID: string
 ) => {
   return Object.values(accountBalances)
     .map(({ assetAmount }) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
         assetAmount.asset.symbol,
-        mainCurrencySymbol
+        mainCurrencySymbol,
+        chainID
       )
 
       if (typeof assetPricePoint === "undefined") {
@@ -397,7 +400,12 @@ function getNetworkAccountTotalsByCategory(
         avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
         localizedTotalMainCurrencyAmount: formatCurrencyAmount(
           mainCurrencySymbol,
-          getTotalBalance(accountData.balances, assets, mainCurrencySymbol),
+          getTotalBalance(
+            accountData.balances,
+            assets,
+            mainCurrencySymbol,
+            network.chainID
+          ),
           desiredDecimals.default
         ),
       }
@@ -469,7 +477,8 @@ export const selectAccountTotalsForOverview = createSelector(
           accountsTotal[normalizedAddress].totals[chainID] = getTotalBalance(
             accountData.balances,
             assetsState,
-            mainCurrencySymbol
+            mainCurrencySymbol,
+            chainID
           )
         })
       )
