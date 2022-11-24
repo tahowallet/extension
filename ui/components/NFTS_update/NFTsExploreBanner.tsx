@@ -4,13 +4,13 @@ import SharedBanner from "../Shared/SharedBanner"
 
 const HARDCODED_MARKETS = [
   {
-    title: "Opensea",
+    title: "OpenSea",
     url: "https://opensea.io/",
     color: "#409FFF",
     icon: "opensea.png",
   },
   {
-    title: "Looksrare",
+    title: "LooksRare",
     url: "https://looksrare.org/",
     color: "#2DE370",
     icon: "looksrare.png",
@@ -31,6 +31,7 @@ type ExporeLinkProps = {
   title: string
   color: string
   icon: string
+  type?: "link" | "button"
 }
 
 function ExploreLink({
@@ -38,24 +39,36 @@ function ExploreLink({
   title,
   color,
   icon,
+  type = "link",
 }: ExporeLinkProps): JSX.Element {
   return (
-    <a href={url} rel="noreferrer" target="_blank">
-      <img width="16" src={`images/${icon}`} alt={title} />
+    <a className={type} href={url} rel="noreferrer" target="_blank">
       {title}
+      <img width="16" height="16" src={`images/${icon}`} alt={title} />
       <style jsx>{`
         a {
           display: flex;
           align-items: center;
           gap: 8px;
           color: ${color};
-          padding: 8px;
+          padding: 0px 4px;
           font-family: Segment;
           font-size: 16px;
           font-weight: 600;
           line-height: 24px;
           letter-spacing: 0.03em;
           text-align: center;
+        }
+
+        a.button {
+          border: 2px solid ${color};
+          border-radius: 4px;
+          padding: 8px 16px;
+        }
+
+        img {
+          object-position: center;
+          object-fit: contain;
         }
       `}</style>
     </a>
@@ -88,13 +101,14 @@ export default function NFTsExploreBanner(props: {
           line-height: 24px;
           letter-spacing: 0em;
           text-align: center;
-          margin-bottom: 8px;
+          margin-bottom: 16px;
         }
 
         nav {
           display: flex;
           justify-content: center;
           gap: 8px;
+          margin-bottom: 8px;
         }
       `}</style>
     </SharedBanner>
