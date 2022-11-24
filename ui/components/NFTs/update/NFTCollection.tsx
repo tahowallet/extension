@@ -4,6 +4,7 @@ import {
   fetchNFTsFromCollection,
   NFTCollectionCached,
 } from "@tallyho/tally-background/redux-slices/nfts_update"
+import classNames from "classnames"
 import NFTItem from "./NFTItem"
 import { useBackgroundDispatch } from "../../../hooks"
 
@@ -32,19 +33,42 @@ export default function NFTCollection(props: {
   }, [dispatch, isExpanded, id, owner, network])
 
   return (
-    <li className="nft_collection">
-      <div className="nft_collection_item">
+    <>
+      <li
+        className={classNames("nft_collection", {
+          expanded: isExpanded,
+        })}
+      >
         <NFTItem
           item={collection}
           onClick={toggleCollection}
           isCollection
           isExpanded={isExpanded}
         />
-      </div>
-      {isExpanded &&
-        collection.nfts.map((nft) => (
-          <NFTItem item={nft} onClick={onItemClick} />
-        ))}
-    </li>
+        {isExpanded &&
+          collection.nfts.map((nft) => (
+            <NFTItem item={nft} onClick={onItemClick} />
+          ))}
+      </li>
+      <style jsx>{`
+        .nft_collection {
+          margin: 0;
+          padding: 0;
+          background: transparent;
+          width: 168px;
+          transition: all 200ms ease-in-out;
+        }
+        .nft_collection.expanded {
+          margin: 8px -16px;
+          width: 100%;
+          padding: 8px 16px 6px;
+          background: var(--green-120);
+          border-radius: 16px;
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
+        }
+      `}</style>
+    </>
   )
 }
