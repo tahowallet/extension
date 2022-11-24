@@ -40,7 +40,6 @@ export default function TabBar(): ReactElement {
             background-color: var(--hunter-green);
             display: flex;
             justify-content: space-around;
-            padding: 0px 46px;
             box-sizing: border-box;
             align-items: center;
             flex-shrink: 0;
