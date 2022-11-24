@@ -4,6 +4,7 @@ import {
   OPTIMISM,
   NETWORK_BY_CHAIN_ID,
   POLYGON,
+  BINANCE_SMART_CHAIN,
 } from "@tallyho/tally-background/constants"
 import { AccountTotalList } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
@@ -14,6 +15,7 @@ const NETWORKS_CHART_COLORS = {
   [POLYGON.chainID]: "#8347E5",
   [ARBITRUM_ONE.chainID]: "#2083C5",
   [OPTIMISM.chainID]: "#CD041C",
+  [BINANCE_SMART_CHAIN.chainID]: "#F3BA2F",
 }
 
 const getNetworksPercents = (
