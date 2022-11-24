@@ -79,7 +79,7 @@ export const BNB: NetworkBaseAsset = {
   name: "Binance Coin",
   symbol: "BNB",
   decimals: 18,
-  coinType: coinTypesByAssetSymbol.BSC,
+  coinType: coinTypesByAssetSymbol.BNB,
   metadata: {
     coinGeckoID: "binancecoin",
     tokenLists: [],
