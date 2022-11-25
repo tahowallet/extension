@@ -125,7 +125,7 @@ function alchemyOrDefaultProvider(chainID: string, method: string): boolean {
     RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
       method.startsWith(m)
     ) ||
-    !!RPC_METHOD_PROVIDER_ROUTING[Number(chainID)]?.some((m: string) =>
+    (RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some((m: string) =>
       method.startsWith(m)
     )
   )
