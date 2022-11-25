@@ -7,6 +7,8 @@ import SharedButton from "../Shared/SharedButton"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 import NFTImage from "./NFTImage"
 
+const MAX_DESCRIPTION_LENGTH = 180
+
 // Chrome seems to have problems when elements with backdrop style are rendered initially
 // out of the viewport - browser is not rendering them at all. This is a workaround
 // to force them to rerender.
@@ -37,6 +39,11 @@ const useBackdrop = () => {
 
   return ref
 }
+
+const trimDescription = (description?: string) =>
+  description && description.length > MAX_DESCRIPTION_LENGTH
+    ? `${description.slice(0, MAX_DESCRIPTION_LENGTH)}...`
+    : description
 
 export default function NFTPreview(props: {
   nft: NFT
@@ -85,7 +92,9 @@ export default function NFTPreview(props: {
         </div>
 
         <div className="preview_header">
-          <h1>{name?.length ? name : "No title"}</h1>
+          <h1 className="ellipsis_multiline">
+            {name?.length ? name : "No title"}
+          </h1>
           <SharedButton
             type="tertiary"
             size="small"
@@ -115,7 +124,7 @@ export default function NFTPreview(props: {
           <div className="preview_section_header">
             {t("preview.description")}
           </div>
-          <p>{description || "-"}</p>
+          <p>{trimDescription(description) || "-"}</p>
         </div>
 
         <div className="preview_section preview_section_row">
