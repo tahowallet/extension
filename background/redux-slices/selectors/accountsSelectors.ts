@@ -82,7 +82,8 @@ const computeCombinedAssetAmountsData = (
   assets: AssetsState,
   mainCurrencySymbol: string,
   currentNetwork: EVMNetwork,
-  hideDust: boolean
+  hideDust: boolean,
+  useCurrentNetwork = false
 ): {
   combinedAssetAmounts: CompleteAssetAmount[]
   totalMainCurrencyAmount: number | undefined
@@ -95,11 +96,12 @@ const computeCombinedAssetAmountsData = (
   // data from the assets slice
   const combinedAssetAmounts = assetAmounts
     .map<CompleteAssetAmount>((assetAmount) => {
+      // i tutaj ten chainid juz nie dziala
       const assetPricePoint = selectAssetPricePoint(
         assets,
         assetAmount.asset.symbol,
         mainCurrencySymbol,
-        currentNetwork.chainID
+        useCurrentNetwork ? currentNetwork.chainID : undefined
       )
 
       const mainCurrencyEnrichedAssetAmount =
@@ -261,7 +263,8 @@ export const selectCurrentAccountBalances = createSelector(
         assets,
         mainCurrencySymbol,
         currentNetwork,
-        hideDust
+        hideDust,
+        true
       )
 
     return {

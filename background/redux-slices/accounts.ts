@@ -2,7 +2,12 @@ import { createSlice } from "@reduxjs/toolkit"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../accounts"
 import { EVMNetwork, Network } from "../networks"
-import { AnyAsset, AnyAssetAmount, SmartContractFungibleAsset } from "../assets"
+import {
+  AnyAsset,
+  AnyAssetAmount,
+  FungibleAsset,
+  SmartContractFungibleAsset,
+} from "../assets"
 import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
@@ -172,9 +177,22 @@ function updateCombinedData(immerState: AccountState) {
       [symbol: string]: AnyAssetAmount
     }>((acc, combinedAssetAmount) => {
       const assetSymbol = combinedAssetAmount.asset.symbol
+      let { amount } = combinedAssetAmount
+
+      if (acc[assetSymbol]?.asset) {
+        const { decimals } = acc[assetSymbol].asset as FungibleAsset
+        const assetDecimals =
+          "decimals" in combinedAssetAmount.asset
+            ? combinedAssetAmount.asset.decimals
+            : 0
+        if (assetDecimals > decimals) {
+          amount /= BigInt(`1${"0".repeat(assetDecimals - decimals)}`)
+        }
+      }
+
       acc[assetSymbol] = {
         ...combinedAssetAmount,
-        amount: (acc[assetSymbol]?.amount || 0n) + combinedAssetAmount.amount,
+        amount: (acc[assetSymbol]?.amount || 0n) + amount,
       }
       return acc
     }, {})
