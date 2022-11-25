@@ -25,7 +25,7 @@ import NFTListCurrentWallet from "../components/NFTs/update/NFTListCurrentWallet
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "wallet" })
-  const [panelNumber, setPanelNumber] = useState(1)
+  const [panelNumber, setPanelNumber] = useState(0)
 
   const dispatch = useBackgroundDispatch()
 
