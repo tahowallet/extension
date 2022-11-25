@@ -1,5 +1,6 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
+import classNames from "classnames"
 import AchievementsOverview from "../components/NFTs/AchievementsOverview"
 import NFTsOverview from "../components/NFTs/NFTsOverview"
 import SharedBanner from "../components/Shared/SharedBanner"
@@ -14,51 +15,46 @@ export default function NFTs(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
   })
-  const hasNFTs = useBackgroundSelector(() => true)
+  const hasNFTs = useBackgroundSelector(() => false)
   const [panelNumber, setPanelNumber] = useState(0)
-
-  const renderTabContent = useCallback(
-    (value: number) => {
-      switch (value) {
-        case 0:
-          return (
-            <>
-              <SharedBanner
-                icon="notif-announcement"
-                iconColor="var(--link)"
-                canBeClosed
-                id="nft_soon"
-                customStyles="margin: 8px 0;"
-              >
-                {t("NFTPricingComingSoon")}
-              </SharedBanner>
-              <NFTsOverview />
-            </>
-          )
-        case 1:
-          return <AchievementsOverview />
-        default:
-          return null
-      }
-    },
-    [t]
-  )
 
   return (
     <div className="page_content">
       <NFTsHeader hasNFTs={hasNFTs} />
-
-      {/* TODO: Move these to their respective tab */}
-      <NFTsExploreBanner type="nfts" />
-      <NFTsExploreBanner type="badge" />
-      <div className="panel_switcher_wrap">
+      <div
+        className={classNames("panel_switcher_wrap", {
+          margin: !hasNFTs,
+        })}
+      >
         <SharedPanelSwitcher
           setPanelNumber={setPanelNumber}
           panelNumber={panelNumber}
           panelNames={PANEL_NAMES}
         />
       </div>
-      {renderTabContent(panelNumber)}
+      {panelNumber === 0 &&
+        (hasNFTs ? (
+          <>
+            <SharedBanner
+              icon="notif-announcement"
+              iconColor="var(--link)"
+              canBeClosed
+              id="nft_soon"
+              customStyles="margin: 8px 0;"
+            >
+              {t("NFTPricingComingSoon")}
+            </SharedBanner>
+            <NFTsOverview />
+          </>
+        ) : (
+          <NFTsExploreBanner type="nfts" />
+        ))}
+      {panelNumber === 1 &&
+        (hasNFTs ? (
+          <AchievementsOverview />
+        ) : (
+          <NFTsExploreBanner type="badge" />
+        ))}
       <style jsx>
         {`
           .page_content {
@@ -70,6 +66,9 @@ export default function NFTs(): ReactElement {
           }
           .panel_switcher_wrap {
             width: 100%;
+          }
+          .panel_switcher_wrap.margin {
+            margin-bottom: 16px;
           }
         `}
       </style>
