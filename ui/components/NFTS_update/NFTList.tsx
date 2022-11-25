@@ -1,7 +1,7 @@
 import { NFT } from "@tallyho/tally-background/nfts"
 import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
 import React, { ReactElement, useState } from "react"
-import SharedSlideUpMenu from "../../Shared/SharedSlideUpMenu"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import NFTCollection from "./NFTCollection"
 import NFTPreview from "./NFTPreview"
 

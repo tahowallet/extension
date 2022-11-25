@@ -3,8 +3,8 @@ import { NFT } from "@tallyho/tally-background/nfts"
 import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
 import React, { ReactElement, useRef, useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
-import SharedButton from "../../Shared/SharedButton"
-import SharedNetworkIcon from "../../Shared/SharedNetworkIcon"
+import SharedButton from "../Shared/SharedButton"
+import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 import NFTImage from "./NFTImage"
 
 // Chrome seems to have problems when elements with backdrop style are rendered initially

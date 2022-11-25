@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 import React, { ReactElement } from "react"
-import { i18n } from "../../../_locales/i18n"
-import SharedIcon from "../../Shared/SharedIcon"
+import { i18n } from "../../_locales/i18n"
+import SharedIcon from "../Shared/SharedIcon"
 
 const icons = {
   close: {

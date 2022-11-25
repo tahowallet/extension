@@ -21,7 +21,7 @@ import SharedBanner from "../components/Shared/SharedBanner"
 import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultBanner"
 import WalletBanner from "../components/Wallet/Banner/WalletBanner"
 import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
-import NFTListCurrentWallet from "../components/NFTs/update/NFTListCurrentWallet"
+import NFTListCurrentWallet from "../components/NFTS_update/NFTListCurrentWallet"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation()

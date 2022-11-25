@@ -6,7 +6,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/nfts_update"
 import classNames from "classnames"
 import NFTItem from "./NFTItem"
-import { useBackgroundDispatch } from "../../../hooks"
+import { useBackgroundDispatch } from "../../hooks"
 
 export default function NFTCollection(props: {
   collection: NFTCollectionCached

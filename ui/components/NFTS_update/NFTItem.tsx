@@ -3,7 +3,7 @@ import { NFT } from "@tallyho/tally-background/nfts"
 import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
 import NFTImage from "./NFTImage"
 import NFTHover from "./NFTHover"
-import SharedNetworkIcon from "../../Shared/SharedNetworkIcon"
+import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 
 export default function NFTsItem<T extends NFT | NFTCollectionCached>(props: {
   item: T
