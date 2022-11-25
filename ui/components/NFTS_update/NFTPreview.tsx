@@ -1,3 +1,4 @@
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { NFT } from "@tallyho/tally-background/nfts"
 import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
@@ -95,14 +96,16 @@ export default function NFTPreview(props: {
           <h1 className="ellipsis_multiline">
             {name?.length ? name : "No title"}
           </h1>
-          <SharedButton
-            type="tertiary"
-            size="small"
-            iconSmall="send"
-            iconPosition="left"
-          >
-            {t("preview.send")}
-          </SharedButton>
+          {isEnabled(FeatureFlags.SUPPORT_NFT_SEND) && (
+            <SharedButton
+              type="tertiary"
+              size="small"
+              iconSmall="send"
+              iconPosition="left"
+            >
+              {t("preview.send")}
+            </SharedButton>
+          )}
         </div>
 
         <div className="preview_section">
