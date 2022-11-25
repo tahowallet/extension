@@ -2,6 +2,7 @@ import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { NFT } from "@tallyho/tally-background/nfts"
 import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
 import React, { ReactElement, useRef, useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../Shared/SharedButton"
 import SharedNetworkIcon from "../../Shared/SharedNetworkIcon"
 import NFTImage from "./NFTImage"
@@ -49,6 +50,9 @@ export default function NFTPreview(props: {
     collection.floorPrice
 
   const backdropRef = useBackdrop()
+  const { t } = useTranslation("translation", {
+    keyPrefix: "nfts",
+  })
 
   return (
     <>
@@ -60,13 +64,17 @@ export default function NFTPreview(props: {
           </div>
           <div className="preview_details" ref={backdropRef}>
             <div className="preview_section_column">
-              <span className="preview_details_header">Owner</span>
+              <span className="preview_details_header">
+                {t("preview.owner")}
+              </span>
               <span className="preview_details_value">
                 {truncateAddress(owner)}
               </span>
             </div>
             <div className="preview_section_column align_right">
-              <span className="preview_details_header">Floor price</span>
+              <span className="preview_details_header">
+                {t("preview.floorPrice")}
+              </span>
               <span className="preview_details_value">
                 {floorPrice
                   ? `~${floorPrice.value} ${floorPrice.tokenSymbol}`
@@ -84,12 +92,12 @@ export default function NFTPreview(props: {
             iconSmall="send"
             iconPosition="left"
           >
-            Send
+            {t("preview.send")}
           </SharedButton>
         </div>
 
         <div className="preview_section">
-          <div className="preview_section_header">View on</div>
+          <div className="preview_section_header"> {t("preview.viewOn")}</div>
           <div className="preview_section_row">
             <SharedButton type="secondary" size="small">
               Looksrare
@@ -103,27 +111,31 @@ export default function NFTPreview(props: {
           </div>
         </div>
 
-        {!!description && (
-          <div className="preview_section">
-            <div className="preview_section_header">Description</div>
-            <p>{description}</p>
+        <div className="preview_section">
+          <div className="preview_section_header">
+            {t("preview.description")}
           </div>
-        )}
+          <p>{description || "-"}</p>
+        </div>
 
         <div className="preview_section preview_section_row">
           <div className="preview_section_column">
-            <div className="preview_section_header">Items in collection</div>
+            <div className="preview_section_header">
+              {t("preview.itemsCount")}
+            </div>
             <p>TODO</p>
           </div>
           <div className="preview_section_column align_right">
-            <div className="preview_section_header">Creator</div>
+            <div className="preview_section_header">{t("preview.creator")}</div>
             <p>TODO</p>
           </div>
         </div>
 
         {!!attributes.length && (
           <div className="preview_section">
-            <div className="preview_section_header">Properties</div>
+            <div className="preview_section_header">
+              {t("preview.properties")}
+            </div>
             <div className="preview_property_list preview_section_row">
               {attributes.map(({ trait, value }) => (
                 <div

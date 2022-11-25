@@ -1,25 +1,26 @@
 /* eslint-disable no-nested-ternary */
 import React, { ReactElement } from "react"
+import { i18n } from "../../../_locales/i18n"
 import SharedIcon from "../../Shared/SharedIcon"
 
 const icons = {
   close: {
     icon: "close",
-    label: "close",
+    label: i18n.t("nfts.collectionHover.close"),
     background: "var(--green-40)",
     size: 12,
     style: "",
   },
   expand: {
     icon: "chevron",
-    label: "expand collection",
+    label: i18n.t("nfts.collectionHover.expand"),
     background: "var(--success)",
     size: 12,
     style: "margin-bottom: 3px;",
   },
   view: {
     icon: "eye",
-    label: "view details",
+    label: i18n.t("nfts.collectionHover.view"),
     background: "var(--trophy-gold)",
     size: 22,
     style: "",
