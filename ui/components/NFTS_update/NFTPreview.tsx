@@ -85,7 +85,7 @@ export default function NFTPreview(props: {
         </div>
 
         <div className="preview_header">
-          <h1>{name}</h1>
+          <h1>{name?.length ? name : "No title"}</h1>
           <SharedButton
             type="tertiary"
             size="small"

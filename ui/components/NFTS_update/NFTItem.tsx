@@ -12,7 +12,7 @@ export default function NFTsItem<T extends NFT | NFTCollectionCached>(props: {
   onClick: (value: T) => void
 }): ReactElement {
   const { onClick, isCollection = false, isExpanded = false, item } = props
-  const { name = "No title", network, thumbnail } = item
+  const { name, network, thumbnail } = item
   const floorPrice =
     "floorPrice" in item && item.floorPrice?.value && item.floorPrice
   const nftsCount = "nfts" in item && item.nfts.length
@@ -40,7 +40,7 @@ export default function NFTsItem<T extends NFT | NFTCollectionCached>(props: {
         />
       </div>
       <div className="nft_item_details">
-        <span className="ellipsis">{name}</span>
+        <span className="ellipsis">{name?.length ? name : "No title"}</span>
         {!!nftsCount && <span className="nft_item_count">({nftsCount})</span>}
       </div>
       <style jsx>{`
