@@ -25,7 +25,7 @@ if (isEnabled(FeatureFlags.ENABLE_ACHIEVEMENTS_TAB)) {
   panelNames.push("Achievements")
 }
 
-export default function Overview(): ReactElement {
+function Overview(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
   })
@@ -99,4 +99,59 @@ export default function Overview(): ReactElement {
       </style>
     </>
   )
+}
+
+function NewOverview(): ReactElement {
+  const accountsTotal = useBackgroundSelector(selectAccountTotalsForOverview)
+  const balance = useBackgroundSelector(getTotalBalanceForOverview)
+  const networksCount = useBackgroundSelector(getNetworkCountForOverview)
+  const accountsCount = useBackgroundSelector(getAddressCount)
+
+  const { combinedData } = useBackgroundSelector(
+    selectAccountAndTimestampedActivities
+  )
+  const initializationLoadingTimeExpired = useBackgroundSelector(
+    selectInitializationTimeExpired
+  )
+
+  return (
+    <section className="stats">
+      <BalanceHeader
+        balance={balance}
+        initializationTimeExpired={initializationLoadingTimeExpired}
+      />
+      <AccountList
+        accountsTotal={accountsTotal}
+        accountsCount={accountsCount}
+      />
+      <NetworksChart
+        accountsTotal={accountsTotal}
+        networksCount={networksCount}
+      />
+      {/* TODO: ADD NFT OVERVIEW */}
+      <OverviewAssetsTable
+        assets={combinedData.assets}
+        initializationLoadingTimeExpired={initializationLoadingTimeExpired}
+      />
+      <style jsx>
+        {`
+          .stats {
+            padding: 16px 16px 24px;
+            width: calc(100% - 32px);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+          }
+        `}
+      </style>
+    </section>
+  )
+}
+
+export default function UpdatedOverview(): ReactElement {
+  if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+    return <NewOverview />
+  }
+
+  return <Overview />
 }
