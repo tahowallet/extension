@@ -24,7 +24,7 @@ import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyt
 import NFTListCurrentWallet from "../components/NFTs/update/NFTListCurrentWallet"
 
 export default function Wallet(): ReactElement {
-  const { t } = useTranslation("translation", { keyPrefix: "wallet" })
+  const { t } = useTranslation()
   const [panelNumber, setPanelNumber] = useState(0)
 
   const dispatch = useBackgroundDispatch()
@@ -62,13 +62,13 @@ export default function Wallet(): ReactElement {
     (background) => background.ui?.initializationLoadingTimeExpired
   )
 
-  const panelNames = [t("pages.assets")]
+  const panelNames = [t("wallet.pages.assets")]
 
   if (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
-    panelNames.push(t("pages.NFTs"))
+    panelNames.push(t("wallet.pages.NFTs"))
   }
 
-  panelNames.push(t("pages.activity"))
+  panelNames.push(t("wallet.pages.activity"))
 
   return (
     <>
@@ -119,7 +119,7 @@ export default function Wallet(): ReactElement {
                     id="nft_soon"
                     customStyles="margin: 8px 0;"
                   >
-                    {t("NFTPricingComingSoon")}
+                    {t("nfts.NFTPricingComingSoon")}
                   </SharedBanner>
                   <NFTsWallet />
                 </>
