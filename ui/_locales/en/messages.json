@@ -611,5 +611,13 @@
         "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab"
       }
     }
+  },
+  "tabs": {
+    "wallet": "Wallet",
+    "nfts": "NFTs",
+    "portfolio": "Portfolio",
+    "swap": "Swap",
+    "earn": "Earn",
+    "settings": "Settings"
   }
 }
