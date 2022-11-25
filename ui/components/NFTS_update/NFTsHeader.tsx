@@ -2,11 +2,11 @@ import React, { ReactElement } from "react"
 import { HeaderContainer, EmptyHeader } from "./NFTsHeaderBase"
 
 type HeaderProps = {
-  hasAccounts: boolean
+  hasNFTs: boolean
 }
 
-export default function NFTsHeader({ hasAccounts }: HeaderProps): ReactElement {
-  if (!hasAccounts) {
+export default function NFTsHeader({ hasNFTs }: HeaderProps): ReactElement {
+  if (!hasNFTs) {
     return (
       <HeaderContainer>
         <EmptyHeader />

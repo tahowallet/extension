@@ -1,6 +1,6 @@
 import React from "react"
 
-type ExporeMarketLinkProps = {
+type ExploreMarketLinkProps = {
   url: string
   title: string
   color: string
@@ -14,7 +14,7 @@ export default function ExploreMarketLink({
   color,
   icon,
   type = "link",
-}: ExporeMarketLinkProps): JSX.Element {
+}: ExploreMarketLinkProps): JSX.Element {
   return (
     <a className={type} href={url} rel="noreferrer" target="_blank">
       {title}

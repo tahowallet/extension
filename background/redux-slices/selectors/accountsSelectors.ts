@@ -550,8 +550,3 @@ export const getTotalBalanceForOverview = createSelector(
       2
     )
 )
-
-export const getHasAccounts = createSelector(
-  getAllAddresses,
-  (allAddresses) => allAddresses.length > 0
-)
