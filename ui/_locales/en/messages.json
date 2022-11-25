@@ -230,7 +230,16 @@
     "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title",
     "NFTPricingComingSoon": "Coming soon: NFT price + sending",
+    "units": {
+      "nft_one": "NFT",
+      "nft_other": "NFTs",
+      "badge_one": "Badge",
+      "badge_other": "Badges",
+      "collection_one": "Collection",
+      "collection_other": "Collections"
+    },
     "header": {
+      "title": "Estimated total NFTs value",
       "addAccountCTA": "Add account",
       "emptyTitle": "No NFTs here",
       "emptyDesc": "Add more accounts to see your NFTs, you can also just add read-only accounts"
