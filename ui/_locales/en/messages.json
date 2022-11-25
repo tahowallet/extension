@@ -229,7 +229,16 @@
   "nfts": {
     "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title",
-    "NFTPricingComingSoon": "Coming soon: NFT price + sending"
+    "NFTPricingComingSoon": "Coming soon: NFT price + sending",
+    "header": {
+      "addAccountCTA": "Add account",
+      "emptyTitle": "No NFTs here",
+      "emptyDesc": "Add more accounts to see your NFTs, you can also just add read-only accounts"
+    },
+    "emptyBannerTitle": {
+      "nfts": "Explore markets",
+      "badge": "Explore badges"
+    }
   },
   "achievements": {
     "empty": "Nothing to see here",
