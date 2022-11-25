@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid"
+import browser from "webextension-polyfill"
 
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 
@@ -43,7 +44,7 @@ export default class AnalyticsService extends BaseService<Events> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    const { hasDefaultOnBeenTurnedOn } =
+    let { isEnabled, hasDefaultOnBeenTurnedOn } =
       await this.preferenceService.getAnalyticsPreferences()
 
     if (
@@ -53,15 +54,27 @@ export default class AnalyticsService extends BaseService<Events> {
       // this handles the edge case where we have already shipped analytics
       // but with default turned off and now we want to turn default on
       // and show a notification to the user
+
+      isEnabled = true
+      hasDefaultOnBeenTurnedOn = true
+
       await this.preferenceService.updateAnalyticsPreferences({
-        isEnabled: true,
-        hasDefaultOnBeenTurnedOn: true,
+        isEnabled,
+        hasDefaultOnBeenTurnedOn,
       })
     }
 
-    this.sendAnalyticsEvent("Background start")
+    if (isEnabled) {
+      this.sendAnalyticsEvent("Background start")
 
-    this.initializeListeners()
+      this.initializeListeners()
+
+      const { uuid } = await this.getOrCreateAnalyticsUUID()
+
+      browser.runtime.setUninstallURL(
+        `${process.env.WEBSITE_ORIGIN}/goodbye?uuid=${uuid}`
+      )
+    }
   }
 
   protected override async internalStopService(): Promise<void> {
