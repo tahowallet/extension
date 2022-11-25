@@ -280,6 +280,15 @@
     "accounts": "Accounts",
     "assets": "Assets",
     "networks": "Networks",
+    "nfts": "<0>{{nfts}}</0> $t(overview.units.nft, {'count': {{nfts}} }) in <2>{{collections}}</2> $t(overview.units.collection, {'count': {{collections}} }) & <4>{{badges}}</4> $t(overview.units.badge, {'count': {{badges}} })",
+    "units": {
+      "nft": "NFT",
+      "nft_other": "NFTs",
+      "collection": "Collection",
+      "collection_other": "Collections",
+      "badge": "Badge",
+      "badge_other": "Badges"
+    },
     "tableHeader": {
       "asset": "Asset",
       "price": "Price",
@@ -533,7 +542,7 @@
       "bannerTitle": "New Odyssey week!",
       "emptyBannerContent": "Check out Arbitrum Odyssey campaign",
       "notificationTitle": "Odyssey notifications",
-      "notificationDismissInfo":"Want to receive future Odyssey notifications? We will show you one every week that you can dismiss.",
+      "notificationDismissInfo": "Want to receive future Odyssey notifications? We will show you one every week that you can dismiss.",
       "showNotifications": "Yes, show notification",
       "dontShowNotifications": "No thanks",
       "startNow": "Start now",
@@ -562,7 +571,7 @@
       "notDefault": "is not your default wallet",
       "tooltip": "Setting Tally Ho as your default wallet means that everytime you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
     },
-    "analyticsNotification": { 
+    "analyticsNotification": {
       "title": "Analytics are on",
       "description": "They help us improve the wallet for you",
       "settingsLink": "Change settings"

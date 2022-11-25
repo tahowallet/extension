@@ -18,6 +18,7 @@ import BalanceHeader from "../components/Overview/BalanceHeader"
 import NetworksChart from "../components/Overview/NetworksChart"
 import AccountList from "../components/Overview/AccountList"
 import AchievementsOverview from "../components/NFTs/AchievementsOverview"
+import NFTsPortfolioOverview from "../components/Overview/NFTsPortfolioOverview"
 
 const panelNames = ["Assets", "NFTs"]
 
@@ -128,7 +129,7 @@ function NewOverview(): ReactElement {
         accountsTotal={accountsTotal}
         networksCount={networksCount}
       />
-      {/* TODO: ADD NFT OVERVIEW */}
+      <NFTsPortfolioOverview />
       <OverviewAssetsTable
         assets={combinedData.assets}
         initializationLoadingTimeExpired={initializationLoadingTimeExpired}
