@@ -62,6 +62,7 @@ export type NFTCollection = {
   hasBadges: boolean
   thumbnail?: string
   nftCount?: number
+  totalNftCount?: number
   floorPrice?: {
     value: bigint
     token: {

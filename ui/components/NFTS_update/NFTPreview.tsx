@@ -51,11 +51,10 @@ export default function NFTPreview(props: {
   collection: NFTCollectionCached
 }): ReactElement {
   const { nft, collection } = props
-  const { thumbnail, name, network, owner, description, attributes } = nft
-  const floorPrice =
-    "floorPrice" in collection &&
-    collection.floorPrice?.value &&
-    collection.floorPrice
+  const { thumbnail, contract, name, network, owner, description, attributes } =
+    nft
+  const { totalNftCount } = collection
+  const floorPrice = collection.floorPrice?.value && collection.floorPrice
 
   const backdropRef = useBackdrop()
   const { t } = useTranslation("translation", {
@@ -135,11 +134,11 @@ export default function NFTPreview(props: {
             <div className="preview_section_header">
               {t("preview.itemsCount")}
             </div>
-            <p>TODO</p>
+            <p>{totalNftCount ?? "-"}</p>
           </div>
           <div className="preview_section_column align_right">
             <div className="preview_section_header">{t("preview.creator")}</div>
-            <p>TODO</p>
+            <p>{contract ? truncateAddress(contract) : "-"}</p>
           </div>
         </div>
 
@@ -155,7 +154,9 @@ export default function NFTPreview(props: {
                   className="preview_property preview_section_column"
                 >
                   <span className="preview_property_trait">{trait}</span>
-                  <span className="preview_property_value">{value}</span>
+                  <span className="preview_property_value ellipsis">
+                    {value}
+                  </span>
                 </div>
               ))}
             </div>
@@ -267,11 +268,13 @@ export default function NFTPreview(props: {
         .preview_property_trait {
           color: var(--green-40);
           font-size: 12px;
-          letter-spacing: 2%;
+          width: 100%;
+          text-align: center;
         }
         .preview_property_value {
-          letter-spacing: 3%;
           font-size: 14px;
+          width: 100%;
+          text-align: center;
         }
       `}</style>
     </>
