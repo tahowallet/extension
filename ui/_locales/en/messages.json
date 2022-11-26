@@ -280,14 +280,14 @@
     "accounts": "Accounts",
     "assets": "Assets",
     "networks": "Networks",
-    "nfts": "<0>{{nfts}}</0> $t(overview.units.nft, {'count': {{nfts}} }) in <2>{{collections}}</2> $t(overview.units.collection, {'count': {{collections}} }) & <4>{{badges}}</4> $t(overview.units.badge, {'count': {{badges}} })",
+    "nfts": "{{nfts}} in {{collections}} & {{badges}}",
     "units": {
-      "nft": "NFT",
-      "nft_other": "NFTs",
-      "collection": "Collection",
-      "collection_other": "Collections",
-      "badge": "Badge",
-      "badge_other": "Badges"
+      "nft": "<strong>1</strong> NFT",
+      "nft_other": "<strong>{{count}}</strong> NFTs",
+      "collection": "<strong>1</strong> Collection",
+      "collection_other": "<strong>{{count}}</strong> Collections",
+      "badge": "<strong>1</strong> Badge",
+      "badge_other": "<strong>{{count}}</strong> Badges"
     },
     "tableHeader": {
       "asset": "Asset",

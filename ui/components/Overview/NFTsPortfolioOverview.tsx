@@ -5,7 +5,7 @@ export default function NFTsPortfolioOverview(): ReactElement {
   const { t } = useTranslation()
 
   // TODO: Replace these stubs
-  const nftCount = 30
+  const nftCount = 10
   const collectionCount = 12
   const badgeCount = 6
 
@@ -20,22 +20,15 @@ export default function NFTsPortfolioOverview(): ReactElement {
           t={t}
           i18nKey="overview.nfts"
           values={{
-            nfts: nftCount,
-            collections: collectionCount,
-            badges: badgeCount,
+            nfts: t("overview.units.nft", { count: nftCount }),
+            collections: t("overview.units.collection", {
+              count: collectionCount,
+            }),
+            badges: t("overview.units.badge", { count: badgeCount }),
           }}
-        >
-          {/* 
-            These strings will not get rendered, they act as placeholders
-            to pass the right component structure to Trans
-           */}
-          <strong>Several</strong>
-          {` NFTs in `}
-          <strong>a few</strong>
-          {` collections and `}
-          <strong>many</strong>
-          {` badges`}
-        </Trans>
+          // Passing strong here includes the classes from styled-jsx
+          components={{ strong: <strong /> }}
+        />
       </div>
       <style jsx>
         {`
