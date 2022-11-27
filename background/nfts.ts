@@ -40,6 +40,7 @@ export type NFTsWithPagesResponse = {
 
 export type NFT = {
   id: string
+  tokenId: string
   collectionID: string
   name: string
   description?: string

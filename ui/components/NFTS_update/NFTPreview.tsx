@@ -6,6 +6,10 @@ import React, { ReactElement, useRef, useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
+import ExploreMarketLink, {
+  HARDCODED_BADGES,
+  HARDCODED_MARKETS,
+} from "./ExploreMarketLink"
 import NFTImage from "./NFTImage"
 
 const MAX_DESCRIPTION_LENGTH = 180
@@ -51,8 +55,16 @@ export default function NFTPreview(props: {
   collection: NFTCollectionCached
 }): ReactElement {
   const { nft, collection } = props
-  const { thumbnail, contract, name, network, owner, description, attributes } =
-    nft
+  const {
+    thumbnail,
+    contract,
+    name,
+    network,
+    owner,
+    description,
+    attributes,
+    badge,
+  } = nft
   const { totalNftCount } = collection
   const floorPrice = collection.floorPrice?.value && collection.floorPrice
 
@@ -109,16 +121,17 @@ export default function NFTPreview(props: {
 
         <div className="preview_section">
           <div className="preview_section_header"> {t("preview.viewOn")}</div>
-          <div className="preview_section_row">
-            <SharedButton type="secondary" size="small">
-              Looksrare
-            </SharedButton>
-            <SharedButton type="secondary" size="small">
-              Opensea
-            </SharedButton>
-            <SharedButton type="secondary" size="small">
-              Galxe
-            </SharedButton>
+          <div className="preview_section_row preview_markets">
+            {(badge ? HARDCODED_BADGES : HARDCODED_MARKETS).map(
+              ({ url, title, color, icon, getNFTLink }) => (
+                <ExploreMarketLink
+                  type="button"
+                  key={url}
+                  url={getNFTLink(nft)}
+                  {...{ title, color, icon }}
+                />
+              )
+            )}
           </div>
         </div>
 
@@ -275,6 +288,11 @@ export default function NFTPreview(props: {
           font-size: 14px;
           width: 100%;
           text-align: center;
+        }
+        .preview_markets {
+          margin-top: 8px;
+          gap: 16px;
+          justify-content: flex-start;
         }
       `}</style>
     </>

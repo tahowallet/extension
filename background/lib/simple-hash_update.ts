@@ -136,6 +136,7 @@ function simpleHashNFTModelToNFT(
 ): NFT {
   const {
     nft_id: nftID,
+    token_id: tokenId,
     name,
     description,
     contract_address: contractAddress,
@@ -169,6 +170,7 @@ function simpleHashNFTModelToNFT(
 
   return {
     id: nftID,
+    tokenId,
     name,
     description,
     thumbnail,

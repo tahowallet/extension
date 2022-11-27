@@ -40,6 +40,7 @@ function poapNFTModelToNFT(original: PoapNFTModel, owner: string): NFT {
   } = original
   return {
     id: tokenId,
+    tokenId,
     name: eventName,
     description,
     thumbnail,
