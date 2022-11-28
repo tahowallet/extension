@@ -1,3 +1,5 @@
+import Emittery from "emittery"
+
 export type {
   ServiceLifecycleEvents,
   Service,
@@ -20,3 +22,11 @@ export { default as SigningService } from "./signing"
 export { default as AnalyticsService } from "./analytics"
 export { default as NFTsService } from "./nfts"
 export { default as WalletConnectService } from "./wallet-connect"
+
+export function getNoopService<T>(): T {
+  return Promise.resolve({
+    startService: () => Promise.resolve(),
+    stopService: () => Promise.resolve(),
+    emitter: new Emittery(),
+  }) as unknown as T
+}

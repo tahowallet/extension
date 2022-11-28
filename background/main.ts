@@ -6,7 +6,6 @@ import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { debounce } from "lodash"
 
-import Emittery from "emittery"
 import {
   decodeJSON,
   encodeJSON,
@@ -34,6 +33,7 @@ import {
   NFTsService,
   WalletConnectService,
   AnalyticsService,
+  getNoopService,
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
@@ -296,11 +296,7 @@ export default class Main extends BaseService<never> {
           internalEthereumProviderService,
           preferenceService
         )
-      : (Promise.resolve({
-          startService: () => Promise.resolve(),
-          stopService: () => Promise.resolve(),
-          emitter: new Emittery(),
-        }) as unknown as WalletConnectService)
+      : getNoopService<WalletConnectService>()
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
