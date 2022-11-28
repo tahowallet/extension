@@ -1502,9 +1502,16 @@ export default class Main extends BaseService<never> {
   private connectPopupMonitor() {
     runtime.onConnect.addListener((port) => {
       if (port.name !== popupMonitorPortName) return
-      this.analyticsService.sendAnalyticsEvent("UI open")
+
+      const openTime = Date.now()
 
       port.onDisconnect.addListener(() => {
+        this.analyticsService.sendAnalyticsEvent("UI shown", {
+          openTime: new Date(openTime).toISOString(),
+          closeTime: new Date().toISOString(),
+          openLength: (Date.now() - openTime) / 1e3,
+          unit: "s",
+        })
         this.onPopupDisconnected()
       })
     })

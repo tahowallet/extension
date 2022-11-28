@@ -39,12 +39,14 @@ export default function setAnimationConditions(
       ?.hasTopBar
   setShouldDisplayDecoy(isDecoyNeeded)
 
+  const tabRoutes = tabs.map((tab) => tab.path)
+
   const isGoingBetweenTabs =
-    tabs.includes(locationName) && tabs.includes(prevLocationName)
+    tabRoutes.includes(locationName) && tabRoutes.includes(prevLocationName)
 
   const isGoingToATabLeftOfTab =
-    tabs.includes(locationName) &&
-    tabs.indexOf(locationName) < tabs.indexOf(prevLocationName)
+    tabRoutes.includes(locationName) &&
+    tabRoutes.indexOf(locationName) < tabRoutes.indexOf(prevLocationName)
 
   const isGoingBack =
     entries &&
