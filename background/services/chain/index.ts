@@ -84,7 +84,8 @@ const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 // OpenEthereum with tracing to catch up to where we are.
 const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
 
-const NETWORK_POLLING_TIMEOUT = MINUTE * 5
+// Add a little bit of wiggle room
+const NETWORK_POLLING_TIMEOUT = MINUTE * 2.05
 
 // The number of milliseconds after a request to look up a transaction was
 // first seen to continue looking in case the transaction fails to be found
