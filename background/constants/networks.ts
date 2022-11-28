@@ -155,6 +155,6 @@ export const RPC_METHOD_PROVIDER_ROUTING = {
     "eth_call", // this is causing issues on optimism with ankr and is used heavily by uniswap
   ],
   [ARBITRUM_ONE.chainID]: [
-    "eth_call", // this is causing issues on optimism with ankr and is used heavily by uniswap
+    "eth_call", // this is causing issues on arbitrum with ankr and is used heavily by uniswap
   ],
 } as const
