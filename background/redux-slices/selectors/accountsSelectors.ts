@@ -96,7 +96,6 @@ const computeCombinedAssetAmountsData = (
   // data from the assets slice
   const combinedAssetAmounts = assetAmounts
     .map<CompleteAssetAmount>((assetAmount) => {
-      // i tutaj ten chainid juz nie dziala
       const assetPricePoint = selectAssetPricePoint(
         assets,
         assetAmount.asset.symbol,
