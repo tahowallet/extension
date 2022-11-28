@@ -6,7 +6,9 @@ import {
   POLYGON,
   BINANCE_SMART_CHAIN,
 } from "@tallyho/tally-background/constants"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { AccountTotalList } from "@tallyho/tally-background/redux-slices/selectors"
+import classNames from "classnames"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -56,7 +58,12 @@ export default function NetworksChart({
   return (
     <>
       <div>
-        <div className="chains_header">
+        <div
+          className={classNames(
+            "chains_header",
+            isEnabled(FeatureFlags.SUPPORT_NFT_TAB) && "nft-update"
+          )}
+        >
           {t("overview.networks")}({networksCount})
         </div>
         <div className="chains_chart">
@@ -90,6 +97,15 @@ export default function NetworksChart({
           line-height: 16px;
           color: var(--green-40);
         }
+
+        .chains_header.nft-update {
+          font-family: "Segment";
+          font-weight: 400;
+          font-size: 16px;
+          line-height: 24px;
+          color: var(--white);
+        }
+
         .chains_chart {
           margin: 8px 0;
           height: 6px;
