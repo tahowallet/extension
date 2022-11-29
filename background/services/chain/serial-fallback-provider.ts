@@ -262,12 +262,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
      * a given message's retry cycle rather than just when the message
      * is first initiated
      */
-    const cachedResult = this.checkForCachedResult(messageId, {
-      method,
-      params,
-    })
+    const cachedResult = this.checkForCachedResult(method, params)
 
     if (typeof cachedResult !== "undefined") {
+      // Cache hit! - return early
       delete this.messagesToSend[messageId]
       return cachedResult
     }
@@ -333,7 +331,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
             return await this.attemptToSendMessageOnNewProvider(messageId)
           }
 
-          // If we've looped around through all of our providers, set us up for the next call, but fail the
+          // Otherwise, set us up for the next call, but fail the
           // current one since we've gone through every available provider. Note
           // that this may happen over time, but we still fail the request that
           // hits the end of the list.
@@ -397,10 +395,16 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 
+  /**
+   *
+   * @param method the current RPC method
+   * @param params the parameters for the current rpc method
+   * @returns A cached result for the given method, or `undefined` indicating a cache miss
+   */
   private checkForCachedResult(
-    messageId: symbol,
-    { method, params }: { method: string; params: unknown }
-  ) {
+    method: string,
+    params: unknown
+  ): string | boolean | undefined {
     // @TODO Remove once initial activity load is refactored.
     if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
       const address = (params as string[])[0]
@@ -422,7 +426,13 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     return undefined
   }
 
-  private async attemptToSendMessageOnNewProvider(messageId: symbol) {
+  /**
+   * @param messageId The unique identifier of a given message
+   * @returns The result of sending the message via the next provider
+   */
+  private async attemptToSendMessageOnNewProvider(
+    messageId: symbol
+  ): Promise<unknown> {
     this.disconnectCurrentProvider()
     this.currentProviderIndex += 1
     // Try again with the next provider.
