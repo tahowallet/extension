@@ -155,6 +155,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       method: string
       params: unknown
       backoffCount: number
+      providerIndex: number
     }
   } = {}
 
@@ -406,6 +407,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       method,
       params,
       backoffCount: 0,
+      providerIndex: this.currentProviderIndex,
     }
 
     const result = await this.routeRpcCall(id)
@@ -752,7 +754,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * backoff time.
    */
   private backoffFor(messageId: symbol): number | undefined {
-    const { backoffCount } = this.messagesToSend[messageId]
+    const { backoffCount, providerIndex } = this.messagesToSend[messageId]
+
+    if (providerIndex !== this.currentProviderIndex) {
+      this.messagesToSend[messageId].backoffCount = 0
+      this.messagesToSend[messageId].providerIndex = this.currentProviderIndex
+    }
 
     if (backoffCount && backoffCount > MAX_RETRIES_PER_PROVIDER) {
       return undefined
