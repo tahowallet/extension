@@ -42,8 +42,8 @@ export type NFT = {
   id: string
   collectionID: string
   name: string
-  description?: string
-  thumbnail?: string
+  description: string
+  thumbnail: string
   transferDate?: string
   attributes: { trait: string; value: string }[]
   contract: string
