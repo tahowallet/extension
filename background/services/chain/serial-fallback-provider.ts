@@ -37,7 +37,7 @@ const WAIT_BEFORE_SUBSCRIBING = 2 * SECOND
 // Wait 100ms before attempting another send if a websocket provider is still connecting.
 const WAIT_BEFORE_SEND_AGAIN = 100
 // Percentage of .send calls to route to alchemy
-const ALCHEMY_RPC_CALL_PERCENTAGE = 50
+const ALCHEMY_RPC_CALL_PERCENTAGE = 0
 /**
  * Wait the given number of ms, then run the provided function. Returns a
  * promise that will resolve after the delay has elapsed and the passed
@@ -324,26 +324,16 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
       if (
         stringifiedError.match(
-          /WebSocket is already in CLOSING|bad response|missing response/
+          /WebSocket is already in CLOSING|bad response|missing response|we can't execute this request/
         )
       ) {
-        const backoff = this.backoffFor(messageId)
-        if (typeof backoff === "undefined") {
-          logger.debug(
-            "Attempting to connect new provider after error",
-            error,
-            "."
-          )
-          this.disconnectCurrentProvider()
-          this.currentProviderIndex += 1
-          if (this.currentProviderIndex < this.providerCreators.length) {
-            // Try again with the next provider.
-            await this.reconnectProvider()
-
-            return await this.routeRpcCall(messageId)
+        if (this.shouldSendMessageOnNextProvider(messageId)) {
+          // If there is another provider to try - try to send the message on that provider
+          if (this.currentProviderIndex + 1 < this.providerCreators.length) {
+            return await this.attemptToSendMessageOnNewProvider(messageId)
           }
 
-          // If we've looped around, set us up for the next call, but fail the
+          // If we've looped around through all of our providers, set us up for the next call, but fail the
           // current one since we've gone through every available provider. Note
           // that this may happen over time, but we still fail the request that
           // hits the end of the list.
@@ -352,9 +342,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           // Reconnect, but don't wait for the connection to go through.
           this.reconnectProvider()
           delete this.messagesToSend[messageId]
-
           throw error
         } else {
+          const backoff = this.backoffFor(messageId)
           logger.debug(
             "Backing off for",
             backoff,
@@ -430,6 +420,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
 
     return undefined
+  }
+
+  private async attemptToSendMessageOnNewProvider(messageId: symbol) {
+    this.disconnectCurrentProvider()
+    this.currentProviderIndex += 1
+    // Try again with the next provider.
+    await this.reconnectProvider()
+    return this.routeRpcCall(messageId)
   }
 
   /**
@@ -785,19 +783,27 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * Backoffs respect a cooldown time after which they reset down to the base
    * backoff time.
    */
-  private backoffFor(messageId: symbol): number | undefined {
-    const { backoffCount, providerIndex } = this.messagesToSend[messageId]
+  private backoffFor(messageId: symbol): number {
+    this.conditionallyIncrementMessageProviderIndex(messageId)
+    this.messagesToSend[messageId].backoffCount += 1
+    return backedOffMs()
+  }
+
+  private conditionallyIncrementMessageProviderIndex(messageId: symbol) {
+    const { providerIndex } = this.messagesToSend[messageId]
 
     if (providerIndex !== this.currentProviderIndex) {
       this.messagesToSend[messageId].backoffCount = 0
       this.messagesToSend[messageId].providerIndex = this.currentProviderIndex
     }
+  }
 
-    if (backoffCount && backoffCount > MAX_RETRIES_PER_PROVIDER) {
-      return undefined
+  private shouldSendMessageOnNextProvider(messageId: symbol): boolean {
+    const { backoffCount } = this.messagesToSend[messageId]
+    if (backoffCount && backoffCount < MAX_RETRIES_PER_PROVIDER) {
+      return true
     }
-    this.messagesToSend[messageId].backoffCount += 1
-    return backedOffMs()
+    return false
   }
 
   /**
