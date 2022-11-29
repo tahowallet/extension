@@ -46,22 +46,20 @@ export const selectNFTBadgesCollections = createSelector(
 
 /* Counting selectors  */
 export const selectNFTsCount = createSelector(
-  selectAllCollections,
+  selectNFTCollections,
   (collections) => {
     return collections.reduce(
-      (sum, collection) =>
-        collection.hasBadges ? sum : sum + (collection.nftCount ?? 0),
+      (sum, collection) => sum + (collection.nftCount ?? 0),
       0
     )
   }
 )
 
 export const selectNFTBadgesCount = createSelector(
-  selectAllCollections,
+  selectNFTBadgesCollections,
   (collections) => {
     return collections.reduce(
-      (sum, collection) =>
-        collection.hasBadges ? sum + (collection.nftCount ?? 0) : sum,
+      (sum, collection) => sum + (collection.nftCount ?? 0),
       0
     )
   }
