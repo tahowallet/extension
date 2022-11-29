@@ -1,6 +1,8 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import classNames from "classnames"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 
@@ -32,10 +34,20 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
   }
 
   return (
-    <table className="assets_table standard_width">
+    <table
+      className={classNames(
+        "assets_table standard_width",
+        isEnabled(FeatureFlags.SUPPORT_NFT_TAB) && "nft-update"
+      )}
+    >
       <thead>
         <tr>
-          <th>{t("overview.tableHeader.asset")}</th>
+          <th>
+            {t("overview.tableHeader.asset")}
+            {isEnabled(FeatureFlags.SUPPORT_NFT_TAB)
+              ? `(${assets.length})`
+              : ""}
+          </th>
           <th>{t("overview.tableHeader.price")}</th>
           <th>{t("overview.tableHeader.balance")}</th>
         </tr>
@@ -93,6 +105,19 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
         thead tr {
           height 32px;
         }
+
+        .assets_table.nft-update{
+          margin: 0;
+        }
+
+        .assets_table.nft-update thead th:first-child{
+          font-family: 'Segment';
+          font-weight: 400;
+          font-size: 16px;
+          line-height: 24px;
+          color: var(--white);
+        }
+
         td,
         th {
           border-bottom: 1px solid var(--green-120);

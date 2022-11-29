@@ -313,6 +313,15 @@
     "accounts": "Accounts",
     "assets": "Assets",
     "networks": "Networks",
+    "nfts": "{{nfts}} in {{collections}} & {{badges}}",
+    "units": {
+      "nft": "<strong>1</strong> NFT",
+      "nft_other": "<strong>{{count}}</strong> NFTs",
+      "collection": "<strong>1</strong> Collection",
+      "collection_other": "<strong>{{count}}</strong> Collections",
+      "badge": "<strong>1</strong> Badge",
+      "badge_other": "<strong>{{count}}</strong> Badges"
+    },
     "tableHeader": {
       "asset": "Asset",
       "price": "Price",
