@@ -256,12 +256,19 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private async routeRpcCall(messageId: symbol): Promise<unknown> {
     const { method, params } = this.messagesToSend[messageId]
 
+    /*
+     * Checking the cache needs to happen inside or routeRpcCall,
+     * This gives us multiple chances to get a cache hit throughout
+     * a given message's retry cycle rather than just when the message
+     * is first initiated
+     */
     const cachedResult = this.checkForCachedResult(messageId, {
       method,
       params,
     })
 
     if (typeof cachedResult !== "undefined") {
+      delete this.messagesToSend[messageId]
       return cachedResult
     }
 
@@ -328,7 +335,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
             "."
           )
           this.disconnectCurrentProvider()
-
           this.currentProviderIndex += 1
           if (this.currentProviderIndex < this.providerCreators.length) {
             // Try again with the next provider.
@@ -411,7 +417,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       const now = Date.now()
       const lastUpdate = this.latestBalanceCache[address]?.updatedAt
       if (lastUpdate && now < lastUpdate + 1 * SECOND) {
-        delete this.messagesToSend[messageId]
         return this.latestBalanceCache[address].balance
       }
     }
@@ -420,7 +425,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     if (method === "eth_getCode" && (params as string[])[1] === "latest") {
       const address = (params as string[])[0]
       if (typeof this.latestHasCodeCache[address] !== "undefined") {
-        delete this.messagesToSend[messageId]
         return this.latestHasCodeCache[address].hasCode
       }
     }
@@ -442,6 +446,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return this.cachedChainId
     }
 
+    // Generate a unique symbol to track the message and store message information
     const id = Symbol(method)
     this.messagesToSend[id] = {
       method,
@@ -450,8 +455,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       providerIndex: this.currentProviderIndex,
     }
 
+    // Start routing message down our waterfall of rpc providers
     const result = await this.routeRpcCall(id)
+
+    // Cache results for method/param combinations that are frequently called subsequently
     this.conditionallyCacheResult(result, { method, params })
+
     return result
   }
 
