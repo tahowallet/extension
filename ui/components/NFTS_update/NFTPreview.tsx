@@ -1,6 +1,5 @@
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
-import { NFT } from "@tallyho/tally-background/nfts"
-import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
+import { NFTWithCollection } from "@tallyho/tally-background/redux-slices/nfts_update"
 import React, { ReactElement, useRef, useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
@@ -38,10 +37,7 @@ const useBackdrop = () => {
   return ref
 }
 
-export default function NFTPreview(props: {
-  nft: NFT
-  collection: NFTCollectionCached
-}): ReactElement {
+export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const { nft, collection } = props
   const { thumbnail, name, network, owner, description, attributes } = nft
   const floorPrice =
