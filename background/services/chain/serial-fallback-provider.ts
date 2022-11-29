@@ -29,7 +29,7 @@ const BASE_BACKOFF_MS = 100
 // This generally results in a wait time of around 30 seconds (with a maximum time
 // of 76.5 seconds for 8 completely serial requests) before falling back since we
 // usually have multiple requests going out at once.
-const MAX_RETRIES = 8
+const MAX_RETRIES_PER_PROVIDER = 2
 // Wait 15 seconds between primary provider reconnect attempts.
 const PRIMARY_PROVIDER_RECONNECT_INTERVAL = 15 * SECOND
 // Wait 2 seconds after a primary provider is created before resubscribing.
@@ -754,7 +754,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private backoffFor(messageId: symbol): number | undefined {
     const { backoffCount } = this.messagesToSend[messageId]
 
-    if (backoffCount && backoffCount > MAX_RETRIES) {
+    if (backoffCount && backoffCount > MAX_RETRIES_PER_PROVIDER) {
       return undefined
     }
     this.messagesToSend[messageId].backoffCount += 1
