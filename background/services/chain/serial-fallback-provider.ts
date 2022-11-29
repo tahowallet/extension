@@ -361,6 +361,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
           // Reconnect, but don't wait for the connection to go through.
           this.reconnectProvider()
+          delete this.messagesToSend[messageId]
 
           throw error
         } else {
@@ -390,6 +391,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         this.currentProvider
       )
 
+      delete this.messagesToSend[messageId]
       throw error
     }
   }
