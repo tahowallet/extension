@@ -586,7 +586,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * unsubscribes all those event handlers so they can be attached to the new
    * current provider.
    */
-  private async disconnectCurrentProvider() {
+  private disconnectCurrentProvider() {
     logger.debug(
       "Disconnecting current provider; websocket: ",
       this.currentProvider instanceof WebSocketProvider,
@@ -638,7 +638,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * has been somehow set out of range, resets it to 0.
    */
   private async reconnectProvider() {
-    await this.disconnectCurrentProvider()
+    this.disconnectCurrentProvider()
     if (this.currentProviderIndex >= this.providerCreators.length) {
       this.currentProviderIndex = 0
     }
