@@ -58,14 +58,10 @@ function waitAnd<T, E extends Promise<T>>(
 }
 
 /**
- * Given the number of the backoff being executed, returns a jittered number of
- * ms to back off before making the next attempt.
+ * Return a jittered amount of ms to backoff bounded between 100 and 200 ms
  */
-function backedOffMs(backoffCount: number): number {
-  const backoffSlotStart = BASE_BACKOFF_MS * 2 ** backoffCount
-  const backoffSlotEnd = BASE_BACKOFF_MS * 2 ** (backoffCount + 1)
-
-  return backoffSlotStart + Math.random() * (backoffSlotEnd - backoffSlotStart)
+function backedOffMs(): number {
+  return 100 + 100 * Math.random()
 }
 
 /**
@@ -666,7 +662,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       await this.subscriptions.reduce(
         (previousPromise, { tag, param, processFunc }) =>
           previousPromise.then(() =>
-            waitAnd(backedOffMs(0), () =>
+            waitAnd(backedOffMs(), () =>
               // Direct subscriptions are internal, but we want to be able to
               // restore them.
               // eslint-disable-next-line no-underscore-dangle
@@ -752,7 +748,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       // extends until the start of the next backoff. This specific backoff is
       // randomized within that slot.
       const newBackoffCount = backoffCount + 1
-      const backoffMs = backedOffMs(newBackoffCount)
+      const backoffMs = backedOffMs()
 
       this.currentBackoff = {
         providerIndex,
