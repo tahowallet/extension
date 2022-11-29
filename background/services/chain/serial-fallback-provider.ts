@@ -31,7 +31,7 @@ const BASE_BACKOFF_MS = 100
 // usually have multiple requests going out at once.
 const MAX_RETRIES_PER_PROVIDER = 2
 // Wait 15 seconds between primary provider reconnect attempts.
-const PRIMARY_PROVIDER_RECONNECT_INTERVAL = 15 * SECOND
+const PRIMARY_PROVIDER_RECONNECT_INTERVAL = 10 * SECOND
 // Wait 2 seconds after a primary provider is created before resubscribing.
 const WAIT_BEFORE_SUBSCRIBING = 2 * SECOND
 // Wait 100ms before attempting another send if a websocket provider is still connecting.
@@ -321,6 +321,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       const stringifiedError = String(error)
 
       if (
+        /**
+         * WebSocket is already in CLOSING - We are reconnecting
+         * bad response - error on the endpoint provider's side
+         * missing response - we might be disconnected due to network instability
+         * we can't execute this request - ankr rate limit hit
+         */
         stringifiedError.match(
           /WebSocket is already in CLOSING|bad response|missing response|we can't execute this request/
         )

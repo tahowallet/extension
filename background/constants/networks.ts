@@ -123,15 +123,22 @@ export const CHAIN_ID_TO_RPC_URLS: {
   [chainId: string]: Array<string> | undefined
 } = {
   [ROOTSTOCK.chainID]: ["https://public-node.rsk.co"],
-  [POLYGON.chainID]: ["https://polygon-rpc.com"],
+  [POLYGON.chainID]: ["https://polygon-rpc.com", "https://1rpc.io/matic"],
   [OPTIMISM.chainID]: [
     "https://rpc.ankr.com/optimism",
+    "https://1rpc.io/op",
     "https://optimism-mainnet.public.blastapi.io",
   ],
-  [ETHEREUM.chainID]: ["https://rpc.ankr.com/eth"],
-  [ARBITRUM_ONE.chainID]: ["https://rpc.ankr.com/arbitrum"],
+  [ETHEREUM.chainID]: ["https://rpc.ankr.com/eth", "https://1rpc.io/eth"],
+  [ARBITRUM_ONE.chainID]: [
+    "https://rpc.ankr.com/arbitrum",
+    "https://1rpc.io/arb",
+  ],
   [GOERLI.chainID]: ["https://ethereum-goerli-rpc.allthatnode.com"],
-  [AVALANCHE.chainID]: ["https://api.avax.network/ext/bc/C/rpc"],
+  [AVALANCHE.chainID]: [
+    "https://api.avax.network/ext/bc/C/rpc",
+    "https://1rpc.io/avax/c",
+  ],
 }
 
 /**
