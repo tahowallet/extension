@@ -24,7 +24,7 @@ import {
 } from "../../lib/alchemy"
 
 // Back off by this amount as a base, exponentiated by attempts and jittered.
-const BASE_BACKOFF_MS = 150
+const BASE_BACKOFF_MS = 100
 // Retry 8 times before falling back to the next provider.
 // This generally results in a wait time of around 30 seconds (with a maximum time
 // of 76.5 seconds for 8 completely serial requests) before falling back since we
@@ -61,7 +61,7 @@ function waitAnd<T, E extends Promise<T>>(
  * Return a jittered amount of ms to backoff bounded between 100 and 200 ms
  */
 function backedOffMs(): number {
-  return 100 + 100 * Math.random()
+  return BASE_BACKOFF_MS + 100 * Math.random()
 }
 
 /**
