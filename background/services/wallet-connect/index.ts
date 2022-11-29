@@ -77,7 +77,7 @@ export default class WalletConnectService extends BaseService<Events> {
 
     // TODO: remove this, inject uri
     // simulate connection attempt
-    const wcUri = "wc:710fc886274cd9d759e1b8cda6f0e36b056c04edcda1f711536ddb90c027f36a@2?relay-protocol=irn&symKey=4f6775a3d5a1b2f7f5c0ee150fc1c8d11cb187b03f6cd5875de6ea9fc14ebdb4"
+    const wcUri = "wc:710f..."
     await this.performConnection(wcUri)
   }
 
