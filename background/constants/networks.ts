@@ -1,5 +1,5 @@
 import { EVMNetwork, Network } from "../networks"
-import { BTC, ETH, MATIC, OPTIMISTIC_ETH, RBTC } from "./currencies"
+import { AVAX, BTC, ETH, MATIC, OPTIMISTIC_ETH, RBTC } from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
   name: "Ethereum",
@@ -31,6 +31,14 @@ export const ARBITRUM_ONE: EVMNetwork = {
   chainID: "42161",
   family: "EVM",
   coingeckoPlatformID: "arbitrum-one",
+}
+
+export const AVALANCHE: EVMNetwork = {
+  name: "Avalanche",
+  baseAsset: AVAX,
+  chainID: "43114",
+  family: "EVM",
+  coingeckoPlatformID: "avalanche",
 }
 
 export const OPTIMISM: EVMNetwork = {
@@ -65,11 +73,11 @@ export const FORK: EVMNetwork = {
 }
 
 export const EIP_1559_COMPLIANT_CHAIN_IDS = new Set(
-  [ETHEREUM, POLYGON, GOERLI].map((network) => network.chainID)
+  [ETHEREUM, POLYGON, GOERLI, AVALANCHE].map((network) => network.chainID)
 )
 
 export const CHAINS_WITH_MEMPOOL = new Set(
-  [ETHEREUM, POLYGON, GOERLI].map((network) => network.chainID)
+  [ETHEREUM, POLYGON, AVALANCHE, GOERLI].map((network) => network.chainID)
 )
 
 export const NETWORK_BY_CHAIN_ID = {
@@ -77,6 +85,7 @@ export const NETWORK_BY_CHAIN_ID = {
   [POLYGON.chainID]: POLYGON,
   [ROOTSTOCK.chainID]: ROOTSTOCK,
   [ARBITRUM_ONE.chainID]: ARBITRUM_ONE,
+  [AVALANCHE.chainID]: AVALANCHE,
   [OPTIMISM.chainID]: OPTIMISM,
   [GOERLI.chainID]: GOERLI,
   [FORK.chainID]: FORK,
@@ -88,21 +97,6 @@ export const TEST_NETWORK_BY_CHAIN_ID = new Set(
 export const NETWORK_FOR_LEDGER_SIGNING = [ETHEREUM, POLYGON]
 
 // Networks that are not added to this struct will
-// not have an in-wallet NFT tab
-export const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
-  [chainID: string]: ("alchemy" | "simplehash" | "poap")[]
-} = {
-  [ETHEREUM.chainID]: ["alchemy", "poap"],
-  [POLYGON.chainID]: ["alchemy"],
-  [OPTIMISM.chainID]: ["simplehash"],
-  [ARBITRUM_ONE.chainID]: ["simplehash"],
-}
-
-export const NETWORKS_SUPPORTING_NFTS = new Set(
-  Object.keys(CHAIN_ID_TO_NFT_METADATA_PROVIDER)
-)
-
-// Networks that are not added to this struct will
 // not have an in-wallet Swap page
 export const CHAIN_ID_TO_0X_API_BASE: {
   [chainID: string]: string | undefined
@@ -112,6 +106,7 @@ export const CHAIN_ID_TO_0X_API_BASE: {
   [OPTIMISM.chainID]: "optimism.api.0x.org",
   [GOERLI.chainID]: "goerli.api.0x.org",
   [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
+  [AVALANCHE.chainID]: "avalanche.api.0x.org",
 }
 
 export const NETWORKS_SUPPORTING_SWAPS = new Set(
@@ -134,11 +129,32 @@ export const CHAIN_ID_TO_RPC_URLS: {
     "https://optimism-mainnet.public.blastapi.io",
   ],
   [ETHEREUM.chainID]: ["https://rpc.ankr.com/eth"],
-  // @TODO Figure out why calling multicall with more than 1 argument returns
-  // {
-  //   jsonrpc: "2.0",
-  //   error: { code: 0, message: "we can't execute this request" },
-  // }
-  // [ARBITRUM_ONE.chainID]: ["https://rpc.ankr.com/arbitrum"],
+  [ARBITRUM_ONE.chainID]: ["https://rpc.ankr.com/arbitrum"],
   [GOERLI.chainID]: ["https://ethereum-goerli-rpc.allthatnode.com"],
+  [AVALANCHE.chainID]: ["https://api.avax.network/ext/bc/C/rpc"],
 }
+
+/**
+ * Method list, to describe which rpc method calls on which networks should
+ * prefer alchemy provider over the generic ones.
+ *
+ * The method names can be full or the starting parts of the method name.
+ * This allows us to use "namespaces" for providers eg `alchemy_...` or `qn_...`
+ *
+ * The structure is network specific with an extra `everyChain` option.
+ * The methods in this array will be directed towards alchemy on every network.
+ */
+export const RPC_METHOD_PROVIDER_ROUTING = {
+  everyChain: [
+    "alchemy_", // alchemy specific api calls start with this
+    "eth_sendRawTransaction", // broadcast should always go to alchemy
+    "eth_subscribe", // generic http providers do not support this, but dapps need this
+    "eth_estimateGas", // just want to be safe, when setting up a transaction
+  ],
+  [OPTIMISM.chainID]: [
+    "eth_call", // this is causing issues on optimism with ankr and is used heavily by uniswap
+  ],
+  [ARBITRUM_ONE.chainID]: [
+    "eth_call", // this is causing issues on arbitrum with ankr and is used heavily by uniswap
+  ],
+} as const

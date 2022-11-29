@@ -1,8 +1,4 @@
 import {
-  AlchemyProvider,
-  AlchemyWebSocketProvider,
-} from "@ethersproject/providers"
-import {
   getAssetTransfers as getAlchemyAssetTransfers,
   getTokenBalances as getAlchemyTokenBalances,
   getTokenMetadata as getAlchemyTokenMetadata,
@@ -52,13 +48,9 @@ export default class AssetDataHelper {
     }
 
     try {
-      // FIXME Allow arbitrary providers?
-      if (
-        provider.currentProvider instanceof AlchemyWebSocketProvider ||
-        provider.currentProvider instanceof AlchemyProvider
-      ) {
+      if (provider.supportsAlchemy) {
         return await getAlchemyTokenBalances(
-          provider.currentProvider,
+          provider,
           addressOnNetwork,
           smartContractAddresses
         )
@@ -121,22 +113,8 @@ export default class AssetDataHelper {
       return undefined
     }
 
-    try {
-      if (
-        provider.currentProvider instanceof AlchemyWebSocketProvider ||
-        provider.currentProvider instanceof AlchemyProvider
-      ) {
-        return await getAlchemyTokenMetadata(
-          provider.currentProvider,
-          tokenSmartContract
-        )
-      }
-    } catch (error) {
-      logger.debug(
-        "Problem resolving asset metadata via Alchemy helper; network may " +
-          "not support it. Falling back to standard lookup.",
-        error
-      )
+    if (provider.supportsAlchemy) {
+      return getAlchemyTokenMetadata(provider, tokenSmartContract)
     }
 
     return getERC20Metadata(provider, tokenSmartContract)
@@ -160,13 +138,10 @@ export default class AssetDataHelper {
     }
 
     try {
-      if (
-        provider.currentProvider instanceof AlchemyWebSocketProvider ||
-        provider.currentProvider instanceof AlchemyProvider
-      ) {
+      if (provider.supportsAlchemy) {
         const promises = [
           getAlchemyAssetTransfers(
-            provider.currentProvider,
+            provider,
             addressOnNetwork,
             "incoming",
             startBlock,
@@ -176,7 +151,7 @@ export default class AssetDataHelper {
         if (!incomingOnly) {
           promises.push(
             getAlchemyAssetTransfers(
-              provider.currentProvider,
+              provider,
               addressOnNetwork,
               "outgoing",
               startBlock,

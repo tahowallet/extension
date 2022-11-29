@@ -1,12 +1,11 @@
 import { JsonRpcProvider } from "@ethersproject/providers"
 import { Contract, utils, constants } from "ethers"
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
-import { ROOTSTOCK } from "../../../constants"
-import { sameNetwork } from "../../../networks"
 import { NameResolver } from "../name-resolver"
 import logger from "../../../lib/logger"
 
 import { normalizeEVMAddress } from "../../../lib/utils"
+import { ROOTSTOCK } from "../../../constants"
 
 export default function rnsResolver(): NameResolver<"RNS"> {
   const rskNetworkProvider = new JsonRpcProvider("https://public-node.rsk.co")
@@ -36,14 +35,14 @@ export default function rnsResolver(): NameResolver<"RNS"> {
 
   return {
     type: "RNS",
-    canAttemptNameResolution(): boolean {
-      return true
+    canAttemptNameResolution({ network }): boolean {
+      return network.chainID === ROOTSTOCK.chainID
     },
     canAttemptAvatarResolution(): boolean {
       return false
     },
-    canAttemptAddressResolution({ name, network }: NameOnNetwork): boolean {
-      return sameNetwork(network, ROOTSTOCK) && name.endsWith(".rsk")
+    canAttemptAddressResolution({ name }: NameOnNetwork): boolean {
+      return name.endsWith(".rsk")
     },
 
     async lookUpAddressForName({

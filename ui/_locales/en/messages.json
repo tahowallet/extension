@@ -45,11 +45,14 @@
     "error": {
       "invalidAmount": "Invalid amount",
       "insufficientBalance": "Insufficient balance"
-    },
-    "priceImpactTooltip": {
-      "firstLine": "Price difference between assets is high.",
-      "secondLine": "This is due to low liquidity of the swap pair."
     }
+  },
+  "priceDetails": {
+    "priceImpactTooltip": {
+      "firstLine": "Price impact between assets is high.",
+      "secondLine": "This is due to low liquidity of the swap pair."
+    },
+    "noAssetPrice": "No price information"
   },
   "comingSoon": "Coming soon",
   "dappConnection": {
@@ -225,7 +228,41 @@
   },
   "nfts": {
     "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
-    "noTitle": "No title"
+    "noTitle": "No title",
+    "NFTPricingComingSoon": "Coming soon: NFT price + sending",
+    "collectionHover": {
+      "close": "close",
+      "expand": "expand collection",
+      "view": "view details"
+    },
+    "preview": {
+      "owner": "Owner",
+      "floorPrice": "Floor price",
+      "send": "Send",
+      "viewOn": "View on",
+      "description": "Description",
+      "itemsCount": "Items in collection",
+      "creator": "Creator",
+      "properties": "Properties"
+    },
+    "units": {
+      "nft_one": "NFT",
+      "nft_other": "NFTs",
+      "badge_one": "Badge",
+      "badge_other": "Badges",
+      "collection_one": "Collection",
+      "collection_other": "Collections"
+    },
+    "header": {
+      "title": "Estimated total NFTs value",
+      "addAccountCTA": "Add account",
+      "emptyTitle": "No NFTs here",
+      "emptyDesc": "Add more accounts to see your NFTs, you can also just add read-only accounts"
+    },
+    "emptyBannerTitle": {
+      "nfts": "Explore markets",
+      "badge": "Explore badges"
+    }
   },
   "achievements": {
     "empty": "Nothing to see here",
@@ -276,6 +313,15 @@
     "accounts": "Accounts",
     "assets": "Assets",
     "networks": "Networks",
+    "nfts": "{{nfts}} in {{collections}} & {{badges}}",
+    "units": {
+      "nft": "<strong>1</strong> NFT",
+      "nft_other": "<strong>{{count}}</strong> NFTs",
+      "collection": "<strong>1</strong> Collection",
+      "collection_other": "<strong>{{count}}</strong> Collections",
+      "badge": "<strong>1</strong> Badge",
+      "badge_other": "<strong>{{count}}</strong> Badges"
+    },
     "tableHeader": {
       "asset": "Asset",
       "price": "Price",
@@ -529,7 +575,7 @@
       "bannerTitle": "New Odyssey week!",
       "emptyBannerContent": "Check out Arbitrum Odyssey campaign",
       "notificationTitle": "Odyssey notifications",
-      "notificationDismissInfo":"Want to receive future Odyssey notifications? We will show you one every week that you can dismiss.",
+      "notificationDismissInfo": "Want to receive future Odyssey notifications? We will show you one every week that you can dismiss.",
       "showNotifications": "Yes, show notification",
       "dontShowNotifications": "No thanks",
       "startNow": "Start now",
@@ -538,6 +584,7 @@
     },
     "totalAccountBalance": "Total account balance",
     "send": "Send",
+    "swap": "Swap",
     "receive": "Receive",
     "secureSeed": "First, secure your recovery seed",
     "sendAsset": "Send Asset",
@@ -551,12 +598,16 @@
       "NFTs": "NFTs",
       "activity": "Activity"
     },
-    "NFTPricingComingSoon": "Coming soon: NFT price + sending",
     "defaultToggle": {
       "snackbar": "You can change this in Settings later",
       "isDefault": "is now your default wallet",
       "notDefault": "is not your default wallet",
       "tooltip": "Setting Tally Ho as your default wallet means that everytime you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
+    },
+    "analyticsNotification": {
+      "title": "Analytics are on",
+      "description": "They help us improve the wallet for you",
+      "settingsLink": "Change settings"
     }
   },
   "dAppConnect": {
@@ -588,8 +639,18 @@
         "SUPPORT_FORGOT_PASSWORD": "Enable to forgot password",
         "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
-        "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner"
+        "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
+        "SUPPORT_AVALANCHE": "Enable Avalanche network",
+        "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab"
       }
     }
+  },
+  "tabs": {
+    "wallet": "Wallet",
+    "nfts": "NFTs",
+    "portfolio": "Portfolio",
+    "swap": "Swap",
+    "earn": "Earn",
+    "settings": "Settings"
   }
 }

@@ -161,10 +161,6 @@ export type AddressOnNetworkAnnotation = {
    */
   timestamp: UNIXTime
   /**
-   * The latest nonce associated with the address / network.
-   */
-  nonce: bigint
-  /**
    * Whether code was found at this address at the time of annotation
    * resolution.
    */

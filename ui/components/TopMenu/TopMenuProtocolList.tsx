@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import {
   ARBITRUM_ONE,
+  AVALANCHE,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
@@ -42,6 +43,21 @@ const productionNetworks = [
         },
       ]
     : []),
+  ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE)
+    ? [
+        {
+          network: AVALANCHE,
+          info: i18n.t("protocol.compatibleChain"),
+        },
+      ]
+    : [
+        {
+          network: AVALANCHE,
+          info: i18n.t("comingSoon"),
+          isDisabled: true,
+        },
+      ]),
+
   // {
   //   name: "Binance Smart Chain",
   //   info: i18n.t("protocol.compatibleChain"),

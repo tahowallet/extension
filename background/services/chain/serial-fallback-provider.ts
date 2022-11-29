@@ -13,6 +13,7 @@ import {
   SECOND,
   CHAIN_ID_TO_RPC_URLS,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
+  RPC_METHOD_PROVIDER_ROUTING,
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
@@ -38,6 +39,8 @@ const PRIMARY_PROVIDER_RECONNECT_INTERVAL = 15 * SECOND
 const WAIT_BEFORE_SUBSCRIBING = 2 * SECOND
 // Wait 100ms before attempting another send if a websocket provider is still connecting.
 const WAIT_BEFORE_SEND_AGAIN = 100
+// Percentage of .send calls to route to alchemy
+const ALCHEMY_RPC_CALL_PERCENTAGE = 50
 /**
  * Wait the given number of ms, then run the provided function. Returns a
  * promise that will resolve after the delay has elapsed and the passed
@@ -108,6 +111,27 @@ function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
 }
 
 /**
+ * Return the decision whether a given RPC call should be routed to the alchemy provider
+ * or the generic provider.
+ *
+ * Checking whether is alchemy supported is a non concern for this function!
+ *
+ * @param chainID string chainID to handle chain specific routings
+ * @param method the current RPC method
+ * @returns true | false whether the method on a given network should routed to alchemy or can be sent over the generic provider
+ */
+function alchemyOrDefaultProvider(chainID: string, method: string): boolean {
+  return (
+    RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
+      method.startsWith(m)
+    ) ||
+    (RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some((m: string) =>
+      method.startsWith(m)
+    )
+  )
+}
+
+/**
  * The SerialFallbackProvider is an Ethers JsonRpcProvider that can fall back
  * through a series of providers in case previous ones fail.
  *
@@ -129,7 +153,15 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   // The currently-used provider, produced by the provider-creator at
   // currentProviderIndex.
-  currentProvider: JsonRpcProvider
+  private currentProvider: JsonRpcProvider
+
+  private alchemyProvider: JsonRpcProvider | undefined
+
+  private alchemyProviderCreator:
+    | (() => WebSocketProvider | JsonRpcProvider)
+    | undefined
+
+  supportsAlchemy = false
 
   /**
    * Since our architecture follows a pattern of using distinct provider instances
@@ -142,6 +174,29 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // The index of the provider creator that created the current provider. Used
   // for reconnects when relevant.
   private currentProviderIndex = 0
+
+  // TEMPORARY cache for latest account balances to reduce number of rpc calls
+  // This is intended as a temporary fix to the burst of account enrichment that
+  // happens when the extension is first loaded up as a result of activity emission
+  // inside of chainService.connectChainService
+  private latestBalanceCache: {
+    [address: string]: {
+      balance: string
+      updatedAt: number
+    }
+  } = {}
+
+  // TEMPORARY cache for if an address has code to reduce number of rpc calls
+  // This is intended as a temporary fix to the burst of account enrichment that
+  // happens when the extension is first loaded up as a result of activity emission
+  // inside of chainService.connectChainService
+  // There is no TTL here as the cache will get reset every time the extension is
+  // reloaded and the property of having code updates quite rarely.
+  private latestHasCodeCache: {
+    [address: string]: {
+      hasCode: boolean
+    }
+  } = {}
 
   // Information on the current backoff state. This is used to ensure retries
   // and reconnects back off exponentially.
@@ -172,18 +227,54 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     // Internal network type useful for helper calls, but not exposed to avoid
     // clashing with Ethers's own `network` stuff.
     private evmNetwork: EVMNetwork,
-    providerCreators: Array<() => WebSocketProvider | JsonRpcProvider>
+    providerCreators: Array<{
+      type: "alchemy" | "generic"
+      creator: () => WebSocketProvider | JsonRpcProvider
+    }>
   ) {
     const [firstProviderCreator, ...remainingProviderCreators] =
-      providerCreators
+      providerCreators.map((pc) => pc.creator)
 
     const firstProvider = firstProviderCreator()
 
     super(firstProvider.connection, firstProvider.network)
 
     this.currentProvider = firstProvider
+
+    const alchemyProviderCreator = providerCreators.find(
+      (creator) => creator.type === "alchemy"
+    )
+
+    if (alchemyProviderCreator) {
+      this.supportsAlchemy = true
+      this.alchemyProviderCreator = alchemyProviderCreator.creator
+      this.alchemyProvider = this.alchemyProviderCreator()
+    }
+
+    setInterval(() => {
+      this.attemptToReconnectToPrimaryProvider()
+      this.attemptToReconnectToAlchemyProvider()
+    }, PRIMARY_PROVIDER_RECONNECT_INTERVAL)
+
     this.cachedChainId = utils.hexlify(Number(evmNetwork.chainID))
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
+  }
+
+  private async routeRpcCall(
+    method: string,
+    params: unknown
+  ): Promise<unknown> {
+    if (
+      this.alchemyProvider &&
+      Math.random() < ALCHEMY_RPC_CALL_PERCENTAGE / 100
+    ) {
+      // Cast `unknown` to `any` - which is the type that the send method expects.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return this.alchemyProvider.send(method, params as Array<any>)
+    }
+    // Cast `unknown` to `any` - which is the type that the send method expects.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return this.currentProvider.send(method, params as Array<any>)
   }
 
   /**
@@ -197,6 +288,34 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     if (method === "eth_chainId") {
       return this.cachedChainId
     }
+
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      const now = Date.now()
+      const lastUpdate = this.latestBalanceCache[address]?.updatedAt
+      if (lastUpdate && now < lastUpdate + 1 * SECOND) {
+        return this.latestBalanceCache[address].balance
+      }
+    }
+
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getCode" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      if (typeof this.latestHasCodeCache[address] !== "undefined") {
+        return this.latestHasCodeCache[address].hasCode
+      }
+    }
+
+    if (alchemyOrDefaultProvider(this.cachedChainId, method)) {
+      if (this.alchemyProvider) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return this.alchemyProvider.send(method, params as any)
+      }
+      throw new Error(
+        `Calling ${method} is not supported on ${this.currentProvider.network.name}`
+      )
+    }
     try {
       if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
         // Detect disconnected WebSocket and immediately throw.
@@ -209,14 +328,35 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           this.send(method, params)
         )
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return await this.currentProvider.send(method, params as any)
+
+      const result = await this.routeRpcCall(method, params)
+
+      // @TODO Remove once initial activity load is refactored.
+      if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
+        const address = (params as string[])[0]
+        this.latestBalanceCache[address] = {
+          balance: result as string,
+          updatedAt: Date.now(),
+        }
+      }
+
+      // @TODO Remove once initial activity load is refactored.
+      if (method === "eth_getCode" && (params as string[])[1] === "latest") {
+        const address = (params as string[])[0]
+        this.latestHasCodeCache[address] = {
+          hasCode: result as boolean,
+        }
+      }
+
+      return result
     } catch (error) {
       // Awful, but what can ya do.
       const stringifiedError = String(error)
 
       if (
-        stringifiedError.match(/WebSocket is already in CLOSING|bad response/)
+        stringifiedError.match(
+          /WebSocket is already in CLOSING|bad response|missing response/
+        )
       ) {
         const backoff = this.backoffFor(this.currentProviderIndex)
         if (typeof backoff === "undefined") {
@@ -287,11 +427,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     processFunc: (result: unknown) => void
   ): Promise<void> {
     const subscription = { tag, param, processFunc }
-    this.subscriptions.push(subscription)
 
     if (this.currentProvider instanceof WebSocketProvider) {
       // eslint-disable-next-line no-underscore-dangle
       await this.currentProvider._subscribe(tag, param, processFunc)
+      this.subscriptions.push(subscription)
     } else {
       logger.warn(
         "Current provider is not a WebSocket provider; subscription " +
@@ -516,6 +656,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return false
     }
 
+    if (!provider.network) {
+      return false
+    }
+
     if (provider instanceof WebSocketProvider) {
       const websocketProvider = provider as WebSocketProvider
 
@@ -544,49 +688,42 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         provider.on(eventName, listener)
       }
     })
-    if (!(provider instanceof WebSocketProvider)) {
-      if (this.subscriptions.length > 0) {
-        logger.warn(
-          `Cannot resubscribe ${this.subscriptions.length} subscription(s) ` +
-            `as the current provider is not a WebSocket provider; waiting ` +
-            `until a WebSocket provider connects to restore subscriptions ` +
-            `properly.`
-        )
-        // Intentionally not awaited - This starts off a recursive reconnect loop
-        // that keeps trying to reconnect until successful.
-        this.attemptToReconnectToPrimaryProvider()
-      }
-      return false
-    }
 
     logger.debug("Subscriptions resubscribed...")
     return true
   }
 
+  private async attemptToReconnectToAlchemyProvider(): Promise<void> {
+    if (
+      this.alchemyProvider &&
+      this.alchemyProviderCreator &&
+      isClosedOrClosingWebSocketProvider(this.alchemyProvider)
+    ) {
+      // Always reconnect without resubscribing - since subscriptions
+      // should live on the currentProvider
+      this.alchemyProvider = this.alchemyProviderCreator()
+    }
+  }
+
   private async attemptToReconnectToPrimaryProvider(): Promise<unknown> {
-    // Attempt to reconnect to primary provider every 15 seconds
-    return waitAnd(PRIMARY_PROVIDER_RECONNECT_INTERVAL, async () => {
-      if (this.currentProviderIndex === 0) {
-        // If we are already connected to the primary provider - don't resubscribe
-        // and stop attempting to reconnect.
-        return null
+    if (this.currentProviderIndex === 0) {
+      // If we are already connected to the primary provider - don't resubscribe
+      return null
+    }
+    const primaryProvider = this.providerCreators[0]()
+    // We need to wait before attempting to resubscribe of the primaryProvider's
+    // websocket connection will almost always still be in a CONNECTING state when
+    // resubscribing.
+    return waitAnd(WAIT_BEFORE_SUBSCRIBING, async (): Promise<unknown> => {
+      const subscriptionsSuccessful = await this.resubscribe(primaryProvider)
+      if (!subscriptionsSuccessful) {
+        return
       }
-      const primaryProvider = this.providerCreators[0]()
-      // We need to wait before attempting to resubscribe of the primaryProvider's
-      // websocket connection will almost always still be in a CONNECTING state when
-      // resubscribing.
-      return waitAnd(WAIT_BEFORE_SUBSCRIBING, async (): Promise<unknown> => {
-        const subscriptionsSuccessful = await this.resubscribe(primaryProvider)
-        if (!subscriptionsSuccessful) {
-          await this.attemptToReconnectToPrimaryProvider()
-          return
-        }
-        // Cleanup the subscriptions on the backup provider.
-        await this.disconnectCurrentProvider()
-        // only set if subscriptions are successful
-        this.currentProvider = primaryProvider
-        this.currentProviderIndex = 0
-      })
+      // Cleanup the subscriptions on the backup provider.
+      await this.disconnectCurrentProvider()
+      // only set if subscriptions are successful
+      this.currentProvider = primaryProvider
+      this.currentProviderIndex = 0
     })
   }
 
@@ -697,23 +834,35 @@ export function makeSerialFallbackProvider(
     network.chainID
   )
     ? [
-        () =>
-          new AlchemyWebSocketProvider(
-            getNetwork(Number(network.chainID)),
-            ALCHEMY_KEY
-          ),
-        () =>
-          new AlchemyProvider(getNetwork(Number(network.chainID)), ALCHEMY_KEY),
+        {
+          type: "alchemy" as const,
+          creator: () =>
+            new AlchemyProvider(
+              getNetwork(Number(network.chainID)),
+              ALCHEMY_KEY
+            ),
+        },
+        {
+          type: "alchemy" as const,
+          creator: () =>
+            new AlchemyWebSocketProvider(
+              getNetwork(Number(network.chainID)),
+              ALCHEMY_KEY
+            ),
+        },
       ]
     : []
 
   const genericProviders = (CHAIN_ID_TO_RPC_URLS[network.chainID] || []).map(
-    (rpcUrl) => () => new JsonRpcProvider(rpcUrl)
+    (rpcUrl) => ({
+      type: "generic" as const,
+      creator: () => new JsonRpcProvider(rpcUrl),
+    })
   )
 
   return new SerialFallbackProvider(network, [
     // Prefer alchemy as the primary provider when available
-    ...alchemyProviderCreators,
     ...genericProviders,
+    ...alchemyProviderCreators,
   ])
 }
