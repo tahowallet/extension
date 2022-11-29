@@ -1,9 +1,18 @@
 /* eslint-disable no-nested-ternary */
 import React, { ReactElement } from "react"
-import { i18n } from "../../_locales/i18n"
+import { i18n, I18nKey } from "../../_locales/i18n"
 import SharedIcon from "../Shared/SharedIcon"
 
-const icons = {
+const icons: Record<
+  "close" | "expand" | "view",
+  {
+    icon: string
+    label: I18nKey
+    background: string
+    size: number
+    style: string
+  }
+> = {
   close: {
     icon: "close",
     label: i18n.t("nfts.collectionHover.close"),
