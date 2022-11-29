@@ -1,3 +1,5 @@
+import { ETHEREUM } from "@tallyho/tally-background/constants"
+import { POAP_CONTRACT } from "@tallyho/tally-background/lib/poap_update"
 import { NFT } from "@tallyho/tally-background/nfts"
 import React from "react"
 
@@ -9,16 +11,33 @@ type ExploreMarketLinkProps = {
   type?: "link" | "button"
 }
 
-export const MARKET_LINK = {
+type MarketDetails = {
+  title: string
+  url: string
+  color: string
+  icon: string
+  getNFTLink: (nft: NFT) => string
+}
+
+const OPENSEA_CHAINS = {
+  1: "ethereum",
+  10: "optimism",
+  137: "matic",
+  42161: "arbitrum",
+}
+
+export const MARKET_LINK: Record<string, MarketDetails> = {
   opensea: {
     title: "OpenSea",
     url: "https://opensea.io/",
     color: "#409FFF",
     icon: "opensea.png",
     getNFTLink: (nft: NFT): string =>
-      `https://opensea.io/assets/${nft.network.name.toLowerCase()}/${
-        nft.contract
-      }/${nft.tokenId}`,
+      `https://opensea.io/assets/${
+        OPENSEA_CHAINS[
+          parseInt(nft.network.chainID, 10) as keyof typeof OPENSEA_CHAINS
+        ]
+      }/${nft.contract}/${nft.tokenId}`,
   },
   looksrare: {
     title: "LooksRare",
@@ -44,6 +63,19 @@ export const MARKET_LINK = {
     getNFTLink: (nft: NFT): string =>
       `https://app.poap.xyz/token/${nft.tokenId}`,
   },
+}
+
+export function getRelevantMarketsList(nft: NFT): MarketDetails[] {
+  if (nft.contract === POAP_CONTRACT) {
+    return [MARKET_LINK.poap]
+  }
+  if (nft.badge) {
+    return [MARKET_LINK.galxe]
+  }
+  if (nft.network.chainID !== ETHEREUM.chainID) {
+    return [MARKET_LINK.opensea]
+  }
+  return [MARKET_LINK.opensea, MARKET_LINK.looksrare]
 }
 
 export const HARDCODED_MARKETS = [MARKET_LINK.opensea, MARKET_LINK.looksrare]

@@ -3,6 +3,8 @@ import logger from "./logger"
 import { ETHEREUM } from "../constants"
 import { NFT, NFTCollection, NFTsWithPagesResponse } from "../nfts"
 
+export const POAP_CONTRACT = "poap_contract"
+
 type PoapNFTModel = {
   event: {
     id: number
@@ -52,7 +54,7 @@ function poapNFTModelToNFT(original: PoapNFTModel, owner: string): NFT {
       { trait: "Year", value: year?.toString() },
     ],
     collectionID: "POAP",
-    contract: "poap_contract", // contract address doesn't make sense for POAPs
+    contract: POAP_CONTRACT, // contract address doesn't make sense for POAPs
     owner,
     network: ETHEREUM,
     badge: {

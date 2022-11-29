@@ -1,14 +1,17 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { NFTWithCollection } from "@tallyho/tally-background/redux-slices/nfts_update"
-import React, { ReactElement, useRef, useState, useEffect } from "react"
+import React, {
+  ReactElement,
+  useRef,
+  useState,
+  useEffect,
+  useMemo,
+} from "react"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
-import ExploreMarketLink, {
-  HARDCODED_BADGES,
-  HARDCODED_MARKETS,
-} from "./ExploreMarketLink"
+import ExploreMarketLink, { getRelevantMarketsList } from "./ExploreMarketLink"
 import NFTImage from "./NFTImage"
 
 const MAX_DESCRIPTION_LENGTH = 180
@@ -63,6 +66,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
   } = nft
   const { totalNftCount } = collection
   const floorPrice = collection.floorPrice?.value && collection.floorPrice
+  const marketsList = useMemo(() => getRelevantMarketsList(nft), [nft])
 
   const backdropRef = useBackdrop()
   const { t } = useTranslation("translation", {
@@ -118,16 +122,14 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         <div className="preview_section">
           <div className="preview_section_header"> {t("preview.viewOn")}</div>
           <div className="preview_section_row preview_markets">
-            {(badge ? HARDCODED_BADGES : HARDCODED_MARKETS).map(
-              ({ url, title, color, icon, getNFTLink }) => (
-                <ExploreMarketLink
-                  type="button"
-                  key={url}
-                  url={getNFTLink(nft)}
-                  {...{ title, color, icon }}
-                />
-              )
-            )}
+            {marketsList.map(({ url, title, color, icon, getNFTLink }) => (
+              <ExploreMarketLink
+                type="button"
+                key={url}
+                url={getNFTLink(nft)}
+                {...{ title, color, icon }}
+              />
+            ))}
           </div>
         </div>
 
