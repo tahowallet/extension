@@ -256,29 +256,13 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private async routeRpcCall(messageId: symbol): Promise<unknown> {
     const { method, params } = this.messagesToSend[messageId]
 
-    if (method === "eth_chainId") {
-      delete this.messagesToSend[messageId]
-      return this.cachedChainId
-    }
+    const cachedResult = this.checkForCachedResult(messageId, {
+      method,
+      params,
+    })
 
-    // @TODO Remove once initial activity load is refactored.
-    if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
-      const address = (params as string[])[0]
-      const now = Date.now()
-      const lastUpdate = this.latestBalanceCache[address]?.updatedAt
-      if (lastUpdate && now < lastUpdate + 1 * SECOND) {
-        delete this.messagesToSend[messageId]
-        return this.latestBalanceCache[address].balance
-      }
-    }
-
-    // @TODO Remove once initial activity load is refactored.
-    if (method === "eth_getCode" && (params as string[])[1] === "latest") {
-      const address = (params as string[])[0]
-      if (typeof this.latestHasCodeCache[address] !== "undefined") {
-        delete this.messagesToSend[messageId]
-        return this.latestHasCodeCache[address].hasCode
-      }
+    if (typeof cachedResult !== "undefined") {
+      return cachedResult
     }
 
     try {
@@ -417,6 +401,33 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 
+  private checkForCachedResult(
+    messageId: symbol,
+    { method, params }: { method: string; params: unknown }
+  ) {
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      const now = Date.now()
+      const lastUpdate = this.latestBalanceCache[address]?.updatedAt
+      if (lastUpdate && now < lastUpdate + 1 * SECOND) {
+        delete this.messagesToSend[messageId]
+        return this.latestBalanceCache[address].balance
+      }
+    }
+
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getCode" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      if (typeof this.latestHasCodeCache[address] !== "undefined") {
+        delete this.messagesToSend[messageId]
+        return this.latestHasCodeCache[address].hasCode
+      }
+    }
+
+    return undefined
+  }
+
   /**
    * Override the core `send` method to handle disconnects and other errors
    * that should trigger retries. Ethers already does internal retrying, but
@@ -425,6 +436,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * possible/necessary.
    */
   override async send(method: string, params: unknown): Promise<unknown> {
+    // Since we can reliably return the chainId with absolutely no communication with
+    // the provider - we can return it without needing to worry about routing rpc calls
+    if (method === "eth_chainId") {
+      return this.cachedChainId
+    }
+
     const id = Symbol(method)
     this.messagesToSend[id] = {
       method,
@@ -434,9 +451,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
 
     const result = await this.routeRpcCall(id)
-
     this.conditionallyCacheResult(result, { method, params })
-
     return result
   }
 
