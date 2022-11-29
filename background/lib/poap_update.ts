@@ -54,7 +54,7 @@ function poapNFTModelToNFT(original: PoapNFTModel, owner: string): NFT {
     contract: "poap_contract", // contract address doesn't make sense for POAPs
     owner,
     network: ETHEREUM,
-    achievement: {
+    badge: {
       url: `https://app.poap.xyz/token/${tokenId}`,
     },
   }
@@ -100,10 +100,11 @@ export async function getPoapCollections(
   return {
     id: "POAP", // let's keep POAPs in one collection
     name: "POAP",
-    nftCount: undefined, // we don't know at this point how many POAPs this address has
+    nftCount: undefined, // TODO: we don't know at this point how many POAPs this address has
     owner: address,
+    hasBadges: true,
     network: ETHEREUM,
     floorPrice: undefined, // POAPs don't have floor prices
-    thumbnail: undefined, // TODO: set a thumbnail for POAP collection
+    thumbnail: "https://poap.xyz/POAP.f74a7300.svg",
   }
 }
