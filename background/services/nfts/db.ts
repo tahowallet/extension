@@ -33,7 +33,7 @@ export class NFTsDatabase extends Dexie {
     return this.collections.toArray()
   }
 
-  async getNFTsFromCollection(
+  async getCollectionNFTsForAccount(
     collectionID: string,
     { address, network }: AddressOnNetwork
   ): Promise<NFT[]> {
