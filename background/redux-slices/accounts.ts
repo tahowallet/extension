@@ -5,7 +5,7 @@ import { EVMNetwork, Network } from "../networks"
 import {
   AnyAsset,
   AnyAssetAmount,
-  FungibleAsset,
+  isFungibleAsset,
   SmartContractFungibleAsset,
 } from "../assets"
 import {
@@ -16,6 +16,7 @@ import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
 import { AccountSigner } from "../services/signing"
 import { TEST_NETWORK_BY_CHAIN_ID } from "../constants"
+import { convertFixedPoint } from "../lib/fixed-point"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -180,13 +181,18 @@ function updateCombinedData(immerState: AccountState) {
       let { amount } = combinedAssetAmount
 
       if (acc[assetSymbol]?.asset) {
-        const { decimals } = acc[assetSymbol].asset as FungibleAsset
-        const assetDecimals =
-          "decimals" in combinedAssetAmount.asset
-            ? combinedAssetAmount.asset.decimals
-            : 0
-        if (assetDecimals > decimals) {
-          amount /= BigInt(`1${"0".repeat(assetDecimals - decimals)}`)
+        const accAsset = acc[assetSymbol].asset
+        const decimals = isFungibleAsset(accAsset) ? accAsset.decimals : 0
+        const targetDecimals = isFungibleAsset(combinedAssetAmount.asset)
+          ? combinedAssetAmount.asset.decimals
+          : 0
+
+        if (targetDecimals > decimals) {
+          amount = convertFixedPoint(
+            combinedAssetAmount?.amount,
+            decimals,
+            targetDecimals
+          )
         }
       }
 
