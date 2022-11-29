@@ -396,6 +396,27 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 
+  private conditionallyCacheResult(
+    result: unknown,
+    { method, params }: { method: string; params: unknown }
+  ): void {
+    if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      this.latestBalanceCache[address] = {
+        balance: result as string,
+        updatedAt: Date.now(),
+      }
+    }
+
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getCode" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      this.latestHasCodeCache[address] = {
+        hasCode: result as boolean,
+      }
+    }
+  }
+
   /**
    * Override the core `send` method to handle disconnects and other errors
    * that should trigger retries. Ethers already does internal retrying, but
@@ -414,22 +435,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
     const result = await this.routeRpcCall(id)
 
-    // @TODO Remove once initial activity load is refactored.
-    if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
-      const address = (params as string[])[0]
-      this.latestBalanceCache[address] = {
-        balance: result as string,
-        updatedAt: Date.now(),
-      }
-    }
-
-    // @TODO Remove once initial activity load is refactored.
-    if (method === "eth_getCode" && (params as string[])[1] === "latest") {
-      const address = (params as string[])[0]
-      this.latestHasCodeCache[address] = {
-        hasCode: result as boolean,
-      }
-    }
+    this.conditionallyCacheResult(result, { method, params })
 
     return result
   }
