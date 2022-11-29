@@ -150,6 +150,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   private alchemyProvider: JsonRpcProvider | undefined
 
+  private messagesToSend: {
+    [id: symbol]: {
+      method: string
+      params: unknown
+      backoffCount: number
+    }
+  } = {}
+
   private alchemyProviderCreator:
     | (() => WebSocketProvider | JsonRpcProvider)
     | undefined
@@ -190,14 +198,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       hasCode: boolean
     }
   } = {}
-
-  // Information on the current backoff state. This is used to ensure retries
-  // and reconnects back off exponentially.
-  private currentBackoff = {
-    providerIndex: 0,
-    backoffMs: BASE_BACKOFF_MS,
-    backoffCount: 0,
-  }
 
   // Information on WebSocket-style subscriptions. Tracked here so as to
   // restore them in case of WebSocket disconnects.
@@ -252,32 +252,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
   }
 
-  private async routeRpcCall(
-    method: string,
-    params: unknown
-  ): Promise<unknown> {
-    if (
-      this.alchemyProvider &&
-      Math.random() < ALCHEMY_RPC_CALL_PERCENTAGE / 100
-    ) {
-      // Cast `unknown` to `any` - which is the type that the send method expects.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return this.alchemyProvider.send(method, params as Array<any>)
-    }
-    // Cast `unknown` to `any` - which is the type that the send method expects.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this.currentProvider.send(method, params as Array<any>)
-  }
+  private async routeRpcCall(messageId: symbol): Promise<unknown> {
+    const { method, params } = this.messagesToSend[messageId]
 
-  /**
-   * Override the core `send` method to handle disconnects and other errors
-   * that should trigger retries. Ethers already does internal retrying, but
-   * this retry methodology eventually falls back on another provider, handles
-   * WebSocket disconnects, and restores subscriptions where
-   * possible/necessary.
-   */
-  override async send(method: string, params: unknown): Promise<unknown> {
     if (method === "eth_chainId") {
+      delete this.messagesToSend[messageId]
       return this.cachedChainId
     }
 
@@ -287,6 +266,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       const now = Date.now()
       const lastUpdate = this.latestBalanceCache[address]?.updatedAt
       if (lastUpdate && now < lastUpdate + 1 * SECOND) {
+        delete this.messagesToSend[messageId]
         return this.latestBalanceCache[address].balance
       }
     }
@@ -295,19 +275,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     if (method === "eth_getCode" && (params as string[])[1] === "latest") {
       const address = (params as string[])[0]
       if (typeof this.latestHasCodeCache[address] !== "undefined") {
+        delete this.messagesToSend[messageId]
         return this.latestHasCodeCache[address].hasCode
       }
     }
 
-    if (alchemyOrDefaultProvider(this.cachedChainId, method)) {
-      if (this.alchemyProvider) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return this.alchemyProvider.send(method, params as any)
-      }
-      throw new Error(
-        `Calling ${method} is not supported on ${this.currentProvider.network.name}`
-      )
-    }
     try {
       if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
         // Detect disconnected WebSocket and immediately throw.
@@ -317,29 +289,42 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       if (isConnectingWebSocketProvider(this.currentProvider)) {
         // If the websocket is still connecting, wait and try to send again.
         return await waitAnd(WAIT_BEFORE_SEND_AGAIN, async () =>
-          this.send(method, params)
+          this.routeRpcCall(messageId)
         )
       }
 
-      const result = await this.routeRpcCall(method, params)
-
-      // @TODO Remove once initial activity load is refactored.
-      if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
-        const address = (params as string[])[0]
-        this.latestBalanceCache[address] = {
-          balance: result as string,
-          updatedAt: Date.now(),
+      if (alchemyOrDefaultProvider(this.cachedChainId, method)) {
+        if (this.alchemyProvider) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const result = await this.alchemyProvider.send(method, params as any)
+          delete this.messagesToSend[messageId]
+          return result
         }
+        throw new Error(
+          `Calling ${method} is not supported on ${this.currentProvider.network.name}`
+        )
       }
 
-      // @TODO Remove once initial activity load is refactored.
-      if (method === "eth_getCode" && (params as string[])[1] === "latest") {
-        const address = (params as string[])[0]
-        this.latestHasCodeCache[address] = {
-          hasCode: result as boolean,
-        }
+      if (
+        this.alchemyProvider &&
+        Math.random() < ALCHEMY_RPC_CALL_PERCENTAGE / 100
+      ) {
+        // Cast `unknown` to `any` - which is the type that the send method expects.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await this.alchemyProvider.send(
+          method,
+          params as Array<any>
+        )
+        delete this.messagesToSend[messageId]
+        return result
       }
-
+      // Cast `unknown` to `any` - which is the type that the send method expects.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await this.currentProvider.send(
+        method,
+        params as Array<any>
+      )
+      delete this.messagesToSend[messageId]
       return result
     } catch (error) {
       // Awful, but what can ya do.
@@ -350,7 +335,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           /WebSocket is already in CLOSING|bad response|missing response/
         )
       ) {
-        const backoff = this.backoffFor(this.currentProviderIndex)
+        const backoff = this.backoffFor(messageId)
         if (typeof backoff === "undefined") {
           logger.debug(
             "Attempting to connect new provider after error",
@@ -364,7 +349,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
             // Try again with the next provider.
             await this.reconnectProvider()
 
-            return await this.send(method, params)
+            return await this.routeRpcCall(messageId)
           }
 
           // If we've looped around, set us up for the next call, but fail the
@@ -392,7 +377,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
             }
 
             logger.debug("Retrying", method, params)
-            return this.send(method, params)
+            return this.routeRpcCall(messageId)
           })
         }
       }
@@ -406,6 +391,43 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
       throw error
     }
+  }
+
+  /**
+   * Override the core `send` method to handle disconnects and other errors
+   * that should trigger retries. Ethers already does internal retrying, but
+   * this retry methodology eventually falls back on another provider, handles
+   * WebSocket disconnects, and restores subscriptions where
+   * possible/necessary.
+   */
+  override async send(method: string, params: unknown): Promise<unknown> {
+    const id = Symbol(method)
+    this.messagesToSend[id] = {
+      method,
+      params,
+      backoffCount: 0,
+    }
+
+    const result = await this.routeRpcCall(id)
+
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      this.latestBalanceCache[address] = {
+        balance: result as string,
+        updatedAt: Date.now(),
+      }
+    }
+
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getCode" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      this.latestHasCodeCache[address] = {
+        hasCode: result as boolean,
+      }
+    }
+
+    return result
   }
 
   /**
@@ -729,35 +751,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * Backoffs respect a cooldown time after which they reset down to the base
    * backoff time.
    */
-  private backoffFor(providerIndex: number): number | undefined {
-    const { providerIndex: existingProviderIndex, backoffCount } =
-      this.currentBackoff
+  private backoffFor(messageId: symbol): number | undefined {
+    const { backoffCount } = this.messagesToSend[messageId]
 
-    if (backoffCount > MAX_RETRIES) {
+    if (backoffCount && backoffCount > MAX_RETRIES) {
       return undefined
     }
-
-    if (existingProviderIndex !== providerIndex) {
-      this.currentBackoff = {
-        providerIndex,
-        backoffMs: BASE_BACKOFF_MS,
-        backoffCount: 0,
-      }
-    } else {
-      // The next backoff slot starts at the current minimum backoff and
-      // extends until the start of the next backoff. This specific backoff is
-      // randomized within that slot.
-      const newBackoffCount = backoffCount + 1
-      const backoffMs = backedOffMs()
-
-      this.currentBackoff = {
-        providerIndex,
-        backoffMs,
-        backoffCount: newBackoffCount,
-      }
-    }
-
-    return this.currentBackoff.backoffMs
+    this.messagesToSend[messageId].backoffCount += 1
+    return backedOffMs()
   }
 
   /**
