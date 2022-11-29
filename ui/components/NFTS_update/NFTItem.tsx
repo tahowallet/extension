@@ -16,10 +16,17 @@ export default function NFTsItem<T extends NFT | NFTCollectionCached>(props: {
   const floorPrice =
     "floorPrice" in item && item.floorPrice?.value && item.floorPrice
   const nftsCount = "nfts" in item && item.nfts.length
+  const isBadge = "badge" in item && !!item.badge
   return (
     <div className="nft_item">
       <div className="nft_image">
-        <NFTImage src={thumbnail} alt={name} width={168} height={168} />
+        <NFTImage
+          src={thumbnail}
+          alt={name}
+          width={168}
+          height={168}
+          isBadge={isBadge}
+        />
         <div className="nft_image_details">
           <SharedNetworkIcon
             network={network}

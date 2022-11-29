@@ -77,7 +77,7 @@ export default function NFTPreview(props: {
     <>
       <div className="preview_wrapper">
         <div className="preview_image">
-          <NFTImage src={thumbnail} alt={name} width={384} />
+          <NFTImage src={thumbnail} alt={name} width={384} isBadge={!!badge} />
           <div className="preview_network">
             <SharedNetworkIcon network={network} size={24} hasBackground />
           </div>
@@ -151,7 +151,9 @@ export default function NFTPreview(props: {
           </div>
           <div className="preview_section_column align_right">
             <div className="preview_section_header">{t("preview.creator")}</div>
-            <p>{contract ? truncateAddress(contract) : "-"}</p>
+            <p>
+              {contract?.startsWith("0x") ? truncateAddress(contract) : "-"}
+            </p>
           </div>
         </div>
 
@@ -161,17 +163,23 @@ export default function NFTPreview(props: {
               {t("preview.properties")}
             </div>
             <div className="preview_property_list preview_section_row">
-              {attributes.map(({ trait, value }) => (
-                <div
-                  key={trait}
-                  className="preview_property preview_section_column"
-                >
-                  <span className="preview_property_trait">{trait}</span>
-                  <span className="preview_property_value ellipsis">
-                    {value}
-                  </span>
-                </div>
-              ))}
+              {attributes.map(
+                ({ trait, value }) =>
+                  !!value && (
+                    <div
+                      key={trait}
+                      className="preview_property preview_section_column"
+                    >
+                      <span className="preview_property_trait">{trait}</span>
+                      <span
+                        className="preview_property_value ellipsis"
+                        title={value}
+                      >
+                        {value}
+                      </span>
+                    </div>
+                  )
+              )}
             </div>
           </div>
         )}
