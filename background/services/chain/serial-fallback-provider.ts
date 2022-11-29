@@ -13,6 +13,7 @@ import {
   SECOND,
   CHAIN_ID_TO_RPC_URLS,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
+  RPC_METHOD_PROVIDER_ROUTING,
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
@@ -107,6 +108,27 @@ function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
   }
 
   return false
+}
+
+/**
+ * Return the decision whether a given RPC call should be routed to the alchemy provider
+ * or the generic provider.
+ *
+ * Checking whether is alchemy supported is a non concern for this function!
+ *
+ * @param chainID string chainID to handle chain specific routings
+ * @param method the current RPC method
+ * @returns true | false whether the method on a given network should routed to alchemy or can be sent over the generic provider
+ */
+function alchemyOrDefaultProvider(chainID: string, method: string): boolean {
+  return (
+    RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
+      method.startsWith(m)
+    ) ||
+    (RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some((m: string) =>
+      method.startsWith(m)
+    )
+  )
 }
 
 /**
@@ -285,7 +307,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
     }
 
-    if (method.startsWith("alchemy_")) {
+    if (alchemyOrDefaultProvider(this.cachedChainId, method)) {
       if (this.alchemyProvider) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return this.alchemyProvider.send(method, params as any)
