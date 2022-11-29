@@ -1,6 +1,8 @@
 import classNames from "classnames"
 import React, { ReactElement, useState } from "react"
 
+const noPreviewLink = "./images/no_preview.svg"
+
 export default function NFTImage({
   width,
   height,
@@ -17,6 +19,8 @@ export default function NFTImage({
   isAchievement?: boolean
 }): ReactElement {
   const [isLoading, setIsLoading] = useState(true)
+  const [imageUrl, setImageUrl] = useState(src || noPreviewLink)
+
   return (
     <>
       <img
@@ -26,16 +30,14 @@ export default function NFTImage({
           loading: isLoading,
         })}
         alt={alt}
-        src={src}
+        src={imageUrl}
         width={width}
         height={height}
         onError={({ currentTarget }) => {
           // eslint-disable-next-line no-param-reassign
           currentTarget.onerror = null // prevents looping
-          // eslint-disable-next-line no-param-reassign
-          currentTarget.src = "./images/no_preview.svg"
-          // eslint-disable-next-line no-param-reassign
-          currentTarget.className = ""
+          setImageUrl("./images/no_preview.svg")
+          setIsLoading(false)
         }}
       />
       <style jsx>{`
