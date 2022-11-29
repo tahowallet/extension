@@ -141,11 +141,33 @@ export const CHAIN_ID_TO_RPC_URLS: {
     "https://optimism-mainnet.public.blastapi.io",
   ],
   [ETHEREUM.chainID]: ["https://rpc.ankr.com/eth"],
-  [ARBITRUM_ONE.chainID]: [
-    // This one is having issues with signing/other endpoints
-    // "https://rpc.ankr.com/arbitrum"
-  ],
+  [ARBITRUM_ONE.chainID]: ["https://rpc.ankr.com/arbitrum"],
   [GOERLI.chainID]: ["https://ethereum-goerli-rpc.allthatnode.com"],
   [AVALANCHE.chainID]: ["https://api.avax.network/ext/bc/C/rpc"],
   [BINANCE_SMART_CHAIN.chainID]: ["https://rpc.ankr.com/bsc"],
 }
+
+/**
+ * Method list, to describe which rpc method calls on which networks should
+ * prefer alchemy provider over the generic ones.
+ *
+ * The method names can be full or the starting parts of the method name.
+ * This allows us to use "namespaces" for providers eg `alchemy_...` or `qn_...`
+ *
+ * The structure is network specific with an extra `everyChain` option.
+ * The methods in this array will be directed towards alchemy on every network.
+ */
+export const RPC_METHOD_PROVIDER_ROUTING = {
+  everyChain: [
+    "alchemy_", // alchemy specific api calls start with this
+    "eth_sendRawTransaction", // broadcast should always go to alchemy
+    "eth_subscribe", // generic http providers do not support this, but dapps need this
+    "eth_estimateGas", // just want to be safe, when setting up a transaction
+  ],
+  [OPTIMISM.chainID]: [
+    "eth_call", // this is causing issues on optimism with ankr and is used heavily by uniswap
+  ],
+  [ARBITRUM_ONE.chainID]: [
+    "eth_call", // this is causing issues on arbitrum with ankr and is used heavily by uniswap
+  ],
+} as const
