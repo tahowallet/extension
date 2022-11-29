@@ -9,7 +9,6 @@ import {
 import { utils } from "ethers"
 import { getNetwork } from "@ethersproject/networks"
 import {
-  MINUTE,
   SECOND,
   CHAIN_ID_TO_RPC_URLS,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
@@ -26,8 +25,6 @@ import {
 
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 150
-// Reset backoffs after 5 minutes.
-const COOLDOWN_PERIOD = 5 * MINUTE
 // Retry 8 times before falling back to the next provider.
 // This generally results in a wait time of around 30 seconds (with a maximum time
 // of 76.5 seconds for 8 completely serial requests) before falling back since we
@@ -204,7 +201,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     providerIndex: 0,
     backoffMs: BASE_BACKOFF_MS,
     backoffCount: 0,
-    lastBackoffTime: 0,
   }
 
   // Information on WebSocket-style subscriptions. Tracked here so as to
@@ -738,11 +734,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * backoff time.
    */
   private backoffFor(providerIndex: number): number | undefined {
-    const {
-      providerIndex: existingProviderIndex,
-      backoffCount,
-      lastBackoffTime,
-    } = this.currentBackoff
+    const { providerIndex: existingProviderIndex, backoffCount } =
+      this.currentBackoff
 
     if (backoffCount > MAX_RETRIES) {
       return undefined
@@ -753,14 +746,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         providerIndex,
         backoffMs: BASE_BACKOFF_MS,
         backoffCount: 0,
-        lastBackoffTime: Date.now(),
-      }
-    } else if (Date.now() - lastBackoffTime > COOLDOWN_PERIOD) {
-      this.currentBackoff = {
-        providerIndex,
-        backoffMs: BASE_BACKOFF_MS,
-        backoffCount: 0,
-        lastBackoffTime: Date.now(),
       }
     } else {
       // The next backoff slot starts at the current minimum backoff and
@@ -773,7 +758,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         providerIndex,
         backoffMs,
         backoffCount: newBackoffCount,
-        lastBackoffTime: Date.now(),
       }
     }
 
