@@ -1,6 +1,8 @@
 import classNames from "classnames"
 import React, { ReactElement, useState } from "react"
 
+const noPreviewLink = "./images/no_preview.svg"
+
 export default function NFTImage({
   width,
   height,
@@ -17,6 +19,7 @@ export default function NFTImage({
   isBadge?: boolean
 }): ReactElement {
   const [isLoading, setIsLoading] = useState(true)
+  const [imageUrl, setImageUrl] = useState(src || noPreviewLink)
 
   return (
     <>
@@ -34,16 +37,14 @@ export default function NFTImage({
             badge: isBadge,
           })}
           alt={alt}
-          src={src}
+          src={imageUrl}
           width={width}
           height={height}
           onError={({ currentTarget }) => {
             // eslint-disable-next-line no-param-reassign
             currentTarget.onerror = null // prevents looping
-            // eslint-disable-next-line no-param-reassign
-            currentTarget.src = "./images/no_preview.svg"
-            // eslint-disable-next-line no-param-reassign
-            currentTarget.className = ""
+            setImageUrl("./images/no_preview.svg")
+            setIsLoading(false)
           }}
         />
       </div>
@@ -99,7 +100,7 @@ export default function NFTImage({
           position: absolute;
           top: 0;
           left: 0;
-          background: no-repeat center/200% url(${src});
+          background: no-repeat center/200% url(${imageUrl});
           filter: blur(20px);
         }
       `}</style>

@@ -88,7 +88,7 @@ export default class NFTsService extends BaseService<Events> {
         await this.db.updateNFTs(nfts)
         this.#nextPageUrls.push(...nextPageURLs) // TODO: implement fetching next pages
 
-        const updatedNFTs = await this.db.getNFTsFromCollection(
+        const updatedNFTs = await this.db.getCollectionNFTsForAccount(
           collectionID,
           account
         )

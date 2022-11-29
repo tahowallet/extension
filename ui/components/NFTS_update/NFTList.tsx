@@ -1,5 +1,7 @@
-import { NFT } from "@tallyho/tally-background/nfts"
-import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
+import {
+  NFTCollectionCached,
+  NFTWithCollection,
+} from "@tallyho/tally-background/redux-slices/nfts_update"
 import React, { ReactElement, useState } from "react"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import NFTCollection from "./NFTCollection"
@@ -10,15 +12,10 @@ export default function NFTList(props: {
 }): ReactElement {
   const { collections } = props
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-  const [currentNFTPreview, setCurrentNFTPreview] = useState<{
-    nft: NFT
-    collection: NFTCollectionCached
-  } | null>(null)
+  const [currentNFTPreview, setCurrentNFTPreview] =
+    useState<NFTWithCollection | null>(null)
 
-  const openPreview = (current: {
-    nft: NFT
-    collection: NFTCollectionCached
-  }) => {
+  const openPreview = (current: NFTWithCollection) => {
     setIsPreviewOpen(true)
     setCurrentNFTPreview(current)
   }

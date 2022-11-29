@@ -21,6 +21,11 @@ export type NFTsState = {
   }
 }
 
+export type NFTWithCollection = {
+  collection: NFTCollectionCached
+  nft: NFT
+}
+
 export type FiltersState = []
 
 export type NFTsSliceState = { nfts: NFTsState; filters: FiltersState }

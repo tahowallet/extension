@@ -5,7 +5,7 @@ import NFTImage from "./NFTImage"
 import NFTHover from "./NFTHover"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 
-export default function NFTsItem<T extends NFT | NFTCollectionCached>(props: {
+export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
   item: T
   isCollection?: boolean
   isExpanded?: boolean

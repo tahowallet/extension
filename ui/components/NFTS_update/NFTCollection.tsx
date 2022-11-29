@@ -3,6 +3,7 @@ import { NFT } from "@tallyho/tally-background/nfts"
 import {
   fetchNFTsFromCollection,
   NFTCollectionCached,
+  NFTWithCollection,
 } from "@tallyho/tally-background/redux-slices/nfts_update"
 import classNames from "classnames"
 import NFTItem from "./NFTItem"
@@ -10,7 +11,7 @@ import { useBackgroundDispatch } from "../../hooks"
 
 export default function NFTCollection(props: {
   collection: NFTCollectionCached
-  openPreview: (current: { nft: NFT; collection: NFTCollectionCached }) => void
+  openPreview: (current: NFTWithCollection) => void
 }): ReactElement {
   const { collection, openPreview } = props
   const { id, owner, network } = collection
