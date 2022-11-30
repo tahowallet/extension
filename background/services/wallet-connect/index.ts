@@ -123,7 +123,6 @@ export default class WalletConnectService extends BaseService<Events> {
             namespaces,
           })
           await acknowledged()
-          console.log("[WalletConnect Demo] - connection acknowledged")
         } else {
           // TODO: how to handle this case?
         }
@@ -132,15 +131,13 @@ export default class WalletConnectService extends BaseService<Events> {
 
     this.signClient?.on(
       "session_request",
-      (event: SignClientTypes.EventArguments["session_request"]) => {
-        console.log("[WalletConnect Demo] - got session_request event", event)
-      }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      (event: SignClientTypes.EventArguments["session_request"]) => {}
     )
   }
 
   async performConnection(uri: string): Promise<void> {
     if (this.signClient === undefined) {
-      console.log("[WalletConnect Demo] - signClient undefined")
       return
     }
 
@@ -150,16 +147,12 @@ export default class WalletConnectService extends BaseService<Events> {
       // Route the provided URI to the v1 SignClient if URI version indicates it, else use v2.
       if (version === 1) {
         // createLegacySignClient({ uri })
-        console.log("[WalletConnect Demo] - TODO: unsupported legacy")
       } else if (version === 2) {
         await this.signClient.pair({ uri })
-        console.log("[WalletConnect Demo] - pairing request sent")
       } else {
         // TODO: decide how to handle this
-        console.log("[WalletConnect Demo] - unhandled uri", uri)
       }
-    } catch (err: unknown) {
-      console.log("[WalletConnect Demo] - TODO: handle error", err)
-    }
+      // eslint-disable-next-line no-empty
+    } catch (err: unknown) {}
   }
 }
