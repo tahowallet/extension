@@ -11,6 +11,7 @@ import SharedAccordion from "../Shared/SharedAccordion"
 import SharedIcon from "../Shared/SharedIcon"
 import SharedLoadingDoggo from "../Shared/SharedLoadingDoggo"
 import NFTListItem from "./NFTCollectionListItem"
+import SharedImageWithFallback from "../Shared/SharedImageWithFallback"
 
 export default function NFTCollectionAccordion({
   collection,
@@ -50,8 +51,9 @@ export default function NFTCollectionAccordion({
       <SharedAccordion
         headerElement={
           <div key={collection.id} className="nft_collection">
-            <img
+            <SharedImageWithFallback
               alt={collection.name}
+              fallback="images/no_preview.svg"
               width="32"
               height="32"
               src={collection.thumbnail}
@@ -131,7 +133,7 @@ export default function NFTCollectionAccordion({
             flex-grow: 1;
           }
 
-          .nft_collection img {
+          .nft_collection :global(img) {
             border-radius: 4px;
           }
 

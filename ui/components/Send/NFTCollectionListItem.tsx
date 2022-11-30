@@ -1,24 +1,34 @@
 import React from "react"
 import { NFT } from "@tallyho/tally-background/nfts"
 import SharedIcon from "../Shared/SharedIcon"
+import SharedImageWithFallback from "../Shared/SharedImageWithFallback"
+
+export const noPreviewImg = "/images/no_preview.svg"
 
 export default function NFTCollectionListItem({
   id,
   name = id,
-  thumbnail = "/images/no_preview.svg",
+  thumbnail = noPreviewImg,
   onClick,
 }: Pick<NFT, "id" | "name" | "thumbnail"> & {
   onClick: () => void
 }): JSX.Element {
   return (
     <div key={id}>
-      <img width="64" height="64" src={thumbnail} loading="lazy" alt={name} />
+      <SharedImageWithFallback
+        width="64"
+        height="64"
+        src={thumbnail}
+        fallback={noPreviewImg}
+        loading="lazy"
+        alt={name}
+      />
       <button type="button" className="label" onClick={onClick}>
         <p className="ellipsis">{name}</p>
         <SharedIcon height={16} width={16} icon="icons/s/continue.svg" />
       </button>
       <style jsx>{`
-        img {
+        div :global(img) {
           border-radius: 4px;
           object-position: center;
           object-fit: cover;
