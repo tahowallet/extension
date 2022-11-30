@@ -13,6 +13,7 @@ import {
   SECOND,
   CHAIN_ID_TO_RPC_URLS,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
+  RPC_METHOD_PROVIDER_ROUTING,
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
@@ -110,6 +111,27 @@ function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
 }
 
 /**
+ * Return the decision whether a given RPC call should be routed to the alchemy provider
+ * or the generic provider.
+ *
+ * Checking whether is alchemy supported is a non concern for this function!
+ *
+ * @param chainID string chainID to handle chain specific routings
+ * @param method the current RPC method
+ * @returns true | false whether the method on a given network should routed to alchemy or can be sent over the generic provider
+ */
+function alchemyOrDefaultProvider(chainID: string, method: string): boolean {
+  return (
+    RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
+      method.startsWith(m)
+    ) ||
+    (RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some((m: string) =>
+      method.startsWith(m)
+    )
+  )
+}
+
+/**
  * The SerialFallbackProvider is an Ethers JsonRpcProvider that can fall back
  * through a series of providers in case previous ones fail.
  *
@@ -152,6 +174,29 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // The index of the provider creator that created the current provider. Used
   // for reconnects when relevant.
   private currentProviderIndex = 0
+
+  // TEMPORARY cache for latest account balances to reduce number of rpc calls
+  // This is intended as a temporary fix to the burst of account enrichment that
+  // happens when the extension is first loaded up as a result of activity emission
+  // inside of chainService.connectChainService
+  private latestBalanceCache: {
+    [address: string]: {
+      balance: string
+      updatedAt: number
+    }
+  } = {}
+
+  // TEMPORARY cache for if an address has code to reduce number of rpc calls
+  // This is intended as a temporary fix to the burst of account enrichment that
+  // happens when the extension is first loaded up as a result of activity emission
+  // inside of chainService.connectChainService
+  // There is no TTL here as the cache will get reset every time the extension is
+  // reloaded and the property of having code updates quite rarely.
+  private latestHasCodeCache: {
+    [address: string]: {
+      hasCode: boolean
+    }
+  } = {}
 
   // Information on the current backoff state. This is used to ensure retries
   // and reconnects back off exponentially.
@@ -244,7 +289,25 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return this.cachedChainId
     }
 
-    if (method.startsWith("alchemy_")) {
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      const now = Date.now()
+      const lastUpdate = this.latestBalanceCache[address]?.updatedAt
+      if (lastUpdate && now < lastUpdate + 1 * SECOND) {
+        return this.latestBalanceCache[address].balance
+      }
+    }
+
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getCode" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      if (typeof this.latestHasCodeCache[address] !== "undefined") {
+        return this.latestHasCodeCache[address].hasCode
+      }
+    }
+
+    if (alchemyOrDefaultProvider(this.cachedChainId, method)) {
       if (this.alchemyProvider) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return this.alchemyProvider.send(method, params as any)
@@ -265,7 +328,27 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           this.send(method, params)
         )
       }
-      return await this.routeRpcCall(method, params)
+
+      const result = await this.routeRpcCall(method, params)
+
+      // @TODO Remove once initial activity load is refactored.
+      if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
+        const address = (params as string[])[0]
+        this.latestBalanceCache[address] = {
+          balance: result as string,
+          updatedAt: Date.now(),
+        }
+      }
+
+      // @TODO Remove once initial activity load is refactored.
+      if (method === "eth_getCode" && (params as string[])[1] === "latest") {
+        const address = (params as string[])[0]
+        this.latestHasCodeCache[address] = {
+          hasCode: result as boolean,
+        }
+      }
+
+      return result
     } catch (error) {
       // Awful, but what can ya do.
       const stringifiedError = String(error)

@@ -47,7 +47,7 @@ import {
   ethersTransactionFromTransactionRequest,
   unsignedTransactionFromEVMTransaction,
 } from "./utils"
-import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress, wait } from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEIP1559TransactionSignatureRequest,
@@ -1395,7 +1395,6 @@ export default class ChainService extends BaseService<Events> {
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
     const fetchedByNetwork: { [chainID: string]: number } = {}
-    const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
     let queue = Promise.resolve()
 
     // Drop all transactions that weren't retrieved from the queue.

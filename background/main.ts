@@ -12,6 +12,7 @@ import {
   getEthereumNetwork,
   isProbablyEVMAddress,
   normalizeEVMAddress,
+  wait,
 } from "./lib/utils"
 
 import {
@@ -29,6 +30,7 @@ import {
   DoggoService,
   LedgerService,
   SigningService,
+  NFTsService,
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
@@ -127,7 +129,6 @@ import {
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 import { deleteNFts } from "./redux-slices/nfts"
-import { EnrichedEVMTransactionRequest } from "./services/enrichment"
 import {
   ActivityDetail,
   addActivity,
@@ -143,6 +144,13 @@ import AnalyticsService from "./services/analytics"
 import { AnalyticsPreferences } from "./services/preferences/types"
 import { isSmartContractFungibleAsset } from "./assets"
 import { FeatureFlags, isEnabled } from "./features"
+import { NFTCollection } from "./nfts"
+import {
+  initializeNFTs,
+  updateNFTsCollections,
+  emitter as nftsSliceEmitter,
+  updateNFTs,
+} from "./redux-slices/nfts_update"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -283,6 +291,8 @@ export default class Main extends BaseService<never> {
       preferenceService
     )
 
+    const nftsService = NFTsService.create(chainService)
+
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
@@ -322,7 +332,8 @@ export default class Main extends BaseService<never> {
       await telemetryService,
       await ledgerService,
       await signingService,
-      await analyticsService
+      await analyticsService,
+      await nftsService
     )
   }
 
@@ -398,7 +409,13 @@ export default class Main extends BaseService<never> {
      * A promise to the analytics service which will be responsible for listening
      * to events and dispatching to our analytics backend
      */
-    private analyticsService: AnalyticsService
+    private analyticsService: AnalyticsService,
+
+    /**
+     * A promise to the NFTs service which takes care of NFTs data, fetching, updating
+     * details and prices of NFTs for imported accounts.
+     */
+    private nftsService: NFTsService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -458,6 +475,7 @@ export default class Main extends BaseService<never> {
       this.ledgerService.startService(),
       this.signingService.startService(),
       this.analyticsService.startService(),
+      this.nftsService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -478,6 +496,7 @@ export default class Main extends BaseService<never> {
       this.ledgerService.stopService(),
       this.signingService.stopService(),
       this.analyticsService.stopService(),
+      this.nftsService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -497,6 +516,11 @@ export default class Main extends BaseService<never> {
     this.connectLedgerService()
     this.connectSigningService()
     this.connectAnalyticsService()
+
+    // Nothing else beside creating a service should happen when feature flag is off
+    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+      this.connectNFTsService()
+    }
 
     await this.connectChainService()
 
@@ -705,29 +729,38 @@ export default class Main extends BaseService<never> {
             { maxFeePerGas, maxPriorityFeePerGas }
           )
 
-        const { annotation } =
-          await this.enrichmentService.enrichTransactionSignature(
-            network,
-            populatedRequest,
-            2 /* TODO desiredDecimals should be configurable */
-          )
+        // Create promise to pass into Promise.race
+        const getAnnotation = async () => {
+          const { annotation } =
+            await this.enrichmentService.enrichTransactionSignature(
+              network,
+              populatedRequest,
+              2 /* TODO desiredDecimals should be configurable */
+            )
+          return annotation
+        }
 
-        const enrichedPopulatedRequest: EnrichedEVMTransactionRequest = {
-          ...populatedRequest,
-          annotation,
+        const maybeEnrichedAnnotation = await Promise.race([
+          getAnnotation(),
+          // Wait 10 seconds before discarding enrichment
+          wait(10_000),
+        ])
+
+        if (maybeEnrichedAnnotation) {
+          populatedRequest.annotation = maybeEnrichedAnnotation
         }
 
         if (typeof gasEstimationError === "undefined") {
           this.store.dispatch(
             transactionRequest({
-              transactionRequest: enrichedPopulatedRequest,
+              transactionRequest: populatedRequest,
               transactionLikelyFails: false,
             })
           )
         } else {
           this.store.dispatch(
             transactionRequest({
-              transactionRequest: enrichedPopulatedRequest,
+              transactionRequest: populatedRequest,
               transactionLikelyFails: true,
             })
           )
@@ -1389,6 +1422,28 @@ export default class Main extends BaseService<never> {
     this.telemetryService.connectReduxStore(this.store)
   }
 
+  connectNFTsService(): void {
+    this.nftsService.emitter.on(
+      "initializeNFTs",
+      (collections: NFTCollection[]) => {
+        this.store.dispatch(initializeNFTs(collections))
+      }
+    )
+    this.nftsService.emitter.on(
+      "updateCollections",
+      (collections: NFTCollection[]) => {
+        this.store.dispatch(updateNFTsCollections(collections))
+      }
+    )
+    this.nftsService.emitter.on("updateNFTs", (payload) => {
+      this.store.dispatch(updateNFTs(payload))
+    })
+
+    nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) => {
+      this.nftsService.fetchNFTsFromCollection(collectionID, account)
+    })
+  }
+
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
     const addressNetwork = this.store.getState().ui.selectedAccount
     const transaction = await this.chainService.getTransaction(
@@ -1465,9 +1520,16 @@ export default class Main extends BaseService<never> {
   private connectPopupMonitor() {
     runtime.onConnect.addListener((port) => {
       if (port.name !== popupMonitorPortName) return
-      this.analyticsService.sendAnalyticsEvent("UI open")
+
+      const openTime = Date.now()
 
       port.onDisconnect.addListener(() => {
+        this.analyticsService.sendAnalyticsEvent("UI shown", {
+          openTime: new Date(openTime).toISOString(),
+          closeTime: new Date().toISOString(),
+          openLength: (Date.now() - openTime) / 1e3,
+          unit: "s",
+        })
         this.onPopupDisconnected()
       })
     })

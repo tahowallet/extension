@@ -106,22 +106,6 @@ export const TEST_NETWORK_BY_CHAIN_ID = new Set(
 export const NETWORK_FOR_LEDGER_SIGNING = [ETHEREUM, POLYGON]
 
 // Networks that are not added to this struct will
-// not have an in-wallet NFT tab
-export const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
-  [chainID: string]: ("alchemy" | "simplehash" | "poap")[]
-} = {
-  [ETHEREUM.chainID]: ["alchemy", "poap"],
-  [POLYGON.chainID]: ["alchemy"],
-  [OPTIMISM.chainID]: ["simplehash"],
-  [ARBITRUM_ONE.chainID]: ["simplehash"],
-  [AVALANCHE.chainID]: ["simplehash"],
-}
-
-export const NETWORKS_SUPPORTING_NFTS = new Set(
-  Object.keys(CHAIN_ID_TO_NFT_METADATA_PROVIDER)
-)
-
-// Networks that are not added to this struct will
 // not have an in-wallet Swap page
 export const CHAIN_ID_TO_0X_API_BASE: {
   [chainID: string]: string | undefined
@@ -159,3 +143,28 @@ export const CHAIN_ID_TO_RPC_URLS: {
   [GOERLI.chainID]: ["https://ethereum-goerli-rpc.allthatnode.com"],
   [AVALANCHE.chainID]: ["https://api.avax.network/ext/bc/C/rpc"],
 }
+
+/**
+ * Method list, to describe which rpc method calls on which networks should
+ * prefer alchemy provider over the generic ones.
+ *
+ * The method names can be full or the starting parts of the method name.
+ * This allows us to use "namespaces" for providers eg `alchemy_...` or `qn_...`
+ *
+ * The structure is network specific with an extra `everyChain` option.
+ * The methods in this array will be directed towards alchemy on every network.
+ */
+export const RPC_METHOD_PROVIDER_ROUTING = {
+  everyChain: [
+    "alchemy_", // alchemy specific api calls start with this
+    "eth_sendRawTransaction", // broadcast should always go to alchemy
+    "eth_subscribe", // generic http providers do not support this, but dapps need this
+    "eth_estimateGas", // just want to be safe, when setting up a transaction
+  ],
+  [OPTIMISM.chainID]: [
+    "eth_call", // this is causing issues on optimism with ankr and is used heavily by uniswap
+  ],
+  [ARBITRUM_ONE.chainID]: [
+    "eth_call", // this is causing issues on arbitrum with ankr and is used heavily by uniswap
+  ],
+} as const

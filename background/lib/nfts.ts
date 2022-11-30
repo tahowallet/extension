@@ -1,13 +1,16 @@
 import { AddressOnNetwork } from "../accounts"
-import { EVMNetwork } from "../networks"
 import {
-  CHAIN_ID_TO_NFT_METADATA_PROVIDER,
   ETHEREUM,
+  POLYGON,
+  OPTIMISM,
+  AVALANCHE,
+  ARBITRUM_ONE,
   NETWORK_BY_CHAIN_ID,
 } from "../constants"
 import { getNFTs as alchemyGetNFTs, AlchemyNFTItem } from "./alchemy"
 import { getNFTs as simpleHashGetNFTs, SimpleHashNFTModel } from "./simple-hash"
 import { getNFTs as poapGetNFTs, PoapNFTModel } from "./poap"
+import { EVMNetwork } from "../networks"
 
 export type NFT = {
   name: string
@@ -21,6 +24,17 @@ export type NFT = {
   contract: { address: string }
   isAchievement: boolean
   achievementUrl: string | null
+}
+
+// TODO: REMOVE AFTER NFTS UPDATE
+const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
+  [chainID: string]: ("alchemy" | "simplehash" | "poap")[]
+} = {
+  [ETHEREUM.chainID]: ["alchemy", "poap"],
+  [POLYGON.chainID]: ["alchemy"],
+  [OPTIMISM.chainID]: ["simplehash"],
+  [ARBITRUM_ONE.chainID]: ["simplehash"],
+  [AVALANCHE.chainID]: ["simplehash"],
 }
 
 function isGalxeAchievement(url: string | null | undefined) {
@@ -116,6 +130,7 @@ function poapNFTModelToNFT(original: PoapNFTModel): NFT {
   }
 }
 
+// eslint-disable-next-line import/prefer-default-export
 export async function getNFTs({
   address,
   network,

@@ -1,37 +1,49 @@
 import React, { ReactElement } from "react"
 
-import { useLocation } from "react-router-dom"
+import { matchPath, useHistory, useLocation } from "react-router-dom"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants/networks"
-import TabBarIcon from "./TabBarIcon"
-import tabs from "../../utils/tabs"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { useTranslation } from "react-i18next"
+import TabBarIconButton from "./TabBarIconButton"
+import tabs, { defaultTab, TabInfo } from "../../utils/tabs"
 import { useBackgroundSelector } from "../../hooks"
+
+const isTabSupportedByNetwork = (tab: TabInfo, network: EVMNetwork) => {
+  switch (tab.path) {
+    case "/swap":
+      return NETWORKS_SUPPORTING_SWAPS.has(network.chainID)
+    default:
+      return true
+  }
+}
 
 export default function TabBar(): ReactElement {
   const location = useLocation()
-  const activeTabName = location?.pathname?.split("/")[1] || "wallet"
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const history = useHistory()
+  const { t } = useTranslation()
 
-  const isTabSupportedByNetwork = (tab: string) => {
-    switch (tab) {
-      case "swap":
-        return NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID)
-      default:
-        return true
-    }
-  }
+  const activeTab =
+    tabs.find(({ path }) =>
+      matchPath(location.pathname, { path, exact: false })
+    ) ?? defaultTab
 
   return (
     <nav>
-      {tabs.filter(isTabSupportedByNetwork).map((tabName) => {
-        return (
-          <TabBarIcon
-            key={tabName}
-            name={tabName}
-            isActive={activeTabName === tabName}
-          />
-        )
-      })}
+      {tabs
+        .filter((tab) => isTabSupportedByNetwork(tab, selectedNetwork))
+        .map(({ path, title, icon }) => {
+          return (
+            <TabBarIconButton
+              key={path}
+              icon={icon}
+              title={t(title)}
+              onClick={() => history.push(path)}
+              isActive={activeTab.path === path}
+            />
+          )
+        })}
       <style jsx>
         {`
           nav {
@@ -40,7 +52,6 @@ export default function TabBar(): ReactElement {
             background-color: var(--hunter-green);
             display: flex;
             justify-content: space-around;
-            padding: 0px 46px;
             box-sizing: border-box;
             align-items: center;
             flex-shrink: 0;
