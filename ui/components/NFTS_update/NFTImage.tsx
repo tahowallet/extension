@@ -95,11 +95,11 @@ export default function NFTImage({
           height: ${height || width + 40}px;
         }
         .nft_image_wrapper.badge .nft_image_background {
-          width: 100%;
-          height: 100%;
+          width: 120%;
+          height: 120%;
           position: absolute;
-          top: 0;
-          left: 0;
+          top: -10%;
+          left: -10%;
           background: no-repeat center/200% url(${imageUrl});
           filter: blur(20px);
         }
