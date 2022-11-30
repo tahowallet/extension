@@ -5,12 +5,14 @@ import {
 import React, { ReactElement, useState } from "react"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import NFTCollection from "./NFTCollection"
+import NFTItem from "./NFTItem"
 import NFTPreview from "./NFTPreview"
 
 export default function NFTList(props: {
   collections: NFTCollectionCached[]
+  expandBadgesCollections?: boolean
 }): ReactElement {
-  const { collections } = props
+  const { collections, expandBadgesCollections = false } = props
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [currentNFTPreview, setCurrentNFTPreview] =
     useState<NFTWithCollection | null>(null)
@@ -28,13 +30,25 @@ export default function NFTList(props: {
   return (
     <>
       <ul className="nft_list">
-        {collections.map((collection) => (
-          <NFTCollection
-            key={collection.id}
-            openPreview={openPreview}
-            collection={collection}
-          />
-        ))}
+        {collections.map((collection) =>
+          collection.hasBadges &&
+          expandBadgesCollections &&
+          collection.nfts.length ? (
+            collection.nfts.map((nft) => (
+              <NFTItem
+                key={nft.id}
+                item={nft}
+                onClick={() => openPreview({ nft, collection })}
+              />
+            ))
+          ) : (
+            <NFTCollection
+              key={collection.id}
+              openPreview={openPreview}
+              collection={collection}
+            />
+          )
+        )}
       </ul>
       <SharedSlideUpMenu
         isOpen={isPreviewOpen}

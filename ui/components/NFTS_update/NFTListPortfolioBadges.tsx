@@ -6,5 +6,5 @@ import { useBackgroundSelector } from "../../hooks"
 export default function NFTListPortfolioBadges(): ReactElement {
   const collections = useBackgroundSelector(selectNFTBadgesCollections)
 
-  return <NFTList collections={collections} />
+  return <NFTList collections={collections} expandBadgesCollections />
 }
