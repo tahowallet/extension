@@ -42,14 +42,14 @@ export type NFT = {
   id: string
   collectionID: string
   name: string
-  description?: string
-  thumbnail?: string
+  description: string
+  thumbnail: string
   transferDate?: string
   attributes: { trait: string; value: string }[]
   contract: string
   owner: string
   network: EVMNetwork
-  achievement: null | {
+  badge: null | {
     url: string
   }
 }
@@ -59,6 +59,7 @@ export type NFTCollection = {
   name: string
   owner: string
   network: EVMNetwork
+  hasBadges: boolean
   thumbnail?: string
   nftCount?: number
   floorPrice?: {
@@ -66,6 +67,7 @@ export type NFTCollection = {
     token: {
       name: string
       symbol: string
+      decimals: number
     }
   }
 }

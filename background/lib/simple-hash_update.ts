@@ -7,49 +7,51 @@ import { sameEVMAddress } from "./utils"
 
 type SimpleHashNFTModel = {
   nft_id: string
-  token_id: string
-  name: string
-  description?: string
+  token_id: string | null
+  name: string | null
+  description: string | null
   contract_address: string
   chain: "polygon" | "arbitrum" | "optimism" | "ethereum"
-  external_url?: string
+  external_url: string | null
   image_url: string | null
   previews?: {
-    image_small_url?: string
-    image_medium_url?: string
-    image_large_url?: string
+    image_small_url: string | null
+    image_medium_url: string | null
+    image_large_url: string | null
   }
   collection: {
-    collection_id: string
-    name: string
+    collection_id: string // can be null due to docs but we won't fetch NFTs without collections anyway
+    name: string | null
     floor_prices: {
-      value: bigint
+      value: number
       payment_token: {
-        name: string
-        symbol: string
+        name: string | null
+        symbol: string | null
+        decimals: number
       }
     }[]
   }
   owners: { owner_address: string; last_acquired_date: string }[]
-  extra_metadata?: {
-    attributes?: [{ trait_type: string; value: string }]
+  extra_metadata: {
+    attributes?: [{ trait_type?: string | null; value?: string | null }]
   }
 }
 
 type SimpleHashCollectionModel = {
   id: string
-  name: string
-  image_url: string
+  name: string | null
+  image_url: string | null
   chain: "polygon" | "arbitrum" | "optimism" | "ethereum"
-  distinct_nfts_owned: number
-  distinct_owner_count: number
-  distinct_nft_count: number
-  total_quantity: number
+  distinct_nfts_owned: number | null
+  distinct_owner_count: number | null
+  distinct_nft_count: number | null
+  total_quantity: number | null
   floor_prices: {
-    value: bigint
+    value: number
     payment_token: {
-      name: string
-      symbol: string
+      name: string | null
+      symbol: string | null
+      decimals: number
     }
   }[]
 }
@@ -94,20 +96,14 @@ function simpleHashCollectionModelToCollection(
   original: SimpleHashCollectionModel,
   owner: HexString
 ): NFTCollection {
-  const {
-    id,
-    name,
-    chain,
-    distinct_nfts_owned: nftCount,
-    floor_prices: collectionPrices,
-    image_url: thumbnail,
-  } = original
+  const { id, chain, floor_prices: collectionPrices } = original
   const floorPrice = collectionPrices
     ?.map(({ value, payment_token }) => ({
-      value,
+      value: BigInt(value),
       token: {
-        name: payment_token.name,
-        symbol: payment_token.symbol,
+        name: payment_token.name || "Ether",
+        symbol: payment_token.symbol || "ETH",
+        decimals: payment_token.decimals,
       },
     }))
     .sort((price1, price2) => Number(price1.value - price2.value))[0]
@@ -115,12 +111,13 @@ function simpleHashCollectionModelToCollection(
 
   return {
     id,
-    name,
-    nftCount,
+    name: original.name || "",
+    nftCount: original.distinct_nft_count || 0,
     owner,
-    thumbnail,
+    thumbnail: original.image_url || "",
     network: NETWORK_BY_CHAIN_ID[chainID],
     floorPrice,
+    hasBadges: false, // TODO: check how to discover if this is a Galxe collection
   }
 }
 
@@ -130,8 +127,6 @@ function simpleHashNFTModelToNFT(
 ): NFT {
   const {
     nft_id: nftID,
-    name,
-    description,
     contract_address: contractAddress,
     chain,
     image_url: previewURL,
@@ -148,7 +143,8 @@ function simpleHashNFTModelToNFT(
     previewURL ||
     previews?.image_large_url ||
     previews?.image_medium_url ||
-    previews?.image_small_url
+    previews?.image_small_url ||
+    ""
   const chainID = SIMPLE_HASH_CHAIN_TO_ID[chain]
 
   const transferDate = owners.find(({ owner_address }) =>
@@ -156,15 +152,19 @@ function simpleHashNFTModelToNFT(
   )?.last_acquired_date
 
   const attributes =
-    metadata?.attributes?.map(({ trait_type, value }) => ({
-      value,
-      trait: trait_type,
-    })) ?? []
+    metadata?.attributes?.flatMap(({ trait_type, value }) =>
+      value && trait_type
+        ? {
+            value,
+            trait: trait_type,
+          }
+        : []
+    ) ?? []
 
   return {
     id: nftID,
-    name,
-    description,
+    name: original.name || "",
+    description: original.description || "",
     thumbnail,
     transferDate,
     attributes,
@@ -172,7 +172,7 @@ function simpleHashNFTModelToNFT(
     contract: contractAddress,
     owner,
     network: NETWORK_BY_CHAIN_ID[chainID],
-    achievement: isAchievement ? { url: nftURL } : null,
+    badge: isAchievement && nftURL ? { url: nftURL } : null,
   }
 }
 
