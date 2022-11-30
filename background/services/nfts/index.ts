@@ -1,7 +1,7 @@
 import { AddressOnNetwork } from "../../accounts"
 import { FeatureFlags, isEnabled } from "../../features"
 import { getNFTCollections, getNFTs } from "../../lib/nfts_update"
-import { NFT, NFTCollection } from "../../nfts"
+import { NFTCollection, NFT } from "../../nfts"
 import BaseService from "../base"
 import ChainService from "../chain"
 
@@ -10,7 +10,8 @@ import { getOrCreateDB, NFTsDatabase } from "./db"
 
 interface Events extends ServiceLifecycleEvents {
   initializeNFTs: NFTCollection[]
-  updateNFTs: NFT[] // TODO update redux
+  updateCollections: NFTCollection[]
+  updateNFTs: { account: AddressOnNetwork; collectionID: string; nfts: NFT[] }
 }
 
 export default class NFTsService extends BaseService<Events> {
@@ -69,25 +70,34 @@ export default class NFTsService extends BaseService<Events> {
         request.then(async (collections) => {
           await this.db.updateCollections(collections)
 
-          // this.emitter.emit("updateNFTs", "")
+          this.emitter.emit(
+            "updateCollections",
+            await this.db.getAllCollections()
+          )
         })
       )
     )
   }
 
   async fetchNFTsFromCollection(
-    collections: string[],
-    accounts?: AddressOnNetwork[]
+    collectionID: string,
+    account: AddressOnNetwork
   ): Promise<void> {
-    const accountsToFetch =
-      accounts ?? (await this.chainService.getAccountsToTrack())
-
-    getNFTs(accountsToFetch, collections).forEach((request) =>
+    getNFTs([account], [collectionID]).forEach((request) =>
       request.then(async ({ nfts, nextPageURLs }) => {
         await this.db.updateNFTs(nfts)
-        this.#nextPageUrls.push(...nextPageURLs)
+        this.#nextPageUrls.push(...nextPageURLs) // TODO: implement fetching next pages
 
-        // this.emitter.emit("updateNFTs", "")
+        const updatedNFTs = await this.db.getCollectionNFTsForAccount(
+          collectionID,
+          account
+        )
+
+        this.emitter.emit("updateNFTs", {
+          collectionID,
+          account,
+          nfts: updatedNFTs,
+        })
       })
     )
   }

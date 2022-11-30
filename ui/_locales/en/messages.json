@@ -230,6 +230,21 @@
     "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title",
     "NFTPricingComingSoon": "Coming soon: NFT price + sending",
+    "collectionHover": {
+      "close": "close",
+      "expand": "expand collection",
+      "view": "view details"
+    },
+    "preview": {
+      "owner": "Owner",
+      "floorPrice": "Floor price",
+      "send": "Send",
+      "viewOn": "View on",
+      "description": "Description",
+      "itemsCount": "Items in collection",
+      "creator": "Creator",
+      "properties": "Properties"
+    },
     "units": {
       "nft_one": "NFT",
       "nft_other": "NFTs",
