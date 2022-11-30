@@ -156,15 +156,16 @@ function simpleHashNFTModelToNFT(
     sameEVMAddress(owner_address, owner)
   )?.last_acquired_date
 
-  const attributes =
-    metadata?.attributes?.flatMap(({ trait_type, value }) =>
-      value && trait_type
-        ? {
-            value,
-            trait: trait_type,
-          }
-        : []
-    ) ?? []
+  const attributes = Array.isArray(metadata?.attributes)
+    ? metadata.attributes.flatMap(({ trait_type, value }) =>
+        value && trait_type
+          ? {
+              value,
+              trait: trait_type,
+            }
+          : []
+      )
+    : []
 
   return {
     id: nftID,
