@@ -129,7 +129,7 @@ function simpleHashNFTModelToNFT(
     nft_id: nftID,
     contract_address: contractAddress,
     chain,
-    image_url: previewURL,
+    image_url: fullsizeURL,
     previews,
     owners = [],
     external_url: nftURL = "",
@@ -140,11 +140,16 @@ function simpleHashNFTModelToNFT(
   const isAchievement = isGalxeAchievement(nftURL)
 
   const thumbnail =
-    previewURL ||
-    previews?.image_large_url ||
-    previews?.image_medium_url ||
     previews?.image_small_url ||
+    previews?.image_medium_url ||
+    previews?.image_large_url ||
+    fullsizeURL ||
     ""
+
+  const previewURL =
+    (previews?.image_medium_url || previews?.image_large_url || fullsizeURL) ??
+    undefined
+
   const chainID = SIMPLE_HASH_CHAIN_TO_ID[chain]
 
   const transferDate = owners.find(({ owner_address }) =>
@@ -166,6 +171,7 @@ function simpleHashNFTModelToNFT(
     name: original.name || "",
     description: original.description || "",
     thumbnail,
+    previewURL,
     transferDate,
     attributes,
     collectionID,

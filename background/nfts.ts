@@ -44,6 +44,7 @@ export type NFT = {
   name: string
   description: string
   thumbnail: string
+  previewURL?: string
   transferDate?: string
   attributes: { trait: string; value: string }[]
   contract: string
