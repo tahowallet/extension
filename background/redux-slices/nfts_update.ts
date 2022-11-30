@@ -134,6 +134,6 @@ export default NFTsSlice.reducer
 export const fetchNFTsFromCollection = createBackgroundAsyncThunk(
   "nfts/fetchNFTsFromCollection",
   async (payload: { collectionID: string; account: AddressOnNetwork }) => {
-    emitter.emit("fetchNFTs", payload)
+    await emitter.emit("fetchNFTs", payload)
   }
 )
