@@ -22,6 +22,7 @@ import monitorForWalletConnectionPrompts from "./wallet-connection-handlers"
 const impersonateMetamaskWhitelist = [
   "transferto.xyz",
   "opensea.io",
+  "staking.polygon.technology",
   "gmx.io",
   "app.lyra.finance",
   "matcha.xyz",
