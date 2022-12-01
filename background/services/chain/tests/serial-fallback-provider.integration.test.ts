@@ -199,10 +199,14 @@ describe("Serial Fallback Provider", () => {
       alchemySendStub.onCall(0).returns(ETHEREUM.chainID)
       alchemySendStub.onCall(1).returns("success")
 
+      // Accessing private property
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((fallbackProvider as any).currentProviderIndex).toEqual(0)
       await expect(
         fallbackProvider.send("eth_getBalance", [])
       ).resolves.toEqual("success")
+      // Accessing private property
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((fallbackProvider as any).currentProviderIndex).toEqual(1)
     })
   })
