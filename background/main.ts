@@ -1435,13 +1435,13 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(updateNFTsCollections(collections))
       }
     )
-    this.nftsService.emitter.on("updateNFTs", (payload) => {
-      this.store.dispatch(updateNFTs(payload))
+    this.nftsService.emitter.on("updateNFTs", async (payload) => {
+      await this.store.dispatch(updateNFTs(payload))
     })
 
-    nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) => {
+    nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) =>
       this.nftsService.fetchNFTsFromCollection(collectionID, account)
-    })
+    )
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
