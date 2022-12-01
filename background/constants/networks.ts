@@ -41,6 +41,14 @@ export const AVALANCHE: EVMNetwork = {
   coingeckoPlatformID: "avalanche",
 }
 
+export const ARBITRUM_NOVA: EVMNetwork = {
+  name: "Arbitrum Nova",
+  baseAsset: ETH,
+  chainID: "42170",
+  family: "EVM",
+  coingeckoPlatformID: "arbitrum-nova",
+}
+
 export const OPTIMISM: EVMNetwork = {
   name: "Optimism",
   baseAsset: OPTIMISTIC_ETH,
@@ -86,6 +94,7 @@ export const NETWORK_BY_CHAIN_ID = {
   [ROOTSTOCK.chainID]: ROOTSTOCK,
   [ARBITRUM_ONE.chainID]: ARBITRUM_ONE,
   [AVALANCHE.chainID]: AVALANCHE,
+  [ARBITRUM_NOVA.chainID]: ARBITRUM_NOVA,
   [OPTIMISM.chainID]: OPTIMISM,
   [GOERLI.chainID]: GOERLI,
   [FORK.chainID]: FORK,
@@ -130,6 +139,7 @@ export const CHAIN_ID_TO_RPC_URLS: {
   ],
   [ETHEREUM.chainID]: ["https://rpc.ankr.com/eth"],
   [ARBITRUM_ONE.chainID]: ["https://rpc.ankr.com/arbitrum"],
+  [ARBITRUM_NOVA.chainID]: ["https://nova.arbitrum.io/rpc	"],
   [GOERLI.chainID]: ["https://ethereum-goerli-rpc.allthatnode.com"],
   [AVALANCHE.chainID]: ["https://api.avax.network/ext/bc/C/rpc"],
 }

@@ -641,6 +641,7 @@
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
         "SUPPORT_AVALANCHE": "Enable Avalanche network",
+        "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
         "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab"
       }
     }
