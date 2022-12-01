@@ -109,20 +109,16 @@ describe("Serial Fallback Provider", () => {
       expect(genericSendStub.callCount).toEqual(3)
     })
 
-    it("should switch to next provider after two bad responses", async () => {
-      // eth_getBalance
-      genericSendStub.onCall(0).throws("bad response")
-      // eth_chainId
-      genericSendStub.onCall(1).returns(ETHEREUM.chainID)
-      // eth_getBalance
-      genericSendStub.onCall(2).throws("bad response")
+    it("should switch to next provider after three bad responses", async () => {
+      genericSendStub.throws("bad response")
       alchemySendStub.onCall(0).returns(ETHEREUM.chainID)
       alchemySendStub.onCall(1).returns("success")
 
       await expect(
         fallbackProvider.send("eth_getBalance", [])
       ).resolves.toEqual("success")
-      expect(genericSendStub.callCount).toEqual(3)
+      // 3 calls to eth_getBalance plus 1 underlying call to eth_chainId
+      expect(genericSendStub.callCount).toEqual(4)
       expect(alchemySendStub.callCount).toEqual(2)
     })
 
@@ -191,6 +187,23 @@ describe("Serial Fallback Provider", () => {
       ])
       expect(result2).toEqual(123)
       expect(genericSendStub.callCount).toBeGreaterThan(callCountAfterOneCall)
+    })
+
+    it("should increment the currentProviderIndex when failing over", async () => {
+      // eth_getBalance
+      genericSendStub.onCall(0).throws("bad response")
+      // eth_chainId
+      genericSendStub.onCall(1).returns(ETHEREUM.chainID)
+      // eth_getBalance
+      genericSendStub.onCall(2).throws("bad response")
+      alchemySendStub.onCall(0).returns(ETHEREUM.chainID)
+      alchemySendStub.onCall(1).returns("success")
+
+      expect((fallbackProvider as any).currentProviderIndex).toEqual(0)
+      await expect(
+        fallbackProvider.send("eth_getBalance", [])
+      ).resolves.toEqual("success")
+      expect((fallbackProvider as any).currentProviderIndex).toEqual(1)
     })
   })
 })
