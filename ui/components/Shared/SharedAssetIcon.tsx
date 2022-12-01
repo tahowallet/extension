@@ -1,35 +1,54 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { storageGatewayURL } from "@tallyho/tally-background/lib/storage-gateway"
 import classNames from "classnames"
 
-interface Props {
+type Props = {
   size: "small" | "medium" | "large" | number
   logoURL: string
   symbol: string
 }
 
 const hardcodedIcons = new Set(["ETH", "MATIC", "DOGGO", "RBTC", "AVAX"])
+
+// Passes IPFS and Arweave through HTTP gateway
+function getAsHttpURL(anyURL: string) {
+  let httpURL = anyURL
+  try {
+    httpURL = storageGatewayURL(new URL(anyURL)).href
+  } catch (err) {
+    httpURL = ""
+  }
+  return httpURL
+}
+
 export default function SharedAssetIcon(props: Props): ReactElement {
   const { size, logoURL, symbol } = props
 
+  const [httpURL, setHttpURL] = useState(() => getAsHttpURL(logoURL))
+
   const hasHardcodedIcon = hardcodedIcons.has(symbol)
 
-  // Passes IPFS and Arweave through HTTP gateway
-  function getAsHttpURL(anyURL: string) {
-    let httpURL = anyURL
-    try {
-      httpURL = storageGatewayURL(new URL(anyURL)).href
-    } catch (err) {
-      httpURL = ""
-    }
-    return httpURL
-  }
-
-  const httpURL = getAsHttpURL(logoURL)
+  const sizeClass = typeof size === "string" ? size : "custom_size"
 
   const shouldDisplayTokenIcon = Boolean(httpURL || hasHardcodedIcon)
 
-  const sizeClass = typeof size === "string" ? size : "custom_size"
+  useEffect(() => {
+    const isIpfsURL = /^ipfs:/.test(logoURL)
+
+    if (isIpfsURL) {
+      fetch(httpURL).then(async (response) => {
+        if (
+          response.ok &&
+          response.headers.get("content-type") === "text/html"
+        ) {
+          const base = "data:image/svg+xml;base64,"
+          setHttpURL(
+            base + Buffer.from(await response.arrayBuffer()).toString("base64")
+          )
+        }
+      })
+    }
+  }, [httpURL, logoURL])
 
   return (
     <div className={classNames("token_icon_wrap", sizeClass)}>
