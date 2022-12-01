@@ -108,7 +108,7 @@ function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
  *
  * @param chainID string chainID to handle chain specific routings
  * @param method the current RPC method
- * @returns true | false whether the method on a given network should routed to alchemy or can be sent over the generic provider
+ * @returns true | false whether the method on a given network should be routed to alchemy or can be sent over the generic provider
  */
 function alchemyOrDefaultProvider(chainID: string, method: string): boolean {
   return (
@@ -147,7 +147,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   private alchemyProvider: JsonRpcProvider | undefined
 
-  private messagesToSend: {
+  /**
+   * This object holds all messages that are either being sent to a provider
+   * and waiting for a response, or are in the process of being backed off due
+   * to bad network conditions or hitting rate limits.
+   */
+  public messagesToSend: {
     [id: symbol]: {
       method: string
       params: unknown[]
@@ -250,6 +255,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
   }
 
+  /**
+   * This method takes care of sending off a message via an underlying provider
+   * as well as backing off and failing over to other providers should a given
+   * provider be disconnected.
+   *
+   * @param messageId The unique identifier of a given message
+   * @returns The result of sending the message to a given provider
+   */
   private async routeRpcCall(messageId: symbol): Promise<unknown> {
     const { method, params } = this.messagesToSend[messageId]
 
@@ -292,6 +305,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           return result
         }
         if (method.startsWith("alchemy_")) {
+          delete this.messagesToSend[messageId]
           throw new Error(
             `Calling ${method} is not supported on ${this.currentProvider.network.name}`
           )
@@ -317,6 +331,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         method,
         params as Array<any>
       )
+      // If https://github.com/tc39/proposal-decorators ever gets out of Stage 3
+      // cleaning up the messageToSend object seems like a great job for a decorator
       delete this.messagesToSend[messageId]
       return result
     } catch (error) {
@@ -383,6 +399,13 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 
+  /**
+   * A method that caches calls to eth_getCode and eth_getBalance
+   *
+   * @param result result of a successful call to an rpc provider
+   * @param method rpc method sent to the rpc provider
+   * @param params corresponding rpc params sent to the rpc provider
+   */
   private conditionallyCacheResult(
     result: unknown,
     { method, params }: { method: string; params: unknown }
@@ -405,6 +428,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
+   * A method that checks the local cache for any previous calls to eth_getCode
+   * or any recent calls to eth_getBalance for a given address
    *
    * @param method the current RPC method
    * @param params the parameters for the current rpc method
@@ -436,6 +461,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
+   * Called when a message has failed MAX_RETRIES_PER_PROVIDER times on a given
+   * provider, and is ready to be sent to the next provider in line
+   *
    * @param messageId The unique identifier of a given message
    * @returns The result of sending the message via the next provider
    */
@@ -793,22 +821,22 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Computes the backoff time for the given provider index. If the provider
-   * index is new, starts with the base backoff; if the provider index is
-   * unchanged, computes a jittered exponential backoff. If the current
-   * provider has already exceeded its maximum retries, returns undefined to
-   * signal that the provider should be considered dead for the time being.
-   *
-   * Backoffs respect a cooldown time after which they reset down to the base
-   * backoff time.
+   * @param messageId The unique identifier of a given message
+   * @returns number of miliseconds to backoff
    */
   private backoffFor(messageId: symbol): number {
-    this.conditionallyIncrementMessageProviderIndex(messageId)
     this.messagesToSend[messageId].backoffCount += 1
+    this.conditionallyIncrementCurrentProviderIndex(messageId)
     return backedOffMs()
   }
 
-  private conditionallyIncrementMessageProviderIndex(messageId: symbol) {
+  /**
+   * Increments the currentProviderIndex and resets a given messages backOffCount
+   * if it is being sent on a new provider.
+   *
+   * @param messageId The unique identifier of a given message
+   */
+  private conditionallyIncrementCurrentProviderIndex(messageId: symbol) {
     const { providerIndex } = this.messagesToSend[messageId]
 
     if (providerIndex !== this.currentProviderIndex) {
@@ -817,6 +845,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 
+  /**
+   * @param messageId The unique identifier of a given message
+   * @returns true if a message should be sent on the next provider, false otherwise
+   */
   private shouldSendMessageOnNextProvider(messageId: symbol): boolean {
     const { backoffCount } = this.messagesToSend[messageId]
     if (backoffCount && backoffCount < MAX_RETRIES_PER_PROVIDER) {
