@@ -24,12 +24,9 @@ import {
 } from "../../lib/alchemy"
 
 // Back off by this amount as a base, exponentiated by attempts and jittered.
-const BASE_BACKOFF_MS = 100
-// Retry 8 times before falling back to the next provider.
-// This generally results in a wait time of around 30 seconds (with a maximum time
-// of 76.5 seconds for 8 completely serial requests) before falling back since we
-// usually have multiple requests going out at once.
-const MAX_RETRIES_PER_PROVIDER = 2
+const BASE_BACKOFF_MS = 400
+// Retry 3 times before falling back to the next provider.
+const MAX_RETRIES_PER_PROVIDER = 3
 // Wait 15 seconds between primary provider reconnect attempts.
 const PRIMARY_PROVIDER_RECONNECT_INTERVAL = 10 * SECOND
 // Wait 2 seconds after a primary provider is created before resubscribing.
@@ -58,10 +55,10 @@ function waitAnd<T, E extends Promise<T>>(
 }
 
 /**
- * Return a jittered amount of ms to backoff bounded between 100 and 200 ms
+ * Return a jittered amount of ms to backoff bounded between 400 and 800 ms
  */
 function backedOffMs(): number {
-  return BASE_BACKOFF_MS + 100 * Math.random()
+  return BASE_BACKOFF_MS + 400 * Math.random()
 }
 
 /**
