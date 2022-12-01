@@ -60,33 +60,37 @@ const findAndReplaceUniswapInjectedOption = (): void => {
   }
 }
 
-const findAndReplaceJoeMetamaskOption = (): void => {
+const findAndReplaceJoeMetamaskOption = (addedNode: Node): void => {
   let maybeButton = document.getElementById("connect-INJECTED")
 
-  if (!maybeButton) {
-    document
-      .querySelectorAll<HTMLButtonElement>("[aria-modal] button")
-      .forEach((element) => {
-        if (/metamask/i.test(element.innerText)) {
-          maybeButton = element
-        }
-      })
+  // Replacing innerHTML here causes a render loop
+  if (!maybeButton && !(addedNode instanceof HTMLElement)) {
+    return
   }
 
-  // Replacing innerHTML here causes a render loop
-  if (maybeButton) {
-    Array.from(maybeButton.querySelectorAll("div"))
-      .reverse()
-      .find((e) => {
-        if (/metamask/i.test(e.innerText)) {
-          e.innerText = "Tally Ho"
-          return true
-        }
-        return false
-      })
+  if (
+    !maybeButton &&
+    // cmon typescript
+    addedNode instanceof HTMLElement
+  ) {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const btn of addedNode.getElementsByTagName("button")) {
+      if (btn.innerText === "MetaMask") {
+        maybeButton = btn
+      }
+    }
+  }
 
-    const img = maybeButton.querySelector("img")
-    if (img) img.src = TALLY_ICON_URL
+  if (!maybeButton) {
+    return
+  }
+
+  const textNode = maybeButton.children?.[0]?.children?.[0]
+  const img = maybeButton.querySelector("img")
+
+  if (textNode && img) {
+    textNode.textContent = "Tally Ho"
+    img.src = TALLY_ICON_URL
   }
 }
 
