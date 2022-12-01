@@ -1,4 +1,5 @@
 import {
+  ARBITRUM_NOVA,
   ARBITRUM_ONE,
   AVALANCHE,
   BINANCE_SMART_CHAIN,
@@ -27,6 +28,10 @@ export const scanWebsite = {
   [BINANCE_SMART_CHAIN.chainID]: {
     title: "BscScan",
     url: "https://bscscan.com",
+  },
+  [ARBITRUM_NOVA.chainID]: {
+    title: "Arbiscan",
+    url: "https://nova.arbiscan.io/",
   },
 }
 

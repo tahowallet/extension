@@ -30,6 +30,7 @@ export const RuntimeFlag = {
   SUPPORT_AVALANCHE: process.env.SUPPORT_AVALANCHE === "true",
   SUPPORT_BINANCE_SMART_CHAIN:
     process.env.SUPPORT_BINANCE_SMART_CHAIN === "true",
+  SUPPORT_ARBITRUM_NOVA: process.env.SUPPORT_ARBITRUM_NOVA === "true",
   SUPPORT_ACHIEVEMENTS_BANNER:
     process.env.SUPPORT_ACHIEVEMENTS_BANNER === "true",
   SUPPORT_NFT_TAB: process.env.SUPPORT_NFT_TAB === "true",
