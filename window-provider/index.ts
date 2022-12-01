@@ -75,6 +75,15 @@ export default class TallyWindowProvider extends EventEmitter {
     }
   >()
 
+  // TODO: These are used by MetaMask and accessed by some dApps
+  _state = {
+    accounts: null,
+    isConnected: false,
+    isUnlocked: false,
+    initialized: false,
+    isPermanentlyDisconnected: false,
+  }
+
   providerInfo = {
     label: "Tally Ho!",
     injectedNamespace: "tally",
