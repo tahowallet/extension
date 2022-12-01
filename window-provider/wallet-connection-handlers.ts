@@ -60,6 +60,36 @@ const findAndReplaceUniswapInjectedOption = (): void => {
   }
 }
 
+const findAndReplaceJoeMetamaskOption = (): void => {
+  let maybeButton = document.getElementById("connect-INJECTED")
+
+  if (!maybeButton) {
+    document
+      .querySelectorAll<HTMLButtonElement>("[aria-modal] button")
+      .forEach((element) => {
+        if (/metamask/i.test(element.innerText)) {
+          maybeButton = element
+        }
+      })
+  }
+
+  // Replacing innerHTML here causes a render loop
+  if (maybeButton) {
+    Array.from(maybeButton.querySelectorAll("div"))
+      .reverse()
+      .find((e) => {
+        if (/metamask/i.test(e.innerText)) {
+          e.innerText = "Tally Ho"
+          return true
+        }
+        return false
+      })
+
+    const img = maybeButton.querySelector("img")
+    if (img) img.src = TALLY_ICON_URL
+  }
+}
+
 function findAndReplaceGMXMetamaskOption(addedNode: Node): void {
   if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
     return
@@ -204,6 +234,7 @@ const hostnameToHandler = {
   "app.yieldprotocol.com": findAndReplaceYieldProtocolMetamaskOption,
   "tofunft.com": findAndReplaceTofuNftMetamaskOption,
   "aboard.exchange": findAndReplaceAboardMetamaskOption,
+  "traderjoexyz.com": findAndReplaceJoeMetamaskOption,
 } as const
 
 export default function monitorForWalletConnectionPrompts(): void {
