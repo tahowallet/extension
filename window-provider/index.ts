@@ -23,6 +23,7 @@ const impersonateMetamaskWhitelist = [
   "traderjoexyz.com",
   "transferto.xyz",
   "opensea.io",
+  "staking.polygon.technology",
   "gmx.io",
   "app.lyra.finance",
   "matcha.xyz",
