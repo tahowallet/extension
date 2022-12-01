@@ -27,7 +27,7 @@ import {
 const BASE_BACKOFF_MS = 400
 // Retry 3 times before falling back to the next provider.
 const MAX_RETRIES_PER_PROVIDER = 3
-// Wait 15 seconds between primary provider reconnect attempts.
+// Wait 10 seconds between primary provider reconnect attempts.
 const PRIMARY_PROVIDER_RECONNECT_INTERVAL = 10 * SECOND
 // Wait 2 seconds after a primary provider is created before resubscribing.
 const WAIT_BEFORE_SUBSCRIBING = 2 * SECOND
