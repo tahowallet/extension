@@ -145,7 +145,12 @@ import { AnalyticsPreferences } from "./services/preferences/types"
 import { isSmartContractFungibleAsset } from "./assets"
 import { FeatureFlags, isEnabled } from "./features"
 import { NFTCollection } from "./nfts"
-import { initializeNFTs } from "./redux-slices/nfts_update"
+import {
+  initializeNFTs,
+  updateNFTsCollections,
+  emitter as nftsSliceEmitter,
+  updateNFTs,
+} from "./redux-slices/nfts_update"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1424,6 +1429,19 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(initializeNFTs(collections))
       }
     )
+    this.nftsService.emitter.on(
+      "updateCollections",
+      (collections: NFTCollection[]) => {
+        this.store.dispatch(updateNFTsCollections(collections))
+      }
+    )
+    this.nftsService.emitter.on("updateNFTs", (payload) => {
+      this.store.dispatch(updateNFTs(payload))
+    })
+
+    nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) => {
+      this.nftsService.fetchNFTsFromCollection(collectionID, account)
+    })
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {

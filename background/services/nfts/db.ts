@@ -1,5 +1,7 @@
 import Dexie from "dexie"
+import { AddressOnNetwork } from "../../accounts"
 import { FeatureFlags, isEnabled } from "../../features"
+import { sameEVMAddress } from "../../lib/utils"
 import { NFT, NFTCollection } from "../../nfts"
 
 export class NFTsDatabase extends Dexie {
@@ -29,6 +31,21 @@ export class NFTsDatabase extends Dexie {
 
   async getAllCollections(): Promise<NFTCollection[]> {
     return this.collections.toArray()
+  }
+
+  async getCollectionNFTsForAccount(
+    collectionID: string,
+    { address, network }: AddressOnNetwork
+  ): Promise<NFT[]> {
+    return this.nfts
+      .filter(
+        (nft) =>
+          nft.collectionID === collectionID &&
+          sameEVMAddress(nft.owner, address) &&
+          network.chainID === nft.network.chainID
+      )
+
+      .toArray()
   }
 }
 

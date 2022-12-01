@@ -153,7 +153,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private messagesToSend: {
     [id: symbol]: {
       method: string
-      params: unknown
+      params: unknown[]
       backoffCount: number
       providerIndex: number
     }
@@ -283,16 +283,22 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         )
       }
 
-      if (alchemyOrDefaultProvider(this.cachedChainId, method)) {
+      if (
+        // Force some methods to be handled by alchemy if we're on an alchemy supported chain
+        this.alchemyProvider &&
+        alchemyOrDefaultProvider(this.cachedChainId, method)
+      ) {
         if (this.alchemyProvider) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const result = await this.alchemyProvider.send(method, params as any)
+          const result = await this.alchemyProvider.send(method, params)
           delete this.messagesToSend[messageId]
           return result
         }
-        throw new Error(
-          `Calling ${method} is not supported on ${this.currentProvider.network.name}`
-        )
+        if (method.startsWith("alchemy_")) {
+          throw new Error(
+            `Calling ${method} is not supported on ${this.currentProvider.network.name}`
+          )
+        }
       }
 
       if (
@@ -453,7 +459,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * WebSocket disconnects, and restores subscriptions where
    * possible/necessary.
    */
-  override async send(method: string, params: unknown): Promise<unknown> {
+  override async send(method: string, params: unknown[]): Promise<unknown> {
     // Since we can reliably return the chainId with absolutely no communication with
     // the provider - we can return it without needing to worry about routing rpc calls
     if (method === "eth_chainId") {
