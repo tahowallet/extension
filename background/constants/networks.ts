@@ -157,7 +157,10 @@ export const CHAIN_ID_TO_RPC_URLS: {
     "https://api.avax.network/ext/bc/C/rpc",
     "https://rpc.ankr.com/avalanche",
   ],
-  [BINANCE_SMART_CHAIN.chainID]: ["https://rpc.ankr.com/bsc"],
+  [BINANCE_SMART_CHAIN.chainID]: [
+    "https://rpc.ankr.com/bsc",
+    "https://bsc-dataseed.binance.org",
+  ],
 }
 
 /**
