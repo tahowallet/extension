@@ -1,4 +1,4 @@
-const ipfsGateway = new URL("https://ipfs.io/ipfs")
+const ipfsGateway = new URL("https://ipfs.io/ipfs/")
 const arweaveGateway = new URL("https://arweave.net/")
 
 /**
@@ -31,18 +31,18 @@ export function changeURLProtocolAndBase(url: URL, baseURL: URL): URL {
 }
 
 // TODO eventually we want proper IPFS and Arweave support
-export function storageGatewayURL(url: URL): URL {
-  switch (url.protocol) {
+export function storageGatewayURL(url: string): URL {
+  const protocol = url.slice(0, url.indexOf("//"))
+
+  switch (protocol) {
     case "ipfs:": {
-      // Set to HTTPs so Chrome URL parser can get content identifier
-      // as the hostname for ipfs links
-      const fixedURL = new URL(url)
-      fixedURL.protocol = "https"
-      return changeURLProtocolAndBase(fixedURL, ipfsGateway)
+      // cidv0 is case sensitive
+      const contentId = url.split("ipfs://")[1]
+      return new URL(contentId, ipfsGateway)
     }
     case "ar:":
-      return changeURLProtocolAndBase(url, arweaveGateway)
+      return changeURLProtocolAndBase(new URL(url), arweaveGateway)
     default:
-      return url
+      return new URL(url)
   }
 }

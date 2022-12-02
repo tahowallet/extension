@@ -14,7 +14,7 @@ const hardcodedIcons = new Set(["ETH", "MATIC", "DOGGO", "RBTC", "AVAX"])
 function getAsHttpURL(anyURL: string) {
   let httpURL = anyURL
   try {
-    httpURL = storageGatewayURL(new URL(anyURL)).href
+    httpURL = storageGatewayURL(anyURL).href
   } catch (err) {
     httpURL = ""
   }
@@ -24,31 +24,38 @@ function getAsHttpURL(anyURL: string) {
 export default function SharedAssetIcon(props: Props): ReactElement {
   const { size, logoURL, symbol } = props
 
-  const [httpURL, setHttpURL] = useState(() => getAsHttpURL(logoURL))
+  const [imageURL, setImageURL] = useState(() => getAsHttpURL(logoURL))
 
   const hasHardcodedIcon = hardcodedIcons.has(symbol)
 
   const sizeClass = typeof size === "string" ? size : "custom_size"
 
-  const shouldDisplayTokenIcon = Boolean(httpURL || hasHardcodedIcon)
+  const shouldDisplayTokenIcon = Boolean(imageURL || hasHardcodedIcon)
 
   useEffect(() => {
     const isIpfsURL = /^ipfs:/.test(logoURL)
 
     if (isIpfsURL) {
-      fetch(httpURL).then(async (response) => {
-        if (
-          response.ok &&
-          response.headers.get("content-type") === "text/html"
-        ) {
-          const base = "data:image/svg+xml;base64,"
-          setHttpURL(
-            base + Buffer.from(await response.arrayBuffer()).toString("base64")
-          )
-        }
-      })
+      fetch(imageURL)
+        .then(async (response) => {
+          if (
+            response.ok &&
+            response.headers.get("content-type") === "text/html"
+          ) {
+            const base = "data:image/svg+xml;base64,"
+            setImageURL(
+              base +
+                Buffer.from(await response.arrayBuffer()).toString("base64")
+            )
+          } else {
+            throw new Error("INVALID_RESPONSE")
+          }
+        })
+        .catch(() => {
+          // noop
+        })
     }
-  }, [httpURL, logoURL])
+  }, [imageURL, logoURL])
 
   return (
     <div className={classNames("token_icon_wrap", sizeClass)}>
@@ -113,7 +120,7 @@ export default function SharedAssetIcon(props: Props): ReactElement {
             ? `background: url("${`./images/assets/${symbol.toLowerCase()}.png`}");
             background-size: cover;
             `
-            : `background: url("${httpURL}");
+            : `background: url("${imageURL}");
             background-size: cover;`}
         }
       `}</style>
