@@ -5,7 +5,7 @@ import {
   selectNFTCollectionsCount,
   selectNFTsCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { useBackgroundSelector } from "../../hooks"
+import { useBackgroundSelector, useTotalNFTsFloorPrice } from "../../hooks"
 
 export default function NFTsPortfolioOverview(): ReactElement {
   const { t } = useTranslation()
@@ -14,11 +14,12 @@ export default function NFTsPortfolioOverview(): ReactElement {
   const collectionCount = useBackgroundSelector(selectNFTCollectionsCount)
   const badgeCount = useBackgroundSelector(selectNFTBadgesCount)
 
+  const { totalFloorPriceInUSD } = useTotalNFTsFloorPrice()
   return (
     <section>
       <header>
         <h5 className="nft-count">NFT({nftCount + badgeCount})</h5>
-        <span className="estimate">~$24,231,00</span>
+        <span className="estimate">~${totalFloorPriceInUSD}</span>
       </header>
       <div>
         <Trans

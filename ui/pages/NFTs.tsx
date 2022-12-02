@@ -1,13 +1,6 @@
 import React, { ReactElement, useState } from "react"
 import classNames from "classnames"
-import {
-  selectMainCurrencySign,
-  selectMainCurrencySymbol,
-  selectNFTBadgesCount,
-  selectNFTCollectionsCount,
-  selectNFTsCount,
-} from "@tallyho/tally-background/redux-slices/selectors"
-import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { selectNFTsCount } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import NFTsExploreBanner from "../components/NFTS_update/NFTsExploreBanner"
 import NFTsHeader from "../components/NFTS_update/NFTsHeader"
@@ -19,29 +12,12 @@ const PANEL_NAMES = ["NFTs", "Badges"]
 
 export default function NFTs(): ReactElement {
   const nftCount = useBackgroundSelector(selectNFTsCount)
-  const collectionCount = useBackgroundSelector(selectNFTCollectionsCount)
-  const badgeCount = useBackgroundSelector(selectNFTBadgesCount)
 
-  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
-  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
-  const isLoading = useBackgroundSelector(() => false)
-
-  // TODO: Remove these stubs
-  const someAmount = formatCurrencyAmount(mainCurrencySymbol, 240_241, 0)
-  const someAmountInETH = "21.366 ETH"
   const [panelNumber, setPanelNumber] = useState(0)
 
   return (
     <div className="page_content">
-      <NFTsHeader
-        nftsCount={nftCount}
-        collectionsCount={collectionCount}
-        badgesCount={badgeCount}
-        totalInCurrency={someAmount}
-        totalInETH={someAmountInETH}
-        mainCurrencySign={mainCurrencySign}
-        loading={isLoading}
-      />
+      <NFTsHeader />
       <div
         className={classNames("panel_switcher_wrap", {
           margin: !(nftCount > 0),
