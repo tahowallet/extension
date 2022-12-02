@@ -33,6 +33,7 @@ import {
   CHAINS_WITH_MEMPOOL,
   EIP_1559_COMPLIANT_CHAIN_IDS,
   AVALANCHE,
+  SECOND,
 } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
@@ -66,11 +67,6 @@ import {
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
 import KeyringService from "../keyring"
-
-// How many queued transactions should be retrieved on every tx alarm, per
-// network. To get frequency, divide by the alarm period. 5 tx / 5 minutes →
-// max 1 tx/min.
-const TRANSACTIONS_RETRIEVED_PER_ALARM = 5
 
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
@@ -191,6 +187,20 @@ export default class ChainService extends BaseService<Events> {
     hash: HexString
     firstSeen: UNIXTime
   }[]
+
+  /**
+   * Internal timer for the transactionsToRetrieve FIFO queue.
+   * Starting multiple transaction requests at the same time is resource intensive
+   * on the user's machine and also can result in rate limitations with the provider.
+   *
+   * Because of this we need to smooth out the retrieval scheduling.
+   *
+   * Limitations
+   *   - handlers can fire only in 1+ minute intervals
+   *   - in manifest v3 / service worker context the background thread can be shut down any time.
+   *     Because of this we need to keep the granular queue tied to the persisted list of txs
+   */
+  private transactionToRetrieveGranularTimer: NodeJS.Timer | undefined
 
   static create: ServiceCreatorFunction<
     Events,
@@ -1482,32 +1492,30 @@ export default class ChainService extends BaseService<Events> {
   }
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
-    const fetchedByNetwork: { [chainID: string]: number } = {}
-
-    // Drop all transactions that weren't retrieved from the queue.
-    this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
-      ({ network, hash, firstSeen }) => {
-        fetchedByNetwork[network.chainID] ??= 0
-
+    if (
+      !this.transactionToRetrieveGranularTimer &&
+      this.transactionsToRetrieve.length
+    ) {
+      this.transactionToRetrieveGranularTimer = setInterval(() => {
         if (
-          fetchedByNetwork[network.chainID] >= TRANSACTIONS_RETRIEVED_PER_ALARM
+          !this.transactionsToRetrieve.length &&
+          this.transactionToRetrieveGranularTimer
         ) {
-          // Once a given network has hit its limit, include any additional
-          // transactions in the updated queue.
-          return true
+          clearInterval(this.transactionToRetrieveGranularTimer)
+          this.transactionToRetrieveGranularTimer = undefined
+
+          return
         }
 
-        // If more transactions can be retrieved in this alarm, bump the count,
-        // retrieve the transaction, and drop from the updated queue.
-        fetchedByNetwork[network.chainID] += 1
-
-        // Note: this starts retrieving TRANSACTIONS_RETRIEVED_PER_ALARM * networks at the same time
-        // another queue solution should come here, but one that's editable runtime. Haven't found
-        // a solution yet that seemed to worth the complexity.
-        this.retrieveTransaction({ network, hash, firstSeen })
-        return false
-      }
-    )
+        // TODO: balance getting txs between networks
+        const txToRetrieve = this.transactionsToRetrieve[0]
+        this.removeTransactionHashFromQueue(
+          txToRetrieve.network,
+          txToRetrieve.hash
+        )
+        this.retrieveTransaction(txToRetrieve)
+      }, 2 * SECOND)
+    }
   }
 
   /**
@@ -1547,6 +1555,7 @@ export default class ChainService extends BaseService<Events> {
         !transaction.blockHash &&
         !transaction.blockHeight
       ) {
+        // It's a pending tx, let's subscribe to events.
         this.subscribeToTransactionConfirmation(
           transaction.network,
           transaction
