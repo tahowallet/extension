@@ -245,7 +245,10 @@ export default function monitorForWalletConnectionPrompts(): void {
   ;(
     Object.keys(hostnameToHandler) as Array<keyof typeof hostnameToHandler>
   ).forEach((hostname) => {
-    if (window.location.hostname.includes(hostname)) {
+    if (
+      typeof window !== "undefined" &&
+      window.location.hostname.includes(hostname)
+    ) {
       observeMutations(hostnameToHandler[hostname])
     }
   })
