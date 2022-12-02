@@ -3,6 +3,9 @@ import classNames from "classnames"
 import {
   selectMainCurrencySign,
   selectMainCurrencySymbol,
+  selectNFTBadgesCount,
+  selectNFTCollectionsCount,
+  selectNFTsCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -14,15 +17,10 @@ import NFTListPortfolioBadges from "../components/NFTS_update/NFTListPortfolioBa
 
 const PANEL_NAMES = ["NFTs", "Badges"]
 
-// TODO: Remove these stubs
-const stubSelectNFTCount = () => 16
-const stubSelectCollectionCount = () => 2
-const stubSelectBadgeCount = () => 5
-
 export default function NFTs(): ReactElement {
-  const nftCounts = useBackgroundSelector(stubSelectNFTCount)
-  const collectionCount = useBackgroundSelector(stubSelectCollectionCount)
-  const badgeCount = useBackgroundSelector(stubSelectBadgeCount)
+  const nftCount = useBackgroundSelector(selectNFTsCount)
+  const collectionCount = useBackgroundSelector(selectNFTCollectionsCount)
+  const badgeCount = useBackgroundSelector(selectNFTBadgesCount)
 
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
@@ -36,9 +34,9 @@ export default function NFTs(): ReactElement {
   return (
     <div className="page_content">
       <NFTsHeader
-        nfts={nftCounts}
-        collections={collectionCount}
-        badges={badgeCount}
+        nftsCount={nftCount}
+        collectionsCount={collectionCount}
+        badgesCount={badgeCount}
         totalInCurrency={someAmount}
         totalInETH={someAmountInETH}
         mainCurrencySign={mainCurrencySign}
@@ -46,7 +44,7 @@ export default function NFTs(): ReactElement {
       />
       <div
         className={classNames("panel_switcher_wrap", {
-          margin: !(nftCounts > 0),
+          margin: !(nftCount > 0),
         })}
       >
         <SharedPanelSwitcher
@@ -57,13 +55,13 @@ export default function NFTs(): ReactElement {
       </div>
       <div className="standard_width">
         {panelNumber === 0 &&
-          (nftCounts > 0 ? (
+          (nftCount > 0 ? (
             <NFTListPortfolio />
           ) : (
             <NFTsExploreBanner type="nfts" />
           ))}
         {panelNumber === 1 &&
-          (nftCounts > 0 ? (
+          (nftCount > 0 ? (
             <NFTListPortfolioBadges />
           ) : (
             <NFTsExploreBanner type="badge" />

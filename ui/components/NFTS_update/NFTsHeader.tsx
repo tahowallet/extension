@@ -5,18 +5,18 @@ import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 
 type HeaderProps = {
   loading: boolean
-  nfts: number
-  collections: number
-  badges: number
+  nftsCount: number
+  collectionsCount: number
+  badgesCount: number
   totalInCurrency: string
   totalInETH: string
   mainCurrencySign: string
 }
 
 export default function NFTsHeader({
-  nfts,
-  collections,
-  badges,
+  nftsCount,
+  collectionsCount,
+  badgesCount,
   totalInCurrency,
   totalInETH,
   mainCurrencySign,
@@ -26,7 +26,7 @@ export default function NFTsHeader({
     keyPrefix: "nfts",
   })
 
-  if (nfts < 1) {
+  if (nftsCount < 1) {
     return (
       <HeaderContainer>
         <EmptyHeader />
@@ -49,18 +49,18 @@ export default function NFTsHeader({
       </div>
       <ul className="nft_counts">
         <li>
-          <strong>{collections}</strong>
-          {t("units.collection", { count: collections })}
+          <strong>{collectionsCount}</strong>
+          {t("units.collection", { count: collectionsCount })}
         </li>
         <li className="spacer" role="presentation" />
         <li>
-          <strong>{nfts}</strong>
-          {t("units.nft", { count: nfts })}
+          <strong>{nftsCount}</strong>
+          {t("units.nft", { count: nftsCount })}
         </li>
         <li className="spacer" role="presentation" />
         <li>
-          <strong>{badges}</strong>
-          {t("units.badge", { count: badges })}
+          <strong>{badgesCount}</strong>
+          {t("units.badge", { count: badgesCount })}
         </li>
       </ul>
       <style jsx>{`
