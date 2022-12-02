@@ -216,6 +216,7 @@ export default function Send(): ReactElement {
               selectedAsset={selectedAsset ?? undefined}
               selectedNFT={(assetType === "nft" && selectedNFT) || undefined}
               amount={amount}
+              showMaxButton={assetType !== "nft"}
               NFTCollections={
                 isEnabled(FeatureFlags.SUPPORT_NFT_TAB)
                   ? nftCollections
