@@ -150,6 +150,7 @@ import {
   updateNFTsCollections,
   emitter as nftsSliceEmitter,
   updateNFTs,
+  deleteNFTsForAddress,
 } from "./redux-slices/nfts_update"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -568,6 +569,7 @@ export default class Main extends BaseService<never> {
 
     this.store.dispatch(removeActivities(address))
     this.store.dispatch(deleteNFts(address))
+    this.store.dispatch(deleteNFTsForAddress(address))
 
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))

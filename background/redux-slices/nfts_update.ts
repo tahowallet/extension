@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { fromFixedPointNumber } from "../lib/fixed-point"
+import { normalizeEVMAddress } from "../lib/utils"
 import { NFT, NFTCollection } from "../nfts"
 import { createBackgroundAsyncThunk } from "./utils"
 
@@ -52,9 +53,10 @@ function updateCollection(
     thumbnail,
   } = collection
   const { chainID } = network
+  const ownerAddress = normalizeEVMAddress(owner)
   acc.nfts[chainID] ??= {}
-  acc.nfts[chainID][owner] ??= {}
-  acc.nfts[chainID][owner][collection.id] = {
+  acc.nfts[chainID][ownerAddress] ??= {}
+  acc.nfts[chainID][ownerAddress][collection.id] = {
     id,
     name,
     nftCount,
@@ -62,7 +64,7 @@ function updateCollection(
     nfts: [],
     hasBadges,
     network,
-    owner,
+    owner: ownerAddress,
     thumbnail,
     floorPrice: floorPrice && {
       value: fromFixedPointNumber(
@@ -124,13 +126,33 @@ const NFTsSlice = createSlice({
         nfts,
       } = payload
 
-      immerState.nfts[network.chainID][address][collectionID].nfts = nfts
+      immerState.nfts[network.chainID][normalizeEVMAddress(address)][
+        collectionID
+      ].nfts = nfts
+    },
+    deleteNFTsForAddress: (
+      immerState,
+      {
+        payload: address,
+      }: {
+        payload: string
+      }
+    ) => {
+      const normalizedAddress = normalizeEVMAddress(address)
+
+      Object.keys(immerState.nfts).forEach((chainID) => {
+        delete immerState.nfts[chainID][normalizedAddress]
+      })
     },
   },
 })
 
-export const { initializeNFTs, updateNFTsCollections, updateNFTs } =
-  NFTsSlice.actions
+export const {
+  initializeNFTs,
+  updateNFTsCollections,
+  updateNFTs,
+  deleteNFTsForAddress,
+} = NFTsSlice.actions
 export default NFTsSlice.reducer
 
 export const fetchNFTsFromCollection = createBackgroundAsyncThunk(
