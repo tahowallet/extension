@@ -991,7 +991,7 @@ export default class ChainService extends BaseService<Events> {
     txHash: HexString,
     firstSeen: UNIXTime
   ): void {
-    const seen = this.transactionsToRetrieve.some(({ hash }) => hash === txHash)
+    const seen = this.isTransactionHashQueued(network, txHash)
 
     if (!seen) {
       // @TODO Interleave initial transaction retrieval by network
@@ -999,20 +999,37 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
-  removeTransactionHashFromQueue(network: EVMNetwork, hash: HexString): void {
-    const seen = this.transactionsToRetrieve.some(
-      (queuedTx) => queuedTx.hash === hash
+  /**
+   * Checks if a transaction with a given hash on a network is in the queue or not.
+   *
+   * @param txHash The hash of a tx to check.
+   * @returns true if the tx hash is in the queue, false otherwise.
+   */
+  isTransactionHashQueued(txNetwork: EVMNetwork, txHash: HexString): boolean {
+    return this.transactionsToRetrieve.some(
+      ({ hash, network }) =>
+        hash === txHash && txNetwork.chainID === network.chainID
     )
+  }
+
+  /**
+   * Removes a particular hash from our queue.
+   *
+   * @param network The network on which the transaction has been broadcast.
+   * @param txHash The tx hash identifier of the transaction we want to retrieve.
+   */
+  removeTransactionHashFromQueue(network: EVMNetwork, txHash: HexString): void {
+    const seen = this.isTransactionHashQueued(network, txHash)
 
     if (seen) {
       // Let's clean up the tx queue if the hash is present.
       // The pending tx hash should be on chain as soon as it's broadcasted.
       this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
-        (queuedTx) => queuedTx.hash !== hash
+        (queuedTx) => queuedTx.hash !== txHash
       )
 
       // Let's clean up the subscriptions
-      this.providerForNetwork(network)?.off(hash)
+      this.providerForNetwork(network)?.off(txHash)
     }
   }
 
