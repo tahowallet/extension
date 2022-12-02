@@ -112,7 +112,7 @@ function simpleHashCollectionModelToCollection(
   return {
     id,
     name: original.name || "",
-    nftCount: original.distinct_nft_count || 0,
+    nftCount: original.distinct_nfts_owned || 0,
     totalNftCount: original.distinct_nft_count || 0,
     owner,
     thumbnail: original.image_url || "",
