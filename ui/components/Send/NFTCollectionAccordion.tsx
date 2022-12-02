@@ -56,7 +56,7 @@ export default function NFTCollectionAccordion({
               fallback="images/no_preview.svg"
               width="32"
               height="32"
-              src={collection.thumbnail}
+              src={collection.thumbnailURL}
             />
             <span className="ellipsis">{collection.name}</span>
           </div>
@@ -77,7 +77,7 @@ export default function NFTCollectionAccordion({
                   key={nft.id}
                   id={nft.id}
                   name={nft.name}
-                  thumbnail={nft.thumbnail}
+                  thumbnailURL={nft.thumbnailURL}
                   onClick={() => onSelectNFT(nft)}
                 />
               ))}

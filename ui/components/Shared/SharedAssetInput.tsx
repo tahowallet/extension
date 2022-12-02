@@ -319,14 +319,20 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
   const { asset, isDisabled, toggleIsAssetMenuOpen, selectedNFT } = props
 
   if (selectedNFT) {
-    const { name, thumbnail } = selectedNFT
+    const { name, thumbnailURL } = selectedNFT
     return (
       <button
         type="button"
         disabled={isDisabled}
         onClick={toggleIsAssetMenuOpen}
       >
-        <img width="56" height="56" src={thumbnail} loading="lazy" alt={name} />
+        <img
+          width="56"
+          height="56"
+          src={thumbnailURL}
+          loading="lazy"
+          alt={name}
+        />
         <span className="ellipsis">{name}</span>
         <style jsx>{`
           button {

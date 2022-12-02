@@ -48,7 +48,7 @@ function updateCollection(
     owner,
     floorPrice,
     hasBadges,
-    thumbnail,
+    thumbnailURL,
   } = collection
   const { chainID } = network
   acc.nfts[chainID] ??= {}
@@ -61,7 +61,7 @@ function updateCollection(
     hasBadges,
     network,
     owner,
-    thumbnail,
+    thumbnailURL,
     floorPrice: floorPrice && {
       value: fromFixedPointNumber(
         { amount: floorPrice.value, decimals: floorPrice.token.decimals },

@@ -114,7 +114,7 @@ function simpleHashCollectionModelToCollection(
     name: original.name || "",
     nftCount: original.distinct_nft_count || 0,
     owner,
-    thumbnail: original.image_url || "",
+    thumbnailURL: original.image_url || "",
     network: NETWORK_BY_CHAIN_ID[chainID],
     floorPrice,
     hasBadges: false, // TODO: check how to discover if this is a Galxe collection
@@ -139,12 +139,12 @@ function simpleHashNFTModelToNFT(
 
   const isAchievement = isGalxeAchievement(nftURL)
 
-  const thumbnail =
+  const thumbnailURL =
     previews?.image_small_url ||
     previews?.image_medium_url ||
     previews?.image_large_url ||
     fullsizeURL ||
-    ""
+    undefined
 
   const previewURL =
     (previews?.image_medium_url || previews?.image_large_url || fullsizeURL) ??
@@ -171,7 +171,7 @@ function simpleHashNFTModelToNFT(
     id: nftID,
     name: original.name || "",
     description: original.description || "",
-    thumbnail,
+    thumbnailURL,
     previewURL,
     transferDate,
     attributes,

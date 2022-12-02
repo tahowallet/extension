@@ -8,9 +8,9 @@ export const noPreviewImg = "/images/no_preview.svg"
 export default function NFTCollectionListItem({
   id,
   name = id,
-  thumbnail = noPreviewImg,
+  thumbnailURL = noPreviewImg,
   onClick,
-}: Pick<NFT, "id" | "name" | "thumbnail"> & {
+}: Pick<NFT, "id" | "name" | "thumbnailURL"> & {
   onClick: () => void
 }): JSX.Element {
   return (
@@ -18,7 +18,7 @@ export default function NFTCollectionListItem({
       <SharedImageWithFallback
         width="64"
         height="64"
-        src={thumbnail}
+        src={thumbnailURL}
         fallback={noPreviewImg}
         loading="lazy"
         alt={name}
