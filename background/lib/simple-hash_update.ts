@@ -138,8 +138,6 @@ function simpleHashNFTModelToNFT(
     extra_metadata: metadata,
   } = original
 
-  const isAchievement = isGalxeAchievement(nftURL)
-
   const thumbnail =
     previewURL ||
     previews?.image_large_url ||
@@ -174,7 +172,7 @@ function simpleHashNFTModelToNFT(
     contract: contractAddress,
     owner,
     network: NETWORK_BY_CHAIN_ID[chainID],
-    badge: isAchievement && nftURL ? { url: nftURL } : null,
+    isBadge: isGalxeAchievement(nftURL),
   }
 }
 

@@ -58,9 +58,7 @@ function poapNFTModelToNFT(original: PoapNFTModel, owner: string): NFT {
     contract: POAP_CONTRACT, // contract address doesn't make sense for POAPs
     owner,
     network: ETHEREUM,
-    badge: {
-      url: `https://app.poap.xyz/token/${tokenId}`,
-    },
+    isBadge: true,
   }
 }
 

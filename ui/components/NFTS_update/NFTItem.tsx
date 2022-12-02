@@ -16,7 +16,7 @@ export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
   const floorPrice =
     "floorPrice" in item && item.floorPrice?.value && item.floorPrice
   const nftsCount = "nfts" in item && item.nfts.length
-  const isBadge = "badge" in item && !!item.badge
+  const isBadge = "isBadge" in item && item.isBadge
   return (
     <div className="nft_item">
       <div className="nft_image">

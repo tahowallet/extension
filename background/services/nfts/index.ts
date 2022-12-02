@@ -105,7 +105,7 @@ export default class NFTsService extends BaseService<Events> {
               nftCount: updatedNFTs.length,
             }
           )
-        } else if (updatedNFTs.some((nft) => !!nft.badge)) {
+        } else if (updatedNFTs.some((nft) => nft.isBadge)) {
           // update collection as a badges collection
           updatedCollection = await this.db.updateCollectionData(
             collectionID,
