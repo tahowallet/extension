@@ -57,6 +57,7 @@ export default function NFTCollectionAccordion({
               width="32"
               height="32"
               src={collection.thumbnailURL}
+              customStyles="border-radius: 4px;"
             />
             <span className="ellipsis">{collection.name}</span>
           </div>
@@ -128,10 +129,6 @@ export default function NFTCollectionAccordion({
             align-items: center;
             gap: 8px;
             flex-grow: 1;
-          }
-
-          .nft_collection :global(img) {
-            border-radius: 4px;
           }
 
           .nft_list {

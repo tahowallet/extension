@@ -22,18 +22,17 @@ export default function NFTCollectionListItem({
         fallback={noPreviewImg}
         loading="lazy"
         alt={name}
+        customStyles={`
+          border-radius: 4px;
+          object-position: center;
+          object-fit: cover;
+        `}
       />
       <button type="button" className="label" onClick={onClick}>
         <p className="ellipsis">{name}</p>
         <SharedIcon height={16} width={16} icon="icons/s/continue.svg" />
       </button>
       <style jsx>{`
-        div :global(img) {
-          border-radius: 4px;
-          object-position: center;
-          object-fit: cover;
-        }
-
         div {
           display: flex;
           align-items: center;

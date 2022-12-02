@@ -13,10 +13,12 @@ export default function SharedImageWithFallback({
   loading,
   alt,
   className,
+  customStyles = "",
   placeholder = defaultPlaceholder,
 }: PropsWithoutRef<JSX.IntrinsicElements["img"]> & {
   fallback: string
   placeholder?: string
+  customStyles?: string
 }): JSX.Element {
   const [isLoading, setIsLoading] = useState(true)
   const [imageSrc, setImageSrc] = useState(placeholder)
@@ -68,6 +70,11 @@ export default function SharedImageWithFallback({
           }
         `}
       </style>
+      <style jsx>{`
+        img {
+          ${customStyles}
+        }
+      `}</style>
     </>
   )
 }
