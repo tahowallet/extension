@@ -761,8 +761,7 @@ export default class ChainService extends BaseService<Events> {
       const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
 
       if (
-        !this.evmChainLastSeenNoncesByNormalizedAddress[chainID] ||
-        !this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
+        !this.evmChainLastSeenNoncesByNormalizedAddress[chainID]?.[
           normalizedAddress
         ]
       ) {
