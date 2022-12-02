@@ -108,9 +108,7 @@ export default function NFTCollectionAccordion({
               window.open(url, "_blank")?.focus()
             }
           }}
-          customStyles={`
-                        margin: 12px 0 auto;
-                      `}
+          customStyles="margin: 12px 0 auto;"
         />
       )}
       <style jsx>
