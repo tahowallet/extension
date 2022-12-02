@@ -1,6 +1,6 @@
 {
-  "name": "Tally Ho",
-  "version": "0.18.3",
+  "name": "Tally Ho BETA",
+  "version": "0.18.3.1",
   "description": "The community owned and operated Web3 wallet.",
   "homepage_url": "https://tally.cash",
   "author": "https://tally.cash",
@@ -33,7 +33,7 @@
     }
   },
   "icons": {
-    "128": "icon-128.png"
+    "128": "icon-128-dark.png"
   },
   "action": {
     "default_title": "Tally Ho",
