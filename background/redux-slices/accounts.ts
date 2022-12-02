@@ -182,23 +182,24 @@ function updateCombinedData(immerState: AccountState) {
 
       if (acc[assetSymbol]?.asset) {
         const accAsset = acc[assetSymbol].asset
-        const decimals = isFungibleAsset(accAsset) ? accAsset.decimals : 0
-        const targetDecimals = isFungibleAsset(combinedAssetAmount.asset)
+        const existingDecimals = isFungibleAsset(accAsset)
+          ? accAsset.decimals
+          : 0
+        const newDecimals = isFungibleAsset(combinedAssetAmount.asset)
           ? combinedAssetAmount.asset.decimals
           : 0
 
-        if (targetDecimals > decimals) {
-          amount = convertFixedPoint(
-            combinedAssetAmount?.amount,
-            decimals,
-            targetDecimals
-          )
+        if (newDecimals !== existingDecimals) {
+          amount = convertFixedPoint(amount, newDecimals, existingDecimals)
         }
       }
 
-      acc[assetSymbol] = {
-        ...combinedAssetAmount,
-        amount: (acc[assetSymbol]?.amount || 0n) + amount,
+      if (acc[assetSymbol]) {
+        acc[assetSymbol].amount += amount
+      } else {
+        acc[assetSymbol] = {
+          ...combinedAssetAmount,
+        }
       }
       return acc
     }, {})
