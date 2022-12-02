@@ -53,15 +53,21 @@ export default function NFTCollectionListItem({
           color: var(--white);
           flex-grow: 1;
           overflow: hidden;
+          gap: 8px;
         }
 
         .label:hover {
           color: var(--trophy-gold);
         }
 
+        .label p {
+          max-width: calc(100% - 24px);
+        }
+
         .label :global(.icon) {
           background-color: var(--green-40);
         }
+
         .label:hover :global(.icon) {
           background-color: currentColor;
         }
