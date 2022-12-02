@@ -96,17 +96,16 @@ export default function NFTCollectionAccordion({
           icon="icons/s/new-tab.svg"
           width={16}
           color="var(--green-40)"
+          disabled={collection.nfts.length < 1 || isLoading}
           hoverColor="var(--trophy-gold)"
           onClick={() => {
-            if (!isLoading) {
-              const { contract } = collection.nfts[0] ?? {}
+            const { contract } = collection.nfts[0] ?? {}
 
-              const url = `${
-                scanWebsite[collection.network.chainID].url
-              }/token/${contract}`
+            const url = `${
+              scanWebsite[collection.network.chainID].url
+            }/token/${contract}`
 
-              window.open(url, "_blank")?.focus()
-            }
+            window.open(url, "_blank")?.focus()
           }}
           customStyles="margin: 12px 0 auto;"
         />
