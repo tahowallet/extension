@@ -1269,7 +1269,7 @@ export default class ChainService extends BaseService<Events> {
 
     if (!result) {
       logger.warn(
-        `Tx has ${hash} is found in our local registry but not on chain.`
+        `Tx hash ${hash} is found in our local registry but not on chain.`
       )
 
       this.removeTransactionHashFromQueue(network, hash)
