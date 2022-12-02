@@ -49,7 +49,7 @@ const productionNetworks = [
     ? [
         {
           network: AVALANCHE,
-          info: i18n.t("protocol.compatibleChain"),
+          info: i18n.t("protocol.avalanche"),
         },
       ]
     : [

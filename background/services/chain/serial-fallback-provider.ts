@@ -315,7 +315,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return this.alchemyProvider.send(method, params)
     }
 
-    if (method.startsWith("alchemy_")) {
+    if (/^alchemy_|^eth_subscribe$/.test(method)) {
       throw new Error(
         `Calling ${method} is not supported on ${this.currentProvider.network.name}`
       )
