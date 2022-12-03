@@ -91,7 +91,7 @@ export default function NFTCollection(props: {
           isLoaded={!isLoading && !!nfts.length}
           width={168}
           height={168}
-          customStyles="margin: 8px 0;"
+          customStyles="margin: 8px 0 34px;"
         >
           {nfts.length === 1 ? (
             <NFTItem
