@@ -191,12 +191,19 @@ function simpleHashNFTModelToNFT(
 export async function getSimpleHashNFTs(
   address: string,
   collectionID: string,
-  chainIDs: string[]
+  chainIDs: string[],
+  nextPageURL?: string
 ): Promise<NFTsWithPagesResponse> {
-  const requestURL = new URL("https://api.simplehash.com/api/v0/nfts/owners")
-  requestURL.searchParams.set("chains", getChainIDsNames(chainIDs))
-  requestURL.searchParams.set("wallet_addresses", address)
-  requestURL.searchParams.set("collection_id", collectionID)
+  let requestURL: URL
+
+  if (nextPageURL) {
+    requestURL = new URL(nextPageURL)
+  } else {
+    requestURL = new URL("https://api.simplehash.com/api/v0/nfts/owners")
+    requestURL.searchParams.set("chains", getChainIDsNames(chainIDs))
+    requestURL.searchParams.set("wallet_addresses", address)
+    requestURL.searchParams.set("collection_id", collectionID)
+  }
 
   try {
     const result: SimpleHashNFTsByWalletAPIResponse = await fetchJson({

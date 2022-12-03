@@ -12,6 +12,7 @@ export type NFTCollectionCached = {
     tokenSymbol: string
   }
   nfts: NFT[]
+  hasNextPage: boolean
 } & Omit<NFTCollection, "floorPrice">
 
 export type NFTsState = {
@@ -33,6 +34,7 @@ export type NFTsSliceState = { nfts: NFTsState; filters: FiltersState }
 
 export type Events = {
   fetchNFTs: { collectionID: string; account: AddressOnNetwork }
+  fetchMoreNFTs: { collectionID: string; account: AddressOnNetwork }
 }
 
 export const emitter = new Emittery<Events>()
@@ -66,6 +68,7 @@ function updateCollection(
     network,
     owner: ownerAddress,
     thumbnail,
+    hasNextPage: false,
     floorPrice: floorPrice && {
       value: fromFixedPointNumber(
         { amount: floorPrice.value, decimals: floorPrice.token.decimals },
@@ -117,6 +120,7 @@ const NFTsSlice = createSlice({
           account: AddressOnNetwork
           collectionID: string
           nfts: NFT[]
+          hasNextPage: boolean
         }
       }
     ) => {
@@ -124,11 +128,16 @@ const NFTsSlice = createSlice({
         account: { network, address },
         collectionID,
         nfts,
+        hasNextPage,
       } = payload
 
-      immerState.nfts[network.chainID][normalizeEVMAddress(address)][
-        collectionID
-      ].nfts = nfts
+      const collectionToUpdate =
+        immerState.nfts[network.chainID][normalizeEVMAddress(address)][
+          collectionID
+        ]
+
+      collectionToUpdate.nfts = nfts
+      collectionToUpdate.hasNextPage = hasNextPage
     },
     deleteNFTsForAddress: (
       immerState,
@@ -159,5 +168,12 @@ export const fetchNFTsFromCollection = createBackgroundAsyncThunk(
   "nfts/fetchNFTsFromCollection",
   async (payload: { collectionID: string; account: AddressOnNetwork }) => {
     await emitter.emit("fetchNFTs", payload)
+  }
+)
+
+export const fetchMoreNFTsFromCollection = createBackgroundAsyncThunk(
+  "nfts/fetchMoreNFTsFromCollection",
+  async (payload: { collectionID: string; account: AddressOnNetwork }) => {
+    await emitter.emit("fetchMoreNFTs", payload)
   }
 )

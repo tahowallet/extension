@@ -1,6 +1,7 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { NFT } from "@tallyho/tally-background/nfts"
 import {
+  fetchMoreNFTsFromCollection,
   fetchNFTsFromCollection,
   NFTCollectionCached,
   NFTWithCollection,
@@ -15,7 +16,7 @@ export default function NFTCollection(props: {
   openPreview: (current: NFTWithCollection) => void
 }): ReactElement {
   const { collection, openPreview } = props
-  const { id, owner, network, nfts } = collection
+  const { id, owner, network, nfts, hasNextPage } = collection
   const dispatch = useBackgroundDispatch()
 
   const [isExpanded, setIsExpanded] = useState(false)
@@ -27,6 +28,17 @@ export default function NFTCollection(props: {
     () =>
       dispatch(
         fetchNFTsFromCollection({
+          collectionID: id,
+          account: { address: owner, network },
+        })
+      ),
+    [id, owner, network, dispatch]
+  )
+
+  const fetchMore = useCallback(
+    () =>
+      dispatch(
+        fetchMoreNFTsFromCollection({
           collectionID: id,
           account: { address: owner, network },
         })
@@ -61,6 +73,23 @@ export default function NFTCollection(props: {
 
   const collectionRef = useIntersectionObserver<HTMLLIElement>(
     intersectionCallback,
+    { threshold: 0.1 }
+  )
+
+  const loadMoreCallback = useCallback(
+    ([element]) => {
+      if (element.isIntersecting) {
+        if (hasNextPage) setIsUpdating(true) // if next page is known show loader
+        fetchMore().finally(() => {
+          setIsUpdating(false)
+        })
+      }
+    },
+    [fetchMore, hasNextPage]
+  )
+
+  const loadMoreRef = useIntersectionObserver<HTMLDivElement>(
+    loadMoreCallback,
     { threshold: 0.1 }
   )
 
@@ -123,6 +152,7 @@ export default function NFTCollection(props: {
                 height={168}
                 customStyles="margin: 8px 0;"
               />
+              <div ref={loadMoreRef} className="nft_load_more" />
             </>
           )}
         </SharedSkeletonLoader>
@@ -144,6 +174,10 @@ export default function NFTCollection(props: {
           display: flex;
           flex-wrap: wrap;
           justify-content: space-between;
+        }
+        .nft_load_more {
+          width: 100%;
+          height: 1px;
         }
       `}</style>
     </>

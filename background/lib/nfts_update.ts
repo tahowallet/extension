@@ -28,13 +28,18 @@ function groupChainsByAddress(accounts: AddressOnNetwork[]) {
 export function getNFTs(
   accounts: AddressOnNetwork[],
   collections: string[]
-): Promise<{ nfts: NFT[]; nextPageURLs: string[] }>[] {
+): Promise<{
+  nfts: NFT[]
+  nextPageURLs: { [collectionID: string]: { [address: string]: string } }
+}>[] {
   const chainIDsByAddress = groupChainsByAddress(accounts)
 
   return Object.entries(chainIDsByAddress).flatMap(
     async ([address, chainIDs]) => {
       const nfts: NFT[] = []
-      const nextPageURLs: string[] = []
+      const nextPageURLs: {
+        [collectionID: string]: { [address: string]: string }
+      } = {}
 
       const poapChains = chainIDs.filter((chainID) =>
         NFT_PROVIDER_TO_CHAIN.poap.includes(chainID)
@@ -57,7 +62,10 @@ export function getNFTs(
 
             nfts.push(...simpleHashNFTs)
 
-            if (nextPageURL) nextPageURLs.push(nextPageURL)
+            if (nextPageURL) {
+              nextPageURLs[collectionID] ??= {}
+              nextPageURLs[collectionID][address] = nextPageURL
+            }
           })
         )
       }
