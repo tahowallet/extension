@@ -113,6 +113,8 @@ export default class NFTsService extends BaseService<Events> {
         [account.network.chainID],
         nextPage
       ).then(async ({ nfts, nextPageURL }) => {
+        delete this.#nextPageUrls[collectionID][account.address]
+
         const nextPageMap: NextPageURLsMap = nextPageURL
           ? { [collectionID]: { [account.address]: nextPageURL } }
           : {}
@@ -136,11 +138,13 @@ export default class NFTsService extends BaseService<Events> {
 
     this.updateNextPages(nextPageURLs)
 
+    const hasNextPage = !!Object.keys(nextPageURLs).length
+
     await this.emitter.emit("updateNFTs", {
       collectionID,
       account,
       nfts: updatedNFTs,
-      hasNextPage: !!Object.keys(nextPageURLs).length,
+      hasNextPage,
     })
   }
 
@@ -151,5 +155,9 @@ export default class NFTsService extends BaseService<Events> {
         this.#nextPageUrls[collectionID][address] = url
       })
     )
+  }
+
+  async removeNFTsForAddress(address: string): Promise<void> {
+    await this.db.removeNFTsForAddress(address)
   }
 }

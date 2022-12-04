@@ -47,6 +47,13 @@ export class NFTsDatabase extends Dexie {
 
       .toArray()
   }
+
+  async removeNFTsForAddress(address: string): Promise<void> {
+    await this.nfts.filter((nft) => sameEVMAddress(nft.owner, address)).delete()
+    await this.collections
+      .filter((collection) => sameEVMAddress(collection.owner, address))
+      .delete()
+  }
 }
 
 export async function getOrCreateDB(): Promise<NFTsDatabase> {

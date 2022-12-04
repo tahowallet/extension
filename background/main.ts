@@ -569,8 +569,12 @@ export default class Main extends BaseService<never> {
 
     this.store.dispatch(removeActivities(address))
     this.store.dispatch(deleteNFts(address))
-    this.store.dispatch(deleteNFTsForAddress(address))
 
+    // remove NFTs
+    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+      this.store.dispatch(deleteNFTsForAddress(address))
+      await this.nftsService.removeNFTsForAddress(address)
+    }
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))
     await this.providerBridgeService.revokePermissionsForAddress(address)
