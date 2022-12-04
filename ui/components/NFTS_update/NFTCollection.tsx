@@ -78,14 +78,14 @@ export default function NFTCollection(props: {
 
   const loadMoreCallback = useCallback(
     ([element]) => {
-      if (element.isIntersecting) {
+      if (element.isIntersecting && !isUpdating) {
         if (hasNextPage) setIsUpdating(true) // if next page is known show loader
         fetchMore().finally(() => {
           setIsUpdating(false)
         })
       }
     },
-    [fetchMore, hasNextPage]
+    [fetchMore, hasNextPage, isUpdating]
   )
 
   const loadMoreRef = useIntersectionObserver<HTMLDivElement>(
