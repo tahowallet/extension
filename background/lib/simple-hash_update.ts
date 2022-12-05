@@ -70,6 +70,7 @@ const CHAIN_ID_TO_NAME = {
   10: "optimism",
   137: "polygon",
   42161: "arbitrum",
+  43114: "avalanche",
 }
 
 const SIMPLE_HASH_CHAIN_TO_ID = {
@@ -77,6 +78,7 @@ const SIMPLE_HASH_CHAIN_TO_ID = {
   optimism: 10,
   polygon: 137,
   arbitrum: 42161,
+  avalanche: 43114,
 }
 
 function isGalxeAchievement(url: string | null | undefined) {

@@ -1,6 +1,7 @@
 import {
   ETHEREUM,
   ARBITRUM_ONE,
+  AVALANCHE,
   OPTIMISM,
   NETWORK_BY_CHAIN_ID,
   POLYGON,
@@ -16,6 +17,7 @@ const NETWORKS_CHART_COLORS = {
   [POLYGON.chainID]: "#8347E5",
   [ARBITRUM_ONE.chainID]: "#2083C5",
   [OPTIMISM.chainID]: "#CD041C",
+  [AVALANCHE.chainID]: "#E84142",
 }
 
 const getNetworksPercents = (

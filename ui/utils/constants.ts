@@ -1,4 +1,5 @@
 import {
+  ARBITRUM_NOVA,
   ARBITRUM_ONE,
   AVALANCHE,
   ETHEREUM,
@@ -23,6 +24,10 @@ export const scanWebsite = {
   [GOERLI.chainID]: { title: "Etherscan", url: "https://goerli.etherscan.io/" },
   [ARBITRUM_ONE.chainID]: { title: "Arbiscan", url: "https://arbiscan.io/" },
   [AVALANCHE.chainID]: { title: "Snowtrace", url: "https://snowtrace.io/" },
+  [ARBITRUM_NOVA.chainID]: {
+    title: "Arbiscan",
+    url: "https://nova.arbiscan.io/",
+  },
 }
 
 export const ESTIMATED_SPEED_IN_READABLE_FORMAT_RELATIVE_TO_CONFIDENCE_LEVEL: {

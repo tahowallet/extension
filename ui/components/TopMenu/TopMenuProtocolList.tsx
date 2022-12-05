@@ -1,5 +1,6 @@
 import React, { ReactElement } from "react"
 import {
+  ARBITRUM_NOVA,
   ARBITRUM_ONE,
   AVALANCHE,
   ETHEREUM,
@@ -47,12 +48,27 @@ const productionNetworks = [
     ? [
         {
           network: AVALANCHE,
-          info: i18n.t("protocol.compatibleChain"),
+          info: i18n.t("protocol.avalanche"),
         },
       ]
     : [
         {
           network: AVALANCHE,
+          info: i18n.t("comingSoon"),
+          isDisabled: true,
+        },
+      ]),
+
+  ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA)
+    ? [
+        {
+          network: ARBITRUM_NOVA,
+          info: i18n.t("protocol.mainnet"),
+        },
+      ]
+    : [
+        {
+          network: ARBITRUM_NOVA,
           info: i18n.t("comingSoon"),
           isDisabled: true,
         },

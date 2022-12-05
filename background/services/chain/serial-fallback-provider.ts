@@ -284,7 +284,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * WebSocket disconnects, and restores subscriptions where
    * possible/necessary.
    */
-  override async send(method: string, params: unknown): Promise<unknown> {
+  override async send(method: string, params: unknown[]): Promise<unknown> {
     if (method === "eth_chainId") {
       return this.cachedChainId
     }
@@ -307,15 +307,20 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
     }
 
-    if (alchemyOrDefaultProvider(this.cachedChainId, method)) {
-      if (this.alchemyProvider) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return this.alchemyProvider.send(method, params as any)
-      }
+    if (
+      // Force some methods to be handled by alchemy if we're on an alchemy supported chain
+      this.alchemyProvider &&
+      alchemyOrDefaultProvider(this.cachedChainId, method)
+    ) {
+      return this.alchemyProvider.send(method, params)
+    }
+
+    if (/^alchemy_|^eth_subscribe$/.test(method)) {
       throw new Error(
         `Calling ${method} is not supported on ${this.currentProvider.network.name}`
       )
     }
+
     try {
       if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
         // Detect disconnected WebSocket and immediately throw.
