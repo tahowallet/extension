@@ -42,7 +42,7 @@ export const AVALANCHE: EVMNetwork = {
 }
 
 export const BINANCE_SMART_CHAIN: EVMNetwork = {
-  name: "BNB Smart Chain",
+  name: "BNB Chain",
   baseAsset: BNB,
   chainID: "56",
   family: "EVM",
