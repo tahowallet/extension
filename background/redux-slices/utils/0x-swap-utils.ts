@@ -97,7 +97,8 @@ export async function getAssetAmount(
   const assetPricePoint = selectAssetPricePoint(
     assets,
     asset?.symbol,
-    hardcodedMainCurrencySymbol
+    hardcodedMainCurrencySymbol,
+    network.chainID
   )
 
   return enrichAssetAmountWithMainCurrencyValues(
