@@ -11,6 +11,7 @@ export const coinTypesByAssetSymbol = {
   RBTC: 137,
   MATIC: 966,
   AVAX: 9005,
+  BNB: 714,
 } as const
 
 /**
