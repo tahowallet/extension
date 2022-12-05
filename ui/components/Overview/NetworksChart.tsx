@@ -1,9 +1,11 @@
 import {
   ETHEREUM,
   ARBITRUM_ONE,
+  AVALANCHE,
   OPTIMISM,
   NETWORK_BY_CHAIN_ID,
   POLYGON,
+  BINANCE_SMART_CHAIN,
 } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { AccountTotalList } from "@tallyho/tally-background/redux-slices/selectors"
@@ -16,6 +18,8 @@ const NETWORKS_CHART_COLORS = {
   [POLYGON.chainID]: "#8347E5",
   [ARBITRUM_ONE.chainID]: "#2083C5",
   [OPTIMISM.chainID]: "#CD041C",
+  [AVALANCHE.chainID]: "#E84142",
+  [BINANCE_SMART_CHAIN.chainID]: "#F3BA2F",
 }
 
 const getNetworksPercents = (

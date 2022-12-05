@@ -24,6 +24,7 @@ export default function TopMenuProtocolSwitcher({
             display: flex;
             align-items: center;
             user-select: none;
+            white-space: nowrap;
           }
           button:hover {
             color: #fff;

@@ -8,7 +8,7 @@ interface Props {
   symbol: string
 }
 
-const hardcodedIcons = new Set(["ETH", "MATIC", "DOGGO", "RBTC", "AVAX"])
+const hardcodedIcons = new Set(["ETH", "MATIC", "DOGGO", "RBTC", "AVAX", "BNB"])
 export default function SharedAssetIcon(props: Props): ReactElement {
   const { size, logoURL, symbol } = props
 
