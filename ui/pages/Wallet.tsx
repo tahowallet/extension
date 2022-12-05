@@ -9,7 +9,7 @@ import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/clai
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
-import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/constants/networks"
+import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -20,9 +20,11 @@ import NFTsWallet from "../components/NFTs/NFTsWallet"
 import SharedBanner from "../components/Shared/SharedBanner"
 import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultBanner"
 import WalletBanner from "../components/Wallet/Banner/WalletBanner"
+import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
+import NFTListCurrentWallet from "../components/NFTS_update/NFTListCurrentWallet"
 
 export default function Wallet(): ReactElement {
-  const { t } = useTranslation("translation", { keyPrefix: "wallet" })
+  const { t } = useTranslation()
   const [panelNumber, setPanelNumber] = useState(0)
 
   const dispatch = useBackgroundDispatch()
@@ -60,18 +62,19 @@ export default function Wallet(): ReactElement {
     (background) => background.ui?.initializationLoadingTimeExpired
   )
 
-  const panelNames = [t("pages.assets")]
+  const panelNames = [t("wallet.pages.assets")]
 
   if (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
-    panelNames.push(t("pages.NFTs"))
+    panelNames.push(t("wallet.pages.NFTs"))
   }
 
-  panelNames.push(t("pages.activity"))
+  panelNames.push(t("wallet.pages.activity"))
 
   return (
     <>
       <div className="page_content">
         <WalletToggleDefaultBanner />
+        <WalletAnalyticsNotificationBanner />
         <div className="section">
           <WalletAccountBalanceControl
             balance={totalMainCurrencyValue}
@@ -104,7 +107,10 @@ export default function Wallet(): ReactElement {
               />
             )}
             {panelNumber === 1 &&
-              NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) && (
+              NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) &&
+              (isEnabled(FeatureFlags.SUPPORT_NFT_TAB) ? (
+                <NFTListCurrentWallet />
+              ) : (
                 <>
                   <SharedBanner
                     icon="notif-announcement"
@@ -113,11 +119,11 @@ export default function Wallet(): ReactElement {
                     id="nft_soon"
                     customStyles="margin: 8px 0;"
                   >
-                    {t("NFTPricingComingSoon")}
+                    {t("nfts.NFTPricingComingSoon")}
                   </SharedBanner>
                   <NFTsWallet />
                 </>
-              )}
+              ))}
             {panelNumber ===
               (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)
                 ? 2

@@ -20,7 +20,7 @@ import { AssetTransfer } from "../../assets"
 import {
   HOUR,
   ETHEREUM,
-  RSK,
+  ROOTSTOCK,
   POLYGON,
   ARBITRUM_ONE,
   OPTIMISM,
@@ -30,6 +30,8 @@ import {
   MINUTE,
   CHAINS_WITH_MEMPOOL,
   EIP_1559_COMPLIANT_CHAIN_IDS,
+  AVALANCHE,
+  ARBITRUM_NOVA,
 } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
@@ -45,7 +47,7 @@ import {
   ethersTransactionFromTransactionRequest,
   unsignedTransactionFromEVMTransaction,
 } from "./utils"
-import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress, wait } from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEIP1559TransactionSignatureRequest,
@@ -83,7 +85,8 @@ const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 // OpenEthereum with tracing to catch up to where we are.
 const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
 
-const NETWORK_POLLING_TIMEOUT = MINUTE * 5
+// Add a little bit of wiggle room
+const NETWORK_POLLING_TIMEOUT = MINUTE * 2.05
 
 // The number of milliseconds after a request to look up a transaction was
 // first seen to continue looking in case the transaction fails to be found
@@ -105,7 +108,16 @@ interface Events extends ServiceLifecycleEvents {
     account: AddressOnNetwork
   }
   newAccountToTrack: AddressOnNetwork
-  accountsWithBalances: AccountBalance[]
+  accountsWithBalances: {
+    /**
+     * Retrieved balance for the network's base asset
+     */
+    balances: AccountBalance[]
+    /**
+     * The respective address and network for this balance update
+     */
+    addressOnNetwork: AddressOnNetwork
+  }
   transactionSend: HexString
   transactionSendFailure: undefined
   assetTransfers: {
@@ -228,7 +240,7 @@ export default class ChainService extends BaseService<Events> {
       },
       forceRecentAssetTransfers: {
         schedule: {
-          periodInMinutes: (HOUR * 12) / 1e3,
+          periodInMinutes: (12 * HOUR) / MINUTE,
         },
         handler: () => {
           this.handleRecentAssetTransferAlarm()
@@ -259,7 +271,9 @@ export default class ChainService extends BaseService<Events> {
       OPTIMISM,
       GOERLI,
       ARBITRUM_ONE,
-      ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [RSK] : []),
+      ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [ROOTSTOCK] : []),
+      ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE) ? [AVALANCHE] : []),
+      ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA) ? [ARBITRUM_NOVA] : []),
     ]
 
     this.trackedNetworks = []
@@ -810,27 +824,53 @@ export default class ChainService extends BaseService<Events> {
     address,
     network,
   }: AddressOnNetwork): Promise<AccountBalance> {
+    const normalizedAddress = normalizeEVMAddress(address)
+
     const balance = await this.providerForNetworkOrThrow(network).getBalance(
-      address
+      normalizedAddress
     )
+
+    const trackedAccounts = await this.getAccountsToTrack()
+    const allTrackedAddresses = new Set(
+      trackedAccounts.map((account) => account.address)
+    )
+
     const accountBalance: AccountBalance = {
-      address,
+      address: normalizedAddress,
       network,
       assetAmount: {
-        asset: network.baseAsset,
+        // Data stored in chain db for network base asset might be stale
+        asset: NETWORK_BY_CHAIN_ID[network.chainID].baseAsset,
         amount: balance.toBigInt(),
       },
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
       retrievedAt: Date.now(),
     }
-    this.emitter.emit("accountsWithBalances", [accountBalance])
-    await this.db.addBalance(accountBalance)
+
+    // Don't emit or save if the account isn't tracked
+    if (allTrackedAddresses.has(normalizedAddress)) {
+      this.emitter.emit("accountsWithBalances", {
+        balances: [accountBalance],
+        addressOnNetwork: {
+          address: normalizedAddress,
+          network,
+        },
+      })
+
+      await this.db.addBalance(accountBalance)
+    }
+
     return accountBalance
   }
 
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
-    await this.db.addAccountToTrack(addressNetwork)
-    this.emitter.emit("newAccountToTrack", addressNetwork)
+    const isAccountOnNetworkAlreadyTracked =
+      await this.db.getTrackedAccountOnNetwork(addressNetwork)
+    if (!isAccountOnNetworkAlreadyTracked) {
+      // Skip save, emit and savedTransaction emission on resubmission
+      await this.db.addAccountToTrack(addressNetwork)
+      this.emitter.emit("newAccountToTrack", addressNetwork)
+    }
     this.emitSavedTransactions(addressNetwork)
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
       logger.error(
@@ -1257,7 +1297,7 @@ export default class ChainService extends BaseService<Events> {
     incomingOnly = false
   ): Promise<void> {
     if (
-      [ETHEREUM, POLYGON, OPTIMISM, ARBITRUM_ONE, GOERLI, RSK].every(
+      this.supportedNetworks.every(
         (network) => network.chainID !== addressOnNetwork.network.chainID
       )
     ) {
@@ -1356,7 +1396,6 @@ export default class ChainService extends BaseService<Events> {
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
     const fetchedByNetwork: { [chainID: string]: number } = {}
-    const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
     let queue = Promise.resolve()
 
     // Drop all transactions that weren't retrieved from the queue.

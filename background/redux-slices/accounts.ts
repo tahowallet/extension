@@ -252,9 +252,16 @@ const accountSlice = createSlice({
     },
     updateAccountBalance: (
       immerState,
-      { payload: accountsWithBalances }: { payload: AccountBalance[] }
+      {
+        payload: { balances },
+      }: {
+        payload: {
+          balances: AccountBalance[]
+          addressOnNetwork: AddressOnNetwork
+        }
+      }
     ) => {
-      accountsWithBalances.forEach((updatedAccountBalance) => {
+      balances.forEach((updatedAccountBalance) => {
         const {
           address,
           network,
@@ -273,6 +280,12 @@ const accountSlice = createSlice({
         }
 
         if (existingAccountData !== "loading") {
+          if (
+            updatedAccountBalance.assetAmount.amount === 0n &&
+            existingAccountData.balances[updatedAssetSymbol] === undefined
+          ) {
+            return
+          }
           existingAccountData.balances[updatedAssetSymbol] =
             updatedAccountBalance
         } else {

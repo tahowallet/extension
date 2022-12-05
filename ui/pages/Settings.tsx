@@ -13,12 +13,14 @@ import {
 } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
+import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
 import { getLanguage, setLanguage } from "../_locales/i18n"
 import SettingButton from "./Settings/SettingButton"
+import { useBackgroundSelector } from "../hooks"
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
 
@@ -107,6 +109,7 @@ export default function Settings(): ReactElement {
   const hideBanners = useSelector(selectHideBanners)
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
+  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))
@@ -124,7 +127,10 @@ export default function Settings(): ReactElement {
   }
 
   const hideSmallAssetBalance = {
-    title: t("settings.hideSmallAssetBalance", { amount: 2, sign: "$" }),
+    title: t("settings.hideSmallAssetBalance", {
+      amount: 2,
+      sign: mainCurrencySign,
+    }),
     component: () => (
       <SharedToggleButton
         onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
@@ -217,10 +223,10 @@ export default function Settings(): ReactElement {
     enableTestNetworks,
     dAppsSettings,
     bugReport,
+    ...(isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) ? [analytics] : []),
     ...(isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER)
       ? [notificationBanner]
       : []),
-    ...(isEnabled(FeatureFlags.SUPPORT_ANALYTICS) ? [analytics] : []),
   ]
 
   const settings = {

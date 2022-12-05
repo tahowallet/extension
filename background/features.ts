@@ -18,13 +18,20 @@ export const RuntimeFlag = {
   USE_UPDATED_SIGNING_UI: process.env.USE_UPDATED_SIGNING_UI === "true",
   SUPPORT_MULTIPLE_LANGUAGES: process.env.SUPPORT_MULTIPLE_LANGUAGES === "true",
   SUPPORT_ANALYTICS: process.env.SUPPORT_ANALYTICS === "true",
+  ENABLE_ANALYTICS_DEFAULT_ON:
+    process.env.ENABLE_ANALYTICS_DEFAULT_ON === "true",
+  SHOW_ANALYTICS_DELETE_DATA_BUTTON:
+    process.env.SHOW_ANALYTICS_DELETE_DATA_BUTTON === "true",
   SUPPORT_KEYRING_LOCKING: process.env.SUPPORT_KEYRING_LOCKING === "true",
   SUPPORT_FORGOT_PASSWORD: process.env.SUPPORT_FORGOT_PASSWORD === "true",
   ENABLE_ACHIEVEMENTS_TAB: process.env.ENABLE_ACHIEVEMENTS_TAB === "true",
   HIDE_TOKEN_FEATURES: process.env.HIDE_TOKEN_FEATURES === "true",
   SUPPORT_RSK: process.env.SUPPORT_RSK === "true",
+  SUPPORT_AVALANCHE: process.env.SUPPORT_AVALANCHE === "true",
+  SUPPORT_ARBITRUM_NOVA: process.env.SUPPORT_ARBITRUM_NOVA === "true",
   SUPPORT_ACHIEVEMENTS_BANNER:
     process.env.SUPPORT_ACHIEVEMENTS_BANNER === "true",
+  SUPPORT_NFT_TAB: process.env.SUPPORT_NFT_TAB === "true",
 } as const
 
 type BuildTimeFlagType = keyof typeof BuildTimeFlag

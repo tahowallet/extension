@@ -87,6 +87,7 @@ export default function KeyringUnlock({
         <div className="signing_wrap">
           <div className="input_wrap">
             <PasswordInput
+              id="signing_password"
               label={t("signingPassword")}
               onChange={(value) => {
                 setPassword(value)

@@ -26,6 +26,7 @@ import SettingsAnalytics from "../pages/Settings/SettingsAnalytics"
 import SettingsConnectedWebsites from "../pages/Settings/SettingsConnectedWebsites"
 import HiddenDevPanel from "../components/HiddenDevPanel/HiddenDevPanel"
 import FeatureFlagsPanel from "../components/HiddenDevPanel/FeatureFlagsPanel"
+import NFTs from "../pages/NFTs"
 
 interface PageList {
   path: string
@@ -170,6 +171,13 @@ const pageList: PageList[] = [
     Component: Swap,
     hasTabBar: true,
     hasTopBar: true,
+    persistOnClose: true,
+  },
+  {
+    path: "/nfts",
+    Component: NFTs,
+    hasTabBar: true,
+    hasTopBar: false,
     persistOnClose: true,
   },
   {

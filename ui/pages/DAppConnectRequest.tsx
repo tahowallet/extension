@@ -8,10 +8,11 @@ import {
   grantPermission,
 } from "@tallyho/tally-background/redux-slices/dapp"
 
-import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { Redirect } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import DAppConnectPage from "./DAppConnect/DAppConnectPage"
 import SwitchWalletPage from "./DAppConnect/SwitchWalletPage"
+import ErrorFallback from "./ErrorFallback"
 
 export default function DAppConnectRequest(): ReactElement {
   const dispatch = useBackgroundDispatch()
@@ -35,36 +36,35 @@ export default function DAppConnectRequest(): ReactElement {
   }, [dispatch, permission])
 
   const grant = useCallback(async () => {
-    if (typeof permission !== "undefined") {
+    if (
+      typeof permission !== "undefined" &&
+      typeof currentAccountTotal !== "undefined"
+    ) {
       dispatch(
         grantPermission({
           ...permission,
+          accountAddress: currentAccountTotal.address, // make sure address is matching current account
           state: "allow",
         })
       )
     }
     window.onbeforeunload = null
     window.close()
-  }, [dispatch, permission])
+  }, [dispatch, permission, currentAccountTotal])
 
   const deny = useCallback(async () => {
     // The denyOrRevokePermission will be dispatched in the onbeforeunload effect
     window.close()
   }, [])
 
-  if (
-    typeof permission === "undefined" ||
-    typeof currentAccountTotal === "undefined" ||
-    normalizeEVMAddress(permission.accountAddress) !==
-      normalizeEVMAddress(currentAccountTotal?.address)
-  ) {
-    // FIXME What do we do if we end up in a weird state here? Dismiss the
-    // FIXME popover? Show an error?
-    return (
-      <div>
-        You do not seem to have an account, which is sad for a wallet :(
-      </div>
-    )
+  if (typeof permission === "undefined") {
+    // something went wrong with permisison request
+    return <ErrorFallback />
+  }
+
+  if (typeof currentAccountTotal === "undefined") {
+    // there is no account, let's onbaord first
+    return <Redirect to="/onboarding/info-intro" />
   }
 
   return (

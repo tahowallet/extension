@@ -56,7 +56,8 @@ const pagePreferences = Object.fromEntries(
 function transformLocation(
   inputLocation: Location,
   isTransactionPendingSignature: boolean,
-  needsKeyringUnlock: boolean
+  needsKeyringUnlock: boolean,
+  hasAccounts: boolean
 ): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
   // so I need to grab it from the window
@@ -65,6 +66,7 @@ function transformLocation(
 
   let { pathname } = inputLocation
   if (
+    hasAccounts &&
     isAllowedQueryParamPage(maybePage) &&
     !inputLocation.pathname.includes("/keyring/")
   ) {
@@ -100,10 +102,15 @@ export function Main(): ReactElement {
   const currentAccount = useBackgroundSelector(selectCurrentAddressNetwork)
   // Emit an event when the popup page is first loaded.
   useEffect(() => {
+    /**
+     * Marking user activity every time this component is rerendered
+     * lets us avoid edge cases where we fail to mark user activity on
+     * a given account when a user has the wallet open for longer than
+     * the current NETWORK_POLLING_TIMEOUT and is clicking around between
+     * tabs / into assets / etc.
+     */
     dispatch(userActivityEncountered(currentAccount))
-    // We explicitly do not want to reload on dependency change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  })
 
   const isDappPopup = useIsDappPopup()
   const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)
@@ -158,7 +165,8 @@ export function Main(): ReactElement {
             const transformedLocation = transformLocation(
               routeProps.location,
               isTransactionPendingSignature,
-              needsKeyringUnlock
+              needsKeyringUnlock,
+              hasAccounts
             )
 
             const normalizedPathname = pagePreferences[
