@@ -3,7 +3,11 @@ import {
   getSimpleHashCollections,
   getSimpleHashNFTs,
 } from "./simple-hash_update"
-import { getPoapNFTs, getPoapCollections } from "./poap_update"
+import {
+  getPoapNFTs,
+  getPoapCollections,
+  POAP_COLLECTION_ID,
+} from "./poap_update"
 import {
   NFT,
   CHAIN_ID_TO_NFT_METADATA_PROVIDER,
@@ -45,7 +49,7 @@ export function getNFTs(
         NFT_PROVIDER_TO_CHAIN.poap.includes(chainID)
       )
 
-      if (poapChains.length) {
+      if (poapChains.length && collections.includes(POAP_COLLECTION_ID)) {
         const { nfts: poapNFTs } = await getPoapNFTs(address)
         nfts.push(...poapNFTs)
       }
@@ -57,6 +61,8 @@ export function getNFTs(
       if (simpleHashChains.length) {
         await Promise.allSettled(
           collections.map(async (collectionID) => {
+            if (collectionID === POAP_COLLECTION_ID) return // Don't fetch POAP from SimpleHash
+
             const { nfts: simpleHashNFTs, nextPageURL } =
               await getSimpleHashNFTs(address, collectionID, simpleHashChains)
 

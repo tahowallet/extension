@@ -2,6 +2,7 @@ import { AddressOnNetwork } from "../../accounts"
 import { FeatureFlags, isEnabled } from "../../features"
 import { getNFTCollections, getNFTs } from "../../lib/nfts_update"
 import { getSimpleHashNFTs } from "../../lib/simple-hash_update"
+import { POAP_COLLECTION_ID } from "../../lib/poap_update"
 import { NFTCollection, NFT } from "../../nfts"
 import BaseService from "../base"
 import ChainService from "../chain"
@@ -137,6 +138,32 @@ export default class NFTsService extends BaseService<Events> {
     )
 
     this.updateNextPages(nextPageURLs)
+
+    let updatedCollection: NFTCollection | undefined
+
+    if (collectionID === POAP_COLLECTION_ID) {
+      // update number of poaps
+      updatedCollection = await this.db.updateCollectionData(
+        collectionID,
+        account,
+        {
+          nftCount: updatedNFTs.length,
+        }
+      )
+    } else if (updatedNFTs.some((nft) => nft.isBadge)) {
+      // update collection as a badges collection
+      updatedCollection = await this.db.updateCollectionData(
+        collectionID,
+        account,
+        {
+          hasBadges: true,
+        }
+      )
+    }
+
+    if (updatedCollection) {
+      this.emitter.emit("updateCollections", [updatedCollection])
+    }
 
     const hasNextPage = !!Object.keys(nextPageURLs).length
 

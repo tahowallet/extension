@@ -112,7 +112,7 @@ function simpleHashCollectionModelToCollection(
   return {
     id,
     name: original.name || "",
-    nftCount: original.distinct_nft_count || 0,
+    nftCount: original.distinct_nfts_owned || 0,
     totalNftCount: original.distinct_nft_count || 0,
     owner,
     thumbnail: original.image_url || "",
@@ -137,8 +137,6 @@ function simpleHashNFTModelToNFT(
     collection: { collection_id: collectionID },
     extra_metadata: metadata,
   } = original
-
-  const isAchievement = isGalxeAchievement(nftURL)
 
   const thumbnail =
     previewURL ||
@@ -174,7 +172,7 @@ function simpleHashNFTModelToNFT(
     contract: contractAddress,
     owner,
     network: NETWORK_BY_CHAIN_ID[chainID],
-    badge: isAchievement && nftURL ? { url: nftURL } : null,
+    isBadge: isGalxeAchievement(nftURL),
   }
 }
 

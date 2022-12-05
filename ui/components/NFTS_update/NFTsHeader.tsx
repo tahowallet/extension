@@ -1,32 +1,31 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import { HeaderContainer, EmptyHeader } from "./NFTsHeaderBase"
+import {
+  selectMainCurrencySign,
+  selectNFTBadgesCount,
+  selectNFTCollectionsCount,
+  selectNFTsCount,
+} from "@tallyho/tally-background/redux-slices/selectors"
+
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
+import { HeaderContainer, EmptyHeader } from "./NFTsHeaderBase"
+import { useBackgroundSelector, useTotalNFTsFloorPrice } from "../../hooks"
 
-type HeaderProps = {
-  loading: boolean
-  nfts: number
-  collections: number
-  badges: number
-  totalInCurrency: string
-  totalInETH: string
-  mainCurrencySign: string
-}
-
-export default function NFTsHeader({
-  nfts,
-  collections,
-  badges,
-  totalInCurrency,
-  totalInETH,
-  mainCurrencySign,
-  loading,
-}: HeaderProps): ReactElement {
+export default function NFTsHeader(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
   })
+  const isLoading = useBackgroundSelector(() => false)
+  const nftCount = useBackgroundSelector(selectNFTsCount)
 
-  if (nfts < 1) {
+  const collectionCount = useBackgroundSelector(selectNFTCollectionsCount)
+  const badgeCount = useBackgroundSelector(selectNFTBadgesCount)
+  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
+
+  const { totalFloorPriceInETH, totalFloorPriceInUSD } =
+    useTotalNFTsFloorPrice()
+
+  if (nftCount < 1) {
     return (
       <HeaderContainer>
         <EmptyHeader />
@@ -40,27 +39,27 @@ export default function NFTsHeader({
         <div className="stats_title">{t("header.title")}</div>
         <div className="stats_totals">
           <span className="currency_sign">{mainCurrencySign}</span>
-          <span className="currency_total">{totalInCurrency}</span>
-          {loading && (
+          <span className="currency_total">{totalFloorPriceInUSD}</span>
+          {isLoading && (
             <SharedLoadingSpinner size="small" variant="transparent" />
           )}
         </div>
-        <div className="crypto_total">{totalInETH}</div>
+        <div className="crypto_total">{totalFloorPriceInETH} ETH</div>
       </div>
       <ul className="nft_counts">
         <li>
-          <strong>{collections}</strong>
-          {t("units.collection", { count: collections })}
+          <strong>{collectionCount}</strong>
+          {t("units.collection", { count: collectionCount })}
         </li>
         <li className="spacer" role="presentation" />
         <li>
-          <strong>{nfts}</strong>
-          {t("units.nft", { count: nfts })}
+          <strong>{nftCount}</strong>
+          {t("units.nft", { count: nftCount })}
         </li>
         <li className="spacer" role="presentation" />
         <li>
-          <strong>{badges}</strong>
-          {t("units.badge", { count: badges })}
+          <strong>{badgeCount}</strong>
+          {t("units.badge", { count: badgeCount })}
         </li>
       </ul>
       <style jsx>{`

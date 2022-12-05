@@ -26,7 +26,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     owner,
     description,
     attributes,
-    badge,
+    isBadge,
   } = nft
   const { totalNftCount } = collection
   const floorPrice = collection.floorPrice?.value && collection.floorPrice
@@ -54,7 +54,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     <>
       <div className="preview_wrapper">
         <div className="preview_image">
-          <NFTImage src={thumbnail} alt={name} width={384} isBadge={!!badge} />
+          <NFTImage src={thumbnail} alt={name} width={384} isBadge={isBadge} />
           <div className="preview_network">
             <SharedNetworkIcon network={network} size={24} hasBackground />
           </div>

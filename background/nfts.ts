@@ -50,9 +50,7 @@ export type NFT = {
   contract: string
   owner: string
   network: EVMNetwork
-  badge: null | {
-    url: string
-  }
+  isBadge: boolean
 }
 
 export type NFTCollection = {
