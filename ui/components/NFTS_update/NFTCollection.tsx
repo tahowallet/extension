@@ -16,7 +16,7 @@ export default function NFTCollection(props: {
   openPreview: (current: NFTWithCollection) => void
 }): ReactElement {
   const { collection, openPreview } = props
-  const { id, owner, network, nfts, hasNextPage } = collection
+  const { id, owner, network, nfts, nftCount, hasNextPage } = collection
   const dispatch = useBackgroundDispatch()
 
   const [isExpanded, setIsExpanded] = useState(false)
@@ -114,6 +114,7 @@ export default function NFTCollection(props: {
         ref={collectionRef}
         className={classNames("nft_collection", {
           expanded: isExpanded && !isLoading,
+          invisible: !nftCount,
         })}
       >
         <SharedSkeletonLoader
@@ -174,6 +175,12 @@ export default function NFTCollection(props: {
           display: flex;
           flex-wrap: wrap;
           justify-content: space-between;
+        }
+        .nft_collection.invisible {
+          opacity: 0;
+          pointer-events: none;
+          position: absolute;
+          bottom: 0;
         }
         .nft_load_more {
           width: 100%;

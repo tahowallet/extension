@@ -1,6 +1,9 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import classNames from "classnames"
-import { selectNFTsCount } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectNFTBadgesCount,
+  selectNFTsCount,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { useTranslation } from "react-i18next"
 import { cleanCachedNFTs } from "@tallyho/tally-background/redux-slices/nfts_update"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -15,6 +18,7 @@ const PANEL_NAMES = ["NFTs", "Badges"]
 export default function NFTs(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const nftCount = useBackgroundSelector(selectNFTsCount)
+  const badgesCount = useBackgroundSelector(selectNFTBadgesCount)
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
   })
@@ -53,7 +57,7 @@ export default function NFTs(): ReactElement {
             <NFTsExploreBanner type="nfts" />
           ))}
         {panelNumber === 1 &&
-          (nftCount > 0 ? (
+          (badgesCount > 0 ? (
             <>
               <h2>{t("units.badge_other")}</h2>
               <NFTListPortfolioBadges />

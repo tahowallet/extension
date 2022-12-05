@@ -30,11 +30,16 @@ export type NFTWithCollection = {
 
 export type FiltersState = []
 
-export type NFTsSliceState = { nfts: NFTsState; filters: FiltersState }
+export type NFTsSliceState = {
+  isReloading: boolean
+  nfts: NFTsState
+  filters: FiltersState
+}
 
 export type Events = {
   fetchNFTs: { collectionID: string; account: AddressOnNetwork }
   fetchMoreNFTs: { collectionID: string; account: AddressOnNetwork }
+  refetchCollections: never
 }
 
 export const emitter = new Emittery<Events>()
@@ -81,6 +86,7 @@ function updateCollection(
 
 function initializeCollections(collections: NFTCollection[]): NFTsSliceState {
   const state: NFTsSliceState = {
+    isReloading: false,
     nfts: {},
     filters: [],
   }
@@ -91,6 +97,7 @@ function initializeCollections(collections: NFTCollection[]): NFTsSliceState {
 const NFTsSlice = createSlice({
   name: "nftsUpdate",
   initialState: {
+    isReloading: false,
     nfts: {},
     filters: [],
   } as NFTsSliceState,
@@ -139,6 +146,12 @@ const NFTsSlice = createSlice({
       collectionToUpdate.nfts = nfts
       collectionToUpdate.hasNextPage = hasNextPage
     },
+    updateIsReloading: (
+      immerState,
+      { payload: isReloading }: { payload: boolean }
+    ) => {
+      immerState.isReloading = isReloading
+    },
     deleteNFTsForAddress: (
       immerState,
       {
@@ -158,10 +171,14 @@ const NFTsSlice = createSlice({
         Object.keys(immerState.nfts[chainID]).forEach((address) =>
           Object.keys(immerState.nfts[chainID][address]).forEach(
             (collectionID) => {
-              const reducedList = immerState.nfts[chainID][address][
-                collectionID
-              ].nfts.slice(0, 2) // leave 2 nfts to avoid unnecessary updates
-              immerState.nfts[chainID][address][collectionID].nfts = reducedList
+              const collection = immerState.nfts[chainID][address][collectionID]
+
+              // TODO: as badges are always expanded they are not updating on intersection
+              // Figure out a way for badges to follow the same rules as regular nfts
+              if (!collection.hasBadges) {
+                const reducedList = collection.nfts.slice(0, 2) // leave 2 nfts to avoid unnecessary updates
+                collection.nfts = reducedList
+              }
             }
           )
         )
@@ -174,6 +191,7 @@ export const {
   initializeNFTs,
   updateNFTsCollections,
   updateNFTs,
+  updateIsReloading,
   deleteNFTsForAddress,
   cleanCachedNFTs,
 } = NFTsSlice.actions
@@ -190,5 +208,12 @@ export const fetchMoreNFTsFromCollection = createBackgroundAsyncThunk(
   "nfts/fetchMoreNFTsFromCollection",
   async (payload: { collectionID: string; account: AddressOnNetwork }) => {
     await emitter.emit("fetchMoreNFTs", payload)
+  }
+)
+
+export const refetchCollections = createBackgroundAsyncThunk(
+  "nfts/refetchCollections",
+  async () => {
+    await emitter.emit("refetchCollections")
   }
 )

@@ -11,6 +11,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, NFTsDatabase } from "./db"
 
 interface Events extends ServiceLifecycleEvents {
+  isReloadingNFTs: boolean
   initializeNFTs: NFTCollection[]
   updateCollections: NFTCollection[]
   updateNFTs: {
@@ -58,7 +59,7 @@ export default class NFTsService extends BaseService<Events> {
 
   private async connectChainServiceEvents(): Promise<void> {
     this.chainService.emitter.once("serviceStarted").then(async () => {
-      await this.fetchCollections()
+      await this.refreshCollections()
 
       const collections = await this.db.getAllCollections()
       this.emitter.emit("initializeNFTs", collections)
@@ -66,16 +67,30 @@ export default class NFTsService extends BaseService<Events> {
 
     this.chainService.emitter.on(
       "newAccountToTrack",
-      async (addressOnNetwork) => this.fetchCollections([addressOnNetwork])
+      async (addressOnNetwork) => {
+        await this.refreshCollections([addressOnNetwork])
+      }
     )
   }
 
-  async fetchCollections(accounts?: AddressOnNetwork[]): Promise<void> {
+  async refreshCollections(accounts?: AddressOnNetwork[]): Promise<void> {
     const accountsToFetch =
       accounts ?? (await this.chainService.getAccountsToTrack())
 
+    this.emitter.emit("isReloadingNFTs", true)
+    await this.fetchCollections(accountsToFetch)
+    // prefetch POAPs to avoid loading empty POAPs collections from UI
+    await Promise.allSettled(
+      accountsToFetch.map((account) =>
+        this.fetchNFTsFromCollection(POAP_COLLECTION_ID, account)
+      )
+    )
+    this.emitter.emit("isReloadingNFTs", false)
+  }
+
+  async fetchCollections(accounts: AddressOnNetwork[]): Promise<void> {
     await Promise.all(
-      getNFTCollections(accountsToFetch).map(async (request) =>
+      getNFTCollections(accounts).map(async (request) =>
         request.then(async (collections) => {
           await this.db.updateCollections(collections)
 

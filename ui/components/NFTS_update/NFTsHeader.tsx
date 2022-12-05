@@ -39,27 +39,27 @@ export default function NFTsHeader(): ReactElement {
         <div className="stats_title">{t("header.title")}</div>
         <div className="stats_totals">
           <span className="currency_sign">{mainCurrencySign}</span>
-          <span className="currency_total">{totalFloorPriceInUSD}</span>
+          <span className="currency_total">{totalFloorPriceInUSD ?? "0"}</span>
           {isLoading && (
             <SharedLoadingSpinner size="small" variant="transparent" />
           )}
         </div>
-        <div className="crypto_total">{totalFloorPriceInETH} ETH</div>
+        <div className="crypto_total">{totalFloorPriceInETH ?? "-"} ETH</div>
       </div>
       <ul className="nft_counts">
         <li>
           <strong>{collectionCount}</strong>
-          {t("units.collection", { count: collectionCount })}
+          {t("units.collection", { count: collectionCount ?? 0 })}
         </li>
         <li className="spacer" role="presentation" />
         <li>
           <strong>{nftCount}</strong>
-          {t("units.nft", { count: nftCount })}
+          {t("units.nft", { count: nftCount ?? 0 })}
         </li>
         <li className="spacer" role="presentation" />
         <li>
           <strong>{badgeCount}</strong>
-          {t("units.badge", { count: badgeCount })}
+          {t("units.badge", { count: badgeCount ?? 0 })}
         </li>
       </ul>
       <style jsx>{`

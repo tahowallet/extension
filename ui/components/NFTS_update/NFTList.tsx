@@ -2,7 +2,9 @@ import {
   NFTCollectionCached,
   NFTWithCollection,
 } from "@tallyho/tally-background/redux-slices/nfts_update"
+import { selectIsReloadingNFTs } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useState } from "react"
+import { useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import NFTCollection from "./NFTCollection"
 import NFTItem from "./NFTItem"
@@ -17,6 +19,8 @@ export default function NFTList(props: {
   const [currentNFTPreview, setCurrentNFTPreview] =
     useState<NFTWithCollection | null>(null)
 
+  const isReloading = useBackgroundSelector(selectIsReloadingNFTs)
+
   const openPreview = (current: NFTWithCollection) => {
     setIsPreviewOpen(true)
     setCurrentNFTPreview(current)
@@ -27,6 +31,8 @@ export default function NFTList(props: {
     setCurrentNFTPreview(null)
   }
 
+  if (isReloading) return <>Loading</> // TODO: use loading puppy animation
+
   return (
     <>
       <ul className="nft_list">
@@ -36,14 +42,14 @@ export default function NFTList(props: {
           collection.nfts.length ? (
             collection.nfts.map((nft) => (
               <NFTItem
-                key={nft.id}
+                key={`${nft.id}_${nft.owner}`}
                 item={nft}
                 onClick={() => openPreview({ nft, collection })}
               />
             ))
           ) : (
             <NFTCollection
-              key={collection.id}
+              key={`${collection.id}_${collection.owner}`}
               openPreview={openPreview}
               collection={collection}
             />

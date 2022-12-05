@@ -33,7 +33,10 @@ export const useTotalNFTsFloorPrice = (): {
 
   const totalFloorPriceLocalized =
     enrichAssetAmountWithMainCurrencyValues(
-      { asset: ETH, amount: BigInt(totalFloorPriceInETH * 10 ** ETH.decimals) },
+      {
+        asset: ETH,
+        amount: BigInt(Math.round(totalFloorPriceInETH * 10 ** ETH.decimals)),
+      },
       ETHPricePoint,
       2
     ).localizedMainCurrencyAmount ?? "-"

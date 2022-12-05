@@ -10,6 +10,11 @@ const selectNFTs = createSelector(
   (slice) => slice.nfts
 )
 
+export const selectIsReloadingNFTs = createSelector(
+  (state: RootState) => state.nftsUpdate,
+  (slice) => slice.isReloading
+)
+
 /* Filtering selectors */
 
 export const selectNFTFilters = createSelector(
@@ -47,6 +52,16 @@ export const selectNFTBadgesCollections = createSelector(
 )
 
 /* Counting selectors  */
+
+export const selectCurrentAccountNFTsCount = createSelector(
+  selectCurrentAccountNFTs,
+  (collections) => {
+    return collections.reduce(
+      (sum, collection) => sum + (collection.nftCount ?? 0),
+      0
+    )
+  }
+)
 export const selectNFTsCount = createSelector(
   selectNFTCollections,
   (collections) => {
