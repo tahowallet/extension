@@ -1,23 +1,32 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import classNames from "classnames"
 import { selectNFTsCount } from "@tallyho/tally-background/redux-slices/selectors"
 import { useTranslation } from "react-i18next"
+import { cleanCachedNFTs } from "@tallyho/tally-background/redux-slices/nfts_update"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import NFTsExploreBanner from "../components/NFTS_update/NFTsExploreBanner"
 import NFTsHeader from "../components/NFTS_update/NFTsHeader"
-import { useBackgroundSelector } from "../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import NFTListPortfolio from "../components/NFTS_update/NFTListPortfolio"
 import NFTListPortfolioBadges from "../components/NFTS_update/NFTListPortfolioBadges"
 
 const PANEL_NAMES = ["NFTs", "Badges"]
 
 export default function NFTs(): ReactElement {
+  const dispatch = useBackgroundDispatch()
   const nftCount = useBackgroundSelector(selectNFTsCount)
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
   })
 
   const [panelNumber, setPanelNumber] = useState(0)
+
+  useEffect(
+    () => () => {
+      dispatch(cleanCachedNFTs())
+    },
+    [dispatch]
+  )
 
   return (
     <div className="page_content">

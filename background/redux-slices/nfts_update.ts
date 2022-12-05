@@ -153,6 +153,20 @@ const NFTsSlice = createSlice({
         delete immerState.nfts[chainID][normalizedAddress]
       })
     },
+    cleanCachedNFTs: (immerState) => {
+      Object.keys(immerState.nfts).forEach((chainID) =>
+        Object.keys(immerState.nfts[chainID]).forEach((address) =>
+          Object.keys(immerState.nfts[chainID][address]).forEach(
+            (collectionID) => {
+              const reducedList = immerState.nfts[chainID][address][
+                collectionID
+              ].nfts.slice(0, 2) // leave 2 nfts to avoid unnecessary updates
+              immerState.nfts[chainID][address][collectionID].nfts = reducedList
+            }
+          )
+        )
+      )
+    },
   },
 })
 
@@ -161,6 +175,7 @@ export const {
   updateNFTsCollections,
   updateNFTs,
   deleteNFTsForAddress,
+  cleanCachedNFTs,
 } = NFTsSlice.actions
 export default NFTsSlice.reducer
 
