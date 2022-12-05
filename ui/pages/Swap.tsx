@@ -635,6 +635,12 @@ export default function Swap(): ReactElement {
                 }}
                 label={t("swap.to")}
               />
+              {priceDetails === undefined ? (
+                <div className="loading_corgi">
+                  <img src="./images/swap_corgi.gif" alt="loading corgi" />
+                  <span className="simple_text">Fetching price...</span>
+                </div>
+              ) : null}
             </div>
             <div className="settings_wrap">
               {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
@@ -754,6 +760,18 @@ export default function Swap(): ReactElement {
           }
           .settings_wrap {
             margin-top: 16px;
+          }
+
+          .loading_corgi {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 10px;
+            margin-bottom: 35px;
+          }
+
+          .loading_corgi img {
+            width: 54px;
           }
         `}
       </style>
