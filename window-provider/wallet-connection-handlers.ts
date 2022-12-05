@@ -1,6 +1,9 @@
 const TALLY_ICON_URL =
   "https://tally.cash/icons/icon-144x144.png?v=41306c4d4e6795cdeaecc31bd794f68e"
 
+const TALLY_NAME = "Tally Ho"
+const META_MASK = "MetaMask"
+
 const observeMutations = (handler: (node: Node) => void) => {
   document.addEventListener("DOMContentLoaded", () => {
     const observer = new MutationObserver(function monitorMutations(mutations) {
@@ -54,7 +57,7 @@ const findAndReplaceUniswapInjectedOption = (): void => {
       // Replace the `Injected` text with `Tally Ho`
       iconAndTextDiv.innerHTML = iconAndTextDiv.innerHTML.replace(
         "Injected",
-        "Tally Ho"
+        TALLY_NAME
       )
     }
   }
@@ -75,7 +78,7 @@ const findAndReplaceJoeMetamaskOption = (addedNode: Node): void => {
   ) {
     // eslint-disable-next-line no-restricted-syntax
     for (const btn of addedNode.getElementsByTagName("button")) {
-      if (btn.innerText === "MetaMask") {
+      if (btn.innerText === META_MASK) {
         maybeButton = btn
       }
     }
@@ -89,7 +92,7 @@ const findAndReplaceJoeMetamaskOption = (addedNode: Node): void => {
   const img = maybeButton.querySelector("img")
 
   if (textNode && img) {
-    textNode.textContent = "Tally Ho"
+    textNode.textContent = TALLY_NAME
     img.src = TALLY_ICON_URL
   }
 }
@@ -100,7 +103,7 @@ function findAndReplaceGMXMetamaskOption(addedNode: Node): void {
   }
 
   if (
-    addedNode.textContent?.includes("MetaMask") &&
+    addedNode.textContent?.includes(META_MASK) &&
     (addedNode as Element).classList.contains("Connect-wallet-modal")
   ) {
     const connectionOptions = (addedNode as Element)?.children?.[1]
@@ -113,7 +116,7 @@ function findAndReplaceGMXMetamaskOption(addedNode: Node): void {
     // eslint-disable-next-line no-restricted-syntax
     for (const option of connectionOptions) {
       if (option.classList.contains("MetaMask-btn")) {
-        option.innerHTML = option.innerHTML.replaceAll("MetaMask", "Tally Ho")
+        option.innerHTML = option.innerHTML.replaceAll(META_MASK, TALLY_NAME)
         // Replace metamask icon with Tally icon
         option.innerHTML = option.innerHTML.replace(
           /\ssrc="(.+)"\s/,
@@ -157,7 +160,7 @@ function findAndReplaceYieldProtocolMetamaskOption(addedNode: Node): void {
 
     metamaskText.innerHTML = metamaskText.innerHTML.replace(
       "Metamask",
-      "Tally Ho"
+      TALLY_NAME
     )
 
     const metamaskIcon = container?.children?.[2]
@@ -178,7 +181,7 @@ function findAndReplaceTofuNftMetamaskOption(addedNode: Node): void {
     return
   }
 
-  if (addedNode.textContent?.includes("MetaMask")) {
+  if (addedNode.textContent?.includes(META_MASK)) {
     const metaMaskContainer = (addedNode as HTMLElement)?.children?.[0]
       ?.children?.[0]?.children?.[0]?.children?.[0]?.children?.[1]
       ?.children?.[0]?.children?.[0] as HTMLElement
@@ -189,11 +192,11 @@ function findAndReplaceTofuNftMetamaskOption(addedNode: Node): void {
 
     const textNode = metaMaskContainer.children[1]
 
-    if (!textNode || textNode.textContent !== "MetaMask") {
+    if (!textNode || textNode.textContent !== META_MASK) {
       return
     }
 
-    textNode.innerHTML = textNode.innerHTML.replace("MetaMask", "Tally Ho")
+    textNode.innerHTML = textNode.innerHTML.replace(META_MASK, TALLY_NAME)
 
     metaMaskContainer.removeChild(metaMaskContainer.children[0])
     const tallyIcon = document.createElement("img")
@@ -232,6 +235,194 @@ function findAndReplaceAboardMetamaskOption(addedNode: Node): void {
   }
 }
 
+function findAndReplacePancakeSwapInjectedOption(addedNode: Node): void {
+  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+    return
+  }
+
+  const text = "Injected"
+  if (
+    addedNode.textContent?.includes(text) &&
+    addedNode instanceof HTMLElement
+  ) {
+    const parentElement =
+      addedNode.children?.[1].children?.[0].children?.[0].children?.[1]
+        .children?.[0].children?.[1].children
+    // eslint-disable-next-line no-restricted-syntax
+    for (const element of parentElement) {
+      const textContainer = element.children?.[1]
+
+      if (textContainer?.innerHTML === text) {
+        const iconContainer = element.children?.[0].children?.[0]
+
+        if (textContainer && iconContainer) {
+          textContainer.textContent = TALLY_NAME
+
+          const tallyIcon = document.createElement("img")
+          tallyIcon.src = TALLY_ICON_URL
+          tallyIcon.setAttribute("height", "48px")
+          tallyIcon.setAttribute("width", "48px")
+          iconContainer.removeChild(iconContainer.children[0])
+          iconContainer.appendChild(tallyIcon)
+          iconContainer.appendChild(iconContainer.children[0])
+        }
+      }
+    }
+  }
+}
+
+function findAndReplaceStargateFinanceMetamaskOption(addedNode: Node): void {
+  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+    return
+  }
+
+  const text = "Metamask"
+  if (
+    addedNode.textContent?.includes(text) &&
+    addedNode instanceof HTMLElement
+  ) {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const li of addedNode.getElementsByTagName("li")) {
+      if (li.innerText === text) {
+        const textContainer = li.children?.[0]
+        const iconContainer = li.children?.[1].children?.[0]
+
+        if (textContainer && iconContainer) {
+          textContainer.textContent = TALLY_NAME
+
+          const tallyIcon = document.createElement("img")
+          tallyIcon.src = TALLY_ICON_URL
+          tallyIcon.setAttribute("height", "24px")
+          tallyIcon.setAttribute("width", "24px")
+          iconContainer.removeChild(iconContainer.children[0])
+          iconContainer.appendChild(tallyIcon)
+          iconContainer.appendChild(iconContainer.children[0])
+        }
+      }
+    }
+  }
+}
+
+function findAndReplaceCelerMetamaskOption(addedNode: Node): void {
+  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+    return
+  }
+
+  if (addedNode instanceof HTMLElement) {
+    if (addedNode.textContent?.includes(META_MASK)) {
+      const modal = addedNode.querySelector(".ant-spin-container")
+
+      if (modal instanceof HTMLElement) {
+        // eslint-disable-next-line no-restricted-syntax
+        for (const element of modal.children?.[0].children) {
+          const textContainer =
+            element.children?.[0]?.children?.[1].children?.[0]
+
+          if (textContainer.innerHTML === META_MASK) {
+            const img = element.querySelector("img")
+
+            if (textContainer && img) {
+              textContainer.textContent = TALLY_NAME
+              img.src = TALLY_ICON_URL
+            }
+          }
+        }
+      }
+    }
+
+    /* Adding a tally icon after login in the account view */
+    if (
+      addedNode.querySelector("img") &&
+      addedNode.textContent?.includes("...")
+    ) {
+      const img = addedNode.querySelector("img")
+
+      if (img) {
+        img.src = TALLY_ICON_URL
+      }
+    }
+  }
+}
+
+function findAndReplaceMultchainMetamaskOption(addedNode: Node): void {
+  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+    return
+  }
+
+  if (
+    addedNode.textContent?.includes(META_MASK) &&
+    addedNode instanceof HTMLElement
+  ) {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const btn of addedNode.getElementsByTagName("button")) {
+      if (btn.innerText === META_MASK) {
+        const textContainer = btn.children?.[0]?.children?.[0]
+        const img = btn.querySelector("img")
+
+        if (textContainer && img) {
+          textContainer.textContent = TALLY_NAME
+          img.src = TALLY_ICON_URL
+        }
+      }
+    }
+  }
+}
+
+function findAndReplaceVenusMetamaskOption(addedNode: Node): void {
+  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+    return
+  }
+
+  if (
+    addedNode.textContent?.includes(META_MASK) &&
+    addedNode instanceof HTMLElement
+  ) {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const btn of addedNode.getElementsByTagName("button")) {
+      if (btn.innerText === META_MASK) {
+        const textContainer = btn.children?.[1]
+        const img = btn.children?.[0]
+
+        if (textContainer && img) {
+          textContainer.textContent = TALLY_NAME
+
+          const tallyIcon = document.createElement("img")
+          tallyIcon.src = TALLY_ICON_URL
+          tallyIcon.setAttribute("height", "48px")
+          tallyIcon.setAttribute("width", "48px")
+          btn.removeChild(btn.children[0])
+          btn.appendChild(tallyIcon)
+          btn.appendChild(btn.children[0])
+        }
+      }
+    }
+  }
+}
+
+function findAndReplaceAlpacaFinanceMetamaskOption(addedNode: Node): void {
+  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+    return
+  }
+
+  if (
+    addedNode.textContent?.includes(META_MASK) &&
+    addedNode instanceof HTMLElement
+  ) {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const btn of addedNode.getElementsByTagName("button")) {
+      if (btn.innerText === META_MASK) {
+        const textNode = btn.children?.[0]?.children?.[0].children?.[0]
+        const img = btn.querySelector("img")
+
+        if (textNode && img) {
+          textNode.textContent = TALLY_NAME
+          img.src = TALLY_ICON_URL
+        }
+      }
+    }
+  }
+}
+
 const hostnameToHandler = {
   "uniswap.org": findAndReplaceUniswapInjectedOption,
   "gmx.io": findAndReplaceGMXMetamaskOption,
@@ -239,6 +430,12 @@ const hostnameToHandler = {
   "tofunft.com": findAndReplaceTofuNftMetamaskOption,
   "aboard.exchange": findAndReplaceAboardMetamaskOption,
   "traderjoexyz.com": findAndReplaceJoeMetamaskOption,
+  "pancakeswap.finance": findAndReplacePancakeSwapInjectedOption,
+  "cbridge.celer.network": findAndReplaceCelerMetamaskOption,
+  "stargate.finance": findAndReplaceStargateFinanceMetamaskOption,
+  "app.multchain.cn": findAndReplaceMultchainMetamaskOption,
+  "app.venus.io": findAndReplaceVenusMetamaskOption,
+  "app.alpacafinance.org": findAndReplaceAlpacaFinanceMetamaskOption,
 } as const
 
 export default function monitorForWalletConnectionPrompts(): void {
