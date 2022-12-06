@@ -103,15 +103,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-      - name: Install playwright
-        run: npm i -D @playwright/test
+      - name: Read .nvmrc
+        run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+        id: nvm
+      - name: Use Node + Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version: "${{ steps.nvm.outputs.NVMRC }}"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
       - uses: actions/download-artifact@v3
         with:
           name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
-      - name: Extract extention
+      - name: Extract extension
         run: unzip -o chrome.zip -d dist/chrome
       - name: Run Playwright tests
         run: xvfb-run npx playwright test
