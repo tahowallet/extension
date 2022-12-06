@@ -3,6 +3,7 @@ const TALLY_ICON_URL =
 
 const TALLY_NAME = "Tally Ho"
 const META_MASK = "MetaMask"
+const INJECTED = "Injected"
 
 const observeMutations = (handler: (node: Node) => void) => {
   document.addEventListener("DOMContentLoaded", () => {
@@ -236,13 +237,8 @@ function findAndReplaceAboardMetamaskOption(addedNode: Node): void {
 }
 
 function findAndReplacePancakeSwapInjectedOption(addedNode: Node): void {
-  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
-    return
-  }
-
-  const text = "Injected"
   if (
-    addedNode.textContent?.includes(text) &&
+    addedNode.textContent?.includes(INJECTED) &&
     addedNode instanceof HTMLElement
   ) {
     const parentElement =
@@ -252,7 +248,7 @@ function findAndReplacePancakeSwapInjectedOption(addedNode: Node): void {
     for (const element of parentElement) {
       const textContainer = element.children?.[1]
 
-      if (textContainer?.innerHTML === text) {
+      if (textContainer?.innerHTML === INJECTED) {
         const iconContainer = element.children?.[0].children?.[0]
 
         if (textContainer && iconContainer) {
@@ -344,24 +340,37 @@ function findAndReplaceCelerMetamaskOption(addedNode: Node): void {
   }
 }
 
-function findAndReplaceMultchainMetamaskOption(addedNode: Node): void {
+function findAndReplaceMultchainMetamaskAndInjectedOption(
+  addedNode: Node
+): void {
   if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
     return
   }
 
-  if (
-    addedNode.textContent?.includes(META_MASK) &&
-    addedNode instanceof HTMLElement
-  ) {
-    // eslint-disable-next-line no-restricted-syntax
-    for (const btn of addedNode.getElementsByTagName("button")) {
-      if (btn.innerText === META_MASK) {
-        const textContainer = btn.children?.[0]?.children?.[0]
-        const img = btn.querySelector("img")
+  const getOptionName = (): string => {
+    switch (true) {
+      case addedNode.textContent?.includes(INJECTED):
+        return INJECTED
+      case addedNode.textContent?.includes(META_MASK):
+        return META_MASK
+      default:
+        return ""
+    }
+  }
 
-        if (textContainer && img) {
-          textContainer.textContent = TALLY_NAME
-          img.src = TALLY_ICON_URL
+  if (addedNode instanceof HTMLElement) {
+    const option = getOptionName()
+    if (option) {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const btn of addedNode.getElementsByTagName("button")) {
+        if (btn.innerText === option) {
+          const textContainer = btn.children?.[0]?.children?.[0]
+          const img = btn.querySelector("img")
+
+          if (textContainer && img) {
+            textContainer.textContent = TALLY_NAME
+            img.src = TALLY_ICON_URL
+          }
         }
       }
     }
@@ -453,7 +462,7 @@ const hostnameToHandler = {
   "pancakeswap.finance": findAndReplacePancakeSwapInjectedOption,
   "cbridge.celer.network": findAndReplaceCelerMetamaskOption,
   "stargate.finance": findAndReplaceStargateFinanceMetamaskOption,
-  "app.multchain.cn.com": findAndReplaceMultchainMetamaskOption,
+  "app.multchain.cn.com": findAndReplaceMultchainMetamaskAndInjectedOption,
   "app.venus.io": findAndReplaceVenusMetamaskOption,
   "app.alpacafinance.org": findAndReplaceAlpacaFinanceMetamaskOption,
 } as const
