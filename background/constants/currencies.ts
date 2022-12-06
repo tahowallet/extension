@@ -75,6 +75,18 @@ export const AVAX: NetworkBaseAsset = {
   },
 }
 
+export const BNB: NetworkBaseAsset = {
+  name: "Binance Coin",
+  symbol: "BNB",
+  decimals: 18,
+  coinType: coinTypesByAssetSymbol.BNB,
+  metadata: {
+    coinGeckoID: "binancecoin",
+    tokenLists: [],
+    websiteURL: "https://bnbchain.org",
+  },
+}
+
 export const BTC: NetworkBaseAsset = {
   name: "Bitcoin",
   symbol: "BTC",
@@ -87,7 +99,7 @@ export const BTC: NetworkBaseAsset = {
   },
 }
 
-export const BASE_ASSETS = [ETH, BTC, MATIC, RBTC, OPTIMISTIC_ETH, AVAX]
+export const BASE_ASSETS = [ETH, BTC, MATIC, RBTC, OPTIMISTIC_ETH, AVAX, BNB]
 
 export const BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce<{
   [assetSymbol: string]: NetworkBaseAsset

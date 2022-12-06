@@ -304,7 +304,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           delete this.messagesToSend[messageId]
           return result
         }
-        if (method.startsWith("alchemy_")) {
+        if (/^alchemy_|^eth_subscribe$/.test(method)) {
           delete this.messagesToSend[messageId]
           throw new Error(
             `Calling ${method} is not supported on ${this.currentProvider.network.name}`

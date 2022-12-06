@@ -2,6 +2,7 @@ import {
   ARBITRUM_NOVA,
   ARBITRUM_ONE,
   AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
@@ -24,6 +25,10 @@ export const scanWebsite = {
   [GOERLI.chainID]: { title: "Etherscan", url: "https://goerli.etherscan.io/" },
   [ARBITRUM_ONE.chainID]: { title: "Arbiscan", url: "https://arbiscan.io/" },
   [AVALANCHE.chainID]: { title: "Snowtrace", url: "https://snowtrace.io/" },
+  [BINANCE_SMART_CHAIN.chainID]: {
+    title: "BscScan",
+    url: "https://bscscan.com",
+  },
   [ARBITRUM_NOVA.chainID]: {
     title: "Arbiscan",
     url: "https://nova.arbiscan.io/",
