@@ -123,6 +123,7 @@
     "webpack": "^5.58.1",
     "webpack-cli": "4.5.0",
     "webpack-livereload-plugin": "^3.0.1",
-    "webpack-merge": "^5.8.0"
+    "webpack-merge": "^5.8.0",
+    "@playwright/test": "^1.26.1"
   }
 }
