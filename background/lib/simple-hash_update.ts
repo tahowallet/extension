@@ -5,13 +5,15 @@ import { HexString } from "../types"
 import logger from "./logger"
 import { sameEVMAddress } from "./utils"
 
+type SupportedChain = "polygon" | "arbitrum" | "optimism" | "ethereum" | "bsc"
+
 type SimpleHashNFTModel = {
   nft_id: string
   token_id: string | null
   name: string | null
   description: string | null
   contract_address: string
-  chain: "polygon" | "arbitrum" | "optimism" | "ethereum"
+  chain: SupportedChain
   external_url: string | null
   image_url: string | null
   previews?: {
@@ -41,7 +43,7 @@ type SimpleHashCollectionModel = {
   id: string
   name: string | null
   image_url: string | null
-  chain: "polygon" | "arbitrum" | "optimism" | "ethereum"
+  chain: SupportedChain
   distinct_nfts_owned: number | null
   distinct_owner_count: number | null
   distinct_nft_count: number | null
@@ -70,6 +72,8 @@ const CHAIN_ID_TO_NAME = {
   10: "optimism",
   137: "polygon",
   42161: "arbitrum",
+  43114: "avalanche",
+  56: "bsc",
 }
 
 const SIMPLE_HASH_CHAIN_TO_ID = {
@@ -77,6 +81,8 @@ const SIMPLE_HASH_CHAIN_TO_ID = {
   optimism: 10,
   polygon: 137,
   arbitrum: 42161,
+  avalanche: 43114,
+  bsc: 56,
 }
 
 function isGalxeAchievement(url: string | null | undefined) {

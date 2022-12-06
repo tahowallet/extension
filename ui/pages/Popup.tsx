@@ -102,10 +102,15 @@ export function Main(): ReactElement {
   const currentAccount = useBackgroundSelector(selectCurrentAddressNetwork)
   // Emit an event when the popup page is first loaded.
   useEffect(() => {
+    /**
+     * Marking user activity every time this component is rerendered
+     * lets us avoid edge cases where we fail to mark user activity on
+     * a given account when a user has the wallet open for longer than
+     * the current NETWORK_POLLING_TIMEOUT and is clicking around between
+     * tabs / into assets / etc.
+     */
     dispatch(userActivityEncountered(currentAccount))
-    // We explicitly do not want to reload on dependency change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  })
 
   const isDappPopup = useIsDappPopup()
   const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)

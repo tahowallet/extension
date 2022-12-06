@@ -1,7 +1,9 @@
 import React, { ReactElement } from "react"
 import {
+  ARBITRUM_NOVA,
   ARBITRUM_ONE,
   AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
@@ -47,7 +49,7 @@ const productionNetworks = [
     ? [
         {
           network: AVALANCHE,
-          info: i18n.t("protocol.compatibleChain"),
+          info: i18n.t("protocol.avalanche"),
         },
       ]
     : [
@@ -57,13 +59,34 @@ const productionNetworks = [
           isDisabled: true,
         },
       ]),
-
-  // {
-  //   name: "Binance Smart Chain",
-  //   info: i18n.t("protocol.compatibleChain"),
-  //   width: 24,
-  //   height: 24,
-  // },
+  ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
+    ? [
+        {
+          network: BINANCE_SMART_CHAIN,
+          info: i18n.t("protocol.compatibleChain"),
+        },
+      ]
+    : [
+        {
+          network: BINANCE_SMART_CHAIN,
+          info: i18n.t("comingSoon"),
+          isDisabled: true,
+        },
+      ]),
+  ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA)
+    ? [
+        {
+          network: ARBITRUM_NOVA,
+          info: i18n.t("protocol.mainnet"),
+        },
+      ]
+    : [
+        {
+          network: ARBITRUM_NOVA,
+          info: i18n.t("comingSoon"),
+          isDisabled: true,
+        },
+      ]),
   // {
   //   name: "Celo",
   //   info: "Global payments infrastructure",
