@@ -29,6 +29,30 @@ export class NFTsDatabase extends Dexie {
     await this.collections.bulkPut(collections)
   }
 
+  async updateCollectionData(
+    collectionID: string,
+    { address, network }: AddressOnNetwork,
+    data: Partial<NFTCollection>
+  ): Promise<NFTCollection | undefined> {
+    const collection = await this.collections.get({
+      id: collectionID,
+      owner: address,
+      "network.chainID": network.chainID,
+    })
+
+    if (collection) {
+      const updatedCollection = {
+        ...collection,
+        ...data,
+      }
+      await this.updateCollections([updatedCollection])
+
+      return updatedCollection
+    }
+
+    return undefined
+  }
+
   async getAllCollections(): Promise<NFTCollection[]> {
     return this.collections.toArray()
   }

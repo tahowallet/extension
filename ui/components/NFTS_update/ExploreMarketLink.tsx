@@ -69,7 +69,7 @@ export function getRelevantMarketsList(nft: NFT): MarketDetails[] {
   if (nft.contract === POAP_CONTRACT) {
     return [MARKET_LINK.poap]
   }
-  if (nft.badge) {
+  if (nft.isBadge) {
     return [MARKET_LINK.galxe]
   }
   if (nft.network.chainID !== ETHEREUM.chainID) {

@@ -1,10 +1,7 @@
 import React, { ReactElement, useState } from "react"
 import classNames from "classnames"
-import {
-  selectMainCurrencySign,
-  selectMainCurrencySymbol,
-} from "@tallyho/tally-background/redux-slices/selectors"
-import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { selectNFTsCount } from "@tallyho/tally-background/redux-slices/selectors"
+import { useTranslation } from "react-i18next"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import NFTsExploreBanner from "../components/NFTS_update/NFTsExploreBanner"
 import NFTsHeader from "../components/NFTS_update/NFTsHeader"
@@ -14,39 +11,20 @@ import NFTListPortfolioBadges from "../components/NFTS_update/NFTListPortfolioBa
 
 const PANEL_NAMES = ["NFTs", "Badges"]
 
-// TODO: Remove these stubs
-const stubSelectNFTCount = () => 16
-const stubSelectCollectionCount = () => 2
-const stubSelectBadgeCount = () => 5
-
 export default function NFTs(): ReactElement {
-  const nftCounts = useBackgroundSelector(stubSelectNFTCount)
-  const collectionCount = useBackgroundSelector(stubSelectCollectionCount)
-  const badgeCount = useBackgroundSelector(stubSelectBadgeCount)
+  const nftCount = useBackgroundSelector(selectNFTsCount)
+  const { t } = useTranslation("translation", {
+    keyPrefix: "nfts",
+  })
 
-  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
-  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
-  const isLoading = useBackgroundSelector(() => false)
-
-  // TODO: Remove these stubs
-  const someAmount = formatCurrencyAmount(mainCurrencySymbol, 240_241, 0)
-  const someAmountInETH = "21.366 ETH"
   const [panelNumber, setPanelNumber] = useState(0)
 
   return (
     <div className="page_content">
-      <NFTsHeader
-        nfts={nftCounts}
-        collections={collectionCount}
-        badges={badgeCount}
-        totalInCurrency={someAmount}
-        totalInETH={someAmountInETH}
-        mainCurrencySign={mainCurrencySign}
-        loading={isLoading}
-      />
+      <NFTsHeader />
       <div
         className={classNames("panel_switcher_wrap", {
-          margin: !(nftCounts > 0),
+          margin: !(nftCount > 0),
         })}
       >
         <SharedPanelSwitcher
@@ -57,14 +35,20 @@ export default function NFTs(): ReactElement {
       </div>
       <div className="standard_width">
         {panelNumber === 0 &&
-          (nftCounts > 0 ? (
-            <NFTListPortfolio />
+          (nftCount > 0 ? (
+            <>
+              <h2>{t("units.collection_other")}</h2>
+              <NFTListPortfolio />
+            </>
           ) : (
             <NFTsExploreBanner type="nfts" />
           ))}
         {panelNumber === 1 &&
-          (nftCounts > 0 ? (
-            <NFTListPortfolioBadges />
+          (nftCount > 0 ? (
+            <>
+              <h2>{t("units.badge_other")}</h2>
+              <NFTListPortfolioBadges />
+            </>
           ) : (
             <NFTsExploreBanner type="badge" />
           ))}
@@ -83,6 +67,12 @@ export default function NFTs(): ReactElement {
           }
           .panel_switcher_wrap.margin {
             margin-bottom: 16px;
+          }
+          .page_content h2 {
+            font-weight: 600;
+            font-size: 18px;
+            line-height: 24px;
+            margin: 10px 0 0;
           }
         `}
       </style>
