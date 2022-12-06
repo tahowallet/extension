@@ -453,7 +453,7 @@ const hostnameToHandler = {
   "pancakeswap.finance": findAndReplacePancakeSwapInjectedOption,
   "cbridge.celer.network": findAndReplaceCelerMetamaskOption,
   "stargate.finance": findAndReplaceStargateFinanceMetamaskOption,
-  "app.multchain.cn": findAndReplaceMultchainMetamaskOption,
+  "app.multchain.cn.com": findAndReplaceMultchainMetamaskOption,
   "app.venus.io": findAndReplaceVenusMetamaskOption,
   "app.alpacafinance.org": findAndReplaceAlpacaFinanceMetamaskOption,
 } as const
