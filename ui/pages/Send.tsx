@@ -94,7 +94,13 @@ export default function Send(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
-  const nftCollections = useBackgroundSelector(selectCurrentAccountNFTs)
+  const nftCollections = useBackgroundSelector((state) => {
+    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+      return selectCurrentAccountNFTs(state)
+    }
+
+    return []
+  })
 
   const fungibleAssetAmounts =
     // Only look at fungible assets.
