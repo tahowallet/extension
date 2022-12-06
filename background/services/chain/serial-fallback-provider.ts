@@ -853,7 +853,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    */
   private shouldSendMessageOnNextProvider(messageId: symbol): boolean {
     const { backoffCount } = this.messagesToSend[messageId]
-    if (backoffCount && backoffCount < MAX_RETRIES_PER_PROVIDER) {
+    if (backoffCount && backoffCount >= MAX_RETRIES_PER_PROVIDER) {
       return true
     }
     return false
