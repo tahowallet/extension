@@ -373,26 +373,46 @@ function findAndReplaceVenusMetamaskOption(addedNode: Node): void {
     return
   }
 
+  const createTallyImg = (): HTMLImageElement => {
+    const tallyIcon = document.createElement("img")
+    tallyIcon.src = TALLY_ICON_URL
+    tallyIcon.setAttribute("height", "48px")
+    tallyIcon.setAttribute("width", "48px")
+    return tallyIcon
+  }
+
   if (
     addedNode.textContent?.includes(META_MASK) &&
     addedNode instanceof HTMLElement
   ) {
-    // eslint-disable-next-line no-restricted-syntax
-    for (const btn of addedNode.getElementsByTagName("button")) {
-      if (btn.innerText === META_MASK) {
-        const textContainer = btn.children?.[1]
-        const img = btn.children?.[0]
+    /* Replace MetaMak option from account view */
+    if (addedNode.textContent?.includes("Log out")) {
+      const modal = addedNode.querySelector(".venus-modal")
 
-        if (textContainer && img) {
+      if (modal instanceof HTMLElement) {
+        const container = modal.children?.[1].children?.[0].children?.[0]
+        const textContainer = container.children?.[1].children?.[0]
+
+        if (container && textContainer) {
           textContainer.textContent = TALLY_NAME
+          container.removeChild(container.children[0])
+          container.appendChild(createTallyImg())
+          container.appendChild(container.children[0])
+        }
+      }
+    } else {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const btn of addedNode.getElementsByTagName("button")) {
+        if (btn.innerText === META_MASK) {
+          const textContainer = btn.children?.[1]
+          const img = btn.children?.[0]
 
-          const tallyIcon = document.createElement("img")
-          tallyIcon.src = TALLY_ICON_URL
-          tallyIcon.setAttribute("height", "48px")
-          tallyIcon.setAttribute("width", "48px")
-          btn.removeChild(btn.children[0])
-          btn.appendChild(tallyIcon)
-          btn.appendChild(btn.children[0])
+          if (textContainer && img) {
+            textContainer.textContent = TALLY_NAME
+            btn.removeChild(btn.children[0])
+            btn.appendChild(createTallyImg())
+            btn.appendChild(btn.children[0])
+          }
         }
       }
     }
