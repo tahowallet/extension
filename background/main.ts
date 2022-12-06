@@ -1459,9 +1459,9 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateNFTs(payload))
     })
 
-    nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) => {
+    nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) =>
       this.nftsService.fetchNFTsFromCollection(collectionID, account)
-    })
+    )
   }
 
   // eslint-disable-next-line class-methods-use-this
