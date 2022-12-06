@@ -41,6 +41,7 @@
   },
   "assetInput": {
     "search": "Search by name or address",
+    "searchNFT": "Search NFT",
     "selectToken": "Select token",
     "error": {
       "invalidAmount": "Invalid amount",
@@ -408,6 +409,9 @@
       "emptyList": "Not connected to any websites"
     }
   },
+  "send": {
+    "balance": "Balance: {{amount}}"
+  },
   "shared": {
     "tallyHo": "Tally Ho",
     "metaMask": "MetaMask",
@@ -644,7 +648,8 @@
         "SUPPORT_AVALANCHE": "Enable Avalanche network",
         "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab",
         "SUPPORT_NFT_SEND": "Enable sending NFTs",
-        "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network"
+        "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
+        "SUPPORT_BINANCE_SMART_CHAIN": "Enable Binance Smart Chain network"
       }
     }
   },

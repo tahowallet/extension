@@ -31,6 +31,9 @@ import {
   LedgerService,
   SigningService,
   NFTsService,
+  WalletConnectService,
+  AnalyticsService,
+  getNoopService,
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
@@ -140,7 +143,6 @@ import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
 import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
-import AnalyticsService from "./services/analytics"
 import { AnalyticsPreferences } from "./services/preferences/types"
 import { isSmartContractFungibleAsset } from "./assets"
 import { FeatureFlags, isEnabled } from "./features"
@@ -293,6 +295,14 @@ export default class Main extends BaseService<never> {
 
     const nftsService = NFTsService.create(chainService)
 
+    const walletConnectService = isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT)
+      ? WalletConnectService.create(
+          providerBridgeService,
+          internalEthereumProviderService,
+          preferenceService
+        )
+      : getNoopService<WalletConnectService>()
+
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
@@ -333,7 +343,8 @@ export default class Main extends BaseService<never> {
       await ledgerService,
       await signingService,
       await analyticsService,
-      await nftsService
+      await nftsService,
+      await walletConnectService
     )
   }
 
@@ -415,7 +426,13 @@ export default class Main extends BaseService<never> {
      * A promise to the NFTs service which takes care of NFTs data, fetching, updating
      * details and prices of NFTs for imported accounts.
      */
-    private nftsService: NFTsService
+    private nftsService: NFTsService,
+
+    /**
+     * A promise to the Wallet Connect service which takes care of handling wallet connect
+     * protocol and communication.
+     */
+    private walletConnectService: WalletConnectService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -476,6 +493,7 @@ export default class Main extends BaseService<never> {
       this.signingService.startService(),
       this.analyticsService.startService(),
       this.nftsService.startService(),
+      this.walletConnectService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -497,6 +515,7 @@ export default class Main extends BaseService<never> {
       this.signingService.stopService(),
       this.analyticsService.stopService(),
       this.nftsService.stopService(),
+      this.walletConnectService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -516,6 +535,7 @@ export default class Main extends BaseService<never> {
     this.connectLedgerService()
     this.connectSigningService()
     this.connectAnalyticsService()
+    this.connectWalletConnectService()
 
     // Nothing else beside creating a service should happen when feature flag is off
     if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
@@ -1439,9 +1459,14 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateNFTs(payload))
     })
 
-    nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) => {
+    nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) =>
       this.nftsService.fetchNFTsFromCollection(collectionID, account)
-    })
+    )
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  connectWalletConnectService(): void {
+    // TODO: here comes the glue between the UI and service layer
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {

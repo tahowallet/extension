@@ -84,8 +84,9 @@ export default class NFTsService extends BaseService<Events> {
     collectionID: string,
     account: AddressOnNetwork
   ): Promise<void> {
-    getNFTs([account], [collectionID]).forEach((request) =>
-      request.then(async ({ nfts, nextPageURLs }) => {
+    await Promise.allSettled(
+      getNFTs([account], [collectionID]).map(async (request) => {
+        const { nfts, nextPageURLs } = await request
         await this.db.updateNFTs(nfts)
         this.#nextPageUrls.push(...nextPageURLs) // TODO: implement fetching next pages
 
