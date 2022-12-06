@@ -35,6 +35,8 @@ const WAIT_BEFORE_SUBSCRIBING = 2 * SECOND
 const WAIT_BEFORE_SEND_AGAIN = 100
 // Percentage of .send calls to route to alchemy
 const ALCHEMY_RPC_CALL_PERCENTAGE = 0
+// How long before a cached balance is considered stale
+const BALANCE_TTL = 1 * SECOND
 /**
  * Wait the given number of ms, then run the provided function. Returns a
  * promise that will resolve after the delay has elapsed and the passed
@@ -444,7 +446,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       const address = (params as string[])[0]
       const now = Date.now()
       const lastUpdate = this.latestBalanceCache[address]?.updatedAt
-      if (lastUpdate && now < lastUpdate + 1 * SECOND) {
+      if (lastUpdate && now < lastUpdate + BALANCE_TTL) {
         return this.latestBalanceCache[address].balance
       }
     }
