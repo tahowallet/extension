@@ -120,7 +120,7 @@ function simpleHashCollectionModelToCollection(
     name: original.name || "",
     nftCount: original.distinct_nft_count || 0,
     owner,
-    thumbnail: original.image_url || "",
+    thumbnailURL: original.image_url || "",
     network: NETWORK_BY_CHAIN_ID[chainID],
     floorPrice,
     hasBadges: false, // TODO: check how to discover if this is a Galxe collection
@@ -135,7 +135,7 @@ function simpleHashNFTModelToNFT(
     nft_id: nftID,
     contract_address: contractAddress,
     chain,
-    image_url: previewURL,
+    image_url: fullsizeURL,
     previews,
     owners = [],
     external_url: nftURL = "",
@@ -145,33 +145,40 @@ function simpleHashNFTModelToNFT(
 
   const isAchievement = isGalxeAchievement(nftURL)
 
-  const thumbnail =
-    previewURL ||
-    previews?.image_large_url ||
-    previews?.image_medium_url ||
+  const thumbnailURL =
     previews?.image_small_url ||
-    ""
+    previews?.image_medium_url ||
+    previews?.image_large_url ||
+    fullsizeURL ||
+    undefined
+
+  const previewURL =
+    (previews?.image_medium_url || previews?.image_large_url || fullsizeURL) ??
+    undefined
+
   const chainID = SIMPLE_HASH_CHAIN_TO_ID[chain]
 
   const transferDate = owners.find(({ owner_address }) =>
     sameEVMAddress(owner_address, owner)
   )?.last_acquired_date
 
-  const attributes =
-    metadata?.attributes?.flatMap(({ trait_type, value }) =>
-      value && trait_type
-        ? {
-            value,
-            trait: trait_type,
-          }
-        : []
-    ) ?? []
+  const attributes = Array.isArray(metadata?.attributes)
+    ? metadata.attributes.flatMap(({ trait_type, value }) =>
+        value && trait_type
+          ? {
+              value,
+              trait: trait_type,
+            }
+          : []
+      )
+    : []
 
   return {
     id: nftID,
     name: original.name || "",
     description: original.description || "",
-    thumbnail,
+    thumbnailURL,
+    previewURL,
     transferDate,
     attributes,
     collectionID,
