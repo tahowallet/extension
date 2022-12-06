@@ -63,13 +63,15 @@ function updateCollection(
   const ownerAddress = normalizeEVMAddress(owner)
   acc.nfts[chainID] ??= {}
   acc.nfts[chainID][ownerAddress] ??= {}
+  const savedCollection = acc.nfts[chainID][ownerAddress][collection.id] ?? {}
+
   acc.nfts[chainID][ownerAddress][collection.id] = {
     id,
     name,
     nftCount,
     totalNftCount,
-    nfts: [],
-    hasBadges,
+    nfts: savedCollection.nfts ?? [],
+    hasBadges: savedCollection.hasBadges || hasBadges, // once we know it has badges it should stay like that
     network,
     owner: ownerAddress,
     thumbnail,

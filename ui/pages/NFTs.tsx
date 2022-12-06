@@ -5,7 +5,10 @@ import {
   selectNFTsCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useTranslation } from "react-i18next"
-import { cleanCachedNFTs } from "@tallyho/tally-background/redux-slices/nfts_update"
+import {
+  cleanCachedNFTs,
+  refetchCollections,
+} from "@tallyho/tally-background/redux-slices/nfts_update"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import NFTsExploreBanner from "../components/NFTS_update/NFTsExploreBanner"
 import NFTsHeader from "../components/NFTS_update/NFTsHeader"
@@ -25,12 +28,12 @@ export default function NFTs(): ReactElement {
 
   const [panelNumber, setPanelNumber] = useState(0)
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    dispatch(refetchCollections())
+    return () => {
       dispatch(cleanCachedNFTs())
-    },
-    [dispatch]
-  )
+    }
+  }, [dispatch])
 
   return (
     <div className="page_content">
