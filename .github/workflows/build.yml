@@ -104,6 +104,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
+      - name: Install playwright
+        run: npm i -D @playwright/test
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
       - uses: actions/download-artifact@v3
