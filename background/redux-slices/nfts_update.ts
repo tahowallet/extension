@@ -57,7 +57,7 @@ function updateCollection(
     owner,
     floorPrice,
     hasBadges,
-    thumbnail,
+    thumbnailURL,
   } = collection
   const { chainID } = network
   const ownerAddress = normalizeEVMAddress(owner)
@@ -74,7 +74,7 @@ function updateCollection(
     hasBadges: savedCollection.hasBadges || hasBadges, // once we know it has badges it should stay like that
     network,
     owner: ownerAddress,
-    thumbnail,
+    thumbnailURL,
     hasNextPage: false,
     floorPrice: floorPrice && {
       value: fromFixedPointNumber(

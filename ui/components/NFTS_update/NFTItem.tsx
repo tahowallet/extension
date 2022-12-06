@@ -12,7 +12,8 @@ export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
   onClick: (value: T) => void
 }): ReactElement {
   const { onClick, isCollection = false, isExpanded = false, item } = props
-  const { name, network, thumbnail } = item
+  const { name = "No title", network, thumbnailURL } = item
+
   const floorPrice =
     "floorPrice" in item && item.floorPrice?.value && item.floorPrice
   const nftsCount = "nftCount" in item && item.nftCount
@@ -21,7 +22,7 @@ export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
     <div className="nft_item">
       <div className="nft_image">
         <NFTImage
-          src={thumbnail}
+          src={thumbnailURL}
           alt={name}
           width={168}
           height={168}

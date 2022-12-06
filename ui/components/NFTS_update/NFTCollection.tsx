@@ -127,7 +127,7 @@ export default function NFTCollection(props: {
             <NFTItem
               item={{
                 ...collection,
-                thumbnail: nfts[0].thumbnail || collection.thumbnail,
+                thumbnail: nfts[0].thumbnailURL || collection.thumbnailURL,
               }}
               onClick={() => onItemClick(nfts[0])}
             />
@@ -135,7 +135,7 @@ export default function NFTCollection(props: {
             <NFTItem
               item={{
                 ...collection,
-                thumbnail: nfts[0]?.thumbnail || collection.thumbnail,
+                thumbnail: nfts[0]?.thumbnailURL || collection.thumbnailURL,
               }}
               onClick={toggleCollection}
               isCollection

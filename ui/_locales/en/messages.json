@@ -41,6 +41,7 @@
   },
   "assetInput": {
     "search": "Search by name or address",
+    "searchNFT": "Search NFT",
     "selectToken": "Select token",
     "error": {
       "invalidAmount": "Invalid amount",
@@ -342,6 +343,7 @@
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
     "compatibleChain": "Ethereum-compatible blockchain",
+    "avalanche": "Mainnet C-Chain (beta)",
     "connected": "Connected"
   },
   "readOnly": "Read-only",
@@ -406,6 +408,9 @@
       "ariaLabel": "Manage connected websites",
       "emptyList": "Not connected to any websites"
     }
+  },
+  "send": {
+    "balance": "Balance: {{amount}}"
   },
   "shared": {
     "tallyHo": "Tally Ho",
@@ -642,7 +647,9 @@
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
         "SUPPORT_AVALANCHE": "Enable Avalanche network",
         "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab",
-        "SUPPORT_NFT_SEND": "Enable sending NFTs"
+        "SUPPORT_NFT_SEND": "Enable sending NFTs",
+        "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
+        "SUPPORT_BINANCE_SMART_CHAIN": "Enable Binance Smart Chain network"
       }
     }
   },

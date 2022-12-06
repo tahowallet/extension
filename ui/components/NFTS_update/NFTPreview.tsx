@@ -19,7 +19,7 @@ const trimDescription = (description?: string) =>
 export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const { nft, collection } = props
   const {
-    thumbnail,
+    thumbnailURL,
     contract,
     name,
     network,
@@ -29,8 +29,10 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     isBadge,
   } = nft
   const { totalNftCount } = collection
-  const floorPrice = collection.floorPrice?.value && collection.floorPrice
-  const marketsList = useMemo(() => getRelevantMarketsList(nft), [nft])
+  const floorPrice =
+    "floorPrice" in collection &&
+    collection.floorPrice?.value &&
+    collection.floorPrice
 
   // Chrome seems to have problems when elements with backdrop style are rendered initially
   // out of the viewport - browser is not rendering them at all. This is a workaround
@@ -46,6 +48,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     { threshold: 0.8 }
   )
 
+  const marketsList = useMemo(() => getRelevantMarketsList(nft), [nft])
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
   })
@@ -54,7 +57,12 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     <>
       <div className="preview_wrapper">
         <div className="preview_image">
-          <NFTImage src={thumbnail} alt={name} width={384} isBadge={isBadge} />
+          <NFTImage
+            src={thumbnailURL}
+            alt={name}
+            width={384}
+            isBadge={isBadge}
+          />
           <div className="preview_network">
             <SharedNetworkIcon network={network} size={24} hasBackground />
           </div>

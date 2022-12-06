@@ -108,11 +108,10 @@ export default class NFTsService extends BaseService<Events> {
     account: AddressOnNetwork
   ): Promise<void> {
     await Promise.allSettled(
-      getNFTs([account], [collectionID]).map((request) =>
-        request.then(async ({ nfts, nextPageURLs }) => {
-          await this.updateSavedNFTs(collectionID, account, nfts, nextPageURLs)
-        })
-      )
+      getNFTs([account], [collectionID]).map(async (request) => {
+        const { nfts, nextPageURLs } = await request
+        await this.updateSavedNFTs(collectionID, account, nfts, nextPageURLs)
+      })
     )
   }
 
