@@ -59,7 +59,7 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
     title: "POAP",
     url: "https://poap.xyz/",
     color: "#8076fa",
-    icon: "", // TODO add poap icon
+    icon: "poap.png",
     getNFTLink: (nft: NFT): string =>
       `https://app.poap.xyz/token/${nft.tokenId}`,
   },
