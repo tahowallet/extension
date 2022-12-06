@@ -236,6 +236,14 @@ function findAndReplaceAboardMetamaskOption(addedNode: Node): void {
   }
 }
 
+const createTallyImg = (): HTMLImageElement => {
+  const tallyIcon = document.createElement("img")
+  tallyIcon.src = TALLY_ICON_URL
+  tallyIcon.setAttribute("height", "48px")
+  tallyIcon.setAttribute("width", "48px")
+  return tallyIcon
+}
+
 function findAndReplacePancakeSwapInjectedOption(addedNode: Node): void {
   if (
     addedNode instanceof HTMLElement &&
@@ -254,12 +262,8 @@ function findAndReplacePancakeSwapInjectedOption(addedNode: Node): void {
         if (textContainer && iconContainer) {
           textContainer.textContent = TALLY_NAME
 
-          const tallyIcon = document.createElement("img")
-          tallyIcon.src = TALLY_ICON_URL
-          tallyIcon.setAttribute("height", "48px")
-          tallyIcon.setAttribute("width", "48px")
           iconContainer.removeChild(iconContainer.children[0])
-          iconContainer.appendChild(tallyIcon)
+          iconContainer.appendChild(createTallyImg())
           iconContainer.appendChild(iconContainer.children[0])
         }
       }
@@ -378,14 +382,6 @@ function findAndReplaceVenusMetamaskOption(addedNode: Node): void {
     return
   }
 
-  const createTallyImg = (): HTMLImageElement => {
-    const tallyIcon = document.createElement("img")
-    tallyIcon.src = TALLY_ICON_URL
-    tallyIcon.setAttribute("height", "48px")
-    tallyIcon.setAttribute("width", "48px")
-    return tallyIcon
-  }
-
   if (
     addedNode instanceof HTMLElement &&
     addedNode.innerText?.includes(META_MASK)
@@ -401,7 +397,9 @@ function findAndReplaceVenusMetamaskOption(addedNode: Node): void {
         if (container && textContainer) {
           textContainer.textContent = TALLY_NAME
           container.removeChild(container.children[0])
-          container.appendChild(createTallyImg())
+          const img = createTallyImg()
+          img.style.marginRight = "16px"
+          container.appendChild(img)
           container.appendChild(container.children[0])
         }
       }
