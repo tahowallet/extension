@@ -238,8 +238,8 @@ function findAndReplaceAboardMetamaskOption(addedNode: Node): void {
 
 function findAndReplacePancakeSwapInjectedOption(addedNode: Node): void {
   if (
-    addedNode.textContent?.includes(INJECTED) &&
-    addedNode instanceof HTMLElement
+    addedNode instanceof HTMLElement &&
+    addedNode.innerText?.includes(INJECTED)
   ) {
     const parentElement =
       addedNode.children?.[1].children?.[0].children?.[0].children?.[1]
@@ -273,10 +273,7 @@ function findAndReplaceStargateFinanceMetamaskOption(addedNode: Node): void {
   }
 
   const text = "Metamask"
-  if (
-    addedNode.textContent?.includes(text) &&
-    addedNode instanceof HTMLElement
-  ) {
+  if (addedNode instanceof HTMLElement && addedNode.innerText?.includes(text)) {
     // eslint-disable-next-line no-restricted-syntax
     for (const li of addedNode.getElementsByTagName("li")) {
       if (li.innerText === text) {
@@ -305,7 +302,7 @@ function findAndReplaceCelerMetamaskOption(addedNode: Node): void {
   }
 
   if (addedNode instanceof HTMLElement) {
-    if (addedNode.textContent?.includes(META_MASK)) {
+    if (addedNode.innerText?.includes(META_MASK)) {
       const modal = addedNode.querySelector(".ant-spin-container")
 
       if (modal instanceof HTMLElement) {
@@ -329,7 +326,7 @@ function findAndReplaceCelerMetamaskOption(addedNode: Node): void {
     /* Adding a tally icon after login in the account view */
     if (
       addedNode.querySelector("img") &&
-      addedNode.textContent?.includes("...")
+      addedNode.innerText?.includes("...")
     ) {
       const img = addedNode.querySelector("img")
 
@@ -347,18 +344,17 @@ function findAndReplaceMultchainMetamaskAndInjectedOption(
     return
   }
 
-  const getOptionName = (): string => {
-    switch (true) {
-      case addedNode.textContent?.includes(INJECTED):
-        return INJECTED
-      case addedNode.textContent?.includes(META_MASK):
-        return META_MASK
-      default:
-        return ""
-    }
-  }
-
   if (addedNode instanceof HTMLElement) {
+    const getOptionName = (): string => {
+      switch (true) {
+        case addedNode.innerText?.includes(INJECTED):
+          return INJECTED
+        case addedNode.innerText?.includes(META_MASK):
+          return META_MASK
+        default:
+          return ""
+      }
+    }
     const option = getOptionName()
     if (option) {
       // eslint-disable-next-line no-restricted-syntax
@@ -391,11 +387,11 @@ function findAndReplaceVenusMetamaskOption(addedNode: Node): void {
   }
 
   if (
-    addedNode.textContent?.includes(META_MASK) &&
-    addedNode instanceof HTMLElement
+    addedNode instanceof HTMLElement &&
+    addedNode.innerText?.includes(META_MASK)
   ) {
     /* Replace MetaMak option from account view */
-    if (addedNode.textContent?.includes("Log out")) {
+    if (addedNode.innerText?.includes("Log out")) {
       const modal = addedNode.querySelector(".venus-modal")
 
       if (modal instanceof HTMLElement) {
@@ -434,8 +430,8 @@ function findAndReplaceAlpacaFinanceMetamaskOption(addedNode: Node): void {
   }
 
   if (
-    addedNode.textContent?.includes(META_MASK) &&
-    addedNode instanceof HTMLElement
+    addedNode instanceof HTMLElement &&
+    addedNode.innerText?.includes(META_MASK)
   ) {
     // eslint-disable-next-line no-restricted-syntax
     for (const btn of addedNode.getElementsByTagName("button")) {
