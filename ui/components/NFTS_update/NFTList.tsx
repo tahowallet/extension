@@ -5,6 +5,7 @@ import {
 import { selectIsReloadingNFTs } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useState } from "react"
 import { useBackgroundSelector } from "../../hooks"
+import SharedLoadingDoggo from "../Shared/SharedLoadingDoggo"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import NFTCollection from "./NFTCollection"
 import NFTItem from "./NFTItem"
@@ -31,7 +32,8 @@ export default function NFTList(props: {
     setCurrentNFTPreview(null)
   }
 
-  if (isReloading) return <>Loading</> // TODO: use loading puppy animation
+  if (isReloading)
+    return <SharedLoadingDoggo size={78} message="Fetching NFTs" />
 
   return (
     <>

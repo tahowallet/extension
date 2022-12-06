@@ -19,7 +19,7 @@ const trimDescription = (description?: string) =>
 export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const { nft, collection } = props
   const {
-    previewURL,
+    thumbnailURL,
     contract,
     name,
     network,
@@ -57,7 +57,12 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     <>
       <div className="preview_wrapper">
         <div className="preview_image">
-          <NFTImage src={previewURL} alt={name} width={384} isBadge={isBadge} />
+          <NFTImage
+            src={thumbnailURL}
+            alt={name}
+            width={384}
+            isBadge={isBadge}
+          />
           <div className="preview_network">
             <SharedNetworkIcon network={network} size={24} hasBackground />
           </div>

@@ -116,7 +116,8 @@ export default function NFTsHeader(): ReactElement {
           display: flex;
           flex-direction: row;
           align-items: center;
-          gap: 16px;
+          justify-content: space-evenly;
+          width: 100%;
         }
 
         li {
@@ -137,6 +138,7 @@ export default function NFTsHeader(): ReactElement {
         li.spacer {
           border: 0.5px solid var(--green-80);
           align-self: stretch;
+          margin: 0 5px;
         }
       `}</style>
     </HeaderContainer>
