@@ -4,6 +4,7 @@ import {
   OPTIMISM,
   ARBITRUM_ONE,
   AVALANCHE,
+  BINANCE_SMART_CHAIN,
 } from "./constants"
 import { EVMNetwork } from "./networks"
 // Networks that are not added to this struct will
@@ -16,6 +17,7 @@ export const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
   [OPTIMISM.chainID]: ["simplehash"],
   [ARBITRUM_ONE.chainID]: ["simplehash"],
   [AVALANCHE.chainID]: ["simplehash"],
+  [BINANCE_SMART_CHAIN.chainID]: ["simplehash"],
 }
 
 export const NFT_PROVIDER_TO_CHAIN = {
@@ -26,6 +28,7 @@ export const NFT_PROVIDER_TO_CHAIN = {
     OPTIMISM.chainID,
     ARBITRUM_ONE.chainID,
     AVALANCHE.chainID,
+    BINANCE_SMART_CHAIN.chainID,
   ],
 }
 
