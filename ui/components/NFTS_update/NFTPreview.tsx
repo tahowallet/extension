@@ -39,7 +39,7 @@ const useBackdrop = () => {
 
 export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const { nft, collection } = props
-  const { thumbnail, name, network, owner, description, attributes } = nft
+  const { thumbnailURL, name, network, owner, description, attributes } = nft
   const floorPrice =
     "floorPrice" in collection &&
     collection.floorPrice?.value &&
@@ -54,7 +54,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     <>
       <div className="preview_wrapper">
         <div className="preview_image">
-          <NFTImage src={thumbnail} alt={name} width={384} />
+          <NFTImage src={thumbnailURL} alt={name} width={384} />
           <div className="preview_network">
             <SharedNetworkIcon network={network} size={24} hasBackground />
           </div>
