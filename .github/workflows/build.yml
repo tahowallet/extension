@@ -125,4 +125,3 @@ jobs:
             test-results/
             #videos/
           retention-days: 30
-
