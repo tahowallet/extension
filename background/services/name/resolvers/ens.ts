@@ -2,6 +2,7 @@ import ChainService from "../../chain"
 import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import {
   ARBITRUM_ONE,
+  AVALANCHE,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
@@ -16,6 +17,7 @@ const ENS_SUPPORTED_NETWORKS = [
   OPTIMISM,
   ARBITRUM_ONE,
   GOERLI,
+  AVALANCHE,
 ]
 
 export default function ensResolverFor(

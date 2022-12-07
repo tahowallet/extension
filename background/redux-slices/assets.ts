@@ -110,6 +110,13 @@ const selectPairedAssetSymbol = (
   pairedAssetSymbol: string
 ) => pairedAssetSymbol
 
+const selectChainID = (
+  _: AssetsState,
+  _2: string,
+  _3: string,
+  chainID: string
+) => chainID
+
 /**
  * Executes an asset transfer between two addresses, for a set amount. Supports
  * an optional fixed gas limit.
@@ -191,9 +198,21 @@ export const transferAsset = createBackgroundAsyncThunk(
  * the selector will return them in the order [ETH, USD].
  */
 export const selectAssetPricePoint = createSelector(
-  [selectAssetsState, selectAssetSymbol, selectPairedAssetSymbol],
-  (assets, assetSymbol, pairedAssetSymbol) => {
-    const pricedAsset = assets.find(
+  [
+    selectAssetsState,
+    selectAssetSymbol,
+    selectPairedAssetSymbol,
+    selectChainID,
+  ],
+  (assets, assetSymbol, pairedAssetSymbol, chainID) => {
+    const pricedAsset = (
+      chainID
+        ? assets.filter(
+            (asset) =>
+              "homeNetwork" in asset && asset.homeNetwork.chainID === chainID
+          )
+        : assets
+    ).find(
       (asset) =>
         asset.symbol === assetSymbol &&
         pairedAssetSymbol in asset.recentPrices &&

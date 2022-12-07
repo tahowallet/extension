@@ -34,6 +34,8 @@ import {
   EIP_1559_COMPLIANT_CHAIN_IDS,
   AVALANCHE,
   SECOND,
+  BINANCE_SMART_CHAIN,
+  ARBITRUM_NOVA,
 } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
@@ -49,7 +51,7 @@ import {
   ethersTransactionFromTransactionRequest,
   unsignedTransactionFromEVMTransaction,
 } from "./utils"
-import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress, wait } from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEIP1559TransactionSignatureRequest,
@@ -82,7 +84,8 @@ const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 // OpenEthereum with tracing to catch up to where we are.
 const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
 
-const NETWORK_POLLING_TIMEOUT = MINUTE * 5
+// Add a little bit of wiggle room
+const NETWORK_POLLING_TIMEOUT = MINUTE * 2.05
 
 // The number of milliseconds after a request to look up a transaction was
 // first seen to continue looking in case the transaction fails to be found
@@ -285,6 +288,10 @@ export default class ChainService extends BaseService<Events> {
       ARBITRUM_ONE,
       ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [ROOTSTOCK] : []),
       ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE) ? [AVALANCHE] : []),
+      ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
+        ? [BINANCE_SMART_CHAIN]
+        : []),
+      ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA) ? [ARBITRUM_NOVA] : []),
     ]
 
     this.trackedNetworks = []

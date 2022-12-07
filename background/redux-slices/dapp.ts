@@ -4,7 +4,9 @@ import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
 import { keyPermissionsByChainIdAddressOrigin } from "../services/provider-bridge/utils"
 import {
+  ARBITRUM_NOVA,
   AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
@@ -131,7 +133,9 @@ const dappSlice = createSlice({
             POLYGON,
             OPTIMISM,
             AVALANCHE,
+            BINANCE_SMART_CHAIN,
             GOERLI,
+            ARBITRUM_NOVA,
           ].map((network) => ({
             ...permission,
             chainID: network.chainID,
