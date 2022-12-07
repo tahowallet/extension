@@ -1,19 +1,25 @@
 import { AddressOnNetwork } from "../../accounts"
 import { FeatureFlags, isEnabled } from "../../features"
-import { getNFTCollections, getNFTs } from "../../lib/nfts_update"
+import {
+  getNFTCollections,
+  getNFTs,
+  getTransferredNFTs,
+} from "../../lib/nfts_update"
 import { getSimpleHashNFTs } from "../../lib/simple-hash_update"
 import { POAP_COLLECTION_ID } from "../../lib/poap_update"
-import { NFTCollection, NFT } from "../../nfts"
+import { NFTCollection, NFT, TransferredNFT } from "../../nfts"
 import BaseService from "../base"
 import ChainService from "../chain"
 
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, NFTsDatabase } from "./db"
+import { getUNIXTimestamp } from "../../lib/utils"
 
 interface Events extends ServiceLifecycleEvents {
   isReloadingNFTs: boolean
   initializeNFTs: NFTCollection[]
   updateCollections: NFTCollection[]
+  removeTransferredNFTs: TransferredNFT[]
   updateNFTs: {
     account: AddressOnNetwork
     collectionID: string
@@ -26,6 +32,8 @@ type NextPageURLsMap = { [collectionID: string]: { [address: string]: string } }
 
 export default class NFTsService extends BaseService<Events> {
   #nextPageUrls: NextPageURLsMap = {}
+
+  #transfersLookupTimestamp: number
 
   static create: ServiceCreatorFunction<
     Events,
@@ -40,6 +48,7 @@ export default class NFTsService extends BaseService<Events> {
     private chainService: ChainService
   ) {
     super()
+    this.#transfersLookupTimestamp = getUNIXTimestamp()
   }
 
   protected override async internalStartService(): Promise<void> {
@@ -78,6 +87,7 @@ export default class NFTsService extends BaseService<Events> {
       accounts ?? (await this.chainService.getAccountsToTrack())
 
     this.emitter.emit("isReloadingNFTs", true)
+    await this.removeTransferredNFTs(accountsToFetch)
     await this.fetchCollections(accountsToFetch)
     // prefetch POAPs to avoid loading empty POAPs collections from UI
     await Promise.allSettled(
@@ -200,5 +210,19 @@ export default class NFTsService extends BaseService<Events> {
 
   async removeNFTsForAddress(address: string): Promise<void> {
     await this.db.removeNFTsForAddress(address)
+  }
+
+  async removeTransferredNFTs(accounts: AddressOnNetwork[]): Promise<void> {
+    const removedNFTs = await getTransferredNFTs(
+      accounts,
+      this.#transfersLookupTimestamp
+    )
+
+    this.#transfersLookupTimestamp = getUNIXTimestamp()
+
+    if (removedNFTs.length) {
+      await this.db.removeNFTsByID(removedNFTs)
+      this.emitter.emit("removeTransferredNFTs", removedNFTs)
+    }
   }
 }
