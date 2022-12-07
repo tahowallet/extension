@@ -51,7 +51,7 @@ import {
   ethersTransactionFromTransactionRequest,
   unsignedTransactionFromEVMTransaction,
 } from "./utils"
-import { normalizeEVMAddress, sameEVMAddress, wait } from "../../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEIP1559TransactionSignatureRequest,
