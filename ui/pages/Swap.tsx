@@ -637,7 +637,7 @@ export default function Swap(): ReactElement {
                 label={t("swap.to")}
               />
               {priceDetails === undefined &&
-              sellAmount &&
+              (sellAmount || buyAmount) &&
               buyAsset &&
               sellAsset ? (
                 <SharedLoadingDoggo
