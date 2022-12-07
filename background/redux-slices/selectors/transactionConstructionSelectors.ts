@@ -92,7 +92,8 @@ export const selectTransactionMainCurrencyPricePoint = createSelector(
     return selectAssetPricePoint(
       assets,
       baseAsset?.symbol ?? currentNetwork.baseAsset.symbol, // Fallback to current network's base asset
-      mainCurrencySymbol
+      mainCurrencySymbol,
+      currentNetwork.chainID
     )
   }
 )
