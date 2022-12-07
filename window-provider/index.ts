@@ -45,6 +45,15 @@ const impersonateMetamaskWhitelist = [
   "app.benqi.fi",
   "snowtrace.io",
   "core.app",
+  "cbridge.celer.network",
+  "stargate.finance",
+  "app.multchain.cn",
+  "app.venus.io",
+  "app.alpacafinance.org",
+  "pancakeswap.finance",
+  "liquidifty.io",
+  "ankr.com",
+  "mint.xencrypto.io",
 ]
 
 const METAMASK_STATE_MOCK = {

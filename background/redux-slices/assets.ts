@@ -126,11 +126,13 @@ export const transferAsset = createBackgroundAsyncThunk(
     toAddressNetwork: { address: toAddress, network: toNetwork },
     assetAmount,
     gasLimit,
+    nonce,
   }: {
     fromAddressNetwork: AddressOnNetwork
     toAddressNetwork: AddressOnNetwork
     assetAmount: AnyAssetAmount
     gasLimit?: bigint
+    nonce?: number
   }) => {
     if (!sameNetwork(fromNetwork, toNetwork)) {
       throw new Error("Only same-network transfers are supported for now.")
@@ -149,6 +151,7 @@ export const transferAsset = createBackgroundAsyncThunk(
         to: toAddress,
         value: assetAmount.amount,
         gasLimit,
+        nonce,
       })
     } else if (isSmartContractFungibleAsset(assetAmount.asset)) {
       logger.debug(
@@ -169,6 +172,7 @@ export const transferAsset = createBackgroundAsyncThunk(
       await signer.sendUncheckedTransaction({
         ...transactionDetails,
         gasLimit: gasLimit ?? transactionDetails.gasLimit,
+        nonce,
       })
     } else {
       throw new Error(
