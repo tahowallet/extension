@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
+  selectCurrentAccountNFTs,
   selectCurrentAccountSigner,
   selectCurrentNetwork,
   selectMainCurrencySymbol,
@@ -32,6 +33,8 @@ import classNames from "classnames"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { NFT } from "@tallyho/tally-background/nfts"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
@@ -56,6 +59,14 @@ export default function Send(): ReactElement {
     location.state ?? currentAccount.network.baseAsset
   )
 
+  const [assetType, setAssetType] = useState<"token" | "nft">("token")
+  const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null)
+
+  const handleAssetSelect = (asset: FungibleAsset) => {
+    setSelectedAsset(asset)
+    setAssetType("token")
+  }
+
   // Switch the asset being sent when switching between networks, but still use
   // location.state on initial page render - if it exists
   useEffect(() => {
@@ -73,6 +84,7 @@ export default function Send(): ReactElement {
     string | undefined
   >(undefined)
   const [amount, setAmount] = useState("")
+
   const [isSendingTransactionRequest, setIsSendingTransactionRequest] =
     useState(false)
   const [hasError, setHasError] = useState(false)
@@ -82,6 +94,13 @@ export default function Send(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
+  const nftCollections = useBackgroundSelector((state) => {
+    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+      return selectCurrentAccountNFTs(state)
+    }
+
+    return []
+  })
 
   const fungibleAssetAmounts =
     // Only look at fungible assets.
@@ -186,7 +205,7 @@ export default function Send(): ReactElement {
             <SharedAssetInput
               currentNetwork={currentNetwork}
               label={t("wallet.assetAmount")}
-              onAssetSelect={setSelectedAsset}
+              onAssetSelect={handleAssetSelect}
               assetsAndAmounts={fungibleAssetAmounts}
               onAmountChange={(value, errorMessage) => {
                 setAmount(value)
@@ -196,10 +215,21 @@ export default function Send(): ReactElement {
                   setHasError(false)
                 }
               }}
-              selectedAsset={selectedAsset}
+              onSelectNFT={(nft) => {
+                setSelectedNFT(nft)
+                setAssetType("nft")
+              }}
+              selectedAsset={selectedAsset ?? undefined}
+              selectedNFT={(assetType === "nft" && selectedNFT) || undefined}
               amount={amount}
+              showMaxButton={assetType !== "nft"}
+              NFTCollections={
+                isEnabled(FeatureFlags.SUPPORT_NFT_TAB)
+                  ? nftCollections
+                  : undefined
+              }
             />
-            {!hasError && (
+            {assetType === "token" && !hasError && (
               <div className="value">
                 ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
               </div>
@@ -253,7 +283,7 @@ export default function Send(): ReactElement {
               size="large"
               isDisabled={
                 currentAccountSigner === ReadOnlyAccountSigner ||
-                Number(amount) === 0 ||
+                (assetType === "token" && Number(amount) === 0) ||
                 destinationAddress === undefined ||
                 hasError
               }
