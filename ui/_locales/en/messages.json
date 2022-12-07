@@ -211,6 +211,10 @@
       "explainerThree": "Only in rare cases will the actual fee you pay change by more than 10% from the estimate.",
       "learnMore": "Learn More"
     },
+    "bsc": {
+      "title": "Coming soon!",
+      "description": "Changing network fees for BNB Chain is not currently available."
+    },
     "miner": "Miner:",
     "maxBase": "Max Base:",
     "speeds": {
