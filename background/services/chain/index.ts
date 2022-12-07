@@ -154,11 +154,6 @@ export default class ChainService extends BaseService<Events> {
     evm: {},
   }
 
-  subscribedAccounts: {
-    account: string
-    provider: SerialFallbackProvider
-  }[]
-
   subscribedNetworks: {
     network: EVMNetwork
     provider: SerialFallbackProvider
@@ -296,7 +291,6 @@ export default class ChainService extends BaseService<Events> {
       ),
     }
 
-    this.subscribedAccounts = []
     this.subscribedNetworks = []
     this.transactionsToRetrieve = []
 
@@ -317,10 +311,6 @@ export default class ChainService extends BaseService<Events> {
     Promise.allSettled(
       accounts
         .flatMap((an) => [
-          // subscribe to all account transactions
-          this.subscribeToAccountTransactions(an).catch((e) => {
-            logger.error(e)
-          }),
           // do a base-asset balance check for every account
           this.getLatestBaseAccountBalance(an).catch((e) => {
             logger.error(e)
@@ -876,12 +866,6 @@ export default class ChainService extends BaseService<Events> {
       this.emitter.emit("newAccountToTrack", addressNetwork)
     }
     this.emitSavedTransactions(addressNetwork)
-    this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
-      logger.error(
-        "chainService/addAccountToTrack: Error subscribing to account transactions",
-        e
-      )
-    })
     this.getLatestBaseAccountBalance(addressNetwork).catch((e) => {
       logger.error(
         "chainService/addAccountToTrack: Error getting latestBaseAccountBalance",
@@ -1631,27 +1615,6 @@ export default class ChainService extends BaseService<Events> {
 
     this.pollLatestBlock(network, provider)
     this.pollBlockPrices()
-  }
-
-  /**
-   * Watch logs for an account's transactions on a particular network.
-   *
-   * @param addressOnNetwork The network and address to watch.
-   */
-  private async subscribeToAccountTransactions({
-    address,
-    network,
-  }: AddressOnNetwork): Promise<void> {
-    const provider = this.providerForNetworkOrThrow(network)
-    await provider.subscribeFullPendingTransactions(
-      { address, network },
-      this.handlePendingTransaction.bind(this)
-    )
-
-    this.subscribedAccounts.push({
-      account: address,
-      provider,
-    })
   }
 
   /**
