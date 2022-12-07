@@ -4,6 +4,7 @@ import { SignClientTypes, SessionTypes } from "@walletconnect/types"
 import {
   EIP1193Error,
   EIP1193_ERROR_CODES,
+  isEIP1193Error,
   RPCRequest,
 } from "@tallyho/provider-bridge-shared"
 
@@ -14,12 +15,17 @@ import PreferenceService from "../preferences"
 import ProviderBridgeService from "../provider-bridge"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
 import { browser } from "../.."
+import {
+  approveEIP155Request,
+  rejectEIP155Request,
+} from "./eip155-request-utils"
 
 interface Events extends ServiceLifecycleEvents {
   placeHolderEventForTypingPurposes: string
 }
 
 interface TranslatedRequestParams {
+  topic?: string
   method: string
   params: RPCRequest["params"]
 }
@@ -183,6 +189,29 @@ export default class WalletConnectService extends BaseService<Events> {
     }
   }
 
+  private async postApprovalResponse(
+    event: SignClientTypes.EventArguments["session_request"],
+    payload: any
+  ) {
+    const { topic } = event
+    const response = approveEIP155Request(event, payload)
+    await this.signClient?.respond({
+      topic,
+      response,
+    })
+  }
+
+  private async postRejectionResponse(
+    event: SignClientTypes.EventArguments["session_request"]
+  ) {
+    const { topic } = event
+    const response = rejectEIP155Request(event)
+    await this.signClient?.respond({
+      topic,
+      response,
+    })
+  }
+
   private static getMetaPort(
     name: string,
     postMessage: (message: any) => void
@@ -201,7 +230,7 @@ export default class WalletConnectService extends BaseService<Events> {
     event: SignClientTypes.EventArguments["session_request"]
   ): TranslatedRequestParams {
     // TODO: figure out if this method is needed
-    const { params: eventParams } = event
+    const { params: eventParams, topic } = event
     // TODO: handle chain id
     const { request } = eventParams
 
@@ -217,6 +246,7 @@ export default class WalletConnectService extends BaseService<Events> {
       case "eth_sign": // --- important wallet methods ---
       case "personal_sign":
         return {
+          topic,
           method: request.method,
           params: request.params,
         }
@@ -228,15 +258,23 @@ export default class WalletConnectService extends BaseService<Events> {
   async sessionRequestListener(
     event: SignClientTypes.EventArguments["session_request"]
   ): Promise<void> {
-    WalletConnectService.tempFeatureLog("in sessionRequestListener")
+    WalletConnectService.tempFeatureLog("in sessionRequestListener", event)
     const { method, params } = WalletConnectService.processRequestParams(event)
 
     const port = WalletConnectService.getMetaPort(
       "sessionRequestListenerPort",
       async (message) => {
         WalletConnectService.tempFeatureLog(
-          `sessionRequestListenerPort message: ${message}`
+          "sessionRequestListenerPort message:",
+          message
         )
+
+        // TODO: make this check more elaborate
+        if (isEIP1193Error(message.result)) {
+          await this.postRejectionResponse(event)
+        } else {
+          await this.postApprovalResponse(event, message.result)
+        }
       }
     )
 
