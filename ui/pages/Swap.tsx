@@ -62,6 +62,7 @@ import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
+import SharedLoadingDoggo from "../components/Shared/SharedLoadingDoggo"
 
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
@@ -636,10 +637,7 @@ export default function Swap(): ReactElement {
                 label={t("swap.to")}
               />
               {priceDetails === undefined ? (
-                <div className="loading_corgi">
-                  <img src="./images/swap_corgi.gif" alt="loading corgi" />
-                  <span className="simple_text">Fetching price...</span>
-                </div>
+                <SharedLoadingDoggo size={54} message="Fetching price" />
               ) : null}
             </div>
             <div className="settings_wrap">
@@ -760,18 +758,6 @@ export default function Swap(): ReactElement {
           }
           .settings_wrap {
             margin-top: 16px;
-          }
-
-          .loading_corgi {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 10px;
-            margin-bottom: 35px;
-          }
-
-          .loading_corgi img {
-            width: 54px;
           }
         `}
       </style>
