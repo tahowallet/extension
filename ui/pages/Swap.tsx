@@ -636,8 +636,15 @@ export default function Swap(): ReactElement {
                 }}
                 label={t("swap.to")}
               />
-              {priceDetails === undefined ? (
-                <SharedLoadingDoggo size={54} message="Fetching price" />
+              {priceDetails === undefined &&
+              sellAmount &&
+              buyAsset &&
+              sellAsset ? (
+                <SharedLoadingDoggo
+                  size={54}
+                  message="Fetching price"
+                  margin="15px 0 0 0"
+                />
               ) : null}
             </div>
             <div className="settings_wrap">
