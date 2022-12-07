@@ -125,6 +125,12 @@ interface Events extends ServiceLifecycleEvents {
   blockPrices: { blockPrices: BlockPrices; network: EVMNetwork }
 }
 
+export type QueuedTxToRetrieve = {
+  network: EVMNetwork
+  hash: HexString
+  firstSeen: UNIXTime
+}
+
 /**
  * ChainService is responsible for basic network monitoring and interaction.
  * Other services rely on the chain service rather than polling networks
@@ -182,11 +188,7 @@ export default class ChainService extends BaseService<Events> {
    * cached, alongside information about when that hash request was first seen
    * for expiration purposes.
    */
-  private transactionsToRetrieve: {
-    network: EVMNetwork
-    hash: HexString
-    firstSeen: UNIXTime
-  }[]
+  private transactionsToRetrieve: QueuedTxToRetrieve[]
 
   /**
    * Internal timer for the transactionsToRetrieve FIFO queue.
@@ -1037,9 +1039,6 @@ export default class ChainService extends BaseService<Events> {
       this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
         (queuedTx) => queuedTx.hash !== txHash
       )
-
-      // Let's clean up the subscriptions
-      this.providerForNetwork(network)?.off(txHash)
     }
   }
 
@@ -1300,6 +1299,8 @@ export default class ChainService extends BaseService<Events> {
       )
 
       this.removeTransactionHashFromQueue(network, hash)
+      // Let's clean up the subscriptions
+      this.providerForNetwork(network)?.off(hash)
 
       const savedTx = await this.db.getTransaction(network, hash)
       if (savedTx && !("status" in savedTx)) {
@@ -1501,9 +1502,9 @@ export default class ChainService extends BaseService<Events> {
           !this.transactionsToRetrieve.length &&
           this.transactionToRetrieveGranularTimer
         ) {
+          // Clean up if we have a timer, but we don't have anything in the queue
           clearInterval(this.transactionToRetrieveGranularTimer)
           this.transactionToRetrieveGranularTimer = undefined
-
           return
         }
 
@@ -1533,11 +1534,7 @@ export default class ChainService extends BaseService<Events> {
     network,
     hash,
     firstSeen,
-  }: {
-    network: EVMNetwork
-    hash: string
-    firstSeen: number
-  }): Promise<void> {
+  }: QueuedTxToRetrieve): Promise<void> {
     try {
       const result = await this.getOrCancelTransaction(network, hash)
 
