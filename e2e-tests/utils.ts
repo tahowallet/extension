@@ -1,10 +1,11 @@
-import { test as base, BrowserContext, chromium } from "@playwright/test"
+import { test as base, BrowserContext, chromium, Page } from "@playwright/test"
 import path from "path"
 
 export const tallyHoTest = base.extend<{
   context: BrowserContext
   extensionId: string
 }>({
+  /* eslint-disable-next-line no-empty-pattern */
   context: async ({}, use) => {
     const pathToExtension = path.resolve(__dirname, "../dist/chrome")
     const context = await chromium.launchPersistentContext("", {
@@ -35,14 +36,14 @@ export const tallyHoTest = base.extend<{
   },
 })
 
-export async function createWallet(page: any, extensionId: any) {
-  console.log(`chrome-extension://${extensionId}/popup.html`)
+export async function createWallet(
+  page: Page,
+  extensionId: string
+): Promise<void> {
   await page.goto(`chrome-extension://${extensionId}/popup.html`)
   // await expect(page.locator("body")).toHaveText("my-extension popup");
 
   const passwd = "VoXaXa!239"
-  const recoveryPhrase =
-    "tilt ski leave code make fantasy rifle learn wash quiz youth inside promote garlic cat album tell pass between hub brush evolve staff imitate"
 
   await page.locator("text=Continue").click()
   await page.locator("text=Continue").click()
@@ -56,7 +57,7 @@ export async function createWallet(page: any, extensionId: any) {
 
   await page.locator("text=Reveal my secret recovery phrase").click()
 
-  function extractWords(wordsHtml: any) {
+  function extractWords(wordsHtml: string) {
     return wordsHtml
       .replace(/<[^>]*>?/gm, " ")
       .trim()
@@ -76,23 +77,24 @@ export async function createWallet(page: any, extensionId: any) {
         });
 */
 
-  console.log(words)
+  // console.log(words)
   await page.locator("text=I wrote it down").click()
 
   const wordContainers = await page.locator(".word_index")
   const count = await wordContainers.count()
 
-  for (let i = 0; i < count; i++) {
+  /* eslint-disable no-await-in-loop */
+  for (let i = 0; i < count; i += 1) {
     const el = wordContainers.nth(i)
-    const idx = parseInt((await el.allInnerTexts())[0]) - 1
+    const idx = parseInt((await el.allInnerTexts())[0], 10) - 1
     const word = words[idx]
-    console.log(idx, word)
+    // console.log(idx, word)
 
     // 1. gas, gasp... need exact text match
     // 2. a word can repeat multiple times - always return the first match
     await page.locator(`button.small :text("${word}")`).nth(0).click()
   }
-
+  /* eslint-enable no-await-in-loop */
   await page.locator("text=Verify recovery phrase").click()
   await page.locator("text=Take me to my wallet").click()
 }

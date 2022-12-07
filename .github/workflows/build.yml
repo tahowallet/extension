@@ -102,7 +102,7 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Read .nvmrc
         run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
         id: nvm
@@ -123,7 +123,7 @@ jobs:
         run: xvfb-run npx playwright test
         #env:
         # DEBUG: pw:api*
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: debug-output

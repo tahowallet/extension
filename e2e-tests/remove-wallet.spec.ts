@@ -1,6 +1,6 @@
 import { createWallet, tallyHoTest } from "./utils"
 
-tallyHoTest("Remove wallet", async ({ page, context, extensionId }) => {
+tallyHoTest("Remove wallet", async ({ page, extensionId }) => {
   await createWallet(page, extensionId)
   await page.locator(".profile_button").nth(1).click()
   await page.locator(".icon_settings").click()
