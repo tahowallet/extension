@@ -11,10 +11,10 @@
     100%  { transform: translate(0,1047px) rotate3d(1,1,1,1080deg) ; }
   }
   .ld.ld-fall {
-    animation: ld-fall 4s linear infinite;
+    animation: ld-fall 12s linear infinite;
   }
   .ld.ld-fall2 {
-    animation: ld-fall 4s linear infinite;
+    animation: ld-fall 12s linear infinite;
     animation-fill-mode: forwards;
   }
 </style>
