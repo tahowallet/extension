@@ -26,7 +26,7 @@ export default function SignTransactionSignInfoProvider({
   const baseAssetPricePoint = useBackgroundSelector((state) =>
     selectAssetPricePoint(
       state.assets,
-      transactionDetails.network.baseAsset.symbol,
+      transactionDetails.network.baseAsset,
       USD.symbol
     )
   )
