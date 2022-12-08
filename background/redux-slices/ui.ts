@@ -9,7 +9,7 @@ import { AccountSignerSettings } from "../ui"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 
-const defaultSettings = {
+export const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
   showTestNetworks: false,
