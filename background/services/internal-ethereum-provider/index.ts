@@ -216,6 +216,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           return signed.hash
         })
       case "eth_signTransaction":
+        console.log("$$$ InternalEthereumProviderService -> eth_signTransaction", params)
         return this.signTransaction(
           params[0] as JsonRpcTransactionRequest,
           origin
@@ -313,6 +314,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     transactionRequest: JsonRpcTransactionRequest,
     origin: string
   ): Promise<SignedTransaction> {
+    console.log("$$$ in signTransaction", transactionRequest)
     const annotation =
       origin === TALLY_INTERNAL_ORIGIN &&
       "annotation" in transactionRequest &&
@@ -335,6 +337,8 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     if (typeof from === "undefined") {
       throw new Error("Transactions must have a from address for signing.")
     }
+
+    console.log("$$$ signTransaction convertedRequest", convertedRequest)
 
     const currentNetwork = await this.getCurrentOrDefaultNetworkForOrigin(
       origin

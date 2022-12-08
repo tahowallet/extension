@@ -16,6 +16,8 @@ export function approveEIP155Request(
   switch (request.method) {
     case "eth_sign":
     case "personal_sign":
+    case "eth_signTransaction":
+    case "eth_sendTransaction":
       return formatJsonRpcResult(id, signedMessage)
 
     default:

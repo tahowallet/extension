@@ -97,7 +97,7 @@ export default class WalletConnectService extends BaseService<Events> {
     // TODO: remove this, inject uri
     // simulate connection attempt
     const wcUri =
-      "wc:39bd4a50f81b138dc7b13012c7a7b8ea1eb0c57990efbe834002b6245d063218@2?relay-protocol=irn&symKey=ab64e6c79b7826677b2d89ef9b27250ba299510c74df7b5dfbf020fa5abe92fe"
+      "wc:70e3ca637cd88494fd6e68d348c0f3940a73911bb272e409b28c28faaa9d89f5@2?relay-protocol=irn&symKey=8bcd2d3018dda379dd836b19a56ee4b70506ba20615f6c1b70e9b622c7fce73c"
 
     setTimeout(() => {
       this.performConnection(wcUri)
@@ -165,6 +165,10 @@ export default class WalletConnectService extends BaseService<Events> {
     const { id, params } = proposal
     const { requiredNamespaces, relays } = params
 
+    WalletConnectService.tempFeatureLog(
+      "requiredNamespaces",
+      requiredNamespaces
+    )
     // TODO: expand this section to be able to match requiredNamespaces to actual wallet
     const key = "eip155"
     const accounts = [`eip155:1:${address}`]
@@ -230,7 +234,7 @@ export default class WalletConnectService extends BaseService<Events> {
     event: SignClientTypes.EventArguments["session_request"]
   ): TranslatedRequestParams {
     // TODO: figure out if this method is needed
-    const { params: eventParams, topic } = event
+    const { params: eventParams } = event
     // TODO: handle chain id
     const { request } = eventParams
 
@@ -245,8 +249,14 @@ export default class WalletConnectService extends BaseService<Events> {
         }
       case "eth_sign": // --- important wallet methods ---
       case "personal_sign":
+      case "eth_sendTransaction":
         return {
-          topic,
+          method: request.method,
+          params: request.params,
+        }
+      case "eth_signTransaction":
+        console.log("$$$ processRequestParams -> eth_signTransaction", event)
+        return {
           method: request.method,
           params: request.params,
         }
