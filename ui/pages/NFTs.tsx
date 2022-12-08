@@ -1,8 +1,8 @@
 import React, { ReactElement, useState } from "react"
-import classNames from "classnames"
 import {
   selectNFTBadgesCount,
   selectNFTsCount,
+  selectIsReloadingNFTs,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useTranslation } from "react-i18next"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -17,6 +17,8 @@ const PANEL_NAMES = ["NFTs", "Badges"]
 export default function NFTs(): ReactElement {
   const nftCount = useBackgroundSelector(selectNFTsCount)
   const badgesCount = useBackgroundSelector(selectNFTBadgesCount)
+  const isLoading = useBackgroundSelector(selectIsReloadingNFTs)
+
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
   })
@@ -28,11 +30,7 @@ export default function NFTs(): ReactElement {
   return (
     <div className="page_content">
       <NFTsHeader />
-      <div
-        className={classNames("panel_switcher_wrap", {
-          margin: !(nftCount > 0),
-        })}
-      >
+      <div className="panel_switcher_wrap">
         <SharedPanelSwitcher
           setPanelNumber={setPanelNumber}
           panelNumber={panelNumber}
@@ -41,7 +39,7 @@ export default function NFTs(): ReactElement {
       </div>
       <div className="standard_width">
         {panelNumber === 0 &&
-          (nftCount > 0 ? (
+          (nftCount || isLoading ? (
             <>
               <h2>{t("units.collection_other")}</h2>
               <NFTListPortfolio />
@@ -50,7 +48,7 @@ export default function NFTs(): ReactElement {
             <NFTsExploreBanner type="nfts" />
           ))}
         {panelNumber === 1 &&
-          (badgesCount > 0 ? (
+          (badgesCount || isLoading ? (
             <>
               <h2>{t("units.badge_other")}</h2>
               <NFTListPortfolioBadges />
@@ -70,9 +68,6 @@ export default function NFTs(): ReactElement {
           }
           .panel_switcher_wrap {
             width: 100%;
-          }
-          .panel_switcher_wrap.margin {
-            margin-bottom: 16px;
           }
           .page_content h2 {
             font-weight: 600;
