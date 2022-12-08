@@ -5,6 +5,7 @@ import { useParsedValidation, useRunOnFirstRender } from "../../hooks"
 interface Props<T> {
   id?: string
   label?: string
+  name?: string
   maxLength?: number
   focusedLabelBackgroundColor: string
   placeholder?: string
@@ -32,6 +33,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     maxLength,
     focusedLabelBackgroundColor,
     type,
+    name,
     onChange,
     onFocus,
     value: currentValue,
@@ -74,6 +76,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
       <input
         id={id}
         type={type}
+        name={name}
         placeholder={
           typeof placeholder === "undefined" || placeholder === ""
             ? " "
@@ -85,6 +88,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
           handleInputChange(event.target.value)
         }
         onFocus={onFocus}
+        data-empty={inputValue.trim().length < 1}
         className={classNames({
           error: !isEmpty && (errorMessage ?? parserError !== undefined),
           small: isSmall,
@@ -145,7 +149,6 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             width: fit-content;
             margin-left: 16px;
             transform: translateY(-32px);
-            background-color: ${focusedLabelBackgroundColor};
             border-radius: 5px;
             box-sizing: border-box;
             color: var(--green-40);
@@ -162,8 +165,14 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
           input:focus {
             border-color: var(--trophy-gold);
           }
+
+          input[data-empty="false"] ~ label {
+            background-color: ${focusedLabelBackgroundColor};
+          }
+
           input:focus ~ label {
             color: var(--trophy-gold);
+            background-color: ${focusedLabelBackgroundColor};
           }
           input:focus ~ label,
           input:not(:placeholder-shown) ~ label,
