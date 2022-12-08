@@ -15,7 +15,7 @@ const steps = isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES)
           fileName: "illustration_onboarding_welcome",
           extraStyles: `margin-top: 25px;`,
         },
-        title: "Let's get you set up!",
+        title: "Welcome to Tally Ho!",
         body: "The community owned & operated wallet.",
         buttonCopy: "Continue",
       },
@@ -90,6 +90,10 @@ export default function OnboardingInfoIntro({
 
   return (
     <section>
+      <div className="illustration_section">
+        <div className="illustration" />
+        <div className="forest" />
+      </div>
       <div className="bottom_part">
         <div className="bottom_content">
           <SharedProgressIndicator
