@@ -11,6 +11,7 @@ export default function NFTImage({
   fit = "cover",
   isBadge = false,
   isZoomed = false,
+  customStyles = "",
 }: {
   width: number
   height?: number
@@ -19,6 +20,7 @@ export default function NFTImage({
   fit?: string
   isBadge?: boolean
   isZoomed?: boolean
+  customStyles?: string
 }): ReactElement {
   const [isLoading, setIsLoading] = useState(true)
   const [imageUrl, setImageUrl] = useState(src || noPreviewLink)
@@ -70,7 +72,6 @@ export default function NFTImage({
           object-fit: ${fit};
           max-height: ${height ?? "100%"};
           max-width: ${width ?? "100%"};
-          border-radius: 8px;
           transform: scale(1);
           flex-grow: 1;
           transition: transform 200ms ease-in-out;
@@ -96,6 +97,7 @@ export default function NFTImage({
         .nft_image_wrapper {
           border-radius: 8px;
           overflow: hidden;
+          ${customStyles}
         }
         .nft_image_wrapper.badge {
           overflow: hidden;
