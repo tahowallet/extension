@@ -24,7 +24,6 @@ export default function ImportSeed(props: Props): ReactElement {
   const [errorMessage, setErrorMessage] = useState("")
   const [path, setPath] = useState<string>("m/44'/60'/0'/0")
   const [isImporting, setIsImporting] = useState(false)
-  const [isActive, setActive] = useState(false)
 
   const dispatch = useBackgroundDispatch()
   const keyringImport = useBackgroundSelector(
@@ -67,16 +66,9 @@ export default function ImportSeed(props: Props): ReactElement {
 
   if (!areKeyringsUnlocked) return <></>
 
-  // eslint-disable-next-line
-  const activeBox = (event: React.MouseEvent<HTMLInputElement>) => {
-    if (!isActive) {
-      setActive((current) => !current)
-    }
-  }
-
   return (
     <>
-      <div className="content">
+      <div className="content fadeIn">
         <form
           onSubmit={(event) => {
             event.preventDefault()
@@ -90,33 +82,21 @@ export default function ImportSeed(props: Props): ReactElement {
               Copy paste or write down a 12 or 24 word secret recovery phrase.
             </div>
             <div className="input_wrap">
-              <div>
-                <p
-                  id="recovery_phrase"
-                  contentEditable
-                  className={isActive ? "is-active" : ""}
-                  onMouseDown={activeBox}
-                  onInput={(e) => {
-                    setRecoveryPhrase(e.currentTarget.innerText)
-                  }}
-                  role="presentation"
-                />
-                <div className="recovery_label">Enter your passphrase</div>
-                <p className="error">{errorMessage}</p>
-              </div>
+              <div
+                id="recovery_phrase"
+                role="textbox"
+                aria-label="Recovery phrase"
+                tabIndex={0}
+                contentEditable
+                data-empty={recoveryPhrase.length < 1}
+                spellCheck="false"
+                onInput={(e) => {
+                  setRecoveryPhrase(e.currentTarget.innerText.trim())
+                }}
+              />
+              <div className="recovery_label">Paste secret recovery seed</div>
+              {errorMessage && <p className="error">{errorMessage}</p>}
             </div>
-            <SharedButton
-              size={
-                isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
-                  ? "medium"
-                  : "large"
-              }
-              type="primary"
-              isDisabled={!recoveryPhrase}
-              onClick={importWallet}
-            >
-              Import account
-            </SharedButton>
             {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
               <div className="select_wrapper">
                 <OnboardingDerivationPathSelect onChange={setPath} />
@@ -125,14 +105,16 @@ export default function ImportSeed(props: Props): ReactElement {
           </div>
           <div className="portion bottom">
             <SharedButton
+              style={{ width: "100%", maxWidth: "300px" }}
               size={
                 isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
                   ? "medium"
                   : "large"
               }
               type="primary"
-              isDisabled={isImporting}
+              isDisabled={!recoveryPhrase || isImporting}
               onClick={importWallet}
+              center
             >
               Import account
             </SharedButton>
@@ -150,17 +132,17 @@ export default function ImportSeed(props: Props): ReactElement {
         </form>
       </div>
       <style jsx>{`
+        form {
+          all: unset;
+        }
+
         .content {
           display: flex;
           align-items: center;
           flex-direction: column;
           justify-content: space-between;
-          height: 100%;
         }
-        .content {
-          animation: fadeIn ease 200ms;
-          width: 100%;
-        }
+
         h1 {
           margin: unset;
         }
@@ -173,7 +155,7 @@ export default function ImportSeed(props: Props): ReactElement {
           justify-content: space-between;
           flex-direction: column;
           margin-top: ${isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
-            ? "35px"
+            ? "48px"
             : "24px"};
           margin-bottom: ${isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
             ? "24px"
@@ -182,8 +164,8 @@ export default function ImportSeed(props: Props): ReactElement {
         .illustration_import {
           background: url("./images/doggo_import.svg");
           background-size: cover;
-          width: 106.5px;
-          height: 103.5px;
+          width: 85px;
+          height: 83px;
           margin-bottom: 15px;
         }
         .serif_header {
@@ -193,16 +175,16 @@ export default function ImportSeed(props: Props): ReactElement {
         }
 
         .info {
-          height: 43px;
-          margin-bottom: 18px;
+          margin-bottom: 40.5px;
         }
+
         .info,
         .help_button {
           width: 320px;
           text-align: center;
           font-size: 16px;
           line-height: 24px;
-          color: var(--green-60);
+          color: var(--green-40);
           font-weight: 500;
         }
         .help_button {
@@ -219,15 +201,30 @@ export default function ImportSeed(props: Props): ReactElement {
         .input_wrap {
           position: relative;
         }
+
         .recovery_label {
           position: absolute;
-          opacity: 0.5;
-          top: 40px;
-          left: 10px;
+          font-size: 12px;
+          line-height: 16px;
           transition: all 0.2s ease-in-out;
         }
+
+        #recovery_phrase[data-empty="true"]:not(:focus) ~ .recovery_label {
+          font-size: 16px;
+          line-height: 24px;
+          top: 12px;
+          left: 16px;
+        }
+
+        #recovery_phrase[data-empty="false"] ~ .recovery_label {
+          padding: 0 6px;
+          color: var(--green-40);
+          background: var(--hunter-green);
+          top: -8px;
+          left: 16px;
+        }
+
         #recovery_phrase {
-          margin: 30px auto;
           width: 320px;
           height: 200px;
           border-radius: 4px;
@@ -235,45 +232,33 @@ export default function ImportSeed(props: Props): ReactElement {
           padding: 12px 16px;
           white-space: pre-wrap;
           word-wrap: break-word;
-          color: white;
+          color: var(--white);
           font-family: inherit;
+          overflow-y: scroll;
         }
-        #recovery_phrase p,
+
         #recovery_phrase * {
-          color: white;
           word-wrap: break-word;
-          color: white;
+          color: var(--white);
           font-family: inherit;
         }
+
         #recovery_phrase:focus ~ .recovery_label {
-          display: block;
-          opacity: 1;
-          top: 20px;
-          left: 20px;
-          font-size: 14px;
+          top: -8px;
+          left: 16px;
           padding: 0 6px;
           color: var(--trophy-gold);
           background: var(--hunter-green);
           transition: all 0.2s ease-in-out;
           z-index: 999;
         }
-        .is-active {
-          background: var(--hunter-green);
-        }
-        .is-active ~ .recovery_label {
-          display: none;
-        }
+
         #recovery_phrase:focus {
           border: 2px solid var(--trophy-gold);
           outline: 0;
           background: var(--hunter-green);
         }
-        #recovery_phrase [contenteditable][placeholder]:empty:before {
-          content: attr(placeholder);
-          position: absolute;
-          color: gray;
-          background-color: transparent;
-        }
+
         .error {
           color: red;
         }
