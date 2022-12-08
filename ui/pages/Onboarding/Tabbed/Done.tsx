@@ -1,96 +1,82 @@
-import React, { useEffect, useState, ReactElement } from "react"
-import browser from "webextension-polyfill"
-import LedgerPanelContainer from "../../../components/Ledger/LedgerPanelContainer"
+import React, { ReactElement } from "react"
 
 export default function Done(): ReactElement {
-  const [os, setOS] = useState("windows")
-
-  // fetch the OS using the extension API to decide what shortcut to show
-  useEffect(() => {
-    let active = true
-
-    async function loadOS() {
-      if (active) {
-        setOS((await browser.runtime.getPlatformInfo()).os)
-      }
-    }
-
-    loadOS()
-
-    return () => {
-      active = false
-    }
-  }, [])
-
-  // state for alt, t, and option key status
-  const [tPressed, setTPressed] = useState(false)
-  const [altPressed, setAltPressed] = useState(false)
-
-  // add keydown/up listeners for our shortcut code
-  useEffect(() => {
-    const downListener = (e: KeyboardEvent) => {
-      if (e.altKey || e.key === "Alt") {
-        setAltPressed(true)
-      }
-      if (e.key === "t") {
-        setTPressed(true)
-      }
-    }
-    const upListener = (e: KeyboardEvent) => {
-      if (e.altKey || e.key === "Alt") {
-        setAltPressed(false)
-      }
-      if (e.key === "t") {
-        setTPressed(false)
-      }
-    }
-
-    window.addEventListener("keydown", downListener.bind(window))
-    window.addEventListener("keyup", upListener.bind(window))
-
-    return () => {
-      window.removeEventListener("keydown", downListener)
-      window.removeEventListener("keyup", upListener)
-    }
-  })
-
   return (
-    <LedgerPanelContainer
-      indicatorImageSrc="/images/onboarding_success.svg"
-      heading={
-        <>
-          Congratulations!
-          <br />
-          You can now open
-          <br />
-          Tally Ho.
-        </>
-      }
-    >
-      <div className="wallet_shortcut">
-        <span>Try this shortcut to open the wallet.</span>
+    <section>
+      <div className="confetti">
+        <img src="./images/confetti.svg" alt="Confetti" />
+      </div>
+      <div className="wrapper fadeIn">
+        <header>
+          <img
+            width="80"
+            height="80"
+            alt="Tally Ho Gold"
+            src="./images/doggo_gold.svg"
+            className="illustration"
+          />
+          <div>
+            <h1>Welcome to TallyHo!</h1>
+            <span>
+              For faster access we recommend pinning Tally&nbsp;Ho to your
+              browser
+            </span>
+          </div>
+        </header>
         <img
-          width="318"
-          height="84"
-          className="indicator"
-          src={
-            os === "mac"
-              ? `/images/mac-shortcut${altPressed ? "-option" : ""}${
-                  tPressed ? "-t" : ""
-                }.svg`
-              : `/images/windows-shortcut${altPressed ? "-alt" : ""}${
-                  tPressed ? "-t" : ""
-                }.svg`
-          }
-          alt={os === "mac" ? "option + T" : "alt + T"}
+          width="383"
+          src="./images/onboarding_pin_extension.gif"
+          alt="Pin the wallet"
         />
       </div>
+
       <style jsx>{`
-        .button_container {
-          display: flex;
-          justify-content: center;
-          padding: 1rem;
+        section {
+          text-align: center;
         }
+        header {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          align-items: center;
+          margin-bottom: 32px;
+        }
+
+        header div {
+          max-width: 340px;
+          display: flex;
+          flex-direction: column;
+          gap: 12 px;
+        }
+
+        header h1 {
+          display: inline-block;
+          font-family: "Quincy CF";
+          font-weight: 500;
+          font-size: 36px;
+          line-height: 42px;
+          margin: 0;
+          color: var(--white);
+        }
+
+        header span {
+          font-family: "Segment";
+          font-style: normal;
+          font-weight: 400;
+          font-size: 16px;
+          line-height: 24px;
+          color: var(--green-40);
+        }
+
+        header img {
+          border-radius: 22px;
+        }
+
+        .wrapper {
+          position: relative;
+          z-index: 1;
+        }
+
         .wallet_shortcut {
           display: flex;
           flex-direction: column;
@@ -103,18 +89,20 @@ export default function Done(): ReactElement {
           color: var(--green-40);
           margin-top: 24px;
         }
+
         .wallet_shortcut > span {
           text-align: center;
         }
         .confetti {
           position: absolute;
-          z-index: 1;
+          display: none;
+          opacity: 0.7;
           top: 0;
           left: 0;
           width: 100%;
           height: 100%;
         }
       `}</style>
-    </LedgerPanelContainer>
+    </section>
   )
 }
