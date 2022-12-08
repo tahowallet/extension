@@ -21,6 +21,8 @@ export default function LedgerPrepare({
     : t("subheadingWord2")
   const warningText =
     deviceCount === 0 ? t("noLedgerConnected") : t("multipleLedgersConnected")
+
+  const showError = !initialScreen && deviceCount !== 1
   return (
     <LedgerPanelContainer
       indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
@@ -29,33 +31,55 @@ export default function LedgerPrepare({
         subheadingWord: subHeadingWord,
       })}
     >
-      {!initialScreen && deviceCount !== 1 ? (
-        <div className="steps">
-          <div className="box error">
-            <span className="block_icon" />
-            {warningText}
+      <div className="content" data-has-errors={showError}>
+        {showError ? (
+          <div className="error_container">
+            <div className="box error">
+              <span className="block_icon" />
+              {warningText}
+            </div>
+            <div className="box">
+              <p className="highlight_text">{t("stepsExplainer")}</p>
+            </div>
           </div>
-          <div className="box">
-            <p className="highlight_text">{t("stepsExplainer")}</p>
-          </div>
-        </div>
-      ) : (
-        <></>
-      )}
-      <ol className="steps">
-        <li>{t("step1")}</li>
-        <li>{t("step2")}</li>
-        <li>{t("step3")}</li>
-      </ol>
-      <LedgerContinueButton onClick={onContinue}>
-        {buttonLabel}
-      </LedgerContinueButton>
+        ) : (
+          <></>
+        )}
+        <ol className="steps">
+          <li>{t("step1")}</li>
+          <li>{t("step2")}</li>
+          <li>{t("step3")}</li>
+        </ol>
+        <LedgerContinueButton onClick={onContinue}>
+          {buttonLabel}
+        </LedgerContinueButton>
+      </div>
       <style jsx>{`
+        .content {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .content[data-has-errors="false"] {
+          margin-top: 54px;
+        }
+
+        .error_container {
+          padding: 0.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
         .steps {
+          display: flex;
+          flex-direction: column;
+          gap: 32px;
           list-style: none;
           padding: 0.5rem;
           counter-reset: step;
-          background: transparent;
+          margin-bottom: 48px;
+          align-self: center;
         }
 
         .steps > li {
@@ -63,7 +87,6 @@ export default function LedgerPrepare({
           align-items: center;
           font-size: 22px;
           font-weight: 500;
-          line-height: 32px;
         }
 
         .steps > li::before {
@@ -72,7 +95,6 @@ export default function LedgerPrepare({
           display: inline-block;
           width: 2.5rem;
           height: 2.5rem;
-          margin: 1rem;
           margin-right: 2rem;
           border-radius: 1.25rem;
           border: 1px solid var(--green-60);

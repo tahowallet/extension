@@ -20,7 +20,6 @@ export default function LedgerConnectPopup(): ReactElement {
       <style jsx>{`
         .help {
           position: fixed;
-          right: 30%;
           display: flex;
           height: 0;
         }
