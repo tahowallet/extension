@@ -1,7 +1,6 @@
 import React, { ReactElement, useState } from "react"
 import OnboardingStepsIndicator from "../../../components/Onboarding/OnboardingStepsIndicator"
 import SeedVerification from "../VerifySeed/SeedVerification"
-import { OnboardingSubheader } from "../styles"
 import VerifySeedSuccess from "../VerifySeed/VerifySeedSuccess"
 import VerifySeedError from "../VerifySeed/VerifySeedError"
 import { useBackgroundSelector } from "../../../hooks"
@@ -13,8 +12,7 @@ export default function VerifySeed({
 }: {
   nextPage: string
 }): ReactElement {
-  const [verificationStep, setVerificationStep] =
-    useState<VerificationStep>("verification")
+  const [verificationStep] = useState<VerificationStep>("verification")
   const mnemonic = useBackgroundSelector((state) => {
     return state.keyrings.keyringToVerify?.mnemonic
   })
@@ -22,53 +20,58 @@ export default function VerifySeed({
   if (!mnemonic) return <span>Recovery phrase not created</span>
 
   return (
-    <div className="verify_section">
+    <div>
       <div className="steps_indicator">
         <OnboardingStepsIndicator activeStep={2} />
       </div>
-      <h1 className="serif_header center_text">Verify recovery phrase</h1>
-      <div className="subtitle">
-        Click on each word in the order that you are asked to
-      </div>
+      <section className="verify_section fadeIn">
+        <h1 className="center_text">Verify recovery phrase</h1>
+        <div className="subtitle center_text">
+          Click on each word in the order that you are asked to
+        </div>
 
-      {verificationStep === "verification" && (
-        <SeedVerification setStep={setVerificationStep} mnemonic={mnemonic} />
-      )}
-      {verificationStep === "success" && (
-        <VerifySeedSuccess mnemonic={mnemonic} nextPage={nextPage} />
-      )}
-      {verificationStep === "error" && <VerifySeedError />}
-
+        {verificationStep === "verification" && (
+          <SeedVerification mnemonic={mnemonic} nextPage="/onboarding/done" />
+        )}
+        {verificationStep === "success" && (
+          <VerifySeedSuccess mnemonic={mnemonic} nextPage={nextPage} />
+        )}
+        {verificationStep === "error" && <VerifySeedError />}
+      </section>
       <style jsx>
         {`
-          .serif_header {
+          h1 {
             font-family: "Quincy CF";
+            font-style: normal;
             font-weight: 500;
-            font-size: 46px;
+            font-size: 36px;
             line-height: 42px;
-            margin: 1em auto;
-            margin-bottom: 0px;
+            color: var(--white);
+            margin: 24px 0 4px;
           }
+
           .subtitle {
-            ${OnboardingSubheader}
-            margin-top: 1em;
-            margin-bottom: 3em;
+            font-family: "Segment";
+            font-style: normal;
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 24px;
+            color: var(--green-40);
+            margin-bottom: 41px;
           }
-          .onboarding_box {
-            padding: 2em;
-          }
+
           .top {
             display: flex;
             justify-content: center;
             width: 100%;
             height: 47px;
           }
+
           .verify_section {
-            text-align: center;
-            width: 100%;
-            max-width: 500px;
-            margin: auto;
+            max-width: 450px;
+            margin: 0 auto;
           }
+
           .steps_indicator {
             width: 200px;
             margin: auto;
