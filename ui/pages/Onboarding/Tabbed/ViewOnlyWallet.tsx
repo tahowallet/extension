@@ -8,6 +8,7 @@ import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/sel
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
 import SharedButton from "../../../components/Shared/SharedButton"
 import SharedAddressInput from "../../../components/Shared/SharedAddressInput"
+import OnboardingTip from "./OnboardingTip"
 
 export default function ViewOnlyWallet(): ReactElement {
   const dispatch = useBackgroundDispatch()
@@ -49,16 +50,23 @@ export default function ViewOnlyWallet(): ReactElement {
 
   // TODO remove the "embedded" variable and restyle
   return (
-    <>
+    <section className="fadeIn">
+      <header>
+        <img
+          width="80"
+          height="80"
+          alt="Tally Ho Gold"
+          src="./images/doggo_readonly.svg"
+        />
+        <div>
+          <h1>Read-only address</h1>
+          <div className="subtitle">
+            Add an Ethereum address or ENS name to view an existing wallet in
+            Tally Ho!
+          </div>
+        </div>
+      </header>
       <div className="content">
-        <div className="illustration_section">
-          <div className="illustration" />
-        </div>
-        <h1 className="serif_header">Read-only address</h1>
-        <div className="subtitle">
-          Add an Ethereum address or ENS name to view an existing wallet in
-          Tally Ho!
-        </div>
         <form
           onSubmit={(event) => {
             event.preventDefault()
@@ -74,53 +82,71 @@ export default function ViewOnlyWallet(): ReactElement {
             onClick={handleSubmitViewOnlyAddress}
             isDisabled={addressOnNetwork === undefined}
             showLoadingOnClick
+            center
             isFormSubmit
           >
             Preview Tally Ho!
           </SharedButton>
         </form>
+        <OnboardingTip>You can upgrade a view-only wallet later</OnboardingTip>
       </div>
 
       <style jsx>
         {`
+          header {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 42px;
+          }
+
+          header img {
+            border-radius: 22px;
+          }
+
+          header > div {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+
+          header h1 {
+            font-family: "Quincy CF";
+            font-weight: 500;
+            font-size: 36px;
+            line-height: 42px;
+            margin: 0;
+          }
+
+          .subtitle {
+            color: var(--green-40);
+            max-width: 307px;
+            text-align: center;
+            line-height: 24px;
+          }
+
           .content {
             display: flex;
             flex-direction: column;
             align-items: center;
-            animation: fadeIn ease 200ms;
           }
-          h1 {
-            margin-top: 55px;
-            margin-bottom: 15px;
+
+          form {
+            margin-bottom: 52px;
+            align-items: stretch;
           }
-          .subtitle {
-            color: var(--green-60);
-            width: 307px;
-            text-align: center;
-            line-height: 24px;
-            margin-bottom: 40px;
-          }
+
           .input_wrap {
             width: 320px;
-            margin-bottom: 24px;
+            margin-bottom: 40px;
           }
-          .illustration_section {
-            height: 140px;
-            display: flex;
-            position: relative;
-          }
-          .illustration {
-            background: url("./images/doggo_readonly.svg") no-repeat;
-            background-size: 100%;
-            width: 120px;
-            height: 140px;
-            flex-shrink: 0;
-            margin: 0 auto;
-            margin-top: 0;
-            animation: fadeIn ease 0.5s;
+
+          .center_horizontal {
+            font-weight: 500;
           }
         `}
       </style>
-    </>
+    </section>
   )
 }
