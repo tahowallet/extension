@@ -16,23 +16,21 @@ export default function Tab({ store }: { store: Store }): ReactElement {
     <>
       <Provider store={store}>
         {/* HashRouter seems the only choice supporting safe page reloads. */}
-        <HashRouter>
-          <Switch>
-            <Route path="/onboarding">
-              <BrowserTabContainer>
+        <BrowserTabContainer>
+          <HashRouter>
+            <Switch>
+              <Route path="/onboarding">
                 <TabbedOnboardingRoot />
-              </BrowserTabContainer>
-            </Route>
-            <Route path="/ledger" exact>
-              <BrowserTabContainer>
+              </Route>
+              <Route path="/ledger" exact>
                 <Ledger />
-              </BrowserTabContainer>
-            </Route>
-            <Route>
-              <TabNotFound />
-            </Route>
-          </Switch>
-        </HashRouter>
+              </Route>
+              <Route>
+                <TabNotFound />
+              </Route>
+            </Switch>
+          </HashRouter>
+        </BrowserTabContainer>
       </Provider>
       <>
         <style jsx global>
