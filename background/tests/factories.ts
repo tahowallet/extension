@@ -32,8 +32,10 @@ import {
   PreferenceService,
   SigningService,
 } from "../services"
-import { QueuedTxToRetrieve } from "../services/chain"
 import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
+import TransactionRetrieveQueueService, {
+  QueuedTxToRetrieve,
+} from "../services/chain/transaction-retrieve-queue.service"
 
 const createRandom0xHash = () =>
   keccak256(Buffer.from(Math.random().toString()))
@@ -59,6 +61,10 @@ export const createChainService = async (
     overrides.keyringService ?? createKeyringService()
   )
 }
+
+export const createTransactionRetrieveQueueService =
+  async (): Promise<TransactionRetrieveQueueService> =>
+    Promise.resolve(TransactionRetrieveQueueService.create())
 
 export async function createNameService(overrides?: {
   chainService?: Promise<ChainService>

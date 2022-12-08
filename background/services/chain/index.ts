@@ -33,7 +33,6 @@ import {
   CHAINS_WITH_MEMPOOL,
   EIP_1559_COMPLIANT_CHAIN_IDS,
   AVALANCHE,
-  SECOND,
   BINANCE_SMART_CHAIN,
   ARBITRUM_NOVA,
 } from "../../constants"
@@ -69,7 +68,9 @@ import {
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
 import KeyringService from "../keyring"
-import QueuedTransactionRetrieveService from "./queued-transaction-retrieve.service"
+import TransactionRetrieveQueueService, {
+  QueuedTxToRetrieve,
+} from "./transaction-retrieve-queue.service"
 
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
@@ -129,12 +130,6 @@ interface Events extends ServiceLifecycleEvents {
   blockPrices: { blockPrices: BlockPrices; network: EVMNetwork }
 }
 
-export type QueuedTxToRetrieve = {
-  network: EVMNetwork
-  hash: HexString
-  firstSeen: UNIXTime
-}
-
 /**
  * ChainService is responsible for basic network monitoring and interaction.
  * Other services rely on the chain service rather than polling networks
@@ -187,41 +182,19 @@ export default class ChainService extends BaseService<Events> {
     [chainID: string]: { [normalizedAddress: string]: number }
   } = {}
 
-  /**
-   * FIFO queues of transaction hashes per network that should be retrieved and
-   * cached, alongside information about when that hash request was first seen
-   * for expiration purposes.
-   */
-  private transactionsToRetrieve: QueuedTxToRetrieve[]
-
-  /**
-   * Internal timer for the transactionsToRetrieve FIFO queue.
-   * Starting multiple transaction requests at the same time is resource intensive
-   * on the user's machine and also can result in rate limitations with the provider.
-   *
-   * Because of this we need to smooth out the retrieval scheduling.
-   *
-   * Limitations
-   *   - handlers can fire only in 1+ minute intervals
-   *   - in manifest v3 / service worker context the background thread can be shut down any time.
-   *     Because of this we need to keep the granular queue tied to the persisted list of txs
-   */
-  private transactionToRetrieveGranularTimer: NodeJS.Timer | undefined
-
   static create: ServiceCreatorFunction<
     Events,
     ChainService,
     [Promise<PreferenceService>, Promise<KeyringService>]
   > = async (preferenceService, keyringService) => {
-    const db = createDB()
-    const queuedTransactionRetrieveService =
-      QueuedTransactionRetrieveService.create(db)
+    const transactionRetrieveQueueService =
+      TransactionRetrieveQueueService.create()
 
     return new this(
-      db,
+      createDB(),
       await preferenceService,
       await keyringService,
-      await queuedTransactionRetrieveService
+      await transactionRetrieveQueueService
     )
   }
 
@@ -235,18 +208,9 @@ export default class ChainService extends BaseService<Events> {
     private db: ChainDatabase,
     private preferenceService: PreferenceService,
     private keyringService: KeyringService,
-    private queuedTransactionRetrieveService: QueuedTransactionRetrieveService
+    private transactionRetrieveQueueService: TransactionRetrieveQueueService
   ) {
     super({
-      queuedTransactions: {
-        schedule: {
-          delayInMinutes: 1,
-          periodInMinutes: 1,
-        },
-        handler: () => {
-          this.handleQueuedTransactionAlarm()
-        },
-      },
       historicAssetTransfers: {
         schedule: {
           periodInMinutes: 60,
@@ -323,14 +287,18 @@ export default class ChainService extends BaseService<Events> {
 
     this.subscribedAccounts = []
     this.subscribedNetworks = []
-    this.transactionsToRetrieve = []
 
     this.assetData = new AssetDataHelper(this)
   }
 
   override async internalStartService(): Promise<void> {
     await super.internalStartService()
-    await this.queuedTransactionRetrieveService.startService()
+
+    await this.transactionRetrieveQueueService.startService()
+    this.transactionRetrieveQueueService.emitter.on(
+      "txToRetrieve",
+      this.retrieveTransaction
+    )
 
     const accounts = await this.getAccountsToTrack()
     const trackedNetworks = await this.getTrackedNetworks()
@@ -364,7 +332,11 @@ export default class ChainService extends BaseService<Events> {
                   logger.debug(
                     `Queuing pending transaction ${hash} for status lookup.`
                   )
-                  this.queueTransactionHashToRetrieve(network, hash, firstSeen)
+                  this.transactionRetrieveQueueService.add(
+                    network,
+                    hash,
+                    firstSeen
+                  )
                 })
               })
               .catch((e) => {
@@ -376,7 +348,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   protected override async internalStopService(): Promise<void> {
-    await this.queuedTransactionRetrieveService.stopService()
+    await this.transactionRetrieveQueueService.stopService()
   }
 
   /**
@@ -1009,63 +981,6 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Queues up a particular transaction hash for later retrieval.
-   *
-   * Using this method means the service can decide when to retrieve a
-   * particular transaction. Queued transactions are generally retrieved on a
-   * periodic basis.
-   *
-   * @param network The network on which the transaction has been broadcast.
-   * @param txHash The tx hash identifier of the transaction we want to retrieve.
-   * @param firstSeen The timestamp at which the queued transaction was first
-   *        seen; used to treat transactions as dropped after a certain amount
-   *        of time.
-   */
-  queueTransactionHashToRetrieve(
-    network: EVMNetwork,
-    txHash: HexString,
-    firstSeen: UNIXTime
-  ): void {
-    const seen = this.isTransactionHashQueued(network, txHash)
-
-    if (!seen) {
-      // @TODO Interleave initial transaction retrieval by network
-      this.transactionsToRetrieve.push({ hash: txHash, network, firstSeen })
-    }
-  }
-
-  /**
-   * Checks if a transaction with a given hash on a network is in the queue or not.
-   *
-   * @param txHash The hash of a tx to check.
-   * @returns true if the tx hash is in the queue, false otherwise.
-   */
-  isTransactionHashQueued(txNetwork: EVMNetwork, txHash: HexString): boolean {
-    return this.transactionsToRetrieve.some(
-      ({ hash, network }) =>
-        hash === txHash && txNetwork.chainID === network.chainID
-    )
-  }
-
-  /**
-   * Removes a particular hash from our queue.
-   *
-   * @param network The network on which the transaction has been broadcast.
-   * @param txHash The tx hash identifier of the transaction we want to retrieve.
-   */
-  removeTransactionHashFromQueue(network: EVMNetwork, txHash: HexString): void {
-    const seen = this.isTransactionHashQueued(network, txHash)
-
-    if (seen) {
-      // Let's clean up the tx queue if the hash is present.
-      // The pending tx hash should be on chain as soon as it's broadcasted.
-      this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
-        (queuedTx) => queuedTx.hash !== txHash
-      )
-    }
-  }
-
-  /**
    * Estimate the gas needed to make a transaction. Adds 10% as a safety net to
    * the base estimate returned by the provider.
    */
@@ -1321,7 +1236,7 @@ export default class ChainService extends BaseService<Events> {
         `Tx hash ${hash} is found in our local registry but not on chain.`
       )
 
-      this.removeTransactionHashFromQueue(network, hash)
+      this.transactionRetrieveQueueService.remove(network, hash)
       // Let's clean up the subscriptions
       this.providerForNetwork(network)?.off(hash)
 
@@ -1455,7 +1370,7 @@ export default class ChainService extends BaseService<Events> {
     /// send all new tx hashes into a queue to retrieve + cache
     assetTransfers.forEach((a) => {
       if (!savedTransactionHashes.has(a.txHash)) {
-        this.queueTransactionHashToRetrieve(
+        this.transactionRetrieveQueueService.add(
           addressOnNetwork.network,
           a.txHash,
           firstSeen
@@ -1515,33 +1430,6 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
-  private async handleQueuedTransactionAlarm(): Promise<void> {
-    if (
-      !this.transactionToRetrieveGranularTimer &&
-      this.transactionsToRetrieve.length
-    ) {
-      this.transactionToRetrieveGranularTimer = setInterval(() => {
-        if (
-          !this.transactionsToRetrieve.length &&
-          this.transactionToRetrieveGranularTimer
-        ) {
-          // Clean up if we have a timer, but we don't have anything in the queue
-          clearInterval(this.transactionToRetrieveGranularTimer)
-          this.transactionToRetrieveGranularTimer = undefined
-          return
-        }
-
-        // TODO: balance getting txs between networks
-        const txToRetrieve = this.transactionsToRetrieve[0]
-        this.removeTransactionHashFromQueue(
-          txToRetrieve.network,
-          txToRetrieve.hash
-        )
-        this.retrieveTransaction(txToRetrieve)
-      }, 2 * SECOND)
-    }
-  }
-
   /**
    * Retrieve a confirmed or unconfirmed transaction's details, saving the
    * results. If the transaction is confirmed, triggers retrieval and storage
@@ -1589,7 +1477,7 @@ export default class ChainService extends BaseService<Events> {
     } catch (error) {
       logger.error(`Error retrieving transaction ${hash}`, error)
       if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
-        this.queueTransactionHashToRetrieve(network, hash, firstSeen)
+        this.transactionRetrieveQueueService.add(network, hash, firstSeen)
       } else {
         logger.warn(
           `Transaction ${hash} is too old to keep looking for it; treating ` +
@@ -1829,12 +1717,16 @@ export default class ChainService extends BaseService<Events> {
         "alchemy"
       )
 
-      this.removeTransactionHashFromQueue(network, transaction.hash)
+      this.transactionRetrieveQueueService.remove(network, transaction.hash)
     })
 
     // Let's add the transaction to the queued lookup. If the transaction is dropped
     // because of wrong nonce on chain the event will never arrive.
-    this.queueTransactionHashToRetrieve(network, transaction.hash, Date.now())
+    this.transactionRetrieveQueueService.add(
+      network,
+      transaction.hash,
+      Date.now()
+    )
   }
 
   /**
