@@ -2,99 +2,97 @@ import React, { ReactElement } from "react"
 import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
 import SharedButton from "../../../components/Shared/SharedButton"
 import SharedIcon from "../../../components/Shared/SharedIcon"
+import OnboardingTip from "./OnboardingTip"
 
-const accountCreateButtonInfos = [
+const intersperseWith = <T, K>(arr: T[], getItem: (index: number) => K) => {
+  const result: (T | K)[] = []
+
+  for (let i = 0; i < arr.length; i += 1) {
+    const element = arr[i]
+    result.push(element)
+
+    if (i < arr.length - 1) result.push(getItem(i))
+  }
+
+  return result
+}
+
+const options = [
   {
-    items: [
-      {
-        label: "Import recovery phrase",
-        icon: "./images/add_wallet/import.svg",
-        url: "/onboarding/import-seed/set-password",
-        isAvailable: true,
-      },
-      {
-        label: "Connect to Ledger",
-        icon: "./images/add_wallet/ledger.svg",
-        url: "/onboarding/ledger",
-        isAvailable: isLedgerSupported,
-      },
-      {
-        label: "Read-only address",
-        icon: "./images/add_wallet/preview.svg",
-        url: "/onboarding/view-only-wallet",
-        isAvailable: true,
-      },
-    ],
+    label: "Import recovery phrase",
+    icon: "add_wallet/import.svg",
+    url: "/onboarding/import-seed/set-password",
+    isAvailable: true,
   },
-]
+  {
+    label: "Connect to Ledger",
+    icon: "add_wallet/ledger.svg",
+    url: "/onboarding/ledger",
+    isAvailable: isLedgerSupported,
+  },
+  {
+    label: "Read-only address",
+    icon: "add_wallet/preview.svg",
+    url: "/onboarding/view-only-wallet",
+    isAvailable: true,
+  },
+].filter((item) => item.isAvailable)
 
 function AddWalletRow({
   icon,
   url,
-  children,
+  label,
   onClick,
 }: {
   icon: string
-  children: React.ReactNode
+  label: string
   url?: string
   onClick?: () => void
 }) {
   return (
-    <li>
-      <SharedButton
-        type="unstyled"
-        size="medium"
-        linkTo={url}
-        onClick={onClick}
-      >
-        <div className="option standard_width">
-          <div className="left">
-            <img
-              className="icon preview_icon"
-              src={icon}
-              alt={`${icon} icon`}
-            />
-            {children}
-          </div>
-
-          <div className="icon_chevron_right" />
-          <SharedIcon
-            icon="chevron_right.svg"
-            width={16}
-            color="var(--green-40)"
-          />
+    <SharedButton
+      style={{ width: "100%" }}
+      type="unstyled"
+      size="medium"
+      linkTo={url}
+      onClick={onClick}
+    >
+      <div className="option">
+        <div className="left">
+          <SharedIcon icon={icon} width={32} color="currentColor" />
+          {label}
         </div>
-      </SharedButton>
+        <div className="icon_chevron_right" />
+        <SharedIcon icon="chevron_right.svg" width={16} color="currentColor" />
+      </div>
       <style jsx>{`
         .left {
           display: flex;
           align-items: center;
+          gap: 10px;
         }
+
         .option {
           display: flex;
-          height: auto;
-          border-radius: 0;
-          background-color: var(--green-95);
+          width: 100%;
+          gap: 10px;
+          justify-content: space-between;
           align-items: center;
-          padding: 20px 0;
-          box-sizing: border-box;
-          margin-bottom: 0px;
-          color: var(--green-40);
+          background-color: var(--green-95);
           font-size: 18px;
           font-weight: 600;
+          color: var(--green-20);
           line-height: 24px;
-          justify-content: space-between;
         }
+
         .option:hover {
           color: var(--trophy-gold);
         }
+
         .option:hover button {
           background-color: var(--trophy-gold) !important;
         }
-        li:nth-of-type(2) .option {
-          border-top: 1px solid black;
-          border-bottom: 1px solid black;
-        }
+
         .icon {
           width: 32px;
           height: 32px;
@@ -102,67 +100,100 @@ function AddWalletRow({
           margin-right: 10px;
         }
       `}</style>
-    </li>
+    </SharedButton>
   )
 }
 
+const optionsWithSpacer = intersperseWith(options, () => "spacer" as const)
+
 export default function AddWallet(): ReactElement {
   return (
-    <>
-      <div className="button_sections_wrap">
-        {accountCreateButtonInfos.map((creationSection) => {
-          return (
-            <section>
-              <div className="illustration_section">
-                <div className="illustration" />
-                <div className="forest" />
-              </div>
-              <div className="bottom_content">
-                <h1 className="bottom_title">Use existing wallet</h1>
-              </div>
-              <ul>
-                {creationSection.items.map(
-                  ({ label, icon, url, isAvailable }) =>
-                    isAvailable ? (
-                      <AddWalletRow icon={icon} url={url}>
-                        {label}
-                      </AddWalletRow>
-                    ) : (
-                      <></>
-                    )
-                )}
-              </ul>
-            </section>
-          )
-        })}
-      </div>
+    <section className="fadeIn">
+      <header>
+        <img
+          width="80"
+          height="80"
+          alt="Tally Ho Gold"
+          src="./images/doggo_gold.svg"
+        />
+        <div className="bottom_content">
+          <h1 className="bottom_title">Use existing wallet</h1>
+        </div>
+      </header>
+      <div className="actions_container">
+        <ul>
+          {optionsWithSpacer.map((option, i) => {
+            if (option === "spacer") {
+              const key = `option-${i}`
 
+              return (
+                <li key={key}>
+                  <div role="presentation" className="spacer" />
+                </li>
+              )
+            }
+
+            const { label, icon, url } = option
+            return (
+              <li key={url}>
+                <AddWalletRow icon={icon} url={url} label={label} />
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+      <OnboardingTip>You can always add more wallets later</OnboardingTip>
       <style jsx>
         {`
           section {
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
+            --fade-in-duration: 300ms;
           }
+
+          header {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 42px;
+          }
+
+          header img {
+            border-radius: 22px;
+          }
+
+          header h1 {
+            font-family: "Quincy CF";
+            font-weight: 500;
+            font-size: 36px;
+            line-height: 42px;
+            margin: 0;
+          }
+
           ul {
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
             background-color: var(--green-95);
-            border-radius: 1em;
-            padding: 1em;
+            border-radius: 16px;
+            padding: 24px;
+            gap: 24px;
           }
+
           li {
-            border-top: 1px solid black;
-          }
-          .button_sections_wrap {
-            height: 500px;
             display: flex;
-            flex-direction: column;
-            justify-content: space-between;
           }
+
+          .spacer {
+            width: 100%;
+            border: 0.5px solid var(--green-120);
+          }
+
+          .actions_container {
+            margin-bottom: 24px;
+          }
+
           .top {
             display: flex;
             width: 100%;
@@ -171,23 +202,7 @@ export default function AddWallet(): ReactElement {
             margin-bottom: 5px;
             padding-top: 68.5px;
           }
-          h1 {
-            font-family: "Quincy CF";
-            font-weight: 500;
-            font-size: 46px;
-            line-height: 42px;
-            margin: 1em auto;
-          }
-          h2 {
-            width: 100%;
-            margin-bottom: 16px;
-            display: block;
-            color: var(--green-40);
-            font-size: 16px;
-            line-height: 24px;
-            display: flex;
-            align-items: center;
-          }
+
           .icon_close {
             mask-image: url("./images/close.svg");
             mask-size: cover;
@@ -196,32 +211,12 @@ export default function AddWallet(): ReactElement {
             margin-right: 10px;
             margin-top: 2px;
           }
+
           .icon_close:hover {
             background-color: var(--green-20);
           }
-          .illustration {
-            background: url("./images/doggo_gold.svg");
-            background-size: cover;
-            width: 120px;
-            height: 120px;
-            flex-shrink: 0;
-            left: 0;
-            right: 0;
-            margin: 0 auto;
-            margin-top: 0;
-            position: absolute;
-            animation: fadeIn ease 0.5s;
-          }
-          .forest {
-            background-size: cover;
-            width: 384px;
-            height: 141px;
-            align-self: flex-end;
-            justify-self: flex-end;
-            z-index: 1;
-          }
         `}
       </style>
-    </>
+    </section>
   )
 }
