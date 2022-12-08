@@ -3,20 +3,12 @@ import {
   createPassword,
   generateNewKeyring,
 } from "@tallyho/tally-background/redux-slices/keyrings"
-import {
-  setNewDefaultWalletValue,
-  selectDefaultWallet,
-} from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
-import {
-  useBackgroundDispatch,
-  useAreKeyringsUnlocked,
-  useBackgroundSelector,
-} from "../../../hooks"
+import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../../hooks"
 import SharedButton from "../../../components/Shared/SharedButton"
-import SharedToggleButton from "../../../components/Shared/SharedToggleButton"
 import PasswordStrengthBar from "../../../components/Password/PasswordStrengthBar"
 import PasswordInput from "../../../components/Shared/PasswordInput"
+import { WalletDefaultToggle } from "../../../components/Wallet/WalletToggleDefaultBanner"
 
 export default function SetPassword({
   nextPage,
@@ -29,7 +21,6 @@ export default function SetPassword({
   const history = useHistory()
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
-  const defaultWallet = useBackgroundSelector(selectDefaultWallet)
 
   const dispatch = useBackgroundDispatch()
 
@@ -69,34 +60,44 @@ export default function SetPassword({
   }
 
   return (
-    <>
-      <div className="illustration_section">
-        <div className="illustration" />
+    <section className="fadeIn">
+      <header>
+        <img
+          alt="Secure doggo"
+          width="80"
+          height="80"
+          src="./images/doggo_secure.svg"
+        />
         <style jsx>
           {`
-            .illustration_section {
-              height: 140px;
+            header {
               display: flex;
-              position: relative;
+              flex-direction: column;
+              gap: 20px;
+              margin-bottom: 32px;
             }
-            .illustration {
-              background: url("./images/doggo_secure.svg") no-repeat;
-              background-size: 100%;
-              width: 120px;
-              height: 140px;
-              flex-shrink: 0;
+
+            header h1 {
+              font-family: "Quincy CF";
+              font-weight: 500;
+              font-size: 36px;
+              line-height: 42px;
+              margin: 0em;
+            }
+
+            img {
               margin: 0 auto;
-              margin-top: -8px;
-              animation: fadeIn ease 0.5s;
             }
           `}
         </style>
-      </div>
-
+        <h1 className="center_text">
+          First, let&apos;s secure
+          <br /> your wallet
+        </h1>
+      </header>
       <div className="password_section">
-        <h1 className="center_text">First, let&apos;s secure your wallet</h1>
-
         <form
+          name="password"
           onSubmit={(event) => {
             event.preventDefault()
             dispatchCreatePassword()
@@ -105,6 +106,7 @@ export default function SetPassword({
           <div className="input_wrap">
             <PasswordInput
               label="Password"
+              name="password"
               onChange={handleInputChange(setPassword)}
               errorMessage={passwordErrorMessage}
             />
@@ -116,6 +118,7 @@ export default function SetPassword({
           </div>
           <div className="input_wrap repeat_password_wrap">
             <PasswordInput
+              name="confirm_password"
               label="Repeat Password"
               onChange={handleInputChange(setPasswordConfirmation)}
               errorMessage={passwordErrorMessage}
@@ -123,12 +126,7 @@ export default function SetPassword({
           </div>
           <div className="set_as_default_ask">
             Set Tally Ho as default wallet
-            <SharedToggleButton
-              onChange={(toggleValue) => {
-                dispatch(setNewDefaultWalletValue(toggleValue))
-              }}
-              value={defaultWallet}
-            />
+            <WalletDefaultToggle />
           </div>
           <SharedButton
             type="primary"
@@ -137,64 +135,42 @@ export default function SetPassword({
             showLoadingOnClick={!passwordErrorMessage}
             isFormSubmit
           >
-            Begin the hunt
+            <span className="submit_button">Begin the hunt</span>
           </SharedButton>
         </form>
-        <div className="restore">
-          <SharedButton type="tertiary" size="medium">
-            Restoring account?
-          </SharedButton>
-        </div>
+
         <style jsx>
           {`
-            .wordmark {
-              background: url("./images/wordmark@2x.png");
-              background-size: cover;
-              width: 95px;
-              height: 25px;
-              position: absolute;
-              left: 0px;
-              right: 0px;
-              margin: 0 auto;
-            }
             form {
-              background: transparent;
-              width: 65%;
+              max-width: 290px;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
             }
-            h1 {
-              font-family: "Quincy CF";
-              font-weight: 500;
-              font-size: 46px;
-              line-height: 42px;
-              margin: 1em;
-            }
+
             .input_wrap {
               width: 100%;
             }
+
             .strength_bar_wrap {
               width: 100%;
               height: 26px;
               box-sizing: border-box;
               padding-top: 10px;
-              margin-bottom: 25px;
+              margin-bottom: 28px;
             }
             .repeat_password_wrap {
-              margin-bottom: 25px;
-              margin-top: 10px;
+              margin-bottom: 44px;
             }
             .set_as_default_ask {
               display: flex;
-              width: 100%;
-              justify-content: space-between;
               align-items: center;
+              width: 100%;
               color: var(--green-20);
+              font-size: 16px;
+              line-height: 24px;
               font-weight: 500;
-              margin-bottom: 40px;
-            }
-            .restore {
-              display: none; // TODO Implement account restoration.
-              position: fixed;
-              bottom: 26px;
+              margin-bottom: 32px;
             }
             .warning_wrap {
               margin-top: 16px;
@@ -212,9 +188,15 @@ export default function SetPassword({
               max-width: 500px;
               margin: auto;
             }
+
+            .submit_button {
+              font-size: 20px;
+              line-height: 24px;
+              font-weight: 500;
+            }
           `}
         </style>
       </div>
-    </>
+    </section>
   )
 }
