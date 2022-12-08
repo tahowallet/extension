@@ -69,6 +69,7 @@ import {
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
 import KeyringService from "../keyring"
+import QueuedTransactionRetrieveService from "./queued-transaction-retrieve.service"
 
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
@@ -212,7 +213,16 @@ export default class ChainService extends BaseService<Events> {
     ChainService,
     [Promise<PreferenceService>, Promise<KeyringService>]
   > = async (preferenceService, keyringService) => {
-    return new this(createDB(), await preferenceService, await keyringService)
+    const db = createDB()
+    const queuedTransactionRetrieveService =
+      QueuedTransactionRetrieveService.create(db)
+
+    return new this(
+      db,
+      await preferenceService,
+      await keyringService,
+      await queuedTransactionRetrieveService
+    )
   }
 
   supportedNetworks: EVMNetwork[]
@@ -224,7 +234,8 @@ export default class ChainService extends BaseService<Events> {
   private constructor(
     private db: ChainDatabase,
     private preferenceService: PreferenceService,
-    private keyringService: KeyringService
+    private keyringService: KeyringService,
+    private queuedTransactionRetrieveService: QueuedTransactionRetrieveService
   ) {
     super({
       queuedTransactions: {
@@ -319,6 +330,7 @@ export default class ChainService extends BaseService<Events> {
 
   override async internalStartService(): Promise<void> {
     await super.internalStartService()
+    await this.queuedTransactionRetrieveService.startService()
 
     const accounts = await this.getAccountsToTrack()
     const trackedNetworks = await this.getTrackedNetworks()
@@ -361,6 +373,10 @@ export default class ChainService extends BaseService<Events> {
           )
         )
     )
+  }
+
+  protected override async internalStopService(): Promise<void> {
+    await this.queuedTransactionRetrieveService.stopService()
   }
 
   /**
