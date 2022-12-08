@@ -1,18 +1,13 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement } from "react"
 import OnboardingStepsIndicator from "../../../components/Onboarding/OnboardingStepsIndicator"
-import SeedVerification from "../VerifySeed/SeedVerification"
-import VerifySeedSuccess from "../VerifySeed/VerifySeedSuccess"
-import VerifySeedError from "../VerifySeed/VerifySeedError"
+import SeedVerification from "./SeedVerification"
 import { useBackgroundSelector } from "../../../hooks"
-
-type VerificationStep = "verification" | "success" | "error"
 
 export default function VerifySeed({
   nextPage,
 }: {
   nextPage: string
 }): ReactElement {
-  const [verificationStep] = useState<VerificationStep>("verification")
   const mnemonic = useBackgroundSelector((state) => {
     return state.keyrings.keyringToVerify?.mnemonic
   })
@@ -30,13 +25,7 @@ export default function VerifySeed({
           Click on each word in the order that you are asked to
         </div>
 
-        {verificationStep === "verification" && (
-          <SeedVerification mnemonic={mnemonic} nextPage="/onboarding/done" />
-        )}
-        {verificationStep === "success" && (
-          <VerifySeedSuccess mnemonic={mnemonic} nextPage={nextPage} />
-        )}
-        {verificationStep === "error" && <VerifySeedError />}
+        <SeedVerification mnemonic={mnemonic} nextPage={nextPage} />
       </section>
       <style jsx>
         {`

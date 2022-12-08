@@ -32,7 +32,7 @@ function SeedWord(
       >
         <span className="word_index">{index + 1}</span>
         <span className="dash">-</span>
-        <div className="word_box">{word}</div>
+        {word || <div className="word_box" />}
       </div>
       <style jsx>{`
         .word_container {
@@ -40,42 +40,27 @@ function SeedWord(
           color: var(--green-60);
           font-size: 18px;
           line-height: 24px;
-          display: inline-flex;
+          display: flex;
           margin-bottom: 24px;
-          width: 45%;
+          width: 140px;
         }
         .word_index {
           width: 15px;
-          background: var(--green-95);
-          padding: 0.25em;
         }
         .word_container.is_active {
           color: var(--trophy-gold);
         }
         .word_container.is_filled {
-          color: var(--green-40);
-        }
-        .word_container.is_filled .word_box {
-          background: var(--green-60);
-          border-color: var(--green-60);
-          background-image: url("./images/icons/s/close.svg");
-          background-position: right 5px bottom 5px;
-          background-size: 15%;
-          background-repeat: no-repeat;
-          padding-right: 20px;
+          color: var(--green-20);
         }
         .word_box {
           border: 1px solid;
           border-radius: 4px;
-          width: 100px;
+          width: 70px;
           height: 22px;
-          padding: 0.25em 0.5em;
-          text-align: left;
         }
         .dash {
-          padding: 0.25em;
-          margin-right: 5px;
-          background: var(--green-95);
+          margin: 0 11px 0 8px;
         }
       `}</style>
     </>
@@ -265,9 +250,8 @@ function SeedVerification({
           .onboarding_box {
             ${OnboardingBox}
             flex-wrap: wrap;
-            height: 300px;
-            justify-content: flex-start;
-            padding: 3em;
+            height: 226px;
+            justify-content: space-between;
             padding-bottom: 0;
           }
         `}
