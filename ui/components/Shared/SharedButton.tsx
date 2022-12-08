@@ -5,7 +5,7 @@ import { History } from "history"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
 import { PropsWithIcon } from "./types"
 
-interface Props {
+type Props = {
   children: React.ReactNode
   id?: string
   type:
@@ -21,6 +21,9 @@ interface Props {
     | "unstyled"
     | "twitter"
   size: "small" | "medium" | "large"
+  /**
+   * Default: right
+   */
   iconPosition?: "left" | "right"
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
   isDisabled?: boolean
@@ -28,6 +31,7 @@ interface Props {
   showLoadingOnClick: boolean
   isLoading: boolean
   isFormSubmit: boolean
+  center?: boolean
   style?: React.CSSProperties
 }
 
@@ -49,6 +53,7 @@ export default function SharedButton(
     isLoading,
     isFormSubmit,
     style,
+    center = false,
   } = props
 
   const [navigateTo, setNavigateTo] =
@@ -94,7 +99,8 @@ export default function SharedButton(
         { "tertiary error": type === "tertiaryError" },
         { deemphasized_white: type === "deemphasizedWhite" },
         { warning: type === "warning" },
-        { twitter: type === "twitter" }
+        { twitter: type === "twitter" },
+        { center }
       )}
       onClick={handleClick}
       style={style}
@@ -157,6 +163,10 @@ export default function SharedButton(
             display: flex;
             align-items: center;
           }
+          .center .button_content {
+            justify-content: center;
+            width: 100%;
+          }
           .icon_button {
             mask-image: url("./images/icons/s/${iconSmall}.svg");
             mask-size: cover;
@@ -171,7 +181,6 @@ export default function SharedButton(
             height: 48px;
             border-radius: 8px;
             padding: 0 24px;
-            margin: 24px auto;
           }
           .icon_secondary_medium {
             width: 16px;
