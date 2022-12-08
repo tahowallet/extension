@@ -12,9 +12,58 @@ import VerifySeed from "./VerifySeed"
 import InfoIntro from "./Intro"
 import ViewOnlyWallet from "./ViewOnlyWallet"
 import Ledger from "./Ledger"
+import { productionNetworks } from "../../../components/TopMenu/TopMenuProtocolList"
 
 type Props = {
   children: ReactElement
+}
+
+const getNetworkIcon = (networkName: string) => {
+  const icon = networkName.replaceAll(" ", "").toLowerCase()
+
+  return `/images/networks/${icon}@2x.png`
+}
+
+/**
+ * Renders a list of production network icons
+ */
+function SupportedChains(): ReactElement {
+  return (
+    <div className="supported_chains">
+      <span>Supported Chains</span>
+      <div className="chain_logos">
+        {productionNetworks.map(({ network }) => (
+          <img
+            width="24"
+            height="24"
+            key={network.chainID}
+            src={getNetworkIcon(network.name)}
+            alt={network.name}
+          />
+        ))}
+      </div>
+      <style jsx>{`
+        .supported_chains {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          align-items: center;
+        }
+
+        .supported_chains span {
+          font-size: 12px;
+          line-height: 16px;
+          color: var(--green-40);
+        }
+
+        .chain_logos {
+          display: flex;
+          gap: 10px;
+          opacity: 0.8;
+        }
+      `}</style>
+    </div>
+  )
 }
 
 function Navigation({ children }: Props): ReactElement {
@@ -24,109 +73,84 @@ function Navigation({ children }: Props): ReactElement {
         {`
           section {
             width: 100%;
+            display: flex;
+            height: 100%;
+            width: 100%;
           }
+
           .left_container {
             position: relative;
             width: 50%;
+            padding-top: 80px;
             height: 100%;
-            float: left;
-            text-align: center;
-            padding-top: 3em;
-            background: radial-gradient(
-              circle,
-              rgba(36, 107, 103, 1) 0%,
-              rgba(12, 47, 44, 1) 50%,
-              rgba(4, 20, 20, 1) 100%
-            );
-            background-size: 140% 200%;
-            animation: gradient 20s ease infinite;
+            display: flex;
+            flex-direction: column;
+            overflow-y: hidden;
+            box-sizing: border-box;
           }
+
           .right_container {
             position: relative;
             padding-top: 80px;
             width: 50%;
             height: 100%;
-            float: right;
-            background: radial-gradient(
-              ellipse at right bottom,
-              rgba(36, 107, 103, 0.15) 0%,
-              var(--green-120) 100%
-            );
+            box-sizing: border-box;
+            background: #04141480;
+            overflow-y: hidden;
           }
+
+          .route_based_content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+          }
+
+          /* TODO */
           .top {
             display: flex;
             justify-content: space-between;
-            width: 100%;
+            width: 32px;
             padding: 3em 6em;
             position: absolute;
             z-index: 999;
           }
-          .onboarding_container {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-          }
+
           .onboarding_branding {
             width: 100%;
             max-width: 300px;
-            padding: 3em 0;
-            border-bottom: 1px solid black;
-            margin: 2em auto;
+            padding-bottom: 44px;
+            border-bottom: 1px solid var(--green-120);
+            margin: 0 auto 38px;
           }
-          .onboarding_branding img {
-            max-width: 100%;
-          }
+
           .onboarding_facts {
-            width: 100%;
             max-width: 300px;
-            margin: auto;
-            padding: 1em 0;
+            color: var(--green-20);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
           }
+
           .onboarding_facts p {
+            margin: 0;
             text-align: left;
             font-size: 18px;
-            margin: 25px 0;
+            line-height: 24px;
           }
+
           .onboarding_facts p::before {
             content: url("./images/check.svg");
-            width: 15px;
-            height: 15px;
-            padding: 15px;
+            width: 16px;
+            height: 16px;
+            margin-right: 16px;
           }
-          .onboarding_chains {
-            position: absolute;
-            bottom: 140px;
-            left: 0px;
-            width: 100%;
-            text-align: center;
-            opacity: 0.8;
+
+          .supported_chains_container {
+            margin-top: auto;
+            margin-bottom: 40px;
           }
-          .onboarding_chains p {
-            font-size: 12px;
-          }
-          .onboarding_chains img {
-            display: inline-block;
-            height: 25px;
-            margin: 10px;
-          }
-          .back_button button {
-            background: var(--green-60);
-            padding: 1em 0.75em;
-            border-radius: 190px;
-            font-size: 1em;
-            margin: 2em;
-          }
-          @keyframes gradient {
-            0% {
-              background-position: 100% 100%;
-            }
-            50% {
-              background-position: 25% 50%;
-            }
-            100% {
-              background-position: 100% 100%;
-            }
-          }
+
           @media (max-width: 980px) {
             .left_container {
               display: none;
@@ -141,17 +165,15 @@ function Navigation({ children }: Props): ReactElement {
         <div className="onboarding_branding">
           <img src="./images/logo_onboarding.svg" alt="Onboarding logo" />
         </div>
-        <div className="onboarding_facts">
-          <p>Fully owned by the community</p>
-          <p>Accessible to everyone</p>
-          <p>100% open source</p>
-        </div>
-        <div className="onboarding_chains">
-          <p>Supported Chains</p>
-          <img src="./images/eth@2x.png" alt="Ethereum" />
-          <img src="./images/optimism@2x.png" alt="Optimism" />
-          <img src="./images/arbitrum@2x.png" alt="Arbitrum One" />
-          <img src="./images/polygon@2x.png" alt="Polygon Mainnet" />
+        <div className="route_based_content">
+          <div className="onboarding_facts">
+            <p>Fully owned by the community</p>
+            <p>Accessible to everyone</p>
+            <p>100% open source</p>
+          </div>
+          <div className="supported_chains_container">
+            <SupportedChains />
+          </div>
         </div>
       </div>
       <div className="right_container">
