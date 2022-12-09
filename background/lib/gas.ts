@@ -115,31 +115,31 @@ const getArbitrumPrices = async (
 
 const getLegacyGasPrices = async (
   network: EVMNetwork,
-  baseFeePerGas: bigint,
+  gasPrice: bigint,
   blockNumber: number
 ): Promise<BlockPrices> => {
   return {
     network,
     blockNumber,
-    baseFeePerGas,
+    baseFeePerGas: gasPrice,
     estimatedPrices: [
       {
         confidence: 99,
         maxPriorityFeePerGas: 0n, // doesn't exist
         maxFeePerGas: 0n, // doesn't exist
-        price: baseFeePerGas,
+        price: gasPrice,
       },
       {
         confidence: 95,
         maxPriorityFeePerGas: 0n,
         maxFeePerGas: 0n,
-        price: baseFeePerGas,
+        price: gasPrice,
       },
       {
         confidence: 70,
         maxPriorityFeePerGas: 0n,
         maxFeePerGas: 0n,
-        price: baseFeePerGas,
+        price: gasPrice,
       },
     ],
     dataSource: "local",
