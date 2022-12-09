@@ -89,14 +89,16 @@ export default function SignTransactionDetailPanel({
     setNetworkSettingsModalOpen(false)
   }
 
-  const hight = `${
-    transactionDetails.network.name === BINANCE_SMART_CHAIN.name
-      ? 150
-      : 3 * 56 +
-        320 +
-        (hasInsufficientFundsWarning ? 15 : 0) +
-        (isEIP1559Compliant ? 0 : 40)
-  }px`
+  const getHightForSlideUpMenu = () => {
+    return `${
+      transactionDetails.network.name === BINANCE_SMART_CHAIN.name
+        ? 150
+        : 3 * 56 +
+          320 +
+          (hasInsufficientFundsWarning ? 15 : 0) +
+          (isEIP1559Compliant ? 0 : 40)
+    }px`
+  }
 
   return (
     <div className="detail_items_wrap standard_width_padded">
@@ -104,7 +106,7 @@ export default function SignTransactionDetailPanel({
         size="custom"
         isOpen={networkSettingsModalOpen}
         close={() => setNetworkSettingsModalOpen(false)}
-        customSize={hight}
+        customSize={getHightForSlideUpMenu()}
       >
         <NetworkSettingsChooser
           estimatedFeesPerGas={estimatedFeesPerGas}
