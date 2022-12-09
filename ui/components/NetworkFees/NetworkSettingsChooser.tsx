@@ -11,6 +11,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   ARBITRUM_ONE,
+  BINANCE_SMART_CHAIN,
   OPTIMISM,
   ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
@@ -19,6 +20,7 @@ import NetworkSettingsSelect from "./NetworkSettingsSelect"
 import NetworkSettingsOptimism from "./NetworkSettingsSelectOptimism"
 import NetworkSettingsRSK from "./NetworkSettingsSelectRSK"
 import NetworkSettingsSelectArbitrum from "./NetworkSettingsSelectArbitrum"
+import NetworkSettingsSelectBNBChain from "./NetworkSettingsSelectBNBChain"
 
 interface NetworkSettingsChooserProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
@@ -58,6 +60,9 @@ export default function NetworkSettingsChooser({
             onSave={saveNetworkSettings}
           />
         )
+      }
+      if (transactionDetails.network.name === BINANCE_SMART_CHAIN.name) {
+        return <NetworkSettingsSelectBNBChain />
       }
       return (
         <NetworkSettingsSelect

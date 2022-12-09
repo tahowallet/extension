@@ -54,6 +54,7 @@ const impersonateMetamaskWhitelist = [
   "liquidifty.io",
   "ankr.com",
   "mint.xencrypto.io",
+  "bscscan.com",
 ]
 
 const METAMASK_STATE_MOCK = {
