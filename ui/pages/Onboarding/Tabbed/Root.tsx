@@ -7,8 +7,7 @@ import AddWallet from "./AddWallet"
 import Done from "./Done"
 import ImportSeed from "./ImportSeed"
 import SetPassword from "./SetPassword"
-import SaveSeed from "./SaveSeed"
-import VerifySeed from "./VerifySeed"
+import SaveSeed from "./NewSeed"
 import InfoIntro from "./Intro"
 import ViewOnlyWallet from "./ViewOnlyWallet"
 import Ledger from "./Ledger"
@@ -91,7 +90,7 @@ function Navigation({ children }: Props): ReactElement {
 
           .right_container {
             position: relative;
-            padding-top: 80px;
+            padding: 62px 80px 0;
             width: 50%;
             height: 100%;
             box-sizing: border-box;
@@ -206,12 +205,6 @@ export default function Root(): ReactElement {
         </Route>
         <Route path={`${path}/import-seed`}>
           <ImportSeed nextPage={`${path}/done`} />
-        </Route>
-        <Route path={`${path}/new-seed/set-password`}>
-          <SetPassword nextPage={`${path}/new-seed`} />
-        </Route>
-        <Route path={`${path}/new-seed/verify`}>
-          <VerifySeed nextPage={`${path}/done`} />
         </Route>
         <Route path={`${path}/new-seed`}>
           <SaveSeed />

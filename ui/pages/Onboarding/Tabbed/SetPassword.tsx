@@ -1,8 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import {
-  createPassword,
-  generateNewKeyring,
-} from "@tallyho/tally-background/redux-slices/keyrings"
+import { createPassword } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../../hooks"
 import SharedButton from "../../../components/Shared/SharedButton"
@@ -26,10 +23,9 @@ export default function SetPassword({
 
   useEffect(() => {
     if (areKeyringsUnlocked) {
-      dispatch(generateNewKeyring())
-      history.push(nextPage)
+      history.replace(nextPage)
     }
-  }, [areKeyringsUnlocked, dispatch, history, nextPage])
+  }, [areKeyringsUnlocked, history, nextPage])
 
   const validatePassword = (): boolean => {
     if (password.length < 8) {
@@ -131,7 +127,6 @@ export default function SetPassword({
           <SharedButton
             type="primary"
             size="large"
-            onClick={dispatchCreatePassword}
             showLoadingOnClick={!passwordErrorMessage}
             isFormSubmit
           >
