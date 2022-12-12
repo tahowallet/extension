@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import LedgerPanelContainer from "../../components/Ledger/LedgerPanelContainer"
+import LedgerPanelContainer from "../../../../components/Ledger/LedgerPanelContainer"
 
 export default function LedgerConnectPopup(): ReactElement {
   const { t } = useTranslation("translation", {
@@ -19,15 +19,14 @@ export default function LedgerConnectPopup(): ReactElement {
       </div>
       <style jsx>{`
         .help {
-          position: fixed;
-          left: 600px;
+          position: absolute;
           display: flex;
           height: 0;
         }
 
         .select_device_help {
           flex-flow: column;
-          top: 104px;
+          top: 108px;
         }
 
         .click_connect_help {

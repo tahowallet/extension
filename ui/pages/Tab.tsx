@@ -22,6 +22,7 @@ export default function Tab({ store }: { store: Store }): ReactElement {
               <Route path="/onboarding">
                 <TabbedOnboardingRoot />
               </Route>
+              {/* Old Ledger import */}
               <Route path="/ledger" exact>
                 <Ledger />
               </Route>

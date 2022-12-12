@@ -2,12 +2,12 @@ import { connectLedger } from "@tallyho/tally-background/redux-slices/ledger"
 import React, { ReactElement, useState } from "react"
 import { ledgerUSBVendorId } from "@ledgerhq/devices"
 import { LedgerProductDatabase } from "@tallyho/tally-background/services/ledger"
-import LedgerPanelContainer from "../../../components/Ledger/LedgerPanelContainer"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
-import LedgerConnectPopup from "../../Ledger/LedgerConnectPopup"
-import LedgerImportDone from "../../Ledger/LedgerImportDone"
-import LedgerImportAccounts from "../../Ledger/LedgerImportAccounts"
-import LedgerPrepare from "../../Ledger/LedgerPrepare"
+import LedgerPanelContainer from "../../../../components/Ledger/LedgerPanelContainer"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
+import LedgerConnectPopup from "./LedgerConnectPopup"
+import LedgerImportDone from "./LedgerImportDone"
+import LedgerImportAccounts from "./LedgerImportAccounts"
+import LedgerPrepare from "./LedgerPrepare"
 
 const filters = Object.values(LedgerProductDatabase).map(
   ({ productId }): USBDeviceFilter => ({
@@ -20,6 +20,7 @@ export default function Ledger(): ReactElement {
   const [phase, setPhase] = useState<
     "0-prepare" | "1-request" | "2-connect" | "3-done"
   >("0-prepare")
+
   const deviceID = useBackgroundSelector(
     (state) => state.ledger.currentDeviceID
   )
@@ -35,7 +36,12 @@ export default function Ledger(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const connectionError = phase === "2-connect" && !device && !connecting
   return (
-    <>
+    <div>
+      <style jsx>{`
+        div {
+          position: relative;
+        }
+      `}</style>
       {(phase === "0-prepare" || connectionError) && (
         <LedgerPrepare
           initialScreen={phase === "0-prepare"}
@@ -93,6 +99,6 @@ export default function Ledger(): ReactElement {
           }}
         />
       )}
-    </>
+    </div>
   )
 }
