@@ -108,14 +108,24 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         <div className="preview_section">
           <div className="preview_section_header"> {t("preview.viewOn")}</div>
           <div className="preview_section_row preview_markets">
-            {marketsList.map(({ url, title, color, icon, getNFTLink }) => (
-              <ExploreMarketLink
-                type="button"
-                key={url}
-                url={getNFTLink(nft)}
-                {...{ title, color, icon }}
-              />
-            ))}
+            {marketsList.map(
+              ({
+                url,
+                title,
+                color,
+                icon,
+                hoverIcon,
+                hoverColor,
+                getNFTLink,
+              }) => (
+                <ExploreMarketLink
+                  type="button"
+                  key={url}
+                  url={getNFTLink(nft)}
+                  {...{ title, color, icon, hoverColor, hoverIcon }}
+                />
+              )
+            )}
           </div>
         </div>
 
