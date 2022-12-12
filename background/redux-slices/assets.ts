@@ -3,6 +3,7 @@ import { ethers } from "ethers"
 import {
   AnyAsset,
   AnyAssetAmount,
+  isFungibleAsset,
   isSmartContractFungibleAsset,
   PricePoint,
 } from "../assets"
@@ -15,9 +16,10 @@ import { getProvider } from "./utils/contract-utils"
 import { sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
-import { FIAT_CURRENCIES_SYMBOL } from "../constants"
+import { BASE_ASSETS_BY_SYMBOL, FIAT_CURRENCIES_SYMBOL } from "../constants"
+import { convertFixedPoint } from "../lib/fixed-point"
 
-type SingleAssetState = AnyAsset & {
+export type SingleAssetState = AnyAsset & {
   recentPrices: {
     [assetSymbol: string]: PricePoint
   }
@@ -59,7 +61,11 @@ const assetsSlice = createSlice({
                 a.homeNetwork.name === asset.homeNetwork.name &&
                 normalizeEVMAddress(a.contractAddress) ===
                   normalizeEVMAddress(asset.contractAddress)) ||
-              asset.name === a.name
+              // Only match base assets by name - since there may be
+              // many assets that share a name and symbol across L2's
+              (BASE_ASSETS_BY_SYMBOL[a.symbol] &&
+                BASE_ASSETS_BY_SYMBOL[asset.symbol] &&
+                a.name === asset.name)
           )
           // if there aren't duplicates, add the asset
           if (duplicates.length === 0) {
@@ -98,11 +104,11 @@ export const { assetsLoaded, newPricePoint } = assetsSlice.actions
 export default assetsSlice.reducer
 
 const selectAssetsState = (state: AssetsState) => state
-const selectAssetSymbol = (_: AssetsState, assetSymbol: string) => assetSymbol
+const selectAsset = (_: AssetsState, asset: AnyAsset) => asset
 
 const selectPairedAssetSymbol = (
   _: AssetsState,
-  _2: string,
+  _2: AnyAsset,
   pairedAssetSymbol: string
 ) => pairedAssetSymbol
 
@@ -120,11 +126,13 @@ export const transferAsset = createBackgroundAsyncThunk(
     toAddressNetwork: { address: toAddress, network: toNetwork },
     assetAmount,
     gasLimit,
+    nonce,
   }: {
     fromAddressNetwork: AddressOnNetwork
     toAddressNetwork: AddressOnNetwork
     assetAmount: AnyAssetAmount
     gasLimit?: bigint
+    nonce?: number
   }) => {
     if (!sameNetwork(fromNetwork, toNetwork)) {
       throw new Error("Only same-network transfers are supported for now.")
@@ -143,6 +151,7 @@ export const transferAsset = createBackgroundAsyncThunk(
         to: toAddress,
         value: assetAmount.amount,
         gasLimit,
+        nonce,
       })
     } else if (isSmartContractFungibleAsset(assetAmount.asset)) {
       logger.debug(
@@ -163,6 +172,7 @@ export const transferAsset = createBackgroundAsyncThunk(
       await signer.sendUncheckedTransaction({
         ...transactionDetails,
         gasLimit: gasLimit ?? transactionDetails.gasLimit,
+        nonce,
       })
     } else {
       throw new Error(
@@ -183,32 +193,54 @@ export const transferAsset = createBackgroundAsyncThunk(
  * the selector will return them in the order [ETH, USD].
  */
 export const selectAssetPricePoint = createSelector(
-  [selectAssetsState, selectAssetSymbol, selectPairedAssetSymbol],
-  (assets, assetSymbol, pairedAssetSymbol) => {
+  [selectAssetsState, selectAsset, selectPairedAssetSymbol],
+  (assets, assetToFind, pairedAssetSymbol) => {
+    /* Find a best-effort price point by looking for assets with the same symbol  */
     const pricedAsset = assets.find(
       (asset) =>
-        asset.symbol === assetSymbol &&
+        asset.symbol === assetToFind.symbol &&
         pairedAssetSymbol in asset.recentPrices &&
         asset.recentPrices[pairedAssetSymbol].pair
           .map(({ symbol }) => symbol)
-          .includes(assetSymbol)
+          .includes(assetToFind.symbol)
     )
 
     if (pricedAsset) {
-      const pricePoint = pricedAsset.recentPrices[pairedAssetSymbol]
-      const { pair, amounts, time } = pricePoint
+      let pricePoint = pricedAsset.recentPrices[pairedAssetSymbol]
 
-      if (pair[0].symbol === assetSymbol) {
-        return pricePoint
+      // Flip it if the price point looks like USD-ETH
+      if (pricePoint.pair[0].symbol !== assetToFind.symbol) {
+        const { pair, amounts, time } = pricePoint
+        pricePoint = {
+          pair: [pair[1], pair[0]],
+          amounts: [amounts[1], amounts[0]],
+          time,
+        }
       }
 
-      const flippedPricePoint: PricePoint = {
-        pair: [pair[1], pair[0]],
-        amounts: [amounts[1], amounts[0]],
-        time,
+      const assetDecimals = isFungibleAsset(assetToFind)
+        ? assetToFind.decimals
+        : 0
+      const pricePointAssetDecimals = isFungibleAsset(pricePoint.pair[0])
+        ? pricePoint.pair[0].decimals
+        : 0
+
+      if (assetDecimals !== pricePointAssetDecimals) {
+        const { amounts } = pricePoint
+        pricePoint = {
+          ...pricePoint,
+          amounts: [
+            convertFixedPoint(
+              amounts[0],
+              pricePointAssetDecimals,
+              assetDecimals
+            ),
+            amounts[1],
+          ],
+        }
       }
 
-      return flippedPricePoint
+      return pricePoint
     }
 
     // If no matching priced asset was found, return undefined.

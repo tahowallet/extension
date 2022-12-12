@@ -1,12 +1,14 @@
 import { AddressOnNetwork } from "../accounts"
+import { fetchWithTimeout } from "../utils/fetching"
 import logger from "./logger"
 
 export type SimpleHashNFTModel = {
   name: string
   description?: string
   token_id: string
-  contractAddress: string
-  chain: "polygon" | "arbitrum" | "optimism" | "ethereum"
+  contract_address: string
+  chain: "polygon" | "arbitrum" | "optimism" | "ethereum" | "bsc"
+  external_url?: string
   audio_url: string | null
   image_url: string | null
   video_url: string | null
@@ -21,6 +23,8 @@ const CHAIN_ID_TO_NAME = {
   10: "optimism",
   137: "polygon",
   42161: "arbitrum",
+  43114: "avalanche",
+  56: "bsc",
 }
 
 /**
@@ -56,7 +60,7 @@ export async function getNFTs({
   try {
     // TODO validate with AJV
     const result = (await (
-      await fetch(requestURL.toString(), {
+      await fetchWithTimeout(requestURL.toString(), {
         headers,
       })
     ).json()) as unknown as SimpleHashAPIResponse

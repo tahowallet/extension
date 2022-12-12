@@ -1,17 +1,18 @@
 import React, { ReactElement } from "react"
 import { storageGatewayURL } from "@tallyho/tally-background/lib/storage-gateway"
+import classNames from "classnames"
 
 interface Props {
-  size: "small" | "medium" | "large"
+  size: "small" | "medium" | "large" | number
   logoURL: string
   symbol: string
 }
 
+const hardcodedIcons = new Set(["ETH", "MATIC", "DOGGO", "RBTC", "AVAX", "BNB"])
 export default function SharedAssetIcon(props: Props): ReactElement {
   const { size, logoURL, symbol } = props
 
-  const hardcodedIcons = ["ETH", "DOGGO"]
-  const hasHardcodedIcon = hardcodedIcons.includes(symbol)
+  const hasHardcodedIcon = hardcodedIcons.has(symbol)
 
   // Passes IPFS and Arweave through HTTP gateway
   function getAsHttpURL(anyURL: string) {
@@ -28,12 +29,14 @@ export default function SharedAssetIcon(props: Props): ReactElement {
 
   const shouldDisplayTokenIcon = Boolean(httpURL || hasHardcodedIcon)
 
+  const sizeClass = typeof size === "string" ? size : "custom_size"
+
   return (
-    <div className={`token_icon_wrap ${size}`}>
+    <div className={classNames("token_icon_wrap", sizeClass)}>
       {shouldDisplayTokenIcon ? (
         <div className="token_icon" />
       ) : (
-        <div className={`token_icon_fallback ${size}`}>
+        <div className={classNames("token_icon_fallback", sizeClass)}>
           {symbol.slice(0)[0]}
         </div>
       )}
@@ -74,6 +77,12 @@ export default function SharedAssetIcon(props: Props): ReactElement {
         `}
       </style>
       <style jsx>{`
+        ${typeof size === "number"
+          ? `.token_icon_wrap.custom_size {
+              width: ${size}px;
+              height: ${size}px;
+            }`
+          : ""}
         .token_icon {
           width: 100%;
           height: 100%;

@@ -8,25 +8,32 @@ const defaultPreferences: Preferences = {
     urls: [
       storageGatewayURL(
         new URL(
-          "ipfs://bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife"
+          "ipfs://bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm"
         )
       ).href, // the Tally community-curated list
       "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
       "https://meta.yearn.finance/api/tokens/list", // the Yearn list
       "https://messari.io/tokenlist/messari-verified", // Messari-verified projects
-      "https://wrapped.tokensoft.eth.link", // Wrapped tokens
-      "https://tokenlist.aave.eth.link", // Aave-listed tokens and interest-bearing assets
+      "https://wrapped.tokensoft.eth.limo", // Wrapped tokens
+      "https://tokenlist.aave.eth.limo", // Aave-listed tokens and interest-bearing assets
       "https://raw.githubusercontent.com/compound-finance/token-list/master/compound.tokenlist.json", // Compound-listed tokens and interest-bearing assets
       "https://api-polygon-tokens.polygon.technology/tokenlists/default.tokenlist.json", // Polygon Default Tokens
       "https://static.optimism.io/optimism.tokenlist.json", // Optimism Default Tokens
       "https://bridge.arbitrum.io/token-list-42161.json", // Arbitrum Default tokens
+      "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/src/joe.tokenlist-v2.json", // Trader Joe tokens
+      "https://tokens.pancakeswap.finance/pancakeswap-default.json", // PancakeSwap Default List
     ],
   },
   currency: USD,
-  defaultWallet: true,
+  defaultWallet: false,
   selectedAccount: {
     address: "",
     network: ETHEREUM,
+  },
+  accountSignersSettings: [],
+  analytics: {
+    isEnabled: false,
+    hasDefaultOnBeenTurnedOn: false,
   },
 }
 

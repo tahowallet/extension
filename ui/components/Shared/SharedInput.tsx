@@ -201,7 +201,9 @@ SharedTypedInput.defaultProps = {
 }
 
 export default function SharedInput(
-  props: Omit<Props<string>, "onChange"> & { onChange?: (_: string) => void }
+  props: Omit<Props<string>, "onChange"> & {
+    onChange?: (_: string) => void
+  }
 ): ReactElement {
   const onChangeWrapper = (newValue: string | undefined) => {
     props.onChange?.(newValue ?? "")

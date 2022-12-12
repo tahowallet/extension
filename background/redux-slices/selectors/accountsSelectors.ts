@@ -31,11 +31,15 @@ import {
   selectKeyringsByAddresses,
   selectSourcesByAddress,
 } from "./keyringsSelectors"
-import { AddressOnNetwork } from "../../accounts"
+import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { EVMNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
-import { BASE_ASSETS_BY_SYMBOL, NETWORK_BY_CHAIN_ID } from "../../constants"
+import {
+  BASE_ASSETS_BY_SYMBOL,
+  NETWORK_BY_CHAIN_ID,
+  TEST_NETWORK_BY_CHAIN_ID,
+} from "../../constants"
 import { DOGGO } from "../../constants/assets"
-import { HIDE_TOKEN_FEATURES } from "../../features"
+import { FeatureFlags, isEnabled } from "../../features"
 import {
   AccountSigner,
   ReadOnlyAccountSigner,
@@ -44,7 +48,16 @@ import {
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
-const desiredDecimals = 2
+const desiredDecimals = {
+  default: 2,
+  greater: 6,
+}
+
+// List of assets by symbol that should be displayed with more decimal places
+const EXCEPTION_ASSETS_BY_SYMBOL = ["BTC", "sBTC", "WBTC", "tBTC"].map(
+  (symbol) => symbol.toUpperCase()
+)
+
 // TODO Make this a setting.
 const userValueDustThreshold = 2
 
@@ -58,7 +71,8 @@ const shouldForciblyDisplayAsset = (
   }
 
   const isDoggo =
-    !HIDE_TOKEN_FEATURES && assetAmount.asset.symbol === DOGGO.symbol
+    !isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) &&
+    assetAmount.asset.symbol === DOGGO.symbol
 
   return isDoggo || isNetworkBaseAsset(baseAsset, network)
 }
@@ -83,7 +97,7 @@ const computeCombinedAssetAmountsData = (
     .map<CompleteAssetAmount>((assetAmount) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
-        assetAmount.asset.symbol,
+        assetAmount.asset,
         mainCurrencySymbol
       )
 
@@ -91,13 +105,17 @@ const computeCombinedAssetAmountsData = (
         enrichAssetAmountWithMainCurrencyValues(
           assetAmount,
           assetPricePoint,
-          desiredDecimals
+          desiredDecimals.default
         )
 
       const fullyEnrichedAssetAmount = enrichAssetAmountWithDecimalValues(
         mainCurrencyEnrichedAssetAmount,
         heuristicDesiredDecimalsForUnitPrice(
-          desiredDecimals,
+          EXCEPTION_ASSETS_BY_SYMBOL.includes(
+            assetAmount.asset.symbol.toUpperCase()
+          )
+            ? desiredDecimals.greater
+            : desiredDecimals.default,
           mainCurrencyEnrichedAssetAmount.unitPrice
         )
       )
@@ -136,6 +154,18 @@ const computeCombinedAssetAmountsData = (
       }
       if (asset2.asset.symbol === DOGGO.symbol) {
         return 1
+      }
+
+      // Always display the current network's base asset first
+      const networkBaseAsset = currentNetwork.baseAsset
+
+      const leftIsNetworkBaseAsset =
+        networkBaseAsset.symbol === asset1.asset.symbol
+      const rightIsNetworkBaseAsset =
+        networkBaseAsset.symbol === asset2.asset.symbol
+
+      if (leftIsNetworkBaseAsset !== rightIsNetworkBaseAsset) {
+        return leftIsNetworkBaseAsset ? -1 : 1
       }
 
       const leftIsBaseAsset = asset1.asset.symbol in BASE_ASSETS_BY_SYMBOL
@@ -200,25 +230,12 @@ export const selectAccountAndTimestampedActivities = createSelector(
           ? formatCurrencyAmount(
               mainCurrencySymbol,
               totalMainCurrencyAmount,
-              desiredDecimals
+              desiredDecimals.default
             )
           : undefined,
       },
       accountData: account.accountsData,
     }
-  }
-)
-
-export const selectMainCurrencyPricePoint = createSelector(
-  getAssetsState,
-  (state) => selectMainCurrencySymbol(state),
-  selectCurrentNetwork,
-  (assets, mainCurrencySymbol, currentNetwork) => {
-    return selectAssetPricePoint(
-      assets,
-      currentNetwork.baseAsset.symbol,
-      mainCurrencySymbol
-    )
   }
 )
 
@@ -252,20 +269,10 @@ export const selectCurrentAccountBalances = createSelector(
         ? formatCurrencyAmount(
             mainCurrencySymbol,
             totalMainCurrencyAmount,
-            desiredDecimals
+            desiredDecimals.default
           )
         : undefined,
     }
-  }
-)
-
-export const selectCurrentAccountAssetBalance = createSelector(
-  selectCurrentAccountBalances,
-  (_: RootState, assetSymbol: string) => assetSymbol,
-  (assetsBalances, assetSymbol) => {
-    return assetsBalances?.assetAmounts.find(
-      (asset) => asset.asset.symbol === assetSymbol
-    )
   }
 )
 
@@ -309,105 +316,165 @@ const getAccountType = (
   return AccountType.Internal
 }
 
-export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
-  getAccountState,
-  getAssetsState,
-  selectCurrentNetwork,
-  selectAccountSignersByAddress,
-  selectKeyringsByAddresses,
-  selectSourcesByAddress,
-  selectMainCurrencySymbol,
-  (
-    accounts,
-    assets,
-    currentNetwork,
-    accountSignersByAddress,
-    keyringsByAddresses,
-    sourcesByAddress,
-    mainCurrencySymbol
-  ): CategorizedAccountTotals => {
-    return Object.entries(
-      accounts.accountsData.evm[currentNetwork.chainID] ?? {}
-    )
-      .filter(([, accountData]) => typeof accountData !== "undefined")
-      .map(([address, accountData]): AccountTotal => {
-        const shortenedAddress = truncateAddress(address)
+const getTotalBalance = (
+  accountBalances: { [assetSymbol: string]: AccountBalance },
+  assets: AssetsState,
+  mainCurrencySymbol: string
+) => {
+  return Object.values(accountBalances)
+    .map(({ assetAmount }) => {
+      const assetPricePoint = selectAssetPricePoint(
+        assets,
+        assetAmount.asset,
+        mainCurrencySymbol
+      )
 
-        const accountSigner =
-          accountSignersByAddress[address] ?? ReadOnlyAccountSigner
-        const keyringId = keyringsByAddresses[address]?.id
+      if (typeof assetPricePoint === "undefined") {
+        return 0
+      }
 
-        const accountType = getAccountType(
-          address,
-          accountSigner,
-          sourcesByAddress
-        )
+      const convertedAmount = convertAssetAmountViaPricePoint(
+        assetAmount,
+        assetPricePoint
+      )
 
-        if (accountData === "loading") {
-          return {
-            address,
-            network: currentNetwork,
-            shortenedAddress,
-            accountType,
-            keyringId,
-            accountSigner,
-          }
-        }
+      if (typeof convertedAmount === "undefined") {
+        return 0
+      }
 
-        const totalMainCurrencyAmount = Object.values(accountData.balances)
-          .map(({ assetAmount }) => {
-            const assetPricePoint = selectAssetPricePoint(
-              assets,
-              assetAmount.asset.symbol,
-              mainCurrencySymbol
-            )
+      return assetAmountToDesiredDecimals(
+        convertedAmount,
+        desiredDecimals.default
+      )
+    })
+    .reduce((total, assetBalance) => total + assetBalance, 0)
+}
 
-            if (typeof assetPricePoint === "undefined") {
-              return 0
-            }
+function getNetworkAccountTotalsByCategory(
+  state: RootState,
+  network: EVMNetwork
+): CategorizedAccountTotals {
+  const accounts = getAccountState(state)
+  const assets = getAssetsState(state)
+  const accountSignersByAddress = selectAccountSignersByAddress(state)
+  const keyringsByAddresses = selectKeyringsByAddresses(state)
+  const sourcesByAddress = selectSourcesByAddress(state)
+  const mainCurrencySymbol = selectMainCurrencySymbol(state)
 
-            const convertedAmount = convertAssetAmountViaPricePoint(
-              assetAmount,
-              assetPricePoint
-            )
+  return Object.entries(accounts.accountsData.evm[network.chainID] ?? {})
+    .filter(([, accountData]) => typeof accountData !== "undefined")
+    .map(([address, accountData]): AccountTotal => {
+      const shortenedAddress = truncateAddress(address)
 
-            if (typeof convertedAmount === "undefined") {
-              return 0
-            }
+      const accountSigner = accountSignersByAddress[address]
+      const keyringId = keyringsByAddresses[address]?.id
 
-            return assetAmountToDesiredDecimals(
-              convertedAmount,
-              desiredDecimals
-            )
-          })
-          .reduce((total, assetBalance) => total + assetBalance, 0)
+      const accountType = getAccountType(
+        address,
+        accountSigner,
+        sourcesByAddress
+      )
 
+      if (accountData === "loading") {
         return {
           address,
-          network: currentNetwork,
+          network,
           shortenedAddress,
           accountType,
           keyringId,
           accountSigner,
-          name: accountData.ens.name ?? accountData.defaultName,
-          avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
-          localizedTotalMainCurrencyAmount: formatCurrencyAmount(
-            mainCurrencySymbol,
-            totalMainCurrencyAmount,
-            desiredDecimals
-          ),
         }
-      })
-      .reduce<CategorizedAccountTotals>(
-        (seenTotalsByType, accountTotal) => ({
-          ...seenTotalsByType,
-          [accountTotal.accountType]: [
-            ...(seenTotalsByType[accountTotal.accountType] ?? []),
-            accountTotal,
-          ],
-        }),
-        {}
+      }
+
+      return {
+        address,
+        network,
+        shortenedAddress,
+        accountType,
+        keyringId,
+        accountSigner,
+        name: accountData.ens.name ?? accountData.defaultName,
+        avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
+        localizedTotalMainCurrencyAmount: formatCurrencyAmount(
+          mainCurrencySymbol,
+          getTotalBalance(accountData.balances, assets, mainCurrencySymbol),
+          desiredDecimals.default
+        ),
+      }
+    })
+    .reduce<CategorizedAccountTotals>(
+      (seenTotalsByType, accountTotal) => ({
+        ...seenTotalsByType,
+        [accountTotal.accountType]: [
+          ...(seenTotalsByType[accountTotal.accountType] ?? []),
+          accountTotal,
+        ],
+      }),
+      {}
+    )
+}
+
+const selectNetworkAccountTotalsByCategoryResolver = createSelector(
+  (state: RootState) => state,
+  (state) => (network: EVMNetwork) => {
+    return getNetworkAccountTotalsByCategory(state, network)
+  }
+)
+
+export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
+  selectNetworkAccountTotalsByCategoryResolver,
+  selectCurrentNetwork,
+  (
+    selectNetworkAccountTotalsByCategory,
+    currentNetwork
+  ): CategorizedAccountTotals => {
+    return selectNetworkAccountTotalsByCategory(currentNetwork)
+  }
+)
+
+export type AccountTotalList = {
+  [address: string]: {
+    ensName?: string
+    shortenedAddress: string
+    totals: {
+      [chainID: string]: number
+    }
+  }
+}
+/** Get list of all accounts totals on all networks but without test networks */
+export const selectAccountTotalsForOverview = createSelector(
+  getAccountState,
+  getAssetsState,
+  selectMainCurrencySymbol,
+  (accountsState, assetsState, mainCurrencySymbol) => {
+    const accountsTotal: AccountTotalList = {}
+
+    Object.entries(accountsState.accountsData.evm)
+      .filter(
+        ([chainID, accounts]) =>
+          typeof accounts !== "undefined" &&
+          !TEST_NETWORK_BY_CHAIN_ID.has(chainID)
       )
+      .forEach(([chainID, accounts]) =>
+        Object.entries(accounts).forEach(([address, accountData]) => {
+          if (accountData === "loading") return
+
+          const normalizedAddress = normalizeEVMAddress(address)
+          accountsTotal[normalizedAddress] ??= {
+            ensName: accountData.ens.name,
+            shortenedAddress: truncateAddress(address),
+            totals: {},
+          }
+
+          accountsTotal[normalizedAddress].totals[chainID] = getTotalBalance(
+            accountData.balances,
+            assetsState,
+            mainCurrencySymbol
+          )
+        })
+      )
+
+    return accountsTotal
   }
 )
 
@@ -429,7 +496,9 @@ export const getAccountTotal = (
   accountAddressOnNetwork: AddressOnNetwork
 ): AccountTotal | undefined =>
   findAccountTotal(
-    selectCurrentNetworkAccountTotalsByCategory(state),
+    selectNetworkAccountTotalsByCategoryResolver(state)(
+      accountAddressOnNetwork.network
+    ),
     accountAddressOnNetwork
   )
 
@@ -440,31 +509,44 @@ export const selectCurrentAccountTotal = createSelector(
     findAccountTotal(categorizedAccountTotals, currentAccount)
 )
 
-export const getAllAddresses = createSelector(
-  (state: RootState) => state.account,
-  (account) => [
-    ...new Set(
-      Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
-        Object.keys(chainAddresses)
-      )
-    ),
-  ]
-)
+export const getAllAddresses = createSelector(getAccountState, (account) => [
+  ...new Set(
+    Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
+      Object.keys(chainAddresses)
+    )
+  ),
+])
 
 export const getAddressCount = createSelector(
   getAllAddresses,
   (allAddresses) => allAddresses.length
 )
 
-export const getAllNetworks = createSelector(
-  (state: RootState) => state.account,
-  (account) =>
-    Object.keys(account.accountsData.evm).map(
-      (chainID) => NETWORK_BY_CHAIN_ID[chainID]
-    )
+export const getAllNetworks = createSelector(getAccountState, (account) =>
+  Object.keys(account.accountsData.evm).map(
+    (chainID) => NETWORK_BY_CHAIN_ID[chainID]
+  )
 )
 
-export const getNetworkCount = createSelector(
-  getAllNetworks,
-  (allNetworks) => allNetworks.length
+export const getNetworkCountForOverview = createSelector(
+  getAccountState,
+  (account) =>
+    Object.keys(account.accountsData.evm).filter(
+      (chainID) => !TEST_NETWORK_BY_CHAIN_ID.has(chainID)
+    ).length
+)
+
+export const getTotalBalanceForOverview = createSelector(
+  selectAccountTotalsForOverview,
+  selectMainCurrencySymbol,
+  (accountsTotal, currencySymbol) =>
+    formatCurrencyAmount(
+      currencySymbol,
+      Object.values(accountsTotal).reduce(
+        (total, { totals }) =>
+          Object.values(totals).reduce((sum, balance) => sum + balance) + total,
+        0
+      ),
+      2
+    )
 )

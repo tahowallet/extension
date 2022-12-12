@@ -3,26 +3,37 @@ import {
   truncateDecimalAmount,
   weiToGwei,
 } from "@tallyho/tally-background/lib/utils"
-import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
+import {
+  heuristicDesiredDecimalsForUnitPrice,
+  enrichAssetAmountWithMainCurrencyValues,
+} from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import {
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
-  selectFeeType,
   selectTransactionData,
   selectTransactionMainCurrencyPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import { EVM_ROLLUP_CHAIN_IDS } from "@tallyho/tally-background/constants"
-import { isEIP1559TransactionRequest } from "@tallyho/tally-background/networks"
+import {
+  ARBITRUM_ONE,
+  BINANCE_SMART_CHAIN,
+  OPTIMISM,
+  ROOTSTOCK,
+} from "@tallyho/tally-background/constants"
+import {
+  EVMNetwork,
+  isEIP1559EnrichedTransactionRequest,
+  isEIP1559TransactionRequest,
+} from "@tallyho/tally-background/networks"
+import { useTranslation } from "react-i18next"
 import {
   PricePoint,
   unitPricePointForPricePoint,
   assetAmountToDesiredDecimals,
 } from "@tallyho/tally-background/assets"
+import type { EnrichedEVMTransactionRequest } from "@tallyho/tally-background/services/enrichment"
 import { useBackgroundSelector } from "../../hooks"
-import FeeSettingsTextDeprecated from "./FeeSettingsTextDeprecated"
 
 const getFeeDollarValue = (
   currencyPrice: PricePoint | undefined,
@@ -60,16 +71,66 @@ const getFeeDollarValue = (
   return undefined
 }
 
+const estimateGweiAmount = (options: {
+  baseFeePerGas: bigint
+  networkSettings: NetworkFeeSettings
+  network: EVMNetwork
+  transactionData?: EnrichedEVMTransactionRequest
+}): string => {
+  const { network, networkSettings, baseFeePerGas, transactionData } = options
+  let estimatedSpendPerGas =
+    baseFeePerGas + networkSettings.values.maxPriorityFeePerGas
+
+  if (
+    transactionData &&
+    !isEIP1559EnrichedTransactionRequest(transactionData) &&
+    network.chainID === OPTIMISM.chainID
+  ) {
+    estimatedSpendPerGas =
+      (networkSettings.values.gasPrice || estimatedSpendPerGas) +
+      transactionData.estimatedRollupGwei
+  }
+
+  let desiredDecimals = 0
+
+  if (ROOTSTOCK.chainID === network.chainID) {
+    estimatedSpendPerGas = networkSettings.values.gasPrice ?? 0n
+    desiredDecimals = 2
+  }
+
+  if (network.chainID === ARBITRUM_ONE.chainID) {
+    estimatedSpendPerGas = baseFeePerGas
+    desiredDecimals = 2
+  }
+
+  if (network.chainID === BINANCE_SMART_CHAIN.chainID) {
+    estimatedSpendPerGas = networkSettings.values.gasPrice ?? 0n
+    desiredDecimals = 2
+  }
+
+  const estimatedSpendPerGasInGwei = weiToGwei(estimatedSpendPerGas ?? 0n)
+  const decimalLength = heuristicDesiredDecimalsForUnitPrice(
+    desiredDecimals,
+    Number(estimatedSpendPerGasInGwei)
+  )
+  const estimatedGweiAmount = truncateDecimalAmount(
+    estimatedSpendPerGasInGwei,
+    decimalLength
+  )
+
+  return estimatedGweiAmount
+}
+
 export default function FeeSettingsText({
   customNetworkSetting,
 }: {
   customNetworkSetting?: NetworkFeeSettings
 }): ReactElement {
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
+  const { t } = useTranslation()
   const transactionData = useBackgroundSelector(selectTransactionData)
-
-  const selectedFeeType = useBackgroundSelector(selectFeeType)
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const currentNetwork = transactionData?.network || selectedNetwork
+  const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   let networkSettings = useBackgroundSelector(selectDefaultNetworkFeeSettings)
   networkSettings = customNetworkSetting ?? networkSettings
   const baseFeePerGas =
@@ -82,22 +143,24 @@ export default function FeeSettingsText({
   const mainCurrencyPricePoint = useBackgroundSelector(
     selectTransactionMainCurrencyPricePoint
   )
+  const estimatedGweiAmount = estimateGweiAmount({
+    baseFeePerGas,
+    networkSettings,
+    transactionData,
+    network: currentNetwork,
+  })
+
   const gasLimit = networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
   const estimatedSpendPerGas =
     networkSettings.values.gasPrice ||
     baseFeePerGas + networkSettings.values.maxPriorityFeePerGas
 
-  const estimatedGweiAmount =
-    typeof estimatedFeesPerGas !== "undefined" &&
-    typeof selectedFeeType !== "undefined"
-      ? truncateDecimalAmount(weiToGwei(estimatedSpendPerGas ?? 0n), 0)
-      : ""
-
-  if (typeof estimatedFeesPerGas === "undefined") return <div>Unknown</div>
+  if (typeof estimatedFeesPerGas === "undefined")
+    return <div>{t("networkFees.unknownFee")}</div>
 
   const estimatedRollupFee =
     transactionData &&
-    EVM_ROLLUP_CHAIN_IDS.has(transactionData.network.chainID) &&
+    transactionData.network.chainID === OPTIMISM.chainID &&
     !isEIP1559TransactionRequest(transactionData)
       ? transactionData.estimatedRollupFee
       : 0n
@@ -110,19 +173,15 @@ export default function FeeSettingsText({
     estimatedRollupFee
   )
 
-  if (!CUSTOM_GAS_SELECT) {
-    return <FeeSettingsTextDeprecated />
-  }
-
   if (!dollarValue) return <div>~{gweiValue}</div>
 
   return (
-    <div>
-      {!gasLimit && CUSTOM_GAS_SELECT ? (
-        <>TBD</>
+    <div className="fee_settings_text_container">
+      {!gasLimit ? (
+        <>{t("networkFees.toBeDetermined")}</>
       ) : (
         <>
-          ~${dollarValue}
+          <span>~${dollarValue}</span>
           <span className="fee_gwei">({gweiValue})</span>
         </>
       )}
@@ -130,6 +189,11 @@ export default function FeeSettingsText({
         .fee_gwei {
           color: var(--green-60);
           margin-left: 5px;
+        }
+        .fee_settings_text_container {
+          display: flex;
+          justify-content: space-around;
+          flex-wrap: wrap;
         }
       `}</style>
     </div>

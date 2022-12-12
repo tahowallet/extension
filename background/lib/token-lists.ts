@@ -1,6 +1,7 @@
 import { TokenList } from "@uniswap/token-lists"
 
 import { memoize } from "lodash"
+import { fetchJson } from "@ethersproject/web"
 import {
   FungibleAsset,
   SmartContractFungibleAsset,
@@ -12,6 +13,9 @@ import {
   findClosestAssetIndex,
   prioritizedAssetSimilarityKeys,
 } from "./asset-similarity"
+import { SECOND } from "../constants"
+import { normalizeEVMAddress } from "./utils"
+import { DeepWriteable } from "../types"
 
 // We allow `any` here because we don't know what we'll get back from a 3rd party api.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,18 +26,34 @@ const cleanTokenListResponse = (json: any, url: string) => {
       return cleanedJson
     }
   }
+
+  // Trader joe token list has invalid tags
+  if (url.includes("traderjoe-xyz") && Array.isArray(json?.tokens)) {
+    const tokens = json.tokens.map((token: unknown) => {
+      if (typeof token === "object" && token && "tags" in token) {
+        return { ...token, tags: [] }
+      }
+
+      return token
+    })
+    return { ...json, tokens }
+  }
+
   return json
 }
 
 export async function fetchAndValidateTokenList(
   url: string
-): Promise<TokenListAndReference> {
-  const response = await fetch(url)
-  if (!response.ok) {
+): Promise<DeepWriteable<TokenListAndReference>> {
+  let ok = true
+  const response = await fetchJson({ url, timeout: 10 * SECOND }).catch(() => {
+    ok = false
+  })
+
+  if (!ok) {
     throw new Error(`Error resolving token list at ${url}`)
   }
-  const json = await response.json()
-  const cleanedJSON = cleanTokenListResponse(json, url)
+  const cleanedJSON = cleanTokenListResponse(response, url)
 
   if (!isValidUniswapTokenListResponse(cleanedJSON)) {
     throw new Error(`Invalid token list at ${url}`)
@@ -64,18 +84,23 @@ function tokenListToFungibleAssetsForNetwork(
   }
 
   return tokenList.tokens
-    .filter(({ chainId }) => chainId === networkChainID)
+    .filter(
+      ({ chainId, symbol }) =>
+        chainId === networkChainID &&
+        // Filter out assets with the same symbol as the network base asset
+        symbol !== network.baseAsset.symbol
+    )
     .map((tokenMetadata) => {
       return {
         metadata: {
-          logoURL: tokenMetadata.logoURI,
+          ...(tokenMetadata.logoURI ? { logoURL: tokenMetadata.logoURI } : {}),
           tokenLists: [tokenListCitation],
         },
         name: tokenMetadata.name,
         symbol: tokenMetadata.symbol,
         decimals: tokenMetadata.decimals,
         homeNetwork: network,
-        contractAddress: tokenMetadata.address,
+        contractAddress: normalizeEVMAddress(tokenMetadata.address),
       }
     })
 }
@@ -118,6 +143,7 @@ export function mergeAssets<T extends FungibleAsset>(
         updatedSeenAssetsBySimilarityKey[referenceKey][matchingAssetIndex]
 
       updatedSeenAssetsBySimilarityKey[referenceKey][matchingAssetIndex] = {
+        ...asset,
         ...matchingAsset,
         metadata: {
           ...matchingAsset.metadata,

@@ -1,11 +1,21 @@
 import React, { ReactElement } from "react"
 import { useHistory } from "react-router-dom"
 import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../../components/Shared/SharedButton"
 import { useBackgroundDispatch } from "../../../hooks"
 import { OnboardingBox, OnboardingMessageHeader } from "../styles"
 
-function VerifySeedSuccess({ mnemonic }: { mnemonic: string[] }): ReactElement {
+function VerifySeedSuccess({
+  mnemonic,
+  nextPage = "/",
+}: {
+  mnemonic: string[]
+  nextPage?: string
+}): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.seedVerification",
+  })
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
 
@@ -18,12 +28,9 @@ function VerifySeedSuccess({ mnemonic }: { mnemonic: string[] }): ReactElement {
             src="./images/message_correct.png"
             alt="correct"
           />
-          <span>Congratulations!</span>
+          <span>{t("successMessage")}</span>
         </div>
-        <p>
-          Secret recovery phrase is correct and you can now start using your new
-          wallet.
-        </p>
+        <p>{t("successExplainer")}</p>
       </div>
       <SharedButton
         size="medium"
@@ -35,10 +42,10 @@ function VerifySeedSuccess({ mnemonic }: { mnemonic: string[] }): ReactElement {
               source: "internal",
             })
           )
-          history.push("/")
+          history.push(nextPage)
         }}
       >
-        Take me to my wallet
+        {t("successButton")}
       </SharedButton>
       <style jsx>
         {`

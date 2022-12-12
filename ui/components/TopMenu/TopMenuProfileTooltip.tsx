@@ -1,13 +1,15 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 
 export default function TopMenuProfileTooltip(props: {
   copyAddress: () => void
 }): ReactElement {
+  const { t } = useTranslation()
   const { copyAddress } = props
 
   return (
     <button type="button" className="tooltip" onClick={copyAddress}>
-      <span className="tooltip_label">Copy address</span>
+      <span className="tooltip_label">{t("topMenu.copyAddressTooltip")}</span>
       <span className="tooltip_icon" />
       <style jsx>{`
         .tooltip {

@@ -1,14 +1,21 @@
-import { BaseProvider } from "@ethersproject/providers"
+import { BaseProvider, Provider } from "@ethersproject/providers"
 import { BigNumber, ethers } from "ethers"
+
 import {
   EventFragment,
   Fragment,
   FunctionFragment,
   TransactionDescription,
 } from "ethers/lib/utils"
-import { SmartContractFungibleAsset } from "../assets"
+import { SmartContractAmount, SmartContractFungibleAsset } from "../assets"
 import { EVMLog, SmartContract } from "../networks"
 import { HexString } from "../types"
+import { AddressOnNetwork } from "../accounts"
+import {
+  AggregateContractResponse,
+  MULTICALL_ABI,
+  MULTICALL_CONTRACT_ADDRESS,
+} from "./multicall"
 
 export const ERC20_FUNCTIONS = {
   allowance: FunctionFragment.from(
@@ -172,4 +179,44 @@ export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
       }
     })
     .filter((info): info is ERC20TransferLog => typeof info !== "undefined")
+}
+
+export const getTokenBalances = async (
+  { address, network }: AddressOnNetwork,
+  tokenAddresses: HexString[],
+  provider: Provider
+): Promise<SmartContractAmount[]> => {
+  const contract = new ethers.Contract(
+    MULTICALL_CONTRACT_ADDRESS,
+    MULTICALL_ABI,
+    provider
+  )
+
+  const balanceOfCallData = ERC20_INTERFACE.encodeFunctionData("balanceOf", [
+    address,
+  ])
+
+  const response = (await contract.callStatic.tryBlockAndAggregate(
+    // false === don't require all calls to succeed
+    false,
+    tokenAddresses.map((tokenAddress) => [tokenAddress, balanceOfCallData])
+  )) as AggregateContractResponse
+
+  return response.returnData.flatMap((data, i) => {
+    if (data.success !== true) {
+      return []
+    }
+
+    if (data.returnData === "0x00" || data.returnData === "0x") {
+      return []
+    }
+
+    return {
+      amount: BigInt(BigNumber.from(data.returnData).toString()),
+      smartContract: {
+        contractAddress: tokenAddresses[i],
+        homeNetwork: network,
+      },
+    }
+  })
 }

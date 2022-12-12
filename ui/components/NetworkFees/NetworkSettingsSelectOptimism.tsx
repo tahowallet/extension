@@ -1,70 +1,135 @@
 import React, { ReactElement } from "react"
 import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { OPTIMISM } from "@tallyho/tally-background/constants"
+import {
+  ARBITRUM_ONE,
+  NETWORK_BY_CHAIN_ID,
+  OPTIMISM,
+} from "@tallyho/tally-background/constants"
+import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 
 export default function NetworkSettingsOptimism(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "networkFees.optimism",
+  })
+
   const transactionData = useBackgroundSelector(selectTransactionData)
-  if (transactionData?.network.chainID !== OPTIMISM.chainID) {
+
+  const { name, chainID } =
+    NETWORK_BY_CHAIN_ID[transactionData?.network.chainID ?? 1]
+  if (chainID !== OPTIMISM.chainID && chainID !== ARBITRUM_ONE.chainID) {
     throw new Error(
-      "NetworkSettingsSelect mismatch - expected an Optimism transaction"
+      "NetworkSettingsSelect mismatch - expected an Optimism or Arbitrum transaction"
     )
   }
 
   return (
     <div className="fees standard_width">
-      <div className="title">Network Fees</div>
+      <div className="title">{t("title")}</div>
+      <div className="simple_text">{t("header", { name })}</div>
 
-      <div className="explainer">
-        <span>
-          Gas Fees on Optimism work differently from Ethereum. The bulk of the
-          cost of an Optimism transaction is automatically deducted by the
-          network to pay the Ethereum rollup fee and is not editable by the
-          user.
-        </span>
-        <br />
-        <span>
-          Tally Ho stays in sync with the current Optimism and Ethereum network
-          fees to estimate the fee for a given transaction. Only in rare cases
-          will the actual fee you pay deviate by more than 25% from the provided
-          estimate.
-        </span>
-        <br />
-        <SharedButton
-          type="tertiary"
-          size="medium"
-          iconMedium="new-tab"
-          onClick={() => {
-            window
-              .open(
-                "https://help.optimism.io/hc/en-us/articles/4411895794715-Transaction-fees",
-                "_blank"
-              )
-              ?.focus()
-          }}
-        >
-          Learn More
-        </SharedButton>
+      <div className="fees_chart">
+        <div className="fees_chart_item">
+          {name === "Optimism" ? (
+            <div className="fees_icon icon_optimism" />
+          ) : (
+            <div className="fees_icon icon_arbitrum" />
+          )}
+          <span>{t("transactionFee")}</span>
+        </div>
+        <div className="fee_chart_sign">+</div>
+        <div className="fees_chart_item">
+          <div className="fees_icon icon_ethereum" />
+          <span>{t("rollUp")}</span>
+        </div>
+        <div className="fee_chart_sign">=</div>
+
+        <div className="fees_chart_item">
+          <div className="fees_icon icon_gas" />
+          <span>{t("estimatedGas")}</span>
+        </div>
       </div>
+
+      <div className="simple_text">{t("explainerOne", { name })}</div>
+
+      <div className="simple_text">
+        {t("explainerTwo", { name })}
+        <br />
+        {t("explainerThree")}
+      </div>
+
+      <SharedButton
+        type="tertiary"
+        size="medium"
+        iconSmall="new-tab"
+        onClick={() => {
+          window
+            .open(
+              name === "Optimism"
+                ? "https://help.optimism.io/hc/en-us/articles/4411895794715-Transaction-fees"
+                : "https://developer.arbitrum.io/arbos/gas",
+              "_blank"
+            )
+            ?.focus()
+        }}
+      >
+        {t("learnMore")}
+      </SharedButton>
       <style jsx>
         {`
-          .explainer {
-            width: 100%;
-            height: 100%;
+          .title {
+            color: var(--green-5);
+            margin-bottom: 29px;
+            font-weight: 600;
+            font-size: 18px;
+            line-height: 24px;
+          }
+          .simple_text {
+            color: var(--green-5);
+            margin-bottom: 8px;
+          }
+          .fees_chart {
+            background: var(--hunter-green);
+            border-radius: 8px;
             display: flex;
+            align-items: center;
             justify-content: space-between;
+            padding: 16px;
+            color: var(--green-40);
+            font-weight: 500;
+            font-size: 12px;
+            line-height: 16px;
+            margin: 11px 0 16px;
+          }
+          .fees_icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 100%;
+            background-size: contain;
+            margin-bottom: 8px;
+          }
+          .fees_icon.icon_optimism {
+            background-image: url("/images/networks/optimism@2x.png");
+          }
+          .fees_icon.icon_arbitrum {
+            background-image: url("/images/networks/arbitrum_icon_small@2x.png");
+          }
+          .fees_icon.icon_ethereum {
+            background-image: url("/images/ethereum-background@2x.png");
+          }
+          .fees_icon.icon_gas {
+            background-image: url("/images/gas@2x.png");
+          }
+          .fees_chart_item {
+            display: flex;
             flex-direction: column;
             align-items: center;
-            background: #002522;
-            box-sizing: border-box;
-            padding: 12px;
-            margin: 8px 0;
-            color: var(--green-20);
-            border-radius: 4px;
-            box-shadow: 0px 16px 16px rgba(0, 20, 19, 0.14),
-              0px 6px 8px rgba(0, 20, 19, 0.24),
-              0px 2px 4px rgba(0, 20, 19, 0.34);
+          }
+          .fee_chart_sign {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 25px;
           }
         `}
       </style>

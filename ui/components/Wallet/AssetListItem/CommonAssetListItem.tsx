@@ -5,6 +5,7 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
+import SharedIconRouterLink from "../../Shared/SharedIconRouterLink"
 
 type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount
@@ -84,22 +85,18 @@ export default function CommonAssetListItem(
         </div>
         <div className="asset_right">
           <>
-            <Link
-              to={{
-                pathname: "/send",
-                state: assetAmount.asset,
-              }}
-              className="asset_icon asset_icon_send"
+            <SharedIconRouterLink
+              path="/send"
+              state={assetAmount.asset}
+              iconClass="asset_icon_send"
             />
-            <Link
-              to={{
-                pathname: "/swap",
-                state: {
-                  symbol: assetAmount.asset.symbol,
-                  contractAddress,
-                },
+            <SharedIconRouterLink
+              path="/swap"
+              state={{
+                symbol: assetAmount.asset.symbol,
+                contractAddress,
               }}
-              className="asset_icon asset_icon_swap"
+              iconClass="asset_icon_swap"
             />
           </>
         </div>

@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useTranslation } from "react-i18next"
 import {
@@ -8,18 +8,69 @@ import {
   toggleHideDust,
   selectShowTestNetworks,
   toggleTestNetworks,
+  toggleHideBanners,
+  selectHideBanners,
 } from "@tallyho/tally-background/redux-slices/ui"
-import {
-  SUPPORT_ANALYTICS,
-  SUPPORT_GOERLI,
-  SUPPORT_MULTIPLE_LANGUAGES,
-} from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { useHistory } from "react-router-dom"
+import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
 import { getLanguage, setLanguage } from "../_locales/i18n"
 import SettingButton from "./Settings/SettingButton"
+import { useBackgroundSelector } from "../hooks"
+
+const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
+
+function VersionLabel(): ReactElement {
+  const { t } = useTranslation()
+  const history = useHistory()
+  const [clickCounter, setClickCounter] = useState(0)
+  const [isHover, setIsHover] = useState(false)
+
+  useEffect(() => {
+    if (
+      isEnabled(FeatureFlags.SWITCH_RUNTIME_FLAGS) &&
+      clickCounter === NUMBER_OF_CLICKS_FOR_DEV_PANEL &&
+      isHover
+    ) {
+      setIsHover(false)
+      setClickCounter(0)
+      history.push("/dev")
+    }
+  }, [clickCounter, history, isHover])
+
+  return (
+    <div className="version">
+      <button
+        type="button"
+        onMouseEnter={() => setIsHover(true)}
+        onMouseLeave={() => setIsHover(false)}
+        onClick={() => setClickCounter((prevState) => prevState + 1)}
+      >
+        {t("settings.versionLabel", {
+          version: process.env.VERSION ?? t("settings.unknownVersionOrCommit"),
+        })}
+        {process.env.COMMIT_SHA?.slice(0, 7) ??
+          t("settings.unknownVersionOrCommit")}
+      </button>
+      <style jsx>
+        {`
+          .version {
+            margin: 16px 0;
+            color: var(--green-40);
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0 auto;
+            padding: 16px 0px;
+          }
+        `}
+      </style>
+    </div>
+  )
+}
 
 function SettingRow(props: {
   title: string
@@ -55,8 +106,10 @@ export default function Settings(): ReactElement {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const hideDust = useSelector(selectHideDust)
+  const hideBanners = useSelector(selectHideBanners)
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
+  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))
@@ -69,8 +122,15 @@ export default function Settings(): ReactElement {
     dispatch(toggleTestNetworks(defaultWalletValue))
   }
 
+  const toggleHideNotificationBanners = (toggleValue: boolean) => {
+    dispatch(toggleHideBanners(!toggleValue))
+  }
+
   const hideSmallAssetBalance = {
-    title: t("settings.hideSmallAssetBalance", { amount: 2, sign: "$" }),
+    title: t("settings.hideSmallAssetBalance", {
+      amount: 2,
+      sign: mainCurrencySign,
+    }),
     component: () => (
       <SharedToggleButton
         onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
@@ -124,24 +184,49 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const dAppsSettings = {
+    title: "",
+    component: () => (
+      <SettingButton
+        link="/settings/connected-websites"
+        label={t("settings.connectedWebsites")}
+        ariaLabel={t("settings.connectedWebsitesSettings.ariaLabel")}
+      />
+    ),
+  }
+
   const analytics = {
     title: "",
     component: () => (
       <SettingButton
-        link=""
+        link="/settings/analytics"
         label={t("settings.analytics")}
         ariaLabel={t("settings.analyticsSetUp.ariaLabel")}
       />
     ),
   }
 
+  const notificationBanner = {
+    title: t("settings.showBanners"),
+    component: () => (
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleHideNotificationBanners(toggleValue)}
+        value={!hideBanners}
+      />
+    ),
+  }
+
   const generalList = [
-    hideSmallAssetBalance,
     setAsDefault,
-    ...(SUPPORT_MULTIPLE_LANGUAGES ? [languages] : []),
-    ...(SUPPORT_GOERLI ? [enableTestNetworks] : []),
+    hideSmallAssetBalance,
+    ...(isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) ? [languages] : []),
+    enableTestNetworks,
+    dAppsSettings,
     bugReport,
-    ...(SUPPORT_ANALYTICS ? [analytics] : []),
+    ...(isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) ? [analytics] : []),
+    ...(isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER)
+      ? [notificationBanner]
+      : []),
   ]
 
   const settings = {
@@ -176,10 +261,7 @@ export default function Settings(): ReactElement {
             {t("settings.joinBtn")}
           </SharedButton>
         </div>
-        <div className="version">
-          Version: {process.env.VERSION ?? `<unknown>`}_
-          {process.env.COMMIT_SHA?.slice(0, 7) ?? `<unknown>`}
-        </div>
+        <VersionLabel />
       </section>
       <style jsx>
         {`
@@ -191,7 +273,7 @@ export default function Settings(): ReactElement {
           }
           .community_cta_wrap {
             width: 100vw;
-            margin-top: auto;
+            margin-top: 20px;
             margin-left: -21px;
             background-color: var(--green-95);
             text-align: center;
@@ -236,14 +318,6 @@ export default function Settings(): ReactElement {
           }
           .mega_discord_chat_bubble_button:hover {
             opacity: 0.8;
-          }
-          .version {
-            margin: 16px 0;
-            color: var(--green-40);
-            font-size: 16px;
-            font-weight: 500;
-            margin: 0 auto;
-            padding: 16px 0px;
           }
         `}
       </style>

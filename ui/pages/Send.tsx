@@ -9,7 +9,9 @@ import { useTranslation } from "react-i18next"
 import {
   selectCurrentAccount,
   selectCurrentAccountBalances,
+  selectCurrentAccountNFTs,
   selectCurrentAccountSigner,
+  selectCurrentNetwork,
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -29,6 +31,10 @@ import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-backgrou
 import { useHistory, useLocation } from "react-router-dom"
 import classNames from "classnames"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
+import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { NFT } from "@tallyho/tally-background/nfts"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
@@ -39,17 +45,27 @@ import {
 } from "../hooks"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
+import SharedIcon from "../components/Shared/SharedIcon"
 
 export default function Send(): ReactElement {
   const { t } = useTranslation()
   const isMounted = useRef(false)
   const location = useLocation<FungibleAsset>()
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
   const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(
     location.state ?? currentAccount.network.baseAsset
   )
+
+  const [assetType, setAssetType] = useState<"token" | "nft">("token")
+  const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null)
+
+  const handleAssetSelect = (asset: FungibleAsset) => {
+    setSelectedAsset(asset)
+    setAssetType("token")
+  }
 
   // Switch the asset being sent when switching between networks, but still use
   // location.state on initial page render - if it exists
@@ -68,6 +84,7 @@ export default function Send(): ReactElement {
     string | undefined
   >(undefined)
   const [amount, setAmount] = useState("")
+
   const [isSendingTransactionRequest, setIsSendingTransactionRequest] =
     useState(false)
   const [hasError, setHasError] = useState(false)
@@ -77,6 +94,13 @@ export default function Send(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
+  const nftCollections = useBackgroundSelector((state) => {
+    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+      return selectCurrentAccountNFTs(state)
+    }
+
+    return []
+  })
 
   const fungibleAssetAmounts =
     // Only look at fungible assets.
@@ -85,11 +109,7 @@ export default function Send(): ReactElement {
         isFungibleAssetAmount(assetAmount)
     )
   const assetPricePoint = useBackgroundSelector((state) =>
-    selectAssetPricePoint(
-      state.assets,
-      selectedAsset.symbol,
-      mainCurrencySymbol
-    )
+    selectAssetPricePoint(state.assets, selectedAsset, mainCurrencySymbol)
   )
 
   const assetAmountFromForm = () => {
@@ -140,13 +160,30 @@ export default function Send(): ReactElement {
     history.push("/singleAsset", assetAmount.asset)
   }, [assetAmount, currentAccount, destinationAddress, dispatch, history])
 
+  const copyAddress = useCallback(() => {
+    if (destinationAddress === undefined) {
+      return
+    }
+
+    navigator.clipboard.writeText(destinationAddress)
+    dispatch(setSnackbarMessage("Address copied to clipboard"))
+  }, [destinationAddress, dispatch])
+
   const {
+    rawValue: userAddressValue,
     errorMessage: addressErrorMessage,
     isValidating: addressIsValidating,
     handleInputChange: handleAddressChange,
   } = useAddressOrNameValidation((value) =>
     setDestinationAddress(value?.address)
   )
+
+  // True if the user input a valid name (ENS, address book, etc) that we
+  // resolved to an address.
+  const resolvedNameToAddress =
+    addressErrorMessage === undefined &&
+    destinationAddress !== undefined &&
+    !sameEVMAddress(destinationAddress, userAddressValue)
 
   return (
     <>
@@ -162,8 +199,9 @@ export default function Send(): ReactElement {
         <div className="form">
           <div className="form_input">
             <SharedAssetInput
+              currentNetwork={currentNetwork}
               label={t("wallet.assetAmount")}
-              onAssetSelect={setSelectedAsset}
+              onAssetSelect={handleAssetSelect}
               assetsAndAmounts={fungibleAssetAmounts}
               onAmountChange={(value, errorMessage) => {
                 setAmount(value)
@@ -173,12 +211,25 @@ export default function Send(): ReactElement {
                   setHasError(false)
                 }
               }}
-              selectedAsset={selectedAsset}
+              onSelectNFT={(nft) => {
+                setSelectedNFT(nft)
+                setAssetType("nft")
+              }}
+              selectedAsset={selectedAsset ?? undefined}
+              selectedNFT={(assetType === "nft" && selectedNFT) || undefined}
               amount={amount}
+              showMaxButton={assetType !== "nft"}
+              NFTCollections={
+                isEnabled(FeatureFlags.SUPPORT_NFT_TAB)
+                  ? nftCollections
+                  : undefined
+              }
             />
-            <div className="value">
-              ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
-            </div>
+            {assetType === "token" && !hasError && (
+              <div className="value">
+                ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
+              </div>
+            )}
           </div>
           <div className="form_input send_to_field">
             <label htmlFor="send_address">{t("wallet.sendTo")}</label>
@@ -190,12 +241,29 @@ export default function Send(): ReactElement {
               onChange={(event) => handleAddressChange(event.target.value)}
               className={classNames({
                 error: addressErrorMessage !== undefined,
+                resolved_address: resolvedNameToAddress,
               })}
             />
             {addressIsValidating ? (
               <p className="validating">
                 <SharedLoadingSpinner />
               </p>
+            ) : (
+              <></>
+            )}
+            {resolvedNameToAddress ? (
+              <button
+                type="button"
+                className="address"
+                onClick={() => copyAddress()}
+              >
+                <SharedIcon
+                  icon="icons/s/copy.svg"
+                  width={14}
+                  color="var(--green-60)"
+                />
+                {destinationAddress}
+              </button>
             ) : (
               <></>
             )}
@@ -211,7 +279,7 @@ export default function Send(): ReactElement {
               size="large"
               isDisabled={
                 currentAccountSigner === ReadOnlyAccountSigner ||
-                Number(amount) === 0 ||
+                (assetType === "token" && Number(amount) === 0) ||
                 destinationAddress === undefined ||
                 hasError
               }
@@ -254,6 +322,7 @@ export default function Send(): ReactElement {
             margin-top: 30px;
           }
           .form_input {
+            position: relative;
             margin-bottom: 14px;
           }
           .form {
@@ -268,8 +337,8 @@ export default function Send(): ReactElement {
           .value {
             display: flex;
             justify-content: flex-end;
-            position: relative;
-            top: -24px;
+            position: absolute;
+            bottom: 8px;
             right: 16px;
             color: var(--green-60);
             font-size: 12px;
@@ -299,9 +368,16 @@ export default function Send(): ReactElement {
             border-radius: 4px;
             background-color: var(--green-95);
             padding: 0px 16px;
+
+            transition: padding-bottom 0.2s;
           }
           input#send_address::placeholder {
             color: var(--green-40);
+          }
+          input#send_address.resolved_address {
+            font-size: 18px;
+            font-weight: 600;
+            padding-bottom: 16px;
           }
           input#send_address ~ .error {
             color: var(--error);
@@ -313,6 +389,32 @@ export default function Send(): ReactElement {
             margin-top: -25px;
             margin-right: 15px;
             margin-bottom: 5px;
+          }
+          input#send_address ~ .address {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+
+            color: var(--green-60);
+            font-weight: 500;
+            font-size: 12px;
+            line-height: 20px;
+            align-self: flex-start;
+            text-align: start;
+            margin-top: -30px;
+            margin-left: 16px;
+            margin-bottom: 5px;
+
+            transition: color 0.2s;
+          }
+          input#send_address ~ .address:hover {
+            color: var(--gold-80);
+          }
+          input#send_address ~ .address > :global(.icon) {
+            transition: background-color 0.2s;
+          }
+          input#send_address ~ .address:hover > :global(.icon) {
+            background-color: var(--gold-80);
           }
           input#send_address ~ .validating {
             margin-top: -50px;

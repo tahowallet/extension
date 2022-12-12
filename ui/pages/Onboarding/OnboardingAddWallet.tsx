@@ -1,30 +1,33 @@
 import React, { ReactElement } from "react"
 import { useHistory } from "react-router-dom"
 import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
+import { i18n } from "../../_locales/i18n"
 
 const accountCreateButtonInfos = [
   {
-    title: "Add existing accounts",
+    title: i18n.t("onboarding.addWallet.addExistingAccount"),
     items: [
       {
-        label: "Import recovery phrase",
+        label: i18n.t("onboarding.addWallet.importWallet"),
         icon: "./images/add_wallet/import.svg",
         url: "/onboarding/import-metamask",
         isAvailable: true,
       },
       {
-        label: "Connect to Ledger",
+        label: i18n.t("onboarding.addWallet.addLedger"),
         icon: "./images/add_wallet/ledger.svg",
         onClick: () => {
           window.open("/tab.html#/ledger", "_blank")?.focus()
           window.close()
         },
+        url: "/ledger",
         isAvailable: isLedgerSupported,
       },
       {
-        label: "Read-only address",
+        label: i18n.t("onboarding.addWallet.addReadOnly"),
         icon: "./images/add_wallet/preview.svg",
         url: "/onboarding/view-only-wallet",
         isAvailable: true,
@@ -32,10 +35,10 @@ const accountCreateButtonInfos = [
     ],
   },
   {
-    title: "Add new recovery phrase",
+    title: i18n.t("onboarding.addWallet.addNewAccount"),
     items: [
       {
-        label: "Create new wallet",
+        label: i18n.t("onboarding.addWallet.createNewWallet"),
         icon: "./images/add_wallet/create_tally.svg",
         url: "/onboarding/onboarding-interstitial-create-phrase",
         isAvailable: true,
@@ -116,21 +119,30 @@ function AddWalletRow({
   )
 }
 
-export default function OnboardingStartTheHunt(): ReactElement {
+export default function OnboardingStartTheHunt({
+  embedded = false,
+}: {
+  embedded: boolean
+}): ReactElement {
+  const { t } = useTranslation()
   const history = useHistory()
 
   return (
     <section className="start_wrap">
       <div className="top standard_width">
-        <h1>Add accounts</h1>
-        <button
-          type="button"
-          aria-label="close"
-          className="icon_close"
-          onClick={() => {
-            history.push("/")
-          }}
-        />
+        {!embedded && (
+          <>
+            <h1>{t("onboarding.addWallet.addAccounts")}</h1>
+            <button
+              type="button"
+              aria-label="close"
+              className="icon_close"
+              onClick={() => {
+                history.push("/")
+              }}
+            />
+          </>
+        )}
       </div>
       <div className="button_sections_wrap">
         {accountCreateButtonInfos.map((creationSection) => {
@@ -141,7 +153,11 @@ export default function OnboardingStartTheHunt(): ReactElement {
                 {creationSection.items.map(
                   ({ label, icon, url, isAvailable, onClick }) =>
                     isAvailable ? (
-                      <AddWalletRow icon={icon} url={url} onClick={onClick}>
+                      <AddWalletRow
+                        icon={icon}
+                        url={url}
+                        onClick={embedded ? undefined : onClick}
+                      >
                         {label}
                       </AddWalletRow>
                     ) : (
@@ -164,8 +180,8 @@ export default function OnboardingStartTheHunt(): ReactElement {
             align-items: center;
           }
           .start_wrap {
-            padding-top: 15px;
-            background-color: var(--hunter-green);
+            padding-top: ${embedded ? "83.5px" : "15px"};
+            ${embedded ? "" : `background-color: var(--hunter-green);`}
           }
           .button_sections_wrap {
             height: 500px;

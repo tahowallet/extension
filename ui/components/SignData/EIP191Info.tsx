@@ -1,34 +1,41 @@
 import React from "react"
-import { SignDataRequest } from "@tallyho/tally-background/utils/signing"
+import { MessageSigningRequest } from "@tallyho/tally-background/utils/signing"
+import { useTranslation } from "react-i18next"
 
 const EIP191Info: React.FC<{
-  signingData: SignDataRequest["signingData"]
+  signingData: MessageSigningRequest["signingData"]
   account: string
   internal: boolean
-}> = ({ signingData, account, internal }) => {
+  // FIXME Drop this once new signing flow is final.
+  excludeHeader?: boolean
+}> = ({ signingData, account, internal, excludeHeader = false }) => {
+  const { t } = useTranslation("translation", { keyPrefix: "signing" })
   return (
     <>
-      <div className="label header">
-        {internal
-          ? "Your signature is required"
-          : "A dapp is requesting your signature"}
-      </div>
-      <div className="divider" />
-      <div className="divider" />
+      {excludeHeader ? (
+        <></>
+      ) : (
+        <>
+          <div className="label header">
+            {internal ? t("signatureRequired") : t("dappSignatureRequest")}
+          </div>
+          <div className="divider" />
+        </>
+      )}
       <div className="message">
-        <div className="message-title">Message</div>
+        <div className="message-title">{t("message")}</div>
         <div className="light">{`${signingData}`}</div>
       </div>
       <div className="message">
-        <div className="signed">Signed,</div>
+        <div className="signed">{t("signed")}</div>
         <div>{account ?? "Unknown"}</div>
       </div>
       <style jsx>{`
         .message {
           margin: 16px;
-          font-size: 14px;
           width: 100%;
           overflow-wrap: anywhere;
+          color: --var(green-20);
         }
         .message-title {
           color: var(--green-40);

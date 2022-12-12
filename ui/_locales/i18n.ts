@@ -1,5 +1,5 @@
 import i18n from "i18next"
-import { initReactI18next } from "react-i18next"
+import { initReactI18next, TFuncKey, TFuncReturn } from "react-i18next"
 import { resources } from "./index"
 import { getLocalStorageItem, setLocalStorageItem } from "../hooks"
 
@@ -27,6 +27,26 @@ const setLanguage = (lang: string): void => {
     .changeLanguage(lang)
     .then(() => lang && setLocalStorageItem(LANGUAGE_KEY, lang))
 }
+
+declare module "react-i18next" {
+  interface CustomTypeOptions {
+    resources: typeof resources["en"]
+  }
+}
+
+/**
+ * Returns all keys that hold string values
+ */
+type StringValueKeys<Dict> = {
+  [k in keyof Dict]: Dict[k] extends string ? k : never
+}[keyof Dict]
+
+/**
+ * All i18n keys that return strings
+ */
+export type I18nKey = StringValueKeys<{
+  [k in TFuncKey]: TFuncReturn<"translation", k, null> extends string ? k : null
+}>
 
 export { i18n, getLanguage, setLanguage }
 

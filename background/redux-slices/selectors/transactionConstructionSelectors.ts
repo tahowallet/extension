@@ -2,6 +2,8 @@ import { createSelector } from "@reduxjs/toolkit"
 import { PricePoint } from "../../assets"
 import { selectCurrentNetwork } from "."
 import { NetworksState } from "../networks"
+import { LegacyEVMTransactionRequest } from "../../networks"
+import { ROOTSTOCK } from "../../constants/networks"
 import {
   TransactionConstruction,
   NetworkFeeSettings,
@@ -10,12 +12,25 @@ import { getAssetsState } from "./accountsSelectors"
 import { selectMainCurrencySymbol } from "./uiSelectors"
 import { selectAssetPricePoint } from "../assets"
 
+export const selectTransactionNetwork = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.transactionRequest?.network,
+  (network) => network
+)
+
 export const selectDefaultNetworkFeeSettings = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction,
   (state: { networks: NetworksState }) => state.networks,
   selectCurrentNetwork,
-  (transactionConstruction, networks, currentNetwork): NetworkFeeSettings => {
+  selectTransactionNetwork,
+  (
+    transactionConstruction,
+    networks,
+    selectedNetwork,
+    transactionNetwork
+  ): NetworkFeeSettings => {
+    const currentNetwork = transactionNetwork || selectedNetwork
     const selectedFeesPerGas =
       transactionConstruction.estimatedFeesPerGas?.[currentNetwork.chainID]?.[
         transactionConstruction.feeTypeSelected
@@ -27,9 +42,14 @@ export const selectDefaultNetworkFeeSettings = createSelector(
       values: {
         maxFeePerGas: selectedFeesPerGas?.maxFeePerGas ?? 0n,
         maxPriorityFeePerGas: selectedFeesPerGas?.maxPriorityFeePerGas ?? 0n,
-        gasPrice: selectedFeesPerGas?.price ?? 0n,
+        gasPrice:
+          currentNetwork.chainID === ROOTSTOCK.chainID
+            ? (
+                transactionConstruction.transactionRequest as LegacyEVMTransactionRequest
+              )?.gasPrice
+            : selectedFeesPerGas?.price ?? 0n,
         baseFeePerGas:
-          networks.evm[currentNetwork.chainID].baseFeePerGas ?? undefined, // @TODO: Support multi-network
+          networks.evm[currentNetwork.chainID]?.baseFeePerGas ?? undefined,
       },
     }
   }
@@ -38,8 +58,12 @@ export const selectDefaultNetworkFeeSettings = createSelector(
 export const selectEstimatedFeesPerGas = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.estimatedFeesPerGas,
+  selectTransactionNetwork,
   selectCurrentNetwork,
-  (gasData, selectedNetwork) => gasData[selectedNetwork.chainID]
+  (gasData, transactionNetwork, selectedNetwork) =>
+    transactionNetwork
+      ? gasData[transactionNetwork.chainID]
+      : gasData[selectedNetwork.chainID]
 )
 
 export const selectFeeType = createSelector(
@@ -67,16 +91,10 @@ export const selectTransactionMainCurrencyPricePoint = createSelector(
   ): PricePoint | undefined => {
     return selectAssetPricePoint(
       assets,
-      baseAsset?.symbol ?? currentNetwork.baseAsset.symbol, // Fallback to current network's base asset
+      baseAsset ?? currentNetwork.baseAsset, // Fallback to current network's base asset
       mainCurrencySymbol
     )
   }
-)
-
-export const selectLastGasEstimatesRefreshTime = createSelector(
-  (state: { transactionConstruction: TransactionConstruction }) =>
-    state.transactionConstruction.lastGasEstimatesRefreshed,
-  (updateTime) => updateTime
 )
 
 export const selectTransactionData = createSelector(

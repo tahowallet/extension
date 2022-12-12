@@ -7,22 +7,20 @@ import React, {
 } from "react"
 import { useTranslation } from "react-i18next"
 import {
-  fetchSwapPrice,
   clearSwapQuote,
   approveTransfer,
   selectLatestQuoteRequest,
   selectInProgressApprovalContract,
-  SwapQuoteRequest,
   fetchSwapQuote,
+  fetchSwapPrice,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
-  HIDE_SWAP_REWARDS,
-  HIDE_TOKEN_FEATURES,
-} from "@tallyho/tally-background/features"
-import {
+  getAssetsState,
   selectCurrentAccountBalances,
   selectCurrentAccountSigner,
   selectCurrentNetwork,
+  selectMainCurrencySign,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AnyAsset,
@@ -33,7 +31,7 @@ import {
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import logger from "@tallyho/tally-background/lib/logger"
-import { useLocation } from "react-router-dom"
+import { Redirect, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { sameNetwork } from "@tallyho/tally-background/networks"
@@ -41,7 +39,14 @@ import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux
 import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
 import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
-import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
+import {
+  EIP_1559_COMPLIANT_CHAIN_IDS,
+  NETWORKS_SUPPORTING_SWAPS,
+} from "@tallyho/tally-background/constants"
+import {
+  PriceDetails,
+  SwapQuoteRequest,
+} from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -57,6 +62,7 @@ import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
+import SharedLoadingDoggo from "../components/Shared/SharedLoadingDoggo"
 
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
@@ -100,6 +106,14 @@ export default function Swap(): ReactElement {
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
   const isReadOnlyAccount = currentAccountSigner === ReadOnlyAccountSigner
+
+  const assets = useBackgroundSelector(getAssetsState)
+
+  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
+
+  const [priceDetails, setPriceDetails] = useState<PriceDetails | undefined>(
+    undefined
+  )
 
   // TODO We're special-casing ETH here in an odd way. Going forward, we should
   // filter by current chain and better handle network-native base assets
@@ -231,6 +245,10 @@ export default function Swap(): ReactElement {
       }
     }
   }, [sellAsset, sellAssetAmounts])
+
+  useEffect(() => {
+    setPriceDetails(undefined)
+  }, [sellAsset, buyAsset, dispatch])
 
   const inProgressApprovalContract = useBackgroundSelector(
     selectInProgressApprovalContract
@@ -375,9 +393,12 @@ export default function Swap(): ReactElement {
       }
 
       latestQuoteRequest.current = quoteRequest
-
-      const { quote, needsApproval: quoteNeedsApproval } = ((await dispatch(
-        fetchSwapPrice(quoteRequest)
+      const {
+        quote,
+        needsApproval: quoteNeedsApproval,
+        priceDetails: quotePriceDetails,
+      } = ((await dispatch(
+        fetchSwapPrice({ quoteRequest, assets })
       )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapPrice>) ?? {
         quote: undefined,
         needsApproval: false,
@@ -412,6 +433,7 @@ export default function Swap(): ReactElement {
         }
         setNeedsApproval(quoteNeedsApproval)
         setApprovalTarget(quote.allowanceTarget)
+        setPriceDetails(quotePriceDetails)
 
         if (requestedQuote === "sell") {
           setBuyAmount(
@@ -432,7 +454,14 @@ export default function Swap(): ReactElement {
         }
       }
     },
-    [buyAsset, dispatch, sellAsset, swapTransactionSettings, selectedNetwork]
+    [
+      sellAsset,
+      buyAsset,
+      swapTransactionSettings,
+      selectedNetwork,
+      dispatch,
+      assets,
+    ]
   )
 
   const updateSellAsset = useCallback(
@@ -493,6 +522,13 @@ export default function Swap(): ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [swapTransactionSettings, isApprovalInProgress])
 
+  const isSwapSupportedByNetwork = () =>
+    NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID)
+
+  if (!isSwapSupportedByNetwork()) {
+    return <Redirect to="/" />
+  }
+
   return (
     <>
       <CorePage>
@@ -520,10 +556,10 @@ export default function Swap(): ReactElement {
           <div className="header">
             <SharedActivityHeader label={t("swap.title")} activity="swap" />
             <ReadOnlyNotice isLite />
-            {HIDE_TOKEN_FEATURES ? (
+            {isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) ? (
               <></>
             ) : (
-              !HIDE_SWAP_REWARDS && (
+              !isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) && (
                 // TODO: Add onClick function after design is ready
                 <SharedIcon
                   icon="cog@2x.png"
@@ -535,10 +571,10 @@ export default function Swap(): ReactElement {
               )
             )}
           </div>
-          {HIDE_TOKEN_FEATURES ? (
+          {isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) ? (
             <></>
           ) : (
-            HIDE_SWAP_REWARDS && (
+            isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) && (
               <SharedBanner
                 id="swap_rewards"
                 canBeClosed
@@ -546,19 +582,25 @@ export default function Swap(): ReactElement {
                 iconColor="var(--link)"
                 customStyles="margin-bottom: 16px"
               >
-                Swap rewards coming soon
+                {t("swap.swapRewardsTeaser")}
               </SharedBanner>
             )
           )}
           <div className="form">
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
+                currentNetwork={currentNetwork}
                 amount={sellAmount}
+                amountMainCurrency={priceDetails?.sellCurrencyAmount}
+                showPriceDetails
+                isPriceDetailsLoading={!priceDetails}
                 assetsAndAmounts={sellAssetAmounts}
                 selectedAsset={sellAsset}
                 isDisabled={sellAmountLoading}
+                mainCurrencySign={mainCurrencySign}
                 onAssetSelect={updateSellAsset}
                 onAmountChange={(newAmount, error) => {
+                  setPriceDetails(undefined)
                   setSellAmount(newAmount)
                   if (typeof error === "undefined") {
                     updateSwapData("sell", newAmount)
@@ -568,18 +610,25 @@ export default function Swap(): ReactElement {
               />
             </div>
             <button className="icon_change" type="button" onClick={flipSwap}>
-              Switch Assets
+              {t("swap.switchAssets")}
             </button>
             <div className="form_input">
               <SharedAssetInput<SmartContractFungibleAsset | FungibleAsset>
+                currentNetwork={currentNetwork}
                 amount={buyAmount}
+                amountMainCurrency={priceDetails?.buyCurrencyAmount}
+                priceImpact={priceDetails?.priceImpact}
+                isPriceDetailsLoading={!priceDetails}
+                showPriceDetails
                 // FIXME Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
                 selectedAsset={buyAsset}
                 isDisabled={buyAmountLoading}
                 showMaxButton={false}
+                mainCurrencySign={mainCurrencySign}
                 onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount, error) => {
+                  setPriceDetails(undefined)
                   setBuyAmount(newAmount)
                   if (typeof error === "undefined") {
                     updateSwapData("buy", newAmount)
@@ -587,9 +636,21 @@ export default function Swap(): ReactElement {
                 }}
                 label={t("swap.to")}
               />
+              {priceDetails === undefined &&
+              (sellAmount || buyAmount) &&
+              buyAsset &&
+              sellAsset ? (
+                <SharedLoadingDoggo
+                  size={54}
+                  message="Fetching price"
+                  margin="15px 0 0 0"
+                />
+              ) : null}
             </div>
             <div className="settings_wrap">
-              {!HIDE_SWAP_REWARDS ? <SwapRewardsCard /> : null}
+              {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
+                <SwapRewardsCard />
+              ) : null}
             </div>
             <div className="footer standard_width_padded">
               {
@@ -598,7 +659,7 @@ export default function Swap(): ReactElement {
                 needsApproval ? (
                   isApprovalInProgress ? (
                     <SharedButton type="primary" size="large" isDisabled>
-                      Waiting for approval transaction...
+                      {t("swap.waitingForApproval")}
                     </SharedButton>
                   ) : (
                     <SharedButton
@@ -613,7 +674,7 @@ export default function Swap(): ReactElement {
                       onClick={approveAsset}
                       showLoadingOnClick={!confirmationMenu}
                     >
-                      Approve asset
+                      {t("swap.approveAsset")}
                     </SharedButton>
                   )
                 ) : (

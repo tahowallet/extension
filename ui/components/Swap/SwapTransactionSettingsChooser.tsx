@@ -9,7 +9,6 @@ import {
   selectEstimatedFeesPerGas,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
-import { CUSTOM_GAS_SELECT } from "@tallyho/tally-background/features"
 import { setSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
 import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
@@ -18,7 +17,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "../NetworkFees/NetworkSettingsSelect"
 import FeeSettingsText from "../NetworkFees/FeeSettingsText"
 import SharedSelect, { Option } from "../Shared/SharedSelect"
-import NetworkSettingsSelectLegacy from "../NetworkFees/NetworkSettingsSelectLegacy"
+import NetworkSettingsSelectArbitrum from "../NetworkFees/NetworkSettingsSelectArbitrum"
 
 export type SwapTransactionSettings = {
   slippageTolerance: number
@@ -118,7 +117,7 @@ export default function SwapTransactionSettingsChooser({
                     onSave={saveSettings}
                   />
                 ) : (
-                  <NetworkSettingsSelectLegacy
+                  <NetworkSettingsSelectArbitrum
                     estimatedFeesPerGas={estimatedFeesPerGas}
                     networkSettings={swapTransactionSettings.networkSettings}
                     onNetworkSettingsChange={setNetworkSettings}
@@ -180,7 +179,7 @@ export default function SwapTransactionSettingsChooser({
             flex-grow: 2;
           }
           .row {
-            padding: ${CUSTOM_GAS_SELECT ? "unset" : "15px 0px"};
+            padding: unset;
             display: flex;
             align-items: center;
           }

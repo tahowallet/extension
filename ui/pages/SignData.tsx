@@ -1,8 +1,7 @@
-import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
   getAccountTotal,
   selectCurrentAccountSigner,
-  selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   rejectDataSignature,
@@ -11,6 +10,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/signing"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import React, { ReactElement, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
 import Signing from "../components/Signing"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
@@ -26,18 +26,17 @@ export enum SignDataType {
 }
 
 export default function SignData(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "signTransaction.signTypedData",
+  })
   const dispatch = useBackgroundDispatch()
   const typedDataRequest = useBackgroundSelector(selectTypedData)
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const history = useHistory()
 
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof typedDataRequest !== "undefined") {
-      return getAccountTotal(state, {
-        address: typedDataRequest.account.address,
-        network: currentNetwork,
-      })
+      return getAccountTotal(state, typedDataRequest.account)
     }
     return undefined
   })
@@ -48,35 +47,30 @@ export default function SignData(): ReactElement {
 
   const isLocked = useIsSignerLocked(currentAccountSigner)
 
-  if (USE_UPDATED_SIGNING_UI) {
+  if (isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI)) {
     if (currentAccountSigner === null || typedDataRequest === undefined) {
       return <></>
     }
 
-    return (
-      <Signing
-        accountSigner={currentAccountSigner}
-        request={typedDataRequest}
-      />
-    )
+    return <Signing request={typedDataRequest} />
   }
 
   if (isLocked) return <></>
 
+  const canConfirm =
+    typedDataRequest !== undefined &&
+    currentAccountSigner &&
+    currentAccountSigner !== ReadOnlyAccountSigner
+
   const handleConfirm = () => {
-    if (typedDataRequest !== undefined) {
-      if (
-        currentAccountSigner &&
-        currentAccountSigner !== ReadOnlyAccountSigner
-      ) {
-        dispatch(
-          signTypedData({
-            request: typedDataRequest,
-            accountSigner: currentAccountSigner,
-          })
-        )
-        setIsTransactionSigning(true)
-      }
+    if (canConfirm) {
+      dispatch(
+        signTypedData({
+          request: typedDataRequest,
+          accountSigner: currentAccountSigner,
+        })
+      )
+      setIsTransactionSigning(true)
     }
 
     // We need to send user to the previous page after signing data is completed
@@ -90,15 +84,18 @@ export default function SignData(): ReactElement {
 
   const getTitle = () => {
     if (typedDataRequest?.typedData.primaryType === "PermitAndTransferFrom") {
-      return "Authorize Deposit"
+      return t("authorizeDeposit")
     }
-    return `Sign ${typedDataRequest?.typedData.primaryType ?? "Message"}`
+    return t("signMessage", {
+      messageType: typedDataRequest?.typedData.primaryType ?? "Message",
+    })
   }
 
   return (
     <SignTransactionContainer
       signerAccountTotal={signerAccountTotal}
-      confirmButtonLabel="Confirm"
+      confirmButtonLabel={t("confirmButtonLabel")}
+      canConfirm={canConfirm}
       handleConfirm={handleConfirm}
       handleReject={handleReject}
       title={getTitle()}

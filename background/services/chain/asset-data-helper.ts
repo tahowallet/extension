@@ -1,8 +1,4 @@
 import {
-  AlchemyProvider,
-  AlchemyWebSocketProvider,
-} from "@ethersproject/providers"
-import {
   getAssetTransfers as getAlchemyAssetTransfers,
   getTokenBalances as getAlchemyTokenBalances,
   getTokenMetadata as getAlchemyTokenMetadata,
@@ -17,8 +13,12 @@ import { AddressOnNetwork } from "../../accounts"
 import { HexString } from "../../types"
 import logger from "../../lib/logger"
 import { EVMNetwork, SmartContract } from "../../networks"
-import { getBalance, getMetadata as getERC20Metadata } from "../../lib/erc20"
-import { USE_MAINNET_FORK } from "../../features"
+import {
+  getBalance,
+  getMetadata as getERC20Metadata,
+  getTokenBalances,
+} from "../../lib/erc20"
+import { FeatureFlags, isEnabled } from "../../features"
 import { DOGGO, FORK } from "../../constants"
 
 interface ProviderManager {
@@ -48,27 +48,27 @@ export default class AssetDataHelper {
     }
 
     try {
-      // FIXME Allow arbitrary providers?
-      if (
-        provider.currentProvider instanceof AlchemyWebSocketProvider ||
-        provider.currentProvider instanceof AlchemyProvider
-      ) {
+      if (provider.supportsAlchemy) {
         return await getAlchemyTokenBalances(
-          provider.currentProvider,
+          provider,
           addressOnNetwork,
           smartContractAddresses
         )
       }
+      return await getTokenBalances(
+        addressOnNetwork,
+        smartContractAddresses || [],
+        provider
+      )
     } catch (error) {
       logger.debug(
-        "Problem resolving asset balances via Alchemy helper; network " +
-          "may not support it.",
+        "Problem resolving asset balances; network may not support it.",
         error
       )
     }
 
     // Load balances of tokens on the mainnet fork
-    if (USE_MAINNET_FORK) {
+    if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
       const tokens = [
         "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", // AAVE
         "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", // UNI
@@ -113,22 +113,8 @@ export default class AssetDataHelper {
       return undefined
     }
 
-    try {
-      if (
-        provider.currentProvider instanceof AlchemyWebSocketProvider ||
-        provider.currentProvider instanceof AlchemyProvider
-      ) {
-        return await getAlchemyTokenMetadata(
-          provider.currentProvider,
-          tokenSmartContract
-        )
-      }
-    } catch (error) {
-      logger.debug(
-        "Problem resolving asset metadata via Alchemy helper; network may " +
-          "not support it. Falling back to standard lookup.",
-        error
-      )
+    if (provider.supportsAlchemy) {
+      return getAlchemyTokenMetadata(provider, tokenSmartContract)
     }
 
     return getERC20Metadata(provider, tokenSmartContract)
@@ -141,7 +127,8 @@ export default class AssetDataHelper {
   async getAssetTransfers(
     addressOnNetwork: AddressOnNetwork,
     startBlock: number,
-    endBlock?: number
+    endBlock?: number,
+    incomingOnly = false
   ): Promise<AssetTransfer[]> {
     const provider = this.providerTracker.providerForNetwork(
       addressOnNetwork.network
@@ -151,16 +138,28 @@ export default class AssetDataHelper {
     }
 
     try {
-      if (
-        provider.currentProvider instanceof AlchemyWebSocketProvider ||
-        provider.currentProvider instanceof AlchemyProvider
-      ) {
-        return await getAlchemyAssetTransfers(
-          provider.currentProvider,
-          addressOnNetwork,
-          startBlock,
-          endBlock
-        )
+      if (provider.supportsAlchemy) {
+        const promises = [
+          getAlchemyAssetTransfers(
+            provider,
+            addressOnNetwork,
+            "incoming",
+            startBlock,
+            endBlock
+          ),
+        ]
+        if (!incomingOnly) {
+          promises.push(
+            getAlchemyAssetTransfers(
+              provider,
+              addressOnNetwork,
+              "outgoing",
+              startBlock,
+              endBlock
+            )
+          )
+        }
+        return (await Promise.all(promises)).flat()
       }
     } catch (error) {
       logger.warn(

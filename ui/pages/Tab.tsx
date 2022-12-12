@@ -2,7 +2,10 @@ import React, { ReactElement } from "react"
 import { Provider } from "react-redux"
 import { HashRouter, Route, Switch } from "react-router-dom"
 import { Store } from "webext-redux"
+import BrowserTabContainer from "../components/BrowserTab/BrowserTabContainer"
 import Ledger from "./Ledger/Ledger"
+import TabbedOnboardingRoot from "./Onboarding/Tabbed/Root"
+
 import TabNotFound from "./TabNotFound"
 
 /**
@@ -15,8 +18,15 @@ export default function Tab({ store }: { store: Store }): ReactElement {
         {/* HashRouter seems the only choice supporting safe page reloads. */}
         <HashRouter>
           <Switch>
+            <Route path="/onboarding">
+              <BrowserTabContainer>
+                <TabbedOnboardingRoot />
+              </BrowserTabContainer>
+            </Route>
             <Route path="/ledger" exact>
-              <Ledger />
+              <BrowserTabContainer>
+                <Ledger />
+              </BrowserTabContainer>
             </Route>
             <Route>
               <TabNotFound />

@@ -2,13 +2,19 @@ import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
 
-import { Preferences, TokenListPreferences } from "./types"
+import {
+  AnalyticsPreferences,
+  Preferences,
+  TokenListPreferences,
+} from "./types"
 import { getOrCreateDB, PreferenceDatabase } from "./db"
 import BaseService from "../base"
 import { normalizeEVMAddress } from "../../lib/utils"
-import { ETHEREUM } from "../../constants"
+import { ETHEREUM, OPTIMISM, ARBITRUM_ONE } from "../../constants"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString } from "../../types"
+import { AccountSignerSettings } from "../../ui"
+import { AccountSignerWithId } from "../../signing"
 
 type AddressBookEntry = {
   network: EVMNetwork
@@ -29,10 +35,60 @@ const BUILT_IN_CONTRACTS = [
     name: "0x Router",
   },
   {
+    network: OPTIMISM,
+    address: normalizeEVMAddress("0xdef1abe32c034e558cdd535791643c58a13acc10"),
+    name: "0x Router",
+  },
+  {
     network: ETHEREUM,
     // Uniswap v3 Router
     address: normalizeEVMAddress("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"),
     name: "🦄 Uniswap",
+  },
+  {
+    network: OPTIMISM,
+    // Uniswap v3 Router
+    address: normalizeEVMAddress("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"),
+    name: "🦄 Uniswap",
+  },
+  {
+    network: ARBITRUM_ONE,
+    // Uniswap v3 Router
+    address: normalizeEVMAddress("0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"),
+    name: "🦄 Uniswap",
+  },
+  {
+    network: ETHEREUM,
+    // Optimism's custodial Teleportr bridge
+    // https://etherscan.io/address/0x52ec2f3d7c5977a8e558c8d9c6000b615098e8fc
+    address: normalizeEVMAddress("0x52ec2f3d7c5977a8e558c8d9c6000b615098e8fc"),
+    name: "🔴 Optimism Teleportr",
+  },
+  {
+    network: OPTIMISM,
+    // https://optimistic.etherscan.io/address/0x4200000000000000000000000000000000000010
+    address: normalizeEVMAddress("0x4200000000000000000000000000000000000010"),
+    name: "🔴 Optimism Teleportr",
+  },
+  {
+    network: ETHEREUM,
+    // Optimism's non-custodial Gateway bridge
+    address: normalizeEVMAddress("0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1"),
+    name: "🔴 Optimism Gateway",
+  },
+  {
+    network: ETHEREUM,
+    // Arbitrum's Delayed Inbox
+    // https://etherscan.io/address/0x4dbd4fc535ac27206064b68ffcf827b0a60bab3f
+    address: normalizeEVMAddress("0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f"),
+    name: "🔵 Arbitrum bridge",
+  },
+  {
+    network: ETHEREUM,
+    // Arbitrum's old bridge contract
+    // https://etherscan.io/address/0x011b6e24ffb0b5f5fcc564cf4183c5bbbc96d515
+    address: normalizeEVMAddress("0x011B6E24FfB0B5f5fCc564cf4183C5BBBc96D515"),
+    name: "🔵 Arbitrum Old Bridge",
   },
 ]
 
@@ -40,7 +96,9 @@ interface Events extends ServiceLifecycleEvents {
   preferencesChanges: Preferences
   initializeDefaultWallet: boolean
   initializeSelectedAccount: AddressOnNetwork
+  updateAnalyticsPreferences: AnalyticsPreferences
   addressBookEntryModified: AddressBookEntry
+  updatedSignerSettings: AccountSignerSettings[]
 }
 
 /*
@@ -67,7 +125,7 @@ export default class PreferenceService extends BaseService<Events> {
     super()
   }
 
-  protected async internalStartService(): Promise<void> {
+  protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
     this.emitter.emit("initializeDefaultWallet", await this.getDefaultWallet())
@@ -75,9 +133,13 @@ export default class PreferenceService extends BaseService<Events> {
       "initializeSelectedAccount",
       await this.getSelectedAccount()
     )
+    this.emitter.emit(
+      "updateAnalyticsPreferences",
+      await this.getAnalyticsPreferences()
+    )
   }
 
-  protected async internalStopService(): Promise<void> {
+  protected override async internalStopService(): Promise<void> {
     this.db.close()
 
     await super.internalStopService()
@@ -139,6 +201,44 @@ export default class PreferenceService extends BaseService<Events> {
         sameNetwork(network, entryNetwork) &&
         normalizeEVMAddress(address) === normalizeEVMAddress(entryAddress)
     )
+  }
+
+  async deleteAccountSignerSettings(
+    signer: AccountSignerWithId
+  ): Promise<void> {
+    const updatedSignerSettings = await this.db.deleteAccountSignerSettings(
+      signer
+    )
+
+    this.emitter.emit("updatedSignerSettings", updatedSignerSettings)
+  }
+
+  async updateAccountSignerTitle(
+    signer: AccountSignerWithId,
+    title: string
+  ): Promise<void> {
+    const updatedSignerSettings = this.db.updateSignerTitle(signer, title)
+
+    this.emitter.emit("updatedSignerSettings", await updatedSignerSettings)
+  }
+
+  async getAnalyticsPreferences(): Promise<Preferences["analytics"]> {
+    return (await this.db.getPreferences())?.analytics
+  }
+
+  async updateAnalyticsPreferences(
+    analyticsPreferences: Partial<AnalyticsPreferences>
+  ): Promise<void> {
+    await this.db.upsertAnalyticsPreferences(analyticsPreferences)
+    const { analytics } = await this.db.getPreferences()
+
+    // This step is not strictly needed, because the settings can only
+    // be changed from the UI
+    this.emitter.emit("updateAnalyticsPreferences", analytics)
+  }
+
+  async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
+    return this.db.getAccountSignerSettings()
   }
 
   async getCurrency(): Promise<FiatCurrency> {

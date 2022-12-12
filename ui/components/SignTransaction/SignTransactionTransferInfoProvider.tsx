@@ -9,6 +9,7 @@ import {
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { TransactionAnnotation } from "@tallyho/tally-background/services/enrichment"
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../../hooks"
 import FeeSettingsText from "../NetworkFees/FeeSettingsText"
 import SharedAddress from "../Shared/SharedAddress"
@@ -26,11 +27,12 @@ export default function SignTransactionTransferInfoProvider({
 }: SignTransactionInfoProviderProps & {
   annotation: TransactionAnnotation & { type: "asset-transfer" }
 }): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
   const assets = useBackgroundSelector(getAssetsState)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
   const assetPricePoint = selectAssetPricePoint(
     assets,
-    assetAmount.asset.symbol,
+    assetAmount.asset,
     mainCurrencySymbol
   )
 
@@ -52,17 +54,19 @@ export default function SignTransactionTransferInfoProvider({
       infoBlock={
         <div className="sign_block">
           <div className="container">
-            <div className="label">Send to</div>
+            <div className="label">{t("assetTransfer.sendTo")}</div>
             <div className="send_to">
               <SharedAddress
                 address={recipient?.address}
-                name={recipient?.annotation?.nameOnNetwork?.name}
+                name={
+                  recipient?.annotation?.nameRecord?.resolved.nameOnNetwork.name
+                }
               />
             </div>
           </div>
           <div className="divider" />
           <div className="container">
-            <span className="label">Spend Amount</span>
+            <span className="label">{t("spendAmount")}</span>
             <span className="spend_amount">
               {readableDecimalAmount} {assetAmount.asset.symbol}
             </span>

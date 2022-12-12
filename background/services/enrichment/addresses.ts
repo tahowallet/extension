@@ -15,16 +15,14 @@ export async function resolveAddressAnnotation(
 ): Promise<AddressOnNetworkAnnotation> {
   const { address, network } = addressOnNetwork
   const provider = chainService.providerForNetworkOrThrow(network)
-  const [nonce, codeHex, balance, nameOnNetwork] = await Promise.all([
-    provider.getTransactionCount(address),
+  const [codeHex, balance, nameRecord] = await Promise.all([
     provider.getCode(address),
     chainService.getLatestBaseAccountBalance(addressOnNetwork),
     nameService.lookUpName(addressOnNetwork),
   ])
   return {
     balance,
-    nameOnNetwork,
-    nonce: BigInt(nonce),
+    nameRecord,
     hasCode: codeHex !== "0x",
     timestamp: Date.now(),
   }

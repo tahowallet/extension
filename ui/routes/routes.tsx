@@ -22,6 +22,11 @@ import KeyringUnlock from "../components/Keyring/KeyringUnlock"
 import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
 import Eligible from "../pages/Claiming/Eligible"
 import SettingsExportLogs from "../pages/Settings/SettingsExportLogs"
+import SettingsAnalytics from "../pages/Settings/SettingsAnalytics"
+import SettingsConnectedWebsites from "../pages/Settings/SettingsConnectedWebsites"
+import HiddenDevPanel from "../components/HiddenDevPanel/HiddenDevPanel"
+import FeatureFlagsPanel from "../components/HiddenDevPanel/FeatureFlagsPanel"
+import NFTs from "../pages/NFTs"
 
 interface PageList {
   path: string
@@ -58,7 +63,7 @@ const pageList: PageList[] = [
   },
   {
     path: "/onboarding/import-metamask",
-    Component: (): ReactElement => <OnboardingImportMetamask nextPage="/" />,
+    Component: () => <OnboardingImportMetamask nextPage="/" />,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
@@ -106,7 +111,7 @@ const pageList: PageList[] = [
     persistOnClose: true,
   },
   {
-    path: "/overview",
+    path: "/portfolio",
     Component: Overview,
     hasTabBar: true,
     hasTopBar: false,
@@ -134,6 +139,20 @@ const pageList: PageList[] = [
     persistOnClose: true,
   },
   {
+    path: "/settings/connected-websites",
+    Component: SettingsConnectedWebsites,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: true,
+  },
+  {
+    path: "/settings/analytics",
+    Component: SettingsAnalytics,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: true,
+  },
+  {
     path: "/settings",
     Component: Menu,
     hasTabBar: true,
@@ -152,6 +171,13 @@ const pageList: PageList[] = [
     Component: Swap,
     hasTabBar: true,
     hasTopBar: true,
+    persistOnClose: true,
+  },
+  {
+    path: "/nfts",
+    Component: NFTs,
+    hasTabBar: true,
+    hasTopBar: false,
     persistOnClose: true,
   },
   {
@@ -188,6 +214,20 @@ const pageList: PageList[] = [
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: true,
+  },
+  {
+    path: "/dev/feature-flags",
+    Component: FeatureFlagsPanel,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: false,
+  },
+  {
+    path: "/dev",
+    Component: HiddenDevPanel,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: false,
   },
   {
     path: "/",

@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto"
 import PreferenceService from ".."
 import { POLYGON } from "../../../constants"
 import DEFAULT_PREFERENCES from "../defaults"
@@ -9,6 +8,10 @@ describe("Preference Service Integration", () => {
   beforeEach(async () => {
     preferenceService = await PreferenceService.create()
     await preferenceService.startService()
+  })
+
+  afterEach(async () => {
+    await preferenceService.stopService()
   })
 
   describe("setSelectedAccount", () => {
@@ -28,10 +31,10 @@ describe("Preference Service Integration", () => {
 
   describe("setDefaultWalletValue", () => {
     it("should correctly toggle defaultWallet in indexedDB", async () => {
-      // Should default to true
-      expect(await preferenceService.getDefaultWallet()).toEqual(true)
-      await preferenceService.setDefaultWalletValue(false)
+      // Should default to false
       expect(await preferenceService.getDefaultWallet()).toEqual(false)
+      await preferenceService.setDefaultWalletValue(true)
+      expect(await preferenceService.getDefaultWallet()).toEqual(true)
     })
   })
 })

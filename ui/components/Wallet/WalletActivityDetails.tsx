@@ -1,28 +1,31 @@
-import React, { useCallback, ReactElement } from "react"
-import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
-import { getRecipient } from "@tallyho/tally-background/redux-slices/utils/activity-utils"
+import React, { useCallback, ReactElement, useEffect, useState } from "react"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  ActivityDetail,
+  Activity,
+  fetchSelectedActivityDetails,
+} from "@tallyho/tally-background/redux-slices/activities"
 import SharedButton from "../Shared/SharedButton"
 import SharedAddress from "../Shared/SharedAddress"
-import { useBackgroundSelector } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { scanWebsite } from "../../utils/constants"
+import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
+import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
-interface DetailRowItemProps {
-  label: string
-  value: unknown
-  valueDetail: string
-}
-
-function DetailRowItem(props: DetailRowItemProps): ReactElement {
-  const { label, value, valueDetail } = props
+function DetailRowItem(props: ActivityDetail): ReactElement {
+  const { assetIconUrl, label, value } = props
 
   return (
     <li>
-      {label}
-      <div className="right">
-        {value}
-        <div className="value_detail">{valueDetail}</div>
+      <div className="label">
+        {assetIconUrl === undefined ? (
+          <></>
+        ) : (
+          <SharedAssetIcon symbol={label} logoURL={assetIconUrl} size={24} />
+        )}
+        {label}
       </div>
+      <div className="right">{value}</div>
       <style jsx>
         {`
           li {
@@ -33,6 +36,11 @@ function DetailRowItem(props: DetailRowItemProps): ReactElement {
             padding: 7px 0px;
             height: 24px;
             align-items: center;
+          }
+          .label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
           }
           .right {
             float: right;
@@ -101,7 +109,7 @@ function DestinationCard(props: DestinationCardProps): ReactElement {
 }
 
 interface WalletActivityDetailsProps {
-  activityItem: ActivityItem
+  activityItem: Activity
 }
 // Include this "or" type to handle existing placeholder data
 // on the single asset page. TODO: Remove once single asset page
@@ -111,7 +119,8 @@ export default function WalletActivityDetails(
   props: WalletActivityDetailsProps
 ): ReactElement {
   const { activityItem } = props
-
+  const dispatch = useBackgroundDispatch()
+  const [details, setDetails] = useState<ActivityDetail[]>([])
   const network = useBackgroundSelector(selectCurrentNetwork)
 
   const openExplorer = useCallback(() => {
@@ -123,10 +132,20 @@ export default function WalletActivityDetails(
       ?.focus()
   }, [activityItem?.hash, network.chainID])
 
-  if (!activityItem) return <></>
+  useEffect(() => {
+    const fetchDetails = async () => {
+      if (activityItem?.hash) {
+        setDetails(
+          (await dispatch(
+            fetchSelectedActivityDetails(activityItem.hash)
+          )) as unknown as ActivityDetail[]
+        )
+      }
+    }
+    fetchDetails()
+  }, [activityItem.hash, dispatch])
 
-  const { address: recipientAddress, name: recipientName } =
-    getRecipient(activityItem)
+  if (!activityItem) return <></>
 
   return (
     <div className="wrap standard_width center_horizontal">
@@ -147,52 +166,32 @@ export default function WalletActivityDetails(
         <div className="icon_transfer" />
         <DestinationCard
           label="To"
-          address={recipientAddress || "(Contract creation)"}
-          name={recipientName}
+          address={activityItem.recipient.address || "(Contract creation)"}
+          name={activityItem.recipient.name}
         />
       </div>
       <ul>
-        {Object.entries(activityItem.infoRows).map(
-          ([key, { label, value }]) => {
-            return (
-              <DetailRowItem
-                key={key}
-                label={label}
-                value={value}
-                valueDetail=""
-              />
-            )
-          }
+        {details.length ? (
+          <></>
+        ) : (
+          Array.from({ length: 7 }).map(() => (
+            <SharedSkeletonLoader
+              height={24}
+              customStyles="margin: 10px 0 15px;"
+            />
+          ))
         )}
-        <DetailRowItem
-          label="Timestamp"
-          value={
-            typeof activityItem.annotation?.blockTimestamp !== "undefined"
-              ? new Date(
-                  activityItem.annotation?.blockTimestamp * 1000
-                ).toLocaleString()
-              : "(Unknown)"
-          }
-          valueDetail=""
-        />
+        {details.map(({ assetIconUrl, label, value }) => {
+          return (
+            <DetailRowItem
+              key={label}
+              assetIconUrl={assetIconUrl}
+              label={label}
+              value={value}
+            />
+          )
+        })}
       </ul>
-      <div className="activity_log_wrap">
-        <div className="activity_log_title">Activity Log</div>
-        <ul>
-          <li className="activity_log_item">
-            <div className="activity_log_icon plus" />
-            Tx created at 03:00 on 14/4/2021
-          </li>
-          <li className="activity_log_item">
-            <div className="activity_log_icon arrow" />
-            Tx submitted 03:01 on 14/4/2021
-          </li>
-          <li className="activity_log_item">
-            <div className="activity_log_icon check" />
-            Tx confirmed at 03:03 on 14/4/2021
-          </li>
-        </ul>
-      </div>
       <style jsx>
         {`
           .wrap {
@@ -227,51 +226,6 @@ export default function WalletActivityDetails(
             position: relative;
             flex-grow: 1;
             flex-shrink: 0;
-          }
-          .activity_log_title {
-            height: 24px;
-            color: #ffffff;
-            font-size: 18px;
-            font-weight: 600;
-            line-height: 24px;
-            margin-top: 27px;
-            margin-bottom: 6px;
-          }
-          .activity_log_item {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            height: 24px;
-            color: var(--green-40);
-            font-size: 16px;
-            font-weight: 400;
-            line-height: 24px;
-            margin-bottom: 13px;
-          }
-          .activity_log_icon {
-            mask-size: 12px 12px;
-            width: 12px;
-            height: 12px;
-            margin-right: 8px;
-            background-color: var(--green-60);
-          }
-          .plus {
-            mask-image: url("./images/plus@2x.png");
-            mask-size: cover;
-            width: 17px;
-            height: 17px;
-            transform: translateX(-2.5px);
-            margin-right: 3px;
-          }
-          .arrow {
-            mask-image: url("./images/send@2x.png");
-          }
-          .check {
-            mask-image: url("./images/check@2x.png");
-            background-color: var(--success);
-          }
-          .activity_log_wrap {
-            display: none;
           }
         `}
       </style>

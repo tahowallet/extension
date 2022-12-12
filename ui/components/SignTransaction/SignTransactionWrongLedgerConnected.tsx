@@ -1,23 +1,27 @@
-import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import { truncateAddress } from "@tallyho/tally-background/lib/utils"
+import { HexString } from "@tallyho/tally-background/types"
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 import SignTransactionSlideUpContentLayout from "./SignTransactionSlideUpContentLayout"
 
 export default function SignTransactionWrongLedgerConnected({
-  signerAccountTotal,
+  requiredAddress,
 }: {
-  signerAccountTotal?: AccountTotal
+  requiredAddress: HexString
 }): ReactElement {
-  const address = signerAccountTotal?.address ?? ""
+  const { t } = useTranslation("translation", {
+    keyPrefix: "ledger.wrongLedger",
+  })
 
   return (
     <SignTransactionSlideUpContentLayout
-      title="Wrong Ledger"
-      helpMessage="Looks like you are using the wrong Ledger."
+      title={t("title")}
+      helpMessage={t("helpMessage")}
       steps={[
         <div className="step_account">
           <div className="step_account_content">
-            <div>Connect the Ledger containing this account:</div>
+            <div>{t("connectLedger")}</div>
             <div>
               <SharedButton
                 iconSmall="new-tab"
@@ -25,11 +29,14 @@ export default function SignTransactionWrongLedgerConnected({
                 type="deemphasizedWhite"
                 onClick={() => {
                   window
-                    .open(`https://etherscan.io/address/${address}`, "_blank")
+                    .open(
+                      `https://etherscan.io/address/${requiredAddress}`,
+                      "_blank"
+                    )
                     ?.focus()
                 }}
               >
-                {`${address.slice(0, 7)}...${address.slice(-6)}`}
+                {truncateAddress(requiredAddress)}
               </SharedButton>
             </div>
           </div>
@@ -46,7 +53,7 @@ export default function SignTransactionWrongLedgerConnected({
             }
           `}</style>
         </div>,
-        <>Refresh the page</>,
+        <>{t("refresh")}</>,
       ]}
     />
   )

@@ -20,6 +20,7 @@ interface Props {
   children: React.ReactNode
   customSize?: string
   size: SharedSlideUpMenuSize
+  isFullScreen?: boolean
   alwaysRenderChildren?: boolean
 }
 
@@ -30,10 +31,16 @@ const menuHeights: Record<SharedSlideUpMenuSize, string | null> = {
   large: "600px",
   custom: null,
 }
-
 export default function SharedSlideUpMenu(props: Props): ReactElement {
-  const { isOpen, close, size, children, customSize, alwaysRenderChildren } =
-    props
+  const {
+    isOpen,
+    close,
+    size,
+    children,
+    customSize,
+    isFullScreen,
+    alwaysRenderChildren,
+  } = props
 
   const slideUpMenuRef = useRef(null)
 
@@ -60,23 +67,22 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
         style={{ "--menu-height": menuHeight } as CSSProperties}
         ref={isOpen ? slideUpMenuRef : null}
       >
-        <SharedIcon
-          icon="close.svg"
-          width={12}
-          color="var(--green-20)"
-          hoverColor="#fff"
-          customStyles={`
-            position: absolute;
-            z-index: 2;
-            position: sticky;
-            top: 0px;
-            right: 24px;
-            float: right;`}
-          ariaLabel="Close menu"
-          onClick={(e) => {
-            close(e)
-          }}
-        />
+        <div
+          className={classNames("slide_up_close", {
+            hover_content: isFullScreen,
+          })}
+        >
+          <SharedIcon
+            icon="close.svg"
+            width={12}
+            color="var(--green-20)"
+            hoverColor="#fff"
+            ariaLabel="Close menu"
+            onClick={(e) => {
+              close(e)
+            }}
+          />
+        </div>
         {displayChildren}
       </div>
       <style jsx>
@@ -85,7 +91,8 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             width: 100%;
             height: var(--menu-height);
             overflow: hidden;
-            border-radius: 16px;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
             background-color: var(--green-95);
             position: fixed;
             left: 0px;
@@ -96,7 +103,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             opacity: 1;
             transition: transform cubic-bezier(0.19, 1, 0.22, 1)
               ${SLIDE_TRANSITION_MS}ms;
-            padding-top: 24px;
+            padding-top: ${isFullScreen ? "0" : "24px"};
             box-sizing: border-box;
           }
           .overlay {
@@ -129,6 +136,21 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             opacity: 0;
             pointer-events: none;
           }
+          .slide_up_close {
+            position: sticky;
+            z-index: 2;
+            top: 0px;
+            right: 24px;
+            float: right;
+          }
+          .slide_up_close.hover_content {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(0, 20, 19, 0.75);
+            padding: 8px;
+            border-radius: 100%;
+          }
         `}
       </style>
     </>
@@ -137,4 +159,5 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
 
 SharedSlideUpMenu.defaultProps = {
   size: "medium",
+  isFullScreen: false,
 }

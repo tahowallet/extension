@@ -14,6 +14,7 @@ import CopyPlugin, { ObjectPattern } from "copy-webpack-plugin"
 import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin"
 import WebExtensionArchivePlugin from "./build-utils/web-extension-archive-webpack-plugin"
 import InjectWindowProvider from "./build-utils/inject-window-provider"
+import "dotenv-defaults/config"
 
 const supportedBrowsers = ["chrome"]
 
@@ -22,8 +23,8 @@ const baseConfig: Configuration = {
   devtool: "source-map",
   stats: "errors-only",
   entry: {
-    ui: "./src/ui.ts",
-    "tab-ui": "./src/tab-ui.ts",
+    popup: "./src/popup.ts",
+    tab: "./src/tab.ts",
     background: "./src/background.ts",
     "background-ui": "./src/background-ui.ts",
     "window-provider": "./src/window-provider.ts",
@@ -108,6 +109,32 @@ const modeConfigs: {
       new LiveReloadPlugin({}),
       new CopyPlugin({
         patterns: ["dev-utils/*.js"],
+        // FIXME Forced cast below due to an incompatibility between the webpack
+        // FIXME version refed in @types/copy-webpack-plugin and our local
+        // FIXME webpack version.
+      }) as unknown as WebpackPluginInstance,
+      new CopyPlugin({
+        patterns: [
+          {
+            from: "node_modules/@tallyho/tally-ui/public/",
+            force: true,
+            priority: 1,
+            transform: (content, fileName) => {
+              if (fileName.endsWith("popup.html")) {
+                const port = process.env.REACT_DEVTOOLS_DEFAULT_PORT
+
+                return content
+                  .toString("utf8")
+                  .replace(
+                    "<!-- INSERT_REACT_DEV_TOOLS_HERE -->",
+                    `<script src="http://localhost:${port}"></script>`
+                  )
+              }
+
+              return content
+            },
+          },
+        ],
         // FIXME Forced cast below due to an incompatibility between the webpack
         // FIXME version refed in @types/copy-webpack-plugin and our local
         // FIXME webpack version.
@@ -207,10 +234,32 @@ export default (
             {
               from: `manifest/manifest(|.${mode}|.${browser}|.${browser}.${mode}).json`,
               to: "manifest.json",
-              transformAll: (assets: { data: Buffer }[]) => {
+              transformAll: (
+                assets: { data: Buffer; sourceFilename: string }[]
+              ) => {
+                const getPriority = (filename: string) => {
+                  switch (true) {
+                    case filename.endsWith(`manifest.${browser}.${mode}.json`):
+                      return 8
+                    case filename.endsWith(`manifest.${browser}.json`):
+                      return 4
+                    case filename.endsWith(`manifest.${mode}.json`):
+                      return 2
+                    case filename.endsWith("manifest.json"):
+                      return 1
+                    default:
+                      return 0
+                  }
+                }
+
                 const combinedManifest = webpackMerge(
                   {},
                   ...assets
+                    .sort(
+                      (a, b) =>
+                        getPriority(a.sourceFilename) -
+                        getPriority(b.sourceFilename)
+                    )
                     .map((asset) => asset.data.toString("utf8"))
                     // JSON.parse chokes on empty strings
                     .filter((assetData) => assetData.trim().length > 0)

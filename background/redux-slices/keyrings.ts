@@ -7,7 +7,9 @@ import { Keyring, KeyringMetadata } from "../services/keyring/index"
 
 type KeyringsState = {
   keyrings: Keyring[]
-  keyringMetadata: { [keyringId: string]: { source: "import" | "internal" } }
+  keyringMetadata: {
+    [keyringId: string]: KeyringMetadata
+  }
   importing: false | "pending" | "done"
   status: "locked" | "unlocked" | "uninitialized"
   keyringToVerify: {
@@ -27,6 +29,7 @@ export const initialState: KeyringsState = {
 export type Events = {
   createPassword: string
   unlockKeyrings: string
+  lockKeyrings: never
   generateNewKeyring: never
   deriveAddress: string
   importKeyring: ImportKeyring
@@ -145,6 +148,13 @@ export const unlockKeyrings = createBackgroundAsyncThunk(
   "keyrings/unlockKeyrings",
   async (password: string) => {
     await emitter.emit("unlockKeyrings", password)
+  }
+)
+
+export const lockKeyrings = createBackgroundAsyncThunk(
+  "keyrings/lockKeyrings",
+  async () => {
+    await emitter.emit("lockKeyrings")
   }
 )
 

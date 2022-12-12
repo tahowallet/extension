@@ -1,16 +1,15 @@
 import React, { ReactElement, useState } from "react"
 import { NFT } from "@tallyho/tally-background/redux-slices/nfts"
-import { VariableSizeGrid as List } from "react-window"
 import NFTsListItem from "./NFTsListItem"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import NFTsSlideUpPreviewContent from "./NFTsSlideUpPreviewContent"
 
 function NFTsList({
   nfts,
-  height = 538, // TODO: improve scroll, this number is full page NFT list height
+  isAchievement,
 }: {
   nfts: NFT[]
-  height?: number
+  isAchievement?: boolean
 }): ReactElement {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [currentNFTPreview, setCurrentNFTPreview] = useState<NFT | null>(null)
@@ -26,23 +25,24 @@ function NFTsList({
 
   return (
     <>
-      <List
-        columnCount={2}
-        rowCount={Math.ceil(nfts.length / 2)}
-        rowHeight={() => 216}
-        columnWidth={(index) => (index ? 168 : 184)}
-        height={height}
-        width={352}
-        itemData={nfts}
-      >
-        {({ columnIndex, rowIndex, data, style }) => (
+      <div className="nft_list">
+        {nfts.map((item) => (
           <NFTsListItem
-            nft={data[rowIndex * 2 + columnIndex]}
-            style={style}
+            nft={item}
+            isAchievement={isAchievement}
             openPreview={openPreview}
+            key={`${item.tokenID}_${item.contract.address}`}
           />
-        )}
-      </List>
+        ))}
+      </div>
+      <style jsx>{`
+        .nft_list {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          margin-bottom: 16px;
+        }
+      `}</style>
       <SharedSlideUpMenu isOpen={isPreviewOpen} close={closePreview}>
         {currentNFTPreview && (
           <NFTsSlideUpPreviewContent nft={currentNFTPreview} />

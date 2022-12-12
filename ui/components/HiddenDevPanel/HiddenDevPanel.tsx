@@ -1,61 +1,47 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
 import SharedButton from "../Shared/SharedButton"
+import SharedPageHeader from "../Shared/SharedPageHeader"
 
 export default function HiddenDevPanel(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "devPanel" })
   const history = useHistory()
 
   return (
-    <div>
-      <h3>Developer Panel</h3>
-      <div className="buttons_wrap standard_width_padded">
-        <SharedButton
-          type="primary"
-          size="medium"
-          iconSmall="arrow-right"
-          onClick={() => {
-            history.push("/onboarding/info-intro")
-          }}
-        >
-          Enter Onboarding
-        </SharedButton>
+    <section className="standard_width_padded">
+      <SharedPageHeader backPath="/settings" withoutBackText>
+        {t("title")}
+      </SharedPageHeader>
+      <div className="buttons_wrap">
         <SharedButton
           type="secondary"
           size="medium"
-          onClick={() => {
-            window.localStorage.setItem("hasSavedSeed", "true")
-            window.location.reload()
-          }}
           iconSmall="arrow-right"
-        >
-          Verify Recovery Seed
-        </SharedButton>
-        <SharedButton
-          type="secondary"
-          size="medium"
           onClick={() => {
-            window.localStorage.removeItem("hasSavedSeed")
-            window.location.reload()
+            history.push("/dev/feature-flags")
           }}
-          iconSmall="arrow-right"
         >
-          Unverify Recovery Seed
+          {t("featureFlags.title")}
         </SharedButton>
       </div>
       <style jsx>{`
+        section {
+          height: 100%;
+        }
         h3 {
           border-bottom: 1px solid var(--hunter-green);
           padding-bottom: 10px;
-          padding-left: 26px;
+          padding-left: 8px;
         }
         .buttons_wrap {
-          margin: 0 auto;
-          height: 140px;
+          height: 80%;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
+          gap: 16px;
+          margin-top: 16px;
         }
       `}</style>
-    </div>
+    </section>
   )
 }

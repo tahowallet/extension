@@ -1,9 +1,11 @@
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import { Slip44CoinType } from "./constants/coin-types"
 import { HexString, UNIXTime } from "./types"
-import type { CoinGeckoAsset } from "./assets"
+import type { CoinGeckoAsset, FungibleAsset } from "./assets"
 import type {
+  EnrichedEIP1559TransactionRequest,
   EnrichedEIP1559TransactionSignatureRequest,
+  EnrichedEVMTransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
   PartialTransactionRequestWithFrom,
 } from "./services/enrichment"
@@ -16,13 +18,11 @@ export type NetworkFamily = "EVM" | "BTC"
 
 // Should be structurally compatible with FungibleAsset or much code will
 // likely explode.
-export type NetworkBaseAsset = {
-  symbol: string
-  name: string
-  decimals: number
-  contractAddress?: string
-  coinType: Slip44CoinType
-}
+export type NetworkBaseAsset = FungibleAsset &
+  CoinGeckoAsset & {
+    contractAddress?: string
+    coinType: Slip44CoinType
+  }
 
 /**
  * Represents a cryptocurrency network; these can potentially be L1 or L2.
@@ -111,12 +111,7 @@ export type EVMTransaction = {
   blockHeight: number | null
   asset: NetworkBaseAsset
   network: EVMNetwork
-  /*
-   * 0 - plain jane
-   * 1 - EIP-2930
-   * 2 - EIP-1559 transactions
-   */
-  type: 0 | 1 | 2 | null
+  type: KnownTxTypes | null
 }
 
 /**
@@ -159,7 +154,28 @@ export type LegacyEVMTransactionRequest = Pick<
   chainID: LegacyEVMTransaction["network"]["chainID"]
   gasLimit: bigint
   estimatedRollupFee: bigint
+  estimatedRollupGwei: bigint
   nonce?: number
+}
+
+/**
+ * Transaction types attributes are expanded in the https://eips.ethereum.org/EIPS/eip-2718 standard which
+ * is backward compatible. This means that it's enough for us to expand only the accepted tx types.
+ * On the other hand we have yet to find other types from the range being used, so let's be restrictive,
+ * and we can expand the range afterwards. Types we have encountered so far:
+ * 0 - plain jane
+ * 1 - EIP-2930
+ * 2 - EIP-1559 transactions
+ * 100 - EIP-2718 on Arbitrum
+ */
+export const KNOWN_TX_TYPES = [0, 1, 2, 100] as const
+export type KnownTxTypes = typeof KNOWN_TX_TYPES[number]
+export function isKnownTxType(arg: unknown): arg is KnownTxTypes {
+  return (
+    arg !== undefined &&
+    arg !== null &&
+    (KNOWN_TX_TYPES as unknown as number[]).includes(Number(arg))
+  )
 }
 
 /**
@@ -169,7 +185,7 @@ export type LegacyEVMTransactionRequest = Pick<
  */
 export type EIP1559Transaction = EVMTransaction & {
   gasPrice: null
-  type: 1 | 2
+  type: KnownTxTypes
   maxFeePerGas: bigint
   maxPriorityFeePerGas: bigint
 }
@@ -301,10 +317,6 @@ export type BlockPrices = {
   blockNumber: number
   baseFeePerGas: bigint
   /**
-   * An estimate of how many transactions will be included in the next block.
-   */
-  estimatedTransactionCount: number | null
-  /**
    * A choice of gas price parameters with associated confidence that a
    * transaction using those parameters will be included in the next block.
    */
@@ -359,7 +371,7 @@ export function sameNetwork(
  */
 export function toHexChainID(chainID: string | number): string {
   if (typeof chainID === "string" && chainID.startsWith("0x")) {
-    return chainID
+    return chainID.toLowerCase()
   }
   return `0x${BigInt(chainID).toString(16)}`
 }
@@ -373,7 +385,9 @@ export const isEIP1559TransactionRequest = (
     | Partial<PartialTransactionRequestWithFrom>
 ): transactionRequest is EIP1559TransactionRequest =>
   "maxFeePerGas" in transactionRequest &&
-  "maxPriorityFeePerGas" in transactionRequest
+  transactionRequest.maxFeePerGas !== null &&
+  "maxPriorityFeePerGas" in transactionRequest &&
+  transactionRequest.maxPriorityFeePerGas !== null
 
 export const isEIP1559SignedTransaction = (
   signedTransaction: SignedTransaction
@@ -388,3 +402,9 @@ export const isEIP1559EnrichedTransactionSignatureRequest = (
 ): transactionSignatureRequest is EnrichedEIP1559TransactionSignatureRequest =>
   "maxFeePerGas" in transactionSignatureRequest &&
   "maxPriorityFeePerGas" in transactionSignatureRequest
+
+export const isEIP1559EnrichedTransactionRequest = (
+  enrichedTransactionRequest: EnrichedEVMTransactionRequest
+): enrichedTransactionRequest is EnrichedEIP1559TransactionRequest =>
+  "maxFeePerGas" in enrichedTransactionRequest &&
+  "maxPriorityFeePerGas" in enrichedTransactionRequest

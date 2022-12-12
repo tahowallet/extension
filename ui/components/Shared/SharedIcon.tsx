@@ -5,10 +5,12 @@ type Props = {
   width: number
   height?: number
   color?: string
-  hoverColor?: string
   customStyles?: string
+  hoverColor?: string
+  transitionHoverTime: string
   ariaLabel?: string
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
+  disabled?: boolean
 }
 
 export default function SharedIcon(props: Props): ReactElement {
@@ -17,33 +19,68 @@ export default function SharedIcon(props: Props): ReactElement {
     width,
     height = width,
     color = "transparent",
-    hoverColor = color,
     customStyles = "",
-    ariaLabel,
-    onClick,
   } = props
 
+  if ("onClick" in props) {
+    const {
+      hoverColor = color,
+      transitionHoverTime,
+      ariaLabel,
+      onClick,
+      disabled = false,
+    } = props
+
+    return (
+      <button
+        className="icon"
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        aria-label={ariaLabel}
+      >
+        <style jsx>{`
+          .icon {
+            mask-image: url("./images/${icon}");
+            mask-size: cover;
+            width: ${width}px;
+            height: ${height}px;
+            background-color: ${color};
+            transition: background-color ${transitionHoverTime};
+            ${customStyles};
+          }
+
+          .icon:disabled {
+            cursor: unset;
+            background-color: var(--green-60);
+          }
+
+          .icon:enabled:hover {
+            cursor: pointer;
+            background-color: ${hoverColor};
+          }
+        `}</style>
+      </button>
+    )
+  }
+
   return (
-    <button
-      className="icon"
-      type="button"
-      onClick={onClick}
-      aria-label={ariaLabel}
-    >
+    <i className="icon">
       <style jsx>{`
         .icon {
+          display: inline-block;
           mask-image: url("./images/${icon}");
           mask-size: cover;
           width: ${width}px;
           height: ${height}px;
-          cursor: ${onClick ? "pointer" : "auto"};
           background-color: ${color};
           ${customStyles};
         }
-        .icon:hover {
-          background-color: ${hoverColor};
-        }
       `}</style>
-    </button>
+    </i>
   )
+}
+
+SharedIcon.defaultProps = {
+  transitionHoverTime: "0",
 }

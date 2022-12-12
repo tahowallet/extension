@@ -19,13 +19,14 @@ import NameService from "../name"
 import {
   TransactionAnnotation,
   PartialTransactionRequestWithFrom,
+  EnrichedEVMTransactionRequest,
 } from "./types"
 import {
   getDistinctRecipentAddressesFromERC20Logs,
   getERC20LogsForAddresses,
 } from "./utils"
 import { enrichAddressOnNetwork } from "./addresses"
-import { EVM_ROLLUP_CHAIN_IDS } from "../../constants"
+import { OPTIMISM } from "../../constants"
 import { parseLogsForWrappedDepositsAndWithdrawals } from "../../lib/wrappedAsset"
 import { parseERC20Tx, parseLogsForERC20Transfers } from "../../lib/erc20"
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
@@ -41,7 +42,7 @@ async function annotationsFromLogs(
   resolvedTime: number,
   block: AnyEVMBlock | undefined
 ): Promise<TransactionAnnotation[]> {
-  const assets = await indexingService.getCachedAssets(network)
+  const assets = indexingService.getCachedAssets(network)
 
   const accountAddresses = (await chainService.getAccountsToTrack()).map(
     (account) => account.address
@@ -56,23 +57,13 @@ async function annotationsFromLogs(
     tokenTransferLogs,
     accountAddresses
   )
-  const relevantAddresses = [
-    ...new Set(
-      getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs)
-        .concat(
-          tokenTransferLogs.flatMap<string>(
-            ({ senderAddress, recipientAddress }) => [
-              senderAddress,
-              recipientAddress,
-            ]
-          )
-        )
-        .map(normalizeEVMAddress)
-    ),
-  ]
+  const relevantAddresses =
+    getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
+      normalizeEVMAddress
+    )
 
   // Look up transfer log names, then flatten to an address -> name map.
-  const annotationsByAddress = Object.fromEntries(
+  const addressEnrichmentsByAddress = Object.fromEntries(
     (
       await Promise.allSettled(
         relevantAddresses.map(
@@ -92,42 +83,63 @@ async function annotationsFromLogs(
       .filter(([, annotation]) => isDefined(annotation))
   )
 
-  const subannotations = tokenTransferLogs.flatMap<TransactionAnnotation>(
-    ({ contractAddress, amount, senderAddress, recipientAddress }) => {
-      // See if the address matches a fungible asset.
-      const matchingFungibleAsset = assets.find(
-        (asset): asset is SmartContractFungibleAsset =>
-          isSmartContractFungibleAsset(asset) &&
-          sameEVMAddress(asset.contractAddress, contractAddress)
+  const subannotations = (
+    await Promise.allSettled(
+      tokenTransferLogs.map(
+        async ({
+          contractAddress,
+          amount,
+          senderAddress,
+          recipientAddress,
+        }) => {
+          // See if the address matches a fungible asset.
+          const matchingFungibleAsset = assets.find(
+            (asset): asset is SmartContractFungibleAsset =>
+              isSmartContractFungibleAsset(asset) &&
+              sameEVMAddress(asset.contractAddress, contractAddress)
+          )
+
+          if (!matchingFungibleAsset) {
+            return undefined
+          }
+
+          // Try to find a resolved annotation for the recipient and sender and otherwise fetch them
+          const recipient =
+            addressEnrichmentsByAddress[
+              normalizeEVMAddress(recipientAddress)
+            ] ??
+            (await enrichAddressOnNetwork(chainService, nameService, {
+              address: recipientAddress,
+              network,
+            }))
+          const sender =
+            addressEnrichmentsByAddress[normalizeEVMAddress(senderAddress)] ??
+            (await enrichAddressOnNetwork(chainService, nameService, {
+              address: senderAddress,
+              network,
+            }))
+
+          return {
+            type: "asset-transfer" as const,
+            assetAmount: enrichAssetAmountWithDecimalValues(
+              {
+                asset: matchingFungibleAsset,
+                amount,
+              },
+              desiredDecimals
+            ),
+            sender,
+            recipient,
+            timestamp: resolvedTime,
+            blockTimestamp: block?.timestamp,
+          }
+        }
       )
-
-      if (!matchingFungibleAsset) {
-        return []
-      }
-
-      // Try to find a resolved annotation for the recipient and sender
-      const recipient =
-        annotationsByAddress[normalizeEVMAddress(recipientAddress)]
-      const sender = annotationsByAddress[normalizeEVMAddress(senderAddress)]
-
-      return [
-        {
-          type: "asset-transfer",
-          assetAmount: enrichAssetAmountWithDecimalValues(
-            {
-              asset: matchingFungibleAsset,
-              amount,
-            },
-            desiredDecimals
-          ),
-          sender,
-          recipient,
-          timestamp: resolvedTime,
-          blockTimestamp: block?.timestamp,
-        },
-      ]
-    }
+    )
   )
+    .filter(isFulfilledPromise)
+    .map(({ value }) => value)
+    .filter(isDefined)
 
   return subannotations
 }
@@ -145,19 +157,29 @@ export default async function resolveTransactionAnnotation(
     | AnyEVMTransaction
     | (PartialTransactionRequestWithFrom & {
         blockHash?: string
+      })
+    | (EnrichedEVMTransactionRequest & {
+        blockHash?: string
       }),
   desiredDecimals: number
 ): Promise<TransactionAnnotation> {
-  // By default, annotate all requests as contract interactions
-  let txAnnotation: TransactionAnnotation = {
-    blockTimestamp: undefined,
-    timestamp: Date.now(),
-    type: "contract-interaction",
-    contractInfo: await enrichAddressOnNetwork(chainService, nameService, {
-      address: transaction.from,
-      network,
-    }),
-  }
+  const assets = await indexingService.getCachedAssets(network)
+
+  // By default, annotate all requests as contract interactions, unless they
+  // already carry additional metadata.
+  let txAnnotation: TransactionAnnotation =
+    "annotation" in transaction && transaction.annotation !== undefined
+      ? transaction.annotation
+      : {
+          blockTimestamp: undefined,
+          timestamp: Date.now(),
+          type: "contract-deployment",
+          transactionLogoURL: assets.find(
+            (asset) =>
+              asset.metadata?.logoURL &&
+              asset.symbol === transaction.network.baseAsset.symbol
+          )?.metadata?.logoURL,
+        }
 
   let block: AnyEVMBlock | undefined
 
@@ -170,12 +192,13 @@ export default async function resolveTransactionAnnotation(
 
   const { gasLimit, blockHash } = transaction
 
-  const additionalL1Gas = EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
-    ? await chainService.estimateL1RollupFee(
-        network,
-        unsignedTransactionFromEVMTransaction(transaction)
-      )
-    : 0n
+  const additionalL1Gas =
+    network.chainID === OPTIMISM.chainID
+      ? await chainService.estimateL1RollupFeeForOptimism(
+          network,
+          unsignedTransactionFromEVMTransaction(transaction)
+        )
+      : 0n
 
   const gasFee: bigint = isEIP1559TransactionRequest(transaction)
     ? (transaction?.maxFeePerGas ?? 0n) * (gasLimit ?? 0n) + additionalL1Gas
@@ -198,149 +221,191 @@ export default async function resolveTransactionAnnotation(
     }
   }
 
-  // If the tx is missing a recipient, its a contract deployment.
-  if (typeof transaction.to === "undefined") {
-    txAnnotation = {
-      ...txAnnotation,
-      type: "contract-deployment",
-    }
-  } else if (
-    transaction.input === null ||
-    transaction.input === "0x" ||
-    typeof transaction.input === "undefined"
-  ) {
-    // If the tx has no data, it's either a simple ETH send, or it's relying
-    // on a contract that's `payable` to execute code
-
-    const [recipient, sender] = await Promise.all([
-      enrichAddressOnNetwork(chainService, nameService, {
+  // If the tx has a recipient, its a contract interaction or another tx type
+  // rather than a deployment.
+  if (typeof transaction.to !== "undefined") {
+    const contractInfo = await enrichAddressOnNetwork(
+      chainService,
+      nameService,
+      {
         address: transaction.to,
         network,
-      }),
-      enrichAddressOnNetwork(chainService, nameService, {
-        address: transaction.from,
-        network,
-      }),
-    ])
-
-    // This is _almost certainly_ not a contract interaction, move on. Note that
-    // a simple ETH send to a contract address can still effectively be a
-    // contract interaction (because it calls the fallback function on the
-    // contract), but for now we deliberately ignore that scenario when
-    // categorizing activities.
-    // TODO We can do more here by checking how much gas was spent. Anything
-    // over the 21k required to send ETH is a more complex contract interaction
-    if (typeof transaction.value !== "undefined") {
-      // Warn if we're sending ETH to a contract. This is normal if you're
-      // funding a multisig or exchange, but it's good to double check
-      if (recipient.annotation.hasCode) {
-        txAnnotation.warnings ??= []
-        txAnnotation.warnings.push("send-to-contract")
       }
-
-      txAnnotation = {
-        ...txAnnotation,
-        type: "asset-transfer",
-        sender,
-        recipient,
-        assetAmount: enrichAssetAmountWithDecimalValues(
-          {
-            asset: network.baseAsset,
-            amount: transaction.value,
-          },
-          desiredDecimals
-        ),
-      }
-    }
-  } else {
-    const assets = await indexingService.getCachedAssets(network)
-
-    // See if the address matches a fungible asset.
-    const matchingFungibleAsset = assets.find(
-      (asset): asset is SmartContractFungibleAsset =>
-        isSmartContractFungibleAsset(asset) &&
-        sameEVMAddress(asset.contractAddress, transaction.to)
     )
 
-    const transactionLogoURL = matchingFungibleAsset?.metadata?.logoURL
+    txAnnotation =
+      txAnnotation.type === "contract-deployment"
+        ? {
+            ...txAnnotation,
+            type: "contract-interaction",
+            contractInfo: await enrichAddressOnNetwork(
+              chainService,
+              nameService,
+              {
+                address: transaction.to,
+                network,
+              }
+            ),
+          }
+        : // Don't replace prepopulated annotations.
+          txAnnotation
 
-    const erc20Tx = parseERC20Tx(transaction.input)
-
-    // TODO handle the case where we don't have asset metadata already
-    if (
-      matchingFungibleAsset &&
-      erc20Tx &&
-      (erc20Tx.name === "transfer" || erc20Tx.name === "transferFrom")
-    ) {
-      const [sender, recipient] = await Promise.all([
-        enrichAddressOnNetwork(chainService, nameService, {
-          address: erc20Tx.args.from ?? transaction.from,
-          network,
-        }),
-        enrichAddressOnNetwork(chainService, nameService, {
-          address: erc20Tx.args.to,
-          network,
-        }),
-      ])
-
-      // We have an ERC-20 transfer
+    // For prepopulated swap annotations, resolve the swap contract info.
+    if (txAnnotation.type === "asset-swap") {
       txAnnotation = {
         ...txAnnotation,
-        type: "asset-transfer",
-        transactionLogoURL,
-        sender,
-        recipient,
-        assetAmount: enrichAssetAmountWithDecimalValues(
-          {
-            asset: matchingFungibleAsset,
-            amount: BigInt(erc20Tx.args.amount),
-          },
-          desiredDecimals
-        ),
+        swapContractInfo: contractInfo,
       }
-      // Warn if we're sending the token to its own contract
-      if (sameEVMAddress(erc20Tx.args.to, transaction.to)) {
-        txAnnotation.warnings ??= []
-        txAnnotation.warnings.push("send-to-token")
-      }
-      // Warn if we're sending the token to a contract. This is normal if
-      // you're funding a multisig or exchange, but it's good to double check
-      if (recipient.annotation.hasCode) {
-        txAnnotation.warnings ??= []
-        txAnnotation.warnings.push("send-to-contract")
-      }
-    } else if (matchingFungibleAsset && erc20Tx && erc20Tx.name === "approve") {
-      const spender = await enrichAddressOnNetwork(chainService, nameService, {
-        address: erc20Tx.args.spender,
+    }
+
+    if (
+      transaction.input === null ||
+      transaction.input === "0x" ||
+      typeof transaction.input === "undefined"
+    ) {
+      // If the tx has no data, it's either a simple ETH send, or it's relying
+      // on a contract that's `payable` to execute code
+
+      const recipient = contractInfo
+      const sender = await enrichAddressOnNetwork(chainService, nameService, {
+        address: transaction.from,
         network,
       })
-      // Warn if we're approving spending to a likely EOA. Note this will also
-      // sweep up CREATE2 contracts that haven't yet been deployed
-      if (!spender.annotation.hasCode) {
-        txAnnotation.warnings ??= []
-        txAnnotation.warnings.push("approve-eoa")
-      }
-      txAnnotation = {
-        ...txAnnotation,
-        type: "asset-approval",
-        transactionLogoURL,
-        spender,
-        assetAmount: enrichAssetAmountWithDecimalValues(
-          {
-            asset: matchingFungibleAsset,
-            amount: BigInt(erc20Tx.args.value),
-          },
-          desiredDecimals
-        ),
+
+      // This is _almost certainly_ not a contract interaction, move on. Note that
+      // a simple ETH send to a contract address can still effectively be a
+      // contract interaction (because it calls the fallback function on the
+      // contract), but for now we deliberately ignore that scenario when
+      // categorizing activities.
+      // TODO We can do more here by checking how much gas was spent. Anything
+      // over the 21k required to send ETH is a more complex contract interaction
+      if (typeof transaction.value !== "undefined") {
+        // Warn if we're sending ETH to a contract. This is normal if you're
+        // funding a multisig or exchange, but it's good to double check
+        // If the annotation is a built-in contract or in the address book,
+        // skip the warning.
+        if (
+          recipient.annotation.hasCode &&
+          !(
+            recipient.annotation.nameRecord?.system ===
+              "tally-known-contracts" ||
+            recipient.annotation.nameRecord?.system === "tally-address-book"
+          )
+        ) {
+          txAnnotation.warnings ??= []
+          txAnnotation.warnings.push("send-to-contract")
+        }
+
+        txAnnotation = {
+          ...txAnnotation,
+          type: "asset-transfer",
+          sender,
+          recipient,
+          assetAmount: enrichAssetAmountWithDecimalValues(
+            {
+              asset: network.baseAsset,
+              amount: transaction.value,
+            },
+            desiredDecimals
+          ),
+        }
       }
     } else {
-      // Fall back on a standard contract interaction.
-      txAnnotation = {
-        ...txAnnotation,
-        // Include the logo URL if we resolve it even if the interaction is
-        // non-specific; the UI can choose to use it or not, but if we know the
-        // address has an associated logo it's worth passing on.
-        transactionLogoURL,
+      const erc20Tx = parseERC20Tx(transaction.input)
+
+      // See if the address matches a fungible asset.
+      const matchingFungibleAsset = assets.find(
+        (asset): asset is SmartContractFungibleAsset =>
+          isSmartContractFungibleAsset(asset) &&
+          sameEVMAddress(asset.contractAddress, transaction.to)
+      )
+
+      const transactionLogoURL = matchingFungibleAsset?.metadata?.logoURL
+
+      // TODO handle the case where we don't have asset metadata already
+      if (
+        matchingFungibleAsset &&
+        erc20Tx &&
+        (erc20Tx.name === "transfer" || erc20Tx.name === "transferFrom")
+      ) {
+        const [sender, recipient] = await Promise.all([
+          enrichAddressOnNetwork(chainService, nameService, {
+            address: erc20Tx.args.from ?? transaction.from,
+            network,
+          }),
+          enrichAddressOnNetwork(chainService, nameService, {
+            address: erc20Tx.args.to,
+            network,
+          }),
+        ])
+
+        // We have an ERC-20 transfer
+        txAnnotation = {
+          ...txAnnotation,
+          type: "asset-transfer",
+          transactionLogoURL,
+          sender,
+          recipient,
+          assetAmount: enrichAssetAmountWithDecimalValues(
+            {
+              asset: matchingFungibleAsset,
+              amount: BigInt(erc20Tx.args.amount),
+            },
+            desiredDecimals
+          ),
+        }
+        // Warn if we're sending the token to its own contract
+        if (sameEVMAddress(erc20Tx.args.to, transaction.to)) {
+          txAnnotation.warnings ??= []
+          txAnnotation.warnings.push("send-to-token")
+        }
+        // Warn if we're sending the token to a contract. This is normal if
+        // you're funding a multisig or exchange, but it's good to double check.
+        // If the annotation is a built-in contract or in the address book,
+        // skip the warning.
+        if (
+          recipient.annotation.hasCode &&
+          !(
+            recipient.annotation.nameRecord?.system ===
+              "tally-known-contracts" ||
+            recipient.annotation.nameRecord?.system === "tally-address-book"
+          )
+        ) {
+          txAnnotation.warnings ??= []
+          txAnnotation.warnings.push("send-to-contract")
+        }
+      } else if (
+        matchingFungibleAsset &&
+        erc20Tx &&
+        erc20Tx.name === "approve"
+      ) {
+        const spender = await enrichAddressOnNetwork(
+          chainService,
+          nameService,
+          {
+            address: erc20Tx.args.spender,
+            network,
+          }
+        )
+        // Warn if we're approving spending to a likely EOA. Note this will also
+        // sweep up CREATE2 contracts that haven't yet been deployed
+        if (!spender.annotation.hasCode) {
+          txAnnotation.warnings ??= []
+          txAnnotation.warnings.push("approve-eoa")
+        }
+        txAnnotation = {
+          ...txAnnotation,
+          type: "asset-approval",
+          transactionLogoURL,
+          spender,
+          assetAmount: enrichAssetAmountWithDecimalValues(
+            {
+              asset: matchingFungibleAsset,
+              amount: BigInt(erc20Tx.args.value),
+            },
+            desiredDecimals
+          ),
+        }
       }
     }
   }

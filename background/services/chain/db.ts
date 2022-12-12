@@ -1,13 +1,12 @@
-import Dexie from "dexie"
+import Dexie, { Collection, DexieOptions, IndexableTypeArray } from "dexie"
 
 import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
 import { FungibleAsset } from "../../assets"
-import { OPTIMISM, POLYGON } from "../../constants"
-import { SUPPORT_OPTIMISM } from "../../features"
+import { GOERLI, POLYGON } from "../../constants"
 
-type Transaction = AnyEVMTransaction & {
+export type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
   firstSeen: UNIXTime
 }
@@ -64,8 +63,8 @@ export class ChainDatabase extends Dexie {
    */
   private balances!: Dexie.Table<AccountBalance, number>
 
-  constructor() {
-    super("tally/chain")
+  constructor(options?: DexieOptions) {
+    super("tally/chain", options)
     this.version(1).stores({
       migrations: "++id,appliedAt",
       accountsToTrack:
@@ -100,23 +99,12 @@ export class ChainDatabase extends Dexie {
         })
     })
 
-    if (SUPPORT_OPTIMISM) {
-      this.version(4).upgrade((tx) => {
-        tx.table("accountsToTrack")
-          .toArray()
-          .then((accounts) => {
-            const addresses = new Set<string>()
-
-            accounts.forEach(({ address }) => addresses.add(address))
-            ;[...addresses].forEach((address) => {
-              tx.table("accountsToTrack").put({
-                network: OPTIMISM,
-                address,
-              })
-            })
-          })
-      })
-    }
+    this.version(4).upgrade((tx) => {
+      tx.table("accountsToTrack")
+        .where("network.chainID")
+        .equals(GOERLI.chainID)
+        .delete()
+    })
 
     this.chainTransactions.hook(
       "updating",
@@ -149,15 +137,18 @@ export class ChainDatabase extends Dexie {
     )
   }
 
-  async getLatestBlock(network: Network): Promise<AnyEVMBlock> {
+  async getLatestBlock(network: Network): Promise<AnyEVMBlock | null> {
     return (
-      await this.blocks
-        .where("[network.name+timestamp]")
-        .aboveOrEqual([network.name, Date.now() - 60 * 60 * 24])
-        .and((block) => block.network.name === network.name)
-        .reverse()
-        .sortBy("timestamp")
-    )[0]
+      (
+        await this.blocks
+          .where("[network.name+timestamp]")
+          // Only query blocks from the last 86 seconds
+          .aboveOrEqual([network.name, Date.now() - 60 * 60 * 24])
+          .and((block) => block.network.name === network.name)
+          .reverse()
+          .sortBy("timestamp")
+      )[0] || null
+    )
   }
 
   async getTransaction(
@@ -174,15 +165,32 @@ export class ChainDatabase extends Dexie {
     )
   }
 
+  async getAllSavedTransactionHashes(): Promise<IndexableTypeArray> {
+    return this.chainTransactions.orderBy("hash").keys()
+  }
+
+  async getAllTransactions(): Promise<Transaction[]> {
+    return this.chainTransactions.toArray()
+  }
+
+  async getTransactionsForNetworkQuery(
+    network: Network
+  ): Promise<Collection<Transaction, [string, string]>> {
+    return this.chainTransactions.where("network.name").equals(network.name)
+  }
+
+  async getTransactionsForNetwork(network: Network): Promise<Transaction[]> {
+    return (await this.getTransactionsForNetworkQuery(network)).toArray()
+  }
+
   /**
    * Looks up and returns all pending transactions for the given network.
    */
   async getNetworkPendingTransactions(
     network: Network
   ): Promise<(AnyEVMTransaction & { firstSeen: UNIXTime })[]> {
-    return this.chainTransactions
-      .where("network.name")
-      .equals(network.name)
+    const transactions = await this.getTransactionsForNetworkQuery(network)
+    return transactions
       .filter(
         (transaction) =>
           !("status" in transaction) &&
@@ -247,15 +255,6 @@ export class ChainDatabase extends Dexie {
     await this.accountsToTrack.where("address").equals(address).delete()
   }
 
-  async setAccountsToTrack(
-    addressesAndNetworks: Set<AddressOnNetwork>
-  ): Promise<void> {
-    await this.transaction("rw", this.accountsToTrack, () => {
-      this.accountsToTrack.clear()
-      this.accountsToTrack.bulkAdd([...addressesAndNetworks])
-    })
-  }
-
   async getOldestAccountAssetTransferLookup(
     addressNetwork: AddressOnNetwork
   ): Promise<bigint | null> {
@@ -284,8 +283,8 @@ export class ChainDatabase extends Dexie {
       .toArray()
     return lookups.reduce(
       (newestBlock: bigint | null, lookup) =>
-        newestBlock === null || lookup.startBlock > newestBlock
-          ? lookup.startBlock
+        newestBlock === null || lookup.endBlock > newestBlock
+          ? lookup.endBlock
           : newestBlock,
       null
     )
@@ -317,10 +316,33 @@ export class ChainDatabase extends Dexie {
   async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.accountsToTrack.toArray()
   }
+
+  async getTrackedAccountOnNetwork({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<AddressOnNetwork | null> {
+    return (
+      (
+        await this.accountsToTrack
+          .where("[address+network.name+network.chainID]")
+          .equals([address, network.name, network.chainID])
+          .toArray()
+      )[0] ?? null
+    )
+  }
+
+  async getChainIDsToTrack(): Promise<Set<string>> {
+    const chainIDs = await this.accountsToTrack
+      .orderBy("network.chainID")
+      .keys()
+    return new Set(
+      chainIDs.filter(
+        (chainID): chainID is string => typeof chainID === "string"
+      )
+    )
+  }
 }
 
-export async function getOrCreateDB(): Promise<ChainDatabase> {
-  const db = new ChainDatabase()
-
-  return db
+export function createDB(options?: DexieOptions): ChainDatabase {
+  return new ChainDatabase(options)
 }

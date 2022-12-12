@@ -1,5 +1,9 @@
-import { AnyAssetAmount, SmartContractFungibleAsset } from "../../assets"
-import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../../accounts"
+import {
+  AnyAssetAmount,
+  FungibleAsset,
+  SmartContractFungibleAsset,
+} from "../../assets"
+import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyEVMTransaction,
   EIP1559TransactionRequest,
@@ -9,6 +13,7 @@ import {
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
 import { UNIXTime } from "../../types"
 import { SignTypedDataRequest } from "../../utils/signing"
+import { ResolvedNameRecord } from "../name"
 
 export type BaseTransactionAnnotation = {
   /**
@@ -67,8 +72,10 @@ export type AssetTransfer = BaseTransactionAnnotation & {
 
 export type AssetSwap = BaseTransactionAnnotation & {
   type: "asset-swap"
-  fromAssetAmount: AnyAssetAmount & AssetDecimalAmount
-  toAssetAmount: AnyAssetAmount & AssetDecimalAmount
+  fromAssetAmount: AnyAssetAmount<FungibleAsset> & AssetDecimalAmount
+  toAssetAmount: AnyAssetAmount<FungibleAsset> & AssetDecimalAmount
+  sources: { name: string; proportion: number }[]
+  swapContractInfo?: EnrichedAddressOnNetwork
 }
 
 export type TransactionAnnotation =
@@ -141,16 +148,10 @@ export type EIP2612SignTypedDataAnnotation = {
   }
 }
 
-export type UnrecognizedSignTypedDataAnnotation = {
-  type: "unrecognized"
-}
-
-export type SignTypedDataAnnotation =
-  | EIP2612SignTypedDataAnnotation
-  | UnrecognizedSignTypedDataAnnotation
+export type SignTypedDataAnnotation = EIP2612SignTypedDataAnnotation
 
 export type EnrichedSignTypedDataRequest = SignTypedDataRequest & {
-  annotation: SignTypedDataAnnotation
+  annotation?: SignTypedDataAnnotation
 }
 
 export type AddressOnNetworkAnnotation = {
@@ -159,10 +160,6 @@ export type AddressOnNetworkAnnotation = {
    * consumers can more easily upsert annotations.
    */
   timestamp: UNIXTime
-  /**
-   * The latest nonce associated with the address / network.
-   */
-  nonce: bigint
   /**
    * Whether code was found at this address at the time of annotation
    * resolution.
@@ -174,9 +171,9 @@ export type AddressOnNetworkAnnotation = {
    */
   balance: AccountBalance
   /**
-   * A reverse-resolved name for this address, if one has been found.
+   * A reverse-resolved name record for this address, if one has been found.
    */
-  nameOnNetwork?: NameOnNetwork
+  nameRecord?: ResolvedNameRecord
 }
 
 export type EnrichedAddressOnNetwork = AddressOnNetwork & {

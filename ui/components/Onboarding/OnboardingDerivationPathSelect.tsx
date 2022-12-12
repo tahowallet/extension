@@ -5,6 +5,8 @@ import React, {
   useRef,
   useState,
 } from "react"
+import { useTranslation } from "react-i18next"
+import { i18n } from "../../_locales/i18n"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 import SharedModal from "../Shared/SharedModal"
@@ -14,28 +16,24 @@ import SharedSelect, { Option } from "../Shared/SharedSelect"
 const initialDerivationPaths: Option[] = [
   {
     value: "m/44'/60'/x'/0/0",
-    label: "Ledger Live",
+    label: i18n.t("ledger.derivationPaths.ledgerLive"),
   },
   {
     value: "m/44'/60'/0'/0",
-    label: "BIP 44 (Trezor, 🦊)",
+    label: i18n.t("ledger.derivationPaths.bip44"),
   },
   {
     value: "m/44'/1'/0'/0",
-    label: "Ethereum Testnet",
+    label: i18n.t("ledger.derivationPaths.ethTestnet"),
   },
   {
     value: "m/44'/60'/0'",
-    label: "Ledger Legacy",
+    label: i18n.t("ledger.derivationPaths.ledgerLegacy"),
     hideActiveValue: true,
   },
   {
     value: "m/44'/137'/0'/0",
-    label: "RSK",
-  },
-  {
-    value: "m/44'/37310'/0'/0",
-    label: "RSK Testnet",
+    label: i18n.t("ledger.derivationPaths.rsk"),
   },
 ]
 
@@ -51,6 +49,7 @@ export default function OnboardingDerivationPathSelect({
 }: {
   onChange: (path: string) => void
 }): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "onboarding" })
   const [derivationPaths, setDerivationPaths] = useState(initialDerivationPaths)
 
   const [modalStep, setModalStep] = useState(0)
@@ -106,7 +105,7 @@ export default function OnboardingDerivationPathSelect({
   return (
     <>
       <SharedModal
-        header="Add derivation path"
+        header={t("addDerivationPath")}
         isOpen={modalStep > 0}
         onClose={() => setModalStep((prev) => prev - 1)}
         minHeight={modalStep === 2 ? "463px" : "auto"}
@@ -116,7 +115,7 @@ export default function OnboardingDerivationPathSelect({
             <div className="input_wrap">
               <SharedInput
                 id="custom_path_label"
-                label="Label"
+                label={t("pathLabel")}
                 onChange={(value) => setCustomPathLabel(value)}
                 focusedLabelBackgroundColor="var(--green-120)"
                 value={customPathLabel}
@@ -125,7 +124,7 @@ export default function OnboardingDerivationPathSelect({
             <div className="input_wrap">
               <SharedInput
                 id="custom_path_value"
-                label="Custom path (m/44'/0'/0)"
+                label={`${t("customPath")} (m/44'/0'/0)`}
                 onFocus={() => setModalStep(2)}
                 focusedLabelBackgroundColor="var(--green-120)"
                 value={customPathValue}
@@ -137,7 +136,7 @@ export default function OnboardingDerivationPathSelect({
               size="medium"
               onClick={handleAddCustomPath}
             >
-              Add derivation path
+              {t("addDerivationPath")}
             </SharedButton>
           </>
         )}
@@ -172,11 +171,11 @@ export default function OnboardingDerivationPathSelect({
         )}
       </SharedModal>
       <SharedSelect
-        label="Derivation path"
+        label={t("derivationPath")}
         options={derivationPaths}
         onChange={onChange}
         defaultIndex={defaultIndex}
-        triggerLabel="Add custom path"
+        triggerLabel={t("addCustomPath")}
         onTrigger={() => setModalStep(1)}
         showValue
         showOptionValue

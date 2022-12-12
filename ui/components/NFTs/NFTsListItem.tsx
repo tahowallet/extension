@@ -1,16 +1,18 @@
 import React, { ReactElement } from "react"
 import { NFT } from "@tallyho/tally-background/redux-slices/nfts"
+import { useTranslation } from "react-i18next"
 import NFTsImage from "./NFTsImage"
 
 function NFTsListItem({
   nft,
-  style,
   openPreview,
+  isAchievement,
 }: {
   nft?: NFT
+  isAchievement?: boolean
   openPreview: (nft: NFT) => void
-  style?: React.CSSProperties
 }): ReactElement {
+  const { t } = useTranslation()
   // getting undefined sometimes, react-window renders second column even if there is no item?
   if (!nft) return <></>
 
@@ -19,15 +21,16 @@ function NFTsListItem({
 
   return (
     <>
-      <button
-        className="nft"
-        type="button"
-        onClick={() => openPreview(nft)}
-        style={style}
-      >
-        <NFTsImage width={168} height={168} alt={name} src={src} />
-        <span className="title">
-          <span>{name || "No title"}</span>
+      <button className="nft" type="button" onClick={() => openPreview(nft)}>
+        <NFTsImage
+          width={168}
+          height={168}
+          alt={name}
+          src={src}
+          isAchievement={isAchievement}
+        />
+        <span className="title ellipsis">
+          <span>{name || t("nfts.noTitle")}</span>
         </span>
       </button>
       <style jsx>{`
@@ -42,20 +45,18 @@ function NFTsListItem({
           content: "";
           width: 168px;
           height: 168px;
-          border-radius: 8px;
+          border-radius: ${isAchievement ? "100%" : "8px"};
           position: absolute;
           background: #fff;
           opacity: 0.2;
         }
         .title {
           max-width: 168px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
           margin-top: 8px;
           font-weight: 500;
           font-size: 14px;
           line-height: 16px;
+          ${isAchievement && "text-align: center;"}
         }
       `}</style>
     </>

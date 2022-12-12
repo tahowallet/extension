@@ -1,6 +1,7 @@
 import EN from "./en/messages.json"
 import zhHant from "./zh_Hant/messages.json"
 import ptBR from "./pt_BR/messages.json"
+import es from "./es/messages.json"
 
 type Lang = {
   title: string
@@ -15,6 +16,9 @@ const SUPPORT_LANGUAGES: { [id: string]: Lang } = {
   },
   pt_br: {
     title: "Português",
+  },
+  es: {
+    title: "Español",
   },
 }
 
@@ -42,7 +46,10 @@ const resources = {
   pt_br: {
     translation: ptBR,
   },
-}
+  es: {
+    translation: es,
+  },
+} as const
 
 export { SUPPORT_LANGUAGES, getLanguageIndex, getAvalableLanguages, resources }
 

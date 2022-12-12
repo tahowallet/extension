@@ -1,12 +1,12 @@
 import React, { ReactElement, useState } from "react"
 import { Redirect } from "react-router-dom"
 import { getAddressCount } from "@tallyho/tally-background/redux-slices/selectors"
-import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedProgressIndicator from "../../components/Shared/SharedProgressIndicator"
 
-const steps = HIDE_TOKEN_FEATURES
+const steps = isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES)
   ? [
       {
         image: {
@@ -29,17 +29,6 @@ const steps = HIDE_TOKEN_FEATURES
         title: "Tally Ho! is a DAO",
         body: `That means Tally Ho is owned by our users. And all profits go straight to the community.`,
         buttonCopy: "Continue",
-      },
-      {
-        image: {
-          width: 267,
-          height: 236.6,
-          fileName: "illustration_onboarding_default",
-          extraStyles: `margin-top: 21px;`,
-        },
-        title: "Tally Ho set as default",
-        body: `Tally Ho will open any time you connect to a dapp — even if you select MetaMask. You can disable this anytime from Settings.`,
-        buttonCopy: "Get started",
       },
     ]
   : [
@@ -78,7 +67,11 @@ const steps = HIDE_TOKEN_FEATURES
       },
     ]
 
-export default function OnboardingInfoIntro(): ReactElement {
+export default function OnboardingInfoIntro({
+  embedded = false,
+}: {
+  embedded: boolean
+}): ReactElement {
   const [activeStep, setActiveStep] = useState(1)
   const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
 
@@ -138,7 +131,10 @@ export default function OnboardingInfoIntro(): ReactElement {
           .illustration_section {
             height: 380px;
             display: flex;
-            background: linear-gradient(180deg, #002f2b 0%, #00403b 100%);
+            ${embedded
+              ? ""
+              : "background: linear-gradient(180deg, #002f2b 0%, #00403b 100%);"}
+            ${embedded ? "padding-top: 68.5px;" : ""}
           }
           section {
             display: flex;
@@ -154,7 +150,8 @@ export default function OnboardingInfoIntro(): ReactElement {
             margin: 12px 0px 0px 0px;
           }
           .forest {
-            background: url("./images/dark_forest@2x.png");
+            ${embedded ? "" : `background: url("./images/dark_forest@2x.png");`}
+            /*  */
             background-size: cover;
             width: 384px;
             height: 141px;
@@ -173,10 +170,7 @@ export default function OnboardingInfoIntro(): ReactElement {
           }
           .bottom_part {
             display: flex;
-            position: fixed;
-            bottom: 0;
-            padding-top: 22px;
-            padding-bottom: 32px;
+            margin-top: -38px;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;

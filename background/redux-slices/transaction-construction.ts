@@ -1,13 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import { FORK, OPTIMISM } from "../constants"
+import { ARBITRUM_ONE, FORK, OPTIMISM } from "../constants"
 import {
   EXPRESS,
   INSTANT,
   MAX_FEE_MULTIPLIER,
   REGULAR,
 } from "../constants/network-fees"
-import { USE_MAINNET_FORK } from "../features"
+import { FeatureFlags, isEnabled } from "../features"
 
 import {
   BlockEstimate,
@@ -57,10 +57,9 @@ export type TransactionConstruction = {
   transactionRequest?: EnrichedEVMTransactionRequest
   signedTransaction?: SignedTransaction
   broadcastOnSign?: boolean
-  transactionLikelyFails?: boolean
+  transactionLikelyFails: boolean
   estimatedFeesPerGas: { [chainID: string]: EstimatedFeesPerGas | undefined }
   customFeesPerGas?: EstimatedFeesPerGas["custom"]
-  lastGasEstimatesRefreshed: number
   feeTypeSelected: NetworkFeeTypeChosen
 }
 
@@ -84,8 +83,8 @@ export const initialState: TransactionConstruction = {
   status: TransactionConstructionStatus.Idle,
   feeTypeSelected: NetworkFeeTypeChosen.Regular,
   estimatedFeesPerGas: {},
+  transactionLikelyFails: false,
   customFeesPerGas: defaultCustomGas,
-  lastGasEstimatesRefreshed: Date.now(),
 }
 
 export type Events = {
@@ -144,8 +143,8 @@ const makeBlockEstimate = (
 // Async thunk to pass transaction options from the store to the background via an event
 export const updateTransactionData = createBackgroundAsyncThunk(
   "transaction-construction/update-transaction",
-  async (options: EnrichedEVMTransactionSignatureRequest) => {
-    await emitter.emit("updateTransaction", options)
+  async (payload: EnrichedEVMTransactionSignatureRequest) => {
+    await emitter.emit("updateTransaction", payload)
   }
 )
 
@@ -156,7 +155,7 @@ export const signTransaction = createBackgroundAsyncThunk(
       EIP1559TransactionRequest | LegacyEVMTransactionRequest
     >
   ) => {
-    if (USE_MAINNET_FORK) {
+    if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
       request.request.chainID = FORK.chainID
     }
 
@@ -188,6 +187,8 @@ const transactionSlice = createSlice({
         },
         transactionLikelyFails,
       }
+      const feeType = state.feeTypeSelected
+      const { chainID } = transactionRequest.network
 
       if (
         // We use two guards here to satisfy the compiler but due to the spread
@@ -196,21 +197,32 @@ const transactionSlice = createSlice({
         isEIP1559TransactionRequest(transactionRequest)
       ) {
         const estimatedMaxFeePerGas =
-          state.estimatedFeesPerGas?.[transactionRequest.network.chainID]?.[
-            state.feeTypeSelected
-          ]?.maxFeePerGas
+          feeType === NetworkFeeTypeChosen.Custom
+            ? state.customFeesPerGas?.maxFeePerGas
+            : state.estimatedFeesPerGas?.[chainID]?.[feeType]?.maxFeePerGas
 
         newState.transactionRequest.maxFeePerGas =
           estimatedMaxFeePerGas ?? transactionRequest.maxFeePerGas
 
         const estimatedMaxPriorityFeePerGas =
-          state.estimatedFeesPerGas?.[transactionRequest.network.chainID]?.[
-            state.feeTypeSelected
-          ]?.maxPriorityFeePerGas
+          feeType === NetworkFeeTypeChosen.Custom
+            ? state.customFeesPerGas?.maxPriorityFeePerGas
+            : state.estimatedFeesPerGas?.[chainID]?.[feeType]
+                ?.maxPriorityFeePerGas
 
         newState.transactionRequest.maxPriorityFeePerGas =
           estimatedMaxPriorityFeePerGas ??
           transactionRequest.maxPriorityFeePerGas
+      }
+
+      if (
+        !isEIP1559TransactionRequest(transactionRequest) &&
+        !isEIP1559TransactionRequest(newState.transactionRequest) &&
+        chainID === ARBITRUM_ONE.chainID
+      ) {
+        newState.transactionRequest.gasPrice =
+          state.estimatedFeesPerGas?.[chainID]?.[feeType]?.price ??
+          transactionRequest.gasPrice
       }
 
       return newState
@@ -220,42 +232,35 @@ const transactionSlice = createSlice({
       { payload }: { payload: TransactionConstructionStatus }
     ) => ({
       estimatedFeesPerGas: state.estimatedFeesPerGas,
-      lastGasEstimatesRefreshed: state.lastGasEstimatesRefreshed,
       status: payload,
       feeTypeSelected: state.feeTypeSelected ?? NetworkFeeTypeChosen.Regular,
       broadcastOnSign: false,
+      transactionLikelyFails: false,
       signedTransaction: undefined,
       customFeesPerGas: state.customFeesPerGas,
     }),
+    updateRollupEstimates: (
+      immerState,
+      {
+        payload,
+      }: {
+        payload: { estimatedRollupFee: bigint; estimatedRollupGwei: bigint }
+      }
+    ) => {
+      const { estimatedRollupFee, estimatedRollupGwei } = payload
+      if (
+        immerState.transactionRequest?.network.chainID === OPTIMISM.chainID &&
+        !isEIP1559TransactionRequest(immerState.transactionRequest)
+      ) {
+        immerState.transactionRequest.estimatedRollupFee = estimatedRollupFee
+        immerState.transactionRequest.estimatedRollupGwei = estimatedRollupGwei
+      }
+    },
     setFeeType: (
       immerState,
       { payload }: { payload: NetworkFeeTypeChosen }
     ) => {
       immerState.feeTypeSelected = payload
-
-      if (immerState.transactionRequest) {
-        const selectedFeesPerGas =
-          immerState.estimatedFeesPerGas?.[
-            immerState.transactionRequest.network.chainID
-          ]?.[immerState.feeTypeSelected] ?? immerState.customFeesPerGas
-
-        immerState.transactionRequest = {
-          ...immerState.transactionRequest,
-        }
-
-        if (
-          immerState.transactionRequest &&
-          isEIP1559TransactionRequest(immerState.transactionRequest)
-        ) {
-          immerState.transactionRequest.maxFeePerGas =
-            selectedFeesPerGas?.maxFeePerGas ??
-            immerState.transactionRequest.maxFeePerGas
-
-          immerState.transactionRequest.maxFeePerGas =
-            selectedFeesPerGas?.maxPriorityFeePerGas ??
-            immerState.transactionRequest.maxPriorityFeePerGas
-        }
-      }
     },
 
     signed: (state, { payload }: { payload: SignedTransaction }) => ({
@@ -303,8 +308,6 @@ const transactionSlice = createSlice({
           },
         }
       }
-
-      immerState.lastGasEstimatesRefreshed = Date.now()
     },
     setCustomGas: (
       immerState,
@@ -326,6 +329,18 @@ const transactionSlice = createSlice({
     clearCustomGas: (immerState) => {
       immerState.customFeesPerGas = defaultCustomGas
     },
+    setCustomGasLimit: (
+      immerState,
+      { payload: gasLimit }: { payload: bigint | undefined }
+    ) => {
+      if (
+        typeof gasLimit !== "undefined" &&
+        immerState.transactionRequest &&
+        isEIP1559TransactionRequest(immerState.transactionRequest)
+      ) {
+        immerState.transactionRequest.gasLimit = gasLimit
+      }
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(updateTransactionData.pending, (immerState) => {
@@ -345,6 +360,8 @@ export const {
   estimatedFeesPerGas,
   setCustomGas,
   clearCustomGas,
+  updateRollupEstimates,
+  setCustomGasLimit,
 } = transactionSlice.actions
 
 export default transactionSlice.reducer

@@ -1,4 +1,3 @@
-import "fake-indexeddb/auto"
 import PreferenceService from ".."
 import { ETHEREUM } from "../../../constants"
 
@@ -8,6 +7,10 @@ describe("Preference Service Unit", () => {
   beforeEach(async () => {
     preferenceService = await PreferenceService.create()
     await preferenceService.startService()
+  })
+
+  afterEach(async () => {
+    await preferenceService.stopService()
   })
 
   describe("addOrEditNameInAddressBook", () => {

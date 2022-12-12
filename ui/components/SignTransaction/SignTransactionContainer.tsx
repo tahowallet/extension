@@ -8,6 +8,7 @@ import React, {
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { Warning } from "@tallyho/tally-background/services/enrichment"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -18,6 +19,7 @@ import SignTransactionMultipleLedgersConnected from "./SignTransactionMultipleLe
 import SignTransactionNetworkAccountInfoTopBar from "./SignTransactionNetworkAccountInfoTopBar"
 import SignTransactionWrongLedgerConnected from "./SignTransactionWrongLedgerConnected"
 import { useSigningLedgerState } from "./useSigningLedgerState"
+import { useDebounce } from "../../hooks"
 
 export default function SignTransactionContainer({
   signerAccountTotal,
@@ -26,6 +28,7 @@ export default function SignTransactionContainer({
   reviewPanel,
   extraPanel,
   confirmButtonLabel,
+  canConfirm,
   handleConfirm,
   handleReject,
   isTransactionSigning,
@@ -38,18 +41,24 @@ export default function SignTransactionContainer({
   reviewPanel: ReactNode
   extraPanel: ReactNode
   confirmButtonLabel: ReactNode
+  canConfirm: boolean
   handleConfirm: () => void
   handleReject: () => void
   isTransactionSigning: boolean
   isArbitraryDataSigningRequired: boolean
   warnings?: Warning[]
 }): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
+  const { t: ledgerT } = useTranslation("translation", { keyPrefix: "ledger" })
   const [isSlideUpOpen, setSlideUpOpen] = useState(false)
   const accountSigner = signerAccountTotal?.accountSigner
   const [isOnDelayToSign, setIsOnDelayToSign] = useState(true)
   const [focusChangeNonce, setFocusChangeNonce] = useState(0)
 
-  const signingLedgerState = useSigningLedgerState(accountSigner ?? null)
+  const signingLedgerState = useSigningLedgerState(
+    signerAccountTotal?.address,
+    accountSigner ?? null
+  )
 
   const isLedgerSigning = accountSigner?.type === "ledger"
   const isWaitingForHardware = isLedgerSigning && isTransactionSigning
@@ -68,6 +77,10 @@ export default function SignTransactionContainer({
     when rendering new sign content or when changing window focus.
   */
   const delaySignButtonTimeout = useRef<number | undefined>()
+
+  // Debounced unlock buttons because dispatching transaction events is async and can happen in batches
+  const [unlockButtons, setUnlockButtons] = useDebounce(canConfirm, 300)
+  useEffect(() => setUnlockButtons(canConfirm), [canConfirm, setUnlockButtons])
 
   function clearDelaySignButtonTimeout() {
     if (typeof delaySignButtonTimeout.current !== "undefined") {
@@ -118,7 +131,7 @@ export default function SignTransactionContainer({
         )}
       </SharedSkeletonLoader>
       <h1 className="serif_header title">
-        {isWaitingForHardware ? "Awaiting hardware wallet signature" : title}
+        {isWaitingForHardware ? t("awaitingHardwareSignature") : title}
       </h1>
       <div className="primary_info_card standard_width">
         {isWaitingForHardware ? reviewPanel : detailPanel}
@@ -126,18 +139,23 @@ export default function SignTransactionContainer({
       {isWaitingForHardware ? (
         <div className="cannot_reject_warning">
           <span className="block_icon" />
-          Tx can only be Rejected from Ledger
+          {ledgerT("onlyRejectFromLedger")}
         </div>
       ) : (
         <>
           {extraPanel}
           <div className="footer_actions">
-            <SharedButton size="large" type="secondary" onClick={handleReject}>
-              Reject
+            <SharedButton
+              size="large"
+              type="secondary"
+              isDisabled={!unlockButtons}
+              onClick={handleReject}
+            >
+              {t("reject")}
             </SharedButton>
             {/* TODO: split into different components depending on signing method, to avoid convoluted logic below */}
             {accountSigner === ReadOnlyAccountSigner && (
-              <span className="no-signing">Read-only accounts cannot sign</span>
+              <span className="no-signing">{t("noSigning")}</span>
             )}
             {isLedgerSigning && !canLedgerSign && (
               <SharedButton
@@ -147,7 +165,7 @@ export default function SignTransactionContainer({
                   setSlideUpOpen(true)
                 }}
               >
-                Check Ledger
+                {ledgerT("checkLedger")}
               </SharedButton>
             )}
             {((isLedgerSigning && canLedgerSign) ||
@@ -158,7 +176,9 @@ export default function SignTransactionContainer({
                 onClick={handleConfirm}
                 showLoadingOnClick
                 isDisabled={
-                  isOnDelayToSign || warnings.includes("insufficient-funds")
+                  isOnDelayToSign ||
+                  !unlockButtons ||
+                  warnings.includes("insufficient-funds")
                 }
               >
                 {confirmButtonLabel}
@@ -180,7 +200,7 @@ export default function SignTransactionContainer({
         )}
         {signingLedgerState?.state === "wrong-ledger-connected" && (
           <SignTransactionWrongLedgerConnected
-            signerAccountTotal={signerAccountTotal}
+            requiredAddress={signingLedgerState.requiredAddress}
           />
         )}
         {signingLedgerState?.state === "multiple-ledgers-connected" && (

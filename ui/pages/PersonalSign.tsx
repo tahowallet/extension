@@ -2,17 +2,17 @@ import React, { ReactElement, useState } from "react"
 import {
   getAccountTotal,
   selectCurrentAccountSigner,
-  selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   rejectDataSignature,
   signData,
   selectSigningData,
 } from "@tallyho/tally-background/redux-slices/signing"
-import { SignDataMessageType } from "@tallyho/tally-background/utils/signing"
 import { useHistory } from "react-router-dom"
-import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
+import { useTranslation } from "react-i18next"
+import { SigningDataType } from "@tallyho/tally-background/utils/signing"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -22,24 +22,21 @@ import PersonalSignDetailPanel from "./PersonalSignDetailPanel"
 import SignTransactionContainer from "../components/SignTransaction/SignTransactionContainer"
 import Signing from "../components/Signing"
 
-const TITLE: Record<SignDataMessageType, string> = {
-  [SignDataMessageType.EIP4361]: "Sign in with Ethereum",
-  [SignDataMessageType.EIP191]: "Sign Message",
+const TITLE: Record<SigningDataType, string> = {
+  eip4361: "Sign in with Ethereum",
+  eip191: "Sign Message",
 }
 
 export default function PersonalSignData(): ReactElement {
+  const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const signingDataRequest = useBackgroundSelector(selectSigningData)
 
   const history = useHistory()
 
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof signingDataRequest !== "undefined") {
-      return getAccountTotal(state, {
-        address: signingDataRequest.account.address,
-        network: currentNetwork,
-      })
+      return getAccountTotal(state, signingDataRequest.account)
     }
     return undefined
   })
@@ -51,17 +48,12 @@ export default function PersonalSignData(): ReactElement {
   const isLocked = useIsSignerLocked(currentAccountSigner)
   if (isLocked) return <></>
 
-  if (USE_UPDATED_SIGNING_UI) {
+  if (isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI)) {
     if (currentAccountSigner === null || signingDataRequest === undefined) {
       return <></>
     }
 
-    return (
-      <Signing
-        accountSigner={currentAccountSigner}
-        request={signingDataRequest}
-      />
-    )
+    return <Signing request={signingDataRequest} />
   }
 
   if (
@@ -71,9 +63,12 @@ export default function PersonalSignData(): ReactElement {
     return <></>
   }
 
+  const canConfirm =
+    currentAccountSigner !== ReadOnlyAccountSigner &&
+    signingDataRequest !== undefined
+
   const handleConfirm = () => {
-    if (currentAccountSigner === ReadOnlyAccountSigner) return
-    if (signingDataRequest === undefined) return
+    if (!canConfirm) return
 
     dispatch(
       signData({
@@ -92,7 +87,8 @@ export default function PersonalSignData(): ReactElement {
   return (
     <SignTransactionContainer
       signerAccountTotal={signerAccountTotal}
-      confirmButtonLabel="Sign"
+      confirmButtonLabel={t("signTransaction.confirmButtonLabel")}
+      canConfirm={canConfirm}
       handleConfirm={handleConfirm}
       handleReject={handleReject}
       title={TITLE[signingDataRequest.messageType]}

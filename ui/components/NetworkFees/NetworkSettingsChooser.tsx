@@ -1,15 +1,26 @@
+/* eslint-disable no-nested-ternary */
 import React, { ReactElement, useState } from "react"
 import {
   EstimatedFeesPerGas,
   NetworkFeeSettings,
   setFeeType,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
-import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectDefaultNetworkFeeSettings,
+  selectTransactionData,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import {
+  ARBITRUM_ONE,
+  BINANCE_SMART_CHAIN,
+  OPTIMISM,
+  ROOTSTOCK,
+} from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "./NetworkSettingsSelect"
 import NetworkSettingsOptimism from "./NetworkSettingsSelectOptimism"
+import NetworkSettingsRSK from "./NetworkSettingsSelectRSK"
+import NetworkSettingsSelectArbitrum from "./NetworkSettingsSelectArbitrum"
+import NetworkSettingsSelectBNBChain from "./NetworkSettingsSelectBNBChain"
 
 interface NetworkSettingsChooserProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
@@ -23,7 +34,7 @@ export default function NetworkSettingsChooser({
   const [networkSettings, setNetworkSettings] = useState(
     useBackgroundSelector(selectDefaultNetworkFeeSettings)
   )
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const dispatch = useBackgroundDispatch()
 
@@ -32,20 +43,43 @@ export default function NetworkSettingsChooser({
     onNetworkSettingsSave(networkSettings)
   }
 
-  return (
-    <>
-      <div className="wrapper">
-        {EIP_1559_COMPLIANT_CHAIN_IDS.has(currentNetwork.chainID) ? (
-          <NetworkSettingsSelect
+  function networkSettingsSelectorFinder() {
+    if (transactionDetails) {
+      if (transactionDetails.network.name === OPTIMISM.name) {
+        return <NetworkSettingsOptimism />
+      }
+      if (transactionDetails.network.name === ROOTSTOCK.name) {
+        return <NetworkSettingsRSK />
+      }
+      if (transactionDetails.network.name === ARBITRUM_ONE.name) {
+        return (
+          <NetworkSettingsSelectArbitrum
             estimatedFeesPerGas={estimatedFeesPerGas}
             networkSettings={networkSettings}
             onNetworkSettingsChange={setNetworkSettings}
             onSave={saveNetworkSettings}
           />
-        ) : (
-          <NetworkSettingsOptimism />
-        )}
-      </div>
+        )
+      }
+      if (transactionDetails.network.name === BINANCE_SMART_CHAIN.name) {
+        return <NetworkSettingsSelectBNBChain />
+      }
+      return (
+        <NetworkSettingsSelect
+          estimatedFeesPerGas={estimatedFeesPerGas}
+          networkSettings={networkSettings}
+          onNetworkSettingsChange={setNetworkSettings}
+          onSave={saveNetworkSettings}
+        />
+      )
+    }
+
+    return <></>
+  }
+
+  return (
+    <>
+      <div className="wrapper">{networkSettingsSelectorFinder()}</div>
       <style jsx>
         {`
           .wrapper {

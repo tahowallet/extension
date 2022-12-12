@@ -1,5 +1,11 @@
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
-import { isProbablyEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { ROOTSTOCK } from "@tallyho/tally-background/constants"
+import {
+  isProbablyEVMAddress,
+  normalizeEVMAddress,
+  isValidChecksumAddress,
+  isMixedCaseAddress,
+} from "@tallyho/tally-background/lib/utils"
 import { resolveNameOnNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { HexString } from "@tallyho/tally-background/types"
@@ -157,7 +163,17 @@ export const useAddressOrNameValidation: AsyncValidationHook<
       if (trimmed === "") {
         onValidChange(undefined)
       } else if (isProbablyEVMAddress(trimmed)) {
-        onValidChange({ address: trimmed })
+        // Apply checksum validation only for RSK network
+        if (
+          ROOTSTOCK.chainID === network.chainID &&
+          isMixedCaseAddress(trimmed) &&
+          !isValidChecksumAddress(trimmed, +network.chainID)
+        ) {
+          onValidChange(undefined)
+          setErrorMessage("Be careful! This may not be a valid RSK address.")
+        } else {
+          onValidChange({ address: normalizeEVMAddress(trimmed) })
+        }
       } else {
         setIsValidating(true)
         validatingValue.current = trimmed

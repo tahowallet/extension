@@ -1,8 +1,9 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-
-// FIXME Make this configurable.
-const hardcodedMainCurrencySymbol = "USD"
+import {
+  hardcodedMainCurrencySign,
+  hardcodedMainCurrencySymbol,
+} from "../utils/constants"
 
 export const selectCurrentNetwork = createSelector(
   (state: RootState) => state.ui.selectedAccount.network,
@@ -19,7 +20,7 @@ export const selectCurrentAccount = createSelector(
 )
 
 export const selectShowingActivityDetail = createSelector(
-  (state: RootState) => state.activities,
+  (state: RootState) => state.activities.activities,
   selectCurrentAccount,
   (state: RootState) => state.ui.showingActivityDetailID,
   (activities, currentAccountOnNetwork, showingActivityDetailID) => {
@@ -27,9 +28,11 @@ export const selectShowingActivityDetail = createSelector(
       return null
     }
 
-    return activities[currentAccountOnNetwork.address][
-      currentAccountOnNetwork.network.chainID
-    ].entities[showingActivityDetailID]
+    return (
+      activities[currentAccountOnNetwork.address]?.[
+        currentAccountOnNetwork.network.chainID
+      ]?.find((activity) => activity.hash === showingActivityDetailID) ?? null
+    )
   }
 )
 
@@ -41,6 +44,11 @@ export const selectCurrentAddressNetwork = createSelector(
 export const selectMainCurrencySymbol = createSelector(
   () => null,
   () => hardcodedMainCurrencySymbol
+)
+
+export const selectMainCurrencySign = createSelector(
+  () => null,
+  () => hardcodedMainCurrencySign
 )
 
 export const selectMainCurrency = createSelector(

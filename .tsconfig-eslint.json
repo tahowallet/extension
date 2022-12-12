@@ -1,5 +1,11 @@
 {
   "extends": "./tsconfig.json",
-  "include": [".eslintrc.js", "**/*.js", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "include": [
+    ".eslintrc.js",
+    "**/*.js",
+    "**/*.ts",
+    "**/*.tsx",
+    ".github/**/*.js"
+  ],
+  "exclude": ["node_modules", "dist", "**/validate/*.js", "**/local-chain/**"]
 }

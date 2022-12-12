@@ -3,7 +3,16 @@ import Emittery from "emittery"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
 import { keyPermissionsByChainIdAddressOrigin } from "../services/provider-bridge/utils"
-import { ETHEREUM, GOERLI, OPTIMISM, POLYGON } from "../constants"
+import {
+  ARBITRUM_NOVA,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
+  ETHEREUM,
+  GOERLI,
+  OPTIMISM,
+  POLYGON,
+  ROOTSTOCK,
+} from "../constants"
 
 export type DAppPermissionState = {
   permissionRequests: { [origin: string]: PermissionRequest }
@@ -92,6 +101,19 @@ const dappSlice = createSlice({
 
       return state
     },
+    revokePermissionsForAddress: (
+      immerState,
+      { payload: address }: { payload: string }
+    ) => {
+      Object.keys(immerState.allowed.evm).forEach((chainID) => {
+        if (immerState.allowed.evm[chainID]?.[address]) {
+          const { [address]: _, ...withoutAddressToRemove } =
+            immerState.allowed.evm[chainID]
+
+          immerState.allowed.evm[chainID] = withoutAddressToRemove
+        }
+      })
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -105,12 +127,19 @@ const dappSlice = createSlice({
           delete updatedPermissionRequests[permission.origin]
 
           // Support all networks regardless of which one initiated grant request
-          const permissions = [ETHEREUM, POLYGON, OPTIMISM, GOERLI].map(
-            (network) => ({
-              ...permission,
-              chainID: network.chainID,
-            })
-          )
+          const permissions = [
+            ETHEREUM,
+            ROOTSTOCK,
+            POLYGON,
+            OPTIMISM,
+            AVALANCHE,
+            BINANCE_SMART_CHAIN,
+            GOERLI,
+            ARBITRUM_NOVA,
+          ].map((network) => ({
+            ...permission,
+            chainID: network.chainID,
+          }))
 
           const allowedPermission = keyPermissionsByChainIdAddressOrigin(
             permissions,
@@ -128,19 +157,13 @@ const dappSlice = createSlice({
         ) => {
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.origin]
-          ;[ETHEREUM, POLYGON, OPTIMISM, GOERLI].forEach((network) => {
-            if (
-              immerState.allowed.evm[network.chainID]?.[
-                permission.accountAddress
-              ]
-            ) {
+
+          Object.keys(immerState.allowed.evm).forEach((chainID) => {
+            if (immerState.allowed.evm[chainID]?.[permission.accountAddress]) {
               const { [permission.origin]: _, ...withoutOriginToRemove } =
-                immerState.allowed.evm[network.chainID][
-                  permission.accountAddress
-                ]
-              immerState.allowed.evm[network.chainID][
-                permission.accountAddress
-              ] = withoutOriginToRemove
+                immerState.allowed.evm[chainID][permission.accountAddress]
+              immerState.allowed.evm[chainID][permission.accountAddress] =
+                withoutOriginToRemove
             }
           })
         }
@@ -148,6 +171,10 @@ const dappSlice = createSlice({
   },
 })
 
-export const { requestPermission, initializePermissions } = dappSlice.actions
+export const {
+  requestPermission,
+  initializePermissions,
+  revokePermissionsForAddress,
+} = dappSlice.actions
 
 export default dappSlice.reducer

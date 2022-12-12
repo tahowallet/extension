@@ -15,7 +15,11 @@ import {
   PartialTransactionRequestWithFrom,
 } from "./types"
 import { SignTypedDataRequest } from "../../utils/signing"
-import { enrichEIP2612SignTypedDataRequest, isEIP2612TypedData } from "./utils"
+import {
+  enrichEIP2612SignTypedDataRequest,
+  getRelevantTransactionAddresses,
+  isEIP2612TypedData,
+} from "./utils"
 import { ETHEREUM } from "../../constants"
 
 import resolveTransactionAnnotation from "./transactions"
@@ -70,25 +74,25 @@ export default class EnrichmentService extends BaseService<Events> {
     super({})
   }
 
-  async internalStartService(): Promise<void> {
+  override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
     await this.connectChainServiceEvents()
   }
 
   private async connectChainServiceEvents(): Promise<void> {
-    this.chainService.emitter.on(
-      "transaction",
-      async ({ transaction, forAccounts }) => {
-        this.emitter.emit("enrichedEVMTransaction", {
-          transaction: await this.enrichTransaction(
-            transaction,
-            2 /* TODO desiredDecimals should be configurable */
-          ),
-          forAccounts,
-        })
-      }
-    )
+    this.chainService.emitter.on("transaction", async ({ transaction }) => {
+      const accounts = await this.chainService.getAccountsToTrack()
+      const enrichedTransaction = await this.enrichTransaction(transaction, 2)
+
+      this.emitter.emit("enrichedEVMTransaction", {
+        transaction: enrichedTransaction,
+        forAccounts: getRelevantTransactionAddresses(
+          enrichedTransaction,
+          accounts
+        ),
+      })
+    })
   }
 
   async enrichTransactionSignature(
@@ -120,12 +124,11 @@ export default class EnrichmentService extends BaseService<Events> {
   async enrichSignTypedDataRequest(
     signTypedDataRequest: SignTypedDataRequest
   ): Promise<EnrichedSignTypedDataRequest> {
-    let annotation: SignTypedDataAnnotation = {
-      type: "unrecognized",
-    }
+    let annotation: SignTypedDataAnnotation | undefined
+
     const { typedData } = signTypedDataRequest
     if (isEIP2612TypedData(typedData)) {
-      const assets = await this.indexingService.getCachedAssets(ETHEREUM)
+      const assets = this.indexingService.getCachedAssets(ETHEREUM)
       const correspondingAsset = assets.find(
         (asset): asset is SmartContractFungibleAsset => {
           if (

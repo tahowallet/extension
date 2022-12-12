@@ -1,107 +1,116 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useRef, useState } from "react"
 import dayjs from "dayjs"
 import classNames from "classnames"
-import { ActivityItem } from "@tallyho/tally-background/redux-slices/activities"
 import {
-  isMaxUint256,
   sameEVMAddress,
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
 import { HexString } from "@tallyho/tally-background/types"
-import { getRecipient } from "@tallyho/tally-background/redux-slices/utils/activity-utils"
+import { useTranslation } from "react-i18next"
+import {
+  Activity,
+  INFINITE_VALUE,
+} from "@tallyho/tally-background/redux-slices/activities"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 
 interface Props {
   onClick: () => void
-  activity: ActivityItem
+  activity: Activity
   asAccount: string
 }
 
-function isReceiveActivity(activity: ActivityItem, account: string): boolean {
+function isReceiveActivity(activity: Activity, account: string): boolean {
   return (
-    activity.annotation?.type === "asset-transfer" &&
-    sameEVMAddress(activity.annotation?.recipient?.address, account)
+    activity.type === "asset-transfer" &&
+    sameEVMAddress(activity.recipient?.address, account)
   )
 }
 
-function isSendActivity(activity: ActivityItem, account: string): boolean {
-  return activity.annotation?.type === "asset-transfer"
-    ? sameEVMAddress(activity.annotation?.sender?.address, account)
+function isSendActivity(activity: Activity, account: string): boolean {
+  return activity.type === "asset-transfer"
+    ? sameEVMAddress(activity.sender?.address, account)
     : true
 }
 
 export default function WalletActivityListItem(props: Props): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet.activities",
+  })
   const { onClick, activity, asAccount } = props
+  const outcomeRef = useRef<HTMLDivElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const [outcomeWidth, setOutcomeWidth] = useState(0)
+  const [bottomWidth, setBottomWidth] = useState(0)
+
+  useEffect(() => {
+    if (outcomeRef.current) {
+      setOutcomeWidth(outcomeRef.current.offsetWidth)
+    }
+  }, [outcomeRef])
+
+  useEffect(() => {
+    if (bottomRef.current) {
+      setBottomWidth(bottomRef.current.offsetWidth)
+    }
+  }, [bottomRef])
 
   // TODO Replace this with better conditional rendering.
   let renderDetails: {
-    iconClass: string | undefined
+    iconClass?: string
     label: string
     recipient: {
-      address: HexString | undefined
-      name?: string | undefined
+      address?: HexString
+      name?: string
     }
-    assetLogoURL: string | undefined
+    assetLogoURL?: string
     assetSymbol: string
     assetValue: string
   } = {
     iconClass: undefined,
-    label: "Contract interaction",
-    recipient: getRecipient(activity),
-    assetLogoURL: undefined,
-    assetSymbol: activity.asset.symbol,
-    assetValue: activity.localizedDecimalValue,
+    label: t("contractInteraction"),
+    recipient: activity.recipient,
+    assetLogoURL: activity.assetLogoUrl,
+    assetSymbol: activity.assetSymbol,
+    assetValue: activity.value,
   }
 
-  switch (activity.annotation?.type) {
+  switch (activity.type) {
     case "asset-transfer":
       renderDetails = {
         ...renderDetails,
-        label: isReceiveActivity(activity, asAccount) ? "Received" : "Send",
+        label: isReceiveActivity(activity, asAccount)
+          ? t("tokenReceived")
+          : t("tokenSent"),
         iconClass: isReceiveActivity(activity, asAccount)
           ? "receive_icon"
           : "send_icon",
-        assetLogoURL: activity.annotation.transactionLogoURL,
-        assetSymbol: activity.annotation.assetAmount.asset.symbol,
-        assetValue: activity.annotation.assetAmount.localizedDecimalAmount,
       }
       break
     case "asset-approval":
       renderDetails = {
-        label: "Token approval",
+        ...renderDetails,
+        label: t("tokenApproved"),
         iconClass: "approve_icon",
-        recipient: {
-          address: activity.annotation.spender.address,
-          name: activity.annotation.spender.annotation.nameOnNetwork?.name,
-        },
-        assetLogoURL: activity.annotation.transactionLogoURL,
-        assetSymbol: activity.annotation.assetAmount.asset.symbol,
-        assetValue: isMaxUint256(activity.annotation.assetAmount.amount)
-          ? "Infinite"
-          : activity.annotation.assetAmount.localizedDecimalAmount,
+        assetValue:
+          activity.value === INFINITE_VALUE
+            ? t("infiniteApproval")
+            : activity.value,
       }
       break
     case "asset-swap":
       renderDetails = {
+        ...renderDetails,
         iconClass: "swap_icon",
-        label: "Swap",
-        recipient: getRecipient(activity),
-        assetLogoURL: activity.annotation.transactionLogoURL,
-        assetSymbol: activity.asset.symbol,
-        assetValue: activity.localizedDecimalValue,
+        label: t("tokenSwapped"),
       }
       break
     case "contract-deployment":
     case "contract-interaction":
     default:
       renderDetails = {
+        ...renderDetails,
         iconClass: "contract_interaction_icon",
-        label: "Contract Interaction",
-        recipient: getRecipient(activity),
-        // TODO fall back to the asset URL we have in metadata
-        assetLogoURL: activity.annotation?.transactionLogoURL,
-        assetSymbol: activity.asset.symbol,
-        assetValue: activity.localizedDecimalValue,
+        label: t("contractInteraction"),
       }
   }
 
@@ -117,29 +126,29 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             {"status" in activity &&
             activity.blockHash !== null &&
             activity.status !== 1 ? (
-              <div className="status failed">Failed</div>
+              <div className="status failed">{t("transactionFailed")}</div>
             ) : (
               <></>
             )}
             {"status" in activity &&
             activity.blockHash === null &&
             activity.status === 0 ? (
-              <div className="status dropped">Dropped</div>
+              <div className="status dropped">{t("transactionDropped")}</div>
             ) : (
               <></>
             )}
             {!("status" in activity) && activity.blockHash === null ? (
-              <div className="status pending">Pending...</div>
+              <div className="status pending">{t("transactionPending")}</div>
             ) : (
               <></>
             )}
           </div>
           <div className="right">
-            {activity.annotation?.blockTimestamp &&
-              dayjs.unix(activity.annotation?.blockTimestamp).format("MMM D")}
+            {activity.blockTimestamp &&
+              dayjs.unix(activity.blockTimestamp).format("MMM D")}
           </div>
         </div>
-        <div className="bottom">
+        <div ref={bottomRef} className="bottom">
           <div className="left">
             <div className="token_icon_wrap">
               <SharedAssetIcon
@@ -151,27 +160,30 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               />
             </div>
             <div className="amount">
-              <span className="bold_amount_count">
+              <span
+                className="bold_amount_count"
+                title={renderDetails.assetValue}
+              >
                 {renderDetails.assetValue}
               </span>
-              {renderDetails.assetSymbol}
+              <span className="name">{renderDetails.assetSymbol}</span>
             </div>
           </div>
-          <div className="right">
+          <div ref={outcomeRef} className="right">
             {isSendActivity(activity, asAccount) ? (
               <div className="outcome" title={renderDetails.recipient.address}>
-                To:
+                {t("transactionTo")}
                 {` ${
                   renderDetails.recipient.name ??
                   (renderDetails.recipient.address === undefined
-                    ? "(Contract creation)"
+                    ? t("contractCreation")
                     : truncateAddress(renderDetails.recipient.address))
                 }`}
               </div>
             ) : (
               <div className="outcome" title={activity.from}>
-                From:
-                {` ${activity.fromTruncated}`}
+                {t("transactionFrom")}
+                {` ${truncateAddress(activity.from)}`}
               </div>
             )}
           </div>
@@ -185,7 +197,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             background-color: var(--green-95);
             display: flex;
             flex-direction: column;
-            padding: 11px 19px 8px 8px;
+            padding: 9px 19px 8px 8px;
             box-sizing: border-box;
             margin-bottom: 16px;
             justify-content: space-between;
@@ -246,7 +258,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             justify-content: space-between;
             width: 100%;
             align-items: center;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
           }
           .bottom {
             display: flex;
@@ -263,7 +275,6 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             height: 32px;
             background-color: var(--hunter-green);
             border-radius: 80px;
-            margin-right: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -282,17 +293,27 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             letter-spacing: 0.42px;
             line-height: 16px;
             text-transform: uppercase;
+            display: flex;
+            flex-wrap: wrap;
+            padding: 0px 8px;
+            align-items: center;
           }
           .bold_amount_count {
-            width: 70px;
             height: 24px;
             color: #fefefc;
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
             margin-right: 4px;
+            max-width: calc(${bottomWidth}px - 50px - ${outcomeWidth}px);
+            overflow: hidden;
+            text-overflow: ellipsis;
             // For Infinite text in token approvals.
             text-transform: none;
+          }
+          .name {
+            white-space: nowrap;
+            padding-top: 3px;
           }
           .price {
             width: 58px;
@@ -319,6 +340,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             display: flex;
             justify-content: space-between;
             text-align: right;
+            white-space: nowrap;
           }
           .outcome {
             color: var(--green-5);

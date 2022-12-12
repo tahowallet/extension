@@ -27,6 +27,7 @@ import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
 import { PermissionMap } from "./utils"
 import { toHexChainID } from "../../networks"
+import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -101,7 +102,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
-  protected async internalStartService(): Promise<void> {
+  protected override async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
     this.emitter.emit(
@@ -120,38 +121,31 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
 
     const { origin } = new URL(url)
-    const completeTab =
-      typeof tab !== "undefined" && typeof tab.id !== "undefined"
-        ? {
-            ...tab,
-            // Firefox sometimes requires an extra query to get favicons,
-            // unclear why but may be related to
-            // https://bugzilla.mozilla.org/show_bug.cgi?id=1417721 .
-            ...(await browser.tabs.get(tab.id)),
-          }
-        : tab
-    const faviconUrl = completeTab?.favIconUrl ?? ""
-    const title = completeTab?.title ?? ""
 
     const response: PortResponseEvent = {
       id: event.id,
       jsonrpc: "2.0",
       result: [],
     }
-
-    const { chainID } =
-      await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+    const network =
+      await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
         origin
       )
 
-    const originPermission = await this.checkPermission(origin, chainID)
-    if (isTallyConfigPayload(event.request)) {
+    const originPermission = await this.checkPermission(origin, network.chainID)
+    if (origin === TALLY_INTERNAL_ORIGIN) {
+      // Explicitly disallow anyone who has managed to pretend to be the
+      // internal provider.
+      response.result = new EIP1193Error(
+        EIP1193_ERROR_CODES.unauthorized
+      ).toJSON()
+    } else if (isTallyConfigPayload(event.request)) {
       // let's start with the internal communication
       response.id = "tallyHo"
       response.result = {
         method: event.request.method,
         defaultWallet: await this.preferenceService.getDefaultWallet(),
-        chainId: toHexChainID(chainID),
+        chainId: toHexChainID(network.chainID),
       }
     } else if (event.request.method === "tally_setClaimReferrer") {
       const referrer = event.request.params[0]
@@ -163,10 +157,16 @@ export default class ProviderBridgeService extends BaseService<Events> {
       this.emitter.emit("setClaimReferrer", String(referrer))
 
       response.result = null
-    } else if (event.request.method === "eth_chainId") {
-      // we need to send back the chainId independent of dApp permission if we want to be compliant with MM and web3-react
-      // We are calling the `internalEthereumProviderService.routeSafeRPCRequest` directly here, because the point
-      // of this exception is to provide the proper chainId for the dApp, independent from the permissions.
+    } else if (
+      event.request.method === "eth_chainId" ||
+      event.request.method === "net_version"
+    ) {
+      // we need to send back the chainId and net_version (a deprecated
+      // precursor to eth_chainId) independent of dApp permission if we want to
+      // be compliant with MM and web3-react We are calling the
+      // `internalEthereumProviderService.routeSafeRPCRequest` directly here,
+      // because the point of this exception is to provide the proper chainId
+      // for the dApp, independent from the permissions.
       response.result =
         await this.internalEthereumProviderService.routeSafeRPCRequest(
           event.request.method,
@@ -182,7 +182,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
         event.request.params,
         origin
       )
-    } else if (event.request.method === "wallet_addEthereumChain") {
+    } else if (
+      event.request.method === "wallet_addEthereumChain" ||
+      event.request.method === "wallet_switchEthereumChain"
+    ) {
       response.result =
         await this.internalEthereumProviderService.routeSafeRPCRequest(
           event.request.method,
@@ -206,11 +209,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
         )) as string
       ).toString()
 
+      // these params are taken directly from the dapp website
+      const [title, faviconUrl] = event.request.params as string[]
+
       const permissionRequest: PermissionRequest = {
         key: `${origin}_${accountAddress}_${dAppChainID}`,
         origin,
         chainID: dAppChainID,
-        faviconUrl,
+        faviconUrl: faviconUrl || tab?.favIconUrl || "", // if favicon was not found on the website then try with browser's `tab`
         title,
         state: "request",
         accountAddress,
@@ -270,7 +276,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
       const { chainID } =
-        await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+        await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
           origin
         )
       if (await this.checkPermission(origin, chainID)) {
@@ -336,6 +342,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
       delete this.#pendingPermissionsRequests[permission.origin]
     }
 
+    this.notifyContentScriptsAboutAddressChange()
+  }
+
+  async revokePermissionsForAddress(revokeAddress: string): Promise<void> {
+    await this.db.deletePermissionByAddress(revokeAddress)
     this.notifyContentScriptsAboutAddressChange()
   }
 
@@ -415,7 +426,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
         case "eth_signTransaction":
         case "eth_sendTransaction":
           checkPermissionSignTransaction(
-            params[0] as EthersTransactionRequest,
+            {
+              // A dApp can't know what should be the next nonce because it can't access
+              // the information about how many tx are in the signing process inside the
+              // wallet. Nonce should be assigned only by the wallet.
+              ...(params[0] as EthersTransactionRequest),
+              nonce: undefined,
+            },
             enablingPermission
           )
 

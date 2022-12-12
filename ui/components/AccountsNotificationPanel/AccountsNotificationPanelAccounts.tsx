@@ -1,5 +1,15 @@
-import React, { ReactElement, useEffect, useState } from "react"
-import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
+import React, {
+  ReactElement,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
+import {
+  setNewSelectedAccount,
+  setSnackbarMessage,
+  updateSignerTitle,
+} from "@tallyho/tally-background/redux-slices/ui"
 import { deriveAddress } from "@tallyho/tally-background/redux-slices/keyrings"
 import {
   AccountTotal,
@@ -15,6 +25,10 @@ import {
 } from "@tallyho/tally-background/lib/utils"
 import { clearSignature } from "@tallyho/tally-background/redux-slices/earn"
 import { resetClaimFlow } from "@tallyho/tally-background/redux-slices/claim"
+import { useTranslation } from "react-i18next"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { AccountSigner } from "@tallyho/tally-background/services/signing"
+import { isSameAccountSignerWithId } from "@tallyho/tally-background/utils/signing"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
@@ -23,28 +37,39 @@ import {
 } from "../../hooks"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import AccountItemOptionsMenu from "../AccountItem/AccountItemOptionsMenu"
+import { i18n } from "../../_locales/i18n"
+import SharedIcon from "../Shared/SharedIcon"
+import SharedDropdown from "../Shared/SharedDropDown"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import EditSectionForm from "./EditSectionForm"
+import SigningButton from "./SigningButton"
 
 type WalletTypeInfo = {
   title: string
   icon: string
+  category: string
 }
 
-const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
+export const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   [AccountType.ReadOnly]: {
-    title: "Read-only",
-    icon: "./images/eye_account@2x.png",
+    title: i18n.t("accounts.notificationPanel.readOnly"),
+    icon: "./images/eye@2x.png",
+    category: i18n.t("accounts.notificationPanel.category.readOnly"),
   },
   [AccountType.Imported]: {
-    title: "Import",
+    title: i18n.t("accounts.notificationPanel.import"),
     icon: "./images/imported@2x.png",
+    category: i18n.t("accounts.notificationPanel.category.others"),
   },
   [AccountType.Internal]: {
-    title: "Tally Ho",
-    icon: "./images/tally_avatar.svg",
+    title: i18n.t("accounts.notificationPanel.internal"),
+    icon: "./images/stars_grey.svg",
+    category: i18n.t("accounts.notificationPanel.category.others"),
   },
   [AccountType.Ledger]: {
-    title: "Full access via Ledger", // FIXME: check copy against UI specs
-    icon: "./images/ledger_icon@2x.png", // FIXME: use proper icon
+    title: i18n.t("accounts.notificationPanel.ledger"),
+    icon: "./images/ledger_icon.svg",
+    category: i18n.t("accounts.notificationPanel.category.ledger"),
   },
 }
 
@@ -52,41 +77,103 @@ function WalletTypeHeader({
   accountType,
   onClickAddAddress,
   walletNumber,
+  accountSigner,
 }: {
   accountType: AccountType
   onClickAddAddress?: () => void
+  accountSigner: AccountSigner
   walletNumber?: number
 }) {
+  const { t } = useTranslation()
   const { title, icon } = walletTypeDetails[accountType]
+  const dispatch = useBackgroundDispatch()
+
+  const settingsBySigner = useBackgroundSelector(
+    (state) => state.ui.accountSignerSettings
+  )
+  const signerSettings =
+    accountSigner.type !== "read-only"
+      ? settingsBySigner.find(({ signer }) =>
+          isSameAccountSignerWithId(signer, accountSigner)
+        )
+      : undefined
+
+  const sectionCustomName = signerSettings?.title
+
+  const sectionTitle = useMemo(() => {
+    if (accountType === AccountType.ReadOnly) return title
+
+    if (sectionCustomName) return sectionCustomName
+
+    return `${title} ${walletNumber}`
+  }, [accountType, title, sectionCustomName, walletNumber])
+
   const history = useHistory()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
-
+  const [showEditMenu, setShowEditMenu] = useState(false)
   return (
     <>
+      {accountSigner.type !== "read-only" && (
+        <SharedSlideUpMenu
+          size="small"
+          isOpen={showEditMenu}
+          close={(e) => {
+            e.stopPropagation()
+            setShowEditMenu(false)
+          }}
+        >
+          <EditSectionForm
+            onSubmit={(newName) => {
+              if (newName) {
+                dispatch(updateSignerTitle([accountSigner, newName]))
+              }
+              setShowEditMenu(false)
+            }}
+            onCancel={() => setShowEditMenu(false)}
+            accountTypeIcon={walletTypeDetails[accountType].icon}
+            currentName={sectionTitle}
+          />
+        </SharedSlideUpMenu>
+      )}
       <header className="wallet_title">
         <h2 className="left">
-          <div className="icon" />
-          {title} {accountType !== AccountType.ReadOnly ? walletNumber : null}
-        </h2>
-        {onClickAddAddress ? (
-          <div className="right">
-            <SharedButton
-              type="tertiaryGray"
-              size="small"
-              iconSmall="add"
-              onClick={() => {
-                if (areKeyringsUnlocked) {
-                  onClickAddAddress()
-                } else {
-                  history.push("/keyring/unlock")
-                }
-              }}
-            >
-              Add address
-            </SharedButton>
+          <div className="icon_wrap">
+            <div className="icon" />
           </div>
-        ) : (
-          <></>
+          {sectionTitle}
+        </h2>
+        {accountType !== AccountType.ReadOnly && (
+          <SharedDropdown
+            toggler={(toggle) => (
+              <SharedIcon
+                color="var(--green-40)"
+                customStyles="cursor: pointer;"
+                width={24}
+                onClick={() => toggle()}
+                icon="settings.svg"
+              />
+            )}
+            options={[
+              {
+                key: "edit",
+                icon: "icons/s/edit.svg",
+                label: t("accounts.accountItem.editName"),
+                onClick: () => setShowEditMenu(true),
+              },
+              onClickAddAddress && {
+                key: "addAddress",
+                onClick: () => {
+                  if (areKeyringsUnlocked) {
+                    onClickAddAddress()
+                  } else {
+                    history.push("/keyring/unlock")
+                  }
+                },
+                icon: "icons/s/add.svg",
+                label: t("accounts.notificationPanel.addAddress"),
+              },
+            ]}
+          />
         )}
       </header>
       <style jsx>{`
@@ -94,23 +181,28 @@ function WalletTypeHeader({
           display: flex;
           align-items: center;
           justify-content: space-between;
+          padding-top: 16px;
+          padding-right: 4px;
         }
         .wallet_title > h2 {
-          color: #fff;
+          color: var(--green-40);
           font-size: 18px;
           font-weight: 600;
           line-height: 24px;
-          padding: 0px 12px 0px 16px;
+          padding: 0px 12px 0px 24px;
           margin: 8px 0px;
         }
+        .icon_wrap {
+          background-color: var(--green-60);
+          margin: 0 7px 0 0;
+          border-radius: 4px;
+        }
         .icon {
-          background: url("${icon}");
-          background-size: cover;
-          background-color: #faf9f4;
+          mask-image: url("${icon}");
+          mask-size: cover;
+          background-color: var(--green-20);
           width: 24px;
           height: 24px;
-          border-radius: 4px;
-          margin: 0 7px 0 0;
         }
         .icon_wallet {
           background: url("./images/wallet_kind_icon@2x.png") center no-repeat;
@@ -146,8 +238,12 @@ type Props = {
 export default function AccountsNotificationPanelAccounts({
   onCurrentAddressChange,
 }: Props): ReactElement {
+  const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
+  const history = useHistory()
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const isMounted = useRef(false)
 
   const accountTotals = useBackgroundSelector(
     selectCurrentNetworkAccountTotalsByCategory
@@ -179,6 +275,15 @@ export default function AccountsNotificationPanelAccounts({
     }
   }, [onCurrentAddressChange, pendingSelectedAddress, selectedAccountAddress])
 
+  useEffect(() => {
+    // Prevents notifications from displaying when the component is not yet mounted
+    if (!isMounted.current) {
+      isMounted.current = true
+    } else if (!areKeyringsUnlocked) {
+      dispatch(setSnackbarMessage(t("accounts.notificationPanel.snackbar")))
+    }
+  }, [history, areKeyringsUnlocked, dispatch, t])
+
   const accountTypes = [
     AccountType.Internal,
     AccountType.Imported,
@@ -208,89 +313,113 @@ export default function AccountsNotificationPanelAccounts({
             },
             {} as { [keyringId: string]: AccountTotal[] }
           )
-
-          return Object.values(accountTotalsByType).map(
-            (accountTotalsByKeyringId, idx) => {
-              return (
-                <section key={accountType}>
-                  <WalletTypeHeader
-                    accountType={accountType}
-                    walletNumber={idx + 1}
-                    onClickAddAddress={
-                      accountType === "imported" || accountType === "internal"
-                        ? () => {
-                            if (accountTotalsByKeyringId[0].keyringId) {
-                              dispatch(
-                                deriveAddress(
-                                  accountTotalsByKeyringId[0].keyringId
-                                )
-                              )
-                            }
-                          }
-                        : undefined
-                    }
-                  />
-                  <ul>
-                    {accountTotalsByKeyringId.map((accountTotal) => {
-                      const normalizedAddress = normalizeEVMAddress(
-                        accountTotal.address
-                      )
-
-                      const isSelected = sameEVMAddress(
-                        normalizedAddress,
-                        selectedAccountAddress
-                      )
-
-                      return (
-                        <li
-                          key={normalizedAddress}
-                          // We use these event handlers in leiu of :hover so that we can prevent child hovering
-                          // from affecting the hover state of this li.
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              "var(--hunter-green)"
-                          }}
-                          onFocus={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              "var(--hunter-green)"
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = ""
-                          }}
-                          onBlur={(e) => {
-                            e.currentTarget.style.backgroundColor = ""
-                          }}
-                        >
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                updateCurrentAccount(normalizedAddress)
+          return (
+            <>
+              {!(
+                accountType === AccountType.Imported &&
+                (accountTotals[AccountType.Internal]?.length ?? 0)
+              ) && (
+                <div className="category_wrap simple_text">
+                  <p className="category_title">
+                    {walletTypeDetails[accountType].category}
+                  </p>
+                  {isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
+                    (accountType === AccountType.Imported ||
+                      accountType === AccountType.Internal) && (
+                      <SigningButton
+                        onCurrentAddressChange={onCurrentAddressChange}
+                      />
+                    )}
+                </div>
+              )}
+              {Object.values(accountTotalsByType).map(
+                (accountTotalsByKeyringId, idx) => {
+                  return (
+                    <section key={accountType}>
+                      <WalletTypeHeader
+                        accountType={accountType}
+                        walletNumber={idx + 1}
+                        accountSigner={
+                          accountTotalsByKeyringId[0].accountSigner
+                        }
+                        onClickAddAddress={
+                          accountType === "imported" ||
+                          accountType === "internal"
+                            ? () => {
+                                if (accountTotalsByKeyringId[0].keyringId) {
+                                  dispatch(
+                                    deriveAddress(
+                                      accountTotalsByKeyringId[0].keyringId
+                                    )
+                                  )
+                                }
                               }
-                            }}
-                            onClick={() => {
-                              dispatch(resetClaimFlow())
-                              updateCurrentAccount(normalizedAddress)
-                            }}
-                          >
-                            <SharedAccountItemSummary
+                            : undefined
+                        }
+                      />
+                      <ul>
+                        {accountTotalsByKeyringId.map((accountTotal) => {
+                          const normalizedAddress = normalizeEVMAddress(
+                            accountTotal.address
+                          )
+
+                          const isSelected = sameEVMAddress(
+                            normalizedAddress,
+                            selectedAccountAddress
+                          )
+
+                          return (
+                            <li
                               key={normalizedAddress}
-                              accountTotal={accountTotal}
-                              isSelected={isSelected}
+                              // We use these event handlers in leiu of :hover so that we can prevent child hovering
+                              // from affecting the hover state of this li.
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "var(--hunter-green)"
+                              }}
+                              onFocus={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "var(--hunter-green)"
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = ""
+                              }}
+                              onBlur={(e) => {
+                                e.currentTarget.style.backgroundColor = ""
+                              }}
                             >
-                              <AccountItemOptionsMenu
-                                accountTotal={accountTotal}
-                              />
-                            </SharedAccountItemSummary>
-                          </div>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </section>
-              )
-            }
+                              <div
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    updateCurrentAccount(normalizedAddress)
+                                  }
+                                }}
+                                onClick={() => {
+                                  dispatch(resetClaimFlow())
+                                  updateCurrentAccount(normalizedAddress)
+                                }}
+                              >
+                                <SharedAccountItemSummary
+                                  key={normalizedAddress}
+                                  accountTotal={accountTotal}
+                                  isSelected={isSelected}
+                                >
+                                  <AccountItemOptionsMenu
+                                    accountTotal={accountTotal}
+                                  />
+                                </SharedAccountItemSummary>
+                              </div>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </section>
+                  )
+                }
+              )}
+            </>
           )
         })}
       <footer>
@@ -301,7 +430,7 @@ export default function AccountsNotificationPanelAccounts({
           iconPosition="left"
           linkTo="/onboarding/add-wallet"
         >
-          Add Wallet
+          {t("accounts.notificationPanel.addWallet")}
         </SharedButton>
       </footer>
       <style jsx>
@@ -314,10 +443,14 @@ export default function AccountsNotificationPanelAccounts({
             align-content: center;
             margin-bottom: 8px;
           }
+          section:last-of-type {
+            margin-bottom: 16px;
+          }
           li {
             width: 100%;
             box-sizing: border-box;
             padding: 8px 0px 8px 24px;
+            cursor: pointer;
           }
           footer {
             width: 100%;
@@ -335,8 +468,17 @@ export default function AccountsNotificationPanelAccounts({
             height: 432px;
             overflow-y: scroll;
           }
-          section:first-of-type {
-            padding-top: 16px;
+          .category_wrap {
+            display: flex;
+            justify-content: space-between;
+            background-color: var(--hunter-green);
+            padding: 8px 10px 8px 24px;
+          }
+          .category_title {
+            color: var(--green-60);
+          }
+          p {
+            margin: 0;
           }
         `}
       </style>
