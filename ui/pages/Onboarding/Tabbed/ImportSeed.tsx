@@ -99,6 +99,18 @@ export default function ImportSeed(props: Props): ReactElement {
                 contentEditable
                 data-empty={recoveryPhrase.length < 1}
                 spellCheck="false"
+                onPaste={(e) => {
+                  e.preventDefault()
+                  const text = e.clipboardData.getData("text/plain").trim()
+                  e.currentTarget.innerText = text
+                  setRecoveryPhrase(text)
+                }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  const text = e.dataTransfer.getData("text/plain").trim()
+                  e.currentTarget.innerText = text
+                  setRecoveryPhrase(text)
+                }}
                 onInput={(e) => {
                   setRecoveryPhrase(e.currentTarget.innerText.trim())
                 }}
@@ -216,6 +228,7 @@ export default function ImportSeed(props: Props): ReactElement {
           font-size: 12px;
           line-height: 16px;
           transition: all 0.2s ease-in-out;
+          pointer-events: none;
         }
 
         #recovery_phrase[data-empty="true"]:not(:focus) ~ .recovery_label {
