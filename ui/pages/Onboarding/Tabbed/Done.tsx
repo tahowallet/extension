@@ -1,6 +1,11 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 
 export default function Done(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.tabbed.complete",
+  })
+
   return (
     <section>
       <div className="confetti">
@@ -16,17 +21,14 @@ export default function Done(): ReactElement {
             className="illustration"
           />
           <div>
-            <h1>Welcome to TallyHo!</h1>
-            <span>
-              For faster access we recommend pinning Tally&nbsp;Ho to your
-              browser
-            </span>
+            <h1>{t("title")}</h1>
+            <span>{t("subtitle")}</span>
           </div>
         </header>
         <img
           width="383"
           src="./images/onboarding_pin_extension.gif"
-          alt="Pin the wallet"
+          alt={t("animationAlt")}
         />
       </div>
 

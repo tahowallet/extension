@@ -1,5 +1,8 @@
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../../../components/Shared/SharedButton"
+import { useBackgroundDispatch } from "../../../../hooks"
 
 export default function NewSeedReview({
   onReview,
@@ -8,9 +11,14 @@ export default function NewSeedReview({
   mnemonic: string[]
   onReview: () => void
 }): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.tabbed.newWalletReview",
+  })
+  const dispatch = useBackgroundDispatch()
+
   return (
     <section className="fadeIn">
-      <h1 className="center_text">Save and store your recovery phrase</h1>
+      <h1 className="center_text">{t("title")}</h1>
       <div className="step_content">
         <div className="seed_phrase">
           {mnemonic.map((word, i) => {
@@ -25,19 +33,20 @@ export default function NewSeedReview({
           })}
         </div>
         <SharedButton type="primary" size="medium" onClick={onReview} center>
-          I wrote it down
+          {t("submit")}
         </SharedButton>
         <div className="copy_phrase">
           <SharedButton
             type="tertiary"
             size="small"
             iconMedium="copy"
-            onClick={() =>
+            onClick={() => {
               navigator.clipboard.writeText(mnemonic?.join(" ") ?? "")
-            }
+              dispatch(setSnackbarMessage(t("copyAddressSnackbar")))
+            }}
             center
           >
-            Copy phrase to clipboard
+            {t("copyAddressAction")}
           </SharedButton>
         </div>
       </div>

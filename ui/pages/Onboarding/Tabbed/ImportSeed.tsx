@@ -3,6 +3,7 @@ import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { Redirect, useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../../components/Shared/SharedButton"
 import OnboardingDerivationPathSelect from "../../../components/Onboarding/OnboardingDerivationPathSelect"
 import {
@@ -25,6 +26,10 @@ export default function ImportSeed(props: Props): ReactElement {
   const [errorMessage, setErrorMessage] = useState("")
   const [path, setPath] = useState<string>("m/44'/60'/0'/0")
   const [isImporting, setIsImporting] = useState(false)
+
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.tabbed.addWallet.importSeed",
+  })
 
   const dispatch = useBackgroundDispatch()
   const keyringImport = useBackgroundSelector(
@@ -50,7 +55,7 @@ export default function ImportSeed(props: Props): ReactElement {
       splitTrimmedRecoveryPhrase.length !== 12 &&
       splitTrimmedRecoveryPhrase.length !== 24
     ) {
-      setErrorMessage("Must be a 12 or 24 word recovery phrase")
+      setErrorMessage(t("errors.phraseLengthError"))
     } else if (isValidMnemonic(plainRecoveryPhrase)) {
       setIsImporting(true)
       dispatch(
@@ -61,9 +66,9 @@ export default function ImportSeed(props: Props): ReactElement {
         })
       )
     } else {
-      setErrorMessage("Invalid recovery phrase")
+      setErrorMessage(t("errors.invalidPhraseError"))
     }
-  }, [dispatch, recoveryPhrase, path])
+  }, [dispatch, recoveryPhrase, path, t])
 
   if (!areKeyringsUnlocked)
     return (
@@ -86,15 +91,13 @@ export default function ImportSeed(props: Props): ReactElement {
         >
           <div className="portion top">
             <div className="illustration_import" />
-            <h1 className="serif_header">Import secret recovery phrase</h1>
-            <div className="info">
-              Copy paste or write down a 12 or 24 word secret recovery phrase.
-            </div>
+            <h1 className="serif_header">{t("title")}</h1>
+            <div className="info">{t("subtitle")}</div>
             <div className="input_wrap">
               <div
                 id="recovery_phrase"
                 role="textbox"
-                aria-label="Recovery phrase"
+                aria-labelledby="recovery_label"
                 tabIndex={0}
                 contentEditable
                 data-empty={recoveryPhrase.length < 1}
@@ -115,7 +118,9 @@ export default function ImportSeed(props: Props): ReactElement {
                   setRecoveryPhrase(e.currentTarget.innerText.trim())
                 }}
               />
-              <div className="recovery_label">Paste secret recovery seed</div>
+              <div id="recovery_label" className="recovery_label">
+                {t("inputLabel")}
+              </div>
               {errorMessage && <p className="error">{errorMessage}</p>}
             </div>
             {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
@@ -137,7 +142,7 @@ export default function ImportSeed(props: Props): ReactElement {
               onClick={importWallet}
               center
             >
-              Import account
+              {t("submit")}
             </SharedButton>
             {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
               <button

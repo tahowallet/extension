@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { createPassword } from "@tallyho/tally-background/redux-slices/keyrings"
 import { Redirect, useHistory, useLocation } from "react-router-dom"
+import { Trans, useTranslation } from "react-i18next"
 import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../../hooks"
 import SharedButton from "../../../components/Shared/SharedButton"
 import PasswordStrengthBar from "../../../components/Password/PasswordStrengthBar"
@@ -13,6 +14,7 @@ export default function SetPassword(): JSX.Element {
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("")
   const [passwordConfirmation, setPasswordConfirmation] = useState("")
   const history = useHistory()
+  const { t } = useTranslation()
 
   const { state: { nextPage } = {} } = useLocation<{ nextPage?: string }>()
 
@@ -28,11 +30,11 @@ export default function SetPassword(): JSX.Element {
 
   const validatePassword = (): boolean => {
     if (password.length < 8) {
-      setPasswordErrorMessage("Must be at least 8 characters")
+      setPasswordErrorMessage(t("keyring.setPassword.error.characterCount"))
       return false
     }
     if (password !== passwordConfirmation) {
-      setPasswordErrorMessage("Passwords don’t match")
+      setPasswordErrorMessage(t("keyring.setPassword.error.noMatch"))
       return false
     }
     return true
@@ -90,8 +92,7 @@ export default function SetPassword(): JSX.Element {
           `}
         </style>
         <h1 className="center_text">
-          First, let&apos;s secure
-          <br /> your wallet
+          <Trans t={t} i18nKey="onboarding.setPassword.title" />
         </h1>
       </header>
       <div className="password_section">
@@ -124,7 +125,7 @@ export default function SetPassword(): JSX.Element {
             />
           </div>
           <div className="set_as_default_ask">
-            Set Tally Ho as default wallet
+            {t("onboarding.setPassword.setAsDefault")}
             <WalletDefaultToggle />
           </div>
           <SharedButton
@@ -133,7 +134,9 @@ export default function SetPassword(): JSX.Element {
             showLoadingOnClick={!passwordErrorMessage}
             isFormSubmit
           >
-            <span className="submit_button">Begin the hunt</span>
+            <span className="submit_button">
+              {t("onboarding.setPassword.submit")}
+            </span>
           </SharedButton>
         </form>
 

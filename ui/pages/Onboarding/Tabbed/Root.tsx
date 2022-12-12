@@ -2,6 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 
 import { Route, Switch, matchPath, useLocation } from "react-router-dom"
 
+import { useTranslation } from "react-i18next"
 import browser from "webextension-polyfill"
 import SharedBackButton from "../../../components/Shared/SharedBackButton"
 import AddWallet from "./AddWallet"
@@ -26,9 +27,10 @@ const getNetworkIcon = (networkName: string) => {
  * Renders a list of production network icons
  */
 function SupportedChains(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "onboarding" })
   return (
     <div className="supported_chains">
-      <span>Supported Chains</span>
+      <span>{t("supportedChains")}</span>
       <div className="chain_logos">
         {productionNetworks.map(({ network }) => (
           <img
@@ -138,7 +140,6 @@ const WalletShortcut = () => {
         .wallet_shortcut {
           display: flex;
           flex-direction: column;
-          // justify-content: space-evenly;
           align-items: center;
           gap: 22px;
         }
@@ -152,18 +153,20 @@ const WalletShortcut = () => {
 }
 
 function RouteBasedContent() {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.tabbed.routeBasedContent",
+  })
   return (
     <Switch>
       <Route key={OnboardingRoutes.NEW_SEED} path={OnboardingRoutes.NEW_SEED}>
         <div className="fadeIn">
-          If you want to preview TallyHo, you can start easier by adding a view
-          only account
+          {t("newSeed.tip")}
           <SharedButton
             type="secondary"
             size="medium"
             linkTo={OnboardingRoutes.VIEW_ONLY_WALLET}
           >
-            Add preview account
+            {t("newSeed.action")}
           </SharedButton>
         </div>
         <style jsx>{`
@@ -177,9 +180,9 @@ function RouteBasedContent() {
       </Route>
       <Route key={OnboardingRoutes.LEDGER} path={OnboardingRoutes.LEDGER}>
         <div className="fadeIn">
-          Trezor integration comming soon, check out the open{" "}
+          {t("ledger.tip")}
           <a target="_blank" href="https://tallyho.org/" rel="noreferrer">
-            Gitcoin bounty
+            {t("ledger.action")}
           </a>
         </div>
         <style jsx>{`
@@ -192,25 +195,19 @@ function RouteBasedContent() {
         key={OnboardingRoutes.ADD_WALLET}
         path={OnboardingRoutes.ADD_WALLET}
       >
-        <div className="fadeIn">
-          Some of the code for this was written by Community contributors
-        </div>
+        <div className="fadeIn">{t("addWallet.tip")}</div>
       </Route>
       <Route
         key={OnboardingRoutes.VIEW_ONLY_WALLET}
         path={OnboardingRoutes.VIEW_ONLY_WALLET}
       >
-        <div className="fadeIn">
-          A good way to take a peak at what Tally Ho offers
-        </div>
+        <div className="fadeIn">{t("viewOnly.tip")}</div>
       </Route>
       <Route
         key={OnboardingRoutes.IMPORT_SEED}
         path={OnboardingRoutes.IMPORT_SEED}
       >
-        <div className="fadeIn">
-          TallyHo offers the possibility of adding multiple recovery phrases
-        </div>
+        <div className="fadeIn">{t("importSeed.tip")}</div>
       </Route>
       <Route
         key={OnboardingRoutes.ONBOARDING_COMPLETE}
@@ -222,9 +219,9 @@ function RouteBasedContent() {
       </Route>
       <Route>
         <div className="onboarding_facts fadeIn">
-          <p>Fully owned by the community</p>
-          <p>Accessible to everyone</p>
-          <p>100% open source</p>
+          <p>{t("default.fact1")}</p>
+          <p>{t("default.fact2")}</p>
+          <p>{t("default.fact3")}</p>
           <style jsx>
             {`
               .onboarding_facts {

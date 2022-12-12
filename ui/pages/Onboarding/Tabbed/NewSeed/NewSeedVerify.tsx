@@ -1,6 +1,6 @@
 import classNames from "classnames"
 import React, { ReactElement, useMemo, useState } from "react"
-import { useTranslation } from "react-i18next"
+import { Trans, useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import SharedButton from "../../../../components/Shared/SharedButton"
 import SharedIcon from "../../../../components/Shared/SharedIcon"
@@ -115,7 +115,10 @@ export default function NewSeedVerify({
   onVerify: (mnemonic: string[]) => void
   mnemonic: string[]
 }): ReactElement {
-  const { t } = useTranslation()
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.tabbed.newWalletVerify",
+  })
+
   const SEED_WORDS_TO_VERIFY = 8
 
   const randomIndexes = useMemo(
@@ -218,10 +221,8 @@ export default function NewSeedVerify({
 
   return (
     <section className="verify_section fadeIn">
-      <h1 className="center_text">Verify recovery phrase</h1>
-      <div className="subtitle center_text">
-        Click on each word in the order that you are asked to
-      </div>
+      <h1 className="center_text">{t("title")}</h1>
+      <div className="subtitle center_text">{t("subtitle")}</div>
       <div className="words_list">
         {placeholderList.map(({ selectedWord, key, wordIndex }, i) => (
           <SeedWord
@@ -255,7 +256,8 @@ export default function NewSeedVerify({
                           width={24}
                           icon="icons/m/notif-correct.svg"
                         />
-                        Verified
+
+                        {t("validState")}
                       </>
                     ) : (
                       <>
@@ -264,7 +266,8 @@ export default function NewSeedVerify({
                           width={24}
                           icon="icons/m/notif-wrong.svg"
                         />
-                        Incorrect Order
+
+                        {t("invalidState")}
                       </>
                     )}
                   </span>
@@ -275,7 +278,7 @@ export default function NewSeedVerify({
                   size="medium"
                   onClick={handleVerification}
                 >
-                  {t("onboarding.seedVerification.verifySeedPrompt")}
+                  {t("verifyValidState")}
                 </SharedButton>
               )}
 
@@ -285,14 +288,11 @@ export default function NewSeedVerify({
                 isDisabled={!submitted || !isValidSeed}
                 onClick={() => onVerify(mnemonic)}
               >
-                Finalise
+                {t("submit")}
               </SharedButton>
             </div>
             {submitted && !isValidSeed && (
-              <div className="error">
-                Verify the order and remove the ones that aren&apos;t in the
-                right position.
-              </div>
+              <div className="error">{t("invalidStateMsg")}</div>
             )}
           </>
         ) : (
@@ -316,23 +316,28 @@ export default function NewSeedVerify({
       </div>
 
       <OnboardingTip>
-        If you didn’t write it down, you can{" "}
-        <Link
-          component={({ navigate, children }) => (
-            <span
-              className="reset_seed_link"
-              role="link"
-              tabIndex={0}
-              onKeyUp={navigate}
-              onClick={navigate}
-            >
-              {children}
-            </span>
-          )}
-          to={OnboardingRoutes.NEW_SEED}
-        >
-          start with a new phrase
-        </Link>
+        <Trans
+          t={t}
+          i18nKey="tip"
+          components={{
+            url: (
+              <Link
+                component={({ navigate, children }) => (
+                  <span
+                    className="reset_seed_link"
+                    role="link"
+                    tabIndex={0}
+                    onKeyUp={navigate}
+                    onClick={navigate}
+                  >
+                    {children}
+                  </span>
+                )}
+                to={OnboardingRoutes.NEW_SEED}
+              />
+            ),
+          }}
+        />
       </OnboardingTip>
       <style jsx>
         {`

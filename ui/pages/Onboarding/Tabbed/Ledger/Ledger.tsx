@@ -2,6 +2,7 @@ import { connectLedger } from "@tallyho/tally-background/redux-slices/ledger"
 import React, { ReactElement, useState } from "react"
 import { ledgerUSBVendorId } from "@ledgerhq/devices"
 import { LedgerProductDatabase } from "@tallyho/tally-background/services/ledger"
+import { useTranslation } from "react-i18next"
 import LedgerPanelContainer from "../../../../components/Ledger/LedgerPanelContainer"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import LedgerConnectPopup from "./LedgerConnectPopup"
@@ -20,6 +21,10 @@ export default function Ledger(): ReactElement {
   const [phase, setPhase] = useState<
     "0-prepare" | "1-request" | "2-connect" | "3-done"
   >("0-prepare")
+
+  const { t } = useTranslation("translation", {
+    keyPrefix: "ledger.onboarding",
+  })
 
   const deviceID = useBackgroundSelector(
     (state) => state.ledger.currentDeviceID
@@ -81,7 +86,7 @@ export default function Ledger(): ReactElement {
       {phase === "2-connect" && !device && connecting && (
         <LedgerPanelContainer
           indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
-          heading="Connecting..."
+          heading={t("connecting")}
         />
       )}
       {phase === "2-connect" && device && (

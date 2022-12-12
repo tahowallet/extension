@@ -1,4 +1,5 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
 import SharedButton from "../../../components/Shared/SharedButton"
 import SharedIcon from "../../../components/Shared/SharedIcon"
@@ -17,27 +18,6 @@ const intersperseWith = <T, K>(arr: T[], getItem: (index: number) => K) => {
 
   return result
 }
-
-const options = [
-  {
-    label: "Import recovery phrase",
-    icon: "add_wallet/import.svg",
-    url: OnboardingRoutes.IMPORT_SEED,
-    isAvailable: true,
-  },
-  {
-    label: "Connect to Ledger",
-    icon: "add_wallet/ledger.svg",
-    url: OnboardingRoutes.LEDGER,
-    isAvailable: isLedgerSupported,
-  },
-  {
-    label: "Read-only address",
-    icon: "add_wallet/preview.svg",
-    url: OnboardingRoutes.VIEW_ONLY_WALLET,
-    isAvailable: true,
-  },
-].filter((item) => item.isAvailable)
 
 function AddWalletRow({
   icon,
@@ -105,9 +85,36 @@ function AddWalletRow({
   )
 }
 
-const optionsWithSpacer = intersperseWith(options, () => "spacer" as const)
-
 export default function AddWallet(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.tabbed.addWallet",
+  })
+
+  const optionsWithSpacer = useMemo(() => {
+    const options = [
+      {
+        label: t("options.importSeed"),
+        icon: "add_wallet/import.svg",
+        url: OnboardingRoutes.IMPORT_SEED,
+        isAvailable: true,
+      },
+      {
+        label: t("options.ledger"),
+        icon: "add_wallet/ledger.svg",
+        url: OnboardingRoutes.LEDGER,
+        isAvailable: isLedgerSupported,
+      },
+      {
+        label: t("options.readOnly"),
+        icon: "add_wallet/preview.svg",
+        url: OnboardingRoutes.VIEW_ONLY_WALLET,
+        isAvailable: true,
+      },
+    ].filter((item) => item.isAvailable)
+
+    return intersperseWith(options, () => "spacer" as const)
+  }, [t])
+
   return (
     <section className="fadeIn">
       <header>
@@ -118,7 +125,7 @@ export default function AddWallet(): ReactElement {
           src="./images/doggo_gold.svg"
         />
         <div className="bottom_content">
-          <h1 className="bottom_title">Use existing wallet</h1>
+          <h1 className="bottom_title">{t("title")}</h1>
         </div>
       </header>
       <div className="actions_container">
@@ -143,7 +150,7 @@ export default function AddWallet(): ReactElement {
           })}
         </ul>
       </div>
-      <OnboardingTip>You can always add more wallets later</OnboardingTip>
+      <OnboardingTip>{t("tip")}</OnboardingTip>
       <style jsx>
         {`
           section {

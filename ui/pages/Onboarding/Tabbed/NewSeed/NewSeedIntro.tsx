@@ -1,4 +1,5 @@
 import React, { ReactElement } from "react"
+import { Trans, useTranslation } from "react-i18next"
 import SharedButton from "../../../../components/Shared/SharedButton"
 import OnboardingTip from "../OnboardingTip"
 
@@ -7,9 +8,13 @@ export default function NewSeedIntro({
 }: {
   onAccept: () => void
 }): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.tabbed.newWalletIntro",
+  })
+
   return (
     <section className="step_content fadeIn">
-      <h1 className="center_text">Before we get started</h1>
+      <h1 className="center_text">{t("title")}</h1>
       <div className="message">
         <div className="message_header">
           <img
@@ -19,23 +24,16 @@ export default function NewSeedIntro({
           />
         </div>
         <p>
-          It&apos;s important to write down your secret recovery phrase and
-          store it somewhere safe.
-          <br />
-          <br />
-          This is the only way to recover your accounts and funds.
-          <br />
-          <br />
-          <u>You will not be able to export your recovery phrase later.</u>
+          <Trans t={t} i18nKey="warning" components={{ u: <u /> }} />
         </p>
       </div>
       <div className="cta">
         <SharedButton type="primary" size="large" onClick={onAccept} center>
-          Create recovery phrase
+          {t("submit")}
         </SharedButton>
       </div>
 
-      <OnboardingTip>You can upgrade a view-only wallet later</OnboardingTip>
+      <OnboardingTip>{t("tip")}</OnboardingTip>
       <style jsx>{`
         .step_content {
           display: flex;

@@ -98,6 +98,7 @@
     "checkLedger": "Check Ledger",
     "onlyRejectFromLedger": "Tx can only be Rejected from Ledger",
     "onboarding": {
+      "connecting": "Connecting...",
       "prepare": {
         "continueButton": "Continue",
         "tryAgainButton": "Try Again",
@@ -270,6 +271,96 @@
     "collection": "Tally Ho collection"
   },
   "onboarding": {
+    "tabbed": {
+      "routeBasedContent": {
+        "newSeed": {
+          "tip": "If you want to preview TallyHo, you can start easier by adding a view only account",
+          "action": "Add preview account"
+        },
+        "ledger": {
+          "tip": "Trezor integration comming soon, check out the open ",
+          "action": "Gitcoin bounty"
+        },
+        "addWallet": {
+          "tip": "Some of the code for this was written by Community contributors"
+        },
+        "viewOnly": {
+          "tip": "A good way to take a peak at what Tally Ho offers"
+        },
+        "importSeed": {
+          "tip": "TallyHo offers the possibility of adding multiple recovery phrases"
+        },
+        "default": {
+          "fact1": "Fully owned by the community",
+          "fact2": "Accessible to everyone",
+          "fact3": "100% open source"
+        }
+      },
+      "intro": {
+        "title": "Let's get you setup!",
+        "useExisting": "Use existing wallet",
+        "createNew": "Create new wallet"
+      },
+      "addWallet": {
+        "title": "Use existing wallet",
+        "tip": "You can always add more wallets later",
+        "options": {
+          "importSeed": "Import recovery phrase",
+          "ledger": "Connect to Ledger",
+          "readOnly": "Read-only address"
+        },
+        "importSeed": {
+          "title": "Import secret recovery phrase",
+          "subtitle": "Copy paste or write down a 12 or 24 word secret recovery phrase.",
+          "inputLabel": "Paste secret recovery seed",
+          "submit": "Import account",
+          "errors": {
+            "pasteRecoveryPhrase": "Paste recovery phrase",
+            "phraseLengthError": "Must be a 12 or 24 word recovery phrase",
+            "invalidPhraseError": "Invalid recovery phrase"
+          }
+        },
+        "viewOnly": {
+          "title": "Read-only address",
+          "subtitle": "Add an Ethereum address or ENS name to view an existing wallet in Tally Ho!",
+          "submit": "Preview Tally Ho!",
+          "tip": "You can upgrade a view-only wallet later"
+        }
+      },
+      "newWalletIntro": {
+        "title": "Before we get started",
+        "warning": "It's important to write down your secret recovery phrase and store it somewhere safe.<br /><br />This is the only way to recover your accounts and funds.<br /><br /><u>You will not be able to export your recovery phrase later.</u>",
+        "submit": "Create recovery phrase",
+        "tip": "You can upgrade a view-only wallet later"
+      },
+      "newWalletReview": {
+        "title": "Save and store your recovery phrase",
+        "submit": "I wrote it down",
+        "copyAddressAction": "Copy phrase to clipboard",
+        "copyAddressSnackbar": "Copied to clipboard"
+      },
+      "newWalletVerify": {
+        "title": "Verify recovery phrase",
+        "subtitle": "Click on each word in the order that you are asked to",
+        "validState": "Verified",
+        "invalidState": "Incorrect Order",
+        "invalidStateMsg": "Verify the order and remove the ones that aren't in the right position.",
+        "verifyValidState": "Verify recovery phrase",
+        "submit": "Finalise",
+        "tip": "If you didn’t write it down, you can <url>start with a new phrase</url>"
+      },
+      "complete": {
+        "title": "Welcome to TallyHo!",
+        "subtitle": "For faster access we recommend pinning TallyHo to your browser",
+        "animationAlt": "Pin the wallet"
+      }
+    },
+    "setPassword": {
+      "title": "First, let's secure<br /> your wallet",
+      "setAsDefault": "Set Tally Ho as default wallet",
+      "submit": "Begin the hunt"
+    },
+    "supportedChains": "Supported Chains",
     "steps": {
       "create": "Create",
       "save": "Save",

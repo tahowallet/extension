@@ -1,13 +1,18 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../../components/Shared/SharedButton"
 import OnboardingRoutes from "./Routes"
 
 export default function Intro(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.tabbed.intro",
+  })
+
   return (
     <section className="fadeIn">
       <header>
         <div className="illustration" />
-        <h1>Let&apos;s get you setup!</h1>
+        <h1>{t("title")}</h1>
       </header>
       <div className="actions">
         <SharedButton
@@ -21,7 +26,7 @@ export default function Intro(): ReactElement {
             fontWeight: 500,
           }}
         >
-          Use existing wallet
+          {t("useExisting")}
         </SharedButton>
         <SharedButton
           type="secondary"
@@ -34,7 +39,7 @@ export default function Intro(): ReactElement {
             fontWeight: 500,
           }}
         >
-          Create new wallet
+          {t("createNew")}
         </SharedButton>
       </div>
       <style jsx>
