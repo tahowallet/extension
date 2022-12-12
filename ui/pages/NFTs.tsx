@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useRef, useState } from "react"
 import {
   selectNFTBadgesCount,
   selectNFTsCount,
@@ -11,6 +11,7 @@ import NFTsHeader from "../components/NFTS_update/NFTsHeader"
 import { useBackgroundSelector, useNFTsReload } from "../hooks"
 import NFTListPortfolio from "../components/NFTS_update/NFTListPortfolio"
 import NFTListPortfolioBadges from "../components/NFTS_update/NFTListPortfolioBadges"
+import SharedButtonUp from "../components/Shared/SharedButtonUp"
 
 const PANEL_NAMES = ["NFTs", "Badges"]
 
@@ -18,6 +19,7 @@ export default function NFTs(): ReactElement {
   const nftCount = useBackgroundSelector(selectNFTsCount)
   const badgesCount = useBackgroundSelector(selectNFTBadgesCount)
   const isLoading = useBackgroundSelector(selectIsReloadingNFTs)
+  const pageRef = useRef(null)
 
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
@@ -28,7 +30,7 @@ export default function NFTs(): ReactElement {
   useNFTsReload()
 
   return (
-    <div className="page_content">
+    <div className="page_content" ref={pageRef}>
       <NFTsHeader />
       <div className="panel_switcher_wrap">
         <SharedPanelSwitcher
@@ -57,6 +59,7 @@ export default function NFTs(): ReactElement {
             <NFTsExploreBanner type="badge" />
           ))}
       </div>
+      <SharedButtonUp elementRef={pageRef} offset={100} />
       <style jsx>
         {`
           .page_content {
