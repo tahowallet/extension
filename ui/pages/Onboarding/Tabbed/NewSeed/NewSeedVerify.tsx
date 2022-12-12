@@ -7,6 +7,7 @@ import SharedButton from "../../../../components/Shared/SharedButton"
 import SharedIcon from "../../../../components/Shared/SharedIcon"
 import { useBackgroundDispatch } from "../../../../hooks"
 import OnboardingTip from "../OnboardingTip"
+import OnboardingRoutes from "../Routes"
 
 type SeedWordProps = {
   word?: string
@@ -340,7 +341,7 @@ export default function NewSeedVerify({
               {children}
             </span>
           )}
-          to="/onboarding/new-seed"
+          to={OnboardingRoutes.NEW_SEED}
         >
           start with a new phrase
         </Link>

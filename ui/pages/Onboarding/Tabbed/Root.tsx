@@ -7,15 +7,13 @@ import AddWallet from "./AddWallet"
 import Done from "./Done"
 import ImportSeed from "./ImportSeed"
 import SetPassword from "./SetPassword"
-import SaveSeed from "./NewSeed"
+import NewSeed from "./NewSeed"
 import InfoIntro from "./Intro"
 import ViewOnlyWallet from "./ViewOnlyWallet"
 import Ledger from "./Ledger"
 import { productionNetworks } from "../../../components/TopMenu/TopMenuProtocolList"
-
-type Props = {
-  children: ReactElement
-}
+import SharedButton from "../../../components/Shared/SharedButton"
+import OnboardingRoutes from "./Routes"
 
 const getNetworkIcon = (networkName: string) => {
   const icon = networkName.replaceAll(" ", "").toLowerCase()
@@ -65,7 +63,102 @@ function SupportedChains(): ReactElement {
   )
 }
 
-function Navigation({ children }: Props): ReactElement {
+function LocationBasedContent() {
+  const { path } = useRouteMatch()
+  return (
+    <Switch>
+      <Route path={OnboardingRoutes.NEW_SEED}>
+        <div>
+          If you want to preview TallyHo, you can start easier by adding a view
+          only account
+          <SharedButton type="secondary" size="medium">
+            Add preview account
+          </SharedButton>
+        </div>
+      </Route>
+      <Route path={OnboardingRoutes.LEDGER}>
+        <div>
+          Trezor integration comming soon, check out the open
+          <a className="external_link" href="https://a.com">
+            Gitcoin bounty
+          </a>
+        </div>
+      </Route>
+      <Route path={OnboardingRoutes.ADD_WALLET}>
+        <div>
+          Some of the code for this was written by Community contributors
+        </div>
+      </Route>
+      <Route path={OnboardingRoutes.VIEW_ONLY_WALLET}>
+        <div>A good way to take a peak at what Tally Ho offers</div>
+      </Route>
+      <Route path={OnboardingRoutes.IMPORT_SEED}>
+        <div>
+          TallyHo offers the possibility of adding multiple recovery phrases
+        </div>
+      </Route>
+      <Route path={OnboardingRoutes.ONBOARDING_COMPLETE}>
+        <div>
+          done!
+          {/* <div className="wallet_shortcut hide">
+            <span>
+              Did you know that you can open Tally Ho using a keyboard shortcut?
+            </span>
+            <img
+              width="318"
+              height="84"
+              className="indicator"
+              src={
+                os === "mac"
+                  ? `/images/mac-shortcut${altPressed ? "-option" : ""}${
+                      tPressed ? "-t" : ""
+                    }.svg`
+                  : `/images/windows-shortcut${altPressed ? "-alt" : ""}${
+                      tPressed ? "-t" : ""
+                    }.svg`
+              }
+              alt={os === "mac" ? "option + T" : "alt + T"}
+            />
+          </div> */}
+        </div>
+      </Route>
+      <Route path={path}>
+        <div className="onboarding_facts">
+          <p>Fully owned by the community</p>
+          <p>Accessible to everyone</p>
+          <p>100% open source</p>
+          <style jsx>
+            {`
+              .onboarding_facts {
+                max-width: 300px;
+                color: var(--green-20);
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+              }
+
+              .onboarding_facts p {
+                margin: 0;
+                text-align: left;
+                font-size: 18px;
+                line-height: 24px;
+              }
+
+              .onboarding_facts p::before {
+                content: url("./images/check.svg");
+                width: 16px;
+                height: 16px;
+                margin-right: 16px;
+              }
+            `}
+          </style>
+        </div>
+      </Route>
+    </Switch>
+  )
+}
+
+function Navigation({ children }: { children: React.ReactNode }): ReactElement {
   return (
     <section className="onboarding_container">
       <style jsx>
@@ -123,28 +216,6 @@ function Navigation({ children }: Props): ReactElement {
             margin: 0 auto 38px;
           }
 
-          .onboarding_facts {
-            max-width: 300px;
-            color: var(--green-20);
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-          }
-
-          .onboarding_facts p {
-            margin: 0;
-            text-align: left;
-            font-size: 18px;
-            line-height: 24px;
-          }
-
-          .onboarding_facts p::before {
-            content: url("./images/check.svg");
-            width: 16px;
-            height: 16px;
-            margin-right: 16px;
-          }
-
           .supported_chains_container {
             margin-top: auto;
             margin-bottom: 40px;
@@ -165,19 +236,15 @@ function Navigation({ children }: Props): ReactElement {
           <img src="./images/logo_onboarding.svg" alt="Onboarding logo" />
         </div>
         <div className="route_based_content">
-          <div className="onboarding_facts">
-            <p>Fully owned by the community</p>
-            <p>Accessible to everyone</p>
-            <p>100% open source</p>
-          </div>
-          <div className="supported_chains_container">
-            <SupportedChains />
-          </div>
+          <LocationBasedContent />
+        </div>
+        <div className="supported_chains_container">
+          <SupportedChains />
         </div>
       </div>
       <div className="right_container">
-        <div className="top back_button">
-          <SharedBackButton withoutBackText />
+        <div className="back_button">
+          <SharedBackButton withoutBackText round />
         </div>
         {children}
       </div>
@@ -186,33 +253,31 @@ function Navigation({ children }: Props): ReactElement {
 }
 
 export default function Root(): ReactElement {
-  const { path } = useRouteMatch()
-
   return (
     <Navigation>
       <Switch>
-        <Route path={`${path}`} exact>
+        <Route path={OnboardingRoutes.ONBOARDING_START} exact>
           <InfoIntro />
         </Route>
-        <Route path={`${path}/add-wallet`}>
+        <Route path={OnboardingRoutes.ADD_WALLET}>
           <AddWallet />
         </Route>
-        <Route path={`${path}/ledger`}>
+        <Route path={OnboardingRoutes.LEDGER}>
           <Ledger />
         </Route>
-        <Route path={`${path}/import-seed/set-password`}>
-          <SetPassword nextPage={`${path}/import-seed`} />
+        <Route path={OnboardingRoutes.SET_PASSWORD}>
+          <SetPassword />
         </Route>
-        <Route path={`${path}/import-seed`}>
-          <ImportSeed nextPage={`${path}/done`} />
+        <Route path={OnboardingRoutes.IMPORT_SEED}>
+          <ImportSeed nextPage={OnboardingRoutes.ONBOARDING_COMPLETE} />
         </Route>
-        <Route path={`${path}/new-seed`}>
-          <SaveSeed />
+        <Route path={OnboardingRoutes.NEW_SEED}>
+          <NewSeed />
         </Route>
-        <Route path={`${path}/view-only-wallet`}>
+        <Route path={OnboardingRoutes.VIEW_ONLY_WALLET}>
           <ViewOnlyWallet />
         </Route>
-        <Route path={`${path}/done`}>
+        <Route path={OnboardingRoutes.ONBOARDING_COMPLETE}>
           <Done />
         </Route>
       </Switch>

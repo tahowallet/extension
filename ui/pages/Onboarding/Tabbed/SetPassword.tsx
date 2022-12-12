@@ -1,28 +1,27 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { createPassword } from "@tallyho/tally-background/redux-slices/keyrings"
-import { useHistory } from "react-router-dom"
+import { Redirect, useHistory, useLocation } from "react-router-dom"
 import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../../hooks"
 import SharedButton from "../../../components/Shared/SharedButton"
 import PasswordStrengthBar from "../../../components/Password/PasswordStrengthBar"
 import PasswordInput from "../../../components/Shared/PasswordInput"
 import { WalletDefaultToggle } from "../../../components/Wallet/WalletToggleDefaultBanner"
+import OnboardingRoutes from "./Routes"
 
-export default function SetPassword({
-  nextPage,
-}: {
-  nextPage: string
-}): ReactElement {
+export default function SetPassword(): JSX.Element {
   const [password, setPassword] = useState("")
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("")
   const [passwordConfirmation, setPasswordConfirmation] = useState("")
   const history = useHistory()
+
+  const { state: { nextPage } = {} } = useLocation<{ nextPage?: string }>()
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
 
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
-    if (areKeyringsUnlocked) {
+    if (nextPage && areKeyringsUnlocked) {
       history.replace(nextPage)
     }
   }, [areKeyringsUnlocked, history, nextPage])
@@ -53,6 +52,10 @@ export default function SetPassword({
     if (validatePassword()) {
       dispatch(createPassword(password))
     }
+  }
+
+  if (!nextPage) {
+    return <Redirect to={OnboardingRoutes.ONBOARDING_START} />
   }
 
   return (

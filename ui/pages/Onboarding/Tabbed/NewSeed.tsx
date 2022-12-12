@@ -16,7 +16,7 @@ import {
 import NewSeedIntro from "./NewSeed/NewSeedIntro"
 import NewSeedReview from "./NewSeed/NewSeedReview"
 import NewSeedVerify from "./NewSeed/NewSeedVerify"
-import SetPassword from "./SetPassword"
+import OnboardingRoutes from "./Routes"
 
 const StepContainer = ({
   children,
@@ -46,7 +46,13 @@ const StepContainer = ({
   )
 }
 
-export default function SaveSeed(): ReactElement {
+const NewSeedRoutes = {
+  START: OnboardingRoutes.NEW_SEED,
+  REVIEW_SEED: `${OnboardingRoutes.NEW_SEED}/new`,
+  VERIFY_SEED: `${OnboardingRoutes.NEW_SEED}/verify`,
+} as const
+
+export default function NewSeed(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const mnemonic = useBackgroundSelector(
     (state) => state.keyrings.keyringToVerify?.mnemonic
@@ -58,33 +64,38 @@ export default function SaveSeed(): ReactElement {
   const { path } = useRouteMatch()
 
   const showNewSeedPhrase = () => {
-    dispatch(generateNewKeyring()).then(() => history.push(`${path}/new`))
+    dispatch(generateNewKeyring()).then(() =>
+      history.push(NewSeedRoutes.REVIEW_SEED)
+    )
   }
 
   const showSeedVerification = () => {
-    history.push(`${path}/verify`)
+    history.push(NewSeedRoutes.VERIFY_SEED)
   }
 
   const onVerifySuccess = () => {
     history.push(`${path}/../done`)
   }
 
-  if (!areKeyringsUnlocked) {
-    return <Redirect to={`${path}/set-password`} />
-  }
+  if (!areKeyringsUnlocked)
+    return (
+      <Redirect
+        to={{
+          pathname: OnboardingRoutes.SET_PASSWORD,
+          state: { nextPage: path },
+        }}
+      />
+    )
 
   return (
     <Switch>
-      <Route path={`${path}/set-password`}>
-        <SetPassword nextPage={`${path}`} />
-      </Route>
-      <Route path={`${path}`} exact>
+      <Route path={NewSeedRoutes.START} exact>
         <StepContainer step={0}>
           <NewSeedIntro onAccept={showNewSeedPhrase} />
         </StepContainer>
       </Route>
       {mnemonic && (
-        <Route path={`${path}/new`}>
+        <Route path={NewSeedRoutes.REVIEW_SEED}>
           <StepContainer step={1}>
             <NewSeedReview
               mnemonic={mnemonic}
@@ -94,7 +105,7 @@ export default function SaveSeed(): ReactElement {
         </Route>
       )}
       {mnemonic && (
-        <Route path={`${path}/verify`}>
+        <Route path={NewSeedRoutes.VERIFY_SEED}>
           <StepContainer step={2}>
             <NewSeedVerify mnemonic={mnemonic} onVerify={onVerifySuccess} />
           </StepContainer>

@@ -1,16 +1,8 @@
-import React, { ReactElement, useState } from "react"
-import { useRouteMatch, Redirect } from "react-router-dom"
+import React, { ReactElement } from "react"
 import SharedButton from "../../../components/Shared/SharedButton"
+import OnboardingRoutes from "./Routes"
 
 export default function Intro(): ReactElement {
-  const [redirectToAddWallet] = useState(false)
-
-  const { path } = useRouteMatch()
-
-  if (redirectToAddWallet) {
-    return <Redirect push to={`${path}/add-wallet`} />
-  }
-
   return (
     <section className="fadeIn">
       <header>
@@ -21,7 +13,7 @@ export default function Intro(): ReactElement {
         <SharedButton
           type="primary"
           size="large"
-          linkTo={`${path}/add-wallet`}
+          linkTo={OnboardingRoutes.ADD_WALLET}
           center
           style={{
             fontSize: "20px",
@@ -34,7 +26,7 @@ export default function Intro(): ReactElement {
         <SharedButton
           type="secondary"
           size="large"
-          linkTo={`${path}/new-seed/set-password`}
+          linkTo={OnboardingRoutes.NEW_SEED}
           center
           style={{
             fontSize: "20px",
