@@ -52,13 +52,24 @@ export default function Snackbar(): ReactElement {
   }, [clearSnackbarTimeout, dispatch])
 
   return (
-    <div className={classNames("snackbar_wrap", { hidden: shouldHide })}>
-      {displayMessage}
+    <div className="snackbar_container">
+      <div className={classNames("snackbar_wrap", { hidden: shouldHide })}>
+        {displayMessage}
+      </div>
       <style jsx>
         {`
+          .snackbar_container {
+            position: fixed;
+            z-index: 999999999;
+            bottom: 72px;
+            left: 0;
+            right: 0;
+          }
+
           .snackbar_wrap {
             max-width: 352px;
-            width: auto;
+            margin 0 auto;
+            width: fit-content;
             height: 40px;
             padding: 0 16px;
             display: flex;
@@ -66,9 +77,6 @@ export default function Snackbar(): ReactElement {
             justify-content: center;
             font-size: 16px;
             font-weight: 500;
-            position: fixed;
-            bottom: 72px;
-            z-index: 999999999;
             background: var(--green-120);
             color: var(--green-20);
             box-shadow: 0px 24px 24px rgba(0, 20, 19, 0.14),
@@ -80,6 +88,7 @@ export default function Snackbar(): ReactElement {
             transform: translateY(0px);
             user-select: none;
           }
+
           .hidden {
             // Take up no space, and let pointer events through just in case. No
             // hidden snackbar should get in the way of a user's actions.

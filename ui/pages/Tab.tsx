@@ -3,6 +3,7 @@ import { Provider } from "react-redux"
 import { HashRouter, Route, Switch } from "react-router-dom"
 import { Store } from "webext-redux"
 import BrowserTabContainer from "../components/BrowserTab/BrowserTabContainer"
+import Snackbar from "../components/Snackbar/Snackbar"
 import Ledger from "./Ledger/Ledger"
 import TabbedOnboardingRoot from "./Onboarding/Tabbed/Root"
 
@@ -32,6 +33,7 @@ export default function Tab({ store }: { store: Store }): ReactElement {
             </Switch>
           </HashRouter>
         </BrowserTabContainer>
+        <Snackbar />
       </Provider>
       <>
         <style jsx global>
