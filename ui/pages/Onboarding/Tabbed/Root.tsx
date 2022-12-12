@@ -306,16 +306,6 @@ function Navigation({ children }: { children: React.ReactNode }): ReactElement {
             text-align: center;
           }
 
-          /* TODO */
-          .top {
-            display: flex;
-            justify-content: space-between;
-            width: 32px;
-            padding: 3em 6em;
-            position: absolute;
-            z-index: 999;
-          }
-
           .onboarding_branding {
             width: 100%;
             max-width: 300px;
@@ -353,10 +343,12 @@ function Navigation({ children }: { children: React.ReactNode }): ReactElement {
       <div className="right_container">
         {!matchPath(location.pathname, {
           path: [
+            OnboardingRoutes.ONBOARDING_START,
             OnboardingRoutes.SET_PASSWORD,
-            NewSeedRoutes.VERIFY_SEED,
             OnboardingRoutes.ONBOARDING_COMPLETE,
+            NewSeedRoutes.VERIFY_SEED,
           ],
+          exact: true,
         }) && (
           <div className="back_button">
             <SharedBackButton withoutBackText round />
@@ -364,6 +356,13 @@ function Navigation({ children }: { children: React.ReactNode }): ReactElement {
         )}
         {children}
       </div>
+      <style jsx>{`
+        .back_button {
+          position: absolute;
+          margin-top: 20px;
+          z-index: 1;
+        }
+      `}</style>
     </section>
   )
 }
