@@ -1,11 +1,9 @@
-import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import classNames from "classnames"
 import React, { ReactElement, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import SharedButton from "../../../../components/Shared/SharedButton"
 import SharedIcon from "../../../../components/Shared/SharedIcon"
-import { useBackgroundDispatch } from "../../../../hooks"
 import OnboardingTip from "../OnboardingTip"
 import OnboardingRoutes from "../Routes"
 
@@ -114,7 +112,7 @@ export default function NewSeedVerify({
   onVerify,
   mnemonic,
 }: {
-  onVerify: () => void
+  onVerify: (mnemonic: string[]) => void
   mnemonic: string[]
 }): ReactElement {
   const { t } = useTranslation()
@@ -155,7 +153,6 @@ export default function NewSeedVerify({
 
   const [submitted, setSubmitted] = useState(false)
   const [isValidSeed, setIsValidSeed] = useState(false)
-  const dispatch = useBackgroundDispatch()
 
   const handleVerification = () => {
     const isValid = placeholderList.every(
@@ -217,15 +214,6 @@ export default function NewSeedVerify({
     }
 
     setActivePlaceholder(position)
-  }
-
-  const handleOnboardingComplete = () => {
-    dispatch(
-      importKeyring({
-        mnemonic: mnemonic.join(" "),
-        source: "internal",
-      })
-    ).then(() => onVerify())
   }
 
   return (
@@ -295,7 +283,7 @@ export default function NewSeedVerify({
                 type="primary"
                 size="medium"
                 isDisabled={!submitted || !isValidSeed}
-                onClick={handleOnboardingComplete}
+                onClick={() => onVerify(mnemonic)}
               >
                 Finalise
               </SharedButton>

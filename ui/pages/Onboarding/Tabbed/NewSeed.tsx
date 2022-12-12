@@ -1,4 +1,7 @@
-import { generateNewKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
+import {
+  generateNewKeyring,
+  importKeyring,
+} from "@tallyho/tally-background/redux-slices/keyrings"
 import React, { ReactElement } from "react"
 import {
   Redirect,
@@ -73,8 +76,13 @@ export default function NewSeed(): ReactElement {
     history.push(NewSeedRoutes.VERIFY_SEED)
   }
 
-  const onVerifySuccess = () => {
-    history.push(`${path}/../done`)
+  const onVerifySuccess = (verifiedMnemonic: string[]) => {
+    dispatch(
+      importKeyring({
+        mnemonic: verifiedMnemonic.join(" "),
+        source: "internal",
+      })
+    ).then(() => history.push(OnboardingRoutes.ONBOARDING_COMPLETE))
   }
 
   if (!areKeyringsUnlocked)
