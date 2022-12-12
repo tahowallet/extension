@@ -1,6 +1,6 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
-import { useHistory } from "react-router-dom"
+import { Redirect, useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import SharedButton from "../../../components/Shared/SharedButton"
@@ -10,6 +10,7 @@ import {
   useBackgroundSelector,
   useAreKeyringsUnlocked,
 } from "../../../hooks"
+import OnboardingRoutes from "./Routes"
 
 type Props = {
   nextPage: string
@@ -64,7 +65,15 @@ export default function ImportSeed(props: Props): ReactElement {
     }
   }, [dispatch, recoveryPhrase, path])
 
-  if (!areKeyringsUnlocked) return <></>
+  if (!areKeyringsUnlocked)
+    return (
+      <Redirect
+        to={{
+          pathname: OnboardingRoutes.SET_PASSWORD,
+          state: { nextPage: OnboardingRoutes.IMPORT_SEED },
+        }}
+      />
+    )
 
   return (
     <>

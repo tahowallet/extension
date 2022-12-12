@@ -49,7 +49,7 @@ const StepContainer = ({
   )
 }
 
-const NewSeedRoutes = {
+export const NewSeedRoutes = {
   START: OnboardingRoutes.NEW_SEED,
   REVIEW_SEED: `${OnboardingRoutes.NEW_SEED}/new`,
   VERIFY_SEED: `${OnboardingRoutes.NEW_SEED}/verify`,
@@ -73,7 +73,7 @@ export default function NewSeed(): ReactElement {
   }
 
   const showSeedVerification = () => {
-    history.push(NewSeedRoutes.VERIFY_SEED)
+    history.replace(NewSeedRoutes.VERIFY_SEED)
   }
 
   const onVerifySuccess = (verifiedMnemonic: string[]) => {

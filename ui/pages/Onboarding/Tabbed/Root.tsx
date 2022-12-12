@@ -1,13 +1,14 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 
-import { useRouteMatch, Route, Switch } from "react-router-dom"
+import { Route, Switch, matchPath, useLocation } from "react-router-dom"
 
+import browser from "webextension-polyfill"
 import SharedBackButton from "../../../components/Shared/SharedBackButton"
 import AddWallet from "./AddWallet"
 import Done from "./Done"
 import ImportSeed from "./ImportSeed"
 import SetPassword from "./SetPassword"
-import NewSeed from "./NewSeed"
+import NewSeed, { NewSeedRoutes } from "./NewSeed"
 import InfoIntro from "./Intro"
 import ViewOnlyWallet from "./ViewOnlyWallet"
 import Ledger from "./Ledger"
@@ -63,77 +64,174 @@ function SupportedChains(): ReactElement {
   )
 }
 
-function LocationBasedContent() {
-  const { path } = useRouteMatch()
+const WalletShortcut = () => {
+  const [os, setOS] = useState("windows")
+
+  // fetch the OS using the extension API to decide what shortcut to show
+  useEffect(() => {
+    let active = true
+
+    async function loadOS() {
+      if (active) {
+        setOS((await browser.runtime.getPlatformInfo()).os)
+      }
+    }
+
+    loadOS()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  // state for alt, t, and option key status
+  const [tPressed, setTPressed] = useState(false)
+  const [altPressed, setAltPressed] = useState(false)
+
+  // add keydown/up listeners for our shortcut code
+  useEffect(() => {
+    const downListener = (e: KeyboardEvent) => {
+      if (e.altKey || e.key === "Alt") {
+        setAltPressed(true)
+      }
+      if (e.key === "t") {
+        setTPressed(true)
+      }
+    }
+    const upListener = (e: KeyboardEvent) => {
+      if (e.altKey || e.key === "Alt") {
+        setAltPressed(false)
+      }
+      if (e.key === "t") {
+        setTPressed(false)
+      }
+    }
+
+    window.addEventListener("keydown", downListener.bind(window))
+    window.addEventListener("keyup", upListener.bind(window))
+
+    return () => {
+      window.removeEventListener("keydown", downListener)
+      window.removeEventListener("keyup", upListener)
+    }
+  })
+  return (
+    <div className="wallet_shortcut">
+      <span>
+        Did you know that you can open Tally Ho using a keyboard shortcut?
+      </span>
+      <img
+        height="38"
+        className="indicator"
+        src={
+          os === "mac"
+            ? `/images/mac-shortcut${altPressed ? "-option" : ""}${
+                tPressed ? "-t" : ""
+              }.svg`
+            : `/images/windows-shortcut${altPressed ? "-alt" : ""}${
+                tPressed ? "-t" : ""
+              }.svg`
+        }
+        alt={os === "mac" ? "option + T" : "alt + T"}
+      />
+      <style jsx>{`
+        .wallet_shortcut {
+          display: flex;
+          flex-direction: column;
+          // justify-content: space-evenly;
+          align-items: center;
+          gap: 22px;
+        }
+
+        .wallet_shortcut > span {
+          text-align: center;
+        }
+      `}</style>
+    </div>
+  )
+}
+
+function RouteBasedContent() {
   return (
     <Switch>
-      <Route path={OnboardingRoutes.NEW_SEED}>
-        <div>
+      <Route key={OnboardingRoutes.NEW_SEED} path={OnboardingRoutes.NEW_SEED}>
+        <div className="fadeIn">
           If you want to preview TallyHo, you can start easier by adding a view
           only account
-          <SharedButton type="secondary" size="medium">
+          <SharedButton
+            type="secondary"
+            size="medium"
+            linkTo={OnboardingRoutes.VIEW_ONLY_WALLET}
+          >
             Add preview account
           </SharedButton>
         </div>
+        <style jsx>{`
+          div {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+          }
+        `}</style>
       </Route>
-      <Route path={OnboardingRoutes.LEDGER}>
-        <div>
-          Trezor integration comming soon, check out the open
-          <a className="external_link" href="https://a.com">
+      <Route key={OnboardingRoutes.LEDGER} path={OnboardingRoutes.LEDGER}>
+        <div className="fadeIn">
+          Trezor integration comming soon, check out the open{" "}
+          <a target="_blank" href="https://tallyho.org/" rel="noreferrer">
             Gitcoin bounty
           </a>
         </div>
+        <style jsx>{`
+          a {
+            color: var(--trophy-gold);
+          }
+        `}</style>
       </Route>
-      <Route path={OnboardingRoutes.ADD_WALLET}>
-        <div>
+      <Route
+        key={OnboardingRoutes.ADD_WALLET}
+        path={OnboardingRoutes.ADD_WALLET}
+      >
+        <div className="fadeIn">
           Some of the code for this was written by Community contributors
         </div>
       </Route>
-      <Route path={OnboardingRoutes.VIEW_ONLY_WALLET}>
-        <div>A good way to take a peak at what Tally Ho offers</div>
+      <Route
+        key={OnboardingRoutes.VIEW_ONLY_WALLET}
+        path={OnboardingRoutes.VIEW_ONLY_WALLET}
+      >
+        <div className="fadeIn">
+          A good way to take a peak at what Tally Ho offers
+        </div>
       </Route>
-      <Route path={OnboardingRoutes.IMPORT_SEED}>
-        <div>
+      <Route
+        key={OnboardingRoutes.IMPORT_SEED}
+        path={OnboardingRoutes.IMPORT_SEED}
+      >
+        <div className="fadeIn">
           TallyHo offers the possibility of adding multiple recovery phrases
         </div>
       </Route>
-      <Route path={OnboardingRoutes.ONBOARDING_COMPLETE}>
-        <div>
-          done!
-          {/* <div className="wallet_shortcut hide">
-            <span>
-              Did you know that you can open Tally Ho using a keyboard shortcut?
-            </span>
-            <img
-              width="318"
-              height="84"
-              className="indicator"
-              src={
-                os === "mac"
-                  ? `/images/mac-shortcut${altPressed ? "-option" : ""}${
-                      tPressed ? "-t" : ""
-                    }.svg`
-                  : `/images/windows-shortcut${altPressed ? "-alt" : ""}${
-                      tPressed ? "-t" : ""
-                    }.svg`
-              }
-              alt={os === "mac" ? "option + T" : "alt + T"}
-            />
-          </div> */}
+      <Route
+        key={OnboardingRoutes.ONBOARDING_COMPLETE}
+        path={OnboardingRoutes.ONBOARDING_COMPLETE}
+      >
+        <div className="fadeIn">
+          <WalletShortcut />
         </div>
       </Route>
-      <Route path={path}>
-        <div className="onboarding_facts">
+      <Route>
+        <div className="onboarding_facts fadeIn">
           <p>Fully owned by the community</p>
           <p>Accessible to everyone</p>
           <p>100% open source</p>
           <style jsx>
             {`
               .onboarding_facts {
-                max-width: 300px;
                 color: var(--green-20);
                 display: flex;
                 flex-direction: column;
+                justify-content: center;
                 gap: 24px;
               }
 
@@ -159,6 +257,7 @@ function LocationBasedContent() {
 }
 
 function Navigation({ children }: { children: React.ReactNode }): ReactElement {
+  const location = useLocation()
   return (
     <section className="onboarding_container">
       <style jsx>
@@ -177,6 +276,7 @@ function Navigation({ children }: { children: React.ReactNode }): ReactElement {
             height: 100%;
             display: flex;
             flex-direction: column;
+            align-items: center;
             overflow-y: hidden;
             box-sizing: border-box;
           }
@@ -192,10 +292,18 @@ function Navigation({ children }: { children: React.ReactNode }): ReactElement {
           }
 
           .route_based_content {
+            max-width: 400px;
             display: flex;
             flex-direction: column;
             align-items: center;
             flex-grow: 1;
+            font-family: "Segment";
+            font-style: normal;
+            font-weight: 400;
+            font-size: 18px;
+            line-height: 24px;
+            color: var(--green-20);
+            text-align: center;
           }
 
           /* TODO */
@@ -236,16 +344,24 @@ function Navigation({ children }: { children: React.ReactNode }): ReactElement {
           <img src="./images/logo_onboarding.svg" alt="Onboarding logo" />
         </div>
         <div className="route_based_content">
-          <LocationBasedContent />
+          <RouteBasedContent />
         </div>
         <div className="supported_chains_container">
           <SupportedChains />
         </div>
       </div>
       <div className="right_container">
-        <div className="back_button">
-          <SharedBackButton withoutBackText round />
-        </div>
+        {!matchPath(location.pathname, {
+          path: [
+            OnboardingRoutes.SET_PASSWORD,
+            NewSeedRoutes.VERIFY_SEED,
+            OnboardingRoutes.ONBOARDING_COMPLETE,
+          ],
+        }) && (
+          <div className="back_button">
+            <SharedBackButton withoutBackText round />
+          </div>
+        )}
         {children}
       </div>
     </section>

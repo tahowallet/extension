@@ -3,6 +3,7 @@ import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
 import SharedButton from "../../../components/Shared/SharedButton"
 import SharedIcon from "../../../components/Shared/SharedIcon"
 import OnboardingTip from "./OnboardingTip"
+import OnboardingRoutes from "./Routes"
 
 const intersperseWith = <T, K>(arr: T[], getItem: (index: number) => K) => {
   const result: (T | K)[] = []
@@ -21,19 +22,19 @@ const options = [
   {
     label: "Import recovery phrase",
     icon: "add_wallet/import.svg",
-    url: "/onboarding/import-seed/set-password",
+    url: OnboardingRoutes.IMPORT_SEED,
     isAvailable: true,
   },
   {
     label: "Connect to Ledger",
     icon: "add_wallet/ledger.svg",
-    url: "/onboarding/ledger",
+    url: OnboardingRoutes.LEDGER,
     isAvailable: isLedgerSupported,
   },
   {
     label: "Read-only address",
     icon: "add_wallet/preview.svg",
-    url: "/onboarding/view-only-wallet",
+    url: OnboardingRoutes.VIEW_ONLY_WALLET,
     isAvailable: true,
   },
 ].filter((item) => item.isAvailable)

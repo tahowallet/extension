@@ -77,22 +77,6 @@ export default function Done(): ReactElement {
           z-index: 1;
         }
 
-        .wallet_shortcut {
-          display: flex;
-          flex-direction: column;
-          justify-content: space-evenly;
-          align-items: center;
-          padding: 16px;
-          height: 158px;
-          border-radius: 16px;
-          background-color: var(--hunter-green);
-          color: var(--green-40);
-          margin-top: 24px;
-        }
-
-        .wallet_shortcut > span {
-          text-align: center;
-        }
         .confetti {
           position: absolute;
           display: none;
