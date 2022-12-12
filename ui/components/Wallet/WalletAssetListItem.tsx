@@ -58,11 +58,9 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           }
           .asset_icon_send {
             mask-image: url("./images/send_asset.svg");
-            margin-left: 20px;
           }
           .asset_icon_swap {
             mask-image: url("./images/swap_asset.svg");
-            margin-left: 20px;
           }
           .untrusted_asset_icon {
             display: inline-block;
