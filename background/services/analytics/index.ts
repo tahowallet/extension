@@ -65,8 +65,6 @@ export default class AnalyticsService extends BaseService<Events> {
     }
 
     if (isEnabled) {
-      this.sendAnalyticsEvent("Background start")
-
       this.initializeListeners()
 
       const { uuid } = await this.getOrCreateAnalyticsUUID()
@@ -74,6 +72,8 @@ export default class AnalyticsService extends BaseService<Events> {
       browser.runtime.setUninstallURL(
         `${process.env.WEBSITE_ORIGIN}/goodbye?uuid=${uuid}`
       )
+
+      await this.sendAnalyticsEvent("Background start")
     }
   }
 
