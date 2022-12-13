@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import {
+  selectIsReloadingNFTs,
   selectMainCurrencySign,
   selectNFTBadgesCount,
   selectNFTCollectionsCount,
@@ -15,7 +16,7 @@ export default function NFTsHeader(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
   })
-  const isLoading = useBackgroundSelector(() => false)
+  const isLoading = useBackgroundSelector(selectIsReloadingNFTs)
   const nftCount = useBackgroundSelector(selectNFTsCount)
 
   const collectionCount = useBackgroundSelector(selectNFTCollectionsCount)
@@ -25,7 +26,7 @@ export default function NFTsHeader(): ReactElement {
   const { totalFloorPriceInETH, totalFloorPriceInUSD } =
     useTotalNFTsFloorPrice()
 
-  if (nftCount < 1) {
+  if (!nftCount && !badgeCount && !isLoading) {
     return (
       <HeaderContainer>
         <EmptyHeader />
@@ -41,7 +42,9 @@ export default function NFTsHeader(): ReactElement {
           <span className="currency_sign">{mainCurrencySign}</span>
           <span className="currency_total">{totalFloorPriceInUSD ?? "0"}</span>
           {isLoading && (
-            <SharedLoadingSpinner size="small" variant="transparent" />
+            <div className="stats_spinner">
+              <SharedLoadingSpinner size="small" variant="transparent" />
+            </div>
           )}
         </div>
         <div className="crypto_total">{totalFloorPriceInETH ?? "-"} ETH</div>
@@ -79,7 +82,13 @@ export default function NFTsHeader(): ReactElement {
           color: var(--green-20);
         }
 
+        .stats_spinner {
+          position: absolute;
+          right: -25px;
+        }
+
         .stats_totals {
+          position: relative;
           display: flex;
           flex-direction: row;
           gap: 4px;
