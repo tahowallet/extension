@@ -10,11 +10,20 @@ import ExploreMarketLink, { getRelevantMarketsList } from "./ExploreMarketLink"
 import NFTImage from "./NFTImage"
 
 const MAX_DESCRIPTION_LENGTH = 180
+const LINK_REGEX = /\[([\w\s\d]+)\]\((https?:\/\/[\w\d./?=#]+)\)/gm
 
-const trimDescription = (description?: string) =>
+const removeMarkdownLinks = (description: string) => {
+  return description.replace(LINK_REGEX, "$1")
+}
+
+const trimDescription = (description: string) =>
   description && description.length > MAX_DESCRIPTION_LENGTH
     ? `${description.slice(0, MAX_DESCRIPTION_LENGTH)}...`
     : description
+
+const parseDescription = (description = "") => {
+  return trimDescription(removeMarkdownLinks(description))
+}
 
 export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const { nft, collection } = props
@@ -133,7 +142,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           <div className="preview_section_header">
             {t("preview.description")}
           </div>
-          <p>{trimDescription(description) || "-"}</p>
+          <p>{parseDescription(description) || "-"}</p>
         </div>
 
         <div className="preview_section preview_section_row">
