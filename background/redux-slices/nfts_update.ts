@@ -68,7 +68,7 @@ function updateCollection(
   acc.nfts[chainID][ownerAddress][collection.id] = {
     id,
     name,
-    nftCount,
+    nftCount: nftCount ?? savedCollection.nftCount ?? 0, // POAPs has no nftCount until the NFTs are loaded, let's fallback to old number
     totalNftCount,
     nfts: savedCollection.nfts ?? [],
     hasBadges: savedCollection.hasBadges || hasBadges, // once we know it has badges it should stay like that

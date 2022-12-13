@@ -68,16 +68,20 @@ export default class NFTsService extends BaseService<Events> {
 
   private async connectChainServiceEvents(): Promise<void> {
     this.chainService.emitter.once("serviceStarted").then(async () => {
+      this.emitter.emit("isReloadingNFTs", true)
       await this.refreshCollections()
 
       const collections = await this.db.getAllCollections()
       this.emitter.emit("initializeNFTs", collections)
+      this.emitter.emit("isReloadingNFTs", false)
     })
 
     this.chainService.emitter.on(
       "newAccountToTrack",
       async (addressOnNetwork) => {
+        this.emitter.emit("isReloadingNFTs", true)
         await this.refreshCollections([addressOnNetwork])
+        this.emitter.emit("isReloadingNFTs", false)
       }
     )
   }
@@ -86,7 +90,6 @@ export default class NFTsService extends BaseService<Events> {
     const accountsToFetch =
       accounts ?? (await this.chainService.getAccountsToTrack())
 
-    this.emitter.emit("isReloadingNFTs", true)
     await this.removeTransferredNFTs(accountsToFetch)
     await this.fetchCollections(accountsToFetch)
     // prefetch POAPs to avoid loading empty POAPs collections from UI
@@ -95,7 +98,6 @@ export default class NFTsService extends BaseService<Events> {
         this.fetchNFTsFromCollection(POAP_COLLECTION_ID, account)
       )
     )
-    this.emitter.emit("isReloadingNFTs", false)
   }
 
   async fetchCollections(accounts: AddressOnNetwork[]): Promise<void> {
