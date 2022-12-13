@@ -24,12 +24,10 @@ export const tallyHoTest = base.extend<{
     let [background] = context.backgroundPages()
     if (!background) background = await context.waitForEvent("backgroundpage")
 
-    /*
-      // for manifest v3:
-      let [background] = context.serviceWorkers();
-      if (!background)
-        background = await context.waitForEvent("serviceworker");
-      */
+    // // for manifest v3:
+    // let [background] = context.serviceWorkers();
+    // if (!background)
+    //   background = await context.waitForEvent("serviceworker");
 
     const extensionId = background.url().split("/")[2]
     await use(extensionId)
@@ -41,7 +39,6 @@ export async function createWallet(
   extensionId: string
 ): Promise<void> {
   await page.goto(`chrome-extension://${extensionId}/popup.html`)
-  // await expect(page.locator("body")).toHaveText("my-extension popup");
 
   const passwd = "VoXaXa!239"
 
@@ -67,15 +64,6 @@ export async function createWallet(
   const wordsDivs = await page.locator("div.column.words")
   let words = extractWords(await wordsDivs.nth(0).innerHTML())
   words = words.concat(extractWords(await wordsDivs.nth(1).innerHTML()))
-
-  /*
-    const words = await page.$$eval('.column.words', word_divs => {
-        return word_divs.map(div => div.innerHTML.replace(/<[^>]*>?/gm, ' ')
-                        .trim()
-                        .split(' '))
-                        .flat();
-        });
-*/
 
   // console.log(words)
   await page.locator("text=I wrote it down").click()
