@@ -169,4 +169,5 @@ export const hexToAscii = (hex_: string): string => {
   return str.replace("\x00", "")
 }
 
-export const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+export const wait = (ms: number): Promise<void> =>
+  new Promise<void>((r) => setTimeout(r, ms))

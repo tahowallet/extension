@@ -12,14 +12,15 @@ export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
   onClick: (value: T) => void
 }): ReactElement {
   const { onClick, isCollection = false, isExpanded = false, item } = props
-  const { name = "No title", network, thumbnail } = item
+  const { name = "No title", network, thumbnailURL } = item
+
   const floorPrice =
     "floorPrice" in item && item.floorPrice?.value && item.floorPrice
   const nftsCount = "nfts" in item && item.nfts.length
   return (
     <div className="nft_item">
       <div className="nft_image">
-        <NFTImage src={thumbnail} alt={name} width={168} height={168} />
+        <NFTImage src={thumbnailURL} alt={name} width={168} height={168} />
         <div className="nft_image_details">
           <SharedNetworkIcon
             network={network}

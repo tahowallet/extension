@@ -317,7 +317,7 @@ export function transactionFromEthersTransaction(
   },
   network: EVMNetwork
 ): AnyEVMTransaction {
-  if (tx.hash === undefined) {
+  if (!tx || tx.hash === undefined) {
     throw new Error("Malformed transaction")
   }
   if (!isKnownTxType(tx.type)) {

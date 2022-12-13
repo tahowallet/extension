@@ -97,7 +97,7 @@ const computeCombinedAssetAmountsData = (
     .map<CompleteAssetAmount>((assetAmount) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
-        assetAmount.asset.symbol,
+        assetAmount.asset,
         mainCurrencySymbol
       )
 
@@ -325,7 +325,7 @@ const getTotalBalance = (
     .map(({ assetAmount }) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
-        assetAmount.asset.symbol,
+        assetAmount.asset,
         mainCurrencySymbol
       )
 
