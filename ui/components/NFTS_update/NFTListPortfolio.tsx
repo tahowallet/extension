@@ -1,6 +1,8 @@
 import {
   selectNFTBadgesCollections,
+  selectNFTBadgesCount,
   selectNFTCollections,
+  selectNFTCollectionsCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
@@ -20,6 +22,9 @@ export default function NFTListPortfolio(props: {
   const collections = useBackgroundSelector(
     type === "nfts" ? selectNFTCollections : selectNFTBadgesCollections
   )
+  const nftCount = useBackgroundSelector(
+    type === "nfts" ? selectNFTCollectionsCount : selectNFTBadgesCount
+  )
 
   if (isEmptyPortfolio) {
     return <NFTsExploreBanner type={type} />
@@ -27,7 +32,7 @@ export default function NFTListPortfolio(props: {
 
   return (
     <>
-      {collections.length > 0 ? (
+      {nftCount > 0 ? (
         <>
           <h2>
             {type === "nfts"
