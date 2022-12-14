@@ -75,3 +75,9 @@ export type NFTCollection = {
     }
   }
 }
+
+export type TransferredNFT = {
+  id: string
+  chainID: string
+  address: string
+}

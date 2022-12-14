@@ -10,7 +10,12 @@ import {
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
-import { useBackgroundSelector } from "./redux-hooks"
+import {
+  cleanCachedNFTs,
+  refetchCollections,
+} from "@tallyho/tally-background/redux-slices/nfts_update"
+import { useEffect } from "react"
+import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 
 export const useTotalNFTsFloorPrice = (): {
   totalFloorPriceInETH: string
@@ -29,7 +34,10 @@ export const useTotalNFTsFloorPrice = (): {
 
   const totalFloorPriceLocalized =
     enrichAssetAmountWithMainCurrencyValues(
-      { asset: ETH, amount: BigInt(totalFloorPriceInETH * 10 ** ETH.decimals) },
+      {
+        asset: ETH,
+        amount: BigInt(Math.round(totalFloorPriceInETH * 10 ** ETH.decimals)),
+      },
       ETHPricePoint,
       2
     ).localizedMainCurrencyAmount ?? "-"
@@ -38,4 +46,15 @@ export const useTotalNFTsFloorPrice = (): {
     totalFloorPriceInETH: totalFloorPriceInETHFormatted,
     totalFloorPriceInUSD: totalFloorPriceLocalized,
   }
+}
+
+export const useNFTsReload = (): void => {
+  const dispatch = useBackgroundDispatch()
+
+  useEffect(() => {
+    dispatch(refetchCollections())
+    return () => {
+      dispatch(cleanCachedNFTs())
+    }
+  }, [dispatch])
 }

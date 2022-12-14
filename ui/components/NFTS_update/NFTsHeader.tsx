@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import {
+  selectIsReloadingNFTs,
   selectMainCurrencySign,
   selectNFTBadgesCount,
   selectNFTCollectionsCount,
@@ -15,7 +16,7 @@ export default function NFTsHeader(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
   })
-  const isLoading = useBackgroundSelector(() => false)
+  const isLoading = useBackgroundSelector(selectIsReloadingNFTs)
   const nftCount = useBackgroundSelector(selectNFTsCount)
 
   const collectionCount = useBackgroundSelector(selectNFTCollectionsCount)
@@ -25,7 +26,7 @@ export default function NFTsHeader(): ReactElement {
   const { totalFloorPriceInETH, totalFloorPriceInUSD } =
     useTotalNFTsFloorPrice()
 
-  if (nftCount < 1) {
+  if (!nftCount && !badgeCount && !isLoading) {
     return (
       <HeaderContainer>
         <EmptyHeader />
@@ -39,27 +40,29 @@ export default function NFTsHeader(): ReactElement {
         <div className="stats_title">{t("header.title")}</div>
         <div className="stats_totals">
           <span className="currency_sign">{mainCurrencySign}</span>
-          <span className="currency_total">{totalFloorPriceInUSD}</span>
+          <span className="currency_total">{totalFloorPriceInUSD ?? "0"}</span>
           {isLoading && (
-            <SharedLoadingSpinner size="small" variant="transparent" />
+            <div className="stats_spinner">
+              <SharedLoadingSpinner size="small" variant="transparent" />
+            </div>
           )}
         </div>
-        <div className="crypto_total">{totalFloorPriceInETH} ETH</div>
+        <div className="crypto_total">{totalFloorPriceInETH ?? "-"} ETH</div>
       </div>
       <ul className="nft_counts">
         <li>
           <strong>{collectionCount}</strong>
-          {t("units.collection", { count: collectionCount })}
+          {t("units.collection", { count: collectionCount ?? 0 })}
         </li>
         <li className="spacer" role="presentation" />
         <li>
           <strong>{nftCount}</strong>
-          {t("units.nft", { count: nftCount })}
+          {t("units.nft", { count: nftCount ?? 0 })}
         </li>
         <li className="spacer" role="presentation" />
         <li>
           <strong>{badgeCount}</strong>
-          {t("units.badge", { count: badgeCount })}
+          {t("units.badge", { count: badgeCount ?? 0 })}
         </li>
       </ul>
       <style jsx>{`
@@ -79,7 +82,13 @@ export default function NFTsHeader(): ReactElement {
           color: var(--green-20);
         }
 
+        .stats_spinner {
+          position: absolute;
+          right: -25px;
+        }
+
         .stats_totals {
+          position: relative;
           display: flex;
           flex-direction: row;
           gap: 4px;
@@ -116,7 +125,8 @@ export default function NFTsHeader(): ReactElement {
           display: flex;
           flex-direction: row;
           align-items: center;
-          gap: 16px;
+          justify-content: space-evenly;
+          width: 100%;
         }
 
         li {
@@ -137,6 +147,7 @@ export default function NFTsHeader(): ReactElement {
         li.spacer {
           border: 0.5px solid var(--green-80);
           align-self: stretch;
+          margin: 0 5px;
         }
       `}</style>
     </HeaderContainer>

@@ -1,56 +1,29 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { NFTWithCollection } from "@tallyho/tally-background/redux-slices/nfts_update"
-import React, {
-  ReactElement,
-  useRef,
-  useState,
-  useEffect,
-  useMemo,
-} from "react"
+import React, { ReactElement, useMemo } from "react"
 import { useTranslation } from "react-i18next"
+import { useIntersectionObserver } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 import ExploreMarketLink, { getRelevantMarketsList } from "./ExploreMarketLink"
 import NFTImage from "./NFTImage"
 
 const MAX_DESCRIPTION_LENGTH = 180
+const LINK_REGEX = /\[([\w\s\d]+)\]\((https?:\/\/[\w\d./?=#]+)\)/gm
 
-// Chrome seems to have problems when elements with backdrop style are rendered initially
-// out of the viewport - browser is not rendering them at all. This is a workaround
-// to force them to rerender.
-// TODO: scrolling in and out of the view is still breaking it, needs more work
-const useBackdrop = () => {
-  const ref = useRef<HTMLDivElement>(null)
-  const [obs] = useState(
-    () =>
-      new IntersectionObserver(
-        ([div]) => {
-          if (div.isIntersecting) {
-            div.target.classList.remove("preview_backdrop")
-            div.target.classList.add("preview_backdrop")
-          }
-        },
-        { threshold: 0.8 }
-      )
-  )
-  useEffect(() => {
-    const div = ref.current
-    if (div) {
-      obs.observe(ref.current)
-    }
-    return () => {
-      if (div) obs.unobserve(div)
-    }
-  }, [obs])
-
-  return ref
+const removeMarkdownLinks = (description: string) => {
+  return description.replace(LINK_REGEX, "$1")
 }
 
-const trimDescription = (description?: string) =>
+const trimDescription = (description: string) =>
   description && description.length > MAX_DESCRIPTION_LENGTH
     ? `${description.slice(0, MAX_DESCRIPTION_LENGTH)}...`
     : description
+
+const parseDescription = (description = "") => {
+  return trimDescription(removeMarkdownLinks(description))
+}
 
 export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const { nft, collection } = props
@@ -70,8 +43,21 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     collection.floorPrice?.value &&
     collection.floorPrice
 
+  // Chrome seems to have problems when elements with backdrop style are rendered initially
+  // out of the viewport - browser is not rendering them at all. This is a workaround
+  // to force them to rerender.
+  // TODO: scrolling in and out of the view is still breaking it, needs more work
+  const backdropRef = useIntersectionObserver<HTMLDivElement>(
+    ([div]) => {
+      if (div.isIntersecting) {
+        div.target.classList.remove("preview_backdrop")
+        div.target.classList.add("preview_backdrop")
+      }
+    },
+    { threshold: 0.8 }
+  )
+
   const marketsList = useMemo(() => getRelevantMarketsList(nft), [nft])
-  const backdropRef = useBackdrop()
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
   })
@@ -85,6 +71,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
             alt={name}
             width={384}
             isBadge={isBadge}
+            customStyles="border-radius: 0 0 8px 8px;"
           />
           <div className="preview_network">
             <SharedNetworkIcon network={network} size={24} hasBackground />
@@ -130,14 +117,24 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         <div className="preview_section">
           <div className="preview_section_header"> {t("preview.viewOn")}</div>
           <div className="preview_section_row preview_markets">
-            {marketsList.map(({ url, title, color, icon, getNFTLink }) => (
-              <ExploreMarketLink
-                type="button"
-                key={url}
-                url={getNFTLink(nft)}
-                {...{ title, color, icon }}
-              />
-            ))}
+            {marketsList.map(
+              ({
+                url,
+                title,
+                color,
+                icon,
+                hoverIcon,
+                hoverColor,
+                getNFTLink,
+              }) => (
+                <ExploreMarketLink
+                  type="button"
+                  key={url}
+                  url={getNFTLink(nft)}
+                  {...{ title, color, icon, hoverColor, hoverIcon }}
+                />
+              )
+            )}
           </div>
         </div>
 
@@ -145,7 +142,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           <div className="preview_section_header">
             {t("preview.description")}
           </div>
-          <p>{trimDescription(description) || "-"}</p>
+          <p>{parseDescription(description) || "-"}</p>
         </div>
 
         <div className="preview_section preview_section_row">

@@ -7,15 +7,19 @@ type ExploreMarketLinkProps = {
   url: string
   title: string
   color: string
+  hoverColor: string
   icon?: string
+  hoverIcon?: string
   type?: "link" | "button"
 }
 
 type MarketDetails = {
   title: string
   url: string
+  hoverColor: string
   color: string
   icon: string
+  hoverIcon?: string
   getNFTLink: (nft: NFT) => string
 }
 
@@ -31,6 +35,7 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
     title: "OpenSea",
     url: "https://opensea.io/",
     color: "#409FFF",
+    hoverColor: "#A8D4FF",
     icon: "opensea.png",
     getNFTLink: (nft: NFT): string =>
       `https://opensea.io/assets/${
@@ -43,6 +48,7 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
     title: "LooksRare",
     url: "https://looksrare.org/",
     color: "#2DE370",
+    hoverColor: "#B3F5CB",
     icon: "looksrare.png",
     getNFTLink: (nft: NFT): string =>
       `https://looksrare.org/collections/${nft.contract}/${nft.tokenId}`,
@@ -50,7 +56,8 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
   galxe: {
     title: "Galxe",
     url: "https://galxe.com/",
-    color: "var(--white)",
+    color: "#D6EAE9",
+    hoverColor: "#ffffff",
     icon: "galxe.svg",
     getNFTLink: (nft: NFT): string =>
       `https://galxe.com/nft/${nft.tokenId}/${nft.contract}`,
@@ -59,7 +66,9 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
     title: "POAP",
     url: "https://poap.xyz/",
     color: "#8076fa",
-    icon: "", // TODO add poap icon
+    hoverColor: "#E8E5FF",
+    icon: "poap.png",
+    hoverIcon: "poap_white.png",
     getNFTLink: (nft: NFT): string =>
       `https://app.poap.xyz/token/${nft.tokenId}`,
   },
@@ -86,15 +95,15 @@ export default function ExploreMarketLink({
   url,
   title,
   color,
+  hoverColor,
   icon,
+  hoverIcon,
   type = "link",
 }: ExploreMarketLinkProps): JSX.Element {
   return (
     <a className={type} href={url} rel="noreferrer" target="_blank">
       {title}
-      {!!icon && (
-        <img width="16" height="16" src={`images/${icon}`} alt={title} />
-      )}
+      {!!icon && <div className="market_icon" />}
       <style jsx>{`
         a {
           display: flex;
@@ -116,9 +125,23 @@ export default function ExploreMarketLink({
           padding: 8px 16px;
         }
 
-        img {
-          object-position: center;
-          object-fit: contain;
+        .market_icon {
+          width: 16px;
+          height: 16px;
+          background-image: url("images/${icon}");
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+        }
+
+        a:hover {
+          color: ${hoverColor};
+        }
+        a.button:hover {
+          border-color: ${hoverColor};
+        }
+        a:hover .market_icon {
+          background-image: url("images/${hoverIcon ?? icon}");
         }
       `}</style>
     </a>

@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import { NFT } from "@tallyho/tally-background/nfts"
 import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
 import NFTImage from "./NFTImage"
@@ -16,17 +16,24 @@ export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
 
   const floorPrice =
     "floorPrice" in item && item.floorPrice?.value && item.floorPrice
-  const nftsCount = "nfts" in item && item.nfts.length
+  const nftsCount = "nftCount" in item && item.nftCount
   const isBadge = "isBadge" in item && item.isBadge
+
+  const [hasHover, setHasHover] = useState(false)
   return (
     <div className="nft_item">
-      <div className="nft_image">
+      <div
+        className="nft_image"
+        onMouseEnter={() => setHasHover(true)}
+        onMouseLeave={() => setHasHover(false)}
+      >
         <NFTImage
           src={thumbnailURL}
           alt={name}
           width={168}
           height={168}
           isBadge={isBadge}
+          isZoomed={hasHover || isExpanded}
         />
         <div className="nft_image_details">
           <SharedNetworkIcon

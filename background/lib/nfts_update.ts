@@ -2,6 +2,7 @@ import { AddressOnNetwork } from "../accounts"
 import {
   getSimpleHashCollections,
   getSimpleHashNFTs,
+  getSimpleHashNFTsTransfers,
 } from "./simple-hash_update"
 import {
   getPoapNFTs,
@@ -13,7 +14,9 @@ import {
   CHAIN_ID_TO_NFT_METADATA_PROVIDER,
   NFT_PROVIDER_TO_CHAIN,
   NFTCollection,
+  TransferredNFT,
 } from "../nfts"
+import { UNIXTime } from "../types"
 
 function groupChainsByAddress(accounts: AddressOnNetwork[]) {
   return accounts.reduce<{ [address: string]: string[] }>((acc, account) => {
@@ -32,13 +35,18 @@ function groupChainsByAddress(accounts: AddressOnNetwork[]) {
 export function getNFTs(
   accounts: AddressOnNetwork[],
   collections: string[]
-): Promise<{ nfts: NFT[]; nextPageURLs: string[] }>[] {
+): Promise<{
+  nfts: NFT[]
+  nextPageURLs: { [collectionID: string]: { [address: string]: string } }
+}>[] {
   const chainIDsByAddress = groupChainsByAddress(accounts)
 
   return Object.entries(chainIDsByAddress).flatMap(
     async ([address, chainIDs]) => {
       const nfts: NFT[] = []
-      const nextPageURLs: string[] = []
+      const nextPageURLs: {
+        [collectionID: string]: { [address: string]: string }
+      } = {}
 
       const poapChains = chainIDs.filter((chainID) =>
         NFT_PROVIDER_TO_CHAIN.poap.includes(chainID)
@@ -63,7 +71,10 @@ export function getNFTs(
 
             nfts.push(...simpleHashNFTs)
 
-            if (nextPageURL) nextPageURLs.push(nextPageURL)
+            if (nextPageURL) {
+              nextPageURLs[collectionID] ??= {}
+              nextPageURLs[collectionID][address] = nextPageURL
+            }
           })
         )
       }
@@ -104,4 +115,30 @@ export function getNFTCollections(
       return collections
     }
   )
+}
+
+export async function getTransferredNFTs(
+  accounts: AddressOnNetwork[],
+  timestamp: UNIXTime
+): Promise<TransferredNFT[]> {
+  const { addresses, chains } = accounts.reduce<{
+    addresses: Set<string>
+    chains: Set<string>
+  }>(
+    (acc, account) => {
+      acc.addresses.add(account.address)
+      acc.chains.add(account.network.chainID)
+
+      return acc
+    },
+    { addresses: new Set(), chains: new Set() }
+  )
+
+  const removedNFTs = await getSimpleHashNFTsTransfers(
+    [...addresses],
+    [...chains],
+    timestamp
+  )
+
+  return removedNFTs
 }
