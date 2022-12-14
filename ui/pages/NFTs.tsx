@@ -37,7 +37,7 @@ export default function NFTs(): ReactElement {
         {panelNumber === 0 && (
           <NFTListPortfolio type="nfts" isEmptyPortfolio={!(allNftCount > 0)} />
         )}
-        {panelNumber === 0 && (
+        {panelNumber === 1 && (
           <NFTListPortfolio
             type="badge"
             isEmptyPortfolio={!(allBadgesCount > 0)}
