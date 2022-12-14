@@ -1,4 +1,9 @@
-import sinon from "sinon"
+// We use the classInstance["privateMethodOrVariableName"] to access private properties in a type safe way
+// without redefining the types. This is a typescript shortcoming that we can't easily redefine class member visibility.
+// https://github.com/microsoft/TypeScript/issues/22677
+// POC https://www.typescriptlang.org/play?#code/MYGwhgzhAEBiD29oG8BQ0PWPAdhALgE4Cuw+8hAFAA6ECWAbmPgKbRgBc0B9OA5gBpotRszYAjLjmIBbcS0IBKFAF9Ua1CBb5oAM0TQAvNBwsA7nESUARGHHBrQgIwAmAMyLU2PPC0A6EHg+Sn14AG1bawBdZQB6WOgAeQBpVHisXAhfFgCgkMQIgH0waLiEgFEAJUrEyrSE0IiSqKNoAFZodKqayqA
+/* eslint-disable @typescript-eslint/dot-notation */
+
 import * as uuid from "uuid"
 
 import AnalyticsService from ".."
@@ -6,51 +11,37 @@ import * as features from "../../../features"
 import { createAnalyticsService } from "../../../tests/factories"
 import { Writeable } from "../../../types"
 import PreferenceService from "../../preferences"
-import { PreferenceDatabase } from "../../preferences/db"
-import { AnalyticsDatabase } from "../db"
-
-type AnalyticsServiceExternalized = Omit<AnalyticsService, ""> & {
-  internalStartService: () => Promise<void>
-  preferenceService: PreferenceService
-  db: AnalyticsDatabase
-}
-
-type PreferenceServiceExternalized = Omit<PreferenceService, ""> & {
-  db: PreferenceDatabase
-}
-
-const sandbox = sinon.createSandbox()
 
 describe("AnalyticsService", () => {
-  let analyticsService: AnalyticsServiceExternalized
-  let preferenceService: PreferenceServiceExternalized
+  let analyticsService: AnalyticsService
+  let preferenceService: PreferenceService
   const runtimeFlagWritable = features.RuntimeFlag as Writeable<
     typeof features.RuntimeFlag
   >
+  beforeAll(() => {
+    global.fetch = jest.fn()
+    // We need this set otherwise the posthog lib won't send the events
+    process.env.POSTHOG_API_KEY = "hey hey hey"
+  })
   beforeEach(async () => {
-    sandbox.restore()
     jest.clearAllMocks()
 
-    analyticsService =
-      (await createAnalyticsService()) as unknown as AnalyticsServiceExternalized
+    analyticsService = await createAnalyticsService()
 
-    preferenceService =
-      analyticsService.preferenceService as unknown as PreferenceServiceExternalized
+    preferenceService = analyticsService["preferenceService"]
 
-    jest.spyOn(analyticsService.preferenceService, "getAnalyticsPreferences")
-    jest.spyOn(analyticsService.preferenceService, "updateAnalyticsPreferences")
-    jest.spyOn(analyticsService.preferenceService.emitter, "emit")
-    jest.spyOn(analyticsService.db, "setAnalyticsUUID")
-
-    global.fetch = jest.fn()
+    jest.spyOn(preferenceService, "getAnalyticsPreferences")
+    jest.spyOn(preferenceService, "updateAnalyticsPreferences")
+    jest.spyOn(preferenceService.emitter, "emit")
+    jest.spyOn(analyticsService["db"], "setAnalyticsUUID")
   })
   describe("the setup starts with the proper environment setup", () => {
     it("PreferenceService should be initialized with isEnabled off and hasDefaultOnBeenTurnedOn off by default", async () => {
-      const { isEnabled, hasDefaultOnBeenTurnedOn } =
-        await preferenceService.getAnalyticsPreferences()
+      expect(await preferenceService.getAnalyticsPreferences()).toStrictEqual({
+        isEnabled: false,
+        hasDefaultOnBeenTurnedOn: false,
+      })
 
-      expect(isEnabled).toBe(false)
-      expect(hasDefaultOnBeenTurnedOn).toBe(false)
       expect(preferenceService.getAnalyticsPreferences).toBeCalled()
     })
     it("should change the isEnabled output based on the changed feature flag", () => {
@@ -76,14 +67,18 @@ describe("AnalyticsService", () => {
     })
   })
   describe("before the feature is released (the feature flags are off)", () => {
-    it("should not send any analytics events when both of the feature flags are off", async () => {
+    beforeEach(async () => {
+      runtimeFlagWritable.SUPPORT_ANALYTICS = false
+      runtimeFlagWritable.ENABLE_ANALYTICS_DEFAULT_ON = false
+
       await analyticsService.startService()
+    })
+    it("should not send any analytics events when both of the feature flags are off", async () => {
       await analyticsService.sendAnalyticsEvent("Background start")
 
       expect(fetch).not.toBeCalled()
     })
     it("should not send any analytics events when only the support feature flag is on but the default on is not", async () => {
-      await analyticsService.startService()
       await analyticsService.sendAnalyticsEvent("Background start")
 
       expect(fetch).not.toBeCalled()
@@ -118,7 +113,12 @@ describe("AnalyticsService", () => {
     })
 
     it("should generate a new uuid", async () => {
-      expect(uuid.v4).toBeCalledTimes(1)
+      // Called once for generating the new user uuid
+      // and another time when sending the pothog event
+      expect(uuid.v4).toBeCalledTimes(2)
+
+      // Posthog events are sent through global.fetch method
+      expect(fetch).toBeCalledTimes(1)
     })
 
     it.todo("should send 'New Install' and 'Background start' events")
