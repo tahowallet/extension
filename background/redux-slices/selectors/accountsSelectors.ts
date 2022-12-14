@@ -82,8 +82,7 @@ const computeCombinedAssetAmountsData = (
   assets: AssetsState,
   mainCurrencySymbol: string,
   currentNetwork: EVMNetwork,
-  hideDust: boolean,
-  useCurrentNetwork = false
+  hideDust: boolean
 ): {
   combinedAssetAmounts: CompleteAssetAmount[]
   totalMainCurrencyAmount: number | undefined
@@ -98,9 +97,8 @@ const computeCombinedAssetAmountsData = (
     .map<CompleteAssetAmount>((assetAmount) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
-        assetAmount.asset.symbol,
-        mainCurrencySymbol,
-        useCurrentNetwork ? currentNetwork.chainID : undefined
+        assetAmount.asset,
+        mainCurrencySymbol
       )
 
       const mainCurrencyEnrichedAssetAmount =
@@ -262,8 +260,7 @@ export const selectCurrentAccountBalances = createSelector(
         assets,
         mainCurrencySymbol,
         currentNetwork,
-        hideDust,
-        true
+        hideDust
       )
 
     return {
@@ -322,16 +319,14 @@ const getAccountType = (
 const getTotalBalance = (
   accountBalances: { [assetSymbol: string]: AccountBalance },
   assets: AssetsState,
-  mainCurrencySymbol: string,
-  chainID: string
+  mainCurrencySymbol: string
 ) => {
   return Object.values(accountBalances)
     .map(({ assetAmount }) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
-        assetAmount.asset.symbol,
-        mainCurrencySymbol,
-        chainID
+        assetAmount.asset,
+        mainCurrencySymbol
       )
 
       if (typeof assetPricePoint === "undefined") {
@@ -402,12 +397,7 @@ function getNetworkAccountTotalsByCategory(
         avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
         localizedTotalMainCurrencyAmount: formatCurrencyAmount(
           mainCurrencySymbol,
-          getTotalBalance(
-            accountData.balances,
-            assets,
-            mainCurrencySymbol,
-            network.chainID
-          ),
+          getTotalBalance(accountData.balances, assets, mainCurrencySymbol),
           desiredDecimals.default
         ),
       }
@@ -479,8 +469,7 @@ export const selectAccountTotalsForOverview = createSelector(
           accountsTotal[normalizedAddress].totals[chainID] = getTotalBalance(
             accountData.balances,
             assetsState,
-            mainCurrencySymbol,
-            chainID
+            mainCurrencySymbol
           )
         })
       )

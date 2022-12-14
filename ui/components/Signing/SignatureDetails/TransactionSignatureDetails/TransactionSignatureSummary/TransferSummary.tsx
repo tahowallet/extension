@@ -37,7 +37,7 @@ export function TransferSummaryBase({
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
   const assetPricePoint = selectAssetPricePoint(
     assets,
-    assetAmount.asset.symbol,
+    assetAmount.asset,
     mainCurrencySymbol
   )
   const localizedMainCurrencyAmount =

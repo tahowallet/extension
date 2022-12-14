@@ -109,11 +109,7 @@ export default function Send(): ReactElement {
         isFungibleAssetAmount(assetAmount)
     )
   const assetPricePoint = useBackgroundSelector((state) =>
-    selectAssetPricePoint(
-      state.assets,
-      selectedAsset.symbol,
-      mainCurrencySymbol
-    )
+    selectAssetPricePoint(state.assets, selectedAsset, mainCurrencySymbol)
   )
 
   const assetAmountFromForm = () => {
