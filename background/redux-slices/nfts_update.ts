@@ -28,7 +28,20 @@ export type NFTWithCollection = {
   nft: NFT
 }
 
-export type FiltersState = []
+export type Filter = {
+  id: string
+  name: string
+  isEnabled: boolean
+  thumbnailURL?: string
+}
+
+export type SortType = "asc" | "desc" | "new" | "old" | "number"
+
+export type FiltersState = {
+  collections: Filter[]
+  accounts: Filter[]
+  type: SortType
+}
 
 export type NFTsSliceState = {
   isReloading: boolean
@@ -86,13 +99,42 @@ function updateCollection(
   }
 }
 
+function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
+  const { id, name, thumbnailURL, owner } = collection
+
+  const existedCollection = acc.filters.collections.find((obj) => obj.id === id)
+  const existedAccount = acc.filters.accounts.find((obj) => obj.id === owner)
+
+  acc.filters.collections = [
+    ...acc.filters.collections.filter((obj) => obj.id !== id),
+    {
+      id,
+      name,
+      thumbnailURL,
+      isEnabled: existedCollection ? existedCollection.isEnabled : true,
+    },
+  ]
+
+  acc.filters.accounts = [
+    ...acc.filters.accounts.filter((obj) => obj.id !== owner),
+    {
+      id: owner,
+      name: owner,
+      isEnabled: existedAccount ? existedAccount.isEnabled : true,
+    },
+  ]
+}
+
 function initializeCollections(collections: NFTCollection[]): NFTsSliceState {
   const state: NFTsSliceState = {
     isReloading: false,
     nfts: {},
-    filters: [],
+    filters: { collections: [], accounts: [], type: "desc" },
   }
-  collections.forEach((collection) => updateCollection(state, collection))
+  collections.forEach((collection) => {
+    updateCollection(state, collection)
+    updateFilters(state, collection)
+  })
   return state
 }
 
@@ -101,7 +143,7 @@ const NFTsSlice = createSlice({
   initialState: {
     isReloading: false,
     nfts: {},
-    filters: [],
+    filters: { collections: [], accounts: [], type: "desc" },
   } as NFTsSliceState,
   reducers: {
     initializeNFTs: (
@@ -186,6 +228,27 @@ const NFTsSlice = createSlice({
         )
       )
     },
+    updateCollectionFilter: (
+      immerState,
+      { payload: filter }: { payload: Filter }
+    ) => {
+      const idx = immerState.filters.collections.findIndex(
+        ({ id }) => id === filter.id
+      )
+      immerState.filters.collections[idx] = filter
+    },
+    updateAccountFilter: (
+      immerState,
+      { payload: filter }: { payload: Filter }
+    ) => {
+      const idx = immerState.filters.accounts.findIndex(
+        ({ id }) => id === filter.id
+      )
+      immerState.filters.accounts[idx] = filter
+    },
+    updateSortType: (immerState, { payload: type }: { payload: SortType }) => {
+      immerState.filters.type = type
+    },
   },
 })
 
@@ -196,6 +259,9 @@ export const {
   updateIsReloading,
   deleteNFTsForAddress,
   cleanCachedNFTs,
+  updateCollectionFilter,
+  updateAccountFilter,
+  updateSortType,
 } = NFTsSlice.actions
 export default NFTsSlice.reducer
 
