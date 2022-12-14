@@ -19,6 +19,7 @@ import NetworksChart from "../components/Overview/NetworksChart"
 import AccountList from "../components/Overview/AccountList"
 import AchievementsOverview from "../components/NFTs/AchievementsOverview"
 import NFTsPortfolioOverview from "../components/Overview/NFTsPortfolioOverview"
+import AbilitiesHeader from "../components/Overview/AbilitiesHeader"
 
 const panelNames = ["Assets", "NFTs"]
 
@@ -50,6 +51,7 @@ function Overview(): ReactElement {
           balance={balance}
           initializationTimeExpired={initializationLoadingTimeExpired}
         />
+        <AbilitiesHeader />
         <AccountList
           accountsTotal={accountsTotal}
           accountsCount={accountsCount}
