@@ -112,6 +112,15 @@ export const selectAllNFTsCount = createSelector(
   }
 )
 
+export const selectAllNFTBadgesCount = createSelector(
+  selectAllCollections,
+  (collections) => {
+    return collections
+      .filter((collection) => collection.hasBadges)
+      .reduce((sum, collection) => sum + (collection.nftCount ?? 0), 0)
+  }
+)
+
 export const selectNFTsCount = createSelector(
   selectNFTCollections,
   (collections) => {
@@ -143,7 +152,7 @@ export const selectAllNFTCollectionsCount = createSelector(
 )
 
 export const selectTotalFloorPriceInETH = createSelector(
-  selectAllCollections,
+  selectNFTCollections,
   (collections) => {
     return collections.reduce((sum, collection) => {
       if (collection.floorPrice && isETHPrice(collection)) {
