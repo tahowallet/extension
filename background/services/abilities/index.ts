@@ -6,12 +6,13 @@ import { DaylightAbility, getDaylightAbilities } from "./daylight"
 // Placeholder
 // interface Events extends ServiceLifecycleEvents {}
 
-type Ability = {
+export type Ability = {
   type: "mint"
   title: string
   description: string | null
   uuid: string
   linkUrl: string
+  completed: boolean
 }
 
 const normalizeDaylightAbilities = (
@@ -30,6 +31,7 @@ const normalizeDaylightAbilities = (
       description: daylightAbility.description,
       uuid: daylightAbility.uid,
       linkUrl: daylightAbility.action.linkUrl,
+      completed: false,
     })
   })
 

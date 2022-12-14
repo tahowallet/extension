@@ -6,6 +6,7 @@ import activitiesReducer from "./activities"
 import keyringsReducer from "./keyrings"
 import networksReducer from "./networks"
 import swapReducer from "./0x-swap"
+import abilitiesReducer from "./abilities"
 import transactionConstructionReducer from "./transaction-construction"
 import uiReducer from "./ui"
 import dappReducer from "./dapp"
@@ -18,6 +19,7 @@ import nftsUpdateReducer from "./nfts_update"
 import { FeatureFlags, isEnabled } from "../features"
 
 const mainReducer = combineReducers({
+  abilities: abilitiesReducer,
   account: accountsReducer,
   assets: assetsReducer,
   activities: activitiesReducer,
