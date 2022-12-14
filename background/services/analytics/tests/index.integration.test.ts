@@ -11,6 +11,7 @@ import * as features from "../../../features"
 import { createAnalyticsService } from "../../../tests/factories"
 import { Writeable } from "../../../types"
 import PreferenceService from "../../preferences"
+import * as posthog from "../../../lib/posthog"
 
 describe("AnalyticsService", () => {
   let analyticsService: AnalyticsService
@@ -34,6 +35,8 @@ describe("AnalyticsService", () => {
     jest.spyOn(preferenceService, "updateAnalyticsPreferences")
     jest.spyOn(preferenceService.emitter, "emit")
     jest.spyOn(analyticsService["db"], "setAnalyticsUUID")
+    jest.spyOn(analyticsService, "sendAnalyticsEvent")
+    jest.spyOn(posthog, "sendPosthogEvent")
   })
   describe("the setup starts with the proper environment setup", () => {
     it("PreferenceService should be initialized with isEnabled off and hasDefaultOnBeenTurnedOn off by default", async () => {
@@ -114,14 +117,22 @@ describe("AnalyticsService", () => {
 
     it("should generate a new uuid", async () => {
       // Called once for generating the new user uuid
-      // and another time when sending the pothog event
-      expect(uuid.v4).toBeCalledTimes(2)
-
-      // Posthog events are sent through global.fetch method
-      expect(fetch).toBeCalledTimes(1)
+      // and once for the 'Background start' and once for the `New install' event
+      expect(uuid.v4).toBeCalledTimes(3)
     })
 
-    it.todo("should send 'New Install' and 'Background start' events")
+    it("should send 'New Install' and 'Background start' events", () => {
+      // Posthog events are sent through global.fetch method
+      // During initialization we send 2 events
+      expect(fetch).toBeCalledTimes(2)
+
+      const [[, firstEventName], [, secondEventName]] = (
+        posthog.sendPosthogEvent as unknown as jest.SpyInstance
+      ).mock.calls
+
+      expect(firstEventName).toBe("New install")
+      expect(secondEventName).toBe("Background start")
+    })
   })
   describe("feature is released and enabled", () => {
     it.todo("should send 'Background start' event when the service starts")
