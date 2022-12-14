@@ -667,6 +667,9 @@ export default function SharedAssetInput<T extends AnyAsset>(
               }
             />
             {showPriceDetails &&
+              amount &&
+              selectedAsset &&
+              Number(amount) !== 0 &&
               (!errorMessage ? (
                 <PriceDetails
                   amountMainCurrency={amountMainCurrency}
