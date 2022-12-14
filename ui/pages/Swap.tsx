@@ -507,7 +507,7 @@ export default function Swap(): ReactElement {
               ) : null}
             </div>
             <div className="footer standard_width_padded">
-              {quote?.needsApproval ? (
+              {quoteAppliesToCurrentAssets && quote?.needsApproval ? (
                 <ApproveQuoteBtn
                   isApprovalInProgress={!!isApprovalInProgress}
                   isDisabled={isReadOnlyAccount || !quote}
