@@ -3,6 +3,9 @@ import logger from "./logger"
 import { ETHEREUM } from "../constants"
 import { NFT, NFTCollection, NFTsWithPagesResponse } from "../nfts"
 
+export const POAP_CONTRACT = "poap_contract"
+export const POAP_COLLECTION_ID = "POAP"
+
 type PoapNFTModel = {
   event: {
     id: number
@@ -40,6 +43,7 @@ function poapNFTModelToNFT(original: PoapNFTModel, owner: string): NFT {
   } = original
   return {
     id: tokenId,
+    tokenId,
     name: eventName,
     description,
     thumbnailURL: thumbnail,
@@ -50,13 +54,11 @@ function poapNFTModelToNFT(original: PoapNFTModel, owner: string): NFT {
       { trait: "City", value: city },
       { trait: "Year", value: year?.toString() },
     ],
-    collectionID: "POAP",
-    contract: "poap_contract", // contract address doesn't make sense for POAPs
+    collectionID: POAP_COLLECTION_ID,
+    contract: POAP_CONTRACT, // contract address doesn't make sense for POAPs
     owner,
     network: ETHEREUM,
-    badge: {
-      url: `https://app.poap.xyz/token/${tokenId}`,
-    },
+    isBadge: true,
   }
 }
 
@@ -98,8 +100,8 @@ export async function getPoapCollections(
   address: string
 ): Promise<NFTCollection> {
   return {
-    id: "POAP", // let's keep POAPs in one collection
-    name: "POAP",
+    id: POAP_COLLECTION_ID, // let's keep POAPs in one collection
+    name: POAP_COLLECTION_ID,
     nftCount: undefined, // TODO: we don't know at this point how many POAPs this address has
     owner: address,
     hasBadges: true,
