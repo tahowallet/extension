@@ -38,23 +38,19 @@ function useIntersectionObserver<T extends React.RefObject<HTMLElement>>(
     element: TypedIntersectionObserverEntry<
       T extends React.RefObject<infer U> ? U : never
     >
-  ) => void
+  ) => void,
+  options: IntersectionObserverInit
 ) {
   const callbackRef = useRef(callback)
   const [obs] = useState(
     () =>
-      new IntersectionObserver(
-        ([element]) => {
-          if (element.isIntersecting) {
-            callbackRef.current(
-              element as TypedIntersectionObserverEntry<
-                T extends React.RefObject<infer U> ? U : never
-              >
-            )
-          }
-        },
-        { threshold: 0.01, root: null, rootMargin: "50px 0px 50px 0px" }
-      )
+      new IntersectionObserver(([element]) => {
+        callbackRef.current(
+          element as TypedIntersectionObserverEntry<
+            T extends React.RefObject<infer U> ? U : never
+          >
+        )
+      }, options)
   )
 
   useLayoutEffect(() => {
@@ -84,7 +80,15 @@ export default function SharedAssetIcon(props: Props): ReactElement {
 
   const containerRef = useRef<HTMLDivElement>(null)
 
-  useIntersectionObserver(containerRef, () => setIsVisible(true))
+  useIntersectionObserver(
+    containerRef,
+    (entry) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true)
+      }
+    },
+    { threshold: 0.01, root: null, rootMargin: "50px 0px 50px 0px" }
+  )
 
   useEffect(() => {
     if (!visible) {
