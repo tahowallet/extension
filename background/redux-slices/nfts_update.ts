@@ -158,9 +158,10 @@ const NFTsSlice = createSlice({
       immerState,
       { payload: collections }: { payload: NFTCollection[] }
     ) => {
-      collections.forEach((collection) =>
+      collections.forEach((collection) => {
         updateCollection(immerState, collection)
-      )
+        updateFilters(immerState, collection)
+      })
     },
     updateNFTs: (
       immerState,
