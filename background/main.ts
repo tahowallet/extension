@@ -156,6 +156,7 @@ import {
   updateIsReloading,
   deleteTransferredNFTs,
 } from "./redux-slices/nfts_update"
+import AbilitiesService from "./services/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -260,6 +261,7 @@ export default class Main extends BaseService<never> {
   store: ReduxStoreType
 
   static create: ServiceCreatorFunction<never, Main, []> = async () => {
+    const abilitiesService = AbilitiesService.create()
     const preferenceService = PreferenceService.create()
     const keyringService = KeyringService.create()
     const chainService = ChainService.create(preferenceService, keyringService)
@@ -347,7 +349,8 @@ export default class Main extends BaseService<never> {
       await signingService,
       await analyticsService,
       await nftsService,
-      await walletConnectService
+      await walletConnectService,
+      await abilitiesService
     )
   }
 
@@ -435,7 +438,12 @@ export default class Main extends BaseService<never> {
      * A promise to the Wallet Connect service which takes care of handling wallet connect
      * protocol and communication.
      */
-    private walletConnectService: WalletConnectService
+    private walletConnectService: WalletConnectService,
+
+    /**
+     * A promise to the Abilities service which takes care of fetching and storing abilities
+     */
+    private abilitiesService: AbilitiesService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -446,6 +454,12 @@ export default class Main extends BaseService<never> {
 
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState, this)
+
+    setTimeout(() => {
+      this.abilitiesService.getAbilities(
+        "0x0d18b6e68ec588149f2fc20b76ff70b1cfb28884"
+      )
+    }, 3000)
 
     wrapStore(this.store, {
       serializer: encodeJSON,
@@ -497,6 +511,7 @@ export default class Main extends BaseService<never> {
       this.analyticsService.startService(),
       this.nftsService.startService(),
       this.walletConnectService.startService(),
+      this.abilitiesService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -519,6 +534,7 @@ export default class Main extends BaseService<never> {
       this.analyticsService.stopService(),
       this.nftsService.stopService(),
       this.walletConnectService.stopService(),
+      this.abilitiesService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
