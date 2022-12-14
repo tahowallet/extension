@@ -25,11 +25,7 @@ export const useTotalNFTsFloorPrice = (): {
     totalFloorPriceInETH,
     4
   )
-  const ETHPricePoint = selectAssetPricePoint(
-    assets,
-    ETH.symbol,
-    mainCurrencySymbol
-  )
+  const ETHPricePoint = selectAssetPricePoint(assets, ETH, mainCurrencySymbol)
 
   const totalFloorPriceLocalized =
     enrichAssetAmountWithMainCurrencyValues(
