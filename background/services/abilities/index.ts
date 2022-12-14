@@ -13,10 +13,12 @@ export type Ability = {
   uuid: string
   linkUrl: string
   completed: boolean
+  address: string
 }
 
 const normalizeDaylightAbilities = (
-  daylightAbilities: DaylightAbility[]
+  daylightAbilities: DaylightAbility[],
+  address: string
 ): Ability[] => {
   const normalizedAbilities: Ability[] = []
 
@@ -32,6 +34,7 @@ const normalizeDaylightAbilities = (
       uuid: daylightAbility.uid,
       linkUrl: daylightAbility.action.linkUrl,
       completed: false,
+      address,
     })
   })
 
@@ -61,7 +64,9 @@ export default class AbilitiesService extends BaseService<ServiceLifecycleEvents
       console.log(this)
     }
     const daylightAbilities = await getDaylightAbilities(address)
-    return normalizeDaylightAbilities(daylightAbilities)
+
+    console.log(daylightAbilities)
+    return normalizeDaylightAbilities(daylightAbilities, address)
   }
 
   //   override async internalStartService(): Promise<void> {}

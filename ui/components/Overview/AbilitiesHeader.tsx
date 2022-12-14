@@ -1,7 +1,9 @@
+import { selectAbilityCount } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
+import { useSelector } from "react-redux"
 
 export default function AbilitiesHeader(): ReactElement {
-  const newAbilities = 0
+  const newAbilities = useSelector(selectAbilityCount)
 
   const abilityCount = newAbilities > 0 ? `${newAbilities} New` : "None"
 

@@ -157,6 +157,7 @@ import {
   deleteTransferredNFTs,
 } from "./redux-slices/nfts_update"
 import AbilitiesService from "./services/abilities"
+import { setAbilities } from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -195,6 +196,8 @@ const persistStoreState = debounce(persistStoreFn, 50, {
 const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
+
+  ;(window as any).store = store
 
   persistStoreState(state)
   return result
@@ -455,10 +458,12 @@ export default class Main extends BaseService<never> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState, this)
 
-    setTimeout(async () => {
+    setInterval(async () => {
       const abilities = await this.abilitiesService.getAbilities(
-        "0x0d18b6e68ec588149f2fc20b76ff70b1cfb28884"
+        this.store.getState().ui.selectedAccount.address
       )
+
+      this.store.dispatch(setAbilities(abilities))
     }, 3000)
 
     wrapStore(this.store, {
