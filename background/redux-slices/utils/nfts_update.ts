@@ -24,6 +24,7 @@ export const getAdditionalDataForFilter = (
   return a ? { name: a.name, avatarURL: a.avatarURL } : {}
 }
 
+/* Items are sorted by price in ETH. All other elements are added at the end. */
 const sortByPrice = (
   type: "asc" | "desc",
   collection1: NFTCollectionCached,
