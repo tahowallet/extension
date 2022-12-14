@@ -8,3 +8,4 @@ app/extension-scripts/api/playground/
 *.rest
 .DS_Store
 .vscode
+playwright-report

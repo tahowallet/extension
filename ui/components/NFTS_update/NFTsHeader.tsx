@@ -2,6 +2,7 @@ import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
   selectAllNFTsCount,
+  selectIsReloadingNFTs,
   selectMainCurrencySign,
   selectNFTBadgesCount,
   selectNFTCollectionsCount,
@@ -21,7 +22,7 @@ export default function NFTsHeader(): ReactElement {
   })
   const [openFiltersMenu, setOpenFiltersMenu] = useState(false)
 
-  const isLoading = useBackgroundSelector(() => false)
+  const isLoading = useBackgroundSelector(selectIsReloadingNFTs)
   const allNftCount = useBackgroundSelector(selectAllNFTsCount)
   const nftCount = useBackgroundSelector(selectNFTsCount)
 
@@ -36,7 +37,7 @@ export default function NFTsHeader(): ReactElement {
     setOpenFiltersMenu((currentlyOpen) => !currentlyOpen)
   }, [])
 
-  if (allNftCount < 1) {
+  if (!allNftCount && !isLoading) {
     return (
       <HeaderContainer>
         <EmptyHeader />
@@ -112,7 +113,13 @@ export default function NFTsHeader(): ReactElement {
           color: var(--green-20);
         }
 
+        .stats_spinner {
+          position: absolute;
+          right: -25px;
+        }
+
         .stats_totals {
+          position: relative;
           display: flex;
           flex-direction: row;
           gap: 4px;

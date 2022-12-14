@@ -37,6 +37,8 @@ const WAIT_BEFORE_SEND_AGAIN = 100
 const ALCHEMY_RPC_CALL_PERCENTAGE = 0
 // How long before a cached balance is considered stale
 const BALANCE_TTL = 1 * SECOND
+// How often to cleanup our hasCode and balance caches.
+const CACHE_CLEANUP_INTERVAL = 10 * SECOND
 /**
  * Wait the given number of ms, then run the provided function. Returns a
  * promise that will resolve after the delay has elapsed and the passed
@@ -253,6 +255,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.attemptToReconnectToAlchemyProvider()
     }, PRIMARY_PROVIDER_RECONNECT_INTERVAL)
 
+    setInterval(() => {
+      this.cleanupStaleCacheEntries()
+    }, CACHE_CLEANUP_INTERVAL)
+
     this.cachedChainId = utils.hexlify(Number(evmNetwork.chainID))
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
   }
@@ -318,21 +324,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         this.alchemyProvider &&
         Math.random() < ALCHEMY_RPC_CALL_PERCENTAGE / 100
       ) {
-        // Cast `unknown` to `any` - which is the type that the send method expects.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result = await this.alchemyProvider.send(
-          method,
-          params as Array<any>
-        )
+        const result = await this.alchemyProvider.send(method, params)
         delete this.messagesToSend[messageId]
         return result
       }
-      // Cast `unknown` to `any` - which is the type that the send method expects.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await this.currentProvider.send(
-        method,
-        params as Array<any>
-      )
+      const result = await this.currentProvider.send(method, params)
       // If https://github.com/tc39/proposal-decorators ever gets out of Stage 3
       // cleaning up the messageToSend object seems like a great job for a decorator
       delete this.messagesToSend[messageId]
@@ -460,6 +456,34 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
 
     return undefined
+  }
+
+  /**
+   * Cache cleanup to mitigate unbounded growth of our hasCode and balance caches.
+   * @TODO remove this method once loading of initial activities is refactored.
+   */
+  cleanupStaleCacheEntries(): void {
+    const balanceCache = Object.entries(this.latestBalanceCache)
+    const hasCodeCache = Object.keys(this.latestHasCodeCache)
+    if (balanceCache.length > 0) {
+      logger.info(
+        `Cleaning up ${this.network.chainId} balance cache, ${balanceCache.length} entries`
+      )
+      const now = Date.now()
+      balanceCache.forEach(([address, balance]) => {
+        if (balance.updatedAt < now - BALANCE_TTL) {
+          delete this.latestBalanceCache[address]
+        }
+      })
+    }
+
+    if (hasCodeCache.length > 0) {
+      logger.info(
+        `Cleaning up ${this.network.chainId} hasCode cache, ${hasCodeCache.length} entries`
+      )
+
+      this.latestHasCodeCache = {}
+    }
   }
 
   /**

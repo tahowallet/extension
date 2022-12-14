@@ -4,6 +4,7 @@ type SharedLoadingDoggoProps = {
   size: number
   message?: string
   padding?: React.CSSProperties["padding"]
+  margin?: React.CSSProperties["margin"]
   animated?: boolean
 }
 
@@ -11,6 +12,7 @@ export default function SharedLoadingDoggo({
   size,
   message,
   padding = "0",
+  margin = "0",
   animated: animate = true,
 }: SharedLoadingDoggoProps): ReactElement {
   return (
@@ -42,6 +44,7 @@ export default function SharedLoadingDoggo({
           align-items: center;
           flex-direction: column;
           padding: ${padding};
+          margin: ${margin};
         }
 
         span {

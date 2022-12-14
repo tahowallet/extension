@@ -1,4 +1,5 @@
 import {
+  selectIsReloadingNFTs,
   selectNFTBadgesCollections,
   selectNFTBadgesCount,
   selectNFTCollections,
@@ -25,14 +26,15 @@ export default function NFTListPortfolio(props: {
   const nftCount = useBackgroundSelector(
     type === "nfts" ? selectNFTCollectionsCount : selectNFTBadgesCount
   )
+  const isLoading = useBackgroundSelector(selectIsReloadingNFTs)
 
-  if (isEmptyPortfolio) {
+  if (isEmptyPortfolio || !isLoading) {
     return <NFTsExploreBanner type={type} />
   }
 
   return (
     <>
-      {nftCount > 0 ? (
+      {nftCount ? (
         <>
           <h2>
             {type === "nfts"

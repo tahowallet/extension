@@ -3,6 +3,7 @@ import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import {
   ARBITRUM_ONE,
   AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
@@ -18,6 +19,7 @@ const ENS_SUPPORTED_NETWORKS = [
   ARBITRUM_ONE,
   GOERLI,
   AVALANCHE,
+  BINANCE_SMART_CHAIN,
 ]
 
 export default function ensResolverFor(

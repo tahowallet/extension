@@ -3,7 +3,7 @@ import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { fromFixedPointNumber } from "../lib/fixed-point"
 import { normalizeEVMAddress } from "../lib/utils"
-import { NFT, NFTCollection } from "../nfts"
+import { NFT, NFTCollection, TransferredNFT } from "../nfts"
 import { createBackgroundAsyncThunk } from "./utils"
 
 export type NFTCollectionCached = {
@@ -81,7 +81,7 @@ function updateCollection(
   acc.nfts[chainID][ownerAddress][collection.id] = {
     id,
     name,
-    nftCount,
+    nftCount: nftCount ?? savedCollection.nftCount ?? 0, // POAPs has no nftCount until the NFTs are loaded, let's fallback to old number
     totalNftCount,
     nfts: savedCollection.nfts ?? [],
     hasBadges: savedCollection.hasBadges || hasBadges, // once we know it has badges it should stay like that
@@ -211,6 +211,22 @@ const NFTsSlice = createSlice({
         delete immerState.nfts[chainID][normalizedAddress]
       })
     },
+    deleteTransferredNFTs: (
+      immerState,
+      { payload: transferredNFTs }: { payload: TransferredNFT[] }
+    ) => {
+      transferredNFTs.forEach(({ id, chainID, address }) => {
+        Object.keys(
+          immerState.nfts[chainID][normalizeEVMAddress(address)]
+        ).forEach((collectionID) => {
+          const collection = immerState.nfts[chainID]?.[address]?.[collectionID]
+
+          if (collection) {
+            collection.nfts = collection.nfts.filter((nft) => nft.id !== id)
+          }
+        })
+      })
+    },
     cleanCachedNFTs: (immerState) => {
       Object.keys(immerState.nfts).forEach((chainID) =>
         Object.keys(immerState.nfts[chainID]).forEach((address) =>
@@ -259,6 +275,7 @@ export const {
   updateNFTs,
   updateIsReloading,
   deleteNFTsForAddress,
+  deleteTransferredNFTs,
   cleanCachedNFTs,
   updateCollectionFilter,
   updateAccountFilter,

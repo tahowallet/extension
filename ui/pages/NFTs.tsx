@@ -1,5 +1,4 @@
-import React, { ReactElement, useState } from "react"
-import classNames from "classnames"
+import React, { ReactElement, useRef, useState } from "react"
 import {
   selectAllNFTBadgesCount,
   selectAllNFTsCount,
@@ -8,25 +7,23 @@ import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import NFTsHeader from "../components/NFTS_update/NFTsHeader"
 import { useBackgroundSelector, useNFTsReload } from "../hooks"
 import NFTListPortfolio from "../components/NFTS_update/NFTListPortfolio"
+import SharedButtonUp from "../components/Shared/SharedButtonUp"
 
 const PANEL_NAMES = ["NFTs", "Badges"]
 
 export default function NFTs(): ReactElement {
   const allNftCount = useBackgroundSelector(selectAllNFTsCount)
   const allBadgesCount = useBackgroundSelector(selectAllNFTBadgesCount)
+  const pageRef = useRef(null)
 
   const [panelNumber, setPanelNumber] = useState(0)
 
   useNFTsReload()
 
   return (
-    <div className="page_content">
+    <div className="page_content" ref={pageRef}>
       <NFTsHeader />
-      <div
-        className={classNames("panel_switcher_wrap", {
-          margin: !(allNftCount > 0),
-        })}
-      >
+      <div className="panel_switcher_wrap">
         <SharedPanelSwitcher
           setPanelNumber={setPanelNumber}
           panelNumber={panelNumber}
@@ -44,6 +41,7 @@ export default function NFTs(): ReactElement {
           />
         )}
       </div>
+      <SharedButtonUp elementRef={pageRef} offset={100} />
       <style jsx>
         {`
           .page_content {
@@ -52,12 +50,6 @@ export default function NFTs(): ReactElement {
             flex-direction: column;
             gap: 8px;
             align-items: center;
-          }
-          .panel_switcher_wrap {
-            width: 100%;
-          }
-          .panel_switcher_wrap.margin {
-            margin-bottom: 16px;
           }
         `}
       </style>
