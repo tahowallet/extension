@@ -9,7 +9,6 @@ import {
 import { utils } from "ethers"
 import { getNetwork } from "@ethersproject/networks"
 import {
-  MINUTE,
   SECOND,
   CHAIN_ID_TO_RPC_URLS,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
@@ -25,22 +24,21 @@ import {
 } from "../../lib/alchemy"
 
 // Back off by this amount as a base, exponentiated by attempts and jittered.
-const BASE_BACKOFF_MS = 150
-// Reset backoffs after 5 minutes.
-const COOLDOWN_PERIOD = 5 * MINUTE
-// Retry 8 times before falling back to the next provider.
-// This generally results in a wait time of around 30 seconds (with a maximum time
-// of 76.5 seconds for 8 completely serial requests) before falling back since we
-// usually have multiple requests going out at once.
-const MAX_RETRIES = 8
-// Wait 15 seconds between primary provider reconnect attempts.
-const PRIMARY_PROVIDER_RECONNECT_INTERVAL = 15 * SECOND
+const BASE_BACKOFF_MS = 400
+// Retry 3 times before falling back to the next provider.
+const MAX_RETRIES_PER_PROVIDER = 3
+// Wait 10 seconds between primary provider reconnect attempts.
+const PRIMARY_PROVIDER_RECONNECT_INTERVAL = 10 * SECOND
 // Wait 2 seconds after a primary provider is created before resubscribing.
 const WAIT_BEFORE_SUBSCRIBING = 2 * SECOND
 // Wait 100ms before attempting another send if a websocket provider is still connecting.
 const WAIT_BEFORE_SEND_AGAIN = 100
 // Percentage of .send calls to route to alchemy
-const ALCHEMY_RPC_CALL_PERCENTAGE = 50
+const ALCHEMY_RPC_CALL_PERCENTAGE = 0
+// How long before a cached balance is considered stale
+const BALANCE_TTL = 1 * SECOND
+// How often to cleanup our hasCode and balance caches.
+const CACHE_CLEANUP_INTERVAL = 10 * SECOND
 /**
  * Wait the given number of ms, then run the provided function. Returns a
  * promise that will resolve after the delay has elapsed and the passed
@@ -61,14 +59,10 @@ function waitAnd<T, E extends Promise<T>>(
 }
 
 /**
- * Given the number of the backoff being executed, returns a jittered number of
- * ms to back off before making the next attempt.
+ * Return a jittered amount of ms to backoff bounded between 400 and 800 ms
  */
-function backedOffMs(backoffCount: number): number {
-  const backoffSlotStart = BASE_BACKOFF_MS * 2 ** backoffCount
-  const backoffSlotEnd = BASE_BACKOFF_MS * 2 ** (backoffCount + 1)
-
-  return backoffSlotStart + Math.random() * (backoffSlotEnd - backoffSlotStart)
+function backedOffMs(): number {
+  return BASE_BACKOFF_MS + 400 * Math.random()
 }
 
 /**
@@ -118,7 +112,7 @@ function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
  *
  * @param chainID string chainID to handle chain specific routings
  * @param method the current RPC method
- * @returns true | false whether the method on a given network should routed to alchemy or can be sent over the generic provider
+ * @returns true | false whether the method on a given network should be routed to alchemy or can be sent over the generic provider
  */
 function alchemyOrDefaultProvider(chainID: string, method: string): boolean {
   return (
@@ -156,6 +150,20 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private currentProvider: JsonRpcProvider
 
   private alchemyProvider: JsonRpcProvider | undefined
+
+  /**
+   * This object holds all messages that are either being sent to a provider
+   * and waiting for a response, or are in the process of being backed off due
+   * to bad network conditions or hitting rate limits.
+   */
+  public messagesToSend: {
+    [id: symbol]: {
+      method: string
+      params: unknown[]
+      backoffCount: number
+      providerIndex: number
+    }
+  } = {}
 
   private alchemyProviderCreator:
     | (() => WebSocketProvider | JsonRpcProvider)
@@ -197,15 +205,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       hasCode: boolean
     }
   } = {}
-
-  // Information on the current backoff state. This is used to ensure retries
-  // and reconnects back off exponentially.
-  private currentBackoff = {
-    providerIndex: 0,
-    backoffMs: BASE_BACKOFF_MS,
-    backoffCount: 0,
-    lastBackoffTime: 0,
-  }
 
   // Information on WebSocket-style subscriptions. Tracked here so as to
   // restore them in case of WebSocket disconnects.
@@ -256,69 +255,37 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.attemptToReconnectToAlchemyProvider()
     }, PRIMARY_PROVIDER_RECONNECT_INTERVAL)
 
+    setInterval(() => {
+      this.cleanupStaleCacheEntries()
+    }, CACHE_CLEANUP_INTERVAL)
+
     this.cachedChainId = utils.hexlify(Number(evmNetwork.chainID))
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
   }
 
-  private async routeRpcCall(
-    method: string,
-    params: unknown
-  ): Promise<unknown> {
-    if (
-      this.alchemyProvider &&
-      Math.random() < ALCHEMY_RPC_CALL_PERCENTAGE / 100
-    ) {
-      // Cast `unknown` to `any` - which is the type that the send method expects.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return this.alchemyProvider.send(method, params as Array<any>)
-    }
-    // Cast `unknown` to `any` - which is the type that the send method expects.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this.currentProvider.send(method, params as Array<any>)
-  }
-
   /**
-   * Override the core `send` method to handle disconnects and other errors
-   * that should trigger retries. Ethers already does internal retrying, but
-   * this retry methodology eventually falls back on another provider, handles
-   * WebSocket disconnects, and restores subscriptions where
-   * possible/necessary.
+   * This method takes care of sending off a message via an underlying provider
+   * as well as backing off and failing over to other providers should a given
+   * provider be disconnected.
+   *
+   * @param messageId The unique identifier of a given message
+   * @returns The result of sending the message to a given provider
    */
-  override async send(method: string, params: unknown[]): Promise<unknown> {
-    if (method === "eth_chainId") {
-      return this.cachedChainId
-    }
+  private async routeRpcCall(messageId: symbol): Promise<unknown> {
+    const { method, params } = this.messagesToSend[messageId]
 
-    // @TODO Remove once initial activity load is refactored.
-    if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
-      const address = (params as string[])[0]
-      const now = Date.now()
-      const lastUpdate = this.latestBalanceCache[address]?.updatedAt
-      if (lastUpdate && now < lastUpdate + 1 * SECOND) {
-        return this.latestBalanceCache[address].balance
-      }
-    }
+    /*
+     * Checking the cache needs to happen inside or routeRpcCall,
+     * This gives us multiple chances to get a cache hit throughout
+     * a given message's retry cycle rather than just when the message
+     * is first initiated
+     */
+    const cachedResult = this.checkForCachedResult(method, params)
 
-    // @TODO Remove once initial activity load is refactored.
-    if (method === "eth_getCode" && (params as string[])[1] === "latest") {
-      const address = (params as string[])[0]
-      if (typeof this.latestHasCodeCache[address] !== "undefined") {
-        return this.latestHasCodeCache[address].hasCode
-      }
-    }
-
-    if (
-      // Force some methods to be handled by alchemy if we're on an alchemy supported chain
-      this.alchemyProvider &&
-      alchemyOrDefaultProvider(this.cachedChainId, method)
-    ) {
-      return this.alchemyProvider.send(method, params)
-    }
-
-    if (method.startsWith("alchemy_")) {
-      throw new Error(
-        `Calling ${method} is not supported on ${this.currentProvider.network.name}`
-      )
+    if (typeof cachedResult !== "undefined") {
+      // Cache hit! - return early
+      delete this.messagesToSend[messageId]
+      return cachedResult
     }
 
     try {
@@ -330,57 +297,64 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       if (isConnectingWebSocketProvider(this.currentProvider)) {
         // If the websocket is still connecting, wait and try to send again.
         return await waitAnd(WAIT_BEFORE_SEND_AGAIN, async () =>
-          this.send(method, params)
+          this.routeRpcCall(messageId)
         )
       }
 
-      const result = await this.routeRpcCall(method, params)
-
-      // @TODO Remove once initial activity load is refactored.
-      if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
-        const address = (params as string[])[0]
-        this.latestBalanceCache[address] = {
-          balance: result as string,
-          updatedAt: Date.now(),
+      if (
+        // Force some methods to be handled by alchemy if we're on an alchemy supported chain
+        this.alchemyProvider &&
+        alchemyOrDefaultProvider(this.cachedChainId, method)
+      ) {
+        if (this.alchemyProvider) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const result = await this.alchemyProvider.send(method, params)
+          delete this.messagesToSend[messageId]
+          return result
+        }
+        if (/^alchemy_|^eth_subscribe$/.test(method)) {
+          delete this.messagesToSend[messageId]
+          throw new Error(
+            `Calling ${method} is not supported on ${this.currentProvider.network.name}`
+          )
         }
       }
 
-      // @TODO Remove once initial activity load is refactored.
-      if (method === "eth_getCode" && (params as string[])[1] === "latest") {
-        const address = (params as string[])[0]
-        this.latestHasCodeCache[address] = {
-          hasCode: result as boolean,
-        }
+      if (
+        this.alchemyProvider &&
+        Math.random() < ALCHEMY_RPC_CALL_PERCENTAGE / 100
+      ) {
+        const result = await this.alchemyProvider.send(method, params)
+        delete this.messagesToSend[messageId]
+        return result
       }
-
+      const result = await this.currentProvider.send(method, params)
+      // If https://github.com/tc39/proposal-decorators ever gets out of Stage 3
+      // cleaning up the messageToSend object seems like a great job for a decorator
+      delete this.messagesToSend[messageId]
       return result
     } catch (error) {
       // Awful, but what can ya do.
       const stringifiedError = String(error)
 
       if (
+        /**
+         * WebSocket is already in CLOSING - We are reconnecting
+         * bad response - error on the endpoint provider's side
+         * missing response - we might be disconnected due to network instability
+         * we can't execute this request - ankr rate limit hit
+         */
         stringifiedError.match(
-          /WebSocket is already in CLOSING|bad response|missing response/
+          /WebSocket is already in CLOSING|bad response|missing response|we can't execute this request/
         )
       ) {
-        const backoff = this.backoffFor(this.currentProviderIndex)
-        if (typeof backoff === "undefined") {
-          logger.debug(
-            "Attempting to connect new provider after error",
-            error,
-            "."
-          )
-          this.disconnectCurrentProvider()
-
-          this.currentProviderIndex += 1
-          if (this.currentProviderIndex < this.providerCreators.length) {
-            // Try again with the next provider.
-            await this.reconnectProvider()
-
-            return await this.send(method, params)
+        if (this.shouldSendMessageOnNextProvider(messageId)) {
+          // If there is another provider to try - try to send the message on that provider
+          if (this.currentProviderIndex + 1 < this.providerCreators.length) {
+            return await this.attemptToSendMessageOnNewProvider(messageId)
           }
 
-          // If we've looped around, set us up for the next call, but fail the
+          // Otherwise, set us up for the next call, but fail the
           // current one since we've gone through every available provider. Note
           // that this may happen over time, but we still fail the request that
           // hits the end of the list.
@@ -388,9 +362,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
           // Reconnect, but don't wait for the connection to go through.
           this.reconnectProvider()
-
+          delete this.messagesToSend[messageId]
           throw error
         } else {
+          const backoff = this.backoffFor(messageId)
           logger.debug(
             "Backing off for",
             backoff,
@@ -405,7 +380,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
             }
 
             logger.debug("Retrying", method, params)
-            return this.send(method, params)
+            return this.routeRpcCall(messageId)
           })
         }
       }
@@ -417,8 +392,147 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         this.currentProvider
       )
 
+      delete this.messagesToSend[messageId]
       throw error
     }
+  }
+
+  /**
+   * A method that caches calls to eth_getCode and eth_getBalance
+   *
+   * @param result result of a successful call to an rpc provider
+   * @param method rpc method sent to the rpc provider
+   * @param params corresponding rpc params sent to the rpc provider
+   */
+  private conditionallyCacheResult(
+    result: unknown,
+    { method, params }: { method: string; params: unknown }
+  ): void {
+    if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      this.latestBalanceCache[address] = {
+        balance: result as string,
+        updatedAt: Date.now(),
+      }
+    }
+
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getCode" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      this.latestHasCodeCache[address] = {
+        hasCode: result as boolean,
+      }
+    }
+  }
+
+  /**
+   * A method that checks the local cache for any previous calls to eth_getCode
+   * or any recent calls to eth_getBalance for a given address
+   *
+   * @param method the current RPC method
+   * @param params the parameters for the current rpc method
+   * @returns A cached result for the given method, or `undefined` indicating a cache miss
+   */
+  private checkForCachedResult(
+    method: string,
+    params: unknown
+  ): string | boolean | undefined {
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getBalance" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      const now = Date.now()
+      const lastUpdate = this.latestBalanceCache[address]?.updatedAt
+      if (lastUpdate && now < lastUpdate + BALANCE_TTL) {
+        return this.latestBalanceCache[address].balance
+      }
+    }
+
+    // @TODO Remove once initial activity load is refactored.
+    if (method === "eth_getCode" && (params as string[])[1] === "latest") {
+      const address = (params as string[])[0]
+      if (typeof this.latestHasCodeCache[address] !== "undefined") {
+        return this.latestHasCodeCache[address].hasCode
+      }
+    }
+
+    return undefined
+  }
+
+  /**
+   * Cache cleanup to mitigate unbounded growth of our hasCode and balance caches.
+   * @TODO remove this method once loading of initial activities is refactored.
+   */
+  cleanupStaleCacheEntries(): void {
+    const balanceCache = Object.entries(this.latestBalanceCache)
+    const hasCodeCache = Object.keys(this.latestHasCodeCache)
+    if (balanceCache.length > 0) {
+      logger.info(
+        `Cleaning up ${this.network.chainId} balance cache, ${balanceCache.length} entries`
+      )
+      const now = Date.now()
+      balanceCache.forEach(([address, balance]) => {
+        if (balance.updatedAt < now - BALANCE_TTL) {
+          delete this.latestBalanceCache[address]
+        }
+      })
+    }
+
+    if (hasCodeCache.length > 0) {
+      logger.info(
+        `Cleaning up ${this.network.chainId} hasCode cache, ${hasCodeCache.length} entries`
+      )
+
+      this.latestHasCodeCache = {}
+    }
+  }
+
+  /**
+   * Called when a message has failed MAX_RETRIES_PER_PROVIDER times on a given
+   * provider, and is ready to be sent to the next provider in line
+   *
+   * @param messageId The unique identifier of a given message
+   * @returns The result of sending the message via the next provider
+   */
+  private async attemptToSendMessageOnNewProvider(
+    messageId: symbol
+  ): Promise<unknown> {
+    this.disconnectCurrentProvider()
+    this.currentProviderIndex += 1
+    // Try again with the next provider.
+    await this.reconnectProvider()
+    return this.routeRpcCall(messageId)
+  }
+
+  /**
+   * Override the core `send` method to handle disconnects and other errors
+   * that should trigger retries. Ethers already does internal retrying, but
+   * this retry methodology eventually falls back on another provider, handles
+   * WebSocket disconnects, and restores subscriptions where
+   * possible/necessary.
+   */
+  override async send(method: string, params: unknown[]): Promise<unknown> {
+    // Since we can reliably return the chainId with absolutely no communication with
+    // the provider - we can return it without needing to worry about routing rpc calls
+    if (method === "eth_chainId") {
+      return this.cachedChainId
+    }
+
+    // Generate a unique symbol to track the message and store message information
+    const id = Symbol(method)
+    this.messagesToSend[id] = {
+      method,
+      params,
+      backoffCount: 0,
+      providerIndex: this.currentProviderIndex,
+    }
+
+    // Start routing message down our waterfall of rpc providers
+    const result = await this.routeRpcCall(id)
+
+    // Cache results for method/param combinations that are frequently called subsequently
+    this.conditionallyCacheResult(result, { method, params })
+
+    return result
   }
 
   /**
@@ -575,7 +689,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * unsubscribes all those event handlers so they can be attached to the new
    * current provider.
    */
-  private async disconnectCurrentProvider() {
+  private disconnectCurrentProvider() {
     logger.debug(
       "Disconnecting current provider; websocket: ",
       this.currentProvider instanceof WebSocketProvider,
@@ -627,7 +741,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * has been somehow set out of range, resets it to 0.
    */
   private async reconnectProvider() {
-    await this.disconnectCurrentProvider()
+    this.disconnectCurrentProvider()
     if (this.currentProviderIndex >= this.providerCreators.length) {
       this.currentProviderIndex = 0
     }
@@ -675,7 +789,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       await this.subscriptions.reduce(
         (previousPromise, { tag, param, processFunc }) =>
           previousPromise.then(() =>
-            waitAnd(backedOffMs(0), () =>
+            waitAnd(backedOffMs(), () =>
               // Direct subscriptions are internal, but we want to be able to
               // restore them.
               // eslint-disable-next-line no-underscore-dangle
@@ -733,56 +847,40 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Computes the backoff time for the given provider index. If the provider
-   * index is new, starts with the base backoff; if the provider index is
-   * unchanged, computes a jittered exponential backoff. If the current
-   * provider has already exceeded its maximum retries, returns undefined to
-   * signal that the provider should be considered dead for the time being.
-   *
-   * Backoffs respect a cooldown time after which they reset down to the base
-   * backoff time.
+   * @param messageId The unique identifier of a given message
+   * @returns number of miliseconds to backoff
    */
-  private backoffFor(providerIndex: number): number | undefined {
-    const {
-      providerIndex: existingProviderIndex,
-      backoffCount,
-      lastBackoffTime,
-    } = this.currentBackoff
+  private backoffFor(messageId: symbol): number {
+    this.messagesToSend[messageId].backoffCount += 1
+    this.conditionallyIncrementCurrentProviderIndex(messageId)
+    return backedOffMs()
+  }
 
-    if (backoffCount > MAX_RETRIES) {
-      return undefined
+  /**
+   * Increments the currentProviderIndex and resets a given messages backOffCount
+   * if it is being sent on a new provider.
+   *
+   * @param messageId The unique identifier of a given message
+   */
+  private conditionallyIncrementCurrentProviderIndex(messageId: symbol) {
+    const { providerIndex } = this.messagesToSend[messageId]
+
+    if (providerIndex !== this.currentProviderIndex) {
+      this.messagesToSend[messageId].backoffCount = 0
+      this.messagesToSend[messageId].providerIndex = this.currentProviderIndex
     }
+  }
 
-    if (existingProviderIndex !== providerIndex) {
-      this.currentBackoff = {
-        providerIndex,
-        backoffMs: BASE_BACKOFF_MS,
-        backoffCount: 0,
-        lastBackoffTime: Date.now(),
-      }
-    } else if (Date.now() - lastBackoffTime > COOLDOWN_PERIOD) {
-      this.currentBackoff = {
-        providerIndex,
-        backoffMs: BASE_BACKOFF_MS,
-        backoffCount: 0,
-        lastBackoffTime: Date.now(),
-      }
-    } else {
-      // The next backoff slot starts at the current minimum backoff and
-      // extends until the start of the next backoff. This specific backoff is
-      // randomized within that slot.
-      const newBackoffCount = backoffCount + 1
-      const backoffMs = backedOffMs(newBackoffCount)
-
-      this.currentBackoff = {
-        providerIndex,
-        backoffMs,
-        backoffCount: newBackoffCount,
-        lastBackoffTime: Date.now(),
-      }
+  /**
+   * @param messageId The unique identifier of a given message
+   * @returns true if a message should be sent on the next provider, false otherwise
+   */
+  private shouldSendMessageOnNextProvider(messageId: symbol): boolean {
+    const { backoffCount } = this.messagesToSend[messageId]
+    if (backoffCount && backoffCount >= MAX_RETRIES_PER_PROVIDER) {
+      return true
     }
-
-    return this.currentBackoff.backoffMs
+    return false
   }
 
   /**

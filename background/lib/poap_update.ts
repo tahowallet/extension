@@ -42,7 +42,7 @@ function poapNFTModelToNFT(original: PoapNFTModel, owner: string): NFT {
     id: tokenId,
     name: eventName,
     description,
-    thumbnail,
+    thumbnailURL: thumbnail,
     transferDate: created,
     attributes: [
       { trait: "Event", value: eventName },
@@ -105,6 +105,6 @@ export async function getPoapCollections(
     hasBadges: true,
     network: ETHEREUM,
     floorPrice: undefined, // POAPs don't have floor prices
-    thumbnail: "https://poap.xyz/POAP.f74a7300.svg",
+    thumbnailURL: "https://poap.xyz/POAP.f74a7300.svg",
   }
 }

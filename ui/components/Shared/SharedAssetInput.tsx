@@ -13,7 +13,10 @@ import {
   fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
+import { NFT } from "@tallyho/tally-background/nfts"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
+import classNames from "classnames"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem, {
@@ -22,6 +25,9 @@ import SharedAssetItem, {
 } from "./SharedAssetItem"
 import SharedAssetIcon from "./SharedAssetIcon"
 import PriceDetails from "./PriceDetails"
+import SharedPanelSwitcher from "./SharedPanelSwitcher"
+import noop from "../../utils/noop"
+import NFTCollectionAccordion from "../Send/NFTCollectionAccordion"
 
 // List of symbols we want to display first.  Lower array index === higher priority.
 // For now we just prioritize somewhat popular assets that we are able to load an icon for.
@@ -51,9 +57,11 @@ const symbolPriority = Object.fromEntries(
 interface SelectAssetMenuContentProps<AssetType extends AnyAsset> {
   currentNetwork: EVMNetwork
   assets: AnyAssetWithOptionalAmount<AssetType>[]
+  nfts: NFTCollectionCached[]
   setSelectedAssetAndClose: (
     asset: AnyAssetWithOptionalAmount<AssetType>
   ) => void
+  onSelectNFT?: (nft: NFT) => void
 }
 
 // Sorts an AnyAssetWithOptionalAmount by symbol, alphabetically, according to
@@ -116,7 +124,13 @@ function SelectAssetMenuContent<T extends AnyAsset>(
   props: SelectAssetMenuContentProps<T>
 ): ReactElement {
   const { t } = useTranslation()
-  const { setSelectedAssetAndClose, assets, currentNetwork } = props
+  const {
+    setSelectedAssetAndClose,
+    assets,
+    currentNetwork,
+    nfts: nftCollections,
+    onSelectNFT = noop,
+  } = props
   const [searchTerm, setSearchTerm] = useState("")
   const searchInput = useRef<HTMLInputElement | null>(null)
 
@@ -148,42 +162,100 @@ function SelectAssetMenuContent<T extends AnyAsset>(
     searchInput.current?.focus()
   }, [searchInput])
 
+  const shouldDisplayNFTs = nftCollections.length > 0
+  const [panelNumber, setPanelNumber] = useState(0)
+
   return (
     <>
-      <div className="standard_width_padded center_horizontal">
-        <div className="search_label">{t("shared.selectToken")}</div>
-        <div className="search_wrap">
-          <input
-            type="text"
-            ref={searchInput}
-            className="search_input"
-            placeholder={t("assetInput.search")}
-            spellCheck={false}
-            onChange={(event) => setSearchTerm(event.target.value)}
+      {shouldDisplayNFTs && (
+        <div className="panel_switcher">
+          <SharedPanelSwitcher
+            setPanelNumber={setPanelNumber}
+            panelNumber={panelNumber}
+            panelNames={["Tokens", "NFTs"]}
           />
-          <span className="icon_search" />
         </div>
-      </div>
-      <div className="divider" />
-      <ul className="assets_list">
-        {sortedFilteredAssets.map((assetWithOptionalAmount) => {
-          const { asset } = assetWithOptionalAmount
-          return (
-            <SharedAssetItem
-              key={
-                asset.metadata?.coinGeckoID ??
-                asset.symbol +
-                  ("contractAddress" in asset ? asset.contractAddress : "")
-              }
-              assetAndAmount={assetWithOptionalAmount}
-              onClick={() => setSelectedAssetAndClose(assetWithOptionalAmount)}
-              currentNetwork={currentNetwork}
+      )}
+      {panelNumber === 0 && (
+        <div className={classNames(shouldDisplayNFTs && "nfts_update")}>
+          <div className="standard_width_padded center_horizontal">
+            <div className="search_label">{t("shared.selectToken")}</div>
+            <div className="search_wrap">
+              <input
+                type="text"
+                ref={searchInput}
+                className="search_input"
+                placeholder={t("assetInput.search")}
+                spellCheck={false}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+              <span className="icon_search" />
+            </div>
+          </div>
+          <div className="divider" />
+          <ul className="assets_list">
+            {sortedFilteredAssets.map((assetWithOptionalAmount) => {
+              const { asset } = assetWithOptionalAmount
+              return (
+                <SharedAssetItem
+                  key={
+                    asset.metadata?.coinGeckoID ??
+                    asset.symbol +
+                      ("contractAddress" in asset ? asset.contractAddress : "")
+                  }
+                  assetAndAmount={assetWithOptionalAmount}
+                  onClick={() =>
+                    setSelectedAssetAndClose(assetWithOptionalAmount)
+                  }
+                  currentNetwork={currentNetwork}
+                />
+              )
+            })}
+          </ul>
+        </div>
+      )}
+      {panelNumber === 1 && (
+        <div className="nfts_update standard_width_padded center_horizontal">
+          <div className="search_wrap">
+            <input
+              type="text"
+              ref={searchInput}
+              className="search_input"
+              placeholder={t("assetInput.searchNFT")}
+              spellCheck={false}
+              onChange={(event) => setSearchTerm(event.target.value)}
             />
-          )
-        })}
-      </ul>
+            <span className="icon_search" />
+          </div>
+          <div className="nft_list">
+            {nftCollections.map((collection) => (
+              <NFTCollectionAccordion
+                key={collection.id}
+                collection={collection}
+                onSelectNFT={onSelectNFT}
+              />
+            ))}
+          </div>
+        </div>
+      )}
       <style jsx>
         {`
+          .panel_switcher {
+            width: 100%;
+          }
+          .nfts_update > div {
+            margin-top: 16px;
+          }
+
+          .nft_list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow: scroll;
+            height: calc(100% - 96px);
+            width: 100%;
+          }
+
           .search_label {
             height: 20px;
             color: var(--green-60);
@@ -240,10 +312,52 @@ interface SelectedAssetButtonProps {
   asset: Asset
   isDisabled: boolean
   toggleIsAssetMenuOpen?: () => void
+  selectedNFT?: NFT
 }
 
 function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
-  const { asset, isDisabled, toggleIsAssetMenuOpen } = props
+  const { asset, isDisabled, toggleIsAssetMenuOpen, selectedNFT } = props
+
+  if (selectedNFT) {
+    const { name, thumbnailURL } = selectedNFT
+    return (
+      <button
+        type="button"
+        disabled={isDisabled}
+        onClick={toggleIsAssetMenuOpen}
+      >
+        <img
+          width="56"
+          height="56"
+          src={thumbnailURL}
+          loading="lazy"
+          alt={name}
+        />
+        <span className="ellipsis">{name}</span>
+        <style jsx>{`
+          button {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            max-width: calc(100% - 32px);
+          }
+          img {
+            border-radius: 4px;
+            object-fit: cover;
+            object-position: center;
+          }
+          span {
+            font-family: "Segment";
+            font-style: normal;
+            font-weight: 500;
+            font-size: 16px;
+            line-height: 24px;
+            color: var(--white);
+          }
+        `}</style>
+      </button>
+    )
+  }
 
   return (
     <button type="button" disabled={isDisabled} onClick={toggleIsAssetMenuOpen}>
@@ -298,6 +412,9 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   mainCurrencySign?: string
   onAssetSelect?: (asset: AssetType) => void
   onAmountChange?: (value: string, errorMessage: string | undefined) => void
+  NFTCollections?: NFTCollectionCached[]
+  onSelectNFT?: (nft: NFT) => void
+  selectedNFT?: NFT
 }
 
 function isSameAsset(asset1: Asset, asset2: Asset) {
@@ -341,6 +458,9 @@ export default function SharedAssetInput<T extends AnyAsset>(
     mainCurrencySign,
     onAssetSelect,
     onAmountChange,
+    NFTCollections,
+    onSelectNFT,
+    selectedNFT,
   } = props
   const [openAssetMenu, setOpenAssetMenu] = useState(false)
 
@@ -405,6 +525,11 @@ export default function SharedAssetInput<T extends AnyAsset>(
     [selectedAssetAndAmount, t]
   )
 
+  const handleSelectNFT = (nft: NFT) => {
+    setOpenAssetMenu(false)
+    onSelectNFT?.(nft)
+  }
+
   useEffect(() => {
     const error = getErrorMessage(amount)
     setErrorMessage(error ?? "")
@@ -430,6 +555,11 @@ export default function SharedAssetInput<T extends AnyAsset>(
     onAmountChange?.(fixedPointString, getErrorMessage(fixedPointString))
   }
 
+  const displayedBalance = selectedNFT
+    ? 1
+    : selectedAssetAndAmount &&
+      hasAmounts(selectedAssetAndAmount) &&
+      selectedAssetAndAmount.localizedDecimalAmount
   return (
     <>
       <label
@@ -443,11 +573,12 @@ export default function SharedAssetInput<T extends AnyAsset>(
         {label}
       </label>
 
-      {typeof selectedAssetAndAmount !== "undefined" &&
-      hasAmounts(selectedAssetAndAmount) ? (
+      {displayedBalance ? (
         <div className="amount_controls">
           <span className="available">
-            Balance: {selectedAssetAndAmount.localizedDecimalAmount}
+            {t("send.balance", {
+              amount: displayedBalance,
+            })}
           </span>
           {isMaxButtonVisible ? (
             <button type="button" className="max" onClick={setMaxBalance}>
@@ -472,15 +603,21 @@ export default function SharedAssetInput<T extends AnyAsset>(
             currentNetwork={currentNetwork}
             assets={assetsAndAmounts}
             setSelectedAssetAndClose={setSelectedAssetAndClose}
+            onSelectNFT={handleSelectNFT}
+            nfts={NFTCollections ?? []}
           />
         )}
       </SharedSlideUpMenu>
-      <div className="asset_wrap standard_width">
+      <div
+        className="asset_wrap standard_width"
+        data-type={selectedNFT ? "nft" : "token"}
+      >
         <div>
           {selectedAssetAndAmount?.asset.symbol ? (
             <SelectedAssetButton
               isDisabled={isDisabled || disableDropdown}
               asset={selectedAssetAndAmount.asset}
+              selectedNFT={selectedNFT}
               toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
             />
           ) : (
@@ -496,36 +633,38 @@ export default function SharedAssetInput<T extends AnyAsset>(
             </SharedButton>
           )}
         </div>
-        <div className="input_amount_wrap">
-          <input
-            id={`asset_amount_input${inputId}`}
-            className="input_amount"
-            type="number"
-            step="any"
-            placeholder="0.0"
-            min="0"
-            disabled={isDisabled}
-            value={amount}
-            spellCheck={false}
-            onChange={(event) =>
-              onAmountChange?.(
-                event.target.value,
-                getErrorMessage(event.target.value)
-              )
-            }
-          />
-          {showPriceDetails &&
-            (!errorMessage ? (
-              <PriceDetails
-                amountMainCurrency={amountMainCurrency}
-                priceImpact={priceImpact}
-                isLoading={!!isPriceDetailsLoading}
-                mainCurrencySign={mainCurrencySign || ""}
-              />
-            ) : (
-              <div className="error_message">{errorMessage}</div>
-            ))}
-        </div>
+        {!selectedNFT && (
+          <div className="input_amount_wrap">
+            <input
+              id={`asset_amount_input${inputId}`}
+              className="input_amount"
+              type="number"
+              step="any"
+              placeholder="0.0"
+              min="0"
+              disabled={isDisabled}
+              value={amount}
+              spellCheck={false}
+              onChange={(event) =>
+                onAmountChange?.(
+                  event.target.value,
+                  getErrorMessage(event.target.value)
+                )
+              }
+            />
+            {showPriceDetails &&
+              (!errorMessage ? (
+                <PriceDetails
+                  amountMainCurrency={amountMainCurrency}
+                  priceImpact={priceImpact}
+                  isLoading={!!isPriceDetailsLoading}
+                  mainCurrencySign={mainCurrencySign || ""}
+                />
+              ) : (
+                <div className="error_message">{errorMessage}</div>
+              ))}
+          </div>
+        )}
         {errorMessage && !showPriceDetails && (
           <div className="error_message error_message_wrap">{errorMessage}</div>
         )}
@@ -562,6 +701,13 @@ export default function SharedAssetInput<T extends AnyAsset>(
             padding: 0px 16px;
             box-sizing: border-box;
             position: relative;
+          }
+          .asset_wrap[data-type="nft"] {
+            padding: 8px;
+          }
+          .asset_wrap[data-type="nft"] > div {
+            flex-grow: 1;
+            max-width: 100%;
           }
           // Using :global() to target child component
           label:hover ~ .asset_wrap > div > :global(button:hover) {

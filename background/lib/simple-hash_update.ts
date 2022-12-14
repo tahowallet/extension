@@ -5,13 +5,15 @@ import { HexString } from "../types"
 import logger from "./logger"
 import { sameEVMAddress } from "./utils"
 
+type SupportedChain = "polygon" | "arbitrum" | "optimism" | "ethereum" | "bsc"
+
 type SimpleHashNFTModel = {
   nft_id: string
   token_id: string | null
   name: string | null
   description: string | null
   contract_address: string
-  chain: "polygon" | "arbitrum" | "optimism" | "ethereum"
+  chain: SupportedChain
   external_url: string | null
   image_url: string | null
   previews?: {
@@ -41,7 +43,7 @@ type SimpleHashCollectionModel = {
   id: string
   name: string | null
   image_url: string | null
-  chain: "polygon" | "arbitrum" | "optimism" | "ethereum"
+  chain: SupportedChain
   distinct_nfts_owned: number | null
   distinct_owner_count: number | null
   distinct_nft_count: number | null
@@ -70,6 +72,8 @@ const CHAIN_ID_TO_NAME = {
   10: "optimism",
   137: "polygon",
   42161: "arbitrum",
+  43114: "avalanche",
+  56: "bsc",
 }
 
 const SIMPLE_HASH_CHAIN_TO_ID = {
@@ -77,6 +81,8 @@ const SIMPLE_HASH_CHAIN_TO_ID = {
   optimism: 10,
   polygon: 137,
   arbitrum: 42161,
+  avalanche: 43114,
+  bsc: 56,
 }
 
 function isGalxeAchievement(url: string | null | undefined) {
@@ -114,7 +120,7 @@ function simpleHashCollectionModelToCollection(
     name: original.name || "",
     nftCount: original.distinct_nft_count || 0,
     owner,
-    thumbnail: original.image_url || "",
+    thumbnailURL: original.image_url || "",
     network: NETWORK_BY_CHAIN_ID[chainID],
     floorPrice,
     hasBadges: false, // TODO: check how to discover if this is a Galxe collection
@@ -129,7 +135,7 @@ function simpleHashNFTModelToNFT(
     nft_id: nftID,
     contract_address: contractAddress,
     chain,
-    image_url: previewURL,
+    image_url: fullsizeURL,
     previews,
     owners = [],
     external_url: nftURL = "",
@@ -139,33 +145,40 @@ function simpleHashNFTModelToNFT(
 
   const isAchievement = isGalxeAchievement(nftURL)
 
-  const thumbnail =
-    previewURL ||
-    previews?.image_large_url ||
-    previews?.image_medium_url ||
+  const thumbnailURL =
     previews?.image_small_url ||
-    ""
+    previews?.image_medium_url ||
+    previews?.image_large_url ||
+    fullsizeURL ||
+    undefined
+
+  const previewURL =
+    (previews?.image_medium_url || previews?.image_large_url || fullsizeURL) ??
+    undefined
+
   const chainID = SIMPLE_HASH_CHAIN_TO_ID[chain]
 
   const transferDate = owners.find(({ owner_address }) =>
     sameEVMAddress(owner_address, owner)
   )?.last_acquired_date
 
-  const attributes =
-    metadata?.attributes?.flatMap(({ trait_type, value }) =>
-      value && trait_type
-        ? {
-            value,
-            trait: trait_type,
-          }
-        : []
-    ) ?? []
+  const attributes = Array.isArray(metadata?.attributes)
+    ? metadata.attributes.flatMap(({ trait_type, value }) =>
+        value && trait_type
+          ? {
+              value,
+              trait: trait_type,
+            }
+          : []
+      )
+    : []
 
   return {
     id: nftID,
     name: original.name || "",
     description: original.description || "",
-    thumbnail,
+    thumbnailURL,
+    previewURL,
     transferDate,
     attributes,
     collectionID,

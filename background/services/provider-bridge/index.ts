@@ -426,7 +426,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
         case "eth_signTransaction":
         case "eth_sendTransaction":
           checkPermissionSignTransaction(
-            params[0] as EthersTransactionRequest,
+            {
+              // A dApp can't know what should be the next nonce because it can't access
+              // the information about how many tx are in the signing process inside the
+              // wallet. Nonce should be assigned only by the wallet.
+              ...(params[0] as EthersTransactionRequest),
+              nonce: undefined,
+            },
             enablingPermission
           )
 

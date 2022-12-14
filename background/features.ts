@@ -28,10 +28,13 @@ export const RuntimeFlag = {
   HIDE_TOKEN_FEATURES: process.env.HIDE_TOKEN_FEATURES === "true",
   SUPPORT_RSK: process.env.SUPPORT_RSK === "true",
   SUPPORT_AVALANCHE: process.env.SUPPORT_AVALANCHE === "true",
+  SUPPORT_BINANCE_SMART_CHAIN:
+    process.env.SUPPORT_BINANCE_SMART_CHAIN === "true",
   SUPPORT_ARBITRUM_NOVA: process.env.SUPPORT_ARBITRUM_NOVA === "true",
   SUPPORT_ACHIEVEMENTS_BANNER:
     process.env.SUPPORT_ACHIEVEMENTS_BANNER === "true",
   SUPPORT_NFT_TAB: process.env.SUPPORT_NFT_TAB === "true",
+  SUPPORT_WALLET_CONNECT: process.env.SUPPORT_WALLET_CONNECT === "true",
 } as const
 
 type BuildTimeFlagType = keyof typeof BuildTimeFlag

@@ -2,7 +2,12 @@ import { createSlice } from "@reduxjs/toolkit"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../accounts"
 import { EVMNetwork, Network } from "../networks"
-import { AnyAsset, AnyAssetAmount, SmartContractFungibleAsset } from "../assets"
+import {
+  AnyAsset,
+  AnyAssetAmount,
+  isFungibleAsset,
+  SmartContractFungibleAsset,
+} from "../assets"
 import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
@@ -11,6 +16,7 @@ import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
 import { AccountSigner } from "../services/signing"
 import { TEST_NETWORK_BY_CHAIN_ID } from "../constants"
+import { convertFixedPoint } from "../lib/fixed-point"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -172,9 +178,28 @@ function updateCombinedData(immerState: AccountState) {
       [symbol: string]: AnyAssetAmount
     }>((acc, combinedAssetAmount) => {
       const assetSymbol = combinedAssetAmount.asset.symbol
-      acc[assetSymbol] = {
-        ...combinedAssetAmount,
-        amount: (acc[assetSymbol]?.amount || 0n) + combinedAssetAmount.amount,
+      let { amount } = combinedAssetAmount
+
+      if (acc[assetSymbol]?.asset) {
+        const accAsset = acc[assetSymbol].asset
+        const existingDecimals = isFungibleAsset(accAsset)
+          ? accAsset.decimals
+          : 0
+        const newDecimals = isFungibleAsset(combinedAssetAmount.asset)
+          ? combinedAssetAmount.asset.decimals
+          : 0
+
+        if (newDecimals !== existingDecimals) {
+          amount = convertFixedPoint(amount, newDecimals, existingDecimals)
+        }
+      }
+
+      if (acc[assetSymbol]) {
+        acc[assetSymbol].amount += amount
+      } else {
+        acc[assetSymbol] = {
+          ...combinedAssetAmount,
+        }
       }
       return acc
     }, {})

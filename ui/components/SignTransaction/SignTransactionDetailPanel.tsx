@@ -11,7 +11,10 @@ import type {
   EnrichedLegacyTransactionRequest,
 } from "@tallyho/tally-background/services/enrichment"
 import { useTranslation } from "react-i18next"
-import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
+import {
+  BINANCE_SMART_CHAIN,
+  EIP_1559_COMPLIANT_CHAIN_IDS,
+} from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
@@ -86,18 +89,24 @@ export default function SignTransactionDetailPanel({
     setNetworkSettingsModalOpen(false)
   }
 
+  const getHightForSlideUpMenu = () => {
+    return `${
+      transactionDetails.network.name === BINANCE_SMART_CHAIN.name
+        ? 150
+        : 3 * 56 +
+          320 +
+          (hasInsufficientFundsWarning ? 15 : 0) +
+          (isEIP1559Compliant ? 0 : 40)
+    }px`
+  }
+
   return (
     <div className="detail_items_wrap standard_width_padded">
       <SharedSlideUpMenu
         size="custom"
         isOpen={networkSettingsModalOpen}
         close={() => setNetworkSettingsModalOpen(false)}
-        customSize={`${
-          3 * 56 +
-          320 +
-          (hasInsufficientFundsWarning ? 15 : 0) +
-          (isEIP1559Compliant ? 0 : 40)
-        }px`}
+        customSize={getHightForSlideUpMenu()}
       >
         <NetworkSettingsChooser
           estimatedFeesPerGas={estimatedFeesPerGas}

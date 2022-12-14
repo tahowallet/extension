@@ -8,6 +8,7 @@ import Blocknative, {
 import { BlockPrices, EVMNetwork } from "../networks"
 import {
   ARBITRUM_ONE,
+  BINANCE_SMART_CHAIN,
   EIP_1559_COMPLIANT_CHAIN_IDS,
   ETHEREUM,
   POLYGON,
@@ -112,6 +113,39 @@ const getArbitrumPrices = async (
   }
 }
 
+const getLegacyGasPrices = async (
+  network: EVMNetwork,
+  gasPrice: bigint,
+  blockNumber: number
+): Promise<BlockPrices> => {
+  return {
+    network,
+    blockNumber,
+    baseFeePerGas: gasPrice,
+    estimatedPrices: [
+      {
+        confidence: 99,
+        maxPriorityFeePerGas: 0n, // doesn't exist
+        maxFeePerGas: 0n, // doesn't exist
+        price: gasPrice,
+      },
+      {
+        confidence: 95,
+        maxPriorityFeePerGas: 0n,
+        maxFeePerGas: 0n,
+        price: gasPrice,
+      },
+      {
+        confidence: 70,
+        maxPriorityFeePerGas: 0n,
+        maxFeePerGas: 0n,
+        price: gasPrice,
+      },
+    ],
+    dataSource: "local",
+  }
+}
+
 export default async function getBlockPrices(
   network: EVMNetwork,
   provider: Provider
@@ -154,6 +188,20 @@ export default async function getBlockPrices(
 
   if (network.chainID === ARBITRUM_ONE.chainID) {
     return getArbitrumPrices(baseFeePerGas ?? 0n, currentBlock.number)
+  }
+
+  if (network.chainID === BINANCE_SMART_CHAIN.chainID) {
+    try {
+      const gasPrice = (await provider.getGasPrice()).toBigInt()
+
+      return await getLegacyGasPrices(
+        BINANCE_SMART_CHAIN,
+        gasPrice,
+        currentBlock.number
+      )
+    } catch (err) {
+      logger.error("Error getting gas price from BlockNative", err)
+    }
   }
 
   // otherwise, we're going it alone!
