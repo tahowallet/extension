@@ -95,7 +95,7 @@ export default function Send(): ReactElement {
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
   const nftCollections = useBackgroundSelector((state) => {
-    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+    if (isEnabled(FeatureFlags.SUPPORT_NFT_SEND)) {
       return selectCurrentAccountNFTs(state)
     }
 
@@ -220,7 +220,7 @@ export default function Send(): ReactElement {
               amount={amount}
               showMaxButton={assetType !== "nft"}
               NFTCollections={
-                isEnabled(FeatureFlags.SUPPORT_NFT_TAB)
+                isEnabled(FeatureFlags.SUPPORT_NFT_SEND)
                   ? nftCollections
                   : undefined
               }

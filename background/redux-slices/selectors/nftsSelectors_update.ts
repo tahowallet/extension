@@ -3,9 +3,16 @@ import { RootState } from ".."
 import { normalizeEVMAddress } from "../../lib/utils"
 import { selectCurrentAccount } from "./uiSelectors"
 
+const ETH_SYMBOLS = ["ETH", "WETH"]
+
 const selectNFTs = createSelector(
   (state: RootState) => state.nftsUpdate,
   (slice) => slice.nfts
+)
+
+export const selectIsReloadingNFTs = createSelector(
+  (state: RootState) => state.nftsUpdate,
+  (slice) => slice.isReloading
 )
 
 /* Filtering selectors */
@@ -45,6 +52,16 @@ export const selectNFTBadgesCollections = createSelector(
 )
 
 /* Counting selectors  */
+
+export const selectCurrentAccountNFTsCount = createSelector(
+  selectCurrentAccountNFTs,
+  (collections) => {
+    return collections.reduce(
+      (sum, collection) => sum + (collection.nftCount ?? 0),
+      0
+    )
+  }
+)
 export const selectNFTsCount = createSelector(
   selectNFTCollections,
   (collections) => {
@@ -66,11 +83,22 @@ export const selectNFTBadgesCount = createSelector(
 )
 
 export const selectNFTCollectionsCount = createSelector(
-  selectAllCollections,
+  selectNFTCollections,
   (collections) => collections.length
 )
 
-export const selectTotalFloorPrice = createSelector(
-  selectNFTs,
-  () => "00.00" // TODO
+export const selectTotalFloorPriceInETH = createSelector(
+  selectAllCollections,
+  (collections) => {
+    return collections.reduce((sum, collection) => {
+      if (
+        collection.floorPrice &&
+        ETH_SYMBOLS.includes(collection.floorPrice.tokenSymbol)
+      ) {
+        return sum + collection.floorPrice.value * (collection.nftCount ?? 0)
+      }
+
+      return sum
+    }, 0)
+  }
 )
