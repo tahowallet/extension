@@ -19,9 +19,9 @@ export const isETHPrice = (collection: NFTCollectionCached): boolean => {
 export const getAdditionalDataForFilter = (
   id: string,
   accounts: AccountData[]
-): { name?: string; thumbnailURL?: string } => {
+): { name?: string; avatarURL?: string } => {
   const a = accounts.find(({ address }) => address === id)
-  return a ? { name: a.name, thumbnailURL: a.avatarURL } : {}
+  return a ? { name: a.name, avatarURL: a.avatarURL } : {}
 }
 
 export const sortNFTS = (

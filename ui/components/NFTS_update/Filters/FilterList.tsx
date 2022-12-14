@@ -15,7 +15,7 @@ export default function FilterList({
         <FilterListItem
           key={item.id}
           label={item.name}
-          avatarURL={item?.thumbnailURL}
+          avatarURL={item?.avatarURL}
           checked={item.isEnabled}
           onChange={(toggleValue) =>
             onChange({ ...item, isEnabled: toggleValue })
