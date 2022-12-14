@@ -2,7 +2,7 @@ import React from "react"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 
-export default function ApproveQuoteBtn({
+export default function ApproveQuoteButton({
   isApprovalInProgress,
   isDisabled,
   onApproveClick,
