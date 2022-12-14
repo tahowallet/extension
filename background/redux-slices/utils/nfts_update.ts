@@ -31,31 +31,31 @@ export const sortNFTS = (
 ): number => {
   switch (type) {
     case "asc": {
-      if (
-        collection1.floorPrice &&
-        isETHPrice(collection1) &&
-        collection2.floorPrice &&
-        isETHPrice(collection2)
-      ) {
-        return (
-          (Number(collection1?.floorPrice?.value) || 0) -
-          (Number(collection2?.floorPrice?.value) || 0)
-        )
+      if (collection1.floorPrice && collection2.floorPrice) {
+        if (isETHPrice(collection1) && isETHPrice(collection2)) {
+          return (
+            (Number(collection1?.floorPrice?.value) || 0) -
+            (Number(collection2?.floorPrice?.value) || 0)
+          )
+        }
       }
+      if (collection1.floorPrice === undefined) return 1
+      if (collection2.floorPrice === undefined) return -1
+
       return 1
     }
     case "desc": {
-      if (
-        collection1.floorPrice &&
-        isETHPrice(collection1) &&
-        collection2.floorPrice &&
-        isETHPrice(collection2)
-      ) {
-        return (
-          (Number(collection2?.floorPrice?.value) || 0) -
-          (Number(collection1?.floorPrice?.value) || 0)
-        )
+      if (collection1.floorPrice && collection2.floorPrice) {
+        if (isETHPrice(collection1) && isETHPrice(collection2)) {
+          return (
+            (Number(collection2?.floorPrice?.value) || 0) -
+            (Number(collection1?.floorPrice?.value) || 0)
+          )
+        }
       }
+      if (collection1.floorPrice === undefined) return 1
+      if (collection2.floorPrice === undefined) return -1
+
       return 1
     }
     case "new": {
