@@ -1,9 +1,11 @@
 import { selectAbilityCount } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
 import { useSelector } from "react-redux"
+import { useHistory } from "react-router-dom"
 
 export default function AbilitiesHeader(): ReactElement {
   const newAbilities = useSelector(selectAbilityCount)
+  const history = useHistory()
 
   const abilityCount = newAbilities > 0 ? `${newAbilities} New` : "None"
 
@@ -15,7 +17,14 @@ export default function AbilitiesHeader(): ReactElement {
             <div className="icon_eth" />
             <div>Daylight abilities</div>
           </div>
-          <div className="ability_count">{abilityCount}</div>
+          <div
+            onClick={() => {
+              history.push("abilities")
+            }}
+            className="ability_count"
+          >
+            {abilityCount}
+          </div>
         </div>
       </div>
       <style jsx>{`
@@ -63,9 +72,9 @@ export default function AbilitiesHeader(): ReactElement {
           padding: 4px 8px 4px 8px;
           color: ${newAbilities > 0 ? "var(--success)" : "var(--green-40)"};
           font-weight: 500;
+          cursor: pointer;
         }
-
-        .icon_eth {
+        .icon_daylight {
           background: url("./images/assets/daylight.png");
           background-size: 39px 22px;
           width: 39px;
