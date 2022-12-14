@@ -33,8 +33,8 @@ export type QuoteUpdate = {
     slippageTolerance: number
     networkSettings: NetworkFeeSettings
   }
-  sourceAsset: SwappableAsset
-  targetAsset: SwappableAsset
+  sellAsset: SwappableAsset
+  buyAsset: SwappableAsset
   quoteRequest: SwapQuoteRequest
   timestamp: number
 }
@@ -42,16 +42,16 @@ export type QuoteUpdate = {
 export const fetchQuote = async ({
   type,
   amount,
-  sourceAsset,
-  targetAsset,
+  sellAsset,
+  buyAsset,
   settings,
   network,
   getQuoteFn,
 }: {
-  type: "getSourceAmount" | "getTargetAmount"
+  type: QuoteType
   amount: string
-  sourceAsset: SwappableAsset
-  targetAsset: SwappableAsset
+  sellAsset: SwappableAsset
+  buyAsset: SwappableAsset
   settings: {
     slippageTolerance: number
     networkSettings: NetworkFeeSettings
@@ -63,13 +63,11 @@ export const fetchQuote = async ({
 }): Promise<QuoteUpdate> => {
   const quoteRequest: SwapQuoteRequest = {
     assets: {
-      sellAsset: sourceAsset,
-      buyAsset: targetAsset,
+      sellAsset,
+      buyAsset,
     },
     amount:
-      type === "getSourceAmount"
-        ? { buyAmount: amount }
-        : { sellAmount: amount },
+      type === "getSellAmount" ? { buyAmount: amount } : { sellAmount: amount },
     slippageTolerance: settings.slippageTolerance,
     gasPrice: EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)
       ? settings.networkSettings.values.maxFeePerGas
@@ -87,8 +85,8 @@ export const fetchQuote = async ({
     approvalTarget: undefined,
     swapTransactionSettings: settings,
     quoteRequest,
-    sourceAsset,
-    targetAsset,
+    sellAsset,
+    buyAsset,
     timestamp: Date.now(),
   }
 
@@ -109,14 +107,14 @@ export const fetchQuote = async ({
       needsApproval: updatedQuoteData.needsApproval,
       approvalTarget: updatedQuoteData.quote.allowanceTarget,
       quote:
-        type === "getSourceAmount"
+        type === "getSellAmount"
           ? fixedPointNumberToString({
               amount: BigInt(updatedQuoteData.quote.sellAmount),
-              decimals: sourceAsset.decimals,
+              decimals: sellAsset.decimals,
             })
           : fixedPointNumberToString({
               amount: BigInt(updatedQuoteData.quote.buyAmount),
-              decimals: targetAsset.decimals,
+              decimals: buyAsset.decimals,
             }),
     }
   }
@@ -124,7 +122,7 @@ export const fetchQuote = async ({
   return requestResult
 }
 
-export type QuoteType = "getSourceAmount" | "getTargetAmount"
+export type QuoteType = "getSellAmount" | "getBuyAmount"
 
 // FIXME Unify once asset similarity code is unified.
 export function isSameAsset(asset1: AnyAsset, asset2: AnyAsset): boolean {
@@ -153,10 +151,10 @@ export function isSameAsset(asset1: AnyAsset, asset2: AnyAsset): boolean {
 }
 
 type RequestQuoteUpdateConfig = {
-  type: "getSourceAmount" | "getTargetAmount"
+  type: QuoteType
   amount: string
-  sourceAsset?: SwappableAsset
-  targetAsset?: SwappableAsset
+  sellAsset?: SwappableAsset
+  buyAsset?: SwappableAsset
   transactionSettings?: QuoteUpdate["swapTransactionSettings"]
 }
 
@@ -166,8 +164,8 @@ export function useSwapQuote(useSwapConfig: {
 }): {
   quote: QuoteUpdate | null
   loading: boolean
-  loadingSourceAmount: boolean
-  loadingTargetAmount: boolean
+  loadingSellAmount: boolean
+  loadingBuyAmount: boolean
   requestQuoteUpdate: DebouncedFunc<
     (config: RequestQuoteUpdateConfig) => Promise<void>
   >
@@ -202,7 +200,7 @@ export function useSwapQuote(useSwapConfig: {
     async (config: RequestQuoteUpdateConfig) => {
       if (!mountedRef.current) return
 
-      const { type, amount, sourceAsset, targetAsset } = config
+      const { type, amount, sellAsset, buyAsset } = config
 
       const requestContext = requestContextRef.current
       const transactionSettings =
@@ -210,8 +208,8 @@ export function useSwapQuote(useSwapConfig: {
 
       // Swap amounts can't update unless both sell and buy assets are specified.
       if (
-        !sourceAsset ||
-        !targetAsset ||
+        !sellAsset ||
+        !buyAsset ||
         amount.trim() === "" ||
         Number(amount) === 0
       ) {
@@ -231,8 +229,8 @@ export function useSwapQuote(useSwapConfig: {
         result = await fetchQuote({
           type,
           amount,
-          sourceAsset,
-          targetAsset,
+          sellAsset,
+          buyAsset,
           getQuoteFn: (quoteRequest) =>
             dispatch(fetchSwapPrice({ quoteRequest })) as unknown as Promise<
               AsyncThunkFulfillmentType<typeof fetchSwapPrice>
@@ -272,16 +270,14 @@ export function useSwapQuote(useSwapConfig: {
     return debouncedFn
   })
 
-  const loadingSourceAmount =
-    quoteRequestState.loadingType === "getSourceAmount"
-  const loadingTargetAmount =
-    quoteRequestState.loadingType === "getTargetAmount"
+  const loadingSellAmount = quoteRequestState.loadingType === "getSellAmount"
+  const loadingBuyAmount = quoteRequestState.loadingType === "getBuyAmount"
 
   return {
     quote: quoteRequestState.quote,
     loading: quoteRequestState.loading,
-    loadingSourceAmount,
-    loadingTargetAmount,
+    loadingSellAmount,
+    loadingBuyAmount,
     requestQuoteUpdate: debouncedRequest,
   }
 }

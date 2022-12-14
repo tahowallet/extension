@@ -103,14 +103,14 @@ export default function Swap(): ReactElement {
     assets: { sellAsset: locationAsset },
   }
 
-  const [sourceAsset, setSourceAsset] = useState(savedSellAsset)
-  const [targetAsset, setTargetAsset] = useState(savedBuyAsset)
-  const [sourceAmount, setSourceAmount] = useState(
+  const [sellAsset, setSellAsset] = useState(savedSellAsset)
+  const [buyAsset, setBuyAsset] = useState(savedBuyAsset)
+  const [sellAmount, setSellAmount] = useState(
     typeof savedSwapAmount !== "undefined" && "sellAmount" in savedSwapAmount
       ? savedSwapAmount.sellAmount
       : ""
   )
-  const [targetAmount, setTargetAmount] = useState(
+  const [buyAmount, setBuyAmount] = useState(
     typeof savedSwapAmount !== "undefined" && "buyAmount" in savedSwapAmount
       ? savedSwapAmount.buyAmount
       : ""
@@ -118,14 +118,11 @@ export default function Swap(): ReactElement {
 
   const previousChainId = usePrevious(currentNetwork.chainID)
 
-  if (
-    previousChainId !== currentNetwork.chainID &&
-    (sourceAsset || targetAsset)
-  ) {
-    setSourceAsset(undefined)
-    setTargetAsset(undefined)
-    setSourceAmount("")
-    setTargetAmount("")
+  if (previousChainId !== currentNetwork.chainID && (sellAsset || buyAsset)) {
+    setSellAsset(undefined)
+    setBuyAsset(undefined)
+    setSellAmount("")
+    setBuyAmount("")
   }
 
   const buyAssets = useBackgroundSelector((state) => {
@@ -134,7 +131,7 @@ export default function Swap(): ReactElement {
     const knownAssets: AnyAsset[] = state.assets
     return knownAssets.filter((asset): asset is SwappableAsset => {
       // We don't want to buy the same asset we're selling.
-      if (asset.symbol === sourceAsset?.symbol) {
+      if (asset.symbol === sellAsset?.symbol) {
         return false
       }
 
@@ -156,15 +153,15 @@ export default function Swap(): ReactElement {
   const sellAssetAmounts = (
     ownedSellAssetAmounts.some(
       ({ asset }) =>
-        typeof sourceAsset !== "undefined" && isSameAsset(asset, sourceAsset)
+        typeof sellAsset !== "undefined" && isSameAsset(asset, sellAsset)
     )
       ? ownedSellAssetAmounts
       : ownedSellAssetAmounts.concat(
-          typeof sourceAsset === "undefined"
+          typeof sellAsset === "undefined"
             ? []
             : [
                 {
-                  asset: sourceAsset,
+                  asset: sellAsset,
                   amount: 0n,
                   decimalAmount: 0,
                   localizedDecimalAmount: "0",
@@ -172,30 +169,30 @@ export default function Swap(): ReactElement {
               ]
         )
   ).filter(
-    (sellAssetAmount) => sellAssetAmount.asset.symbol !== targetAsset?.symbol
+    (sellAssetAmount) => sellAssetAmount.asset.symbol !== buyAsset?.symbol
   )
 
   useEffect(() => {
-    if (typeof sourceAsset !== "undefined") {
+    if (typeof sellAsset !== "undefined") {
       const isSelectedSellAssetInSellAssets = sellAssetAmounts.some(
-        ({ asset }) => isSameAsset(asset, sourceAsset)
+        ({ asset }) => isSameAsset(asset, sellAsset)
       )
 
       if (!isSelectedSellAssetInSellAssets) {
         sellAssetAmounts.push({
-          asset: sourceAsset,
+          asset: sellAsset,
           amount: 0n,
           decimalAmount: 0,
           localizedDecimalAmount: "0",
         })
       }
     }
-  }, [sourceAsset, sellAssetAmounts])
+  }, [sellAsset, sellAssetAmounts])
 
   const {
     loading: loadingQuote,
-    loadingSourceAmount,
-    loadingTargetAmount,
+    loadingSellAmount,
+    loadingBuyAmount,
     quote,
     requestQuoteUpdate,
   } = useSwapQuote({
@@ -209,10 +206,10 @@ export default function Swap(): ReactElement {
     selectInProgressApprovalContract
   )
   const isApprovalInProgress =
-    sourceAsset &&
-    "contractAddress" in sourceAsset &&
+    sellAsset &&
+    "contractAddress" in sellAsset &&
     normalizeEVMAddress(inProgressApprovalContract || "0x") ===
-      normalizeEVMAddress(sourceAsset?.contractAddress || "0x")
+      normalizeEVMAddress(sellAsset?.contractAddress || "0x")
 
   const finalQuote = useBackgroundSelector((state) => state.swap.finalQuote)
 
@@ -239,7 +236,7 @@ export default function Swap(): ReactElement {
   const approveAsset = async () => {
     if (!quote) return
 
-    if (typeof sourceAsset === "undefined") {
+    if (typeof sellAsset === "undefined") {
       logger.error(t("swap.error.noSellAsset"))
       return
     }
@@ -247,87 +244,85 @@ export default function Swap(): ReactElement {
       logger.error(t("swap.error.noApprovalTarget"))
       return
     }
-    if (!isSmartContractFungibleAsset(sourceAsset)) {
-      logger.error(t("swap.error.nonContractAsset"), sourceAsset)
+    if (!isSmartContractFungibleAsset(sellAsset)) {
+      logger.error(t("swap.error.nonContractAsset"), sellAsset)
       return
     }
 
     await dispatch(
       approveTransfer({
-        assetContractAddress: sourceAsset.contractAddress,
+        assetContractAddress: sellAsset.contractAddress,
         approvalTarget: quote.approvalTarget,
       })
     )
   }
 
-  const updateSourceAsset = useCallback(
-    (newSourceAsset: SwappableAsset) => {
-      setSourceAsset(newSourceAsset)
-      setSourceAmount("")
+  const updateSellAsset = useCallback(
+    (newSellAsset: SwappableAsset) => {
+      setSellAsset(newSellAsset)
+      setSellAmount("")
 
       // Updating the source asset quotes the new source asset against the existing
       // target amount.
-      if (newSourceAsset && targetAsset && targetAmount) {
+      if (newSellAsset && buyAsset && buyAmount) {
         requestQuoteUpdate({
-          type: "getSourceAmount",
-          amount: targetAmount,
-          sourceAsset: newSourceAsset,
-          targetAsset,
+          type: "getSellAmount",
+          amount: buyAmount,
+          sellAsset: newSellAsset,
+          buyAsset,
         })
         requestQuoteUpdate.flush()
       }
     },
-    [requestQuoteUpdate, targetAmount, targetAsset]
+    [requestQuoteUpdate, buyAmount, buyAsset]
   )
 
-  const updateTargetAsset = useCallback(
-    (newTargetAsset: SwappableAsset) => {
-      setTargetAsset(newTargetAsset)
-      setTargetAmount("")
+  const updateBuyAsset = useCallback(
+    (newBuyAsset: SwappableAsset) => {
+      setBuyAsset(newBuyAsset)
+      setBuyAmount("")
 
       // Updating the target asset quotes the new target asset against the existing
       // source amount.
-      if (sourceAsset && newTargetAsset && sourceAmount) {
+      if (sellAsset && newBuyAsset && sellAmount) {
         requestQuoteUpdate({
-          type: "getTargetAmount",
-          amount: sourceAmount,
-          sourceAsset,
-          targetAsset: newTargetAsset,
+          type: "getBuyAmount",
+          amount: sellAmount,
+          sellAsset,
+          buyAsset: newBuyAsset,
         })
         requestQuoteUpdate.flush()
       }
     },
-    [sourceAmount, requestQuoteUpdate, sourceAsset]
+    [sellAmount, requestQuoteUpdate, sellAsset]
   )
 
   const flipSwap = useCallback(() => {
-    const [newSourceAsset, newTargetAsset] = [targetAsset, sourceAsset]
-    const [newSourceAmount, newTargetAmount] = [targetAmount, sourceAmount]
+    const [newSellAsset, newBuyAsset] = [buyAsset, sellAsset]
+    const [newSellAmount, newBuyAmount] = [buyAmount, sellAmount]
 
-    setSourceAsset(newSourceAsset)
-    setTargetAsset(newTargetAsset)
+    setSellAsset(newSellAsset)
+    setBuyAsset(newBuyAsset)
 
-    if (newSourceAmount) {
-      setSourceAmount(newSourceAmount)
+    if (newSellAmount) {
+      setSellAmount(newSellAmount)
     }
 
-    if (newTargetAmount) {
-      setTargetAmount(newTargetAmount)
+    if (newBuyAmount) {
+      setBuyAmount(newBuyAmount)
     }
 
-    if (newSourceAmount && newSourceAsset && newTargetAsset)
+    if (newSellAmount && newSellAsset && newBuyAsset)
       requestQuoteUpdate({
-        type: "getTargetAmount",
-        amount: targetAmount,
-        sourceAsset: newSourceAsset,
-        targetAsset: newTargetAsset,
+        type: "getBuyAmount",
+        amount: buyAmount,
+        sellAsset: newSellAsset,
+        buyAsset: newBuyAsset,
       })
-  }, [targetAmount, sourceAmount, targetAsset, sourceAsset, requestQuoteUpdate])
+  }, [buyAmount, sellAmount, buyAsset, sellAsset, requestQuoteUpdate])
 
   const quoteAppliesToCurrentAssets =
-    quote &&
-    quote.sourceAsset === sourceAsset &&
-    quote.targetAsset === targetAsset
+    quote && quote.sellAsset === sellAsset && quote.buyAsset === buyAsset
 
   // Update if quote changes
 
@@ -342,21 +337,21 @@ export default function Swap(): ReactElement {
   ) {
     const { quote: newAmount, type } = quote
 
-    if (type === "getSourceAmount" && newAmount !== sourceAmount) {
-      setSourceAmount(newAmount)
-    } else if (type === "getTargetAmount" && newAmount !== targetAmount) {
-      setTargetAmount(newAmount)
+    if (type === "getSellAmount" && newAmount !== sellAmount) {
+      setSellAmount(newAmount)
+    } else if (type === "getBuyAmount" && newAmount !== buyAmount) {
+      setBuyAmount(newAmount)
     }
   }
 
   useOnMount(() => {
     // Request a quote on mount
-    if (sourceAsset && targetAsset && sourceAmount) {
+    if (sellAsset && buyAsset && sellAmount) {
       requestQuoteUpdate({
-        type: "getTargetAmount",
-        amount: sourceAmount,
-        sourceAsset,
-        targetAsset,
+        type: "getBuyAmount",
+        amount: sellAmount,
+        sellAsset,
+        buyAsset,
       })
     }
   })
@@ -379,12 +374,12 @@ export default function Swap(): ReactElement {
           size="large"
         >
           {quote &&
-            typeof sourceAsset !== "undefined" &&
-            typeof targetAsset !== "undefined" &&
+            typeof sellAsset !== "undefined" &&
+            typeof buyAsset !== "undefined" &&
             typeof finalQuote !== "undefined" && (
               <SwapQuote
-                sellAsset={sourceAsset}
-                buyAsset={targetAsset}
+                sellAsset={sellAsset}
+                buyAsset={buyAsset}
                 finalQuote={finalQuote}
                 swapTransactionSettings={quote.swapTransactionSettings}
               />
@@ -428,28 +423,28 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput<SwappableAsset>
                 currentNetwork={currentNetwork}
-                amount={sourceAmount}
+                amount={sellAmount}
                 amountMainCurrency={
-                  sourceAmount
+                  sellAmount
                     ? quote?.priceDetails?.sellCurrencyAmount
                     : undefined
                 }
                 showPriceDetails
                 isPriceDetailsLoading={loadingQuote}
                 assetsAndAmounts={sellAssetAmounts}
-                selectedAsset={sourceAsset}
-                isDisabled={loadingSourceAmount}
-                onAssetSelect={updateSourceAsset}
+                selectedAsset={sellAsset}
+                isDisabled={loadingSellAmount}
+                onAssetSelect={updateSellAsset}
                 mainCurrencySign={mainCurrencySign}
                 onAmountChange={(newAmount, error) => {
-                  setSourceAmount(newAmount)
+                  setSellAmount(newAmount)
 
                   if (!error) {
                     requestQuoteUpdate({
-                      type: "getTargetAmount",
+                      type: "getBuyAmount",
                       amount: newAmount,
-                      sourceAsset,
-                      targetAsset,
+                      sellAsset,
+                      buyAsset,
                     })
                   }
                 }}
@@ -467,40 +462,38 @@ export default function Swap(): ReactElement {
             <div className="form_input">
               <SharedAssetInput<SwappableAsset>
                 currentNetwork={currentNetwork}
-                amount={targetAmount}
+                amount={buyAmount}
                 amountMainCurrency={
-                  targetAmount
-                    ? quote?.priceDetails?.buyCurrencyAmount
-                    : undefined
+                  buyAmount ? quote?.priceDetails?.buyCurrencyAmount : undefined
                 }
                 priceImpact={quote?.priceDetails?.priceImpact}
                 isPriceDetailsLoading={loadingQuote}
                 showPriceDetails
                 // FIXME: Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
-                selectedAsset={targetAsset}
-                isDisabled={loadingTargetAmount}
+                selectedAsset={buyAsset}
+                isDisabled={loadingBuyAmount}
                 showMaxButton={false}
                 mainCurrencySign={mainCurrencySign}
-                onAssetSelect={updateTargetAsset}
+                onAssetSelect={updateBuyAsset}
                 onAmountChange={(newAmount, error) => {
-                  setTargetAmount(newAmount)
+                  setBuyAmount(newAmount)
                   if (error) {
                     requestQuoteUpdate.cancel()
                     return
                   }
                   if (newAmount) {
                     requestQuoteUpdate({
-                      type: "getSourceAmount",
+                      type: "getSellAmount",
                       amount: newAmount,
-                      sourceAsset,
-                      targetAsset,
+                      sellAsset,
+                      buyAsset,
                     })
                   }
                 }}
                 label={t("swap.to")}
               />
-              {loadingQuote && sourceAsset && targetAsset && (
+              {loadingQuote && sellAsset && buyAsset && (
                 <SharedLoadingDoggo
                   size={54}
                   message="Fetching price"
@@ -528,10 +521,10 @@ export default function Swap(): ReactElement {
                   isDisabled={
                     isReadOnlyAccount ||
                     !quote ||
-                    !sourceAsset ||
-                    !sourceAmount ||
-                    !targetAsset ||
-                    !targetAmount
+                    !sellAsset ||
+                    !sellAmount ||
+                    !buyAsset ||
+                    !buyAmount
                   }
                   onClick={getFinalQuote}
                   showLoadingOnClick={!confirmationMenu}
