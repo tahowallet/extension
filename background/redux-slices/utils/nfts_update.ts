@@ -24,79 +24,73 @@ export const getAdditionalDataForFilter = (
   return a ? { name: a.name, avatarURL: a.avatarURL } : {}
 }
 
+const sortByPrice = (
+  type: "asc" | "desc",
+  collection1: NFTCollectionCached,
+  collection2: NFTCollectionCached
+): number => {
+  if (collection1.floorPrice && collection2.floorPrice) {
+    if (isETHPrice(collection1) && isETHPrice(collection2)) {
+      if (type === "asc") {
+        return collection1.floorPrice.value - collection2.floorPrice.value
+      }
+      return collection2.floorPrice.value - collection1.floorPrice.value
+    }
+  }
+  if (collection1.floorPrice === undefined) return 1
+  if (collection2.floorPrice === undefined) return -1
+
+  return 1
+}
+
+const sortByDate = (
+  type: "new" | "old",
+  collection1: NFTCollectionCached,
+  collection2: NFTCollectionCached
+): number => {
+  const dates1 = collection1.nfts.map(({ transferDate }) =>
+    new Date(transferDate || "").getTime()
+  )
+  const dates2 = collection2.nfts.map(({ transferDate }) =>
+    new Date(transferDate || "").getTime()
+  )
+
+  const transferDate1 = new Date(
+    type === "new" ? Math.max(...dates1) : Math.min(...dates1)
+  )
+  const transferDate2 = new Date(
+    type === "new" ? Math.max(...dates2) : Math.min(...dates2)
+  )
+
+  if (type === "new") {
+    return transferDate1 > transferDate2 ? -1 : 1
+  }
+
+  return transferDate1 > transferDate2 ? 1 : -1
+}
+
+const sortByNFTCount = (
+  collection1: NFTCollectionCached,
+  collection2: NFTCollectionCached
+): number =>
+  (Number(collection2?.nftCount) || 0) - (Number(collection1?.nftCount) || 0)
+
 export const sortNFTS = (
   collection1: NFTCollectionCached,
   collection2: NFTCollectionCached,
   type: SortType
 ): number => {
   switch (type) {
-    case "asc": {
-      if (collection1.floorPrice && collection2.floorPrice) {
-        if (isETHPrice(collection1) && isETHPrice(collection2)) {
-          return (
-            (Number(collection1?.floorPrice?.value) || 0) -
-            (Number(collection2?.floorPrice?.value) || 0)
-          )
-        }
-      }
-      if (collection1.floorPrice === undefined) return 1
-      if (collection2.floorPrice === undefined) return -1
-
-      return 1
-    }
-    case "desc": {
-      if (collection1.floorPrice && collection2.floorPrice) {
-        if (isETHPrice(collection1) && isETHPrice(collection2)) {
-          return (
-            (Number(collection2?.floorPrice?.value) || 0) -
-            (Number(collection1?.floorPrice?.value) || 0)
-          )
-        }
-      }
-      if (collection1.floorPrice === undefined) return 1
-      if (collection2.floorPrice === undefined) return -1
-
-      return 1
-    }
-    case "new": {
-      const transferDate1 = new Date(
-        Math.max(
-          ...collection1.nfts.map(({ transferDate }) =>
-            new Date(transferDate || "").getTime()
-          )
-        )
-      )
-      const transferDate2 = new Date(
-        Math.max(
-          ...collection2.nfts.map(({ transferDate }) =>
-            new Date(transferDate || "").getTime()
-          )
-        )
-      )
-      return transferDate1 > transferDate2 ? -1 : 1
-    }
-    case "old": {
-      const transferDate1 = new Date(
-        Math.min(
-          ...collection1.nfts.map(({ transferDate }) =>
-            new Date(transferDate || "").getTime()
-          )
-        )
-      )
-      const transferDate2 = new Date(
-        Math.min(
-          ...collection2.nfts.map(({ transferDate }) =>
-            new Date(transferDate || "").getTime()
-          )
-        )
-      )
-      return transferDate1 > transferDate2 ? 1 : -1
-    }
+    case "asc":
+      return sortByPrice("asc", collection1, collection2)
+    case "desc":
+      return sortByPrice("desc", collection1, collection2)
+    case "new":
+      return sortByDate("new", collection1, collection2)
+    case "old":
+      return sortByDate("old", collection1, collection2)
     case "number":
-      return (
-        (Number(collection2?.nftCount) || 0) -
-        (Number(collection1?.nftCount) || 0)
-      )
+      return sortByNFTCount(collection1, collection2)
     default:
       return 0
   }
