@@ -17,13 +17,14 @@ type Ability = {
 const normalizeDaylightAbilities = (
   daylightAbilities: DaylightAbility[]
 ): Ability[] => {
-  const toReturn: Ability[] = []
+  const normalizedAbilities: Ability[] = []
 
   daylightAbilities.forEach((daylightAbility) => {
+    // Lets start with just mints
     if (daylightAbility.type !== "mint") {
       return
     }
-    toReturn.push({
+    normalizedAbilities.push({
       type: daylightAbility.type,
       title: daylightAbility.title,
       description: daylightAbility.description,
@@ -32,7 +33,7 @@ const normalizeDaylightAbilities = (
     })
   })
 
-  return toReturn
+  return normalizedAbilities
 }
 
 export default class AbilitiesService extends BaseService<ServiceLifecycleEvents> {
