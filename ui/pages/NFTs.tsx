@@ -51,6 +51,9 @@ export default function NFTs(): ReactElement {
             gap: 8px;
             align-items: center;
           }
+          .panel_switcher_wrap {
+            width: 100%;
+          }
         `}
       </style>
     </div>

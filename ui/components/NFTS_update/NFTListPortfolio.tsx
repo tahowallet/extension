@@ -28,13 +28,13 @@ export default function NFTListPortfolio(props: {
   )
   const isLoading = useBackgroundSelector(selectIsReloadingNFTs)
 
-  if (isEmptyPortfolio || !isLoading) {
+  if (isEmptyPortfolio) {
     return <NFTsExploreBanner type={type} />
   }
 
   return (
     <>
-      {nftCount ? (
+      {nftCount || isLoading ? (
         <>
           <h2>
             {type === "nfts"
