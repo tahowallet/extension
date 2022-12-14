@@ -44,6 +44,7 @@ import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
 import ApproveQuoteBtn from "../components/Swap/ApproveQuoteButton"
 import { isSameAsset, useSwapQuote } from "../utils/swap"
 import { useOnMount, usePrevious } from "../hooks/react-hooks"
+import SharedLoadingDoggo from "../components/Shared/SharedLoadingDoggo"
 
 export default function Swap(): ReactElement {
   const { t } = useTranslation()
@@ -499,6 +500,13 @@ export default function Swap(): ReactElement {
                 }}
                 label={t("swap.to")}
               />
+              {loadingQuote && sourceAsset && targetAsset && (
+                <SharedLoadingDoggo
+                  size={54}
+                  message="Fetching price"
+                  margin="15px 0 0 0"
+                />
+              )}
             </div>
             <div className="settings_wrap">
               {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (

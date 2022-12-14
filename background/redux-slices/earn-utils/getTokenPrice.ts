@@ -23,7 +23,7 @@ const getTokenPrice = async (
     // assetPricePoint.amounts[1] returns USD value with 10 decimals
     const assetPricePoint = selectAssetPricePoint(
       assets,
-      asset.symbol,
+      asset,
       mainCurrencySymbol
     )
     tokenPrice = assetPricePoint?.amounts[1]

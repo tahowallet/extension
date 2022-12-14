@@ -168,3 +168,6 @@ export const hexToAscii = (hex_: string): string => {
     str += String.fromCharCode(parseInt(hex.substr(i, 2), 16))
   return str.replace("\x00", "")
 }
+
+export const wait = (ms: number): Promise<void> =>
+  new Promise<void>((r) => setTimeout(r, ms))

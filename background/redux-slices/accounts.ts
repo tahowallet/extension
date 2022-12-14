@@ -2,7 +2,12 @@ import { createSlice } from "@reduxjs/toolkit"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../accounts"
 import { EVMNetwork, Network } from "../networks"
-import { AnyAsset, AnyAssetAmount, SmartContractFungibleAsset } from "../assets"
+import {
+  AnyAsset,
+  AnyAssetAmount,
+  isFungibleAsset,
+  SmartContractFungibleAsset,
+} from "../assets"
 import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
@@ -11,6 +16,7 @@ import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
 import { AccountSigner } from "../services/signing"
 import { TEST_NETWORK_BY_CHAIN_ID } from "../constants"
+import { convertFixedPoint } from "../lib/fixed-point"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -172,9 +178,28 @@ function updateCombinedData(immerState: AccountState) {
       [symbol: string]: AnyAssetAmount
     }>((acc, combinedAssetAmount) => {
       const assetSymbol = combinedAssetAmount.asset.symbol
-      acc[assetSymbol] = {
-        ...combinedAssetAmount,
-        amount: (acc[assetSymbol]?.amount || 0n) + combinedAssetAmount.amount,
+      let { amount } = combinedAssetAmount
+
+      if (acc[assetSymbol]?.asset) {
+        const accAsset = acc[assetSymbol].asset
+        const existingDecimals = isFungibleAsset(accAsset)
+          ? accAsset.decimals
+          : 0
+        const newDecimals = isFungibleAsset(combinedAssetAmount.asset)
+          ? combinedAssetAmount.asset.decimals
+          : 0
+
+        if (newDecimals !== existingDecimals) {
+          amount = convertFixedPoint(amount, newDecimals, existingDecimals)
+        }
+      }
+
+      if (acc[assetSymbol]) {
+        acc[assetSymbol].amount += amount
+      } else {
+        acc[assetSymbol] = {
+          ...combinedAssetAmount,
+        }
       }
       return acc
     }, {})
@@ -253,7 +278,7 @@ const accountSlice = createSlice({
     updateAccountBalance: (
       immerState,
       {
-        payload: { balances, addressOnNetwork },
+        payload: { balances },
       }: {
         payload: {
           balances: AccountBalance[]
@@ -261,30 +286,6 @@ const accountSlice = createSlice({
         }
       }
     ) => {
-      // TODO: Figure out how to detect base asset balances once we add custom networks
-      const isBaseAssetBalance =
-        balances.length === 1 && "coinType" in balances[0].assetAmount.asset
-
-      if (!isBaseAssetBalance) {
-        const updatedBalancesSymbols = new Set(
-          balances.map((balance) => balance.assetAmount.asset.symbol)
-        )
-
-        const { network, address } = addressOnNetwork
-
-        // Don't delete base asset balance
-        updatedBalancesSymbols.add(network.baseAsset.symbol)
-
-        const existing = immerState.accountsData.evm[network.chainID][address]
-        if (existing !== undefined && existing !== "loading") {
-          Object.keys(existing.balances).forEach((symbol) => {
-            if (!updatedBalancesSymbols.has(symbol)) {
-              delete existing.balances[symbol]
-            }
-          })
-        }
-      }
-
       balances.forEach((updatedAccountBalance) => {
         const {
           address,
@@ -304,6 +305,12 @@ const accountSlice = createSlice({
         }
 
         if (existingAccountData !== "loading") {
+          if (
+            updatedAccountBalance.assetAmount.amount === 0n &&
+            existingAccountData.balances[updatedAssetSymbol] === undefined
+          ) {
+            return
+          }
           existingAccountData.balances[updatedAssetSymbol] =
             updatedAccountBalance
         } else {

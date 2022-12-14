@@ -92,7 +92,7 @@ export async function getAssetAmount(
 
   const assetPricePoint = selectAssetPricePoint(
     assets,
-    asset?.symbol,
+    asset,
     hardcodedMainCurrencySymbol
   )
 
