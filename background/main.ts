@@ -154,6 +154,7 @@ import {
   updateNFTs,
   deleteNFTsForAddress,
   updateIsReloading,
+  deleteTransferredNFTs,
 } from "./redux-slices/nfts_update"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -1464,6 +1465,9 @@ export default class Main extends BaseService<never> {
     )
     this.nftsService.emitter.on("updateNFTs", async (payload) => {
       await this.store.dispatch(updateNFTs(payload))
+    })
+    this.nftsService.emitter.on("removeTransferredNFTs", async (payload) => {
+      this.store.dispatch(deleteTransferredNFTs(payload))
     })
     this.nftsService.emitter.on("isReloadingNFTs", async (payload) => {
       this.store.dispatch(updateIsReloading(payload))

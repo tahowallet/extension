@@ -2,7 +2,7 @@ import Dexie from "dexie"
 import { AddressOnNetwork } from "../../accounts"
 import { FeatureFlags, isEnabled } from "../../features"
 import { sameEVMAddress } from "../../lib/utils"
-import { NFT, NFTCollection } from "../../nfts"
+import { NFT, NFTCollection, TransferredNFT } from "../../nfts"
 
 export class NFTsDatabase extends Dexie {
   private nfts!: Dexie.Table<NFT, number>
@@ -76,6 +76,14 @@ export class NFTsDatabase extends Dexie {
     await this.nfts.filter((nft) => sameEVMAddress(nft.owner, address)).delete()
     await this.collections
       .filter((collection) => sameEVMAddress(collection.owner, address))
+      .delete()
+  }
+
+  async removeNFTsByID(removedNFTs: TransferredNFT[]): Promise<void> {
+    await this.nfts
+      .filter((nft) =>
+        removedNFTs.some((transferred) => transferred.id === nft.id)
+      )
       .delete()
   }
 }

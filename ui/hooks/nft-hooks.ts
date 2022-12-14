@@ -13,7 +13,6 @@ import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/as
 import {
   cleanCachedNFTs,
   refetchCollections,
-  updateIsReloading,
 } from "@tallyho/tally-background/redux-slices/nfts_update"
 import { useEffect } from "react"
 import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
@@ -57,12 +56,8 @@ export const useNFTsReload = (): void => {
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
-    // TODO: to avoid flash of the list on the first render - not perfect
-    dispatch(updateIsReloading(true))
     dispatch(refetchCollections())
     return () => {
-      // TODO: prepare for the next refetch - works if this component was unmounted correctly (closing extension is not updating it correctly)
-      dispatch(updateIsReloading(true))
       dispatch(cleanCachedNFTs())
     }
   }, [dispatch])

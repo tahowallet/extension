@@ -33,7 +33,13 @@ export default function NFTList(props: {
   }
 
   if (isReloading)
-    return <SharedLoadingDoggo size={78} message="Fetching NFTs" />
+    return (
+      <SharedLoadingDoggo
+        size={78}
+        message="Fetching NFTs"
+        padding="20px 0 0"
+      />
+    )
 
   return (
     <>
