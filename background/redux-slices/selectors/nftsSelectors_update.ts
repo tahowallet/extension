@@ -102,6 +102,16 @@ export const selectCurrentAccountNFTsCount = createSelector(
   }
 )
 
+export const selectAllNFTsCount = createSelector(
+  selectAllCollections,
+  (collections) => {
+    return collections.reduce(
+      (sum, collection) => sum + (collection.nftCount ?? 0),
+      0
+    )
+  }
+)
+
 export const selectNFTsCount = createSelector(
   selectNFTCollections,
   (collections) => {

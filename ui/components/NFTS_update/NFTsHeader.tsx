@@ -1,6 +1,7 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
+  selectAllNFTsCount,
   selectMainCurrencySign,
   selectNFTBadgesCount,
   selectNFTCollectionsCount,
@@ -10,12 +11,18 @@ import {
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 import { HeaderContainer, EmptyHeader } from "./NFTsHeaderBase"
 import { useBackgroundSelector, useTotalNFTsFloorPrice } from "../../hooks"
+import SharedIcon from "../Shared/SharedIcon"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import NFTsFilters from "./Filters/NFTsFilters"
 
 export default function NFTsHeader(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
   })
+  const [openFiltersMenu, setOpenFiltersMenu] = useState(false)
+
   const isLoading = useBackgroundSelector(() => false)
+  const allNftCount = useBackgroundSelector(selectAllNFTsCount)
   const nftCount = useBackgroundSelector(selectNFTsCount)
 
   const collectionCount = useBackgroundSelector(selectNFTCollectionsCount)
@@ -25,7 +32,11 @@ export default function NFTsHeader(): ReactElement {
   const { totalFloorPriceInETH, totalFloorPriceInUSD } =
     useTotalNFTsFloorPrice()
 
-  if (nftCount < 1) {
+  const handleToggleClick = useCallback(() => {
+    setOpenFiltersMenu((currentlyOpen) => !currentlyOpen)
+  }, [])
+
+  if (allNftCount < 1) {
     return (
       <HeaderContainer>
         <EmptyHeader />
@@ -34,34 +45,55 @@ export default function NFTsHeader(): ReactElement {
   }
 
   return (
-    <HeaderContainer>
-      <div className="stats_container">
-        <div className="stats_title">{t("header.title")}</div>
-        <div className="stats_totals">
-          <span className="currency_sign">{mainCurrencySign}</span>
-          <span className="currency_total">{totalFloorPriceInUSD ?? "0"}</span>
-          {isLoading && (
-            <SharedLoadingSpinner size="small" variant="transparent" />
+    <>
+      <SharedSlideUpMenu isOpen={openFiltersMenu} close={handleToggleClick}>
+        <NFTsFilters />
+      </SharedSlideUpMenu>
+      <HeaderContainer>
+        <div className="stats_container">
+          <div className="stats_title">{t("header.title")}</div>
+          {allNftCount > 0 && (
+            <SharedIcon
+              width={24}
+              icon="toggle.svg"
+              ariaLabel={t("filters.title")}
+              color="var(--green-40)"
+              hoverColor="var(--green-20)"
+              customStyles={`
+              position: absolute;
+              right: -80px;
+          `}
+              onClick={handleToggleClick}
+            />
           )}
+          <div className="stats_totals">
+            <span className="currency_sign">{mainCurrencySign}</span>
+            <span className="currency_total">
+              {totalFloorPriceInUSD ?? "0"}
+            </span>
+            {isLoading && (
+              <SharedLoadingSpinner size="small" variant="transparent" />
+            )}
+          </div>
+          <div className="crypto_total">{totalFloorPriceInETH ?? "-"} ETH</div>
         </div>
-        <div className="crypto_total">{totalFloorPriceInETH ?? "-"} ETH</div>
-      </div>
-      <ul className="nft_counts">
-        <li>
-          <strong>{collectionCount}</strong>
-          {t("units.collection", { count: collectionCount ?? 0 })}
-        </li>
-        <li className="spacer" role="presentation" />
-        <li>
-          <strong>{nftCount}</strong>
-          {t("units.nft", { count: nftCount ?? 0 })}
-        </li>
-        <li className="spacer" role="presentation" />
-        <li>
-          <strong>{badgeCount}</strong>
-          {t("units.badge", { count: badgeCount ?? 0 })}
-        </li>
-      </ul>
+        <ul className="nft_counts">
+          <li>
+            <strong>{collectionCount}</strong>
+            {t("units.collection", { count: collectionCount ?? 0 })}
+          </li>
+          <li className="spacer" role="presentation" />
+          <li>
+            <strong>{nftCount}</strong>
+            {t("units.nft", { count: nftCount ?? 0 })}
+          </li>
+          <li className="spacer" role="presentation" />
+          <li>
+            <strong>{badgeCount}</strong>
+            {t("units.badge", { count: badgeCount ?? 0 })}
+          </li>
+        </ul>
+      </HeaderContainer>
       <style jsx>{`
         .stats_container {
           text-align: center;
@@ -69,6 +101,7 @@ export default function NFTsHeader(): ReactElement {
           display: flex;
           flex-direction: column;
           align-items: center;
+          position: relative;
         }
 
         .stats_title {
@@ -116,8 +149,7 @@ export default function NFTsHeader(): ReactElement {
           display: flex;
           flex-direction: row;
           align-items: center;
-          justify-content: space-evenly;
-          width: 100%;
+          gap: 16px;
         }
 
         li {
@@ -138,9 +170,8 @@ export default function NFTsHeader(): ReactElement {
         li.spacer {
           border: 0.5px solid var(--green-80);
           align-self: stretch;
-          margin: 0 5px;
         }
       `}</style>
-    </HeaderContainer>
+    </>
   )
 }
