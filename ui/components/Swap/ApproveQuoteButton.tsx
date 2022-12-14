@@ -6,11 +6,11 @@ export default function ApproveQuoteButton({
   isApprovalInProgress,
   isDisabled,
   onApproveClick,
-  loading,
+  isLoading,
 }: {
   isApprovalInProgress: boolean
   onApproveClick(): void
-  loading: boolean
+  isLoading: boolean
   isDisabled: boolean
 }): React.ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "swap" })
@@ -25,7 +25,7 @@ export default function ApproveQuoteButton({
       size="large"
       isDisabled={isDisabled}
       onClick={onApproveClick}
-      isLoading={loading}
+      isLoading={isLoading}
     >
       {t("approveAsset")}
     </SharedButton>

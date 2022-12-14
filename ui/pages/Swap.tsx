@@ -512,7 +512,7 @@ export default function Swap(): ReactElement {
                   isApprovalInProgress={!!isApprovalInProgress}
                   isDisabled={isReadOnlyAccount || !quote}
                   onApproveClick={approveAsset}
-                  loading={confirmationMenu}
+                  isLoading={confirmationMenu}
                 />
               ) : (
                 <SharedButton
