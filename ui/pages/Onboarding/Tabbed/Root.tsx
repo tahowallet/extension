@@ -341,7 +341,6 @@ function Navigation({ children }: { children: React.ReactNode }): ReactElement {
         {!matchPath(location.pathname, {
           path: [
             OnboardingRoutes.ONBOARDING_START,
-            OnboardingRoutes.SET_PASSWORD,
             OnboardingRoutes.ONBOARDING_COMPLETE,
             NewSeedRoutes.VERIFY_SEED,
           ],
