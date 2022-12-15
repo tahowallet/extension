@@ -1,0 +1,41 @@
+name: Release flow
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Read .nvmrc
+        run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+        id: nvm
+      - name: Use Node + Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version: "${{ steps.nvm.outputs.NVMRC }}"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
+      - name: Release build
+        run: |
+          echo 'USE_ANALYTICS_SOURCE="PROD"' >> .env
+          yarn build
+        env:
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+          BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
+          UNS_API_KEY: ${{ secrets.UNS_API_KEY }}
+          SIMPLE_HASH_API_KEY: ${{ secrets.SIMPLE_HASH_API_KEY }}
+          ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}
+          COMMIT_SHA: ${{ github.sha }}
+          POAP_API_KEY: ${{ secrets.POAP_API_KEY }}
+      - name: Create Release and Upload Artifacts
+        uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # v1
+        with:
+          files: dist/*.zip
+          draft: true
+          generate_release_notes: true
