@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { Ability } from "../services/abilities"
 import { HexString } from "../types"
+import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 
 type AbilitiesState = {
@@ -51,6 +52,7 @@ export const completeAbility = createBackgroundAsyncThunk(
   ) => {
     await main.markAbilityAsCompleted(address, abilityId)
     dispatch(markAbilityAsCompleted({ address, abilityId }))
+    dispatch(setSnackbarMessage("Marked as Completed"))
   }
 )
 

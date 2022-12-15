@@ -30,30 +30,57 @@ const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
           >
             Visit website
           </SharedButton>
-          <SharedTooltip
-            horizontalPosition="center"
-            width={200}
-            verticalPosition="bottom"
-            IconComponent={() => (
-              <SharedIcon
-                height={16}
-                width={16}
-                icon="icons/s/mark-read.svg"
-                color="var(--green-40)"
-                hoverColor="var(--success)"
-                onClick={() => {
-                  dispatch(
-                    completeAbility({
-                      address: ability.address,
-                      abilityId: ability.abilityId,
-                    })
-                  )
-                }}
-              />
-            )}
-          >
-            Mark as Completed
-          </SharedTooltip>
+          <div className="button_container">
+            <SharedTooltip
+              horizontalPosition="center"
+              width={200}
+              verticalPosition="top"
+              IconComponent={() => (
+                <SharedIcon
+                  height={16}
+                  width={16}
+                  icon="icons/s/mark-read.svg"
+                  color="var(--green-40)"
+                  hoverColor="var(--success)"
+                  onClick={() => {
+                    dispatch(
+                      completeAbility({
+                        address: ability.address,
+                        abilityId: ability.abilityId,
+                      })
+                    )
+                  }}
+                />
+              )}
+            >
+              Mark as Completed
+            </SharedTooltip>
+            <SharedTooltip
+              horizontalPosition="center"
+              width={200}
+              verticalPosition="top"
+              IconComponent={() => (
+                <SharedIcon
+                  height={16}
+                  width={16}
+                  icon="icons/s/garbage.svg"
+                  color="var(--green-40)"
+                  customStyles="margin-left: 10px;"
+                  hoverColor="#EC3137"
+                  onClick={() => {
+                    dispatch(
+                      completeAbility({
+                        address: ability.address,
+                        abilityId: ability.abilityId,
+                      })
+                    )
+                  }}
+                />
+              )}
+            >
+              Delete
+            </SharedTooltip>
+          </div>
         </div>
       </div>
       <style jsx>
@@ -67,6 +94,10 @@ const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
             height: 295px;
             background: rgba(4, 20, 20, 0.4);
             border-radius: 12px;
+          }
+          .button_container {
+            display: flex;
+            flex-direction:row;
           }
           .title {
             font-family: Segment;
