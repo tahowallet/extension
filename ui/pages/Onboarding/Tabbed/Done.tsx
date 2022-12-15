@@ -48,7 +48,7 @@ export default function Done(): ReactElement {
           max-width: 340px;
           display: flex;
           flex-direction: column;
-          gap: 12 px;
+          gap: 12px;
         }
 
         header h1 {

@@ -6,16 +6,18 @@ import SharedIcon from "../../../components/Shared/SharedIcon"
 import OnboardingTip from "./OnboardingTip"
 import OnboardingRoutes from "./Routes"
 
-const intersperseWith = <T, K>(arr: T[], getItem: (index: number) => K) => {
+const intersperseWith = <T, K>(items: T[], getItem: (index: number) => K) => {
   const result: (T | K)[] = []
 
-  for (let i = 0; i < arr.length; i += 1) {
-    const element = arr[i]
+  for (let i = 0; i < items.length; i += 1) {
+    const element = items[i]
+
     result.push(element)
 
-    if (i < arr.length - 1) result.push(getItem(i))
+    if (i < items.length - 1) {
+      result.push(getItem(i))
+    }
   }
-
   return result
 }
 

@@ -68,7 +68,7 @@ export default function Snackbar(): ReactElement {
 
           .snackbar_wrap {
             max-width: 352px;
-            margin 0 auto;
+            margin: 0 auto;
             width: fit-content;
             height: 40px;
             padding: 0 16px;
