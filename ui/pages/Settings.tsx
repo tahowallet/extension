@@ -23,6 +23,8 @@ import SettingButton from "./Settings/SettingButton"
 import { useBackgroundSelector } from "../hooks"
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
+const FAQ_URL =
+  "https://tallyhowallet.notion.site/Tally-Ho-Knowledge-Base-4d95ed5439c64d6db3d3d27abf1fdae5"
 
 function VersionLabel(): ReactElement {
   const { t } = useTranslation()
@@ -173,6 +175,18 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const needHelp = {
+    title: "",
+    component: () => (
+      <SettingButton
+        label={t("settings.needHelp")}
+        ariaLabel={t("settings.needHelp")}
+        icon="new-tab"
+        onClick={() => window.open(FAQ_URL, "_blank")?.focus()}
+      />
+    ),
+  }
+
   const bugReport = {
     title: "",
     component: () => (
@@ -180,6 +194,7 @@ export default function Settings(): ReactElement {
         link="/settings/export-logs"
         label={t("settings.bugReport")}
         ariaLabel={t("settings.exportLogs.ariaLabel")}
+        icon="continue"
       />
     ),
   }
@@ -191,6 +206,7 @@ export default function Settings(): ReactElement {
         link="/settings/connected-websites"
         label={t("settings.connectedWebsites")}
         ariaLabel={t("settings.connectedWebsitesSettings.ariaLabel")}
+        icon="continue"
       />
     ),
   }
@@ -202,6 +218,7 @@ export default function Settings(): ReactElement {
         link="/settings/analytics"
         label={t("settings.analytics")}
         ariaLabel={t("settings.analyticsSetUp.ariaLabel")}
+        icon="continue"
       />
     ),
   }
@@ -222,6 +239,7 @@ export default function Settings(): ReactElement {
     ...(isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) ? [languages] : []),
     enableTestNetworks,
     dAppsSettings,
+    needHelp,
     bugReport,
     ...(isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) ? [analytics] : []),
     ...(isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER)
