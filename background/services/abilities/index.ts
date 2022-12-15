@@ -3,15 +3,15 @@ import BaseService from "../base"
 import { HexString } from "../../types"
 import { DaylightAbility, getDaylightAbilities } from "./daylight"
 
-// Placeholder
-// interface Events extends ServiceLifecycleEvents {}
+export type AbilityType = "mint"
 
 export type Ability = {
-  type: "mint"
+  type: AbilityType
   title: string
   description: string | null
   uuid: string
   linkUrl: string
+  imageUrl?: string
   completed: boolean
   address: string
 }
@@ -33,6 +33,7 @@ const normalizeDaylightAbilities = (
       description: daylightAbility.description,
       uuid: daylightAbility.uid,
       linkUrl: daylightAbility.action.linkUrl,
+      imageUrl: daylightAbility.imageUrl || undefined,
       completed: false,
       address,
     })

@@ -458,7 +458,7 @@ export default class Main extends BaseService<never> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState, this)
 
-    setInterval(async () => {
+    setTimeout(async () => {
       const abilities = await this.abilitiesService.getAbilities(
         this.store.getState().ui.selectedAccount.address
       )
