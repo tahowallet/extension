@@ -14,7 +14,6 @@ import {
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
 import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
-import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
@@ -264,21 +263,6 @@ export default function Settings(): ReactElement {
             />
           ))}
         </ul>
-        <div className="community_cta_wrap">
-          <h2>{t("settings.joinTitle")}</h2>
-          <p>{t("settings.joinDesc")}</p>
-          <SharedButton
-            type="primary"
-            size="large"
-            iconMedium="discord"
-            iconPosition="left"
-            onClick={() => {
-              window.open(`https://chat.tally.cash/`, "_blank")?.focus()
-            }}
-          >
-            {t("settings.joinBtn")}
-          </SharedButton>
-        </div>
         <VersionLabel />
       </section>
       <style jsx>
@@ -289,37 +273,12 @@ export default function Settings(): ReactElement {
             height: 544px;
             background-color: var(--hunter-green);
           }
-          .community_cta_wrap {
-            width: 100vw;
-            margin-top: 20px;
-            margin-left: -21px;
-            background-color: var(--green-95);
-            text-align: center;
-            padding: 24px 0px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
           h1 {
             color: #fff;
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
             margin-bottom: 5px;
-          }
-          h2 {
-            font-weight: 500;
-            font-size: 22px;
-            padding: 0px;
-            margin: 0px 0px -1px 0px;
-          }
-          p {
-            color: var(--green-20);
-            text-align: center;
-            font-size: 16px;
-            margin-top: 6px;
-            margin-bottom: 24px;
           }
           span {
             color: var(--green-40);

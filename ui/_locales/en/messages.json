@@ -364,9 +364,6 @@
     "analytics": "Analytics",
     "needHelp": "Need Help?",
     "showBanners": "Show achievement banners",
-    "joinTitle": "Join our community",
-    "joinDesc": "Join our Discord to give us feedback!",
-    "joinBtn": "Join and give feedback",
     "versionLabel": "Version {{version}}",
     "unknownVersionOrCommit": "<unknown>",
     "exportLogs": {
