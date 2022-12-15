@@ -167,8 +167,6 @@ export default function NewSeedVerify({
   }
 
   const handleAdd = (wordIndex: number) => {
-    if (isValidSeed) return
-
     const position =
       activePlaceholder >= 0
         ? activePlaceholder
@@ -203,6 +201,7 @@ export default function NewSeedVerify({
   }
 
   const handlePlaceholderClick = (position: number): void => {
+    if (isValidSeed) return
     const { selectedWord } = placeholderList[position]
 
     // Clear if placeholder is not empty
