@@ -1,6 +1,30 @@
 import React, { ReactElement } from "react"
 
-export default function BrowserTabContainer({
+function LegacyBrowserTabContainer({
+  children,
+}: {
+  children: React.ReactNode
+}): ReactElement {
+  return (
+    <>
+      <div className="container">{children}</div>
+      <style jsx>{`
+        .container {
+          height: 100%;
+          background: no-repeat 2rem 2rem / 205px auto
+              url("/images/logo_horizontal.svg"),
+            no-repeat bottom / cover url("/images/tab_background.svg"),
+            linear-gradient(to top, #10322f, var(--hunter-green) 100%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+      `}</style>
+    </>
+  )
+}
+
+function BrowserTabContainer({
   children,
 }: {
   children: React.ReactNode
@@ -11,7 +35,7 @@ export default function BrowserTabContainer({
         <div className="cover gradient-1" />
         <div className="cover gradient-2" />
         <div className="cover gradient-3" />
-        {children}
+        <div className="wrapper">{children}</div>
       </div>
 
       <style jsx>{`
@@ -22,6 +46,13 @@ export default function BrowserTabContainer({
           flex-direction: column;
           align-items: center;
         }
+
+        .wrapper {
+          height: 100%;
+          width: 100%;
+          position: relative;
+        }
+
         .cover {
           position: absolute;
           top: 0;
@@ -54,25 +85,32 @@ export default function BrowserTabContainer({
 
         /* top left to bottom */
         .gradient-2 {
-          --originX: calc(148vw / 2);
-          --left: 40vw;
-          --top: -67px;
           background: radial-gradient(
-            circle var(--originX) at var(--left) var(--top),
-            hsl(175.77, 49.65%, 28.04%),
-            hsla(175.77, 49.68%, 27.81%, 0.9803241) 9.99%,
-            hsla(175.76, 49.77%, 27.18%, 0.9259259) 19.07%,
-            hsla(175.74, 49.92%, 26.2%, 0.84375) 27.44%,
-            hsla(175.71, 50.14%, 24.92%, 0.7407407) 35.26%,
-            hsla(175.68, 50.46%, 23.38%, 0.6238426) 42.72%,
-            hsla(175.62, 50.92%, 21.62%, 0.5) 50%,
-            hsla(175.55, 51.56%, 19.71%, 0.3761574) 57.28%,
-            hsla(175.46, 52.47%, 17.72%, 0.2592593) 64.74%,
-            hsla(175.33, 53.76%, 15.75%, 0.15625) 72.56%,
-            hsla(175.19, 55.43%, 13.98%, 0.0740741) 80.93%,
-            hsla(175.06, 57.2%, 12.67%, 0.0196759) 90.01%,
-            hsla(175, 58.06%, 12.16%, 0)
+            circle,
+            rgba(36, 107, 103, 1) 0%,
+            rgba(12, 47, 44, 1) 50%,
+            rgba(4, 20, 20, 1) 100%
           );
+          background-size: 200% 200%;
+          animation: gradient 40s ease infinite;
+        }
+
+        @keyframes gradient {
+          0% {
+            background-position: 100% 100%;
+          }
+          25% {
+            background-position: 25% 75%;
+          }
+          50% {
+            background-position: 75% 50%;
+          }
+          75% {
+            background-position: 100% 75%;
+          }
+          100% {
+            background-position: 100% 100%;
+          }
         }
 
         /* bottom right */
@@ -104,3 +142,7 @@ export default function BrowserTabContainer({
     </>
   )
 }
+
+BrowserTabContainer.Legacy = LegacyBrowserTabContainer
+
+export default BrowserTabContainer

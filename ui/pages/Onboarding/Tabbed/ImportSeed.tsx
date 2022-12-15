@@ -253,7 +253,7 @@ export default function ImportSeed(props: Props): ReactElement {
 
         #recovery_phrase {
           width: 320px;
-          height: 200px;
+          height: 104px;
           border-radius: 4px;
           border: 2px solid var(--green-60);
           padding: 12px 16px;
