@@ -11,7 +11,7 @@ import PreferenceService from "../preferences"
 import { FeatureFlags, isEnabled as isFeatureFlagEnabled } from "../../features"
 
 interface Events extends ServiceLifecycleEvents {
-  placeHolderEventForTypingPurposes: string
+  enableDefaultOn: void
 }
 
 /*
@@ -62,6 +62,8 @@ export default class AnalyticsService extends BaseService<Events> {
         isEnabled,
         hasDefaultOnBeenTurnedOn,
       })
+
+      await this.emitter.emit("enableDefaultOn", undefined)
     }
 
     if (isEnabled) {

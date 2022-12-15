@@ -1484,21 +1484,10 @@ export default class Main extends BaseService<never> {
   }
 
   async connectAnalyticsService(): Promise<void> {
-    const { hasDefaultOnBeenTurnedOn } =
-      await this.preferenceService.getAnalyticsPreferences()
-
-    if (
-      isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) &&
-      !hasDefaultOnBeenTurnedOn
-    ) {
-      // TODO: Remove this in the next release after we switch on
-      //       analytics by default
-      await this.preferenceService.updateAnalyticsPreferences({
-        isEnabled: true,
-        hasDefaultOnBeenTurnedOn: true,
-      })
+    this.analyticsService.emitter.on("enableDefaultOn", () => {
       this.store.dispatch(setShowAnalyticsNotification(true))
-    }
+    })
+
     this.preferenceService.emitter.on(
       "updateAnalyticsPreferences",
       async (analyticsPreferences: AnalyticsPreferences) => {
