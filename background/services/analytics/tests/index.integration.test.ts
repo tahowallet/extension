@@ -201,7 +201,38 @@ describe("AnalyticsService", () => {
     })
   })
   describe("feature is released but disabled", () => {
-    it.todo("should not send any event when the service starts")
-    it.todo("should not send any event when the service starts")
+    beforeEach(async () => {
+      jest.spyOn(analyticsService, "sendAnalyticsEvent")
+      jest.spyOn(posthog, "sendPosthogEvent")
+      jest
+        .spyOn(preferenceService, "getAnalyticsPreferences")
+        .mockImplementation(() =>
+          Promise.resolve({
+            isEnabled: false,
+            hasDefaultOnBeenTurnedOn: true,
+          })
+        )
+
+      runtimeFlagWritable.SUPPORT_ANALYTICS = true
+      runtimeFlagWritable.ENABLE_ANALYTICS_DEFAULT_ON = true
+
+      // Initialize analytics uuid
+      await analyticsService["getOrCreateAnalyticsUUID"]()
+
+      await analyticsService.startService()
+    })
+    it("should not send any event when the service starts", async () => {
+      expect(analyticsService.sendAnalyticsEvent).not.toBeCalled()
+
+      expect(posthog.sendPosthogEvent).not.toBeCalled()
+      expect(fetch).not.toBeCalled()
+    })
+    it("should not send any event when the 'sendAnalyticsEvent()' method is called", async () => {
+      await analyticsService.sendAnalyticsEvent("Background start")
+      expect(analyticsService.sendAnalyticsEvent).toBeCalledTimes(1)
+
+      expect(posthog.sendPosthogEvent).not.toBeCalled()
+      expect(fetch).not.toBeCalled()
+    })
   })
 })
