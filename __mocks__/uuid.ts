@@ -1,9 +1,9 @@
-const mock = jest.createMockFromModule<typeof import("uuid")>("uuid")
-const actual = jest.requireActual<typeof import("uuid")>("uuid")
+const uuidMock = jest.createMockFromModule<typeof import("uuid")>("uuid")
+const uuidActual = jest.requireActual<typeof import("uuid")>("uuid")
 
-const v4Spy = jest.spyOn(actual, "v4")
+const v4Spy = jest.spyOn(uuidActual, "v4")
 
 module.exports = {
-  ...mock,
+  ...uuidMock,
   v4: v4Spy,
 }

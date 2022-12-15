@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/dot-notation */
 
 import * as uuid from "uuid"
+import browser from "webextension-polyfill"
 
 import AnalyticsService from ".."
 import * as features from "../../../features"
@@ -29,11 +30,11 @@ describe("AnalyticsService", () => {
 
     analyticsService = await createAnalyticsService()
     preferenceService = analyticsService["preferenceService"]
-
-    jest.spyOn(preferenceService, "getAnalyticsPreferences")
   })
   describe("the setup starts with the proper environment setup", () => {
     it("PreferenceService should be initialized with isEnabled off and hasDefaultOnBeenTurnedOn off by default", async () => {
+      jest.spyOn(preferenceService, "getAnalyticsPreferences")
+
       expect(await preferenceService.getAnalyticsPreferences()).toEqual({
         isEnabled: false,
         hasDefaultOnBeenTurnedOn: false,
@@ -152,9 +153,52 @@ describe("AnalyticsService", () => {
       )
     })
   })
-  describe("feature is released and enabled", () => {
-    it.todo("should send 'Background start' event when the service starts")
-    it.todo("should set the uninstall url when the service starts")
+  describe("feature is released and enabled (analytics uuid has been created earlier)", () => {
+    beforeEach(async () => {
+      jest.spyOn(analyticsService, "sendAnalyticsEvent")
+      jest.spyOn(preferenceService, "updateAnalyticsPreferences")
+      jest
+        .spyOn(preferenceService, "getAnalyticsPreferences")
+        .mockImplementation(() =>
+          Promise.resolve({
+            isEnabled: true,
+            hasDefaultOnBeenTurnedOn: true,
+          })
+        )
+
+      runtimeFlagWritable.SUPPORT_ANALYTICS = true
+      runtimeFlagWritable.ENABLE_ANALYTICS_DEFAULT_ON = true
+
+      // Initialize analytics uuid
+      await analyticsService["getOrCreateAnalyticsUUID"]()
+
+      await analyticsService.startService()
+    })
+    it("should not run the initialization flow", async () => {
+      // uuid should be already present
+      expect(await analyticsService["getOrCreateAnalyticsUUID"]()).toEqual(
+        expect.objectContaining({ isNew: false })
+      )
+
+      expect(analyticsService.sendAnalyticsEvent).not.toHaveBeenCalledWith(
+        expect.anything(),
+        "New install",
+        undefined
+      )
+
+      expect(
+        preferenceService.updateAnalyticsPreferences
+      ).not.toHaveBeenCalled()
+    })
+    it("should send 'Background start' event when the service starts", async () => {
+      expect(analyticsService.sendAnalyticsEvent).toBeCalledTimes(1)
+      expect(analyticsService.sendAnalyticsEvent).toBeCalledWith(
+        "Background start"
+      )
+    })
+    it("should set the uninstall url when the service starts", async () => {
+      expect(browser.runtime.setUninstallURL).toBeCalledTimes(1)
+    })
   })
   describe("feature is released but disabled", () => {
     it.todo("should not send any event when the service starts")

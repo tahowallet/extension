@@ -1,16 +1,13 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
-import sinon from "sinon"
+const browserMock = jest.createMockFromModule<
+  typeof import("webextension-polyfill")
+>("webextension-polyfill")
 
-const mock = jest.createMockFromModule<typeof import("webextension-polyfill")>(
-  "webextension-polyfill"
-)
-
-const setUninstallURL = sinon.stub()
+const setUninstallURL = jest.fn()
 
 module.exports = {
-  ...mock,
+  ...browserMock,
   runtime: {
-    ...mock.runtime,
+    ...browserMock.runtime,
     setUninstallURL,
   },
 }
