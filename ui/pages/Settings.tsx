@@ -20,10 +20,25 @@ import { getLanguageIndex, getAvalableLanguages } from "../_locales"
 import { getLanguage, setLanguage } from "../_locales/i18n"
 import SettingButton from "./Settings/SettingButton"
 import { useBackgroundSelector } from "../hooks"
+import SharedIcon from "../components/Shared/SharedIcon"
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
 const FAQ_URL =
   "https://tallyhowallet.notion.site/Tally-Ho-Knowledge-Base-4d95ed5439c64d6db3d3d27abf1fdae5"
+const FOOTER_ACTIONS = [
+  {
+    icon: "icons/m/discord",
+    linkTo: "https://chat.tally.cash/",
+  },
+  {
+    icon: "twitter",
+    linkTo: "https://twitter.com/TallyCash",
+  },
+  {
+    icon: "icons/m/github",
+    linkTo: "https://github.com/tallycash/extension",
+  },
+]
 
 function VersionLabel(): ReactElement {
   const { t } = useTranslation()
@@ -263,8 +278,24 @@ export default function Settings(): ReactElement {
             />
           ))}
         </ul>
-        <VersionLabel />
       </section>
+      <div className="footer">
+        <div className="action_icons">
+          {FOOTER_ACTIONS.map(({ icon, linkTo }) => (
+            <SharedIcon
+              icon={`${icon}.svg`}
+              width={18}
+              color="var(--green-20)"
+              hoverColor="var(--trophy-gold)"
+              transitionHoverTime="0.2s"
+              onClick={() => {
+                window.open(linkTo, "_blank")?.focus()
+              }}
+            />
+          ))}
+        </div>
+        <VersionLabel />
+      </div>
       <style jsx>
         {`
           section {
@@ -286,15 +317,18 @@ export default function Settings(): ReactElement {
             font-weight: 400;
             line-height: 24px;
           }
-          .mega_discord_chat_bubble_button {
-            background: url("./images/tally_ho_chat_bubble@2x.png");
-            background-size: cover;
-            width: 266px;
-            height: 120px;
-            margin-top: 20px;
+          .footer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 16px;
+            width: 100%;
+            background-color: var(--green-95);
           }
-          .mega_discord_chat_bubble_button:hover {
-            opacity: 0.8;
+          .action_icons {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
           }
         `}
       </style>
