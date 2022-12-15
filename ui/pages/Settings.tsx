@@ -266,8 +266,8 @@ export default function Settings(): ReactElement {
   }
 
   return (
-    <>
-      <section className="standard_width_padded">
+    <section className="standard_width_padded">
+      <div className="menu">
         <h1>{t("settings.mainMenu")}</h1>
         <ul>
           {settings.general.map((setting) => (
@@ -278,7 +278,7 @@ export default function Settings(): ReactElement {
             />
           ))}
         </ul>
-      </section>
+      </div>
       <div className="footer">
         <div className="action_icons">
           {FOOTER_ACTIONS.map(({ icon, linkTo }) => (
@@ -301,8 +301,15 @@ export default function Settings(): ReactElement {
           section {
             display: flex;
             flex-flow: column;
+            justify-content: space-between;
             height: 544px;
             background-color: var(--hunter-green);
+          }
+          .menu {
+            display: flex;
+            justify-content: space-between;
+            display: flex;
+            flex-direction: column;
           }
           h1 {
             color: #fff;
@@ -318,12 +325,16 @@ export default function Settings(): ReactElement {
             line-height: 24px;
           }
           .footer {
+            width: 100vw;
+            margin-top: 20px;
+            margin-left: -24px;
+            background-color: var(--green-95);
+            text-align: center;
+            padding-top: 16px;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-top: 16px;
-            width: 100%;
-            background-color: var(--green-95);
           }
           .action_icons {
             display: flex;
@@ -332,6 +343,6 @@ export default function Settings(): ReactElement {
           }
         `}
       </style>
-    </>
+    </section>
   )
 }
