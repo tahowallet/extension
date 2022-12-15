@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { Ability } from "../services/abilities"
 import { HexString } from "../types"
+import { createBackgroundAsyncThunk } from "./utils"
 
 type AbilitiesState = {
   [address: HexString]: {
@@ -14,17 +15,13 @@ const abilitiesSlice = createSlice({
   name: "abilities",
   initialState,
   reducers: {
-    addAbilitiesForAddress: (
-      immerState,
-      { payload }: { payload: { address: HexString; abilities: Ability[] } }
-    ) => {
-      const { address, abilities } = payload
-      if (!immerState[address]) {
-        immerState[address] = {}
-      }
-
-      abilities.forEach((ability) => {
-        immerState[address][ability.uuid] = ability
+    addAbilities: (immerState, { payload }: { payload: Ability[] }) => {
+      payload.forEach((ability) => {
+        const { address } = ability
+        if (!immerState[address]) {
+          immerState[address] = {}
+        }
+        immerState[address][ability.abilityId] = ability
       })
     },
     removeAbility: (
@@ -33,9 +30,28 @@ const abilitiesSlice = createSlice({
     ) => {
       delete immerState[payload.address]?.[payload.abilityId]
     },
+    markAbilityAsCompleted: (
+      immerState,
+      { payload }: { payload: { address: HexString; abilityId: string } }
+    ) => {
+      console.log("payload: ", payload)
+      immerState[payload.address][payload.abilityId].completed = true
+    },
   },
 })
 
-export const { addAbilitiesForAddress, removeAbility } = abilitiesSlice.actions
+export const { addAbilities, removeAbility, markAbilityAsCompleted } =
+  abilitiesSlice.actions
+
+export const completeAbility = createBackgroundAsyncThunk(
+  "abilities/completeAbility",
+  async (
+    { address, abilityId }: { address: HexString; abilityId: string },
+    { dispatch, extra: { main } }
+  ) => {
+    await main.markAbilityAsCompleted(address, abilityId)
+    dispatch(markAbilityAsCompleted({ address, abilityId }))
+  }
+)
 
 export default abilitiesSlice.reducer

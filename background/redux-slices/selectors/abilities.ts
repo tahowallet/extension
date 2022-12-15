@@ -9,7 +9,11 @@ export const selectActiveAbilities = createSelector(
   (abilities) => {
     const activeAbilities: Ability[] = []
     Object.values(abilities).forEach((addressAbilities) => {
-      activeAbilities.push(...Object.values(addressAbilities))
+      activeAbilities.push(
+        ...Object.values(addressAbilities).filter(
+          (ability) => ability.completed === false
+        )
+      )
     })
     return activeAbilities
   }

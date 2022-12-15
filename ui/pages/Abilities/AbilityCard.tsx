@@ -1,11 +1,15 @@
+import { completeAbility } from "@tallyho/tally-background/redux-slices/abilities"
 import { Ability } from "@tallyho/tally-background/services/abilities"
 import React, { ReactElement } from "react"
 import SharedButton from "../../components/Shared/SharedButton"
+import SharedIcon from "../../components/Shared/SharedIcon"
+import SharedTooltip from "../../components/Shared/SharedTooltip"
+import { useBackgroundDispatch } from "../../hooks"
 import AbilityCardHeader from "./AbilityCardHeader"
 
 // eslint-disable-next-line import/prefer-default-export
 const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
-  console.log(ability)
+  const dispatch = useBackgroundDispatch()
   return (
     <>
       <div className="ability_card">
@@ -26,6 +30,30 @@ const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
           >
             Visit website
           </SharedButton>
+          <SharedTooltip
+            horizontalPosition="center"
+            width={200}
+            verticalPosition="bottom"
+            IconComponent={() => (
+              <SharedIcon
+                height={16}
+                width={16}
+                icon="icons/s/mark-read.svg"
+                color="var(--green-40)"
+                hoverColor="var(--success)"
+                onClick={() => {
+                  dispatch(
+                    completeAbility({
+                      address: ability.address,
+                      abilityId: ability.abilityId,
+                    })
+                  )
+                }}
+              />
+            )}
+          >
+            Mark as Completed
+          </SharedTooltip>
         </div>
       </div>
       <style jsx>
@@ -80,6 +108,9 @@ const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
             margin-top: 16px;
             display: flex;
             flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
           }
         `}
       </style>

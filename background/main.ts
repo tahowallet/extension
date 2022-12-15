@@ -157,7 +157,7 @@ import {
   deleteTransferredNFTs,
 } from "./redux-slices/nfts_update"
 import AbilitiesService from "./services/abilities"
-import { addAbilitiesForAddress } from "./redux-slices/abilities"
+import { addAbilities, markAbilityAsCompleted } from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -464,8 +464,8 @@ export default class Main extends BaseService<never> {
       )
 
       addresses.forEach(async (address) => {
-        const abilities = await this.abilitiesService.getAbilities(address)
-        this.store.dispatch(addAbilitiesForAddress({ address, abilities }))
+        const abilities = await this.abilitiesService.pollForAbilities(address)
+        this.store.dispatch(addAbilities(abilities))
       })
     }, 3000)
 
@@ -563,6 +563,7 @@ export default class Main extends BaseService<never> {
     this.connectSigningService()
     this.connectAnalyticsService()
     this.connectWalletConnectService()
+    this.connectAbilitiesService()
 
     // Nothing else beside creating a service should happen when feature flag is off
     if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
@@ -1512,6 +1513,15 @@ export default class Main extends BaseService<never> {
     // TODO: here comes the glue between the UI and service layer
   }
 
+  connectAbilitiesService(): void {
+    this.abilitiesService.emitter.on(
+      "initializeSavedAbilities",
+      async (savedAbilities) => {
+        this.store.dispatch(addAbilities(savedAbilities))
+      }
+    )
+  }
+
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
     const addressNetwork = this.store.getState().ui.selectedAccount
     const transaction = await this.chainService.getTransaction(
@@ -1583,6 +1593,14 @@ export default class Main extends BaseService<never> {
       logger.info("Error looking up Ethereum address: ", error)
       return undefined
     }
+  }
+
+  async markAbilityAsCompleted(
+    address: HexString,
+    abilityId: string
+  ): Promise<void> {
+    console.log("Marking as completed")
+    await this.abilitiesService.markAbilityAsCompleted(address, abilityId)
   }
 
   private connectPopupMonitor() {

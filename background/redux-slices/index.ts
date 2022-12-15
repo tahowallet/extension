@@ -19,7 +19,6 @@ import nftsUpdateReducer from "./nfts_update"
 import { FeatureFlags, isEnabled } from "../features"
 
 const mainReducer = combineReducers({
-  abilities: abilitiesReducer,
   account: accountsReducer,
   assets: assetsReducer,
   activities: activitiesReducer,
@@ -34,6 +33,9 @@ const mainReducer = combineReducers({
   earn: earnReducer,
   ledger: ledgerReducer,
   nfts: nftsReducer,
+  ...(isEnabled(FeatureFlags.SUPPORT_ABILITIES)
+    ? { abilities: abilitiesReducer }
+    : {}),
   ...(isEnabled(FeatureFlags.SUPPORT_NFT_TAB)
     ? { nftsUpdate: nftsUpdateReducer }
     : {}),
