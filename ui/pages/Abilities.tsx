@@ -1,10 +1,10 @@
-import { selectAccountAbilities } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectActiveAbilities } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
 import { useSelector } from "react-redux"
 import AbilityCard from "./Abilities/AbilityCard"
 
 export default function Abilities(): ReactElement {
-  const abilities = useSelector(selectAccountAbilities)
+  const abilities = useSelector(selectActiveAbilities)
 
   return (
     <>

@@ -1,7 +1,7 @@
 import { Ability } from "@tallyho/tally-background/services/abilities"
 import React, { ReactElement } from "react"
 import SharedButton from "../../components/Shared/SharedButton"
-import AbilityLabel from "./AbilityLabel"
+import AbilityCardHeader from "./AbilityCardHeader"
 
 // eslint-disable-next-line import/prefer-default-export
 const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
@@ -9,7 +9,7 @@ const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
   return (
     <>
       <div className="ability_card">
-        <AbilityLabel type={ability.type} />
+        <AbilityCardHeader ability={ability} />
         <div title={ability.title} className="title">
           {ability.title}
         </div>

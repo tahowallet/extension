@@ -27,14 +27,14 @@ type Community = {
   imageUrl: string
 }
 
-type AbilityRequirement =
+export type DaylightAbilityRequirement =
   | TokenBalanceRequirement
   | NFTRequirement
   | AllowListRequirement
 
 type TokenBalanceRequirement = {
   chain: string
-  type: string
+  type: "hasTokenBalance"
   address: string
   community?: Array<Community>
   minAmount?: number
@@ -42,14 +42,14 @@ type TokenBalanceRequirement = {
 
 type NFTRequirement = {
   chain: string
-  type: string
+  type: "hasNftWithSpecificId"
   address: string
   id: string
 }
 
 type AllowListRequirement = {
   chain: string
-  type: string
+  type: "onAllowlist"
   addresses: Array<string>
 }
 
@@ -76,7 +76,7 @@ export type DaylightAbility = {
   uid: string
   slug: string
   action: DaylightAbilityAction
-  requirements: Array<AbilityRequirement>
+  requirements: Array<DaylightAbilityRequirement>
 }
 
 type AbilitiesResponse = {
@@ -90,6 +90,7 @@ export const getDaylightAbilities = async (
   address: string
 ): Promise<DaylightAbility[]> => {
   const response: AbilitiesResponse = await fetchJson(
+    // `${DAYLIGHT_BASE_URL}/${address}/abilities?deadline=set`
     `${DAYLIGHT_BASE_URL}/${address}/abilities`
   )
 

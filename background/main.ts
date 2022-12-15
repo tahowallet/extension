@@ -459,11 +459,14 @@ export default class Main extends BaseService<never> {
     this.store = initializeStore(savedReduxState, this)
 
     setTimeout(async () => {
-      const abilities = await this.abilitiesService.getAbilities(
-        this.store.getState().ui.selectedAccount.address
+      const addresses = (await this.chainService.getAccountsToTrack()).map(
+        (account) => account.address
       )
 
-      this.store.dispatch(setAbilities(abilities))
+      addresses.forEach(async (address) => {
+        const abilities = await this.abilitiesService.getAbilities(address)
+        this.store.dispatch(setAbilities(abilities))
+      })
     }, 3000)
 
     wrapStore(this.store, {

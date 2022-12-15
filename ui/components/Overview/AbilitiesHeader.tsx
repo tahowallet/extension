@@ -14,13 +14,20 @@ export default function AbilitiesHeader(): ReactElement {
       <div className="abilities_header">
         <div className="info_container">
           <div className="abilities_info">
-            <div className="icon_eth" />
+            <div className="icon_daylight" />
             <div>Daylight abilities</div>
           </div>
           <div
             onClick={() => {
               history.push("abilities")
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                history.push("abilities")
+              }
+            }}
+            role="button"
+            tabIndex={0}
             className="ability_count"
           >
             {abilityCount}
@@ -32,6 +39,7 @@ export default function AbilitiesHeader(): ReactElement {
           display: flex;
           flex-direction: row;
           justify-content: space-between;
+          align-items: center;
           padding: 16px;
         }
         .abilities_header {
