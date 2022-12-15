@@ -3,18 +3,20 @@ import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
 
 export default function SettingButton(props: {
-  link: string
   label: string
   ariaLabel: string
+  icon: string
+  link?: string
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
 }): ReactElement {
-  const { link, ariaLabel, label } = props
+  const { link, ariaLabel, label, icon, onClick } = props
 
   return (
-    <SharedButton type="unstyled" size="medium" linkTo={link}>
+    <SharedButton type="unstyled" size="medium" linkTo={link} onClick={onClick}>
       <div className="button_row">
         <div className="action_name">{label}</div>
         <SharedIcon
-          icon="icons/s/continue.svg"
+          icon={`icons/s/${icon}.svg`}
           width={16}
           color="var(--green-20)"
           ariaLabel={ariaLabel}
