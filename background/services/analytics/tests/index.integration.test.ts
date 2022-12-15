@@ -28,19 +28,13 @@ describe("AnalyticsService", () => {
     jest.clearAllMocks()
 
     analyticsService = await createAnalyticsService()
-
     preferenceService = analyticsService["preferenceService"]
 
     jest.spyOn(preferenceService, "getAnalyticsPreferences")
-    jest.spyOn(preferenceService, "updateAnalyticsPreferences")
-    jest.spyOn(preferenceService.emitter, "emit")
-    jest.spyOn(analyticsService["db"], "setAnalyticsUUID")
-    jest.spyOn(analyticsService, "sendAnalyticsEvent")
-    jest.spyOn(posthog, "sendPosthogEvent")
   })
   describe("the setup starts with the proper environment setup", () => {
     it("PreferenceService should be initialized with isEnabled off and hasDefaultOnBeenTurnedOn off by default", async () => {
-      expect(await preferenceService.getAnalyticsPreferences()).toStrictEqual({
+      expect(await preferenceService.getAnalyticsPreferences()).toEqual({
         isEnabled: false,
         hasDefaultOnBeenTurnedOn: false,
       })
@@ -71,6 +65,8 @@ describe("AnalyticsService", () => {
   })
   describe("before the feature is released (the feature flags are off)", () => {
     beforeEach(async () => {
+      jest.spyOn(analyticsService, "sendAnalyticsEvent")
+
       runtimeFlagWritable.SUPPORT_ANALYTICS = false
       runtimeFlagWritable.ENABLE_ANALYTICS_DEFAULT_ON = false
 
@@ -89,6 +85,12 @@ describe("AnalyticsService", () => {
   })
   describe("when the feature is released (feature flags are on, but settings is still off)", () => {
     beforeEach(async () => {
+      jest.spyOn(analyticsService["db"], "setAnalyticsUUID")
+      jest.spyOn(analyticsService.emitter, "emit")
+      jest.spyOn(preferenceService, "updateAnalyticsPreferences")
+      jest.spyOn(preferenceService.emitter, "emit")
+      jest.spyOn(posthog, "sendPosthogEvent")
+
       runtimeFlagWritable.SUPPORT_ANALYTICS = true
       runtimeFlagWritable.ENABLE_ANALYTICS_DEFAULT_ON = true
 
@@ -97,13 +99,23 @@ describe("AnalyticsService", () => {
 
     it("should change isEnabled and hasDefaultOnBeenTurnedOn to true in PreferenceService", async () => {
       // The default off value for analytics settings in PreferenceService has a test in the environment setup describe
-      expect(await preferenceService.getAnalyticsPreferences()).toStrictEqual({
+      expect(await preferenceService.getAnalyticsPreferences()).toEqual({
         isEnabled: true,
         hasDefaultOnBeenTurnedOn: true,
       })
       expect(preferenceService.updateAnalyticsPreferences).toBeCalledTimes(1)
     })
-    it("should emit settings update event to notify UI", async () => {
+    it("should emit enableDefaultOn and settings update event to notify UI", async () => {
+      expect(analyticsService.emitter.emit).toBeCalledTimes(2)
+      expect(analyticsService.emitter.emit).toHaveBeenCalledWith(
+        "enableDefaultOn",
+        undefined
+      )
+      expect(analyticsService.emitter.emit).toHaveBeenCalledWith(
+        "serviceStarted",
+        undefined
+      )
+
       expect(preferenceService.emitter.emit).toBeCalledTimes(1)
       expect(preferenceService.emitter.emit).toBeCalledWith(
         "updateAnalyticsPreferences",
@@ -115,10 +127,12 @@ describe("AnalyticsService", () => {
       expect(preferenceService.updateAnalyticsPreferences).toBeCalledTimes(1)
     })
 
-    it("should generate a new uuid", async () => {
+    it("should generate a new uuid and save it to database", async () => {
       // Called once for generating the new user uuid
       // and once for the 'Background start' and once for the `New install' event
       expect(uuid.v4).toBeCalledTimes(3)
+
+      expect(analyticsService["db"].setAnalyticsUUID).toBeCalledTimes(1)
     })
 
     it("should send 'New Install' and 'Background start' events", () => {
@@ -126,12 +140,16 @@ describe("AnalyticsService", () => {
       // During initialization we send 2 events
       expect(fetch).toBeCalledTimes(2)
 
-      const [[, firstEventName], [, secondEventName]] = (
-        posthog.sendPosthogEvent as unknown as jest.SpyInstance
-      ).mock.calls
-
-      expect(firstEventName).toBe("New install")
-      expect(secondEventName).toBe("Background start")
+      expect(posthog.sendPosthogEvent).toHaveBeenCalledWith(
+        expect.anything(),
+        "New install",
+        undefined
+      )
+      expect(posthog.sendPosthogEvent).toHaveBeenCalledWith(
+        expect.anything(),
+        "Background start",
+        undefined
+      )
     })
   })
   describe("feature is released and enabled", () => {
