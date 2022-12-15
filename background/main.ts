@@ -157,7 +157,7 @@ import {
   deleteTransferredNFTs,
 } from "./redux-slices/nfts_update"
 import AbilitiesService from "./services/abilities"
-import { setAbilities } from "./redux-slices/abilities"
+import { addAbilitiesForAddress } from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -465,7 +465,7 @@ export default class Main extends BaseService<never> {
 
       addresses.forEach(async (address) => {
         const abilities = await this.abilitiesService.getAbilities(address)
-        this.store.dispatch(setAbilities(abilities))
+        this.store.dispatch(addAbilitiesForAddress({ address, abilities }))
       })
     }, 3000)
 
