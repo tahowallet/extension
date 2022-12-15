@@ -49,7 +49,7 @@ import { isSameAsset, useSwapQuote } from "../utils/swap"
 import { useOnMount, usePrevious, useInterval } from "../hooks/react-hooks"
 import SharedLoadingDoggo from "../components/Shared/SharedLoadingDoggo"
 
-const REFRESH_QUOTE_INTERVAL = 5 * SECOND
+const REFRESH_QUOTE_INTERVAL = 10 * SECOND
 
 export default function Swap(): ReactElement {
   const { t } = useTranslation()
@@ -367,14 +367,18 @@ export default function Swap(): ReactElement {
       !amountInputHasFocus &&
       sellAsset &&
       buyAsset &&
-      sellAmount
-    )
+      (sellAmount || buyAmount)
+    ) {
+      const type = sellAmount ? "getBuyAmount" : "getSellAmount"
+      const amount = sellAmount || buyAmount
+
       requestQuoteUpdate({
-        type: "getBuyAmount",
-        amount: sellAmount,
+        type,
+        amount,
         sellAsset,
         buyAsset,
       })
+    }
   }, REFRESH_QUOTE_INTERVAL)
 
   useOnMount(() => {
@@ -530,13 +534,14 @@ export default function Swap(): ReactElement {
                 }}
                 label={t("swap.to")}
               />
-              {loadingQuote && sellAsset && buyAsset && (
-                <SharedLoadingDoggo
-                  size={54}
-                  message="Fetching price"
-                  margin="15px 0 0 0"
-                />
-              )}
+              <div className="loading_wrapper">
+                {loadingQuote && sellAsset && buyAsset && (
+                  <SharedLoadingDoggo
+                    size={54}
+                    message={t("swap.loadingQuote")}
+                  />
+                )}
+              </div>
             </div>
             <div className="settings_wrap">
               {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
@@ -603,6 +608,12 @@ export default function Swap(): ReactElement {
             font-weight: 500;
             line-height: 32px;
           }
+
+          .loading_wrapper {
+            min-height: 73.5px;
+            margin: 16px 0 32px;
+          }
+
           .footer {
             display: flex;
             justify-content: center;
