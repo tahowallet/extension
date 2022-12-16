@@ -1,6 +1,6 @@
 import { BigNumber, ethers, utils } from "ethers"
 import { normalizeHexAddress, toChecksumAddress } from "@tallyho/hd-keyring"
-import { HexString } from "../../types"
+import { HexString, UNIXTime } from "../../types"
 import { EVMNetwork } from "../../networks"
 import { ETHEREUM, GOERLI } from "../../constants"
 import { AddressOnNetwork } from "../../accounts"
@@ -171,3 +171,5 @@ export const hexToAscii = (hex_: string): string => {
 
 export const wait = (ms: number): Promise<void> =>
   new Promise<void>((r) => setTimeout(r, ms))
+
+export const getUNIXTimestamp = (): UNIXTime => Math.floor(Date.now() / 1000)

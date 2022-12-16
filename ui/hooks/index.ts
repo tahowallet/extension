@@ -7,6 +7,7 @@ export * from "./redux-hooks"
 export * from "./signing-hooks"
 export * from "./dom-hooks"
 export * from "./validation-hooks"
+export * from "./nft-hooks"
 
 export function useIsDappPopup(): boolean {
   const [isDappPopup, setIsDappPopup] = useState(false)

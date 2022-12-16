@@ -79,7 +79,7 @@ export default function NFTsHover(props: {
           justify-content: center;
           background: rgba(0, 20, 19, 0.75); // --green-120
           border-radius: 4px;
-          backdrop-filter: blur(2px);
+          backdrop-filter: blur(8px);
           font-size: 14px;
           font-weight: 500;
           line-height: 16px;
