@@ -80,7 +80,15 @@ export default class WalletConnectService extends BaseService<Events> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    await this.initializeWalletConnect()
+    this.signClient = await createSignClient()
+    this.defineEventHandlers()
+
+    this.providerBridgeService.emitter.on(
+      "walletConnectInit",
+      async (wcUri: string) => {
+        this.performConnection(wcUri)
+      }
+    )
   }
 
   protected override async internalStopService(): Promise<void> {
@@ -88,20 +96,6 @@ export default class WalletConnectService extends BaseService<Events> {
     // this.db.close()
 
     await super.internalStopService()
-  }
-
-  private async initializeWalletConnect() {
-    this.signClient = await createSignClient()
-    this.defineEventHandlers()
-
-    // TODO: remove this, inject uri
-    // simulate connection attempt
-    const wcUri =
-      "wc:70e3ca637cd88494fd6e68d348c0f3940a73911bb272e409b28c28faaa9d89f5@2?relay-protocol=irn&symKey=8bcd2d3018dda379dd836b19a56ee4b70506ba20615f6c1b70e9b622c7fce73c"
-
-    setTimeout(() => {
-      this.performConnection(wcUri)
-    }, 2000)
   }
 
   private defineEventHandlers(): void {
