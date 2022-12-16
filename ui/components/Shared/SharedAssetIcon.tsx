@@ -1,12 +1,7 @@
-import React, {
-  ReactElement,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { storageGatewayURL } from "@tallyho/tally-background/lib/storage-gateway"
 import classNames from "classnames"
+import { useIntersectionObserver } from "../../hooks"
 
 type Props = {
   size: "small" | "medium" | "large" | number
@@ -27,45 +22,6 @@ function getAsHttpURL(anyURL: string) {
   return httpURL
 }
 
-type TypedIntersectionObserverEntry<T extends Element> =
-  IntersectionObserverEntry & {
-    target: T
-  }
-
-function useIntersectionObserver<T extends React.RefObject<HTMLElement>>(
-  ref: T,
-  callback: (
-    element: TypedIntersectionObserverEntry<
-      T extends React.RefObject<infer U> ? U : never
-    >
-  ) => void,
-  options: IntersectionObserverInit
-) {
-  const callbackRef = useRef(callback)
-  const [obs] = useState(
-    () =>
-      new IntersectionObserver(([element]) => {
-        callbackRef.current(
-          element as TypedIntersectionObserverEntry<
-            T extends React.RefObject<infer U> ? U : never
-          >
-        )
-      }, options)
-  )
-
-  useLayoutEffect(() => {
-    const target = ref.current
-
-    if (target) {
-      obs.observe(ref.current)
-    }
-
-    return () => {
-      if (target) obs.unobserve(target)
-    }
-  }, [ref, obs])
-}
-
 export default function SharedAssetIcon(props: Props): ReactElement {
   const { size, logoURL, symbol } = props
 
@@ -78,15 +34,13 @@ export default function SharedAssetIcon(props: Props): ReactElement {
 
   const sizeClass = typeof size === "string" ? size : "custom_size"
 
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useIntersectionObserver(
-    containerRef,
-    (entry) => {
-      if (entry.isIntersecting) {
-        setIsVisible(true)
-      }
-    },
+  const containerObserverCallback = useCallback(([entry]) => {
+    if (entry.isIntersecting) {
+      setIsVisible(true)
+    }
+  }, [])
+  const containerRef = useIntersectionObserver<HTMLDivElement>(
+    containerObserverCallback,
     { threshold: 0.01, root: null, rootMargin: "50px 0px 50px 0px" }
   )
 

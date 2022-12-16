@@ -5,6 +5,7 @@ import {
   useState,
   useCallback,
   useMemo,
+  useLayoutEffect,
 } from "react"
 
 export const useOnClickOutside = <T extends HTMLElement = HTMLElement>(
@@ -139,24 +140,27 @@ export function useLocalStorage(
 }
 
 export function useIntersectionObserver<T extends HTMLElement>(
-  callback: IntersectionObserverCallback,
-  options?: { threshold: number }
+  callback: IntersectionObserverCallback, // should be created with useCallback
+  initialOptions?: IntersectionObserverInit
 ): RefObject<T> {
-  const ref = useRef<T>(null)
-  const observer = useMemo(
-    () => new IntersectionObserver(callback, options),
-    [callback, options]
-  )
+  const optionsRef = useRef(initialOptions)
+  const elementRef = useRef<T>(null)
 
-  useEffect(() => {
-    const element = ref.current
+  const observer = useMemo(() => {
+    return new IntersectionObserver(callback, optionsRef.current)
+  }, [callback, optionsRef])
+
+  useLayoutEffect(() => {
+    const element = elementRef.current
+
     if (element) {
-      observer.observe(ref.current)
+      observer.observe(elementRef.current)
     }
+
     return () => {
       if (element) observer.unobserve(element)
     }
-  }, [observer])
+  }, [elementRef, observer])
 
-  return ref
+  return elementRef
 }
