@@ -1,19 +1,23 @@
+import { SignClientTypes } from "@walletconnect/types"
+import {
+  EIP1193Error,
+  EIP1193_ERROR_CODES,
+} from "@tallyho/provider-bridge-shared"
 import {
   formatJsonRpcError,
   formatJsonRpcResult,
   JsonRpcError,
   JsonRpcResult,
 } from "@json-rpc-tools/utils"
-import { SignClientTypes } from "@walletconnect/types"
+import { TranslatedRequestParams } from "./types"
 
 export function approveEIP155Request(
-  requestEvent: SignClientTypes.EventArguments["session_request"],
+  request: TranslatedRequestParams,
   signedMessage: string
 ): JsonRpcResult<any> {
-  const { params, id } = requestEvent
-  const { request } = params
+  const { id, method } = request
 
-  switch (request.method) {
+  switch (method) {
     case "eth_sign":
     case "personal_sign":
     case "eth_signTransaction":
@@ -26,9 +30,33 @@ export function approveEIP155Request(
 }
 
 export function rejectEIP155Request(
-  request: SignClientTypes.EventArguments["session_request"]
+  request: TranslatedRequestParams
 ): JsonRpcError {
   const { id } = request
 
   return formatJsonRpcError(id, "JSONRPC_REQUEST_METHOD_REJECTED")
+}
+
+export function processRequestParams(
+  event: SignClientTypes.EventArguments["session_request"]
+): TranslatedRequestParams {
+  // TODO: figure out if this method is needed
+  const { id, params: eventParams, topic } = event
+  // TODO: handle chain id
+  const { request } = eventParams
+
+  switch (request.method) {
+    case "eth_sign":
+    case "personal_sign":
+    case "eth_sendTransaction":
+    case "eth_signTransaction":
+      return {
+        id,
+        topic,
+        method: request.method,
+        params: request.params,
+      }
+    default:
+      throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
+  }
 }

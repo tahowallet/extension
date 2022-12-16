@@ -1,12 +1,7 @@
-import SignClient from "@walletconnect/sign-client"
 import { parseUri } from "@walletconnect/utils"
 import { SignClientTypes, SessionTypes } from "@walletconnect/types"
-import {
-  EIP1193Error,
-  EIP1193_ERROR_CODES,
-  isEIP1193Error,
-  RPCRequest,
-} from "@tallyho/provider-bridge-shared"
+import SignClient from "@walletconnect/sign-client"
+import { isEIP1193Error } from "@tallyho/provider-bridge-shared"
 
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 
@@ -14,23 +9,27 @@ import BaseService from "../base"
 import PreferenceService from "../preferences"
 import ProviderBridgeService from "../provider-bridge"
 import InternalEthereumProviderService from "../internal-ethereum-provider"
-import { browser } from "../.."
 import {
   approveEIP155Request,
+  processRequestParams,
   rejectEIP155Request,
 } from "./eip155-request-utils"
+
+import createSignClient from "./sign-client-helper"
+import {
+  acknowledgeLegacyProposal,
+  createLegacySignClient,
+  LegacyEventData,
+  postLegacyApprovalResponse,
+  postLegacyRejectionResponse,
+  processLegacyRequestParams,
+} from "./legacy-sign-client-helper"
+import { getMetaPort } from "./utils"
+import { TranslatedRequestParams } from "./types"
 
 interface Events extends ServiceLifecycleEvents {
   placeHolderEventForTypingPurposes: string
 }
-
-interface TranslatedRequestParams {
-  topic?: string
-  method: string
-  params: RPCRequest["params"]
-}
-
-const temporaryDAppUri = "https://react-dapp-v2-with-ethers.vercel.app" // TODO: this constant should be removed and replaced with a dynamic value
 
 /*
  * The walletconnect service is responsible for encapsulating the wallet connect
@@ -43,6 +42,8 @@ const temporaryDAppUri = "https://react-dapp-v2-with-ethers.vercel.app" // TODO:
  */
 export default class WalletConnectService extends BaseService<Events> {
   signClient: SignClient | undefined
+
+  senderUrl = ""
 
   /*
    * Create a new WalletConnectService. The service isn't initialized until
@@ -89,9 +90,8 @@ export default class WalletConnectService extends BaseService<Events> {
     await super.internalStopService()
   }
 
-  // eslint-disable-next-line class-methods-use-this
   private async initializeWalletConnect() {
-    this.signClient = await WalletConnectService.createSignClient()
+    this.signClient = await createSignClient()
     this.defineEventHandlers()
 
     // TODO: remove this, inject uri
@@ -104,28 +104,13 @@ export default class WalletConnectService extends BaseService<Events> {
     }, 2000)
   }
 
-  private static createSignClient(): Promise<SignClient> {
-    return SignClient.init({
-      logger: "debug", // TODO: set from .env
-      projectId: "9ab2e13df08600b06ac588e1292d6512", // TODO: set from .env
-      relayUrl: "wss://relay.walletconnect.com",
-      metadata: {
-        // TODO: customize this metadata
-        name: "Tally Ho Wallet",
-        description: "WalletConnect for Tally Ho wallet",
-        url: "https://walletconnect.com/",
-        icons: ["https://avatars.githubusercontent.com/u/37784886"],
-      },
-    })
-  }
-
   private defineEventHandlers(): void {
     this.signClient?.on("session_proposal", (proposal) =>
-      this.sessionProposalListener(proposal)
+      this.sessionProposalListener(false, proposal)
     )
 
     this.signClient?.on("session_request", (event) =>
-      this.sessionRequestListener(event)
+      this.sessionRequestListener(false, event)
     )
   }
 
@@ -140,10 +125,11 @@ export default class WalletConnectService extends BaseService<Events> {
 
       // Route the provided URI to the v1 SignClient if URI version indicates it, else use v2.
       if (version === 1) {
-        // createLegacySignClient({ uri })
-        WalletConnectService.tempFeatureLog(
-          "TODO: unsupported legacy",
-          parseUri(uri)
+        WalletConnectService.tempFeatureLog("legacy pairing", parseUri(uri))
+        createLegacySignClient(
+          uri,
+          (payload) => this.sessionProposalListener(true, payload),
+          (payload) => this.sessionRequestListener(true, undefined, payload)
         )
       } else if (version === 2) {
         await this.signClient.pair({ uri })
@@ -165,6 +151,7 @@ export default class WalletConnectService extends BaseService<Events> {
     const { id, params } = proposal
     const { requiredNamespaces, relays } = params
 
+    WalletConnectService.tempFeatureLog("proposal", proposal)
     WalletConnectService.tempFeatureLog(
       "requiredNamespaces",
       requiredNamespaces
@@ -194,7 +181,7 @@ export default class WalletConnectService extends BaseService<Events> {
   }
 
   private async postApprovalResponse(
-    event: SignClientTypes.EventArguments["session_request"],
+    event: TranslatedRequestParams,
     payload: any
   ) {
     const { topic } = event
@@ -205,9 +192,7 @@ export default class WalletConnectService extends BaseService<Events> {
     })
   }
 
-  private async postRejectionResponse(
-    event: SignClientTypes.EventArguments["session_request"]
-  ) {
+  private async postRejectionResponse(event: TranslatedRequestParams) {
     const { topic } = event
     const response = rejectEIP155Request(event)
     await this.signClient?.respond({
@@ -216,96 +201,85 @@ export default class WalletConnectService extends BaseService<Events> {
     })
   }
 
-  private static getMetaPort(
-    name: string,
-    postMessage: (message: any) => void
-  ): Required<browser.Runtime.Port> {
-    const port: browser.Runtime.Port = browser.runtime.connect({
-      name,
-    })
-    port.sender = {
-      url: temporaryDAppUri,
-    }
-    port.postMessage = postMessage
-    return port as unknown as Required<browser.Runtime.Port>
-  }
-
-  private static processRequestParams(
-    event: SignClientTypes.EventArguments["session_request"]
-  ): TranslatedRequestParams {
-    // TODO: figure out if this method is needed
-    const { params: eventParams } = event
-    // TODO: handle chain id
-    const { request } = eventParams
-
-    switch (request.method) {
-      case "eth_signTypedData":
-      case "eth_signTypedData_v1":
-      case "eth_signTypedData_v3":
-      case "eth_signTypedData_v4":
-        return {
-          method: request.method,
-          params: request.params,
-        }
-      case "eth_sign": // --- important wallet methods ---
-      case "personal_sign":
-      case "eth_sendTransaction":
-        return {
-          method: request.method,
-          params: request.params,
-        }
-      case "eth_signTransaction":
-        return {
-          method: request.method,
-          params: request.params,
-        }
-      default:
-        throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
-    }
-  }
-
   async sessionRequestListener(
-    event: SignClientTypes.EventArguments["session_request"]
+    isLegacy: boolean, // TODO: this along with @legacyEvent should be removed when we fully migrate to v2, @event should become non optional
+    event?: SignClientTypes.EventArguments["session_request"],
+    legacyEvent?: LegacyEventData
   ): Promise<void> {
     WalletConnectService.tempFeatureLog("in sessionRequestListener", event)
-    const { method, params } = WalletConnectService.processRequestParams(event)
 
-    const port = WalletConnectService.getMetaPort(
+    let request: TranslatedRequestParams | undefined
+    if (isLegacy && legacyEvent) {
+      request = processLegacyRequestParams(legacyEvent)
+    } else if (event) {
+      request = processRequestParams(event)
+    }
+
+    const port = getMetaPort(
       "sessionRequestListenerPort",
+      this.senderUrl,
       async (message) => {
         WalletConnectService.tempFeatureLog(
           "sessionRequestListenerPort message:",
           message
         )
 
-        // TODO: make this check more elaborate
+        if (!request) {
+          return
+        }
+
         if (isEIP1193Error(message.result)) {
-          await this.postRejectionResponse(event)
+          if (isLegacy) {
+            postLegacyRejectionResponse(request)
+          } else {
+            await this.postRejectionResponse(request)
+          }
+        } else if (isLegacy) {
+          postLegacyApprovalResponse(request, message.result)
         } else {
-          await this.postApprovalResponse(event, message.result)
+          await this.postApprovalResponse(request, message.result)
         }
       }
     )
 
+    if (!request) {
+      return
+    }
+
     await this.providerBridgeService.onMessageListener(port, {
       id: "1400",
-      request: {
-        method,
-        params,
-      },
+      request,
     })
   }
 
   async sessionProposalListener(
+    isLegacy: boolean,
     proposal: SignClientTypes.EventArguments["session_proposal"]
   ): Promise<void> {
-    WalletConnectService.tempFeatureLog("in sessionProposalListener")
+    WalletConnectService.tempFeatureLog("in sessionProposalListener", proposal)
 
-    const port = WalletConnectService.getMetaPort(
+    const { params } = proposal
+
+    if (isLegacy && Array.isArray(params) && params.length > 0) {
+      this.senderUrl = params[0].peerMeta?.url || ""
+    } else if (params) {
+      this.senderUrl = params.proposer.metadata.url // we can also extract information such as icons and description
+    }
+
+    if (!this.senderUrl) {
+      return
+    }
+
+    const port = getMetaPort(
       "sessionProposalListenerPort",
+      this.senderUrl,
       async (message) => {
         if (Array.isArray(message.result) && message.result.length > 0) {
-          await this.acknowledgeProposal(proposal, message.result[0])
+          if (isLegacy) {
+            acknowledgeLegacyProposal(message.result)
+          } else if (proposal) {
+            await this.acknowledgeProposal(proposal, message.result[0])
+          }
           WalletConnectService.tempFeatureLog("pairing request acknowledged")
         }
       }
@@ -320,7 +294,9 @@ export default class WalletConnectService extends BaseService<Events> {
     })
   }
 
+  /* eslint-disable */
   private static tempFeatureLog(message?: any, ...optionalParams: any[]): void {
-    console.log(`[WalletConnect Demo] - ${message || ""}`, optionalParams)
+    console.log(`[WalletConnect Demo] - ${message || ""}`, ...optionalParams)
   }
+  /* eslint-enable */
 }
