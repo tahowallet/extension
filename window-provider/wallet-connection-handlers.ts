@@ -446,6 +446,7 @@ function findAndReplaceAlpacaFinanceMetamaskOption(addedNode: Node): void {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function addTallyButtonForWalletConnectModal(addedNode: Node): void {
   // For some reason this fails with children but works with childNodes.
   // childNodes is a NodeList and Node elements don't have className in their types.
@@ -497,5 +498,7 @@ export default function monitorForWalletConnectionPrompts(): void {
     }
   })
 
-  observeMutations(addTallyButtonForWalletConnectModal)
+  // Commenting this out for now, because we don't have a way to put this behind a feature flag
+  // SUPPORT_WALLET_CONNECT flag
+  // observeMutations(addTallyButtonForWalletConnectModal)
 }
