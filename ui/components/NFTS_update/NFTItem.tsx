@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import { NFT } from "@tallyho/tally-background/nfts"
 import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
 import NFTImage from "./NFTImage"
@@ -12,14 +12,29 @@ export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
   onClick: (value: T) => void
 }): ReactElement {
   const { onClick, isCollection = false, isExpanded = false, item } = props
-  const { name = "No title", network, thumbnail } = item
+  const { name = "No title", network, thumbnailURL } = item
+
   const floorPrice =
     "floorPrice" in item && item.floorPrice?.value && item.floorPrice
-  const nftsCount = "nfts" in item && item.nfts.length
+  const nftsCount = "nftCount" in item && item.nftCount
+  const isBadge = "isBadge" in item && item.isBadge
+
+  const [hasHover, setHasHover] = useState(false)
   return (
     <div className="nft_item">
-      <div className="nft_image">
-        <NFTImage src={thumbnail} alt={name} width={168} height={168} />
+      <div
+        className="nft_image"
+        onMouseEnter={() => setHasHover(true)}
+        onMouseLeave={() => setHasHover(false)}
+      >
+        <NFTImage
+          src={thumbnailURL}
+          alt={name}
+          width={168}
+          height={168}
+          isBadge={isBadge}
+          isZoomed={hasHover || isExpanded}
+        />
         <div className="nft_image_details">
           <SharedNetworkIcon
             network={network}
@@ -40,7 +55,7 @@ export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
         />
       </div>
       <div className="nft_item_details">
-        <span className="ellipsis">{name}</span>
+        <span className="ellipsis">{name?.length ? name : "No title"}</span>
         {!!nftsCount && <span className="nft_item_count">({nftsCount})</span>}
       </div>
       <style jsx>{`

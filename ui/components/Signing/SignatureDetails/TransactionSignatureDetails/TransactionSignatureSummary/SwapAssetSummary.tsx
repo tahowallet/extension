@@ -24,7 +24,7 @@ export default function SwapAssetSummary({
 
   const fromAssetPricePoint = selectAssetPricePoint(
     assets,
-    fromAssetAmount.asset.symbol,
+    fromAssetAmount.asset,
     mainCurrencySymbol
   )
   const localizedFromMainCurrencyAmount =
@@ -36,7 +36,7 @@ export default function SwapAssetSummary({
 
   const toAssetPricePoint = selectAssetPricePoint(
     assets,
-    toAssetAmount.asset.symbol,
+    toAssetAmount.asset,
     mainCurrencySymbol
   )
   const localizedToMainCurrencyAmount =

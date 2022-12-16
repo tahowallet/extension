@@ -3,6 +3,7 @@ import {
   ARBITRUM_NOVA,
   ARBITRUM_ONE,
   AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
@@ -58,7 +59,20 @@ export const productionNetworks = [
           isDisabled: true,
         },
       ]),
-
+  ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
+    ? [
+        {
+          network: BINANCE_SMART_CHAIN,
+          info: i18n.t("protocol.compatibleChain"),
+        },
+      ]
+    : [
+        {
+          network: BINANCE_SMART_CHAIN,
+          info: i18n.t("comingSoon"),
+          isDisabled: true,
+        },
+      ]),
   ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA)
     ? [
         {
@@ -73,13 +87,6 @@ export const productionNetworks = [
           isDisabled: true,
         },
       ]),
-
-  // {
-  //   name: "Binance Smart Chain",
-  //   info: i18n.t("protocol.compatibleChain"),
-  //   width: 24,
-  //   height: 24,
-  // },
   // {
   //   name: "Celo",
   //   info: "Global payments infrastructure",

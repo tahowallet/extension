@@ -41,6 +41,7 @@
   },
   "assetInput": {
     "search": "Search by name or address",
+    "searchNFT": "Search NFT",
     "selectToken": "Select token",
     "error": {
       "invalidAmount": "Invalid amount",
@@ -212,6 +213,10 @@
       "explainerTwo": "Tally Ho stays in sync with the current RSK and Ethereum network fees to estimate the fee for a given transaction.",
       "explainerThree": "Only in rare cases will the actual fee you pay change by more than 10% from the estimate.",
       "learnMore": "Learn More"
+    },
+    "bsc": {
+      "title": "Coming soon!",
+      "description": "Changing network fees for BNB Chain is not currently available."
     },
     "miner": "Miner:",
     "maxBase": "Max Base:",
@@ -433,7 +438,7 @@
     "beta": "Mainnet (beta)",
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
-    "compatibleChain": "Ethereum-compatible blockchain",
+    "compatibleChain": "Ethereum-compatible blockchain (beta)",
     "avalanche": "Mainnet C-Chain (beta)",
     "connected": "Connected"
   },
@@ -449,10 +454,8 @@
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
     "analytics": "Analytics",
+    "needHelp": "Need Help?",
     "showBanners": "Show achievement banners",
-    "joinTitle": "Join our community",
-    "joinDesc": "Join our Discord to give us feedback!",
-    "joinBtn": "Join and give feedback",
     "versionLabel": "Version {{version}}",
     "unknownVersionOrCommit": "<unknown>",
     "exportLogs": {
@@ -499,6 +502,9 @@
       "ariaLabel": "Manage connected websites",
       "emptyList": "Not connected to any websites"
     }
+  },
+  "send": {
+    "balance": "Balance: {{amount}}"
   },
   "shared": {
     "tallyHo": "Tally Ho",
@@ -734,8 +740,10 @@
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
         "SUPPORT_AVALANCHE": "Enable Avalanche network",
+        "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab",
+        "SUPPORT_NFT_SEND": "Enable sending NFTs",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
-        "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab"
+        "SUPPORT_BINANCE_SMART_CHAIN": "Enable Binance Smart Chain network"
       }
     }
   },

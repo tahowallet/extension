@@ -7,9 +7,7 @@ const defaultPreferences: Preferences = {
     autoUpdate: false,
     urls: [
       storageGatewayURL(
-        new URL(
-          "ipfs://bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm"
-        )
+        "ipfs://bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm"
       ).href, // the Tally community-curated list
       "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
       "https://meta.yearn.finance/api/tokens/list", // the Yearn list
@@ -21,6 +19,7 @@ const defaultPreferences: Preferences = {
       "https://static.optimism.io/optimism.tokenlist.json", // Optimism Default Tokens
       "https://bridge.arbitrum.io/token-list-42161.json", // Arbitrum Default tokens
       "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/src/joe.tokenlist-v2.json", // Trader Joe tokens
+      "https://tokens.pancakeswap.finance/pancakeswap-default.json", // PancakeSwap Default List
     ],
   },
   currency: USD,

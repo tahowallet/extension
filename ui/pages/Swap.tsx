@@ -62,6 +62,7 @@ import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
+import SharedLoadingDoggo from "../components/Shared/SharedLoadingDoggo"
 
 // FIXME Unify once asset similarity code is unified.
 function isSameAsset(asset1: AnyAsset, asset2: AnyAsset) {
@@ -635,6 +636,16 @@ export default function Swap(): ReactElement {
                 }}
                 label={t("swap.to")}
               />
+              {priceDetails === undefined &&
+              (sellAmount || buyAmount) &&
+              buyAsset &&
+              sellAsset ? (
+                <SharedLoadingDoggo
+                  size={54}
+                  message="Fetching price"
+                  margin="15px 0 0 0"
+                />
+              ) : null}
             </div>
             <div className="settings_wrap">
               {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
