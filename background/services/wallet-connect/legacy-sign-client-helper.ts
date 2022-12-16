@@ -22,6 +22,12 @@ export type LegacyEventData = {
 
 let legacySignClient: LegacySignClient | undefined
 
+/* eslint-disable */
+function tempFeatureLog(message?: any, ...optionalParams: any[]): void {
+  console.log(`[WalletConnect Demo V1] - ${message || ""}`, optionalParams)
+}
+/* eslint-enable */
+
 function deleteCachedLegacySession(): void {
   if (typeof window === "undefined") return
   window.localStorage.removeItem("walletconnect")
@@ -64,12 +70,12 @@ export function createLegacySignClient(
     if (error) {
       throw new Error(`legacySignClient > session_request failed: ${error}`)
     }
-    console.log("LegacySessionProposalModal", { legacyProposal: payload })
+    tempFeatureLog("LegacySessionProposalModal", { legacyProposal: payload })
     sessionProposalListener?.(payload)
   })
 
   legacySignClient?.on("connect", () => {
-    console.log("legacySignClient > connect")
+    tempFeatureLog("legacySignClient > connect")
   })
 
   legacySignClient?.on("error", (error) => {
@@ -136,9 +142,3 @@ export async function postLegacyRejectionResponse(
     error,
   })
 }
-
-/* eslint-disable */
-function tempFeatureLog(message?: any, ...optionalParams: any[]): void {
-  console.log(`[WalletConnect Demo V1] - ${message || ""}`, optionalParams)
-}
-/* eslint-enable */
