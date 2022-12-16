@@ -35,14 +35,23 @@ const abilitiesSlice = createSlice({
       immerState,
       { payload }: { payload: { address: HexString; abilityId: string } }
     ) => {
-      console.log("payload: ", payload)
       immerState[payload.address][payload.abilityId].completed = true
+    },
+    markAbilityAsRemoved: (
+      immerState,
+      { payload }: { payload: { address: HexString; abilityId: string } }
+    ) => {
+      immerState[payload.address][payload.abilityId].removedFromUi = true
     },
   },
 })
 
-export const { addAbilities, removeAbility, markAbilityAsCompleted } =
-  abilitiesSlice.actions
+export const {
+  addAbilities,
+  removeAbility,
+  markAbilityAsCompleted,
+  markAbilityAsRemoved,
+} = abilitiesSlice.actions
 
 export const completeAbility = createBackgroundAsyncThunk(
   "abilities/completeAbility",
@@ -52,7 +61,19 @@ export const completeAbility = createBackgroundAsyncThunk(
   ) => {
     await main.markAbilityAsCompleted(address, abilityId)
     dispatch(markAbilityAsCompleted({ address, abilityId }))
-    dispatch(setSnackbarMessage("Marked as Completed"))
+    dispatch(setSnackbarMessage("Marked as completed"))
+  }
+)
+
+export const deleteAbilty = createBackgroundAsyncThunk(
+  "abilities/deleteAbility",
+  async (
+    { address, abilityId }: { address: HexString; abilityId: string },
+    { dispatch, extra: { main } }
+  ) => {
+    await main.markAbilityAsRemoved(address, abilityId)
+    dispatch(markAbilityAsRemoved({ address, abilityId }))
+    dispatch(setSnackbarMessage("Ability deleted"))
   }
 )
 

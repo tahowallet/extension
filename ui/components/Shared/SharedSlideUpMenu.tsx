@@ -92,7 +92,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             height: var(--menu-height);
             overflow: hidden;
             border-radius: ${isFullScreen ? "0" : "16px 16px 0 0"};
-            background-color: var(--green-95);
+            background-color: #13302e;
             position: fixed;
             left: 0px;
             right: 0px;

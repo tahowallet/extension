@@ -11,7 +11,8 @@ export const selectActiveAbilities = createSelector(
     Object.values(abilities).forEach((addressAbilities) => {
       activeAbilities.push(
         ...Object.values(addressAbilities).filter(
-          (ability) => ability.completed === false
+          (ability) =>
+            ability.completed === false && ability.removedFromUi === false
         )
       )
     })

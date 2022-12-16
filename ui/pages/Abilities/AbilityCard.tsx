@@ -1,24 +1,50 @@
 import { completeAbility } from "@tallyho/tally-background/redux-slices/abilities"
 import { Ability } from "@tallyho/tally-background/services/abilities"
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
+import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 import SharedTooltip from "../../components/Shared/SharedTooltip"
 import { useBackgroundDispatch } from "../../hooks"
 import AbilityCardHeader from "./AbilityCardHeader"
+import AbilityRemovalConfirm from "./AbilityRemovalConfirm"
 
 // eslint-disable-next-line import/prefer-default-export
 const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
+  const [showRemoveAbilityConfirm, setShowRemoveAbilityConfirm] =
+    useState(false)
+
   const dispatch = useBackgroundDispatch()
   return (
     <>
       <div className="ability_card">
+        <SharedSlideUpMenu
+          size="small"
+          isOpen={showRemoveAbilityConfirm}
+          close={(e) => {
+            e?.stopPropagation()
+            setShowRemoveAbilityConfirm(false)
+          }}
+        >
+          <div
+            role="presentation"
+            onClick={(e) => e.stopPropagation()}
+            style={{ cursor: "default" }}
+          >
+            <AbilityRemovalConfirm
+              ability={ability}
+              close={() => setShowRemoveAbilityConfirm(false)}
+            />
+          </div>
+        </SharedSlideUpMenu>
         <AbilityCardHeader ability={ability} />
         <div title={ability.title} className="title">
           {ability.title}
         </div>
         <div className="description">{ability.description}</div>
-        <img className="image" alt="logo" src={ability.imageUrl} />
+        {ability.imageUrl ? (
+          <img className="image" alt="logo" src={ability.imageUrl} />
+        ) : null}
         <div className="controls">
           <SharedButton
             type="primary"
@@ -33,7 +59,7 @@ const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
           <div className="button_container">
             <SharedTooltip
               horizontalPosition="center"
-              width={200}
+              width={130}
               verticalPosition="top"
               IconComponent={() => (
                 <SharedIcon
@@ -57,7 +83,7 @@ const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
             </SharedTooltip>
             <SharedTooltip
               horizontalPosition="center"
-              width={200}
+              width={50}
               verticalPosition="top"
               IconComponent={() => (
                 <SharedIcon
@@ -68,12 +94,7 @@ const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
                   customStyles="margin-left: 10px;"
                   hoverColor="#EC3137"
                   onClick={() => {
-                    dispatch(
-                      completeAbility({
-                        address: ability.address,
-                        abilityId: ability.abilityId,
-                      })
-                    )
+                    setShowRemoveAbilityConfirm(true)
                   }}
                 />
               )}
@@ -94,6 +115,7 @@ const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
             height: 295px;
             background: rgba(4, 20, 20, 0.4);
             border-radius: 12px;
+            margin-bottom: 16px;
           }
           .button_container {
             display: flex;

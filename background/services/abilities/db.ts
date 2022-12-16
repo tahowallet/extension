@@ -6,12 +6,12 @@ export class AbilitiesDatabase extends Dexie {
   private abilities!: Dexie.Table<Ability, string>
 
   constructor() {
-    super("tally/nfts")
+    super("tally/abilities")
 
     // No tables are created when feature flag is off
     if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
       this.version(1).stores({
-        abilities: "++id, [abilityId+address], completed, spam",
+        abilities: "++id, &[abilityId+address], removedFromUi, completed",
       })
     }
   }
@@ -37,12 +37,11 @@ export class AbilitiesDatabase extends Dexie {
   }
 
   async getActiveAbilities(): Promise<Ability[]> {
-    return this.abilities
-      .where({
-        completed: false,
-        spam: false,
+    return (
+      await this.abilities.where({
+        removedFromUi: false,
       })
-      .toArray()
+    ).toArray()
   }
 
   async markAsCompleted(address: string, abilityId: string): Promise<void> {
@@ -56,14 +55,14 @@ export class AbilitiesDatabase extends Dexie {
     })
   }
 
-  async markAsSpam(address: string, abilityId: string): Promise<void> {
+  async markAsRemoved(address: string, abilityId: string): Promise<void> {
     const ability = await this.getAbility(address, abilityId)
     if (!ability) {
       throw new Error("Ability does not exist")
     }
     this.abilities.put({
       ...ability,
-      spam: true,
+      removedFromUi: true,
     })
   }
 }

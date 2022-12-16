@@ -90,8 +90,9 @@ export const getDaylightAbilities = async (
   address: string
 ): Promise<DaylightAbility[]> => {
   const response: AbilitiesResponse = await fetchJson(
-    // `${DAYLIGHT_BASE_URL}/${address}/abilities?deadline=set`
-    `${DAYLIGHT_BASE_URL}/${address}/abilities`
+    // Abilities whose deadline has not yet passed
+    // `${DAYLIGHT_BASE_URL}/${address}/abilities?deadline=set&type=mint&type=airdrop&type=access`
+    `${DAYLIGHT_BASE_URL}/${address}/abilities?type=mint&type=airdrop&type=access`
   )
 
   return response.abilities

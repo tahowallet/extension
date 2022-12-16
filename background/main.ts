@@ -157,7 +157,7 @@ import {
   deleteTransferredNFTs,
 } from "./redux-slices/nfts_update"
 import AbilitiesService from "./services/abilities"
-import { addAbilities, markAbilityAsCompleted } from "./redux-slices/abilities"
+import { addAbilities } from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -264,10 +264,10 @@ export default class Main extends BaseService<never> {
   store: ReduxStoreType
 
   static create: ServiceCreatorFunction<never, Main, []> = async () => {
-    const abilitiesService = AbilitiesService.create()
     const preferenceService = PreferenceService.create()
     const keyringService = KeyringService.create()
     const chainService = ChainService.create(preferenceService, keyringService)
+    const abilitiesService = AbilitiesService.create(chainService)
     const indexingService = IndexingService.create(
       preferenceService,
       chainService
@@ -457,17 +457,6 @@ export default class Main extends BaseService<never> {
 
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState, this)
-
-    setTimeout(async () => {
-      const addresses = (await this.chainService.getAccountsToTrack()).map(
-        (account) => account.address
-      )
-
-      addresses.forEach(async (address) => {
-        const abilities = await this.abilitiesService.pollForAbilities(address)
-        this.store.dispatch(addAbilities(abilities))
-      })
-    }, 3000)
 
     wrapStore(this.store, {
       serializer: encodeJSON,
@@ -1514,12 +1503,10 @@ export default class Main extends BaseService<never> {
   }
 
   connectAbilitiesService(): void {
-    this.abilitiesService.emitter.on(
-      "initializeSavedAbilities",
-      async (savedAbilities) => {
-        this.store.dispatch(addAbilities(savedAbilities))
-      }
-    )
+    this.abilitiesService.emitter.on("newAbilities", async (newAbilities) => {
+      console.log("xxx Got new abilities!", newAbilities)
+      this.store.dispatch(addAbilities(newAbilities))
+    })
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
@@ -1599,8 +1586,14 @@ export default class Main extends BaseService<never> {
     address: HexString,
     abilityId: string
   ): Promise<void> {
-    console.log("Marking as completed")
     await this.abilitiesService.markAbilityAsCompleted(address, abilityId)
+  }
+
+  async markAbilityAsRemoved(
+    address: HexString,
+    abilityId: string
+  ): Promise<void> {
+    await this.abilitiesService.markAbilityAsRemoved(address, abilityId)
   }
 
   private connectPopupMonitor() {

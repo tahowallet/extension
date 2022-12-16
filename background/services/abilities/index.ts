@@ -7,6 +7,7 @@ import {
   getDaylightAbilities,
 } from "./daylight"
 import { AbilitiesDatabase, getOrCreateDB } from "./db"
+import ChainService from "../chain"
 
 export type AbilityType = "mint" | "airdrop" | "access"
 
@@ -38,7 +39,7 @@ export type Ability = {
   linkUrl: string
   imageUrl?: string
   completed: boolean
-  spam: boolean
+  removedFromUi: boolean
   address: string
   requirement: AbilityRequirement
 }
@@ -92,7 +93,7 @@ const normalizeDaylightAbilities = (
         linkUrl: daylightAbility.action.linkUrl,
         imageUrl: daylightAbility.imageUrl || undefined,
         completed: false,
-        spam: false,
+        removedFromUi: false,
         address,
         requirement: normalizeDaylightRequirements(
           // Just take the 1st requirement for now
@@ -106,27 +107,44 @@ const normalizeDaylightAbilities = (
 }
 
 interface Events extends ServiceLifecycleEvents {
-  initializeSavedAbilities: Ability[]
+  newAbilities: Ability[]
 }
 export default class AbilitiesService extends BaseService<Events> {
-  constructor(private db: AbilitiesDatabase) {
-    super()
+  constructor(
+    private db: AbilitiesDatabase,
+    private chainService: ChainService
+  ) {
+    super({
+      abilitiesAlarm: {
+        schedule: {
+          periodInMinutes: 60,
+        },
+        runAtStart: true,
+        handler: () => {
+          this.abilitiesAlarm()
+        },
+      },
+    })
   }
 
   static create: ServiceCreatorFunction<
     ServiceLifecycleEvents,
     AbilitiesService,
-    []
-  > = async () => {
-    return new this(await getOrCreateDB())
+    [Promise<ChainService>]
+  > = async (chainService) => {
+    return new this(await getOrCreateDB(), await chainService)
   }
 
   protected override async internalStartService(): Promise<void> {
-    const savedActiveAbilities = await this.db.getActiveAbilities()
-    this.emitter.emit("initializeSavedAbilities", savedActiveAbilities)
+    await super.internalStartService()
+    // const savedActiveAbilities = await this.db.getActiveAbilities()
+    // this.emitter.emit("initializeSavedAbilities", savedActiveAbilities)
+    this.chainService.emitter.on("newAccountToTrack", (addressOnNetwork) => {
+      this.pollForAbilities(addressOnNetwork.address)
+    })
   }
 
-  async pollForAbilities(address: HexString): Promise<Ability[]> {
+  async pollForAbilities(address: HexString): Promise<void> {
     const daylightAbilities = await getDaylightAbilities(address)
     const normalizedAbilities = normalizeDaylightAbilities(
       daylightAbilities,
@@ -144,7 +162,9 @@ export default class AbilitiesService extends BaseService<Events> {
       })
     )
 
-    return newAbilities
+    if (newAbilities.length) {
+      this.emitter.emit("newAbilities", newAbilities)
+    }
   }
 
   async markAbilityAsCompleted(
@@ -154,5 +174,20 @@ export default class AbilitiesService extends BaseService<Events> {
     return this.db.markAsCompleted(address, abilityId)
   }
 
-  //   override async internalStartService(): Promise<void> {}
+  async markAbilityAsRemoved(
+    address: string,
+    abilityId: string
+  ): Promise<void> {
+    return this.db.markAsRemoved(address, abilityId)
+  }
+
+  async abilitiesAlarm(): Promise<void> {
+    const accountsToTrack = await this.chainService.getAccountsToTrack()
+    // 1-by-1 decreases likelihood of hitting rate limit
+    // eslint-disable-next-line no-restricted-syntax
+    for (const address of accountsToTrack.map((account) => account.address)) {
+      // eslint-disable-next-line no-await-in-loop
+      await this.pollForAbilities(address)
+    }
+  }
 }

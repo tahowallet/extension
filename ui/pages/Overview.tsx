@@ -51,7 +51,7 @@ function Overview(): ReactElement {
           balance={balance}
           initializationTimeExpired={initializationLoadingTimeExpired}
         />
-        <AbilitiesHeader />
+        {FeatureFlags.SUPPORT_ABILITIES ? <AbilitiesHeader /> : null}
         <AccountList
           accountsTotal={accountsTotal}
           accountsCount={accountsCount}
