@@ -6,6 +6,7 @@ import {
   isFungibleAsset,
   isSmartContractFungibleAsset,
   PricePoint,
+  SmartContractFungibleAsset,
 } from "../assets"
 import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
@@ -19,11 +20,13 @@ import logger from "../lib/logger"
 import { BASE_ASSETS_BY_SYMBOL, FIAT_CURRENCIES_SYMBOL } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
 
-export type SingleAssetState = AnyAsset & {
+export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
   recentPrices: {
     [assetSymbol: string]: PricePoint
   }
 }
+
+export type SingleAssetState = AssetWithRecentPrices
 
 export type AssetsState = SingleAssetState[]
 
@@ -195,15 +198,33 @@ export const transferAsset = createBackgroundAsyncThunk(
 export const selectAssetPricePoint = createSelector(
   [selectAssetsState, selectAsset, selectPairedAssetSymbol],
   (assets, assetToFind, pairedAssetSymbol) => {
-    /* Find a best-effort price point by looking for assets with the same symbol  */
-    const pricedAsset = assets.find(
-      (asset) =>
-        asset.symbol === assetToFind.symbol &&
-        pairedAssetSymbol in asset.recentPrices &&
-        asset.recentPrices[pairedAssetSymbol].pair.some(
-          ({ symbol }) => symbol === assetToFind.symbol
-        )
-    )
+    const hasRecentPriceData = (asset: SingleAssetState): boolean =>
+      pairedAssetSymbol in asset.recentPrices &&
+      asset.recentPrices[pairedAssetSymbol].pair.some(
+        ({ symbol }) => symbol === assetToFind.symbol
+      )
+
+    let pricedAsset: SingleAssetState | undefined
+
+    /* If we're looking for a smart contract, try to find an exact price point */
+    if (isSmartContractFungibleAsset(assetToFind)) {
+      pricedAsset = assets.find(
+        (asset): asset is AssetWithRecentPrices<SmartContractFungibleAsset> =>
+          isSmartContractFungibleAsset(asset) &&
+          asset.symbol === assetToFind.symbol &&
+          asset.contractAddress === assetToFind.contractAddress &&
+          asset.homeNetwork.chainID === assetToFind.homeNetwork.chainID &&
+          hasRecentPriceData(asset)
+      )
+    }
+
+    /* Otherwise, find a best-effort match by looking for assets with the same symbol  */
+    if (!pricedAsset) {
+      pricedAsset = assets.find(
+        (asset) =>
+          asset.symbol === assetToFind.symbol && hasRecentPriceData(asset)
+      )
+    }
 
     if (pricedAsset) {
       let pricePoint = pricedAsset.recentPrices[pairedAssetSymbol]

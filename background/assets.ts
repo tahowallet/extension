@@ -184,9 +184,9 @@ export function isFungibleAsset(asset: AnyAsset): asset is FungibleAsset {
 /**
  * Type guard to check if an AnyAsset is actually a SmartContractFungibleAsset.
  */
-export function isSmartContractFungibleAsset(
-  asset: AnyAsset
-): asset is SmartContractFungibleAsset {
+export function isSmartContractFungibleAsset<T extends AnyAsset>(
+  asset: T
+): asset is T & SmartContractFungibleAsset {
   return "homeNetwork" in asset && isFungibleAsset(asset)
 }
 

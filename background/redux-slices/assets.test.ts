@@ -51,7 +51,40 @@ describe("Assets selectors", () => {
       expect(result).toMatchObject(pricePoint)
     })
 
-    /* Best effort matches */
+    test("should retrieve exact price point for a smart contract asset if available", () => {
+      /* same symbol, network, different contract address */
+      const similarAsset = {
+        ...asset,
+        contractAddress: "0xf4d2888d29d722226fafa5d9b24f9164c092421e",
+      }
+
+      const similarAssetPricePoint: PricePoint = {
+        pair: [
+          similarAsset,
+          {
+            name: "United States Dollar",
+            symbol: "USD",
+            decimals: 10,
+          },
+        ],
+        amounts: [1000000000000000000n, 123450000n],
+        time: 1671166100,
+      }
+
+      const similarAssetWithPricePoint: SingleAssetState = {
+        ...similarAsset,
+        recentPrices: {
+          USD: similarAssetPricePoint,
+        },
+      }
+
+      const state = [assetWithPricePoint, similarAssetWithPricePoint]
+      const result = selectAssetPricePoint(state, similarAsset, "USD")
+
+      expect(result).toMatchObject(similarAssetPricePoint)
+    })
+
+    /* Best-effort matches */
     test("should fallback to a price point for an asset with the same symbol", () => {
       /* same symbol, different network */
       const assetWithoutPricePoint: SingleAssetState = {
@@ -60,7 +93,7 @@ describe("Assets selectors", () => {
         recentPrices: {},
       }
 
-      const state = [...assetState, assetWithoutPricePoint]
+      const state = [assetWithPricePoint, assetWithoutPricePoint]
       const result = selectAssetPricePoint(state, assetWithoutPricePoint, "USD")
 
       expect(result).toMatchObject(pricePoint)
