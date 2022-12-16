@@ -186,7 +186,7 @@ export const transferAsset = createBackgroundAsyncThunk(
  * Selects a particular asset price point given the asset symbol and the paired
  * asset symbol used to price it.
  *
- * For example, calling `selectAssetPricePoint(state.assets, "ETH", "USD")`
+ * For example, calling `selectAssetPricePoint(state.assets, ETH, "USD")`
  * will return the ETH-USD price point, if it exists. Note that this selector
  * guarantees that the returned price point will have the pair in the specified
  * order, so even if the store price point has amounts in the order [USD, ETH],
@@ -200,9 +200,9 @@ export const selectAssetPricePoint = createSelector(
       (asset) =>
         asset.symbol === assetToFind.symbol &&
         pairedAssetSymbol in asset.recentPrices &&
-        asset.recentPrices[pairedAssetSymbol].pair
-          .map(({ symbol }) => symbol)
-          .includes(assetToFind.symbol)
+        asset.recentPrices[pairedAssetSymbol].pair.some(
+          ({ symbol }) => symbol === assetToFind.symbol
+        )
     )
 
     if (pricedAsset) {
