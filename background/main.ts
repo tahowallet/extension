@@ -1095,6 +1095,17 @@ export default class Main extends BaseService<never> {
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
+        /**
+         * There is a case in which the user changes the settings on the ledger after connection.
+         * For example, it sets disabled blind signing. Before the transaction signature request
+         * ledger should be connected again to refresh the state. Without reconnection,
+         * the user doesn't receive an error message on how to fix it.
+         */
+        const isArbitraryDataSigningEnabled =
+          await this.ledgerService.isArbitraryDataSigningEnabled()
+        if (!isArbitraryDataSigningEnabled) {
+          this.connectLedger()
+        }
         this.store.dispatch(
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
