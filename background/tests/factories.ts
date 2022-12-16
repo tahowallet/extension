@@ -10,6 +10,12 @@ import { BigNumber } from "ethers"
 import { keccak256 } from "ethers/lib/utils"
 import { AccountBalance, AddressOnNetwork } from "../accounts"
 import {
+  AnyAsset,
+  isFungibleAsset,
+  PricePoint,
+  SmartContractFungibleAsset,
+} from "../assets"
+import {
   ARBITRUM_ONE,
   AVALANCHE,
   ETH,
@@ -309,3 +315,76 @@ export const makeSerialFallbackProvider =
 
     return new MockSerialFallbackProvider()
   }
+
+export const createSmartContractAsset = (
+  overrides: Partial<SmartContractFungibleAsset> = {}
+): SmartContractFungibleAsset => {
+  const getRandomStr = (length: number) => {
+    let result = ""
+
+    while (result.length < length) {
+      result += Math.random().toString(36).slice(2)
+    }
+
+    return result.slice(0, length)
+  }
+
+  const symbol = getRandomStr(3)
+  const asset = {
+    metadata: {
+      logoURL:
+        "https://messari.io/asset-images/0783ede3-4b2c-418a-9f82-f171894c70e2/128.png",
+      tokenLists: [
+        {
+          url: "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
+          name: "Uniswap Labs Default",
+          logoURL: "ipfs://QmNa8mQkrNKp1WEEeGjFezDmDeodkWRevGFN8JCV7b4Xir",
+        },
+      ],
+    },
+    name: `${symbol} Network`,
+    symbol,
+    decimals: 18,
+    homeNetwork: ETHEREUM,
+    contractAddress: createRandom0xHash(),
+  }
+
+  return {
+    ...asset,
+    ...overrides,
+  }
+}
+
+/**
+ * @param asset Any type of asset
+ * @param price Price, e.g. 1.5 => 1.5$
+ * @param flip Return assets and amounts in reverse order
+ */
+export const createPricePoint = (
+  asset: AnyAsset,
+  price = 1,
+  flip = false
+): PricePoint => {
+  const decimals = isFungibleAsset(asset) ? asset.decimals : 18
+
+  const pricePoint: PricePoint = {
+    pair: [
+      asset,
+      {
+        name: "United States Dollar",
+        symbol: "USD",
+        decimals: 10,
+      },
+    ],
+    amounts: [10n ** BigInt(decimals), BigInt(Math.trunc(1e11 * price))],
+    time: Math.trunc(Date.now() / 1e3),
+  }
+
+  if (flip) {
+    const { pair, amounts } = pricePoint
+    pricePoint.pair = [pair[1], pair[0]]
+    pricePoint.amounts = [amounts[1], amounts[0]]
+  }
+
+  return pricePoint
+}
