@@ -21,19 +21,28 @@ export function changeURLProtocolAndBase(url: URL, baseURL: URL): URL {
   const newURL = new URL(url)
   newURL.protocol = baseURL.protocol
   newURL.hostname = baseURL.hostname
-  newURL.pathname = `${baseURL.pathname}/${url.hostname}/${url.pathname}`
+  newURL.pathname = `${baseURL.pathname}/${url.hostname}`
+
+  if (url.pathname !== "" && url.pathname !== "/") {
+    newURL.pathname += url.pathname
+  }
 
   return newURL
 }
 
 // TODO eventually we want proper IPFS and Arweave support
-export function storageGatewayURL(url: URL): URL {
-  switch (url.protocol) {
-    case "ipfs:":
-      return changeURLProtocolAndBase(url, ipfsGateway)
+export function storageGatewayURL(url: string): URL {
+  const protocol = url.slice(0, url.indexOf("//"))
+
+  switch (protocol) {
+    case "ipfs:": {
+      // cidv0 is case sensitive
+      const contentId = url.split("ipfs://")[1]
+      return new URL(contentId, ipfsGateway)
+    }
     case "ar:":
-      return changeURLProtocolAndBase(url, arweaveGateway)
+      return changeURLProtocolAndBase(new URL(url), arweaveGateway)
     default:
-      return url
+      return new URL(url)
   }
 }
