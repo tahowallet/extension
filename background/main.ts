@@ -197,8 +197,6 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
 
-  ;(window as any).store = store
-
   persistStoreState(state)
   return result
 }
@@ -1504,7 +1502,6 @@ export default class Main extends BaseService<never> {
 
   connectAbilitiesService(): void {
     this.abilitiesService.emitter.on("newAbilities", async (newAbilities) => {
-      console.log("xxx Got new abilities!", newAbilities)
       this.store.dispatch(addAbilities(newAbilities))
     })
   }
@@ -1586,14 +1583,14 @@ export default class Main extends BaseService<never> {
     address: HexString,
     abilityId: string
   ): Promise<void> {
-    await this.abilitiesService.markAbilityAsCompleted(address, abilityId)
+    return this.abilitiesService.markAbilityAsCompleted(address, abilityId)
   }
 
   async markAbilityAsRemoved(
     address: HexString,
     abilityId: string
   ): Promise<void> {
-    await this.abilitiesService.markAbilityAsRemoved(address, abilityId)
+    return this.abilitiesService.markAbilityAsRemoved(address, abilityId)
   }
 
   private connectPopupMonitor() {

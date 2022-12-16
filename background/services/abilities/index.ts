@@ -8,6 +8,7 @@ import {
 } from "./daylight"
 import { AbilitiesDatabase, getOrCreateDB } from "./db"
 import ChainService from "../chain"
+import { FeatureFlags } from "../../features"
 
 export type AbilityType = "mint" | "airdrop" | "access"
 
@@ -137,14 +138,16 @@ export default class AbilitiesService extends BaseService<Events> {
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
-    // const savedActiveAbilities = await this.db.getActiveAbilities()
-    // this.emitter.emit("initializeSavedAbilities", savedActiveAbilities)
     this.chainService.emitter.on("newAccountToTrack", (addressOnNetwork) => {
       this.pollForAbilities(addressOnNetwork.address)
     })
   }
 
   async pollForAbilities(address: HexString): Promise<void> {
+    if (!FeatureFlags.SUPPORT_ABILITIES) {
+      return
+    }
+
     const daylightAbilities = await getDaylightAbilities(address)
     const normalizedAbilities = normalizeDaylightAbilities(
       daylightAbilities,
@@ -155,8 +158,8 @@ export default class AbilitiesService extends BaseService<Events> {
 
     await Promise.all(
       normalizedAbilities.map(async (ability) => {
-        const newAbility = await this.db.addNewAbility(ability)
-        if (newAbility) {
+        const isNewAbility = await this.db.addNewAbility(ability)
+        if (isNewAbility) {
           newAbilities.push(ability)
         }
       })
@@ -183,9 +186,13 @@ export default class AbilitiesService extends BaseService<Events> {
 
   async abilitiesAlarm(): Promise<void> {
     const accountsToTrack = await this.chainService.getAccountsToTrack()
+    const addresses = accountsToTrack
+      .map((account) => account.address)
+      .filter((address, index, self) => self.indexOf(address) === index)
+
     // 1-by-1 decreases likelihood of hitting rate limit
     // eslint-disable-next-line no-restricted-syntax
-    for (const address of accountsToTrack.map((account) => account.address)) {
+    for (const address of addresses) {
       // eslint-disable-next-line no-await-in-loop
       await this.pollForAbilities(address)
     }

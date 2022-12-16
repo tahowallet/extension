@@ -9,7 +9,6 @@ import { useBackgroundDispatch } from "../../hooks"
 import AbilityCardHeader from "./AbilityCardHeader"
 import AbilityRemovalConfirm from "./AbilityRemovalConfirm"
 
-// eslint-disable-next-line import/prefer-default-export
 const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
   const [showRemoveAbilityConfirm, setShowRemoveAbilityConfirm] =
     useState(false)

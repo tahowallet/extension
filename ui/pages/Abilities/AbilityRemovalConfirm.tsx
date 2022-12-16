@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
 import { Ability } from "@tallyho/tally-background/services/abilities"
-import { deleteAbilty } from "@tallyho/tally-background/redux-slices/abilities"
+import { removeAbility } from "@tallyho/tally-background/redux-slices/abilities"
 import { useTranslation } from "react-i18next"
 
 import { useBackgroundDispatch } from "../../hooks"
@@ -36,7 +36,7 @@ export default function AbilityRemovalConfirm({
               e.stopPropagation()
               // @TODO Actually report spam
               dispatch(
-                deleteAbilty({
+                removeAbility({
                   address: ability.address,
                   abilityId: ability.abilityId,
                 })
@@ -55,7 +55,7 @@ export default function AbilityRemovalConfirm({
           onClick={(e) => {
             e.stopPropagation()
             dispatch(
-              deleteAbilty({
+              removeAbility({
                 address: ability.address,
                 abilityId: ability.abilityId,
               })

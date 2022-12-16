@@ -24,7 +24,7 @@ export default function TabBar(): ReactElement {
   const history = useHistory()
   const { t } = useTranslation()
 
-  const overrideActiveTab = ["abilities"].some((pathName) =>
+  const noActiveTab = ["abilities"].some((pathName) =>
     location.pathname.includes(pathName)
   )
 
@@ -44,7 +44,7 @@ export default function TabBar(): ReactElement {
               icon={icon}
               title={t(title)}
               onClick={() => history.push(path)}
-              isActive={overrideActiveTab ? false : activeTab.path === path}
+              isActive={noActiveTab ? false : activeTab.path === path}
             />
           )
         })}

@@ -1,10 +1,10 @@
-import { selectActiveAbilities } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectFilteredAbilities } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
 import { useSelector } from "react-redux"
 import AbilityCard from "./Abilities/AbilityCard"
 
 export default function Abilities(): ReactElement {
-  const abilities = useSelector(selectActiveAbilities)
+  const abilities = useSelector(selectFilteredAbilities)
 
   return (
     <>
@@ -14,7 +14,7 @@ export default function Abilities(): ReactElement {
           <h1>Daylight Abilities!</h1>
         </div>
         {abilities.map((ability) => (
-          <AbilityCard ability={ability} />
+          <AbilityCard key={ability.abilityId} ability={ability} />
         ))}
       </section>
       <style jsx>

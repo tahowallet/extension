@@ -2,18 +2,29 @@ import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { Ability } from "../../services/abilities"
 
-const selectAbilities = (state: RootState) => state.abilities
+const selectAbilities = (state: RootState) => state.abilities.abilities
 
-export const selectActiveAbilities = createSelector(
+const selectAbilityFilter = (state: RootState) => state.abilities.filter
+
+export const selectFilteredAbilities = createSelector(
+  selectAbilityFilter,
   selectAbilities,
-  (abilities) => {
+  (filter, abilities) => {
     const activeAbilities: Ability[] = []
     Object.values(abilities).forEach((addressAbilities) => {
       activeAbilities.push(
-        ...Object.values(addressAbilities).filter(
-          (ability) =>
-            ability.completed === false && ability.removedFromUi === false
-        )
+        ...Object.values(addressAbilities).filter((ability) => {
+          if (ability.removedFromUi === true) {
+            return false
+          }
+          if (filter === "incomplete") {
+            return ability.completed === false
+          }
+          if (filter === "completed") {
+            return ability.completed === true
+          }
+          return true
+        })
       )
     })
     return activeAbilities
@@ -21,6 +32,6 @@ export const selectActiveAbilities = createSelector(
 )
 
 export const selectAbilityCount = createSelector(
-  selectActiveAbilities,
+  selectFilteredAbilities,
   (abilities) => abilities.length
 )
