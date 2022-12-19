@@ -346,7 +346,7 @@
     "beta": "Mainnet (beta)",
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
-    "compatibleChain": "Ethereum-compatible blockchain",
+    "compatibleChain": "Ethereum-compatible blockchain (beta)",
     "avalanche": "Mainnet C-Chain (beta)",
     "connected": "Connected"
   },
@@ -362,10 +362,8 @@
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
     "analytics": "Analytics",
+    "needHelp": "Need Help?",
     "showBanners": "Show achievement banners",
-    "joinTitle": "Join our community",
-    "joinDesc": "Join our Discord to give us feedback!",
-    "joinBtn": "Join and give feedback",
     "versionLabel": "Version {{version}}",
     "unknownVersionOrCommit": "<unknown>",
     "exportLogs": {

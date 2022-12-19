@@ -133,7 +133,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
             )}
           </footer>
           <SharedSlideUpMenu
-            isOpen={isSlideUpOpen}
+            isOpen={isSlideUpOpen && ledgerCannotSign}
             size="auto"
             close={() => setIsSlideUpOpen(false)}
           >
