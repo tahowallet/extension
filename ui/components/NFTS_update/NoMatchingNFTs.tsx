@@ -13,7 +13,9 @@ export default function NoMatchingNFTs(props: {
   return (
     <div className="content">
       <h2>
-        {t("noMatchingNFTs", { type: type === "nfts" ? "NFTs" : "badges" })}
+        {t("noMatchingNFTs", {
+          type: type === "nfts" ? t("type1") : t("type2"),
+        })}
       </h2>
       <NFTsExploreBanner type={type} />
       <style jsx>{`

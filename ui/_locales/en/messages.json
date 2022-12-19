@@ -235,6 +235,8 @@
     "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title",
     "NFTPricingComingSoon": "Coming soon: NFT price + sending",
+    "type1": "NFTs",
+    "type2": "badges",
     "noMatchingNFTs": "No {{type}} matching your filters",
     "collectionHover": {
       "close": "close",
