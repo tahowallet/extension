@@ -211,7 +211,6 @@ export const selectAssetPricePoint = createSelector(
       pricedAsset = assets.find(
         (asset): asset is AssetWithRecentPrices<SmartContractFungibleAsset> =>
           isSmartContractFungibleAsset(asset) &&
-          asset.symbol === assetToFind.symbol &&
           asset.contractAddress === assetToFind.contractAddress &&
           asset.homeNetwork.chainID === assetToFind.homeNetwork.chainID &&
           hasRecentPriceData(asset)

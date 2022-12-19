@@ -22,6 +22,7 @@ import {
   ETHEREUM,
   OPTIMISM,
   POLYGON,
+  USD,
 } from "../constants"
 import {
   AnyEVMTransaction,
@@ -368,14 +369,7 @@ export const createPricePoint = (
   const decimals = isFungibleAsset(asset) ? asset.decimals : 18
 
   const pricePoint: PricePoint = {
-    pair: [
-      asset,
-      {
-        name: "United States Dollar",
-        symbol: "USD",
-        decimals: 10,
-      },
-    ],
+    pair: [asset, USD],
     amounts: [10n ** BigInt(decimals), BigInt(Math.trunc(1e11 * price))],
     time: Math.trunc(Date.now() / 1e3),
   }
