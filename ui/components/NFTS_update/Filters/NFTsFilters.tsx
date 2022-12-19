@@ -82,6 +82,7 @@ export default function NFTsFilters(): ReactElement {
           {radioBtns.map(({ value, label }) => (
             <SharedRadio
               key={value}
+              id={`radio_${value}`}
               name={RADIO_NAME}
               value={filters.type === value}
               label={label}

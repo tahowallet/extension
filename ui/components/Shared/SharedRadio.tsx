@@ -1,6 +1,7 @@
 import React, { ReactElement, useEffect, useState } from "react"
 
 type Props = {
+  id: string
   name?: string
   label: string
   value?: boolean
@@ -8,6 +9,7 @@ type Props = {
 }
 
 export default function SharedRadio({
+  id,
   name,
   label,
   value,
@@ -22,13 +24,13 @@ export default function SharedRadio({
   return (
     <div className="radio">
       <input
-        id="radio"
+        id={id}
         type="radio"
         name={name || "radio"}
         checked={checked}
         onChange={() => onChange(!checked)}
       />
-      <label htmlFor="radio" className="label">
+      <label htmlFor={id} className="label">
         {label}
       </label>
       <style jsx>{`
