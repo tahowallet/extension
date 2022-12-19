@@ -45,7 +45,10 @@ export default function NFTListPortfolio(props: {
               ? t("units.collection_other")
               : t("units.badge_other")}
           </h2>
-          <NFTList collections={collections} />
+          <NFTList
+            collections={collections}
+            expandBadgesCollections={type !== "nfts"}
+          />
         </>
       ) : (
         <NoMatchingNFTs type={type} />
