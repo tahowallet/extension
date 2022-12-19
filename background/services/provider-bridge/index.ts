@@ -452,7 +452,18 @@ export default class ProviderBridgeService extends BaseService<Events> {
         }
       }
     } catch (error) {
-      logger.log("error processing request", error)
+      if (typeof error === "object" && error !== null && "body" in error) {
+        logger.log("error processing request", error)
+        const parsedError = JSON.parse((error as { body: string }).body)?.error
+        if (parsedError) {
+          return {
+            ...parsedError,
+            message:
+              parsedError.message[0].toUpperCase() +
+              parsedError.message.slice(1),
+          }
+        }
+      }
       return new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()
     }
   }
