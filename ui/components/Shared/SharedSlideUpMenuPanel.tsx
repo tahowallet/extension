@@ -1,18 +1,20 @@
-import React, { ReactElement, ReactNode } from "react"
+import React, { CSSProperties, ReactElement, ReactNode } from "react"
 
 type Props = {
   header: string
+  style?: CSSProperties
   children?: ReactNode
 }
 
 export default function SharedSlideUpMenuPanel({
   header,
+  style,
   children,
 }: Props): ReactElement {
   return (
     <div>
       <div className="header_wrap">
-        <h3>{header}</h3>
+        <h3 style={style}>{header}</h3>
       </div>
       {children}
       <style jsx>{`
