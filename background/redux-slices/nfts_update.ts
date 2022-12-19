@@ -32,7 +32,7 @@ export type Filter = {
   id: string
   name: string
   isEnabled: boolean
-  avatarURL?: string
+  thumbnailURL?: string
 }
 
 export type SortType = "asc" | "desc" | "new" | "old" | "number"
@@ -112,7 +112,7 @@ function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
     {
       id,
       name,
-      avatarURL: thumbnailURL,
+      thumbnailURL,
       isEnabled: existingCollections ? existingCollections.isEnabled : true,
     },
   ]

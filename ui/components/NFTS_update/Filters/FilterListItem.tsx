@@ -9,21 +9,21 @@ const STARS_GREY_URL = "./images/stars_grey.svg"
 
 type FilterListItemProps = {
   label: string
-  avatarURL?: string
+  thumbnailURL?: string
   checked: boolean
   onChange: (toggleValue: boolean) => void
 }
 
 export default function FilterListItem({
   label,
-  avatarURL,
+  thumbnailURL,
   checked,
   onChange,
 }: FilterListItemProps): ReactElement {
   return (
     <div className="content">
       <div className="text_wrap">
-        <div className="avatar" />
+        <div className="thumbnail" />
         <label className="label ellipsis">
           {isProbablyEVMAddress(label) ? truncateAddress(label) : label}
         </label>
@@ -44,8 +44,8 @@ export default function FilterListItem({
           gap: 8px;
           width: 85%;
         }
-        .avatar {
-          background: url("${avatarURL || STARS_GREY_URL}") center no-repeat;
+        .thumbnail {
+          background: url("${thumbnailURL || STARS_GREY_URL}") center no-repeat;
           background-size: cover;
           width: 32px;
           height: 32px;
