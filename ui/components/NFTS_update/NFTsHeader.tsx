@@ -158,7 +158,8 @@ export default function NFTsHeader(): ReactElement {
           display: flex;
           flex-direction: row;
           align-items: center;
-          gap: 16px;
+          justify-content: space-evenly;
+          width: 100%;
         }
 
         li {
