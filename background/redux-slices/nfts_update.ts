@@ -102,8 +102,10 @@ function updateCollection(
 function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
   const { id, name, thumbnailURL, owner } = collection
 
-  const existedCollection = acc.filters.collections.find((obj) => obj.id === id)
-  const existedAccount = acc.filters.accounts.find((obj) => obj.id === owner)
+  const existingCollections = acc.filters.collections.find(
+    (obj) => obj.id === id
+  )
+  const existingAccounts = acc.filters.accounts.find((obj) => obj.id === owner)
 
   acc.filters.collections = [
     ...acc.filters.collections.filter((obj) => obj.id !== id),
@@ -111,7 +113,7 @@ function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
       id,
       name,
       avatarURL: thumbnailURL,
-      isEnabled: existedCollection ? existedCollection.isEnabled : true,
+      isEnabled: existingCollections ? existingCollections.isEnabled : true,
     },
   ]
 
@@ -120,7 +122,7 @@ function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
     {
       id: owner,
       name: owner,
-      isEnabled: existedAccount ? existedAccount.isEnabled : true,
+      isEnabled: existingAccounts ? existingAccounts.isEnabled : true,
     },
   ]
 }

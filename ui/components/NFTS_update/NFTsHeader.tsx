@@ -4,9 +4,9 @@ import {
   selectAllNFTsCount,
   selectIsReloadingNFTs,
   selectMainCurrencySign,
-  selectNFTBadgesCount,
-  selectNFTCollectionsCount,
-  selectNFTsCount,
+  selectFilteredNFTBadgesCount,
+  selectFilteredNFTCollectionsCount,
+  selectFilteredNFTsCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
@@ -24,10 +24,12 @@ export default function NFTsHeader(): ReactElement {
 
   const isLoading = useBackgroundSelector(selectIsReloadingNFTs)
   const allNftCount = useBackgroundSelector(selectAllNFTsCount)
-  const nftCount = useBackgroundSelector(selectNFTsCount)
+  const nftCount = useBackgroundSelector(selectFilteredNFTsCount)
 
-  const collectionCount = useBackgroundSelector(selectNFTCollectionsCount)
-  const badgeCount = useBackgroundSelector(selectNFTBadgesCount)
+  const collectionCount = useBackgroundSelector(
+    selectFilteredNFTCollectionsCount
+  )
+  const badgeCount = useBackgroundSelector(selectFilteredNFTBadgesCount)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const { totalFloorPriceInETH, totalFloorPriceInUSD } =

@@ -1,9 +1,9 @@
 import {
   selectIsReloadingNFTs,
-  selectNFTBadgesCollections,
-  selectNFTBadgesCount,
-  selectNFTCollections,
-  selectNFTCollectionsCount,
+  selectFilteredNFTBadgesCollections,
+  selectFilteredNFTBadgesCount,
+  selectFilteredNFTCollections,
+  selectFilteredNFTCollectionsCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
@@ -21,10 +21,14 @@ export default function NFTListPortfolio(props: {
     keyPrefix: "nfts",
   })
   const collections = useBackgroundSelector(
-    type === "nfts" ? selectNFTCollections : selectNFTBadgesCollections
+    type === "nfts"
+      ? selectFilteredNFTCollections
+      : selectFilteredNFTBadgesCollections
   )
   const nftCount = useBackgroundSelector(
-    type === "nfts" ? selectNFTCollectionsCount : selectNFTBadgesCount
+    type === "nfts"
+      ? selectFilteredNFTCollectionsCount
+      : selectFilteredNFTBadgesCount
   )
   const isLoading = useBackgroundSelector(selectIsReloadingNFTs)
 
