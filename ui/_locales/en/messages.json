@@ -282,7 +282,8 @@
       },
       "sortTypeTitle": "Sort collection",
       "collectionsTitle": "Show/hide collections",
-      "accountsTitle": "Show/hide accounts"
+      "accountsTitle": "Show/hide accounts",
+      "noCollections": "No collections"
     }
   },
   "achievements": {

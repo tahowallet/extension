@@ -33,6 +33,8 @@ export type Filter = {
   name: string
   isEnabled: boolean
   thumbnailURL?: string
+  /* Only for the collection filter */
+  owner?: string
 }
 
 export type SortType = "asc" | "desc" | "new" | "old" | "number"
@@ -102,20 +104,10 @@ function updateCollection(
 function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
   const { id, name, thumbnailURL, owner } = collection
 
+  const existingAccounts = acc.filters.accounts.find((obj) => obj.id === owner)
   const existingCollections = acc.filters.collections.find(
     (obj) => obj.id === id
   )
-  const existingAccounts = acc.filters.accounts.find((obj) => obj.id === owner)
-
-  acc.filters.collections = [
-    ...acc.filters.collections.filter((obj) => obj.id !== id),
-    {
-      id,
-      name,
-      thumbnailURL,
-      isEnabled: existingCollections ? existingCollections.isEnabled : true,
-    },
-  ]
 
   acc.filters.accounts = [
     ...acc.filters.accounts.filter((obj) => obj.id !== owner),
@@ -123,6 +115,17 @@ function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
       id: owner,
       name: owner,
       isEnabled: existingAccounts ? existingAccounts.isEnabled : true,
+    },
+  ]
+
+  acc.filters.collections = [
+    ...acc.filters.collections.filter((obj) => obj.id !== id),
+    {
+      id,
+      name,
+      thumbnailURL,
+      owner,
+      isEnabled: existingCollections ? existingCollections.isEnabled : true,
     },
   ]
 }

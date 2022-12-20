@@ -90,21 +90,23 @@ export default function NFTsFilters(): ReactElement {
             />
           ))}
         </div>
-        <div>
-          <span className="simple_text filter_title">
-            {t("collectionsTitle")}
-          </span>
-          <FilterList
-            filters={filters.collections}
-            onChange={handleUpdateCollectionFilter}
-          />
-        </div>
-        <div>
-          <span className="simple_text filter_title">{t("accountsTitle")}</span>
+        <div className="simple_text">
+          <span className="filter_title">{t("accountsTitle")}</span>
           <FilterList
             filters={filters.accounts}
             onChange={handleUpdateAccountFilter}
           />
+        </div>
+        <div className="simple_text">
+          <span className="filter_title">{t("collectionsTitle")}</span>
+          {filters.collections.length > 0 ? (
+            <FilterList
+              filters={filters.collections}
+              onChange={handleUpdateCollectionFilter}
+            />
+          ) : (
+            <>{t("noCollections")}</>
+          )}
         </div>
       </div>
       <style jsx>{`
@@ -119,6 +121,7 @@ export default function NFTsFilters(): ReactElement {
         .filter_title {
           display: inline-block;
           margin-bottom: 4px;
+          width: 100%;
         }
       `}</style>
     </SharedSlideUpMenuPanel>

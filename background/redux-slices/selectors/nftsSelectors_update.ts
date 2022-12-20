@@ -31,11 +31,16 @@ export const selectCompletedNFTFilters = createSelector(
   selectNFTFilters,
   selectAccountTotals,
   (filters, accountTotals) => {
+    const collections = filters.collections.filter((collection) =>
+      filters.accounts.find(
+        (account) => account.id === collection.owner && account.isEnabled
+      )
+    )
     const accounts = filters.accounts.map((filter) => ({
       ...filter,
       ...getAdditionalDataForFilter(filter.id, accountTotals as AccountData[]),
     }))
-    return { ...filters, accounts }
+    return { ...filters, collections, accounts }
   }
 )
 
