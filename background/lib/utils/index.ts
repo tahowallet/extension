@@ -1,6 +1,6 @@
 import { BigNumber, ethers, utils } from "ethers"
 import { normalizeHexAddress, toChecksumAddress } from "@tallyho/hd-keyring"
-import { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
+import { NormalizedEVMAddress, UNIXTime } from "../../types"
 import { EVMNetwork } from "../../networks"
 import { ETHEREUM, GOERLI } from "../../constants"
 import { AddressOnNetwork } from "../../accounts"
