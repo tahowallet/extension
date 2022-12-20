@@ -6,12 +6,13 @@ import {
   updateSortType,
 } from "@tallyho/tally-background/redux-slices/nfts_update"
 import { selectCompletedNFTFilters } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, useCallback, useMemo } from "react"
+import React, { ReactElement, useCallback, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
 import SharedSlideUpMenuPanel from "../../Shared/SharedSlideUpMenuPanel"
 import SharedRadio from "../../Shared/SharedRadio"
 import FilterList from "./FilterList"
+import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 
 const RADIO_NAME = "sortType"
 
@@ -24,6 +25,7 @@ export default function NFTsFilters(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts.filters",
   })
+  const [isLoading, setIsLoading] = useState(false)
   const filters = useBackgroundSelector(selectCompletedNFTFilters)
   const dispatch = useBackgroundDispatch()
 
@@ -43,7 +45,12 @@ export default function NFTsFilters(): ReactElement {
 
   const handleUpdateAccountFilter = useCallback(
     (filter: Filter) => {
-      dispatch(updateAccountFilter(filter))
+      setIsLoading(true)
+      dispatch(updateAccountFilter(filter)).then(() =>
+        setTimeout(() => {
+          setIsLoading(false)
+        }, 500)
+      )
     },
     [dispatch]
   )
@@ -99,13 +106,21 @@ export default function NFTsFilters(): ReactElement {
         </div>
         <div className="simple_text">
           <span className="filter_title">{t("collectionsTitle")}</span>
-          {filters.collections.length > 0 ? (
-            <FilterList
-              filters={filters.collections}
-              onChange={handleUpdateCollectionFilter}
-            />
+          {isLoading ? (
+            <div className="spinner">
+              <SharedLoadingSpinner size="small" variant="transparent" />
+            </div>
           ) : (
-            <>{t("noCollections")}</>
+            <>
+              {filters.collections.length > 0 ? (
+                <FilterList
+                  filters={filters.collections}
+                  onChange={handleUpdateCollectionFilter}
+                />
+              ) : (
+                <>{t("noCollections")}</>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -122,6 +137,13 @@ export default function NFTsFilters(): ReactElement {
           display: inline-block;
           margin-bottom: 4px;
           width: 100%;
+        }
+        .spinner {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          flex-direction: column;
+          padding: 16px 0;
         }
       `}</style>
     </SharedSlideUpMenuPanel>
