@@ -25,7 +25,7 @@ import {
 import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
-import { PermissionMap } from "./utils"
+import { getRPCErrorResponser, PermissionMap } from "./utils"
 import { toHexChainID } from "../../networks"
 import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 
@@ -452,15 +452,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
         }
       }
     } catch (error) {
-      if (typeof error === "object" && error !== null && "body" in error) {
+      if (typeof error === "object" && error !== null) {
         logger.log("error processing request", error)
-        const parsedError = JSON.parse((error as { body: string }).body)?.error
-        if (parsedError) {
-          return {
-            ...parsedError,
-            message:
-              parsedError.message[0].toUpperCase() +
-              parsedError.message.slice(1),
+        // eslint-disable-next-line default-case
+        switch (true) {
+          case "body" in error:
+            return getRPCErrorResponser(error)
+          case "error" in error: {
+            return getRPCErrorResponser((error as { error: string }).error)
           }
         }
       }
