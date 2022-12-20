@@ -446,6 +446,34 @@ function findAndReplaceAlpacaFinanceMetamaskOption(addedNode: Node): void {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function addTallyButtonForWalletConnectModal(addedNode: Node): void {
+  // For some reason this fails with children but works with childNodes.
+  // childNodes is a NodeList and Node elements don't have className in their types.
+  // In reality it's there and works well.
+  if (
+    (addedNode?.childNodes[1] as unknown as HTMLElement)?.className !==
+    "walletconnect-search__input"
+  ) {
+    return
+  }
+
+  const walletButtonsWrapper = (addedNode as unknown as HTMLElement)
+    .children[2] as HTMLElement
+
+  const aWalletButton = walletButtonsWrapper.children[2] as HTMLAnchorElement
+  const aUrl = new URL(aWalletButton.href)
+
+  const wcUri = aUrl.searchParams.get("uri")
+
+  const tallyButton = document.createElement("button")
+  tallyButton.innerHTML = "Here be doggos"
+  tallyButton.onclick = () => {
+    window?.tally?.send("tally_walletConnectInit", [wcUri])
+  }
+  walletButtonsWrapper.before(tallyButton)
+}
+
 const hostnameToHandler = {
   "uniswap.org": findAndReplaceUniswapInjectedOption,
   "gmx.io": findAndReplaceGMXMetamaskOption,
@@ -469,4 +497,8 @@ export default function monitorForWalletConnectionPrompts(): void {
       observeMutations(hostnameToHandler[hostname])
     }
   })
+
+  // Commenting this out for now, because we don't have a way to put this behind a feature flag
+  // SUPPORT_WALLET_CONNECT flag
+  // observeMutations(addTallyButtonForWalletConnectModal)
 }

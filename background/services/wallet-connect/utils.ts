@@ -1,4 +1,4 @@
-import { browser } from "../.."
+import browser from "webextension-polyfill"
 
 /* eslint-disable import/prefer-default-export */
 export const getMetaPort = (
