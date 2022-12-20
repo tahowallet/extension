@@ -186,9 +186,7 @@ export default class AbilitiesService extends BaseService<Events> {
 
   async abilitiesAlarm(): Promise<void> {
     const accountsToTrack = await this.chainService.getAccountsToTrack()
-    const addresses = accountsToTrack
-      .map((account) => account.address)
-      .filter((address, index, self) => self.indexOf(address) === index)
+    const addresses = new Set(accountsToTrack.map((account) => account.address))
 
     // 1-by-1 decreases likelihood of hitting rate limit
     // eslint-disable-next-line no-restricted-syntax
