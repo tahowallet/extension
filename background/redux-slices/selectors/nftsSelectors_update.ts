@@ -117,7 +117,7 @@ export const selectAllNFTBadgesCount = createSelector(
 )
 
 export const selectAllNFTCollectionsCount = createSelector(
-  selectFilteredNFTCollections,
+  selectAllNFTCollections,
   (collections) => collections.length
 )
 
