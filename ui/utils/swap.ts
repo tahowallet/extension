@@ -37,6 +37,7 @@ export type QuoteUpdate = {
   buyAsset: SwappableAsset
   quoteRequest: SwapQuoteRequest
   timestamp: number
+  amount: string
 }
 
 export const fetchQuote = async ({
@@ -88,6 +89,7 @@ export const fetchQuote = async ({
     sellAsset,
     buyAsset,
     timestamp: Date.now(),
+    amount,
   }
 
   if (updatedQuoteData) {
