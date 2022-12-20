@@ -33,7 +33,7 @@ export default function NFTsHeader(): ReactElement {
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const { totalFloorPriceInETH, totalFloorPriceInUSD } =
-    useTotalNFTsFloorPrice()
+    useTotalNFTsFloorPrice(false)
 
   const handleToggleClick = useCallback(() => {
     setOpenFiltersMenu((currentlyOpen) => !currentlyOpen)

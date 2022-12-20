@@ -1,20 +1,18 @@
 import React, { ReactElement } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import {
-  selectFilteredNFTBadgesCount,
-  selectFilteredNFTCollectionsCount,
-  selectFilteredNFTsCount,
+  selectAllNFTBadgesCount,
+  selectAllNFTCollectionsCount,
+  selectAllNFTsCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector, useTotalNFTsFloorPrice } from "../../hooks"
 
 export default function NFTsPortfolioOverview(): ReactElement {
   const { t } = useTranslation()
 
-  const nftCount = useBackgroundSelector(selectFilteredNFTsCount)
-  const collectionCount = useBackgroundSelector(
-    selectFilteredNFTCollectionsCount
-  )
-  const badgeCount = useBackgroundSelector(selectFilteredNFTBadgesCount)
+  const nftCount = useBackgroundSelector(selectAllNFTsCount)
+  const collectionCount = useBackgroundSelector(selectAllNFTCollectionsCount)
+  const badgeCount = useBackgroundSelector(selectAllNFTBadgesCount)
 
   const { totalFloorPriceInUSD } = useTotalNFTsFloorPrice()
   return (

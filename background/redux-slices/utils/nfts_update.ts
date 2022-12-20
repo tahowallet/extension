@@ -1,4 +1,9 @@
-import { Filter, NFTCollectionCached, SortType } from "../nfts_update"
+import {
+  Filter,
+  FiltersState,
+  NFTCollectionCached,
+  SortType,
+} from "../nfts_update"
 
 const ETH_SYMBOLS = ["ETH", "WETH"]
 
@@ -8,11 +13,11 @@ export type AccountData = {
   avatarURL: string
 }
 
-export const isEnableFilter = (id: string, filters: Filter[]): boolean => {
+const isEnableFilter = (id: string, filters: Filter[]): boolean => {
   return !!filters.find((filter) => id === filter.id && filter.isEnabled)
 }
 
-export const isETHPrice = (collection: NFTCollectionCached): boolean => {
+const isETHPrice = (collection: NFTCollectionCached): boolean => {
   return !!ETH_SYMBOLS.includes(collection?.floorPrice?.tokenSymbol ?? "")
 }
 
@@ -96,3 +101,31 @@ export const sortNFTS = (
       return 0
   }
 }
+
+export const getTotalFloorPriceInETH = (
+  collections: NFTCollectionCached[]
+): number =>
+  collections.reduce((sum, collection) => {
+    if (collection.floorPrice && isETHPrice(collection)) {
+      return sum + collection.floorPrice.value * (collection.nftCount ?? 0)
+    }
+
+    return sum
+  }, 0)
+
+export const getNFTsCount = (collections: NFTCollectionCached[]): number =>
+  collections.reduce((sum, collection) => sum + (collection.nftCount ?? 0), 0)
+
+export const getFilteredCollections = (
+  collections: NFTCollectionCached[],
+  filters: FiltersState
+): NFTCollectionCached[] =>
+  collections
+    .filter(
+      (collection) =>
+        isEnableFilter(collection.id, filters.collections) &&
+        isEnableFilter(collection.owner, filters.accounts)
+    )
+    .sort((collection1, collection2) =>
+      sortNFTS(collection1, collection2, filters.type)
+    )
