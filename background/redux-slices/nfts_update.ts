@@ -172,16 +172,32 @@ const NFTsSlice = createSlice({
       immerState,
       { payload: transferredNFTs }: { payload: TransferredNFT[] }
     ) => {
-      transferredNFTs.forEach(({ id, chainID, address }) => {
-        Object.keys(
-          immerState.nfts[chainID][normalizeEVMAddress(address)]
-        ).forEach((collectionID) => {
-          const collection = immerState.nfts[chainID]?.[address]?.[collectionID]
+      transferredNFTs.forEach(({ id: nftID, chainID, address }) => {
+        const normalizedAddress = normalizeEVMAddress(address)
+        Object.keys(immerState.nfts[chainID][normalizedAddress] ?? {}).forEach(
+          (collectionID) => {
+            const collection =
+              immerState.nfts[chainID]?.[normalizedAddress]?.[collectionID]
 
-          if (collection) {
-            collection.nfts = collection.nfts.filter((nft) => nft.id !== id)
+            if (collection) {
+              const hasTransferredNFT = collection.nfts.some(
+                (nft) => nft.id === nftID
+              )
+
+              if (hasTransferredNFT) {
+                if (collection.nfts.length === 1) {
+                  delete immerState.nfts[chainID][normalizedAddress][
+                    collectionID
+                  ]
+                } else {
+                  collection.nfts = collection.nfts.filter(
+                    (nft) => nft.id !== nftID
+                  )
+                }
+              }
+            }
           }
-        })
+        )
       })
     },
     cleanCachedNFTs: (immerState) => {
