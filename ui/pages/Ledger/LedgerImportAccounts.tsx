@@ -40,6 +40,7 @@ function usePageData({
 
   const firstIndex = pageIndex * addressesPerPage
   const lastIndex = (pageIndex + 1) * addressesPerPage - 1
+
   for (let i = firstIndex; i <= lastIndex; i += 1) {
     if (parentPath.includes("x")) {
       const formattedString = parentPath.slice().replace("x", `${i}`)
@@ -66,28 +67,36 @@ function usePageData({
 
   useEffect(() => {
     const nextUnresolvedAccount = items.find((item) => item.account === null)
+
     if (!nextUnresolvedAccount) return
+
     const { path } = nextUnresolvedAccount
+
     dispatch(addLedgerAccount({ deviceID: device.id, path }))
   }, [device.id, dispatch, items])
 
   useEffect(() => {
     const nextUnresolvedAddress = items.find((item) => item.address === null)
-    if (!nextUnresolvedAddress) return
-    const { account } = nextUnresolvedAddress
-    if (!account) return
-    const { path, fetchingAddress } = account
-    if (!path || fetchingAddress) return
-    dispatch(fetchAddress({ deviceID: device.id, path }))
+
+    if (!nextUnresolvedAddress?.account) return
+
+    const { path, fetchingAddress } = nextUnresolvedAddress.account
+
+    if (!fetchingAddress) {
+      dispatch(fetchAddress({ deviceID: device.id, path }))
+    }
   }, [device.id, dispatch, items])
 
   useEffect(() => {
     const nextUnresolvedBalance = items.find((item) => item.balance === null)
-    if (!nextUnresolvedBalance) return
-    const { path, account } = nextUnresolvedBalance
-    if (!account) return
-    const { address } = account
-    if (!address) return
+
+    if (!nextUnresolvedBalance?.account?.address) return
+
+    const {
+      path,
+      account: { address },
+    } = nextUnresolvedBalance
+
     dispatch(
       fetchBalance({
         deviceID: device.id,
@@ -98,13 +107,12 @@ function usePageData({
     )
   }, [device.id, dispatch, items, network])
 
-  const selectedAccounts = items.flatMap((item) => {
-    if (!selectedStates[item.path]) return []
-    if (!item.account) return []
-    const { path, address } = item.account
-    if (!address) return []
-    return [{ path, address }]
-  })
+  const selectedAccounts = Object.keys(selectedStates)
+    .map((path) => ({ path, address: device.accounts[path]?.address }))
+    .filter(
+      (account): account is { path: string; address: string } =>
+        !!selectedStates[account.path] && !!account.address
+    )
 
   return { firstIndex, lastIndex, items, selectedAccounts }
 }
