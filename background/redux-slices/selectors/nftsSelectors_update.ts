@@ -1,6 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { normalizeEVMAddress } from "../../lib/utils"
+import { Filter } from "../nfts_update"
 import {
   AccountData,
   getAdditionalDataForFilter,
@@ -31,15 +32,28 @@ export const selectCompletedNFTFilters = createSelector(
   selectNFTFilters,
   selectAccountTotals,
   (filters, accountTotals) => {
+    const accounts = filters.accounts.reduce<Filter[]>((acc, filter) => {
+      const additionalData = getAdditionalDataForFilter(
+        filter.id,
+        accountTotals as AccountData[]
+      )
+      if (Object.keys(additionalData).length > 0) {
+        return [
+          ...acc,
+          {
+            ...filter,
+            ...additionalData,
+          },
+        ]
+      }
+      return [...acc]
+    }, [])
+
     const collections = filters.collections.filter((collection) =>
-      filters.accounts.find(
+      accounts.find(
         (account) => account.id === collection.owner && account.isEnabled
       )
     )
-    const accounts = filters.accounts.map((filter) => ({
-      ...filter,
-      ...getAdditionalDataForFilter(filter.id, accountTotals as AccountData[]),
-    }))
     return { ...filters, collections, accounts }
   }
 )
