@@ -89,9 +89,7 @@ export default function AbilityRemovalConfirm({
             font-style: normal;
             font-weight: 600;
             font-size: 18px;
-            line-height: 24px;
-        
-            
+            line-height: 24px;     
             color: #D6EAE9;
         }
         .remove_ability_option {
