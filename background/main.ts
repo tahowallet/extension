@@ -36,7 +36,7 @@ import {
   getNoopService,
 } from "./services"
 
-import { HexString, KeyringTypes } from "./types"
+import { HexString, KeyringTypes, NormalizedEVMAddress } from "./types"
 import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
@@ -1591,14 +1591,14 @@ export default class Main extends BaseService<never> {
   }
 
   async markAbilityAsCompleted(
-    address: HexString,
+    address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<void> {
     return this.abilitiesService.markAbilityAsCompleted(address, abilityId)
   }
 
   async markAbilityAsRemoved(
-    address: HexString,
+    address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<void> {
     return this.abilitiesService.markAbilityAsRemoved(address, abilityId)

@@ -1,6 +1,6 @@
 import { BigNumber, ethers, utils } from "ethers"
 import { normalizeHexAddress, toChecksumAddress } from "@tallyho/hd-keyring"
-import { HexString, UNIXTime } from "../../types"
+import { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
 import { EVMNetwork } from "../../networks"
 import { ETHEREUM, GOERLI } from "../../constants"
 import { AddressOnNetwork } from "../../accounts"
@@ -25,8 +25,10 @@ export function isMixedCaseAddress(address: string): boolean {
   )
 }
 
-export function normalizeEVMAddress(address: string | Buffer): HexString {
-  return normalizeHexAddress(address)
+export function normalizeEVMAddress(
+  address: string | Buffer
+): NormalizedEVMAddress {
+  return normalizeHexAddress(address) as NormalizedEVMAddress
 }
 
 export function normalizeAddressOnNetwork({

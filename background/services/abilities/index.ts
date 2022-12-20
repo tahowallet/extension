@@ -1,6 +1,6 @@
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
-import { HexString } from "../../types"
+import { HexString, NormalizedEVMAddress } from "../../types"
 import {
   DaylightAbility,
   DaylightAbilityRequirement,
@@ -9,6 +9,7 @@ import {
 import { AbilitiesDatabase, getOrCreateDB } from "./db"
 import ChainService from "../chain"
 import { FeatureFlags } from "../../features"
+import { normalizeEVMAddress } from "../../lib/utils"
 
 export type AbilityType = "mint" | "airdrop" | "access"
 
@@ -41,7 +42,7 @@ export type Ability = {
   imageUrl?: string
   completed: boolean
   removedFromUi: boolean
-  address: string
+  address: NormalizedEVMAddress
   requirement: AbilityRequirement
 }
 
@@ -95,7 +96,7 @@ const normalizeDaylightAbilities = (
         imageUrl: daylightAbility.imageUrl || undefined,
         completed: false,
         removedFromUi: false,
-        address,
+        address: normalizeEVMAddress(address),
         requirement: normalizeDaylightRequirements(
           // Just take the 1st requirement for now
           daylightAbility.requirements[0]
@@ -171,14 +172,14 @@ export default class AbilitiesService extends BaseService<Events> {
   }
 
   async markAbilityAsCompleted(
-    address: string,
+    address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<void> {
     return this.db.markAsCompleted(address, abilityId)
   }
 
   async markAbilityAsRemoved(
-    address: string,
+    address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<void> {
     return this.db.markAsRemoved(address, abilityId)

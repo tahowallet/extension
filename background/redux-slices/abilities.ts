@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { Ability } from "../services/abilities"
-import { HexString } from "../types"
+import { HexString, NormalizedEVMAddress } from "../types"
 import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 
@@ -63,7 +63,10 @@ export const {
 export const completeAbility = createBackgroundAsyncThunk(
   "abilities/completeAbility",
   async (
-    { address, abilityId }: { address: HexString; abilityId: string },
+    {
+      address,
+      abilityId,
+    }: { address: NormalizedEVMAddress; abilityId: string },
     { dispatch, extra: { main } }
   ) => {
     await main.markAbilityAsCompleted(address, abilityId)
@@ -75,7 +78,10 @@ export const completeAbility = createBackgroundAsyncThunk(
 export const removeAbility = createBackgroundAsyncThunk(
   "abilities/removeAbility",
   async (
-    { address, abilityId }: { address: HexString; abilityId: string },
+    {
+      address,
+      abilityId,
+    }: { address: NormalizedEVMAddress; abilityId: string },
     { dispatch, extra: { main } }
   ) => {
     await main.markAbilityAsRemoved(address, abilityId)

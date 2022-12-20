@@ -1,6 +1,7 @@
 import Dexie from "dexie"
 import { FeatureFlags, isEnabled } from "../../features"
 import type { Ability } from "."
+import { NormalizedEVMAddress } from "../../types"
 
 export class AbilitiesDatabase extends Dexie {
   private abilities!: Dexie.Table<Ability, string>
@@ -30,7 +31,7 @@ export class AbilitiesDatabase extends Dexie {
   }
 
   async getAbility(
-    address: string,
+    address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<Ability | undefined> {
     return this.abilities.get({ address, abilityId })
@@ -44,7 +45,10 @@ export class AbilitiesDatabase extends Dexie {
     ).toArray()
   }
 
-  async markAsCompleted(address: string, abilityId: string): Promise<void> {
+  async markAsCompleted(
+    address: NormalizedEVMAddress,
+    abilityId: string
+  ): Promise<void> {
     const ability = await this.getAbility(address, abilityId)
     if (!ability) {
       throw new Error("Ability does not exist")
@@ -55,7 +59,10 @@ export class AbilitiesDatabase extends Dexie {
     })
   }
 
-  async markAsRemoved(address: string, abilityId: string): Promise<void> {
+  async markAsRemoved(
+    address: NormalizedEVMAddress,
+    abilityId: string
+  ): Promise<void> {
     const ability = await this.getAbility(address, abilityId)
     if (!ability) {
       throw new Error("Ability does not exist")
