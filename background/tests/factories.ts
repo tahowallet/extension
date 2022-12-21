@@ -1,10 +1,29 @@
 /* eslint-disable class-methods-use-this */
-import { Block, FeeData } from "@ethersproject/abstract-provider"
+import {
+  Block,
+  FeeData,
+  TransactionReceipt,
+  TransactionResponse,
+} from "@ethersproject/abstract-provider"
 import { DexieOptions } from "dexie"
 import { BigNumber } from "ethers"
 import { keccak256 } from "ethers/lib/utils"
 import { AccountBalance, AddressOnNetwork } from "../accounts"
-import { ETH, ETHEREUM, OPTIMISM } from "../constants"
+import {
+  AnyAsset,
+  isFungibleAsset,
+  PricePoint,
+  SmartContractFungibleAsset,
+} from "../assets"
+import {
+  ARBITRUM_ONE,
+  AVALANCHE,
+  ETH,
+  ETHEREUM,
+  OPTIMISM,
+  POLYGON,
+  USD,
+} from "../constants"
 import {
   AnyEVMTransaction,
   LegacyEVMTransactionRequest,
@@ -20,6 +39,7 @@ import {
   PreferenceService,
   SigningService,
 } from "../services"
+import { QueuedTxToRetrieve } from "../services/chain"
 import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 
 const createRandom0xHash = () =>
@@ -206,6 +226,43 @@ export const createBlockPrices = (
   ...overrides,
 })
 
+export const createQueuedTransaction = (
+  overrides: Partial<QueuedTxToRetrieve> = {}
+): QueuedTxToRetrieve => ({
+  network: OPTIMISM,
+  hash: createRandom0xHash(),
+  firstSeen: Date.now(),
+  ...overrides,
+})
+
+export const createTransactionsToRetrieve = (
+  numberOfTx = 100
+): QueuedTxToRetrieve[] => {
+  const NETWORKS = [ETHEREUM, POLYGON, ARBITRUM_ONE, AVALANCHE, OPTIMISM]
+
+  return [...Array(numberOfTx).keys()].map((_, ind) =>
+    createQueuedTransaction({ network: NETWORKS[ind % NETWORKS.length] })
+  )
+}
+
+export const createTransactionResponse = (
+  overrides: Partial<TransactionResponse> = {}
+): TransactionResponse => ({
+  hash: createRandom0xHash(),
+  blockNumber: 25639147,
+  blockHash: createRandom0xHash(),
+  timestamp: Date.now(),
+  confirmations: 0,
+  from: createRandom0xHash(),
+  nonce: 570,
+  gasLimit: BigNumber.from(15000000),
+  data: "...",
+  value: BigNumber.from(15000000),
+  chainId: Number(OPTIMISM.chainID),
+  wait: () => Promise.resolve({} as TransactionReceipt),
+  ...overrides,
+})
+
 export const makeEthersBlock = (overrides?: Partial<Block>): Block => {
   return {
     hash: "0x20567436620bf18c07cf34b3ec4af3e530d7a2391d7a87fb0661565186f4e834",
@@ -259,3 +316,69 @@ export const makeSerialFallbackProvider =
 
     return new MockSerialFallbackProvider()
   }
+
+export const createSmartContractAsset = (
+  overrides: Partial<SmartContractFungibleAsset> = {}
+): SmartContractFungibleAsset => {
+  const getRandomStr = (length: number) => {
+    let result = ""
+
+    while (result.length < length) {
+      result += Math.random().toString(36).slice(2)
+    }
+
+    return result.slice(0, length)
+  }
+
+  const symbol = getRandomStr(3)
+  const asset = {
+    metadata: {
+      logoURL:
+        "https://messari.io/asset-images/0783ede3-4b2c-418a-9f82-f171894c70e2/128.png",
+      tokenLists: [
+        {
+          url: "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
+          name: "Uniswap Labs Default",
+          logoURL: "ipfs://QmNa8mQkrNKp1WEEeGjFezDmDeodkWRevGFN8JCV7b4Xir",
+        },
+      ],
+    },
+    name: `${symbol} Network`,
+    symbol,
+    decimals: 18,
+    homeNetwork: ETHEREUM,
+    contractAddress: createRandom0xHash(),
+  }
+
+  return {
+    ...asset,
+    ...overrides,
+  }
+}
+
+/**
+ * @param asset Any type of asset
+ * @param price Price, e.g. 1.5 => 1.5$
+ * @param flip Return assets and amounts in reverse order
+ */
+export const createPricePoint = (
+  asset: AnyAsset,
+  price = 1,
+  flip = false
+): PricePoint => {
+  const decimals = isFungibleAsset(asset) ? asset.decimals : 18
+
+  const pricePoint: PricePoint = {
+    pair: [asset, USD],
+    amounts: [10n ** BigInt(decimals), BigInt(Math.trunc(1e11 * price))],
+    time: Math.trunc(Date.now() / 1e3),
+  }
+
+  if (flip) {
+    const { pair, amounts } = pricePoint
+    pricePoint.pair = [pair[1], pair[0]]
+    pricePoint.amounts = [amounts[1], amounts[0]]
+  }
+
+  return pricePoint
+}

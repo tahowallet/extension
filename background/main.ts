@@ -12,6 +12,7 @@ import {
   getEthereumNetwork,
   isProbablyEVMAddress,
   normalizeEVMAddress,
+  wait,
 } from "./lib/utils"
 
 import {
@@ -29,6 +30,10 @@ import {
   DoggoService,
   LedgerService,
   SigningService,
+  NFTsService,
+  WalletConnectService,
+  AnalyticsService,
+  getNoopService,
 } from "./services"
 
 import { HexString, KeyringTypes } from "./types"
@@ -68,6 +73,8 @@ import {
   setNewSelectedAccount,
   setSnackbarMessage,
   setAccountsSignerSettings,
+  toggleCollectAnalytics,
+  setShowAnalyticsNotification,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -106,18 +113,12 @@ import {
   setVaultsAsStale,
 } from "./redux-slices/earn"
 import {
+  removeDevice,
   resetLedgerState,
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import {
-  ARBITRUM_ONE,
-  ETHEREUM,
-  GOERLI,
-  OPTIMISM,
-  POLYGON,
-  RSK,
-} from "./constants"
+import { OPTIMISM } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
@@ -132,7 +133,6 @@ import {
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 import { deleteNFts } from "./redux-slices/nfts"
-import { EnrichedEVMTransactionRequest } from "./services/enrichment"
 import {
   ActivityDetail,
   addActivity,
@@ -144,6 +144,19 @@ import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
 import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
+import { AnalyticsPreferences } from "./services/preferences/types"
+import { isSmartContractFungibleAsset } from "./assets"
+import { FeatureFlags, isEnabled } from "./features"
+import { NFTCollection } from "./nfts"
+import {
+  initializeNFTs,
+  updateNFTsCollections,
+  emitter as nftsSliceEmitter,
+  updateNFTs,
+  deleteNFTsForAddress,
+  updateIsReloading,
+  deleteTransferredNFTs,
+} from "./redux-slices/nfts_update"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -279,6 +292,21 @@ export default class Main extends BaseService<never> {
       chainService
     )
 
+    const analyticsService = AnalyticsService.create(
+      chainService,
+      preferenceService
+    )
+
+    const nftsService = NFTsService.create(chainService)
+
+    const walletConnectService = isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT)
+      ? WalletConnectService.create(
+          providerBridgeService,
+          internalEthereumProviderService,
+          preferenceService
+        )
+      : getNoopService<WalletConnectService>()
+
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
@@ -317,7 +345,10 @@ export default class Main extends BaseService<never> {
       await doggoService,
       await telemetryService,
       await ledgerService,
-      await signingService
+      await signingService,
+      await analyticsService,
+      await nftsService,
+      await walletConnectService
     )
   }
 
@@ -387,7 +418,25 @@ export default class Main extends BaseService<never> {
      * A promise to the signing service which will route operations between the UI
      * and the exact signing services.
      */
-    private signingService: SigningService
+    private signingService: SigningService,
+
+    /**
+     * A promise to the analytics service which will be responsible for listening
+     * to events and dispatching to our analytics backend
+     */
+    private analyticsService: AnalyticsService,
+
+    /**
+     * A promise to the NFTs service which takes care of NFTs data, fetching, updating
+     * details and prices of NFTs for imported accounts.
+     */
+    private nftsService: NFTsService,
+
+    /**
+     * A promise to the Wallet Connect service which takes care of handling wallet connect
+     * protocol and communication.
+     */
+    private walletConnectService: WalletConnectService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -446,6 +495,9 @@ export default class Main extends BaseService<never> {
       this.telemetryService.startService(),
       this.ledgerService.startService(),
       this.signingService.startService(),
+      this.analyticsService.startService(),
+      this.nftsService.startService(),
+      this.walletConnectService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -465,6 +517,9 @@ export default class Main extends BaseService<never> {
       this.telemetryService.stopService(),
       this.ledgerService.stopService(),
       this.signingService.stopService(),
+      this.analyticsService.stopService(),
+      this.nftsService.stopService(),
+      this.walletConnectService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -483,6 +538,13 @@ export default class Main extends BaseService<never> {
     this.connectTelemetryService()
     this.connectLedgerService()
     this.connectSigningService()
+    this.connectAnalyticsService()
+    this.connectWalletConnectService()
+
+    // Nothing else beside creating a service should happen when feature flag is off
+    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+      this.connectNFTsService()
+    }
 
     await this.connectChainService()
 
@@ -524,9 +586,18 @@ export default class Main extends BaseService<never> {
       await this.preferenceService.deleteAccountSignerSettings(signer)
     }
 
+    if (signer.type === "ledger" && lastAddressInAccount) {
+      this.store.dispatch(removeDevice(signer.deviceID))
+    }
+
     this.store.dispatch(removeActivities(address))
     this.store.dispatch(deleteNFts(address))
 
+    // remove NFTs
+    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+      this.store.dispatch(deleteNFTsForAddress(address))
+      await this.nftsService.removeNFTsForAddress(address)
+    }
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))
     await this.providerBridgeService.revokePermissionsForAddress(address)
@@ -687,29 +758,38 @@ export default class Main extends BaseService<never> {
             { maxFeePerGas, maxPriorityFeePerGas }
           )
 
-        const { annotation } =
-          await this.enrichmentService.enrichTransactionSignature(
-            network,
-            populatedRequest,
-            2 /* TODO desiredDecimals should be configurable */
-          )
+        // Create promise to pass into Promise.race
+        const getAnnotation = async () => {
+          const { annotation } =
+            await this.enrichmentService.enrichTransactionSignature(
+              network,
+              populatedRequest,
+              2 /* TODO desiredDecimals should be configurable */
+            )
+          return annotation
+        }
 
-        const enrichedPopulatedRequest: EnrichedEVMTransactionRequest = {
-          ...populatedRequest,
-          annotation,
+        const maybeEnrichedAnnotation = await Promise.race([
+          getAnnotation(),
+          // Wait 10 seconds before discarding enrichment
+          wait(10_000),
+        ])
+
+        if (maybeEnrichedAnnotation) {
+          populatedRequest.annotation = maybeEnrichedAnnotation
         }
 
         if (typeof gasEstimationError === "undefined") {
           this.store.dispatch(
             transactionRequest({
-              transactionRequest: enrichedPopulatedRequest,
+              transactionRequest: populatedRequest,
               transactionLikelyFails: false,
             })
           )
         } else {
           this.store.dispatch(
             transactionRequest({
-              transactionRequest: enrichedPopulatedRequest,
+              transactionRequest: populatedRequest,
               transactionLikelyFails: true,
             })
           )
@@ -854,27 +934,43 @@ export default class Main extends BaseService<never> {
   async connectIndexingService(): Promise<void> {
     this.indexingService.emitter.on(
       "accountsWithBalances",
-      async (accountsWithBalances) => {
+      async ({ balances, addressOnNetwork }) => {
         const assetsToTrack = await this.indexingService.getAssetsToTrack()
+        const trackedAccounts = await this.chainService.getAccountsToTrack()
+        const allTrackedAddresses = new Set(
+          trackedAccounts.map((account) => account.address)
+        )
+
+        if (!allTrackedAddresses.has(addressOnNetwork.address)) {
+          return
+        }
 
         const filteredBalancesToDispatch: AccountBalance[] = []
 
-        accountsWithBalances.forEach((balance) => {
+        balances.forEach((balance) => {
           // TODO support multi-network assets
-          const doesThisBalanceHaveAnAlreadyTrackedAsset =
-            !!assetsToTrack.filter(
-              (t) => t.symbol === balance.assetAmount.asset.symbol
-            )[0]
+          const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
+            (tracked) =>
+              tracked.symbol === balance.assetAmount.asset.symbol &&
+              isSmartContractFungibleAsset(balance.assetAmount.asset) &&
+              normalizeEVMAddress(tracked.contractAddress) ===
+                normalizeEVMAddress(balance.assetAmount.asset.contractAddress)
+          )
 
           if (
             balance.assetAmount.amount > 0 ||
-            doesThisBalanceHaveAnAlreadyTrackedAsset
+            balanceHasAnAlreadyTrackedAsset
           ) {
             filteredBalancesToDispatch.push(balance)
           }
         })
 
-        this.store.dispatch(updateAccountBalance(filteredBalancesToDispatch))
+        this.store.dispatch(
+          updateAccountBalance({
+            balances: filteredBalancesToDispatch,
+            addressOnNetwork,
+          })
+        )
       }
     )
 
@@ -1013,6 +1109,17 @@ export default class Main extends BaseService<never> {
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
+        /**
+         * There is a case in which the user changes the settings on the ledger after connection.
+         * For example, it sets disabled blind signing. Before the transaction signature request
+         * ledger should be connected again to refresh the state. Without reconnection,
+         * the user doesn't receive an error message on how to fix it.
+         */
+        const isArbitraryDataSigningEnabled =
+          await this.ledgerService.isArbitraryDataSigningEnabled()
+        if (!isArbitraryDataSigningEnabled) {
+          this.connectLedger()
+        }
         this.store.dispatch(
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
@@ -1193,13 +1300,6 @@ export default class Main extends BaseService<never> {
     )
 
     this.providerBridgeService.emitter.on(
-      "dappOpened",
-      async (addressOnNetwork: AddressOnNetwork) => {
-        this.chainService.markAccountActivity(addressOnNetwork)
-      }
-    )
-
-    this.providerBridgeService.emitter.on(
       "setClaimReferrer",
       async (referral: string) => {
         const isAddress = isProbablyEVMAddress(referral)
@@ -1234,15 +1334,12 @@ export default class Main extends BaseService<never> {
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       await Promise.all(
-        // TODO: replace this with this.chainService.supportedNetworks when removing the chain feature flags
-        [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, RSK].map(
-          async (network) => {
-            await this.providerBridgeService.grantPermission({
-              ...permission,
-              chainID: network.chainID,
-            })
-          }
-        )
+        this.chainService.supportedNetworks.map(async (network) => {
+          await this.providerBridgeService.grantPermission({
+            ...permission,
+            chainID: network.chainID,
+          })
+        })
       )
     })
 
@@ -1250,14 +1347,12 @@ export default class Main extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await Promise.all(
-          [ETHEREUM, POLYGON, OPTIMISM, GOERLI, ARBITRUM_ONE, RSK].map(
-            async (network) => {
-              await this.providerBridgeService.denyOrRevokePermission({
-                ...permission,
-                chainID: network.chainID,
-              })
-            }
-          )
+          this.chainService.supportedNetworks.map(async (network) => {
+            await this.providerBridgeService.denyOrRevokePermission({
+              ...permission,
+              chainID: network.chainID,
+            })
+          })
         )
       }
     )
@@ -1380,6 +1475,44 @@ export default class Main extends BaseService<never> {
     this.telemetryService.connectReduxStore(this.store)
   }
 
+  connectNFTsService(): void {
+    this.nftsService.emitter.on(
+      "initializeNFTs",
+      (collections: NFTCollection[]) => {
+        this.store.dispatch(initializeNFTs(collections))
+      }
+    )
+    this.nftsService.emitter.on(
+      "updateCollections",
+      (collections: NFTCollection[]) => {
+        this.store.dispatch(updateNFTsCollections(collections))
+      }
+    )
+    this.nftsService.emitter.on("updateNFTs", async (payload) => {
+      await this.store.dispatch(updateNFTs(payload))
+    })
+    this.nftsService.emitter.on("removeTransferredNFTs", async (payload) => {
+      this.store.dispatch(deleteTransferredNFTs(payload))
+    })
+    this.nftsService.emitter.on("isReloadingNFTs", async (payload) => {
+      this.store.dispatch(updateIsReloading(payload))
+    })
+    nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) =>
+      this.nftsService.fetchNFTsFromCollection(collectionID, account)
+    )
+    nftsSliceEmitter.on("fetchMoreNFTs", ({ collectionID, account }) =>
+      this.nftsService.fetchNFTsFromNextPage(collectionID, account)
+    )
+    nftsSliceEmitter.on("refetchCollections", () =>
+      this.nftsService.refreshCollections()
+    )
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  connectWalletConnectService(): void {
+    // TODO: here comes the glue between the UI and service layer
+  }
+
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
     const addressNetwork = this.store.getState().ui.selectedAccount
     const transaction = await this.chainService.getTransaction(
@@ -1392,6 +1525,46 @@ export default class Main extends BaseService<never> {
     )
 
     return getActivityDetails(enrichedTransaction)
+  }
+
+  async connectAnalyticsService(): Promise<void> {
+    const { hasDefaultOnBeenTurnedOn } =
+      await this.preferenceService.getAnalyticsPreferences()
+
+    if (
+      isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) &&
+      !hasDefaultOnBeenTurnedOn
+    ) {
+      // TODO: Remove this in the next release after we switch on
+      //       analytics by default
+      await this.preferenceService.updateAnalyticsPreferences({
+        isEnabled: true,
+        hasDefaultOnBeenTurnedOn: true,
+      })
+      this.store.dispatch(setShowAnalyticsNotification(true))
+    }
+    this.preferenceService.emitter.on(
+      "updateAnalyticsPreferences",
+      async (analyticsPreferences: AnalyticsPreferences) => {
+        // This event is used on initialization and data change
+        this.store.dispatch(
+          toggleCollectAnalytics(
+            // we are using only this field on the UI atm
+            // it's expected that more detailed analytics settings will come
+            analyticsPreferences.isEnabled
+          )
+        )
+      }
+    )
+
+    uiSliceEmitter.on(
+      "updateAnalyticsPreferences",
+      async (analyticsPreferences: Partial<AnalyticsPreferences>) => {
+        await this.preferenceService.updateAnalyticsPreferences(
+          analyticsPreferences
+        )
+      }
+    )
   }
 
   async updateSignerTitle(
@@ -1416,7 +1589,16 @@ export default class Main extends BaseService<never> {
   private connectPopupMonitor() {
     runtime.onConnect.addListener((port) => {
       if (port.name !== popupMonitorPortName) return
+
+      const openTime = Date.now()
+
       port.onDisconnect.addListener(() => {
+        this.analyticsService.sendAnalyticsEvent("UI shown", {
+          openTime: new Date(openTime).toISOString(),
+          closeTime: new Date().toISOString(),
+          openLength: (Date.now() - openTime) / 1e3,
+          unit: "s",
+        })
         this.onPopupDisconnected()
       })
     })

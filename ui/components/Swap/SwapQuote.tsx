@@ -6,7 +6,7 @@ import {
   ZrxQuote,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { useHistory } from "react-router-dom"
-import { FungibleAsset } from "@tallyho/tally-background/assets"
+import { SwappableAsset } from "@tallyho/tally-background/assets"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
 import SharedActivityHeader from "../Shared/SharedActivityHeader"
@@ -17,8 +17,8 @@ import SwapTransactionSettingsChooser, {
 import { useBackgroundDispatch } from "../../hooks"
 
 type Props = {
-  sellAsset: FungibleAsset
-  buyAsset: FungibleAsset
+  sellAsset: SwappableAsset
+  buyAsset: SwappableAsset
   finalQuote: ZrxQuote
   swapTransactionSettings: SwapTransactionSettings
 }

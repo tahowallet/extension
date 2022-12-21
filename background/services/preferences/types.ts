@@ -13,4 +13,10 @@ export interface Preferences {
   defaultWallet: boolean
   selectedAccount: AddressOnNetwork
   accountSignersSettings: AccountSignerSettings[]
+  analytics: {
+    isEnabled: boolean
+    hasDefaultOnBeenTurnedOn: boolean
+  }
 }
+
+export type AnalyticsPreferences = Preferences["analytics"]

@@ -1,11 +1,14 @@
 import React, { ReactElement } from "react"
 import {
+  ARBITRUM_NOVA,
   ARBITRUM_ONE,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
   POLYGON,
-  RSK,
+  ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { sameNetwork } from "@tallyho/tally-background/networks"
@@ -37,17 +40,53 @@ const productionNetworks = [
   ...(isEnabled(FeatureFlags.SUPPORT_RSK)
     ? [
         {
-          network: RSK,
-          info: i18n.t("protocol.mainnet"),
+          network: ROOTSTOCK,
+          info: i18n.t("protocol.beta"),
         },
       ]
     : []),
-  // {
-  //   name: "Binance Smart Chain",
-  //   info: i18n.t("protocol.compatibleChain"),
-  //   width: 24,
-  //   height: 24,
-  // },
+  ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE)
+    ? [
+        {
+          network: AVALANCHE,
+          info: i18n.t("protocol.avalanche"),
+        },
+      ]
+    : [
+        {
+          network: AVALANCHE,
+          info: i18n.t("comingSoon"),
+          isDisabled: true,
+        },
+      ]),
+  ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
+    ? [
+        {
+          network: BINANCE_SMART_CHAIN,
+          info: i18n.t("protocol.compatibleChain"),
+        },
+      ]
+    : [
+        {
+          network: BINANCE_SMART_CHAIN,
+          info: i18n.t("comingSoon"),
+          isDisabled: true,
+        },
+      ]),
+  ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA)
+    ? [
+        {
+          network: ARBITRUM_NOVA,
+          info: i18n.t("protocol.mainnet"),
+        },
+      ]
+    : [
+        {
+          network: ARBITRUM_NOVA,
+          info: i18n.t("comingSoon"),
+          isDisabled: true,
+        },
+      ]),
   // {
   //   name: "Celo",
   //   info: "Global payments infrastructure",

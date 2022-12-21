@@ -6,6 +6,7 @@ import { AddressOnNetwork } from "../../accounts"
 import DEFAULT_PREFERENCES from "./defaults"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
+import { AnalyticsPreferences } from "./types"
 
 type SignerRecordId = `${AccountSignerWithId["type"]}/${string}`
 
@@ -28,6 +29,10 @@ export interface Preferences {
   defaultWallet: boolean
   currentAddress?: string
   selectedAccount: AddressOnNetwork
+  analytics: {
+    isEnabled: boolean
+    hasDefaultOnBeenTurnedOn: boolean
+  }
 }
 
 export class PreferenceDatabase extends Dexie {
@@ -231,6 +236,38 @@ export class PreferenceDatabase extends Dexie {
       signersSettings: "&id",
     })
 
+    this.version(11).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          // eslint-disable-next-line no-param-reassign
+          storedPreferences.analytics = DEFAULT_PREFERENCES.analytics
+        })
+    })
+
+    this.version(12).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          storedPreferences.tokenLists.urls.push(
+            "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/src/joe.tokenlist-v2.json"
+          )
+        })
+    })
+
+    this.version(13).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          storedPreferences.tokenLists.urls.push(
+            "https://tokens.pancakeswap.finance/pancakeswap-default.json"
+          )
+        })
+    })
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
@@ -245,6 +282,19 @@ export class PreferenceDatabase extends Dexie {
     // TBD: This will surely return a value because `getOrCreateDB` is called first
     // when the service is created. It runs the migration which writes the `DEFAULT_PREFERENCES`
     return this.preferences.reverse().first() as Promise<Preferences>
+  }
+
+  async upsertAnalyticsPreferences(
+    analyticsPreferences: Partial<AnalyticsPreferences>
+  ): Promise<void> {
+    const preferences = await this.getPreferences()
+
+    await this.preferences.toCollection().modify({
+      analytics: {
+        ...preferences.analytics,
+        ...analyticsPreferences,
+      },
+    })
   }
 
   async setDefaultWalletValue(defaultWallet: boolean): Promise<void> {

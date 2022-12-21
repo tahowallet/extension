@@ -208,6 +208,13 @@ const ledgerSlice = createSlice({
     ) => {
       immerState.usbDeviceCount = usbDeviceCount
     },
+    removeDevice: (immerState, { payload: deviceID }: { payload: string }) => {
+      delete immerState.devices[deviceID]
+
+      if (immerState.currentDeviceID === deviceID) {
+        immerState.currentDeviceID = null
+      }
+    },
   },
 })
 
@@ -216,6 +223,7 @@ export const {
   setDeviceConnectionStatus,
   addLedgerAccount,
   setUsbDeviceCount,
+  removeDevice,
 } = ledgerSlice.actions
 
 export default ledgerSlice.reducer

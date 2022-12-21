@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { selectHideDust } from "../ui"
 import { RootState } from ".."
-import { AccountState, AccountType, CompleteAssetAmount } from "../accounts"
+import { AccountType, CompleteAssetAmount } from "../accounts"
 import { AssetsState, selectAssetPricePoint } from "../assets"
 import {
   enrichAssetAmountWithDecimalValues,
@@ -48,7 +48,16 @@ import {
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
-const desiredDecimals = 2
+const desiredDecimals = {
+  default: 2,
+  greater: 6,
+}
+
+// List of assets by symbol that should be displayed with more decimal places
+const EXCEPTION_ASSETS_BY_SYMBOL = ["BTC", "sBTC", "WBTC", "tBTC"].map(
+  (symbol) => symbol.toUpperCase()
+)
+
 // TODO Make this a setting.
 const userValueDustThreshold = 2
 
@@ -88,7 +97,7 @@ const computeCombinedAssetAmountsData = (
     .map<CompleteAssetAmount>((assetAmount) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
-        assetAmount.asset.symbol,
+        assetAmount.asset,
         mainCurrencySymbol
       )
 
@@ -96,13 +105,17 @@ const computeCombinedAssetAmountsData = (
         enrichAssetAmountWithMainCurrencyValues(
           assetAmount,
           assetPricePoint,
-          desiredDecimals
+          desiredDecimals.default
         )
 
       const fullyEnrichedAssetAmount = enrichAssetAmountWithDecimalValues(
         mainCurrencyEnrichedAssetAmount,
         heuristicDesiredDecimalsForUnitPrice(
-          desiredDecimals,
+          EXCEPTION_ASSETS_BY_SYMBOL.includes(
+            assetAmount.asset.symbol.toUpperCase()
+          )
+            ? desiredDecimals.greater
+            : desiredDecimals.default,
           mainCurrencyEnrichedAssetAmount.unitPrice
         )
       )
@@ -217,7 +230,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
           ? formatCurrencyAmount(
               mainCurrencySymbol,
               totalMainCurrencyAmount,
-              desiredDecimals
+              desiredDecimals.default
             )
           : undefined,
       },
@@ -256,7 +269,7 @@ export const selectCurrentAccountBalances = createSelector(
         ? formatCurrencyAmount(
             mainCurrencySymbol,
             totalMainCurrencyAmount,
-            desiredDecimals
+            desiredDecimals.default
           )
         : undefined,
     }
@@ -312,7 +325,7 @@ const getTotalBalance = (
     .map(({ assetAmount }) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
-        assetAmount.asset.symbol,
+        assetAmount.asset,
         mainCurrencySymbol
       )
 
@@ -329,27 +342,31 @@ const getTotalBalance = (
         return 0
       }
 
-      return assetAmountToDesiredDecimals(convertedAmount, desiredDecimals)
+      return assetAmountToDesiredDecimals(
+        convertedAmount,
+        desiredDecimals.default
+      )
     })
     .reduce((total, assetBalance) => total + assetBalance, 0)
 }
 
 function getNetworkAccountTotalsByCategory(
-  accounts: AccountState,
-  assets: AssetsState,
-  accountSignersByAddress: ReturnType<typeof selectAccountSignersByAddress>,
-  keyringsByAddresses: ReturnType<typeof selectKeyringsByAddresses>,
-  sourcesByAddress: ReturnType<typeof selectSourcesByAddress>,
-  mainCurrencySymbol: ReturnType<typeof selectMainCurrencySymbol>,
+  state: RootState,
   network: EVMNetwork
 ): CategorizedAccountTotals {
+  const accounts = getAccountState(state)
+  const assets = getAssetsState(state)
+  const accountSignersByAddress = selectAccountSignersByAddress(state)
+  const keyringsByAddresses = selectKeyringsByAddresses(state)
+  const sourcesByAddress = selectSourcesByAddress(state)
+  const mainCurrencySymbol = selectMainCurrencySymbol(state)
+
   return Object.entries(accounts.accountsData.evm[network.chainID] ?? {})
     .filter(([, accountData]) => typeof accountData !== "undefined")
     .map(([address, accountData]): AccountTotal => {
       const shortenedAddress = truncateAddress(address)
 
-      const accountSigner =
-        accountSignersByAddress[address] ?? ReadOnlyAccountSigner
+      const accountSigner = accountSignersByAddress[address]
       const keyringId = keyringsByAddresses[address]?.id
 
       const accountType = getAccountType(
@@ -381,7 +398,7 @@ function getNetworkAccountTotalsByCategory(
         localizedTotalMainCurrencyAmount: formatCurrencyAmount(
           mainCurrencySymbol,
           getTotalBalance(accountData.balances, assets, mainCurrencySymbol),
-          desiredDecimals
+          desiredDecimals.default
         ),
       }
     })
@@ -398,32 +415,9 @@ function getNetworkAccountTotalsByCategory(
 }
 
 const selectNetworkAccountTotalsByCategoryResolver = createSelector(
-  getAccountState,
-  getAssetsState,
-  selectAccountSignersByAddress,
-  selectKeyringsByAddresses,
-  selectSourcesByAddress,
-  selectMainCurrencySymbol,
-  selectCurrentNetwork,
-  (
-    accounts,
-    assets,
-    accountSignersByAddress,
-    keyringsByAddresses,
-    sourcesByAddress,
-    mainCurrencySymbol
-  ): ((network: EVMNetwork) => CategorizedAccountTotals) => {
-    return (network: EVMNetwork) => {
-      return getNetworkAccountTotalsByCategory(
-        accounts,
-        assets,
-        accountSignersByAddress,
-        keyringsByAddresses,
-        sourcesByAddress,
-        mainCurrencySymbol,
-        network
-      )
-    }
+  (state: RootState) => state,
+  (state) => (network: EVMNetwork) => {
+    return getNetworkAccountTotalsByCategory(state, network)
   }
 )
 

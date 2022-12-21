@@ -1,9 +1,29 @@
 import { BigNumber, ethers, utils } from "ethers"
-import { normalizeHexAddress } from "@tallyho/hd-keyring"
-import { HexString } from "../../types"
+import { normalizeHexAddress, toChecksumAddress } from "@tallyho/hd-keyring"
+import { HexString, UNIXTime } from "../../types"
 import { EVMNetwork } from "../../networks"
 import { ETHEREUM, GOERLI } from "../../constants"
 import { AddressOnNetwork } from "../../accounts"
+
+export function isValidChecksumAddress(
+  address: string,
+  chainId?: number
+): boolean {
+  return toChecksumAddress(address, chainId) === address
+}
+
+export function isMixedCaseAddress(address: string): boolean {
+  let addressValue = address
+  // If address is uppercase then convert 0X prefix to lowercase
+  if (address.slice(0, 2) === "0X") {
+    addressValue = `0x${address.slice(2)}`
+  }
+
+  return !(
+    addressValue.match(/^(0x)?[0-9A-F]{40}$/) ||
+    addressValue.match(/^(0x)?[0-9a-f]{40}$/)
+  )
+}
 
 export function normalizeEVMAddress(address: string | Buffer): HexString {
   return normalizeHexAddress(address)
@@ -148,3 +168,8 @@ export const hexToAscii = (hex_: string): string => {
     str += String.fromCharCode(parseInt(hex.substr(i, 2), 16))
   return str.replace("\x00", "")
 }
+
+export const wait = (ms: number): Promise<void> =>
+  new Promise<void>((r) => setTimeout(r, ms))
+
+export const getUNIXTimestamp = (): UNIXTime => Math.floor(Date.now() / 1000)

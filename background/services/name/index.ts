@@ -358,7 +358,7 @@ export default class NameService extends BaseService<Events> {
     if (avatarUri instanceof URL) {
       return {
         ...baseResolvedAvatar,
-        resolved: { avatar: storageGatewayURL(avatarUri) },
+        resolved: { avatar: storageGatewayURL(avatarUri.href) },
       }
     }
 
@@ -392,7 +392,7 @@ export default class NameService extends BaseService<Events> {
           const { image } = metadata
           const resolvedGateway = {
             ...baseResolvedAvatar,
-            resolved: { avatar: storageGatewayURL(new URL(image)) },
+            resolved: { avatar: storageGatewayURL(image) },
           }
 
           this.cachedResolvedEIP155Avatars[normalizedAvatarUri] =
@@ -405,7 +405,7 @@ export default class NameService extends BaseService<Events> {
     // If not an EIP URI, assume we're looking at a standard URL; if that
     // fails, log an error and just return undefined.
     try {
-      const plainURL = storageGatewayURL(new URL(avatarUri))
+      const plainURL = storageGatewayURL(avatarUri)
       return {
         ...baseResolvedAvatar,
         resolved: { avatar: plainURL },

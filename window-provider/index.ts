@@ -20,7 +20,10 @@ import monitorForWalletConnectionPrompts from "./wallet-connection-handlers"
 // TODO: we don't want to impersonate MetaMask everywhere to not break existing integrations,
 //       so let's do this only on the websites that need this feature
 const impersonateMetamaskWhitelist = [
+  "traderjoexyz.com",
+  "transferto.xyz",
   "opensea.io",
+  "staking.polygon.technology",
   "gmx.io",
   "app.lyra.finance",
   "matcha.xyz",
@@ -38,7 +41,29 @@ const impersonateMetamaskWhitelist = [
   "tofunft.com",
   "aboard.exchange",
   "portal.zksync.io",
+  "blur.io",
+  "app.benqi.fi",
+  "snowtrace.io",
+  "core.app",
+  "cbridge.celer.network",
+  "stargate.finance",
+  "app.multchain.cn",
+  "app.venus.io",
+  "app.alpacafinance.org",
+  "pancakeswap.finance",
+  "liquidifty.io",
+  "ankr.com",
+  "mint.xencrypto.io",
+  "bscscan.com",
 ]
+
+const METAMASK_STATE_MOCK = {
+  accounts: null,
+  isConnected: false,
+  isUnlocked: false,
+  initialized: false,
+  isPermanentlyDisconnected: false,
+}
 
 export default class TallyWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
@@ -69,6 +94,8 @@ export default class TallyWindowProvider extends EventEmitter {
       }
     }
   >()
+
+  _state?: typeof METAMASK_STATE_MOCK
 
   providerInfo = {
     label: "Tally Ho!",
@@ -111,12 +138,24 @@ export default class TallyWindowProvider extends EventEmitter {
           result.defaultWallet,
           result.shouldReload
         )
+        const currentHost = window.location.host
         if (
           impersonateMetamaskWhitelist.some((host) =>
-            window.location.host.includes(host)
+            currentHost.includes(host)
           )
         ) {
           this.isMetaMask = result.defaultWallet
+
+          if (
+            this.isMetaMask &&
+            // This is internal to MetaMask but accessed by this dApp
+            // TODO: Improve MetaMask provider impersonation
+            currentHost.includes("core.app")
+          ) {
+            // eslint-disable-next-line no-underscore-dangle
+            this._state = METAMASK_STATE_MOCK
+          }
+
           this.tallySetAsDefault = result.defaultWallet
         }
         if (result.chainId && result.chainId !== this.chainId) {
@@ -127,6 +166,14 @@ export default class TallyWindowProvider extends EventEmitter {
       }
     }
 
+    /**
+     * Some dApps may have a problem with preserving a reference to a provider object.
+     * This is the result of incorrect assignment.
+     * In such a case, the object this is undefined
+     * which results in an error in the execution of the request.
+     * The request function should always have a provider object set.
+     */
+    this.request = this.request.bind(this)
     monitorForWalletConnectionPrompts()
     this.transport.addEventListener(internalListener)
     this.transport.addEventListener(this.internalBridgeListener.bind(this))

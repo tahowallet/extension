@@ -1,7 +1,3 @@
-import {
-  AlchemyProvider,
-  AlchemyWebSocketProvider,
-} from "@ethersproject/providers"
 import { BigNumber, utils } from "ethers"
 
 import logger from "./logger"
@@ -17,6 +13,7 @@ import {
   isValidAlchemyTokenBalanceResponse,
   isValidAlchemyTokenMetadataResponse,
 } from "./validate"
+import type SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import { AddressOnNetwork } from "../accounts"
 import { fetchWithTimeout } from "../utils/fetching"
 
@@ -41,7 +38,7 @@ export const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer
  *        to look.
  */
 export async function getAssetTransfers(
-  provider: AlchemyProvider | AlchemyWebSocketProvider,
+  provider: SerialFallbackProvider,
   addressOnNetwork: AddressOnNetwork,
   direction: "incoming" | "outgoing",
   fromBlock: number,
@@ -152,7 +149,7 @@ export async function getAssetTransfers(
  *        tokens on its platform
  */
 export async function getTokenBalances(
-  provider: AlchemyProvider | AlchemyWebSocketProvider,
+  provider: SerialFallbackProvider,
   { address, network }: AddressOnNetwork,
   tokens?: HexString[]
 ): Promise<SmartContractAmount[]> {
@@ -191,7 +188,12 @@ export async function getTokenBalances(
       // A hex value of 0x without any subsequent numbers generally means "no
       // value" (as opposed to 0) in Ethereum implementations, so filter it out
       // as effectively undefined.
-      .filter(({ tokenBalance }) => tokenBalance !== "0x")
+      .filter(
+        ({ tokenBalance }) =>
+          // Do not filter out 0-balances here to account for cases when a users
+          // spends all of their tokens (swap MAX of a token, bridge all tokens, etc..)
+          tokenBalance !== "0x"
+      )
       .map((tokenBalance) => {
         let balance = tokenBalance.tokenBalance
         if (balance.length > 66) {
@@ -220,7 +222,7 @@ export async function getTokenBalances(
  *        for the same network, or results are undefined.
  */
 export async function getTokenMetadata(
-  provider: AlchemyProvider | AlchemyWebSocketProvider,
+  provider: SerialFallbackProvider,
   { contractAddress, homeNetwork }: SmartContract
 ): Promise<SmartContractFungibleAsset | undefined> {
   const json: unknown = await provider.send("alchemy_getTokenMetadata", [

@@ -1,4 +1,4 @@
-import { FiatCurrency, FungibleAsset, CoinGeckoAsset } from "../assets"
+import { FiatCurrency } from "../assets"
 import { NetworkBaseAsset } from "../networks"
 import { coinTypesByAssetSymbol } from "./coin-types"
 
@@ -13,7 +13,7 @@ export const FIAT_CURRENCIES_SYMBOL = FIAT_CURRENCIES.map(
   (currency) => currency.symbol
 )
 
-export const ETH: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
+export const ETH: NetworkBaseAsset = {
   name: "Ether",
   symbol: "ETH",
   decimals: 18,
@@ -25,7 +25,7 @@ export const ETH: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   },
 }
 
-export const RBTC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
+export const RBTC: NetworkBaseAsset = {
   name: "RSK Token",
   symbol: "RBTC",
   decimals: 18,
@@ -37,25 +37,25 @@ export const RBTC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   },
 }
 
-export const OPTIMISTIC_ETH: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset =
-  {
-    name: "Ether",
-    symbol: "ETH",
-    decimals: 18,
-    coinType: coinTypesByAssetSymbol.ETH,
-    contractAddress: "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000",
-    metadata: {
-      coinGeckoID: "ethereum",
-      tokenLists: [],
-      websiteURL: "https://ethereum.org",
-    },
-  }
+export const OPTIMISTIC_ETH: NetworkBaseAsset = {
+  name: "Ether",
+  symbol: "ETH",
+  decimals: 18,
+  coinType: coinTypesByAssetSymbol.ETH,
+  contractAddress: "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0000",
+  metadata: {
+    coinGeckoID: "ethereum",
+    tokenLists: [],
+    websiteURL: "https://ethereum.org",
+  },
+}
 
-export const MATIC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
+export const MATIC: NetworkBaseAsset = {
   name: "Matic Token",
   symbol: "MATIC",
   decimals: 18,
   coinType: coinTypesByAssetSymbol.MATIC,
+  contractAddress: "0x0000000000000000000000000000000000001010",
   metadata: {
     coinGeckoID: "matic-network",
     tokenLists: [],
@@ -63,7 +63,31 @@ export const MATIC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   },
 }
 
-export const BTC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
+export const AVAX: NetworkBaseAsset = {
+  name: "Avalanche",
+  symbol: "AVAX",
+  decimals: 18,
+  coinType: coinTypesByAssetSymbol.AVAX,
+  metadata: {
+    coinGeckoID: "avalanche-2",
+    tokenLists: [],
+    websiteURL: "https://avax.network/",
+  },
+}
+
+export const BNB: NetworkBaseAsset = {
+  name: "Binance Coin",
+  symbol: "BNB",
+  decimals: 18,
+  coinType: coinTypesByAssetSymbol.BNB,
+  metadata: {
+    coinGeckoID: "binancecoin",
+    tokenLists: [],
+    websiteURL: "https://bnbchain.org",
+  },
+}
+
+export const BTC: NetworkBaseAsset = {
   name: "Bitcoin",
   symbol: "BTC",
   decimals: 8,
@@ -75,10 +99,10 @@ export const BTC: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset = {
   },
 }
 
-export const BASE_ASSETS = [ETH, BTC, MATIC, RBTC, OPTIMISTIC_ETH]
+export const BASE_ASSETS = [ETH, BTC, MATIC, RBTC, OPTIMISTIC_ETH, AVAX, BNB]
 
 export const BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce<{
-  [assetSymbol: string]: FungibleAsset & CoinGeckoAsset & NetworkBaseAsset
+  [assetSymbol: string]: NetworkBaseAsset
 }>((acc, asset) => {
   const newAcc = {
     ...acc,

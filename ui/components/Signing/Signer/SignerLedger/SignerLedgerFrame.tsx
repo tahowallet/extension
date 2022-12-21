@@ -105,7 +105,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
         </>
       ) : (
         <>
-          {children}
+          <div className="signature-details">{children}</div>
           <footer>
             <SharedButton size="large" type="secondary" onClick={handleReject}>
               {tSigning("reject")}
@@ -133,11 +133,23 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
             )}
           </footer>
           <SharedSlideUpMenu
-            isOpen={isSlideUpOpen}
+            isOpen={isSlideUpOpen && ledgerCannotSign}
+            size="auto"
             close={() => setIsSlideUpOpen(false)}
           >
             <SignerLedgerConnect signingLedgerState={ledgerState} />
           </SharedSlideUpMenu>
+          <style jsx>
+            {`
+              .signature-details {
+                /*
+                 * Adjust for fixed-position footer, plus some extra to visually
+                 * deal with the drop shadow.
+                 */
+                margin-bottom: 84px;
+              }
+            `}
+          </style>
         </>
       )}
     </>
