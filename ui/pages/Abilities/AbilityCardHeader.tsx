@@ -14,7 +14,7 @@ const getRequirementLabel = (ability: Ability): string => {
 }
 
 // eslint-disable-next-line import/prefer-default-export
-const AbilityCardHeader = ({ ability }: { ability: Ability }): ReactElement => {
+function AbilityCardHeader({ ability }: { ability: Ability }): ReactElement {
   return (
     <>
       <div className="header">
