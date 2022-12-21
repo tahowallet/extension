@@ -72,7 +72,7 @@ export default function AbilitiesHeader(): ReactElement {
           display: flex;
           flex-direction: row;
           align-items: flex-end;
-          background: #0d2321;
+          background: var(--hunter-green);
           border-radius: 17px;
           padding: 4px 8px 4px 8px;
           color: ${newAbilities > 0 ? "var(--success)" : "var(--green-40)"};
