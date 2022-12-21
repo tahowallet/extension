@@ -54,11 +54,8 @@ export default function AbilitiesHeader(): ReactElement {
 
           width: 352px;
           height: 56px;
-          box-shadow: 0px 2px 4px 0px #00141357;
-
-          box-shadow: 0px 6px 8px 0px #0014133d;
-
-          box-shadow: 0px 16px 16px 0px #00141324;
+          box-shadow: 0px 2px 4px 0px #00141357, 0px 6px 8px 0px #0014133d,
+            0px 16px 16px 0px #00141324;
 
           display: flex;
           flex-direction: column;
