@@ -1,7 +1,7 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { NFTWithCollection } from "@tallyho/tally-background/redux-slices/nfts_update"
-import React, { ReactElement, useCallback, useMemo } from "react"
+import React, { ReactElement, useCallback, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useIntersectionObserver } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
@@ -47,16 +47,17 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
   // out of the viewport - browser is not rendering them at all. This is a workaround
   // to force them to rerender.
   // TODO: scrolling in and out of the view is still breaking it, needs more work
+  const backdropRef = useRef<HTMLDivElement>(null)
   const backdropCallback = useCallback(([div]) => {
     if (div.isIntersecting) {
       div.target.classList.remove("preview_backdrop")
       div.target.classList.add("preview_backdrop")
     }
   }, [])
-  const backdropRef = useIntersectionObserver<HTMLDivElement>(
-    backdropCallback,
-    { threshold: 0.8 }
-  )
+
+  useIntersectionObserver<HTMLDivElement>(backdropRef, backdropCallback, {
+    threshold: 0.8,
+  })
 
   const marketsList = useMemo(() => getRelevantMarketsList(nft), [nft])
   const { t } = useTranslation("translation", {

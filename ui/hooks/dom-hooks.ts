@@ -140,11 +140,11 @@ export function useLocalStorage(
 }
 
 export function useIntersectionObserver<T extends HTMLElement>(
+  elementRef: RefObject<T>,
   callback: IntersectionObserverCallback, // should be created with useCallback
   initialOptions?: IntersectionObserverInit
 ): RefObject<T> {
   const optionsRef = useRef(initialOptions)
-  const elementRef = useRef<T>(null)
 
   const observer = useMemo(() => {
     return new IntersectionObserver(callback, optionsRef.current)

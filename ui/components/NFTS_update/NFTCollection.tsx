@@ -1,4 +1,10 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, {
+  ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { NFT } from "@tallyho/tally-background/nfts"
 import {
   fetchMoreNFTsFromCollection,
@@ -46,6 +52,7 @@ export default function NFTCollection(props: {
     [id, owner, network, dispatch]
   )
 
+  const collectionRef = useRef<HTMLLIElement>(null)
   const intersectionCallback = useCallback(
     ([element]) => {
       if (element.isIntersecting && !wasUpdated) {
@@ -71,11 +78,11 @@ export default function NFTCollection(props: {
     [fetchCollection, isLoading, isUpdating, wasUpdated, nfts.length]
   )
 
-  const collectionRef = useIntersectionObserver<HTMLLIElement>(
-    intersectionCallback,
-    { threshold: 0.1 }
-  )
+  useIntersectionObserver<HTMLLIElement>(collectionRef, intersectionCallback, {
+    threshold: 0.1,
+  })
 
+  const loadMoreRef = useRef<HTMLDivElement>(null)
   const loadMoreCallback = useCallback(
     ([element]) => {
       if (element.isIntersecting && !isUpdating) {
@@ -88,10 +95,9 @@ export default function NFTCollection(props: {
     [fetchMore, hasNextPage, isUpdating]
   )
 
-  const loadMoreRef = useIntersectionObserver<HTMLDivElement>(
-    loadMoreCallback,
-    { threshold: 0.1 }
-  )
+  useIntersectionObserver<HTMLDivElement>(loadMoreRef, loadMoreCallback, {
+    threshold: 0.1,
+  })
 
   useEffect(() => {
     // update collection on expand if needed

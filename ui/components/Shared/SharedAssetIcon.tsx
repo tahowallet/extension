@@ -1,4 +1,10 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, {
+  ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { storageGatewayURL } from "@tallyho/tally-background/lib/storage-gateway"
 import classNames from "classnames"
 import { useIntersectionObserver } from "../../hooks"
@@ -34,12 +40,15 @@ export default function SharedAssetIcon(props: Props): ReactElement {
 
   const sizeClass = typeof size === "string" ? size : "custom_size"
 
+  const containerRef = useRef<HTMLDivElement>(null)
   const containerObserverCallback = useCallback(([entry]) => {
     if (entry.isIntersecting) {
       setIsVisible(true)
     }
   }, [])
-  const containerRef = useIntersectionObserver<HTMLDivElement>(
+
+  useIntersectionObserver<HTMLDivElement>(
+    containerRef,
     containerObserverCallback,
     { threshold: 0.01, root: null, rootMargin: "50px 0px 50px 0px" }
   )
