@@ -91,7 +91,7 @@ const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
                   icon="icons/s/garbage.svg"
                   color="var(--green-40)"
                   customStyles="margin-left: 10px;"
-                  hoverColor="#EC3137"
+                  hoverColor="var(--error)"
                   onClick={() => {
                     setShowRemoveAbilityConfirm(true)
                   }}
