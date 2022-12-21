@@ -9,7 +9,7 @@ import { useBackgroundDispatch } from "../../hooks"
 import AbilityCardHeader from "./AbilityCardHeader"
 import AbilityRemovalConfirm from "./AbilityRemovalConfirm"
 
-const AbilityCard = ({ ability }: { ability: Ability }): ReactElement => {
+function AbilityCard({ ability }: { ability: Ability }): ReactElement {
   const [showRemoveAbilityConfirm, setShowRemoveAbilityConfirm] =
     useState(false)
 
