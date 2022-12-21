@@ -101,33 +101,39 @@ function updateCollection(
   }
 }
 
-function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
+const FILTER_TYPE = ["accounts", "collections"] as const
+type FilterType = typeof FILTER_TYPE[number]
+
+function updateFilter(
+  acc: NFTsSliceState,
+  collection: NFTCollection,
+  type: FilterType
+): void {
   const { id, name, thumbnailURL, owner } = collection
 
-  const existingAccounts = acc.filters.accounts.find((obj) => obj.id === owner)
-  const existingCollections = acc.filters.collections.find(
-    (obj) => obj.id === id
+  const existingFilterId = acc.filters[type].findIndex(
+    (obj) => obj.id === (type === "accounts" ? owner : id)
   )
+  const filter =
+    type === "accounts"
+      ? { id: owner, name: owner }
+      : { id, name, thumbnailURL, owner }
 
-  acc.filters.accounts = [
-    ...acc.filters.accounts.filter((obj) => obj.id !== owner),
-    {
-      id: owner,
-      name: owner,
-      isEnabled: existingAccounts ? existingAccounts.isEnabled : true,
-    },
-  ]
+  if (existingFilterId >= 0) {
+    acc.filters[type][existingFilterId] = {
+      ...filter,
+      ...acc.filters[type][existingFilterId],
+    }
+  } else {
+    acc.filters[type].push({
+      ...filter,
+      isEnabled: true,
+    })
+  }
+}
 
-  acc.filters.collections = [
-    ...acc.filters.collections.filter((obj) => obj.id !== id),
-    {
-      id,
-      name,
-      thumbnailURL,
-      owner,
-      isEnabled: existingCollections ? existingCollections.isEnabled : true,
-    },
-  ]
+function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
+  FILTER_TYPE.forEach((type) => updateFilter(acc, collection, type))
 }
 
 function initializeCollections(collections: NFTCollection[]): NFTsSliceState {
