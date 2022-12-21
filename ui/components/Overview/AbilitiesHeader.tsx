@@ -66,7 +66,7 @@ export default function AbilitiesHeader(): ReactElement {
           display: flex;
           flex-direction: row;
           align-items: flex-end;
-          font-weight: 400px;
+          font-weight: 400;
         }
         .ability_count {
           display: flex;
