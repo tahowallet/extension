@@ -8,7 +8,7 @@ const typeColor = {
   access: "#02C0EA",
 }
 
-const AbilityLabel = ({ type }: { type: AbilityType }): ReactElement => {
+function AbilityLabel({ type }: { type: AbilityType }): ReactElement {
   return (
     <>
       <div
