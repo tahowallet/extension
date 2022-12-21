@@ -6,8 +6,16 @@ import {
   updateSortType,
 } from "@tallyho/tally-background/redux-slices/nfts_update"
 import { selectCompletedNFTFilters } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, useCallback, useMemo, useState } from "react"
+import React, {
+  ReactElement,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { useTranslation } from "react-i18next"
+import classNames from "classnames"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
 import SharedSlideUpMenuPanel from "../../Shared/SharedSlideUpMenuPanel"
 import SharedRadio from "../../Shared/SharedRadio"
@@ -25,9 +33,17 @@ export default function NFTsFilters(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts.filters",
   })
+  const collectionsRef = useRef<HTMLDivElement>()
+  const [height, setHeight] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const filters = useBackgroundSelector(selectCompletedNFTFilters)
   const dispatch = useBackgroundDispatch()
+
+  useEffect(() => {
+    if (collectionsRef.current) {
+      setHeight(collectionsRef.current.offsetHeight)
+    }
+  }, [collectionsRef])
 
   const handleUpdateSortType = useCallback(
     (type: SortType) => {
@@ -106,22 +122,22 @@ export default function NFTsFilters(): ReactElement {
         </div>
         <div className="simple_text">
           <span className="filter_title">{t("collectionsTitle")}</span>
-          {isLoading ? (
-            <div className="spinner">
-              <SharedLoadingSpinner size="small" variant="transparent" />
-            </div>
-          ) : (
-            <>
-              {filters.collections.length > 0 ? (
-                <FilterList
-                  filters={filters.collections}
-                  onChange={handleUpdateCollectionFilter}
-                />
-              ) : (
-                <>{t("noCollections")}</>
-              )}
-            </>
-          )}
+          <div
+            className={classNames("collections", {
+              visible: filters.collections.length > 0 && !isLoading,
+            })}
+          >
+            {isLoading && (
+              <div className="spinner">
+                <SharedLoadingSpinner size="small" variant="transparent" />
+              </div>
+            )}
+            <FilterList
+              ref={collectionsRef}
+              filters={filters.collections}
+              onChange={handleUpdateCollectionFilter}
+            />
+          </div>
         </div>
       </div>
       <style jsx>{`
@@ -144,6 +160,15 @@ export default function NFTsFilters(): ReactElement {
           align-items: center;
           flex-direction: column;
           padding: 16px 0;
+        }
+        .collections {
+          max-height: 46px;
+          overflow: hidden;
+          transition: max-height 250ms ease-out;
+        }
+        .collections.visible {
+          max-height: ${height}px;
+          transition: max-height 250ms ease-in;
         }
       `}</style>
     </SharedSlideUpMenuPanel>
