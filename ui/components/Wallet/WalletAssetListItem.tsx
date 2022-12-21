@@ -69,7 +69,6 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             width: 22px;
             height: 22px;
             margin-left: 6px;
-            margin-bottom: -6px;
             background-color: var(--trophy-gold);
             font-size: 0;
           }

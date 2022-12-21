@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 
+import { useTranslation } from "react-i18next"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
@@ -16,6 +17,9 @@ type CommonAssetListItemProps = {
 export default function CommonAssetListItem(
   props: CommonAssetListItemProps
 ): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet.trustedAssets",
+  })
   const {
     assetAmount,
     initializationLoadingTimeExpired,
@@ -55,20 +59,6 @@ export default function CommonAssetListItem(
                 {assetAmount.localizedDecimalAmount}
               </span>
               <span>{assetAmount.asset.symbol}</span>
-              {numTokenLists === 0 && !baseAsset && (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.preventDefault()
-                    if (onUntrustedAssetWarningClick) {
-                      onUntrustedAssetWarningClick(assetAmount.asset)
-                    }
-                  }}
-                  className="untrusted_asset_icon"
-                >
-                  Asset isn&apos;t trusted
-                </button>
-              )}
             </div>
             {initializationLoadingTimeExpired && isMissingLocalizedUserValue ? (
               <></>
@@ -85,6 +75,20 @@ export default function CommonAssetListItem(
         </div>
         <div className="asset_right">
           <>
+            {numTokenLists === 0 && !baseAsset && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault()
+                  if (onUntrustedAssetWarningClick) {
+                    onUntrustedAssetWarningClick(assetAmount.asset)
+                  }
+                }}
+                className="untrusted_asset_icon"
+              >
+                {t("notTrusted")}
+              </button>
+            )}
             <SharedIconRouterLink
               path="/send"
               state={assetAmount.asset}

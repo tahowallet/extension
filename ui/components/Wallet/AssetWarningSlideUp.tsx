@@ -2,6 +2,7 @@
 
 import React, { ReactElement } from "react"
 import { AnyAsset } from "@tallyho/tally-background/assets"
+import { useTranslation } from "react-i18next"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedBanner from "../Shared/SharedBanner"
 import SharedButton from "../Shared/SharedButton"
@@ -43,12 +44,15 @@ type AssetWarningSlideUpProps = {
 export default function AssetWarningSlideUp(
   props: AssetWarningSlideUpProps
 ): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet.trustedAssets",
+  })
   const { asset, close } = props
   return (
     <TitledSlideUpMenu
       isOpen={asset !== null}
       size="small"
-      title="Asset imported from transaction history"
+      title={t("assetImported")}
       close={close}
     >
       <style jsx global>{`
@@ -94,19 +98,19 @@ export default function AssetWarningSlideUp(
         }
       `}</style>
       <SharedBanner icon="notif-attention" iconColor="var(--attention)">
-        <span className="warning_text">Asset has not been verified yet!</span>
+        <span className="warning_text">{t("notVerified")}</span>
         <br />
-        <span>Only transact with assets you trust.</span>
+        <span>{t("trustExplainer")}</span>
       </SharedBanner>
       <ul className="asset_details">
         <li className="asset_name">
-          Name
+          {t("name")}
           <div className="right">
             <strong>{`${asset?.name} (${asset?.symbol})`}</strong>
           </div>
         </li>
         <li>
-          Contract address
+          {t("contract")}
           <div className="right">
             <SharedAddress
               address={
@@ -116,8 +120,13 @@ export default function AssetWarningSlideUp(
           </div>
         </li>
       </ul>
-      <SharedButton size="medium" type="secondary" id="close_asset_warning">
-        Close
+      <SharedButton
+        size="medium"
+        type="secondary"
+        id="close_asset_warning"
+        onClick={close}
+      >
+        {t("close")}
       </SharedButton>
     </TitledSlideUpMenu>
   )

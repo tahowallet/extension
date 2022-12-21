@@ -26,6 +26,7 @@ export default `
   .asset_right {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     margin-right: 16px;
   }
   .asset_amount {
