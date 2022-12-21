@@ -13,7 +13,6 @@ const getRequirementLabel = (ability: Ability): string => {
   return ""
 }
 
-// eslint-disable-next-line import/prefer-default-export
 function AbilityCardHeader({ ability }: { ability: Ability }): ReactElement {
   return (
     <>
