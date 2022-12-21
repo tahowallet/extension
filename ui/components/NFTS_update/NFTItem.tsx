@@ -72,7 +72,7 @@ export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
           font-size: 14px;
           line-height: 16px;
           letter-spacing: 3%;
-          border-radius: 4px;
+          border-radius: 6px;
         }
         .nft_image {
           position: relative;

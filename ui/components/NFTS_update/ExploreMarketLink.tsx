@@ -1,4 +1,7 @@
-import { ETHEREUM } from "@tallyho/tally-background/constants"
+import {
+  CHAIN_ID_TO_OPENSEA_CHAIN,
+  ETHEREUM,
+} from "@tallyho/tally-background/constants"
 import { POAP_CONTRACT } from "@tallyho/tally-background/lib/poap_update"
 import { NFT } from "@tallyho/tally-background/nfts"
 import React from "react"
@@ -23,13 +26,6 @@ type MarketDetails = {
   getNFTLink: (nft: NFT) => string
 }
 
-const OPENSEA_CHAINS = {
-  1: "ethereum",
-  10: "optimism",
-  137: "matic",
-  42161: "arbitrum",
-}
-
 export const MARKET_LINK: Record<string, MarketDetails> = {
   opensea: {
     title: "OpenSea",
@@ -39,8 +35,11 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
     icon: "opensea.png",
     getNFTLink: (nft: NFT): string =>
       `https://opensea.io/assets/${
-        OPENSEA_CHAINS[
-          parseInt(nft.network.chainID, 10) as keyof typeof OPENSEA_CHAINS
+        CHAIN_ID_TO_OPENSEA_CHAIN[
+          parseInt(
+            nft.network.chainID,
+            10
+          ) as keyof typeof CHAIN_ID_TO_OPENSEA_CHAIN
         ]
       }/${nft.contract}/${nft.tokenId}`,
   },
