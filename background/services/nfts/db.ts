@@ -2,7 +2,7 @@ import Dexie from "dexie"
 import { AddressOnNetwork } from "../../accounts"
 import { FeatureFlags, isEnabled } from "../../features"
 import { sameEVMAddress } from "../../lib/utils"
-import { NFT, NFTCollection } from "../../nfts"
+import { NFT, NFTCollection, TransferredNFT } from "../../nfts"
 
 export class NFTsDatabase extends Dexie {
   private nfts!: Dexie.Table<NFT, number>
@@ -29,6 +29,30 @@ export class NFTsDatabase extends Dexie {
     await this.collections.bulkPut(collections)
   }
 
+  async updateCollectionData(
+    collectionID: string,
+    { address, network }: AddressOnNetwork,
+    data: Partial<NFTCollection>
+  ): Promise<NFTCollection | undefined> {
+    const collection = await this.collections.get({
+      id: collectionID,
+      owner: address,
+      "network.chainID": network.chainID,
+    })
+
+    if (collection) {
+      const updatedCollection = {
+        ...collection,
+        ...data,
+      }
+      await this.updateCollections([updatedCollection])
+
+      return updatedCollection
+    }
+
+    return undefined
+  }
+
   async getAllCollections(): Promise<NFTCollection[]> {
     return this.collections.toArray()
   }
@@ -46,6 +70,21 @@ export class NFTsDatabase extends Dexie {
       )
 
       .toArray()
+  }
+
+  async removeNFTsForAddress(address: string): Promise<void> {
+    await this.nfts.filter((nft) => sameEVMAddress(nft.owner, address)).delete()
+    await this.collections
+      .filter((collection) => sameEVMAddress(collection.owner, address))
+      .delete()
+  }
+
+  async removeNFTsByID(removedNFTs: TransferredNFT[]): Promise<void> {
+    await this.nfts
+      .filter((nft) =>
+        removedNFTs.some((transferred) => transferred.id === nft.id)
+      )
+      .delete()
   }
 }
 
