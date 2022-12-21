@@ -1,5 +1,6 @@
 import classNames from "classnames"
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
+import noop from "../../utils/noop"
 
 const noPreviewLink = "./images/no_preview.svg"
 
@@ -8,6 +9,7 @@ export default function NFTImage({
   height,
   alt,
   src,
+  highResolutionSrc,
   fit = "cover",
   isBadge = false,
   isZoomed = false,
@@ -17,6 +19,7 @@ export default function NFTImage({
   height?: number
   alt: string
   src?: string
+  highResolutionSrc?: string
   fit?: string
   isBadge?: boolean
   isZoomed?: boolean
@@ -24,6 +27,22 @@ export default function NFTImage({
 }): ReactElement {
   const [isLoading, setIsLoading] = useState(true)
   const [imageUrl, setImageUrl] = useState(src || noPreviewLink)
+
+  useEffect(() => {
+    if (!highResolutionSrc) {
+      return noop
+    }
+
+    const img = new Image()
+    const handleSuccessfulLoad = () => setImageUrl(highResolutionSrc)
+
+    img.src = highResolutionSrc
+    img.addEventListener("load", handleSuccessfulLoad)
+
+    return () => {
+      img.removeEventListener("load", handleSuccessfulLoad)
+    }
+  }, [highResolutionSrc])
 
   return (
     <>
