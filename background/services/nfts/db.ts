@@ -80,11 +80,11 @@ export class NFTsDatabase extends Dexie {
   }
 
   async removeByTransferredNFTs(removedNFTs: TransferredNFT[]): Promise<void> {
-    const nftToRemove = this.nfts.filter((nft) =>
+    const nftsToRemove = this.nfts.filter((nft) =>
       removedNFTs.some((transferred) => transferred.id === nft.id)
     )
 
-    const collectionIdsToRemove = (await nftToRemove.toArray()).reduce(
+    const collectionIdsToRemove = (await nftsToRemove.toArray()).reduce(
       (acc, nft) => {
         acc.add(nft.collectionID)
         return acc
@@ -96,7 +96,7 @@ export class NFTsDatabase extends Dexie {
       .filter((collection) => collectionIdsToRemove.has(collection.id))
       .delete()
 
-    await nftToRemove.delete()
+    await nftsToRemove.delete()
   }
 }
 
