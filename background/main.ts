@@ -152,6 +152,9 @@ import {
   updateNFTsCollections,
   emitter as nftsSliceEmitter,
   updateNFTs,
+  deleteNFTsForAddress,
+  updateIsReloading,
+  deleteTransferredNFTs,
 } from "./redux-slices/nfts_update"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -589,6 +592,11 @@ export default class Main extends BaseService<never> {
     this.store.dispatch(removeActivities(address))
     this.store.dispatch(deleteNFts(address))
 
+    // remove NFTs
+    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+      this.store.dispatch(deleteNFTsForAddress(address))
+      await this.nftsService.removeNFTsForAddress(address)
+    }
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))
     await this.providerBridgeService.revokePermissionsForAddress(address)
@@ -1087,6 +1095,17 @@ export default class Main extends BaseService<never> {
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
+        /**
+         * There is a case in which the user changes the settings on the ledger after connection.
+         * For example, it sets disabled blind signing. Before the transaction signature request
+         * ledger should be connected again to refresh the state. Without reconnection,
+         * the user doesn't receive an error message on how to fix it.
+         */
+        const isArbitraryDataSigningEnabled =
+          await this.ledgerService.isArbitraryDataSigningEnabled()
+        if (!isArbitraryDataSigningEnabled) {
+          this.connectLedger()
+        }
         this.store.dispatch(
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
@@ -1455,12 +1474,23 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(updateNFTsCollections(collections))
       }
     )
-    this.nftsService.emitter.on("updateNFTs", (payload) => {
-      this.store.dispatch(updateNFTs(payload))
+    this.nftsService.emitter.on("updateNFTs", async (payload) => {
+      await this.store.dispatch(updateNFTs(payload))
     })
-
+    this.nftsService.emitter.on("removeTransferredNFTs", async (payload) => {
+      this.store.dispatch(deleteTransferredNFTs(payload))
+    })
+    this.nftsService.emitter.on("isReloadingNFTs", async (payload) => {
+      this.store.dispatch(updateIsReloading(payload))
+    })
     nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) =>
       this.nftsService.fetchNFTsFromCollection(collectionID, account)
+    )
+    nftsSliceEmitter.on("fetchMoreNFTs", ({ collectionID, account }) =>
+      this.nftsService.fetchNFTsFromNextPage(collectionID, account)
+    )
+    nftsSliceEmitter.on("refetchCollections", () =>
+      this.nftsService.refreshCollections()
     )
   }
 

@@ -327,7 +327,11 @@ export default function Swap(): ReactElement {
   }, [buyAmount, sellAmount, buyAsset, sellAsset, requestQuoteUpdate])
 
   const quoteAppliesToCurrentAssets =
-    quote && quote.sellAsset === sellAsset && quote.buyAsset === buyAsset
+    quote &&
+    sellAsset &&
+    buyAsset &&
+    isSameAsset(quote.sellAsset, sellAsset) &&
+    isSameAsset(quote.buyAsset, buyAsset)
 
   // Update if quote changes
 
@@ -399,6 +403,12 @@ export default function Swap(): ReactElement {
   if (!isSwapSupportedByNetwork()) {
     return <Redirect to="/" />
   }
+
+  const quoteAppliesToCurrentAmounts =
+    quote &&
+    (quote.type === "getBuyAmount"
+      ? sellAmount === quote.amount && buyAmount === quote.quote
+      : buyAmount === quote.amount && sellAmount === quote.quote)
 
   return (
     <>
@@ -549,7 +559,7 @@ export default function Swap(): ReactElement {
               ) : null}
             </div>
             <div className="footer standard_width_padded">
-              {quote?.needsApproval ? (
+              {quoteAppliesToCurrentAssets && quote?.needsApproval ? (
                 <ApproveQuoteBtn
                   isApprovalInProgress={!!isApprovalInProgress}
                   isDisabled={isReadOnlyAccount || !quote}
@@ -563,10 +573,8 @@ export default function Swap(): ReactElement {
                   isDisabled={
                     isReadOnlyAccount ||
                     !quote ||
-                    !sellAsset ||
-                    !sellAmount ||
-                    !buyAsset ||
-                    !buyAmount
+                    !quoteAppliesToCurrentAssets ||
+                    !quoteAppliesToCurrentAmounts
                   }
                   onClick={getFinalQuote}
                   showLoadingOnClick={!confirmationMenu}

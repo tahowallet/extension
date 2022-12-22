@@ -1,4 +1,11 @@
-import { RefObject, useEffect, useRef, useState, useCallback } from "react"
+import {
+  RefObject,
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react"
 
 export const useOnClickOutside = <T extends HTMLElement = HTMLElement>(
   ref: RefObject<T>,
@@ -129,4 +136,27 @@ export function useLocalStorage(
   }, [key, value])
 
   return [value, setValue]
+}
+
+export function useIntersectionObserver<T extends HTMLElement>(
+  callback: IntersectionObserverCallback,
+  options?: { threshold: number }
+): RefObject<T> {
+  const ref = useRef<T>(null)
+  const observer = useMemo(
+    () => new IntersectionObserver(callback, options),
+    [callback, options]
+  )
+
+  useEffect(() => {
+    const element = ref.current
+    if (element) {
+      observer.observe(ref.current)
+    }
+    return () => {
+      if (element) observer.unobserve(element)
+    }
+  }, [observer])
+
+  return ref
 }

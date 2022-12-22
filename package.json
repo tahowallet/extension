@@ -1,7 +1,7 @@
 {
   "name": "@tallyho/tally-extension",
   "private": true,
-  "version": "0.18.5",
+  "version": "0.18.6",
   "description": "Tally Ho, the community owned and operated Web3 wallet.",
   "main": "index.js",
   "repository": "git@github.com:thesis/tally-extension.git",
@@ -79,6 +79,7 @@
     "@babel/preset-react": "^7.12.13",
     "@babel/preset-typescript": "^7.15.0",
     "@babel/register": "^7.14.5",
+    "@playwright/test": "^1.26.1",
     "@types/archiver": "^5.1.0",
     "@types/copy-webpack-plugin": "^8.0.0",
     "@types/dotenv-webpack": "^7.0.3",
@@ -124,7 +125,6 @@
     "webpack": "^5.58.1",
     "webpack-cli": "4.5.0",
     "webpack-livereload-plugin": "^3.0.1",
-    "webpack-merge": "^5.8.0",
-    "@playwright/test": "^1.26.1"
+    "webpack-merge": "^5.8.0"
   }
 }
