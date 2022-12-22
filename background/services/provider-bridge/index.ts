@@ -454,13 +454,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
     } catch (error) {
       if (typeof error === "object" && error !== null) {
         logger.log("error processing request", error)
-        // eslint-disable-next-line default-case
-        switch (true) {
-          case "body" in error:
-            return getRPCErrorResponser(error)
-          case "error" in error: {
-            return getRPCErrorResponser((error as { error: string }).error)
-          }
+        if ("body" in error) {
+          return getRPCErrorResponser(error)
+        }
+        if ("error" in error) {
+          return getRPCErrorResponser((error as { error: string }).error)
         }
       }
       return new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()
