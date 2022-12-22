@@ -1,6 +1,7 @@
 import React, { ChangeEvent, ReactElement, useEffect, useRef } from "react"
 import classNames from "classnames"
-import { useParsedValidation, useRunOnFirstRender } from "../../hooks"
+import { useParsedValidation } from "../../hooks"
+import { useRunOnFirstRender } from "../../hooks/react-hooks"
 
 interface Props<T> {
   id?: string
