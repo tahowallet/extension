@@ -1,29 +1,20 @@
 import React, { ReactElement, useRef, useState } from "react"
 import {
-  selectNFTBadgesCount,
-  selectNFTsCount,
-  selectIsReloadingNFTs,
+  selectAllNFTBadgesCount,
+  selectAllNFTsCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { useTranslation } from "react-i18next"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
-import NFTsExploreBanner from "../components/NFTS_update/NFTsExploreBanner"
 import NFTsHeader from "../components/NFTS_update/NFTsHeader"
 import { useBackgroundSelector, useNFTsReload } from "../hooks"
 import NFTListPortfolio from "../components/NFTS_update/NFTListPortfolio"
-import NFTListPortfolioBadges from "../components/NFTS_update/NFTListPortfolioBadges"
 import SharedButtonUp from "../components/Shared/SharedButtonUp"
 
 const PANEL_NAMES = ["NFTs", "Badges"]
 
 export default function NFTs(): ReactElement {
-  const nftCount = useBackgroundSelector(selectNFTsCount)
-  const badgesCount = useBackgroundSelector(selectNFTBadgesCount)
-  const isLoading = useBackgroundSelector(selectIsReloadingNFTs)
+  const allNftCount = useBackgroundSelector(selectAllNFTsCount)
+  const allBadgesCount = useBackgroundSelector(selectAllNFTBadgesCount)
   const pageRef = useRef(null)
-
-  const { t } = useTranslation("translation", {
-    keyPrefix: "nfts",
-  })
 
   const [panelNumber, setPanelNumber] = useState(0)
 
@@ -40,24 +31,15 @@ export default function NFTs(): ReactElement {
         />
       </div>
       <div className="standard_width">
-        {panelNumber === 0 &&
-          (nftCount || isLoading ? (
-            <>
-              <h2>{t("units.collection_other")}</h2>
-              <NFTListPortfolio />
-            </>
-          ) : (
-            <NFTsExploreBanner type="nfts" />
-          ))}
-        {panelNumber === 1 &&
-          (badgesCount || isLoading ? (
-            <>
-              <h2>{t("units.badge_other")}</h2>
-              <NFTListPortfolioBadges />
-            </>
-          ) : (
-            <NFTsExploreBanner type="badge" />
-          ))}
+        {panelNumber === 0 && (
+          <NFTListPortfolio type="nfts" isEmptyPortfolio={!(allNftCount > 0)} />
+        )}
+        {panelNumber === 1 && (
+          <NFTListPortfolio
+            type="badge"
+            isEmptyPortfolio={!(allBadgesCount > 0)}
+          />
+        )}
       </div>
       <SharedButtonUp elementRef={pageRef} offset={100} />
       <style jsx>
@@ -71,12 +53,6 @@ export default function NFTs(): ReactElement {
           }
           .panel_switcher_wrap {
             width: 100%;
-          }
-          .page_content h2 {
-            font-weight: 600;
-            font-size: 18px;
-            line-height: 24px;
-            margin: 10px 0 0;
           }
         `}
       </style>
