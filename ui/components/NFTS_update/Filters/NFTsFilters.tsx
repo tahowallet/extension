@@ -29,6 +29,7 @@ type RadioBtn = {
 
 const RADIO_NAME = "sortType"
 const KEY_PREFIX = "nfts.filters"
+const LOADING_DELAY = 500
 
 const RADIO_BTNS: RadioBtn[] = [
   {
@@ -57,7 +58,8 @@ export default function NFTsFilters(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts.filters",
   })
-  const collectionsRef = useRef<HTMLDivElement>()
+  const collectionsRef = useRef<HTMLDivElement | undefined>(undefined)
+  const timerRef = useRef<number | undefined>(undefined)
   const [height, setHeight] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const filters = useBackgroundSelector(selectEnrichedNFTFilters)
@@ -68,6 +70,14 @@ export default function NFTsFilters(): ReactElement {
       setHeight(collectionsRef.current.offsetHeight)
     }
   }, [collectionsRef])
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+      }
+    }
+  }, [])
 
   const handleUpdateSortType = useCallback(
     (type: SortType) => {
@@ -86,11 +96,12 @@ export default function NFTsFilters(): ReactElement {
   const handleUpdateAccountFilter = useCallback(
     (filter: Filter) => {
       setIsLoading(true)
-      dispatch(updateAccountFilter(filter)).then(() =>
-        setTimeout(() => {
-          setIsLoading(false)
-        }, 500)
-      )
+      dispatch(updateAccountFilter(filter)).then(() => {
+        timerRef.current = window.setTimeout(
+          () => setIsLoading(false),
+          LOADING_DELAY
+        )
+      })
     },
     [dispatch]
   )
@@ -134,6 +145,7 @@ export default function NFTsFilters(): ReactElement {
               ref={collectionsRef}
               filters={filters.collections}
               onChange={handleUpdateCollectionFilter}
+              emptyMessage={t("noCollections")}
             />
           </div>
         </div>

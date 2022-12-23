@@ -1,6 +1,5 @@
 import { Filter } from "@tallyho/tally-background/redux-slices/nfts_update"
 import React, { useEffect, useState } from "react"
-import { useTranslation } from "react-i18next"
 import FilterListItem from "./FilterListItem"
 
 const FilterList = React.forwardRef(
@@ -8,15 +7,14 @@ const FilterList = React.forwardRef(
     {
       filters,
       onChange,
+      emptyMessage,
     }: {
       filters: Filter[]
       onChange: (filter: Filter) => void
+      emptyMessage?: string
     },
     ref
   ) => {
-    const { t } = useTranslation("translation", {
-      keyPrefix: "nfts.filters",
-    })
     const [items, setItems] = useState<Filter[]>(filters)
     const [isEmpty, setIsEmpty] = useState<boolean>(!filters.length)
 
@@ -41,7 +39,7 @@ const FilterList = React.forwardRef(
             }
           />
         ))}
-        {isEmpty && <>{t("noCollections")}</>}
+        {isEmpty && emptyMessage && <>{emptyMessage}</>}
         <style jsx>{`
           .filter_list {
             display: flex;
