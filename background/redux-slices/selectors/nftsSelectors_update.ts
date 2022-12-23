@@ -39,7 +39,7 @@ const selectNFTFilters = createSelector(
   (nftsSlice) => nftsSlice.filters
 )
 
-export const selectCompletedNFTFilters = createSelector(
+export const selectEnrichedNFTFilters = createSelector(
   selectNFTFilters,
   selectAccountTotals,
   (filters, accountTotals) => {

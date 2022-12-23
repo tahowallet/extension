@@ -13,7 +13,7 @@ export type AccountData = {
   avatarURL: string
 }
 
-const isEnableFilter = (id: string, filters: Filter[]): boolean => {
+const isEnabledFilter = (id: string, filters: Filter[]): boolean => {
   return !!filters.find((filter) => id === filter.id && filter.isEnabled)
 }
 
@@ -123,8 +123,8 @@ export const getFilteredCollections = (
   collections
     .filter(
       (collection) =>
-        isEnableFilter(collection.id, filters.collections) &&
-        isEnableFilter(collection.owner, filters.accounts)
+        isEnabledFilter(collection.id, filters.collections) &&
+        isEnabledFilter(collection.owner, filters.accounts)
     )
     .sort((collection1, collection2) =>
       sortNFTS(collection1, collection2, filters.type)

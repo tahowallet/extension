@@ -5,12 +5,11 @@ import {
   updateCollectionFilter,
   updateSortType,
 } from "@tallyho/tally-background/redux-slices/nfts_update"
-import { selectCompletedNFTFilters } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectEnrichedNFTFilters } from "@tallyho/tally-background/redux-slices/selectors"
 import React, {
   ReactElement,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react"
@@ -21,13 +20,38 @@ import SharedSlideUpMenuPanel from "../../Shared/SharedSlideUpMenuPanel"
 import SharedRadio from "../../Shared/SharedRadio"
 import FilterList from "./FilterList"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
-
-const RADIO_NAME = "sortType"
+import { i18n } from "../../../_locales/i18n"
 
 type RadioBtn = {
   value: SortType
   label: string
 }
+
+const RADIO_NAME = "sortType"
+const KEY_PREFIX = "nfts.filters"
+
+const RADIO_BTNS: RadioBtn[] = [
+  {
+    value: "desc",
+    label: i18n.t(`${KEY_PREFIX}.sortType.priceDesc`),
+  },
+  {
+    value: "asc",
+    label: i18n.t(`${KEY_PREFIX}.sortType.priceAsc`),
+  },
+  {
+    value: "new",
+    label: i18n.t(`${KEY_PREFIX}.sortType.newestAdded`),
+  },
+  {
+    value: "old",
+    label: i18n.t(`${KEY_PREFIX}.sortType.oldestAdded`),
+  },
+  {
+    value: "number",
+    label: i18n.t(`${KEY_PREFIX}.sortType.numberInOneCollection`),
+  },
+]
 
 export default function NFTsFilters(): ReactElement {
   const { t } = useTranslation("translation", {
@@ -36,7 +60,7 @@ export default function NFTsFilters(): ReactElement {
   const collectionsRef = useRef<HTMLDivElement>()
   const [height, setHeight] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
-  const filters = useBackgroundSelector(selectCompletedNFTFilters)
+  const filters = useBackgroundSelector(selectEnrichedNFTFilters)
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
@@ -71,38 +95,12 @@ export default function NFTsFilters(): ReactElement {
     [dispatch]
   )
 
-  const radioBtns: RadioBtn[] = useMemo(
-    () => [
-      {
-        value: "desc",
-        label: t("sortType.priceDesc"),
-      },
-      {
-        value: "asc",
-        label: t("sortType.priceAsc"),
-      },
-      {
-        value: "new",
-        label: t("sortType.newestAdded"),
-      },
-      {
-        value: "old",
-        label: t("sortType.oldestAdded"),
-      },
-      {
-        value: "number",
-        label: t("sortType.numberInOneCollection"),
-      },
-    ],
-    [t]
-  )
-
   return (
     <SharedSlideUpMenuPanel header={t("title")}>
       <div className="filters">
         <div>
           <span className="simple_text filter_title">{t("sortTypeTitle")}</span>
-          {radioBtns.map(({ value, label }) => (
+          {RADIO_BTNS.map(({ value, label }) => (
             <SharedRadio
               key={value}
               id={`radio_${value}`}

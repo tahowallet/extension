@@ -272,7 +272,7 @@
       "badge": "Explore badges"
     },
     "filters": {
-      "title": "Filter connections",
+      "title": "Filter collections",
       "sortType": {
         "priceDesc": "Price: Descending",
         "priceAsc": "Price: Ascending",
