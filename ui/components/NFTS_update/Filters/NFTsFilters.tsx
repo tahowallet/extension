@@ -19,7 +19,6 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
 import SharedSlideUpMenuPanel from "../../Shared/SharedSlideUpMenuPanel"
 import SharedRadio from "../../Shared/SharedRadio"
 import FilterList from "./FilterList"
-import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import { i18n } from "../../../_locales/i18n"
 
 type RadioBtn = {
@@ -29,7 +28,8 @@ type RadioBtn = {
 
 const RADIO_NAME = "sortType"
 const KEY_PREFIX = "nfts.filters"
-const LOADING_DELAY = 500
+const DEFAULT_MAX_HIGHT = 46
+const LOADING_DELAY = 1000
 
 const RADIO_BTNS: RadioBtn[] = [
   {
@@ -60,16 +60,16 @@ export default function NFTsFilters(): ReactElement {
   })
   const collectionsRef = useRef<HTMLDivElement | undefined>(undefined)
   const timerRef = useRef<number | undefined>(undefined)
-  const [height, setHeight] = useState(0)
+  const [maxHeight, setMaxHeight] = useState(DEFAULT_MAX_HIGHT)
   const [isLoading, setIsLoading] = useState(false)
   const filters = useBackgroundSelector(selectEnrichedNFTFilters)
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
     if (collectionsRef.current) {
-      setHeight(collectionsRef.current.offsetHeight)
+      setMaxHeight(collectionsRef.current.offsetHeight)
     }
-  }, [collectionsRef])
+  }, [collectionsRef?.current?.offsetHeight])
 
   useEffect(() => {
     return () => {
@@ -133,16 +133,12 @@ export default function NFTsFilters(): ReactElement {
           <span className="filter_title">{t("collectionsTitle")}</span>
           <div
             className={classNames("collections", {
-              visible: filters.collections.length > 0 && !isLoading,
+              visible: !isLoading,
             })}
           >
-            {isLoading && (
-              <div className="spinner">
-                <SharedLoadingSpinner size="small" variant="transparent" />
-              </div>
-            )}
             <FilterList
               ref={collectionsRef}
+              isLoaded={!isLoading}
               filters={filters.collections}
               onChange={handleUpdateCollectionFilter}
               emptyMessage={t("noCollections")}
@@ -172,13 +168,13 @@ export default function NFTsFilters(): ReactElement {
           padding: 16px 0;
         }
         .collections {
-          max-height: 46px;
+          max-height: ${DEFAULT_MAX_HIGHT}px;
           overflow: hidden;
-          transition: max-height 250ms ease-out;
+          transition: max-height 500ms ease-out;
         }
         .collections.visible {
-          max-height: ${height}px;
-          transition: max-height 250ms ease-in;
+          max-height: ${maxHeight}px;
+          transition: max-height 500ms ease-in;
         }
       `}</style>
     </SharedSlideUpMenuPanel>
