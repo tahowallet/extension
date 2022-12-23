@@ -110,56 +110,65 @@ export default function NFTCollection(props: {
 
   return (
     <>
-      <li
-        ref={collectionRef}
-        className={classNames("nft_collection", {
-          expanded: isExpanded && !isLoading,
-          invisible: !nftCount,
-        })}
-      >
-        <SharedSkeletonLoader
-          isLoaded={!isLoading && !!nfts.length}
-          width={168}
-          height={168}
-          customStyles="margin: 8px 0 34px;"
+      <div className="nft_collection_wrapper">
+        <li
+          ref={collectionRef}
+          className={classNames("nft_collection", {
+            expanded: isExpanded && !isLoading,
+            invisible: !nftCount,
+          })}
         >
-          {nfts.length === 1 ? (
-            <NFTItem
-              item={{
-                ...collection,
-                thumbnailURL: nfts[0].thumbnailURL || collection.thumbnailURL,
-              }}
-              onClick={() => onItemClick(nfts[0])}
-            />
-          ) : (
-            <NFTItem
-              item={{
-                ...collection,
-                thumbnailURL: nfts[0]?.thumbnailURL || collection.thumbnailURL,
-              }}
-              onClick={toggleCollection}
-              isCollection
-              isExpanded={isExpanded}
-            />
-          )}
-          {isExpanded && (
-            <>
-              {nfts.map((nft) => (
-                <NFTItem key={nft.id} item={nft} onClick={onItemClick} />
-              ))}
-              <SharedSkeletonLoader
-                isLoaded={!isUpdating}
-                width={168}
-                height={168}
-                customStyles="margin: 8px 0;"
+          <SharedSkeletonLoader
+            isLoaded={!isLoading && !!nfts.length}
+            width={168}
+            height={168}
+            customStyles="margin: 8px 0 34px;"
+          >
+            {nfts.length === 1 ? (
+              <NFTItem
+                item={{
+                  ...collection,
+                  thumbnailURL: nfts[0].thumbnailURL || collection.thumbnailURL,
+                }}
+                onClick={() => onItemClick(nfts[0])}
               />
-              <div ref={loadMoreRef} className="nft_load_more" />
-            </>
-          )}
-        </SharedSkeletonLoader>
-      </li>
+            ) : (
+              <NFTItem
+                item={{
+                  ...collection,
+                  thumbnailURL:
+                    nfts[0]?.thumbnailURL || collection.thumbnailURL,
+                }}
+                onClick={toggleCollection}
+                isCollection
+                isExpanded={isExpanded}
+              />
+            )}
+            {isExpanded && (
+              <>
+                {nfts.map((nft) => (
+                  <NFTItem key={nft.id} item={nft} onClick={onItemClick} />
+                ))}
+                <SharedSkeletonLoader
+                  isLoaded={!isUpdating}
+                  width={168}
+                  height={168}
+                  customStyles="margin: 8px 0;"
+                />
+                <div ref={loadMoreRef} className="nft_load_more" />
+              </>
+            )}
+          </SharedSkeletonLoader>
+        </li>
+      </div>
       <style jsx>{`
+        .nft_collection_wrapper {
+          position: relative;
+          width: 168px;
+          min-height: 208px;
+        }
         .nft_collection {
+          position: absolute;
           margin: 0;
           padding: 0;
           background: transparent;
@@ -167,14 +176,18 @@ export default function NFTCollection(props: {
           transition: all 200ms ease-in-out;
         }
         .nft_collection.expanded {
+          width: 352px;
+          z-index: 10;
           margin: 8px -16px;
-          width: 100%;
           padding: 8px 16px 6px;
           background: var(--green-120);
           border-radius: 16px;
           display: flex;
           flex-wrap: wrap;
           justify-content: space-between;
+        }
+        .nft_collection_wrapper:nth-child(even) .nft_collection.expanded {
+          right: 0;
         }
         .nft_collection.invisible {
           opacity: 0;
