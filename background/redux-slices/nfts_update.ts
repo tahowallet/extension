@@ -34,7 +34,7 @@ export type Filter = {
   isEnabled: boolean
   thumbnailURL?: string
   /* Only for the collection filter */
-  owner?: string
+  owners?: string[]
 }
 
 export type SortType = "asc" | "desc" | "new" | "old" | "number"
@@ -117,17 +117,28 @@ function updateFilter(
   const filter =
     type === "accounts"
       ? { id: owner, name: owner }
-      : { id, name, thumbnailURL, owner }
+      : {
+          id,
+          name,
+          thumbnailURL,
+        }
 
   if (existingFilterId >= 0) {
     acc.filters[type][existingFilterId] = {
-      ...filter,
       ...acc.filters[type][existingFilterId],
+      ...filter,
+    }
+    if (type === "collections") {
+      if (acc.filters[type][existingFilterId].owners) {
+        const { owners = [] } = acc.filters[type][existingFilterId]
+        acc.filters[type][existingFilterId].owners = owners.concat([owner])
+      }
     }
   } else {
     acc.filters[type].push({
       ...filter,
       isEnabled: true,
+      ...(type === "collections" && { owners: [owner] }),
     })
   }
 }
