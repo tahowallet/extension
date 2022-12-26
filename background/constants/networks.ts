@@ -192,3 +192,12 @@ export const RPC_METHOD_PROVIDER_ROUTING = {
     "eth_call", // this is causing issues on arbitrum with ankr and is used heavily by uniswap
   ],
 } as const
+
+export const CHAIN_ID_TO_OPENSEA_CHAIN = {
+  [ETHEREUM.chainID]: "ethereum",
+  [OPTIMISM.chainID]: "optimism",
+  [POLYGON.chainID]: "matic",
+  [ARBITRUM_ONE.chainID]: "arbitrum",
+  [AVALANCHE.chainID]: "avalanche",
+  [BINANCE_SMART_CHAIN.chainID]: "bsc",
+}
