@@ -101,13 +101,10 @@ function updateCollection(
   }
 }
 
-const FILTER_TYPE = ["accounts", "collections"] as const
-type FilterType = typeof FILTER_TYPE[number]
-
 function updateFilter(
   acc: NFTsSliceState,
   collection: NFTCollection,
-  type: FilterType
+  type: "accounts" | "collections"
 ): void {
   const { id, name, thumbnailURL, owner } = collection
 
@@ -146,8 +143,9 @@ function updateFilter(
 function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
   const { nftCount } = collection
   if ((nftCount ?? 0) > 0) {
-    FILTER_TYPE.forEach((type) => updateFilter(acc, collection, type))
+    updateFilter(acc, collection, "collections")
   }
+  updateFilter(acc, collection, "accounts")
 }
 
 function initializeCollections(collections: NFTCollection[]): NFTsSliceState {
