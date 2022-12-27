@@ -144,7 +144,10 @@ function updateFilter(
 }
 
 function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
-  FILTER_TYPE.forEach((type) => updateFilter(acc, collection, type))
+  const { nftCount } = collection
+  if ((nftCount ?? 0) > 0) {
+    FILTER_TYPE.forEach((type) => updateFilter(acc, collection, type))
+  }
 }
 
 function initializeCollections(collections: NFTCollection[]): NFTsSliceState {
