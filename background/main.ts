@@ -305,7 +305,8 @@ export default class Main extends BaseService<never> {
       ? WalletConnectService.create(
           providerBridgeService,
           internalEthereumProviderService,
-          preferenceService
+          preferenceService,
+          chainService
         )
       : getNoopService<WalletConnectService>()
 

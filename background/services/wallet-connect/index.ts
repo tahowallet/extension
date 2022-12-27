@@ -1,4 +1,4 @@
-import { parseUri } from "@walletconnect/utils"
+import { parseUri, getSdkError } from "@walletconnect/utils"
 import { SignClientTypes, SessionTypes } from "@walletconnect/types"
 import SignClient from "@walletconnect/sign-client"
 import { isEIP1193Error } from "@tallyho/provider-bridge-shared"
@@ -20,12 +20,15 @@ import {
   acknowledgeLegacyProposal,
   createLegacySignClient,
   LegacyEventData,
+  LegacyProposal,
   postLegacyApprovalResponse,
   postLegacyRejectionResponse,
   processLegacyRequestParams,
+  rejectLegacyProposal,
 } from "./legacy-sign-client-helper"
 import { getMetaPort } from "./utils"
 import { TranslatedRequestParams } from "./types"
+import ChainService from "../chain"
 
 interface Events extends ServiceLifecycleEvents {
   placeHolderEventForTypingPurposes: string
@@ -55,24 +58,28 @@ export default class WalletConnectService extends BaseService<Events> {
     [
       Promise<ProviderBridgeService>,
       Promise<InternalEthereumProviderService>,
-      Promise<PreferenceService>
+      Promise<PreferenceService>,
+      Promise<ChainService>
     ]
   > = async (
     providerBridgeService,
     internalEthereumProviderService,
-    preferenceService
+    preferenceService,
+    chainService
   ) => {
     return new this(
       await providerBridgeService,
       await internalEthereumProviderService,
-      await preferenceService
+      await preferenceService,
+      await chainService
     )
   }
 
   private constructor(
     private providerBridgeService: ProviderBridgeService,
     private internalEthereumProviderService: InternalEthereumProviderService,
-    private preferenceService: PreferenceService
+    private preferenceService: PreferenceService,
+    private chainService: ChainService
   ) {
     super()
   }
@@ -122,7 +129,7 @@ export default class WalletConnectService extends BaseService<Events> {
         WalletConnectService.tempFeatureLog("legacy pairing", parseUri(uri))
         createLegacySignClient(
           uri,
-          (payload) => this.sessionProposalListener(true, payload),
+          (payload) => this.sessionProposalListener(true, undefined, payload),
           (payload) => this.sessionRequestListener(true, undefined, payload)
         )
       } else if (version === 2) {
@@ -139,7 +146,7 @@ export default class WalletConnectService extends BaseService<Events> {
 
   private async acknowledgeProposal(
     proposal: SignClientTypes.EventArguments["session_proposal"],
-    address: string
+    selectedAccounts: [string]
   ) {
     // TODO: in case of a new connection, this callback should perform request processing AFTER wallet selection/confirmation dialog
     const { id, params } = proposal
@@ -150,14 +157,23 @@ export default class WalletConnectService extends BaseService<Events> {
       "requiredNamespaces",
       requiredNamespaces
     )
-    // TODO: expand this section to be able to match requiredNamespaces to actual wallet
-    const key = "eip155"
-    const accounts = [`eip155:1:${address}`]
+
+    const ethNamespaceKey = "eip155"
+    const ethNamespace = requiredNamespaces[ethNamespaceKey]
+    if (!ethNamespace) {
+      await this.rejectProposal(id)
+      return
+    }
+
     const namespaces: SessionTypes.Namespaces = {}
-    namespaces[key] = {
+    const accounts: string[] = []
+    ethNamespace.chains.forEach((chain) => {
+      selectedAccounts.map((acc) => accounts.push(`${chain}:${acc}`))
+    })
+    namespaces[ethNamespaceKey] = {
       accounts,
-      methods: requiredNamespaces[key].methods,
-      events: requiredNamespaces[key].events,
+      methods: requiredNamespaces[ethNamespaceKey].methods,
+      events: requiredNamespaces[ethNamespaceKey].events,
     }
 
     if (this.signClient !== undefined && relays.length > 0) {
@@ -171,7 +187,15 @@ export default class WalletConnectService extends BaseService<Events> {
       WalletConnectService.tempFeatureLog("connection acknowledged", namespaces)
     } else {
       // TODO: how to handle this case?
+      await this.rejectProposal(id)
     }
+  }
+
+  private async rejectProposal(id: number) {
+    await this.signClient?.reject({
+      id,
+      reason: getSdkError("USER_REJECTED_METHODS"),
+    })
   }
 
   private async postApprovalResponse(
@@ -248,15 +272,18 @@ export default class WalletConnectService extends BaseService<Events> {
 
   async sessionProposalListener(
     isLegacy: boolean,
-    proposal: SignClientTypes.EventArguments["session_proposal"]
+    proposal?: SignClientTypes.EventArguments["session_proposal"],
+    legacyProposal?: LegacyProposal
   ): Promise<void> {
     WalletConnectService.tempFeatureLog("in sessionProposalListener", proposal)
 
-    const { params } = proposal
-
-    if (isLegacy && Array.isArray(params) && params.length > 0) {
-      this.senderUrl = params[0].peerMeta?.url || ""
-    } else if (params) {
+    if (isLegacy && legacyProposal) {
+      const { params } = legacyProposal
+      if (Array.isArray(params) && params.length > 0) {
+        this.senderUrl = params[0].peerMeta?.url || ""
+      }
+    } else if (proposal) {
+      const { params } = proposal
       this.senderUrl = params.proposer.metadata.url // we can also extract information such as icons and description
     }
 
@@ -269,12 +296,18 @@ export default class WalletConnectService extends BaseService<Events> {
       this.senderUrl,
       async (message) => {
         if (Array.isArray(message.result) && message.result.length > 0) {
-          if (isLegacy) {
-            acknowledgeLegacyProposal(message.result)
+          if (isLegacy && legacyProposal) {
+            acknowledgeLegacyProposal(legacyProposal, message.result)
           } else if (proposal) {
-            await this.acknowledgeProposal(proposal, message.result[0])
+            await this.acknowledgeProposal(proposal, message.result)
           }
           WalletConnectService.tempFeatureLog("pairing request acknowledged")
+        } else if (isEIP1193Error(message.result)) {
+          if (isLegacy) {
+            rejectLegacyProposal()
+          } else if (proposal) {
+            await this.rejectProposal(proposal?.id)
+          }
         }
       }
     )

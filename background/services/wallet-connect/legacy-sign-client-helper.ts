@@ -1,17 +1,17 @@
-import { IWalletConnectSession } from "@walletconnect/legacy-types"
+import { IClientMeta, IWalletConnectSession } from "@walletconnect/legacy-types"
 import LegacySignClient from "@walletconnect/client"
-import { SignClientTypes } from "@walletconnect/types"
 
+import { getSdkError } from "@walletconnect/utils"
 import { TranslatedRequestParams } from "./types"
 import {
   approveEIP155Request,
   rejectEIP155Request,
 } from "./eip155-request-utils"
 
-type SessionProposalListener = (
-  payload: SignClientTypes.EventArguments["session_proposal"]
-) => void
-type SessionRequestListener = (payload: any) => void
+export type LegacyProposal = {
+  id: number
+  params: [{ chainId: number; peerId: string; peerMeta: IClientMeta }]
+}
 
 export type LegacyEventData = {
   id: number
@@ -19,6 +19,9 @@ export type LegacyEventData = {
   method: string
   params: any[]
 }
+
+type SessionProposalListener = (payload: LegacyProposal) => void
+type SessionRequestListener = (payload: any) => void
 
 let legacySignClient: LegacySignClient | undefined
 
@@ -95,11 +98,21 @@ export function createLegacySignClient(
   })
 }
 
-export function acknowledgeLegacyProposal(accounts: [string]): void {
+export function acknowledgeLegacyProposal(
+  proposal: LegacyProposal,
+  accounts: string[]
+): void {
+  const { params } = proposal
+  const [{ chainId }] = params
+
   legacySignClient?.approveSession({
     accounts,
-    chainId: 1,
+    chainId: chainId ?? 1,
   })
+}
+
+export function rejectLegacyProposal(): void {
+  legacySignClient?.rejectSession(getSdkError("USER_REJECTED_METHODS"))
 }
 
 export function processLegacyRequestParams(
