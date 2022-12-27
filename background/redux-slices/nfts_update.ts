@@ -129,9 +129,9 @@ function updateFilter(
       ...filter,
     }
     if (type === "collections") {
-      if (acc.filters[type][existingFilterId].owners) {
-        const { owners = [] } = acc.filters[type][existingFilterId]
-        acc.filters[type][existingFilterId].owners = owners.concat([owner])
+      const owners = acc.filters[type][existingFilterId].owners ?? []
+      if (!owners.includes(owner)) {
+        acc.filters[type][existingFilterId].owners = [...owners, owner]
       }
     }
   } else {
