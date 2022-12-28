@@ -33,10 +33,12 @@ import {
 import {
   ChainService,
   IndexingService,
+  InternalEthereumProviderService,
   KeyringService,
   LedgerService,
   NameService,
   PreferenceService,
+  ProviderBridgeService,
   SigningService,
 } from "../services"
 import { QueuedTxToRetrieve } from "../services/chain"
@@ -104,6 +106,16 @@ type CreateSigningServiceOverrides = {
   chainService?: Promise<ChainService>
 }
 
+type CreateProviderBridgeServiceOverrides = {
+  internalEthereumProviderService?: Promise<InternalEthereumProviderService>
+  preferenceService?: Promise<PreferenceService>
+}
+
+type CreateInternalEthereumProviderServiceOverrides = {
+  chainService?: Promise<ChainService>
+  preferenceService?: Promise<PreferenceService>
+}
+
 export const createSigningService = async (
   overrides: CreateSigningServiceOverrides = {}
 ): Promise<SigningService> => {
@@ -111,6 +123,27 @@ export const createSigningService = async (
     overrides.keyringService ?? createKeyringService(),
     overrides.ledgerService ?? createLedgerService(),
     overrides.chainService ?? createChainService()
+  )
+}
+
+export const createInternalEthereumProviderService = async (
+  overrides: CreateInternalEthereumProviderServiceOverrides = {}
+): Promise<InternalEthereumProviderService> => {
+  return InternalEthereumProviderService.create(
+    overrides.chainService ?? createChainService(),
+    overrides.preferenceService ?? createPreferenceService()
+  )
+}
+
+export const createProviderBridgeService = async (
+  overrides: CreateProviderBridgeServiceOverrides = {}
+): Promise<ProviderBridgeService> => {
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+  return ProviderBridgeService.create(
+    overrides.internalEthereumProviderService ??
+      createInternalEthereumProviderService({ preferenceService }),
+    preferenceService
   )
 }
 

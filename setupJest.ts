@@ -33,6 +33,14 @@ Object.defineProperty(browser, "alarms", {
   },
 })
 
+Object.defineProperty(browser, "windows", {
+  writable: true,
+  value: {
+    getCurrent: () => {},
+    create: () => {},
+  },
+})
+
 // Mock top-level logger calls.
 browser.extension.getBackgroundPage = jest.fn()
 browser.tabs.getCurrent = jest.fn(() =>
