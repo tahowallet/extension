@@ -69,7 +69,7 @@ describe("Provider bridge", () => {
       expect(response).toEqual([enablingPermission.accountAddress])
     })
 
-    it("should call routeSafeRequest user has permission to sign", async () => {
+    it("should call routeSafeRequest when user has permission to sign", async () => {
       const { enablingPermission, origin } = BASE_DATA
       const method = "eth_sendTransaction"
       const params = PARAMS[method]
@@ -85,7 +85,7 @@ describe("Provider bridge", () => {
       expect(stub.called).toBe(true)
     })
 
-    it("should not call routeSafeRequest user has not permission to sign", async () => {
+    it("should not call routeSafeRequest when user has not permission to sign", async () => {
       const { enablingPermission, origin } = BASE_DATA
       const method = "eth_sendTransaction"
       const params = PARAMS[method]
