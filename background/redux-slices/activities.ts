@@ -9,6 +9,7 @@ import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../lib/utils"
+import { ACTIVITIES_MAX_COUNT } from "../services/chain"
 import { Transaction } from "../services/chain/db"
 import { EnrichedEVMTransaction } from "../services/enrichment"
 import { HexString } from "../types"
@@ -31,8 +32,6 @@ export type Activities = {
 type ActivitiesState = {
   activities: Activities
 }
-
-const ACTIVITIES_MAX_COUNT = 25
 
 const cleanActivitiesArray = (activitiesArray: Activity[] = []) => {
   activitiesArray.sort(sortActivities)

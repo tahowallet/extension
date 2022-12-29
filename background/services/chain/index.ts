@@ -97,6 +97,8 @@ const GAS_POLLS_PER_PERIOD = 4 // 4 times per minute
 
 const GAS_POLLING_PERIOD = 1 // 1 minute
 
+export const ACTIVITIES_MAX_COUNT = 25
+
 interface Events extends ServiceLifecycleEvents {
   initializeActivities: {
     transactions: Transaction[]
@@ -1471,13 +1473,13 @@ export default class ChainService extends BaseService<Events> {
       await this.db.getAllSavedTransactionHashes()
     )
     /// send all new tx hashes into a queue to retrieve + cache
-    assetTransfers.forEach((a) => {
+    assetTransfers.forEach((a, idx) => {
       if (!savedTransactionHashes.has(a.txHash)) {
         this.priorityQueueTransactionHashToRetrieve(
           addressOnNetwork.network,
           a.txHash,
           firstSeen,
-          1
+          idx < ACTIVITIES_MAX_COUNT ? 0 : 1
         )
       }
     })
