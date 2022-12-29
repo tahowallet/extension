@@ -1,6 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import {
   getAssetsState,
+  selectFilteredTotalFloorPriceInETH,
   selectMainCurrencySymbol,
   selectTotalFloorPriceInETH,
 } from "@tallyho/tally-background/redux-slices/selectors"
@@ -17,14 +18,19 @@ import {
 import { useEffect } from "react"
 import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 
-export const useTotalNFTsFloorPrice = (): {
+export const useTotalNFTsFloorPrice = (
+  useTotalFloorPrice = true
+): {
   totalFloorPriceInETH: string
   totalFloorPriceInUSD: string
 } => {
   const assets = useBackgroundSelector(getAssetsState)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
-  const totalFloorPriceInETH = useBackgroundSelector(selectTotalFloorPriceInETH)
-
+  const totalFloorPriceInETH = useBackgroundSelector(
+    useTotalFloorPrice
+      ? selectTotalFloorPriceInETH
+      : selectFilteredTotalFloorPriceInETH
+  )
   const totalFloorPriceInETHFormatted = formatCurrencyAmount(
     mainCurrencySymbol,
     totalFloorPriceInETH,
