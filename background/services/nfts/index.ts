@@ -91,6 +91,8 @@ export default class NFTsService extends BaseService<Events> {
     const accountsToFetch =
       accounts ?? (await this.chainService.getAccountsToTrack())
 
+    if (!accountsToFetch.length) return
+
     await this.removeTransferredNFTs(accountsToFetch)
     await this.fetchCollections(accountsToFetch)
     // prefetch POAPs to avoid loading empty POAPs collections from UI

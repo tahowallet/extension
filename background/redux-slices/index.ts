@@ -6,6 +6,7 @@ import activitiesReducer from "./activities"
 import keyringsReducer from "./keyrings"
 import networksReducer from "./networks"
 import swapReducer from "./0x-swap"
+import abilitiesReducer from "./abilities"
 import transactionConstructionReducer from "./transaction-construction"
 import uiReducer from "./ui"
 import dappReducer from "./dapp"
@@ -32,6 +33,9 @@ const mainReducer = combineReducers({
   earn: earnReducer,
   ledger: ledgerReducer,
   nfts: nftsReducer,
+  ...(isEnabled(FeatureFlags.SUPPORT_ABILITIES)
+    ? { abilities: abilitiesReducer }
+    : {}),
   ...(isEnabled(FeatureFlags.SUPPORT_NFT_TAB)
     ? { nftsUpdate: nftsUpdateReducer }
     : {}),

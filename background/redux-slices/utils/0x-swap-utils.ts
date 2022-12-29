@@ -1,8 +1,4 @@
-import {
-  FungibleAsset,
-  PricePoint,
-  SmartContractFungibleAsset,
-} from "../../assets"
+import { PricePoint, SwappableAsset } from "../../assets"
 import { USD } from "../../constants"
 import {
   convertFixedPointNumber,
@@ -18,9 +14,9 @@ import {
 } from "./asset-utils"
 import { hardcodedMainCurrencySymbol } from "./constants"
 
-interface SwapAssets {
-  sellAsset: SmartContractFungibleAsset | FungibleAsset
-  buyAsset: SmartContractFungibleAsset | FungibleAsset
+type SwapAssets = {
+  sellAsset: SwappableAsset
+  buyAsset: SwappableAsset
 }
 
 type SwapAmount =
@@ -46,7 +42,7 @@ export type PriceDetails = {
 }
 
 export async function getAssetPricePoint(
-  asset: SmartContractFungibleAsset | FungibleAsset,
+  asset: SwappableAsset,
   assets: AssetsState,
   network: EVMNetwork
 ): Promise<PricePoint | undefined> {
@@ -75,12 +71,12 @@ export async function getAssetPricePoint(
 
 export async function getAssetAmount(
   assets: AssetsState,
-  asset: SmartContractFungibleAsset | FungibleAsset,
+  asset: SwappableAsset,
   amount: string,
   network: EVMNetwork
 ): Promise<
   | ({
-      asset: FungibleAsset | SmartContractFungibleAsset
+      asset: SwappableAsset
       amount: bigint
     } & AssetMainCurrencyAmount)
   | undefined
@@ -117,7 +113,7 @@ export async function getAssetAmount(
  */
 export async function checkCurrencyAmount(
   tokenToEthRate: number,
-  asset: FungibleAsset | SmartContractFungibleAsset,
+  asset: SwappableAsset,
   assets: AssetsState,
   amount: string,
   network: EVMNetwork

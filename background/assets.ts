@@ -1,6 +1,11 @@
 import { TokenList } from "@uniswap/token-lists"
 import { UNIXTime, HexString } from "./types"
-import { NetworkSpecific, SmartContract, Network } from "./networks"
+import {
+  NetworkSpecific,
+  SmartContract,
+  Network,
+  NetworkBaseAsset,
+} from "./networks"
 import { fromFixedPoint } from "./lib/fixed-point"
 
 /**
@@ -117,6 +122,11 @@ export type AnyAsset =
   | SmartContractFungibleAsset
 
 /**
+ * An asset that can be swapped with our current providers
+ */
+export type SwappableAsset = SmartContractFungibleAsset | NetworkBaseAsset
+
+/**
  * An amount associated with a smart contract; used to carry information like
  * per-account smart contract asset balances when full asset information isn't
  * available.
@@ -184,9 +194,9 @@ export function isFungibleAsset(asset: AnyAsset): asset is FungibleAsset {
 /**
  * Type guard to check if an AnyAsset is actually a SmartContractFungibleAsset.
  */
-export function isSmartContractFungibleAsset(
-  asset: AnyAsset
-): asset is SmartContractFungibleAsset {
+export function isSmartContractFungibleAsset<T extends AnyAsset>(
+  asset: T
+): asset is T & SmartContractFungibleAsset {
   return "homeNetwork" in asset && isFungibleAsset(asset)
 }
 

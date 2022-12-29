@@ -235,6 +235,9 @@
     "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title",
     "NFTPricingComingSoon": "Coming soon: NFT price + sending",
+    "type1": "NFTs",
+    "type2": "badges",
+    "noMatchingNFTs": "No {{type}} matching your filters",
     "collectionHover": {
       "close": "close",
       "expand": "expand collection",
@@ -267,6 +270,20 @@
     "emptyBannerTitle": {
       "nfts": "Explore markets",
       "badge": "Explore badges"
+    },
+    "filters": {
+      "title": "Filter collections",
+      "sortType": {
+        "priceDesc": "Price: Descending",
+        "priceAsc": "Price: Ascending",
+        "newestAdded": "Newest added",
+        "oldestAdded": "Oldest added",
+        "numberInOneCollection": "Number (in 1 collection)"
+      },
+      "sortTypeTitle": "Sort collection",
+      "collectionsTitle": "Show/hide collections",
+      "accountsTitle": "Show/hide accounts",
+      "noCollections": "No collections"
     }
   },
   "achievements": {
