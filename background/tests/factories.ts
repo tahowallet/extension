@@ -39,7 +39,10 @@ import {
   PreferenceService,
   SigningService,
 } from "../services"
-import { QueuedTxToRetrieve } from "../services/chain"
+import {
+  PriorityQueuedTxToRetrieve,
+  QueuedTxToRetrieve,
+} from "../services/chain"
 import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 
 const createRandom0xHash = () =>
@@ -237,12 +240,13 @@ export const createQueuedTransaction = (
 
 export const createTransactionsToRetrieve = (
   numberOfTx = 100
-): QueuedTxToRetrieve[] => {
+): PriorityQueuedTxToRetrieve[] => {
   const NETWORKS = [ETHEREUM, POLYGON, ARBITRUM_ONE, AVALANCHE, OPTIMISM]
 
-  return [...Array(numberOfTx).keys()].map((_, ind) =>
-    createQueuedTransaction({ network: NETWORKS[ind % NETWORKS.length] })
-  )
+  return [...Array(numberOfTx).keys()].map((_, ind) => [
+    createQueuedTransaction({ network: NETWORKS[ind % NETWORKS.length] }),
+    1,
+  ])
 }
 
 export const createTransactionResponse = (

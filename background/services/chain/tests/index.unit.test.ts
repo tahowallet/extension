@@ -1,5 +1,8 @@
 import sinon from "sinon"
-import ChainService, { QueuedTxToRetrieve } from ".."
+import ChainService, {
+  PriorityQueuedTxToRetrieve,
+  QueuedTxToRetrieve,
+} from ".."
 import { ETHEREUM, MINUTE, OPTIMISM, POLYGON, SECOND } from "../../../constants"
 import { EVMNetwork } from "../../../networks"
 import * as gas from "../../../lib/gas"
@@ -31,8 +34,8 @@ type ChainServiceExternalized = Omit<ChainService, ""> & {
     incomingOnly: boolean
   ) => Promise<void>
   retrieveTransaction: (queuedTx: QueuedTxToRetrieve) => Promise<void>
-  transactionsToRetrieve: QueuedTxToRetrieve[]
-  handleQueuedTransactionAlarm: () => Promise<void>
+  transactionsToRetrieve: PriorityQueuedTxToRetrieve[]
+  handlePriorityQueuedTransactionAlarm: () => Promise<void>
   transactionToRetrieveGranularTimer: NodeJS.Timer | undefined
 }
 
@@ -234,7 +237,7 @@ describe("Chain Service", () => {
     })
   })
   describe("Queued Transaction Retrieve", () => {
-    describe("handleQueuedTransactionAlarm", () => {
+    describe("handlePriorityQueuedTransactionAlarm", () => {
       let clock: sinon.SinonFakeTimers
       let setIntervalSpy: sinon.SinonSpy
       let chainServiceExternalized: ChainServiceExternalized
@@ -256,7 +259,7 @@ describe("Chain Service", () => {
         clock.restore()
       })
       it("should not start the granular timer if the queue is empty", () => {
-        chainServiceExternalized.handleQueuedTransactionAlarm()
+        chainServiceExternalized.handlePriorityQueuedTransactionAlarm()
 
         clock.tick(2 * SECOND)
 
@@ -270,11 +273,11 @@ describe("Chain Service", () => {
         chainServiceExternalized.transactionsToRetrieve =
           createTransactionsToRetrieve(100)
 
-        chainServiceExternalized.handleQueuedTransactionAlarm()
+        chainServiceExternalized.handlePriorityQueuedTransactionAlarm()
         clock.tick(60 * SECOND)
-        chainServiceExternalized.handleQueuedTransactionAlarm()
+        chainServiceExternalized.handlePriorityQueuedTransactionAlarm()
         clock.tick(60 * SECOND)
-        chainServiceExternalized.handleQueuedTransactionAlarm()
+        chainServiceExternalized.handlePriorityQueuedTransactionAlarm()
         clock.tick(60 * SECOND)
 
         expect(setIntervalSpy.calledOnce).toBe(true)
@@ -287,7 +290,7 @@ describe("Chain Service", () => {
         chainServiceExternalized.transactionsToRetrieve =
           createTransactionsToRetrieve(txInQueueCount)
 
-        chainServiceExternalized.handleQueuedTransactionAlarm()
+        chainServiceExternalized.handlePriorityQueuedTransactionAlarm()
 
         clock.tick(txRetrievedCount * 2 * SECOND)
 
@@ -303,7 +306,7 @@ describe("Chain Service", () => {
         chainServiceExternalized.transactionsToRetrieve =
           createTransactionsToRetrieve(numberOfTxInQueue)
 
-        chainServiceExternalized.handleQueuedTransactionAlarm()
+        chainServiceExternalized.handlePriorityQueuedTransactionAlarm()
 
         clock.tick(numberOfTxInQueue * 2 * SECOND)
 

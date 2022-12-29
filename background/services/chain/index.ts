@@ -134,6 +134,8 @@ export type QueuedTxToRetrieve = {
   firstSeen: UNIXTime
 }
 
+export type PriorityQueuedTxToRetrieve = [QueuedTxToRetrieve, number]
+
 /**
  * ChainService is responsible for basic network monitoring and interaction.
  * Other services rely on the chain service rather than polling networks
@@ -191,7 +193,7 @@ export default class ChainService extends BaseService<Events> {
    * cached, alongside information about when that hash request was first seen
    * for expiration purposes.
    */
-  private transactionsToRetrieve: QueuedTxToRetrieve[]
+  private transactionsToRetrieve: PriorityQueuedTxToRetrieve[]
 
   /**
    * Internal timer for the transactionsToRetrieve FIFO queue.
@@ -233,7 +235,7 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: 1,
         },
         handler: () => {
-          this.handleQueuedTransactionAlarm()
+          this.handlePriorityQueuedTransactionAlarm()
         },
       },
       historicAssetTransfers: {
@@ -352,7 +354,12 @@ export default class ChainService extends BaseService<Events> {
                   logger.debug(
                     `Queuing pending transaction ${hash} for status lookup.`
                   )
-                  this.queueTransactionHashToRetrieve(network, hash, firstSeen)
+                  this.priorityQueueTransactionHashToRetrieve(
+                    network,
+                    hash,
+                    firstSeen,
+                    1
+                  )
                 })
               })
               .catch((e) => {
@@ -1005,16 +1012,35 @@ export default class ChainService extends BaseService<Events> {
    *        seen; used to treat transactions as dropped after a certain amount
    *        of time.
    */
-  queueTransactionHashToRetrieve(
+  priorityQueueTransactionHashToRetrieve(
     network: EVMNetwork,
     txHash: HexString,
-    firstSeen: UNIXTime
+    firstSeen: UNIXTime,
+    priority: number
   ): void {
-    const seen = this.isTransactionHashQueued(network, txHash)
-
+    const newElement: PriorityQueuedTxToRetrieve = [
+      { hash: txHash, network, firstSeen },
+      priority,
+    ]
+    const seen = this.isTransactionHashPriorityQueued(network, txHash)
     if (!seen) {
       // @TODO Interleave initial transaction retrieval by network
-      this.transactionsToRetrieve.push({ hash: txHash, network, firstSeen })
+      if (this.transactionsToRetrieve.length === 0) {
+        this.transactionsToRetrieve.push(newElement)
+      } else {
+        let isAdded = false
+        for (let i = 0; i < this.transactionsToRetrieve.length; i += 1) {
+          if (newElement[1] < this.transactionsToRetrieve[i][1]) {
+            this.transactionsToRetrieve.splice(i, 0, newElement)
+            isAdded = true
+            break
+          }
+        }
+
+        if (!isAdded) {
+          this.transactionsToRetrieve.push(newElement)
+        }
+      }
     }
   }
 
@@ -1024,11 +1050,16 @@ export default class ChainService extends BaseService<Events> {
    * @param txHash The hash of a tx to check.
    * @returns true if the tx hash is in the queue, false otherwise.
    */
-  isTransactionHashQueued(txNetwork: EVMNetwork, txHash: HexString): boolean {
-    return this.transactionsToRetrieve.some(
-      ({ hash, network }) =>
-        hash === txHash && txNetwork.chainID === network.chainID
-    )
+  isTransactionHashPriorityQueued(
+    txNetwork: EVMNetwork,
+    txHash: HexString
+  ): boolean {
+    return this.transactionsToRetrieve
+      .map((transaction) => transaction[0])
+      .some(
+        ({ hash, network }) =>
+          hash === txHash && txNetwork.chainID === network.chainID
+      )
   }
 
   /**
@@ -1037,14 +1068,17 @@ export default class ChainService extends BaseService<Events> {
    * @param network The network on which the transaction has been broadcast.
    * @param txHash The tx hash identifier of the transaction we want to retrieve.
    */
-  removeTransactionHashFromQueue(network: EVMNetwork, txHash: HexString): void {
-    const seen = this.isTransactionHashQueued(network, txHash)
+  removeTransactionHashFromPriorityQueue(
+    network: EVMNetwork,
+    txHash: HexString
+  ): void {
+    const seen = this.isTransactionHashPriorityQueued(network, txHash)
 
     if (seen) {
       // Let's clean up the tx queue if the hash is present.
       // The pending tx hash should be on chain as soon as it's broadcasted.
       this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
-        (queuedTx) => queuedTx.hash !== txHash
+        (transaction) => transaction[0].hash !== txHash
       )
     }
   }
@@ -1305,7 +1339,7 @@ export default class ChainService extends BaseService<Events> {
         `Tx hash ${hash} is found in our local registry but not on chain.`
       )
 
-      this.removeTransactionHashFromQueue(network, hash)
+      this.removeTransactionHashFromPriorityQueue(network, hash)
       // Let's clean up the subscriptions
       this.providerForNetwork(network)?.off(hash)
 
@@ -1439,10 +1473,11 @@ export default class ChainService extends BaseService<Events> {
     /// send all new tx hashes into a queue to retrieve + cache
     assetTransfers.forEach((a) => {
       if (!savedTransactionHashes.has(a.txHash)) {
-        this.queueTransactionHashToRetrieve(
+        this.priorityQueueTransactionHashToRetrieve(
           addressOnNetwork.network,
           a.txHash,
-          firstSeen
+          firstSeen,
+          1
         )
       }
     })
@@ -1499,7 +1534,7 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
-  private async handleQueuedTransactionAlarm(): Promise<void> {
+  private async handlePriorityQueuedTransactionAlarm(): Promise<void> {
     if (
       !this.transactionToRetrieveGranularTimer &&
       this.transactionsToRetrieve.length
@@ -1516,8 +1551,8 @@ export default class ChainService extends BaseService<Events> {
         }
 
         // TODO: balance getting txs between networks
-        const txToRetrieve = this.transactionsToRetrieve[0]
-        this.removeTransactionHashFromQueue(
+        const txToRetrieve = this.transactionsToRetrieve[0][0]
+        this.removeTransactionHashFromPriorityQueue(
           txToRetrieve.network,
           txToRetrieve.hash
         )
@@ -1573,7 +1608,7 @@ export default class ChainService extends BaseService<Events> {
     } catch (error) {
       logger.error(`Error retrieving transaction ${hash}`, error)
       if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
-        this.queueTransactionHashToRetrieve(network, hash, firstSeen)
+        this.priorityQueueTransactionHashToRetrieve(network, hash, firstSeen, 1)
       } else {
         logger.warn(
           `Transaction ${hash} is too old to keep looking for it; treating ` +
@@ -1813,12 +1848,17 @@ export default class ChainService extends BaseService<Events> {
         "alchemy"
       )
 
-      this.removeTransactionHashFromQueue(network, transaction.hash)
+      this.removeTransactionHashFromPriorityQueue(network, transaction.hash)
     })
 
     // Let's add the transaction to the queued lookup. If the transaction is dropped
     // because of wrong nonce on chain the event will never arrive.
-    this.queueTransactionHashToRetrieve(network, transaction.hash, Date.now())
+    this.priorityQueueTransactionHashToRetrieve(
+      network,
+      transaction.hash,
+      Date.now(),
+      1
+    )
   }
 
   /**
