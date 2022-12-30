@@ -139,7 +139,10 @@ export type QueuedTxToRetrieve = {
   hash: HexString
   firstSeen: UNIXTime
 }
-
+/**
+ * The first element in the array is the transaction info the second is the priority.
+ * The priority value is a number in the range 0-1. Where 0 value is the highest priority.
+ */
 export type PriorityQueuedTxToRetrieve = [QueuedTxToRetrieve, number]
 
 /**
@@ -195,9 +198,9 @@ export default class ChainService extends BaseService<Events> {
   } = {}
 
   /**
-   * FIFO queues of transaction hashes per network that should be retrieved and
+   * Modified FIFO queues with priority of transaction hashes per network that should be retrieved and
    * cached, alongside information about when that hash request was first seen
-   * for expiration purposes.
+   * for expiration purposes. In the absence of priorities, it acts as a regular FIFO queue.
    */
   private transactionsToRetrieve: PriorityQueuedTxToRetrieve[]
 
@@ -363,8 +366,7 @@ export default class ChainService extends BaseService<Events> {
                   this.priorityQueueTransactionHashToRetrieve(
                     network,
                     hash,
-                    firstSeen,
-                    1
+                    firstSeen
                   )
                 })
               })
@@ -1017,12 +1019,13 @@ export default class ChainService extends BaseService<Events> {
    * @param firstSeen The timestamp at which the queued transaction was first
    *        seen; used to treat transactions as dropped after a certain amount
    *        of time.
+   * @param priority The priority of the transaction in the queue to be retrieved
    */
   priorityQueueTransactionHashToRetrieve(
     network: EVMNetwork,
     txHash: HexString,
     firstSeen: UNIXTime,
-    priority: number
+    priority = 1
   ): void {
     const newElement: PriorityQueuedTxToRetrieve = [
       { hash: txHash, network, firstSeen },
@@ -1483,7 +1486,7 @@ export default class ChainService extends BaseService<Events> {
           addressOnNetwork.network,
           a.txHash,
           firstSeen,
-          idx < TRANSACTIONS_WITH_PRIORITY_MAX_COUNT ? 0 : 1
+          idx <= TRANSACTIONS_WITH_PRIORITY_MAX_COUNT ? 0 : 1
         )
       }
     })
@@ -1614,7 +1617,7 @@ export default class ChainService extends BaseService<Events> {
     } catch (error) {
       logger.error(`Error retrieving transaction ${hash}`, error)
       if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
-        this.priorityQueueTransactionHashToRetrieve(network, hash, firstSeen, 1)
+        this.priorityQueueTransactionHashToRetrieve(network, hash, firstSeen)
       } else {
         logger.warn(
           `Transaction ${hash} is too old to keep looking for it; treating ` +
@@ -1862,8 +1865,7 @@ export default class ChainService extends BaseService<Events> {
     this.priorityQueueTransactionHashToRetrieve(
       network,
       transaction.hash,
-      Date.now(),
-      1
+      Date.now()
     )
   }
 
