@@ -97,7 +97,11 @@ const GAS_POLLS_PER_PERIOD = 4 // 4 times per minute
 
 const GAS_POLLING_PERIOD = 1 // 1 minute
 
-export const ACTIVITIES_MAX_COUNT = 25
+// Maximum number of transactions with priority.
+// Transactions that will be retrieved before others for one account.
+// Transactions with priority for individual accounts will keep the order of loading
+// from adding accounts.
+const TRANSACTIONS_WITH_PRIORITY_MAX_COUNT = 25
 
 interface Events extends ServiceLifecycleEvents {
   initializeActivities: {
@@ -1479,7 +1483,7 @@ export default class ChainService extends BaseService<Events> {
           addressOnNetwork.network,
           a.txHash,
           firstSeen,
-          idx < ACTIVITIES_MAX_COUNT ? 0 : 1
+          idx < TRANSACTIONS_WITH_PRIORITY_MAX_COUNT ? 0 : 1
         )
       }
     })
