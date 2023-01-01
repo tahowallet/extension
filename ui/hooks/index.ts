@@ -1,7 +1,9 @@
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 
 import { useState, useEffect, ReactElement, ReactNode } from "react"
+import { getAllAddresses } from "@tallyho/tally-background/redux-slices/selectors/accountsSelectors"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
+import { useBackgroundSelector } from "./redux-hooks"
 
 export * from "./redux-hooks"
 export * from "./signing-hooks"
@@ -77,4 +79,8 @@ export function useSwitchablePanels(panels: PanelDescriptor[]): ReactNode {
     }),
     panels[panelNumber].panelElement(),
   ]
+}
+
+export function useIsOnboarding(): boolean {
+  return useBackgroundSelector(getAllAddresses).length < 1
 }

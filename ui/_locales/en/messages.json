@@ -328,11 +328,15 @@
       },
       "addWallet": {
         "title": "Use existing wallet",
+        "titleExisting": "Add account",
         "tip": "You can always add more wallets later",
+        "existingListTitle": "Existing account",
+        "newWalletTitle": "New wallet",
         "options": {
           "importSeed": "Import recovery phrase",
           "ledger": "Connect to Ledger",
-          "readOnly": "Read-only address"
+          "readOnly": "Read-only address",
+          "createNew": "Create new wallet"
         },
         "importSeed": {
           "title": "Import secret recovery phrase",

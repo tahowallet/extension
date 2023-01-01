@@ -5,6 +5,7 @@ import SharedButton from "../../../components/Shared/SharedButton"
 import SharedIcon from "../../../components/Shared/SharedIcon"
 import OnboardingTip from "./OnboardingTip"
 import OnboardingRoutes from "./Routes"
+import { useIsOnboarding } from "../../../hooks"
 
 const intersperseWith = <T, K>(items: T[], getItem: (index: number) => K) => {
   const result: (T | K)[] = []
@@ -87,7 +88,7 @@ function AddWalletRow({
   )
 }
 
-export default function AddWallet(): ReactElement {
+function AddWalletOptions() {
   const { t } = useTranslation("translation", {
     keyPrefix: "onboarding.tabbed.addWallet",
   })
@@ -118,6 +119,47 @@ export default function AddWallet(): ReactElement {
   }, [t])
 
   return (
+    <>
+      {optionsWithSpacer.map((option, i) => {
+        if (option === "spacer") {
+          const key = `option-${i}`
+
+          return (
+            <li key={key}>
+              <div role="presentation" className="spacer" />
+            </li>
+          )
+        }
+
+        const { label, icon, url } = option
+        return (
+          <li key={url}>
+            <AddWalletRow icon={icon} url={url} label={label} />
+          </li>
+        )
+      })}
+      <style jsx>
+        {`
+          li {
+            display: flex;
+          }
+
+          .spacer {
+            width: 100%;
+            border: 0.5px solid var(--green-120);
+          }
+        `}
+      </style>
+    </>
+  )
+}
+
+function OnboardingAddWallet(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.tabbed.addWallet",
+  })
+
+  return (
     <section className="fadeIn">
       <header>
         <img
@@ -131,25 +173,8 @@ export default function AddWallet(): ReactElement {
         </div>
       </header>
       <div className="actions_container">
-        <ul>
-          {optionsWithSpacer.map((option, i) => {
-            if (option === "spacer") {
-              const key = `option-${i}`
-
-              return (
-                <li key={key}>
-                  <div role="presentation" className="spacer" />
-                </li>
-              )
-            }
-
-            const { label, icon, url } = option
-            return (
-              <li key={url}>
-                <AddWalletRow icon={icon} url={url} label={label} />
-              </li>
-            )
-          })}
+        <ul className="list_container">
+          <AddWalletOptions />
         </ul>
       </div>
       <OnboardingTip>{t("tip")}</OnboardingTip>
@@ -182,26 +207,19 @@ export default function AddWallet(): ReactElement {
             margin: 0;
           }
 
-          ul {
+          .actions_container {
+            margin-bottom: 24px;
+            width: 100%;
+            max-width: 348px;
+          }
+
+          .list_container {
             display: flex;
             flex-direction: column;
             background-color: var(--green-95);
             border-radius: 16px;
             padding: 24px;
             gap: 24px;
-          }
-
-          li {
-            display: flex;
-          }
-
-          .spacer {
-            width: 100%;
-            border: 0.5px solid var(--green-120);
-          }
-
-          .actions_container {
-            margin-bottom: 24px;
           }
 
           .top {
@@ -229,4 +247,133 @@ export default function AddWallet(): ReactElement {
       </style>
     </section>
   )
+}
+
+function OnboardingAdditionalWallet(): JSX.Element {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.tabbed.addWallet",
+  })
+
+  return (
+    <section className="fadeIn">
+      <header>
+        <img
+          width="80"
+          height="80"
+          alt="Tally Ho Gold"
+          src="./images/doggo_gold.svg"
+        />
+        <div className="bottom_content">
+          <h1 className="bottom_title">{t("titleExisting")}</h1>
+        </div>
+      </header>
+      <div className="actions_container">
+        <div className="list_wrapper">
+          <span>{t("existingListTitle")}</span>
+          <ul className="list_container">
+            <AddWalletOptions />
+          </ul>
+        </div>
+        <div className="list_wrapper">
+          <span>{t("newWalletTitle")}</span>
+          <ul className="list_container">
+            <AddWalletRow
+              icon="icons/m/wallet.svg"
+              label={t("options.createNew")}
+              url={OnboardingRoutes.NEW_SEED}
+            />
+          </ul>
+        </div>
+      </div>
+      <style jsx>
+        {`
+          .list_wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+          }
+
+          .list_wrapper span {
+            font-size: 16px;
+            text-align: center;
+            color: var(--green-40);
+          }
+
+          .list_container {
+            display: flex;
+            flex-direction: column;
+            background-color: var(--green-95);
+            border-radius: 16px;
+            padding: 24px;
+            gap: 24px;
+          }
+
+          section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            --fade-in-duration: 300ms;
+          }
+
+          header {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 42px;
+          }
+
+          header img {
+            border-radius: 22px;
+          }
+
+          header h1 {
+            font-family: "Quincy CF";
+            font-weight: 500;
+            font-size: 36px;
+            line-height: 42px;
+            margin: 0;
+          }
+
+          .actions_container {
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            width: 100%;
+            max-width: 348px;
+          }
+
+          .top {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            padding-top: 68.5px;
+          }
+
+          .icon_close {
+            mask-image: url("./images/close.svg");
+            mask-size: cover;
+            width: 11px;
+            height: 11px;
+            margin-right: 10px;
+            margin-top: 2px;
+          }
+
+          .icon_close:hover {
+            background-color: var(--green-20);
+          }
+        `}
+      </style>
+    </section>
+  )
+}
+
+export default function AddWallet(): JSX.Element {
+  const isOnboarding = useIsOnboarding()
+
+  if (isOnboarding) return <OnboardingAddWallet />
+
+  return <OnboardingAdditionalWallet />
 }
