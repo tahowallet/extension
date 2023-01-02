@@ -2,44 +2,60 @@ import React, {
   KeyboardEventHandler,
   ReactElement,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react"
 import { useTranslation } from "react-i18next"
-import { i18n } from "../../_locales/i18n"
+import { I18nKey } from "../../_locales/i18n"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 import SharedModal from "../Shared/SharedModal"
 import SharedSelect, { Option } from "../Shared/SharedSelect"
 
+type DerivationPath = {
+  value: string
+  label: I18nKey
+  hideActiveValue?: boolean
+}
+
+export enum DefaultPathIndex {
+  ledgerLive,
+  bip44,
+  ethTestnet,
+  ledgerLegacy,
+  rootstock,
+  rootstockTestnet,
+}
+
 // TODO make this network specific
-const initialDerivationPaths: Option[] = [
-  {
+const defaultDerivationPaths: Record<DefaultPathIndex, DerivationPath> = {
+  [DefaultPathIndex.ledgerLive]: {
     value: "m/44'/60'/x'/0/0",
-    label: i18n.t("ledger.derivationPaths.ledgerLive"),
+    label: "ledger.derivationPaths.ledgerLive",
   },
-  {
+  [DefaultPathIndex.bip44]: {
     value: "m/44'/60'/0'/0",
-    label: i18n.t("ledger.derivationPaths.bip44"),
+    label: "ledger.derivationPaths.bip44",
   },
-  {
+  [DefaultPathIndex.ethTestnet]: {
     value: "m/44'/1'/0'/0",
-    label: i18n.t("ledger.derivationPaths.ethTestnet"),
+    label: "ledger.derivationPaths.ethTestnet",
   },
-  {
+  [DefaultPathIndex.ledgerLegacy]: {
     value: "m/44'/60'/0'",
-    label: i18n.t("ledger.derivationPaths.ledgerLegacy"),
+    label: "ledger.derivationPaths.ledgerLegacy",
     hideActiveValue: true,
   },
-  {
+  [DefaultPathIndex.rootstock]: {
     value: "m/44'/137'/0'/0",
-    label: i18n.t("ledger.derivationPaths.rsk"),
+    label: "ledger.derivationPaths.rsk",
   },
-  {
+  [DefaultPathIndex.rootstockTestnet]: {
     value: "m/44'/37310'/0'/0",
-    label: i18n.t("ledger.derivationPaths.rskTestnet"),
+    label: "ledger.derivationPaths.rskTestnet",
   },
-]
+}
 
 const initialCustomPath = {
   coinType: "0",
@@ -50,16 +66,30 @@ const initialCustomPath = {
 
 export default function OnboardingDerivationPathSelect({
   onChange,
+  defaultPath,
 }: {
   onChange: (path: string) => void
+  defaultPath?: DefaultPathIndex
 }): ReactElement {
-  const { t } = useTranslation("translation", { keyPrefix: "onboarding" })
-  const [derivationPaths, setDerivationPaths] = useState(initialDerivationPaths)
+  const { t, i18n } = useTranslation("translation", { keyPrefix: "onboarding" })
+
+  const defaultPaths: Option[] = useMemo(
+    () =>
+      Object.values(defaultDerivationPaths).map((path) => ({
+        ...path,
+        label: i18n.t(path.label),
+      })),
+    [i18n]
+  )
+
+  const [derivationPaths, setDerivationPaths] = useState<Option[]>([])
 
   const [modalStep, setModalStep] = useState(0)
   const [customPath, setCustomPath] = useState(initialCustomPath)
   const [customPathLabel, setCustomPathLabel] = useState("")
-  const [defaultIndex, setDefaultIndex] = useState<number>()
+  const [defaultIndex, setDefaultIndex] = useState<number | undefined>(
+    defaultPath
+  )
 
   // Reset value to display placeholder after adding a custom path
   const customPathValue = customPath.isReset
@@ -112,6 +142,8 @@ export default function OnboardingDerivationPathSelect({
   ) => {
     if (e.key === "Enter") setModalStep(1)
   }
+
+  const derivationPathOptions = [...defaultPaths, ...derivationPaths]
 
   return (
     <>
@@ -183,7 +215,7 @@ export default function OnboardingDerivationPathSelect({
       </SharedModal>
       <SharedSelect
         label={t("derivationPath")}
-        options={derivationPaths}
+        options={derivationPathOptions}
         onChange={onChange}
         defaultIndex={defaultIndex}
         triggerLabel={t("addCustomPath")}
@@ -191,6 +223,7 @@ export default function OnboardingDerivationPathSelect({
         showValue
         showOptionValue
         placement="top"
+        width="100%"
       />
       <style jsx>{`
         .input_wrap {

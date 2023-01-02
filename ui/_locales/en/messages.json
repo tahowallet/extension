@@ -297,6 +297,7 @@
   },
   "onboarding": {
     "tabbed": {
+      "walletShortcut": "Did you know that you can open Tally Ho using a keyboard shortcut?",
       "routeBasedContent": {
         "newSeed": {
           "tip": "If you want an easy way to preview Tally Ho, you can start by adding a view only account",
