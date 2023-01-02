@@ -111,7 +111,6 @@ export default class KeyringService extends BaseService<Events> {
         },
       },
     })
-    // window.x = this
   }
 
   override async internalStartService(): Promise<void> {
