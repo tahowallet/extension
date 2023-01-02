@@ -682,7 +682,7 @@
         "SUPPORT_NFT_SEND": "Enable sending NFTs",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
         "SUPPORT_BINANCE_SMART_CHAIN": "Enable Binance Smart Chain network",
-        "SUPPORT_CUSTOM_NETWORKS": "Show custom networks page on settings panel",
+        "SUPPORT_CUSTOM_NETWORK": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPC": "Enable to add of a custom RPC"
       }
     }

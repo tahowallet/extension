@@ -271,7 +271,7 @@ export default function Settings(): ReactElement {
     ...(isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER)
       ? [notificationBanner]
       : []),
-    ...(isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) ? [customNetwork] : []),
+    ...(isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORK) ? [customNetwork] : []),
   ]
 
   const settings = {

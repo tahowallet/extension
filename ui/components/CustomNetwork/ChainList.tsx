@@ -5,14 +5,14 @@ import SharedButton from "../Shared/SharedButton"
 const CHAIN_LIST_URL = "https://chainlist.org/"
 
 export default function ChainList(): ReactElement {
-  const { t } = useTranslation("translation", { keyPrefix: "settings" })
+  const { t } = useTranslation("translation", {
+    keyPrefix: "settings.customNetworkSettings.chainList",
+  })
 
   return (
     <div className="chain_list_wrap">
       <div className="icon" />
-      <span className="simple_text">
-        {t(`customNetworkSettings.chainList.description`)}
-      </span>
+      <span className="simple_text">{t(`description`)}</span>
       <div>
         <SharedButton
           type="primary"
@@ -21,7 +21,7 @@ export default function ChainList(): ReactElement {
           style={{ marginTop: "24px" }}
           onClick={() => window.open(CHAIN_LIST_URL, "_blank")?.focus()}
         >
-          {t(`customNetworkSettings.chainList.addBtn`)}
+          {t(`addBtn`)}
         </SharedButton>
       </div>
       <style jsx>{`
