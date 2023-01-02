@@ -363,6 +363,11 @@
         "submit": "Create recovery phrase",
         "tip": "You can upgrade a view-only wallet later"
       },
+      "unlockWallet": {
+        "title": "Password Required",
+        "passwordInput": "Signing password",
+        "submit": "Confirm"
+      },
       "newWalletReview": {
         "title": "Save and store your recovery phrase",
         "submit": "I wrote it down",
@@ -718,7 +723,7 @@
       "assetImported": "Asset imported from transaction history",
       "name": "Name",
       "contract": "Contract address",
-      "close": "Close"      
+      "close": "Close"
     },
     "banner": {
       "bannerTitle": "New Odyssey week!",

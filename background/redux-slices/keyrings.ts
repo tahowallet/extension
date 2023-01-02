@@ -148,8 +148,8 @@ export const deriveAddress = createBackgroundAsyncThunk(
 
 export const unlockKeyrings = createBackgroundAsyncThunk(
   "keyrings/unlockKeyrings",
-  async (password: string) => {
-    await emitter.emit("unlockKeyrings", password)
+  async (password: string, { extra: { main } }) => {
+    return { success: await main.unlockKeyrings(password) }
   }
 )
 
