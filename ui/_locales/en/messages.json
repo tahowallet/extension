@@ -381,6 +381,7 @@
       },
       "complete": {
         "title": "Welcome to Tally Ho!",
+        "titleExisting": "Account added to TallyHo!",
         "subtitle": "For faster access we recommend pinning Tally Ho to your browser",
         "animationAlt": "Pin the wallet"
       }
