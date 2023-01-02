@@ -28,6 +28,7 @@ import HiddenDevPanel from "../components/HiddenDevPanel/HiddenDevPanel"
 import FeatureFlagsPanel from "../components/HiddenDevPanel/FeatureFlagsPanel"
 import NFTs from "../pages/NFTs"
 import Abilities from "../pages/Abilities"
+import SettingsCustomNetwork from "../pages/Settings/SettingsCustomNetwork"
 
 interface PageList {
   path: string
@@ -149,6 +150,13 @@ const pageList: PageList[] = [
   {
     path: "/settings/analytics",
     Component: SettingsAnalytics,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: true,
+  },
+  {
+    path: "/settings/custom-network",
+    Component: SettingsCustomNetwork,
     hasTabBar: true,
     hasTopBar: false,
     persistOnClose: true,

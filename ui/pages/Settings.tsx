@@ -247,6 +247,18 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const customNetwork = {
+    title: "",
+    component: () => (
+      <SettingButton
+        link="/settings/custom-network"
+        label={t("settings.customNetwork")}
+        ariaLabel={t("settings.customNetworkSettings.ariaLabel")}
+        icon="continue"
+      />
+    ),
+  }
+
   const generalList = [
     setAsDefault,
     hideSmallAssetBalance,
@@ -259,6 +271,7 @@ export default function Settings(): ReactElement {
     ...(isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER)
       ? [notificationBanner]
       : []),
+    ...(isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) ? [customNetwork] : []),
   ]
 
   const settings = {
