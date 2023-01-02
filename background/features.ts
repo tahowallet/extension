@@ -38,6 +38,7 @@ export const RuntimeFlag = {
   SUPPORT_WALLET_CONNECT: process.env.SUPPORT_WALLET_CONNECT === "true",
   SUPPORT_ABILITIES: process.env.SUPPORT_ABILITIES === "true",
   SUPPORT_CUSTOM_NETWORKS: process.env.SUPPORT_CUSTOM_NETWORKS === "true",
+  SUPPORT_CUSTOM_RPC: process.env.SUPPORT_CUSTOM_RPC === "true",
 } as const
 
 type BuildTimeFlagType = keyof typeof BuildTimeFlag
