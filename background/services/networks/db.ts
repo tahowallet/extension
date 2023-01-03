@@ -7,20 +7,20 @@ export interface BaseAsset {
   decimals: number
 }
 
-export class BaseAssetsDatabase extends Dexie {
-  private assets!: Dexie.Table<BaseAsset, number>
+export class NetworksDatabase extends Dexie {
+  private baseAssets!: Dexie.Table<BaseAsset, number>
 
   constructor() {
-    super("tally/base-assets")
+    super("tally/networks")
 
     if (isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
       this.version(1).stores({
-        assets: "++id,&name",
+        baseAssets: "++id,&name",
       })
     }
   }
 }
 
-export async function getOrCreateDB(): Promise<BaseAssetsDatabase> {
-  return new BaseAssetsDatabase()
+export async function getOrCreateDB(): Promise<NetworksDatabase> {
+  return new NetworksDatabase()
 }

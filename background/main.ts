@@ -34,6 +34,7 @@ import {
   WalletConnectService,
   AnalyticsService,
   getNoopService,
+  NetworksService,
 } from "./services"
 
 import { HexString, KeyringTypes, NormalizedEVMAddress } from "./types"
@@ -309,6 +310,8 @@ export default class Main extends BaseService<never> {
         )
       : getNoopService<WalletConnectService>()
 
+    const networksService = NetworksService.create()
+
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
     // initial state, which can be useful for development
@@ -351,7 +354,8 @@ export default class Main extends BaseService<never> {
       await analyticsService,
       await nftsService,
       await walletConnectService,
-      await abilitiesService
+      await abilitiesService,
+      await networksService
     )
   }
 
@@ -444,7 +448,11 @@ export default class Main extends BaseService<never> {
     /**
      * A promise to the Abilities service which takes care of fetching and storing abilities
      */
-    private abilitiesService: AbilitiesService
+    private abilitiesService: AbilitiesService,
+    /**
+     * TODO
+     */
+    private networksService: NetworksService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -507,6 +515,7 @@ export default class Main extends BaseService<never> {
       this.nftsService.startService(),
       this.walletConnectService.startService(),
       this.abilitiesService.startService(),
+      this.networksService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -530,6 +539,7 @@ export default class Main extends BaseService<never> {
       this.nftsService.stopService(),
       this.walletConnectService.stopService(),
       this.abilitiesService.stopService(),
+      this.networksService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -555,6 +565,10 @@ export default class Main extends BaseService<never> {
     // Nothing else beside creating a service should happen when feature flag is off
     if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
       this.connectNFTsService()
+    }
+
+    if (isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
+      this.connectNetworksService()
     }
 
     await this.connectChainService()
@@ -1515,6 +1529,11 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("newAbilities", async (newAbilities) => {
       this.store.dispatch(addAbilities(newAbilities))
     })
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  connectNetworksService(): void {
+    // TODO
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
