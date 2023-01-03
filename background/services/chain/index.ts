@@ -285,9 +285,6 @@ export default class ChainService extends BaseService<Events> {
     await super.internalStartService()
 
     await this.initializeNetworks()
-
-    console.log("Networks Initialized", this.supportedNetworks)
-
     const accounts = await this.getAccountsToTrack()
     const trackedNetworks = await this.getTrackedNetworks()
     const transactions = await this.db.getAllTransactions()
@@ -333,7 +330,9 @@ export default class ChainService extends BaseService<Events> {
 
   async initializeNetworks(): Promise<void> {
     await this.db.initializeEVMNetworks()
-    this.supportedNetworks = await this.db.getAllEVMNetworks()
+    if (!this.supportedNetworks.length) {
+      this.supportedNetworks = await this.db.getAllEVMNetworks()
+    }
     this.lastUserActivityOnNetwork =
       Object.fromEntries(
         this.supportedNetworks.map((network) => [network.chainID, 0])
