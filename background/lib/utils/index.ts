@@ -174,4 +174,5 @@ export const hexToAscii = (hex_: string): string => {
 export const wait = (ms: number): Promise<void> =>
   new Promise<void>((r) => setTimeout(r, ms))
 
-export const getUNIXTimestamp = (): UNIXTime => Math.floor(Date.now() / 1000)
+export const getUNIXTimestamp = (time = Date.now()): UNIXTime =>
+  Math.floor(time / 1000)
