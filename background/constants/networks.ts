@@ -1,3 +1,4 @@
+import { FeatureFlags, isEnabled } from "../features"
 import { EVMNetwork, Network } from "../networks"
 import { AVAX, BNB, BTC, ETH, MATIC, OPTIMISTIC_ETH, RBTC } from "./currencies"
 
@@ -79,6 +80,20 @@ export const BITCOIN: Network = {
   family: "BTC",
   coingeckoPlatformID: "bitcoin",
 }
+
+export const DEFAULT_NETWORKS = [
+  ETHEREUM,
+  POLYGON,
+  OPTIMISM,
+  GOERLI,
+  ARBITRUM_ONE,
+  ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [ROOTSTOCK] : []),
+  ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE) ? [AVALANCHE] : []),
+  ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
+    ? [BINANCE_SMART_CHAIN]
+    : []),
+  ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA) ? [ARBITRUM_NOVA] : []),
+]
 
 export const FORK: EVMNetwork = {
   name: "Ethereum",
