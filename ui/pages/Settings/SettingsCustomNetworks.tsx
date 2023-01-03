@@ -1,10 +1,32 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import React, { ReactElement } from "react"
-import { useTranslation } from "react-i18next"
+import { Trans, useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 
-const CHAIN_LIST_URL = "https://chainlist.org/"
+const CHAIN_LIST = {
+  name: "ChainList",
+  url: "https://chainlist.org/",
+}
+
+const LinkText = ({
+  text,
+  url,
+}: {
+  text: string
+  url: string
+}): ReactElement => {
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className="link">
+      {text}
+      <style jsx>{`
+        .link {
+          color: var(--trophy-gold);
+        }
+      `}</style>
+    </a>
+  )
+}
 
 export default function SettingsCustomNetworks(): ReactElement {
   const { t } = useTranslation("translation", {
@@ -19,14 +41,22 @@ export default function SettingsCustomNetworks(): ReactElement {
       <section className="content">
         <div className="chain_list_wrap">
           <div className="icon" />
-          <span className="simple_text">{t(`chainList.description`)}</span>
+          <span className="simple_text">
+            <Trans
+              t={t}
+              i18nKey="chainList.description"
+              components={{
+                link: <LinkText text={CHAIN_LIST.name} url={CHAIN_LIST.url} />,
+              }}
+            />
+          </span>
           <div>
             <SharedButton
               type="primary"
               size="medium"
               iconSmall="new-tab"
               style={{ marginTop: "24px" }}
-              onClick={() => window.open(CHAIN_LIST_URL, "_blank")?.focus()}
+              onClick={() => window.open(CHAIN_LIST.url, "_blank")?.focus()}
             >
               {t(`chainList.addBtn`)}
             </SharedButton>
