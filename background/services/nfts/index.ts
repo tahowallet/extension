@@ -227,7 +227,9 @@ export default class NFTsService extends BaseService<Events> {
       // indexing transfers can take some time, let's add some margin to the timestamp
       this.#transfersLookupTimestamp = getUNIXTimestamp(Date.now() - 5 * MINUTE)
 
-      await this.db.removeByTransferredNFTs(removedNFTs)
+      await this.db.removeNFTsByIDs(
+        removedNFTs.map((transferred) => transferred.id)
+      )
       this.emitter.emit("removeTransferredNFTs", removedNFTs)
     }
   }

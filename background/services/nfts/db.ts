@@ -2,7 +2,7 @@ import Dexie from "dexie"
 import { AddressOnNetwork } from "../../accounts"
 import { FeatureFlags, isEnabled } from "../../features"
 import { sameEVMAddress } from "../../lib/utils"
-import { NFT, NFTCollection, TransferredNFT } from "../../nfts"
+import { NFT, NFTCollection } from "../../nfts"
 
 export class NFTsDatabase extends Dexie {
   private nfts!: Dexie.Table<NFT, number>
@@ -79,11 +79,14 @@ export class NFTsDatabase extends Dexie {
       .delete()
   }
 
-  async removeByTransferredNFTs(removedNFTs: TransferredNFT[]): Promise<void> {
+  async removeNFTsByIDs(removedNFTsIDs: string[]): Promise<void> {
     const nftsToRemove = this.nfts.filter((nft) =>
-      removedNFTs.some((transferred) => transferred.id === nft.id)
+      removedNFTsIDs.some((removedID) => removedID === nft.id)
     )
 
+    // As we don't know if it was the last NFT in a given collection
+    // let's remove it - collection will be refetched in the next step and added
+    // to the database if necessary
     const collectionIdsToRemove = (await nftsToRemove.toArray()).reduce(
       (acc, nft) => {
         acc.add(nft.collectionID)
