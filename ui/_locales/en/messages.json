@@ -436,7 +436,7 @@
         "addBtn": "Add chains with Chainlist"
       },
       "customRPC": {
-        "description": "You can also add a custom RPC, this can be a bit risky as you might add a malicious RPC without knowing, that could result in loss of funds",
+        "description": "You can also add a custom RPC, this can be a bit risky as you might add a malicious RPC without knowing, that could result in loss of funds.",
         "addBtn": "Add custom RPC (Advanced)"
       }
     }

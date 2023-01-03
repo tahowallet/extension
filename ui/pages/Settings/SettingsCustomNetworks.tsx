@@ -2,30 +2,12 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import React, { ReactElement } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"
+import SharedLink from "../../components/Shared/SharedLink"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 
 const CHAIN_LIST = {
   name: "ChainList",
   url: "https://chainlist.org/",
-}
-
-const LinkText = ({
-  text,
-  url,
-}: {
-  text: string
-  url: string
-}): ReactElement => {
-  return (
-    <a href={url} target="_blank" rel="noreferrer" className="link">
-      {text}
-      <style jsx>{`
-        .link {
-          color: var(--trophy-gold);
-        }
-      `}</style>
-    </a>
-  )
 }
 
 export default function SettingsCustomNetworks(): ReactElement {
@@ -46,7 +28,9 @@ export default function SettingsCustomNetworks(): ReactElement {
               t={t}
               i18nKey="chainList.description"
               components={{
-                link: <LinkText text={CHAIN_LIST.name} url={CHAIN_LIST.url} />,
+                link: (
+                  <SharedLink text={CHAIN_LIST.name} url={CHAIN_LIST.url} />
+                ),
               }}
             />
           </span>
@@ -75,7 +59,7 @@ export default function SettingsCustomNetworks(): ReactElement {
         .wrapper {
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 50px;
         }
         .content {
           padding: 0 24px;
