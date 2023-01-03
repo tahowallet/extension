@@ -380,7 +380,7 @@
     "connectedWebsites": "Connected websites",
     "analytics": "Analytics",
     "needHelp": "Need Help?",
-    "customNetwork": "Custom network",
+    "customNetworks": "Custom networks",
     "showBanners": "Show achievement banners",
     "versionLabel": "Version {{version}}",
     "unknownVersionOrCommit": "<unknown>",
@@ -428,9 +428,9 @@
       "ariaLabel": "Manage connected websites",
       "emptyList": "Not connected to any websites"
     },
-    "customNetworkSettings": {
-      "title": "Custom network",
-      "ariaLabel": "Open custom network page",
+    "customNetworksSettings": {
+      "title": "Custom networks",
+      "ariaLabel": "Open custom networks page",
       "chainList": {
         "description": "Fastest and safest way of adding a custom network is by visiting ChainList, connecting your wallet and adding the chains you wish to see.",
         "addBtn": "Add chains with Chainlist"
@@ -682,8 +682,8 @@
         "SUPPORT_NFT_SEND": "Enable sending NFTs",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
         "SUPPORT_BINANCE_SMART_CHAIN": "Enable Binance Smart Chain network",
-        "SUPPORT_CUSTOM_NETWORK": "Show custom network page on settings panel",
-        "SUPPORT_CUSTOM_RPC": "Enable to add of a custom RPC"
+        "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
+        "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs"
       }
     }
   },

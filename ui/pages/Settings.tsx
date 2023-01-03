@@ -247,13 +247,13 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const customNetwork = {
+  const customNetworks = {
     title: "",
     component: () => (
       <SettingButton
-        link="/settings/custom-network"
-        label={t("settings.customNetwork")}
-        ariaLabel={t("settings.customNetworkSettings.ariaLabel")}
+        link="/settings/custom-networks"
+        label={t("settings.customNetworks")}
+        ariaLabel={t("settings.customNetworksSettings.ariaLabel")}
         icon="continue"
       />
     ),
@@ -271,7 +271,9 @@ export default function Settings(): ReactElement {
     ...(isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER)
       ? [notificationBanner]
       : []),
-    ...(isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORK) ? [customNetwork] : []),
+    ...(isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)
+      ? [customNetworks]
+      : []),
   ]
 
   const settings = {
