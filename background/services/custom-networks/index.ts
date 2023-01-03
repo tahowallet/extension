@@ -1,17 +1,17 @@
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { NetworksDatabase, getOrCreateDB } from "./db"
+import { CustomNetworksDatabase, getOrCreateDB, BaseAsset } from "./db"
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface Events extends ServiceLifecycleEvents {}
 
-export default class NetworksService extends BaseService<Events> {
-  static create: ServiceCreatorFunction<Events, NetworksService, []> =
+export default class CustomNetworksService extends BaseService<Events> {
+  static create: ServiceCreatorFunction<Events, CustomNetworksService, []> =
     async () => {
       return new this(await getOrCreateDB())
     }
 
-  private constructor(private db: NetworksDatabase) {
+  private constructor(private db: CustomNetworksDatabase) {
     super()
   }
 
@@ -23,5 +23,14 @@ export default class NetworksService extends BaseService<Events> {
     this.db.close()
 
     await super.internalStopService()
+  }
+
+  /**
+   * Add the base asset for the network.
+   *
+   * @param asset The base asset.
+   */
+  async addBaseAsset(asset: BaseAsset): Promise<void> {
+    await this.db.setBaseAssets(asset)
   }
 }

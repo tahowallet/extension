@@ -22,7 +22,7 @@ export { default as SigningService } from "./signing"
 export { default as AnalyticsService } from "./analytics"
 export { default as NFTsService } from "./nfts"
 export { default as WalletConnectService } from "./wallet-connect"
-export { default as NetworksService } from "./networks"
+export { default as CustomNetworksService } from "./custom-networks"
 
 export function getNoopService<T>(): T {
   return Promise.resolve({

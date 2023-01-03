@@ -32,6 +32,7 @@ import {
   TransactionAnnotation,
 } from "../enrichment"
 import { decodeJSON } from "../../lib/utils"
+import CustomNetworksService from "../custom-networks"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -85,19 +86,25 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   static create: ServiceCreatorFunction<
     Events,
     InternalEthereumProviderService,
-    [Promise<ChainService>, Promise<PreferenceService>]
-  > = async (chainService, preferenceService) => {
+    [
+      Promise<ChainService>,
+      Promise<PreferenceService>,
+      Promise<CustomNetworksService>
+    ]
+  > = async (chainService, preferenceService, customNetworksService) => {
     return new this(
       await getOrCreateDB(),
       await chainService,
-      await preferenceService
+      await preferenceService,
+      await customNetworksService
     )
   }
 
   private constructor(
     private db: InternalEthereumProviderDatabase,
     private chainService: ChainService,
-    private preferenceService: PreferenceService
+    private preferenceService: PreferenceService,
+    private customNetworksService: CustomNetworksService
   ) {
     super()
 

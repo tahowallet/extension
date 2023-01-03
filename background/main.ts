@@ -34,7 +34,7 @@ import {
   WalletConnectService,
   AnalyticsService,
   getNoopService,
-  NetworksService,
+  CustomNetworksService,
 } from "./services"
 
 import { HexString, KeyringTypes, NormalizedEVMAddress } from "./types"
@@ -277,8 +277,13 @@ export default class Main extends BaseService<never> {
       indexingService,
       nameService
     )
+    const customNetworksService = CustomNetworksService.create()
     const internalEthereumProviderService =
-      InternalEthereumProviderService.create(chainService, preferenceService)
+      InternalEthereumProviderService.create(
+        chainService,
+        preferenceService,
+        customNetworksService
+      )
     const providerBridgeService = ProviderBridgeService.create(
       internalEthereumProviderService,
       preferenceService
@@ -309,8 +314,6 @@ export default class Main extends BaseService<never> {
           preferenceService
         )
       : getNoopService<WalletConnectService>()
-
-    const networksService = NetworksService.create()
 
     let savedReduxState = {}
     // Setting READ_REDUX_CACHE to false will start the extension with an empty
@@ -355,7 +358,7 @@ export default class Main extends BaseService<never> {
       await nftsService,
       await walletConnectService,
       await abilitiesService,
-      await networksService
+      await customNetworksService
     )
   }
 
@@ -452,7 +455,7 @@ export default class Main extends BaseService<never> {
     /**
      * TODO
      */
-    private networksService: NetworksService
+    private customNetworksService: CustomNetworksService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -515,7 +518,7 @@ export default class Main extends BaseService<never> {
       this.nftsService.startService(),
       this.walletConnectService.startService(),
       this.abilitiesService.startService(),
-      this.networksService.startService(),
+      this.customNetworksService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -539,7 +542,7 @@ export default class Main extends BaseService<never> {
       this.nftsService.stopService(),
       this.walletConnectService.stopService(),
       this.abilitiesService.stopService(),
-      this.networksService.stopService(),
+      this.customNetworksService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -568,7 +571,7 @@ export default class Main extends BaseService<never> {
     }
 
     if (isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
-      this.connectNetworksService()
+      this.connectCustomNetworksService()
     }
 
     await this.connectChainService()
@@ -1532,7 +1535,7 @@ export default class Main extends BaseService<never> {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  connectNetworksService(): void {
+  connectCustomNetworksService(): void {
     // TODO
   }
 
