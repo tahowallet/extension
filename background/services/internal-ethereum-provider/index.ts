@@ -32,6 +32,8 @@ import {
   TransactionAnnotation,
 } from "../enrichment"
 import { decodeJSON } from "../../lib/utils"
+import { FeatureFlags, isEnabled } from "../../features"
+import { BaseAsset } from "../custom-networks/db"
 import CustomNetworksService from "../custom-networks"
 
 // A type representing the transaction requests that come in over JSON-RPC
@@ -58,6 +60,11 @@ type JsonRpcTransactionRequest = Omit<EthersTransactionRequest, "gasLimit"> & {
 // https://eips.ethereum.org/EIPS/eip-3326
 export type SwitchEthereumChainParameter = {
   chainId: string
+}
+
+// https://eips.ethereum.org/EIPS/eip-3085
+type AddEthereumChainParameter = {
+  nativeCurrency?: BaseAsset
 }
 
 type DAppRequestEvent<T, E> = {
@@ -254,6 +261,13 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       // will just switch to a chain if we already support it - but not add a new one
       case "wallet_addEthereumChain":
       case "wallet_switchEthereumChain": {
+        if (isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
+          const baseAsset = (params[0] as AddEthereumChainParameter)
+            .nativeCurrency
+          if (baseAsset) {
+            await this.customNetworksService.addBaseAsset(baseAsset)
+          }
+        }
         const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
         const supportedNetwork = await this.getTrackedNetworkByChainId(
           newChainId

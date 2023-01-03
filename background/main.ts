@@ -159,6 +159,8 @@ import {
 } from "./redux-slices/nfts_update"
 import AbilitiesService from "./services/abilities"
 import { addAbilities } from "./redux-slices/abilities"
+import { BaseAsset } from "./services/custom-networks/db"
+import { updateBaseAssets } from "./redux-slices/custom-networks"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1534,9 +1536,13 @@ export default class Main extends BaseService<never> {
     })
   }
 
-  // eslint-disable-next-line class-methods-use-this
   connectCustomNetworksService(): void {
-    // TODO
+    this.customNetworksService.emitter.on(
+      "updateBaseAssets",
+      (assets: BaseAsset[]) => {
+        this.store.dispatch(updateBaseAssets(assets))
+      }
+    )
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {

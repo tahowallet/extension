@@ -20,8 +20,9 @@ export class CustomNetworksDatabase extends Dexie {
     }
   }
 
-  async setBaseAssets(asset: BaseAsset): Promise<void> {
-    this.baseAssets.put(asset)
+  async addsBaseAssets(asset: BaseAsset): Promise<BaseAsset[]> {
+    await this.baseAssets.put(asset)
+    return this.baseAssets.toArray()
   }
 }
 

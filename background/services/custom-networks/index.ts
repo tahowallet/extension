@@ -2,8 +2,9 @@ import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { CustomNetworksDatabase, getOrCreateDB, BaseAsset } from "./db"
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface Events extends ServiceLifecycleEvents {}
+interface Events extends ServiceLifecycleEvents {
+  updateBaseAssets: BaseAsset[]
+}
 
 export default class CustomNetworksService extends BaseService<Events> {
   static create: ServiceCreatorFunction<Events, CustomNetworksService, []> =
@@ -31,6 +32,7 @@ export default class CustomNetworksService extends BaseService<Events> {
    * @param asset The base asset.
    */
   async addBaseAsset(asset: BaseAsset): Promise<void> {
-    await this.db.setBaseAssets(asset)
+    const updatedBaseAssets = await this.db.addsBaseAssets(asset)
+    this.emitter.emit("updateBaseAssets", updatedBaseAssets)
   }
 }
