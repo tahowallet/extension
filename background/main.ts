@@ -455,7 +455,7 @@ export default class Main extends BaseService<never> {
      */
     private abilitiesService: AbilitiesService,
     /**
-     * TODO
+     * A promise to the custom Networks service which takes care of networks data and allows to adding custom networks.
      */
     private customNetworksService: CustomNetworksService
   ) {
