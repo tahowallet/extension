@@ -13,7 +13,7 @@ export class BaseAssetsDatabase extends Dexie {
   constructor() {
     super("tally/base-assets")
 
-    if (isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORK)) {
+    if (isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
       this.version(1).stores({
         assets: "++id,&name",
       })
