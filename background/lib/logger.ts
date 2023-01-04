@@ -225,11 +225,13 @@ const logger = () => {
   }
 
   async function clearStorage() {
-    localStorage.removeItem(groupKey(LogLevel.debug))
-    localStorage.removeItem(groupKey(LogLevel.log))
-    localStorage.removeItem(groupKey(LogLevel.info))
-    localStorage.removeItem(groupKey(LogLevel.warn))
-    localStorage.removeItem(groupKey(LogLevel.error))
+    await browser.storage.local.remove([
+      groupKey(LogLevel.debug),
+      groupKey(LogLevel.log),
+      groupKey(LogLevel.info),
+      groupKey(LogLevel.warn),
+      groupKey(LogLevel.error),
+    ])
   }
 
   async function init(env: LoggerEnvironment) {
@@ -239,7 +241,7 @@ const logger = () => {
 
     // Clear all locally stored logs on load, which were used in older versions
     // of the extension.
-    clearStorage()
+    await clearStorage()
   }
 
   return {
