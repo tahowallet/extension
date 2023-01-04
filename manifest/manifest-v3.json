@@ -1,0 +1,46 @@
+{
+  "name": "Tally Ho BETA",
+  "version": "0.18.6.1",
+  "description": "The community owned and operated Web3 wallet.",
+  "homepage_url": "https://tally.cash",
+  "author": "https://tally.cash",
+  "manifest_version": 3,
+  "content_security_policy": {
+    "extension_pages": "object-src 'self'; script-src 'self';"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["window-provider.js"],
+      "matches": ["https://*/*"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": ["file://*/*", "http://localhost/*", "https://*/*"],
+      "js": ["provider-bridge.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "windows": "Alt+T",
+        "mac": "Alt+T",
+        "chromeos": "Alt+T",
+        "linux": "Alt+T"
+      }
+    }
+  },
+  "icons": {
+    "128": "icon-128-dark.png"
+  },
+  "action": {
+    "default_title": "Tally Ho",
+    "default_popup": "popup.html"
+  },
+  "permissions": ["alarms", "storage", "unlimitedStorage", "activeTab"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
