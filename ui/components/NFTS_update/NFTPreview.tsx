@@ -1,51 +1,67 @@
-import { truncateAddress } from "@tallyho/tally-background/lib/utils"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import {
+  isProbablyEVMAddress,
+  truncateAddress,
+} from "@tallyho/tally-background/lib/utils"
 import { NFTWithCollection } from "@tallyho/tally-background/redux-slices/nfts_update"
-import React, { ReactElement, useRef, useState, useEffect } from "react"
+import React, { ReactElement, useMemo } from "react"
 import { useTranslation } from "react-i18next"
+import { useIntersectionObserver } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
+import ExploreMarketLink, { getRelevantMarketsList } from "./ExploreMarketLink"
 import NFTImage from "./NFTImage"
 
-// Chrome seems to have problems when elements with backdrop style are rendered initially
-// out of the viewport - browser is not rendering them at all. This is a workaround
-// to force them to rerender.
-// TODO: scrolling in and out of the view is still breaking it, needs more work
-const useBackdrop = () => {
-  const ref = useRef<HTMLDivElement>(null)
-  const [obs] = useState(
-    () =>
-      new IntersectionObserver(
-        ([div]) => {
-          if (div.isIntersecting) {
-            div.target.classList.remove("preview_backdrop")
-            div.target.classList.add("preview_backdrop")
-          }
-        },
-        { threshold: 0.8 }
-      )
-  )
-  useEffect(() => {
-    const div = ref.current
-    if (div) {
-      obs.observe(ref.current)
-    }
-    return () => {
-      if (div) obs.unobserve(div)
-    }
-  }, [obs])
+const MAX_DESCRIPTION_LENGTH = 180
+const LINK_REGEX = /\[([\w\s\d]+)\]\((https?:\/\/[\w\d./?=#]+)\)/gm
 
-  return ref
+const removeMarkdownLinks = (description: string) => {
+  return description.replace(LINK_REGEX, "$1")
+}
+
+const trimDescription = (description: string) =>
+  description && description.length > MAX_DESCRIPTION_LENGTH
+    ? `${description.slice(0, MAX_DESCRIPTION_LENGTH)}...`
+    : description
+
+const parseDescription = (description = "") => {
+  return trimDescription(removeMarkdownLinks(description))
 }
 
 export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const { nft, collection } = props
-  const { thumbnailURL, name, network, owner, description, attributes } = nft
+  const {
+    thumbnailURL,
+    previewURL,
+    contract,
+    name,
+    network,
+    owner,
+    description,
+    attributes,
+    isBadge,
+  } = nft
+  const { totalNftCount } = collection
   const floorPrice =
     "floorPrice" in collection &&
-    collection.floorPrice?.value &&
+    collection.floorPrice?.value !== undefined &&
     collection.floorPrice
 
-  const backdropRef = useBackdrop()
+  // Chrome seems to have problems when elements with backdrop style are rendered initially
+  // out of the viewport - browser is not rendering them at all. This is a workaround
+  // to force them to rerender.
+  // TODO: scrolling in and out of the view is still breaking it, needs more work
+  const backdropRef = useIntersectionObserver<HTMLDivElement>(
+    ([div]) => {
+      if (div.isIntersecting) {
+        div.target.classList.remove("preview_backdrop")
+        div.target.classList.add("preview_backdrop")
+      }
+    },
+    { threshold: 0.8 }
+  )
+
+  const marketsList = useMemo(() => getRelevantMarketsList(nft), [nft])
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
   })
@@ -54,7 +70,14 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     <>
       <div className="preview_wrapper">
         <div className="preview_image">
-          <NFTImage src={thumbnailURL} alt={name} width={384} />
+          <NFTImage
+            src={thumbnailURL}
+            highResolutionSrc={previewURL}
+            alt={name}
+            width={384}
+            isBadge={isBadge}
+            customStyles="border-radius: 0 0 8px 8px;"
+          />
           <div className="preview_network">
             <SharedNetworkIcon network={network} size={24} hasBackground />
           </div>
@@ -81,29 +104,40 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         </div>
 
         <div className="preview_header">
-          <h1>{name}</h1>
-          <SharedButton
-            type="tertiary"
-            size="small"
-            iconSmall="send"
-            iconPosition="left"
-          >
-            {t("preview.send")}
-          </SharedButton>
+          <h1 className="ellipsis_multiline">{name || t("noTitle")}</h1>
+          {isEnabled(FeatureFlags.SUPPORT_NFT_SEND) && (
+            <SharedButton
+              type="tertiary"
+              size="small"
+              iconSmall="send"
+              iconPosition="left"
+            >
+              {t("preview.send")}
+            </SharedButton>
+          )}
         </div>
 
         <div className="preview_section">
           <div className="preview_section_header"> {t("preview.viewOn")}</div>
-          <div className="preview_section_row">
-            <SharedButton type="secondary" size="small">
-              Looksrare
-            </SharedButton>
-            <SharedButton type="secondary" size="small">
-              Opensea
-            </SharedButton>
-            <SharedButton type="secondary" size="small">
-              Galxe
-            </SharedButton>
+          <div className="preview_section_row preview_markets">
+            {marketsList.map(
+              ({
+                url,
+                title,
+                color,
+                icon,
+                hoverIcon,
+                hoverColor,
+                getNFTLink,
+              }) => (
+                <ExploreMarketLink
+                  type="button"
+                  key={url}
+                  url={getNFTLink(nft)}
+                  {...{ title, color, icon, hoverColor, hoverIcon }}
+                />
+              )
+            )}
           </div>
         </div>
 
@@ -111,7 +145,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           <div className="preview_section_header">
             {t("preview.description")}
           </div>
-          <p>{description || "-"}</p>
+          <p>{parseDescription(description) || "-"}</p>
         </div>
 
         <div className="preview_section preview_section_row">
@@ -119,11 +153,13 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
             <div className="preview_section_header">
               {t("preview.itemsCount")}
             </div>
-            <p>TODO</p>
+            <p>{totalNftCount ?? "-"}</p>
           </div>
           <div className="preview_section_column align_right">
             <div className="preview_section_header">{t("preview.creator")}</div>
-            <p>TODO</p>
+            <p>
+              {isProbablyEVMAddress(contract) ? truncateAddress(contract) : "-"}
+            </p>
           </div>
         </div>
 
@@ -133,15 +169,23 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
               {t("preview.properties")}
             </div>
             <div className="preview_property_list preview_section_row">
-              {attributes.map(({ trait, value }) => (
-                <div
-                  key={trait}
-                  className="preview_property preview_section_column"
-                >
-                  <span className="preview_property_trait">{trait}</span>
-                  <span className="preview_property_value">{value}</span>
-                </div>
-              ))}
+              {attributes.map(
+                ({ trait, value }) =>
+                  !!value && (
+                    <div
+                      key={trait}
+                      className="preview_property preview_section_column"
+                    >
+                      <span className="preview_property_trait">{trait}</span>
+                      <span
+                        className="preview_property_value ellipsis"
+                        title={value}
+                      >
+                        {value}
+                      </span>
+                    </div>
+                  )
+              )}
             </div>
           </div>
         )}
@@ -251,11 +295,18 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         .preview_property_trait {
           color: var(--green-40);
           font-size: 12px;
-          letter-spacing: 2%;
+          width: 100%;
+          text-align: center;
         }
         .preview_property_value {
-          letter-spacing: 3%;
           font-size: 14px;
+          width: 100%;
+          text-align: center;
+        }
+        .preview_markets {
+          margin-top: 8px;
+          gap: 16px;
+          justify-content: flex-start;
         }
       `}</style>
     </>

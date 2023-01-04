@@ -1,6 +1,11 @@
 import { fetchJson } from "@ethersproject/web"
 import { NETWORK_BY_CHAIN_ID } from "../constants"
-import { NFT, NFTCollection, NFTsWithPagesResponse } from "../nfts"
+import {
+  NFT,
+  NFTCollection,
+  NFTsWithPagesResponse,
+  TransferredNFT,
+} from "../nfts"
 import { HexString } from "../types"
 import logger from "./logger"
 import { sameEVMAddress } from "./utils"
@@ -58,6 +63,13 @@ type SimpleHashCollectionModel = {
   }[]
 }
 
+type SimpleHashTransferModel = {
+  nft_id: string
+  chain: SupportedChain
+  from_address: string | null
+  to_address: string | null
+}
+
 type SimpleHashNFTsByWalletAPIResponse = {
   next: string | null
   nfts: SimpleHashNFTModel[]
@@ -65,6 +77,11 @@ type SimpleHashNFTsByWalletAPIResponse = {
 
 type SimpleHashCollectionsByWalletAPIResponse = {
   collections: SimpleHashCollectionModel[]
+}
+
+type SimpleHashTransfersByWalletAPIResponse = {
+  next: string | null
+  transfers: SimpleHashTransferModel[]
 }
 
 const CHAIN_ID_TO_NAME = {
@@ -118,7 +135,8 @@ function simpleHashCollectionModelToCollection(
   return {
     id,
     name: original.name || "",
-    nftCount: original.distinct_nft_count || 0,
+    nftCount: original.distinct_nfts_owned || 0,
+    totalNftCount: original.distinct_nft_count || 0,
     owner,
     thumbnailURL: original.image_url || "",
     network: NETWORK_BY_CHAIN_ID[chainID],
@@ -142,8 +160,6 @@ function simpleHashNFTModelToNFT(
     collection: { collection_id: collectionID },
     extra_metadata: metadata,
   } = original
-
-  const isAchievement = isGalxeAchievement(nftURL)
 
   const thumbnailURL =
     previews?.image_small_url ||
@@ -175,6 +191,7 @@ function simpleHashNFTModelToNFT(
 
   return {
     id: nftID,
+    tokenId: original.token_id || "",
     name: original.name || "",
     description: original.description || "",
     thumbnailURL,
@@ -185,7 +202,7 @@ function simpleHashNFTModelToNFT(
     contract: contractAddress,
     owner,
     network: NETWORK_BY_CHAIN_ID[chainID],
-    badge: isAchievement && nftURL ? { url: nftURL } : null,
+    isBadge: isGalxeAchievement(nftURL),
   }
 }
 
@@ -202,12 +219,19 @@ function simpleHashNFTModelToNFT(
 export async function getSimpleHashNFTs(
   address: string,
   collectionID: string,
-  chainIDs: string[]
+  chainIDs: string[],
+  nextPageURL?: string
 ): Promise<NFTsWithPagesResponse> {
-  const requestURL = new URL("https://api.simplehash.com/api/v0/nfts/owners")
-  requestURL.searchParams.set("chains", getChainIDsNames(chainIDs))
-  requestURL.searchParams.set("wallet_addresses", address)
-  requestURL.searchParams.set("collection_id", collectionID)
+  let requestURL: URL
+
+  if (nextPageURL) {
+    requestURL = new URL(nextPageURL)
+  } else {
+    requestURL = new URL("https://api.simplehash.com/api/v0/nfts/owners")
+    requestURL.searchParams.set("chains", getChainIDsNames(chainIDs))
+    requestURL.searchParams.set("wallet_addresses", address)
+    requestURL.searchParams.set("collection_id", collectionID)
+  }
 
   try {
     const result: SimpleHashNFTsByWalletAPIResponse = await fetchJson({
@@ -263,6 +287,68 @@ export async function getSimpleHashCollections(
       .map((collection) =>
         simpleHashCollectionModelToCollection(collection, address)
       )
+  } catch (err) {
+    logger.error("Error retrieving NFTs ", err)
+  }
+
+  return []
+}
+
+export async function getSimpleHashNFTsTransfers(
+  addresses: string[],
+  chainIDs: string[],
+  fromTimestamp: number,
+  nextPageURL?: string
+): Promise<TransferredNFT[]> {
+  let requestURL: URL
+
+  if (nextPageURL) {
+    requestURL = new URL(nextPageURL)
+  } else {
+    requestURL = new URL(
+      "https://api.simplehash.com/api/v0/nfts/transfers/wallets"
+    )
+    requestURL.searchParams.set("chains", getChainIDsNames(chainIDs))
+    requestURL.searchParams.set("wallet_addresses", addresses.join(","))
+    requestURL.searchParams.set("from_timestamp", fromTimestamp.toString())
+  }
+
+  try {
+    const result: SimpleHashTransfersByWalletAPIResponse = await fetchJson({
+      url: requestURL.toString(),
+      headers: {
+        "X-API-KEY": process.env.SIMPLE_HASH_API_KEY ?? "",
+      },
+    })
+
+    const { transfers, next } = result
+
+    const removedNFTs: TransferredNFT[] = transfers.flatMap((transfer) =>
+      transfer.nft_id &&
+      transfer.from_address &&
+      addresses.some((address) =>
+        sameEVMAddress(address, transfer.from_address)
+      )
+        ? {
+            id: transfer.nft_id,
+            chainID: SIMPLE_HASH_CHAIN_TO_ID[transfer.chain].toString(),
+            address: transfer.from_address,
+          }
+        : []
+    )
+
+    if (next) {
+      const nextPageRemovedNFTs = await getSimpleHashNFTsTransfers(
+        addresses,
+        chainIDs,
+        fromTimestamp,
+        next
+      )
+
+      return [...removedNFTs, ...nextPageRemovedNFTs]
+    }
+
+    return removedNFTs
   } catch (err) {
     logger.error("Error retrieving NFTs ", err)
   }

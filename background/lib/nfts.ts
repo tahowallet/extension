@@ -6,6 +6,7 @@ import {
   AVALANCHE,
   ARBITRUM_ONE,
   NETWORK_BY_CHAIN_ID,
+  BINANCE_SMART_CHAIN,
 } from "../constants"
 import { getNFTs as alchemyGetNFTs, AlchemyNFTItem } from "./alchemy"
 import { getNFTs as simpleHashGetNFTs, SimpleHashNFTModel } from "./simple-hash"
@@ -35,6 +36,7 @@ const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
   [OPTIMISM.chainID]: ["simplehash"],
   [ARBITRUM_ONE.chainID]: ["simplehash"],
   [AVALANCHE.chainID]: ["simplehash"],
+  [BINANCE_SMART_CHAIN.chainID]: ["simplehash"],
 }
 
 function isGalxeAchievement(url: string | null | undefined) {
@@ -69,6 +71,8 @@ const SIMPLE_HASH_CHAIN_TO_ID = {
   optimism: 10,
   polygon: 137,
   arbitrum: 42161,
+  bsc: 56,
+  avalanche: 43114,
 }
 
 function simpleHashNFTModelToNFT(original: SimpleHashNFTModel): NFT {

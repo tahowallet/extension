@@ -21,6 +21,7 @@ interface Props {
   customSize?: string
   size: SharedSlideUpMenuSize
   isFullScreen?: boolean
+  isScrollable?: boolean
   alwaysRenderChildren?: boolean
 }
 
@@ -39,6 +40,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
     children,
     customSize,
     isFullScreen,
+    isScrollable,
     alwaysRenderChildren,
   } = props
 
@@ -90,9 +92,9 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           .slide_up_menu {
             width: 100%;
             height: var(--menu-height);
-            overflow: hidden;
-            border-top-left-radius: 16px;
-            border-top-right-radius: 16px;
+            overflow-x: hidden;
+            overflow-y: ${isScrollable ? "auto" : "hidden"};
+            border-radius: ${isFullScreen ? "0" : "16px 16px 0 0"};
             background-color: var(--green-95);
             position: fixed;
             left: 0px;

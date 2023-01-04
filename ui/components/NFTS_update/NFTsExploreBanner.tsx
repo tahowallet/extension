@@ -1,31 +1,10 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import SharedBanner from "../Shared/SharedBanner"
-import ExploreMarketLink from "./ExploreMarketLink"
-
-const HARDCODED_MARKETS = [
-  {
-    title: "OpenSea",
-    url: "https://opensea.io/",
-    color: "#409FFF",
-    icon: "opensea.png",
-  },
-  {
-    title: "LooksRare",
-    url: "https://looksrare.org/",
-    color: "#2DE370",
-    icon: "looksrare.png",
-  },
-]
-
-const HARDCODED_BADGES = [
-  {
-    title: "Galxe",
-    url: "https://galxe.com/",
-    color: "var(--white)",
-    icon: "galxe.svg",
-  },
-]
+import ExploreMarketLink, {
+  HARDCODED_BADGES,
+  HARDCODED_MARKETS,
+} from "./ExploreMarketLink"
 
 export default function NFTsExploreBanner(props: {
   type: "badge" | "nfts"
@@ -38,11 +17,14 @@ export default function NFTsExploreBanner(props: {
   const items = type === "badge" ? HARDCODED_BADGES : HARDCODED_MARKETS
 
   return (
-    <SharedBanner>
+    <SharedBanner customStyles="margin-top: 10px;">
       <header>{t(`emptyBannerTitle.${type}`)}</header>
       <nav>
-        {items.map(({ title, url, color, icon }) => (
-          <ExploreMarketLink key={url} {...{ url, title, color, icon }} />
+        {items.map(({ title, url, color, hoverColor, hoverIcon, icon }) => (
+          <ExploreMarketLink
+            key={url}
+            {...{ url, title, color, hoverColor, icon, hoverIcon }}
+          />
         ))}
       </nav>
       <style jsx>{`

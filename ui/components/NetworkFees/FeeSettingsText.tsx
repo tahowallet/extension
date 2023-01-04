@@ -17,6 +17,7 @@ import {
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   ARBITRUM_ONE,
+  BINANCE_SMART_CHAIN,
   OPTIMISM,
   ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
@@ -99,6 +100,11 @@ const estimateGweiAmount = (options: {
 
   if (network.chainID === ARBITRUM_ONE.chainID) {
     estimatedSpendPerGas = baseFeePerGas
+    desiredDecimals = 2
+  }
+
+  if (network.chainID === BINANCE_SMART_CHAIN.chainID) {
+    estimatedSpendPerGas = networkSettings.values.gasPrice ?? 0n
     desiredDecimals = 2
   }
 

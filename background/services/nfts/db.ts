@@ -29,6 +29,30 @@ export class NFTsDatabase extends Dexie {
     await this.collections.bulkPut(collections)
   }
 
+  async updateCollectionData(
+    collectionID: string,
+    { address, network }: AddressOnNetwork,
+    data: Partial<NFTCollection>
+  ): Promise<NFTCollection | undefined> {
+    const collection = await this.collections.get({
+      id: collectionID,
+      owner: address,
+      "network.chainID": network.chainID,
+    })
+
+    if (collection) {
+      const updatedCollection = {
+        ...collection,
+        ...data,
+      }
+      await this.updateCollections([updatedCollection])
+
+      return updatedCollection
+    }
+
+    return undefined
+  }
+
   async getAllCollections(): Promise<NFTCollection[]> {
     return this.collections.toArray()
   }
@@ -46,6 +70,36 @@ export class NFTsDatabase extends Dexie {
       )
 
       .toArray()
+  }
+
+  async removeNFTsForAddress(address: string): Promise<void> {
+    await this.nfts.filter((nft) => sameEVMAddress(nft.owner, address)).delete()
+    await this.collections
+      .filter((collection) => sameEVMAddress(collection.owner, address))
+      .delete()
+  }
+
+  async removeNFTsByIDs(removedNFTsIDs: string[]): Promise<void> {
+    const nftsToRemove = this.nfts.filter((nft) =>
+      removedNFTsIDs.some((removedID) => removedID === nft.id)
+    )
+
+    // As we don't know if it was the last NFT in a given collection
+    // let's remove it - collection will be refetched in the next step and added
+    // to the database if necessary
+    const collectionIdsToRemove = (await nftsToRemove.toArray()).reduce(
+      (acc, nft) => {
+        acc.add(nft.collectionID)
+        return acc
+      },
+      new Set<string>()
+    )
+
+    await this.collections
+      .filter((collection) => collectionIdsToRemove.has(collection.id))
+      .delete()
+
+    await nftsToRemove.delete()
   }
 }
 

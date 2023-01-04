@@ -97,3 +97,38 @@ jobs:
           cache: "yarn"
       - run: yarn install --frozen-lockfile
       - run: yarn lint
+  e2e-tests:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Read .nvmrc
+        run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+        id: nvm
+      - name: Use Node + Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version: "${{ steps.nvm.outputs.NVMRC }}"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@v3
+        with:
+          name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
+      - name: Extract extension
+        run: unzip -o chrome.zip -d dist/chrome
+      - name: Run Playwright tests
+        run: xvfb-run npx playwright test
+        #env:
+        # DEBUG: pw:api*
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: debug-output
+          path: |
+            test-results/
+            #videos/
+          retention-days: 30

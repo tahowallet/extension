@@ -2,7 +2,7 @@ const TALLY_ICON_URL =
   "https://tally.cash/icons/icon-144x144.png?v=41306c4d4e6795cdeaecc31bd794f68e"
 
 const TALLY_NAME = "Tally Ho"
-const META_MASK = "MetaMask"
+const METAMASK = "MetaMask"
 const INJECTED = "Injected"
 
 const observeMutations = (handler: (node: Node) => void) => {
@@ -79,7 +79,7 @@ const findAndReplaceJoeMetamaskOption = (addedNode: Node): void => {
   ) {
     // eslint-disable-next-line no-restricted-syntax
     for (const btn of addedNode.getElementsByTagName("button")) {
-      if (btn.innerText === META_MASK) {
+      if (btn.innerText === METAMASK) {
         maybeButton = btn
       }
     }
@@ -104,7 +104,7 @@ function findAndReplaceGMXMetamaskOption(addedNode: Node): void {
   }
 
   if (
-    addedNode.textContent?.includes(META_MASK) &&
+    addedNode.textContent?.includes(METAMASK) &&
     (addedNode as Element).classList.contains("Connect-wallet-modal")
   ) {
     const connectionOptions = (addedNode as Element)?.children?.[1]
@@ -117,7 +117,7 @@ function findAndReplaceGMXMetamaskOption(addedNode: Node): void {
     // eslint-disable-next-line no-restricted-syntax
     for (const option of connectionOptions) {
       if (option.classList.contains("MetaMask-btn")) {
-        option.innerHTML = option.innerHTML.replaceAll(META_MASK, TALLY_NAME)
+        option.innerHTML = option.innerHTML.replaceAll(METAMASK, TALLY_NAME)
         // Replace metamask icon with Tally icon
         option.innerHTML = option.innerHTML.replace(
           /\ssrc="(.+)"\s/,
@@ -182,7 +182,7 @@ function findAndReplaceTofuNftMetamaskOption(addedNode: Node): void {
     return
   }
 
-  if (addedNode.textContent?.includes(META_MASK)) {
+  if (addedNode.textContent?.includes(METAMASK)) {
     const metaMaskContainer = (addedNode as HTMLElement)?.children?.[0]
       ?.children?.[0]?.children?.[0]?.children?.[0]?.children?.[1]
       ?.children?.[0]?.children?.[0] as HTMLElement
@@ -193,11 +193,11 @@ function findAndReplaceTofuNftMetamaskOption(addedNode: Node): void {
 
     const textNode = metaMaskContainer.children[1]
 
-    if (!textNode || textNode.textContent !== META_MASK) {
+    if (!textNode || textNode.textContent !== METAMASK) {
       return
     }
 
-    textNode.innerHTML = textNode.innerHTML.replace(META_MASK, TALLY_NAME)
+    textNode.innerHTML = textNode.innerHTML.replace(METAMASK, TALLY_NAME)
 
     metaMaskContainer.removeChild(metaMaskContainer.children[0])
     const tallyIcon = document.createElement("img")
@@ -306,7 +306,7 @@ function findAndReplaceCelerMetamaskOption(addedNode: Node): void {
   }
 
   if (addedNode instanceof HTMLElement) {
-    if (addedNode.innerText?.includes(META_MASK)) {
+    if (addedNode.innerText?.includes(METAMASK)) {
       const modal = addedNode.querySelector(".ant-spin-container")
 
       if (modal instanceof HTMLElement) {
@@ -315,7 +315,7 @@ function findAndReplaceCelerMetamaskOption(addedNode: Node): void {
           const textContainer =
             element.children?.[0]?.children?.[1].children?.[0]
 
-          if (textContainer.innerHTML === META_MASK) {
+          if (textContainer.innerHTML === METAMASK) {
             const img = element.querySelector("img")
 
             if (textContainer && img) {
@@ -353,8 +353,8 @@ function findAndReplaceMultchainMetamaskAndInjectedOption(
       switch (true) {
         case addedNode.innerText?.includes(INJECTED):
           return INJECTED
-        case addedNode.innerText?.includes(META_MASK):
-          return META_MASK
+        case addedNode.innerText?.includes(METAMASK):
+          return METAMASK
         default:
           return ""
       }
@@ -384,7 +384,7 @@ function findAndReplaceVenusMetamaskOption(addedNode: Node): void {
 
   if (
     addedNode instanceof HTMLElement &&
-    addedNode.innerText?.includes(META_MASK)
+    addedNode.innerText?.includes(METAMASK)
   ) {
     /* Replace MetaMak option from account view */
     if (addedNode.innerText?.includes("Log out")) {
@@ -406,7 +406,7 @@ function findAndReplaceVenusMetamaskOption(addedNode: Node): void {
     } else {
       // eslint-disable-next-line no-restricted-syntax
       for (const btn of addedNode.getElementsByTagName("button")) {
-        if (btn.innerText === META_MASK) {
+        if (btn.innerText === METAMASK) {
           const textContainer = btn.children?.[1]
           const img = btn.children?.[0]
 
@@ -429,11 +429,11 @@ function findAndReplaceAlpacaFinanceMetamaskOption(addedNode: Node): void {
 
   if (
     addedNode instanceof HTMLElement &&
-    addedNode.innerText?.includes(META_MASK)
+    addedNode.innerText?.includes(METAMASK)
   ) {
     // eslint-disable-next-line no-restricted-syntax
     for (const btn of addedNode.getElementsByTagName("button")) {
-      if (btn.innerText === META_MASK) {
+      if (btn.innerText === METAMASK) {
         const textNode = btn.children?.[0]?.children?.[0].children?.[0]
         const img = btn.querySelector("img")
 

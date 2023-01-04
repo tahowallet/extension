@@ -43,6 +43,7 @@ export type NFTsWithPagesResponse = {
 
 export type NFT = {
   id: string
+  tokenId: string
   collectionID: string
   name: string
   description: string
@@ -53,9 +54,7 @@ export type NFT = {
   contract: string
   owner: string
   network: EVMNetwork
-  badge: null | {
-    url: string
-  }
+  isBadge: boolean
 }
 
 export type NFTCollection = {
@@ -66,6 +65,7 @@ export type NFTCollection = {
   hasBadges: boolean
   thumbnailURL?: string
   nftCount?: number
+  totalNftCount?: number
   floorPrice?: {
     value: bigint
     token: {
@@ -74,4 +74,10 @@ export type NFTCollection = {
       decimals: number
     }
   }
+}
+
+export type TransferredNFT = {
+  id: string
+  chainID: string
+  address: string
 }

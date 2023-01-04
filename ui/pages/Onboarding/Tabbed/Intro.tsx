@@ -1,187 +1,91 @@
-import React, { ReactElement, useState } from "react"
-import { useRouteMatch, Redirect } from "react-router-dom"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../../components/Shared/SharedButton"
-import SharedProgressIndicator from "../../../components/Shared/SharedProgressIndicator"
-
-const steps = isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES)
-  ? [
-      {
-        image: {
-          width: 273,
-          height: 245.06,
-          fileName: "illustration_onboarding_welcome",
-          extraStyles: `margin-top: 25px;`,
-        },
-        title: "Welcome to Tally Ho!",
-        body: "The community owned & operated wallet.",
-        buttonCopy: "Continue",
-      },
-      {
-        image: {
-          width: 267,
-          height: 251,
-          fileName: "illustration_onboarding_dao",
-          extraStyles: `margin-top: 21px;`,
-        },
-        title: "Tally Ho! is a DAO",
-        body: `That means Tally Ho is owned by our users. And all profits go straight to the community.`,
-        buttonCopy: "Continue",
-      },
-    ]
-  : [
-      {
-        image: {
-          width: 384,
-          height: 336,
-          fileName: "onboarding/graphic_different",
-          extraStyles: ``,
-        },
-        title: "Tally Ho! is different",
-        body: "Tally Ho! is the first community-owned wallet for Web3 and DeFi. If you own $DOGGO tokens, you are an owner. ",
-        buttonCopy: "Continue",
-      },
-      {
-        image: {
-          width: 384,
-          height: 336,
-          fileName: "onboarding/graphic_token",
-          extraStyles: ``,
-        },
-        title: "The $DOGGO token",
-        body: `You can earn $DOGGO in many ways! Check out the Earn and Swap tabs.`,
-        buttonCopy: "Continue",
-      },
-      {
-        image: {
-          width: 384,
-          height: 336,
-          fileName: "onboarding/graphic_drop",
-          extraStyles: ``,
-        },
-        title: "$DOGGO token drop",
-        body: `If you used Defi in the past, there is a chance you are part of the drop. Check by adding an existing account!`,
-        buttonCopy: "Get started",
-      },
-    ]
+import OnboardingRoutes from "./Routes"
 
 export default function Intro(): ReactElement {
-  const [activeStep, setActiveStep] = useState(1)
-  const [redirectToAddWallet, setRedirectToAddWallet] = useState(false)
-
-  const { path } = useRouteMatch()
-
-  if (redirectToAddWallet) {
-    return <Redirect push to={`${path}/add-wallet`} />
-  }
+  const { t } = useTranslation("translation", {
+    keyPrefix: "onboarding.tabbed.intro",
+  })
 
   return (
-    <section>
-      <div className="illustration_section">
+    <section className="fadeIn">
+      <header>
         <div className="illustration" />
-        <div className="forest" />
-      </div>
-      <div className="bottom_part">
-        <div className="bottom_content">
-          <SharedProgressIndicator
-            numberOfSteps={steps.length}
-            activeStep={activeStep}
-            onProgressStepClicked={(step) => {
-              setActiveStep(step)
-            }}
-          />
-          <h1 className="bottom_title">{steps[activeStep - 1].title} </h1>
-          <p>{steps[activeStep - 1].body}</p>
-        </div>
+        <h1>{t("title")}</h1>
+      </header>
+      <div className="actions">
         <SharedButton
           type="primary"
           size="large"
-          onClick={() => {
-            if (activeStep < steps.length) {
-              setActiveStep(activeStep + 1)
-            } else {
-              setRedirectToAddWallet(true)
-            }
+          linkTo={OnboardingRoutes.ADD_WALLET}
+          center
+          style={{
+            fontSize: "20px",
+            lineHeight: "24px",
+            fontWeight: 500,
           }}
         >
-          {steps[activeStep - 1].buttonCopy}
+          {t("useExisting")}
+        </SharedButton>
+        <SharedButton
+          type="secondary"
+          size="large"
+          linkTo={OnboardingRoutes.NEW_SEED}
+          center
+          style={{
+            fontSize: "20px",
+            lineHeight: "24px",
+            fontWeight: 500,
+          }}
+        >
+          {t("createNew")}
         </SharedButton>
       </div>
       <style jsx>
         {`
-          .bottom_content {
-            margin-top: 28px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-          .illustration_section {
-            height: 380px;
-            display: flex;
-            padding-top: 68.5px;
-          }
           section {
+            max-width: 348px;
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
+            gap: 65px;
             justify-content: center;
             align-items: center;
+            --fade-in-duration: 300ms;
           }
-          h1 {
+
+          .illustration {
+            background: url("./images/doggo_intro.svg");
+            background-size: cover;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+          }
+
+          header {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+          }
+
+          header h1 {
             font-family: "Quincy CF";
             font-weight: 500;
             font-size: 36px;
             line-height: 42px;
-            margin: 12px 0px 0px 0px;
+            margin: 0;
           }
-          .forest {
-            background-size: cover;
-            width: 384px;
-            height: 141px;
-            align-self: flex-end;
-            justify-self: flex-end;
-            z-index: 1;
-          }
-          p {
-            font-size: 16px;
-            font-weight: 400;
-            line-height: 24px;
-            color: var(--green-40);
-            width: 336px;
-            text-align: center;
-            margin-top: 5px;
-          }
-          .bottom_part {
+
+          .actions {
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 16px;
+            background: var(--green-95);
+            padding: 32px;
             display: flex;
-            margin-top: -38px;
             flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            height: 230px;
-            text-align: center;
-            z-index: 1;
-          }
-          .illustration {
-            background: url("./images/${steps[activeStep - 1].image
-              .fileName}@2x.png");
-            background-size: cover;
-            width: ${steps[activeStep - 1].image.width}px;
-            height: ${steps[activeStep - 1].image.height}px;
-            flex-shrink: 0;
-            left: 0;
-            right: 0;
-            margin: 0 auto;
-            margin-top: 0;
-            position: absolute;
-            animation: fadeIn ease 0.5s;
-            ${steps[activeStep - 1].image.extraStyles}
-          }
-          @keyframes fadeIn {
-            0% {
-              opacity: 0;
-            }
-            100% {
-              opacity: 1;
-            }
+            gap: 28px;
           }
         `}
       </style>
