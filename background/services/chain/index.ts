@@ -320,6 +320,7 @@ export default class ChainService extends BaseService<Events> {
   override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
+    await this.initializeBaseAssets()
     const accounts = await this.getAccountsToTrack()
     const trackedNetworks = await this.getTrackedNetworks()
     const transactions = await this.db.getAllTransactions()
@@ -361,6 +362,10 @@ export default class ChainService extends BaseService<Events> {
           )
         )
     )
+  }
+
+  async initializeBaseAssets(): Promise<void> {
+    await this.db.initializeBaseAssets()
   }
 
   /**

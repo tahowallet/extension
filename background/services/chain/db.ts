@@ -2,9 +2,15 @@ import Dexie, { Collection, DexieOptions, IndexableTypeArray } from "dexie"
 
 import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
-import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
+import {
+  AnyEVMBlock,
+  AnyEVMTransaction,
+  Network,
+  NetworkDefaultBaseAsset,
+} from "../../networks"
 import { FungibleAsset } from "../../assets"
 import { GOERLI, POLYGON } from "../../constants"
+import { DEFAULT_BASE_ASSETS } from "../../constants/default-currencies"
 
 export type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
@@ -62,6 +68,8 @@ export class ChainDatabase extends Dexie {
    * Historic account balances.
    */
   private balances!: Dexie.Table<AccountBalance, number>
+
+  private baseAssets!: Dexie.Table<NetworkDefaultBaseAsset, number>
 
   constructor(options?: DexieOptions) {
     super("tally/chain", options)
@@ -135,6 +143,10 @@ export class ChainDatabase extends Dexie {
         return filteredModifications
       }
     )
+
+    this.version(5).stores({
+      baseAssets: "&symbol,name",
+    })
   }
 
   async getLatestBlock(network: Network): Promise<AnyEVMBlock | null> {
@@ -162,6 +174,25 @@ export class ChainDatabase extends Dexie {
           .equals([txHash, network.name])
           .toArray()
       )[0] || null
+    )
+  }
+
+  async getAllBaseAssets(): Promise<NetworkDefaultBaseAsset[]> {
+    return this.baseAssets.toArray()
+  }
+
+  async initializeBaseAssets(): Promise<void> {
+    const existingBaseAssets = await this.getAllBaseAssets()
+    await Promise.all(
+      DEFAULT_BASE_ASSETS.map(async (defaultAsset) => {
+        if (
+          !existingBaseAssets.some(
+            (asset) => asset.symbol === defaultAsset.symbol
+          )
+        ) {
+          await this.baseAssets.put(defaultAsset)
+        }
+      })
     )
   }
 

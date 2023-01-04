@@ -18,7 +18,9 @@ export type NetworkFamily = "EVM" | "BTC"
 
 // Should be structurally compatible with FungibleAsset or much code will
 // likely explode.
-export type NetworkBaseAsset = FungibleAsset &
+export type NetworkDefaultBaseAsset = FungibleAsset
+
+export type NetworkBaseAsset = NetworkDefaultBaseAsset &
   CoinGeckoAsset & {
     contractAddress?: string
     coinType: Slip44CoinType
@@ -30,7 +32,7 @@ export type NetworkBaseAsset = FungibleAsset &
 export type Network = {
   // Considered a primary key; two Networks should never share a name.
   name: string
-  baseAsset: NetworkBaseAsset & CoinGeckoAsset
+  baseAsset: NetworkBaseAsset
   family: NetworkFamily
   chainID?: string
   coingeckoPlatformID: string

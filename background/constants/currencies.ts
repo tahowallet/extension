@@ -1,5 +1,6 @@
 import { FiatCurrency } from "../assets"
 import { NetworkBaseAsset } from "../networks"
+import { DEFAULT_BASE_ASSETS_BY_SYMBOL } from "./default-currencies"
 import { coinTypesByAssetSymbol } from "./coin-types"
 
 export const USD: FiatCurrency = {
@@ -14,9 +15,7 @@ export const FIAT_CURRENCIES_SYMBOL = FIAT_CURRENCIES.map(
 )
 
 export const ETH: NetworkBaseAsset = {
-  name: "Ether",
-  symbol: "ETH",
-  decimals: 18,
+  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.ETH,
   coinType: coinTypesByAssetSymbol.ETH,
   metadata: {
     coinGeckoID: "ethereum",
@@ -26,9 +25,7 @@ export const ETH: NetworkBaseAsset = {
 }
 
 export const RBTC: NetworkBaseAsset = {
-  name: "RSK Token",
-  symbol: "RBTC",
-  decimals: 18,
+  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.RBTC,
   coinType: coinTypesByAssetSymbol.RBTC,
   metadata: {
     coinGeckoID: "rootstock",
@@ -38,9 +35,7 @@ export const RBTC: NetworkBaseAsset = {
 }
 
 export const OPTIMISTIC_ETH: NetworkBaseAsset = {
-  name: "Ether",
-  symbol: "ETH",
-  decimals: 18,
+  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.ETH,
   coinType: coinTypesByAssetSymbol.ETH,
   contractAddress: "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0000",
   metadata: {
@@ -51,9 +46,7 @@ export const OPTIMISTIC_ETH: NetworkBaseAsset = {
 }
 
 export const MATIC: NetworkBaseAsset = {
-  name: "Matic Token",
-  symbol: "MATIC",
-  decimals: 18,
+  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.MATIC,
   coinType: coinTypesByAssetSymbol.MATIC,
   contractAddress: "0x0000000000000000000000000000000000001010",
   metadata: {
@@ -64,9 +57,7 @@ export const MATIC: NetworkBaseAsset = {
 }
 
 export const AVAX: NetworkBaseAsset = {
-  name: "Avalanche",
-  symbol: "AVAX",
-  decimals: 18,
+  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.AVAX,
   coinType: coinTypesByAssetSymbol.AVAX,
   metadata: {
     coinGeckoID: "avalanche-2",
@@ -76,9 +67,7 @@ export const AVAX: NetworkBaseAsset = {
 }
 
 export const BNB: NetworkBaseAsset = {
-  name: "Binance Coin",
-  symbol: "BNB",
-  decimals: 18,
+  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.BNB,
   coinType: coinTypesByAssetSymbol.BNB,
   metadata: {
     coinGeckoID: "binancecoin",
@@ -88,9 +77,7 @@ export const BNB: NetworkBaseAsset = {
 }
 
 export const BTC: NetworkBaseAsset = {
-  name: "Bitcoin",
-  symbol: "BTC",
-  decimals: 8,
+  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.BTC,
   coinType: coinTypesByAssetSymbol.BTC,
   metadata: {
     coinGeckoID: "bitcoin",
