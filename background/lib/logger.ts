@@ -2,6 +2,7 @@
 // the console.
 /* eslint-disable no-console */
 
+import _ from "lodash"
 import browser from "webextension-polyfill"
 
 enum LogLevel {
@@ -29,6 +30,15 @@ interface LogStyles {
 export enum LoggerEnvironment {
   bg = "bg",
   popup = "popup",
+}
+
+type LogEntry = {
+  level: LogLevel
+  timestamp: number
+  isoDateString: string
+  logLabel: string
+  input: unknown[]
+  stackTrace: string[] | undefined
 }
 
 const styles: LogStyles = {
@@ -76,6 +86,9 @@ const logger = () => {
   let environment: LoggerEnvironment | "unknown" = "unknown"
   let isBackgroundLogger = false
   let isPopupLogger = false
+  const queue: LogEntry[] = []
+  let isInitialized = false
+  let isProcessing = false
 
   function groupKey(level: LogLevel) {
     return getEnvGroupKey(environment, level)
@@ -92,19 +105,16 @@ const logger = () => {
     )
   }
 
-  async function saveLog(
-    level: LogLevel,
-    isoDateString: string,
-    logLabel: string,
-    input: unknown[],
-    stackTrace: string[] | undefined
-  ) {
+  // Does some formatting, and saves the entry.
+  async function saveLog(entry: LogEntry) {
+    const { level, logLabel, isoDateString, input, stackTrace } = entry
+
     const formattedInput = input
       .map((loggedValue) => {
         if (typeof loggedValue === "object") {
           try {
             return JSON.stringify(loggedValue)
-          } catch (_) {
+          } catch (err) {
             // If we can't stringify thats OK, we'll still see [object Object] or
             // null in the logs.
             return String(loggedValue)
@@ -123,7 +133,11 @@ const logger = () => {
       .split("\n")
       .join("\n    ")
 
-    const existingLogs = localStorage.getItem(groupKey(level)) ?? ""
+    const existingLogs = _.get(
+      await browser.storage.local.get(groupKey(level)),
+      groupKey(level),
+      ""
+    )
 
     const backgroundPrefix = isBackgroundLogger ? "BG" : ""
     const popupPrefix = isPopupLogger ? "POPUP" : ""
@@ -141,7 +155,7 @@ const logger = () => {
         // usage.
         .substring(0, 50000)
 
-    localStorage.setItem(groupKey(level), updatedLogs)
+    await browser.storage.local.set({ [groupKey(level)]: updatedLogs })
   }
 
   const BLINK_PREFIX = "    at "
@@ -181,7 +195,8 @@ const logger = () => {
     return undefined
   }
 
-  function genericLogger(level: LogLevel, input: unknown[]) {
+  // Registers contextual data: time and stack
+  function prepareLogEntry(level: LogLevel, input: unknown[]): LogEntry {
     const stackTrace = new Error().stack
       ?.split("\n")
       ?.filter((line) => {
@@ -198,9 +213,23 @@ const logger = () => {
       // file, so let's ignore them.
       ?.slice(2)
 
+    const timestamp = Date.now()
     const logLabel =
-      logLabelFromStackEntry(stackTrace?.[0]) ?? "(unknown function)"
-    const isoDateString = new Date().toISOString()
+      logLabelFromStackEntry(stackTrace?.[1]) ?? "(unknown function)"
+    const isoDateString = new Date(timestamp).toISOString()
+
+    return {
+      level,
+      logLabel,
+      timestamp,
+      isoDateString,
+      input,
+      stackTrace,
+    }
+  }
+
+  function writeToConsole(entry: LogEntry) {
+    const { level, logLabel, isoDateString, input, stackTrace } = entry
     const [logDate, logTime] = isoDateString.split(/T/)
 
     console.group(
@@ -220,8 +249,31 @@ const logger = () => {
     }
 
     console.groupEnd()
+  }
 
-    saveLog(level, isoDateString, logLabel, input, stackTrace)
+  const processQueue = async () => {
+    if (!isInitialized || isProcessing) {
+      return
+    }
+    isProcessing = true
+
+    const nextItem = queue.shift()
+    if (!nextItem) {
+      isProcessing = false
+      return
+    }
+
+    await saveLog(nextItem)
+
+    isProcessing = false
+    processQueue()
+  }
+
+  function enqueue(level: LogLevel, input: unknown[]) {
+    const entry = prepareLogEntry(level, input)
+    queue.push(entry)
+    writeToConsole(entry)
+    processQueue()
   }
 
   async function clearStorage() {
@@ -242,24 +294,29 @@ const logger = () => {
     // Clear all locally stored logs on load, which were used in older versions
     // of the extension.
     await clearStorage()
+    isInitialized = true
+
+    // Process items what eventually arrived to the queue before initialization
+    // completed.
+    processQueue()
   }
 
   return {
     init,
     debug(...input: unknown[]): void {
-      genericLogger(LogLevel.debug, input)
+      enqueue(LogLevel.debug, input)
     },
     log(...input: unknown[]): void {
-      genericLogger(LogLevel.log, input)
+      enqueue(LogLevel.log, input)
     },
     info(...input: unknown[]): void {
-      genericLogger(LogLevel.info, input)
+      enqueue(LogLevel.info, input)
     },
     warn(...input: unknown[]): void {
-      genericLogger(LogLevel.warn, input)
+      enqueue(LogLevel.warn, input)
     },
     error(...input: unknown[]): void {
-      genericLogger(LogLevel.error, input)
+      enqueue(LogLevel.error, input)
     },
   }
 }
