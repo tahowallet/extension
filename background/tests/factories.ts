@@ -312,6 +312,10 @@ export const makeSerialFallbackProvider =
       async getFeeData() {
         return makeEthersFeeData()
       }
+
+      async getCode() {
+        return "false"
+      }
     }
 
     return new MockSerialFallbackProvider()
