@@ -18,10 +18,12 @@ import {
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 import {
+  BASE_ASSETS_WITH_COIN_TYPE,
   CHAIN_ID_TO_0X_API_BASE,
   COMMUNITY_MULTISIG_ADDRESS,
   ETHEREUM,
   OPTIMISM,
+  OPTIMISTIC_ETH,
 } from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
@@ -157,12 +159,18 @@ const get0xAssetName = (asset: SwappableAsset, network: EVMNetwork) => {
   }
   if (
     network.name === OPTIMISM.name &&
-    asset.symbol === OPTIMISM.baseAsset.symbol
+    "contractAddress" in asset &&
+    asset.contractAddress ===
+      BASE_ASSETS_WITH_COIN_TYPE.find(
+        ({ symbol }) => symbol === OPTIMISTIC_ETH.symbol
+      )?.contractAddress
   ) {
     return ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS
   }
 
-  return asset.symbol
+  return "contractAddress" in asset && asset.contractAddress
+    ? asset.contractAddress
+    : asset.symbol
 }
 
 // Helper to build a URL to the 0x API for a given swap quote request. Usable

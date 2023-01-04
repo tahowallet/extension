@@ -9,7 +9,11 @@ import {
   UnitPricePoint,
   AnyAsset,
 } from "../../assets"
-import { OPTIMISM } from "../../constants"
+import {
+  BASE_ASSETS_WITH_COIN_TYPE,
+  OPTIMISM,
+  OPTIMISTIC_ETH,
+} from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { AnyNetwork, NetworkBaseAsset } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
@@ -38,9 +42,14 @@ export type AssetDecimalAmount = {
 }
 
 function isOptimismBaseAsset(asset: AnyAsset) {
-  return "symbol" in asset && asset.symbol === OPTIMISM.baseAsset.symbol
+  return (
+    "contractAddress" in asset &&
+    asset.contractAddress ===
+      BASE_ASSETS_WITH_COIN_TYPE.find(
+        ({ symbol }) => symbol === OPTIMISTIC_ETH.symbol
+      )?.contractAddress
+  )
 }
-
 /**
  * Given an asset and a network, determines whether the given asset is the base
  * asset for the given network. Used to special-case transactions that should

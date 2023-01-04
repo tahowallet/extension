@@ -4,7 +4,7 @@ import {
   NetworkSpecific,
   SmartContract,
   Network,
-  NetworkBaseAsset,
+  BaseAssetWithCoinType,
 } from "./networks"
 import { fromFixedPoint } from "./lib/fixed-point"
 
@@ -124,7 +124,7 @@ export type AnyAsset =
 /**
  * An asset that can be swapped with our current providers
  */
-export type SwappableAsset = SmartContractFungibleAsset | NetworkBaseAsset
+export type SwappableAsset = SmartContractFungibleAsset | BaseAssetWithCoinType
 
 /**
  * An amount associated with a smart contract; used to carry information like
