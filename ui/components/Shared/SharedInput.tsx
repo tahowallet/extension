@@ -48,7 +48,10 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
-    if (autoFocus) inputRef.current?.focus()
+    if (autoFocus)
+      inputRef.current?.focus({
+        preventScroll: true,
+      })
   }, [autoFocus])
 
   useEffect(() => {
