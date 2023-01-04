@@ -13,6 +13,7 @@ import {
   CHAIN_ID_TO_RPC_URLS,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
   RPC_METHOD_PROVIDER_ROUTING,
+  ETHEREUM,
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
@@ -22,6 +23,7 @@ import {
   ALCHEMY_KEY,
   transactionFromAlchemyWebsocketTransaction,
 } from "../../lib/alchemy"
+import { HeliosProvider } from "./helios-provider"
 
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 400
@@ -956,12 +958,13 @@ export function makeSerialFallbackProvider(
       ]
     : []
 
-  const genericProviders = (CHAIN_ID_TO_RPC_URLS[network.chainID] || []).map(
-    (rpcUrl) => ({
-      type: "generic" as const,
-      creator: () => new JsonRpcProvider(rpcUrl),
-    })
-  )
+  const genericProviders =
+    network.chainID === ETHEREUM.chainID
+      ? [{ type: "generic" as const, creator: () => new HeliosProvider() }]
+      : (CHAIN_ID_TO_RPC_URLS[network.chainID] || []).map((rpcUrl) => ({
+          type: "generic" as const,
+          creator: () => new JsonRpcProvider(rpcUrl),
+        }))
 
   return new SerialFallbackProvider(network, [
     // Prefer alchemy as the primary provider when available
