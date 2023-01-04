@@ -116,8 +116,7 @@ export type ServiceCreatorFunction<
  * a database to be passed into the service creator function.
  *
  * The goal here is to unlock partitioning certain services into smaller
- * services meanwhile they can share a common database. The concept is similar
- * to pods in kubernetes.
+ * services meanwhile they can share a common database.
  */
 export type ServiceCreatorFunctionWithDatabase<
   EventsType extends ServiceLifecycleEvents,
