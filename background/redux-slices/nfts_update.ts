@@ -101,13 +101,10 @@ function updateCollection(
   }
 }
 
-const FILTER_TYPE = ["accounts", "collections"] as const
-type FilterType = typeof FILTER_TYPE[number]
-
 function updateFilter(
   acc: NFTsSliceState,
   collection: NFTCollection,
-  type: FilterType
+  type: "accounts" | "collections"
 ): void {
   const { id, name, thumbnailURL, owner } = collection
 
@@ -129,9 +126,9 @@ function updateFilter(
       ...filter,
     }
     if (type === "collections") {
-      if (acc.filters[type][existingFilterId].owners) {
-        const { owners = [] } = acc.filters[type][existingFilterId]
-        acc.filters[type][existingFilterId].owners = owners.concat([owner])
+      const owners = acc.filters[type][existingFilterId].owners ?? []
+      if (!owners.includes(owner)) {
+        acc.filters[type][existingFilterId].owners = [...owners, owner]
       }
     }
   } else {
@@ -144,7 +141,11 @@ function updateFilter(
 }
 
 function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
-  FILTER_TYPE.forEach((type) => updateFilter(acc, collection, type))
+  const { nftCount } = collection
+  if ((nftCount ?? 0) > 0) {
+    updateFilter(acc, collection, "collections")
+  }
+  updateFilter(acc, collection, "accounts")
 }
 
 function initializeCollections(collections: NFTCollection[]): NFTsSliceState {
@@ -237,16 +238,32 @@ const NFTsSlice = createSlice({
       immerState,
       { payload: transferredNFTs }: { payload: TransferredNFT[] }
     ) => {
-      transferredNFTs.forEach(({ id, chainID, address }) => {
-        Object.keys(
-          immerState.nfts[chainID][normalizeEVMAddress(address)]
-        ).forEach((collectionID) => {
-          const collection = immerState.nfts[chainID]?.[address]?.[collectionID]
+      transferredNFTs.forEach(({ id: nftID, chainID, address }) => {
+        const normalizedAddress = normalizeEVMAddress(address)
+        Object.keys(immerState.nfts[chainID][normalizedAddress] ?? {}).forEach(
+          (collectionID) => {
+            const collection =
+              immerState.nfts[chainID]?.[normalizedAddress]?.[collectionID]
 
-          if (collection) {
-            collection.nfts = collection.nfts.filter((nft) => nft.id !== id)
+            if (collection) {
+              const hasTransferredNFT = collection.nfts.some(
+                (nft) => nft.id === nftID
+              )
+
+              if (hasTransferredNFT) {
+                if (collection.nfts.length === 1) {
+                  delete immerState.nfts[chainID][normalizedAddress][
+                    collectionID
+                  ]
+                } else {
+                  collection.nfts = collection.nfts.filter(
+                    (nft) => nft.id !== nftID
+                  )
+                }
+              }
+            }
           }
-        })
+        )
       })
     },
     cleanCachedNFTs: (immerState) => {
