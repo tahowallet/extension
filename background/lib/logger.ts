@@ -2,6 +2,8 @@
 // the console.
 /* eslint-disable no-console */
 
+import browser from "webextension-polyfill"
+
 enum LogLevel {
   debug = "debug",
   log = "log",
@@ -279,22 +281,24 @@ type StoredLogData = {
   -readonly [level in keyof typeof LogLevel]: string
 }
 
-function concatLogGroups(level: LogLevel) {
-  return `${
-    localStorage.getItem(getEnvGroupKey(LoggerEnvironment.popup, level)) ?? ""
-  }${localStorage.getItem(getEnvGroupKey(LoggerEnvironment.bg, level)) ?? ""}`
+async function concatLogGroups(level: LogLevel) {
+  const keys = [
+    getEnvGroupKey(LoggerEnvironment.bg, level),
+    getEnvGroupKey(LoggerEnvironment.popup, level),
+  ]
+  const logsByEnv = await browser.storage.local.get(keys)
+  return Object.values(logsByEnv).join()
 }
 
-export function serializeLogs(): string {
+export async function serializeLogs(): Promise<string> {
   const logs: StoredLogData = {
-    debug: concatLogGroups(LogLevel.debug),
-    log: concatLogGroups(LogLevel.log),
-    info: concatLogGroups(LogLevel.info),
-    warn: concatLogGroups(LogLevel.warn),
-    error: concatLogGroups(LogLevel.error),
+    debug: await concatLogGroups(LogLevel.debug),
+    log: await concatLogGroups(LogLevel.log),
+    info: await concatLogGroups(LogLevel.info),
+    warn: await concatLogGroups(LogLevel.warn),
+    error: await concatLogGroups(LogLevel.error),
   }
 
-  // FIXME this check is broken, will be fixed in the next commit
   if (Object.values(logs).every((entry) => entry === "")) {
     return "[NO LOGS FOUND]"
   }
