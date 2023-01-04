@@ -1,5 +1,8 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import { truncateAddress } from "@tallyho/tally-background/lib/utils"
+import {
+  isProbablyEVMAddress,
+  truncateAddress,
+} from "@tallyho/tally-background/lib/utils"
 import { NFTWithCollection } from "@tallyho/tally-background/redux-slices/nfts_update"
 import React, { ReactElement, useMemo } from "react"
 import { useTranslation } from "react-i18next"
@@ -29,6 +32,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const { nft, collection } = props
   const {
     thumbnailURL,
+    previewURL,
     contract,
     name,
     network,
@@ -40,7 +44,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const { totalNftCount } = collection
   const floorPrice =
     "floorPrice" in collection &&
-    collection.floorPrice?.value &&
+    collection.floorPrice?.value !== undefined &&
     collection.floorPrice
 
   // Chrome seems to have problems when elements with backdrop style are rendered initially
@@ -68,6 +72,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         <div className="preview_image">
           <NFTImage
             src={thumbnailURL}
+            highResolutionSrc={previewURL}
             alt={name}
             width={384}
             isBadge={isBadge}
@@ -99,9 +104,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         </div>
 
         <div className="preview_header">
-          <h1 className="ellipsis_multiline">
-            {name?.length ? name : "No title"}
-          </h1>
+          <h1 className="ellipsis_multiline">{name || t("noTitle")}</h1>
           {isEnabled(FeatureFlags.SUPPORT_NFT_SEND) && (
             <SharedButton
               type="tertiary"
@@ -155,7 +158,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           <div className="preview_section_column align_right">
             <div className="preview_section_header">{t("preview.creator")}</div>
             <p>
-              {contract?.startsWith("0x") ? truncateAddress(contract) : "-"}
+              {isProbablyEVMAddress(contract) ? truncateAddress(contract) : "-"}
             </p>
           </div>
         </div>

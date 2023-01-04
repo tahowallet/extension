@@ -27,7 +27,7 @@ export default function SharedNetworkIcon(props: {
           position: absolute;
           width: 100%;
           height: 100%;
-          border-radius: 4px;
+          border-radius: 6px;
           background-color: ${hasBackground
             ? "var(--green-95)"
             : "transparent"};

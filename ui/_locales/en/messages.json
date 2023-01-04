@@ -235,6 +235,9 @@
     "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title",
     "NFTPricingComingSoon": "Coming soon: NFT price + sending",
+    "type1": "NFTs",
+    "type2": "badges",
+    "noMatchingNFTs": "No {{type}} matching your filters",
     "collectionHover": {
       "close": "close",
       "expand": "expand collection",
@@ -267,6 +270,20 @@
     "emptyBannerTitle": {
       "nfts": "Explore markets",
       "badge": "Explore badges"
+    },
+    "filters": {
+      "title": "Filter collections",
+      "sortType": {
+        "priceDesc": "Price: Descending",
+        "priceAsc": "Price: Ascending",
+        "newestAdded": "Newest added",
+        "oldestAdded": "Oldest added",
+        "numberInOneCollection": "Number (in 1 collection)"
+      },
+      "sortTypeTitle": "Sort collection",
+      "collectionsTitle": "Show/hide collections",
+      "accountsTitle": "Show/hide accounts",
+      "noCollections": "No collections"
     }
   },
   "achievements": {
@@ -346,7 +363,7 @@
     "beta": "Mainnet (beta)",
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
-    "compatibleChain": "Ethereum-compatible blockchain",
+    "compatibleChain": "Ethereum-compatible blockchain (beta)",
     "avalanche": "Mainnet C-Chain (beta)",
     "connected": "Connected"
   },
@@ -362,10 +379,9 @@
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
     "analytics": "Analytics",
+    "needHelp": "Need Help?",
+    "customNetworks": "Custom networks",
     "showBanners": "Show achievement banners",
-    "joinTitle": "Join our community",
-    "joinDesc": "Join our Discord to give us feedback!",
-    "joinBtn": "Join and give feedback",
     "versionLabel": "Version {{version}}",
     "unknownVersionOrCommit": "<unknown>",
     "exportLogs": {
@@ -411,6 +427,18 @@
       "disconnected": "Website disconnected",
       "ariaLabel": "Manage connected websites",
       "emptyList": "Not connected to any websites"
+    },
+    "customNetworksSettings": {
+      "title": "Custom networks",
+      "ariaLabel": "Open custom networks page",
+      "chainList": {
+        "description": "Fastest and safest way of adding a custom network is by visiting <link></link>, connecting your wallet and adding the chains you wish to see.",
+        "addBtn": "Add chains with Chainlist"
+      },
+      "customRPC": {
+        "description": "You can also add a custom RPC, this can be a bit risky as you might add a malicious RPC without knowing, that could result in loss of funds.",
+        "addBtn": "Add custom RPC (Advanced)"
+      }
     }
   },
   "send": {
@@ -653,7 +681,9 @@
         "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab",
         "SUPPORT_NFT_SEND": "Enable sending NFTs",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
-        "SUPPORT_BINANCE_SMART_CHAIN": "Enable Binance Smart Chain network"
+        "SUPPORT_BINANCE_SMART_CHAIN": "Enable Binance Smart Chain network",
+        "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
+        "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs"
       }
     }
   },

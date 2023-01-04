@@ -14,15 +14,31 @@ import {
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
 import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
-import SharedButton from "../components/Shared/SharedButton"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
 import { getLanguage, setLanguage } from "../_locales/i18n"
 import SettingButton from "./Settings/SettingButton"
 import { useBackgroundSelector } from "../hooks"
+import SharedIcon from "../components/Shared/SharedIcon"
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
+const FAQ_URL =
+  "https://tallyhowallet.notion.site/Tally-Ho-Knowledge-Base-4d95ed5439c64d6db3d3d27abf1fdae5"
+const FOOTER_ACTIONS = [
+  {
+    icon: "icons/m/discord",
+    linkTo: "https://chat.tally.cash/",
+  },
+  {
+    icon: "twitter",
+    linkTo: "https://twitter.com/TallyCash",
+  },
+  {
+    icon: "icons/m/github",
+    linkTo: "https://github.com/tallycash/extension",
+  },
+]
 
 function VersionLabel(): ReactElement {
   const { t } = useTranslation()
@@ -173,6 +189,18 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const needHelp = {
+    title: "",
+    component: () => (
+      <SettingButton
+        label={t("settings.needHelp")}
+        ariaLabel={t("settings.needHelp")}
+        icon="new-tab"
+        onClick={() => window.open(FAQ_URL, "_blank")?.focus()}
+      />
+    ),
+  }
+
   const bugReport = {
     title: "",
     component: () => (
@@ -180,6 +208,7 @@ export default function Settings(): ReactElement {
         link="/settings/export-logs"
         label={t("settings.bugReport")}
         ariaLabel={t("settings.exportLogs.ariaLabel")}
+        icon="continue"
       />
     ),
   }
@@ -191,6 +220,7 @@ export default function Settings(): ReactElement {
         link="/settings/connected-websites"
         label={t("settings.connectedWebsites")}
         ariaLabel={t("settings.connectedWebsitesSettings.ariaLabel")}
+        icon="continue"
       />
     ),
   }
@@ -202,6 +232,7 @@ export default function Settings(): ReactElement {
         link="/settings/analytics"
         label={t("settings.analytics")}
         ariaLabel={t("settings.analyticsSetUp.ariaLabel")}
+        icon="continue"
       />
     ),
   }
@@ -216,16 +247,32 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const customNetworks = {
+    title: "",
+    component: () => (
+      <SettingButton
+        link="/settings/custom-networks"
+        label={t("settings.customNetworks")}
+        ariaLabel={t("settings.customNetworksSettings.ariaLabel")}
+        icon="continue"
+      />
+    ),
+  }
+
   const generalList = [
     setAsDefault,
     hideSmallAssetBalance,
     ...(isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) ? [languages] : []),
     enableTestNetworks,
     dAppsSettings,
+    needHelp,
     bugReport,
     ...(isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) ? [analytics] : []),
     ...(isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER)
       ? [notificationBanner]
+      : []),
+    ...(isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)
+      ? [customNetworks]
       : []),
   ]
 
@@ -234,8 +281,8 @@ export default function Settings(): ReactElement {
   }
 
   return (
-    <>
-      <section className="standard_width_padded">
+    <section className="standard_width_padded">
+      <div className="menu">
         <h1>{t("settings.mainMenu")}</h1>
         <ul>
           {settings.general.map((setting) => (
@@ -246,42 +293,38 @@ export default function Settings(): ReactElement {
             />
           ))}
         </ul>
-        <div className="community_cta_wrap">
-          <h2>{t("settings.joinTitle")}</h2>
-          <p>{t("settings.joinDesc")}</p>
-          <SharedButton
-            type="primary"
-            size="large"
-            iconMedium="discord"
-            iconPosition="left"
-            onClick={() => {
-              window.open(`https://chat.tally.cash/`, "_blank")?.focus()
-            }}
-          >
-            {t("settings.joinBtn")}
-          </SharedButton>
+      </div>
+      <div className="footer">
+        <div className="action_icons">
+          {FOOTER_ACTIONS.map(({ icon, linkTo }) => (
+            <SharedIcon
+              icon={`${icon}.svg`}
+              width={18}
+              color="var(--green-20)"
+              hoverColor="var(--trophy-gold)"
+              transitionHoverTime="0.2s"
+              onClick={() => {
+                window.open(linkTo, "_blank")?.focus()
+              }}
+            />
+          ))}
         </div>
         <VersionLabel />
-      </section>
+      </div>
       <style jsx>
         {`
           section {
             display: flex;
             flex-flow: column;
+            justify-content: space-between;
             height: 544px;
             background-color: var(--hunter-green);
           }
-          .community_cta_wrap {
-            width: 100vw;
-            margin-top: 20px;
-            margin-left: -21px;
-            background-color: var(--green-95);
-            text-align: center;
-            padding: 24px 0px;
-            box-sizing: border-box;
+          .menu {
+            display: flex;
+            justify-content: space-between;
             display: flex;
             flex-direction: column;
-            align-items: center;
           }
           h1 {
             color: #fff;
@@ -290,37 +333,31 @@ export default function Settings(): ReactElement {
             line-height: 32px;
             margin-bottom: 5px;
           }
-          h2 {
-            font-weight: 500;
-            font-size: 22px;
-            padding: 0px;
-            margin: 0px 0px -1px 0px;
-          }
-          p {
-            color: var(--green-20);
-            text-align: center;
-            font-size: 16px;
-            margin-top: 6px;
-            margin-bottom: 24px;
-          }
           span {
             color: var(--green-40);
             font-size: 16px;
             font-weight: 400;
             line-height: 24px;
           }
-          .mega_discord_chat_bubble_button {
-            background: url("./images/tally_ho_chat_bubble@2x.png");
-            background-size: cover;
-            width: 266px;
-            height: 120px;
+          .footer {
+            width: 100vw;
             margin-top: 20px;
+            margin-left: -24px;
+            background-color: var(--green-95);
+            text-align: center;
+            padding-top: 16px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
           }
-          .mega_discord_chat_bubble_button:hover {
-            opacity: 0.8;
+          .action_icons {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
           }
         `}
       </style>
-    </>
+    </section>
   )
 }

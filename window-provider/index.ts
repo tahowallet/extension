@@ -55,6 +55,7 @@ const impersonateMetamaskWhitelist = [
   "ankr.com",
   "mint.xencrypto.io",
   "bscscan.com",
+  "alchemy.com",
 ]
 
 const METAMASK_STATE_MOCK = {
@@ -166,6 +167,14 @@ export default class TallyWindowProvider extends EventEmitter {
       }
     }
 
+    /**
+     * Some dApps may have a problem with preserving a reference to a provider object.
+     * This is the result of incorrect assignment.
+     * In such a case, the object this is undefined
+     * which results in an error in the execution of the request.
+     * The request function should always have a provider object set.
+     */
+    this.request = this.request.bind(this)
     monitorForWalletConnectionPrompts()
     this.transport.addEventListener(internalListener)
     this.transport.addEventListener(this.internalBridgeListener.bind(this))

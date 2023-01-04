@@ -1,6 +1,7 @@
 import React, { ChangeEvent, ReactElement, useEffect, useRef } from "react"
 import classNames from "classnames"
-import { useParsedValidation, useRunOnFirstRender } from "../../hooks"
+import { useParsedValidation } from "../../hooks"
+import { useRunOnFirstRender } from "../../hooks/react-hooks"
 
 interface Props<T> {
   id?: string
@@ -47,7 +48,10 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
-    if (autoFocus) inputRef.current?.focus()
+    if (autoFocus)
+      inputRef.current?.focus({
+        preventScroll: true,
+      })
   }, [autoFocus])
 
   useEffect(() => {
