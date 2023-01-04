@@ -6,11 +6,10 @@ import {
   AnyEVMBlock,
   AnyEVMTransaction,
   Network,
-  NetworkDefaultBaseAsset,
+  NetworkBaseAsset,
 } from "../../networks"
 import { FungibleAsset } from "../../assets"
-import { GOERLI, POLYGON } from "../../constants"
-import { DEFAULT_BASE_ASSETS } from "../../constants/default-currencies"
+import { BASE_ASSETS, GOERLI, POLYGON } from "../../constants"
 
 export type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
@@ -69,7 +68,7 @@ export class ChainDatabase extends Dexie {
    */
   private balances!: Dexie.Table<AccountBalance, number>
 
-  private baseAssets!: Dexie.Table<NetworkDefaultBaseAsset, number>
+  private baseAssets!: Dexie.Table<NetworkBaseAsset, number>
 
   constructor(options?: DexieOptions) {
     super("tally/chain", options)
@@ -177,14 +176,14 @@ export class ChainDatabase extends Dexie {
     )
   }
 
-  async getAllBaseAssets(): Promise<NetworkDefaultBaseAsset[]> {
+  async getAllBaseAssets(): Promise<NetworkBaseAsset[]> {
     return this.baseAssets.toArray()
   }
 
   async initializeBaseAssets(): Promise<void> {
     const existingBaseAssets = await this.getAllBaseAssets()
     await Promise.all(
-      DEFAULT_BASE_ASSETS.map(async (defaultAsset) => {
+      BASE_ASSETS.map(async (defaultAsset) => {
         if (
           !existingBaseAssets.some(
             (asset) => asset.symbol === defaultAsset.symbol

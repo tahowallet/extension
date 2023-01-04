@@ -18,9 +18,9 @@ export type NetworkFamily = "EVM" | "BTC"
 
 // Should be structurally compatible with FungibleAsset or much code will
 // likely explode.
-export type NetworkDefaultBaseAsset = FungibleAsset
+export type NetworkBaseAsset = FungibleAsset
 
-export type NetworkBaseAsset = NetworkDefaultBaseAsset &
+export type BaseAssetWithCoinType = NetworkBaseAsset &
   CoinGeckoAsset & {
     contractAddress?: string
     coinType: Slip44CoinType

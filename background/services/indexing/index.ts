@@ -15,7 +15,7 @@ import {
   SmartContractFungibleAsset,
 } from "../../assets"
 import {
-  BASE_ASSETS,
+  BASE_ASSETS_WITH_COIN_TYPE,
   FIAT_CURRENCIES,
   HOUR,
   MINUTE,
@@ -623,7 +623,10 @@ export default class IndexingService extends BaseService<Events> {
     try {
       // TODO include user-preferred currencies
       // get the prices of ETH and BTC vs major currencies
-      const basicPrices = await getPrices(BASE_ASSETS, FIAT_CURRENCIES)
+      const basicPrices = await getPrices(
+        BASE_ASSETS_WITH_COIN_TYPE,
+        FIAT_CURRENCIES
+      )
 
       // kick off db writes and event emission, don't wait for the promises to
       // settle
@@ -644,7 +647,7 @@ export default class IndexingService extends BaseService<Events> {
     } catch (e) {
       logger.error(
         "Error getting base asset prices",
-        BASE_ASSETS,
+        BASE_ASSETS_WITH_COIN_TYPE,
         FIAT_CURRENCIES
       )
     }

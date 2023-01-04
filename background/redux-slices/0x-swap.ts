@@ -22,7 +22,6 @@ import {
   COMMUNITY_MULTISIG_ADDRESS,
   ETHEREUM,
   OPTIMISM,
-  OPTIMISTIC_ETH,
 } from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
@@ -158,15 +157,12 @@ const get0xAssetName = (asset: SwappableAsset, network: EVMNetwork) => {
   }
   if (
     network.name === OPTIMISM.name &&
-    "contractAddress" in asset &&
-    asset.contractAddress === OPTIMISTIC_ETH.contractAddress
+    asset.symbol === OPTIMISM.baseAsset.symbol
   ) {
     return ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS
   }
 
-  return "contractAddress" in asset && asset.contractAddress
-    ? asset.contractAddress
-    : asset.symbol
+  return asset.symbol
 }
 
 // Helper to build a URL to the 0x API for a given swap quote request. Usable

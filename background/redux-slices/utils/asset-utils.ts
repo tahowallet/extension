@@ -37,15 +37,8 @@ export type AssetDecimalAmount = {
   localizedDecimalAmount: string
 }
 
-function isBaseAsset(asset: AnyAsset): asset is NetworkBaseAsset {
-  return "coinType" in asset
-}
-
 function isOptimismBaseAsset(asset: AnyAsset) {
-  return (
-    "contractAddress" in asset &&
-    asset.contractAddress === OPTIMISM.baseAsset.contractAddress
-  )
+  return "symbol" in asset && asset.symbol === OPTIMISM.baseAsset.symbol
 }
 
 /**
@@ -67,9 +60,7 @@ export function isNetworkBaseAsset(
   }
 
   return (
-    isBaseAsset(asset) &&
     asset.symbol === network.baseAsset.symbol &&
-    asset.coinType === network.baseAsset.coinType &&
     asset.name === network.baseAsset.name
   )
 }

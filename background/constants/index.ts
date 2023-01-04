@@ -35,4 +35,5 @@ export enum EarnStages {
 
 export * from "./assets"
 export * from "./currencies"
+export * from "./currencies-with-coin-types"
 export * from "./networks"
