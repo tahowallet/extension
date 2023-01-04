@@ -209,6 +209,19 @@ export default (
         ? modeSpecificAdjuster(browser)
         : {}
 
+    const overrideFlag = "-v3"
+
+    let copyPattern = `manifest/manifest(|.${mode}|.${mode}|.${browser}|.${browser}|.${browser}.${mode}|.${browser}.${mode}).json`
+    if (process.env.SUPPORT_MANIFEST_V3 === "true") {
+      copyPattern = `manifest/manifest(|${overrideFlag}|.${mode}|.${mode}${overrideFlag}|.${browser}|.${browser}${overrideFlag}|.${browser}.${mode}|.${browser}.${mode}${overrideFlag}).json`
+    }
+
+    type Asset = {
+      data: Buffer
+      sourceFilename: string
+      absoluteFilename: string
+    }
+
     return webpackMerge(baseConfig, modeSpecificAdjustment, {
       name: browser,
       output: {
@@ -229,21 +242,36 @@ export default (
         // values if their values are not arrays, or adding entries to arrays.
         // It does not support removing keys or array values. webpackMerge is
         // used for this.
+        //
+        // Also handles manifest V3 file overrides.
+        // Any adjustment file can be swapped by a file with the same name with
+        // '-v3' suffix applied on it.
+        //
+        // For example:
+        //  - `manifest-v3.json` overrides `manifest.json`
+        //  - `manifest.development.chrome-v3.json` overrides `manifest.development.chrome.json`
         new CopyPlugin({
           patterns: [
             {
-              from: `manifest/manifest(|.${mode}|.${browser}|.${browser}.${mode}).json`,
+              from: copyPattern,
               to: "manifest.json",
-              transformAll: (
-                assets: { data: Buffer; sourceFilename: string }[]
-              ) => {
+              transformAll: (assets: Asset[]) => {
                 const getPriority = (filename: string) => {
                   switch (true) {
                     case filename.endsWith(`manifest.${browser}.${mode}.json`):
+                    case filename.endsWith(
+                      `manifest.${browser}.${mode}${overrideFlag}.json`
+                    ):
                       return 8
                     case filename.endsWith(`manifest.${browser}.json`):
+                    case filename.endsWith(
+                      `manifest.${browser}${overrideFlag}.json`
+                    ):
                       return 4
                     case filename.endsWith(`manifest.${mode}.json`):
+                    case filename.endsWith(
+                      `manifest.${mode}${overrideFlag}.json`
+                    ):
                       return 2
                     case filename.endsWith("manifest.json"):
                       return 1
@@ -252,9 +280,32 @@ export default (
                   }
                 }
 
+                // Drop base file if override present.
+                const overrideReducer = (acc: Asset[], asset: Asset) => {
+                  const isOverride = asset.sourceFilename.endsWith(
+                    `${overrideFlag}.json`
+                  )
+                  // include override
+                  if (isOverride) {
+                    return [...acc, asset]
+                  }
+                  // else include only if no override can be found for this file
+                  const overrideFound =
+                    assets.findIndex(
+                      (a) =>
+                        a.sourceFilename ===
+                        asset.sourceFilename.replace(
+                          ".json",
+                          `${overrideFlag}.json`
+                        )
+                    ) > -1
+                  return overrideFound ? acc : [...acc, asset]
+                }
+
                 const combinedManifest = webpackMerge(
                   {},
                   ...assets
+                    .reduce(overrideReducer, [])
                     .sort(
                       (a, b) =>
                         getPriority(a.sourceFilename) -
