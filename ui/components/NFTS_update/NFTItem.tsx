@@ -15,7 +15,9 @@ export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
   const { name = "No title", network, thumbnailURL } = item
 
   const floorPrice =
-    "floorPrice" in item && item.floorPrice?.value && item.floorPrice
+    "floorPrice" in item &&
+    item.floorPrice?.value !== undefined &&
+    item.floorPrice
   const nftsCount = "nftCount" in item && item.nftCount
   const isBadge = "isBadge" in item && item.isBadge
 
@@ -70,7 +72,7 @@ export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
           font-size: 14px;
           line-height: 16px;
           letter-spacing: 3%;
-          border-radius: 4px;
+          border-radius: 6px;
         }
         .nft_image {
           position: relative;

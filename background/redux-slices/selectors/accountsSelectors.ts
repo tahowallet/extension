@@ -432,6 +432,12 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
   }
 )
 
+export const selectAccountTotals = createSelector(
+  selectCurrentNetworkAccountTotalsByCategory,
+  (selectNetworkAccountTotalsByCategory): AccountTotal[] =>
+    Object.values(selectNetworkAccountTotalsByCategory).flat()
+)
+
 export type AccountTotalList = {
   [address: string]: {
     ensName?: string

@@ -1,4 +1,5 @@
 import { TypedDataField } from "@ethersproject/abstract-signer"
+import { Opaque } from "./tag-types"
 
 /**
  * Named type for strings that should be URIs.
@@ -32,6 +33,13 @@ export type DomainName = string
  * into a variable of type `HexString` and vice versa.
  */
 export type HexString = string
+
+declare const NormalizedEVMAddressSymbol: unique symbol
+
+export type NormalizedEVMAddress = Opaque<
+  string,
+  typeof NormalizedEVMAddressSymbol
+>
 
 /*
  * Named type for a number measuring time in seconds since the Unix Epoch,

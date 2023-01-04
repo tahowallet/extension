@@ -29,8 +29,12 @@ const assetsAndAmounts = [
   },
 ]
 
-function SharedAssetInputWithState() {
-  const [amount, setAmount] = useState("")
+function SharedAssetInputWithState({
+  initialAmount = "",
+}: {
+  initialAmount?: string
+}) {
+  const [amount, setAmount] = useState(initialAmount)
   const [currentAsset, setCurrent] = useState(asset)
   return (
     <SharedAssetInput
@@ -137,7 +141,9 @@ describe("SharedAssetInput", () => {
   })
 
   test("should display asset price", () => {
-    const ui = renderWithProviders(<SharedAssetInputWithState />)
+    const ui = renderWithProviders(
+      <SharedAssetInputWithState initialAmount="1" />
+    )
 
     expect(ui.getByText("$1")).toBeVisible()
   })
