@@ -1,8 +1,11 @@
+import logger, { LoggerEnvironment } from "@tallyho/tally-background/lib/logger"
 import {
   attachPopupUIToRootElement,
   attachUIToRootElement,
 } from "@tallyho/tally-ui"
 import GlobalError from "@tallyho/tally-ui/components/GlobalError/GlobalError"
+
+logger.init(LoggerEnvironment.popup)
 
 // Prevents from the green screen. The solution checks if the first top-level element is rendered.
 // If this does not happen then reload the UI thread.  To prevent an infinity loop

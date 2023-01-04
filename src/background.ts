@@ -4,6 +4,9 @@ import {
   isEnabled,
   RuntimeFlag,
 } from "@tallyho/tally-background/features"
+import logger, { LoggerEnvironment } from "@tallyho/tally-background/lib/logger"
+
+logger.init(LoggerEnvironment.bg)
 
 browser.runtime.onInstalled.addListener((obj) => {
   if (
