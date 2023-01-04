@@ -85,7 +85,7 @@ async function annotationsFromLogs(
 
   const subannotations = (
     await Promise.allSettled(
-      tokenTransferLogs.map(
+      relevantTransferLogs.map(
         async ({
           contractAddress,
           amount,
@@ -412,6 +412,7 @@ export default async function resolveTransactionAnnotation(
 
   // Look up logs and resolve subannotations, if available.
   if ("logs" in transaction && typeof transaction.logs !== "undefined") {
+    console.log("How many logs?: ", transaction.logs.length)
     const subannotations = await annotationsFromLogs(
       chainService,
       indexingService,
