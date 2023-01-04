@@ -9,6 +9,8 @@ import {
   RPCRequest,
   EIP1193_ERROR_CODES,
   isTallyConfigPayload,
+  isEIP1193Error,
+  EIP1193ErrorPayload,
 } from "@tallyho/provider-bridge-shared"
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import BaseService from "../base"
@@ -452,8 +454,16 @@ export default class ProviderBridgeService extends BaseService<Events> {
         }
       }
     } catch (error) {
+      logger.log("error processing request", error)
       if (typeof error === "object" && error !== null) {
-        logger.log("error processing request", error)
+        if (
+          "eip1193Error" in error &&
+          isEIP1193Error(
+            (error as { eip1193Error: EIP1193ErrorPayload }).eip1193Error
+          )
+        ) {
+          return error
+        }
         if ("body" in error) {
           return getRPCErrorResponser(error)
         }
