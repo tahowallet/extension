@@ -14,6 +14,7 @@ import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, NFTsDatabase } from "./db"
 import { getUNIXTimestamp } from "../../lib/utils"
+import { MINUTE } from "../../constants"
 
 interface Events extends ServiceLifecycleEvents {
   isReloadingNFTs: boolean
@@ -222,10 +223,13 @@ export default class NFTsService extends BaseService<Events> {
       this.#transfersLookupTimestamp
     )
 
-    this.#transfersLookupTimestamp = getUNIXTimestamp()
-
     if (removedNFTs.length) {
-      await this.db.removeNFTsByID(removedNFTs)
+      // indexing transfers can take some time, let's add some margin to the timestamp
+      this.#transfersLookupTimestamp = getUNIXTimestamp(Date.now() - 5 * MINUTE)
+
+      await this.db.removeNFTsByIDs(
+        removedNFTs.map((transferred) => transferred.id)
+      )
       this.emitter.emit("removeTransferredNFTs", removedNFTs)
     }
   }
