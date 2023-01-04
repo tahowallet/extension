@@ -99,7 +99,7 @@ describe("Provider bridge", () => {
       )
 
       expect(stub.called).toBe(false)
-      expect(response).toBe(EIP1193_ERROR_CODES.userRejectedRequest)
+      expect(response).toBe(EIP1193_ERROR_CODES.unauthorized)
     })
   })
 })

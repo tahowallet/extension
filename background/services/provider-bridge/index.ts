@@ -456,13 +456,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
     } catch (error) {
       logger.log("error processing request", error)
       if (typeof error === "object" && error !== null) {
-        if (
-          "eip1193Error" in error &&
-          isEIP1193Error(
-            (error as { eip1193Error: EIP1193ErrorPayload }).eip1193Error
-          )
-        ) {
-          return error
+        if ("eip1193Error" in error) {
+          const { eip1193Error } = error as {
+            eip1193Error: EIP1193ErrorPayload
+          }
+          if (isEIP1193Error(eip1193Error)) {
+            return eip1193Error
+          }
         }
         if ("body" in error) {
           return getRPCErrorResponser(error)
