@@ -98,6 +98,9 @@ const baseConfig: Configuration = {
   optimization: {
     splitChunks: { automaticNameDelimiter: "-" },
   },
+  experiments: {
+    asyncWebAssembly: true,
+  },
 }
 
 // Configuration adjustments for specific build modes, customized by browser.

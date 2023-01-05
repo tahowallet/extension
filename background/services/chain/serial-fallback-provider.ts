@@ -23,7 +23,7 @@ import {
   ALCHEMY_KEY,
   transactionFromAlchemyWebsocketTransaction,
 } from "../../lib/alchemy"
-import { HeliosProvider } from "./helios-provider"
+import { HeliosClient } from "./helios-provider"
 
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 400
@@ -960,7 +960,7 @@ export function makeSerialFallbackProvider(
 
   const genericProviders =
     network.chainID === ETHEREUM.chainID
-      ? [{ type: "generic" as const, creator: () => new HeliosProvider() }]
+      ? [{ type: "generic" as const, creator: () => new HeliosClient() }]
       : (CHAIN_ID_TO_RPC_URLS[network.chainID] || []).map((rpcUrl) => ({
           type: "generic" as const,
           creator: () => new JsonRpcProvider(rpcUrl),
