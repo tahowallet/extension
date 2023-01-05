@@ -5,7 +5,6 @@ import {
   TransactionReceipt,
   TransactionResponse,
 } from "@ethersproject/abstract-provider"
-import { Network } from "@ethersproject/providers"
 import { DexieOptions } from "dexie"
 import { BigNumber } from "ethers"
 import { keccak256 } from "ethers/lib/utils"

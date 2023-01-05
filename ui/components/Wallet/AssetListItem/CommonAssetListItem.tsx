@@ -39,13 +39,6 @@ export default function CommonAssetListItem(
   const numTokenLists = assetAmount?.asset?.metadata?.tokenLists?.length ?? 0
   const baseAsset = isNetworkBaseAsset(assetAmount?.asset, selectedNetwork)
 
-  if (assetAmount.asset.symbol === "MATIC") {
-    console.log("isBaseAsset: ", baseAsset)
-    console.log(assetAmount.asset)
-    if (!baseAsset) {
-      console.trace()
-    }
-  }
   const contractAddress =
     "contractAddress" in assetAmount.asset
       ? assetAmount.asset.contractAddress
