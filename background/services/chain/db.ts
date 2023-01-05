@@ -2,9 +2,14 @@ import Dexie, { Collection, DexieOptions, IndexableTypeArray } from "dexie"
 
 import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
-import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
+import {
+  AnyEVMBlock,
+  AnyEVMTransaction,
+  EVMNetwork,
+  Network,
+} from "../../networks"
 import { FungibleAsset } from "../../assets"
-import { GOERLI, POLYGON } from "../../constants"
+import { DEFAULT_NETWORKS, GOERLI, POLYGON } from "../../constants"
 
 export type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
@@ -62,6 +67,8 @@ export class ChainDatabase extends Dexie {
    * Historic account balances.
    */
   private balances!: Dexie.Table<AccountBalance, number>
+
+  private networks!: Dexie.Table<EVMNetwork, string>
 
   constructor(options?: DexieOptions) {
     super("tally/chain", options)
@@ -135,6 +142,10 @@ export class ChainDatabase extends Dexie {
         return filteredModifications
       }
     )
+
+    this.version(5).stores({
+      networks: "&chainID,name,family",
+    })
   }
 
   async getLatestBlock(network: Network): Promise<AnyEVMBlock | null> {
@@ -162,6 +173,25 @@ export class ChainDatabase extends Dexie {
           .equals([txHash, network.name])
           .toArray()
       )[0] || null
+    )
+  }
+
+  async getAllEVMNetworks(): Promise<EVMNetwork[]> {
+    return this.networks.where("family").equals("EVM").toArray()
+  }
+
+  async initializeEVMNetworks(): Promise<void> {
+    const existingNetworks = await this.getAllEVMNetworks()
+    await Promise.all(
+      DEFAULT_NETWORKS.map(async (defaultNetwork) => {
+        if (
+          !existingNetworks.some(
+            (network) => network.chainID === defaultNetwork.chainID
+          )
+        ) {
+          await this.networks.put(defaultNetwork)
+        }
+      })
     )
   }
 

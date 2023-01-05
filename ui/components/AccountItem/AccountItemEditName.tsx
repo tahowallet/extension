@@ -85,6 +85,7 @@ export default function AccountItemEditName({
             placeholder={t("typeNewName")}
             autoSelect
             errorMessage={error}
+            autoFocus
             onChange={(value) => {
               if (!touched) {
                 setTouched(true)

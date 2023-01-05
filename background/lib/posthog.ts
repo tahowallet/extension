@@ -8,17 +8,11 @@ export const POSTHOG_URL =
 
 // Destructuring doesn't work with env variables. process.nev is `MISSING ENV VAR` in that case
 // eslint-disable-next-line prefer-destructuring
-export const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY
-
-// Destructuring doesn't work with env variables. process.nev is `MISSING ENV VAR` in that case
-// eslint-disable-next-line prefer-destructuring
 export const USE_ANALYTICS_SOURCE = process.env.USE_ANALYTICS_SOURCE
 
 export function shouldSendPosthogEvents(): boolean {
   return (
-    isEnabled(FeatureFlags.SUPPORT_ANALYTICS) &&
-    !!POSTHOG_URL &&
-    !!POSTHOG_API_KEY
+    isEnabled(FeatureFlags.SUPPORT_ANALYTICS) && !!process.env.POSTHOG_API_KEY
   )
 }
 
@@ -34,7 +28,7 @@ export function createPosthogPayload(
     // The unique or anonymous id of the user that triggered the event.
     distinct_id: personUUID,
     // api key
-    api_key: POSTHOG_API_KEY,
+    api_key: process.env.POSTHOG_API_KEY,
     // name of the event
     event: eventName,
     // Let's include a timestamp just to be sure. Optional.
