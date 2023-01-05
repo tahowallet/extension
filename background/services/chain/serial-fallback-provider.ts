@@ -350,41 +350,41 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           /WebSocket is already in CLOSING|bad response|missing response|we can't execute this request/
         )
       ) {
-        if (this.shouldSendMessageOnNextProvider(messageId)) {
-          // If there is another provider to try - try to send the message on that provider
-          if (this.currentProviderIndex + 1 < this.providerCreators.length) {
-            return await this.attemptToSendMessageOnNewProvider(messageId)
+        // if (this.shouldSendMessageOnNextProvider(messageId)) {
+        //   // If there is another provider to try - try to send the message on that provider
+        //   if (this.currentProviderIndex + 1 < this.providerCreators.length) {
+        //     return await this.attemptToSendMessageOnNewProvider(messageId)
+        //   }
+
+        //   // Otherwise, set us up for the next call, but fail the
+        //   // current one since we've gone through every available provider. Note
+        //   // that this may happen over time, but we still fail the request that
+        //   // hits the end of the list.
+        //   this.currentProviderIndex = 0
+
+        //   // Reconnect, but don't wait for the connection to go through.
+        //   this.reconnectProvider()
+        //   delete this.messagesToSend[messageId]
+        //   throw error
+        // } else {
+        const backoff = this.backoffFor(messageId)
+        logger.debug(
+          "Backing off for",
+          backoff,
+          "and retrying: ",
+          method,
+          params
+        )
+
+        return await waitAnd(backoff, async () => {
+          if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
+            await this.reconnectProvider()
           }
 
-          // Otherwise, set us up for the next call, but fail the
-          // current one since we've gone through every available provider. Note
-          // that this may happen over time, but we still fail the request that
-          // hits the end of the list.
-          this.currentProviderIndex = 0
-
-          // Reconnect, but don't wait for the connection to go through.
-          this.reconnectProvider()
-          delete this.messagesToSend[messageId]
-          throw error
-        } else {
-          const backoff = this.backoffFor(messageId)
-          logger.debug(
-            "Backing off for",
-            backoff,
-            "and retrying: ",
-            method,
-            params
-          )
-
-          return await waitAnd(backoff, async () => {
-            if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
-              await this.reconnectProvider()
-            }
-
-            logger.debug("Retrying", method, params)
-            return this.routeRpcCall(messageId)
-          })
-        }
+          logger.debug("Retrying", method, params)
+          return this.routeRpcCall(messageId)
+        })
+        // }
       }
 
       logger.debug(
@@ -966,13 +966,23 @@ export function makeSerialFallbackProvider(
   )
 
   if (network.chainID === ETHEREUM.chainID) {
-    // return new SerialFallbackProvider(network, [
-    //   { type: "generic" as const, creator: () => new HeliosClient() },
-    // ])
+    return new SerialFallbackProvider(network, [
+      { type: "generic" as const, creator: () => new HeliosClient() },
+      {
+        type: "alchemy" as const,
+        creator: () =>
+          new AlchemyProvider(getNetwork(Number(network.chainID)), ALCHEMY_KEY),
+      },
+    ])
     return new SerialFallbackProvider(network, [
       {
         type: "generic" as const,
         creator: () => new JsonRpcProvider("http://localhost:8545"),
+      },
+      {
+        type: "alchemy" as const,
+        creator: () =>
+          new AlchemyProvider(getNetwork(Number(network.chainID)), ALCHEMY_KEY),
       },
     ])
   }
