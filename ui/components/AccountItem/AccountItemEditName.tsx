@@ -83,7 +83,6 @@ export default function AccountItemEditName({
           <SharedInput
             label=""
             placeholder={t("typeNewName")}
-            autoSelect
             errorMessage={error}
             autoFocus
             onChange={(value) => {
