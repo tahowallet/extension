@@ -120,7 +120,8 @@ const modeConfigs: {
             force: true,
             priority: 1,
             transform: (content, fileName) => {
-              if (fileName.endsWith("popup.html")) {
+              // Inject devtools in every static HTML file
+              if (fileName.endsWith(".html")) {
                 const port = process.env.REACT_DEVTOOLS_DEFAULT_PORT
 
                 return content

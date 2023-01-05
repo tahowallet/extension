@@ -4,26 +4,30 @@ import { History, MemoryHistory } from "history"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 
+const isMemoryHistory = (history: History<unknown>): history is MemoryHistory =>
+  "entries" in history
+
 export default function SharedBackButton({
   path,
   onClick,
   withoutBackText,
+  hidden = false,
+  round = false,
 }: {
   path?: string
   onClick?: () => void
   withoutBackText?: boolean
+  hidden?: boolean
+  round?: boolean
 }): ReactElement {
   const { t } = useTranslation()
-  const history: History<unknown> | MemoryHistory<unknown> =
-    useHistory<unknown>()
+  const history = useHistory<unknown>()
 
   const goBack = () => {
-    if ("entries" in history) {
-      const newLocation =
-        path ??
-        (history as MemoryHistory<unknown>).entries.at(-2)?.pathname ??
-        "/"
-      ;(history as MemoryHistory<unknown>).push(newLocation, { isBack: true })
+    if (isMemoryHistory(history)) {
+      const newLocation = path ?? history.entries.at(-2)?.pathname ?? "/"
+
+      history.push(newLocation, { isBack: true })
     } else {
       history.goBack()
     }
@@ -33,7 +37,8 @@ export default function SharedBackButton({
     <button
       type="button"
       className={classNames({
-        hide: !onClick && history.length <= 1,
+        hide: hidden || (!onClick && history.length <= 1),
+        round: withoutBackText && round,
       })}
       onClick={() => {
         if (onClick) {
@@ -43,7 +48,7 @@ export default function SharedBackButton({
         }
       }}
     >
-      <div className="icon_chevron_left" />
+      <div className="icon" />
       {!withoutBackText && t("shared.backButtonText")}
       <style jsx>{`
         button {
@@ -55,19 +60,30 @@ export default function SharedBackButton({
           margin-bottom: 10px;
           margin-top: 2px;
         }
+
         button:hover {
           color: #fff;
         }
-        .icon_chevron_left {
-          mask-image: url("./images/chevron_down.svg");
-          mask-size: 15px 8px;
-          width: 15px;
-          height: 8px;
-          margin-top: 2px;
-          background-color: var(--green-40);
-          transform: rotate(90deg);
+
+        button.round {
+          align-items: center;
+          background: var(--green-60);
+          border-radius: 50%;
+          padding: 12px;
         }
-        button:hover .icon_chevron_left {
+
+        .round .icon {
+          background-color: var(--green-120);
+        }
+
+        .icon {
+          mask: url("./images/chevron_left.svg") center / contain no-repeat;
+          width: 16px;
+          height: 16px;
+          background-color: var(--green-40);
+        }
+
+        button:hover .icon {
           background-color: #fff;
         }
       `}</style>

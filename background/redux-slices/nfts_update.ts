@@ -148,6 +148,22 @@ function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
   updateFilter(acc, collection, "accounts")
 }
 
+function removeAccountFromFilters(acc: NFTsSliceState, address: string): void {
+  acc.filters.accounts = acc.filters.accounts.filter(({ id }) => id !== address)
+  acc.filters.collections = acc.filters.collections.flatMap((collection) => {
+    if (collection.owners?.includes(address)) {
+      return collection.owners.length === 1
+        ? []
+        : {
+            ...collection,
+            owners: collection.owners.filter((owner) => owner !== address),
+          }
+    }
+
+    return collection
+  })
+}
+
 function initializeCollections(collections: NFTCollection[]): NFTsSliceState {
   const state: NFTsSliceState = {
     isReloading: false,
@@ -230,6 +246,7 @@ const NFTsSlice = createSlice({
     ) => {
       const normalizedAddress = normalizeEVMAddress(address)
 
+      removeAccountFromFilters(immerState, normalizedAddress)
       Object.keys(immerState.nfts).forEach((chainID) => {
         delete immerState.nfts[chainID][normalizedAddress]
       })
@@ -252,6 +269,10 @@ const NFTsSlice = createSlice({
 
               if (hasTransferredNFT) {
                 if (collection.nfts.length === 1) {
+                  immerState.filters.collections =
+                    immerState.filters.collections.filter(
+                      ({ id }) => id !== collectionID
+                    )
                   delete immerState.nfts[chainID][normalizedAddress][
                     collectionID
                   ]
