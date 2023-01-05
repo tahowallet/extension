@@ -3,10 +3,13 @@ import { Link } from "react-router-dom"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 
 import { useTranslation } from "react-i18next"
+import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
 import SharedIconRouterLink from "../../Shared/SharedIconRouterLink"
+import { useBackgroundSelector } from "../../../hooks"
 
 type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount
@@ -27,14 +30,22 @@ export default function CommonAssetListItem(
   } = props
   const isMissingLocalizedUserValue =
     typeof assetAmount.localizedMainCurrencyAmount === "undefined"
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   // NB: non-base assets that don't have any token lists are considered
   // untrusted. Reifying base assets clearly will improve this check down the
   // road. Eventually, assets can be flagged as trusted by adding them to an
   // "internal" token list that users can export and share.
   const numTokenLists = assetAmount?.asset?.metadata?.tokenLists?.length ?? 0
-  const baseAsset = !("homeNetwork" in assetAmount?.asset)
+  const baseAsset = isNetworkBaseAsset(assetAmount?.asset, selectedNetwork)
 
+  if (assetAmount.asset.symbol === "MATIC") {
+    console.log("isBaseAsset: ", baseAsset)
+    console.log(assetAmount.asset)
+    if (!baseAsset) {
+      console.trace()
+    }
+  }
   const contractAddress =
     "contractAddress" in assetAmount.asset
       ? assetAmount.asset.contractAddress

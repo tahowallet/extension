@@ -114,7 +114,9 @@ export default function AssetWarningSlideUp(
           <div className="right">
             <SharedAddress
               address={
-                asset && "contractAddress" in asset ? asset.contractAddress : ""
+                asset && "contractAddress" in asset && asset.contractAddress
+                  ? asset.contractAddress
+                  : ""
               }
             />
           </div>
