@@ -243,10 +243,12 @@ export const createTransactionsToRetrieve = (
 ): PriorityQueuedTxToRetrieve[] => {
   const NETWORKS = [ETHEREUM, POLYGON, ARBITRUM_ONE, AVALANCHE, OPTIMISM]
 
-  return [...Array(numberOfTx).keys()].map((_, ind) => [
-    createQueuedTransaction({ network: NETWORKS[ind % NETWORKS.length] }),
-    1,
-  ])
+  return [...Array(numberOfTx).keys()].map((_, ind) => ({
+    transaction: createQueuedTransaction({
+      network: NETWORKS[ind % NETWORKS.length],
+    }),
+    priority: 0,
+  }))
 }
 
 export const createTransactionResponse = (
