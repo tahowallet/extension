@@ -373,8 +373,6 @@ const accountSlice = createSlice({
           return
         }
 
-        immerState.accountsData.evm[chainID] ??= {}
-
         const network = NETWORK_BY_CHAIN_ID[chainID]
         const baseAccountData = getOrCreateAccountData(
           immerState,

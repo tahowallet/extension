@@ -246,13 +246,13 @@ export default class NameService extends BaseService<Events> {
         system,
       } as const
 
-      // emmit local names without a network and update all address networks paird in the redux?
+      // Emit local names without a network and update all address-network pairs in Redux
       this.emitter.emit("resolvedLocalName", nameRecord)
 
       return nameRecord
     }
 
-    // if there is no loacal name then look deeper
+    // If there is no local name then look deeper
     if (!this.cachedResolvedNames[network.family][network.chainID]) {
       this.cachedResolvedNames[network.family][network.chainID] = {}
     }
