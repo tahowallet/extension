@@ -103,6 +103,7 @@ export default function TopMenu(): ReactElement {
       />
       <SharedSlideUpMenu
         isOpen={isProtocolListOpen}
+        isScrollable
         close={() => {
           setIsProtocolListOpen(false)
         }}

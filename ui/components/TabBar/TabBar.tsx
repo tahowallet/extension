@@ -24,6 +24,10 @@ export default function TabBar(): ReactElement {
   const history = useHistory()
   const { t } = useTranslation()
 
+  const noActiveTab = ["abilities"].some((pathName) =>
+    location.pathname.includes(pathName)
+  )
+
   const activeTab =
     tabs.find(({ path }) =>
       matchPath(location.pathname, { path, exact: false })
@@ -40,7 +44,7 @@ export default function TabBar(): ReactElement {
               icon={icon}
               title={t(title)}
               onClick={() => history.push(path)}
-              isActive={activeTab.path === path}
+              isActive={noActiveTab ? false : activeTab.path === path}
             />
           )
         })}
