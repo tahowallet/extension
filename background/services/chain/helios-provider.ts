@@ -33,6 +33,12 @@ export class HeliosClient extends JsonRpcProvider {
     setInterval(async () => this.#node.advance(), 12_000)
   }
 
+  override async perform(method: string, params: any): Promise<any> {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return this[method](params)
+  }
+
   override async getBlockNumber(): Promise<number> {
     return this.#node.get_block_number()
   }
