@@ -958,13 +958,24 @@ export function makeSerialFallbackProvider(
       ]
     : []
 
-  const genericProviders =
-    network.chainID === ETHEREUM.chainID
-      ? [{ type: "generic" as const, creator: () => new HeliosClient() }]
-      : (CHAIN_ID_TO_RPC_URLS[network.chainID] || []).map((rpcUrl) => ({
-          type: "generic" as const,
-          creator: () => new JsonRpcProvider(rpcUrl),
-        }))
+  const genericProviders = (CHAIN_ID_TO_RPC_URLS[network.chainID] || []).map(
+    (rpcUrl) => ({
+      type: "generic" as const,
+      creator: () => new JsonRpcProvider(rpcUrl),
+    })
+  )
+
+  if (network.chainID === ETHEREUM.chainID) {
+    // return new SerialFallbackProvider(network, [
+    //   { type: "generic" as const, creator: () => new HeliosClient() },
+    // ])
+    return new SerialFallbackProvider(network, [
+      {
+        type: "generic" as const,
+        creator: () => new JsonRpcProvider("http://localhost:8545"),
+      },
+    ])
+  }
 
   return new SerialFallbackProvider(network, [
     // Prefer alchemy as the primary provider when available
