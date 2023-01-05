@@ -3,6 +3,7 @@ import {
   PermissionRequest,
 } from "@tallyho/provider-bridge-shared"
 import sinon from "sinon"
+import browser from "webextension-polyfill"
 import { createProviderBridgeService } from "../../../tests/factories"
 import ProviderBridgeService from "../index"
 
@@ -45,6 +46,7 @@ describe("Provider bridge", () => {
 
   beforeEach(async () => {
     browser.windows.getCurrent = jest.fn(() => Promise.resolve(WINDOW))
+    browser.windows.create = jest.fn(() => Promise.resolve(WINDOW))
     providerBridgeService = await createProviderBridgeService()
     await providerBridgeService.startService()
     sandbox.restore()

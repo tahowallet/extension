@@ -20,14 +20,6 @@ Object.defineProperty(window.navigator, "usb", {
   },
 })
 
-Object.defineProperty(browser, "windows", {
-  writable: true,
-  value: {
-    getCurrent: () => {},
-    create: () => {},
-  },
-})
-
 // Prevent Dexie from caching indexedDB global so fake-indexeddb
 // can reset properly.
 Object.defineProperty(Dexie.dependencies, "indexedDB", {
