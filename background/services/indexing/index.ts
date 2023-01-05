@@ -369,7 +369,9 @@ export default class IndexingService extends BaseService<Events> {
           )
 
           this.acceleratedTokenRefresh.assetLookups.push(...assetLookups)
-          this.acceleratedTokenRefresh.timeout ??= window.setTimeout(
+          // Service workers don't have access to DOM elements like window, so need to use self or globalThis
+          // eslint-disable-next-line no-restricted-globals
+          this.acceleratedTokenRefresh.timeout ??= self.setTimeout(
             this.handleAcceleratedTokenRefresh.bind(this),
             ACCELERATED_TOKEN_REFRESH_TIMEOUT
           )

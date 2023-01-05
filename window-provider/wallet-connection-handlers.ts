@@ -465,7 +465,9 @@ export default function monitorForWalletConnectionPrompts(): void {
   ;(
     Object.keys(hostnameToHandler) as Array<keyof typeof hostnameToHandler>
   ).forEach((hostname) => {
-    if (window.location.hostname.includes(hostname)) {
+    // Service workers don't have access to DOM elements like window, so need to use self or globalThis
+    // eslint-disable-next-line no-restricted-globals
+    if (self.location.hostname.includes(hostname)) {
       observeMutations(hostnameToHandler[hostname])
     }
   })
