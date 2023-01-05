@@ -73,52 +73,62 @@ export default function SwapQuote({
   return (
     <section className="center_horizontal standard_width">
       <SharedActivityHeader label={t("title")} activity="swap" />
-      <div className="quote_cards">
-        <SwapQuoteAssetCard
-          label={t("sellAsset")}
-          asset={sellAsset}
-          amount={sellAmount}
-        />
-        <span className="icon_switch" />
-        <SwapQuoteAssetCard
-          label={t("buyAsset")}
-          asset={buyAsset}
-          amount={buyAmount}
-        />
-      </div>
-      <span className="label label_right">
-        1 {sellAsset.symbol} = {finalQuote.price} {buyAsset.symbol}
-      </span>
-      <div className="settings_wrap">
-        <SwapTransactionSettingsChooser
-          isSettingsLocked
-          swapTransactionSettings={swapTransactionSettings}
-        />
-      </div>
-      <div className="exchange_section_wrap">
-        <span className="top_label label">{t("exchangeRoute")}</span>
+      <div className="content_wrap">
+        <div className="quote_cards">
+          <SwapQuoteAssetCard
+            label={t("sellAsset")}
+            asset={sellAsset}
+            amount={sellAmount}
+          />
+          <span className="icon_switch" />
+          <SwapQuoteAssetCard
+            label={t("buyAsset")}
+            asset={buyAsset}
+            amount={buyAmount}
+          />
+        </div>
+        <span className="label label_right">
+          1 {sellAsset.symbol} = {finalQuote.price} {buyAsset.symbol}
+        </span>
+        <div className="settings_wrap">
+          <SwapTransactionSettingsChooser
+            isSettingsLocked
+            swapTransactionSettings={swapTransactionSettings}
+          />
+        </div>
+        <div className="exchange_section_wrap">
+          <span className="top_label label">{t("exchangeRoute")}</span>
 
-        {sources.map((source) => (
-          <div className="exchange_content standard_width" key={source.name}>
-            <div className="left">
-              {source.name.includes("Uniswap") && (
-                <span className="icon_uniswap" />
-              )}
-              {source.name}
+          {sources.map((source) => (
+            <div className="exchange_content standard_width" key={source.name}>
+              <div className="left">
+                {source.name.includes("Uniswap") && (
+                  <span className="icon_uniswap" />
+                )}
+                {source.name}
+              </div>
+              <div>{parseFloat(source.proportion) * 100}%</div>
             </div>
-            <div>{parseFloat(source.proportion) * 100}%</div>
-          </div>
-        ))}
-      </div>
-      <div className="confirm_button center_horizontal">
-        <SharedButton type="primary" size="large" onClick={handleConfirmClick}>
-          {t("continueSwap")}
-        </SharedButton>
+          ))}
+        </div>
+        <div className="confirm_button center_horizontal">
+          <SharedButton
+            type="primary"
+            size="large"
+            onClick={handleConfirmClick}
+          >
+            {t("continueSwap")}
+          </SharedButton>
+        </div>
       </div>
       <style jsx>
         {`
           section {
             margin-top: -24px;
+          }
+          .content_wrap {
+            height: 525px;
+            overflow-y: scroll;
           }
           .icon_uniswap {
             background: url("./images/uniswap@2x.png");
@@ -181,6 +191,7 @@ export default function SwapQuote({
           .confirm_button {
             width: fit-content;
             margin-top: 36px;
+            margin-bottom: 16px;
           }
           .exchange_section_wrap {
             margin-top: 16px;

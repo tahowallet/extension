@@ -44,7 +44,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const { totalNftCount } = collection
   const floorPrice =
     "floorPrice" in collection &&
-    collection.floorPrice?.value &&
+    collection.floorPrice?.value !== undefined &&
     collection.floorPrice
 
   // Chrome seems to have problems when elements with backdrop style are rendered initially
@@ -254,6 +254,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           font-weight: 500;
           font-size: 16px;
           line-height: 24px;
+          overflow-wrap: break-word;
           color: var(--green-20);
           margin: 0;
         }

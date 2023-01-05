@@ -1,54 +1,40 @@
-import React, { ReactElement, useEffect, useState } from "react"
-import {
-  createPassword,
-  generateNewKeyring,
-} from "@tallyho/tally-background/redux-slices/keyrings"
-import {
-  setNewDefaultWalletValue,
-  selectDefaultWallet,
-} from "@tallyho/tally-background/redux-slices/ui"
-import { useHistory } from "react-router-dom"
-import {
-  useBackgroundDispatch,
-  useAreKeyringsUnlocked,
-  useBackgroundSelector,
-} from "../../../hooks"
-import titleStyle from "../../../components/Onboarding/titleStyle"
+import React, { useEffect, useState } from "react"
+import { createPassword } from "@tallyho/tally-background/redux-slices/keyrings"
+import { Redirect, useHistory, useLocation } from "react-router-dom"
+import { Trans, useTranslation } from "react-i18next"
+import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../../hooks"
 import SharedButton from "../../../components/Shared/SharedButton"
-import SharedBanner from "../../../components/Shared/SharedBanner"
-import SharedToggleButton from "../../../components/Shared/SharedToggleButton"
 import PasswordStrengthBar from "../../../components/Password/PasswordStrengthBar"
 import PasswordInput from "../../../components/Shared/PasswordInput"
+import { WalletDefaultToggle } from "../../../components/Wallet/WalletToggleDefaultBanner"
+import OnboardingRoutes from "./Routes"
 
-export default function SetPassword({
-  nextPage,
-}: {
-  nextPage: string
-}): ReactElement {
+export default function SetPassword(): JSX.Element {
   const [password, setPassword] = useState("")
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("")
   const [passwordConfirmation, setPasswordConfirmation] = useState("")
   const history = useHistory()
+  const { t } = useTranslation()
+
+  const { state: { nextPage } = {} } = useLocation<{ nextPage?: string }>()
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
-  const defaultWallet = useBackgroundSelector(selectDefaultWallet)
 
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
-    if (areKeyringsUnlocked) {
-      dispatch(generateNewKeyring())
-      history.push(nextPage)
+    if (nextPage && areKeyringsUnlocked) {
+      history.replace(nextPage)
     }
-  }, [areKeyringsUnlocked, dispatch, history, nextPage])
+  }, [areKeyringsUnlocked, history, nextPage])
 
   const validatePassword = (): boolean => {
     if (password.length < 8) {
-      setPasswordErrorMessage("Must be at least 8 characters")
+      setPasswordErrorMessage(t("keyring.setPassword.error.characterCount"))
       return false
     }
     if (password !== passwordConfirmation) {
-      setPasswordErrorMessage("Passwords don’t match")
+      setPasswordErrorMessage(t("keyring.setPassword.error.noMatch"))
       return false
     }
     return true
@@ -70,127 +56,148 @@ export default function SetPassword({
     }
   }
 
+  if (!nextPage) {
+    return <Redirect to={OnboardingRoutes.ONBOARDING_START} />
+  }
+
   return (
-    <>
-      <h1 className="serif_header center_text">
-        First, let&apos;s secure your wallet
-      </h1>
+    <section className="fadeIn">
+      <header>
+        <img
+          alt="Secure doggo"
+          width="80"
+          height="80"
+          src="./images/doggo_secure.svg"
+        />
+        <style jsx>
+          {`
+            header {
+              display: flex;
+              flex-direction: column;
+              gap: 20px;
+              margin-bottom: 32px;
+            }
 
-      <div className="warning_wrap">
-        <SharedBanner
-          icon="notif-attention"
-          iconColor="var(--attention)"
-          iconAriaLabel="password attention"
+            header h1 {
+              font-family: "Quincy CF";
+              font-weight: 500;
+              font-size: 36px;
+              line-height: 42px;
+              margin: 0em;
+            }
+
+            img {
+              margin: 0 auto;
+            }
+          `}
+        </style>
+        <h1 className="center_text">
+          <Trans t={t} i18nKey="onboarding.setPassword.title" />
+        </h1>
+      </header>
+      <div className="password_section">
+        <form
+          name="password"
+          onSubmit={(event) => {
+            event.preventDefault()
+            dispatchCreatePassword()
+          }}
         >
-          <div className="warning_content">
-            You will NOT be able to change this password for now
+          <div className="input_wrap">
+            <PasswordInput
+              label="Password"
+              name="password"
+              onChange={handleInputChange(setPassword)}
+              errorMessage={passwordErrorMessage}
+            />
           </div>
-        </SharedBanner>
-      </div>
+          <div className="strength_bar_wrap">
+            {!passwordErrorMessage && (
+              <PasswordStrengthBar password={password} />
+            )}
+          </div>
+          <div className="input_wrap repeat_password_wrap">
+            <PasswordInput
+              name="confirm_password"
+              label="Repeat Password"
+              onChange={handleInputChange(setPasswordConfirmation)}
+              errorMessage={passwordErrorMessage}
+            />
+          </div>
+          <div className="set_as_default_ask">
+            {t("onboarding.setPassword.setAsDefault")}
+            <WalletDefaultToggle />
+          </div>
+          <SharedButton
+            type="primary"
+            size="large"
+            showLoadingOnClick={!passwordErrorMessage}
+            isFormSubmit
+          >
+            <span className="submit_button">
+              {t("onboarding.setPassword.submit")}
+            </span>
+          </SharedButton>
+        </form>
 
-      <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          dispatchCreatePassword()
-        }}
-      >
-        <div className="input_wrap">
-          <PasswordInput
-            label="Password"
-            onChange={handleInputChange(setPassword)}
-            errorMessage={passwordErrorMessage}
-          />
-        </div>
-        <div className="strength_bar_wrap">
-          {!passwordErrorMessage && <PasswordStrengthBar password={password} />}
-        </div>
-        <div className="input_wrap repeat_password_wrap">
-          <PasswordInput
-            label="Repeat Password"
-            onChange={handleInputChange(setPasswordConfirmation)}
-            errorMessage={passwordErrorMessage}
-          />
-        </div>
-        <div className="set_as_default_ask">
-          Set Tally Ho as default wallet
-          <SharedToggleButton
-            onChange={(toggleValue) => {
-              dispatch(setNewDefaultWalletValue(toggleValue))
-            }}
-            value={defaultWallet}
-          />
-        </div>
-        <SharedButton
-          type="primary"
-          size="large"
-          onClick={dispatchCreatePassword}
-          showLoadingOnClick={!passwordErrorMessage}
-          isFormSubmit
-        >
-          Begin the hunt
-        </SharedButton>
-      </form>
-      <div className="restore">
-        <SharedButton type="tertiary" size="medium">
-          Restoring account?
-        </SharedButton>
+        <style jsx>
+          {`
+            form {
+              max-width: 290px;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            }
+
+            .input_wrap {
+              width: 100%;
+            }
+
+            .strength_bar_wrap {
+              width: 100%;
+              height: 26px;
+              box-sizing: border-box;
+              padding-top: 10px;
+              margin-bottom: 28px;
+            }
+            .repeat_password_wrap {
+              margin-bottom: 44px;
+            }
+            .set_as_default_ask {
+              display: flex;
+              align-items: center;
+              width: 100%;
+              color: var(--green-20);
+              font-size: 16px;
+              line-height: 24px;
+              font-weight: 500;
+              margin-bottom: 32px;
+            }
+            .warning_wrap {
+              margin-top: 16px;
+              margin-bottom: 24px;
+            }
+            .warning_content {
+              color: var(--attention);
+              font-weight: 500;
+              font-size: 16px;
+              line-height: 24px;
+            }
+            .password_section {
+              text-align: center;
+              width: 100%;
+              max-width: 500px;
+              margin: auto;
+            }
+
+            .submit_button {
+              font-size: 20px;
+              line-height: 24px;
+              font-weight: 500;
+            }
+          `}
+        </style>
       </div>
-      <style jsx>
-        {`
-          .wordmark {
-            background: url("./images/wordmark@2x.png");
-            background-size: cover;
-            width: 95px;
-            height: 25px;
-            position: absolute;
-            left: 0px;
-            right: 0px;
-            margin: 0 auto;
-          }
-          ${titleStyle}
-          .serif_header {
-            width: 335px;
-            margin-bottom: 7px;
-          }
-          .input_wrap {
-            width: 211px;
-          }
-          .strength_bar_wrap {
-            width: 211px;
-            height: 26px;
-            box-sizing: border-box;
-            padding-top: 10px;
-          }
-          .repeat_password_wrap {
-            margin-bottom: 25px;
-            margin-top: 10px;
-          }
-          .set_as_default_ask {
-            display: flex;
-            width: 262px;
-            justify-content: space-between;
-            align-items: center;
-            color: var(--green-20);
-            font-weight: 500;
-            margin-bottom: 40px;
-          }
-          .restore {
-            display: none; // TODO Implement account restoration.
-            position: fixed;
-            bottom: 26px;
-          }
-          .warning_wrap {
-            margin-top: 16px;
-            margin-bottom: 24px;
-          }
-          .warning_content {
-            color: var(--attention);
-            font-weight: 500;
-            font-size: 16px;
-            line-height: 24px;
-          }
-        `}
-      </style>
-    </>
+    </section>
   )
 }

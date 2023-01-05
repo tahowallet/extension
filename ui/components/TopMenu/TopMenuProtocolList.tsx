@@ -19,7 +19,7 @@ import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 import { i18n } from "../../_locales/i18n"
 
-const productionNetworks = [
+export const productionNetworks = [
   {
     network: ETHEREUM,
     info: i18n.t("protocol.mainnet"),

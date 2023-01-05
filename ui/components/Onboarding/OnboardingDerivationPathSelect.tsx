@@ -35,6 +35,10 @@ const initialDerivationPaths: Option[] = [
     value: "m/44'/137'/0'/0",
     label: i18n.t("ledger.derivationPaths.rsk"),
   },
+  {
+    value: "m/44'/37310'/0'/0",
+    label: i18n.t("ledger.derivationPaths.rskTestnet"),
+  },
 ]
 
 const initialCustomPath = {
@@ -72,6 +76,13 @@ export default function OnboardingDerivationPathSelect({
   }, [modalStep])
 
   const handleAddCustomPath = () => {
+    if (
+      customPathLabel.trim().length < 1 &&
+      customPathValue.trim().length < 1
+    ) {
+      return
+    }
+
     setModalStep(0)
     onChange(customPathValue)
     // Change active index of the Select with custom option
@@ -80,7 +91,7 @@ export default function OnboardingDerivationPathSelect({
     // TODO It might be considered to save the custom path to the local db
     setDerivationPaths([
       ...derivationPaths,
-      { label: customPathLabel, value: customPathValue as string },
+      { label: customPathLabel, value: customPathValue },
     ])
 
     // Reset custom path fields
