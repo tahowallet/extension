@@ -74,6 +74,7 @@ export const isEnabled = (flagName: FeatureFlagType): boolean => {
   }
 
   if (BuildTimeFlag.SWITCH_RUNTIME_FLAGS) {
+    // FIXME use browser.storage.local instead of localStorage
     const state = localStorage.getItem(flagName)
     return state !== null ? state === "true" : RuntimeFlag[flagName]
   }
