@@ -13,6 +13,7 @@ import LiveReloadPlugin from "webpack-livereload-plugin"
 import CopyPlugin, { ObjectPattern } from "copy-webpack-plugin"
 import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin"
 import WebExtensionArchivePlugin from "./build-utils/web-extension-archive-webpack-plugin"
+import InjectWindowProvider from "./build-utils/inject-window-provider"
 import "dotenv-defaults/config"
 
 const supportedBrowsers = ["chrome"]
@@ -59,6 +60,9 @@ const baseConfig: Configuration = {
     },
   },
   plugins: [
+    (process.env.SUPPORT_MANIFEST_V3 !== "true"
+      ? new InjectWindowProvider()
+      : undefined) as unknown as WebpackPluginInstance,
     new Dotenv({
       defaults: true,
       systemvars: true,
@@ -92,7 +96,7 @@ const baseConfig: Configuration = {
     new DefinePlugin({
       "process.env.VERSION": JSON.stringify(process.env.npm_package_version),
     }),
-  ],
+  ].filter(Boolean),
   optimization: {
     splitChunks: { automaticNameDelimiter: "-" },
   },
