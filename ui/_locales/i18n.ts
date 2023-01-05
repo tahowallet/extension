@@ -3,7 +3,6 @@ import { initReactI18next, TFuncKey, TFuncReturn } from "react-i18next"
 import { browser } from "@tallyho/tally-background"
 import _ from "lodash"
 import { resources } from "./index"
-import { setLocalStorageItem } from "../hooks"
 
 const LANGUAGE_KEY = "lang"
 const DEFAULT_LANGUAGE = "en"
@@ -34,9 +33,8 @@ i18n
 
 const getLanguage = (): string => i18n.language
 const setLanguage = (lang: string): void => {
-  i18n
-    .changeLanguage(lang)
-    .then(() => lang && setLocalStorageItem(LANGUAGE_KEY, lang))
+  i18n.changeLanguage(lang)
+  browser.storage.local.set({ [LANGUAGE_KEY]: lang })
 }
 
 declare module "react-i18next" {
