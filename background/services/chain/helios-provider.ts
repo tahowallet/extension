@@ -33,10 +33,21 @@ export class HeliosClient extends JsonRpcProvider {
     setInterval(async () => this.#node.advance(), 12_000)
   }
 
-  override async perform(method: string, params: any): Promise<any> {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    return this[method](params)
+  override async send(method: string, params: any): Promise<any> {
+    const implementedMethods = {
+      eth_blockNumber: "getBlockNumber",
+      eth_getBalance: "getBalance",
+      eth_getCode: "getCode",
+      eth_getTransactionByHash: "getTransaction",
+    }
+
+    if (Object.keys(implementedMethods).includes(method)) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return this[implementedMethods[method]](params)
+    }
+
+    return super.send(method, params)
   }
 
   override async getBlockNumber(): Promise<number> {
