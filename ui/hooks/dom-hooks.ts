@@ -1,3 +1,4 @@
+import { browser } from "@tallyho/tally-background"
 import {
   RefObject,
   useEffect,
@@ -115,24 +116,14 @@ export const useDebounce = <T>(initial: T, wait = 300): [T, (v: T) => void] => {
   return [state, setDebouncedState]
 }
 
-export const setLocalStorageItem = (key: string, value: string): void =>
-  localStorage.setItem(key, value)
-
-export const getLocalStorageItem = (
-  key: string,
-  defaultValue: string
-): string => localStorage.getItem(key) || defaultValue
-
 export function useLocalStorage(
   key: string,
   initialValue: string
 ): [string, React.Dispatch<React.SetStateAction<string>>] {
-  const [value, setValue] = useState(() => {
-    return getLocalStorageItem(key, initialValue)
-  })
+  const [value, setValue] = useState(initialValue)
 
   useEffect(() => {
-    setLocalStorageItem(key, value)
+    browser.storage.local.set({ [key]: value })
   }, [key, value])
 
   return [value, setValue]
