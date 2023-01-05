@@ -335,7 +335,7 @@ describe("Chain Service", () => {
       })
 
       it("should add transactions to the queue by priority", async () => {
-        const MAX_COUNT = 25
+        const PRIORITY_MAX_COUNT = 25
         const NUMBER_OF_TX = 100
 
         const hashesForFirstAccount: string[] =
@@ -351,13 +351,32 @@ describe("Chain Service", () => {
               ETHEREUM,
               txHash,
               Date.now(),
-              idx < MAX_COUNT ? 1 : 0
+              idx < PRIORITY_MAX_COUNT ? 1 : 0
             )
           )
         )
 
         expect(chainServiceExternalized.transactionsToRetrieve.length).toBe(
           NUMBER_OF_TX * 2
+        )
+        chainServiceExternalized.transactionsToRetrieve.forEach(
+          ({ transaction }, idx) => {
+            // eslint-disable-next-line prefer-destructuring
+            let hash = transaction.hash
+            // First PRIORITY_MAX_COUNT items from the hashesForFirstAccount
+            if (idx < PRIORITY_MAX_COUNT) hash = hashesForFirstAccount[idx]
+            // First PRIORITY_MAX_COUNT items from the hashesForSecondAccount
+            else if (idx - PRIORITY_MAX_COUNT < PRIORITY_MAX_COUNT)
+              hash = hashesForSecondAccount[idx - PRIORITY_MAX_COUNT]
+            // The rest of the items for hashesForFirstAccount
+            else if (idx < NUMBER_OF_TX + PRIORITY_MAX_COUNT)
+              hash = hashesForFirstAccount[idx - PRIORITY_MAX_COUNT]
+            // The rest of the items for hashesForSecondAccount
+            else {
+              hash = hashesForSecondAccount[idx - NUMBER_OF_TX]
+            }
+            expect(transaction.hash).toBe(hash)
+          }
         )
       })
     })
