@@ -1037,13 +1037,16 @@ window.LiveReloadOptions = { host: "localhost" }
               this.reloadRequests = this.reloadRequests || new Map()
               const location = browser.runtime.getURL(path).toString()
               clearTimeout(this.reloadRequests.get(location))
+
               this.reloadRequests.set(
                 location,
                 setTimeout(() => {
                   browser.extension
                     .getViews()
                     .filter(
-                      (_) => _.window.document.location.toString() == location
+                      // The open window path matches the location of the file changed
+                      (_) =>
+                        _.window.document.location.toString().includes(location)
                     )
                     .forEach((_) => _.window.document.location.reload())
                 }, 300)

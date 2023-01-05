@@ -36,7 +36,7 @@ import {
   getNoopService,
 } from "./services"
 
-import { HexString, KeyringTypes } from "./types"
+import { HexString, KeyringTypes, NormalizedEVMAddress } from "./types"
 import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
@@ -156,6 +156,8 @@ import {
   updateIsReloading,
   deleteTransferredNFTs,
 } from "./redux-slices/nfts_update"
+import AbilitiesService from "./services/abilities"
+import { addAbilities } from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -263,6 +265,7 @@ export default class Main extends BaseService<never> {
     const preferenceService = PreferenceService.create()
     const keyringService = KeyringService.create()
     const chainService = ChainService.create(preferenceService, keyringService)
+    const abilitiesService = AbilitiesService.create(chainService)
     const indexingService = IndexingService.create(
       preferenceService,
       chainService
@@ -347,7 +350,8 @@ export default class Main extends BaseService<never> {
       await signingService,
       await analyticsService,
       await nftsService,
-      await walletConnectService
+      await walletConnectService,
+      await abilitiesService
     )
   }
 
@@ -435,7 +439,12 @@ export default class Main extends BaseService<never> {
      * A promise to the Wallet Connect service which takes care of handling wallet connect
      * protocol and communication.
      */
-    private walletConnectService: WalletConnectService
+    private walletConnectService: WalletConnectService,
+
+    /**
+     * A promise to the Abilities service which takes care of fetching and storing abilities
+     */
+    private abilitiesService: AbilitiesService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -497,6 +506,7 @@ export default class Main extends BaseService<never> {
       this.analyticsService.startService(),
       this.nftsService.startService(),
       this.walletConnectService.startService(),
+      this.abilitiesService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -519,6 +529,7 @@ export default class Main extends BaseService<never> {
       this.analyticsService.stopService(),
       this.nftsService.stopService(),
       this.walletConnectService.stopService(),
+      this.abilitiesService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -539,6 +550,7 @@ export default class Main extends BaseService<never> {
     this.connectSigningService()
     this.connectAnalyticsService()
     this.connectWalletConnectService()
+    this.connectAbilitiesService()
 
     // Nothing else beside creating a service should happen when feature flag is off
     if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
@@ -1499,6 +1511,12 @@ export default class Main extends BaseService<never> {
     // TODO: here comes the glue between the UI and service layer
   }
 
+  connectAbilitiesService(): void {
+    this.abilitiesService.emitter.on("newAbilities", async (newAbilities) => {
+      this.store.dispatch(addAbilities(newAbilities))
+    })
+  }
+
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
     const addressNetwork = this.store.getState().ui.selectedAccount
     const transaction = await this.chainService.getTransaction(
@@ -1514,21 +1532,10 @@ export default class Main extends BaseService<never> {
   }
 
   async connectAnalyticsService(): Promise<void> {
-    const { hasDefaultOnBeenTurnedOn } =
-      await this.preferenceService.getAnalyticsPreferences()
-
-    if (
-      isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) &&
-      !hasDefaultOnBeenTurnedOn
-    ) {
-      // TODO: Remove this in the next release after we switch on
-      //       analytics by default
-      await this.preferenceService.updateAnalyticsPreferences({
-        isEnabled: true,
-        hasDefaultOnBeenTurnedOn: true,
-      })
+    this.analyticsService.emitter.on("enableDefaultOn", () => {
       this.store.dispatch(setShowAnalyticsNotification(true))
-    }
+    })
+
     this.preferenceService.emitter.on(
       "updateAnalyticsPreferences",
       async (analyticsPreferences: AnalyticsPreferences) => {
@@ -1570,6 +1577,20 @@ export default class Main extends BaseService<never> {
       logger.info("Error looking up Ethereum address: ", error)
       return undefined
     }
+  }
+
+  async markAbilityAsCompleted(
+    address: NormalizedEVMAddress,
+    abilityId: string
+  ): Promise<void> {
+    return this.abilitiesService.markAbilityAsCompleted(address, abilityId)
+  }
+
+  async markAbilityAsRemoved(
+    address: NormalizedEVMAddress,
+    abilityId: string
+  ): Promise<void> {
+    return this.abilitiesService.markAbilityAsRemoved(address, abilityId)
   }
 
   private connectPopupMonitor() {

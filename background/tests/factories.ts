@@ -31,6 +31,7 @@ import {
   BlockPrices,
 } from "../networks"
 import {
+  AnalyticsService,
   ChainService,
   IndexingService,
   KeyringService,
@@ -102,6 +103,18 @@ type CreateSigningServiceOverrides = {
   keyringService?: Promise<KeyringService>
   ledgerService?: Promise<LedgerService>
   chainService?: Promise<ChainService>
+}
+
+export async function createAnalyticsService(overrides?: {
+  chainService?: Promise<ChainService>
+  preferenceService?: Promise<PreferenceService>
+}): Promise<AnalyticsService> {
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+  return AnalyticsService.create(
+    overrides?.chainService ?? createChainService({ preferenceService }),
+    preferenceService
+  )
 }
 
 export const createSigningService = async (
