@@ -388,3 +388,6 @@ export const createPricePoint = (
 
   return pricePoint
 }
+
+export const createArrayWith0xHash = (length: number): string[] =>
+  Array.from({ length }).map(() => createRandom0xHash())

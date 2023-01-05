@@ -8,6 +8,7 @@ import { EVMNetwork } from "../../../networks"
 import * as gas from "../../../lib/gas"
 import {
   createAddressOnNetwork,
+  createArrayWith0xHash,
   createBlockPrices,
   createChainService,
   createTransactionsToRetrieve,
@@ -35,8 +36,9 @@ type ChainServiceExternalized = Omit<ChainService, ""> & {
   ) => Promise<void>
   retrieveTransaction: (queuedTx: QueuedTxToRetrieve) => Promise<void>
   transactionsToRetrieve: PriorityQueuedTxToRetrieve[]
-  handlePriorityQueuedTransactionAlarm: () => Promise<void>
+  handleQueuedTransactionAlarm: () => Promise<void>
   transactionToRetrieveGranularTimer: NodeJS.Timer | undefined
+  queueTransactionHashToRetrieve: void
 }
 
 describe("Chain Service", () => {
@@ -237,7 +239,7 @@ describe("Chain Service", () => {
     })
   })
   describe("Queued Transaction Retrieve", () => {
-    describe("handlePriorityQueuedTransactionAlarm", () => {
+    describe("handleQueuedTransactionAlarm", () => {
       let clock: sinon.SinonFakeTimers
       let setIntervalSpy: sinon.SinonSpy
       let chainServiceExternalized: ChainServiceExternalized
@@ -259,7 +261,7 @@ describe("Chain Service", () => {
         clock.restore()
       })
       it("should not start the granular timer if the queue is empty", () => {
-        chainServiceExternalized.handlePriorityQueuedTransactionAlarm()
+        chainServiceExternalized.handleQueuedTransactionAlarm()
 
         clock.tick(2 * SECOND)
 
@@ -273,11 +275,11 @@ describe("Chain Service", () => {
         chainServiceExternalized.transactionsToRetrieve =
           createTransactionsToRetrieve(100)
 
-        chainServiceExternalized.handlePriorityQueuedTransactionAlarm()
+        chainServiceExternalized.handleQueuedTransactionAlarm()
         clock.tick(60 * SECOND)
-        chainServiceExternalized.handlePriorityQueuedTransactionAlarm()
+        chainServiceExternalized.handleQueuedTransactionAlarm()
         clock.tick(60 * SECOND)
-        chainServiceExternalized.handlePriorityQueuedTransactionAlarm()
+        chainServiceExternalized.handleQueuedTransactionAlarm()
         clock.tick(60 * SECOND)
 
         expect(setIntervalSpy.calledOnce).toBe(true)
@@ -290,7 +292,7 @@ describe("Chain Service", () => {
         chainServiceExternalized.transactionsToRetrieve =
           createTransactionsToRetrieve(txInQueueCount)
 
-        chainServiceExternalized.handlePriorityQueuedTransactionAlarm()
+        chainServiceExternalized.handleQueuedTransactionAlarm()
 
         clock.tick(txRetrievedCount * 2 * SECOND)
 
@@ -306,7 +308,7 @@ describe("Chain Service", () => {
         chainServiceExternalized.transactionsToRetrieve =
           createTransactionsToRetrieve(numberOfTxInQueue)
 
-        chainServiceExternalized.handlePriorityQueuedTransactionAlarm()
+        chainServiceExternalized.handleQueuedTransactionAlarm()
 
         clock.tick(numberOfTxInQueue * 2 * SECOND)
 
@@ -321,6 +323,42 @@ describe("Chain Service", () => {
         expect(
           chainServiceExternalized.transactionToRetrieveGranularTimer
         ).toBe(undefined)
+      })
+    })
+
+    describe("queueTransactionHashToRetrieve", () => {
+      let chainServiceExternalized: ChainServiceExternalized
+
+      beforeEach(() => {
+        chainServiceExternalized =
+          chainService as unknown as ChainServiceExternalized
+      })
+
+      it("should add transactions to the queue by priority", async () => {
+        const MAX_COUNT = 25
+        const NUMBER_OF_TX = 100
+
+        const hashesForFirstAccount: string[] =
+          createArrayWith0xHash(NUMBER_OF_TX)
+        const hashesForSecondAccount: string[] =
+          createArrayWith0xHash(NUMBER_OF_TX)
+
+        const allHashesToAdd = [hashesForFirstAccount, hashesForSecondAccount]
+
+        allHashesToAdd.forEach((hashes) =>
+          hashes.forEach((txHash, idx) =>
+            chainServiceExternalized.queueTransactionHashToRetrieve(
+              ETHEREUM,
+              txHash,
+              Date.now(),
+              idx < MAX_COUNT ? 1 : 0
+            )
+          )
+        )
+
+        expect(chainServiceExternalized.transactionsToRetrieve.length).toBe(
+          NUMBER_OF_TX * 2
+        )
       })
     })
   })
