@@ -23,19 +23,12 @@ import { AssetTransfer } from "../../assets"
 import {
   HOUR,
   ETHEREUM,
-  ROOTSTOCK,
-  POLYGON,
-  ARBITRUM_ONE,
   OPTIMISM,
-  GOERLI,
   NETWORK_BY_CHAIN_ID,
   MINUTE,
   CHAINS_WITH_MEMPOOL,
   EIP_1559_COMPLIANT_CHAIN_IDS,
-  AVALANCHE,
   SECOND,
-  BINANCE_SMART_CHAIN,
-  ARBITRUM_NOVA,
 } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
@@ -185,7 +178,7 @@ export default class ChainService extends BaseService<Events> {
 
   private lastUserActivityOnNetwork: {
     [chainID: string]: UNIXTime
-  }
+  } = {}
 
   private lastUserActivityOnAddress: {
     [address: HexString]: UNIXTime
@@ -230,7 +223,7 @@ export default class ChainService extends BaseService<Events> {
     return new this(createDB(), await preferenceService, await keyringService)
   }
 
-  supportedNetworks: EVMNetwork[]
+  supportedNetworks: EVMNetwork[] = []
 
   private trackedNetworks: EVMNetwork[]
 
@@ -295,36 +288,7 @@ export default class ChainService extends BaseService<Events> {
       },
     })
 
-    this.supportedNetworks = [
-      ETHEREUM,
-      POLYGON,
-      OPTIMISM,
-      GOERLI,
-      ARBITRUM_ONE,
-      ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [ROOTSTOCK] : []),
-      ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE) ? [AVALANCHE] : []),
-      ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
-        ? [BINANCE_SMART_CHAIN]
-        : []),
-      ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA) ? [ARBITRUM_NOVA] : []),
-    ]
-
     this.trackedNetworks = []
-
-    this.lastUserActivityOnNetwork =
-      Object.fromEntries(
-        this.supportedNetworks.map((network) => [network.chainID, 0])
-      ) || {}
-
-    this.providers = {
-      evm: Object.fromEntries(
-        this.supportedNetworks.map((network) => [
-          network.chainID,
-          makeSerialFallbackProvider(network),
-        ])
-      ),
-    }
-
     this.subscribedAccounts = []
     this.subscribedNetworks = []
     this.transactionsToRetrieve = []
@@ -335,6 +299,7 @@ export default class ChainService extends BaseService<Events> {
   override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
+    await this.initializeNetworks()
     const accounts = await this.getAccountsToTrack()
     const trackedNetworks = await this.getTrackedNetworks()
     const transactions = await this.db.getAllTransactions()
@@ -376,6 +341,26 @@ export default class ChainService extends BaseService<Events> {
           )
         )
     )
+  }
+
+  async initializeNetworks(): Promise<void> {
+    await this.db.initializeEVMNetworks()
+    if (!this.supportedNetworks.length) {
+      this.supportedNetworks = await this.db.getAllEVMNetworks()
+    }
+    this.lastUserActivityOnNetwork =
+      Object.fromEntries(
+        this.supportedNetworks.map((network) => [network.chainID, 0])
+      ) || {}
+
+    this.providers = {
+      evm: Object.fromEntries(
+        this.supportedNetworks.map((network) => [
+          network.chainID,
+          makeSerialFallbackProvider(network),
+        ])
+      ),
+    }
   }
 
   /**

@@ -64,6 +64,7 @@ export default function NFTsHeader(): ReactElement {
                 color="var(--green-40)"
                 hoverColor="var(--green-20)"
                 onClick={handleToggleClick}
+                disabled={isLoading}
               />
             </div>
           )}
