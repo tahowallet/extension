@@ -6,7 +6,6 @@ import {
 } from "@tallyho/tally-background/features"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { setLocalStorageItem } from "../../hooks"
 import BalanceReloader from "../BalanceReloader/BalanceReloader"
 import SharedPageHeader from "../Shared/SharedPageHeader"
 import SharedToggleButton from "../Shared/SharedToggleButton"
@@ -16,10 +15,15 @@ function FeatureFlag(props: { name: RuntimeFlagType }): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "devPanel.featureFlags.flags",
   })
+  const [isSaving, setIsSaving] = useState(false)
   const [value, setValue] = useState(isEnabled(FeatureFlags[name]))
 
   useEffect(() => {
-    setLocalStorageItem(name, String(value))
+    ;(async () => {
+      setIsSaving(true)
+      await browser.storage.local.set({ [name]: String(value) })
+      setIsSaving(false)
+    })()
   }, [name, value])
 
   return (
@@ -34,6 +38,7 @@ function FeatureFlag(props: { name: RuntimeFlagType }): ReactElement {
       <SharedToggleButton
         onChange={(toggleValue) => setValue(toggleValue)}
         value={value}
+        disabled={isSaving}
       />
       <style jsx>{`
         .toggle_wrap {

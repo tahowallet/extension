@@ -4,11 +4,13 @@ import classNames from "classnames"
 interface SharedToggleButtonProps {
   onChange: (toggleValue: boolean) => void
   value?: boolean | undefined
+  disabled?: boolean | undefined
 }
 
 export default function SharedToggleButton({
   onChange,
   value,
+  disabled,
 }: SharedToggleButtonProps): ReactElement {
   const [isActive, setIsActive] = useState(value || false)
 
@@ -22,6 +24,7 @@ export default function SharedToggleButton({
 
   return (
     <button
+      disabled={disabled}
       type="button"
       className={classNames("container", { is_active: isActive })}
       onClick={handleToggleAction}
