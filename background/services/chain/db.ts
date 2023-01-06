@@ -200,7 +200,7 @@ export class ChainDatabase extends Dexie {
             (asset) => asset.symbol === defaultAsset.symbol
           )
         ) {
-          await this.updateBaseAssets([...existingBaseAssets, defaultAsset])
+          await this.updateBaseAssets([defaultAsset])
         }
       })
     )
