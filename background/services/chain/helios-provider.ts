@@ -4,7 +4,7 @@ import {
   TransactionResponse,
 } from "@ethersproject/providers"
 import { BigNumber } from "ethers"
-import { Node } from "helios-ts/pkg"
+import { Node } from "helios-ts"
 
 export type BlockTag = "latest" | number
 
@@ -35,19 +35,43 @@ export class HeliosClient extends JsonRpcProvider {
 
   override async send(method: string, params: any): Promise<any> {
     const implementedMethods = {
-      eth_blockNumber: "getBlockNumber",
-      eth_getBalance: "getBalance",
-      eth_getCode: "getCode",
-      eth_getTransactionByHash: "getTransaction",
+      // eth_getBalance: "getBalance",
+      // eth_blockNumber: "getBlockNumber",
+      // eth_getCode: "getCode",
+      // eth_getTransactionByHash: "getTransaction",
+      // eth_chainId: "chainId",
+      // eth_getBlockByNumber: "getBlockByNumber",
+      // eth_call: "call",
     }
 
-    if (Object.keys(implementedMethods).includes(method)) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      return this[implementedMethods[method]](params)
+    console.log("---------------- helios -------------------------------------")
+    debugger
+    const r = await this.ping()
+    console.log(r)
+    console.log(
+      "---------------- helios ping -------------------------------------"
+    )
+    let res
+    try {
+      if (Object.keys(implementedMethods).includes(method)) {
+        console.log("--- helios wasm ", method, params)
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        res = await this[implementedMethods[method]](params)
+        console.log("++++++ helios wasm ", res)
+      } else {
+        console.log("--- helios fallback ", method, params)
+        res = await super.send(method, params)
+        console.log(">>>>>> helios fallback ", res)
+      }
+      return res
+    } catch (e) {
+      console.log("###### helios error ", e)
     }
+  }
 
-    return super.send(method, params)
+  ping() {
+    return this.#node.ping()
   }
 
   override async getBlockNumber(): Promise<number> {
@@ -68,6 +92,20 @@ export class HeliosClient extends JsonRpcProvider {
   ): Promise<string> {
     return this.#node.get_code(addr, block.toString())
   }
+
+  // eslint-disable-next-line class-methods-use-this
+  async chainId() {
+    return Promise.resolve("0x01")
+    // return this.#node.chain_id()
+  }
+
+  async getBlockByNumber([block, fullTx]: [string, boolean]) {
+    return this.#node.get_block_by_number(block, fullTx)
+  }
+
+  // async call([callOptions, blockHash]: [unknown, string]) {
+  //   return this.#node.call(callOptions, blockHash)
+  // }
 
   async getNonce(addr: string, block: BlockTag = "latest"): Promise<number> {
     return this.#node.get_nonce(addr, block.toString())

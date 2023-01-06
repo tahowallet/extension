@@ -5,6 +5,7 @@ import {
   RuntimeFlag,
 } from "@tallyho/tally-background/features"
 
+// import("helios-ts").then(() => {
 browser.runtime.onInstalled.addListener((obj) => {
   if (
     obj.reason === "install" &&
@@ -28,3 +29,4 @@ browser.runtime.onInstalled.addListener((obj) => {
 })
 
 startMain()
+// })
