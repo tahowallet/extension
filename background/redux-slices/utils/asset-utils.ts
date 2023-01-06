@@ -41,7 +41,7 @@ function isBaseAssetWithCoinType(asset: AnyAsset): asset is NetworkBaseAsset {
   return "coinType" in asset
 }
 
-function isOptimismBaseAsset(asset: AnyAsset): boolean {
+function isOptimismBaseAsset(asset: AnyAsset) {
   return (
     "contractAddress" in asset &&
     asset.contractAddress === OPTIMISM.baseAsset.contractAddress
