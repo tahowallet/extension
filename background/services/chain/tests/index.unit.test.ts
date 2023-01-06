@@ -327,21 +327,19 @@ describe("Chain Service", () => {
     })
 
     describe("queueTransactionHashToRetrieve", () => {
+      const NUMBER_OF_TX = 100
+      const PRIORITY_MAX_COUNT = 25
       let chainServiceExternalized: ChainServiceExternalized
+      let hashesForFirstAccount: string[]
+      let hashesForSecondAccount: string[]
+      let transactionsToRetrieve: PriorityQueuedTxToRetrieve[]
 
       beforeEach(() => {
         chainServiceExternalized =
           chainService as unknown as ChainServiceExternalized
-      })
 
-      it("should add transactions to the queue by priority", async () => {
-        const PRIORITY_MAX_COUNT = 25
-        const NUMBER_OF_TX = 100
-
-        const hashesForFirstAccount: string[] =
-          createArrayWith0xHash(NUMBER_OF_TX)
-        const hashesForSecondAccount: string[] =
-          createArrayWith0xHash(NUMBER_OF_TX)
+        hashesForFirstAccount = createArrayWith0xHash(NUMBER_OF_TX)
+        hashesForSecondAccount = createArrayWith0xHash(NUMBER_OF_TX)
 
         const allHashesToAdd = [hashesForFirstAccount, hashesForSecondAccount]
 
@@ -356,28 +354,45 @@ describe("Chain Service", () => {
           )
         )
 
-        expect(chainServiceExternalized.transactionsToRetrieve.length).toBe(
-          NUMBER_OF_TX * 2
-        )
-        chainServiceExternalized.transactionsToRetrieve.forEach(
-          ({ transaction }, idx) => {
-            // eslint-disable-next-line prefer-destructuring
-            let hash = transaction.hash
-            // First PRIORITY_MAX_COUNT items from the hashesForFirstAccount
-            if (idx < PRIORITY_MAX_COUNT) hash = hashesForFirstAccount[idx]
-            // First PRIORITY_MAX_COUNT items from the hashesForSecondAccount
-            else if (idx - PRIORITY_MAX_COUNT < PRIORITY_MAX_COUNT)
-              hash = hashesForSecondAccount[idx - PRIORITY_MAX_COUNT]
-            // The rest of the items for hashesForFirstAccount
-            else if (idx < NUMBER_OF_TX + PRIORITY_MAX_COUNT)
-              hash = hashesForFirstAccount[idx - PRIORITY_MAX_COUNT]
-            // The rest of the items for hashesForSecondAccount
-            else {
-              hash = hashesForSecondAccount[idx - NUMBER_OF_TX]
-            }
-            expect(transaction.hash).toBe(hash)
-          }
-        )
+        transactionsToRetrieve = chainServiceExternalized.transactionsToRetrieve
+      })
+
+      it("should add transactions to the queue", async () => {
+        expect(transactionsToRetrieve.length).toBe(NUMBER_OF_TX * 2)
+      })
+
+      it(`the first ${PRIORITY_MAX_COUNT} transactions have a higher priority and should come from the first account`, async () => {
+        Array(PRIORITY_MAX_COUNT).forEach((idx) => {
+          expect(transactionsToRetrieve[idx].transaction.hash).toBe(
+            hashesForFirstAccount[idx]
+          )
+        })
+      })
+
+      it(`another ${PRIORITY_MAX_COUNT} transactions have a higher priority and should come from the second account`, async () => {
+        Array(PRIORITY_MAX_COUNT).forEach((idx) => {
+          expect(
+            transactionsToRetrieve[idx + PRIORITY_MAX_COUNT].transaction.hash
+          ).toBe(hashesForSecondAccount[idx])
+        })
+      })
+
+      it("after items with higher priority in the queue should be the next transactions for the first account", async () => {
+        Array(NUMBER_OF_TX - PRIORITY_MAX_COUNT).forEach((idx) => {
+          expect(
+            transactionsToRetrieve[idx + PRIORITY_MAX_COUNT * 2].transaction
+              .hash
+          ).toBe(hashesForFirstAccount[idx + PRIORITY_MAX_COUNT])
+        })
+      })
+
+      it("transactions with lower priority for the second account should be after high-priority items and all items of the first account", async () => {
+        Array(NUMBER_OF_TX - PRIORITY_MAX_COUNT).forEach((idx) => {
+          expect(
+            transactionsToRetrieve[idx + PRIORITY_MAX_COUNT + NUMBER_OF_TX]
+              .transaction.hash
+          ).toBe(hashesForSecondAccount[idx + PRIORITY_MAX_COUNT])
+        })
       })
     })
   })
