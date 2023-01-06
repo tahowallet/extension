@@ -193,17 +193,13 @@ export class ChainDatabase extends Dexie {
 
   async initializeBaseAssets(): Promise<void> {
     const existingBaseAssets = await this.getAllBaseAssets()
-    await Promise.all(
-      BASE_ASSETS.map(async (defaultAsset) => {
-        if (
-          !existingBaseAssets.some(
-            (asset) => asset.symbol === defaultAsset.symbol
-          )
-        ) {
-          await this.updateBaseAssets([defaultAsset])
-        }
-      })
+    const assets = BASE_ASSETS.filter(
+      (defaultAsset) =>
+        !existingBaseAssets.some(
+          (asset) => asset.symbol === defaultAsset.symbol
+        )
     )
+    await this.updateBaseAssets(assets)
   }
 
   async initializeEVMNetworks(): Promise<void> {
