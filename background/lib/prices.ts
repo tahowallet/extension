@@ -18,7 +18,7 @@ import { USD } from "../constants"
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
 
 export async function getPrices(
-  assets: (AnyAsset & CoinGeckoAsset)[],
+  assets: (AnyAsset & Required<CoinGeckoAsset>)[],
   vsCurrencies: FiatCurrency[]
 ): Promise<PricePoint[]> {
   const coinIds = assets.map((a) => a.metadata.coinGeckoID).join(",")

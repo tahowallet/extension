@@ -9,11 +9,7 @@ import {
   UnitPricePoint,
   AnyAsset,
 } from "../../assets"
-import {
-  BASE_ASSETS_WITH_COIN_TYPE,
-  OPTIMISM,
-  OPTIMISTIC_ETH,
-} from "../../constants"
+import { OPTIMISM } from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { AnyNetwork, NetworkBaseAsset } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
@@ -41,13 +37,14 @@ export type AssetDecimalAmount = {
   localizedDecimalAmount: string
 }
 
-export function isOptimismBaseAsset(asset: AnyAsset): boolean {
+function isBaseAssetWithCoinType(asset: AnyAsset): asset is NetworkBaseAsset {
+  return "coinType" in asset
+}
+
+function isOptimismBaseAsset(asset: AnyAsset): boolean {
   return (
     "contractAddress" in asset &&
-    asset.contractAddress ===
-      BASE_ASSETS_WITH_COIN_TYPE.find(
-        ({ symbol }) => symbol === OPTIMISTIC_ETH.symbol
-      )?.contractAddress
+    asset.contractAddress === OPTIMISM.baseAsset.contractAddress
   )
 }
 /**
@@ -60,7 +57,7 @@ export function isOptimismBaseAsset(asset: AnyAsset): boolean {
  *
  * @return True if the passed asset is the base asset for the passed network.
  */
-export function isNetworkBaseAsset(
+export function isNetworkBaseAssetWithCoinType(
   asset: AnyAsset,
   network: AnyNetwork
 ): asset is NetworkBaseAsset {
@@ -69,7 +66,9 @@ export function isNetworkBaseAsset(
   }
 
   return (
+    isBaseAssetWithCoinType(asset) &&
     asset.symbol === network.baseAsset.symbol &&
+    asset.coinType === network.baseAsset.coinType &&
     asset.name === network.baseAsset.name
   )
 }

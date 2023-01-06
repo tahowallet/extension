@@ -26,7 +26,7 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
-import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { isNetworkBaseAssetWithCoinType } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
 
@@ -142,7 +142,7 @@ export default function Swap(): ReactElement {
       }
       if (
         // Explicitly add a network's base asset.
-        isNetworkBaseAsset(asset, currentNetwork)
+        isNetworkBaseAssetWithCoinType(asset, currentNetwork)
       ) {
         return true
       }

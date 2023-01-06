@@ -22,13 +22,11 @@ import {
   COMMUNITY_MULTISIG_ADDRESS,
   ETHEREUM,
   OPTIMISM,
+  OPTIMISTIC_ETH,
 } from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
-import {
-  enrichAssetAmountWithDecimalValues,
-  isOptimismBaseAsset,
-} from "./utils/asset-utils"
+import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
 import { AssetsState } from "./assets"
 import {
   checkCurrencyAmount,
@@ -158,7 +156,11 @@ const get0xAssetName = (asset: SwappableAsset, network: EVMNetwork) => {
   if (network.name === "Polygon" && asset.symbol === "MATIC") {
     return "MATIC"
   }
-  if (network.name === OPTIMISM.name && isOptimismBaseAsset(asset)) {
+  if (
+    network.name === OPTIMISM.name &&
+    "contractAddress" in asset &&
+    asset.contractAddress === OPTIMISTIC_ETH.contractAddress
+  ) {
     return ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS
   }
 
