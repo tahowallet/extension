@@ -24,12 +24,6 @@ export const RBTC: NetworkBaseAsset = {
   decimals: 18,
 }
 
-export const OPTIMISTIC_ETH: NetworkBaseAsset = {
-  name: "Ether",
-  symbol: "ETH",
-  decimals: 18,
-}
-
 export const MATIC: NetworkBaseAsset = {
   name: "Matic Token",
   symbol: "MATIC",
@@ -54,7 +48,7 @@ export const BTC: NetworkBaseAsset = {
   decimals: 8,
 }
 
-export const BASE_ASSETS = [ETH, BTC, MATIC, RBTC, OPTIMISTIC_ETH, AVAX, BNB]
+export const BASE_ASSETS = [ETH, BTC, MATIC, RBTC, AVAX, BNB]
 
 export const BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce<{
   [assetSymbol: string]: NetworkBaseAsset

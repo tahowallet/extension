@@ -41,7 +41,7 @@ export type AssetDecimalAmount = {
   localizedDecimalAmount: string
 }
 
-function isOptimismBaseAsset(asset: AnyAsset) {
+export function isOptimismBaseAsset(asset: AnyAsset): boolean {
   return (
     "contractAddress" in asset &&
     asset.contractAddress ===

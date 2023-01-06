@@ -4,7 +4,7 @@ import {
   NetworkSpecific,
   SmartContract,
   Network,
-  BaseAssetWithCoinType,
+  NetworkBaseAsset,
 } from "./networks"
 import { fromFixedPoint } from "./lib/fixed-point"
 
@@ -56,7 +56,7 @@ export type Asset = {
  * asset id in CoinGecko's records.
  */
 export type CoinGeckoAsset = Asset & {
-  metadata: Asset["metadata"] & {
+  metadata?: Asset["metadata"] & {
     coinGeckoID: string
   }
 }
@@ -124,7 +124,7 @@ export type AnyAsset =
 /**
  * An asset that can be swapped with our current providers
  */
-export type SwappableAsset = SmartContractFungibleAsset | BaseAssetWithCoinType
+export type SwappableAsset = SmartContractFungibleAsset | NetworkBaseAsset
 
 /**
  * An amount associated with a smart contract; used to carry information like

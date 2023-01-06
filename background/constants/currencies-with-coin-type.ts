@@ -1,17 +1,9 @@
-import { BaseAssetWithCoinType, NetworkBaseAsset } from "../networks"
+import { NetworkBaseAsset } from "../networks"
 import { coinTypesByAssetSymbol } from "./coin-types"
-import { BASE_ASSETS } from "./currencies"
+import { BASE_ASSETS_BY_SYMBOL } from "./currencies"
 
-const SYMBOLS = BASE_ASSETS.map(({ symbol }) => symbol)
-type BaseAssetSymbol = typeof SYMBOLS[number]
-
-const DEFAULT_BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce(
-  (sum, asset) => ({ ...sum, [asset.symbol]: asset }),
-  {}
-) as { [key in BaseAssetSymbol]: NetworkBaseAsset }
-
-const ETH: BaseAssetWithCoinType = {
-  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.ETH,
+const ETH: NetworkBaseAsset = {
+  ...BASE_ASSETS_BY_SYMBOL.ETH,
   coinType: coinTypesByAssetSymbol.ETH,
   metadata: {
     coinGeckoID: "ethereum",
@@ -20,8 +12,8 @@ const ETH: BaseAssetWithCoinType = {
   },
 }
 
-const RBTC: BaseAssetWithCoinType = {
-  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.RBTC,
+const RBTC: NetworkBaseAsset = {
+  ...BASE_ASSETS_BY_SYMBOL.RBTC,
   coinType: coinTypesByAssetSymbol.RBTC,
   metadata: {
     coinGeckoID: "rootstock",
@@ -30,8 +22,8 @@ const RBTC: BaseAssetWithCoinType = {
   },
 }
 
-const OPTIMISTIC_ETH: BaseAssetWithCoinType = {
-  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.ETH,
+const OPTIMISTIC_ETH: NetworkBaseAsset = {
+  ...BASE_ASSETS_BY_SYMBOL.ETH,
   coinType: coinTypesByAssetSymbol.ETH,
   contractAddress: "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0000",
   metadata: {
@@ -41,8 +33,8 @@ const OPTIMISTIC_ETH: BaseAssetWithCoinType = {
   },
 }
 
-const MATIC: BaseAssetWithCoinType = {
-  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.MATIC,
+const MATIC: NetworkBaseAsset = {
+  ...BASE_ASSETS_BY_SYMBOL.MATIC,
   coinType: coinTypesByAssetSymbol.MATIC,
   contractAddress: "0x0000000000000000000000000000000000001010",
   metadata: {
@@ -52,8 +44,8 @@ const MATIC: BaseAssetWithCoinType = {
   },
 }
 
-const AVAX: BaseAssetWithCoinType = {
-  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.AVAX,
+const AVAX: NetworkBaseAsset = {
+  ...BASE_ASSETS_BY_SYMBOL.AVAX,
   coinType: coinTypesByAssetSymbol.AVAX,
   metadata: {
     coinGeckoID: "avalanche-2",
@@ -62,8 +54,8 @@ const AVAX: BaseAssetWithCoinType = {
   },
 }
 
-const BNB: BaseAssetWithCoinType = {
-  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.BNB,
+const BNB: NetworkBaseAsset = {
+  ...BASE_ASSETS_BY_SYMBOL.BNB,
   coinType: coinTypesByAssetSymbol.BNB,
   metadata: {
     coinGeckoID: "binancecoin",
@@ -72,8 +64,8 @@ const BNB: BaseAssetWithCoinType = {
   },
 }
 
-const BTC: BaseAssetWithCoinType = {
-  ...DEFAULT_BASE_ASSETS_BY_SYMBOL.BTC,
+const BTC: NetworkBaseAsset = {
+  ...BASE_ASSETS_BY_SYMBOL.BTC,
   coinType: coinTypesByAssetSymbol.BTC,
   metadata: {
     coinGeckoID: "bitcoin",

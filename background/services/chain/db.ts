@@ -200,7 +200,7 @@ export class ChainDatabase extends Dexie {
             (asset) => asset.symbol === defaultAsset.symbol
           )
         ) {
-          await this.baseAssets.put(defaultAsset)
+          await this.updateBaseAssets([...existingBaseAssets, defaultAsset])
         }
       })
     )
@@ -367,6 +367,10 @@ export class ChainDatabase extends Dexie {
 
   async addBalance(accountBalance: AccountBalance): Promise<void> {
     await this.balances.add(accountBalance)
+  }
+
+  async updateBaseAssets(baseAssets: NetworkBaseAsset[]): Promise<void> {
+    await this.baseAssets.bulkPut(baseAssets)
   }
 
   async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
