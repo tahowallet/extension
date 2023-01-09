@@ -23,21 +23,6 @@ type ChainServiceExternalized = Omit<ChainService, ""> & {
   }
 }
 
-const initProviderForNetworkOrThrow = (
-  sandbox: sinon.SinonSandbox,
-  chainService: ChainServiceExternalized,
-  chainNonce: number
-): void => {
-  const onceSpy = sandbox.spy()
-  sandbox.stub(chainService, "providerForNetworkOrThrow").callsFake(
-    () =>
-      ({
-        getTransactionCount: async () => chainNonce,
-        once: onceSpy,
-      } as unknown as SerialFallbackProvider)
-  )
-}
-
 describe("ChainService", () => {
   const sandbox = sinon.createSandbox()
   let chainService: ChainService
@@ -176,14 +161,18 @@ describe("ChainService", () => {
   describe("populateEVMTransactionNonce", () => {
     const CHAIN_NONCE = 100
 
+    beforeEach(() => {
+      chainService.providerForNetworkOrThrow = jest.fn(
+        () =>
+          ({
+            getTransactionCount: async () => CHAIN_NONCE,
+          } as unknown as SerialFallbackProvider)
+      )
+    })
+
     it("if nonce is not yet populated for transaction request on chain with mempool should populate nonce", async () => {
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
-      initProviderForNetworkOrThrow(
-        sandbox,
-        chainServiceExternalized,
-        CHAIN_NONCE
-      )
       const transactionRequest = createLegacyTransactionRequest({
         network: ETHEREUM,
         chainID: ETHEREUM.chainID,
@@ -206,11 +195,6 @@ describe("ChainService", () => {
     it("if nonce is not yet populated for transaction request on chain without mempool should populate nonce", async () => {
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
-      initProviderForNetworkOrThrow(
-        sandbox,
-        chainServiceExternalized,
-        CHAIN_NONCE
-      )
       const transactionRequest = createLegacyTransactionRequest({
         network: OPTIMISM,
         chainID: OPTIMISM.chainID,
