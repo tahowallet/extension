@@ -159,13 +159,16 @@ describe("ChainService", () => {
   })
 
   describe("populateEVMTransactionNonce", () => {
-    const CHAIN_NONCE = 100
+    // The number of transactions address has ever sent
+    const TRANSACTION_COUNT = 100
+    // Next correct nonce for chain. This should be set to the number of transactions ever sent from this address
+    const CHAIN_NONCE = TRANSACTION_COUNT
 
     beforeEach(() => {
       chainService.providerForNetworkOrThrow = jest.fn(
         () =>
           ({
-            getTransactionCount: async () => CHAIN_NONCE,
+            getTransactionCount: async () => TRANSACTION_COUNT,
           } as unknown as SerialFallbackProvider)
       )
     })
@@ -192,6 +195,23 @@ describe("ChainService", () => {
       ).toBe(CHAIN_NONCE)
     })
 
+    it("if nonce is populated for transaction request on chain with mempool should not populate nonce", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: ETHEREUM,
+        chainID: ETHEREUM.chainID,
+        nonce: CHAIN_NONCE,
+      })
+
+      const transactionWithNonce =
+        await chainServiceExternalized.populateEVMTransactionNonce(
+          transactionRequest
+        )
+
+      expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
+    })
+
     it("if nonce is not yet populated for transaction request on chain without mempool should populate nonce", async () => {
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
@@ -207,6 +227,57 @@ describe("ChainService", () => {
         )
 
       expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
+    })
+
+    it("if nonce is populated for transaction request on chain without mempool should not populate nonce", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: ETHEREUM,
+        chainID: ETHEREUM.chainID,
+        nonce: CHAIN_NONCE,
+      })
+
+      const transactionWithNonce =
+        await chainServiceExternalized.populateEVMTransactionNonce(
+          transactionRequest
+        )
+
+      expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
+    })
+  })
+
+  describe("releaseEVMTransactionNonce", () => {
+    const LAST_SEEN_NONCE = 12
+    const WRONG_NONCE = 11
+    const NONCE = 10
+
+    it("if the nonce for transaction is below the latest allocated nonce should release all intervening nonces", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: ETHEREUM,
+        chainID: ETHEREUM.chainID,
+        nonce: WRONG_NONCE,
+      }) as TransactionRequestWithNonce
+      const { chainID, from } = transactionRequest
+
+      chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+        chainID
+      ] ??= {}
+      chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+        chainID
+      ][from] = LAST_SEEN_NONCE
+
+      await chainServiceExternalized.releaseEVMTransactionNonce(
+        transactionRequest
+      )
+
+      expect(
+        chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+          chainID
+        ][from]
+      ).toBe(NONCE)
     })
   })
 })
