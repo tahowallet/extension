@@ -177,10 +177,12 @@ export default function NFTCollection(props: {
         }
         .nft_collection.expanded {
           width: 352px;
-          z-index: 10;
+          z-index: 3;
           margin: 8px -16px;
           padding: 8px 16px 6px;
           background: var(--green-120);
+          box-shadow: 0 3px 7px rgb(0 20 19 / 54%),
+            0 14px 16px rgb(0 20 19 / 54%), 0 32px 32px rgb(0 20 19 / 20%);
           border-radius: 16px;
           display: flex;
           flex-wrap: wrap;
