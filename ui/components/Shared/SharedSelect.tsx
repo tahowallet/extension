@@ -51,7 +51,7 @@ export default function SharedSelect(props: Props): ReactElement {
   const options = useMemo(
     () =>
       initialOptions.map((option) =>
-        (option as Option).label
+        typeof option !== "string"
           ? option
           : {
               value: option,

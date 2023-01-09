@@ -32,6 +32,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const { nft, collection } = props
   const {
     thumbnailURL,
+    previewURL,
     contract,
     name,
     network,
@@ -71,6 +72,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         <div className="preview_image">
           <NFTImage
             src={thumbnailURL}
+            highResolutionSrc={previewURL}
             alt={name}
             width={384}
             isBadge={isBadge}
@@ -252,6 +254,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           font-weight: 500;
           font-size: 16px;
           line-height: 24px;
+          overflow-wrap: break-word;
           color: var(--green-20);
           margin: 0;
         }

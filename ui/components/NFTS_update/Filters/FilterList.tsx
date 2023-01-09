@@ -1,50 +1,66 @@
 import { Filter } from "@tallyho/tally-background/redux-slices/nfts_update"
-import React, { useEffect, useState } from "react"
+import React from "react"
+import SharedSkeletonLoader from "../../Shared/SharedSkeletonLoader"
 import FilterListItem from "./FilterListItem"
+
+const HEIGHT = 40
 
 const FilterList = React.forwardRef(
   (
     {
       filters,
+      isLoaded = true,
       onChange,
       emptyMessage,
     }: {
       filters: Filter[]
       onChange: (filter: Filter) => void
+      isLoaded?: boolean
       emptyMessage?: string
     },
     ref
   ) => {
-    const [items, setItems] = useState<Filter[]>(filters)
-    const [isEmpty, setIsEmpty] = useState<boolean>(!filters.length)
-
-    useEffect(() => {
-      setItems(filters)
-      const timeout = setTimeout(() => {
-        setIsEmpty(!filters.length)
-      }, 250)
-      return () => clearTimeout(timeout)
-    }, [filters])
-
     return (
       <div ref={ref as React.RefObject<HTMLDivElement>} className="filter_list">
-        {items.map((item) => (
-          <FilterListItem
-            key={item.id}
-            label={item.name}
-            thumbnailURL={item?.thumbnailURL}
-            checked={item.isEnabled}
-            onChange={(toggleValue) =>
-              onChange({ ...item, isEnabled: toggleValue })
-            }
-          />
-        ))}
-        {isEmpty && emptyMessage && <>{emptyMessage}</>}
+        {filters.length > 0 ? (
+          <>
+            {filters.map((item) => (
+              <SharedSkeletonLoader
+                key={item.id}
+                isLoaded={isLoaded}
+                height={HEIGHT}
+              >
+                <FilterListItem
+                  label={item.name}
+                  thumbnailURL={item?.thumbnailURL}
+                  checked={item.isEnabled}
+                  onChange={(toggleValue) =>
+                    onChange({ ...item, isEnabled: toggleValue })
+                  }
+                />
+              </SharedSkeletonLoader>
+            ))}
+          </>
+        ) : (
+          emptyMessage && (
+            <SharedSkeletonLoader
+              isLoaded={isLoaded || filters.length === 0}
+              height={HEIGHT}
+            >
+              <span className="message">{emptyMessage}</span>
+            </SharedSkeletonLoader>
+          )
+        )}
         <style jsx>{`
           .filter_list {
             display: flex;
             flex-direction: column;
             gap: 8px;
+          }
+          .message {
+            height: ${HEIGHT}px;
+            display: flex;
+            align-items: center;
           }
         `}</style>
       </div>
