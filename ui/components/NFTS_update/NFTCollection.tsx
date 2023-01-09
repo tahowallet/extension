@@ -203,6 +203,26 @@ export default function NFTCollection(props: {
           height: 1px;
         }
       `}</style>
+      <style jsx global>{`
+        @keyframes show {
+          0% {
+            opacity: 0;
+            position: absolute;
+          }
+          50% {
+            position: static;
+          }
+          100% {
+            opacity: 1;
+          }
+        }
+        .nft_collection.expanded .nft_item:not(:first-child),
+        .nft_collection.expanded .skeleton {
+          animation-name: show;
+          animation-timing-function: ease-in-out;
+          animation-duration: 0.8s;
+        }
+      `}</style>
     </>
   )
 }
