@@ -18,7 +18,7 @@ import { sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
 import {
-  BASE_ASSETS_WITH_COIN_TYPE_BY_SYMBOL,
+  BUILT_IN_NETWORK_BASE_ASSETS_BY_SYMBOL,
   FIAT_CURRENCIES_SYMBOL,
 } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
@@ -69,8 +69,8 @@ const assetsSlice = createSlice({
                   normalizeEVMAddress(asset.contractAddress)) ||
               // Only match base assets by name - since there may be
               // many assets that share a name and symbol across L2's
-              (BASE_ASSETS_WITH_COIN_TYPE_BY_SYMBOL[a.symbol] &&
-                BASE_ASSETS_WITH_COIN_TYPE_BY_SYMBOL[asset.symbol] &&
+              (BUILT_IN_NETWORK_BASE_ASSETS_BY_SYMBOL[a.symbol] &&
+                BUILT_IN_NETWORK_BASE_ASSETS_BY_SYMBOL[asset.symbol] &&
                 a.name === asset.name)
           )
           // if there aren't duplicates, add the asset

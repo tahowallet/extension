@@ -34,7 +34,7 @@ import {
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { EVMNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
 import {
-  BASE_ASSETS_WITH_COIN_TYPE_BY_SYMBOL,
+  BUILT_IN_NETWORK_BASE_ASSETS_BY_SYMBOL,
   NETWORK_BY_CHAIN_ID,
   TEST_NETWORK_BY_CHAIN_ID,
 } from "../../constants"
@@ -129,7 +129,7 @@ const computeCombinedAssetAmountsData = (
     })
     .filter((assetAmount) => {
       const baseAsset =
-        BASE_ASSETS_WITH_COIN_TYPE_BY_SYMBOL[assetAmount.asset.symbol]
+        BUILT_IN_NETWORK_BASE_ASSETS_BY_SYMBOL[assetAmount.asset.symbol]
 
       const isForciblyDisplayed = shouldForciblyDisplayAsset(
         assetAmount,
@@ -170,9 +170,9 @@ const computeCombinedAssetAmountsData = (
       }
 
       const leftIsBaseAsset =
-        asset1.asset.symbol in BASE_ASSETS_WITH_COIN_TYPE_BY_SYMBOL
+        asset1.asset.symbol in BUILT_IN_NETWORK_BASE_ASSETS_BY_SYMBOL
       const rightIsBaseAsset =
-        asset2.asset.symbol in BASE_ASSETS_WITH_COIN_TYPE_BY_SYMBOL
+        asset2.asset.symbol in BUILT_IN_NETWORK_BASE_ASSETS_BY_SYMBOL
 
       // Always sort base assets above non-base assets.
       if (leftIsBaseAsset !== rightIsBaseAsset) {

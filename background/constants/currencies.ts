@@ -86,7 +86,7 @@ export const BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
   },
 }
 
-export const BASE_ASSETS_WITH_COIN_TYPE = [
+export const BUILT_IN_NETWORK_BASE_ASSETS = [
   ETH,
   BTC,
   MATIC,
@@ -96,8 +96,8 @@ export const BASE_ASSETS_WITH_COIN_TYPE = [
   BNB,
 ]
 
-export const BASE_ASSETS_WITH_COIN_TYPE_BY_SYMBOL =
-  BASE_ASSETS_WITH_COIN_TYPE.reduce<{
+export const BUILT_IN_NETWORK_BASE_ASSETS_BY_SYMBOL =
+  BUILT_IN_NETWORK_BASE_ASSETS.reduce<{
     [assetSymbol: string]: NetworkBaseAsset & Required<CoinGeckoAsset>
   }>((acc, asset) => {
     const newAcc = {

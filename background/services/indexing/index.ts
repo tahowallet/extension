@@ -15,7 +15,7 @@ import {
   SmartContractFungibleAsset,
 } from "../../assets"
 import {
-  BASE_ASSETS_WITH_COIN_TYPE,
+  BUILT_IN_NETWORK_BASE_ASSETS,
   FIAT_CURRENCIES,
   HOUR,
   MINUTE,
@@ -624,7 +624,7 @@ export default class IndexingService extends BaseService<Events> {
       // TODO include user-preferred currencies
       // get the prices of ETH and BTC vs major currencies
       const basicPrices = await getPrices(
-        BASE_ASSETS_WITH_COIN_TYPE,
+        BUILT_IN_NETWORK_BASE_ASSETS,
         FIAT_CURRENCIES
       )
 
@@ -647,7 +647,7 @@ export default class IndexingService extends BaseService<Events> {
     } catch (e) {
       logger.error(
         "Error getting base asset prices",
-        BASE_ASSETS_WITH_COIN_TYPE,
+        BUILT_IN_NETWORK_BASE_ASSETS,
         FIAT_CURRENCIES
       )
     }
