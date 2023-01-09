@@ -13,13 +13,14 @@ import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 
 export default function NFTCollection(props: {
   collection: NFTCollectionCached
+  isExpanded: boolean
+  setExpandedID: (id: string | null) => void
   openPreview: (current: NFTWithCollection) => void
 }): ReactElement {
-  const { collection, openPreview } = props
+  const { collection, openPreview, isExpanded, setExpandedID } = props
   const { id, owner, network, nfts, nftCount, hasNextPage } = collection
   const dispatch = useBackgroundDispatch()
 
-  const [isExpanded, setIsExpanded] = useState(false)
   const [isLoading, setIsLoading] = useState(false) // initial update of collection
   const [isUpdating, setIsUpdating] = useState(false) // update on already loaded collection
   const [wasUpdated, setWasUpdated] = useState(false) // to fetch NFTs data only once during the component lifespan
@@ -104,7 +105,7 @@ export default function NFTCollection(props: {
     }
   }, [fetchCollection, isExpanded, wasUpdated])
 
-  const toggleCollection = () => setIsExpanded((val) => !val)
+  const toggleCollection = () => setExpandedID(isExpanded ? null : id)
 
   const onItemClick = (nft: NFT) => openPreview({ nft, collection })
 
