@@ -161,7 +161,7 @@ describe("ChainService", () => {
   describe("populateEVMTransactionNonce", () => {
     // The number of transactions address has ever sent
     const TRANSACTION_COUNT = 100
-    // Next correct nonce for chain. This should be set to the number of transactions ever sent from this address
+    // Nonce for chain. This should be set to the number of transactions ever sent from this address
     const CHAIN_NONCE = TRANSACTION_COUNT
 
     beforeEach(() => {
@@ -209,6 +209,11 @@ describe("ChainService", () => {
           transactionRequest
         )
 
+      expect(
+        chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+          transactionRequest.chainID
+        ]
+      ).toBe(undefined)
       expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
     })
 
@@ -227,6 +232,11 @@ describe("ChainService", () => {
         )
 
       expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
+      expect(
+        chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+          transactionRequest.chainID
+        ]
+      ).toBe(undefined)
     })
 
     it("if nonce is populated for transaction request on chain without mempool should not populate nonce", async () => {
@@ -244,21 +254,34 @@ describe("ChainService", () => {
         )
 
       expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
+      expect(
+        chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+          transactionRequest.chainID
+        ]
+      ).toBe(undefined)
     })
   })
 
   describe("releaseEVMTransactionNonce", () => {
-    const LAST_SEEN_NONCE = 12
-    const WRONG_NONCE = 11
-    const NONCE = 10
-
     it("if the nonce for transaction is below the latest allocated nonce should release all intervening nonces", async () => {
+      /**
+       * Two transactions have been sent: one approving (nonce=11) the other for the swapping (nonce=12).
+       * In case transaction for nonce 11 will has too small gas we should release all intervening nonces.
+       * Nonce for the chain is then 10. Last seen nonce should also be set to this value.
+       */
+      // Actual Swap transaction
+      const LAST_SEEN_NONCE = 12
+      // Approval transaction
+      const NONCE = 11
+      //  Nonce for chain
+      const CHAIN_NONCE = 10
+
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
       const transactionRequest = createLegacyTransactionRequest({
         network: ETHEREUM,
         chainID: ETHEREUM.chainID,
-        nonce: WRONG_NONCE,
+        nonce: NONCE,
       }) as TransactionRequestWithNonce
       const { chainID, from } = transactionRequest
 
@@ -277,7 +300,39 @@ describe("ChainService", () => {
         chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
           chainID
         ][from]
-      ).toBe(NONCE)
+      ).toBe(CHAIN_NONCE)
+    })
+
+    it("if the nonce for transaction is equal to the value of the latest allocated nonce should release all intervening nonces", async () => {
+      const LAST_SEEN_NONCE = 11
+      const NONCE = LAST_SEEN_NONCE
+      const CHAIN_NONCE = 10
+
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: ETHEREUM,
+        chainID: ETHEREUM.chainID,
+        nonce: NONCE,
+      }) as TransactionRequestWithNonce
+      const { chainID, from } = transactionRequest
+
+      chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+        chainID
+      ] ??= {}
+      chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+        chainID
+      ][from] = LAST_SEEN_NONCE
+
+      await chainServiceExternalized.releaseEVMTransactionNonce(
+        transactionRequest
+      )
+
+      expect(
+        chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+          chainID
+        ][from]
+      ).toBe(CHAIN_NONCE)
     })
   })
 })
