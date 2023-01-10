@@ -60,12 +60,16 @@ export const selectEnrichedNFTFilters = createSelector(
       return [...acc]
     }, [])
 
-    const collections = filters.collections.filter(({ owners }) => {
-      const enablingAccount = (owners ?? []).find((owner) =>
-        accounts.find((account) => account.id === owner && account.isEnabled)
+    const collections = filters.collections
+      .filter(({ owners }) => {
+        const enablingAccount = (owners ?? []).find((owner) =>
+          accounts.find((account) => account.id === owner && account.isEnabled)
+        )
+        return !!enablingAccount
+      })
+      .sort((collection1, collection2) =>
+        collection1.name.localeCompare(collection2.name)
       )
-      return !!enablingAccount
-    })
     return { ...filters, collections, accounts }
   }
 )
