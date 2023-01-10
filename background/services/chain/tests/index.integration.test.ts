@@ -243,8 +243,8 @@ describe("ChainService", () => {
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
       const transactionRequest = createLegacyTransactionRequest({
-        network: ETHEREUM,
-        chainID: ETHEREUM.chainID,
+        network: OPTIMISM,
+        chainID: OPTIMISM.chainID,
         nonce: CHAIN_NONCE,
       })
 
