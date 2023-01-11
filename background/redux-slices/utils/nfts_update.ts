@@ -55,19 +55,13 @@ const sortByDate = (
   collection1: NFTCollectionCached,
   collection2: NFTCollectionCached
 ): number => {
-  const dates1 = collection1.nfts.map(({ transferDate }) =>
-    new Date(transferDate || "").getTime()
-  )
-  const dates2 = collection2.nfts.map(({ transferDate }) =>
-    new Date(transferDate || "").getTime()
-  )
-
+  // NFTs are already sorted with current sort type
   const transferDate1 = new Date(
-    type === "new" ? Math.max(...dates1) : Math.min(...dates1)
-  )
+    collection1.nfts[0]?.transferDate ?? ""
+  ).getTime()
   const transferDate2 = new Date(
-    type === "new" ? Math.max(...dates2) : Math.min(...dates2)
-  )
+    collection2.nfts[0]?.transferDate ?? ""
+  ).getTime()
 
   if (type === "new") {
     return transferDate1 > transferDate2 ? -1 : 1
@@ -157,7 +151,7 @@ export const getFilteredCollections = (
         isEnabledFilter(collection.id, filters.collections) &&
         isEnabledFilter(collection.owner, filters.accounts)
     )
+    .map((collection) => sortNFTs(collection, filters.type))
     .sort((collection1, collection2) =>
       sortCollections(collection1, collection2, filters.type)
     )
-    .map((collection) => sortNFTs(collection, filters.type))
