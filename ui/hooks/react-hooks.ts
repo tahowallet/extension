@@ -17,6 +17,25 @@ export function useIsMounted(): React.MutableRefObject<boolean> {
 }
 
 /**
+ * Proper implementation of `setInterval` with cleanup on component unmount
+ */
+export function useInterval<F extends (...args: unknown[]) => unknown>(
+  callback: F,
+  delay: number
+): void {
+  const callbackRef = useRef(callback)
+  callbackRef.current = callback
+
+  useEffect(() => {
+    const timerId = setInterval(() => callbackRef.current(), delay)
+
+    return () => {
+      clearInterval(timerId)
+    }
+  }, [delay])
+}
+
+/**
  * Returns an always updated ref to value
  */
 export function useValueRef<T>(value: T): React.MutableRefObject<T> {
