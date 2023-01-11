@@ -264,7 +264,7 @@
       "collection_other": "Collections"
     },
     "header": {
-      "title": "Estimated total NFTs value",
+      "title": "Total floor price NFTs value",
       "addAccountCTA": "Add account",
       "emptyTitle": "No NFTs here",
       "emptyDesc": "Add more accounts to see your NFTs, you can also just add read-only accounts"
@@ -276,8 +276,8 @@
     "filters": {
       "title": "Filter collections",
       "sortType": {
-        "priceDesc": "Price: Descending",
-        "priceAsc": "Price: Ascending",
+        "priceDesc": "Floor price: Descending",
+        "priceAsc": "Floor price: Ascending",
         "newestAdded": "Newest added",
         "oldestAdded": "Oldest added",
         "numberInOneCollection": "Number (in 1 collection)"
