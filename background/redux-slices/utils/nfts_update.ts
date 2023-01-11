@@ -1,3 +1,4 @@
+import { NFT } from "../../nfts"
 import {
   Filter,
   FiltersState,
@@ -54,19 +55,13 @@ const sortByDate = (
   collection1: NFTCollectionCached,
   collection2: NFTCollectionCached
 ): number => {
-  const dates1 = collection1.nfts.map(({ transferDate }) =>
-    new Date(transferDate || "").getTime()
-  )
-  const dates2 = collection2.nfts.map(({ transferDate }) =>
-    new Date(transferDate || "").getTime()
-  )
-
+  // NFTs are already sorted with current sort type
   const transferDate1 = new Date(
-    type === "new" ? Math.max(...dates1) : Math.min(...dates1)
-  )
+    collection1.nfts[0]?.transferDate ?? ""
+  ).getTime()
   const transferDate2 = new Date(
-    type === "new" ? Math.max(...dates2) : Math.min(...dates2)
-  )
+    collection2.nfts[0]?.transferDate ?? ""
+  ).getTime()
 
   if (type === "new") {
     return transferDate1 > transferDate2 ? -1 : 1
@@ -75,13 +70,23 @@ const sortByDate = (
   return transferDate1 > transferDate2 ? 1 : -1
 }
 
+const sortNFTsByDate = (type: "new" | "old", nfts: NFT[]): NFT[] => {
+  const sorted = nfts.sort(
+    (nft1, nft2) =>
+      new Date(nft2.transferDate ?? "").getTime() -
+      new Date(nft1.transferDate ?? "").getTime()
+  )
+
+  return type === "new" ? sorted : sorted.reverse()
+}
+
 const sortByNFTCount = (
   collection1: NFTCollectionCached,
   collection2: NFTCollectionCached
 ): number =>
   (Number(collection2?.nftCount) || 0) - (Number(collection1?.nftCount) || 0)
 
-export const sortNFTS = (
+export const sortCollections = (
   collection1: NFTCollectionCached,
   collection2: NFTCollectionCached,
   type: SortType
@@ -99,6 +104,26 @@ export const sortNFTS = (
       return sortByNFTCount(collection1, collection2)
     default:
       return 0
+  }
+}
+
+const sortNFTs = (
+  collection: NFTCollectionCached,
+  type: SortType
+): NFTCollectionCached => {
+  switch (type) {
+    case "new":
+      return {
+        ...collection,
+        nfts: sortNFTsByDate("new", collection.nfts),
+      }
+    case "old":
+      return {
+        ...collection,
+        nfts: sortNFTsByDate("old", collection.nfts),
+      }
+    default:
+      return collection
   }
 }
 
@@ -126,6 +151,7 @@ export const getFilteredCollections = (
         isEnabledFilter(collection.id, filters.collections) &&
         isEnabledFilter(collection.owner, filters.accounts)
     )
+    .map((collection) => sortNFTs(collection, filters.type))
     .sort((collection1, collection2) =>
-      sortNFTS(collection1, collection2, filters.type)
+      sortCollections(collection1, collection2, filters.type)
     )
