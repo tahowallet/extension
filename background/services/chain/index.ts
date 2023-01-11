@@ -794,7 +794,7 @@ export default class ChainService extends BaseService<Events> {
         // now-released-and-therefore-never-broadcast nonce).
         this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
           normalizedAddress
-        ] = lastSeenNonce - 1
+        ] = nonce - 1
       }
     }
   }
