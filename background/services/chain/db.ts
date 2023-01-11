@@ -151,7 +151,7 @@ export class ChainDatabase extends Dexie {
     })
 
     this.version(6).stores({
-      baseAssets: "&symbol,name",
+      baseAssets: "&chainID,symbol,name",
     })
   }
 

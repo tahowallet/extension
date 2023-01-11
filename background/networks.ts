@@ -22,6 +22,7 @@ export type NetworkBaseAsset = FungibleAsset &
   CoinGeckoAsset & {
     contractAddress?: string
     coinType?: Slip44CoinType
+    chainID: string
   }
 
 /**
