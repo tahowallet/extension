@@ -14,7 +14,7 @@ import { normalizeEVMAddress } from "../lib/utils"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
   existsInBaseAssets,
-  isNetworkBaseAssetWithCoinType,
+  isBuiltInNetworkBaseAsset,
 } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
 import { sameNetwork } from "../networks"
@@ -147,7 +147,7 @@ export const transferAsset = createBackgroundAsyncThunk(
     const provider = getProvider()
     const signer = provider.getSigner()
 
-    if (isNetworkBaseAssetWithCoinType(assetAmount.asset, fromNetwork)) {
+    if (isBuiltInNetworkBaseAsset(assetAmount.asset, fromNetwork)) {
       logger.debug(
         `Sending ${assetAmount.amount} ${assetAmount.asset.symbol} from ` +
           `${fromAddress} to ${toAddress} as a base asset transfer.`

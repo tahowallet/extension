@@ -38,7 +38,7 @@ export type AssetDecimalAmount = {
   localizedDecimalAmount: string
 }
 
-function isBaseAssetWithCoinType(asset: AnyAsset): asset is NetworkBaseAsset {
+function hasCoinType(asset: AnyAsset): asset is NetworkBaseAsset {
   return "coinType" in asset
 }
 
@@ -58,7 +58,7 @@ function isOptimismBaseAsset(asset: AnyAsset) {
  *
  * @return True if the passed asset is the base asset for the passed network.
  */
-export function isNetworkBaseAssetWithCoinType(
+export function isBuiltInNetworkBaseAsset(
   asset: AnyAsset,
   network: AnyNetwork
 ): asset is NetworkBaseAsset {
@@ -67,7 +67,7 @@ export function isNetworkBaseAssetWithCoinType(
   }
 
   return (
-    isBaseAssetWithCoinType(asset) &&
+    hasCoinType(asset) &&
     asset.symbol === network.baseAsset.symbol &&
     asset.coinType === network.baseAsset.coinType &&
     asset.name === network.baseAsset.name

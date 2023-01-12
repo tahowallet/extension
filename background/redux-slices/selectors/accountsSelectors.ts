@@ -10,7 +10,7 @@ import {
   formatCurrencyAmount,
   getBaseAssets,
   heuristicDesiredDecimalsForUnitPrice,
-  isNetworkBaseAssetWithCoinType,
+  isBuiltInNetworkBaseAsset,
 } from "../utils/asset-utils"
 import {
   AnyAsset,
@@ -72,7 +72,7 @@ const shouldForciblyDisplayAsset = (
     !isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) &&
     assetAmount.asset.symbol === DOGGO.symbol
 
-  return isDoggo || isNetworkBaseAssetWithCoinType(baseAsset, network)
+  return isDoggo || isBuiltInNetworkBaseAsset(baseAsset, network)
 }
 
 const computeCombinedAssetAmountsData = (
