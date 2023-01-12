@@ -250,16 +250,15 @@ export function heuristicDesiredDecimalsForUnitPrice(
   )
 }
 
-export function existsInBaseAssets(symbol: string): boolean {
-  return BUILT_IN_NETWORK_BASE_ASSETS.some(
-    (baseAsset) => baseAsset.symbol === symbol
-  )
+export function existsInNetworkBaseAssets(symbol: string): boolean {
+  return BUILT_IN_NETWORK_BASE_ASSETS.some((asset) => asset.symbol === symbol)
 }
-export function getBaseAssets(
+
+export function getBuiltInNetworkBaseAsset(
   symbol: string,
   chainID: string
 ): (NetworkBaseAsset & Required<CoinGeckoAsset>) | undefined {
   return BUILT_IN_NETWORK_BASE_ASSETS.find(
-    (baseAsset) => baseAsset.symbol === symbol && baseAsset.chainID === chainID
+    (asset) => asset.symbol === symbol && asset.chainID === chainID
   )
 }

@@ -13,7 +13,7 @@ import { findClosestAssetIndex } from "../lib/asset-similarity"
 import { normalizeEVMAddress } from "../lib/utils"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
-  existsInBaseAssets,
+  existsInNetworkBaseAssets,
   isBuiltInNetworkBaseAsset,
 } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
@@ -69,8 +69,8 @@ const assetsSlice = createSlice({
                   normalizeEVMAddress(asset.contractAddress)) ||
               // Only match base assets by name - since there may be
               // many assets that share a name and symbol across L2's
-              (existsInBaseAssets(a.symbol) &&
-                existsInBaseAssets(asset.symbol) &&
+              (existsInNetworkBaseAssets(a.symbol) &&
+                existsInNetworkBaseAssets(asset.symbol) &&
                 a.name === asset.name)
           )
           // if there aren't duplicates, add the asset
