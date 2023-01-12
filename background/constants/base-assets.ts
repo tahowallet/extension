@@ -17,7 +17,7 @@ const ARBITRUM_NOVA_ETH: NetworkBaseAsset = {
   chainID: "42170",
 }
 
-const OPTIMISM_ETH: NetworkBaseAsset = {
+const OPTIMISTIC_ETH: NetworkBaseAsset = {
   ...ETH,
   chainID: "10",
 }
@@ -65,7 +65,7 @@ const BTC: NetworkBaseAsset = {
   decimals: 8,
 }
 
-export const BASE_ASSETS = [
+export const BASE_ASSETS_BY_CUSTOM_NAME = {
   ETH,
   BTC,
   MATIC,
@@ -74,16 +74,8 @@ export const BASE_ASSETS = [
   BNB,
   ARBITRUM_ONE_ETH,
   ARBITRUM_NOVA_ETH,
-  OPTIMISM_ETH,
+  OPTIMISTIC_ETH,
   GOERLI_ETH,
-]
+}
 
-export const BASE_ASSETS_BY_SYMBOL = BASE_ASSETS.reduce<{
-  [assetSymbol: string]: NetworkBaseAsset
-}>((acc, asset) => {
-  const newAcc = {
-    ...acc,
-  }
-  newAcc[asset.symbol] = asset
-  return newAcc
-}, {})
+export const BASE_ASSETS = Object.values(BASE_ASSETS_BY_CUSTOM_NAME)

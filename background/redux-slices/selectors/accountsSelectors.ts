@@ -6,7 +6,9 @@ import { AssetsState, selectAssetPricePoint } from "../assets"
 import {
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
+  existsInBaseAssets,
   formatCurrencyAmount,
+  getBaseAssets,
   heuristicDesiredDecimalsForUnitPrice,
   isNetworkBaseAssetWithCoinType,
 } from "../utils/asset-utils"
@@ -33,11 +35,7 @@ import {
 } from "./keyringsSelectors"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { EVMNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
-import {
-  BUILT_IN_NETWORK_BASE_ASSETS_BY_SYMBOL,
-  NETWORK_BY_CHAIN_ID,
-  TEST_NETWORK_BY_CHAIN_ID,
-} from "../../constants"
+import { NETWORK_BY_CHAIN_ID, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { FeatureFlags, isEnabled } from "../../features"
 import {
@@ -128,8 +126,10 @@ const computeCombinedAssetAmountsData = (
       return fullyEnrichedAssetAmount
     })
     .filter((assetAmount) => {
-      const baseAsset =
-        BUILT_IN_NETWORK_BASE_ASSETS_BY_SYMBOL[assetAmount.asset.symbol]
+      const baseAsset = getBaseAssets(
+        assetAmount.asset.symbol,
+        currentNetwork.chainID
+      )
 
       const isForciblyDisplayed = shouldForciblyDisplayAsset(
         assetAmount,
@@ -168,11 +168,8 @@ const computeCombinedAssetAmountsData = (
       if (leftIsNetworkBaseAsset !== rightIsNetworkBaseAsset) {
         return leftIsNetworkBaseAsset ? -1 : 1
       }
-
-      const leftIsBaseAsset =
-        asset1.asset.symbol in BUILT_IN_NETWORK_BASE_ASSETS_BY_SYMBOL
-      const rightIsBaseAsset =
-        asset2.asset.symbol in BUILT_IN_NETWORK_BASE_ASSETS_BY_SYMBOL
+      const leftIsBaseAsset = existsInBaseAssets(asset1.asset.symbol)
+      const rightIsBaseAsset = existsInBaseAssets(asset2.asset.symbol)
 
       // Always sort base assets above non-base assets.
       if (leftIsBaseAsset !== rightIsBaseAsset) {

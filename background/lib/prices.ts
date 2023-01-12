@@ -21,7 +21,14 @@ export async function getPrices(
   assets: (AnyAsset & Required<CoinGeckoAsset>)[],
   vsCurrencies: FiatCurrency[]
 ): Promise<PricePoint[]> {
-  const coinIds = assets.map((a) => a.metadata.coinGeckoID).join(",")
+  const coinIds = assets
+    .reduce<string[]>((ids, asset) => {
+      if (ids.some((id) => id === asset.metadata.coinGeckoID)) {
+        return ids
+      }
+      return [...ids, asset.metadata.coinGeckoID]
+    }, [])
+    .join(",")
 
   const currencySymbols = vsCurrencies
     .map((c) => c.symbol.toLowerCase())

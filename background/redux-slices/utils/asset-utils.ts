@@ -8,8 +8,9 @@ import {
   FungibleAsset,
   UnitPricePoint,
   AnyAsset,
+  CoinGeckoAsset,
 } from "../../assets"
-import { OPTIMISM } from "../../constants"
+import { BUILT_IN_NETWORK_BASE_ASSETS, OPTIMISM } from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { AnyNetwork, NetworkBaseAsset } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
@@ -246,5 +247,19 @@ export function heuristicDesiredDecimalsForUnitPrice(
     // special-case unit prices that could not be resolved.
     Math.ceil(Math.log10(numericUnitPrice ?? 0)),
     minimumDesiredDecimals
+  )
+}
+
+export function existsInBaseAssets(symbol: string): boolean {
+  return BUILT_IN_NETWORK_BASE_ASSETS.some(
+    (baseAsset) => baseAsset.symbol === symbol
+  )
+}
+export function getBaseAssets(
+  symbol: string,
+  chainID: string
+): (NetworkBaseAsset & Required<CoinGeckoAsset>) | undefined {
+  return BUILT_IN_NETWORK_BASE_ASSETS.find(
+    (baseAsset) => baseAsset.symbol === symbol && baseAsset.chainID === chainID
   )
 }
