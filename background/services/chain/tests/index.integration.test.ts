@@ -52,6 +52,7 @@ describe("ChainService", () => {
     const chainServiceExternalized =
       chainService as unknown as ChainServiceExternalized
     const CHAIN_NONCE = 100
+    const PENDING_CHAIN_NONCE = CHAIN_NONCE + 1
     // Return a fake provider
     const onceSpy = sandbox.spy()
     const providerForNetworkOrThrow = sandbox
@@ -59,7 +60,8 @@ describe("ChainService", () => {
       .callsFake(
         () =>
           ({
-            getTransactionCount: async () => CHAIN_NONCE,
+            getTransactionCount: async (_: string, blockTag: string) =>
+              blockTag === "latest" ? CHAIN_NONCE : PENDING_CHAIN_NONCE,
             once: onceSpy,
           } as unknown as SerialFallbackProvider)
       )
@@ -96,6 +98,7 @@ describe("ChainService", () => {
     const chainServiceExternalized =
       chainService as unknown as ChainServiceExternalized
     const CHAIN_NONCE = 100
+    const PENDING_CHAIN_NONCE = CHAIN_NONCE + 1
     // Return a fake provider
     const onceSpy = sandbox.spy()
     const providerForNetworkOrThrow = sandbox
@@ -103,7 +106,8 @@ describe("ChainService", () => {
       .callsFake(
         () =>
           ({
-            getTransactionCount: async () => CHAIN_NONCE,
+            getTransactionCount: async (_: string, blockTag: string) =>
+              blockTag === "latest" ? CHAIN_NONCE : PENDING_CHAIN_NONCE,
             once: onceSpy,
           } as unknown as SerialFallbackProvider)
       )
