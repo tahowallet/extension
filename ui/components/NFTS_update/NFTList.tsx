@@ -23,7 +23,8 @@ export default function NFTList(props: {
     null
   )
   const setExpandedID = useCallback(
-    (id: string | null) => setCurrentExpandedID(id),
+    (id: string | null, owner: string | null) =>
+      setCurrentExpandedID(`${id}_${owner}`), // TODO: owner can be removed after we will merge collections owned by multiple accounts
     []
   )
 
@@ -68,7 +69,9 @@ export default function NFTList(props: {
               openPreview={openPreview}
               collection={collection}
               setExpandedID={setExpandedID}
-              isExpanded={collection.id === currentExpandedID}
+              isExpanded={
+                `${collection.id}_${collection.owner}` === currentExpandedID
+              }
             />
           )
         )}
