@@ -803,8 +803,6 @@ export default class ChainService extends BaseService<Events> {
   /**
    * A safety measure to check the last nonce seen and reset the value if necessary.
    * There is a risk that the last seen nonce for a given address and chain with mempool is not set correctly.
-   * It occurs, for example, when several transactions are sent in which one blocks the rest due to low gas price.
-   * Transactions have been rejected and the nonce for the chain has been changed.
    * This value should reflect the nonce for the chain to prevent dropped transactions.
    */
   async safetyMeasureForNonce(
@@ -814,20 +812,15 @@ export default class ChainService extends BaseService<Events> {
     const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
     const provider = this.providerForNetworkOrThrow(network)
 
-    // nonce for chain = number of transactions ever sent from this address
-    const chainNonce = await provider.getTransactionCount(
-      transactionRequest.from,
-      "latest"
-    )
-    const chainPendingTransactionCount = await provider.getTransactionCount(
-      transactionRequest.from,
-      "pending"
-    )
+    const [chainNonce, pendingNonce] = await Promise.all([
+      provider.getTransactionCount(transactionRequest.from, "latest"),
+      provider.getTransactionCount(transactionRequest.from, "pending"),
+    ])
 
     const lastSeenNonce =
       this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress]
 
-    if (chainPendingTransactionCount === 0 && lastSeenNonce !== chainNonce) {
+    if (pendingNonce === chainNonce && lastSeenNonce !== chainNonce) {
       this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
         normalizedAddress
       ] = chainNonce
