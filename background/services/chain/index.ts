@@ -700,6 +700,7 @@ export default class ChainService extends BaseService<Events> {
     // mempool. Note: This does not necessarily mean that the chain is EIP-1559
     // compliant.
     if (CHAINS_WITH_MEMPOOL.has(chainID)) {
+      this.safetyMeasureForNonce(transactionRequest)
       // @TODO: Update this implementation to handle pending txs and also be more
       //        resilient against missing nonce in the mempool.
       const chainNonce = chainTransactionCount - 1
@@ -796,6 +797,40 @@ export default class ChainService extends BaseService<Events> {
           normalizedAddress
         ] = nonce - 1
       }
+    }
+  }
+
+  /**
+   * A safety measure to check the last nonce seen and reset the value if necessary.
+   * There is a risk that the last seen nonce for a given address and chain with mempool is not set correctly.
+   * It occurs, for example, when several transactions are sent in which one blocks the rest due to low gas price.
+   * Transactions have been rejected and the nonce for the chain has been changed.
+   * This value should reflect the nonce for the chain to prevent dropped transactions.
+   */
+  async safetyMeasureForNonce(
+    transactionRequest: TransactionRequest
+  ): Promise<void> {
+    const { network, chainID } = transactionRequest
+    const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
+    const provider = this.providerForNetworkOrThrow(network)
+
+    // nonce for chain = number of transactions ever sent from this address
+    const chainNonce = await provider.getTransactionCount(
+      transactionRequest.from,
+      "latest"
+    )
+    const chainPendingTransactionCount = await provider.getTransactionCount(
+      transactionRequest.from,
+      "pending"
+    )
+
+    const lastSeenNonce =
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress]
+
+    if (chainPendingTransactionCount === 0 && lastSeenNonce !== chainNonce) {
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
+        normalizedAddress
+      ] = chainNonce
     }
   }
 
