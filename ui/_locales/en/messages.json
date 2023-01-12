@@ -264,7 +264,7 @@
       "collection_other": "Collections"
     },
     "header": {
-      "title": "Estimated total NFTs value",
+      "title": "Total floor price NFTs value",
       "addAccountCTA": "Add account",
       "emptyTitle": "No NFTs here",
       "emptyDesc": "Add more accounts to see your NFTs, you can also just add read-only accounts"
@@ -276,8 +276,8 @@
     "filters": {
       "title": "Filter collections",
       "sortType": {
-        "priceDesc": "Price: Descending",
-        "priceAsc": "Price: Ascending",
+        "priceDesc": "Floor price: Descending",
+        "priceAsc": "Floor price: Ascending",
         "newestAdded": "Newest added",
         "oldestAdded": "Oldest added",
         "numberInOneCollection": "Number (in 1 collection)"
@@ -628,6 +628,7 @@
     "swapRewardsTeaser": "Swap rewards coming soon",
     "continueSwap": "Continue Swap",
     "exchangeRoute": "Exchange route",
+    "loadingQuote": "Fetching price",
     "rewards": {
       "header": "Swap rewards for community",
       "body": "This week, 240,000 DOGGO tokens will be equally shared as Swap Rewards.",
@@ -782,6 +783,7 @@
         "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab",
         "SUPPORT_NFT_SEND": "Enable sending NFTs",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
+        "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_BINANCE_SMART_CHAIN": "Enable Binance Smart Chain network",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs"
