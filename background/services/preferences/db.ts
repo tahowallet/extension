@@ -4,6 +4,20 @@ import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork } from "../../accounts"
 
 import DEFAULT_PREFERENCES from "./defaults"
+import { AccountSignerSettings } from "../../ui"
+import { AccountSignerWithId } from "../../signing"
+import { AnalyticsPreferences } from "./types"
+
+type SignerRecordId = `${AccountSignerWithId["type"]}/${string}`
+
+/**
+ * Returns a unique id for an account signer
+ * in the form of "signerType/someId" e.g. "ledger/deviceId"
+ */
+const getSignerRecordId = (signer: AccountSignerWithId): SignerRecordId => {
+  const id = signer.type === "keyring" ? signer.keyringID : signer.deviceID
+  return `${signer.type}/${id}`
+}
 
 // The idea is to use this interface to describe the data structure stored in indexedDb
 // In the future this might also have a runtime type check capability, but it's good enough for now.
@@ -15,10 +29,19 @@ export interface Preferences {
   defaultWallet: boolean
   currentAddress?: string
   selectedAccount: AddressOnNetwork
+  analytics: {
+    isEnabled: boolean
+    hasDefaultOnBeenTurnedOn: boolean
+  }
 }
 
 export class PreferenceDatabase extends Dexie {
   private preferences!: Dexie.Table<Preferences, number>
+
+  private signersSettings!: Dexie.Table<
+    AccountSignerSettings & { id: SignerRecordId },
+    string
+  >
 
   constructor() {
     super("tally/preferences")
@@ -179,6 +202,72 @@ export class PreferenceDatabase extends Dexie {
           })
       })
 
+    this.version(9)
+      .stores({
+        preferences: "++id",
+      })
+      .upgrade((tx) => {
+        return tx
+          .table("preferences")
+          .toCollection()
+          .modify((storedPreferences: Preferences) => {
+            // Get rid of old tally URL
+            const newURLs = storedPreferences.tokenLists.urls.filter(
+              (url) =>
+                !url.includes(
+                  "bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife"
+                )
+            )
+
+            newURLs.push(
+              "https://ipfs.io/ipfs/bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm"
+            )
+
+            // eslint-disable-next-line no-param-reassign
+            storedPreferences.tokenLists = {
+              ...storedPreferences.tokenLists,
+              urls: newURLs,
+            }
+          })
+      })
+
+    this.version(10).stores({
+      preferences: "++id",
+      signersSettings: "&id",
+    })
+
+    this.version(11).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          // eslint-disable-next-line no-param-reassign
+          storedPreferences.analytics = DEFAULT_PREFERENCES.analytics
+        })
+    })
+
+    this.version(12).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          storedPreferences.tokenLists.urls.push(
+            "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/src/joe.tokenlist-v2.json"
+          )
+        })
+    })
+
+    this.version(13).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          storedPreferences.tokenLists.urls.push(
+            "https://tokens.pancakeswap.finance/pancakeswap-default.json"
+          )
+        })
+    })
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
@@ -195,6 +284,19 @@ export class PreferenceDatabase extends Dexie {
     return this.preferences.reverse().first() as Promise<Preferences>
   }
 
+  async upsertAnalyticsPreferences(
+    analyticsPreferences: Partial<AnalyticsPreferences>
+  ): Promise<void> {
+    const preferences = await this.getPreferences()
+
+    await this.preferences.toCollection().modify({
+      analytics: {
+        ...preferences.analytics,
+        ...analyticsPreferences,
+      },
+    })
+  }
+
   async setDefaultWalletValue(defaultWallet: boolean): Promise<void> {
     await this.preferences.toCollection().modify({ defaultWallet })
   }
@@ -203,6 +305,29 @@ export class PreferenceDatabase extends Dexie {
     await this.preferences
       .toCollection()
       .modify({ selectedAccount: addressNetwork })
+  }
+
+  async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
+    return this.signersSettings.toArray()
+  }
+
+  async updateSignerTitle(
+    signer: AccountSignerWithId,
+    title: string
+  ): Promise<AccountSignerSettings[]> {
+    await this.signersSettings.put({
+      id: getSignerRecordId(signer),
+      signer,
+      title,
+    })
+    return this.signersSettings.toArray()
+  }
+
+  async deleteAccountSignerSettings(
+    signer: AccountSignerWithId
+  ): Promise<AccountSignerSettings[]> {
+    await this.signersSettings.delete(getSignerRecordId(signer))
+    return this.signersSettings.toArray()
   }
 }
 

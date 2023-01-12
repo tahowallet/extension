@@ -1,4 +1,4 @@
-import Dexie from "dexie"
+import Dexie, { DexieOptions } from "dexie"
 import { TokenList } from "@uniswap/token-lists"
 
 import { AccountBalance } from "../../accounts"
@@ -10,6 +10,9 @@ import {
   SmartContractFungibleAsset,
   TokenListCitation,
 } from "../../assets"
+import { DeepWriteable } from "../../types"
+import { fixPolygonWETHIssue, polygonTokenListURL } from "./token-list-edit"
+import { normalizeEVMAddress } from "../../lib/utils"
 
 /*
  * IndexedPricePoint extends PricePoint to expose each asset's ID directly for
@@ -126,8 +129,8 @@ export class IndexingDatabase extends Dexie {
    */
   private assetsToTrack!: Dexie.Table<SmartContractFungibleAsset, number>
 
-  constructor() {
-    super("tally/indexing")
+  constructor(options?: DexieOptions) {
+    super("tally/indexing", options)
     this.version(1).stores({
       migrations: "++id,appliedAt",
       prices: "++id,time,[asset1ID+asset2ID]",
@@ -142,6 +145,78 @@ export class IndexingDatabase extends Dexie {
 
     this.version(2).stores({
       migrations: null,
+    })
+
+    this.version(3).upgrade((tx) => {
+      return tx
+        .table("tokenLists")
+        .toCollection()
+        .modify((storedTokenList: DeepWriteable<CachedTokenList>) => {
+          if (storedTokenList.url === polygonTokenListURL) {
+            // This is how migrations are expected to work
+            // eslint-disable-next-line no-param-reassign
+            storedTokenList.list.tokens = fixPolygonWETHIssue(
+              storedTokenList.list.tokens
+            )
+          }
+        })
+    })
+
+    this.version(4).upgrade(async (tx) => {
+      const seenAddresses = new Set<string>()
+
+      const selectInvalidOrDuplicateRecords = (
+        record: SmartContractFungibleAsset & {
+          chainId?: unknown
+          address?: string
+        }
+      ) => {
+        const normalizedAddress = normalizeEVMAddress(record.contractAddress)
+        // These properties are not included after parsing
+        // external token lists
+        const isInvalidFungibleAssetForNetwork =
+          typeof record.chainId !== "undefined" &&
+          typeof record.address !== "undefined"
+
+        if (
+          isInvalidFungibleAssetForNetwork ||
+          seenAddresses.has(normalizedAddress)
+        ) {
+          return true
+        }
+
+        seenAddresses.add(normalizedAddress)
+
+        return false
+      }
+
+      // Remove invalid records
+      await tx
+        .table("assetsToTrack")
+        .filter(selectInvalidOrDuplicateRecords)
+        .delete()
+
+      await tx
+        .table("customAssets")
+        .filter(selectInvalidOrDuplicateRecords)
+        .delete()
+
+      const normalizeAssetAddress = (record: SmartContractFungibleAsset) => {
+        Object.assign(record, {
+          contractAddress: normalizeEVMAddress(record.contractAddress),
+        })
+      }
+
+      // Normalize addresses
+      await tx
+        .table("assetsToTrack")
+        .toCollection()
+        .modify(normalizeAssetAddress)
+
+      await tx
+        .table("customAssets")
+        .toCollection()
+        .modify(normalizeAssetAddress)
     })
   }
 
@@ -296,8 +371,8 @@ export class IndexingDatabase extends Dexie {
   }
 }
 
-export async function getOrCreateDB(): Promise<IndexingDatabase> {
-  const db = new IndexingDatabase()
-
-  return db
+export async function getOrCreateDb(
+  options?: DexieOptions
+): Promise<IndexingDatabase> {
+  return new IndexingDatabase(options)
 }

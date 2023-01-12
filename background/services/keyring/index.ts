@@ -18,7 +18,7 @@ import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
 import BaseService from "../base"
 import { FORK, MINUTE } from "../../constants"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
-import { USE_MAINNET_FORK } from "../../features"
+import { FeatureFlags, isEnabled } from "../../features"
 import { AddressOnNetwork } from "../../accounts"
 import logger from "../../lib/logger"
 
@@ -112,7 +112,7 @@ export default class KeyringService extends BaseService<Events> {
     })
   }
 
-  async internalStartService(): Promise<void> {
+  override async internalStartService(): Promise<void> {
     // Emit locked status on startup. Should always be locked, but the main
     // goal is to have external viewers synced to internal state no matter what
     // it is. Don't emit if there are no keyrings to unlock.
@@ -122,7 +122,7 @@ export default class KeyringService extends BaseService<Events> {
     }
   }
 
-  async internalStopService(): Promise<void> {
+  override async internalStopService(): Promise<void> {
     await this.lock()
 
     await super.internalStopService()
@@ -536,7 +536,7 @@ export default class KeyringService extends BaseService<Events> {
         blockHash: null,
         blockHeight: null,
         asset: network.baseAsset,
-        network: USE_MAINNET_FORK ? FORK : network,
+        network: isEnabled(FeatureFlags.USE_MAINNET_FORK) ? FORK : network,
       }
       return signedTx
     }
@@ -560,7 +560,7 @@ export default class KeyringService extends BaseService<Events> {
       blockHash: null,
       blockHeight: null,
       asset: network.baseAsset,
-      network: USE_MAINNET_FORK ? FORK : network,
+      network: isEnabled(FeatureFlags.USE_MAINNET_FORK) ? FORK : network,
     }
 
     return signedTx

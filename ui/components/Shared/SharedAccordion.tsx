@@ -2,27 +2,59 @@ import classNames from "classnames"
 import React, { ReactElement, useEffect, useRef, useState } from "react"
 import SharedIcon from "./SharedIcon"
 
+const DELAY = 250
+
 export default function SharedAccordion({
   headerElement,
   contentElement,
   contentHeight,
+  isInitiallyOpen = false,
+  style = {},
+  onChange,
 }: {
   headerElement: ReactElement
-  contentElement: ReactElement
+  contentElement: ReactElement | ((isOpen: boolean) => React.ReactNode)
+  onChange?: (isOpen: boolean) => void
   contentHeight?: number
+  isInitiallyOpen?: boolean
+  style?: React.CSSProperties & Record<string, unknown>
 }): ReactElement {
   const contentRef = useRef<HTMLDivElement>(null)
-  const [isOpen, setIsOpen] = useState(false)
-  const [height, setHeight] = useState(0)
+  const [isOpen, setIsOpen] = useState(isInitiallyOpen)
+  /**
+   * Accordion content has an overflow hidden property when it is closed.
+   * The overflow property is changed to visible after a delay when the content is visible.
+   * The goal is to display the tooltip message correctly.
+   */
+  const [isVisible, setIsVisible] = useState(isInitiallyOpen)
+  /* If the accordion is open by default, the first opening should be without a transition. */
+  const [withTransition, setWithTransition] = useState(!isInitiallyOpen)
+  const [height, setHeight] = useState(
+    isInitiallyOpen && contentHeight ? contentHeight : 0
+  )
 
-  const toggle = () => setIsOpen((open) => !open)
+  const toggle = () => {
+    setWithTransition(true)
+    setIsOpen((open) => !open)
+    onChange?.(!isOpen)
+  }
 
   useEffect(() => {
     setHeight(contentHeight ?? contentRef.current?.clientHeight ?? 600)
   }, [contentRef, contentElement, contentHeight])
 
+  useEffect(() => {
+    const timeout = setTimeout(
+      () => {
+        setIsVisible(isOpen)
+      },
+      isOpen ? 140 : 50
+    )
+    return () => clearTimeout(timeout)
+  }, [isOpen])
+
   return (
-    <div className="accordion">
+    <div className="accordion" aria-expanded={isOpen} style={style}>
       <div
         className="accordion_header"
         role="button"
@@ -52,28 +84,48 @@ export default function SharedAccordion({
           visible: isOpen,
         })}
       >
-        <div ref={contentRef}>{contentElement}</div>
+        <div ref={contentRef}>
+          {typeof contentElement === "function"
+            ? contentElement(isOpen)
+            : contentElement}
+        </div>
       </div>
       <style jsx>{`
+        .accordion {
+          background-color: ${isOpen
+            ? "var(--background, var(--green-120))"
+            : ""};
+        }
+
+        .accordion:not([aria-expanded="true"]):hover {
+          background-color: var(--background-hover, none);
+        }
+
         .accordion_header {
           display: flex;
           align-items: center;
-          padding: 4px 8px;
+          padding: var(--header-padding, "4px 8px");
           cursor: pointer;
-          background-color: ${isOpen ? "#041414" : ""};
         }
+
         .accordion_header_content {
           flex: 1 0 auto;
+          max-width: calc(100% - 24px);
         }
+
         .accordion_content {
           max-height: 0;
-          transition: max-height 250ms ease-out;
           overflow: hidden;
+          transition: max-height ${DELAY}ms ease-out, opacity 130ms ease-in;
+          opacity: 0;
           padding: 0 8px;
-          background-color: ${isOpen ? "#041414" : ""};
         }
         .accordion_content.visible {
           max-height: ${height + 10}px;
+          transition: max-height ${withTransition ? DELAY : 0}ms ease-in,
+            opacity 130ms ease-in;
+          opacity: 1;
+          overflow: ${isVisible ? "visible" : "hidden"};
         }
       `}</style>
     </div>

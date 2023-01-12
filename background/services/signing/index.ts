@@ -108,7 +108,7 @@ export default class SigningService extends BaseService<Events> {
     super()
   }
 
-  protected async internalStartService(): Promise<void> {
+  protected override async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
   }
 

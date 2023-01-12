@@ -1,5 +1,8 @@
 import React, { ReactElement } from "react"
 import {
+  ARBITRUM_ONE,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ETHEREUM,
   OPTIMISM,
   POLYGON,
@@ -25,6 +28,9 @@ function getPreviewLink(nft: NFT) {
     [POLYGON.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
     [ETHEREUM.chainID]: `/nft/${contractAddress}/${parsedTokenID}`,
     [OPTIMISM.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
+    [ARBITRUM_ONE.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
+    [BINANCE_SMART_CHAIN.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
+    [AVALANCHE.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
   }
 
   return `${scanWebsite[chainID].url}${previewURL[chainID]}`

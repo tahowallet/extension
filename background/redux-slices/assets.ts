@@ -3,8 +3,10 @@ import { ethers } from "ethers"
 import {
   AnyAsset,
   AnyAssetAmount,
+  isFungibleAsset,
   isSmartContractFungibleAsset,
   PricePoint,
+  SmartContractFungibleAsset,
 } from "../assets"
 import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
@@ -16,12 +18,15 @@ import { sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
 import { BASE_ASSETS_BY_SYMBOL, FIAT_CURRENCIES_SYMBOL } from "../constants"
+import { convertFixedPoint } from "../lib/fixed-point"
 
-type SingleAssetState = AnyAsset & {
+export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
   recentPrices: {
     [assetSymbol: string]: PricePoint
   }
 }
+
+export type SingleAssetState = AssetWithRecentPrices
 
 export type AssetsState = SingleAssetState[]
 
@@ -102,11 +107,11 @@ export const { assetsLoaded, newPricePoint } = assetsSlice.actions
 export default assetsSlice.reducer
 
 const selectAssetsState = (state: AssetsState) => state
-const selectAssetSymbol = (_: AssetsState, assetSymbol: string) => assetSymbol
+const selectAsset = (_: AssetsState, asset: AnyAsset) => asset
 
 const selectPairedAssetSymbol = (
   _: AssetsState,
-  _2: string,
+  _2: AnyAsset,
   pairedAssetSymbol: string
 ) => pairedAssetSymbol
 
@@ -124,11 +129,13 @@ export const transferAsset = createBackgroundAsyncThunk(
     toAddressNetwork: { address: toAddress, network: toNetwork },
     assetAmount,
     gasLimit,
+    nonce,
   }: {
     fromAddressNetwork: AddressOnNetwork
     toAddressNetwork: AddressOnNetwork
     assetAmount: AnyAssetAmount
     gasLimit?: bigint
+    nonce?: number
   }) => {
     if (!sameNetwork(fromNetwork, toNetwork)) {
       throw new Error("Only same-network transfers are supported for now.")
@@ -147,6 +154,7 @@ export const transferAsset = createBackgroundAsyncThunk(
         to: toAddress,
         value: assetAmount.amount,
         gasLimit,
+        nonce,
       })
     } else if (isSmartContractFungibleAsset(assetAmount.asset)) {
       logger.debug(
@@ -167,6 +175,7 @@ export const transferAsset = createBackgroundAsyncThunk(
       await signer.sendUncheckedTransaction({
         ...transactionDetails,
         gasLimit: gasLimit ?? transactionDetails.gasLimit,
+        nonce,
       })
     } else {
       throw new Error(
@@ -180,39 +189,78 @@ export const transferAsset = createBackgroundAsyncThunk(
  * Selects a particular asset price point given the asset symbol and the paired
  * asset symbol used to price it.
  *
- * For example, calling `selectAssetPricePoint(state.assets, "ETH", "USD")`
+ * For example, calling `selectAssetPricePoint(state.assets, ETH, "USD")`
  * will return the ETH-USD price point, if it exists. Note that this selector
  * guarantees that the returned price point will have the pair in the specified
  * order, so even if the store price point has amounts in the order [USD, ETH],
  * the selector will return them in the order [ETH, USD].
  */
 export const selectAssetPricePoint = createSelector(
-  [selectAssetsState, selectAssetSymbol, selectPairedAssetSymbol],
-  (assets, assetSymbol, pairedAssetSymbol) => {
-    const pricedAsset = assets.find(
-      (asset) =>
-        asset.symbol === assetSymbol &&
-        pairedAssetSymbol in asset.recentPrices &&
-        asset.recentPrices[pairedAssetSymbol].pair
-          .map(({ symbol }) => symbol)
-          .includes(assetSymbol)
-    )
+  [selectAssetsState, selectAsset, selectPairedAssetSymbol],
+  (assets, assetToFind, pairedAssetSymbol) => {
+    const hasRecentPriceData = (asset: SingleAssetState): boolean =>
+      pairedAssetSymbol in asset.recentPrices &&
+      asset.recentPrices[pairedAssetSymbol].pair.some(
+        ({ symbol }) => symbol === assetToFind.symbol
+      )
+
+    let pricedAsset: SingleAssetState | undefined
+
+    /* If we're looking for a smart contract, try to find an exact price point */
+    if (isSmartContractFungibleAsset(assetToFind)) {
+      pricedAsset = assets.find(
+        (asset): asset is AssetWithRecentPrices<SmartContractFungibleAsset> =>
+          isSmartContractFungibleAsset(asset) &&
+          asset.contractAddress === assetToFind.contractAddress &&
+          asset.homeNetwork.chainID === assetToFind.homeNetwork.chainID &&
+          hasRecentPriceData(asset)
+      )
+    }
+
+    /* Otherwise, find a best-effort match by looking for assets with the same symbol  */
+    if (!pricedAsset) {
+      pricedAsset = assets.find(
+        (asset) =>
+          asset.symbol === assetToFind.symbol && hasRecentPriceData(asset)
+      )
+    }
 
     if (pricedAsset) {
-      const pricePoint = pricedAsset.recentPrices[pairedAssetSymbol]
-      const { pair, amounts, time } = pricePoint
+      let pricePoint = pricedAsset.recentPrices[pairedAssetSymbol]
 
-      if (pair[0].symbol === assetSymbol) {
-        return pricePoint
+      // Flip it if the price point looks like USD-ETH
+      if (pricePoint.pair[0].symbol !== assetToFind.symbol) {
+        const { pair, amounts, time } = pricePoint
+        pricePoint = {
+          pair: [pair[1], pair[0]],
+          amounts: [amounts[1], amounts[0]],
+          time,
+        }
       }
 
-      const flippedPricePoint: PricePoint = {
-        pair: [pair[1], pair[0]],
-        amounts: [amounts[1], amounts[0]],
-        time,
+      const assetDecimals = isFungibleAsset(assetToFind)
+        ? assetToFind.decimals
+        : 0
+      const pricePointAssetDecimals = isFungibleAsset(pricePoint.pair[0])
+        ? pricePoint.pair[0].decimals
+        : 0
+
+      if (assetDecimals !== pricePointAssetDecimals) {
+        const { amounts } = pricePoint
+        pricePoint = {
+          ...pricePoint,
+          amounts: [
+            convertFixedPoint(
+              amounts[0],
+              pricePointAssetDecimals,
+              assetDecimals
+            ),
+            amounts[1],
+          ],
+        }
       }
 
-      return flippedPricePoint
+      return pricePoint
     }
 
     // If no matching priced asset was found, return undefined.

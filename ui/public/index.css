@@ -16,7 +16,7 @@
   --gold-40: #f5dab7;
   --gold-20: #fbedda;
   --gold-5: #fdf6ed;
-  --white: #ffffff;
+  --white: #d6eae9;
 
   --error: #ec3137;
   --error-80: #ae383b;
@@ -47,15 +47,22 @@ body {
   font-family: "Segment", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
     sans-serif;
   position: relative;
-  color: #d6eae9;
+  color: var(--white);
   font-size: 16px;
   background-color: var(--hunter-green);
 }
 
+html,
+body,
+#tally-root {
+  height: 100%;
+}
+
 body.popup {
   width: 384px;
-  height: 594px;
+  min-height: 594px;
   scrollbar-width: none;
+  overflow: hidden; /* all scrolling is done internally */
 }
 
 a {
@@ -174,5 +181,18 @@ label {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
+  }
+}
+
+.fadeIn {
+  animation: fadeIn ease-in var(--fade-in-duration, 250ms);
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }

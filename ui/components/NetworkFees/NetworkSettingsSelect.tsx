@@ -7,6 +7,7 @@ import {
   NetworkFeeTypeChosen,
   setCustomGas,
   GasOption,
+  setCustomGasLimit,
 } from "@tallyho/tally-background/redux-slices/transaction-construction"
 
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
@@ -207,6 +208,7 @@ export default function NetworkSettingsSelect({
   }, [updateGasOptions])
 
   const setGasLimit = (gasLimit: bigint | undefined) => {
+    dispatch(setCustomGasLimit(gasLimit ?? networkSettings.suggestedGasLimit))
     onNetworkSettingsChange({ ...networkSettings, gasLimit })
   }
 

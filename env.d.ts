@@ -42,6 +42,7 @@ type TallyProvider = WalletProvider & {
 
 type WindowEthereum = WalletProvider & {
   isMetaMask?: boolean
+  tallySetAsDefault?: boolean
   isTally?: boolean
   autoRefreshOnNetworkChange?: boolean
 }

@@ -32,12 +32,6 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           width: 12px;
           height: 12px;
           }
-          .asset_list_item:hover .asset_icon:not(:hover) {
-          background-color: var(--green-40);
-          }
-          .asset_icon:hover {
-          background-color: var(--trophy-gold);
-          }
           .asset_icon_earn {
           width: 22px;
           height: 22px;
@@ -55,7 +49,6 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           }
           .asset_icon_swap {
           mask-image: url("./images/swap_asset.svg");
-          margin-left: 20px;
         `}
       </style>
     </li>

@@ -9,10 +9,18 @@ import {
   selectDefaultNetworkFeeSettings,
   selectTransactionData,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import {
+  ARBITRUM_ONE,
+  BINANCE_SMART_CHAIN,
+  OPTIMISM,
+  ROOTSTOCK,
+} from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import NetworkSettingsSelect from "./NetworkSettingsSelect"
-import NetworkSettingsOptimismAndArbitrum from "./NetworkSettingsSelectOptimismAndArbitrum"
-import NetworkSettingsSelectLegacy from "./NetworkSettingsSelectLegacy"
+import NetworkSettingsOptimism from "./NetworkSettingsSelectOptimism"
+import NetworkSettingsRSK from "./NetworkSettingsSelectRSK"
+import NetworkSettingsSelectArbitrum from "./NetworkSettingsSelectArbitrum"
+import NetworkSettingsSelectBNBChain from "./NetworkSettingsSelectBNBChain"
 
 interface NetworkSettingsChooserProps {
   estimatedFeesPerGas: EstimatedFeesPerGas | undefined
@@ -37,18 +45,24 @@ export default function NetworkSettingsChooser({
 
   function networkSettingsSelectorFinder() {
     if (transactionDetails) {
-      if (transactionDetails.network.name === "Optimism") {
-        return <NetworkSettingsOptimismAndArbitrum />
+      if (transactionDetails.network.name === OPTIMISM.name) {
+        return <NetworkSettingsOptimism />
       }
-      if (transactionDetails.network.name === "Arbitrum") {
+      if (transactionDetails.network.name === ROOTSTOCK.name) {
+        return <NetworkSettingsRSK />
+      }
+      if (transactionDetails.network.name === ARBITRUM_ONE.name) {
         return (
-          <NetworkSettingsSelectLegacy
+          <NetworkSettingsSelectArbitrum
             estimatedFeesPerGas={estimatedFeesPerGas}
             networkSettings={networkSettings}
             onNetworkSettingsChange={setNetworkSettings}
             onSave={saveNetworkSettings}
           />
         )
+      }
+      if (transactionDetails.network.name === BINANCE_SMART_CHAIN.name) {
+        return <NetworkSettingsSelectBNBChain />
       }
       return (
         <NetworkSettingsSelect

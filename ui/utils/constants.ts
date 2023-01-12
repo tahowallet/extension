@@ -1,9 +1,13 @@
 import {
+  ARBITRUM_NOVA,
   ARBITRUM_ONE,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
   OPTIMISM,
   POLYGON,
+  ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
 import { NetworkFeeTypeChosen } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { i18n } from "../_locales/i18n"
@@ -12,15 +16,22 @@ export const doggoTokenDecimalDigits = 18
 
 export const scanWebsite = {
   [ETHEREUM.chainID]: { title: "Etherscan", url: "https://etherscan.io" },
+  [ROOTSTOCK.chainID]: { title: "RSKExplorer", url: "https://explorer.rsk.co" },
   [OPTIMISM.chainID]: {
     title: "Etherscan",
     url: "https://optimistic.etherscan.io",
   },
   [POLYGON.chainID]: { title: "Polygonscan", url: "https://polygonscan.com" },
   [GOERLI.chainID]: { title: "Etherscan", url: "https://goerli.etherscan.io/" },
-  [ARBITRUM_ONE.chainID]: {
+  [ARBITRUM_ONE.chainID]: { title: "Arbiscan", url: "https://arbiscan.io/" },
+  [AVALANCHE.chainID]: { title: "Snowtrace", url: "https://snowtrace.io/" },
+  [BINANCE_SMART_CHAIN.chainID]: {
+    title: "BscScan",
+    url: "https://bscscan.com",
+  },
+  [ARBITRUM_NOVA.chainID]: {
     title: "Arbiscan",
-    url: "https://arbiscan.io/",
+    url: "https://nova.arbiscan.io/",
   },
 }
 

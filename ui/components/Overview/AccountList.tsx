@@ -1,4 +1,6 @@
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { AccountTotalList } from "@tallyho/tally-background/redux-slices/selectors"
+import classNames from "classnames"
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
 import SharedIcon from "../Shared/SharedIcon"
@@ -7,8 +9,8 @@ import AccountItem from "./AccountItem"
 const getAccountsList = (accountsTotal: AccountTotalList) => {
   let totalsSum = 0
 
-  const list = Object.values(accountsTotal).map(
-    ({ ensName, totals, shortenedAddress }) => {
+  const list = Object.entries(accountsTotal).map(
+    ([address, { ensName, totals, shortenedAddress }]) => {
       const total = Object.values(totals).reduce(
         (sum, current) => sum + current,
         0
@@ -18,6 +20,7 @@ const getAccountsList = (accountsTotal: AccountTotalList) => {
 
       return {
         name: ensName ?? shortenedAddress,
+        address,
         total,
         percent: 0,
       }
@@ -52,7 +55,12 @@ export default function AccountList({
 
   return (
     <>
-      <div className="accounts_list">
+      <div
+        className={classNames(
+          "accounts_list",
+          isEnabled(FeatureFlags.SUPPORT_NFT_TAB) && "nft-update"
+        )}
+      >
         <div className="accounts_header">
           <span>
             {t("overview.accounts")}({accountsCount})
@@ -84,10 +92,11 @@ export default function AccountList({
         </div>
         <div>
           {(!isCollapsible || isOpen ? accounts : accounts.slice(0, 3)).map(
-            ({ name, total, percent }) => (
+            ({ address, name, total, percent }) => (
               <AccountItem
                 key={name}
                 name={name}
+                address={address}
                 total={total}
                 percent={percent}
               />
@@ -108,6 +117,18 @@ export default function AccountList({
           line-height: 16px;
           color: var(--green-40);
         }
+
+        .accounts_list.nft-update {
+          margin: 0;
+        }
+        .accounts_list.nft-update .accounts_header {
+          font-family: "Segment";
+          font-weight: 400;
+          font-size: 16px;
+          line-height: 24px;
+          color: var(--white);
+        }
+
         .accounts_toggle {
           display: flex;
           align-items: center;

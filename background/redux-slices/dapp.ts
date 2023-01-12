@@ -3,7 +3,16 @@ import Emittery from "emittery"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
 import { keyPermissionsByChainIdAddressOrigin } from "../services/provider-bridge/utils"
-import { ETHEREUM, GOERLI, OPTIMISM, POLYGON } from "../constants"
+import {
+  ARBITRUM_NOVA,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
+  ETHEREUM,
+  GOERLI,
+  OPTIMISM,
+  POLYGON,
+  ROOTSTOCK,
+} from "../constants"
 
 export type DAppPermissionState = {
   permissionRequests: { [origin: string]: PermissionRequest }
@@ -118,12 +127,19 @@ const dappSlice = createSlice({
           delete updatedPermissionRequests[permission.origin]
 
           // Support all networks regardless of which one initiated grant request
-          const permissions = [ETHEREUM, POLYGON, OPTIMISM, GOERLI].map(
-            (network) => ({
-              ...permission,
-              chainID: network.chainID,
-            })
-          )
+          const permissions = [
+            ETHEREUM,
+            ROOTSTOCK,
+            POLYGON,
+            OPTIMISM,
+            AVALANCHE,
+            BINANCE_SMART_CHAIN,
+            GOERLI,
+            ARBITRUM_NOVA,
+          ].map((network) => ({
+            ...permission,
+            chainID: network.chainID,
+          }))
 
           const allowedPermission = keyPermissionsByChainIdAddressOrigin(
             permissions,

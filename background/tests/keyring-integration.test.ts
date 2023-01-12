@@ -1,8 +1,6 @@
-import "mockzilla-webextension"
-
 import { webcrypto } from "crypto"
-import { Browser } from "webextension-polyfill"
-import { MockzillaDeep } from "mockzilla"
+import browser from "webextension-polyfill"
+
 import KeyringService, {
   Keyring,
   MAX_KEYRING_IDLE_TIME,
@@ -84,18 +82,18 @@ function expectBase64String(
   )
 }
 
-const mockAlarms = (mock: MockzillaDeep<Browser>) => {
-  mock.alarms.create.mock(() => ({}))
-  mock.alarms.onAlarm.addListener.mock(() => ({}))
+const mockAlarms = () => {
+  browser.alarms.create = jest.fn(() => ({}))
+  browser.alarms.onAlarm.addListener = jest.fn(() => ({}))
 }
 
 describe("KeyringService when uninitialized", () => {
   let service: KeyringService
 
   beforeEach(async () => {
-    mockBrowser.storage.local.get.mock(() => Promise.resolve({}))
-    mockBrowser.storage.local.set.mock(() => Promise.resolve())
-    mockAlarms(mockBrowser)
+    browser.storage.local.get = jest.fn(() => Promise.resolve({}))
+    browser.storage.local.set = jest.fn(() => Promise.resolve())
+    mockAlarms()
 
     service = await startKeyringService()
   })
@@ -168,17 +166,17 @@ describe("KeyringService when initialized", () => {
   let address: string
 
   beforeEach(async () => {
-    mockAlarms(mockBrowser)
+    mockAlarms()
 
     let localStorage: Record<string, Record<string, unknown>> = {}
 
-    mockBrowser.storage.local.get.mock((key) => {
+    browser.storage.local.get = jest.fn((key) => {
       if (typeof key === "string" && key in localStorage) {
         return Promise.resolve({ [key]: localStorage[key] } || {})
       }
       return Promise.resolve({})
     })
-    mockBrowser.storage.local.set.mock((values) => {
+    browser.storage.local.set = jest.fn((values) => {
       localStorage = {
         ...localStorage,
         ...values,
@@ -291,18 +289,18 @@ describe("KeyringService when saving keyrings", () => {
   let localStorageCalls: Record<string, unknown>[] = []
 
   beforeEach(() => {
-    mockAlarms(mockBrowser)
+    mockAlarms()
 
     localStorage = {}
     localStorageCalls = []
 
-    mockBrowser.storage.local.get.mock((key) => {
+    browser.storage.local.get = jest.fn((key) => {
       if (typeof key === "string" && key in localStorage) {
         return Promise.resolve({ [key]: localStorage[key] } || {})
       }
       return Promise.resolve({})
     })
-    mockBrowser.storage.local.set.mock((values) => {
+    browser.storage.local.set = jest.fn((values) => {
       localStorage = {
         ...localStorage,
         ...values,
@@ -411,11 +409,11 @@ describe("Keyring service when autolocking", () => {
   let callAutolockHandler: (timeSinceInitialMock: number) => void
 
   beforeEach(async () => {
-    mockBrowser.storage.local.get.mock(() => Promise.resolve({}))
-    mockBrowser.storage.local.set.mock(() => Promise.resolve())
-    mockBrowser.alarms.create.mock(() => ({}))
+    browser.storage.local.get = jest.fn(() => Promise.resolve({}))
+    browser.storage.local.set = jest.fn(() => Promise.resolve())
+    browser.alarms.create = jest.fn(() => ({}))
 
-    mockBrowser.alarms.onAlarm.addListener.mock((handler) => {
+    browser.alarms.onAlarm.addListener = jest.fn((handler) => {
       callAutolockHandler = (timeSinceInitialMock) => {
         jest
           .spyOn(Date, "now")

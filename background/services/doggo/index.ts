@@ -14,7 +14,7 @@ import { HexString } from "../../types"
 import { AddressOnNetwork } from "../../accounts"
 import { DoggoDatabase, getOrCreateDB, ReferrerStats } from "./db"
 import { normalizeEVMAddress } from "../../lib/utils"
-import { HIDE_TOKEN_FEATURES } from "../../features"
+import { FeatureFlags, isEnabled } from "../../features"
 
 interface Events extends ServiceLifecycleEvents {
   newEligibility: Eligible
@@ -48,7 +48,7 @@ export default class DoggoService extends BaseService<Events> {
     super()
   }
 
-  protected async internalStartService(): Promise<void> {
+  protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
     const huntingGrounds = initialVaults
@@ -60,7 +60,7 @@ export default class DoggoService extends BaseService<Events> {
       )
     }
 
-    if (!HIDE_TOKEN_FEATURES) {
+    if (!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES)) {
       // Make sure the hunting ground assets are being tracked.
       huntingGrounds.forEach(({ network, asset }) => {
         this.indexingService.addAssetToTrack({ ...asset, homeNetwork: network })
@@ -88,7 +88,7 @@ export default class DoggoService extends BaseService<Events> {
     }
   }
 
-  protected async internalStopService(): Promise<void> {
+  protected override async internalStopService(): Promise<void> {
     await super.internalStopService()
   }
 

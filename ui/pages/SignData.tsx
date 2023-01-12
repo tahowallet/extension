@@ -1,8 +1,7 @@
-import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
   getAccountTotal,
   selectCurrentAccountSigner,
-  selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   rejectDataSignature,
@@ -32,16 +31,12 @@ export default function SignData(): ReactElement {
   })
   const dispatch = useBackgroundDispatch()
   const typedDataRequest = useBackgroundSelector(selectTypedData)
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const history = useHistory()
 
   const signerAccountTotal = useBackgroundSelector((state) => {
     if (typeof typedDataRequest !== "undefined") {
-      return getAccountTotal(state, {
-        address: typedDataRequest.account.address,
-        network: currentNetwork,
-      })
+      return getAccountTotal(state, typedDataRequest.account)
     }
     return undefined
   })
@@ -52,17 +47,12 @@ export default function SignData(): ReactElement {
 
   const isLocked = useIsSignerLocked(currentAccountSigner)
 
-  if (USE_UPDATED_SIGNING_UI) {
+  if (isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI)) {
     if (currentAccountSigner === null || typedDataRequest === undefined) {
       return <></>
     }
 
-    return (
-      <Signing
-        accountSigner={currentAccountSigner}
-        request={typedDataRequest}
-      />
-    )
+    return <Signing request={typedDataRequest} />
   }
 
   if (isLocked) return <></>

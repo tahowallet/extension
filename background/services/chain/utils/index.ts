@@ -23,7 +23,7 @@ import {
   isKnownTxType,
   KnownTxTypes,
 } from "../../../networks"
-import { USE_MAINNET_FORK } from "../../../features"
+import { FeatureFlags, isEnabled } from "../../../features"
 import { FORK } from "../../../constants"
 import type { PartialTransactionRequestWithFrom } from "../../enrichment"
 
@@ -213,7 +213,12 @@ export function unsignedTransactionFromEVMTransaction(
     gasLimit: BigNumber.from(tx.gasLimit),
     data: tx.input || "",
     value: BigNumber.from(tx.value),
-    chainId: parseInt(USE_MAINNET_FORK ? FORK.chainID : tx.network.chainID, 10),
+    chainId: parseInt(
+      isEnabled(FeatureFlags.USE_MAINNET_FORK)
+        ? FORK.chainID
+        : tx.network.chainID,
+      10
+    ),
     type: tx.type,
   }
 
@@ -237,7 +242,12 @@ export function ethersTransactionFromSignedTransaction(
     data: tx.input || "",
     gasPrice: tx.gasPrice ? BigNumber.from(tx.gasPrice) : undefined,
     type: tx.type,
-    chainId: parseInt(USE_MAINNET_FORK ? FORK.chainID : tx.network.chainID, 10),
+    chainId: parseInt(
+      isEnabled(FeatureFlags.USE_MAINNET_FORK)
+        ? FORK.chainID
+        : tx.network.chainID,
+      10
+    ),
     value: BigNumber.from(tx.value),
     gasLimit: BigNumber.from(tx.gasLimit),
   }
@@ -307,7 +317,7 @@ export function transactionFromEthersTransaction(
   },
   network: EVMNetwork
 ): AnyEVMTransaction {
-  if (tx.hash === undefined) {
+  if (!tx || tx.hash === undefined) {
     throw new Error("Malformed transaction")
   }
   if (!isKnownTxType(tx.type)) {

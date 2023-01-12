@@ -25,7 +25,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
-import { ETHEREUM } from "../../constants"
+import { NETWORK_FOR_LEDGER_SIGNING } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { AddressOnNetwork } from "../../accounts"
 
@@ -280,7 +280,7 @@ export default class LedgerService extends BaseService<Events> {
       this.#currentLedgerId = null
     }
 
-  protected async internalStartService(): Promise<void> {
+  protected override async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
     this.refreshConnectedLedger()
@@ -289,7 +289,7 @@ export default class LedgerService extends BaseService<Events> {
     navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
   }
 
-  protected async internalStopService(): Promise<void> {
+  protected override async internalStopService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
     navigator.usb.removeEventListener("disconnect", this.#handleUSBDisconnect)
@@ -424,7 +424,7 @@ export default class LedgerService extends BaseService<Events> {
           throw new Error("Transaction doesn't appear to have been signed.")
         }
 
-        if (!isKnownTxType(tx.type)) {
+        if (tx.type !== null && !isKnownTxType(tx.type)) {
           throw new Error(`Unknown transaction type ${tx.type}`)
         }
 
@@ -534,7 +534,11 @@ export default class LedgerService extends BaseService<Events> {
     { address, network }: AddressOnNetwork,
     hexDataToSign: HexString
   ): Promise<string> {
-    if (!sameNetwork(network, ETHEREUM)) {
+    if (
+      !NETWORK_FOR_LEDGER_SIGNING.find((supportedNetwork) =>
+        sameNetwork(network, supportedNetwork)
+      )
+    ) {
       throw new Error("Unsupported network for Ledger signing")
     }
 
@@ -570,5 +574,14 @@ export default class LedgerService extends BaseService<Events> {
     this.emitter.emit("signedData", signatureHex)
 
     return signatureHex
+  }
+
+  async isArbitraryDataSigningEnabled(): Promise<boolean> {
+    if (this.transport) {
+      const eth = new Eth(this.transport)
+      const appConfig = await eth.getAppConfiguration()
+      return appConfig.arbitraryDataEnabled !== 0
+    }
+    return false
   }
 }

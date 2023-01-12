@@ -1,6 +1,6 @@
 import sinon from "sinon"
 import ChainService from ".."
-import { ETHEREUM, OPTIMISM } from "../../../constants"
+import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"
 import {
   AnyEVMTransaction,
   TransactionRequest,
@@ -33,6 +33,10 @@ describe("ChainService", () => {
     await chainService.startService()
   })
 
+  afterEach(async () => {
+    await chainService.stopService()
+  })
+
   describe("internalStartService", () => {
     it("should not add duplicate networks on startup", async () => {
       // Startup is simulated in the `beforeEach`
@@ -44,7 +48,7 @@ describe("ChainService", () => {
     })
   })
 
-  it("handlePendingTransactions should update nonce tracking, subscribe to transaction confirmations, and persist the transaction to indexedDB", async () => {
+  it("handlePendingTransactions on chains without mempool should subscribe to transaction confirmations, and persist the transaction to indexedDB", async () => {
     const chainServiceExternalized =
       chainService as unknown as ChainServiceExternalized
     const CHAIN_NONCE = 100
@@ -61,6 +65,52 @@ describe("ChainService", () => {
       )
 
     const transactionRequestWithoutNonce = createLegacyTransactionRequest({
+      network: OPTIMISM,
+      chainID: OPTIMISM.chainID,
+      nonce: undefined,
+    })
+
+    // Populate EVM Transaction Nonce
+    await chainServiceExternalized.populateEVMTransactionNonce(
+      transactionRequestWithoutNonce
+    )
+
+    const { from, network } = transactionRequestWithoutNonce
+    expect(providerForNetworkOrThrow.called).toBe(true)
+
+    const validOptimismEVMTransaction = createAnyEVMTransaction({
+      nonce: CHAIN_NONCE + 1,
+      from,
+      network,
+    })
+
+    await chainServiceExternalized.handlePendingTransaction(
+      validOptimismEVMTransaction
+    )
+
+    // provider.once should be called inside of subscribeToTransactionConfirmation
+    // with the transaction hash
+    expect(onceSpy.called).toBe(true)
+  })
+  it("handlePendingTransactions on chains with mempool should update nonce tracking, subscribe to transaction confirmations, and persist the transaction to indexedDB", async () => {
+    const chainServiceExternalized =
+      chainService as unknown as ChainServiceExternalized
+    const CHAIN_NONCE = 100
+    // Return a fake provider
+    const onceSpy = sandbox.spy()
+    const providerForNetworkOrThrow = sandbox
+      .stub(chainServiceExternalized, "providerForNetworkOrThrow")
+      .callsFake(
+        () =>
+          ({
+            getTransactionCount: async () => CHAIN_NONCE,
+            once: onceSpy,
+          } as unknown as SerialFallbackProvider)
+      )
+
+    const transactionRequestWithoutNonce = createLegacyTransactionRequest({
+      network: POLYGON,
+      chainID: POLYGON.chainID,
       nonce: undefined,
     })
 
@@ -71,14 +121,9 @@ describe("ChainService", () => {
 
     const { chainID, from, network } = transactionRequestWithoutNonce
     expect(providerForNetworkOrThrow.called).toBe(true)
-    expect(
-      chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
-        chainID
-      ][from]
-    ).toBe(CHAIN_NONCE)
 
     const validOptimismEVMTransaction = createAnyEVMTransaction({
-      nonce: 101,
+      nonce: CHAIN_NONCE + 1,
       from,
       network,
     })
@@ -86,6 +131,17 @@ describe("ChainService", () => {
     await chainServiceExternalized.handlePendingTransaction(
       validOptimismEVMTransaction
     )
+
+    // provider.once should be called inside of subscribeToTransactionConfirmation
+    // with the transaction hash
+    expect(onceSpy.called).toBe(true)
+
+    expect(
+      chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+        chainID
+      ][from]
+    ).toBe(CHAIN_NONCE + 1)
+
     // Handling a pending transaction should update the last seem EVM transaction nonce
     expect(
       chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
@@ -93,14 +149,10 @@ describe("ChainService", () => {
       ][validOptimismEVMTransaction.from]
     ).toBe(validOptimismEVMTransaction.nonce)
 
-    // provider.once should be called inside of subscribeToTransactionConfirmation
-    // with the transaction hash
-    expect(onceSpy.called).toBe(true)
-
     // Transaction should be persisted to the db
     expect(
       await chainServiceExternalized.getTransaction(
-        OPTIMISM,
+        POLYGON,
         validOptimismEVMTransaction.hash
       )
     ).toBeTruthy()

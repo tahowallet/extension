@@ -5,14 +5,22 @@ import {
 } from "@tallyho/tally-background/lib/utils"
 import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import {
+  heuristicDesiredDecimalsForUnitPrice,
+  enrichAssetAmountWithMainCurrencyValues,
+} from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import {
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectTransactionData,
   selectTransactionMainCurrencyPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import { EVM_ROLLUP_CHAIN_IDS } from "@tallyho/tally-background/constants"
+import {
+  ARBITRUM_ONE,
+  BINANCE_SMART_CHAIN,
+  OPTIMISM,
+  ROOTSTOCK,
+} from "@tallyho/tally-background/constants"
 import {
   EVMNetwork,
   isEIP1559EnrichedTransactionRequest,
@@ -70,23 +78,44 @@ const estimateGweiAmount = (options: {
   transactionData?: EnrichedEVMTransactionRequest
 }): string => {
   const { network, networkSettings, baseFeePerGas, transactionData } = options
-
   let estimatedSpendPerGas =
     baseFeePerGas + networkSettings.values.maxPriorityFeePerGas
 
   if (
     transactionData &&
     !isEIP1559EnrichedTransactionRequest(transactionData) &&
-    EVM_ROLLUP_CHAIN_IDS.has(network.chainID)
+    network.chainID === OPTIMISM.chainID
   ) {
     estimatedSpendPerGas =
       (networkSettings.values.gasPrice || estimatedSpendPerGas) +
       transactionData.estimatedRollupGwei
   }
 
+  let desiredDecimals = 0
+
+  if (ROOTSTOCK.chainID === network.chainID) {
+    estimatedSpendPerGas = networkSettings.values.gasPrice ?? 0n
+    desiredDecimals = 2
+  }
+
+  if (network.chainID === ARBITRUM_ONE.chainID) {
+    estimatedSpendPerGas = baseFeePerGas
+    desiredDecimals = 2
+  }
+
+  if (network.chainID === BINANCE_SMART_CHAIN.chainID) {
+    estimatedSpendPerGas = networkSettings.values.gasPrice ?? 0n
+    desiredDecimals = 2
+  }
+
+  const estimatedSpendPerGasInGwei = weiToGwei(estimatedSpendPerGas ?? 0n)
+  const decimalLength = heuristicDesiredDecimalsForUnitPrice(
+    desiredDecimals,
+    Number(estimatedSpendPerGasInGwei)
+  )
   const estimatedGweiAmount = truncateDecimalAmount(
-    weiToGwei(estimatedSpendPerGas ?? 0n),
-    0
+    estimatedSpendPerGasInGwei,
+    decimalLength
   )
 
   return estimatedGweiAmount
@@ -131,7 +160,7 @@ export default function FeeSettingsText({
 
   const estimatedRollupFee =
     transactionData &&
-    EVM_ROLLUP_CHAIN_IDS.has(transactionData.network.chainID) &&
+    transactionData.network.chainID === OPTIMISM.chainID &&
     !isEIP1559TransactionRequest(transactionData)
       ? transactionData.estimatedRollupFee
       : 0n
@@ -147,12 +176,12 @@ export default function FeeSettingsText({
   if (!dollarValue) return <div>~{gweiValue}</div>
 
   return (
-    <div>
+    <div className="fee_settings_text_container">
       {!gasLimit ? (
         <>{t("networkFees.toBeDetermined")}</>
       ) : (
         <>
-          ~${dollarValue}
+          <span>~${dollarValue}</span>
           <span className="fee_gwei">({gweiValue})</span>
         </>
       )}
@@ -160,6 +189,11 @@ export default function FeeSettingsText({
         .fee_gwei {
           color: var(--green-60);
           margin-left: 5px;
+        }
+        .fee_settings_text_container {
+          display: flex;
+          justify-content: space-around;
+          flex-wrap: wrap;
         }
       `}</style>
     </div>

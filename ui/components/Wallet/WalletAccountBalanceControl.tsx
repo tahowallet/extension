@@ -1,87 +1,110 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import classNames from "classnames"
-import { useDispatch } from "react-redux"
-import { refreshBackgroundPage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectCurrentAccountSigner } from "@tallyho/tally-background/redux-slices/selectors"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
-import { USE_BALANCE_RELOADER } from "@tallyho/tally-background/features"
-import { useBackgroundSelector, useLocalStorage } from "../../hooks"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import classNames from "classnames"
+import { useHistory } from "react-router-dom"
+import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
 import ReadOnlyNotice from "../Shared/ReadOnlyNotice"
+import SharedSquareButton from "../Shared/SharedSquareButton"
 
-function BalanceReloader(): ReactElement {
-  const dispatch = useDispatch()
-
-  const [isSpinning, setIsSpinning] = useState(false)
-
-  // 0 = never
-  const [timeWhenLastReloaded, setTimeWhenLastReloaded] = useLocalStorage(
-    "timeWhenLastReloaded",
-    "0"
-  )
-
-  const loadingTimeMs = 15000
-  const timeGapBetweenRunningReloadMs = 60000 * 2
-
-  return (
-    <button
-      type="button"
-      disabled={isSpinning}
-      className={classNames("reload", { spinning: isSpinning })}
-      onClick={() => {
-        const currentTime = new Date().getTime()
-        setIsSpinning(true)
-
-        // Appear to spin regardless if too recent. Only refresh
-        // background page if timeGapBetweenRunningReloadMs is met.
-        if (
-          Number(timeWhenLastReloaded) + timeGapBetweenRunningReloadMs <
-          currentTime
-        ) {
-          setTimeWhenLastReloaded(`${currentTime}`)
-          dispatch(refreshBackgroundPage())
-        }
-        setTimeout(() => {
-          setIsSpinning(false)
-          window.location.reload()
-        }, loadingTimeMs)
-      }}
-    >
-      <style jsx>{`
-        .reload {
-          mask-image: url("./images/reload@2x.png");
-          mask-size: cover;
-          background-color: #fff;
-          width: 17px;
-          height: 17px;
-          margin-left: 10px;
-        }
-        .reload:hover {
-          background-color: var(--trophy-gold);
-        }
-        .reload:disabled {
-          pointer-events: none;
-        }
-        .spinning {
-          animation: spin 1s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-        }
-        .spinning:hover {
-          background-color: #fff;
-        }
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
-    </button>
-  )
+type ActionButtonsProps = {
+  onReceive: () => void
 }
 
+function ActionButtons(props: ActionButtonsProps): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet",
+  })
+  const { onReceive } = props
+  const history = useHistory()
+
+  return (
+    <div
+      className={classNames("action_buttons_wrap", {
+        margin: isEnabled(FeatureFlags.SUPPORT_NFT_TAB),
+      })}
+    >
+      {isEnabled(FeatureFlags.SUPPORT_NFT_TAB) ? (
+        <>
+          <div className="button_wrap">
+            <SharedSquareButton
+              icon="icons/s/send.svg"
+              ariaLabel={t("send")}
+              onClick={() => history.push("/send")}
+            >
+              {t("send")}
+            </SharedSquareButton>
+          </div>
+          <div className="button_wrap">
+            <SharedSquareButton
+              icon="icons/s/swap.svg"
+              ariaLabel={t("swap")}
+              onClick={() => history.push("/swap")}
+              iconColor={{
+                color: "var(--trophy-gold)",
+                hoverColor: "var(--trophy-gold)",
+              }}
+            >
+              {t("swap")}
+            </SharedSquareButton>
+          </div>
+          <div className="button_wrap">
+            <SharedSquareButton
+              icon="icons/s/receive.svg"
+              ariaLabel={t("receive")}
+              onClick={onReceive}
+            >
+              {t("receive")}
+            </SharedSquareButton>
+          </div>
+        </>
+      ) : (
+        <>
+          <SharedButton
+            iconSmall="send"
+            size="medium"
+            type="tertiary"
+            linkTo="/send"
+            iconPosition="left"
+          >
+            {t("send")}
+          </SharedButton>
+          <SharedButton
+            onClick={onReceive}
+            iconSmall="receive"
+            size="medium"
+            type="tertiary"
+            iconPosition="left"
+          >
+            {t("receive")}
+          </SharedButton>
+        </>
+      )}
+      <style jsx>
+        {`
+          .action_buttons_wrap {
+            display: flex;
+            width: 180px;
+            justify-content: space-between;
+          }
+          .margin {
+            margin: 8px 0 32px;
+          }
+          .button_wrap {
+            width: 50px;
+            text-align: center;
+          }
+        `}
+      </style>
+    </div>
+  )
+}
 interface Props {
   balance?: string
   initializationLoadingTimeExpired: boolean
@@ -90,7 +113,9 @@ interface Props {
 export default function WalletAccountBalanceControl(
   props: Props
 ): ReactElement {
-  const { t } = useTranslation()
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet",
+  })
   const { balance, initializationLoadingTimeExpired } = props
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false)
 
@@ -119,12 +144,11 @@ export default function WalletAccountBalanceControl(
           customStyles="margin: 12px 0"
           isLoaded={!shouldIndicateLoading}
         >
-          <div className="balance_label">{t("wallet.totalAccountBalance")}</div>
+          <div className="balance_label">{t("totalAccountBalance")}</div>
           <span className="balance_area">
             <span className="balance">
               <span className="dollar_sign">$</span>
               {balance ?? 0}
-              {USE_BALANCE_RELOADER && <BalanceReloader />}
             </span>
           </span>
         </SharedSkeletonLoader>
@@ -139,26 +163,7 @@ export default function WalletAccountBalanceControl(
           {currentAccountSigner !== ReadOnlyAccountSigner && (
             <>
               {hasSavedSeed ? (
-                <div className="send_receive_button_wrap">
-                  <SharedButton
-                    iconSmall="send"
-                    size="medium"
-                    type="tertiary"
-                    linkTo="/send"
-                    iconPosition="left"
-                  >
-                    {t("wallet.send")}
-                  </SharedButton>
-                  <SharedButton
-                    onClick={handleClick}
-                    iconSmall="receive"
-                    size="medium"
-                    type="tertiary"
-                    iconPosition="left"
-                  >
-                    {t("wallet.receive")}
-                  </SharedButton>
-                </div>
+                <ActionButtons onReceive={handleClick} />
               ) : (
                 <div className="save_seed_button_wrap">
                   <SharedButton
@@ -167,7 +172,7 @@ export default function WalletAccountBalanceControl(
                     type="warning"
                     linkTo="/onboarding/2"
                   >
-                    {t("wallet.secureSeed")}
+                    {t("secureSeed")}
                   </SharedButton>
                 </div>
               )}
@@ -195,11 +200,6 @@ export default function WalletAccountBalanceControl(
             line-height: 48px;
             display: flex;
             align-items: center;
-          }
-          .send_receive_button_wrap {
-            display: flex;
-            width: 180px;
-            justify-content: space-between;
           }
           .balance_actions {
             margin-bottom: 20px;

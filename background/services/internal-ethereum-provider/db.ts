@@ -3,13 +3,13 @@ import { ETHEREUM } from "../../constants"
 import { EVMNetwork } from "../../networks"
 import { TALLY_INTERNAL_ORIGIN } from "./constants"
 
-export type ActiveNetwork = {
+type NetworkForOrigin = {
   origin: string
   network: EVMNetwork
 }
 
 export class InternalEthereumProviderDatabase extends Dexie {
-  private activeNetwork!: Dexie.Table<ActiveNetwork, string>
+  private currentNetwork!: Dexie.Table<NetworkForOrigin, string>
 
   constructor() {
     super("tally/internal-ethereum-provider")
@@ -18,24 +18,42 @@ export class InternalEthereumProviderDatabase extends Dexie {
       activeNetwork: "&origin,chainId,network, address",
     })
 
+    this.version(2)
+      .stores({
+        currentNetwork: "&origin,chainId,network, address",
+      })
+      .upgrade((tx) => {
+        return tx
+          .table("activeNetwork")
+          .toArray()
+          .then((networksForOrigins) =>
+            tx.table("currentNetwork").bulkAdd(networksForOrigins)
+          )
+      })
+
+    this.version(3).stores({
+      activeNetworks: null,
+    })
+
     this.on("populate", (tx) => {
       return tx.db
-        .table("activeNetwork")
+        .table("currentNetwork")
         .add({ origin: TALLY_INTERNAL_ORIGIN, network: ETHEREUM })
     })
   }
 
-  async setActiveChainIdForOrigin(
+  async setCurrentChainIdForOrigin(
     origin: string,
     network: EVMNetwork
   ): Promise<string | undefined> {
-    return this.activeNetwork.put({ origin, network })
+    return this.currentNetwork.put({ origin, network })
   }
 
-  async getActiveNetworkForOrigin(
+  async getCurrentNetworkForOrigin(
     origin: string
-  ): Promise<ActiveNetwork | undefined> {
-    return this.activeNetwork.get({ origin })
+  ): Promise<EVMNetwork | undefined> {
+    const currentNetwork = await this.currentNetwork.get({ origin })
+    return currentNetwork?.network
   }
 }
 

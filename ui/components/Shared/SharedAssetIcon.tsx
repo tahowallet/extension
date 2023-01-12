@@ -1,40 +1,150 @@
-import React, { ReactElement } from "react"
+import React, {
+  ReactElement,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
 import { storageGatewayURL } from "@tallyho/tally-background/lib/storage-gateway"
+import classNames from "classnames"
 
-interface Props {
-  size: "small" | "medium" | "large"
+type Props = {
+  size: "small" | "medium" | "large" | number
   logoURL: string
   symbol: string
+}
+
+const hardcodedIcons = new Set(["ETH", "MATIC", "DOGGO", "RBTC", "AVAX", "BNB"])
+
+// Passes IPFS and Arweave through HTTP gateway
+function getAsHttpURL(anyURL: string) {
+  let httpURL = anyURL
+  try {
+    httpURL = storageGatewayURL(anyURL).href
+  } catch (err) {
+    httpURL = ""
+  }
+  return httpURL
+}
+
+type TypedIntersectionObserverEntry<T extends Element> =
+  IntersectionObserverEntry & {
+    target: T
+  }
+
+function useIntersectionObserver<T extends React.RefObject<HTMLElement>>(
+  ref: T,
+  callback: (
+    element: TypedIntersectionObserverEntry<
+      T extends React.RefObject<infer U> ? U : never
+    >
+  ) => void,
+  options: IntersectionObserverInit
+) {
+  const callbackRef = useRef(callback)
+  const [obs] = useState(
+    () =>
+      new IntersectionObserver(([element]) => {
+        callbackRef.current(
+          element as TypedIntersectionObserverEntry<
+            T extends React.RefObject<infer U> ? U : never
+          >
+        )
+      }, options)
+  )
+
+  useLayoutEffect(() => {
+    const target = ref.current
+
+    if (target) {
+      obs.observe(ref.current)
+    }
+
+    return () => {
+      if (target) obs.unobserve(target)
+    }
+  }, [ref, obs])
 }
 
 export default function SharedAssetIcon(props: Props): ReactElement {
   const { size, logoURL, symbol } = props
 
-  const hardcodedIcons = ["ETH", "DOGGO"]
-  const hasHardcodedIcon = hardcodedIcons.includes(symbol)
+  const [imageURL, setImageURL] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
+  const [visible, setIsVisible] = useState(false)
+  const [error, setHasError] = useState(false)
 
-  // Passes IPFS and Arweave through HTTP gateway
-  function getAsHttpURL(anyURL: string) {
-    let httpURL = anyURL
-    try {
-      httpURL = storageGatewayURL(new URL(anyURL)).href
-    } catch (err) {
-      httpURL = ""
+  const hasHardcodedIcon = hardcodedIcons.has(symbol)
+
+  const sizeClass = typeof size === "string" ? size : "custom_size"
+
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useIntersectionObserver(
+    containerRef,
+    (entry) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true)
+      }
+    },
+    { threshold: 0.01, root: null, rootMargin: "50px 0px 50px 0px" }
+  )
+
+  useEffect(() => {
+    if (!visible) {
+      return
     }
-    return httpURL
-  }
 
-  const httpURL = getAsHttpURL(logoURL)
+    const isIpfsURL = /^ipfs:/.test(logoURL)
+    const httpURL = getAsHttpURL(logoURL)
 
-  const shouldDisplayTokenIcon = Boolean(httpURL || hasHardcodedIcon)
+    const img = new Image()
+
+    img.onerror = () => {
+      if (isIpfsURL) {
+        fetch(httpURL)
+          .then(async (response) => {
+            if (
+              response.ok &&
+              response.headers.get("content-type") === "text/html"
+            ) {
+              const prefix = "data:image/svg+xml;base64,"
+              const base64URI = Buffer.from(
+                await response.arrayBuffer()
+              ).toString("base64")
+
+              setImageURL(prefix + base64URI)
+            } else {
+              throw new Error("INVALID_RESPONSE")
+            }
+          })
+          .catch(() => {
+            // connection error / bad response
+            setHasError(true)
+          })
+          .finally(() => setIsLoading(false))
+      } else {
+        setHasError(true)
+        setIsLoading(false)
+      }
+    }
+    img.onload = () => {
+      setIsLoading(false)
+      setImageURL(img.src)
+    }
+    img.src = httpURL
+  }, [visible, logoURL])
 
   return (
-    <div className={`token_icon_wrap ${size}`}>
-      {shouldDisplayTokenIcon ? (
+    <div
+      ref={containerRef}
+      className={classNames("token_icon_wrap", sizeClass)}
+    >
+      {hasHardcodedIcon || (!isLoading && !error) ? (
         <div className="token_icon" />
       ) : (
-        <div className={`token_icon_fallback ${size}`}>
-          {symbol.slice(0)[0]}
+        <div className={classNames("token_icon_fallback", sizeClass)}>
+          {symbol[0]}
         </div>
       )}
       <style jsx>
@@ -74,6 +184,12 @@ export default function SharedAssetIcon(props: Props): ReactElement {
         `}
       </style>
       <style jsx>{`
+        ${typeof size === "number"
+          ? `.token_icon_wrap.custom_size {
+              width: ${size}px;
+              height: ${size}px;
+            }`
+          : ""}
         .token_icon {
           width: 100%;
           height: 100%;
@@ -83,10 +199,20 @@ export default function SharedAssetIcon(props: Props): ReactElement {
           justify-content: center;
           ${hasHardcodedIcon
             ? `background: url("${`./images/assets/${symbol.toLowerCase()}.png`}");
-            background-size: cover;
             `
-            : `background: url("${httpURL}");
-            background-size: cover;`}
+            : `background: url("${imageURL}");
+            `}
+          background-size: cover;
+          animation: fadein 130ms ease-out forwards;
+        }
+
+        @keyframes fadein {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
         }
       `}</style>
     </div>

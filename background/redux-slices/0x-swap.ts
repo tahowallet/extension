@@ -8,7 +8,7 @@ import { fetchJson } from "@ethersproject/web"
 import { BigNumber, ethers, utils } from "ethers"
 
 import { createBackgroundAsyncThunk } from "./utils"
-import { FungibleAsset, SmartContractFungibleAsset } from "../assets"
+import { SwappableAsset } from "../assets"
 import logger from "../lib/logger"
 import {
   isValidSwapPriceResponse,
@@ -18,17 +18,21 @@ import {
 import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 import {
-  ARBITRUM_ONE,
+  CHAIN_ID_TO_0X_API_BASE,
   COMMUNITY_MULTISIG_ADDRESS,
   ETHEREUM,
-  GOERLI,
   OPTIMISM,
   OPTIMISTIC_ETH,
-  POLYGON,
 } from "../constants"
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
 import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
+import { AssetsState } from "./assets"
+import {
+  checkCurrencyAmount,
+  PriceDetails,
+  SwapQuoteRequest,
+} from "./utils/0x-swap-utils"
 
 // This is how 0x represents native token addresses
 const ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS =
@@ -45,27 +49,6 @@ type ZeroExValidationError = {
   field: string
   code: number
   reason: string
-}
-
-interface SwapAssets {
-  sellAsset: SmartContractFungibleAsset | FungibleAsset
-  buyAsset: SmartContractFungibleAsset | FungibleAsset
-}
-
-type SwapAmount =
-  | {
-      sellAmount: string
-    }
-  | {
-      buyAmount: string
-    }
-
-export type SwapQuoteRequest = {
-  assets: SwapAssets
-  amount: SwapAmount
-  slippageTolerance: number
-  gasPrice: bigint
-  network: EVMNetwork
 }
 
 export type ZrxPrice = ValidatedType<typeof isValidSwapPriceResponse>
@@ -137,14 +120,6 @@ export default swapSlice.reducer
 
 export const SWAP_FEE = 0.005
 
-const chainIdTo0xApiBase: { [chainID: string]: string | undefined } = {
-  [ETHEREUM.chainID]: "api.0x.org",
-  [POLYGON.chainID]: "polygon.api.0x.org",
-  [OPTIMISM.chainID]: "optimism.api.0x.org",
-  [GOERLI.chainID]: "goerli.api.0x.org",
-  [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
-}
-
 const get0xApiBase = (network: EVMNetwork) => {
   // Use gated features if there is an API key available in the build.
   const prefix =
@@ -154,7 +129,7 @@ const get0xApiBase = (network: EVMNetwork) => {
       ? "gated."
       : ""
 
-  const base = chainIdTo0xApiBase[network.chainID]
+  const base = CHAIN_ID_TO_0X_API_BASE[network.chainID]
   if (!base) {
     logger.error(`0x swaps are not supported on ${network.name}`)
     return null
@@ -176,10 +151,7 @@ const gatedHeaders: { [header: string]: string } =
       }
     : {}
 
-const get0xAssetName = (
-  asset: SmartContractFungibleAsset | FungibleAsset,
-  network: EVMNetwork
-) => {
+const get0xAssetName = (asset: SwappableAsset, network: EVMNetwork) => {
   // 0x Does not support trading MATIC by contract address on polygon
   if (network.name === "Polygon" && asset.symbol === "MATIC") {
     return "MATIC"
@@ -191,7 +163,10 @@ const get0xAssetName = (
   ) {
     return ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS
   }
-  return "contractAddress" in asset ? asset.contractAddress : asset.symbol
+
+  return "contractAddress" in asset && asset.contractAddress
+    ? asset.contractAddress
+    : asset.symbol
 }
 
 // Helper to build a URL to the 0x API for a given swap quote request. Usable
@@ -323,11 +298,19 @@ const parseAndNotifyOnZeroExApiError = (
 export const fetchSwapPrice = createBackgroundAsyncThunk(
   "0x-swap/fetchPrice",
   async (
-    quoteRequest: SwapQuoteRequest,
-    { dispatch }
-  ): Promise<{ quote: ZrxPrice; needsApproval: boolean } | undefined> => {
+    {
+      quoteRequest,
+    }: {
+      quoteRequest: SwapQuoteRequest
+    },
+    { dispatch, getState }
+  ): Promise<
+    | { quote: ZrxPrice; needsApproval: boolean; priceDetails: PriceDetails }
+    | undefined
+  > => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
+    const { assets } = getState() as { assets: AssetsState }
 
     const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest, {
       takerAddress: tradeAddress,
@@ -373,7 +356,27 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
 
       dispatch(setLatestQuoteRequest(quoteRequest))
 
-      return { quote, needsApproval }
+      const priceDetails = {
+        priceImpact: quote.estimatedPriceImpact
+          ? Number(quote.estimatedPriceImpact)
+          : 0,
+        buyCurrencyAmount: await checkCurrencyAmount(
+          Number(quote.buyTokenToEthRate),
+          quoteRequest.assets.buyAsset,
+          assets,
+          quote.buyAmount,
+          quoteRequest.network
+        ),
+        sellCurrencyAmount: await checkCurrencyAmount(
+          Number(quote.sellTokenToEthRate),
+          quoteRequest.assets.sellAsset,
+          assets,
+          quote.sellAmount,
+          quoteRequest.network
+        ),
+      }
+
+      return { quote, needsApproval, priceDetails }
     } catch (error) {
       logger.warn("Swap price API call threw an error!", apiData, error)
       parseAndNotifyOnZeroExApiError(error, dispatch)
@@ -440,7 +443,7 @@ export const approveTransfer = createBackgroundAsyncThunk(
 export const executeSwap = createBackgroundAsyncThunk(
   "0x-swap/executeSwap",
   async (
-    quote: ZrxQuote & { sellAsset: FungibleAsset; buyAsset: FungibleAsset },
+    quote: ZrxQuote & { sellAsset: SwappableAsset; buyAsset: SwappableAsset },
     { dispatch }
   ) => {
     const provider = getProvider()
@@ -476,6 +479,14 @@ export const executeSwap = createBackgroundAsyncThunk(
         type: "asset-swap",
         fromAssetAmount: sellAssetAmount,
         toAssetAmount: buyAssetAmount,
+        sources: quote.sources
+          .map(({ name, proportion }) => {
+            return {
+              name,
+              proportion: parseFloat(proportion),
+            }
+          })
+          .filter(({ proportion }) => proportion > 0),
         timestamp: Date.now(),
         blockTimestamp: undefined,
       },

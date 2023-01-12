@@ -1,11 +1,16 @@
 import React, { ReactElement, useState, useEffect } from "react"
-import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
+import {
+  MemoryRouter as Router,
+  Switch,
+  Route,
+  Redirect,
+  matchPath,
+} from "react-router-dom"
 import { ErrorBoundary } from "react-error-boundary"
 
 import classNames from "classnames"
 import {
   setRouteHistoryEntries,
-  Location,
   userActivityEncountered,
 } from "@tallyho/tally-background/redux-slices/ui"
 
@@ -14,14 +19,16 @@ import { Provider } from "react-redux"
 import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { runtime } from "webextension-polyfill"
-import { USE_UPDATED_SIGNING_UI } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
 import {
+  getAddressCount,
   selectCurrentAccountSigner,
   selectCurrentAddressNetwork,
   selectKeyringStatus,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { Location } from "history"
 import {
   useIsDappPopup,
   useBackgroundDispatch,
@@ -49,7 +56,8 @@ const pagePreferences = Object.fromEntries(
 function transformLocation(
   inputLocation: Location,
   isTransactionPendingSignature: boolean,
-  needsKeyringUnlock: boolean
+  needsKeyringUnlock: boolean,
+  hasAccounts: boolean
 ): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
   // so I need to grab it from the window
@@ -58,6 +66,7 @@ function transformLocation(
 
   let { pathname } = inputLocation
   if (
+    hasAccounts &&
     isAllowedQueryParamPage(maybePage) &&
     !inputLocation.pathname.includes("/keyring/")
   ) {
@@ -66,7 +75,7 @@ function transformLocation(
 
   if (isTransactionPendingSignature) {
     pathname =
-      !USE_UPDATED_SIGNING_UI && needsKeyringUnlock
+      !isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI) && needsKeyringUnlock
         ? "/keyring/unlock"
         : "/sign-transaction"
   }
@@ -93,10 +102,15 @@ export function Main(): ReactElement {
   const currentAccount = useBackgroundSelector(selectCurrentAddressNetwork)
   // Emit an event when the popup page is first loaded.
   useEffect(() => {
+    /**
+     * Marking user activity every time this component is rerendered
+     * lets us avoid edge cases where we fail to mark user activity on
+     * a given account when a user has the wallet open for longer than
+     * the current NETWORK_POLLING_TIMEOUT and is clicking around between
+     * tabs / into assets / etc.
+     */
     dispatch(userActivityEncountered(currentAccount))
-    // We explicitly do not want to reload on dependency change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  })
 
   const isDappPopup = useIsDappPopup()
   const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)
@@ -129,6 +143,9 @@ export function Main(): ReactElement {
   )
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
   const keyringStatus = useBackgroundSelector(selectKeyringStatus)
+  const hasAccounts = useBackgroundSelector(
+    (state) => getAddressCount(state) > 0
+  )
 
   const needsKeyringUnlock =
     isTransactionPendingSignature &&
@@ -148,7 +165,8 @@ export function Main(): ReactElement {
             const transformedLocation = transformLocation(
               routeProps.location,
               isTransactionPendingSignature,
-              needsKeyringUnlock
+              needsKeyringUnlock,
+              hasAccounts
             )
 
             const normalizedPathname = pagePreferences[
@@ -200,8 +218,24 @@ export function Main(): ReactElement {
                     >
                       <TopMenu />
                     </div>
-                    {/* @ts-expect-error TODO: fix the typing when the feature works */}
                     <Switch location={transformedLocation}>
+                      {
+                        // If there are no existing accounts, display onboarding
+                        // (if we're not there already)
+                        //
+                        !isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING) &&
+                          !hasAccounts &&
+                          !matchPath(transformedLocation.pathname, {
+                            path: [
+                              "/onboarding",
+                              // need to unlock or set new password to import an account
+                              "/keyring",
+                              // this route has it's own error message
+                              "/dapp-permission",
+                            ],
+                            exact: false,
+                          }) && <Redirect to="/onboarding/info-intro" />
+                      }
                       {pageList.map(
                         ({ path, Component, hasTopBar, hasTabBar }) => {
                           return (

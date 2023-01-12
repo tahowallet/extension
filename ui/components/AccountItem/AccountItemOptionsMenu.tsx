@@ -1,10 +1,11 @@
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, useRef, useState } from "react"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
+import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useOnClickOutside } from "../../hooks"
+import { useBackgroundDispatch } from "../../hooks"
+import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import AccountItemEditName from "./AccountItemEditName"
-import AccountitemOptionLabel from "./AccountItemOptionLabel"
 import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
 
 type AccountItemOptionsMenuProps = {
@@ -17,18 +18,19 @@ export default function AccountItemOptionsMenu({
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem",
   })
+  const dispatch = useBackgroundDispatch()
   const { address, network } = accountTotal
-  const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
     useState(false)
   const [showEditName, setShowEditName] = useState(false)
-  const optionsMenuRef = useRef(null)
-  useOnClickOutside(optionsMenuRef, () => {
-    setShowOptionsMenu(false)
-  })
+
+  const copyAddress = useCallback(() => {
+    navigator.clipboard.writeText(address)
+    dispatch(setSnackbarMessage("Address copied to clipboard"))
+  }, [address, dispatch])
 
   return (
-    <div className="options_menu_warp">
+    <div className="options_menu_wrap">
       <SharedSlideUpMenu
         size="custom"
         customSize="304px"
@@ -70,86 +72,48 @@ export default function AccountItemOptionsMenu({
           />
         </div>
       </SharedSlideUpMenu>
-      <button
-        type="button"
-        className="icon_settings"
-        role="menu"
-        tabIndex={0}
-        onKeyPress={(e) => {
-          if (e.key === "enter") {
-            setShowOptionsMenu(true)
-          }
-        }}
-        onClick={(e) => {
-          e.stopPropagation()
-          setShowOptionsMenu(true)
-        }}
+      <SharedDropdown
+        toggler={(toggle) => (
+          <button
+            type="button"
+            className="icon_settings"
+            role="menu"
+            onClick={() => toggle()}
+            tabIndex={0}
+          />
+        )}
+        options={[
+          {
+            key: "edit",
+            icon: "icons/s/edit.svg",
+            label: t("editName"),
+            onClick: () => {
+              setShowEditName(true)
+            },
+          },
+          {
+            key: "copy",
+            icon: "icons/s/copy.svg",
+            label: t("copyAddress"),
+            onClick: () => {
+              copyAddress()
+            },
+          },
+          {
+            key: "remove",
+            icon: "garbage@2x.png",
+            label: t("removeAddress"),
+            onClick: () => {
+              setShowAddressRemoveConfirm(true)
+            },
+            color: "var(--error)",
+            hoverColor: "var(--error-80)",
+          },
+        ]}
       />
 
-      {showOptionsMenu && (
-        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-        <ul
-          ref={optionsMenuRef}
-          className="options"
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-          onMouseOver={(e) => e.stopPropagation()}
-          onFocus={(e) => e.stopPropagation()}
-        >
-          <li className="option">
-            <button
-              className="remove_address_button"
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowOptionsMenu(false)
-                setShowEditName(true)
-              }}
-            >
-              <AccountitemOptionLabel
-                icon="icons/s/edit.svg"
-                label={t("editName")}
-                hoverable
-              />
-            </button>
-            <button
-              type="button"
-              className="close_button"
-              aria-label="Close"
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowOptionsMenu(false)
-              }}
-            >
-              <div className="icon_close" />
-            </button>
-          </li>
-          <li className="option">
-            <button
-              className="remove_address_button"
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowOptionsMenu(false)
-                setShowAddressRemoveConfirm(true)
-              }}
-            >
-              <AccountitemOptionLabel
-                icon="garbage@2x.png"
-                label={t("removeAddress")}
-                hoverable
-                color="var(--error)"
-                hoverColor="var(--error-80)"
-              />
-            </button>
-          </li>
-        </ul>
-      )}
       <style jsx>
         {`
-          .options_menu_warp {
-            position: relative;
-          }
           .icon_settings {
             mask-image: url("./images/more_dots@2x.png");
             mask-repeat: no-repeat;
@@ -162,47 +126,6 @@ export default function AccountItemOptionsMenu({
           }
           .icon_settings:hover {
             background-color: var(--green-40);
-          }
-          .remove_address_button {
-            flex-grow: 2;
-          }
-          .options {
-            position: absolute;
-            right: 6px;
-            top: -6px;
-            cursor: default;
-            border-radius: 4px;
-            background-color: var(--green-120);
-            display: flex;
-            align-items: center;
-            flex-direction: column;
-            justify-content: space-between;
-            width: 212px;
-            border-radius: 4px;
-            z-index: 1;
-          }
-          .option {
-            display: flex;
-            line-height: 24px;
-            padding: 14px;
-            flex-direction: row;
-            width: 90%;
-            align-items: center;
-            height: 100%;
-            cursor: default;
-            justify-content: space-between;
-          }
-          .icon_close {
-            mask-image: url("./images/close.svg");
-            mask-size: cover;
-            margin-right -2px;
-            width: 11px;
-            height: 11px;
-            background-color: var(--green-40);
-            z-index: 1;
-          }
-          .icon_close:hover {
-            background-color: var(--green-20);
           }
         `}
       </style>

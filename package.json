@@ -1,7 +1,7 @@
 {
   "name": "@tallyho/tally-extension",
   "private": true,
-  "version": "0.16.5",
+  "version": "0.18.7",
   "description": "Tally Ho, the community owned and operated Web3 wallet.",
   "main": "index.js",
   "repository": "git@github.com:thesis/tally-extension.git",
@@ -14,7 +14,8 @@
       "./setupJest.ts"
     ],
     "setupFilesAfterEnv": [
-      "./setupJest.env.ts"
+      "./setupJest.env.ts",
+      "./ui/setupJest.env.ts"
     ],
     "testEnvironment": "jsdom"
   },
@@ -34,17 +35,21 @@
     "devtools": "redux-devtools --hostname=localhost --port=8000",
     "lint": "run-p lint:*",
     "lint-fix": "run-p lint:*:fix",
-    "lint:config": "prettier -c '**/*.@(json|yaml|toml)'",
-    "lint:config:fix": "prettier -w '**/*.@(json|yaml|toml)'",
+    "lint:config": "prettier -c '**/*.@(json|yaml|toml|yml)'",
+    "lint:config:fix": "prettier -w '**/*.@(json|yaml|toml|yml)'",
     "lint:docs": "prettier -c '**/*.md'",
     "lint:docs:fix": "prettier -w '**/*.md'",
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
-    "test": "jest --forceExit",
+    "test": "yarn run test:unit && yarn run test:integration && yarn run test:ui",
+    "test:integration": "echo \"> Running Integration Tests\" && jest \"integration.test.ts\" --forceExit --runInBand",
+    "test:unit": "echo \"> Running Unit Tests\" && jest \"unit.test.ts\" --forceExit",
+    "test:ui": "echo \"> Running UI Tests\" && jest \".test.tsx\" --forceExit",
+    "test:e2e": "echo \"> Running e2e Tests\" && playwright test",
     "preversion": "(which jq &>1 && which yq &>1) || (echo 'You must install jq and yq; scripts/macos-setup.sh for macOS.' && exit 1)",
     "version": "scripts/update-version.sh",
     "postversion": "git push --tags origin release-$npm_package_version",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package && playwright install chromium"
   },
   "workspaces": [
     "ui",
@@ -63,6 +68,7 @@
     "@tallyho/window-provider": "0.0.1",
     "buffer": "^6.0.3",
     "react": "^17.0.2",
+    "sinon": "^14.0.1",
     "webext-options-sync": "^2.0.1",
     "webext-redux": "^2.1.7",
     "webextension-polyfill": "^0.7.0"
@@ -73,6 +79,7 @@
     "@babel/preset-react": "^7.12.13",
     "@babel/preset-typescript": "^7.15.0",
     "@babel/register": "^7.14.5",
+    "@playwright/test": "^1.26.1",
     "@types/archiver": "^5.1.0",
     "@types/copy-webpack-plugin": "^8.0.0",
     "@types/dotenv-webpack": "^7.0.3",
@@ -87,6 +94,7 @@
     "archiver": "^5.3.0",
     "babel-loader": "^8.2.2",
     "copy-webpack-plugin": "^9.0.0",
+    "dexie": "^3.0.3",
     "dotenv-defaults": "^2.0.2",
     "dotenv-webpack": "^7.0.3",
     "eslint": "^7.28.0",

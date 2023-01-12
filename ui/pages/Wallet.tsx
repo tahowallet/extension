@@ -1,15 +1,15 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { Redirect } from "react-router-dom"
 import {
-  getAddressCount,
-  selectCurrentAccountActivitiesWithTimestamps,
+  selectCurrentAccountActivities,
   selectCurrentAccountBalances,
+  selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
 
-import { HIDE_TOKEN_FEATURES } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
+import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -18,20 +18,21 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
 import NFTsWallet from "../components/NFTs/NFTsWallet"
 import SharedBanner from "../components/Shared/SharedBanner"
+import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultBanner"
+import WalletBanner from "../components/Wallet/Banner/WalletBanner"
+import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
+import NFTListCurrentWallet from "../components/NFTS_update/NFTListCurrentWallet"
 
 export default function Wallet(): ReactElement {
-  const { t } = useTranslation("translation", { keyPrefix: "wallet" })
+  const { t } = useTranslation()
   const [panelNumber, setPanelNumber] = useState(0)
 
   const dispatch = useBackgroundDispatch()
 
-  const hasAccounts = useBackgroundSelector(
-    (state) => getAddressCount(state) > 0
-  )
-
   //  accountLoading, hasWalletErrorCode
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
   const claimState = useBackgroundSelector((state) => state.claim)
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   useEffect(() => {
     dispatch(
@@ -41,36 +42,51 @@ export default function Wallet(): ReactElement {
     )
   }, [claimState, dispatch])
 
+  useEffect(() => {
+    // On network switch from top menu reset ui back to assets tab
+    if (!NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
+      setPanelNumber(0)
+    }
+  }, [selectedNetwork.chainID])
+
   const { assetAmounts, totalMainCurrencyValue } = accountData ?? {
     assetAmounts: [],
     totalMainCurrencyValue: undefined,
   }
 
   const currentAccountActivities = useBackgroundSelector(
-    selectCurrentAccountActivitiesWithTimestamps
+    selectCurrentAccountActivities
   )
 
   const initializationLoadingTimeExpired = useBackgroundSelector(
     (background) => background.ui?.initializationLoadingTimeExpired
   )
 
-  // If an account doesn't exist, display onboarding
-  if (!hasAccounts) {
-    return <Redirect to="/onboarding/info-intro" />
+  const panelNames = [t("wallet.pages.assets")]
+
+  if (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
+    panelNames.push(t("wallet.pages.NFTs"))
   }
 
-  const panelNames = [t("pages.assets"), t("pages.NFTs"), t("pages.activity")]
+  panelNames.push(t("wallet.pages.activity"))
 
   return (
     <>
       <div className="page_content">
+        <WalletToggleDefaultBanner />
+        <WalletAnalyticsNotificationBanner />
         <div className="section">
           <WalletAccountBalanceControl
             balance={totalMainCurrencyValue}
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           />
         </div>
-        {!HIDE_TOKEN_FEATURES && <OnboardingOpenClaimFlowBanner />}
+        {isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && (
+          <WalletBanner />
+        )}
+        {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
+          <OnboardingOpenClaimFlowBanner />
+        )}
         <div className="section">
           <SharedPanelSwitcher
             setPanelNumber={setPanelNumber}
@@ -90,21 +106,28 @@ export default function Wallet(): ReactElement {
                 }
               />
             )}
-            {panelNumber === 1 && (
-              <>
-                <SharedBanner
-                  icon="notif-announcement"
-                  iconColor="var(--link)"
-                  canBeClosed
-                  id="nft_soon"
-                  customStyles="margin: 8px 0;"
-                >
-                  {t("NFTPricingComingSoon")}
-                </SharedBanner>
-                <NFTsWallet />
-              </>
-            )}
-            {panelNumber === 2 && (
+            {panelNumber === 1 &&
+              NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) &&
+              (isEnabled(FeatureFlags.SUPPORT_NFT_TAB) ? (
+                <NFTListCurrentWallet />
+              ) : (
+                <>
+                  <SharedBanner
+                    icon="notif-announcement"
+                    iconColor="var(--link)"
+                    canBeClosed
+                    id="nft_soon"
+                    customStyles="margin: 8px 0;"
+                  >
+                    {t("nfts.NFTPricingComingSoon")}
+                  </SharedBanner>
+                  <NFTsWallet />
+                </>
+              ))}
+            {panelNumber ===
+              (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)
+                ? 2
+                : 1) && (
               <WalletActivityList activities={currentAccountActivities ?? []} />
             )}
           </div>

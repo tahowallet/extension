@@ -9,7 +9,10 @@
       "regularWarning": "Removing this address doesn't delete your recovery phrase or any private keys. Instead it just hides it from the extension and you won't be able to use it until you add it back.",
       "loudWarningTitle": "Removing this address will remove its associated account from the UI.",
       "loudWarningBody": "Are you sure you want to proceed?",
+      "lastAccountWarningTitle": "Once this account is removed you won't be able to use the wallet until you complete onboarding again.",
+      "lastAccountWarningBody": "Are you sure you want to proceed?",
       "removeAddress": "Remove address",
+      "copyAddress": "Copy address",
       "removeConfirm": "Yes, I want to remove it"
     },
     "notificationPanel": {
@@ -24,7 +27,12 @@
         "readOnly": "Preview",
         "ledger": "Hardware wallets",
         "others": "Imported & generated"
-      }
+      },
+      "signing": {
+        "lock": "Lock signing",
+        "unlock": "Unlock signing"
+      },
+      "snackbar": "Signing locked"
     }
   },
   "viewAddressOnBlockExplorer": "View address on {{blockExplorer}}",
@@ -33,11 +41,19 @@
   },
   "assetInput": {
     "search": "Search by name or address",
+    "searchNFT": "Search NFT",
     "selectToken": "Select token",
     "error": {
       "invalidAmount": "Invalid amount",
       "insufficientBalance": "Insufficient balance"
     }
+  },
+  "priceDetails": {
+    "priceImpactTooltip": {
+      "firstLine": "Price impact between assets is high.",
+      "secondLine": "This is due to low liquidity of the swap pair."
+    },
+    "noAssetPrice": "No price information"
   },
   "comingSoon": "Coming soon",
   "dappConnection": {
@@ -69,18 +85,21 @@
     },
     "unlock": {
       "title": "Unlock signing",
+      "subtitle": "Enter your signing password to continue",
       "submitBtn": "Unlock",
       "signingPassword": "Signing password",
       "forgotPassword": "Forgot password?",
       "error": {
         "incorrect": "Incorrect password"
-      }
+      },
+      "snackbar": "Signing unlocked"
     }
   },
   "ledger": {
     "checkLedger": "Check Ledger",
     "onlyRejectFromLedger": "Tx can only be Rejected from Ledger",
     "onboarding": {
+      "connecting": "Connecting...",
       "prepare": {
         "continueButton": "Continue",
         "tryAgainButton": "Try Again",
@@ -154,8 +173,8 @@
       "bip44": "BIP 44 (Trezor, 🦊)",
       "ethTestnet": "Ethereum Testnet",
       "ledgerLegacy": "Ledger Legacy",
-      "rsk": "RSK",
-      "rskTestnet": "RSK Tetnet"
+      "rsk": "Rootstock",
+      "rskTestnet": "Rootstock Testnet"
     }
   },
   "networkFees": {
@@ -172,7 +191,7 @@
       "invalidLimit": "Gas Limit must be a number",
       "lowGas": "Low"
     },
-    "optimismOrArbitrum": {
+    "optimism": {
       "title": "Network fees",
       "header": "Gas fees on {{name}} work differently from Ethereum.",
       "transactionFee": "Transaction fee",
@@ -182,6 +201,22 @@
       "explainerTwo": "Tally Ho stays in sync with the current {{name}} and Ethereum network fees to estimate the fee for a given transaction.",
       "explainerThree": "Only in rare cases will the actual fee you pay change by more than 25% from the estimate.",
       "learnMore": "Learn More"
+    },
+    "rsk": {
+      "title": "Network fees",
+      "header": "Gas fees on RSK work differently from Ethereum.",
+      "minGasPrice": "Minimum Gas Price",
+      "multiplier": "10%",
+      "percentage": "percentage",
+      "estimatedGas": "Estimated Gas",
+      "explainerOne": "The estimated gas price for RSK transactions is calculated by adding 10% to the Minimum Gas Price obtained from the latest mined block.",
+      "explainerTwo": "Tally Ho stays in sync with the current RSK and Ethereum network fees to estimate the fee for a given transaction.",
+      "explainerThree": "Only in rare cases will the actual fee you pay change by more than 10% from the estimate.",
+      "learnMore": "Learn More"
+    },
+    "bsc": {
+      "title": "Coming soon!",
+      "description": "Changing network fees for BNB Chain is not currently available."
     },
     "miner": "Miner:",
     "maxBase": "Max Base:",
@@ -200,7 +235,58 @@
   },
   "nfts": {
     "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
-    "noTitle": "No title"
+    "noTitle": "No title",
+    "NFTPricingComingSoon": "Coming soon: NFT price + sending",
+    "type1": "NFTs",
+    "type2": "badges",
+    "noMatchingNFTs": "No {{type}} matching your filters",
+    "collectionHover": {
+      "close": "close",
+      "expand": "expand collection",
+      "view": "view details"
+    },
+    "preview": {
+      "owner": "Owner",
+      "floorPrice": "Floor price",
+      "send": "Send",
+      "viewOn": "View on",
+      "description": "Description",
+      "itemsCount": "Items in collection",
+      "creator": "Creator",
+      "properties": "Properties"
+    },
+    "units": {
+      "nft_one": "NFT",
+      "nft_other": "NFTs",
+      "badge_one": "Badge",
+      "badge_other": "Badges",
+      "collection_one": "Collection",
+      "collection_other": "Collections"
+    },
+    "header": {
+      "title": "Total floor price NFTs value",
+      "addAccountCTA": "Add account",
+      "emptyTitle": "No NFTs here",
+      "emptyDesc": "Add more accounts to see your NFTs, you can also just add read-only accounts"
+    },
+    "emptyBannerTitle": {
+      "nfts": "Explore markets",
+      "badge": "Explore badges"
+    },
+    "filters": {
+      "title": "Filter collections",
+      "sortType": {
+        "priceDesc": "Floor price: Descending",
+        "priceAsc": "Floor price: Ascending",
+        "newestAdded": "Newest added",
+        "oldestAdded": "Oldest added",
+        "numberInOneCollection": "Number (in 1 collection)"
+      },
+      "sortTypeTitle": "Sort collection",
+      "collectionsTitle": "Show/hide collections",
+      "accountsTitle": "Show/hide accounts",
+      "noCollections": "No collections"
+    }
   },
   "achievements": {
     "empty": "Nothing to see here",
@@ -208,6 +294,96 @@
     "collection": "Tally Ho collection"
   },
   "onboarding": {
+    "tabbed": {
+      "routeBasedContent": {
+        "newSeed": {
+          "tip": "If you want an easy way to preview Tally Ho, you can start by adding a view only account",
+          "action": "Add preview account"
+        },
+        "ledger": {
+          "tip": "Trezor integration coming soon, check out the open ",
+          "action": "Gitcoin bounty"
+        },
+        "addWallet": {
+          "tip": "Some of the code for this was written by Community contributors"
+        },
+        "viewOnly": {
+          "tip": "A good way to take a peak at what Tally Ho offers"
+        },
+        "importSeed": {
+          "tip": "Tally Ho offers the possibility of adding multiple recovery phrases"
+        },
+        "default": {
+          "fact1": "Fully owned by the community",
+          "fact2": "Accessible to everyone",
+          "fact3": "100% open source"
+        }
+      },
+      "intro": {
+        "title": "Let's get you setup!",
+        "useExisting": "Use existing wallet",
+        "createNew": "Create new wallet"
+      },
+      "addWallet": {
+        "title": "Use existing wallet",
+        "tip": "You can always add more wallets later",
+        "options": {
+          "importSeed": "Import recovery phrase",
+          "ledger": "Connect to Ledger",
+          "readOnly": "Read-only address"
+        },
+        "importSeed": {
+          "title": "Import secret recovery phrase",
+          "subtitle": "Paste or type your 12 to 24 word secret recovery phrase below.",
+          "inputLabel": "Input recovery phrase",
+          "submit": "Import account",
+          "errors": {
+            "pasteRecoveryPhrase": "Paste recovery phrase",
+            "phraseLengthError": "Must be a 12 or 24 word recovery phrase",
+            "invalidPhraseError": "Invalid recovery phrase"
+          }
+        },
+        "viewOnly": {
+          "title": "Read-only address",
+          "subtitle": "Add an Ethereum address or ENS name to view an existing wallet in Tally Ho!",
+          "submit": "Preview Tally Ho!",
+          "tip": "You can upgrade a view-only wallet later"
+        }
+      },
+      "newWalletIntro": {
+        "title": "Before we get started",
+        "warning": "It's important to write down your secret recovery phrase and store it somewhere safe.<br /><br />This is the only way to recover your accounts and funds.<br /><br /><u>You will not be able to export your recovery phrase later.</u>",
+        "submit": "Create recovery phrase",
+        "tip": "You can upgrade a view-only wallet later"
+      },
+      "newWalletReview": {
+        "title": "Save and store your recovery phrase",
+        "submit": "I wrote it down",
+        "copyAddressAction": "Copy phrase to clipboard",
+        "copyAddressSnackbar": "Copied to clipboard"
+      },
+      "newWalletVerify": {
+        "title": "Verify recovery phrase",
+        "subtitle": "Click on each word in the order that you are asked to",
+        "validState": "Verified",
+        "invalidState": "Incorrect Order",
+        "invalidStateMsg": "Verify the order and remove the ones that aren't in the right position.",
+        "verifyValidState": "Verify recovery phrase",
+        "submit": "Finalize",
+        "tip": "If you didn’t write it down, you can <url>start with a new phrase</url>"
+      },
+      "complete": {
+        "title": "Welcome to Tally Ho!",
+        "subtitle": "For faster access we recommend pinning Tally Ho to your browser",
+        "animationAlt": "Pin the wallet"
+      }
+    },
+    "setPassword": {
+      "title": "First, let's secure<br /> your wallet",
+      "setAsDefault": "Set Tally Ho as default wallet",
+      "submit": "Begin the hunt"
+    },
+    "supportedChains": "Supported Chains",
     "steps": {
       "create": "Create",
       "save": "Save",
@@ -251,6 +427,15 @@
     "accounts": "Accounts",
     "assets": "Assets",
     "networks": "Networks",
+    "nfts": "{{nfts}} in {{collections}} & {{badges}}",
+    "units": {
+      "nft": "<strong>1</strong> NFT",
+      "nft_other": "<strong>{{count}}</strong> NFTs",
+      "collection": "<strong>1</strong> Collection",
+      "collection_other": "<strong>{{count}}</strong> Collections",
+      "badge": "<strong>1</strong> Badge",
+      "badge_other": "<strong>{{count}}</strong> Badges"
+    },
     "tableHeader": {
       "asset": "Asset",
       "price": "Price",
@@ -267,9 +452,11 @@
   "popupEdition": "Community Edition",
   "protocol": {
     "mainnet": "Mainnet",
+    "beta": "Mainnet (beta)",
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
-    "compatibleChain": "Ethereum-compatible blockchain",
+    "compatibleChain": "Ethereum-compatible blockchain (beta)",
+    "avalanche": "Mainnet C-Chain (beta)",
     "connected": "Connected"
   },
   "readOnly": "Read-only",
@@ -284,9 +471,9 @@
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
     "analytics": "Analytics",
-    "joinTitle": "Join our community",
-    "joinDesc": "Join our Discord to give us feedback!",
-    "joinBtn": "Join and give feedback",
+    "needHelp": "Need Help?",
+    "customNetworks": "Custom networks",
+    "showBanners": "Show achievement banners",
     "versionLabel": "Version {{version}}",
     "unknownVersionOrCommit": "<unknown>",
     "exportLogs": {
@@ -332,9 +519,27 @@
       "disconnected": "Website disconnected",
       "ariaLabel": "Manage connected websites",
       "emptyList": "Not connected to any websites"
+    },
+    "customNetworksSettings": {
+      "title": "Custom networks",
+      "ariaLabel": "Open custom networks page",
+      "chainList": {
+        "description": "Fastest and safest way of adding a custom network is by visiting <link></link>, connecting your wallet and adding the chains you wish to see.",
+        "addBtn": "Add chains with Chainlist"
+      },
+      "customRPC": {
+        "description": "You can also add a custom RPC, this can be a bit risky as you might add a malicious RPC without knowing, that could result in loss of funds.",
+        "addBtn": "Add custom RPC (Advanced)"
+      }
     }
   },
+  "send": {
+    "balance": "Balance: {{amount}}"
+  },
   "shared": {
+    "tallyHo": "Tally Ho",
+    "metaMask": "MetaMask",
+    "injected": "Injected",
     "cancelBtn": "Cancel",
     "gwei": "Gwei",
     "send": "Send",
@@ -423,6 +628,7 @@
     "swapRewardsTeaser": "Swap rewards coming soon",
     "continueSwap": "Continue Swap",
     "exchangeRoute": "Exchange route",
+    "loadingQuote": "Fetching price",
     "rewards": {
       "header": "Swap rewards for community",
       "body": "This week, 240,000 DOGGO tokens will be equally shared as Swap Rewards.",
@@ -466,7 +672,14 @@
     },
     "connectedDappInfo": {
       "modalClose": "Background close",
-      "dAppTitle": "Account connected to"
+      "dAppTitle": "Account connected to",
+      "dappConnections": "Dapp connections",
+      "guideline": {
+        "title": "How to connect to dapps",
+        "step1": "Set Tally Ho as default",
+        "step2": "Click “connect to wallet” in a dapp",
+        "step3": "Select one similar to these"
+      }
     }
   },
   "wallet": {
@@ -488,8 +701,20 @@
       "transactionFrom": "From:",
       "loadingActivities": "Digging deeper..."
     },
+    "banner": {
+      "bannerTitle": "New Odyssey week!",
+      "emptyBannerContent": "Check out Arbitrum Odyssey campaign",
+      "notificationTitle": "Odyssey notifications",
+      "notificationDismissInfo": "Want to receive future Odyssey notifications? We will show you one every week that you can dismiss.",
+      "showNotifications": "Yes, show notification",
+      "dontShowNotifications": "No thanks",
+      "startNow": "Start now",
+      "learnMore": "Learn More",
+      "snackbar": "You can turn notification back from Settings"
+    },
     "totalAccountBalance": "Total account balance",
     "send": "Send",
+    "swap": "Swap",
     "receive": "Receive",
     "secureSeed": "First, secure your recovery seed",
     "sendAsset": "Send Asset",
@@ -503,14 +728,65 @@
       "NFTs": "NFTs",
       "activity": "Activity"
     },
-    "NFTPricingComingSoon": "Coming soon: NFT price + sending"
+    "defaultToggle": {
+      "snackbar": "You can change this in Settings later",
+      "isDefault": "is now your default wallet",
+      "notDefault": "is not your default wallet",
+      "tooltip": "Setting Tally Ho as your default wallet means that everytime you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
+    },
+    "analyticsNotification": {
+      "title": "Analytics are on",
+      "description": "They help us improve the wallet for you",
+      "settingsLink": "Change settings"
+    }
   },
   "dAppConnect": {
-    "switchWallet":{
+    "switchWallet": {
       "title": "Tally Ho not Default",
       "descFirstPart": "We disabled Tally as default wallet for you. You can always enable it back from Settings",
       "descSecondPart": "at any time.",
       "toggleTitle": "Use Tally Ho as default wallet"
     }
+  },
+  "globalError": {
+    "title": "Ups, nothing to see here",
+    "desc": "Looks like you encountered an empty bowl, try refreshing the page to see if something appears",
+    "submitBtn": "Refresh page"
+  },
+  "devPanel": {
+    "title": "Developer Panel",
+    "featureFlags": {
+      "title": "Feature flags",
+      "flags": {
+        "USE_MAINNET_FORK": "Use mainnet fork",
+        "RESOLVE_RNS_NAMES": "Resolve RNS names",
+        "HIDE_IMPORT_DERIVATION_PATH": "Hide import derivation path",
+        "HIDE_SWAP_REWARDS": "Hide swap rewards",
+        "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
+        "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
+        "SUPPORT_ANALYTICS": "Show Analytics page on the settings page",
+        "SUPPORT_KEYRING_LOCKING": "Enable to lock/unlock accounts ",
+        "SUPPORT_FORGOT_PASSWORD": "Enable to forgot password",
+        "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
+        "HIDE_TOKEN_FEATURES": "Hide token features",
+        "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
+        "SUPPORT_AVALANCHE": "Enable Avalanche network",
+        "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab",
+        "SUPPORT_NFT_SEND": "Enable sending NFTs",
+        "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
+        "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
+        "SUPPORT_BINANCE_SMART_CHAIN": "Enable Binance Smart Chain network",
+        "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
+        "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs"
+      }
+    }
+  },
+  "tabs": {
+    "wallet": "Wallet",
+    "nfts": "NFTs",
+    "portfolio": "Portfolio",
+    "swap": "Swap",
+    "earn": "Earn",
+    "settings": "Settings"
   }
 }

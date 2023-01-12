@@ -15,11 +15,16 @@ import {
   isTallyAccountPayload,
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
+import monitorForWalletConnectionPrompts from "./wallet-connection-handlers"
 
 // TODO: we don't want to impersonate MetaMask everywhere to not break existing integrations,
 //       so let's do this only on the websites that need this feature
 const impersonateMetamaskWhitelist = [
+  "traderjoexyz.com",
+  "transferto.xyz",
   "opensea.io",
+  "staking.polygon.technology",
+  "gmx.io",
   "app.lyra.finance",
   "matcha.xyz",
   "bridge.umbria.network",
@@ -30,7 +35,36 @@ const impersonateMetamaskWhitelist = [
   "kwenta.io",
   "stargate.finance",
   "etherscan.io",
+  "swapr.eth.link",
+  "apex.exchange",
+  "app.yieldprotocol.com",
+  "tofunft.com",
+  "aboard.exchange",
+  "portal.zksync.io",
+  "blur.io",
+  "app.benqi.fi",
+  "snowtrace.io",
+  "core.app",
+  "cbridge.celer.network",
+  "stargate.finance",
+  "app.multchain.cn",
+  "app.venus.io",
+  "app.alpacafinance.org",
+  "pancakeswap.finance",
+  "liquidifty.io",
+  "ankr.com",
+  "mint.xencrypto.io",
+  "bscscan.com",
+  "alchemy.com",
 ]
+
+const METAMASK_STATE_MOCK = {
+  accounts: null,
+  isConnected: false,
+  isUnlocked: false,
+  initialized: false,
+  isPermanentlyDisconnected: false,
+}
 
 export default class TallyWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
@@ -45,9 +79,24 @@ export default class TallyWindowProvider extends EventEmitter {
 
   isMetaMask = false
 
+  tallySetAsDefault = false
+
   isWeb3 = true
 
-  bridgeListeners = new Map()
+  requestResolvers = new Map<
+    string,
+    {
+      resolve: (value: unknown) => void
+      reject: (value: unknown) => void
+      sendData: {
+        id: string
+        target: string
+        request: Required<RequestArgument>
+      }
+    }
+  >()
+
+  _state?: typeof METAMASK_STATE_MOCK
 
   providerInfo = {
     label: "Tally Ho!",
@@ -90,22 +139,120 @@ export default class TallyWindowProvider extends EventEmitter {
           result.defaultWallet,
           result.shouldReload
         )
+        const currentHost = window.location.host
         if (
           impersonateMetamaskWhitelist.some((host) =>
-            window.location.host.includes(host)
+            currentHost.includes(host)
           )
         ) {
           this.isMetaMask = result.defaultWallet
+
+          if (
+            this.isMetaMask &&
+            // This is internal to MetaMask but accessed by this dApp
+            // TODO: Improve MetaMask provider impersonation
+            currentHost.includes("core.app")
+          ) {
+            // eslint-disable-next-line no-underscore-dangle
+            this._state = METAMASK_STATE_MOCK
+          }
+
+          this.tallySetAsDefault = result.defaultWallet
         }
         if (result.chainId && result.chainId !== this.chainId) {
-          this.handleChainIdChange.bind(this)(result.chainId)
+          this.handleChainIdChange(result.chainId)
         }
       } else if (isTallyAccountPayload(result)) {
-        this.handleAddressChange.bind(this)(result.address)
+        this.handleAddressChange(result.address)
       }
     }
 
+    /**
+     * Some dApps may have a problem with preserving a reference to a provider object.
+     * This is the result of incorrect assignment.
+     * In such a case, the object this is undefined
+     * which results in an error in the execution of the request.
+     * The request function should always have a provider object set.
+     */
+    this.request = this.request.bind(this)
+    monitorForWalletConnectionPrompts()
     this.transport.addEventListener(internalListener)
+    this.transport.addEventListener(this.internalBridgeListener.bind(this))
+  }
+
+  private internalBridgeListener(event: unknown): void {
+    let id
+    let result: unknown
+
+    if (isWindowResponseEvent(event)) {
+      if (
+        event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
+        event.source !== window || // we want to recieve messages only from the provider-bridge script
+        event.data.target !== WINDOW_PROVIDER_TARGET
+      ) {
+        return
+      }
+
+      ;({ id, result } = event.data)
+    } else if (isPortResponseEvent(event)) {
+      ;({ id, result } = event)
+    } else {
+      return
+    }
+
+    const requestResolver = this.requestResolvers.get(id)
+
+    if (!requestResolver) return
+
+    const { sendData, reject, resolve } = requestResolver
+
+    this.requestResolvers.delete(sendData.id)
+
+    const { method: sentMethod } = sendData.request
+
+    if (isEIP1193Error(result)) {
+      reject(result)
+    }
+
+    // let's emmit connected on the first successful response from background
+    if (!this.connected) {
+      this.connected = true
+      this.emit("connect", { chainId: this.chainId })
+    }
+
+    switch (sentMethod) {
+      case "wallet_switchEthereumChain":
+      case "wallet_addEthereumChain":
+        // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
+        if (result === null) {
+          this.handleChainIdChange(
+            (sendData.request.params[0] as { chainId: string }).chainId
+          )
+        }
+        break
+
+      case "eth_chainId":
+      case "net_version":
+        if (
+          typeof result === "string" &&
+          Number(this.chainId) !== Number(result)
+        ) {
+          this.handleChainIdChange(result)
+        }
+        break
+
+      case "eth_accounts":
+      case "eth_requestAccounts":
+        if (Array.isArray(result) && result.length !== 0) {
+          this.handleAddressChange(result)
+        }
+        break
+
+      default:
+        break
+    }
+
+    resolve(result)
   }
 
   // deprecated EIP-1193 method
@@ -169,6 +316,7 @@ export default class TallyWindowProvider extends EventEmitter {
     if (typeof method !== "string") {
       return Promise.reject(new Error(`unsupported method type: ${method}`))
     }
+
     const sendData = {
       id: this.requestID.toString(),
       target: PROVIDER_BRIDGE_TARGET,
@@ -182,87 +330,12 @@ export default class TallyWindowProvider extends EventEmitter {
 
     this.transport.postMessage(sendData)
 
-    return new Promise((resolve, reject) => {
-      // TODO: refactor the listener function out of the Promise
-      const listener = (event: unknown) => {
-        let id
-        let result: unknown
-
-        if (isWindowResponseEvent(event)) {
-          if (
-            event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
-            event.source !== window || // we want to recieve messages only from the provider-bridge script
-            event.data.target !== WINDOW_PROVIDER_TARGET
-          ) {
-            return
-          }
-
-          ;({ id, result } = event.data)
-        } else if (isPortResponseEvent(event)) {
-          ;({ id, result } = event)
-        } else {
-          return
-        }
-
-        if (sendData.id !== id) return
-
-        this.transport.removeEventListener(
-          this.bridgeListeners.get(sendData.id)
-        )
-        this.bridgeListeners.delete(sendData.id)
-
-        const { method: sentMethod } = sendData.request
-
-        // TODO: refactor these into their own function handler
-        // https://github.com/tallycash/tally-extension/pull/440#discussion_r753504700
-
-        if (isEIP1193Error(result)) {
-          reject(result)
-        }
-
-        // let's emmit connected on the first successful response from background
-        if (!this.connected) {
-          this.connected = true
-          this.emit("connect", { chainId: this.chainId })
-        }
-
-        if (
-          sentMethod === "wallet_switchEthereumChain" ||
-          sentMethod === "wallet_addEthereumChain"
-        ) {
-          // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
-          if (result === null) {
-            this.handleChainIdChange.bind(this)(
-              (sendData.request.params[0] as { chainId: string }).chainId
-            )
-          }
-        } else if (
-          sentMethod === "eth_chainId" ||
-          sentMethod === "net_version"
-        ) {
-          if (
-            typeof result === "string" &&
-            Number(this.chainId) !== Number(result)
-          ) {
-            this.handleChainIdChange.bind(this)(result)
-          }
-        } else if (
-          (sentMethod === "eth_accounts" ||
-            sentMethod === "eth_requestAccounts") &&
-          Array.isArray(result) &&
-          result.length !== 0
-        ) {
-          this.handleAddressChange.bind(this)(result)
-        }
-
-        resolve(result)
-      }
-
-      this.bridgeListeners.set(sendData.id, listener)
-      // TODO: refactor this to have a single `unsafeAddEventListener` call in the constructor
-      // https://github.com/tallycash/tally-extension/pull/440#discussion_r753509947
-
-      this.transport.addEventListener(this.bridgeListeners.get(sendData.id))
+    return new Promise<unknown>((resolve, reject) => {
+      this.requestResolvers.set(sendData.id, {
+        resolve,
+        reject,
+        sendData,
+      })
     })
   }
 

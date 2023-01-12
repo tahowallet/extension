@@ -2,12 +2,13 @@ import React, { ComponentType } from "react"
 import ReactDOM from "react-dom"
 import { Store } from "webext-redux"
 import { browser, newProxyStore } from "@tallyho/tally-background"
-import { SUPPORT_TABBED_ONBOARDING } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import "./_locales/i18n"
+import { getAllAddresses } from "@tallyho/tally-background/redux-slices/selectors"
 import Popup from "./pages/Popup"
 import Tab from "./pages/Tab"
 
-async function attachUIToRootElement(
+export async function attachUIToRootElement(
   component: ComponentType<{ store: Store }>,
   store?: Store
 ): Promise<void> {
@@ -34,9 +35,10 @@ export async function attachTabUIToRootElement(): Promise<void> {
 export async function attachPopupUIToRootElement(): Promise<void> {
   const store = await newProxyStore()
 
-  if (SUPPORT_TABBED_ONBOARDING) {
+  if (isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING)) {
     const state = store.getState()
-    if (Object.keys(state.account?.accountsData?.evm).length === 0) {
+
+    if (getAllAddresses(state).length === 0) {
       // we're onboarding! look for an onboarding tab, or open a new one,
       // rather than rendering the popup
       const baseURL = browser.runtime.getURL("tab.html")

@@ -24,6 +24,11 @@ import Eligible from "../pages/Claiming/Eligible"
 import SettingsExportLogs from "../pages/Settings/SettingsExportLogs"
 import SettingsAnalytics from "../pages/Settings/SettingsAnalytics"
 import SettingsConnectedWebsites from "../pages/Settings/SettingsConnectedWebsites"
+import HiddenDevPanel from "../components/HiddenDevPanel/HiddenDevPanel"
+import FeatureFlagsPanel from "../components/HiddenDevPanel/FeatureFlagsPanel"
+import NFTs from "../pages/NFTs"
+import Abilities from "../pages/Abilities"
+import SettingsCustomNetworks from "../pages/Settings/SettingsCustomNetworks"
 
 interface PageList {
   path: string
@@ -150,8 +155,22 @@ const pageList: PageList[] = [
     persistOnClose: true,
   },
   {
+    path: "/settings/custom-networks",
+    Component: SettingsCustomNetworks,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: true,
+  },
+  {
     path: "/settings",
     Component: Menu,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: true,
+  },
+  {
+    path: "/abilities",
+    Component: Abilities,
     hasTabBar: true,
     hasTopBar: false,
     persistOnClose: true,
@@ -168,6 +187,13 @@ const pageList: PageList[] = [
     Component: Swap,
     hasTabBar: true,
     hasTopBar: true,
+    persistOnClose: true,
+  },
+  {
+    path: "/nfts",
+    Component: NFTs,
+    hasTabBar: true,
+    hasTopBar: false,
     persistOnClose: true,
   },
   {
@@ -204,6 +230,20 @@ const pageList: PageList[] = [
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: true,
+  },
+  {
+    path: "/dev/feature-flags",
+    Component: FeatureFlagsPanel,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: false,
+  },
+  {
+    path: "/dev",
+    Component: HiddenDevPanel,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: false,
   },
   {
     path: "/",

@@ -6,22 +6,25 @@ import {
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
+import { useTranslation } from "react-i18next"
 import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryProps"
-import SharedAssetIcon from "../../../../Shared/SharedAssetIcon"
 import { useBackgroundSelector } from "../../../../../hooks"
 import SigningDataTransactionSummaryBody from "./TransactionSignatureSummaryBody"
 import SharedAddress from "../../../../Shared/SharedAddress"
+import SwapQuoteAssetCard from "../../../../Swap/SwapQuoteAssetCard"
 
 export default function SwapAssetSummary({
-  annotation: { fromAssetAmount, toAssetAmount },
+  annotation: { fromAssetAmount, toAssetAmount, sources, swapContractInfo },
   transactionRequest: { to },
 }: TransactionSignatureSummaryProps<AssetSwap>): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "swap" })
   const assets = useBackgroundSelector(getAssetsState)
 
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
+
   const fromAssetPricePoint = selectAssetPricePoint(
     assets,
-    fromAssetAmount.asset.symbol,
+    fromAssetAmount.asset,
     mainCurrencySymbol
   )
   const localizedFromMainCurrencyAmount =
@@ -31,39 +34,64 @@ export default function SwapAssetSummary({
       2
     ).localizedMainCurrencyAmount ?? "-"
 
+  const toAssetPricePoint = selectAssetPricePoint(
+    assets,
+    toAssetAmount.asset,
+    mainCurrencySymbol
+  )
+  const localizedToMainCurrencyAmount =
+    enrichAssetAmountWithMainCurrencyValues(toAssetAmount, toAssetPricePoint, 2)
+      .localizedMainCurrencyAmount ?? "-"
+
   return (
     <>
       <h1 className="serif_header title">Swap assets</h1>
       <SigningDataTransactionSummaryBody>
         <span className="site">
-          <SharedAddress address={to ?? "-"} />
-        </span>
-        <span className="pre_post_label">Spend amount</span>
-        <span className="spend_amount">
-          {fromAssetAmount.localizedDecimalAmount}{" "}
-          {fromAssetAmount.asset.symbol}
-        </span>
-        <span className="pre_post_label">
-          {localizedFromMainCurrencyAmount}
-        </span>
-        <div className="asset_items_wrap">
-          <div className="asset_item">
-            <SharedAssetIcon
-              size="small"
-              symbol={fromAssetAmount.asset.symbol}
-              logoURL={fromAssetAmount.asset.metadata?.logoURL}
+          {swapContractInfo !== undefined ? (
+            <SharedAddress
+              address={swapContractInfo.address}
+              name={
+                swapContractInfo.annotation?.nameRecord?.resolved?.nameOnNetwork
+                  ?.name
+              }
             />
-            <span className="asset_name">{fromAssetAmount.asset.symbol}</span>
-          </div>
-          <div className="icon_switch" />
-          <div className="asset_item">
-            <span className="asset_name">{toAssetAmount.asset.symbol}</span>
-            <SharedAssetIcon
-              size="small"
-              symbol={toAssetAmount.asset.symbol}
-              logoURL={toAssetAmount.asset.metadata?.logoURL}
-            />
-          </div>
+          ) : (
+            <SharedAddress address={to ?? "-"} />
+          )}
+        </span>
+        <div className="quote_cards">
+          <SwapQuoteAssetCard
+            label={t("sellAsset")}
+            asset={fromAssetAmount.asset}
+            amount={fromAssetAmount.localizedDecimalAmount}
+          />
+          <span className="icon_switch" />
+          <SwapQuoteAssetCard
+            label={t("buyAsset")}
+            asset={toAssetAmount.asset}
+            amount={toAssetAmount.localizedDecimalAmount}
+          />
+        </div>
+        <span className="label label_right">
+          {mainCurrencySymbol} {localizedFromMainCurrencyAmount} in{" "}
+          {fromAssetAmount.asset.symbol} = {mainCurrencySymbol}{" "}
+          {localizedToMainCurrencyAmount} in {toAssetAmount.asset.symbol}
+        </span>
+        <div className="exchange_section_wrap">
+          <span className="top_label label">{t("exchangeRoute")}</span>
+
+          {sources.map((source) => (
+            <div className="exchange_content standard_width" key={source.name}>
+              <div className="left">
+                {source.name.includes("Uniswap") && (
+                  <span className="icon_uniswap" />
+                )}
+                {source.name}
+              </div>
+              <div>{source.proportion * 100}%</div>
+            </div>
+          ))}
         </div>
       </SigningDataTransactionSummaryBody>
       <style jsx>{`
@@ -132,14 +160,49 @@ export default function SwapAssetSummary({
               margin-top: 9px;
             }
             .asset_item {
+              display: grid;
+              grid-template: "icon amount"
+                             "icon symbol" / 40px 1fr;
               width: 108px;
               height: 48px;
               border-radius: 4px;
               background-color: var(--green-95);
               padding: 8px;
               box-sizing: border-box;
-              display: flex;
               align-items: center;
+            }
+            .asset_item > :global(.token_icon_wrap) {
+              grid-area: icon;
+            }
+            .asset_item .asset_name {
+              grid-area: symbol;
+            }
+            .asset_item .asset_amount {
+              grid-area: amount;
+            }
+            .quote_cards {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+            .exchange_section_wrap {
+              margin-top: 16px;
+            }
+            .exchange_content, .exchange_section_wrap .label {
+              padding: 0 16px;
+            }
+            .exchange_content {
+              height: 40px;
+              border-radius: 4px;
+              color: var(--green-20);
+              font-size: 14px;
+              font-weight: 400;
+              letter-spacing: 0.42px;
+              line-height: 16px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              box-sizing: border-box;
             }
           `}</style>
     </>

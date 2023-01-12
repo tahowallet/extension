@@ -7,7 +7,8 @@ import {
   selectAccountTotalsForOverview,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
-import { ENABLE_ACHIEVEMENTS_TAB } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../hooks"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -17,14 +18,19 @@ import BalanceHeader from "../components/Overview/BalanceHeader"
 import NetworksChart from "../components/Overview/NetworksChart"
 import AccountList from "../components/Overview/AccountList"
 import AchievementsOverview from "../components/NFTs/AchievementsOverview"
+import NFTsPortfolioOverview from "../components/Overview/NFTsPortfolioOverview"
+import AbilitiesHeader from "../components/Overview/AbilitiesHeader"
 
 const panelNames = ["Assets", "NFTs"]
 
-if (ENABLE_ACHIEVEMENTS_TAB) {
+if (isEnabled(FeatureFlags.ENABLE_ACHIEVEMENTS_TAB)) {
   panelNames.push("Achievements")
 }
 
-export default function Overview(): ReactElement {
+function Overview(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "nfts",
+  })
   const [panelNumber, setPanelNumber] = useState(0)
   const accountsTotal = useBackgroundSelector(selectAccountTotalsForOverview)
   const balance = useBackgroundSelector(getTotalBalanceForOverview)
@@ -45,6 +51,7 @@ export default function Overview(): ReactElement {
           balance={balance}
           initializationTimeExpired={initializationLoadingTimeExpired}
         />
+        {isEnabled(FeatureFlags.SUPPORT_ABILITIES) ? <AbilitiesHeader /> : null}
         <AccountList
           accountsTotal={accountsTotal}
           accountsCount={accountsCount}
@@ -76,7 +83,7 @@ export default function Overview(): ReactElement {
             id="nft_soon"
             customStyles="margin: 8px 0;"
           >
-            Coming soon: NFT price + sending
+            {t("NFTPricingComingSoon")}
           </SharedBanner>
           <NFTsOverview />
         </>
@@ -95,4 +102,60 @@ export default function Overview(): ReactElement {
       </style>
     </>
   )
+}
+
+function NewOverview(): ReactElement {
+  const accountsTotal = useBackgroundSelector(selectAccountTotalsForOverview)
+  const balance = useBackgroundSelector(getTotalBalanceForOverview)
+  const networksCount = useBackgroundSelector(getNetworkCountForOverview)
+  const accountsCount = useBackgroundSelector(getAddressCount)
+
+  const { combinedData } = useBackgroundSelector(
+    selectAccountAndTimestampedActivities
+  )
+  const initializationLoadingTimeExpired = useBackgroundSelector(
+    selectInitializationTimeExpired
+  )
+
+  return (
+    <section className="stats">
+      <BalanceHeader
+        balance={balance}
+        initializationTimeExpired={initializationLoadingTimeExpired}
+      />
+      {isEnabled(FeatureFlags.SUPPORT_ABILITIES) ? <AbilitiesHeader /> : null}
+      <AccountList
+        accountsTotal={accountsTotal}
+        accountsCount={accountsCount}
+      />
+      <NetworksChart
+        accountsTotal={accountsTotal}
+        networksCount={networksCount}
+      />
+      <NFTsPortfolioOverview />
+      <OverviewAssetsTable
+        assets={combinedData.assets}
+        initializationLoadingTimeExpired={initializationLoadingTimeExpired}
+      />
+      <style jsx>
+        {`
+          .stats {
+            padding: 16px 16px 24px;
+            width: calc(100% - 32px);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+          }
+        `}
+      </style>
+    </section>
+  )
+}
+
+export default function UpdatedOverview(): ReactElement {
+  if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
+    return <NewOverview />
+  }
+
+  return <Overview />
 }

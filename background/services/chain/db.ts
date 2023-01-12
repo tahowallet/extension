@@ -1,12 +1,17 @@
-import Dexie, { DexieOptions, IndexableTypeArray } from "dexie"
+import Dexie, { Collection, DexieOptions, IndexableTypeArray } from "dexie"
 
 import { UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
-import { AnyEVMBlock, AnyEVMTransaction, Network } from "../../networks"
+import {
+  AnyEVMBlock,
+  AnyEVMTransaction,
+  EVMNetwork,
+  Network,
+} from "../../networks"
 import { FungibleAsset } from "../../assets"
-import { GOERLI, POLYGON } from "../../constants"
+import { DEFAULT_NETWORKS, GOERLI, POLYGON } from "../../constants"
 
-type Transaction = AnyEVMTransaction & {
+export type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
   firstSeen: UNIXTime
 }
@@ -62,6 +67,8 @@ export class ChainDatabase extends Dexie {
    * Historic account balances.
    */
   private balances!: Dexie.Table<AccountBalance, number>
+
+  private networks!: Dexie.Table<EVMNetwork, string>
 
   constructor(options?: DexieOptions) {
     super("tally/chain", options)
@@ -135,6 +142,10 @@ export class ChainDatabase extends Dexie {
         return filteredModifications
       }
     )
+
+    this.version(5).stores({
+      networks: "&chainID,name,family",
+    })
   }
 
   async getLatestBlock(network: Network): Promise<AnyEVMBlock | null> {
@@ -165,8 +176,41 @@ export class ChainDatabase extends Dexie {
     )
   }
 
+  async getAllEVMNetworks(): Promise<EVMNetwork[]> {
+    return this.networks.where("family").equals("EVM").toArray()
+  }
+
+  async initializeEVMNetworks(): Promise<void> {
+    const existingNetworks = await this.getAllEVMNetworks()
+    await Promise.all(
+      DEFAULT_NETWORKS.map(async (defaultNetwork) => {
+        if (
+          !existingNetworks.some(
+            (network) => network.chainID === defaultNetwork.chainID
+          )
+        ) {
+          await this.networks.put(defaultNetwork)
+        }
+      })
+    )
+  }
+
   async getAllSavedTransactionHashes(): Promise<IndexableTypeArray> {
     return this.chainTransactions.orderBy("hash").keys()
+  }
+
+  async getAllTransactions(): Promise<Transaction[]> {
+    return this.chainTransactions.toArray()
+  }
+
+  async getTransactionsForNetworkQuery(
+    network: Network
+  ): Promise<Collection<Transaction, [string, string]>> {
+    return this.chainTransactions.where("network.name").equals(network.name)
+  }
+
+  async getTransactionsForNetwork(network: Network): Promise<Transaction[]> {
+    return (await this.getTransactionsForNetworkQuery(network)).toArray()
   }
 
   /**
@@ -175,9 +219,8 @@ export class ChainDatabase extends Dexie {
   async getNetworkPendingTransactions(
     network: Network
   ): Promise<(AnyEVMTransaction & { firstSeen: UNIXTime })[]> {
-    return this.chainTransactions
-      .where("network.name")
-      .equals(network.name)
+    const transactions = await this.getTransactionsForNetworkQuery(network)
+    return transactions
       .filter(
         (transaction) =>
           !("status" in transaction) &&
@@ -270,8 +313,8 @@ export class ChainDatabase extends Dexie {
       .toArray()
     return lookups.reduce(
       (newestBlock: bigint | null, lookup) =>
-        newestBlock === null || lookup.startBlock > newestBlock
-          ? lookup.startBlock
+        newestBlock === null || lookup.endBlock > newestBlock
+          ? lookup.endBlock
           : newestBlock,
       null
     )
@@ -302,6 +345,20 @@ export class ChainDatabase extends Dexie {
 
   async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.accountsToTrack.toArray()
+  }
+
+  async getTrackedAccountOnNetwork({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<AddressOnNetwork | null> {
+    return (
+      (
+        await this.accountsToTrack
+          .where("[address+network.name+network.chainID]")
+          .equals([address, network.name, network.chainID])
+          .toArray()
+      )[0] ?? null
+    )
   }
 
   async getChainIDsToTrack(): Promise<Set<string>> {

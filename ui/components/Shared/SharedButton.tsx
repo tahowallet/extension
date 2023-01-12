@@ -5,7 +5,7 @@ import { History } from "history"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
 import { PropsWithIcon } from "./types"
 
-interface Props {
+type Props = {
   children: React.ReactNode
   id?: string
   type:
@@ -16,12 +16,14 @@ interface Props {
     | "tertiaryWhite"
     | "tertiaryGray"
     | "tertiaryError"
-    | "tertiaryInvertedGold"
     | "deemphasizedWhite"
     | "warning"
     | "unstyled"
     | "twitter"
   size: "small" | "medium" | "large"
+  /**
+   * Default: right
+   */
   iconPosition?: "left" | "right"
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
   isDisabled?: boolean
@@ -29,6 +31,7 @@ interface Props {
   showLoadingOnClick: boolean
   isLoading: boolean
   isFormSubmit: boolean
+  center?: boolean
   style?: React.CSSProperties
 }
 
@@ -50,6 +53,7 @@ export default function SharedButton(
     isLoading,
     isFormSubmit,
     style,
+    center = false,
   } = props
 
   const [navigateTo, setNavigateTo] =
@@ -93,10 +97,10 @@ export default function SharedButton(
         { "tertiary white": type === "tertiaryWhite" },
         { "tertiary gray": type === "tertiaryGray" },
         { "tertiary error": type === "tertiaryError" },
-        { "tertiary inverted": type === "tertiaryInvertedGold" },
         { deemphasized_white: type === "deemphasizedWhite" },
         { warning: type === "warning" },
-        { twitter: type === "twitter" }
+        { twitter: type === "twitter" },
+        { center }
       )}
       onClick={handleClick}
       style={style}
@@ -158,6 +162,10 @@ export default function SharedButton(
           .button_content {
             display: flex;
             align-items: center;
+          }
+          .center .button_content {
+            justify-content: center;
+            width: 100%;
           }
           .icon_button {
             mask-image: url("./images/icons/s/${iconSmall}.svg");
@@ -295,18 +303,6 @@ export default function SharedButton(
           }
           .error:hover .icon_button {
             background-color: var(--error-80);
-          }
-          .inverted {
-            color: var(--green-40);
-          }
-          .inverted .icon_button {
-            background-color: var(--green-40);
-          }
-          .inverted:hover {
-            color: var(--trophy-gold);
-          }
-          .inverted:hover .icon_button {
-            background-color: var(--trophy-gold);
           }
           .tertiary.disabled {
             color: var(--green-60);

@@ -5,15 +5,19 @@ import { setNewSelectedAccount, UIState } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 import { Keyring, KeyringMetadata } from "../services/keyring/index"
 
+type KeyringToVerify = {
+  id: string
+  mnemonic: string[]
+} | null
+
 type KeyringsState = {
   keyrings: Keyring[]
-  keyringMetadata: { [keyringId: string]: { source: "import" | "internal" } }
+  keyringMetadata: {
+    [keyringId: string]: KeyringMetadata
+  }
   importing: false | "pending" | "done"
   status: "locked" | "unlocked" | "uninitialized"
-  keyringToVerify: {
-    id: string
-    mnemonic: string[]
-  } | null
+  keyringToVerify: KeyringToVerify
 }
 
 export const initialState: KeyringsState = {
@@ -95,7 +99,7 @@ const keyringsSlice = createSlice({
         keyringMetadata,
       }
     },
-    setKeyringToVerify: (state, { payload }) => ({
+    setKeyringToVerify: (state, { payload }: { payload: KeyringToVerify }) => ({
       ...state,
       keyringToVerify: payload,
     }),

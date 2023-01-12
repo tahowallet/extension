@@ -33,7 +33,6 @@ type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
   initializeAllowedPages: PermissionMap
   setClaimReferrer: string
-  dappOpenedOnChain: string
 }
 
 /**
@@ -103,7 +102,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
-  protected async internalStartService(): Promise<void> {
+  protected override async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
     this.emitter.emit(
@@ -128,18 +127,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
       jsonrpc: "2.0",
       result: [],
     }
-
-    const { chainID } =
-      await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+    const network =
+      await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
         origin
       )
 
-    if (event.request.method === "eth_requestAccounts") {
-      // This is analogous to "User opened a dapp on chain X"
-      this.emitter.emit("dappOpenedOnChain", chainID)
-    }
-
-    const originPermission = await this.checkPermission(origin, chainID)
+    const originPermission = await this.checkPermission(origin, network.chainID)
     if (origin === TALLY_INTERNAL_ORIGIN) {
       // Explicitly disallow anyone who has managed to pretend to be the
       // internal provider.
@@ -152,7 +145,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       response.result = {
         method: event.request.method,
         defaultWallet: await this.preferenceService.getDefaultWallet(),
-        chainId: toHexChainID(chainID),
+        chainId: toHexChainID(network.chainID),
       }
     } else if (event.request.method === "tally_setClaimReferrer") {
       const referrer = event.request.params[0]
@@ -283,7 +276,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
       const { chainID } =
-        await this.internalEthereumProviderService.getActiveOrDefaultNetwork(
+        await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
           origin
         )
       if (await this.checkPermission(origin, chainID)) {
@@ -433,7 +426,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
         case "eth_signTransaction":
         case "eth_sendTransaction":
           checkPermissionSignTransaction(
-            params[0] as EthersTransactionRequest,
+            {
+              // A dApp can't know what should be the next nonce because it can't access
+              // the information about how many tx are in the signing process inside the
+              // wallet. Nonce should be assigned only by the wallet.
+              ...(params[0] as EthersTransactionRequest),
+              nonce: undefined,
+            },
             enablingPermission
           )
 

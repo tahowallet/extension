@@ -2,6 +2,8 @@ import { createSelector } from "@reduxjs/toolkit"
 import { PricePoint } from "../../assets"
 import { selectCurrentNetwork } from "."
 import { NetworksState } from "../networks"
+import { LegacyEVMTransactionRequest } from "../../networks"
+import { ROOTSTOCK } from "../../constants/networks"
 import {
   TransactionConstruction,
   NetworkFeeSettings,
@@ -40,7 +42,12 @@ export const selectDefaultNetworkFeeSettings = createSelector(
       values: {
         maxFeePerGas: selectedFeesPerGas?.maxFeePerGas ?? 0n,
         maxPriorityFeePerGas: selectedFeesPerGas?.maxPriorityFeePerGas ?? 0n,
-        gasPrice: selectedFeesPerGas?.price ?? 0n,
+        gasPrice:
+          currentNetwork.chainID === ROOTSTOCK.chainID
+            ? (
+                transactionConstruction.transactionRequest as LegacyEVMTransactionRequest
+              )?.gasPrice
+            : selectedFeesPerGas?.price ?? 0n,
         baseFeePerGas:
           networks.evm[currentNetwork.chainID]?.baseFeePerGas ?? undefined,
       },
@@ -84,16 +91,10 @@ export const selectTransactionMainCurrencyPricePoint = createSelector(
   ): PricePoint | undefined => {
     return selectAssetPricePoint(
       assets,
-      baseAsset?.symbol ?? currentNetwork.baseAsset.symbol, // Fallback to current network's base asset
+      baseAsset ?? currentNetwork.baseAsset, // Fallback to current network's base asset
       mainCurrencySymbol
     )
   }
-)
-
-export const selectLastGasEstimatesRefreshTime = createSelector(
-  (state: { transactionConstruction: TransactionConstruction }) =>
-    state.transactionConstruction.lastGasEstimatesRefreshed,
-  (updateTime) => updateTime
 )
 
 export const selectTransactionData = createSelector(
