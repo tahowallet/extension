@@ -678,6 +678,8 @@ export default class ChainService extends BaseService<Events> {
   async populateEVMTransactionNonce(
     transactionRequest: TransactionRequest
   ): Promise<TransactionRequestWithNonce> {
+    await this.safetyMeasureForNonce(transactionRequest)
+
     if (typeof transactionRequest.nonce !== "undefined") {
       // TS undefined checks don't narrow the containing object's type, so we
       // have to cast `as` here.
@@ -700,7 +702,6 @@ export default class ChainService extends BaseService<Events> {
     // mempool. Note: This does not necessarily mean that the chain is EIP-1559
     // compliant.
     if (CHAINS_WITH_MEMPOOL.has(chainID)) {
-      this.safetyMeasureForNonce(transactionRequest)
       // @TODO: Update this implementation to handle pending txs and also be more
       //        resilient against missing nonce in the mempool.
       const chainNonce = chainTransactionCount - 1
@@ -809,21 +810,26 @@ export default class ChainService extends BaseService<Events> {
     transactionRequest: TransactionRequest
   ): Promise<void> {
     const { network, chainID } = transactionRequest
-    const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
-    const provider = this.providerForNetworkOrThrow(network)
+    if (CHAINS_WITH_MEMPOOL.has(chainID)) {
+      const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
+      const provider = this.providerForNetworkOrThrow(network)
 
-    const [chainNonce, pendingNonce] = await Promise.all([
-      provider.getTransactionCount(transactionRequest.from, "latest"),
-      provider.getTransactionCount(transactionRequest.from, "pending"),
-    ])
+      const [chainNonce, pendingNonce] = await Promise.all([
+        provider.getTransactionCount(transactionRequest.from, "latest"),
+        provider.getTransactionCount(transactionRequest.from, "pending"),
+      ])
 
-    const lastSeenNonce =
-      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][normalizedAddress]
+      this.evmChainLastSeenNoncesByNormalizedAddress[chainID] ??= {}
+      const lastSeenNonce =
+        this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
+          normalizedAddress
+        ]
 
-    if (pendingNonce === chainNonce && lastSeenNonce !== chainNonce) {
-      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-        normalizedAddress
-      ] = chainNonce
+      if (pendingNonce === chainNonce && lastSeenNonce !== chainNonce) {
+        this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
+          normalizedAddress
+        ] = chainNonce
+      }
     }
   }
 
