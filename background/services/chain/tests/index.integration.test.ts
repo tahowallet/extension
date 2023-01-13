@@ -173,7 +173,61 @@ describe("ChainService", () => {
       )
     })
 
-    it("if nonce is not yet populated for transaction request on chain with mempool should populate nonce", async () => {
+    it("should not overwrite the nonce set on tx request for chains with mempool", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: ETHEREUM,
+        chainID: ETHEREUM.chainID,
+        nonce: CHAIN_NONCE,
+      })
+
+      const transactionWithNonce =
+        await chainServiceExternalized.populateEVMTransactionNonce(
+          transactionRequest
+        )
+
+      expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
+    })
+
+    it("should not overwrite the nonce set on tx request for chains without mempool", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: OPTIMISM,
+        chainID: OPTIMISM.chainID,
+        nonce: CHAIN_NONCE,
+      })
+
+      const transactionWithNonce =
+        await chainServiceExternalized.populateEVMTransactionNonce(
+          transactionRequest
+        )
+
+      expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
+    })
+
+    it("should not store the nonce for chains without mempool when tx request is set", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: OPTIMISM,
+        chainID: OPTIMISM.chainID,
+        nonce: CHAIN_NONCE,
+      })
+
+      await chainServiceExternalized.populateEVMTransactionNonce(
+        transactionRequest
+      )
+
+      expect(
+        chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+          transactionRequest.chainID
+        ]
+      ).toBe(undefined)
+    })
+
+    it("should set the nonce for tx request for chains with mempool", async () => {
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
       const transactionRequest = createLegacyTransactionRequest({
@@ -188,6 +242,38 @@ describe("ChainService", () => {
         )
 
       expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
+    })
+
+    it("should set the nonce for tx request for chains without mempool", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: OPTIMISM,
+        chainID: OPTIMISM.chainID,
+        nonce: undefined,
+      })
+
+      const transactionWithNonce =
+        await chainServiceExternalized.populateEVMTransactionNonce(
+          transactionRequest
+        )
+
+      expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
+    })
+
+    it("should store the nonce for chains with mempool when tx request is set", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: ETHEREUM,
+        chainID: ETHEREUM.chainID,
+        nonce: undefined,
+      })
+
+      await chainServiceExternalized.populateEVMTransactionNonce(
+        transactionRequest
+      )
+
       expect(
         chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
           transactionRequest.chainID
@@ -195,29 +281,7 @@ describe("ChainService", () => {
       ).toBe(CHAIN_NONCE)
     })
 
-    it("if nonce is populated for transaction request on chain with mempool should not populate nonce", async () => {
-      const chainServiceExternalized =
-        chainService as unknown as ChainServiceExternalized
-      const transactionRequest = createLegacyTransactionRequest({
-        network: ETHEREUM,
-        chainID: ETHEREUM.chainID,
-        nonce: CHAIN_NONCE,
-      })
-
-      const transactionWithNonce =
-        await chainServiceExternalized.populateEVMTransactionNonce(
-          transactionRequest
-        )
-
-      expect(
-        chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
-          transactionRequest.chainID
-        ]
-      ).toBe(undefined)
-      expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
-    })
-
-    it("if nonce is not yet populated for transaction request on chain without mempool should populate nonce", async () => {
+    it("should not store the nonce for chains without mempool when tx request is set", async () => {
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
       const transactionRequest = createLegacyTransactionRequest({
@@ -226,34 +290,10 @@ describe("ChainService", () => {
         nonce: undefined,
       })
 
-      const transactionWithNonce =
-        await chainServiceExternalized.populateEVMTransactionNonce(
-          transactionRequest
-        )
+      await chainServiceExternalized.populateEVMTransactionNonce(
+        transactionRequest
+      )
 
-      expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
-      expect(
-        chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
-          transactionRequest.chainID
-        ]
-      ).toBe(undefined)
-    })
-
-    it("if nonce is populated for transaction request on chain without mempool should not populate nonce", async () => {
-      const chainServiceExternalized =
-        chainService as unknown as ChainServiceExternalized
-      const transactionRequest = createLegacyTransactionRequest({
-        network: OPTIMISM,
-        chainID: OPTIMISM.chainID,
-        nonce: CHAIN_NONCE,
-      })
-
-      const transactionWithNonce =
-        await chainServiceExternalized.populateEVMTransactionNonce(
-          transactionRequest
-        )
-
-      expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
       expect(
         chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
           transactionRequest.chainID
