@@ -173,7 +173,11 @@ describe("ChainService", () => {
       )
     })
 
-    it("should not overwrite the nonce set on tx request for chains with mempool", async () => {
+    afterEach(() => {
+      jest.clearAllMocks()
+    })
+
+    it("should not overwrite the nonce set on tx request for chains with a mempool", async () => {
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
       const transactionRequest = createLegacyTransactionRequest({
@@ -190,7 +194,7 @@ describe("ChainService", () => {
       expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
     })
 
-    it("should not overwrite the nonce set on tx request for chains without mempool", async () => {
+    it("should not overwrite the nonce set on tx request for chains without a mempool", async () => {
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
       const transactionRequest = createLegacyTransactionRequest({
@@ -207,7 +211,7 @@ describe("ChainService", () => {
       expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
     })
 
-    it("should not store the nonce for chains without mempool when tx request is set", async () => {
+    it("should not store the nonce for chains without a mempool when a tx request is set", async () => {
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
       const transactionRequest = createLegacyTransactionRequest({
@@ -227,7 +231,7 @@ describe("ChainService", () => {
       ).toBe(undefined)
     })
 
-    it("should set the nonce for tx request for chains with mempool", async () => {
+    it("should set the nonce for tx request for chains with a mempool", async () => {
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
       const transactionRequest = createLegacyTransactionRequest({
@@ -244,7 +248,7 @@ describe("ChainService", () => {
       expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
     })
 
-    it("should set the nonce for tx request for chains without mempool", async () => {
+    it("should set the nonce for tx request for chains without a mempool", async () => {
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
       const transactionRequest = createLegacyTransactionRequest({
@@ -261,7 +265,7 @@ describe("ChainService", () => {
       expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
     })
 
-    it("should store the nonce for chains with mempool when tx request is set", async () => {
+    it("should store the nonce for chains with a mempool when a tx request is set", async () => {
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
       const transactionRequest = createLegacyTransactionRequest({
@@ -281,7 +285,7 @@ describe("ChainService", () => {
       ).toBe(CHAIN_NONCE)
     })
 
-    it("should not store the nonce for chains without mempool when tx request is set", async () => {
+    it("should not store the nonce for chains without a mempool when a tx request is set", async () => {
       const chainServiceExternalized =
         chainService as unknown as ChainServiceExternalized
       const transactionRequest = createLegacyTransactionRequest({
@@ -303,7 +307,7 @@ describe("ChainService", () => {
   })
 
   describe("releaseEVMTransactionNonce", () => {
-    it("if the nonce for transaction is below the latest allocated nonce should release all intervening nonces", async () => {
+    it("should release all intervening nonces if the nonce for transaction is below the latest allocated nonce", async () => {
       /**
        * Two transactions have been sent: one approving (nonce=11) the other for the swapping (nonce=12).
        * In case transaction for nonce 11 will has too small gas we should release all intervening nonces.
@@ -343,7 +347,7 @@ describe("ChainService", () => {
       ).toBe(CHAIN_NONCE)
     })
 
-    it("if the nonce for transaction is equal to the value of the latest allocated nonce should release all intervening nonces", async () => {
+    it("should release all intervening nonces if the nonce for a transaction is equal to the value of the latest allocated nonce", async () => {
       const LAST_SEEN_NONCE = 11
       const NONCE = LAST_SEEN_NONCE
       const CHAIN_NONCE = 10
