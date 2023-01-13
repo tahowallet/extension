@@ -141,6 +141,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
           return (
             asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
             ("contractAddress" in asset &&
+              asset.contractAddress &&
               searchTerm.startsWith("0x") &&
               normalizeEVMAddress(asset.contractAddress).includes(
                 // The replace handles `normalizeEVMAddress`'s

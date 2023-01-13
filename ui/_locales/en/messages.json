@@ -701,6 +701,15 @@
       "transactionFrom": "From:",
       "loadingActivities": "Digging deeper..."
     },
+    "trustedAssets": {
+      "notTrusted": "Asset isn't trusted",
+      "notVerified": "Asset has not been verified yet!",
+      "trustExplainer": "Only transact with assets you trust.",
+      "assetImported": "Asset imported from transaction history",
+      "name": "Name",
+      "contract": "Contract address",
+      "close": "Close"      
+    },
     "banner": {
       "bannerTitle": "New Odyssey week!",
       "emptyBannerContent": "Check out Arbitrum Odyssey campaign",

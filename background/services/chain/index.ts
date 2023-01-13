@@ -1846,9 +1846,11 @@ export default class ChainService extends BaseService<Events> {
   ): Promise<void> {
     const provider = this.providerForNetworkOrThrow(network)
     const receipt = await provider.getTransactionReceipt(transaction.hash)
-    await this.saveTransaction(
-      enrichTransactionWithReceipt(transaction, receipt),
-      "alchemy"
-    )
+    if (receipt) {
+      await this.saveTransaction(
+        enrichTransactionWithReceipt(transaction, receipt),
+        "alchemy"
+      )
+    }
   }
 }
