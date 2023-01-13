@@ -120,6 +120,7 @@ export type AnyAsset =
   | FiatCurrency
   | FungibleAsset
   | SmartContractFungibleAsset
+  | NetworkBaseAsset
 
 /**
  * An asset that can be swapped with our current providers
