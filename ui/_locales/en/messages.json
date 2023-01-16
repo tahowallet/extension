@@ -264,7 +264,7 @@
       "collection_other": "Collections"
     },
     "header": {
-      "title": "Total NFT floor price",
+      "title": "Total NFTs floor price",
       "addAccountCTA": "Add account",
       "emptyTitle": "No NFTs here",
       "emptyDesc": "Add more accounts to see your NFTs, you can also just add read-only accounts"
@@ -429,7 +429,7 @@
     "assets": "Assets",
     "networks": "Networks",
     "nfts": "{{nfts}} in {{collections}} & {{badges}}",
-    "nftsTooltip": "NFT’s here are shown based on your filters in the NFT page.",
+    "nftsTooltip": "NFTs here are shown based on your filters in the NFT page.",
     "units": {
       "nft": "<strong>1</strong> NFT",
       "nft_other": "<strong>{{count}}</strong> NFTs",
