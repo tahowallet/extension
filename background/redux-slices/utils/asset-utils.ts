@@ -75,6 +75,18 @@ export function isBuiltInNetworkBaseAsset(
 }
 
 /**
+ * Return network base asset for chain by asset symbol.
+ */
+export function getBuiltInNetworkBaseAsset(
+  symbol: string,
+  chainID: string
+): (NetworkBaseAsset & Required<CoinGeckoAsset>) | undefined {
+  return BUILT_IN_NETWORK_BASE_ASSETS.find(
+    (asset) => asset.symbol === symbol && asset.chainID === chainID
+  )
+}
+
+/**
  * Given an asset symbol, price as a JavaScript number, and a number of desired
  * decimals during formatting, format the price in a localized way as a
  * currency of symbol `assetSymbol`.
@@ -247,18 +259,5 @@ export function heuristicDesiredDecimalsForUnitPrice(
     // special-case unit prices that could not be resolved.
     Math.ceil(Math.log10(numericUnitPrice ?? 0)),
     minimumDesiredDecimals
-  )
-}
-
-export function existsInNetworkBaseAssets(symbol: string): boolean {
-  return BUILT_IN_NETWORK_BASE_ASSETS.some((asset) => asset.symbol === symbol)
-}
-
-export function getBuiltInNetworkBaseAsset(
-  symbol: string,
-  chainID: string
-): (NetworkBaseAsset & Required<CoinGeckoAsset>) | undefined {
-  return BUILT_IN_NETWORK_BASE_ASSETS.find(
-    (asset) => asset.symbol === symbol && asset.chainID === chainID
   )
 }

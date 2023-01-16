@@ -6,7 +6,6 @@ import { AssetsState, selectAssetPricePoint } from "../assets"
 import {
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
-  existsInNetworkBaseAssets,
   formatCurrencyAmount,
   getBuiltInNetworkBaseAsset,
   heuristicDesiredDecimalsForUnitPrice,
@@ -168,8 +167,14 @@ const computeCombinedAssetAmountsData = (
       if (leftIsNetworkBaseAsset !== rightIsNetworkBaseAsset) {
         return leftIsNetworkBaseAsset ? -1 : 1
       }
-      const leftIsBaseAsset = existsInNetworkBaseAssets(asset1.asset.symbol)
-      const rightIsBaseAsset = existsInNetworkBaseAssets(asset2.asset.symbol)
+      const leftIsBaseAsset = !!getBuiltInNetworkBaseAsset(
+        asset1.asset.symbol,
+        networkBaseAsset.chainID
+      )
+      const rightIsBaseAsset = !!getBuiltInNetworkBaseAsset(
+        asset2.asset.symbol,
+        networkBaseAsset.chainID
+      )
 
       // Always sort base assets above non-base assets.
       if (leftIsBaseAsset !== rightIsBaseAsset) {

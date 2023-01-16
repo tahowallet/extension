@@ -12,15 +12,15 @@ import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
 import { normalizeEVMAddress } from "../lib/utils"
 import { createBackgroundAsyncThunk } from "./utils"
-import {
-  existsInNetworkBaseAssets,
-  isBuiltInNetworkBaseAsset,
-} from "./utils/asset-utils"
+import { isBuiltInNetworkBaseAsset } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
 import { sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
-import { FIAT_CURRENCIES_SYMBOL } from "../constants"
+import {
+  BUILT_IN_NETWORK_BASE_ASSETS,
+  FIAT_CURRENCIES_SYMBOL,
+} from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
 
 export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
@@ -69,8 +69,12 @@ const assetsSlice = createSlice({
                   normalizeEVMAddress(asset.contractAddress)) ||
               // Only match base assets by name - since there may be
               // many assets that share a name and symbol across L2's
-              (existsInNetworkBaseAssets(a.symbol) &&
-                existsInNetworkBaseAssets(asset.symbol) &&
+              (BUILT_IN_NETWORK_BASE_ASSETS.some(
+                (baseAsset) => baseAsset.symbol === a.symbol
+              ) &&
+                BUILT_IN_NETWORK_BASE_ASSETS.some(
+                  (baseAsset) => baseAsset.symbol === asset.symbol
+                ) &&
                 a.name === asset.name)
           )
           // if there aren't duplicates, add the asset
