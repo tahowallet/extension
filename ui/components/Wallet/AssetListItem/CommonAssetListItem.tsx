@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 
 import { useTranslation } from "react-i18next"
-import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { isBuiltInNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
@@ -37,7 +37,10 @@ export default function CommonAssetListItem(
   // road. Eventually, assets can be flagged as trusted by adding them to an
   // "internal" token list that users can export and share.
   const numTokenLists = assetAmount?.asset?.metadata?.tokenLists?.length ?? 0
-  const baseAsset = isNetworkBaseAsset(assetAmount?.asset, selectedNetwork)
+  const baseAsset = isBuiltInNetworkBaseAsset(
+    assetAmount?.asset,
+    selectedNetwork
+  )
 
   const contractAddress =
     "contractAddress" in assetAmount.asset
