@@ -29,7 +29,6 @@ import {
   LegacyEVMTransactionRequest,
   AnyEVMBlock,
   BlockPrices,
-  NetworkBaseAsset,
 } from "../networks"
 import {
   AnalyticsService,
@@ -326,28 +325,24 @@ export const makeSerialFallbackProvider =
       async getFeeData() {
         return makeEthersFeeData()
       }
-
-      async getCode() {
-        return "false"
-      }
     }
 
     return new MockSerialFallbackProvider()
   }
 
-const getRandomStr = (length: number) => {
-  let result = ""
-
-  while (result.length < length) {
-    result += Math.random().toString(36).slice(2)
-  }
-
-  return result.slice(0, length)
-}
-
 export const createSmartContractAsset = (
   overrides: Partial<SmartContractFungibleAsset> = {}
 ): SmartContractFungibleAsset => {
+  const getRandomStr = (length: number) => {
+    let result = ""
+
+    while (result.length < length) {
+      result += Math.random().toString(36).slice(2)
+    }
+
+    return result.slice(0, length)
+  }
+
   const symbol = getRandomStr(3)
   const asset = {
     metadata: {
@@ -365,30 +360,6 @@ export const createSmartContractAsset = (
     symbol,
     decimals: 18,
     homeNetwork: ETHEREUM,
-    contractAddress: createRandom0xHash(),
-  }
-
-  return {
-    ...asset,
-    ...overrides,
-  }
-}
-
-export const createNetworkBaseAsset = (
-  overrides: Partial<NetworkBaseAsset> = {}
-): NetworkBaseAsset => {
-  const symbol = getRandomStr(3)
-  const asset: NetworkBaseAsset = {
-    metadata: {
-      coinGeckoID: "ethereum",
-      logoURL: "http://example.com/foo.png",
-      tokenLists: [],
-    },
-    name: `${symbol} Network`,
-    symbol,
-    decimals: 18,
-    coinType: 60,
-    chainID: "1",
     contractAddress: createRandom0xHash(),
   }
 

@@ -26,7 +26,6 @@ export default `
   .asset_right {
     display: flex;
     justify-content: flex-end;
-    align-items: center;
     margin-right: 16px;
   }
   .asset_amount {
@@ -39,7 +38,6 @@ export default `
     text-transform: uppercase;
     margin-bottom: 8px;
     margin-top: -1px;
-    overflow-wrap: anywhere;
   }
   .bold_amount_count {
     width: 70px;

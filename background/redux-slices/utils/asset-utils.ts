@@ -10,11 +10,7 @@ import {
   AnyAsset,
   CoinGeckoAsset,
 } from "../../assets"
-import {
-  BUILT_IN_NETWORK_BASE_ASSETS,
-  OPTIMISM,
-  POLYGON,
-} from "../../constants"
+import { BUILT_IN_NETWORK_BASE_ASSETS, OPTIMISM } from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { AnyNetwork, NetworkBaseAsset } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
@@ -52,14 +48,6 @@ function isOptimismBaseAsset(asset: AnyAsset) {
     asset.contractAddress === OPTIMISM.baseAsset.contractAddress
   )
 }
-
-function isPolygonBaseAsset(asset: AnyAsset) {
-  return (
-    "contractAddress" in asset &&
-    asset.contractAddress === POLYGON.baseAsset.contractAddress
-  )
-}
-
 /**
  * Given an asset and a network, determines whether the given asset is the base
  * asset for the given network. Used to special-case transactions that should
@@ -75,10 +63,6 @@ export function isBuiltInNetworkBaseAsset(
   network: AnyNetwork
 ): asset is NetworkBaseAsset {
   if (network.chainID === OPTIMISM.chainID && isOptimismBaseAsset(asset)) {
-    return true
-  }
-
-  if (network.chainID === POLYGON.chainID && isPolygonBaseAsset(asset)) {
     return true
   }
 

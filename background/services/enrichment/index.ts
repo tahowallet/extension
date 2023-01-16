@@ -133,8 +133,7 @@ export default class EnrichmentService extends BaseService<Events> {
         (asset): asset is SmartContractFungibleAsset => {
           if (
             typedData.domain.verifyingContract &&
-            "contractAddress" in asset &&
-            asset.contractAddress
+            "contractAddress" in asset
           ) {
             return (
               normalizeHexAddress(asset.contractAddress) ===

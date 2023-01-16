@@ -45,8 +45,8 @@ export default function SharedButtonUp<T extends HTMLElement>(props: {
       </button>
       <style jsx>{`
         .button_up {
-          position: absolute;
-          bottom: 68px;
+          position: sticky;
+          bottom: 8px;
           right: 8px;
           margin-left: auto;
           width: 32px;
