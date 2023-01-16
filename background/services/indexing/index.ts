@@ -412,6 +412,24 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   private async connectChainServiceEvents(): Promise<void> {
+    // listen for assetTransfers, and if we find them, track those tokens
+    // TODO update for NFTs
+    this.chainService.emitter.on(
+      "assetTransfers",
+      async ({ addressNetwork, assetTransfers }) => {
+        assetTransfers.forEach((transfer) => {
+          const fungibleAsset = transfer.assetAmount
+            .asset as SmartContractFungibleAsset
+          if (fungibleAsset.contractAddress && fungibleAsset.decimals) {
+            this.addTokenToTrackByContract(
+              addressNetwork,
+              fungibleAsset.contractAddress
+            )
+          }
+        })
+      }
+    )
+
     this.chainService.emitter.on(
       "newAccountToTrack",
       async (addressOnNetwork) => {
