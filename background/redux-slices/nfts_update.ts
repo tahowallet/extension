@@ -255,7 +255,9 @@ const NFTsSlice = createSlice({
       immerState,
       { payload: transferredNFTs }: { payload: TransferredNFT[] }
     ) => {
-      transferredNFTs.forEach(({ id: nftID, chainID, address }) => {
+      transferredNFTs.forEach(({ id: nftID, chainID, from: address }) => {
+        if (!address) return
+
         const normalizedAddress = normalizeEVMAddress(address)
         Object.keys(immerState.nfts[chainID][normalizedAddress] ?? {}).forEach(
           (collectionID) => {
