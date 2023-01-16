@@ -10,7 +10,11 @@ import {
   AnyAsset,
   CoinGeckoAsset,
 } from "../../assets"
-import { BUILT_IN_NETWORK_BASE_ASSETS, OPTIMISM, POLYGON } from "../../constants"
+import {
+  BUILT_IN_NETWORK_BASE_ASSETS,
+  OPTIMISM,
+  POLYGON,
+} from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { AnyNetwork, NetworkBaseAsset } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
