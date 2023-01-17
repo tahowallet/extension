@@ -59,6 +59,74 @@ export type SwitchEthereumChainParameter = {
   chainId: string
 }
 
+// https://eips.ethereum.org/EIPS/eip-3085
+export type AddEthereumChainParameter = {
+  chainId: string
+  blockExplorerUrls?: string[]
+  chainName?: string
+  iconUrls?: string[]
+  nativeCurrency?: {
+    name: string
+    symbol: string
+    decimals: number
+  }
+  rpcUrls?: string[]
+}
+
+// Lets start with all required and work backwards
+export type ValidatedAddEthereumChainParameter = {
+  chainId: string
+  blockExplorerUrl: string
+  chainName: string
+  iconUrl: string
+  nativeCurrency: {
+    name: string
+    symbol: string
+    decimals: number
+  }
+  rpcUrls: string[]
+}
+
+const validateAddEthereumChainParameter = ({
+  chainId,
+  chainName,
+  blockExplorerUrls,
+  iconUrls,
+  nativeCurrency,
+  rpcUrls,
+}: AddEthereumChainParameter): ValidatedAddEthereumChainParameter => {
+  if (
+    !chainId ||
+    !chainName ||
+    !nativeCurrency ||
+    !blockExplorerUrls ||
+    !blockExplorerUrls.length ||
+    !iconUrls ||
+    !iconUrls.length ||
+    !rpcUrls ||
+    !rpcUrls.length
+  ) {
+    throw new Error("Missing Chain Property")
+  }
+
+  if (
+    !nativeCurrency.decimals ||
+    !nativeCurrency.name ||
+    !nativeCurrency.symbol
+  ) {
+    throw new Error("Missing Currency Property")
+  }
+
+  return {
+    chainId,
+    chainName,
+    nativeCurrency,
+    blockExplorerUrl: blockExplorerUrls[0],
+    iconUrl: iconUrls[0],
+    rpcUrls,
+  }
+}
+
 type DAppRequestEvent<T, E> = {
   payload: T
   resolver: (result: E | PromiseLike<E>) => void
@@ -245,21 +313,33 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         )
       // TODO - actually allow adding a new ethereum chain - for now wallet_addEthereumChain
       // will just switch to a chain if we already support it - but not add a new one
-      case "wallet_addEthereumChain":
+      case "wallet_addEthereumChain": {
+        const chainInfo = params[0] as AddEthereumChainParameter
+        const { chainId } = chainInfo
+        const supportedNetwork = await this.getTrackedNetworkByChainId(chainId)
+        if (supportedNetwork) {
+          this.switchToSupportedNetwork(supportedNetwork)
+          return null
+        }
+        try {
+          const validatedParam = validateAddEthereumChainParameter(chainInfo)
+          return this.chainService.addCustomChain(validatedParam)
+        } catch (e) {
+          logger.error(e)
+          throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
+        }
+        throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
+      }
       case "wallet_switchEthereumChain": {
         const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
         const supportedNetwork = await this.getTrackedNetworkByChainId(
           newChainId
         )
         if (supportedNetwork) {
-          const { address } = await this.preferenceService.getSelectedAccount()
-          await this.chainService.markAccountActivity({
-            address,
-            network: supportedNetwork,
-          })
-          await this.db.setCurrentChainIdForOrigin(origin, supportedNetwork)
+          this.switchToSupportedNetwork(supportedNetwork)
           return null
         }
+
         throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
       }
       case "metamask_getProviderState": // --- important MM only methods ---
@@ -389,6 +469,15 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         rejecter: reject,
       })
     })
+  }
+
+  private async switchToSupportedNetwork(supportedNetwork: EVMNetwork) {
+    const { address } = await this.preferenceService.getSelectedAccount()
+    await this.chainService.markAccountActivity({
+      address,
+      network: supportedNetwork,
+    })
+    await this.db.setCurrentChainIdForOrigin(origin, supportedNetwork)
   }
 
   private async signData(

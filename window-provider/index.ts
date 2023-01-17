@@ -214,7 +214,7 @@ export default class TallyWindowProvider extends EventEmitter {
       reject(result)
     }
 
-    // let's emmit connected on the first successful response from background
+    // let's emit connected on the first successful response from background
     if (!this.connected) {
       this.connected = true
       this.emit("connect", { chainId: this.chainId })
