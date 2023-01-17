@@ -79,7 +79,7 @@ export class ChainDatabase extends Dexie {
 
   private baseAssets!: Dexie.Table<NetworkBaseAsset, number>
 
-  private rpcUrls!: Dexie.Table<{ chainId: string; rpcUrls: string[] }, string>
+  private rpcUrls!: Dexie.Table<{ chainID: string; rpcUrls: string[] }, string>
 
   constructor(options?: DexieOptions) {
     super("tally/chain", options)
@@ -163,7 +163,7 @@ export class ChainDatabase extends Dexie {
     })
 
     this.version(7).stores({
-      rpcUrls: "&chainId, rpcUrls",
+      rpcUrls: "&chainID, rpcUrls",
     })
   }
 
@@ -277,22 +277,20 @@ export class ChainDatabase extends Dexie {
     throw new Error(`No RPC Found for ${chainId}`)
   }
 
-  async addRpcUrls(chainId: string, rpcUrls: string[]): Promise<void> {
-    const existingRpcUrlsForChain = await this.rpcUrls.get(chainId)
+  async addRpcUrls(chainID: string, rpcUrls: string[]): Promise<void> {
+    const existingRpcUrlsForChain = await this.rpcUrls.get(chainID)
     if (existingRpcUrlsForChain) {
       existingRpcUrlsForChain.rpcUrls.push(...rpcUrls)
       existingRpcUrlsForChain.rpcUrls = [
         ...new Set(existingRpcUrlsForChain.rpcUrls),
       ]
-      console.log("about to put")
       await this.rpcUrls.put(existingRpcUrlsForChain)
     } else {
-      console.log("new put", { chainId, rpcUrls })
-      await this.rpcUrls.put({ chainId, rpcUrls })
+      await this.rpcUrls.put({ chainID, rpcUrls })
     }
   }
 
-  async getAllRpcUrls(): Promise<{ chainId: string; rpcUrls: string[] }[]> {
+  async getAllRpcUrls(): Promise<{ chainID: string; rpcUrls: string[] }[]> {
     return this.rpcUrls.toArray()
   }
 
