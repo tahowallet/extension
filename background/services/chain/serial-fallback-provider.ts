@@ -956,7 +956,7 @@ export function makeSerialFallbackProvider(
       ]
     : []
 
-  const genericProviders = (rpcUrls || []).map((rpcUrl) => ({
+  const genericProviders = rpcUrls.map((rpcUrl) => ({
     type: "generic" as const,
     creator: () => new JsonRpcProvider(rpcUrl),
   }))

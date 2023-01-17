@@ -32,6 +32,7 @@ import {
   TransactionAnnotation,
 } from "../enrichment"
 import { decodeJSON } from "../../lib/utils"
+import { FeatureFlags } from "../../features"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -95,6 +96,7 @@ const validateAddEthereumChainParameter = ({
   nativeCurrency,
   rpcUrls,
 }: AddEthereumChainParameter): ValidatedAddEthereumChainParameter => {
+  // @TODO Use AJV
   if (
     !chainId ||
     !chainName ||
@@ -104,14 +106,6 @@ const validateAddEthereumChainParameter = ({
     !rpcUrls ||
     !rpcUrls.length
   ) {
-    console.log({
-      chainId,
-      chainName,
-      blockExplorerUrls,
-      iconUrls,
-      nativeCurrency,
-      rpcUrls,
-    })
     throw new Error("Missing Chain Property")
   }
 
@@ -327,7 +321,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           this.switchToSupportedNetwork(supportedNetwork)
           return null
         }
-        // @TODO Feature Flag This
+        if (!FeatureFlags.SUPPORT_CUSTOM_NETWORKS) {
+          // Dissallow adding new chains until feature flag is turned on.
+          throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
+        }
         try {
           const validatedParam = validateAddEthereumChainParameter(chainInfo)
           await this.chainService.addCustomChain(validatedParam)
@@ -336,7 +333,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           logger.error(e)
           throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
         }
-        throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
       }
       case "wallet_switchEthereumChain": {
         const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
