@@ -66,7 +66,7 @@ export default function NetworksChart({
             isEnabled(FeatureFlags.SUPPORT_NFT_TAB) && "nft-update"
           )}
         >
-          {t("overview.networks")}({networksCount})
+          {t("overview.networks")} ({networksCount})
         </div>
         <div className="chains_chart">
           {percents.map(({ chainID, percent }) => (
