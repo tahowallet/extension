@@ -34,7 +34,8 @@ function groupChainsByAddress(accounts: AddressOnNetwork[]) {
 
 export function getNFTs(
   accounts: AddressOnNetwork[],
-  collections: string[]
+  collections: string[],
+  shouldBulkFetch = false
 ): Promise<{
   nfts: NFT[]
   nextPageURLs: { [collectionID: string]: { [address: string]: string } }
@@ -60,23 +61,49 @@ export function getNFTs(
       const simpleHashChains = chainIDs.filter((chainID) =>
         NFT_PROVIDER_TO_CHAIN.simplehash.includes(chainID)
       )
+      // Don't fetch POAP from SimpleHash
+      const simpleHashCollections = collections.filter(
+        (id) => id !== POAP_COLLECTION_ID
+      )
 
-      if (simpleHashChains.length) {
-        await Promise.allSettled(
-          collections.map(async (collectionID) => {
-            if (collectionID === POAP_COLLECTION_ID) return // Don't fetch POAP from SimpleHash
+      if (simpleHashChains.length && simpleHashCollections.length) {
+        let hasUnexpectedNextPage = false
 
-            const { nfts: simpleHashNFTs, nextPageURL } =
-              await getSimpleHashNFTs(address, collectionID, simpleHashChains)
+        if (shouldBulkFetch) {
+          const { nfts: simpleHashNFTs, nextPageURL } = await getSimpleHashNFTs(
+            address,
+            simpleHashCollections,
+            simpleHashChains
+          )
 
+          // doing bulk fetch means there should be no next page of NFTs because we won't be able to load
+          // them correctly for each collection individually
+          if (nextPageURL) {
+            hasUnexpectedNextPage = true
+          } else {
             nfts.push(...simpleHashNFTs)
+          }
+        }
 
-            if (nextPageURL) {
-              nextPageURLs[collectionID] ??= {}
-              nextPageURLs[collectionID][address] = nextPageURL
-            }
-          })
-        )
+        if (!shouldBulkFetch || hasUnexpectedNextPage) {
+          await Promise.allSettled(
+            simpleHashCollections.map(async (collectionID) => {
+              const { nfts: simpleHashNFTs, nextPageURL } =
+                await getSimpleHashNFTs(
+                  address,
+                  [collectionID],
+                  simpleHashChains
+                )
+
+              nfts.push(...simpleHashNFTs)
+
+              if (nextPageURL) {
+                nextPageURLs[collectionID] ??= {}
+                nextPageURLs[collectionID][address] = nextPageURL
+              }
+            })
+          )
+        }
       }
 
       return {

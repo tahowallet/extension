@@ -223,7 +223,7 @@ function simpleHashNFTModelToNFT(
  */
 export async function getSimpleHashNFTs(
   address: string,
-  collectionID: string,
+  collectionIDs: string[],
   chainIDs: string[],
   nextPageURL?: string
 ): Promise<NFTsWithPagesResponse> {
@@ -235,7 +235,7 @@ export async function getSimpleHashNFTs(
     requestURL = new URL("https://api.simplehash.com/api/v0/nfts/owners")
     requestURL.searchParams.set("chains", getChainIDsNames(chainIDs))
     requestURL.searchParams.set("wallet_addresses", address)
-    requestURL.searchParams.set("collection_id", collectionID)
+    requestURL.searchParams.set("collection_ids", collectionIDs.join(","))
   }
 
   try {

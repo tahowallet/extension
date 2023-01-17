@@ -31,15 +31,10 @@ export class NFTsDatabase extends Dexie {
 
   async updateCollectionData(
     collectionID: string,
-    { address, network }: AddressOnNetwork,
+    account: AddressOnNetwork,
     data: Partial<NFTCollection>
   ): Promise<NFTCollection | undefined> {
-    const collection = await this.collections.get({
-      id: collectionID,
-      owner: address,
-      "network.chainID": network.chainID,
-    })
-
+    const collection = await this.getCollection(collectionID, account)
     if (collection) {
       const updatedCollection = {
         ...collection,
@@ -51,6 +46,17 @@ export class NFTsDatabase extends Dexie {
     }
 
     return undefined
+  }
+
+  async getCollection(
+    collectionID: string,
+    { address, network }: AddressOnNetwork
+  ): Promise<NFTCollection | undefined> {
+    return this.collections.get({
+      id: collectionID,
+      owner: address,
+      "network.chainID": network.chainID,
+    })
   }
 
   async getAllCollections(): Promise<NFTCollection[]> {

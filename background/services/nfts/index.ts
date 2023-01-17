@@ -33,6 +33,13 @@ type NextPageURLsMap = { [collectionID: string]: { [address: string]: string } }
 type FreshCollectionsMap = {
   [collectionID: string]: { [address: string]: boolean }
 }
+type CollectionIDsToFetch = {
+  [address: string]: {
+    account: AddressOnNetwork
+    collections: Set<string>
+    nftCount: number
+  }
+}
 
 export default class NFTsService extends BaseService<Events> {
   #nextPageUrls: NextPageURLsMap = {}
@@ -40,6 +47,10 @@ export default class NFTsService extends BaseService<Events> {
   #transfersLookupTimestamp: number
 
   #freshCollections: FreshCollectionsMap = {}
+
+  #nftsFromCollectionsToFetch: CollectionIDsToFetch = {}
+
+  #bulkNftsFetchTimeout: number | undefined = undefined
 
   static create: ServiceCreatorFunction<
     Events,
@@ -136,20 +147,55 @@ export default class NFTsService extends BaseService<Events> {
     collectionID: string,
     account: AddressOnNetwork
   ): Promise<void> {
-    if (
-      this.#freshCollections[collectionID]?.[
-        normalizeEVMAddress(account.address)
-      ]
-    ) {
+    const normalizedAddress = normalizeEVMAddress(account.address)
+
+    if (this.#freshCollections[collectionID]?.[normalizedAddress]) {
       await this.fetchNFTsFromDatabase(collectionID, account)
     } else {
-      await Promise.allSettled(
-        getNFTs([account], [collectionID]).map(async (request) => {
-          const { nfts, nextPageURLs } = await request
-          await this.updateSavedNFTs(collectionID, account, nfts, nextPageURLs)
-        })
-      )
+      await this.bulkFetchNFTsFromCollection(collectionID, account)
     }
+  }
+
+  async bulkFetchNFTsFromCollection(
+    collectionID: string,
+    account: AddressOnNetwork
+  ): Promise<void> {
+    const normalizedAddress = normalizeEVMAddress(account.address)
+    const collection = await this.db.getCollection(collectionID, account)
+    const key = `${normalizedAddress}${account.network.chainID}`
+
+    this.#nftsFromCollectionsToFetch[key] ??= {
+      account,
+      collections: new Set<string>(),
+      nftCount: 0,
+    }
+    this.#nftsFromCollectionsToFetch[key].collections.add(collectionID)
+    // SimpleHash is able to fetch max 50 NFTs at once, if we expect there will be more than one
+    // page of NFTs then we can't do bulk fetch as it would break fetching next pages on demand
+    this.#nftsFromCollectionsToFetch[key].nftCount += collection?.nftCount ?? 0
+
+    clearTimeout(this.#bulkNftsFetchTimeout)
+
+    this.#bulkNftsFetchTimeout = window.setTimeout(async () => {
+      await Promise.allSettled(
+        Object.entries(this.#nftsFromCollectionsToFetch).map(
+          ([fetchKey, { account: accountToFetch, collections, nftCount }]) => {
+            return Promise.allSettled(
+              // bulk fetch only if next page is not expected
+              getNFTs([accountToFetch], [...collections], nftCount < 50).map(
+                async (request) => {
+                  const { nfts, nextPageURLs } = await request
+
+                  await this.updateSavedNFTs(accountToFetch, nfts, nextPageURLs)
+                  delete this.#nftsFromCollectionsToFetch[fetchKey]
+                }
+              )
+            )
+          }
+        )
+      )
+      this.#bulkNftsFetchTimeout = undefined
+    }, 200)
   }
 
   async fetchPOAPs(accounts: AddressOnNetwork[]): Promise<void> {
@@ -181,7 +227,7 @@ export default class NFTsService extends BaseService<Events> {
     if (nextPage) {
       await getSimpleHashNFTs(
         account.address,
-        collectionID,
+        [collectionID],
         [account.network.chainID],
         nextPage
       ).then(async ({ nfts, nextPageURL }) => {
@@ -190,62 +236,89 @@ export default class NFTsService extends BaseService<Events> {
         const nextPageMap: NextPageURLsMap = nextPageURL
           ? { [collectionID]: { [account.address]: nextPageURL } }
           : {}
-        await this.updateSavedNFTs(collectionID, account, nfts, nextPageMap)
+        await this.updateSavedNFTs(account, nfts, nextPageMap)
       })
     }
   }
 
   async updateSavedNFTs(
-    collectionID: string,
     account: AddressOnNetwork,
     nfts: NFT[],
     nextPageURLs: NextPageURLsMap
   ): Promise<void> {
     await this.db.updateNFTs(nfts)
 
-    const updatedNFTs = await this.db.getCollectionNFTsForAccount(
-      collectionID,
-      account
-    )
-
     this.updateNextPages(nextPageURLs)
 
-    let updatedCollection: NFTCollection | undefined
+    const savedNFTsByCollectionMap = nfts.reduce((acc, nft) => {
+      return acc.set(nft.collectionID, [
+        ...(acc.get(nft.collectionID) ?? []),
+        nft,
+      ])
+    }, new Map<string, NFT[]>())
 
-    if (collectionID === POAP_COLLECTION_ID) {
-      // update number of poaps
-      updatedCollection = await this.db.updateCollectionData(
-        collectionID,
+    const updatedCollections: NFTCollection[] = []
+
+    // update number of poaps
+    const poaps = nfts.filter((nft) => nft.collectionID === POAP_COLLECTION_ID)
+    if (poaps.length) {
+      const updated = await this.db.updateCollectionData(
+        POAP_COLLECTION_ID,
         account,
         {
-          nftCount: updatedNFTs.length,
+          nftCount: poaps.length,
         }
       )
-    } else if (updatedNFTs.some((nft) => nft.isBadge)) {
-      // update collection as a badges collection
-      updatedCollection = await this.db.updateCollectionData(
-        collectionID,
-        account,
-        {
-          hasBadges: true,
+      if (updated) updatedCollections.push(updated)
+    }
+
+    // update collections as a badges collections
+    const badgesCollections = [
+      ...nfts.reduce((acc, nft) => {
+        if (nft.collectionID !== POAP_COLLECTION_ID && nft.isBadge) {
+          acc.add(nft.collectionID)
         }
+        return acc
+      }, new Set<string>()),
+    ]
+    if (badgesCollections.length) {
+      await Promise.allSettled(
+        badgesCollections.map(async (collectionID) => {
+          const updated = await this.db.updateCollectionData(
+            collectionID,
+            account,
+            {
+              hasBadges: true,
+            }
+          )
+          if (updated) updatedCollections.push(updated)
+        })
       )
     }
 
-    if (updatedCollection) {
-      this.emitter.emit("updateCollections", [updatedCollection])
+    // sync collecions changed in DB with redux
+    if (updatedCollections.length) {
+      this.emitter.emit("updateCollections", updatedCollections)
     }
 
-    this.setFreshCollection(collectionID, account.address, true)
+    // mark collections as fresh
+    ;[...savedNFTsByCollectionMap.keys()].forEach((collectionID) =>
+      this.setFreshCollection(collectionID, account.address, true)
+    )
 
-    const hasNextPage = !!Object.keys(nextPageURLs).length
+    const hasNextPage = !!Object.keys(nextPageURLs).length // TODO
 
-    await this.emitter.emit("updateNFTs", {
-      collectionID,
-      account,
-      nfts: updatedNFTs,
-      hasNextPage,
-    })
+    await Promise.allSettled(
+      [...savedNFTsByCollectionMap.entries()].map(
+        async ([collectionID, collectionNFTs]) =>
+          this.emitter.emit("updateNFTs", {
+            collectionID,
+            account,
+            nfts: collectionNFTs,
+            hasNextPage,
+          })
+      )
+    )
   }
 
   updateNextPages(nextPageURLs: NextPageURLsMap): void {
