@@ -327,6 +327,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           this.switchToSupportedNetwork(supportedNetwork)
           return null
         }
+        // @TODO Feature Flag This
         try {
           const validatedParam = validateAddEthereumChainParameter(chainInfo)
           await this.chainService.addCustomChain(validatedParam)

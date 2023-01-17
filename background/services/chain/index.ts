@@ -300,57 +300,72 @@ export default class ChainService extends BaseService<Events> {
   override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    await this.initializeBaseAssets()
-    await this.initializeNetworks()
-    const accounts = await this.getAccountsToTrack()
-    const trackedNetworks = await this.getTrackedNetworks()
-    const transactions = await this.db.getAllTransactions()
+    try {
+      await this.initializeRPCs()
+      await this.initializeBaseAssets()
+      await this.initializeNetworks()
+      const accounts = await this.getAccountsToTrack()
+      const trackedNetworks = await this.getTrackedNetworks()
 
-    this.emitter.emit("initializeActivities", { transactions, accounts })
+      const transactions = await this.db.getAllTransactions()
 
-    // get the latest blocks and subscribe for all active networks
+      this.emitter.emit("initializeActivities", { transactions, accounts })
 
-    Promise.allSettled(
-      accounts
-        .flatMap((an) => [
-          // subscribe to all account transactions
-          this.subscribeToAccountTransactions(an).catch((e) => {
-            logger.error(e)
-          }),
-          // do a base-asset balance check for every account
-          this.getLatestBaseAccountBalance(an).catch((e) => {
-            logger.error(e)
-          }),
-        ])
-        .concat(
-          // Schedule any stored unconfirmed transactions for
-          // retrieval---either to confirm they no longer exist, or to
-          // read/monitor their status.
-          trackedNetworks.map((network) =>
-            this.db
-              .getNetworkPendingTransactions(network)
-              .then((pendingTransactions) => {
-                pendingTransactions.forEach(({ hash, firstSeen }) => {
-                  logger.debug(
-                    `Queuing pending transaction ${hash} for status lookup.`
-                  )
-                  this.queueTransactionHashToRetrieve(network, hash, firstSeen)
+      // get the latest blocks and subscribe for all active networks
+
+      Promise.allSettled(
+        accounts
+          .flatMap((an) => [
+            // subscribe to all account transactions
+            this.subscribeToAccountTransactions(an).catch((e) => {
+              logger.error(e)
+            }),
+            // do a base-asset balance check for every account
+            this.getLatestBaseAccountBalance(an).catch((e) => {
+              logger.error(e)
+            }),
+          ])
+          .concat(
+            // Schedule any stored unconfirmed transactions for
+            // retrieval---either to confirm they no longer exist, or to
+            // read/monitor their status.
+            trackedNetworks.map((network) =>
+              this.db
+                .getNetworkPendingTransactions(network)
+                .then((pendingTransactions) => {
+                  pendingTransactions.forEach(({ hash, firstSeen }) => {
+                    logger.debug(
+                      `Queuing pending transaction ${hash} for status lookup.`
+                    )
+                    this.queueTransactionHashToRetrieve(
+                      network,
+                      hash,
+                      firstSeen
+                    )
+                  })
                 })
-              })
-              .catch((e) => {
-                logger.error(e)
-              })
+                .catch((e) => {
+                  logger.error(e)
+                })
+            )
           )
-        )
-    )
+      )
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   async initializeBaseAssets(): Promise<void> {
     await this.db.initializeBaseAssets()
   }
 
+  async initializeRPCs(): Promise<void> {
+    await this.db.initializeRPCs()
+  }
+
   async initializeNetworks(): Promise<void> {
     await this.db.initializeEVMNetworks()
+    const rpcUrls = await this.db.getAllRpcUrls()
     if (!this.supportedNetworks.length) {
       this.supportedNetworks = await this.db.getAllEVMNetworks()
     }
@@ -363,7 +378,10 @@ export default class ChainService extends BaseService<Events> {
       evm: Object.fromEntries(
         this.supportedNetworks.map((network) => [
           network.chainID,
-          makeSerialFallbackProvider(network),
+          makeSerialFallbackProvider(
+            network,
+            rpcUrls.find((v) => v.chainId === network.chainID)?.rpcUrls || []
+          ),
         ])
       ),
     }
@@ -1871,7 +1889,8 @@ export default class ChainService extends BaseService<Events> {
       param.chainId,
       param.nativeCurrency.decimals,
       param.nativeCurrency.symbol,
-      param.nativeCurrency.name
+      param.nativeCurrency.name,
+      param.rpcUrls
     )
   }
 }
