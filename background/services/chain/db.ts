@@ -10,7 +10,13 @@ import {
   NetworkBaseAsset,
 } from "../../networks"
 import { FungibleAsset } from "../../assets"
-import { BASE_ASSETS, DEFAULT_NETWORKS, GOERLI, POLYGON } from "../../constants"
+import {
+  BASE_ASSETS,
+  CHAIN_ID_TO_RPC_URLS,
+  DEFAULT_NETWORKS,
+  GOERLI,
+  POLYGON,
+} from "../../constants"
 
 export type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
@@ -72,6 +78,8 @@ export class ChainDatabase extends Dexie {
   private networks!: Dexie.Table<EVMNetwork, string>
 
   private baseAssets!: Dexie.Table<NetworkBaseAsset, number>
+
+  private rpcUrls!: Dexie.Table<{ chainId: string; rpcUrls: string[] }, string>
 
   constructor(options?: DexieOptions) {
     super("tally/chain", options)
@@ -153,6 +161,10 @@ export class ChainDatabase extends Dexie {
     this.version(6).stores({
       baseAssets: "&chainID,symbol,name",
     })
+
+    this.version(7).stores({
+      rpcUrls: "&chainId, rpcUrls",
+    })
   }
 
   async getLatestBlock(network: Network): Promise<AnyEVMBlock | null> {
@@ -188,9 +200,10 @@ export class ChainDatabase extends Dexie {
     chainID: string,
     decimals: number,
     symbol: string,
-    assetName: string
+    assetName: string,
+    rpcUrls: string[]
   ): Promise<void> {
-    this.networks.put({
+    await this.networks.put({
       name: chainName,
       chainID,
       family: "EVM",
@@ -201,14 +214,40 @@ export class ChainDatabase extends Dexie {
         chainID,
       },
     })
+    await this.addBaseAsset(assetName, symbol, chainID, decimals)
+    await this.addRpcUrls(chainID, rpcUrls)
   }
 
   async getAllEVMNetworks(): Promise<EVMNetwork[]> {
     return this.networks.where("family").equals("EVM").toArray()
   }
 
+  private async addBaseAsset(
+    name: string,
+    symbol: string,
+    chainID: string,
+    decimals: number
+  ) {
+    await this.baseAssets.put({
+      decimals,
+      name,
+      symbol,
+      chainID,
+    })
+  }
+
   async getAllBaseAssets(): Promise<NetworkBaseAsset[]> {
     return this.baseAssets.toArray()
+  }
+
+  async initializeRPCs(): Promise<void> {
+    await Promise.all(
+      Object.entries(CHAIN_ID_TO_RPC_URLS).map(async ([chainId, rpcUrls]) => {
+        if (rpcUrls) {
+          await this.addRpcUrls(chainId, rpcUrls)
+        }
+      })
+    )
   }
 
   async initializeBaseAssets(): Promise<void> {
@@ -228,6 +267,33 @@ export class ChainDatabase extends Dexie {
         }
       })
     )
+  }
+
+  async getRpcUrlsByChainId(chainId: string): Promise<string[]> {
+    const rpcUrls = await this.rpcUrls.where({ chainId }).first()
+    if (rpcUrls) {
+      return rpcUrls.rpcUrls
+    }
+    throw new Error(`No RPC Found for ${chainId}`)
+  }
+
+  async addRpcUrls(chainId: string, rpcUrls: string[]): Promise<void> {
+    const existingRpcUrlsForChain = await this.rpcUrls.get(chainId)
+    if (existingRpcUrlsForChain) {
+      existingRpcUrlsForChain.rpcUrls.push(...rpcUrls)
+      existingRpcUrlsForChain.rpcUrls = [
+        ...new Set(existingRpcUrlsForChain.rpcUrls),
+      ]
+      console.log("about to put")
+      await this.rpcUrls.put(existingRpcUrlsForChain)
+    } else {
+      console.log("new put", { chainId, rpcUrls })
+      await this.rpcUrls.put({ chainId, rpcUrls })
+    }
+  }
+
+  async getAllRpcUrls(): Promise<{ chainId: string; rpcUrls: string[] }[]> {
+    return this.rpcUrls.toArray()
   }
 
   async getAllSavedTransactionHashes(): Promise<IndexableTypeArray> {
