@@ -37,7 +37,11 @@ export default function AbilitiesHeader(): ReactElement {
     <div className="abilities_header">
       <div className="info_container">
         <div className="abilities_info">
-          <div className="icon" />
+          <div
+            className={classNames("icon", {
+              tail: !hideDescription,
+            })}
+          />
           <div
             className={classNames({
               title: !hideDescription,
@@ -78,8 +82,9 @@ export default function AbilitiesHeader(): ReactElement {
           display: flex;
           flex-direction: row;
           justify-content: space-between;
-          align-items: end;
+          align-items: ${hideDescription ? "end" : "center"};
         }
+
         .abilities_header {
           background: var(--green-95);
           border-radius: 8px;
@@ -100,7 +105,7 @@ export default function AbilitiesHeader(): ReactElement {
         .abilities_info {
           display: flex;
           flex-direction: row;
-          align-items: end;
+          align-items: ${hideDescription ? "end" : "center"};
 
           color: var(--white);
           font-weight: 400;
@@ -140,13 +145,18 @@ export default function AbilitiesHeader(): ReactElement {
         }
 
         .icon {
-          background: url("./images/${hideDescription
-            ? ability.icon
-            : "tail"}.svg");
-          background-size: 36px ${hideDescription ? 30 : 36}px;
+          background: url("./images/${ability.icon}.svg");
+          background-size: 36px 30px;
           width: 36px;
-          height: ${hideDescription ? 30 : 36}px;
+          height: 30px;
           margin-right: 14px;
+        }
+
+        .icon.tail {
+          background: url("./images/tail.svg");
+          background-size: 36px 36px;
+          height: 36px;
+          margin-right: 8px;
         }
       `}</style>
     </div>
