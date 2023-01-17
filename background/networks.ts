@@ -34,7 +34,7 @@ export type Network = {
   baseAsset: NetworkBaseAsset & CoinGeckoAsset
   family: NetworkFamily
   chainID?: string
-  coingeckoPlatformID: string
+  coingeckoPlatformID?: string
 }
 
 /**

@@ -78,7 +78,7 @@ export type ValidatedAddEthereumChainParameter = {
   chainId: string
   blockExplorerUrl: string
   chainName: string
-  iconUrl: string
+  iconUrl?: string
   nativeCurrency: {
     name: string
     symbol: string
@@ -101,11 +101,17 @@ const validateAddEthereumChainParameter = ({
     !nativeCurrency ||
     !blockExplorerUrls ||
     !blockExplorerUrls.length ||
-    !iconUrls ||
-    !iconUrls.length ||
     !rpcUrls ||
     !rpcUrls.length
   ) {
+    console.log({
+      chainId,
+      chainName,
+      blockExplorerUrls,
+      iconUrls,
+      nativeCurrency,
+      rpcUrls,
+    })
     throw new Error("Missing Chain Property")
   }
 
@@ -118,11 +124,11 @@ const validateAddEthereumChainParameter = ({
   }
 
   return {
-    chainId,
+    chainId: chainId.startsWith("0x") ? String(parseInt(chainId, 16)) : chainId,
     chainName,
     nativeCurrency,
     blockExplorerUrl: blockExplorerUrls[0],
-    iconUrl: iconUrls[0],
+    iconUrl: iconUrls && iconUrls[0],
     rpcUrls,
   }
 }
@@ -323,7 +329,8 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         }
         try {
           const validatedParam = validateAddEthereumChainParameter(chainInfo)
-          return this.chainService.addCustomChain(validatedParam)
+          await this.chainService.addCustomChain(validatedParam)
+          return null
         } catch (e) {
           logger.error(e)
           throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)

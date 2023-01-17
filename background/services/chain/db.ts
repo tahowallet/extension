@@ -183,6 +183,26 @@ export class ChainDatabase extends Dexie {
     )
   }
 
+  async addEVMNetwork(
+    chainName: string,
+    chainID: string,
+    decimals: number,
+    symbol: string,
+    assetName: string
+  ): Promise<void> {
+    this.networks.put({
+      name: chainName,
+      chainID,
+      family: "EVM",
+      baseAsset: {
+        decimals,
+        symbol,
+        name: assetName,
+        chainID,
+      },
+    })
+  }
+
   async getAllEVMNetworks(): Promise<EVMNetwork[]> {
     return this.networks.where("family").equals("EVM").toArray()
   }
