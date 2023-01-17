@@ -380,7 +380,7 @@ export default class ChainService extends BaseService<Events> {
           network.chainID,
           makeSerialFallbackProvider(
             network,
-            rpcUrls.find((v) => v.chainId === network.chainID)?.rpcUrls || []
+            rpcUrls.find((v) => v.chainID === network.chainID)?.rpcUrls || []
           ),
         ])
       ),
@@ -392,6 +392,7 @@ export default class ChainService extends BaseService<Events> {
    * provider exists.
    */
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
+    console.log(this.providers.evm)
     return isEnabled(FeatureFlags.USE_MAINNET_FORK)
       ? this.providers.evm[ETHEREUM.chainID]
       : this.providers.evm[network.chainID]
