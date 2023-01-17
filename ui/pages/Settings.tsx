@@ -32,11 +32,11 @@ const FOOTER_ACTIONS = [
   },
   {
     icon: "twitter",
-    linkTo: "https://twitter.com/TallyCash",
+    linkTo: "https://twitter.com/TallyHoOfficial",
   },
   {
     icon: "icons/m/github",
-    linkTo: "https://github.com/tallycash/extension",
+    linkTo: "https://github.com/tallyhowallet/extension",
   },
 ]
 
