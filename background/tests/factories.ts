@@ -41,7 +41,10 @@ import {
   PreferenceService,
   SigningService,
 } from "../services"
-import { QueuedTxToRetrieve } from "../services/chain"
+import {
+  PriorityQueuedTxToRetrieve,
+  QueuedTxToRetrieve,
+} from "../services/chain"
 import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 
 const createRandom0xHash = () =>
@@ -251,12 +254,15 @@ export const createQueuedTransaction = (
 
 export const createTransactionsToRetrieve = (
   numberOfTx = 100
-): QueuedTxToRetrieve[] => {
+): PriorityQueuedTxToRetrieve[] => {
   const NETWORKS = [ETHEREUM, POLYGON, ARBITRUM_ONE, AVALANCHE, OPTIMISM]
 
-  return [...Array(numberOfTx).keys()].map((_, ind) =>
-    createQueuedTransaction({ network: NETWORKS[ind % NETWORKS.length] })
-  )
+  return [...Array(numberOfTx).keys()].map((_, ind) => ({
+    transaction: createQueuedTransaction({
+      network: NETWORKS[ind % NETWORKS.length],
+    }),
+    priority: 0,
+  }))
 }
 
 export const createTransactionResponse = (
@@ -388,6 +394,7 @@ export const createNetworkBaseAsset = (
     symbol,
     decimals: 18,
     coinType: 60,
+    chainID: "1",
     contractAddress: createRandom0xHash(),
   }
 
@@ -423,3 +430,6 @@ export const createPricePoint = (
 
   return pricePoint
 }
+
+export const createArrayWith0xHash = (length: number): string[] =>
+  Array.from({ length }).map(() => createRandom0xHash())
