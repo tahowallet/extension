@@ -121,11 +121,6 @@ export const selectAllNFTBadgesCount = createSelector(
   (collections) => getNFTsCount(collections)
 )
 
-export const selectAllNFTCollectionsCount = createSelector(
-  selectAllNFTCollections,
-  (collections) => collections.length
-)
-
 export const selectFilteredNFTsCount = createSelector(
   selectFilteredNFTCollections,
   (collections) => getNFTsCount(collections)
@@ -142,11 +137,6 @@ export const selectFilteredNFTCollectionsCount = createSelector(
 )
 
 /* Total Floor Price selectors  */
-export const selectTotalFloorPriceInETH = createSelector(
-  selectAllCollections,
-  (collections) => getTotalFloorPriceInETH(collections)
-)
-
 export const selectFilteredTotalFloorPriceInETH = createSelector(
   selectFilteredNFTCollections,
   (collections) => getTotalFloorPriceInETH(collections)

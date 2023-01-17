@@ -1,6 +1,17 @@
 import { FeatureFlags, isEnabled } from "../features"
 import { EVMNetwork, Network } from "../networks"
-import { AVAX, BNB, BTC, ETH, MATIC, OPTIMISTIC_ETH, RBTC } from "./currencies"
+import {
+  ARBITRUM_NOVA_ETH,
+  ARBITRUM_ONE_ETH,
+  AVAX,
+  BNB,
+  BTC,
+  ETH,
+  GOERLI_ETH,
+  MATIC,
+  OPTIMISTIC_ETH,
+  RBTC,
+} from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
   name: "Ethereum",
@@ -28,7 +39,7 @@ export const POLYGON: EVMNetwork = {
 
 export const ARBITRUM_ONE: EVMNetwork = {
   name: "Arbitrum",
-  baseAsset: ETH,
+  baseAsset: ARBITRUM_ONE_ETH,
   chainID: "42161",
   family: "EVM",
   coingeckoPlatformID: "arbitrum-one",
@@ -52,7 +63,7 @@ export const BINANCE_SMART_CHAIN: EVMNetwork = {
 
 export const ARBITRUM_NOVA: EVMNetwork = {
   name: "Arbitrum Nova",
-  baseAsset: ETH,
+  baseAsset: ARBITRUM_NOVA_ETH,
   chainID: "42170",
   family: "EVM",
   coingeckoPlatformID: "arbitrum-nova",
@@ -68,7 +79,7 @@ export const OPTIMISM: EVMNetwork = {
 
 export const GOERLI: EVMNetwork = {
   name: "Goerli",
-  baseAsset: ETH,
+  baseAsset: GOERLI_ETH,
   chainID: "5",
   family: "EVM",
   coingeckoPlatformID: "ethereum",

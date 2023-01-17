@@ -109,6 +109,7 @@ export default function NFTsFilters(): ReactElement {
   return (
     <SharedSlideUpMenuPanel header={t("title")}>
       <div className="filters">
+        <span className="simple_text filter_warning">{t("warning")}</span>
         <div>
           <span className="simple_text filter_title">{t("sortTypeTitle")}</span>
           {RADIO_BTNS.map(({ value, label }) => (
@@ -153,12 +154,15 @@ export default function NFTsFilters(): ReactElement {
           gap: 16px;
           height: 456px;
           overflow-y: scroll;
-          padding: 8px 24px;
+          padding: 0 24px 8px;
         }
         .filter_title {
           display: inline-block;
           margin-bottom: 4px;
           width: 100%;
+        }
+        .filter_warning {
+          color: var(--green-20);
         }
         .spinner {
           width: 100%;
