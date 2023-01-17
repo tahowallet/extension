@@ -21,33 +21,37 @@ export default function AbilityRemovalConfirm({
 
   return (
     <div className="remove_ability_option">
-      <div className="header">Delete ability?</div>
-      <div className="remove_ability_details">
-        If you delete an ability you won&apos;t be able to see it anymore
+      <div className="content_container">
+        <div className="header">{t("abilities.deleteSlideUpMenu.title")}</div>
+        <div className="remove_ability_details">
+          {t("abilities.deleteSlideUpMenu.desc")}
+        </div>
+        <ul>
+          <li className="spam_container">
+            <li className="spam_prompt">
+              {t("abilities.deleteSlideUpMenu.spamPrompt")}
+            </li>
+            <SharedButton
+              type="tertiary"
+              size="small"
+              style={{ width: "133px" }}
+              onClick={(e) => {
+                e.stopPropagation()
+                // @TODO Actually report spam
+                dispatch(
+                  removeAbility({
+                    address: ability.address,
+                    abilityId: ability.abilityId,
+                  })
+                )
+                close()
+              }}
+            >
+              {t("abilities.deleteSlideUpMenu.reportSpamBtn")}
+            </SharedButton>
+          </li>
+        </ul>
       </div>
-      <ul>
-        <li className="spam_container">
-          <li className="spam_prompt">Is this ability spam?</li>
-          <SharedButton
-            type="tertiary"
-            size="small"
-            style={{ width: "133px" }}
-            onClick={(e) => {
-              e.stopPropagation()
-              // @TODO Actually report spam
-              dispatch(
-                removeAbility({
-                  address: ability.address,
-                  abilityId: ability.abilityId,
-                })
-              )
-              close()
-            }}
-          >
-            Yes, report spam
-          </SharedButton>
-        </li>
-      </ul>
       <div className="button_container">
         <SharedButton
           type="primary"
@@ -63,7 +67,7 @@ export default function AbilityRemovalConfirm({
             close()
           }}
         >
-          Yes, delete
+          {t("abilities.deleteSlideUpMenu.submitBtn")}
         </SharedButton>
         <SharedButton
           type="tertiary"
@@ -89,12 +93,11 @@ export default function AbilityRemovalConfirm({
             font-style: normal;
             font-weight: 600;
             font-size: 18px;
-            line-height: 24px;     
-            color: #D6EAE9;
+            line-height: 24px;
+            color: var(--white);
         }
         .remove_ability_option {
-          margin-left: 20px;
-          margin-right: 20px;
+          margin: 0 24px 24px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -104,7 +107,7 @@ export default function AbilityRemovalConfirm({
           font-weight: 500;
           font-size: 16px;
           line-height: 24px;
-          color: #789594;
+          color: var(--green-40);
         }
         .remove_ability_details {
           display: flex;
@@ -118,13 +121,10 @@ export default function AbilityRemovalConfirm({
           justify-content: space-between;
         }
         .spam_container {
-          margin-top: -10px;
           background-color: var(--hunter-green);
-          padding-left: 12px;
-          width: 336px;
-          height: 52px;
           display: flex;
           justify-content: space-between;
+          padding: 8px 12px;
         }
         .spam_prompt {
           font-family: 'Segment';
@@ -132,6 +132,12 @@ export default function AbilityRemovalConfirm({
           font-weight: 500;
           font-size: 16px;
           line-height: 24px;
+          color: var(--white);
+        }
+        .content_container {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
         }
       `}</style>
     </div>
