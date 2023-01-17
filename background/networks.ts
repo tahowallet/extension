@@ -21,7 +21,8 @@ export type NetworkFamily = "EVM" | "BTC"
 export type NetworkBaseAsset = FungibleAsset &
   CoinGeckoAsset & {
     contractAddress?: string
-    coinType: Slip44CoinType
+    coinType?: Slip44CoinType
+    chainID: string
   }
 
 /**

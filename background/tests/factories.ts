@@ -394,6 +394,7 @@ export const createNetworkBaseAsset = (
     symbol,
     decimals: 18,
     coinType: 60,
+    chainID: "1",
     contractAddress: createRandom0xHash(),
   }
 
