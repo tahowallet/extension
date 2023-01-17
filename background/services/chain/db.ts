@@ -214,6 +214,8 @@ export class ChainDatabase extends Dexie {
         chainID,
       },
     })
+    // A bit awkward that we are adding the base asset to the network as well
+    // as to its own separate table - but lets forge on for now.
     await this.addBaseAsset(assetName, symbol, chainID, decimals)
     await this.addRpcUrls(chainID, rpcUrls)
   }

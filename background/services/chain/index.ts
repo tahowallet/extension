@@ -1875,7 +1875,10 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
-  async addCustomChain(chainInfo: ValidatedAddEthereumChainParameter) {
+  // Used to add non-default chains via wallet_addEthereumChain
+  async addCustomChain(
+    chainInfo: ValidatedAddEthereumChainParameter
+  ): Promise<void> {
     await this.db.addEVMNetwork(
       chainInfo.chainName,
       chainInfo.chainId,
@@ -1884,5 +1887,6 @@ export default class ChainService extends BaseService<Events> {
       chainInfo.nativeCurrency.name,
       chainInfo.rpcUrls
     )
+    this.supportedNetworks = await this.db.getAllEVMNetworks()
   }
 }

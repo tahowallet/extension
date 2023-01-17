@@ -46,6 +46,27 @@ describe("ChainService", () => {
         )
       ).toHaveLength(1)
     })
+
+    it("should initialize persisted data in the correct order", async () => {
+      const chainServiceInstance = await createChainService()
+      const initializeRPCs = sandbox.spy(chainServiceInstance, "initializeRPCs")
+
+      const initializeBaseAssets = sandbox.spy(
+        chainServiceInstance,
+        "initializeBaseAssets"
+      )
+
+      const initializeNetworks = sandbox.spy(
+        chainServiceInstance,
+        "initializeNetworks"
+      )
+
+      await chainServiceInstance.internalStartService()
+
+      expect(initializeRPCs.calledBefore(initializeBaseAssets)).toBe(true)
+      expect(initializeBaseAssets.calledBefore(initializeNetworks)).toBe(true)
+      expect(initializeNetworks.called).toBe(true)
+    })
   })
 
   it("handlePendingTransactions on chains without mempool should subscribe to transaction confirmations, and persist the transaction to indexedDB", async () => {
