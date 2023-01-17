@@ -284,6 +284,7 @@ export default class ChainService extends BaseService<Events> {
   override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
+    await this.initializeBaseAssets()
     await this.initializeNetworks()
     const accounts = await this.getAccountsToTrack()
     const trackedNetworks = await this.getTrackedNetworks()
@@ -326,6 +327,10 @@ export default class ChainService extends BaseService<Events> {
           )
         )
     )
+  }
+
+  async initializeBaseAssets(): Promise<void> {
+    await this.db.initializeBaseAssets()
   }
 
   async initializeNetworks(): Promise<void> {
