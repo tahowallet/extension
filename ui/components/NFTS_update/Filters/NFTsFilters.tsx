@@ -162,8 +162,6 @@ export default function NFTsFilters(): ReactElement {
           width: 100%;
         }
         .filter_warning {
-          font-size: 16px;
-          line-height: 24px;
           color: var(--green-20);
         }
         .spinner {
