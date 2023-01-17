@@ -33,7 +33,7 @@ export default function NFTsHeader(): ReactElement {
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const { totalFloorPriceInETH, totalFloorPriceInUSD } =
-    useTotalNFTsFloorPrice(false)
+    useTotalNFTsFloorPrice()
 
   const handleToggleClick = useCallback(() => {
     setOpenFiltersMenu((currentlyOpen) => !currentlyOpen)
@@ -81,13 +81,13 @@ export default function NFTsHeader(): ReactElement {
         </div>
         <ul className="nft_counts">
           <li>
-            <strong>{collectionCount}</strong>
-            {t("units.collection", { count: collectionCount ?? 0 })}
+            <strong>{nftCount}</strong>
+            {t("units.nft", { count: nftCount ?? 0 })}
           </li>
           <li className="spacer" role="presentation" />
           <li>
-            <strong>{nftCount}</strong>
-            {t("units.nft", { count: nftCount ?? 0 })}
+            <strong>{collectionCount}</strong>
+            {t("units.collection", { count: collectionCount ?? 0 })}
           </li>
           <li className="spacer" role="presentation" />
           <li>
