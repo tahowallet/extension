@@ -1865,7 +1865,13 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
-  addCustomChain(param: ValidatedAddEthereumChainParameter) {
-    console.log(param)
+  async addCustomChain(param: ValidatedAddEthereumChainParameter) {
+    await this.db.addEVMNetwork(
+      param.chainName,
+      param.chainId,
+      param.nativeCurrency.decimals,
+      param.nativeCurrency.symbol,
+      param.nativeCurrency.name
+    )
   }
 }
