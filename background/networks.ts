@@ -14,7 +14,7 @@ import type {
  * Each supported network family is generally incompatible with others from a
  * transaction, consensus, and/or wire format perspective.
  */
-export type NetworkFamily = "EVM" | "BTC"
+export type NetworkFamily = "EVM"
 
 // Should be structurally compatible with FungibleAsset or much code will
 // likely explode.

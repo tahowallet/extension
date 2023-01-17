@@ -277,7 +277,7 @@ export class ChainDatabase extends Dexie {
     throw new Error(`No RPC Found for ${chainId}`)
   }
 
-  async addRpcUrls(chainID: string, rpcUrls: string[]): Promise<void> {
+  private async addRpcUrls(chainID: string, rpcUrls: string[]): Promise<void> {
     const existingRpcUrlsForChain = await this.rpcUrls.get(chainID)
     if (existingRpcUrlsForChain) {
       existingRpcUrlsForChain.rpcUrls.push(...rpcUrls)
