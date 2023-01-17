@@ -60,12 +60,16 @@ export const selectEnrichedNFTFilters = createSelector(
       return [...acc]
     }, [])
 
-    const collections = filters.collections.filter(({ owners }) => {
-      const enablingAccount = (owners ?? []).find((owner) =>
-        accounts.find((account) => account.id === owner && account.isEnabled)
+    const collections = filters.collections
+      .filter(({ owners }) => {
+        const enablingAccount = (owners ?? []).find((owner) =>
+          accounts.find((account) => account.id === owner && account.isEnabled)
+        )
+        return !!enablingAccount
+      })
+      .sort((collection1, collection2) =>
+        collection1.name.localeCompare(collection2.name)
       )
-      return !!enablingAccount
-    })
     return { ...filters, collections, accounts }
   }
 )
@@ -117,11 +121,6 @@ export const selectAllNFTBadgesCount = createSelector(
   (collections) => getNFTsCount(collections)
 )
 
-export const selectAllNFTCollectionsCount = createSelector(
-  selectAllNFTCollections,
-  (collections) => collections.length
-)
-
 export const selectFilteredNFTsCount = createSelector(
   selectFilteredNFTCollections,
   (collections) => getNFTsCount(collections)
@@ -138,11 +137,6 @@ export const selectFilteredNFTCollectionsCount = createSelector(
 )
 
 /* Total Floor Price selectors  */
-export const selectTotalFloorPriceInETH = createSelector(
-  selectAllCollections,
-  (collections) => getTotalFloorPriceInETH(collections)
-)
-
 export const selectFilteredTotalFloorPriceInETH = createSelector(
   selectFilteredNFTCollections,
   (collections) => getTotalFloorPriceInETH(collections)

@@ -254,6 +254,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           font-weight: 500;
           font-size: 16px;
           line-height: 24px;
+          overflow-wrap: break-word;
           color: var(--green-20);
           margin: 0;
         }

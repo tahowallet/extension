@@ -11,7 +11,7 @@ import PreferenceService from "../preferences"
 import { FeatureFlags, isEnabled as isFeatureFlagEnabled } from "../../features"
 
 interface Events extends ServiceLifecycleEvents {
-  placeHolderEventForTypingPurposes: string
+  enableDefaultOn: void
 }
 
 /*
@@ -62,18 +62,24 @@ export default class AnalyticsService extends BaseService<Events> {
         isEnabled,
         hasDefaultOnBeenTurnedOn,
       })
+
+      await this.emitter.emit("enableDefaultOn", undefined)
     }
 
     if (isEnabled) {
-      this.sendAnalyticsEvent("Background start")
-
       this.initializeListeners()
 
-      const { uuid } = await this.getOrCreateAnalyticsUUID()
+      const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
 
       browser.runtime.setUninstallURL(
         `${process.env.WEBSITE_ORIGIN}/goodbye?uuid=${uuid}`
       )
+
+      if (isNew) {
+        await this.sendAnalyticsEvent("New install")
+      }
+
+      await this.sendAnalyticsEvent("Background start")
     }
   }
 
@@ -91,11 +97,7 @@ export default class AnalyticsService extends BaseService<Events> {
 
     const { isEnabled } = await this.preferenceService.getAnalyticsPreferences()
     if (isEnabled) {
-      const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
-
-      if (isNew) {
-        sendPosthogEvent(uuid, "New install", payload)
-      }
+      const { uuid } = await this.getOrCreateAnalyticsUUID()
 
       sendPosthogEvent(uuid, eventName, payload)
     }
