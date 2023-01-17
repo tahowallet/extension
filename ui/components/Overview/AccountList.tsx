@@ -63,7 +63,7 @@ export default function AccountList({
       >
         <div className="accounts_header">
           <span>
-            {t("overview.accounts")}({accountsCount})
+            {t("overview.accounts")} ({accountsCount})
           </span>
           {isCollapsible && (
             <button
