@@ -62,6 +62,7 @@ import {
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
 import KeyringService from "../keyring"
+import type { ValidatedAddEthereumChainParameter } from "../internal-ethereum-provider"
 
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
@@ -1862,5 +1863,9 @@ export default class ChainService extends BaseService<Events> {
         "alchemy"
       )
     }
+  }
+
+  addCustomChain(param: ValidatedAddEthereumChainParameter) {
+    console.log(param)
   }
 }
