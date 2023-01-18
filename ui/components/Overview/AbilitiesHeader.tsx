@@ -13,7 +13,7 @@ import SharedButton from "../Shared/SharedButton"
 
 export default function AbilitiesHeader(): ReactElement {
   const { t } = useTranslation("translation", {
-    keyPrefix: "overview.abilities",
+    keyPrefix: "abilities",
   })
   const newAbilities = useSelector(selectAbilityCount)
   const hideDescription = useSelector(selectHideDescription)
@@ -23,7 +23,10 @@ export default function AbilitiesHeader(): ReactElement {
   const ability = {
     // @TODO change icon
     icon: newAbilities > 0 ? "dog_abilities" : "dog_abilities",
-    countText: newAbilities > 0 ? `${newAbilities} ${t("new")}` : t("none"),
+    countText:
+      newAbilities > 0
+        ? `${newAbilities} ${t("banner.new")}`
+        : t("banner.none"),
   }
 
   const handleClick = () => {
@@ -48,10 +51,10 @@ export default function AbilitiesHeader(): ReactElement {
           />
           <div
             className={classNames({
-              title: !hideDescription,
+              header: !hideDescription,
             })}
           >
-            {t("title")}
+            {t("header")}
           </div>
         </div>
         <div
@@ -70,13 +73,13 @@ export default function AbilitiesHeader(): ReactElement {
       </div>
       {!hideDescription && (
         <div>
-          <div className="desc">{t("description")}</div>
+          <div className="desc">{t("banner.description")}</div>
           <SharedButton
             type="primary"
             size="medium"
             onClick={() => handleClick()}
           >
-            {t("seeAbilities")}
+            {t("banner.seeAbilities")}
           </SharedButton>
         </div>
       )}
@@ -128,7 +131,7 @@ export default function AbilitiesHeader(): ReactElement {
           line-height: 24px;
         }
 
-        .title {
+        .header {
           font-weight: 600;
           font-size: 18px;
         }
@@ -172,6 +175,7 @@ export default function AbilitiesHeader(): ReactElement {
           background-size: 36px 36px;
           height: 36px;
           margin-right: 8px;
+          border-radius: 24px;
         }
       `}</style>
     </div>
