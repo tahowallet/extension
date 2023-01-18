@@ -59,7 +59,7 @@ export default function NFTList(props: {
             collection.nfts.map((nft) => (
               <NFTItem
                 key={`${nft.id}_${nft.owner}`}
-                item={nft}
+                item={{ ...nft, floorPrice: collection.floorPrice }}
                 onClick={() => openPreview({ nft, collection })}
               />
             ))
