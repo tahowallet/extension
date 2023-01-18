@@ -4,6 +4,15 @@ import { Route, Switch, matchPath, useLocation } from "react-router-dom"
 
 import { useTranslation } from "react-i18next"
 import browser from "webextension-polyfill"
+import {
+  ARBITRUM_ONE,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
+  ETHEREUM,
+  OPTIMISM,
+  POLYGON,
+} from "@tallyho/tally-background/constants"
+
 import SharedBackButton from "../../../components/Shared/SharedBackButton"
 import AddWallet from "./AddWallet"
 import Done from "./Done"
@@ -13,9 +22,19 @@ import NewSeed, { NewSeedRoutes } from "./NewSeed"
 import InfoIntro from "./Intro"
 import ViewOnlyWallet from "./ViewOnlyWallet"
 import Ledger from "./Ledger/Ledger"
-import { productionNetworks } from "../../../components/TopMenu/TopMenuProtocolList"
+
 import SharedButton from "../../../components/Shared/SharedButton"
 import OnboardingRoutes from "./Routes"
+
+// @TODO Rethink what networks we show once custom networks are supported
+const productionNetworks = [
+  ETHEREUM,
+  POLYGON,
+  OPTIMISM,
+  ARBITRUM_ONE,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
+]
 
 const getNetworkIcon = (networkName: string) => {
   const icon = networkName.replaceAll(" ", "").toLowerCase()
@@ -32,7 +51,7 @@ function SupportedChains(): ReactElement {
     <div className="supported_chains">
       <span>{t("supportedChains")}</span>
       <div className="chain_logos">
-        {productionNetworks.map(({ network }) => (
+        {productionNetworks.map((network) => (
           <img
             width="24"
             height="24"

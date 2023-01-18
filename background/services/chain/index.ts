@@ -107,6 +107,7 @@ interface Events extends ServiceLifecycleEvents {
     account: AddressOnNetwork
   }
   newAccountToTrack: AddressOnNetwork
+  supportedNetworks: EVMNetwork[]
   accountsWithBalances: {
     /**
      * Retrieved balance for the network's base asset
@@ -359,7 +360,7 @@ export default class ChainService extends BaseService<Events> {
     await this.db.initializeEVMNetworks()
     const rpcUrls = await this.db.getAllRpcUrls()
     if (!this.supportedNetworks.length) {
-      this.supportedNetworks = await this.db.getAllEVMNetworks()
+      await this.updateSupportedNetworks()
     }
     this.lastUserActivityOnNetwork =
       Object.fromEntries(
@@ -1887,6 +1888,12 @@ export default class ChainService extends BaseService<Events> {
       chainInfo.nativeCurrency.name,
       chainInfo.rpcUrls
     )
-    this.supportedNetworks = await this.db.getAllEVMNetworks()
+    await this.updateSupportedNetworks()
+  }
+
+  async updateSupportedNetworks(): Promise<void> {
+    const supportedNetworks = await this.db.getAllEVMNetworks()
+    this.supportedNetworks = supportedNetworks
+    this.emitter.emit("supportedNetworks", supportedNetworks)
   }
 }

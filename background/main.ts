@@ -63,7 +63,7 @@ import {
   updateKeyrings,
   setKeyringToVerify,
 } from "./redux-slices/keyrings"
-import { blockSeen } from "./redux-slices/networks"
+import { blockSeen, setEVMNetworks } from "./redux-slices/networks"
 import {
   initializationLoadingTimeHitLimit,
   emitter as uiSliceEmitter,
@@ -196,6 +196,7 @@ const persistStoreState = debounce(persistStoreFn, 50, {
 const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
+  ;(window as any).store = store
 
   persistStoreState(state)
   return result
@@ -732,6 +733,10 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(updateAccountBalance(accountWithBalance))
       }
     )
+
+    this.chainService.emitter.on("supportedNetworks", (supportedNetworks) => {
+      this.store.dispatch(setEVMNetworks(supportedNetworks))
+    })
 
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
