@@ -107,6 +107,6 @@ export async function getPoapCollections(
     hasBadges: true,
     network: ETHEREUM,
     floorPrice: undefined, // POAPs don't have floor prices
-    thumbnailURL: "https://poap.xyz/POAP.f74a7300.svg",
+    thumbnailURL: "images/poap_logo.svg",
   }
 }
