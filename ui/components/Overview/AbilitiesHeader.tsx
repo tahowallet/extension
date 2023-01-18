@@ -88,9 +88,9 @@ export default function AbilitiesHeader(): ReactElement {
           background: var(--green-95);
           border-radius: 8px;
           background: radial-gradient(
-            51.48% 205.47% at 0% -126.42%,
-            #f76734 0%,
-            #13302e 100%
+            103.39% 72.17% at -5.73% -7.67%,
+            rgb(247, 103, 52, 0.5) 0%,
+            rgba(19, 48, 46, 0.5) 100%
           );
 
           box-shadow: 0px 16px 16px rgba(7, 17, 17, 0.3),
