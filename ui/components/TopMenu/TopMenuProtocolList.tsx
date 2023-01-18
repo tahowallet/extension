@@ -37,42 +37,22 @@ export const productionNetworks = [
     info: i18n.t("protocol.l2"),
     isDisabled: false,
   },
-  ...(isEnabled(FeatureFlags.SUPPORT_RSK)
-    ? [
-        {
-          network: ROOTSTOCK,
-          info: i18n.t("protocol.beta"),
-        },
-      ]
-    : []),
-  ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE)
-    ? [
-        {
-          network: AVALANCHE,
-          info: i18n.t("protocol.avalanche"),
-        },
-      ]
-    : [
-        {
-          network: AVALANCHE,
-          info: i18n.t("comingSoon"),
-          isDisabled: true,
-        },
-      ]),
-  ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
-    ? [
-        {
-          network: BINANCE_SMART_CHAIN,
-          info: i18n.t("protocol.compatibleChain"),
-        },
-      ]
-    : [
-        {
-          network: BINANCE_SMART_CHAIN,
-          info: i18n.t("comingSoon"),
-          isDisabled: true,
-        },
-      ]),
+
+  {
+    network: ROOTSTOCK,
+    info: i18n.t("protocol.beta"),
+  },
+
+  {
+    network: AVALANCHE,
+    info: i18n.t("protocol.avalanche"),
+  },
+
+  {
+    network: BINANCE_SMART_CHAIN,
+    info: i18n.t("protocol.compatibleChain"),
+  },
+
   ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA)
     ? [
         {
@@ -87,12 +67,6 @@ export const productionNetworks = [
           isDisabled: true,
         },
       ]),
-  // {
-  //   name: "Celo",
-  //   info: "Global payments infrastructure",
-  //   width: 24,
-  //   height: 24,
-  // },
 ]
 
 const testNetworks = [

@@ -90,11 +90,9 @@ export const DEFAULT_NETWORKS = [
   OPTIMISM,
   GOERLI,
   ARBITRUM_ONE,
-  ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [ROOTSTOCK] : []),
-  ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE) ? [AVALANCHE] : []),
-  ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
-    ? [BINANCE_SMART_CHAIN]
-    : []),
+  ROOTSTOCK,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA) ? [ARBITRUM_NOVA] : []),
 ]
 
