@@ -34,7 +34,11 @@ export default function AbilitiesHeader(): ReactElement {
   }
 
   return (
-    <div className="abilities_header">
+    <div
+      className={classNames("abilities_header", {
+        init_state: !hideDescription,
+      })}
+    >
       <div className="info_container">
         <div className="abilities_info">
           <div
@@ -88,17 +92,29 @@ export default function AbilitiesHeader(): ReactElement {
           background: var(--green-95);
           border-radius: 8px;
           background: radial-gradient(
-            103.39% 72.17% at -5.73% -7.67%,
-            rgb(247, 103, 52, 0.5) 0%,
-            rgba(19, 48, 46, 0.5) 100%
-          );
-
-          box-shadow: 0px 16px 16px rgba(7, 17, 17, 0.3),
-            0px 6px 8px rgba(7, 17, 17, 0.24), 0px 2px 4px rgba(7, 17, 17, 0.34);
+              78.69% 248.21% at 114.77% 133.93%,
+              rgba(9, 86, 72, 0.85) 0%,
+              rgba(0, 37, 34, 0) 100%
+            ),
+            radial-gradient(
+              78.69% 248.21% at 0% -133.93%,
+              rgb(247, 103, 52, 0.3) 0%,
+              rgba(19, 48, 46, 0.5) 100%
+            );
 
           padding: 13px 16px 16px;
           width: 100%;
           box-sizing: border-box;
+        }
+
+        .abilities_header.init_state {
+          background: radial-gradient(
+            103.39% 72.17% at -5.73% -7.67%,
+            rgb(247, 103, 52, 0.5) 0%,
+            rgba(19, 48, 46, 0.5) 100%
+          );
+          box-shadow: 0px 16px 16px rgba(7, 17, 17, 0.3),
+            0px 6px 8px rgba(7, 17, 17, 0.24), 0px 2px 4px rgba(7, 17, 17, 0.34);
         }
 
         .abilities_info {
