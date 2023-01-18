@@ -443,6 +443,13 @@
       "assets": "Assets",
       "price": "Price",
       "balance": "Balance"
+    },
+    "abilities": {
+      "title": "Portfolio abilities",
+      "description": "Daylight tells you when you qualify for an airdrop, mint, or unlock.",
+      "seeAbilities": "See your abilities",
+      "new": "New",
+      "none": "None"
     }
   },
   "passwordStrength": {
