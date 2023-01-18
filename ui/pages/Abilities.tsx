@@ -47,6 +47,11 @@ export default function Abilities(): ReactElement {
             flex-direction: row;
             align-items: center;
           }
+          h1 {
+            font-weight: 500;
+            font-size: 22px;
+            line-height: 32px;
+          }
           section {
             display: flex;
             flex-flow: column;
@@ -69,14 +74,14 @@ export default function Abilities(): ReactElement {
             background-size: 39px 22px;
             width: 39px;
             height: 22px;
-            margin-right: 8px;
+            margin-right: 20px;
           }
           .empty_page {
             display: flex;
             flex-direction: column;
             gap: 20px;
             align-items: center;
-            margin-top: 32px;
+            margin-top: 38px;
           }
           .title {
             font-family: Quincy CF;
