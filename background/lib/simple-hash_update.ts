@@ -68,6 +68,11 @@ type SimpleHashTransferModel = {
   chain: SupportedChain
   from_address: string | null
   to_address: string | null
+  nft_details?: {
+    collection?: {
+      collection_id: string
+    }
+  }
 }
 
 type SimpleHashNFTsByWalletAPIResponse = {
@@ -311,6 +316,7 @@ export async function getSimpleHashNFTsTransfers(
     requestURL.searchParams.set("chains", getChainIDsNames(chainIDs))
     requestURL.searchParams.set("wallet_addresses", addresses.join(","))
     requestURL.searchParams.set("from_timestamp", fromTimestamp.toString())
+    requestURL.searchParams.set("include_nft_details", "1")
   }
 
   try {
@@ -323,32 +329,36 @@ export async function getSimpleHashNFTsTransfers(
 
     const { transfers, next } = result
 
-    const removedNFTs: TransferredNFT[] = transfers.flatMap((transfer) =>
-      transfer.nft_id &&
-      transfer.from_address &&
-      addresses.some((address) =>
-        sameEVMAddress(address, transfer.from_address)
-      )
+    const transferDetails: TransferredNFT[] = transfers.flatMap((transfer) =>
+      transfer.nft_id && (transfer.from_address || transfer.to_address)
         ? {
             id: transfer.nft_id,
             chainID: SIMPLE_HASH_CHAIN_TO_ID[transfer.chain].toString(),
-            address: transfer.from_address,
+            from: transfer.from_address,
+            to: transfer.to_address,
+            type: addresses.some((address) =>
+              sameEVMAddress(address, transfer.from_address)
+            )
+              ? "sell"
+              : "buy",
+            collectionID:
+              transfer.nft_details?.collection?.collection_id ?? null,
           }
         : []
     )
 
     if (next) {
-      const nextPageRemovedNFTs = await getSimpleHashNFTsTransfers(
+      const nextPageTransferDetails = await getSimpleHashNFTsTransfers(
         addresses,
         chainIDs,
         fromTimestamp,
         next
       )
 
-      return [...removedNFTs, ...nextPageRemovedNFTs]
+      return [...transferDetails, ...nextPageTransferDetails]
     }
 
-    return removedNFTs
+    return transferDetails
   } catch (err) {
     logger.error("Error retrieving NFTs ", err)
   }

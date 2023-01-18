@@ -56,7 +56,7 @@ export type Asset = {
  * asset id in CoinGecko's records.
  */
 export type CoinGeckoAsset = Asset & {
-  metadata: Asset["metadata"] & {
+  metadata?: Asset["metadata"] & {
     coinGeckoID: string
   }
 }
