@@ -1,15 +1,15 @@
 import { selectFilteredAbilities } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import { useSelector } from "react-redux"
 import SharedButton from "../components/Shared/SharedButton"
 import AbilityCard from "./Abilities/AbilityCard"
+import { useBackgroundSelector } from "../hooks"
 
 export default function Abilities(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "abilities",
   })
-  const abilities = useSelector(selectFilteredAbilities)
+  const abilities = useBackgroundSelector(selectFilteredAbilities)
 
   return (
     <>
