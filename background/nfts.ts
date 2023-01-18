@@ -79,5 +79,8 @@ export type NFTCollection = {
 export type TransferredNFT = {
   id: string
   chainID: string
-  address: string
+  from: string | null
+  to: string | null
+  type: "sell" | "buy"
+  collectionID: string | null
 }
