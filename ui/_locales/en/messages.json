@@ -760,6 +760,14 @@
       "toggleTitle": "Use Tally Ho as default wallet"
     }
   },
+  "abilities": {
+    "header": "Portfolio abilities",
+    "emptyState": {
+      "title": "No abilities here",
+      "desc": "Add more accounts to see your abilities, or change filters",
+      "addBtn": "Add account"
+    }
+  },
   "globalError": {
     "title": "Ups, nothing to see here",
     "desc": "Looks like you encountered an empty bowl, try refreshing the page to see if something appears",
