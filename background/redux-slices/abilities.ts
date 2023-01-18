@@ -11,11 +11,13 @@ type AbilitiesState = {
       [uuid: string]: Ability
     }
   }
+  hideDescription: boolean
 }
 
 const initialState: AbilitiesState = {
   filter: "incomplete",
   abilities: {},
+  hideDescription: false,
 }
 
 const abilitiesSlice = createSlice({
@@ -50,6 +52,9 @@ const abilitiesSlice = createSlice({
       immerState.abilities[payload.address][payload.abilityId].removedFromUi =
         true
     },
+    toggleHideDescription: (immerState, { payload }: { payload: boolean }) => {
+      immerState.hideDescription = payload
+    },
   },
 })
 
@@ -58,6 +63,7 @@ export const {
   deleteAbility,
   markAbilityAsCompleted,
   markAbilityAsRemoved,
+  toggleHideDescription,
 } = abilitiesSlice.actions
 
 export const completeAbility = createBackgroundAsyncThunk(
