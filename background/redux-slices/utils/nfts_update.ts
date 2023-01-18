@@ -127,16 +127,28 @@ const sortNFTs = (
   }
 }
 
-export const getTotalFloorPriceInETH = (
-  collections: NFTCollectionCached[]
-): number =>
-  collections.reduce((sum, collection) => {
-    if (collection.floorPrice && isETHPrice(collection)) {
-      return sum + collection.floorPrice.value * (collection.nftCount ?? 0)
-    }
+type TotalFloorPriceMap = { [symbol: string]: number }
 
-    return sum
-  }, 0)
+export const getTotalFloorPrice = (
+  collections: NFTCollectionCached[]
+): TotalFloorPriceMap =>
+  collections.reduce(
+    (acc, collection) => {
+      if (!collection.floorPrice) return acc
+
+      const sum = collection.floorPrice.value * (collection.nftCount ?? 0)
+
+      if (isETHPrice(collection)) {
+        acc.ETH += sum
+      } else {
+        acc[collection.floorPrice.tokenSymbol] ??= 0
+        acc[collection.floorPrice.tokenSymbol] += sum
+      }
+
+      return acc
+    },
+    { ETH: 0 } as TotalFloorPriceMap
+  )
 
 export const getNFTsCount = (collections: NFTCollectionCached[]): number =>
   collections.reduce((sum, collection) => sum + (collection.nftCount ?? 0), 0)

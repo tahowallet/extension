@@ -7,7 +7,7 @@ import {
   getAdditionalDataForFilter,
   getFilteredCollections,
   getNFTsCount,
-  getTotalFloorPriceInETH,
+  getTotalFloorPrice,
 } from "../utils/nfts_update"
 import { selectAccountTotals } from "./accountsSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
@@ -137,7 +137,7 @@ export const selectFilteredNFTCollectionsCount = createSelector(
 )
 
 /* Total Floor Price selectors  */
-export const selectFilteredTotalFloorPriceInETH = createSelector(
+export const selectFilteredTotalFloorPrice = createSelector(
   selectFilteredNFTCollections,
-  (collections) => getTotalFloorPriceInETH(collections)
+  (collections) => getTotalFloorPrice(collections)
 )
