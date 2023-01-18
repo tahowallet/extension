@@ -21,7 +21,7 @@ export default function AbilitiesHeader(): ReactElement {
   const history = useHistory()
 
   const ability = {
-    // TODO change icons
+    // @TODO change icon
     icon: newAbilities > 0 ? "dog_abilities" : "dog_abilities",
     countText: newAbilities > 0 ? `${newAbilities} ${t("new")}` : t("none"),
   }
@@ -76,7 +76,6 @@ export default function AbilitiesHeader(): ReactElement {
           </SharedButton>
         </div>
       )}
-
       <style jsx>{`
         .info_container {
           display: flex;
