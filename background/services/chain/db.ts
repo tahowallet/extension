@@ -77,7 +77,7 @@ export class ChainDatabase extends Dexie {
 
   private networks!: Dexie.Table<EVMNetwork, string>
 
-  private baseAssets!: Dexie.Table<NetworkBaseAsset, number>
+  private baseAssets!: Dexie.Table<NetworkBaseAsset, string>
 
   private rpcUrls!: Dexie.Table<{ chainID: string; rpcUrls: string[] }, string>
 
@@ -236,6 +236,14 @@ export class ChainDatabase extends Dexie {
       symbol,
       chainID,
     })
+  }
+
+  async getBaseAssetForNetwork(chainID: string): Promise<NetworkBaseAsset> {
+    const baseAsset = await this.baseAssets.get(chainID)
+    if (!baseAsset) {
+      throw new Error(`No Base Asset Found For Network ${chainID}`)
+    }
+    return baseAsset
   }
 
   async getAllBaseAssets(): Promise<NetworkBaseAsset[]> {

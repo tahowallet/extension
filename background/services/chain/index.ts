@@ -881,7 +881,7 @@ export default class ChainService extends BaseService<Events> {
       network,
       assetAmount: {
         // Data stored in chain db for network base asset might be stale
-        asset: NETWORK_BY_CHAIN_ID[network.chainID].baseAsset,
+        asset: await this.db.getBaseAssetForNetwork(network.chainID),
         amount: balance.toBigInt(),
       },
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
