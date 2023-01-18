@@ -12,8 +12,8 @@ export default function Abilities(): ReactElement {
   const abilities = useBackgroundSelector(selectFilteredAbilities)
 
   return (
-    <>
-      <section className="standard_width_padded">
+    <section className="standard_width_padded">
+      <div className="content">
         <div className="header">
           {/* @TODO change icon */}
           <div className="icon_daylight" />
@@ -39,7 +39,7 @@ export default function Abilities(): ReactElement {
             </SharedButton>
           </div>
         )}
-      </section>
+      </div>
       <style jsx>
         {`
           .header {
@@ -53,8 +53,6 @@ export default function Abilities(): ReactElement {
             line-height: 32px;
           }
           section {
-            display: flex;
-            flex-flow: column;
             height: 544px;
             width: 100%;
             background: radial-gradient(
@@ -67,7 +65,16 @@ export default function Abilities(): ReactElement {
                 rgba(9, 86, 72, 0.85) 0%,
                 rgba(0, 37, 34, 0) 100%
               );
+            padding: 0;
+            overflow: hidden;
+          }
+          .content {
+            display: flex;
+            flex-flow: column;
             padding: 0px 24px;
+            height: 100%;
+            overflow-y: scroll;
+            overflow-x: hidden;
           }
           .icon_daylight {
             background: url("./images/assets/daylight.png");
@@ -108,6 +115,6 @@ export default function Abilities(): ReactElement {
           }
         `}
       </style>
-    </>
+    </section>
   )
 }
