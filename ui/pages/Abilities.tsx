@@ -78,9 +78,9 @@ export default function Abilities(): ReactElement {
           .empty_page {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 16px;
             align-items: center;
-            margin-top: 38px;
+            margin-top: 24px;
           }
           .title {
             font-family: Quincy CF;
@@ -100,16 +100,15 @@ export default function Abilities(): ReactElement {
           }
           .icon_tail {
             background: url("./images/tail.svg");
-            background-size: 70px 70px;
-            width: 64px;
-            height: 64px;
+            background-size: 82px 82px;
+            width: 82px;
+            height: 82px;
             border-radius: 24px;
           }
           .logo {
             background-size: 32px 32px;
             width: 32px;
             height: 32px;
-            border-radius: 24px;
             margin-right: 16px;
           }
         `}
