@@ -41,22 +41,19 @@ export const getAdditionalDataForFilter = (
   return a ? { name: a.name, thumbnailURL: a.avatarURL } : {}
 }
 
-/* Items are sorted by price in ETH. All other elements are added at the end. */
+/* Items are sorted by price in USD. All other elements are added at the end. */
 const sortByPrice = (
   type: "asc" | "desc",
   collection1: NFTCollectionEnriched,
   collection2: NFTCollectionEnriched
 ): number => {
-  if (collection1.floorPrice?.valueUSD && collection2.floorPrice?.valueUSD) {
-    if (type === "asc") {
-      return collection1.floorPrice.valueUSD - collection2.floorPrice.valueUSD
-    }
-    return collection2.floorPrice.valueUSD - collection1.floorPrice.valueUSD
-  }
   if (collection1.floorPrice?.valueUSD === undefined) return 1
   if (collection2.floorPrice?.valueUSD === undefined) return -1
 
-  return 1
+  if (type === "asc") {
+    return collection1.floorPrice.valueUSD - collection2.floorPrice.valueUSD
+  }
+  return collection2.floorPrice.valueUSD - collection1.floorPrice.valueUSD
 }
 
 const sortByDate = (
