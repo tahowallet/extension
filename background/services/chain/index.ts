@@ -346,14 +346,6 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
-  async initializeBaseAssets(): Promise<void> {
-    await this.db.initializeBaseAssets()
-  }
-
-  async initializeRPCs(): Promise<void> {
-    await this.db.initializeRPCs()
-  }
-
   async initializeNetworks(): Promise<void> {
     const rpcUrls = await this.db.getAllRpcUrls()
     if (!this.supportedNetworks.length) {
