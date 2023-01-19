@@ -1,10 +1,13 @@
+import { BUILT_IN_NETWORK_BASE_ASSETS } from "../../constants"
 import { NFT } from "../../nfts"
+import { AssetsState, selectAssetPricePoint } from "../assets"
 import {
   Filter,
   FiltersState,
   NFTCollectionCached,
   SortType,
 } from "../nfts_update"
+import { enrichAssetAmountWithMainCurrencyValues } from "./asset-utils"
 
 const ETH_SYMBOLS = ["ETH", "WETH"]
 
@@ -12,6 +15,14 @@ export type AccountData = {
   address: string
   name: string
   avatarURL: string
+}
+
+type NFTCollectionEnriched = NFTCollectionCached & {
+  floorPrice?: {
+    value: number
+    valueUSD?: number
+    tokenSymbol: string
+  }
 }
 
 const isEnabledFilter = (id: string, filters: Filter[]): boolean => {
@@ -30,24 +41,19 @@ export const getAdditionalDataForFilter = (
   return a ? { name: a.name, thumbnailURL: a.avatarURL } : {}
 }
 
-/* Items are sorted by price in ETH. All other elements are added at the end. */
-const sortByPrice = (
+/* Items are sorted by price in USD. All other elements are added at the end. */
+export const sortByPrice = (
   type: "asc" | "desc",
-  collection1: NFTCollectionCached,
-  collection2: NFTCollectionCached
+  collection1: NFTCollectionEnriched,
+  collection2: NFTCollectionEnriched
 ): number => {
-  if (collection1.floorPrice && collection2.floorPrice) {
-    if (isETHPrice(collection1) && isETHPrice(collection2)) {
-      if (type === "asc") {
-        return collection1.floorPrice.value - collection2.floorPrice.value
-      }
-      return collection2.floorPrice.value - collection1.floorPrice.value
-    }
-  }
-  if (collection1.floorPrice === undefined) return 1
-  if (collection2.floorPrice === undefined) return -1
+  if (collection1.floorPrice?.valueUSD === undefined) return 1
+  if (collection2.floorPrice?.valueUSD === undefined) return -1
 
-  return 1
+  if (type === "asc") {
+    return collection1.floorPrice.valueUSD - collection2.floorPrice.valueUSD
+  }
+  return collection2.floorPrice.valueUSD - collection1.floorPrice.valueUSD
 }
 
 const sortByDate = (
@@ -127,31 +133,100 @@ const sortNFTs = (
   }
 }
 
-export const getTotalFloorPriceInETH = (
-  collections: NFTCollectionCached[]
-): number =>
-  collections.reduce((sum, collection) => {
-    if (collection.floorPrice && isETHPrice(collection)) {
-      return sum + collection.floorPrice.value * (collection.nftCount ?? 0)
-    }
+type TotalFloorPriceMap = { [symbol: string]: number }
 
-    return sum
-  }, 0)
+export const getTotalFloorPrice = (
+  collections: NFTCollectionCached[]
+): TotalFloorPriceMap =>
+  collections.reduce(
+    (acc, collection) => {
+      if (!collection.floorPrice) return acc
+
+      const sum = collection.floorPrice.value * (collection.nftCount ?? 0)
+
+      if (isETHPrice(collection)) {
+        acc.ETH += sum
+      } else {
+        acc[collection.floorPrice.tokenSymbol] ??= 0
+        acc[collection.floorPrice.tokenSymbol] += sum
+      }
+
+      return acc
+    },
+    { ETH: 0 } as TotalFloorPriceMap
+  )
 
 export const getNFTsCount = (collections: NFTCollectionCached[]): number =>
   collections.reduce((sum, collection) => sum + (collection.nftCount ?? 0), 0)
 
+export function enrichCollectionWithUSDFloorPrice(
+  collection: NFTCollectionCached,
+  assets: AssetsState,
+  mainCurrencySymbol: string
+): NFTCollectionEnriched {
+  if (!collection.floorPrice) return collection
+
+  const { tokenSymbol, value } = collection.floorPrice
+  const symbol = isETHPrice(collection) ? "ETH" : tokenSymbol
+
+  const baseAsset = BUILT_IN_NETWORK_BASE_ASSETS.find(
+    (asset) => symbol === asset.symbol
+  )
+
+  if (!baseAsset) return collection
+
+  const pricePoint = selectAssetPricePoint(
+    assets,
+    baseAsset,
+    mainCurrencySymbol
+  )
+
+  const valueUSD =
+    enrichAssetAmountWithMainCurrencyValues(
+      {
+        asset: baseAsset,
+        amount: BigInt(Math.round(value * 10 ** baseAsset.decimals)),
+      },
+      pricePoint,
+      2
+    ).mainCurrencyAmount ?? 0
+
+  return {
+    ...collection,
+    floorPrice: {
+      value,
+      valueUSD,
+      tokenSymbol,
+    },
+  }
+}
+
 export const getFilteredCollections = (
   collections: NFTCollectionCached[],
-  filters: FiltersState
-): NFTCollectionCached[] =>
-  collections
+  filters: FiltersState,
+  assets: AssetsState,
+  mainCurrencySymbol: string
+): NFTCollectionCached[] => {
+  const applyPriceSort = filters.type === "asc" || filters.type === "desc"
+
+  return collections
     .filter(
       (collection) =>
         isEnabledFilter(collection.id, filters.collections) &&
         isEnabledFilter(collection.owner, filters.accounts)
     )
-    .map((collection) => sortNFTs(collection, filters.type))
+    .map((collection) => {
+      const collectionWithSortedNFTs = sortNFTs(collection, filters.type)
+
+      return applyPriceSort
+        ? enrichCollectionWithUSDFloorPrice(
+            collectionWithSortedNFTs,
+            assets,
+            mainCurrencySymbol
+          )
+        : collectionWithSortedNFTs
+    })
     .sort((collection1, collection2) =>
       sortCollections(collection1, collection2, filters.type)
     )
+}

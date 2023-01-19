@@ -212,6 +212,20 @@ export function isFungibleAssetAmount(
 ): assetAmount is FungibleAssetAmount {
   return isFungibleAsset(assetAmount.asset)
 }
+/**
+ * Flips `pair` and `amounts` values in the PricePoint object.
+ *
+ * @param pricePoint
+ * @returns pricePoint with flipped pair and amounts
+ */
+export function flipPricePoint(pricePoint: PricePoint): PricePoint {
+  const { pair, amounts, time } = pricePoint
+  return {
+    pair: [pair[1], pair[0]],
+    amounts: [amounts[1], amounts[0]],
+    time,
+  }
+}
 
 /**
  * Converts the given source asset amount, fungible or non-fungible, to a target
