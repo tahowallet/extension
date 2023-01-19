@@ -36,6 +36,7 @@ import {
   AnalyticsService,
   ChainService,
   IndexingService,
+  InternalEthereumProviderService,
   KeyringService,
   LedgerService,
   NameService,
@@ -129,6 +130,18 @@ export const createSigningService = async (
     overrides.keyringService ?? createKeyringService(),
     overrides.ledgerService ?? createLedgerService(),
     overrides.chainService ?? createChainService()
+  )
+}
+
+export const createInternalEthereumProviderService = async (
+  overrides: {
+    chainService?: Promise<ChainService>
+    preferenceService?: Promise<PreferenceService>
+  } = {}
+): Promise<InternalEthereumProviderService> => {
+  return InternalEthereumProviderService.create(
+    overrides.chainService ?? createChainService(),
+    overrides.preferenceService ?? createPreferenceService()
   )
 }
 
