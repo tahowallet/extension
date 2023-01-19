@@ -162,7 +162,7 @@ export const getTotalFloorPrice = (
 export const getNFTsCount = (collections: NFTCollectionCached[]): number =>
   collections.reduce((sum, collection) => sum + (collection.nftCount ?? 0), 0)
 
-function enrichCollectionWithUSDFloorPrice(
+export function enrichCollectionWithUSDFloorPrice(
   collection: NFTCollectionCached,
   assets: AssetsState,
   mainCurrencySymbol: string
@@ -170,9 +170,10 @@ function enrichCollectionWithUSDFloorPrice(
   if (!collection.floorPrice) return collection
 
   const { tokenSymbol, value } = collection.floorPrice
+  const symbol = isETHPrice(collection) ? "ETH" : tokenSymbol
 
   const baseAsset = BUILT_IN_NETWORK_BASE_ASSETS.find(
-    (asset) => tokenSymbol === asset.symbol
+    (asset) => symbol === asset.symbol
   )
 
   if (!baseAsset) return collection

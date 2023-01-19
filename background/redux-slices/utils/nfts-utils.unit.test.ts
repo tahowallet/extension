@@ -1,5 +1,10 @@
-import { ETHEREUM } from "../../constants"
-import { getTotalFloorPrice } from "./nfts-utils"
+import { AVAX, BNB, ETH, ETHEREUM, USD } from "../../constants"
+import { AssetsState } from "../assets"
+import {
+  enrichCollectionWithUSDFloorPrice,
+  getTotalFloorPrice,
+} from "./nfts-utils"
+import { createPricePoint } from "../../tests/factories"
 
 const COLLECTION_MOCK = {
   id: "",
@@ -10,6 +15,27 @@ const COLLECTION_MOCK = {
   nfts: [], // doesn't matter for now
   hasNextPage: false,
 }
+
+const assetsState: AssetsState = [
+  {
+    ...ETH,
+    recentPrices: {
+      USD: createPricePoint(ETH, 2000),
+    },
+  },
+  {
+    ...AVAX,
+    recentPrices: {
+      USD: createPricePoint(AVAX, 15),
+    },
+  },
+  {
+    ...BNB,
+    recentPrices: {
+      USD: createPricePoint(BNB, 50),
+    },
+  },
+]
 
 describe("NFTs utils", () => {
   describe("getTotalFloorPrice", () => {
@@ -112,6 +138,122 @@ describe("NFTs utils", () => {
       ]
 
       expect(getTotalFloorPrice(collections)).toMatchObject({ ETH: 0.001 })
+    })
+  })
+
+  describe("enrichCollectionWithUSDFloorPrice", () => {
+    test("should add USD price if floor price is in ETH", () => {
+      const collection = {
+        ...COLLECTION_MOCK,
+        floorPrice: {
+          value: 1,
+          tokenSymbol: "ETH",
+        },
+      }
+
+      expect(
+        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+          .floorPrice
+      ).toMatchObject({
+        value: 1,
+        valueUSD: 2000,
+        tokenSymbol: "ETH",
+      })
+    })
+    test("should add USD price if floor price is in WETH", () => {
+      const collection = {
+        ...COLLECTION_MOCK,
+        floorPrice: {
+          value: 0.5,
+          tokenSymbol: "WETH",
+        },
+      }
+
+      expect(
+        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+          .floorPrice
+      ).toMatchObject({
+        value: 0.5,
+        valueUSD: 1000,
+        tokenSymbol: "WETH",
+      })
+    })
+    test("should add USD price if floor price is in AVAX", () => {
+      const collection = {
+        ...COLLECTION_MOCK,
+        floorPrice: {
+          value: 2,
+          tokenSymbol: "AVAX",
+        },
+      }
+
+      expect(
+        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+          .floorPrice
+      ).toMatchObject({
+        value: 2,
+        valueUSD: 30,
+        tokenSymbol: "AVAX",
+      })
+    })
+    test("should add USD price if floor price is in BNB", () => {
+      const collection = {
+        ...COLLECTION_MOCK,
+        floorPrice: {
+          value: 0.5,
+          tokenSymbol: "BNB",
+        },
+      }
+
+      expect(
+        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+          .floorPrice
+      ).toMatchObject({
+        value: 0.5,
+        valueUSD: 25,
+        tokenSymbol: "BNB",
+      })
+    })
+    test("shouldn't add USD price if base asset is not found in assets list", () => {
+      const collection = {
+        ...COLLECTION_MOCK,
+        floorPrice: {
+          value: 0.5,
+          tokenSymbol: "MATIC",
+        },
+      }
+
+      expect(
+        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+          .floorPrice
+      ).toMatchObject({
+        value: 0.5,
+        tokenSymbol: "MATIC",
+      })
+    })
+    test("shouldn't add USD price if there is not floor price", () => {
+      const collection = COLLECTION_MOCK
+      expect(
+        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+          .floorPrice
+      ).toBeUndefined()
+    })
+    test("shouldn't add floor price if price is not using base assets", () => {
+      const collection = {
+        ...COLLECTION_MOCK,
+        floorPrice: {
+          value: 0.5,
+          tokenSymbol: "XYZ",
+        },
+      }
+
+      expect(
+        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+          .floorPrice
+      ).toMatchObject({
+        value: 0.5,
+        tokenSymbol: "XYZ",
+      })
     })
   })
 })
