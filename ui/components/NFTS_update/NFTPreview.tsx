@@ -75,6 +75,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
             highResolutionSrc={previewURL}
             alt={name}
             width={384}
+            height={isBadge ? 384 : undefined}
             isBadge={isBadge}
             customStyles="border-radius: 0 0 8px 8px;"
           />

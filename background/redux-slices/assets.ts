@@ -3,6 +3,7 @@ import { ethers } from "ethers"
 import {
   AnyAsset,
   AnyAssetAmount,
+  flipPricePoint,
   isFungibleAsset,
   isSmartContractFungibleAsset,
   PricePoint,
@@ -237,12 +238,7 @@ export const selectAssetPricePoint = createSelector(
 
       // Flip it if the price point looks like USD-ETH
       if (pricePoint.pair[0].symbol !== assetToFind.symbol) {
-        const { pair, amounts, time } = pricePoint
-        pricePoint = {
-          pair: [pair[1], pair[0]],
-          amounts: [amounts[1], amounts[0]],
-          time,
-        }
+        pricePoint = flipPricePoint(pricePoint)
       }
 
       const assetDecimals = isFungibleAsset(assetToFind)
