@@ -13,7 +13,7 @@ import SharedButton from "../Shared/SharedButton"
 
 export default function AbilitiesHeader(): ReactElement {
   const { t } = useTranslation("translation", {
-    keyPrefix: "overview.abilities",
+    keyPrefix: "abilities",
   })
   const newAbilities = useSelector(selectAbilityCount)
   const hideDescription = useSelector(selectHideDescription)
@@ -21,7 +21,7 @@ export default function AbilitiesHeader(): ReactElement {
   const history = useHistory()
 
   const abilityCount =
-    newAbilities > 0 ? `${newAbilities} ${t("new")}` : t("none")
+    newAbilities > 0 ? `${newAbilities} ${t("banner.new")}` : t("banner.none")
 
   const handleClick = () => {
     if (!hideDescription) {
@@ -41,10 +41,10 @@ export default function AbilitiesHeader(): ReactElement {
           <div className="icon_tail" />
           <div
             className={classNames({
-              title: !hideDescription,
+              header: !hideDescription,
             })}
           >
-            {t("title")}
+            {t("header")}
           </div>
         </div>
         <div
@@ -63,13 +63,13 @@ export default function AbilitiesHeader(): ReactElement {
       </div>
       {!hideDescription && (
         <div>
-          <div className="desc">{t("description")}</div>
+          <div className="desc">{t("banner.description")}</div>
           <SharedButton
             type="primary"
             size="medium"
             onClick={() => handleClick()}
           >
-            {t("seeAbilities")}
+            {t("banner.seeAbilities")}
           </SharedButton>
         </div>
       )}
@@ -121,7 +121,7 @@ export default function AbilitiesHeader(): ReactElement {
           line-height: 24px;
         }
 
-        .title {
+        .header {
           font-weight: 600;
           font-size: 18px;
         }
