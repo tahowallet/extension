@@ -11,9 +11,11 @@ import {
   createChainService,
   createLegacyTransactionRequest,
 } from "../../../tests/factories"
+import { ChainDatabase } from "../db"
 import SerialFallbackProvider from "../serial-fallback-provider"
 
 type ChainServiceExternalized = Omit<ChainService, ""> & {
+  db: ChainDatabase
   handlePendingTransaction: (transaction: AnyEVMTransaction) => void
   populateEVMTransactionNonce: (
     transactionRequest: TransactionRequest
@@ -48,12 +50,22 @@ describe("ChainService", () => {
     })
 
     it("should initialize persisted data in the correct order", async () => {
-      const chainServiceInstance = await createChainService()
-      const initializeRPCs = sandbox.spy(chainServiceInstance, "initializeRPCs")
+      const chainServiceInstance =
+        (await createChainService()) as unknown as ChainServiceExternalized
+
+      const initialize = sandbox.spy(chainServiceInstance.db, "initialize")
 
       const initializeBaseAssets = sandbox.spy(
-        chainServiceInstance,
+        chainServiceInstance.db,
         "initializeBaseAssets"
+      )
+      const initializeRPCs = sandbox.spy(
+        chainServiceInstance.db,
+        "initializeRPCs"
+      )
+      const initializeEVMNetworks = sandbox.spy(
+        chainServiceInstance.db,
+        "initializeEVMNetworks"
       )
 
       const initializeNetworks = sandbox.spy(
@@ -63,8 +75,10 @@ describe("ChainService", () => {
 
       await chainServiceInstance.internalStartService()
 
-      expect(initializeRPCs.calledBefore(initializeBaseAssets)).toBe(true)
-      expect(initializeBaseAssets.calledBefore(initializeNetworks)).toBe(true)
+      expect(initialize.calledBefore(initializeNetworks)).toBe(true)
+      expect(initializeBaseAssets.calledBefore(initializeRPCs)).toBe(true)
+      expect(initializeRPCs.calledBefore(initializeEVMNetworks)).toBe(true)
+      expect(initializeEVMNetworks.calledBefore(initializeNetworks)).toBe(true)
       expect(initializeNetworks.called).toBe(true)
     })
   })

@@ -167,6 +167,12 @@ export class ChainDatabase extends Dexie {
     })
   }
 
+  async initialize(): Promise<void> {
+    await this.initializeBaseAssets()
+    await this.initializeRPCs()
+    await this.initializeEVMNetworks()
+  }
+
   async getLatestBlock(network: Network): Promise<AnyEVMBlock | null> {
     return (
       (
