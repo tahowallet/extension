@@ -6,9 +6,11 @@ import SharedIcon from "../../components/Shared/SharedIcon"
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 import SharedTooltip from "../../components/Shared/SharedTooltip"
 import { useBackgroundDispatch } from "../../hooks"
+import { i18n } from "../../_locales/i18n"
 import AbilityCardHeader from "./AbilityCardHeader"
 import AbilityRemovalConfirm from "./AbilityRemovalConfirm"
 
+const DAYS = 30
 const TOOLTIP_STYLE: React.CSSProperties = {
   background: "var(--green-120)",
   borderRadius: "4px",
@@ -18,11 +20,32 @@ const TOOLTIP_STYLE: React.CSSProperties = {
   color: "var(--green-40)",
 }
 
+const getTimeDetails = (ability: Ability): string => {
+  const cutOffDate = new Date()
+  cutOffDate.setDate(cutOffDate.getDate() + DAYS)
+
+  if (ability.closeAt) {
+    if (new Date(ability.closeAt) < cutOffDate) {
+      return i18n.t("abilities.timeCloses")
+    }
+  }
+  if (ability.openAt) {
+    if (new Date(ability.openAt) < cutOffDate) {
+      return i18n.t("abilities.timeStarting")
+    }
+  }
+
+  return ""
+}
+
 function AbilityCard({ ability }: { ability: Ability }): ReactElement {
   const [showRemoveAbilityConfirm, setShowRemoveAbilityConfirm] =
     useState(false)
 
   const dispatch = useBackgroundDispatch()
+
+  const timeDetails = getTimeDetails(ability)
+
   return (
     <>
       <div className="ability_card">
@@ -49,6 +72,12 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
         <div title={ability.title} className="title">
           {ability.title}
         </div>
+        {timeDetails && (
+          <div className="time_details">
+            <SharedIcon color="var(--green-40)" width={16} icon="time.svg" />
+            <div className="simple_text">{timeDetails}</div>
+          </div>
+        )}
         <div className="description">{ability.description}</div>
         {ability.imageUrl ? (
           <img className="image" alt="logo" src={ability.imageUrl} />
@@ -123,7 +152,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
             align-items: flex-start;
             padding: 16px;
             width: 310px;
-            height: 295px;
+            height: 355px;
             background: rgba(4, 20, 20, 0.4);
             border-radius: 12px;
             margin-bottom: 16px;
@@ -139,7 +168,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
             font-family: Segment;
             overflow: hidden;
             text-overflow: ellipsis;
-            width: 320px;
+            width: 100%;
             white-space: nowrap;
             font-size: 18px;
             font-weight: 600;
@@ -151,7 +180,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
           .description {
             margin-top: 4px;
             height: 48px;
-            width: 320px;
+            width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
             font-family: 'Segment';
@@ -166,7 +195,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
             margin-bottom: 16px;
           }
           .image {
-            width: 320px;
+            width: 100%;
             height: 115px;
             border-radius: 4px;
             object-fit: cover;
@@ -182,6 +211,12 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
           .line {
             border: 1px solid var(--green-80);
             height: 24px;
+          }
+          .time_details {
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
           }
         `}
       </style>
