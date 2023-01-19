@@ -8,7 +8,7 @@ import {
   getFilteredCollections,
   getNFTsCount,
   getTotalFloorPrice,
-} from "../utils/nfts_update"
+} from "../utils/nfts-utils"
 import { getAssetsState, selectAccountTotals } from "./accountsSelectors"
 import { selectCurrentAccount, selectMainCurrencySymbol } from "./uiSelectors"
 
