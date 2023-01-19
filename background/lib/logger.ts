@@ -288,8 +288,16 @@ export function serializeLogs(): string {
     return splitLogs
   })
 
+  const HOUR = 1000 * 60 * 60
   return (
     logEntries
+      // Only grab logs from the past hour
+      .filter((logLine) => {
+        return (
+          new Date(logLine.substring(1, iso8601Length)) >
+          new Date(Date.now() - HOUR)
+        )
+      })
       // Sort by date.
       .sort((a, b) => {
         return a

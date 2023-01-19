@@ -302,8 +302,7 @@ export default class ChainService extends BaseService<Events> {
   override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    await this.initializeRPCs()
-    await this.initializeBaseAssets()
+    await this.db.initialize()
     await this.initializeNetworks()
     const accounts = await this.getAccountsToTrack()
     const trackedNetworks = await this.getTrackedNetworks()
@@ -349,16 +348,7 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
-  async initializeBaseAssets(): Promise<void> {
-    await this.db.initializeBaseAssets()
-  }
-
-  async initializeRPCs(): Promise<void> {
-    await this.db.initializeRPCs()
-  }
-
   async initializeNetworks(): Promise<void> {
-    await this.db.initializeEVMNetworks()
     const rpcUrls = await this.db.getAllRpcUrls()
     if (!this.supportedNetworks.length) {
       await this.updateSupportedNetworks()
@@ -1885,14 +1875,14 @@ export default class ChainService extends BaseService<Events> {
   async addCustomChain(
     chainInfo: ValidatedAddEthereumChainParameter
   ): Promise<void> {
-    await this.db.addEVMNetwork(
-      chainInfo.chainName,
-      chainInfo.chainId,
-      chainInfo.nativeCurrency.decimals,
-      chainInfo.nativeCurrency.symbol,
-      chainInfo.nativeCurrency.name,
-      chainInfo.rpcUrls
-    )
+    await this.db.addEVMNetwork({
+      chainName: chainInfo.chainName,
+      chainID: chainInfo.chainId,
+      decimals: chainInfo.nativeCurrency.decimals,
+      symbol: chainInfo.nativeCurrency.symbol,
+      assetName: chainInfo.nativeCurrency.name,
+      rpcUrls: chainInfo.rpcUrls,
+    })
     await this.updateSupportedNetworks()
   }
 

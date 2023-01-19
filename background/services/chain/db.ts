@@ -168,6 +168,12 @@ export class ChainDatabase extends Dexie {
     })
   }
 
+  async initialize(): Promise<void> {
+    await this.initializeBaseAssets()
+    await this.initializeRPCs()
+    await this.initializeEVMNetworks()
+  }
+
   async getLatestBlock(network: Network): Promise<AnyEVMBlock | null> {
     return (
       (
@@ -196,14 +202,21 @@ export class ChainDatabase extends Dexie {
     )
   }
 
-  async addEVMNetwork(
-    chainName: string,
-    chainID: string,
-    decimals: number,
-    symbol: string,
-    assetName: string,
+  async addEVMNetwork({
+    chainName,
+    chainID,
+    decimals,
+    symbol,
+    assetName,
+    rpcUrls,
+  }: {
+    chainName: string
+    chainID: string
+    decimals: number
+    symbol: string
+    assetName: string
     rpcUrls: string[]
-  ): Promise<void> {
+  }): Promise<void> {
     await this.networks.put({
       name: chainName,
       coingeckoPlatformID: CHAIN_ID_TO_COINGECKO_PLATFORM_ID[chainID],
