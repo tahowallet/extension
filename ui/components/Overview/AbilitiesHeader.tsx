@@ -1,92 +1,166 @@
-import { selectAbilityCount } from "@tallyho/tally-background/redux-slices/selectors"
+import { toggleHideDescription } from "@tallyho/tally-background/redux-slices/abilities"
+import {
+  selectAbilityCount,
+  selectHideDescription,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import classNames from "classnames"
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
 import { useSelector } from "react-redux"
 import { useHistory } from "react-router-dom"
+import { useBackgroundDispatch } from "../../hooks"
+import SharedButton from "../Shared/SharedButton"
 
 export default function AbilitiesHeader(): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "overview.abilities",
+  })
   const newAbilities = useSelector(selectAbilityCount)
+  const hideDescription = useSelector(selectHideDescription)
+  const dispatch = useBackgroundDispatch()
   const history = useHistory()
 
-  const abilityCount = newAbilities > 0 ? `${newAbilities} New` : "None"
+  const abilityCount =
+    newAbilities > 0 ? `${newAbilities} ${t("new")}` : t("none")
+
+  const handleClick = () => {
+    if (!hideDescription) {
+      dispatch(toggleHideDescription(true))
+    }
+    history.push("abilities")
+  }
 
   return (
-    <>
-      <div className="abilities_header">
-        <div className="info_container">
-          <div className="abilities_info">
-            <div className="icon_daylight" />
-            <div>Daylight abilities</div>
-          </div>
+    <div
+      className={classNames("abilities_header", {
+        init_state: !hideDescription,
+      })}
+    >
+      <div className="info_container">
+        <div className="abilities_info">
+          <div className="icon_tail" />
           <div
-            onClick={() => {
-              history.push("abilities")
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                history.push("abilities")
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            className="ability_count"
+            className={classNames({
+              title: !hideDescription,
+            })}
           >
-            {abilityCount}
+            {t("title")}
           </div>
         </div>
+        <div
+          tabIndex={0}
+          role="button"
+          className="ability_count"
+          onClick={() => handleClick()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleClick()
+            }
+          }}
+        >
+          {abilityCount}
+        </div>
       </div>
+      {!hideDescription && (
+        <div>
+          <div className="desc">{t("description")}</div>
+          <SharedButton
+            type="primary"
+            size="medium"
+            onClick={() => handleClick()}
+          >
+            {t("seeAbilities")}
+          </SharedButton>
+        </div>
+      )}
       <style jsx>{`
         .info_container {
           display: flex;
           flex-direction: row;
           justify-content: space-between;
           align-items: center;
-          padding: 16px;
         }
+
         .abilities_header {
           background: var(--green-95);
           border-radius: 8px;
-          color: white;
           background: radial-gradient(
-            51.48% 205.47% at 0% -126.42%,
-            #f76734 0%,
-            #13302e 100%
+              78.69% 248.21% at 114.77% 133.93%,
+              rgba(9, 86, 72, 0.85) 0%,
+              rgba(0, 37, 34, 0) 100%
+            ),
+            radial-gradient(
+              78.69% 248.21% at 0% -133.93%,
+              rgb(247, 103, 52, 0.3) 0%,
+              rgba(19, 48, 46, 0.5) 100%
+            );
+
+          padding: 12px 16px 12px 12px;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .abilities_header.init_state {
+          background: radial-gradient(
+            103.39% 72.17% at -5.73% -7.67%,
+            rgb(247, 103, 52, 0.5) 0%,
+            rgba(19, 48, 46, 0.5) 100%
           );
-
-          width: 352px;
-          height: 56px;
-          box-shadow: 0px 2px 4px 0px #00141357, 0px 6px 8px 0px #0014133d,
-            0px 16px 16px 0px #00141324;
-
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
+          box-shadow: 0px 16px 16px rgba(7, 17, 17, 0.3),
+            0px 6px 8px rgba(7, 17, 17, 0.24), 0px 2px 4px rgba(7, 17, 17, 0.34);
         }
 
         .abilities_info {
           display: flex;
           flex-direction: row;
-          align-items: flex-end;
+          align-items: center;
+
+          color: var(--white);
           font-weight: 400;
+          font-size: 16px;
+          line-height: 24px;
         }
+
+        .title {
+          font-weight: 600;
+          font-size: 18px;
+        }
+
         .ability_count {
           display: flex;
           flex-direction: row;
-          align-items: flex-end;
+          align-items: center;
+          justify-content: center;
           background: var(--hunter-green);
           border-radius: 17px;
-          padding: 4px 8px 4px 8px;
-          color: ${newAbilities > 0 ? "var(--success)" : "var(--green-40)"};
-          font-weight: 500;
+          padding: 0px 8px;
           cursor: pointer;
+          height: 24px;
+
+          font-weight: 500;
+          font-size: 14px;
+          line-height: 16px;
+          letter-spacing: 0.03em;
+          color: var(--${newAbilities > 0 ? "success" : "green-40"});
         }
-        .icon_daylight {
-          background: url("./images/assets/daylight.png");
-          background-size: 39px 22px;
-          width: 39px;
-          height: 22px;
+
+        .desc {
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
+          color: var(--green-20);
+          margin: 8px 0 16px;
+        }
+
+        .icon_tail {
+          background: url("./images/tail.svg");
+          background-size: 32px 32px;
+          width: 32px;
+          height: 32px;
           margin-right: 8px;
+          border-radius: 24px;
         }
       `}</style>
-    </>
+    </div>
   )
 }
