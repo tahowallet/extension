@@ -300,9 +300,12 @@ export default class ChainService extends BaseService<Events> {
   }
 
   override async internalStartService(): Promise<void> {
+    console.log("xx starting chain service")
     await super.internalStartService()
 
+    console.log("initializing db")
     await this.db.initialize()
+    console.log("initializing networks")
     await this.initializeNetworks()
     const accounts = await this.getAccountsToTrack()
     const trackedNetworks = await this.getTrackedNetworks()
@@ -350,9 +353,9 @@ export default class ChainService extends BaseService<Events> {
 
   async initializeNetworks(): Promise<void> {
     const rpcUrls = await this.db.getAllRpcUrls()
-    if (!this.supportedNetworks.length) {
-      await this.updateSupportedNetworks()
-    }
+
+    await this.updateSupportedNetworks()
+
     this.lastUserActivityOnNetwork =
       Object.fromEntries(
         this.supportedNetworks.map((network) => [network.chainID, 0])
@@ -856,6 +859,8 @@ export default class ChainService extends BaseService<Events> {
     address,
     network,
   }: AddressOnNetwork): Promise<AccountBalance> {
+    await this.started()
+
     const normalizedAddress = normalizeEVMAddress(address)
 
     const balance = await this.providerForNetworkOrThrow(network).getBalance(

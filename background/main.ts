@@ -723,6 +723,16 @@ export default class Main extends BaseService<never> {
           await this.enrichActivitiesForSelectedAccount()
         }
       )
+
+      // Set up initial state.
+      const existingAccounts = await this.chainService.getAccountsToTrack()
+      existingAccounts.forEach(async (addressNetwork) => {
+        // Mark as loading and wire things up.
+        this.store.dispatch(loadAccount(addressNetwork))
+
+        // Force a refresh of the account balance to populate the store.
+        this.chainService.getLatestBaseAccountBalance(addressNetwork)
+      })
     })
 
     // Wire up chain service to account slice.
@@ -862,16 +872,6 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(signedDataAction(signedData))
       }
     )
-
-    // Set up initial state.
-    const existingAccounts = await this.chainService.getAccountsToTrack()
-    existingAccounts.forEach((addressNetwork) => {
-      // Mark as loading and wire things up.
-      this.store.dispatch(loadAccount(addressNetwork))
-
-      // Force a refresh of the account balance to populate the store.
-      this.chainService.getLatestBaseAccountBalance(addressNetwork)
-    })
 
     this.chainService.emitter.on(
       "blockPrices",
