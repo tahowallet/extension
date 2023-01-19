@@ -1879,14 +1879,14 @@ export default class ChainService extends BaseService<Events> {
   async addCustomChain(
     chainInfo: ValidatedAddEthereumChainParameter
   ): Promise<void> {
-    await this.db.addEVMNetwork(
-      chainInfo.chainName,
-      chainInfo.chainId,
-      chainInfo.nativeCurrency.decimals,
-      chainInfo.nativeCurrency.symbol,
-      chainInfo.nativeCurrency.name,
-      chainInfo.rpcUrls
-    )
+    await this.db.addEVMNetwork({
+      chainName: chainInfo.chainName,
+      chainID: chainInfo.chainId,
+      decimals: chainInfo.nativeCurrency.decimals,
+      symbol: chainInfo.nativeCurrency.symbol,
+      assetName: chainInfo.nativeCurrency.name,
+      rpcUrls: chainInfo.rpcUrls,
+    })
     this.supportedNetworks = await this.db.getAllEVMNetworks()
   }
 }

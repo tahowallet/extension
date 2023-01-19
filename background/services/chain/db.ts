@@ -195,14 +195,21 @@ export class ChainDatabase extends Dexie {
     )
   }
 
-  async addEVMNetwork(
-    chainName: string,
-    chainID: string,
-    decimals: number,
-    symbol: string,
-    assetName: string,
+  async addEVMNetwork({
+    chainName,
+    chainID,
+    decimals,
+    symbol,
+    assetName,
+    rpcUrls,
+  }: {
+    chainName: string
+    chainID: string
+    decimals: number
+    symbol: string
+    assetName: string
     rpcUrls: string[]
-  ): Promise<void> {
+  }): Promise<void> {
     await this.networks.put({
       name: chainName,
       chainID,
