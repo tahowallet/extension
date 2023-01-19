@@ -124,7 +124,7 @@
       "connectSelectedLedger": "Connect selected",
       "doneMessageOne": "Congratulations!",
       "doneMessageTwo": "You can open Tally Ho now.",
-      "onboardingSuccessful": "Selected accounts were succesfully connected.",
+      "onboardingSuccessful": "Selected accounts were successfully connected.",
       "closeTab": "Close tab"
     },
     "connectionStatus": {
@@ -309,7 +309,7 @@
           "tip": "Some of the code for this was written by Community contributors"
         },
         "viewOnly": {
-          "tip": "A good way to take a peak at what Tally Ho offers"
+          "tip": "A good way to take a peek at what Tally Ho offers"
         },
         "importSeed": {
           "tip": "Tally Ho offers the possibility of adding multiple recovery phrases"
@@ -392,7 +392,7 @@
     },
     "seedVerification": {
       "seedIsInWrongOrder": "Wrong Order",
-      "seedMismatchExplainer": "We are sorry, the recovery phrase you entered did not match.You can try to re-order them, but make sure you have them written down.",
+      "seedMismatchExplainer": "We are sorry, the recovery phrase you entered did not match. You can try to re-order them, but make sure you have them written down.",
       "createNewWallet": "If you prefer you can <1><0>create a new wallet.<0></1>",
       "retryVerification": "Try again",
       "verifySeedPrompt": "Verify recovery phrase",
@@ -635,7 +635,7 @@
     "rewards": {
       "header": "Swap rewards for community",
       "body": "This week, 240,000 DOGGO tokens will be equally shared as Swap Rewards.",
-      "tooltip": "Tally Ho rewards it's users that use swap every week. A council decides weekly prizes and who is eligible.",
+      "tooltip": "Tally Ho rewards its users that use swap every week. A council decides weekly prizes and who is eligible.",
       "detailButton": "Details"
     },
     "error": {
@@ -744,7 +744,7 @@
       "snackbar": "You can change this in Settings later",
       "isDefault": "is now your default wallet",
       "notDefault": "is not your default wallet",
-      "tooltip": "Setting Tally Ho as your default wallet means that everytime you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
+      "tooltip": "Setting Tally Ho as your default wallet means that every time you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
     },
     "analyticsNotification": {
       "title": "Analytics are on",
