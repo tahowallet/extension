@@ -78,10 +78,12 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
             <div className="simple_text">{timeDetails}</div>
           </div>
         )}
-        <div className="description">{ability.description}</div>
-        {ability.imageUrl ? (
+        {ability.description && (
+          <div className="description">{ability.description}</div>
+        )}
+        {ability.imageUrl && (
           <img className="image" alt="logo" src={ability.imageUrl} />
-        ) : null}
+        )}
         <div className="controls">
           <SharedButton
             type="primary"
@@ -192,13 +194,13 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
-            margin-bottom: 16px;
           }
           .image {
             width: 100%;
             height: 115px;
             border-radius: 4px;
             object-fit: cover;
+            margin-top: 16px;
           }
           .controls {
             margin-top: 16px;
