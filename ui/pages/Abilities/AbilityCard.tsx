@@ -9,6 +9,15 @@ import { useBackgroundDispatch } from "../../hooks"
 import AbilityCardHeader from "./AbilityCardHeader"
 import AbilityRemovalConfirm from "./AbilityRemovalConfirm"
 
+const TOOLTIP_STYLE: React.CSSProperties = {
+  background: "var(--green-120)",
+  borderRadius: "4px",
+  fontSize: "16px",
+  lineHeight: "24px",
+  padding: "2px 8px",
+  color: "var(--green-40)",
+}
+
 function AbilityCard({ ability }: { ability: Ability }): ReactElement {
   const [showRemoveAbilityConfirm, setShowRemoveAbilityConfirm] =
     useState(false)
@@ -58,14 +67,16 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
           <div className="button_container">
             <SharedTooltip
               horizontalPosition="center"
-              width={130}
-              verticalPosition="top"
+              width={144}
+              verticalPosition="bottom"
+              style={TOOLTIP_STYLE}
               IconComponent={() => (
                 <SharedIcon
                   height={16}
                   width={16}
                   icon="icons/s/mark-read.svg"
                   color="var(--green-40)"
+                  customStyles="margin-right: 8px;"
                   hoverColor="var(--success)"
                   onClick={() => {
                     dispatch(
@@ -80,17 +91,18 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
             >
               Mark as Completed
             </SharedTooltip>
+            <div className="line" />
             <SharedTooltip
               horizontalPosition="center"
               width={50}
-              verticalPosition="top"
+              verticalPosition="bottom"
+              style={TOOLTIP_STYLE}
               IconComponent={() => (
                 <SharedIcon
                   height={16}
                   width={16}
                   icon="icons/s/garbage.svg"
                   color="var(--green-40)"
-                  customStyles="margin-left: 10px;"
                   hoverColor="var(--error)"
                   onClick={() => {
                     setShowRemoveAbilityConfirm(true)
@@ -119,6 +131,9 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
           .button_container {
             display: flex;
             flex-direction:row;
+            align-items: center;
+            height: 100%;
+            gap: 8px;
           }
           .title {
             font-family: Segment;
@@ -163,6 +178,10 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
             align-items: center;
             justify-content: space-between;
             width: 100%;
+          }
+          .line {
+            border: 1px solid var(--green-80);
+            height: 24px;
           }
         `}
       </style>
