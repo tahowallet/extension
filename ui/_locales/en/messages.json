@@ -764,11 +764,11 @@
     "header": "Portfolio abilities",
     "emptyState": {
       "title": "No abilities here",
-      "desc": "Add more accounts to see your abilities, or change filters",
+      "desc": "Add more accounts to see your abilities or change filters",
       "addBtn": "Add account"
     },
     "banner": {
-      "description": "Daylight tells you when you qualify for an airdrop, mint, or unlock.",
+      "description": "Daylight tells you when you qualify for an airdrop, mint or unlock.",
       "seeAbilities": "See your abilities",
       "new": "New",
       "none": "None"
