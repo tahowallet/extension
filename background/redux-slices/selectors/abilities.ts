@@ -35,3 +35,8 @@ export const selectAbilityCount = createSelector(
   selectFilteredAbilities,
   (abilities) => abilities.length
 )
+
+export const selectHideDescription = createSelector(
+  (state: RootState) => state.abilities.hideDescription,
+  (hideDescription) => hideDescription
+)

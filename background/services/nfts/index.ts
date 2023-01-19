@@ -270,6 +270,11 @@ export default class NFTsService extends BaseService<Events> {
   }
 
   async removeNFTsForAddress(address: string): Promise<void> {
+    Object.keys(this.#freshCollections).forEach((collectionID) => {
+      if (this.#freshCollections[collectionID][normalizeEVMAddress(address)]) {
+        this.setFreshCollection(collectionID, address, false)
+      }
+    })
     await this.db.removeNFTsForAddress(address)
   }
 
