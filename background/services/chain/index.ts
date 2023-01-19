@@ -18,6 +18,7 @@ import {
   TransactionRequestWithNonce,
   SignedTransaction,
   toHexChainID,
+  NetworkBaseAsset,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import {
@@ -1874,6 +1875,10 @@ export default class ChainService extends BaseService<Events> {
         "alchemy"
       )
     }
+  }
+
+  async getNetworkBaseAssets(): Promise<NetworkBaseAsset[]> {
+    return this.db.getAllBaseAssets()
   }
 
   // Used to add non-default chains via wallet_addEthereumChain

@@ -184,6 +184,33 @@ export const CHAIN_ID_TO_RPC_URLS: {
   ],
 }
 
+// Taken from https://api.coingecko.com/api/v3/asset_platforms
+export const CHAIN_ID_TO_COINGECKO_PLATFORM_ID: {
+  [chainId: string]: string
+} = {
+  "250": "fantom",
+  "122": "fuse",
+  "361": "theta",
+  "199": "bittorent",
+  "106": "velas",
+  "128": "huobi-token",
+  "96": "bitkub-chain",
+  "333999": "polis-chain",
+  "321": "kucoin-community-chain",
+  "1285": "moonriver",
+  "25": "cronos",
+  "10000": "smartbch",
+  "1313161554": "aurora",
+  "88": "tomochain",
+  "1088": "metis-andromeda",
+  "2001": "milkomeda-cardano",
+  "9001": "evmos",
+  "288": "boba",
+  "42220": "celo",
+  "1284": "moonbeam",
+  "66": "okex-chain",
+}
+
 /**
  * Method list, to describe which rpc method calls on which networks should
  * prefer alchemy provider over the generic ones.

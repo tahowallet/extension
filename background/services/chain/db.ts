@@ -12,6 +12,7 @@ import {
 import { FungibleAsset } from "../../assets"
 import {
   BASE_ASSETS,
+  CHAIN_ID_TO_COINGECKO_PLATFORM_ID,
   CHAIN_ID_TO_RPC_URLS,
   DEFAULT_NETWORKS,
   GOERLI,
@@ -205,6 +206,7 @@ export class ChainDatabase extends Dexie {
   ): Promise<void> {
     await this.networks.put({
       name: chainName,
+      coingeckoPlatformID: CHAIN_ID_TO_COINGECKO_PLATFORM_ID[chainID],
       chainID,
       family: "EVM",
       baseAsset: {
