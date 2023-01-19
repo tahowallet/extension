@@ -42,7 +42,7 @@ export const getAdditionalDataForFilter = (
 }
 
 /* Items are sorted by price in USD. All other elements are added at the end. */
-const sortByPrice = (
+export const sortByPrice = (
   type: "asc" | "desc",
   collection1: NFTCollectionEnriched,
   collection2: NFTCollectionEnriched

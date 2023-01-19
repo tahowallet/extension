@@ -3,6 +3,7 @@ import { AssetsState } from "../assets"
 import {
   enrichCollectionWithUSDFloorPrice,
   getTotalFloorPrice,
+  sortByPrice,
 } from "./nfts-utils"
 import { createPricePoint } from "../../tests/factories"
 
@@ -254,6 +255,45 @@ describe("NFTs utils", () => {
         value: 0.5,
         tokenSymbol: "XYZ",
       })
+    })
+  })
+
+  describe("sortByPrice", () => {
+    const collections = [
+      {
+        ...COLLECTION_MOCK,
+        id: "cheap",
+        floorPrice: { value: 1, valueUSD: 1, tokenSymbol: "USDT" },
+      },
+      {
+        ...COLLECTION_MOCK,
+        id: "expensive",
+        floorPrice: { value: 100, valueUSD: 100, tokenSymbol: "USDT" },
+      },
+      {
+        ...COLLECTION_MOCK,
+        id: "zero",
+        floorPrice: { value: 0, valueUSD: 0, tokenSymbol: "USDT" },
+      },
+      {
+        ...COLLECTION_MOCK,
+        id: "undefined",
+      },
+    ]
+
+    test("should sort collection by ascending floor price", () => {
+      expect(
+        collections
+          .sort((a, b) => sortByPrice("asc", a, b))
+          .map((collection) => collection.id)
+      ).toMatchObject(["zero", "cheap", "expensive", "undefined"])
+    })
+    test("should sort collection by descending floor price", () => {
+      expect(
+        collections
+          .sort((a, b) => sortByPrice("desc", a, b))
+          .map((collection) => collection.id)
+      ).toMatchObject(["expensive", "cheap", "zero", "undefined"])
     })
   })
 })
