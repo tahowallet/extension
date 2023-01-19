@@ -13,18 +13,15 @@ import SharedButton from "../Shared/SharedButton"
 
 export default function AbilitiesHeader(): ReactElement {
   const { t } = useTranslation("translation", {
-    keyPrefix: "overview.abilities",
+    keyPrefix: "abilities",
   })
   const newAbilities = useSelector(selectAbilityCount)
   const hideDescription = useSelector(selectHideDescription)
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
 
-  const ability = {
-    // @TODO change icon
-    icon: newAbilities > 0 ? "dog_abilities" : "dog_abilities",
-    countText: newAbilities > 0 ? `${newAbilities} ${t("new")}` : t("none"),
-  }
+  const abilityCount =
+    newAbilities > 0 ? `${newAbilities} ${t("banner.new")}` : t("banner.none")
 
   const handleClick = () => {
     if (!hideDescription) {
@@ -41,17 +38,13 @@ export default function AbilitiesHeader(): ReactElement {
     >
       <div className="info_container">
         <div className="abilities_info">
-          <div
-            className={classNames("icon", {
-              tail: !hideDescription,
-            })}
-          />
+          <div className="icon_tail" />
           <div
             className={classNames({
-              title: !hideDescription,
+              header: !hideDescription,
             })}
           >
-            {t("title")}
+            {t("header")}
           </div>
         </div>
         <div
@@ -65,18 +58,18 @@ export default function AbilitiesHeader(): ReactElement {
             }
           }}
         >
-          {ability.countText}
+          {abilityCount}
         </div>
       </div>
       {!hideDescription && (
         <div>
-          <div className="desc">{t("description")}</div>
+          <div className="desc">{t("banner.description")}</div>
           <SharedButton
             type="primary"
             size="medium"
             onClick={() => handleClick()}
           >
-            {t("seeAbilities")}
+            {t("banner.seeAbilities")}
           </SharedButton>
         </div>
       )}
@@ -85,7 +78,7 @@ export default function AbilitiesHeader(): ReactElement {
           display: flex;
           flex-direction: row;
           justify-content: space-between;
-          align-items: ${hideDescription ? "end" : "center"};
+          align-items: center;
         }
 
         .abilities_header {
@@ -102,7 +95,7 @@ export default function AbilitiesHeader(): ReactElement {
               rgba(19, 48, 46, 0.5) 100%
             );
 
-          padding: 13px 16px 16px;
+          padding: 12px 16px 12px 12px;
           width: 100%;
           box-sizing: border-box;
         }
@@ -120,7 +113,7 @@ export default function AbilitiesHeader(): ReactElement {
         .abilities_info {
           display: flex;
           flex-direction: row;
-          align-items: ${hideDescription ? "end" : "center"};
+          align-items: center;
 
           color: var(--white);
           font-weight: 400;
@@ -128,7 +121,7 @@ export default function AbilitiesHeader(): ReactElement {
           line-height: 24px;
         }
 
-        .title {
+        .header {
           font-weight: 600;
           font-size: 18px;
         }
@@ -159,19 +152,13 @@ export default function AbilitiesHeader(): ReactElement {
           margin: 8px 0 16px;
         }
 
-        .icon {
-          background: url("./images/${ability.icon}.svg");
-          background-size: 36px 30px;
-          width: 36px;
-          height: 30px;
-          margin-right: 14px;
-        }
-
-        .icon.tail {
+        .icon_tail {
           background: url("./images/tail.svg");
-          background-size: 36px 36px;
-          height: 36px;
+          background-size: 32px 32px;
+          width: 32px;
+          height: 32px;
           margin-right: 8px;
+          border-radius: 24px;
         }
       `}</style>
     </div>
