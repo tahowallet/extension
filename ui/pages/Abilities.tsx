@@ -15,8 +15,7 @@ export default function Abilities(): ReactElement {
     <section className="standard_width_padded">
       <div className="content">
         <div className="header">
-          {/* @TODO change icon */}
-          <div className="icon_daylight" />
+          <div className="icon_tail logo" />
           <h1>{t("header")}</h1>
         </div>
         {abilities.length > 0 ? (
@@ -76,13 +75,6 @@ export default function Abilities(): ReactElement {
             overflow-y: scroll;
             overflow-x: hidden;
           }
-          .icon_daylight {
-            background: url("./images/assets/daylight.png");
-            background-size: 39px 22px;
-            width: 39px;
-            height: 22px;
-            margin-right: 20px;
-          }
           .empty_page {
             display: flex;
             flex-direction: column;
@@ -109,9 +101,16 @@ export default function Abilities(): ReactElement {
           .icon_tail {
             background: url("./images/tail.svg");
             background-size: 70px 70px;
-            border-radius: 24px;
             width: 64px;
             height: 64px;
+            border-radius: 24px;
+          }
+          .logo {
+            background-size: 32px 32px;
+            width: 32px;
+            height: 32px;
+            border-radius: 24px;
+            margin-right: 16px;
           }
         `}
       </style>
