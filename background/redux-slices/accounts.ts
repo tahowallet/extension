@@ -40,7 +40,7 @@ const availableDefaultNames = [
   "Foz",
 ]
 
-type AccountData = {
+export type AccountData = {
   address: HexString
   network: Network
   balances: {
