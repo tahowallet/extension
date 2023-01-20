@@ -1,6 +1,7 @@
 import { completeAbility } from "@tallyho/tally-background/redux-slices/abilities"
 import { Ability } from "@tallyho/tally-background/services/abilities"
 import React, { ReactElement, useState } from "react"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
@@ -39,6 +40,9 @@ const getTimeDetails = (ability: Ability): string => {
 }
 
 function AbilityCard({ ability }: { ability: Ability }): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "abilities",
+  })
   const [showRemoveAbilityConfirm, setShowRemoveAbilityConfirm] =
     useState(false)
 
@@ -93,7 +97,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
               window.open(ability.linkUrl, "_blank")?.focus()
             }}
           >
-            Visit website
+            {t("viewWebsiteBtn")}
           </SharedButton>
           <div className="button_container">
             <SharedTooltip
@@ -120,7 +124,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
                 />
               )}
             >
-              Mark as Completed
+              {t("markBtn")}
             </SharedTooltip>
             <div className="line" />
             <SharedTooltip
@@ -141,7 +145,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
                 />
               )}
             >
-              Delete
+              {t("deleteBtn")}
             </SharedTooltip>
           </div>
         </div>
