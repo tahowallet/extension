@@ -62,6 +62,7 @@ import {
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
 import KeyringService from "../keyring"
+import type { ValidatedAddEthereumChainParameter } from "../internal-ethereum-provider"
 
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
@@ -299,10 +300,11 @@ export default class ChainService extends BaseService<Events> {
   override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    await this.initializeBaseAssets()
+    await this.db.initialize()
     await this.initializeNetworks()
     const accounts = await this.getAccountsToTrack()
     const trackedNetworks = await this.getTrackedNetworks()
+
     const transactions = await this.db.getAllTransactions()
 
     this.emitter.emit("initializeActivities", { transactions, accounts })
@@ -344,12 +346,8 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
-  async initializeBaseAssets(): Promise<void> {
-    await this.db.initializeBaseAssets()
-  }
-
   async initializeNetworks(): Promise<void> {
-    await this.db.initializeEVMNetworks()
+    const rpcUrls = await this.db.getAllRpcUrls()
     if (!this.supportedNetworks.length) {
       this.supportedNetworks = await this.db.getAllEVMNetworks()
     }
@@ -362,7 +360,10 @@ export default class ChainService extends BaseService<Events> {
       evm: Object.fromEntries(
         this.supportedNetworks.map((network) => [
           network.chainID,
-          makeSerialFallbackProvider(network),
+          makeSerialFallbackProvider(
+            network,
+            rpcUrls.find((v) => v.chainID === network.chainID)?.rpcUrls || []
+          ),
         ])
       ),
     }
@@ -1862,5 +1863,20 @@ export default class ChainService extends BaseService<Events> {
         "alchemy"
       )
     }
+  }
+
+  // Used to add non-default chains via wallet_addEthereumChain
+  async addCustomChain(
+    chainInfo: ValidatedAddEthereumChainParameter
+  ): Promise<void> {
+    await this.db.addEVMNetwork({
+      chainName: chainInfo.chainName,
+      chainID: chainInfo.chainId,
+      decimals: chainInfo.nativeCurrency.decimals,
+      symbol: chainInfo.nativeCurrency.symbol,
+      assetName: chainInfo.nativeCurrency.name,
+      rpcUrls: chainInfo.rpcUrls,
+    })
+    this.supportedNetworks = await this.db.getAllEVMNetworks()
   }
 }

@@ -11,6 +11,7 @@ import { keccak256 } from "ethers/lib/utils"
 import { AccountBalance, AddressOnNetwork } from "../accounts"
 import {
   AnyAsset,
+  flipPricePoint,
   isFungibleAsset,
   PricePoint,
   SmartContractFungibleAsset,
@@ -35,6 +36,7 @@ import {
   AnalyticsService,
   ChainService,
   IndexingService,
+  InternalEthereumProviderService,
   KeyringService,
   LedgerService,
   NameService,
@@ -128,6 +130,18 @@ export const createSigningService = async (
     overrides.keyringService ?? createKeyringService(),
     overrides.ledgerService ?? createLedgerService(),
     overrides.chainService ?? createChainService()
+  )
+}
+
+export const createInternalEthereumProviderService = async (
+  overrides: {
+    chainService?: Promise<ChainService>
+    preferenceService?: Promise<PreferenceService>
+  } = {}
+): Promise<InternalEthereumProviderService> => {
+  return InternalEthereumProviderService.create(
+    overrides.chainService ?? createChainService(),
+    overrides.preferenceService ?? createPreferenceService()
   )
 }
 
@@ -418,17 +432,11 @@ export const createPricePoint = (
 
   const pricePoint: PricePoint = {
     pair: [asset, USD],
-    amounts: [10n ** BigInt(decimals), BigInt(Math.trunc(1e11 * price))],
+    amounts: [10n ** BigInt(decimals), BigInt(Math.trunc(1e10 * price))],
     time: Math.trunc(Date.now() / 1e3),
   }
 
-  if (flip) {
-    const { pair, amounts } = pricePoint
-    pricePoint.pair = [pair[1], pair[0]]
-    pricePoint.amounts = [amounts[1], amounts[0]]
-  }
-
-  return pricePoint
+  return flip ? flipPricePoint(pricePoint) : pricePoint
 }
 
 export const createArrayWith0xHash = (length: number): string[] =>

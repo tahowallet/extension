@@ -10,7 +10,6 @@ import { utils } from "ethers"
 import { getNetwork } from "@ethersproject/networks"
 import {
   SECOND,
-  CHAIN_ID_TO_RPC_URLS,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
   RPC_METHOD_PROVIDER_ROUTING,
 } from "../../constants"
@@ -931,7 +930,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 }
 
 export function makeSerialFallbackProvider(
-  network: EVMNetwork
+  network: EVMNetwork,
+  rpcUrls: string[]
 ): SerialFallbackProvider {
   const alchemyProviderCreators = ALCHEMY_SUPPORTED_CHAIN_IDS.has(
     network.chainID
@@ -956,12 +956,10 @@ export function makeSerialFallbackProvider(
       ]
     : []
 
-  const genericProviders = (CHAIN_ID_TO_RPC_URLS[network.chainID] || []).map(
-    (rpcUrl) => ({
-      type: "generic" as const,
-      creator: () => new JsonRpcProvider(rpcUrl),
-    })
-  )
+  const genericProviders = rpcUrls.map((rpcUrl) => ({
+    type: "generic" as const,
+    creator: () => new JsonRpcProvider(rpcUrl),
+  }))
 
   return new SerialFallbackProvider(network, [
     // Prefer alchemy as the primary provider when available

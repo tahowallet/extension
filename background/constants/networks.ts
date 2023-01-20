@@ -1,11 +1,10 @@
 import { FeatureFlags, isEnabled } from "../features"
-import { EVMNetwork, Network } from "../networks"
+import { EVMNetwork } from "../networks"
 import {
   ARBITRUM_NOVA_ETH,
   ARBITRUM_ONE_ETH,
   AVAX,
   BNB,
-  BTC,
   ETH,
   GOERLI_ETH,
   MATIC,
@@ -83,13 +82,6 @@ export const GOERLI: EVMNetwork = {
   chainID: "5",
   family: "EVM",
   coingeckoPlatformID: "ethereum",
-}
-
-export const BITCOIN: Network = {
-  name: "Bitcoin",
-  baseAsset: BTC,
-  family: "BTC",
-  coingeckoPlatformID: "bitcoin",
 }
 
 export const DEFAULT_NETWORKS = [

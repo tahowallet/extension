@@ -47,6 +47,7 @@ export default function SharedRadio({
           line-height: normal;
           color: var(--white);
           margin-top: 0;
+          cursor: pointer;
         }
         .radio-label:before {
           content: "";
