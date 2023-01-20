@@ -18,7 +18,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
     <>
       <div className="ability_card">
         <SharedSlideUpMenu
-          size="small"
+          size="medium"
           isOpen={showRemoveAbilityConfirm}
           close={(e) => {
             e?.stopPropagation()

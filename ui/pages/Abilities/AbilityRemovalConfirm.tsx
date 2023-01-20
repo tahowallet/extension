@@ -1,10 +1,38 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import { Ability } from "@tallyho/tally-background/services/abilities"
 import { removeAbility } from "@tallyho/tally-background/redux-slices/abilities"
 import { useTranslation } from "react-i18next"
 
+import classNames from "classnames"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
+import { i18n } from "../../_locales/i18n"
+import SharedRadio from "../../components/Shared/SharedRadio"
+
+const RADIO_NAME = "spamReason"
+const KEY_PREFIX = "abilities.deleteSlideUpMenu"
+const RADIO_BTNS = [
+  {
+    value: "spam",
+    label: i18n.t(`${KEY_PREFIX}.spamReason.spam`),
+  },
+  {
+    value: "inaccurate informatio",
+    label: i18n.t(`${KEY_PREFIX}.spamReason.inaccurateInfo`),
+  },
+  {
+    value: "copyright violation",
+    label: i18n.t(`${KEY_PREFIX}.spamReason.copyright`),
+  },
+  {
+    value: "scam",
+    label: i18n.t(`${KEY_PREFIX}.spamReason.scam`),
+  },
+  {
+    value: "duplicate",
+    label: i18n.t(`${KEY_PREFIX}.spamReason.duplicate`),
+  },
+]
 
 interface AbilityRemovalConfirmProps {
   ability: Ability
@@ -18,39 +46,50 @@ export default function AbilityRemovalConfirm({
   const dispatch = useBackgroundDispatch()
 
   const { t } = useTranslation("translation")
+  const [showSpamReasons, setShowSpamReasons] = useState(false)
+  const [spamReason, setSpamReason] = useState("")
 
   return (
     <div className="remove_ability_option">
       <div className="content_container">
-        <div className="header">{t("abilities.deleteSlideUpMenu.title")}</div>
-        <div className="remove_ability_details">
-          {t("abilities.deleteSlideUpMenu.desc")}
-        </div>
-        <ul>
-          <li className="spam_container">
-            <li className="spam_prompt">
-              {t("abilities.deleteSlideUpMenu.spamPrompt")}
-            </li>
+        <div className="header">{t(`${KEY_PREFIX}.title`)}</div>
+        <div className="remove_ability_details">{t(`${KEY_PREFIX}.desc`)}</div>
+        <div className="spam_container">
+          <div className="spam_header">
+            <div className="spam_prompt">{t(`${KEY_PREFIX}.spamPrompt`)}</div>
             <SharedButton
               type="tertiary"
               size="small"
-              style={{ width: "133px" }}
               onClick={(e) => {
                 e.stopPropagation()
-                // @TODO Actually report spam
-                dispatch(
-                  removeAbility({
-                    address: ability.address,
-                    abilityId: ability.abilityId,
-                  })
-                )
-                close()
+                setShowSpamReasons((prevState) => !prevState)
               }}
             >
-              {t("abilities.deleteSlideUpMenu.reportSpamBtn")}
+              {showSpamReasons
+                ? t("shared.cancelBtn")
+                : t(`${KEY_PREFIX}.reportSpamBtn`)}
             </SharedButton>
-          </li>
-        </ul>
+          </div>
+          <div
+            className={classNames("spam_reasons", {
+              visible: showSpamReasons,
+            })}
+          >
+            <div className="spam_title simple_text">
+              {t(`${KEY_PREFIX}.selectSpamReason`)}
+            </div>
+            {RADIO_BTNS.map(({ value, label }) => (
+              <SharedRadio
+                key={value}
+                id={`radio_${value}`}
+                name={RADIO_NAME}
+                value={spamReason === value}
+                label={label}
+                onChange={() => setSpamReason(value)}
+              />
+            ))}
+          </div>
+        </div>
       </div>
       <div className="button_container">
         <SharedButton
@@ -67,7 +106,9 @@ export default function AbilityRemovalConfirm({
             close()
           }}
         >
-          {t("abilities.deleteSlideUpMenu.submitBtn")}
+          {t(
+            `${KEY_PREFIX}.${showSpamReasons ? "submitSpamBtn" : "submitBtn"}`
+          )}
         </SharedButton>
         <SharedButton
           type="tertiary"
@@ -81,12 +122,6 @@ export default function AbilityRemovalConfirm({
         </SharedButton>
       </div>
       <style jsx>{`
-        li {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-
-        }
         .header {
             height: 24px;
             font-family: 'Segment';
@@ -120,11 +155,10 @@ export default function AbilityRemovalConfirm({
           flex-direction: row;
           justify-content: space-between;
         }
-        .spam_container {
-          background-color: var(--hunter-green);
+        .spam_header{
           display: flex;
           justify-content: space-between;
-          padding: 8px 12px;
+          align-items: center;
         }
         .spam_prompt {
           font-family: 'Segment';
@@ -138,6 +172,24 @@ export default function AbilityRemovalConfirm({
           display: flex;
           flex-direction: column;
           gap: 16px;
+        }
+        .spam_container {
+          padding: 8px 12px;
+          background-color: var(--hunter-green);
+        }
+        .spam_reasons {
+          opacity: 0;
+          max-height: 0px;
+          overflow: hidden;
+          transition: max-height 500ms, opacity 130ms ease-in;
+        }
+        .spam_reasons.visible {
+          opacity: 1;
+          max-height: 212px;
+          transition: max-height 500ms ease-in, opacity 130ms ease-in;
+        }
+        .spam_title {
+          margin: 14 0 8px;
         }
       `}</style>
     </div>

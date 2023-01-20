@@ -762,8 +762,17 @@
       "title": "Delete ability?",
       "desc": "If you delete an ability you won't be able to see it anymore",
       "spamPrompt": "Is this ability a spam?",
+      "selectSpamReason": "Select reason for reporting",
+      "spamReason": {
+        "spam": "Spam",
+        "inaccurateInfo": "Inaccurate information",
+        "copyright": "Copyright violation",
+        "scam": "Scam",
+        "duplicate": "Duplicate"
+      },
       "reportSpamBtn": "Yes, report spam",
       "submitBtn": "Yes, delete",
+      "submitSpamBtn": "Yes, report & delete",
       "snackbar": "Ability deleted"
     }
   },
