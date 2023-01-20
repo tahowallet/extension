@@ -8,6 +8,7 @@ import {
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants/networks"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { useTranslation } from "react-i18next"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import TabBarIconButton from "./TabBarIconButton"
 import tabs, { defaultTab, TabInfo } from "../../utils/tabs"
 import { useBackgroundSelector } from "../../hooks"
@@ -24,7 +25,10 @@ const isTabSupportedByNetwork = (tab: TabInfo, network: EVMNetwork) => {
 export default function TabBar(): ReactElement {
   const location = useLocation()
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const abilityCount = useBackgroundSelector(selectAbilityCount)
+  const abilityCount = useBackgroundSelector(
+    isEnabled(FeatureFlags.SUPPORT_ABILITIES) ? selectAbilityCount : () => 0
+  )
+
   const history = useHistory()
   const { t } = useTranslation()
 
