@@ -3,6 +3,7 @@ import {
   AccountData,
   AccountState,
 } from "@tallyho/tally-background/redux-slices/accounts"
+import { Ability } from "@tallyho/tally-background/services/abilities"
 import { NormalizedEVMAddress } from "@tallyho/tally-background/types"
 
 export const TEST_ADDRESS =
@@ -40,6 +41,24 @@ export const createAccountState = (
     combinedData: {
       totalMainCurrencyValue: "",
       assets: [],
+    },
+    ...overrides,
+  }
+}
+
+export const createAbility = (overrides: Partial<Ability> = {}): Ability => {
+  return {
+    type: "mint",
+    title: "Test Ability",
+    description: null,
+    abilityId: "",
+    linkUrl: "",
+    completed: false,
+    removedFromUi: false,
+    address: TEST_ADDRESS,
+    requirement: {
+      type: "hold",
+      address: "",
     },
     ...overrides,
   }
