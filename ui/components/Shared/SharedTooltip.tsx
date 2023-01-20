@@ -8,6 +8,7 @@ interface Props {
   horizontalPosition?: HorizontalPosition
   width: number
   height?: number
+  style?: React.CSSProperties
   children: React.ReactNode
   // TODO: find a better way to tell the IconComponent that the tooltip it open
   IconComponent?: ({
@@ -48,6 +49,7 @@ export default function SharedTooltip(props: Props): ReactElement {
     horizontalPosition = "center",
     width,
     height = 20,
+    style,
     IconComponent,
   } = props
   const [isShowingTooltip, setIsShowingTooltip] = useState(false)
@@ -68,7 +70,11 @@ export default function SharedTooltip(props: Props): ReactElement {
       ) : (
         <div className="info_icon" />
       )}
-      {isShowingTooltip ? <div className="tooltip">{children}</div> : null}
+      {isShowingTooltip ? (
+        <div className="tooltip" style={style}>
+          {children}
+        </div>
+      ) : null}
       <style jsx>
         {`
           .tooltip_wrap {
