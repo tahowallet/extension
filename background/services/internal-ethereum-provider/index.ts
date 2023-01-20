@@ -318,7 +318,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         const { chainId } = chainInfo
         const supportedNetwork = await this.getTrackedNetworkByChainId(chainId)
         if (supportedNetwork) {
-          this.switchToSupportedNetwork(supportedNetwork)
+          this.switchToSupportedNetwork(origin, supportedNetwork)
           return null
         }
         if (!FeatureFlags.SUPPORT_CUSTOM_NETWORKS) {
@@ -340,7 +340,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           newChainId
         )
         if (supportedNetwork) {
-          this.switchToSupportedNetwork(supportedNetwork)
+          this.switchToSupportedNetwork(origin, supportedNetwork)
           return null
         }
 
@@ -475,7 +475,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  private async switchToSupportedNetwork(supportedNetwork: EVMNetwork) {
+  private async switchToSupportedNetwork(
+    origin: string,
+    supportedNetwork: EVMNetwork
+  ) {
     const { address } = await this.preferenceService.getSelectedAccount()
     await this.chainService.markAccountActivity({
       address,
