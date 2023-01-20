@@ -14,14 +14,15 @@ import type {
  * Each supported network family is generally incompatible with others from a
  * transaction, consensus, and/or wire format perspective.
  */
-export type NetworkFamily = "EVM" | "BTC"
+export type NetworkFamily = "EVM"
 
 // Should be structurally compatible with FungibleAsset or much code will
 // likely explode.
 export type NetworkBaseAsset = FungibleAsset &
   CoinGeckoAsset & {
     contractAddress?: string
-    coinType: Slip44CoinType
+    coinType?: Slip44CoinType
+    chainID: string
   }
 
 /**
@@ -33,7 +34,7 @@ export type Network = {
   baseAsset: NetworkBaseAsset & CoinGeckoAsset
   family: NetworkFamily
   chainID?: string
-  coingeckoPlatformID: string
+  coingeckoPlatformID?: string
 }
 
 /**

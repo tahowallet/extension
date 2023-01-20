@@ -31,8 +31,6 @@ export default function SharedSlideUpMenuPanel({
           padding-top: 25px;
           margin-top: -25px;
           z-index: 1;
-          border-bottom: 1px solid var(--green-120);
-        }
       `}</style>
     </div>
   )

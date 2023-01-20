@@ -7,8 +7,9 @@ import {
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
+  getBuiltInNetworkBaseAsset,
   heuristicDesiredDecimalsForUnitPrice,
-  isNetworkBaseAsset,
+  isBuiltInNetworkBaseAsset,
 } from "../utils/asset-utils"
 import {
   AnyAsset,
@@ -33,11 +34,7 @@ import {
 } from "./keyringsSelectors"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { EVMNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
-import {
-  BASE_ASSETS_BY_SYMBOL,
-  NETWORK_BY_CHAIN_ID,
-  TEST_NETWORK_BY_CHAIN_ID,
-} from "../../constants"
+import { NETWORK_BY_CHAIN_ID, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { FeatureFlags, isEnabled } from "../../features"
 import {
@@ -74,7 +71,7 @@ const shouldForciblyDisplayAsset = (
     !isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) &&
     assetAmount.asset.symbol === DOGGO.symbol
 
-  return isDoggo || isNetworkBaseAsset(baseAsset, network)
+  return isDoggo || isBuiltInNetworkBaseAsset(baseAsset, network)
 }
 
 const computeCombinedAssetAmountsData = (
@@ -128,7 +125,10 @@ const computeCombinedAssetAmountsData = (
       return fullyEnrichedAssetAmount
     })
     .filter((assetAmount) => {
-      const baseAsset = BASE_ASSETS_BY_SYMBOL[assetAmount.asset.symbol]
+      const baseAsset = getBuiltInNetworkBaseAsset(
+        assetAmount.asset.symbol,
+        currentNetwork.chainID
+      )
 
       const isForciblyDisplayed = shouldForciblyDisplayAsset(
         assetAmount,
@@ -167,9 +167,14 @@ const computeCombinedAssetAmountsData = (
       if (leftIsNetworkBaseAsset !== rightIsNetworkBaseAsset) {
         return leftIsNetworkBaseAsset ? -1 : 1
       }
-
-      const leftIsBaseAsset = asset1.asset.symbol in BASE_ASSETS_BY_SYMBOL
-      const rightIsBaseAsset = asset2.asset.symbol in BASE_ASSETS_BY_SYMBOL
+      const leftIsBaseAsset = !!getBuiltInNetworkBaseAsset(
+        asset1.asset.symbol,
+        networkBaseAsset.chainID
+      )
+      const rightIsBaseAsset = !!getBuiltInNetworkBaseAsset(
+        asset2.asset.symbol,
+        networkBaseAsset.chainID
+      )
 
       // Always sort base assets above non-base assets.
       if (leftIsBaseAsset !== rightIsBaseAsset) {

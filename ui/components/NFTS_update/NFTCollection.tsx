@@ -112,12 +112,16 @@ export default function NFTCollection(props: {
 
   return (
     <>
-      <div className="nft_collection_wrapper">
+      <div
+        className={classNames("nft_collection_wrapper", {
+          expanded: isExpanded && !isLoading,
+          invisible: !nftCount,
+        })}
+      >
         <li
           ref={collectionRef}
           className={classNames("nft_collection", {
             expanded: isExpanded && !isLoading,
-            invisible: !nftCount,
           })}
         >
           <SharedSkeletonLoader
@@ -193,7 +197,7 @@ export default function NFTCollection(props: {
         .nft_collection_wrapper:nth-child(even) .nft_collection.expanded {
           right: 0;
         }
-        .nft_collection.invisible {
+        .nft_collection_wrapper.invisible {
           opacity: 0;
           pointer-events: none;
           position: absolute;
