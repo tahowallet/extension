@@ -123,6 +123,7 @@ export default function AbilityRemovalConfirm({
         <SharedButton
           type="primary"
           size="medium"
+          isDisabled={showSpamReasons ? !spamReason : false}
           onClick={(e) => {
             e.stopPropagation()
             handleDeleteAbility()
@@ -158,6 +159,7 @@ export default function AbilityRemovalConfirm({
           display: flex;
           flex-direction: column;
           justify-content: space-between;
+          gap: 24px;
           height: 95%;
           font-family: 'Segment';
           font-style: normal;

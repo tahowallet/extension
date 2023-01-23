@@ -54,7 +54,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
     <>
       <div className="ability_card">
         <SharedSlideUpMenu
-          size="medium"
+          size="auto"
           isOpen={showRemoveAbilityConfirm}
           close={(e) => {
             e?.stopPropagation()
@@ -132,6 +132,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
               width={50}
               verticalPosition="bottom"
               style={TOOLTIP_STYLE}
+              isOpen={showRemoveAbilityConfirm}
               IconComponent={() => (
                 <SharedIcon
                   height={16}
