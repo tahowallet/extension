@@ -773,6 +773,11 @@
       "new": "New",
       "none": "None"
     },
+    "timeStarting": "Starting in 1 month",
+    "timeCloses": "Closes in 1 month",
+    "viewWebsiteBtn": "Visit website",
+    "markBtn": "Mark as Completed",
+    "deleteBtn": "Delete",
     "deleteSlideUpMenu": {
       "title": "Delete ability?",
       "desc": "If you delete an ability you won't be able to see it anymore",

@@ -42,6 +42,8 @@ export type Ability = {
   slug: string
   linkUrl: string
   imageUrl?: string
+  openAt?: string
+  closeAt?: string
   completed: boolean
   removedFromUi: boolean
   address: NormalizedEVMAddress
@@ -97,6 +99,8 @@ const normalizeDaylightAbilities = (
         slug: daylightAbility.slug,
         linkUrl: daylightAbility.action.linkUrl,
         imageUrl: daylightAbility.imageUrl || undefined,
+        openAt: daylightAbility.openAt || undefined,
+        closeAt: daylightAbility.closeAt || undefined,
         completed: false,
         removedFromUi: false,
         address: normalizeEVMAddress(address),
