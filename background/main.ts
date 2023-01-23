@@ -1283,6 +1283,7 @@ export default class Main extends BaseService<never> {
         [{ chainId: network.chainID }],
         TALLY_INTERNAL_ORIGIN
       )
+      this.chainService.pollBlockPricesForNetwork(network.chainID)
       this.store.dispatch(clearCustomGas())
     })
   }
