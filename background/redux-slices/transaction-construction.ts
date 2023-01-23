@@ -328,6 +328,7 @@ const transactionSlice = createSlice({
     },
     clearCustomGas: (immerState) => {
       immerState.customFeesPerGas = defaultCustomGas
+      immerState.feeTypeSelected = NetworkFeeTypeChosen.Regular
     },
     setCustomGasLimit: (
       immerState,
