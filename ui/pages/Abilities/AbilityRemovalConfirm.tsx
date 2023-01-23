@@ -1,6 +1,9 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { Ability } from "@tallyho/tally-background/services/abilities"
-import { removeAbility } from "@tallyho/tally-background/redux-slices/abilities"
+import {
+  removeAbility,
+  reportSpam,
+} from "@tallyho/tally-background/redux-slices/abilities"
 import { useTranslation } from "react-i18next"
 
 import classNames from "classnames"
@@ -17,7 +20,7 @@ const RADIO_BTNS = [
     label: i18n.t(`${KEY_PREFIX}.spamReason.spam`),
   },
   {
-    value: "inaccurate informatio",
+    value: "inaccurate information",
     label: i18n.t(`${KEY_PREFIX}.spamReason.inaccurateInfo`),
   },
   {
@@ -47,7 +50,32 @@ export default function AbilityRemovalConfirm({
 
   const { t } = useTranslation("translation")
   const [showSpamReasons, setShowSpamReasons] = useState(false)
-  const [spamReason, setSpamReason] = useState("")
+  const [spamReason, setSpamReason] = useState<string | undefined>(undefined)
+
+  useEffect(() => {
+    if (!showSpamReasons) {
+      setSpamReason(undefined)
+    }
+  }, [showSpamReasons])
+
+  const handleDeleteAbility = () => {
+    if (spamReason) {
+      dispatch(
+        reportSpam({
+          address: ability.address,
+          abilitySlug: ability.slug,
+          reason: spamReason,
+        })
+      )
+    }
+    dispatch(
+      removeAbility({
+        address: ability.address,
+        abilityId: ability.abilityId,
+      })
+    )
+    close()
+  }
 
   return (
     <div className="remove_ability_option">
@@ -97,13 +125,7 @@ export default function AbilityRemovalConfirm({
           size="medium"
           onClick={(e) => {
             e.stopPropagation()
-            dispatch(
-              removeAbility({
-                address: ability.address,
-                abilityId: ability.abilityId,
-              })
-            )
-            close()
+            handleDeleteAbility()
           }}
         >
           {t(

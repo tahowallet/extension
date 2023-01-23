@@ -1,6 +1,6 @@
 import { fetchJson } from "@ethersproject/web"
 
-const DAYLIGHT_BASE_URL = "https://api.daylight.xyz/v1/wallets"
+const DAYLIGHT_BASE_URL = "https://api.daylight.xyz/v1"
 
 // https://docs.daylight.xyz/reference/ability-model#ability-types
 type DaylightAbilityType =
@@ -85,7 +85,10 @@ type AbilitiesResponse = {
   status: string
 }
 
-// eslint-disable-next-line import/prefer-default-export
+type SpamReportResponse = {
+  success: boolean
+}
+
 export const getDaylightAbilities = async (
   address: string
 ): Promise<DaylightAbility[]> => {
@@ -93,8 +96,35 @@ export const getDaylightAbilities = async (
     // Abilities whose deadline has not yet passed - we will probably
     // want to turn this on once the feature is ready to go live
     // `${DAYLIGHT_BASE_URL}/${address}/abilities?deadline=set&type=mint&type=airdrop&type=access`
-    `${DAYLIGHT_BASE_URL}/${address}/abilities?type=mint&type=airdrop&type=access`
+    `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities?type=mint&type=airdrop&type=access`
   )
 
   return response.abilities
+}
+
+/**
+ * Report ability as spam.
+ *
+ * Learn more at https://docs.daylight.xyz/reference/create-spam-report
+ *
+ * @param address the address that reports the ability
+ * @param abilitySlug the slug of the ability being reported
+ * @param reason the reason why ability is reported
+ */
+export const createSpamReport = async (
+  address: string,
+  abilitySlug: string,
+  reason: string
+): Promise<boolean> => {
+  const options = JSON.stringify({
+    submitter: address,
+    abilitySlug,
+    reason,
+  })
+  const response: SpamReportResponse = await fetchJson(
+    `${DAYLIGHT_BASE_URL}/spam-report`,
+    options
+  )
+
+  return response.success
 }

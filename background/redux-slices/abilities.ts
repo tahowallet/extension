@@ -1,8 +1,19 @@
 import { createSlice } from "@reduxjs/toolkit"
+import Emittery from "emittery"
 import { Ability } from "../services/abilities"
 import { HexString, NormalizedEVMAddress } from "../types"
 import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
+
+export type Events = {
+  reportSpam: {
+    address: NormalizedEVMAddress
+    abilitySlug: string
+    reason: string
+  }
+}
+
+export const emitter = new Emittery<Events>()
 
 type AbilitiesState = {
   filter: "all" | "completed" | "incomplete"
@@ -93,6 +104,17 @@ export const removeAbility = createBackgroundAsyncThunk(
     await main.markAbilityAsRemoved(address, abilityId)
     dispatch(markAbilityAsRemoved({ address, abilityId }))
     dispatch(setSnackbarMessage("Ability deleted"))
+  }
+)
+
+export const reportSpam = createBackgroundAsyncThunk(
+  "abilities/reportSpam",
+  async (payload: {
+    address: NormalizedEVMAddress
+    abilitySlug: string
+    reason: string
+  }) => {
+    await emitter.emit("reportSpam", payload)
   }
 )
 
