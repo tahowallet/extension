@@ -300,12 +300,9 @@ export default class ChainService extends BaseService<Events> {
   }
 
   override async internalStartService(): Promise<void> {
-    console.log("xx starting chain service")
     await super.internalStartService()
 
-    console.log("initializing db")
     await this.db.initialize()
-    console.log("initializing networks")
     await this.initializeNetworks()
     const accounts = await this.getAccountsToTrack()
     const trackedNetworks = await this.getTrackedNetworks()
