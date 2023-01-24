@@ -35,6 +35,7 @@ export default function WalletActivityList({
     useState(true)
 
   const network = useBackgroundSelector(selectCurrentNetwork)
+  const scanWebsiteInfo = scanWebsite[network.chainID]
 
   useEffect(() => {
     setInstantlyHideActivityDetails(true)
@@ -45,12 +46,9 @@ export default function WalletActivityList({
 
   const openExplorer = useCallback(() => {
     window
-      .open(
-        `${scanWebsite[network.chainID].url}/address/${currentAccount}`,
-        "_blank"
-      )
+      .open(`${scanWebsiteInfo.url}/address/${currentAccount}`, "_blank")
       ?.focus()
-  }, [network.chainID, currentAccount])
+  }, [scanWebsiteInfo, currentAccount])
 
   const handleOpen = useCallback(
     (activityItem: Activity) => {
@@ -117,18 +115,20 @@ export default function WalletActivityList({
       <span>
         <div className="hand">✋</div>
         <div>{t("endOfList")}</div>
-        <div className="row">
-          {t("moreHistory")}
-          <SharedButton
-            type="tertiary"
-            size="small"
-            iconSmall="new-tab"
-            onClick={openExplorer}
-            style={{ padding: 0, fontWeight: 400 }}
-          >
-            {scanWebsite[network.chainID].title}
-          </SharedButton>
-        </div>
+        {scanWebsiteInfo && (
+          <div className="row">
+            {t("moreHistory")}
+            <SharedButton
+              type="tertiary"
+              size="small"
+              iconSmall="new-tab"
+              onClick={openExplorer}
+              style={{ padding: 0, fontWeight: 400 }}
+            >
+              {scanWebsiteInfo?.title}
+            </SharedButton>
+          </div>
+        )}
         <style jsx>{`
           span {
             width: 100%;
