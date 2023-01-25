@@ -1,9 +1,11 @@
+import { AbilityType } from "@tallyho/tally-background/abilities"
 import {
+  Filter,
   AbilityState,
-  updateFiltersAbilityState,
+  updateFilterAbilityState,
+  updateFilterAbilityType,
 } from "@tallyho/tally-background/redux-slices/abilities"
 import { selectAbilityFilters } from "@tallyho/tally-background/redux-slices/selectors"
-import { AbilityType } from "@tallyho/tally-background/services/abilities"
 import React, { ReactElement, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import SharedRadio from "../../components/Shared/SharedRadio"
@@ -34,20 +36,18 @@ const RADIO_BTNS: { value: AbilityState; label: string }[] = [
   },
 ]
 
-const ABILITIES_TYPE = [
-  {
-    type: "claim",
-    desc: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.claim`),
-  },
-  {
-    type: "airdrop",
-    desc: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.airdrop`),
-  },
-  {
-    type: "mint",
-    desc: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.mint`),
-  },
-]
+const getDescriptionForType = (type: AbilityType): string => {
+  switch (type) {
+    case "claim":
+      return i18n.t(`${KEY_PREFIX}.abilityTypeDesc.claim`)
+    case "airdrop":
+      return i18n.t(`${KEY_PREFIX}.abilityTypeDesc.airdrop`)
+    case "mint":
+      return i18n.t(`${KEY_PREFIX}.abilityTypeDesc.mint`)
+    default:
+      return ""
+  }
+}
 
 export default function AbilityFilters(): ReactElement {
   const { t } = useTranslation("translation", {
@@ -56,14 +56,19 @@ export default function AbilityFilters(): ReactElement {
   const filters = useBackgroundSelector(selectAbilityFilters)
   const dispatch = useBackgroundDispatch()
 
-  const handleUpdateAbilityState = useCallback(
-    (type: AbilityState) => {
-      dispatch(updateFiltersAbilityState(type))
+  const handleUpdateFilterAbilityState = useCallback(
+    (state: AbilityState) => {
+      dispatch(updateFilterAbilityState(state))
     },
     [dispatch]
   )
 
-  const handleUpdateAbilityTypes = useCallback(() => {}, [])
+  const handleUpdateFilterAbilityType = useCallback(
+    (filter: Filter) => {
+      dispatch(updateFilterAbilityType(filter))
+    },
+    [dispatch]
+  )
 
   return (
     <SharedSlideUpMenuPanel header={t("title")}>
@@ -77,20 +82,25 @@ export default function AbilityFilters(): ReactElement {
               name={RADIO_NAME}
               value={filters.state === value}
               label={label}
-              onChange={() => handleUpdateAbilityState(value)}
+              onChange={() => handleUpdateFilterAbilityState(value)}
             />
           ))}
         </div>
         <div className="simple_text">
           <span className="filter_title">{t("abilitiesTypesTitle")}</span>
           <div className="filter_list">
-            {ABILITIES_TYPE.map(({ type, desc }) => (
+            {filters.types.map(({ type, isEnabled }) => (
               <AbilityFiltersCard
                 key={type}
-                type={type as AbilityType}
-                description={desc}
-                checked
-                onChange={() => handleUpdateAbilityTypes()}
+                type={type}
+                description={getDescriptionForType(type)}
+                checked={isEnabled}
+                onChange={(toggleValue) =>
+                  handleUpdateFilterAbilityType({
+                    type,
+                    isEnabled: toggleValue,
+                  })
+                }
               />
             ))}
           </div>

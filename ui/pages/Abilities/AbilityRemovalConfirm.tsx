@@ -1,8 +1,8 @@
 import React, { ReactElement } from "react"
-import { Ability } from "@tallyho/tally-background/services/abilities"
 import { removeAbility } from "@tallyho/tally-background/redux-slices/abilities"
 import { useTranslation } from "react-i18next"
 
+import { Ability } from "@tallyho/tally-background/abilities"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
 

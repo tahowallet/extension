@@ -1,11 +1,11 @@
-import { Ability } from "../../services/abilities"
-import { AbilityState } from "../abilities"
+import { Ability, AbilityType } from "../../abilities"
+import { AbilityFilter, AbilityState, Filter } from "../abilities"
 
-// eslint-disable-next-line import/prefer-default-export
-export const filterByState = (
-  ability: Ability,
-  state: AbilityState
-): boolean => {
+const showRemovedAbility = (ability: Ability, state: AbilityState): boolean => {
+  return state === "deleted" && ability.removedFromUi
+}
+
+const filterByState = (ability: Ability, state: AbilityState): boolean => {
   switch (state) {
     case "open":
       return ability.completed === false
@@ -14,4 +14,20 @@ export const filterByState = (
     default:
       return true
   }
+}
+
+const filterByType = (type: AbilityType, types: Filter[]): boolean => {
+  return !!types.find((filter) => filter.type === type)?.isEnabled
+}
+
+// eslint-disable-next-line import/prefer-default-export
+export const filterAbility = (
+  ability: Ability,
+  filters: AbilityFilter
+): boolean => {
+  return (
+    (showRemovedAbility(ability, filters.state) ||
+      filterByState(ability, filters.state)) &&
+    filterByType(ability.type, filters.types)
+  )
 }

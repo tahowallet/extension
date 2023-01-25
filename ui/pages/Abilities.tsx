@@ -114,6 +114,7 @@ export default function Abilities(): ReactElement {
             height: 100%;
             overflow-y: scroll;
             overflow-x: hidden;
+            position: relative;
           }
           .empty_page {
             display: flex;

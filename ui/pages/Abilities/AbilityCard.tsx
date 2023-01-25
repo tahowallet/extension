@@ -1,5 +1,5 @@
+import { Ability } from "@tallyho/tally-background/abilities"
 import { completeAbility } from "@tallyho/tally-background/redux-slices/abilities"
-import { Ability } from "@tallyho/tally-background/services/abilities"
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"

@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-import { Ability } from "../../services/abilities"
-import { filterByState } from "../utils/abilities"
+import { Ability } from "../../abilities"
+import { filterAbility } from "../utils/abilities"
 
 const selectAbilities = createSelector(
   (state: RootState) => state.abilities,
@@ -23,16 +23,13 @@ export const selectAbilityFilters = createSelector(
 export const selectFilteredAbilities = createSelector(
   selectAbilityFilters,
   selectAbilities,
-  (filter, abilities) => {
+  (filters, abilities) => {
     const activeAbilities: Ability[] = []
     Object.values(abilities).forEach((addressAbilities) => {
       activeAbilities.push(
-        ...Object.values(addressAbilities).filter((ability) => {
-          if (ability.removedFromUi === true) {
-            return false
-          }
-          return filterByState(ability, filter.state)
-        })
+        ...Object.values(addressAbilities).filter((ability) =>
+          filterAbility(ability, filters)
+        )
       )
     })
     return activeAbilities

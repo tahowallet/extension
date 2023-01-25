@@ -10,43 +10,7 @@ import { AbilitiesDatabase, getOrCreateDB } from "./db"
 import ChainService from "../chain"
 import { FeatureFlags } from "../../features"
 import { normalizeEVMAddress } from "../../lib/utils"
-
-export type AbilityType = "mint" | "airdrop" | "access"
-
-type AbilityRequirement = HoldERC20 | OwnNFT | AllowList | Unknown
-
-type HoldERC20 = {
-  type: "hold"
-  address: string
-}
-
-type OwnNFT = {
-  type: "own"
-  nftAddress: string
-}
-
-type AllowList = {
-  type: "allowList"
-}
-
-type Unknown = {
-  type: "unknown"
-}
-
-export type Ability = {
-  type: AbilityType
-  title: string
-  description: string | null
-  abilityId: string
-  linkUrl: string
-  imageUrl?: string
-  openAt?: string
-  closeAt?: string
-  completed: boolean
-  removedFromUi: boolean
-  address: NormalizedEVMAddress
-  requirement: AbilityRequirement
-}
+import { Ability, AbilityRequirement } from "../../abilities"
 
 const normalizeDaylightRequirements = (
   requirement: DaylightAbilityRequirement

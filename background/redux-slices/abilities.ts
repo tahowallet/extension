@@ -1,15 +1,20 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { Ability } from "../services/abilities"
+import { Ability, AbilityType } from "../abilities"
 import { HexString, NormalizedEVMAddress } from "../types"
 import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 
 export type AbilityState = "open" | "closed" | "expired" | "deleted" | "all"
 
+export type Filter = { type: AbilityType; isEnabled: boolean }
+
+export type AbilityFilter = {
+  state: AbilityState
+  types: Filter[]
+}
+
 type AbilitiesState = {
-  filters: {
-    state: AbilityState
-  }
+  filters: AbilityFilter
   abilities: {
     [address: HexString]: {
       [uuid: string]: Ability
@@ -18,9 +23,25 @@ type AbilitiesState = {
   hideDescription: boolean
 }
 
+const typesFilter: Filter[] = [
+  {
+    type: "claim",
+    isEnabled: true,
+  },
+  {
+    type: "airdrop",
+    isEnabled: true,
+  },
+  {
+    type: "mint",
+    isEnabled: true,
+  },
+]
+
 const initialState: AbilitiesState = {
   filters: {
     state: "open",
+    types: typesFilter,
   },
   abilities: {},
   hideDescription: false,
@@ -61,11 +82,20 @@ const abilitiesSlice = createSlice({
     toggleHideDescription: (immerState, { payload }: { payload: boolean }) => {
       immerState.hideDescription = payload
     },
-    updateFiltersAbilityState: (
+    updateFilterAbilityState: (
       immerState,
       { payload: state }: { payload: AbilityState }
     ) => {
       immerState.filters.state = state
+    },
+    updateFilterAbilityType: (
+      immerState,
+      { payload: filter }: { payload: Filter }
+    ) => {
+      const idx = immerState.filters.types.findIndex(
+        ({ type }) => type === filter.type
+      )
+      immerState.filters.types[idx] = filter
     },
   },
 })
@@ -76,7 +106,8 @@ export const {
   markAbilityAsCompleted,
   markAbilityAsRemoved,
   toggleHideDescription,
-  updateFiltersAbilityState,
+  updateFilterAbilityState,
+  updateFilterAbilityType,
 } = abilitiesSlice.actions
 
 export const completeAbility = createBackgroundAsyncThunk(

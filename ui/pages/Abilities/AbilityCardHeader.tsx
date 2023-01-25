@@ -1,9 +1,9 @@
 import React, { ReactElement } from "react"
-import { Ability } from "@tallyho/tally-background/services/abilities"
 import {
   AccountTotalList,
   selectAccountTotalsForOverview,
 } from "@tallyho/tally-background/redux-slices/selectors"
+import { Ability } from "@tallyho/tally-background/abilities"
 import AbilityLabel from "./AbilityLabel"
 import { useBackgroundSelector } from "../../hooks"
 
