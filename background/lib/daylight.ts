@@ -1,4 +1,5 @@
 import { fetchJson } from "@ethersproject/web"
+import logger from "./logger"
 
 const DAYLIGHT_BASE_URL = "https://api.daylight.xyz/v1"
 
@@ -92,14 +93,20 @@ type SpamReportResponse = {
 export const getDaylightAbilities = async (
   address: string
 ): Promise<DaylightAbility[]> => {
-  const response: AbilitiesResponse = await fetchJson(
-    // Abilities whose deadline has not yet passed - we will probably
-    // want to turn this on once the feature is ready to go live
-    // `${DAYLIGHT_BASE_URL}/${address}/abilities?deadline=set&type=mint&type=airdrop&type=access`
-    `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities?type=mint&type=airdrop&type=access`
-  )
+  try {
+    const response: AbilitiesResponse = await fetchJson(
+      // Abilities whose deadline has not yet passed - we will probably
+      // want to turn this on once the feature is ready to go live
+      // `${DAYLIGHT_BASE_URL}/${address}/abilities?deadline=set&type=mint&type=airdrop&type=access`
+      `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities?type=mint&type=airdrop&type=access`
+    )
 
-  return response.abilities
+    return response.abilities
+  } catch (err) {
+    logger.error("Error getting abilities", err)
+  }
+
+  return []
 }
 
 /**
@@ -116,15 +123,22 @@ export const createSpamReport = async (
   abilitySlug: string,
   reason: string
 ): Promise<boolean> => {
-  const options = JSON.stringify({
-    submitter: address,
-    abilitySlug,
-    reason,
-  })
-  const response: SpamReportResponse = await fetchJson(
-    `${DAYLIGHT_BASE_URL}/spam-report`,
-    options
-  )
+  try {
+    const options = JSON.stringify({
+      submitter: address,
+      abilitySlug,
+      reason,
+    })
 
-  return response.success
+    const response: SpamReportResponse = await fetchJson(
+      `${DAYLIGHT_BASE_URL}/spam-report`,
+      options
+    )
+
+    return response.success
+  } catch (err) {
+    logger.error("Error reporting spam", err)
+  }
+
+  return false
 }

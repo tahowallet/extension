@@ -160,6 +160,7 @@ import AbilitiesService from "./services/abilities"
 import {
   addAbilities,
   emitter as abilitiesSliceEmitter,
+  removeAbility,
 } from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -1519,8 +1520,25 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("newAbilities", async (newAbilities) => {
       this.store.dispatch(addAbilities(newAbilities))
     })
-    abilitiesSliceEmitter.on("reportSpam", ({ address, abilitySlug, reason }) =>
-      this.abilitiesService.reportSpam(address, abilitySlug, reason)
+    this.abilitiesService.emitter.on(
+      "removeAbility",
+      async ({ address, abilityId }) => {
+        this.store.dispatch(removeAbility({ address, abilityId }))
+      }
+    )
+    this.abilitiesService.emitter.on("reportSpamFailure", () => {
+      this.store.dispatch(setSnackbarMessage("Couldn't report spam"))
+    })
+    abilitiesSliceEmitter.on(
+      "reportAndRemoveAbility",
+      ({ address, abilitySlug, abilityId, reason }) => {
+        this.abilitiesService.reportAndRemoveAbility(
+          address,
+          abilitySlug,
+          abilityId,
+          reason
+        )
+      }
     )
   }
 
