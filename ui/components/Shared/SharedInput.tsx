@@ -153,7 +153,6 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             width: fit-content;
             margin-left: 16px;
             transform: translateY(-32px);
-            background-color: ${focusedLabelBackgroundColor};
             border-radius: 5px;
             box-sizing: border-box;
             color: var(--green-40);
@@ -181,6 +180,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             font-size: 12px;
             font-weight: 500;
             padding: 0px 6px;
+            background-color: ${focusedLabelBackgroundColor};
           }
           .error ~ label,
           input.error:focus ~ label {
