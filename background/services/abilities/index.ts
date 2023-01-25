@@ -8,7 +8,7 @@ import {
 } from "./daylight"
 import { AbilitiesDatabase, getOrCreateDB } from "./db"
 import ChainService from "../chain"
-import { FeatureFlags } from "../../features"
+import { FeatureFlags, isEnabled } from "../../features"
 import { normalizeEVMAddress } from "../../lib/utils"
 
 export type AbilityType = "mint" | "airdrop" | "access"
@@ -40,6 +40,8 @@ export type Ability = {
   abilityId: string
   linkUrl: string
   imageUrl?: string
+  openAt?: string
+  closeAt?: string
   completed: boolean
   removedFromUi: boolean
   address: NormalizedEVMAddress
@@ -94,6 +96,8 @@ const normalizeDaylightAbilities = (
         abilityId: daylightAbility.uid,
         linkUrl: daylightAbility.action.linkUrl,
         imageUrl: daylightAbility.imageUrl || undefined,
+        openAt: daylightAbility.openAt || undefined,
+        closeAt: daylightAbility.closeAt || undefined,
         completed: false,
         removedFromUi: false,
         address: normalizeEVMAddress(address),
@@ -145,7 +149,7 @@ export default class AbilitiesService extends BaseService<Events> {
   }
 
   async pollForAbilities(address: HexString): Promise<void> {
-    if (!FeatureFlags.SUPPORT_ABILITIES) {
+    if (!isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
       return
     }
 

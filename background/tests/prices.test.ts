@@ -2,7 +2,7 @@
 import * as ethers from "@ethersproject/web" // << THIS IS THE IMPORTANT TRICK
 
 import logger from "../lib/logger"
-import { BTC, ETH, FIAT_CURRENCIES, USD } from "../constants"
+import { ETH, FIAT_CURRENCIES, USD } from "../constants"
 import { getPrices } from "../lib/prices"
 import { isValidCoinGeckoPriceResponse } from "../lib/validate"
 
@@ -151,7 +151,7 @@ describe("lib/prices.ts", () => {
           amounts: [639090000000000n, 100000000n],
           pair: [
             { decimals: 10, name: "United States Dollar", symbol: "USD" },
-            BTC,
+            ETH,
           ],
           time: dateNow,
         },
@@ -167,7 +167,7 @@ describe("lib/prices.ts", () => {
 
       jest.spyOn(ethers, "fetchJson").mockResolvedValue(fetchJsonResponse)
 
-      await expect(getPrices([BTC, ETH], FIAT_CURRENCIES)).resolves.toEqual(
+      await expect(getPrices([ETH], FIAT_CURRENCIES)).resolves.toEqual(
         getPricesResponse
       )
       expect(ethers.fetchJson).toHaveBeenCalledTimes(1)

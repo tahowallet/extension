@@ -47,6 +47,8 @@ export default function CommonAssetListItem(
       ? assetAmount.asset.contractAddress
       : undefined
 
+  const assetIsUntrusted = numTokenLists === 0 && !baseAsset
+
   return (
     <Link
       to={{
@@ -67,22 +69,29 @@ export default function CommonAssetListItem(
               </span>
               <span>{assetAmount.asset.symbol}</span>
             </div>
-            {initializationLoadingTimeExpired && isMissingLocalizedUserValue ? (
-              <></>
-            ) : (
-              <div className="price">
-                {isMissingLocalizedUserValue ? (
-                  <SharedLoadingSpinner size="small" />
-                ) : (
-                  `$${assetAmount.localizedMainCurrencyAmount}`
-                )}
-              </div>
-            )}
+
+            {
+              // @TODO don't fetch prices for untrusted assets in the first place
+              // Only show prices for trusted assets
+              assetIsUntrusted ||
+              (initializationLoadingTimeExpired &&
+                isMissingLocalizedUserValue) ? (
+                <></>
+              ) : (
+                <div className="price">
+                  {isMissingLocalizedUserValue ? (
+                    <SharedLoadingSpinner size="small" />
+                  ) : (
+                    `$${assetAmount.localizedMainCurrencyAmount}`
+                  )}
+                </div>
+              )
+            }
           </div>
         </div>
         <div className="asset_right">
           <>
-            {numTokenLists === 0 && !baseAsset && (
+            {assetIsUntrusted && (
               <button
                 type="button"
                 onClick={(event) => {

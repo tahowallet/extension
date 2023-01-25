@@ -90,19 +90,8 @@ export const BNB: NetworkBaseAsset & Required<CoinGeckoAsset> = {
   },
 }
 
-export const BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
-  ...BASE_ASSETS_BY_CUSTOM_NAME.BTC,
-  coinType: coinTypesByAssetSymbol.BTC,
-  metadata: {
-    coinGeckoID: "bitcoin",
-    tokenLists: [],
-    websiteURL: "https://bitcoin.org",
-  },
-}
-
 export const BUILT_IN_NETWORK_BASE_ASSETS = [
   ETH,
-  BTC,
   MATIC,
   RBTC,
   OPTIMISTIC_ETH,

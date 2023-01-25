@@ -55,19 +55,8 @@ const BNB: NetworkBaseAsset = {
   decimals: 18,
 }
 
-const BTC: NetworkBaseAsset = {
-  /**
-   * To persist base asset to indexDB chainID must be declared.
-   */
-  chainID: "",
-  name: "Bitcoin",
-  symbol: "BTC",
-  decimals: 8,
-}
-
 export const BASE_ASSETS_BY_CUSTOM_NAME = {
   ETH,
-  BTC,
   MATIC,
   RBTC,
   AVAX,
