@@ -18,7 +18,7 @@ type CommonAssetListItemProps = {
   onUntrustedAssetWarningClick?: (asset: CompleteAssetAmount["asset"]) => void
 }
 
-const MAX_SYMBOL_LENGTH = 25
+const MAX_SYMBOL_LENGTH = 10
 
 export default function CommonAssetListItem(
   props: CommonAssetListItemProps
