@@ -1,5 +1,7 @@
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { useBackgroundSelector } from "../../../hooks"
 import SharedButton from "../../Shared/SharedButton"
 
 type SignerBaseFrameProps = {
@@ -17,6 +19,10 @@ export default function SignerBaseFrame({
 }: SignerBaseFrameProps): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
 
+  const transactionDetails = useBackgroundSelector(selectTransactionData)
+  const hasInsufficientFunds =
+    transactionDetails?.annotation?.warnings?.includes("insufficient-funds")
+
   const [isOnDelayToSign /* , setIsOnDelayToSign */] = useState(false)
 
   return (
@@ -32,7 +38,7 @@ export default function SignerBaseFrame({
           size="large"
           onClick={onConfirm}
           showLoadingOnClick
-          isDisabled={isOnDelayToSign}
+          isDisabled={hasInsufficientFunds || isOnDelayToSign}
         >
           {signingActionLabel}
         </SharedButton>
