@@ -2,7 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { Ability } from "@tallyho/tally-background/services/abilities"
 import {
   removeAbility,
-  reportAndRemoveAbility,
+  reportSpam,
 } from "@tallyho/tally-background/redux-slices/abilities"
 import { useTranslation } from "react-i18next"
 
@@ -61,21 +61,19 @@ export default function AbilityRemovalConfirm({
   const handleDeleteAbility = () => {
     if (spamReason) {
       dispatch(
-        reportAndRemoveAbility({
+        reportSpam({
           address: ability.address,
           abilitySlug: ability.slug,
-          abilityId: ability.abilityId,
           reason: spamReason,
         })
       )
-    } else {
-      dispatch(
-        removeAbility({
-          address: ability.address,
-          abilityId: ability.abilityId,
-        })
-      )
     }
+    dispatch(
+      removeAbility({
+        address: ability.address,
+        abilityId: ability.abilityId,
+      })
+    )
     close()
   }
 

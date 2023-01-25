@@ -6,10 +6,9 @@ import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 
 export type Events = {
-  reportAndRemoveAbility: {
+  reportSpam: {
     address: NormalizedEVMAddress
     abilitySlug: string
-    abilityId: string
     reason: string
   }
 }
@@ -108,15 +107,14 @@ export const removeAbility = createBackgroundAsyncThunk(
   }
 )
 
-export const reportAndRemoveAbility = createBackgroundAsyncThunk(
-  "abilities/reportAndRemoveAbility",
+export const reportSpam = createBackgroundAsyncThunk(
+  "abilities/reportSpam",
   async (payload: {
     address: NormalizedEVMAddress
     abilitySlug: string
-    abilityId: string
     reason: string
   }) => {
-    await emitter.emit("reportAndRemoveAbility", payload)
+    await emitter.emit("reportSpam", payload)
   }
 )
 

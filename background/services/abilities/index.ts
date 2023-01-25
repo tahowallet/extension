@@ -117,8 +117,6 @@ const normalizeDaylightAbilities = (
 
 interface Events extends ServiceLifecycleEvents {
   newAbilities: Ability[]
-  removeAbility: { address: NormalizedEVMAddress; abilityId: string }
-  reportSpamFailure: undefined
 }
 export default class AbilitiesService extends BaseService<Events> {
   constructor(
@@ -206,17 +204,12 @@ export default class AbilitiesService extends BaseService<Events> {
     }
   }
 
-  async reportAndRemoveAbility(
+  // eslint-disable-next-line class-methods-use-this
+  async reportSpam(
     address: NormalizedEVMAddress,
     abilitySlug: string,
-    abilityId: string,
     reason: string
   ): Promise<void> {
-    const result = await createSpamReport(address, abilitySlug, reason)
-    if (result) {
-      this.emitter.emit("removeAbility", { address, abilityId })
-    } else {
-      await this.emitter.emit("reportSpamFailure")
-    }
+    await createSpamReport(address, abilitySlug, reason)
   }
 }
