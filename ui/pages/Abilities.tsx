@@ -1,22 +1,56 @@
 import { selectFilteredAbilities } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../components/Shared/SharedButton"
 import AbilityCard from "./Abilities/AbilityCard"
 import { useBackgroundSelector } from "../hooks"
+import SharedIcon from "../components/Shared/SharedIcon"
+import SharedTooltip from "../components/Shared/SharedTooltip"
+import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
+import AbilityFilters from "./Abilities/AbilityFilters"
 
 export default function Abilities(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "abilities",
   })
+  const [openFiltersMenu, setOpenFiltersMenu] = useState(false)
   const abilities = useBackgroundSelector(selectFilteredAbilities)
+
+  const handleToggleClick = useCallback(() => {
+    setOpenFiltersMenu((currentlyOpen) => !currentlyOpen)
+  }, [])
 
   return (
     <section className="standard_width_padded">
+      <SharedSlideUpMenu isOpen={openFiltersMenu} close={handleToggleClick}>
+        <AbilityFilters />
+      </SharedSlideUpMenu>
       <div className="content">
         <div className="header">
           <div className="icon_tail logo" />
           <h1>{t("header")}</h1>
+          {abilities.length > 0 && (
+            <div className="filters_container">
+              <SharedTooltip
+                horizontalPosition="left"
+                width={36}
+                verticalPosition="bottom"
+                type="dark"
+                IconComponent={() => (
+                  <SharedIcon
+                    width={24}
+                    icon="toggle.svg"
+                    ariaLabel={t("filters.title")}
+                    color="var(--green-40)"
+                    hoverColor="var(--green-20)"
+                    onClick={handleToggleClick}
+                  />
+                )}
+              >
+                {t("filters.tooltip")}
+              </SharedTooltip>
+            </div>
+          )}
         </div>
         {abilities.length > 0 ? (
           abilities.map((ability) => (
@@ -50,6 +84,12 @@ export default function Abilities(): ReactElement {
             font-weight: 500;
             font-size: 22px;
             line-height: 32px;
+          }
+          .filters_container {
+            position: absolute;
+            width: 90vw;
+            display: flex;
+            justify-content: end;
           }
           section {
             height: 544px;

@@ -52,3 +52,10 @@ export const NETWORK_FEE_CHOSEN_TYPE_TO_HUMAN_READABLE_TYPE: {
   [NetworkFeeTypeChosen.Instant]: i18n.t("networkFees.types.instant"),
   [NetworkFeeTypeChosen.Custom]: i18n.t("networkFees.types.custom"),
 }
+
+export const ABILITY_TYPE_COLOR = {
+  mint: "#20c580",
+  airdrop: "#FF1E6F",
+  access: "#02C0EA",
+  claim: "#F4D530",
+}

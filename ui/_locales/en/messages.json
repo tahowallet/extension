@@ -777,7 +777,24 @@
     "timeCloses": "Closes in 1 month",
     "viewWebsiteBtn": "Visit website",
     "markBtn": "Mark as Completed",
-    "deleteBtn": "Delete"
+    "deleteBtn": "Delete",
+    "filters": {
+      "title": "Filter Abilities",
+      "tooltip": "Filter",
+      "abilityState": {
+        "open": "Open",
+        "closed": "Closed",
+        "expired": "Expired",
+        "all": "All"
+      },
+      "abilityTypeDesc": {
+        "claim": "On-chain reward that someone can claim that is not a mint or airdrop.",
+        "airdrop": "A ERC-20 token airdrop, usually not promised in advance.",
+        "mint": "A ERC-721 or ERC-11555 token mint."
+      },
+      "abilityStateTitle": "Show",
+      "abilitiesTypesTitle": "Notify me about abilities type"
+    }
   },
   "globalError": {
     "title": "Ups, nothing to see here",

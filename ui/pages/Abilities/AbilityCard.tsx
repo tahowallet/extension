@@ -12,14 +12,6 @@ import AbilityCardHeader from "./AbilityCardHeader"
 import AbilityRemovalConfirm from "./AbilityRemovalConfirm"
 
 const DAYS = 30
-const TOOLTIP_STYLE: React.CSSProperties = {
-  background: "var(--green-120)",
-  borderRadius: "4px",
-  fontSize: "16px",
-  lineHeight: "24px",
-  padding: "2px 8px",
-  color: "var(--green-40)",
-}
 
 const getTimeDetails = (ability: Ability): string => {
   const cutOffDate = new Date()
@@ -104,7 +96,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
               horizontalPosition="center"
               width={144}
               verticalPosition="bottom"
-              style={TOOLTIP_STYLE}
+              type="dark"
               IconComponent={() => (
                 <SharedIcon
                   height={16}
@@ -131,7 +123,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
               horizontalPosition="center"
               width={50}
               verticalPosition="bottom"
-              style={TOOLTIP_STYLE}
+              type="dark"
               IconComponent={() => (
                 <SharedIcon
                   height={16}

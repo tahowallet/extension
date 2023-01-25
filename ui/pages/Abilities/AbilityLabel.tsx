@@ -1,20 +1,15 @@
 import React, { ReactElement } from "react"
 import type { AbilityType } from "@tallyho/tally-background/services/abilities"
 import capitalize from "../../utils/capitalize"
-
-const typeColor = {
-  mint: "#20c580",
-  airdrop: "#FF1E6F",
-  access: "#02C0EA",
-}
+import { ABILITY_TYPE_COLOR } from "../../utils/constants"
 
 function AbilityLabel({ type }: { type: AbilityType }): ReactElement {
   return (
     <>
       <div
         style={{
-          color: typeColor[type] || "white",
-          borderColor: typeColor[type] || "white",
+          color: ABILITY_TYPE_COLOR[type] || "white",
+          borderColor: ABILITY_TYPE_COLOR[type] || "white",
         }}
         className="icon_type"
       >

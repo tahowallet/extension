@@ -1,13 +1,27 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { Ability } from "../../services/abilities"
+import { filterByState } from "../utils/abilities"
 
-const selectAbilities = (state: RootState) => state.abilities.abilities
+const selectAbilities = createSelector(
+  (state: RootState) => state.abilities,
+  (abilitiesSlice) => abilitiesSlice.abilities
+)
 
-const selectAbilityFilter = (state: RootState) => state.abilities.filter
+export const selectHideDescription = createSelector(
+  (state: RootState) => state.abilities.hideDescription,
+  (hideDescription) => hideDescription
+)
 
+/* Filtering selectors */
+export const selectAbilityFilters = createSelector(
+  (state: RootState) => state.abilities,
+  (abilitiesSlice) => abilitiesSlice.filters
+)
+
+/* Items selectors */
 export const selectFilteredAbilities = createSelector(
-  selectAbilityFilter,
+  selectAbilityFilters,
   selectAbilities,
   (filter, abilities) => {
     const activeAbilities: Ability[] = []
@@ -17,13 +31,7 @@ export const selectFilteredAbilities = createSelector(
           if (ability.removedFromUi === true) {
             return false
           }
-          if (filter === "incomplete") {
-            return ability.completed === false
-          }
-          if (filter === "completed") {
-            return ability.completed === true
-          }
-          return true
+          return filterByState(ability, filter.state)
         })
       )
     })
@@ -31,12 +39,8 @@ export const selectFilteredAbilities = createSelector(
   }
 )
 
+/* Counting selectors  */
 export const selectAbilityCount = createSelector(
   selectFilteredAbilities,
   (abilities) => abilities.length
-)
-
-export const selectHideDescription = createSelector(
-  (state: RootState) => state.abilities.hideDescription,
-  (hideDescription) => hideDescription
 )

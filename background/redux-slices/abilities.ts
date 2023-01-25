@@ -4,8 +4,12 @@ import { HexString, NormalizedEVMAddress } from "../types"
 import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 
+export type AbilityState = "open" | "closed" | "expired" | "deleted" | "all"
+
 type AbilitiesState = {
-  filter: "all" | "completed" | "incomplete"
+  filters: {
+    state: AbilityState
+  }
   abilities: {
     [address: HexString]: {
       [uuid: string]: Ability
@@ -15,7 +19,9 @@ type AbilitiesState = {
 }
 
 const initialState: AbilitiesState = {
-  filter: "incomplete",
+  filters: {
+    state: "open",
+  },
   abilities: {},
   hideDescription: false,
 }
@@ -55,6 +61,12 @@ const abilitiesSlice = createSlice({
     toggleHideDescription: (immerState, { payload }: { payload: boolean }) => {
       immerState.hideDescription = payload
     },
+    updateFiltersAbilityState: (
+      immerState,
+      { payload: state }: { payload: AbilityState }
+    ) => {
+      immerState.filters.state = state
+    },
   },
 })
 
@@ -64,6 +76,7 @@ export const {
   markAbilityAsCompleted,
   markAbilityAsRemoved,
   toggleHideDescription,
+  updateFiltersAbilityState,
 } = abilitiesSlice.actions
 
 export const completeAbility = createBackgroundAsyncThunk(
