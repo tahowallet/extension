@@ -856,8 +856,6 @@ export default class ChainService extends BaseService<Events> {
     address,
     network,
   }: AddressOnNetwork): Promise<AccountBalance> {
-    await this.started()
-
     const normalizedAddress = normalizeEVMAddress(address)
 
     const balance = await this.providerForNetworkOrThrow(network).getBalance(

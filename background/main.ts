@@ -196,7 +196,6 @@ const persistStoreState = debounce(persistStoreFn, 50, {
 const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
   const state = store.getState()
-  ;(window as any).store = store
 
   persistStoreState(state)
   return result

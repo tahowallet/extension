@@ -13,11 +13,11 @@ import {
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectShowTestNetworks } from "@tallyho/tally-background/redux-slices/ui"
+import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 import { i18n } from "../../_locales/i18n"
-import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
 
 const productionNetworkInfo = {
   [ETHEREUM.chainID]: i18n.t("protocol.mainnet"),
