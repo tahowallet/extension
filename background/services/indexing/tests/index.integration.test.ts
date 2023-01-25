@@ -155,11 +155,10 @@ describe("IndexingService", () => {
       delay.resolve(undefined)
     })
 
-    it.only("should update cache once token lists load", async () => {
+    it("should update cache once token lists load", async () => {
       sandbox
         .stub(chainService, "supportedNetworks")
         .value([ETHEREUM, OPTIMISM])
-      const cacheSpy = jest.spyOn(indexingService, "cacheAssetsForNetwork")
 
       const delay = sinon.promise<void>()
 
