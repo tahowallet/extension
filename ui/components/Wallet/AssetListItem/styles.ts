@@ -40,6 +40,7 @@ export default `
     margin-bottom: 8px;
     margin-top: -1px;
     overflow-wrap: anywhere;
+    word-break: break-all;
   }
   .bold_amount_count {
     width: 70px;
