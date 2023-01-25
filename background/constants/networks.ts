@@ -24,6 +24,7 @@ export const ROOTSTOCK: EVMNetwork = {
   name: "Rootstock",
   baseAsset: RBTC,
   chainID: "30",
+  derivationPath: "m/44'/137'/0'/0",
   family: "EVM",
   coingeckoPlatformID: "rootstock",
 }

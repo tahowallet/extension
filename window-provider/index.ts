@@ -56,6 +56,7 @@ const impersonateMetamaskWhitelist = [
   "mint.xencrypto.io",
   "bscscan.com",
   "alchemy.com",
+  "cow.fi",
 ]
 
 const METAMASK_STATE_MOCK = {
