@@ -772,7 +772,12 @@
       "seeAbilities": "See your abilities",
       "new": "New",
       "none": "None"
-    }
+    },
+    "timeStarting": "Starting in 1 month",
+    "timeCloses": "Closes in 1 month",
+    "viewWebsiteBtn": "Visit website",
+    "markBtn": "Mark as Completed",
+    "deleteBtn": "Delete"
   },
   "globalError": {
     "title": "Ups, nothing to see here",

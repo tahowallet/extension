@@ -7,6 +7,7 @@ import { NFTWithCollection } from "@tallyho/tally-background/redux-slices/nfts_u
 import React, { ReactElement, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useIntersectionObserver } from "../../hooks"
+import { trimWithEllipsis } from "../../utils/textUtils"
 import SharedButton from "../Shared/SharedButton"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 import ExploreMarketLink, { getRelevantMarketsList } from "./ExploreMarketLink"
@@ -19,13 +20,11 @@ const removeMarkdownLinks = (description: string) => {
   return description.replace(LINK_REGEX, "$1")
 }
 
-const trimDescription = (description: string) =>
-  description && description.length > MAX_DESCRIPTION_LENGTH
-    ? `${description.slice(0, MAX_DESCRIPTION_LENGTH)}...`
-    : description
-
 const parseDescription = (description = "") => {
-  return trimDescription(removeMarkdownLinks(description))
+  return trimWithEllipsis(
+    removeMarkdownLinks(description),
+    MAX_DESCRIPTION_LENGTH
+  )
 }
 
 export default function NFTPreview(props: NFTWithCollection): ReactElement {

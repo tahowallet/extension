@@ -5,7 +5,7 @@ import {
 } from "@tallyho/tally-background/lib/utils"
 import { EnrichedSignTypedDataRequest } from "@tallyho/tally-background/services/enrichment"
 import { useTranslation } from "react-i18next"
-import capitalize from "../../utils/capitalize"
+import { capitalize } from "../../utils/textUtils"
 
 type SignTypedDataInfoProps = {
   typedDataRequest: EnrichedSignTypedDataRequest

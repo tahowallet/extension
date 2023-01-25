@@ -10,12 +10,15 @@ import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
 import SharedIconRouterLink from "../../Shared/SharedIconRouterLink"
 import { useBackgroundSelector } from "../../../hooks"
+import { trimWithEllipsis } from "../../../utils/textUtils"
 
 type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount
   initializationLoadingTimeExpired: boolean
   onUntrustedAssetWarningClick?: (asset: CompleteAssetAmount["asset"]) => void
 }
+
+const MAX_SYMBOL_LENGTH = 10
 
 export default function CommonAssetListItem(
   props: CommonAssetListItemProps
@@ -47,6 +50,8 @@ export default function CommonAssetListItem(
       ? assetAmount.asset.contractAddress
       : undefined
 
+  const assetIsUntrusted = numTokenLists === 0 && !baseAsset
+
   return (
     <Link
       to={{
@@ -65,24 +70,33 @@ export default function CommonAssetListItem(
               <span className="bold_amount_count">
                 {assetAmount.localizedDecimalAmount}
               </span>
-              <span>{assetAmount.asset.symbol}</span>
+              <span title={assetAmount.asset.symbol}>
+                {trimWithEllipsis(assetAmount.asset.symbol, MAX_SYMBOL_LENGTH)}
+              </span>
             </div>
-            {initializationLoadingTimeExpired && isMissingLocalizedUserValue ? (
-              <></>
-            ) : (
-              <div className="price">
-                {isMissingLocalizedUserValue ? (
-                  <SharedLoadingSpinner size="small" />
-                ) : (
-                  `$${assetAmount.localizedMainCurrencyAmount}`
-                )}
-              </div>
-            )}
+
+            {
+              // @TODO don't fetch prices for untrusted assets in the first place
+              // Only show prices for trusted assets
+              assetIsUntrusted ||
+              (initializationLoadingTimeExpired &&
+                isMissingLocalizedUserValue) ? (
+                <></>
+              ) : (
+                <div className="price">
+                  {isMissingLocalizedUserValue ? (
+                    <SharedLoadingSpinner size="small" />
+                  ) : (
+                    `$${assetAmount.localizedMainCurrencyAmount}`
+                  )}
+                </div>
+              )
+            }
           </div>
         </div>
         <div className="asset_right">
           <>
-            {numTokenLists === 0 && !baseAsset && (
+            {assetIsUntrusted && (
               <button
                 type="button"
                 onClick={(event) => {
