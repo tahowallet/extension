@@ -10,12 +10,15 @@ import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
 import SharedIconRouterLink from "../../Shared/SharedIconRouterLink"
 import { useBackgroundSelector } from "../../../hooks"
+import { trimWithEllipsis } from "../../../utils/textUtils"
 
 type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount
   initializationLoadingTimeExpired: boolean
   onUntrustedAssetWarningClick?: (asset: CompleteAssetAmount["asset"]) => void
 }
+
+const MAX_SYMBOL_LENGTH = 25
 
 export default function CommonAssetListItem(
   props: CommonAssetListItemProps
@@ -67,7 +70,9 @@ export default function CommonAssetListItem(
               <span className="bold_amount_count">
                 {assetAmount.localizedDecimalAmount}
               </span>
-              <span>{assetAmount.asset.symbol}</span>
+              <span title={assetAmount.asset.symbol}>
+                {trimWithEllipsis(assetAmount.asset.symbol, MAX_SYMBOL_LENGTH)}
+              </span>
             </div>
 
             {
