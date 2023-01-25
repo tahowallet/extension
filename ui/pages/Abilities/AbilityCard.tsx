@@ -159,7 +159,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
             align-items: flex-start;
             padding: 16px;
             width: 310px;
-            height: 355px;
+            max-height: 355px;
             background: rgba(4, 20, 20, 0.4);
             border-radius: 12px;
             margin-bottom: 16px;
