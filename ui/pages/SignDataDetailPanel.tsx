@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 import SharedSkeletonLoader from "../components/Shared/SharedSkeletonLoader"
 import SignTypedDataInfo from "../components/SignData/SignTypedDataInfo"
 import { useBackgroundSelector } from "../hooks"
-import capitalize from "../utils/capitalize"
+import { capitalize } from "../utils/textUtils"
 
 const getSourceLabel = (
   typedDataRequest: EnrichedSignTypedDataRequest
