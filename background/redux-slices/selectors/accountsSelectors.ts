@@ -1,7 +1,11 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { selectHideDust } from "../ui"
 import { RootState } from ".."
-import { AccountType, CompleteAssetAmount } from "../accounts"
+import {
+  AccountType,
+  DEFAULT_ACCOUNT_NAMES,
+  CompleteAssetAmount,
+} from "../accounts"
 import { AssetsState, selectAssetPricePoint } from "../assets"
 import {
   enrichAssetAmountWithDecimalValues,
@@ -518,6 +522,17 @@ export const getAccountTotal = (
     ),
     accountAddressOnNetwork
   )
+
+export const getAccountNameOnChain = (
+  state: RootState,
+  accountAddressOnNetwork: AddressOnNetwork
+): string | undefined => {
+  const account = getAccountTotal(state, accountAddressOnNetwork)
+
+  return account?.name && !DEFAULT_ACCOUNT_NAMES.includes(account.name)
+    ? account.name
+    : undefined
+}
 
 export const selectCurrentAccountTotal = createSelector(
   selectCurrentNetworkAccountTotalsByCategory,
