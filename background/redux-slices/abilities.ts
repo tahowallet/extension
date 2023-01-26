@@ -3,17 +3,11 @@ import { Ability, AbilityType } from "../abilities"
 import { HexString, NormalizedEVMAddress } from "../types"
 import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
+import { FilterAccount } from "./utils/account-filter-utils"
 
 export type AbilityState = "open" | "closed" | "expired" | "deleted" | "all"
 
 export type FilterType = { type: AbilityType; isEnabled: boolean }
-
-export type FilterAccount = {
-  address: string
-  isEnabled: boolean
-  name?: string
-  thumbnailURL?: string
-}
 
 export type AbilityFilter = {
   state: AbilityState
@@ -111,7 +105,7 @@ const abilitiesSlice = createSlice({
       { payload: filter }: { payload: FilterAccount }
     ) => {
       const idx = immerState.filters.accounts.findIndex(
-        ({ address }) => address === filter.address
+        ({ id }) => id === filter.id
       )
       immerState.filters.accounts[idx] = filter
     },
@@ -120,10 +114,14 @@ const abilitiesSlice = createSlice({
       { payload: address }: { payload: string }
     ) => {
       const filter = immerState.filters.accounts.find(
-        (account) => account.address === address
+        (account) => account.id === address
       )
       if (!filter) {
-        immerState.filters.accounts.push({ address, isEnabled: true })
+        immerState.filters.accounts.push({
+          id: address,
+          name: "",
+          isEnabled: true,
+        })
       }
     },
   },

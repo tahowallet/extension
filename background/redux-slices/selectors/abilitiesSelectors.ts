@@ -1,10 +1,10 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { Ability } from "../../abilities"
-import { FilterAccount } from "../abilities"
 import { filterAbility } from "../utils/abilities"
 import {
   AccountData,
+  FilterAccount,
   getAdditionalDataForFilter,
 } from "../utils/account-filter-utils"
 import { selectAccountTotals } from "./accountsSelectors"
@@ -31,7 +31,7 @@ export const selectEnrichedAbilityFilters = createSelector(
   (filters, accountTotals) => {
     const accounts = filters.accounts.reduce<FilterAccount[]>((acc, filter) => {
       const additionalData = getAdditionalDataForFilter(
-        filter.address,
+        filter.id,
         accountTotals as AccountData[]
       )
       if (Object.keys(additionalData).length > 0) {

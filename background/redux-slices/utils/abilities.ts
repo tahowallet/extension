@@ -1,10 +1,6 @@
 import { Ability, AbilityType } from "../../abilities"
-import {
-  AbilityFilter,
-  AbilityState,
-  FilterAccount,
-  FilterType,
-} from "../abilities"
+import { AbilityFilter, AbilityState, FilterType } from "../abilities"
+import { FilterAccount } from "./account-filter-utils"
 
 const filterByState = (ability: Ability, state: AbilityState): boolean => {
   switch (state) {
@@ -32,7 +28,7 @@ const filterByAddress = (
   address: string,
   accounts: FilterAccount[]
 ): boolean => {
-  return !!accounts.find((filter) => filter.address === address)?.isEnabled
+  return !!accounts.find((filter) => filter.id === address)?.isEnabled
 }
 // eslint-disable-next-line import/prefer-default-export
 export const filterAbility = (

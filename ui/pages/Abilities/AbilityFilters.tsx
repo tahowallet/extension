@@ -4,10 +4,10 @@ import {
   AbilityState,
   updateFilterAbilityState,
   updateFilterAbilityType,
-  FilterAccount,
   updateFilterAccount,
 } from "@tallyho/tally-background/redux-slices/abilities"
 import { selectEnrichedAbilityFilters } from "@tallyho/tally-background/redux-slices/selectors"
+import { FilterAccount } from "@tallyho/tally-background/redux-slices/utils/account-filter-utils"
 import React, { ReactElement, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import SharedRadio from "../../components/Shared/SharedRadio"
@@ -124,7 +124,7 @@ export default function AbilityFilters(): ReactElement {
           <div className="filter_list">
             {filters.accounts.map((item) => (
               <SharedToggleItem
-                label={item.name || item.address}
+                label={item.name || item.id}
                 thumbnailURL={item.thumbnailURL}
                 checked={item.isEnabled}
                 onChange={(toggleValue) =>
