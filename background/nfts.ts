@@ -54,7 +54,8 @@ export type NFT = {
   contract: string
   owner: string
   network: EVMNetwork
-  isBadge: boolean
+  supply?: number // only for POAPs
+  isBadge: boolean // POAPs, Galxe NFTs and OATs
 }
 
 export type NFTCollection = {
