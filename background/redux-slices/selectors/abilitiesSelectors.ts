@@ -4,8 +4,7 @@ import { Ability } from "../../abilities"
 import { filterAbility } from "../utils/abilities"
 import {
   AccountData,
-  FilterAccount,
-  getAdditionalDataForFilter,
+  getEnrichedAccountFilter,
 } from "../utils/account-filter-utils"
 import { selectAccountTotals } from "./accountsSelectors"
 
@@ -29,23 +28,10 @@ export const selectEnrichedAbilityFilters = createSelector(
   selectAbilityFilters,
   selectAccountTotals,
   (filters, accountTotals) => {
-    const accounts = filters.accounts.reduce<FilterAccount[]>((acc, filter) => {
-      const additionalData = getAdditionalDataForFilter(
-        filter.id,
-        accountTotals as AccountData[]
-      )
-      if (Object.keys(additionalData).length > 0) {
-        return [
-          ...acc,
-          {
-            ...filter,
-            ...additionalData,
-          },
-        ]
-      }
-      return [...acc]
-    }, [])
-
+    const accounts = getEnrichedAccountFilter(
+      filters.accounts,
+      accountTotals as AccountData[]
+    )
     return { ...filters, accounts }
   }
 )
