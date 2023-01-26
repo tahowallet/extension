@@ -1,8 +1,8 @@
 import { AbilityType } from "@tallyho/tally-background/abilities"
 import React, { ReactElement } from "react"
 import SharedToggleButton from "../../components/Shared/SharedToggleButton"
-import capitalize from "../../utils/capitalize"
 import { ABILITY_TYPE_COLOR } from "../../utils/constants"
+import { capitalize } from "../../utils/textUtils"
 
 type AbilityFiltersCardProps = {
   type: AbilityType
