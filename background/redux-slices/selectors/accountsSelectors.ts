@@ -290,6 +290,7 @@ export type AccountTotal = AddressOnNetwork & {
   // FIXME Add `categoryFor(accountSigner): string` utility function to
   // FIXME generalize beyond keyrings.
   keyringId: string | null
+  path: string | null
   accountSigner: AccountSigner
   name?: string
   avatarURL?: string
@@ -375,6 +376,7 @@ function getNetworkAccountTotalsByCategory(
 
       const accountSigner = accountSignersByAddress[address]
       const keyringId = keyringsByAddresses[address]?.id
+      const path = keyringsByAddresses[address]?.path
 
       const accountType = getAccountType(
         address,
@@ -389,6 +391,7 @@ function getNetworkAccountTotalsByCategory(
           shortenedAddress,
           accountType,
           keyringId,
+          path,
           accountSigner,
         }
       }
@@ -399,6 +402,7 @@ function getNetworkAccountTotalsByCategory(
         shortenedAddress,
         accountType,
         keyringId,
+        path,
         accountSigner,
         name: accountData.ens.name ?? accountData.defaultName,
         avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
