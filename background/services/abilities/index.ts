@@ -78,6 +78,7 @@ const normalizeDaylightAbilities = (
 
 interface Events extends ServiceLifecycleEvents {
   newAbilities: Ability[]
+  newAccount: string
 }
 export default class AbilitiesService extends BaseService<Events> {
   constructor(
@@ -108,7 +109,9 @@ export default class AbilitiesService extends BaseService<Events> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
     this.chainService.emitter.on("newAccountToTrack", (addressOnNetwork) => {
-      this.pollForAbilities(addressOnNetwork.address)
+      const { address } = addressOnNetwork
+      this.pollForAbilities(address)
+      this.emitter.emit("newAccount", address)
     })
   }
 

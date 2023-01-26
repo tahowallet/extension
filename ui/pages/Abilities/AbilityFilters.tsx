@@ -1,15 +1,18 @@
 import { AbilityType } from "@tallyho/tally-background/abilities"
 import {
-  Filter,
+  FilterType,
   AbilityState,
   updateFilterAbilityState,
   updateFilterAbilityType,
+  FilterAccount,
+  updateFilterAccount,
 } from "@tallyho/tally-background/redux-slices/abilities"
-import { selectAbilityFilters } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectEnrichedAbilityFilters } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import SharedRadio from "../../components/Shared/SharedRadio"
 import SharedSlideUpMenuPanel from "../../components/Shared/SharedSlideUpMenuPanel"
+import SharedToggleItem from "../../components/Shared/SharedToggleItem"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { i18n } from "../../_locales/i18n"
 import AbilityFiltersCard from "./AbilityFiltersCard"
@@ -29,6 +32,10 @@ const RADIO_BTNS: { value: AbilityState; label: string }[] = [
   {
     value: "expired",
     label: i18n.t(`${KEY_PREFIX}.abilityState.expired`),
+  },
+  {
+    value: "deleted",
+    label: i18n.t(`${KEY_PREFIX}.abilityState.deleted`),
   },
   {
     value: "all",
@@ -53,7 +60,7 @@ export default function AbilityFilters(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "abilities.filters",
   })
-  const filters = useBackgroundSelector(selectAbilityFilters)
+  const filters = useBackgroundSelector(selectEnrichedAbilityFilters)
   const dispatch = useBackgroundDispatch()
 
   const handleUpdateFilterAbilityState = useCallback(
@@ -64,8 +71,15 @@ export default function AbilityFilters(): ReactElement {
   )
 
   const handleUpdateFilterAbilityType = useCallback(
-    (filter: Filter) => {
+    (filter: FilterType) => {
       dispatch(updateFilterAbilityType(filter))
+    },
+    [dispatch]
+  )
+
+  const handleUpdateFilterAccount = useCallback(
+    (filter: FilterAccount) => {
+      dispatch(updateFilterAccount(filter))
     },
     [dispatch]
   )
@@ -100,6 +114,21 @@ export default function AbilityFilters(): ReactElement {
                     type,
                     isEnabled: toggleValue,
                   })
+                }
+              />
+            ))}
+          </div>
+        </div>
+        <div className="simple_text">
+          <span className="filter_title">{t("accountsTitle")}</span>
+          <div className="filter_list">
+            {filters.accounts.map((item) => (
+              <SharedToggleItem
+                label={item.name || item.address}
+                thumbnailURL={item.thumbnailURL}
+                checked={item.isEnabled}
+                onChange={(toggleValue) =>
+                  handleUpdateFilterAccount({ ...item, isEnabled: toggleValue })
                 }
               />
             ))}

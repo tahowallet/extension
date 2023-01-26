@@ -1,7 +1,7 @@
 import { Filter } from "@tallyho/tally-background/redux-slices/nfts_update"
 import React from "react"
 import SharedSkeletonLoader from "../../Shared/SharedSkeletonLoader"
-import FilterListItem from "./FilterListItem"
+import SharedToggleItem from "../../Shared/SharedToggleItem"
 
 const HEIGHT = 40
 
@@ -30,7 +30,7 @@ const FilterList = React.forwardRef(
                 isLoaded={isLoaded}
                 height={HEIGHT}
               >
-                <FilterListItem
+                <SharedToggleItem
                   label={item.name}
                   thumbnailURL={item?.thumbnailURL}
                   checked={item.isEnabled}

@@ -785,6 +785,7 @@
         "open": "Open",
         "closed": "Closed",
         "expired": "Expired",
+        "deleted": "Deleted",
         "all": "All"
       },
       "abilityTypeDesc": {
@@ -793,7 +794,8 @@
         "mint": "A ERC-721 or ERC-11555 token mint."
       },
       "abilityStateTitle": "Show",
-      "abilitiesTypesTitle": "Notify me about abilities type"
+      "abilitiesTypesTitle": "Notify me about abilities type",
+      "accountsTitle": "Show/hide accounts"
     }
   },
   "globalError": {

@@ -93,7 +93,7 @@ export const getDaylightAbilities = async (
     // Abilities whose deadline has not yet passed - we will probably
     // want to turn this on once the feature is ready to go live
     // `${DAYLIGHT_BASE_URL}/${address}/abilities?deadline=set&type=mint&type=airdrop&type=access`
-    `${DAYLIGHT_BASE_URL}/${address}/abilities?type=mint&type=airdrop&type=access`
+    `${DAYLIGHT_BASE_URL}/${address}/abilities?deadline=all&type=mint&type=airdrop&type=access`
   )
 
   return response.abilities

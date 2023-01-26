@@ -6,11 +6,19 @@ import { createBackgroundAsyncThunk } from "./utils"
 
 export type AbilityState = "open" | "closed" | "expired" | "deleted" | "all"
 
-export type Filter = { type: AbilityType; isEnabled: boolean }
+export type FilterType = { type: AbilityType; isEnabled: boolean }
+
+export type FilterAccount = {
+  address: string
+  isEnabled: boolean
+  name?: string
+  thumbnailURL?: string
+}
 
 export type AbilityFilter = {
   state: AbilityState
-  types: Filter[]
+  types: FilterType[]
+  accounts: FilterAccount[]
 }
 
 type AbilitiesState = {
@@ -23,7 +31,7 @@ type AbilitiesState = {
   hideDescription: boolean
 }
 
-const typesFilter: Filter[] = [
+const typesFilter: FilterType[] = [
   {
     type: "claim",
     isEnabled: true,
@@ -42,6 +50,7 @@ const initialState: AbilitiesState = {
   filters: {
     state: "open",
     types: typesFilter,
+    accounts: [],
   },
   abilities: {},
   hideDescription: false,
@@ -90,12 +99,32 @@ const abilitiesSlice = createSlice({
     },
     updateFilterAbilityType: (
       immerState,
-      { payload: filter }: { payload: Filter }
+      { payload: filter }: { payload: FilterType }
     ) => {
       const idx = immerState.filters.types.findIndex(
         ({ type }) => type === filter.type
       )
       immerState.filters.types[idx] = filter
+    },
+    updateFilterAccount: (
+      immerState,
+      { payload: filter }: { payload: FilterAccount }
+    ) => {
+      const idx = immerState.filters.accounts.findIndex(
+        ({ address }) => address === filter.address
+      )
+      immerState.filters.accounts[idx] = filter
+    },
+    addAccountFilter: (
+      immerState,
+      { payload: address }: { payload: string }
+    ) => {
+      const filter = immerState.filters.accounts.find(
+        (account) => account.address === address
+      )
+      if (!filter) {
+        immerState.filters.accounts.push({ address, isEnabled: true })
+      }
     },
   },
 })
@@ -108,6 +137,8 @@ export const {
   toggleHideDescription,
   updateFilterAbilityState,
   updateFilterAbilityType,
+  updateFilterAccount,
+  addAccountFilter,
 } = abilitiesSlice.actions
 
 export const completeAbility = createBackgroundAsyncThunk(

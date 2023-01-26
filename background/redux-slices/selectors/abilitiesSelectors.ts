@@ -1,7 +1,10 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { Ability } from "../../abilities"
+import { FilterAccount } from "../abilities"
 import { filterAbility } from "../utils/abilities"
+import { AccountData, getAdditionalDataForFilter } from "../utils/nfts-utils"
+import { selectAccountTotals } from "./accountsSelectors"
 
 const selectAbilities = createSelector(
   (state: RootState) => state.abilities,
@@ -14,9 +17,34 @@ export const selectHideDescription = createSelector(
 )
 
 /* Filtering selectors */
-export const selectAbilityFilters = createSelector(
+const selectAbilityFilters = createSelector(
   (state: RootState) => state.abilities,
   (abilitiesSlice) => abilitiesSlice.filters
+)
+
+export const selectEnrichedAbilityFilters = createSelector(
+  selectAbilityFilters,
+  selectAccountTotals,
+  (filters, accountTotals) => {
+    const accounts = filters.accounts.reduce<FilterAccount[]>((acc, filter) => {
+      const additionalData = getAdditionalDataForFilter(
+        filter.address,
+        accountTotals as AccountData[]
+      )
+      if (Object.keys(additionalData).length > 0) {
+        return [
+          ...acc,
+          {
+            ...filter,
+            ...additionalData,
+          },
+        ]
+      }
+      return [...acc]
+    }, [])
+
+    return { ...filters, accounts }
+  }
 )
 
 /* Items selectors */

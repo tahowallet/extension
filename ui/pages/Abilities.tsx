@@ -29,28 +29,26 @@ export default function Abilities(): ReactElement {
         <div className="header">
           <div className="icon_tail logo" />
           <h1>{t("header")}</h1>
-          {abilities.length > 0 && (
-            <div className="filters_container">
-              <SharedTooltip
-                horizontalPosition="left"
-                width={36}
-                verticalPosition="bottom"
-                type="dark"
-                IconComponent={() => (
-                  <SharedIcon
-                    width={24}
-                    icon="toggle.svg"
-                    ariaLabel={t("filters.title")}
-                    color="var(--green-40)"
-                    hoverColor="var(--green-20)"
-                    onClick={handleToggleClick}
-                  />
-                )}
-              >
-                {t("filters.tooltip")}
-              </SharedTooltip>
-            </div>
-          )}
+          <div className="filters_container">
+            <SharedTooltip
+              horizontalPosition="left"
+              width={36}
+              verticalPosition="bottom"
+              type="dark"
+              IconComponent={() => (
+                <SharedIcon
+                  width={24}
+                  icon="toggle.svg"
+                  ariaLabel={t("filters.title")}
+                  color="var(--green-40)"
+                  hoverColor="var(--green-20)"
+                  onClick={handleToggleClick}
+                />
+              )}
+            >
+              {t("filters.tooltip")}
+            </SharedTooltip>
+          </div>
         </div>
         {abilities.length > 0 ? (
           abilities.map((ability) => (
