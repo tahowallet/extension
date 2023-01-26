@@ -93,7 +93,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
                 <SharedAddress address={owner} name={ownerName} elide />
               </span>
             </div>
-            <div className="preview_section_column align_right">
+            <div className="preview_section_column align_right no_shrink">
               <span className="preview_details_header">
                 {t("preview.floorPrice")}
               </span>
@@ -266,6 +266,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         .preview_section_column {
           display: flex;
           flex-direction: column;
+          min-width: 0;
         }
         .preview_section_row {
           display: flex;
@@ -313,6 +314,9 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           margin-top: 8px;
           gap: 16px;
           justify-content: flex-start;
+        }
+        .no_shrink {
+          flex-shrink: 0;
         }
       `}</style>
     </>
