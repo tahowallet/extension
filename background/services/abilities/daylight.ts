@@ -1,19 +1,7 @@
 import { fetchJson } from "@ethersproject/web"
+import { AbilityType } from "../../abilities"
 
 const DAYLIGHT_BASE_URL = "https://api.daylight.xyz/v1/wallets"
-
-// https://docs.daylight.xyz/reference/ability-model#ability-types
-type DaylightAbilityType =
-  | "vote"
-  | "claim"
-  | "airdrop"
-  | "mint"
-  | "access"
-  | "product"
-  | "event"
-  | "article"
-  | "result"
-  | "misc"
 
 type Community = {
   chain: string
@@ -63,7 +51,7 @@ type DaylightAbilityAction = {
 }
 
 export type DaylightAbility = {
-  type: DaylightAbilityType
+  type: AbilityType
   title: string
   description: string | null
   imageUrl: string | null
@@ -90,10 +78,7 @@ export const getDaylightAbilities = async (
   address: string
 ): Promise<DaylightAbility[]> => {
   const response: AbilitiesResponse = await fetchJson(
-    // Abilities whose deadline has not yet passed - we will probably
-    // want to turn this on once the feature is ready to go live
-    // `${DAYLIGHT_BASE_URL}/${address}/abilities?deadline=set&type=mint&type=airdrop&type=access`
-    `${DAYLIGHT_BASE_URL}/${address}/abilities?deadline=all&type=mint&type=airdrop&type=access`
+    `${DAYLIGHT_BASE_URL}/${address}/abilities?deadline=all`
   )
 
   return response.abilities

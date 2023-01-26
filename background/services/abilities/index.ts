@@ -47,30 +47,23 @@ const normalizeDaylightAbilities = (
   const normalizedAbilities: Ability[] = []
 
   daylightAbilities.forEach((daylightAbility) => {
-    // Lets start with just mints
-    if (
-      daylightAbility.type === "mint" ||
-      daylightAbility.type === "airdrop" ||
-      daylightAbility.type === "access"
-    ) {
-      normalizedAbilities.push({
-        type: daylightAbility.type,
-        title: daylightAbility.title,
-        description: daylightAbility.description,
-        abilityId: daylightAbility.uid,
-        linkUrl: daylightAbility.action.linkUrl,
-        imageUrl: daylightAbility.imageUrl || undefined,
-        openAt: daylightAbility.openAt || undefined,
-        closeAt: daylightAbility.closeAt || undefined,
-        completed: false,
-        removedFromUi: false,
-        address: normalizeEVMAddress(address),
-        requirement: normalizeDaylightRequirements(
-          // Just take the 1st requirement for now
-          daylightAbility.requirements[0]
-        ),
-      })
-    }
+    normalizedAbilities.push({
+      type: daylightAbility.type,
+      title: daylightAbility.title,
+      description: daylightAbility.description,
+      abilityId: daylightAbility.uid,
+      linkUrl: daylightAbility.action.linkUrl,
+      imageUrl: daylightAbility.imageUrl || undefined,
+      openAt: daylightAbility.openAt || undefined,
+      closeAt: daylightAbility.closeAt || undefined,
+      completed: false,
+      removedFromUi: false,
+      address: normalizeEVMAddress(address),
+      requirement: normalizeDaylightRequirements(
+        // Just take the 1st requirement for now
+        daylightAbility.requirements[0]
+      ),
+    })
   })
 
   return normalizedAbilities

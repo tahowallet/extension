@@ -1,4 +1,3 @@
-import { AbilityType } from "@tallyho/tally-background/abilities"
 import {
   FilterType,
   AbilityState,
@@ -43,17 +42,17 @@ const RADIO_BTNS: { value: AbilityState; label: string }[] = [
   },
 ]
 
-const getDescriptionForType = (type: AbilityType): string => {
-  switch (type) {
-    case "claim":
-      return i18n.t(`${KEY_PREFIX}.abilityTypeDesc.claim`)
-    case "airdrop":
-      return i18n.t(`${KEY_PREFIX}.abilityTypeDesc.airdrop`)
-    case "mint":
-      return i18n.t(`${KEY_PREFIX}.abilityTypeDesc.mint`)
-    default:
-      return ""
-  }
+const ABILITY_TYPE_DESC = {
+  vote: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.vote`),
+  claim: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.claim`),
+  airdrop: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.airdrop`),
+  mint: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.mint`),
+  access: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.access`),
+  product: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.product`),
+  event: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.event`),
+  article: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.article`),
+  result: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.result`),
+  misc: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.misc`),
 }
 
 export default function AbilityFilters(): ReactElement {
@@ -107,7 +106,7 @@ export default function AbilityFilters(): ReactElement {
               <AbilityFiltersCard
                 key={type}
                 type={type}
-                description={getDescriptionForType(type)}
+                description={ABILITY_TYPE_DESC[type]}
                 checked={isEnabled}
                 onChange={(toggleValue) =>
                   handleUpdateFilterAbilityType({

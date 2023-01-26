@@ -1,6 +1,8 @@
-import { AbilityType } from "@tallyho/tally-background/abilities"
+import {
+  AbilityType,
+  ABILITY_TYPE_COLOR,
+} from "@tallyho/tally-background/abilities"
 import React, { ReactElement } from "react"
-import { ABILITY_TYPE_COLOR } from "../../utils/constants"
 import { capitalize } from "../../utils/textUtils"
 
 function AbilityLabel({ type }: { type: AbilityType }): ReactElement {
