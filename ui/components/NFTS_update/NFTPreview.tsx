@@ -1,13 +1,10 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import {
-  isProbablyEVMAddress,
-  truncateAddress,
-} from "@tallyho/tally-background/lib/utils"
 import { NFTWithCollection } from "@tallyho/tally-background/redux-slices/nfts_update"
 import React, { ReactElement, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useIntersectionObserver } from "../../hooks"
 import { trimWithEllipsis } from "../../utils/textUtils"
+import SharedAddress from "../Shared/SharedAddress"
 import SharedButton from "../Shared/SharedButton"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 import ExploreMarketLink, { getRelevantMarketsList } from "./ExploreMarketLink"
@@ -38,6 +35,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     owner,
     description,
     attributes,
+    supply,
     isBadge,
   } = nft
   const { totalNftCount } = collection
@@ -87,7 +85,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
                 {t("preview.owner")}
               </span>
               <span className="preview_details_value">
-                {truncateAddress(owner)}
+                <SharedAddress address={owner} elide />
               </span>
             </div>
             <div className="preview_section_column align_right">
@@ -153,13 +151,15 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
             <div className="preview_section_header">
               {t("preview.itemsCount")}
             </div>
-            <p>{totalNftCount ?? "-"}</p>
+            <p>{totalNftCount ?? supply ?? "-"}</p>
           </div>
           <div className="preview_section_column align_right">
             <div className="preview_section_header">{t("preview.creator")}</div>
-            <p>
-              {isProbablyEVMAddress(contract) ? truncateAddress(contract) : "-"}
-            </p>
+            {contract?.length ? (
+              <SharedAddress address={contract} elide />
+            ) : (
+              "-"
+            )}
           </div>
         </div>
 
