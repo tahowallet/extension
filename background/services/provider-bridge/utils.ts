@@ -27,7 +27,7 @@ export const keyPermissionsByChainIdAddressOrigin = (
   return map
 }
 
-export function getRPCErrorResponser(error: unknown): {
+export function getRPCErrorResponse(error: unknown): {
   code: number
   message: string
 } {

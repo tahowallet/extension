@@ -27,7 +27,7 @@ import {
 import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
-import { getRPCErrorResponser, PermissionMap } from "./utils"
+import { getRPCErrorResponse, PermissionMap } from "./utils"
 import { toHexChainID } from "../../networks"
 import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 
@@ -465,10 +465,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
           }
         }
         if ("body" in error) {
-          return getRPCErrorResponser(error)
+          return getRPCErrorResponse(error)
         }
         if ("error" in error) {
-          return getRPCErrorResponser((error as { error: string }).error)
+          return getRPCErrorResponse((error as { error: string }).error)
         }
       }
       return new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()

@@ -40,7 +40,7 @@ const PARAMS = {
     },
   ],
 }
-describe("Provider bridge", () => {
+describe("ProviderBridgeService", () => {
   let providerBridgeService: ProviderBridgeService
   const sandbox = sinon.createSandbox()
 
@@ -57,7 +57,7 @@ describe("Provider bridge", () => {
   })
 
   describe("routeContentScriptRPCRequest", () => {
-    it("should return the account address owned by the client", async () => {
+    it("eth_accounts should return the account address owned by the client", async () => {
       const { enablingPermission, origin } = BASE_DATA
       const method = "eth_accounts"
       const params = PARAMS[method]
@@ -71,7 +71,7 @@ describe("Provider bridge", () => {
       expect(response).toEqual([enablingPermission.accountAddress])
     })
 
-    it("should call routeSafeRequest when user has permission to sign", async () => {
+    it("eth_sendTransaction should call routeSafeRequest when user has permission to sign", async () => {
       const { enablingPermission, origin } = BASE_DATA
       const method = "eth_sendTransaction"
       const params = PARAMS[method]
@@ -87,7 +87,7 @@ describe("Provider bridge", () => {
       expect(stub.called).toBe(true)
     })
 
-    it("should not call routeSafeRequest when user has not permission to sign", async () => {
+    it("eth_sendTransaction should not call routeSafeRequest when user has not permission to sign", async () => {
       const { enablingPermission, origin } = BASE_DATA
       const method = "eth_sendTransaction"
       const params = PARAMS[method]
