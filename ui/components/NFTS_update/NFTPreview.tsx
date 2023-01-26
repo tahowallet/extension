@@ -1,8 +1,9 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { NFTWithCollection } from "@tallyho/tally-background/redux-slices/nfts_update"
+import { getAccountNameOnChain } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { useIntersectionObserver } from "../../hooks"
+import { useBackgroundSelector, useIntersectionObserver } from "../../hooks"
 import { trimWithEllipsis } from "../../utils/textUtils"
 import SharedAddress from "../Shared/SharedAddress"
 import SharedButton from "../Shared/SharedButton"
@@ -43,6 +44,10 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     "floorPrice" in collection &&
     collection.floorPrice?.value !== undefined &&
     collection.floorPrice
+
+  const ownerName = useBackgroundSelector((state) =>
+    getAccountNameOnChain(state, { address: owner, network })
+  )
 
   // Chrome seems to have problems when elements with backdrop style are rendered initially
   // out of the viewport - browser is not rendering them at all. This is a workaround
@@ -85,7 +90,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
                 {t("preview.owner")}
               </span>
               <span className="preview_details_value">
-                <SharedAddress address={owner} elide />
+                <SharedAddress address={owner} name={ownerName} elide />
               </span>
             </div>
             <div className="preview_section_column align_right">
