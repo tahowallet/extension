@@ -1083,13 +1083,14 @@ export default class Main extends BaseService<never> {
       })
     })
 
-    keyringSliceEmitter.on("generateNewKeyring", async () => {
+    keyringSliceEmitter.on("generateNewKeyring", async (path) => {
       // TODO move unlocking to a reasonable place in the initialization flow
       const generated: {
         id: string
         mnemonic: string[]
       } = await this.keyringService.generateNewKeyring(
-        KeyringTypes.mnemonicBIP39S256
+        KeyringTypes.mnemonicBIP39S256,
+        path
       )
 
       this.store.dispatch(setKeyringToVerify(generated))
@@ -1278,6 +1279,7 @@ export default class Main extends BaseService<never> {
         [{ chainId: network.chainID }],
         TALLY_INTERNAL_ORIGIN
       )
+      this.chainService.pollBlockPricesForNetwork(network.chainID)
       this.store.dispatch(clearCustomGas())
     })
   }

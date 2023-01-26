@@ -35,6 +35,7 @@ export type Network = {
   family: NetworkFamily
   chainID?: string
   coingeckoPlatformID?: string
+  derivationPath?: string
 }
 
 /**

@@ -8,7 +8,7 @@ import {
 } from "./daylight"
 import { AbilitiesDatabase, getOrCreateDB } from "./db"
 import ChainService from "../chain"
-import { FeatureFlags } from "../../features"
+import { FeatureFlags, isEnabled } from "../../features"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { Ability, AbilityRequirement } from "../../abilities"
 
@@ -113,7 +113,7 @@ export default class AbilitiesService extends BaseService<Events> {
   }
 
   async pollForAbilities(address: HexString): Promise<void> {
-    if (!FeatureFlags.SUPPORT_ABILITIES) {
+    if (!isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
       return
     }
 
