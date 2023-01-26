@@ -33,7 +33,6 @@
     "@ethersproject/providers": "^5.5.3",
     "@ethersproject/transactions": "^5.5.0",
     "@ethersproject/web": "^5.5.1",
-    "@json-rpc-tools/utils": "^1.7.6",
     "@ledgerhq/devices": "^6.20.0",
     "@ledgerhq/errors": "^6.12.0",
     "@ledgerhq/hw-app-eth": "^6.30.0",

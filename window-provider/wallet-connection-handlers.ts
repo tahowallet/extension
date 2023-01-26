@@ -498,7 +498,7 @@ export default function monitorForWalletConnectionPrompts(): void {
     }
   })
 
-  // Commenting this out for now, because we don't have a way to put this behind a feature flag
-  // SUPPORT_WALLET_CONNECT flag
-  // observeMutations(addTallyButtonForWalletConnectModal)
+  if (process.env.SUPPORT_WALLET_CONNECT === "true") {
+    observeMutations(addTallyButtonForWalletConnectModal)
+  }
 }

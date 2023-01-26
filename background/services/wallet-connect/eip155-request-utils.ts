@@ -3,18 +3,40 @@ import {
   EIP1193Error,
   EIP1193_ERROR_CODES,
 } from "@tallyho/provider-bridge-shared"
+import { formatErrorMessage } from "./error"
 import {
-  formatJsonRpcError,
-  formatJsonRpcResult,
+  TranslatedRequestParams,
   JsonRpcError,
   JsonRpcResult,
-} from "@json-rpc-tools/utils"
-import { TranslatedRequestParams } from "./types"
+  ErrorResponse,
+} from "./types"
+
+function formatJsonRpcResult<T = unknown>(
+  id: number,
+  result: T
+): JsonRpcResult<T> {
+  return {
+    id,
+    jsonrpc: "2.0",
+    result,
+  }
+}
+
+function formatJsonRpcError(
+  id: number,
+  error?: string | ErrorResponse
+): JsonRpcError {
+  return {
+    id,
+    jsonrpc: "2.0",
+    error: formatErrorMessage(error),
+  }
+}
 
 export function approveEIP155Request(
   request: TranslatedRequestParams,
   signedMessage: string
-): JsonRpcResult<any> {
+): JsonRpcResult<unknown> {
   const { id, method } = request
 
   switch (method) {
