@@ -11,12 +11,6 @@ import { enrichAssetAmountWithMainCurrencyValues } from "./asset-utils"
 
 const ETH_SYMBOLS = ["ETH", "WETH"]
 
-export type AccountData = {
-  address: string
-  name: string
-  avatarURL: string
-}
-
 type NFTCollectionEnriched = NFTCollectionCached & {
   floorPrice?: {
     value: number
@@ -31,14 +25,6 @@ const isEnabledFilter = (id: string, filters: Filter[]): boolean => {
 
 const isETHPrice = (collection: NFTCollectionCached): boolean => {
   return !!ETH_SYMBOLS.includes(collection?.floorPrice?.tokenSymbol ?? "")
-}
-
-export const getAdditionalDataForFilter = (
-  id: string,
-  accounts: AccountData[]
-): { name?: string; thumbnailURL?: string } => {
-  const a = accounts.find(({ address }) => address === id)
-  return a ? { name: a.name, thumbnailURL: a.avatarURL } : {}
 }
 
 /* Items are sorted by price in USD. All other elements are added at the end. */

@@ -5,6 +5,8 @@ import { Filter } from "../nfts_update"
 import {
   AccountData,
   getAdditionalDataForFilter,
+} from "../utils/account-filter-utils"
+import {
   getFilteredCollections,
   getNFTsCount,
   getTotalFloorPrice,

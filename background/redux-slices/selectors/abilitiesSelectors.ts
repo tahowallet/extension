@@ -3,7 +3,10 @@ import { RootState } from ".."
 import { Ability } from "../../abilities"
 import { FilterAccount } from "../abilities"
 import { filterAbility } from "../utils/abilities"
-import { AccountData, getAdditionalDataForFilter } from "../utils/nfts-utils"
+import {
+  AccountData,
+  getAdditionalDataForFilter,
+} from "../utils/account-filter-utils"
 import { selectAccountTotals } from "./accountsSelectors"
 
 const selectAbilities = createSelector(
