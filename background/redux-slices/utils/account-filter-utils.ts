@@ -1,4 +1,4 @@
-export type FilterAccount = {
+export type Account = {
   id: string
   isEnabled: boolean
   name: string
@@ -20,10 +20,10 @@ const getAdditionalDataForFilter = (
 }
 
 export const getEnrichedAccountFilter = (
-  filters: FilterAccount[],
+  filters: Account[],
   accountTotals: AccountData[]
-): FilterAccount[] => {
-  return filters.reduce<FilterAccount[]>((acc, filter) => {
+): Account[] => {
+  return filters.reduce<Account[]>((acc, filter) => {
     const additionalData = getAdditionalDataForFilter(filter.id, accountTotals)
     if (Object.keys(additionalData).length > 0) {
       return [

@@ -1,11 +1,8 @@
 import { Ability, AbilityType } from "../../abilities"
-import { AbilityFilter, AbilityState, FilterType } from "../abilities"
-import { FilterAccount } from "./account-filter-utils"
+import { AbilityFilter, State, Type } from "../abilities"
+import { Account } from "./account-filter-utils"
 
-export const filterByState = (
-  ability: Ability,
-  state: AbilityState
-): boolean => {
+export const filterByState = (ability: Ability, state: State): boolean => {
   switch (state) {
     case "open":
       return ability.completed === false && !ability.removedFromUi
@@ -23,16 +20,13 @@ export const filterByState = (
   }
 }
 
-export const filterByType = (
-  type: AbilityType,
-  types: FilterType[]
-): boolean => {
+export const filterByType = (type: AbilityType, types: Type[]): boolean => {
   return !!types.find((filter) => filter.type === type)?.isEnabled
 }
 
 export const filterByAddress = (
   address: string,
-  accounts: FilterAccount[]
+  accounts: Account[]
 ): boolean => {
   return !!accounts.find((filter) => filter.id === address)?.isEnabled
 }

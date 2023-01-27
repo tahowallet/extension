@@ -19,33 +19,33 @@ export const selectDescriptionHidden = createSelector(
 )
 
 /* Filtering selectors */
-const selectAbilityFilters = createSelector(
+const selectAbilityFilter = createSelector(
   (state: RootState) => state.abilities,
-  (abilitiesSlice) => abilitiesSlice.filters
+  (abilitiesSlice) => abilitiesSlice.filter
 )
 
-export const selectEnrichedAbilityFilters = createSelector(
-  selectAbilityFilters,
+export const selectEnrichedAbilityFilter = createSelector(
+  selectAbilityFilter,
   selectAccountTotals,
-  (filters, accountTotals) => {
+  (filter, accountTotals) => {
     const accounts = getEnrichedAccountFilter(
-      filters.accounts,
+      filter.accounts,
       accountTotals as AccountData[]
     )
-    return { ...filters, accounts }
+    return { ...filter, accounts }
   }
 )
 
 /* Items selectors */
 export const selectFilteredAbilities = createSelector(
-  selectAbilityFilters,
+  selectAbilityFilter,
   selectAbilities,
-  (filters, abilities) => {
+  (filter, abilities) => {
     const activeAbilities: Ability[] = []
     Object.values(abilities).forEach((addressAbilities) => {
       activeAbilities.push(
         ...Object.values(addressAbilities).filter((ability) =>
-          filterAbility(ability, filters)
+          filterAbility(ability, filter)
         )
       )
     })

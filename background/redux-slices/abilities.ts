@@ -8,20 +8,20 @@ import {
 import { HexString, NormalizedEVMAddress } from "../types"
 import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
-import { FilterAccount } from "./utils/account-filter-utils"
+import { Account } from "./utils/account-filter-utils"
 
-export type AbilityState = "open" | "completed" | "expired" | "deleted" | "all"
+export type State = "open" | "completed" | "expired" | "deleted" | "all"
 
-export type FilterType = { type: AbilityType; isEnabled: boolean }
+export type Type = { type: AbilityType; isEnabled: boolean }
 
 export type AbilityFilter = {
-  state: AbilityState
-  types: FilterType[]
-  accounts: FilterAccount[]
+  state: State
+  types: Type[]
+  accounts: Account[]
 }
 
 type AbilitiesState = {
-  filters: AbilityFilter
+  filter: AbilityFilter
   abilities: {
     [address: HexString]: {
       [uuid: string]: Ability
@@ -30,7 +30,7 @@ type AbilitiesState = {
   hideDescription: boolean
 }
 
-const typesFilter: FilterType[] = ABILITY_TYPES.map((type) => ({
+const typesFilter: Type[] = ABILITY_TYPES.map((type) => ({
   type,
   isEnabled: !!ABILITY_TYPES_ENABLED.find(
     (enabledType) => enabledType === type
@@ -38,7 +38,7 @@ const typesFilter: FilterType[] = ABILITY_TYPES.map((type) => ({
 }))
 
 const initialState: AbilitiesState = {
-  filters: {
+  filter: {
     state: "open",
     types: typesFilter,
     accounts: [],
@@ -82,39 +82,30 @@ const abilitiesSlice = createSlice({
     toggleHideDescription: (immerState, { payload }: { payload: boolean }) => {
       immerState.hideDescription = payload
     },
-    updateFilterAbilityState: (
-      immerState,
-      { payload: state }: { payload: AbilityState }
-    ) => {
-      immerState.filters.state = state
+    updateState: (immerState, { payload: state }: { payload: State }) => {
+      immerState.filter.state = state
     },
-    updateFilterAbilityType: (
-      immerState,
-      { payload: filter }: { payload: FilterType }
-    ) => {
-      const idx = immerState.filters.types.findIndex(
+    updateType: (immerState, { payload: filter }: { payload: Type }) => {
+      const idx = immerState.filter.types.findIndex(
         ({ type }) => type === filter.type
       )
-      immerState.filters.types[idx] = filter
+      immerState.filter.types[idx] = filter
     },
-    updateFilterAccount: (
-      immerState,
-      { payload: filter }: { payload: FilterAccount }
-    ) => {
-      const idx = immerState.filters.accounts.findIndex(
+    updateAccount: (immerState, { payload: filter }: { payload: Account }) => {
+      const idx = immerState.filter.accounts.findIndex(
         ({ id }) => id === filter.id
       )
-      immerState.filters.accounts[idx] = filter
+      immerState.filter.accounts[idx] = filter
     },
     addAccountFilter: (
       immerState,
       { payload: address }: { payload: string }
     ) => {
-      const filter = immerState.filters.accounts.find(
+      const filter = immerState.filter.accounts.find(
         (account) => account.id === address
       )
       if (!filter) {
-        immerState.filters.accounts.push({
+        immerState.filter.accounts.push({
           id: address,
           name: "",
           isEnabled: true,
@@ -130,9 +121,9 @@ export const {
   markAbilityAsCompleted,
   markAbilityAsRemoved,
   toggleHideDescription,
-  updateFilterAbilityState,
-  updateFilterAbilityType,
-  updateFilterAccount,
+  updateState,
+  updateType,
+  updateAccount,
   addAccountFilter,
 } = abilitiesSlice.actions
 

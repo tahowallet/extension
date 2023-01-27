@@ -1,12 +1,12 @@
 import { Ability } from "../../../abilities"
 import { NormalizedEVMAddress } from "../../../types"
-import { FilterType } from "../../abilities"
+import { Type } from "../../abilities"
 import {
   filterByAddress,
   filterByState,
   filterByType,
 } from "../abilities-utils"
-import { FilterAccount } from "../account-filter-utils"
+import { Account } from "../account-filter-utils"
 
 const ADDRESS =
   "0x208e94d5661a73360d9387d3ca169e5c130090cd" as NormalizedEVMAddress
@@ -25,7 +25,7 @@ const ABILITY_DEFAULT: Ability = {
     address: "",
   },
 }
-const TYPES: FilterType[] = [
+const TYPES: Type[] = [
   {
     type: "mint",
     isEnabled: true,
@@ -114,7 +114,7 @@ describe("Abilities utils", () => {
       // TODO change type
       expect(
         filterByAddress(ADDRESS, [
-          { id: ADDRESS, isEnabled: true } as unknown as FilterAccount,
+          { id: ADDRESS, isEnabled: true } as unknown as Account,
         ])
       ).toBeTruthy()
     })
@@ -122,7 +122,7 @@ describe("Abilities utils", () => {
       // TODO change type
       expect(
         filterByAddress(ADDRESS, [
-          { id: ADDRESS, isEnabled: false } as unknown as FilterAccount,
+          { id: ADDRESS, isEnabled: false } as unknown as Account,
         ])
       ).toBeFalsy()
     })

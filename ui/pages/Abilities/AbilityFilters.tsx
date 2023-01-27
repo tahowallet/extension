@@ -1,12 +1,12 @@
 import {
-  FilterType,
-  AbilityState,
-  updateFilterAbilityState,
-  updateFilterAbilityType,
-  updateFilterAccount,
+  Type,
+  State,
+  updateState,
+  updateType,
+  updateAccount,
 } from "@tallyho/tally-background/redux-slices/abilities"
-import { selectEnrichedAbilityFilters } from "@tallyho/tally-background/redux-slices/selectors"
-import { FilterAccount } from "@tallyho/tally-background/redux-slices/utils/account-filter-utils"
+import { selectEnrichedAbilityFilter } from "@tallyho/tally-background/redux-slices/selectors"
+import { Account } from "@tallyho/tally-background/redux-slices/utils/account-filter-utils"
 import React, { ReactElement, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import SharedRadio from "../../components/Shared/SharedRadio"
@@ -19,7 +19,7 @@ import AbilityFiltersCard from "./AbilityFiltersCard"
 const RADIO_NAME = "sortType"
 const KEY_PREFIX = "abilities.filters"
 
-const RADIO_BTNS: { value: AbilityState; label: string }[] = [
+const RADIO_BTNS: { value: State; label: string }[] = [
   {
     value: "open",
     label: i18n.t(`${KEY_PREFIX}.abilityState.open`),
@@ -59,26 +59,26 @@ export default function AbilityFilters(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "abilities.filters",
   })
-  const filters = useBackgroundSelector(selectEnrichedAbilityFilters)
+  const filter = useBackgroundSelector(selectEnrichedAbilityFilter)
   const dispatch = useBackgroundDispatch()
 
-  const handleUpdateFilterAbilityState = useCallback(
-    (state: AbilityState) => {
-      dispatch(updateFilterAbilityState(state))
+  const handleUpdateState = useCallback(
+    (state: State) => {
+      dispatch(updateState(state))
     },
     [dispatch]
   )
 
-  const handleUpdateFilterAbilityType = useCallback(
-    (filter: FilterType) => {
-      dispatch(updateFilterAbilityType(filter))
+  const handleUpdateType = useCallback(
+    (type: Type) => {
+      dispatch(updateType(type))
     },
     [dispatch]
   )
 
-  const handleUpdateFilterAccount = useCallback(
-    (filter: FilterAccount) => {
-      dispatch(updateFilterAccount(filter))
+  const handleUpdateAccount = useCallback(
+    (account: Account) => {
+      dispatch(updateAccount(account))
     },
     [dispatch]
   )
@@ -93,23 +93,23 @@ export default function AbilityFilters(): ReactElement {
               key={value}
               id={`radio_${value}`}
               name={RADIO_NAME}
-              value={filters.state === value}
+              value={filter.state === value}
               label={label}
-              onChange={() => handleUpdateFilterAbilityState(value)}
+              onChange={() => handleUpdateState(value)}
             />
           ))}
         </div>
         <div className="simple_text">
           <span className="filter_title">{t("abilitiesTypesTitle")}</span>
           <div className="filter_list">
-            {filters.types.map(({ type, isEnabled }) => (
+            {filter.types.map(({ type, isEnabled }) => (
               <AbilityFiltersCard
                 key={type}
                 type={type}
                 description={ABILITY_TYPE_DESC[type]}
                 checked={isEnabled}
                 onChange={(toggleValue) =>
-                  handleUpdateFilterAbilityType({
+                  handleUpdateType({
                     type,
                     isEnabled: toggleValue,
                   })
@@ -121,13 +121,13 @@ export default function AbilityFilters(): ReactElement {
         <div className="simple_text">
           <span className="filter_title">{t("accountsTitle")}</span>
           <div className="filter_list">
-            {filters.accounts.map((item) => (
+            {filter.accounts.map((item) => (
               <SharedToggleItem
                 label={item.name || item.id}
                 thumbnailURL={item.thumbnailURL}
                 checked={item.isEnabled}
                 onChange={(toggleValue) =>
-                  handleUpdateFilterAccount({ ...item, isEnabled: toggleValue })
+                  handleUpdateAccount({ ...item, isEnabled: toggleValue })
                 }
               />
             ))}
