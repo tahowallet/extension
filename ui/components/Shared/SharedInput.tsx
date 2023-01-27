@@ -170,13 +170,8 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             border-color: var(--trophy-gold);
           }
 
-          input[data-empty="false"] ~ label {
-            background-color: ${focusedLabelBackgroundColor};
-          }
-
           input:focus ~ label {
             color: var(--trophy-gold);
-            background-color: ${focusedLabelBackgroundColor};
           }
           input:focus ~ label,
           input:not(:placeholder-shown) ~ label,
@@ -185,6 +180,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             font-size: 12px;
             font-weight: 500;
             padding: 0px 6px;
+            background-color: ${focusedLabelBackgroundColor};
           }
           .error ~ label,
           input.error:focus ~ label {
