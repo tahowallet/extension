@@ -2,7 +2,10 @@ import { Ability, AbilityType } from "../../abilities"
 import { AbilityFilter, AbilityState, FilterType } from "../abilities"
 import { FilterAccount } from "./account-filter-utils"
 
-const filterByState = (ability: Ability, state: AbilityState): boolean => {
+export const filterByState = (
+  ability: Ability,
+  state: AbilityState
+): boolean => {
   switch (state) {
     case "open":
       return ability.completed === false && !ability.removedFromUi
@@ -20,17 +23,20 @@ const filterByState = (ability: Ability, state: AbilityState): boolean => {
   }
 }
 
-const filterByType = (type: AbilityType, types: FilterType[]): boolean => {
+export const filterByType = (
+  type: AbilityType,
+  types: FilterType[]
+): boolean => {
   return !!types.find((filter) => filter.type === type)?.isEnabled
 }
 
-const filterByAddress = (
+export const filterByAddress = (
   address: string,
   accounts: FilterAccount[]
 ): boolean => {
   return !!accounts.find((filter) => filter.id === address)?.isEnabled
 }
-// eslint-disable-next-line import/prefer-default-export
+
 export const filterAbility = (
   ability: Ability,
   filters: AbilityFilter

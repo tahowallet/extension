@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { Ability } from "../../abilities"
-import { filterAbility } from "../utils/abilities"
+import { filterAbility } from "../utils/abilities-utils"
 import {
   AccountData,
   getEnrichedAccountFilter,
