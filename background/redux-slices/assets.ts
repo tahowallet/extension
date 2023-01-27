@@ -223,6 +223,11 @@ export const selectAssetPricePoint = createSelector(
           asset.homeNetwork.chainID === assetToFind.homeNetwork.chainID &&
           hasRecentPriceData(asset)
       )
+
+      /* Don't do anything else if this is an untrusted asset and there's no exact match */
+      if ((assetToFind.metadata?.tokenLists.length ?? 0) < 1) {
+        return undefined
+      }
     }
 
     /* Otherwise, find a best-effort match by looking for assets with the same symbol  */
