@@ -7,23 +7,23 @@ import { useBackgroundSelector } from "../hooks"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
-import AbilityFilters from "./Abilities/AbilityFilters"
+import AbilityFilter from "./Abilities/AbilityFilter"
 
 export default function Abilities(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "abilities",
   })
-  const [openFiltersMenu, setOpenFiltersMenu] = useState(false)
+  const [openFilterMenu, setOpenFilterMenu] = useState(false)
   const abilities = useBackgroundSelector(selectFilteredAbilities)
 
   const handleToggleClick = useCallback(() => {
-    setOpenFiltersMenu((currentlyOpen) => !currentlyOpen)
+    setOpenFilterMenu((currentlyOpen) => !currentlyOpen)
   }, [])
 
   return (
     <section className="standard_width_padded">
-      <SharedSlideUpMenu isOpen={openFiltersMenu} close={handleToggleClick}>
-        <AbilityFilters />
+      <SharedSlideUpMenu isOpen={openFilterMenu} close={handleToggleClick}>
+        <AbilityFilter />
       </SharedSlideUpMenu>
       <div className="content">
         <div className="header">
@@ -35,18 +35,19 @@ export default function Abilities(): ReactElement {
               width={36}
               verticalPosition="bottom"
               type="dark"
+              isOpen={openFilterMenu}
               IconComponent={() => (
                 <SharedIcon
                   width={24}
                   icon="toggle.svg"
-                  ariaLabel={t("filters.title")}
+                  ariaLabel={t("filter.title")}
                   color="var(--green-40)"
                   hoverColor="var(--green-20)"
                   onClick={handleToggleClick}
                 />
               )}
             >
-              {t("filters.tooltip")}
+              {t("filter.tooltip")}
             </SharedTooltip>
           </div>
         </div>

@@ -20,10 +20,10 @@ import SharedSlideUpMenuPanel from "../../components/Shared/SharedSlideUpMenuPan
 import SharedToggleItem from "../../components/Shared/SharedToggleItem"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { i18n } from "../../_locales/i18n"
-import AbilityFiltersCard from "./AbilityFiltersCard"
+import AbilityFilterCard from "./AbilityFilterCard"
 
 const RADIO_NAME = "sortType"
-const KEY_PREFIX = "abilities.filters"
+const KEY_PREFIX = "abilities.filter"
 
 const RADIO_BTNS: { value: State; label: string }[] = [
   {
@@ -61,9 +61,9 @@ const ABILITY_TYPE_DESC = {
   misc: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.misc`),
 }
 
-export default function AbilityFilters(): ReactElement {
+export default function AbilityFilter(): ReactElement {
   const { t } = useTranslation("translation", {
-    keyPrefix: "abilities.filters",
+    keyPrefix: "abilities.filter",
   })
   const state = useBackgroundSelector(selectAbilityFilterState)
   const types = useBackgroundSelector(selectAbilityFilterTypes)
@@ -102,7 +102,7 @@ export default function AbilityFilters(): ReactElement {
 
   return (
     <SharedSlideUpMenuPanel header={t("title")}>
-      <div className="filters">
+      <div className="filter">
         <div className="simple_text">
           <span className="filter_title">{t("abilityStateTitle")}</span>
           {RADIO_BTNS.map(({ value, label }) => (
@@ -120,7 +120,7 @@ export default function AbilityFilters(): ReactElement {
           <span className="filter_title">{t("abilitiesTypesTitle")}</span>
           <div className="filter_list">
             {ABILITY_TYPES.map((type) => (
-              <AbilityFiltersCard
+              <AbilityFilterCard
                 key={type}
                 type={type}
                 description={ABILITY_TYPE_DESC[type]}
@@ -148,7 +148,7 @@ export default function AbilityFilters(): ReactElement {
         </div>
       </div>
       <style jsx>{`
-        .filters {
+        .filter {
           display: flex;
           flex-direction: column;
           gap: 24px;

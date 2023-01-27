@@ -6,19 +6,19 @@ import React, { ReactElement } from "react"
 import SharedToggleButton from "../../components/Shared/SharedToggleButton"
 import { capitalize } from "../../utils/textUtils"
 
-type AbilityFiltersCardProps = {
+type AbilityFilterCardProps = {
   type: AbilityType
   description: string
   checked: boolean
   onChange: (toggleValue: boolean) => void
 }
 
-function AbilityFiltersCard({
+function AbilityFilterCard({
   type,
   description,
   checked,
   onChange,
-}: AbilityFiltersCardProps): ReactElement {
+}: AbilityFilterCardProps): ReactElement {
   return (
     <div className="content">
       <div className="header">
@@ -50,4 +50,4 @@ function AbilityFiltersCard({
   )
 }
 
-export default AbilityFiltersCard
+export default AbilityFilterCard

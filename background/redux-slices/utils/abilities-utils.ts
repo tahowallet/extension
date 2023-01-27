@@ -30,10 +30,10 @@ export const filterByAddress = (
   return accounts.includes(address)
 }
 
-export const filterAbility = (ability: Ability, filters: Filter): boolean => {
+export const filterAbility = (ability: Ability, filter: Filter): boolean => {
   return (
-    filterByAddress(ability.address, filters.accounts) &&
-    filterByState(ability, filters.state) &&
-    filterByType(ability.type, filters.types)
+    filterByAddress(ability.address, filter.accounts) &&
+    filterByState(ability, filter.state) &&
+    filterByType(ability.type, filter.types)
   )
 }
