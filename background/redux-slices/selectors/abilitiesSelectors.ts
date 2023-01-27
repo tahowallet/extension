@@ -2,11 +2,6 @@ import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { Ability } from "../../abilities"
 import { filterAbility } from "../utils/abilities-utils"
-import {
-  AccountData,
-  getEnrichedAccountFilter,
-} from "../utils/account-filter-utils"
-import { selectAccountTotals } from "./accountsSelectors"
 
 const selectAbilities = createSelector(
   (state: RootState) => state.abilities,
@@ -24,16 +19,19 @@ const selectAbilityFilter = createSelector(
   (abilitiesSlice) => abilitiesSlice.filter
 )
 
-export const selectEnrichedAbilityFilter = createSelector(
-  selectAbilityFilter,
-  selectAccountTotals,
-  (filter, accountTotals) => {
-    const accounts = getEnrichedAccountFilter(
-      filter.accounts,
-      accountTotals as AccountData[]
-    )
-    return { ...filter, accounts }
-  }
+export const selectAbilityFilterState = createSelector(
+  (state: RootState) => state.abilities,
+  (abilitiesSlice) => abilitiesSlice.filter.state
+)
+
+export const selectAbilityFilterTypes = createSelector(
+  (state: RootState) => state.abilities,
+  (abilitiesSlice) => abilitiesSlice.filter.types
+)
+
+export const selectAbilityFilterAccounts = createSelector(
+  (state: RootState) => state.abilities,
+  (abilitiesSlice) => abilitiesSlice.filter.accounts
 )
 
 /* Items selectors */

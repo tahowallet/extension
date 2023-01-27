@@ -1,15 +1,12 @@
 import { Ability } from "../../../abilities"
 import { NormalizedEVMAddress } from "../../../types"
-import { Type } from "../../abilities"
 import {
   filterByAddress,
   filterByState,
   filterByType,
 } from "../abilities-utils"
-import { Account } from "../account-filter-utils"
 
-const ADDRESS =
-  "0x208e94d5661a73360d9387d3ca169e5c130090cd" as NormalizedEVMAddress
+const ADDRESS = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
 
 const ABILITY_DEFAULT: Ability = {
   type: "mint",
@@ -19,22 +16,12 @@ const ABILITY_DEFAULT: Ability = {
   linkUrl: "",
   completed: false,
   removedFromUi: false,
-  address: ADDRESS,
+  address: ADDRESS as NormalizedEVMAddress,
   requirement: {
     type: "hold",
     address: "",
   },
 }
-const TYPES: Type[] = [
-  {
-    type: "mint",
-    isEnabled: true,
-  },
-  {
-    type: "airdrop",
-    isEnabled: false,
-  },
-]
 
 describe("Abilities utils", () => {
   describe("filterByState", () => {
@@ -100,31 +87,18 @@ describe("Abilities utils", () => {
   })
   describe("filterByType", () => {
     test("should return true if a mint ability", () => {
-      expect(filterByType("mint", TYPES)).toBeTruthy()
+      expect(filterByType("mint", ["mint"])).toBeTruthy()
     })
     test("should return false if a airdrop ability", () => {
-      expect(filterByType("airdrop", TYPES)).toBeFalsy()
-    })
-    test("should return false if type for ability does not exist", () => {
-      expect(filterByType("access", TYPES)).toBeFalsy()
+      expect(filterByType("airdrop", [])).toBeFalsy()
     })
   })
   describe("filterByAddress", () => {
     test("should return true if an address for an ability is enabled", () => {
-      // TODO change type
-      expect(
-        filterByAddress(ADDRESS, [
-          { id: ADDRESS, isEnabled: true } as unknown as Account,
-        ])
-      ).toBeTruthy()
+      expect(filterByAddress(ADDRESS, [ADDRESS])).toBeTruthy()
     })
     test("should return false if an address for an ability is disabled", () => {
-      // TODO change type
-      expect(
-        filterByAddress(ADDRESS, [
-          { id: ADDRESS, isEnabled: false } as unknown as Account,
-        ])
-      ).toBeFalsy()
+      expect(filterByAddress(ADDRESS, [])).toBeFalsy()
     })
   })
 })

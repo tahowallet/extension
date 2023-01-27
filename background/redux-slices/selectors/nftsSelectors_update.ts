@@ -1,11 +1,10 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { normalizeEVMAddress } from "../../lib/utils"
+import { Filter } from "../nfts_update"
 import {
   AccountData,
-  getEnrichedAccountFilter,
-} from "../utils/account-filter-utils"
-import {
+  getAdditionalDataForFilter,
   getFilteredCollections,
   getNFTsCount,
   getTotalFloorPrice,
@@ -44,10 +43,22 @@ export const selectEnrichedNFTFilters = createSelector(
   selectNFTFilters,
   selectAccountTotals,
   (filters, accountTotals) => {
-    const accounts = getEnrichedAccountFilter(
-      filters.accounts,
-      accountTotals as AccountData[]
-    )
+    const accounts = filters.accounts.reduce<Filter[]>((acc, filter) => {
+      const additionalData = getAdditionalDataForFilter(
+        filter.id,
+        accountTotals as AccountData[]
+      )
+      if (Object.keys(additionalData).length > 0) {
+        return [
+          ...acc,
+          {
+            ...filter,
+            ...additionalData,
+          },
+        ]
+      }
+      return [...acc]
+    }, [])
 
     const collections = filters.collections
       .filter(({ owners }) => {

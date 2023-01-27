@@ -5,7 +5,6 @@ import { fromFixedPointNumber } from "../lib/fixed-point"
 import { normalizeEVMAddress } from "../lib/utils"
 import { NFT, NFTCollection, TransferredNFT } from "../nfts"
 import { createBackgroundAsyncThunk } from "./utils"
-import { Account } from "./utils/account-filter-utils"
 
 export type NFTCollectionCached = {
   floorPrice?: {
@@ -28,7 +27,11 @@ export type NFTWithCollection = {
   collection: NFTCollectionCached
   nft: NFT
 }
-export type Filter = Account & {
+export type Filter = {
+  id: string
+  name: string
+  isEnabled: boolean
+  thumbnailURL?: string
   /* Only for the collection filter */
   owners?: string[]
 }

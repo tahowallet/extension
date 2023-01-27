@@ -1,12 +1,18 @@
+import { ABILITY_TYPES } from "@tallyho/tally-background/abilities"
 import {
-  Type,
   State,
   updateState,
-  updateType,
-  updateAccount,
+  addType,
+  deleteType,
+  addAccount,
+  deleteAccount,
 } from "@tallyho/tally-background/redux-slices/abilities"
-import { selectEnrichedAbilityFilter } from "@tallyho/tally-background/redux-slices/selectors"
-import { Account } from "@tallyho/tally-background/redux-slices/utils/account-filter-utils"
+import {
+  selectAbilityFilterAccounts,
+  selectAbilityFilterState,
+  selectAbilityFilterTypes,
+  selectAccountTotals,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import SharedRadio from "../../components/Shared/SharedRadio"
@@ -59,26 +65,37 @@ export default function AbilityFilters(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "abilities.filters",
   })
-  const filter = useBackgroundSelector(selectEnrichedAbilityFilter)
+  const state = useBackgroundSelector(selectAbilityFilterState)
+  const types = useBackgroundSelector(selectAbilityFilterTypes)
+  const accounts = useBackgroundSelector(selectAbilityFilterAccounts)
+  const accountTotals = useBackgroundSelector(selectAccountTotals)
   const dispatch = useBackgroundDispatch()
 
   const handleUpdateState = useCallback(
-    (state: State) => {
-      dispatch(updateState(state))
+    (value: State) => {
+      dispatch(updateState(value))
     },
     [dispatch]
   )
 
   const handleUpdateType = useCallback(
-    (type: Type) => {
-      dispatch(updateType(type))
+    (value: string, isEnabled: boolean) => {
+      if (isEnabled) {
+        dispatch(addType(value))
+      } else {
+        dispatch(deleteType(value))
+      }
     },
     [dispatch]
   )
 
   const handleUpdateAccount = useCallback(
-    (account: Account) => {
-      dispatch(updateAccount(account))
+    (value: string, isEnabled: boolean) => {
+      if (isEnabled) {
+        dispatch(addAccount(value))
+      } else {
+        dispatch(deleteAccount(value))
+      }
     },
     [dispatch]
   )
@@ -93,7 +110,7 @@ export default function AbilityFilters(): ReactElement {
               key={value}
               id={`radio_${value}`}
               name={RADIO_NAME}
-              value={filter.state === value}
+              value={state === value}
               label={label}
               onChange={() => handleUpdateState(value)}
             />
@@ -102,18 +119,13 @@ export default function AbilityFilters(): ReactElement {
         <div className="simple_text">
           <span className="filter_title">{t("abilitiesTypesTitle")}</span>
           <div className="filter_list">
-            {filter.types.map(({ type, isEnabled }) => (
+            {ABILITY_TYPES.map((type) => (
               <AbilityFiltersCard
                 key={type}
                 type={type}
                 description={ABILITY_TYPE_DESC[type]}
-                checked={isEnabled}
-                onChange={(toggleValue) =>
-                  handleUpdateType({
-                    type,
-                    isEnabled: toggleValue,
-                  })
-                }
+                checked={types.includes(type)}
+                onChange={(toggleValue) => handleUpdateType(type, toggleValue)}
               />
             ))}
           </div>
@@ -121,13 +133,14 @@ export default function AbilityFilters(): ReactElement {
         <div className="simple_text">
           <span className="filter_title">{t("accountsTitle")}</span>
           <div className="filter_list">
-            {filter.accounts.map((item) => (
+            {accountTotals.map(({ address, name, avatarURL }) => (
               <SharedToggleItem
-                label={item.name || item.id}
-                thumbnailURL={item.thumbnailURL}
-                checked={item.isEnabled}
+                key={address}
+                label={name || address}
+                thumbnailURL={avatarURL}
+                checked={accounts.includes(address)}
                 onChange={(toggleValue) =>
-                  handleUpdateAccount({ ...item, isEnabled: toggleValue })
+                  handleUpdateAccount(address, toggleValue)
                 }
               />
             ))}
