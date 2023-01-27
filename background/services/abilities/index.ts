@@ -2,10 +2,11 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import { HexString, NormalizedEVMAddress } from "../../types"
 import {
+  createSpamReport,
   DaylightAbility,
   DaylightAbilityRequirement,
   getDaylightAbilities,
-} from "./daylight"
+} from "../../lib/daylight"
 import { AbilitiesDatabase, getOrCreateDB } from "./db"
 import ChainService from "../chain"
 import { FeatureFlags, isEnabled } from "../../features"
@@ -52,6 +53,7 @@ const normalizeDaylightAbilities = (
       title: daylightAbility.title,
       description: daylightAbility.description,
       abilityId: daylightAbility.uid,
+      slug: daylightAbility.slug,
       linkUrl: daylightAbility.action.linkUrl,
       imageUrl: daylightAbility.imageUrl || undefined,
       openAt: daylightAbility.openAt || undefined,
@@ -159,5 +161,14 @@ export default class AbilitiesService extends BaseService<Events> {
       // eslint-disable-next-line no-await-in-loop
       await this.pollForAbilities(address)
     }
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async reportSpam(
+    address: NormalizedEVMAddress,
+    abilitySlug: string,
+    reason: string
+  ): Promise<void> {
+    await createSpamReport(address, abilitySlug, reason)
   }
 }

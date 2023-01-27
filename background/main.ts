@@ -157,7 +157,11 @@ import {
   deleteTransferredNFTs,
 } from "./redux-slices/nfts_update"
 import AbilitiesService from "./services/abilities"
-import { addAbilities, addAccount } from "./redux-slices/abilities"
+import {
+  addAbilities,
+  addAccount,
+  emitter as abilitiesSliceEmitter,
+} from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1520,6 +1524,12 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("newAccount", async (address) => {
       this.store.dispatch(addAccount(address))
     })
+    abilitiesSliceEmitter.on(
+      "reportSpam",
+      ({ address, abilitySlug, reason }) => {
+        this.abilitiesService.reportSpam(address, abilitySlug, reason)
+      }
+    )
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {

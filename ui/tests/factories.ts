@@ -52,6 +52,7 @@ export const createAbility = (overrides: Partial<Ability> = {}): Ability => {
     title: "Test Ability",
     description: null,
     abilityId: "",
+    slug: "",
     linkUrl: "",
     completed: false,
     removedFromUi: false,

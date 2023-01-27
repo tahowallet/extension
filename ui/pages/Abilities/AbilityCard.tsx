@@ -46,7 +46,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
     <>
       <div className="ability_card">
         <SharedSlideUpMenu
-          size="small"
+          size="auto"
           isOpen={showRemoveAbilityConfirm}
           close={(e) => {
             e?.stopPropagation()
@@ -124,6 +124,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
               width={50}
               verticalPosition="bottom"
               type="dark"
+              isOpen={showRemoveAbilityConfirm}
               IconComponent={() => (
                 <SharedIcon
                   height={16}
@@ -150,7 +151,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
             align-items: flex-start;
             padding: 16px;
             width: 310px;
-            height: 355px;
+            max-height: 355px;
             background: rgba(4, 20, 20, 0.4);
             border-radius: 12px;
             margin-bottom: 16px;

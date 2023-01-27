@@ -44,6 +44,7 @@ export type Ability = {
   title: string
   description: string | null
   abilityId: string
+  slug: string
   linkUrl: string
   imageUrl?: string
   openAt?: string

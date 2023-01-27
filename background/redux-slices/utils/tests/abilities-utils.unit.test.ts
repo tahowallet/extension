@@ -13,6 +13,7 @@ const ABILITY_DEFAULT: Ability = {
   title: "Test Ability",
   description: null,
   abilityId: "",
+  slug: "",
   linkUrl: "",
   completed: false,
   removedFromUi: false,
