@@ -5,6 +5,7 @@ import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import OnboardingDerivationPathSelect from "../../components/Onboarding/OnboardingDerivationPathSelect"
@@ -105,12 +106,15 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
     keyPrefix: "onboarding.addWallet.importExistingWallet",
   })
   const { nextPage } = props
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
 
   const [recoveryPhrase, setRecoveryPhrase] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
-  const [path, setPath] = useState<string>("m/44'/60'/0'/0")
+  const [path, setPath] = useState<string>(
+    selectedNetwork.derivationPath ?? "m/44'/60'/0'/0"
+  )
   const [isImporting, setIsImporting] = useState(false)
 
   const dispatch = useBackgroundDispatch()

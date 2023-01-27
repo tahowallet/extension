@@ -1,7 +1,11 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { selectHideDust } from "../ui"
 import { RootState } from ".."
-import { AccountType, CompleteAssetAmount } from "../accounts"
+import {
+  AccountType,
+  DEFAULT_ACCOUNT_NAMES,
+  CompleteAssetAmount,
+} from "../accounts"
 import { AssetsState, selectAssetPricePoint } from "../assets"
 import {
   enrichAssetAmountWithDecimalValues,
@@ -141,10 +145,12 @@ const computeCombinedAssetAmountsData = (
           ? true
           : assetAmount.mainCurrencyAmount > userValueDustThreshold
       const isPresent = assetAmount.decimalAmount > 0
+      const isTrusted = !!(assetAmount.asset?.metadata?.tokenLists.length ?? 0)
 
-      // Hide dust and missing amounts.
+      // Hide dust, untrusted assets and missing amounts.
       return (
-        isForciblyDisplayed || (hideDust ? isNotDust && isPresent : isPresent)
+        isForciblyDisplayed ||
+        (hideDust ? isTrusted && isNotDust && isPresent : isPresent)
       )
     })
     .sort((asset1, asset2) => {
@@ -288,6 +294,7 @@ export type AccountTotal = AddressOnNetwork & {
   // FIXME Add `categoryFor(accountSigner): string` utility function to
   // FIXME generalize beyond keyrings.
   keyringId: string | null
+  path: string | null
   accountSigner: AccountSigner
   name?: string
   avatarURL?: string
@@ -373,6 +380,7 @@ function getNetworkAccountTotalsByCategory(
 
       const accountSigner = accountSignersByAddress[address]
       const keyringId = keyringsByAddresses[address]?.id
+      const path = keyringsByAddresses[address]?.path
 
       const accountType = getAccountType(
         address,
@@ -387,6 +395,7 @@ function getNetworkAccountTotalsByCategory(
           shortenedAddress,
           accountType,
           keyringId,
+          path,
           accountSigner,
         }
       }
@@ -397,6 +406,7 @@ function getNetworkAccountTotalsByCategory(
         shortenedAddress,
         accountType,
         keyringId,
+        path,
         accountSigner,
         name: accountData.ens.name ?? accountData.defaultName,
         avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
@@ -512,6 +522,17 @@ export const getAccountTotal = (
     ),
     accountAddressOnNetwork
   )
+
+export const getAccountNameOnChain = (
+  state: RootState,
+  accountAddressOnNetwork: AddressOnNetwork
+): string | undefined => {
+  const account = getAccountTotal(state, accountAddressOnNetwork)
+
+  return account?.name && !DEFAULT_ACCOUNT_NAMES.includes(account.name)
+    ? account.name
+    : undefined
+}
 
 export const selectCurrentAccountTotal = createSelector(
   selectCurrentNetworkAccountTotalsByCategory,

@@ -29,7 +29,7 @@ export const enum AccountType {
   Internal = "internal",
 }
 
-const availableDefaultNames = [
+export const DEFAULT_ACCOUNT_NAMES = [
   "Phoenix",
   "Matilda",
   "Sirius",
@@ -39,6 +39,8 @@ const availableDefaultNames = [
   "Lola",
   "Foz",
 ]
+
+const availableDefaultNames = [...DEFAULT_ACCOUNT_NAMES]
 
 export type AccountData = {
   address: HexString

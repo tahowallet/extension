@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
 import type { AbilityType } from "@tallyho/tally-background/services/abilities"
-import capitalize from "../../utils/capitalize"
+import { capitalize } from "../../utils/textUtils"
 
 const typeColor = {
   mint: "#20c580",

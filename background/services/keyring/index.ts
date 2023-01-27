@@ -28,6 +28,7 @@ export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
 export type Keyring = {
   type: KeyringTypes
   id: string | null
+  path: string | null
   addresses: string[]
 }
 
@@ -301,7 +302,8 @@ export default class KeyringService extends BaseService<Events> {
    *          accessed at generation time through this return value.
    */
   async generateNewKeyring(
-    type: KeyringTypes
+    type: KeyringTypes,
+    path?: string
   ): Promise<{ id: string; mnemonic: string[] }> {
     this.requireUnlocked()
 
@@ -311,7 +313,13 @@ export default class KeyringService extends BaseService<Events> {
       )
     }
 
-    const newKeyring = new HDKeyring({ strength: 256 })
+    const options: { strength: number; path?: string } = { strength: 256 }
+
+    if (path) {
+      options.path = path
+    }
+
+    const newKeyring = new HDKeyring(options)
 
     const { mnemonic } = newKeyring.serializeSync()
 
@@ -382,6 +390,7 @@ export default class KeyringService extends BaseService<Events> {
           .filter((address) => this.#hiddenAccounts[address] !== true),
       ],
       id: kr.id,
+      path: kr.path,
     }))
   }
 

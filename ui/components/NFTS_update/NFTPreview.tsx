@@ -1,12 +1,11 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import {
-  isProbablyEVMAddress,
-  truncateAddress,
-} from "@tallyho/tally-background/lib/utils"
 import { NFTWithCollection } from "@tallyho/tally-background/redux-slices/nfts_update"
+import { getAccountNameOnChain } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { useIntersectionObserver } from "../../hooks"
+import { useBackgroundSelector, useIntersectionObserver } from "../../hooks"
+import { trimWithEllipsis } from "../../utils/textUtils"
+import SharedAddress from "../Shared/SharedAddress"
 import SharedButton from "../Shared/SharedButton"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 import ExploreMarketLink, { getRelevantMarketsList } from "./ExploreMarketLink"
@@ -19,13 +18,11 @@ const removeMarkdownLinks = (description: string) => {
   return description.replace(LINK_REGEX, "$1")
 }
 
-const trimDescription = (description: string) =>
-  description && description.length > MAX_DESCRIPTION_LENGTH
-    ? `${description.slice(0, MAX_DESCRIPTION_LENGTH)}...`
-    : description
-
 const parseDescription = (description = "") => {
-  return trimDescription(removeMarkdownLinks(description))
+  return trimWithEllipsis(
+    removeMarkdownLinks(description),
+    MAX_DESCRIPTION_LENGTH
+  )
 }
 
 export default function NFTPreview(props: NFTWithCollection): ReactElement {
@@ -39,6 +36,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     owner,
     description,
     attributes,
+    supply,
     isBadge,
   } = nft
   const { totalNftCount } = collection
@@ -46,6 +44,10 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     "floorPrice" in collection &&
     collection.floorPrice?.value !== undefined &&
     collection.floorPrice
+
+  const ownerName = useBackgroundSelector((state) =>
+    getAccountNameOnChain(state, { address: owner, network })
+  )
 
   // Chrome seems to have problems when elements with backdrop style are rendered initially
   // out of the viewport - browser is not rendering them at all. This is a workaround
@@ -88,10 +90,10 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
                 {t("preview.owner")}
               </span>
               <span className="preview_details_value">
-                {truncateAddress(owner)}
+                <SharedAddress address={owner} name={ownerName} elide />
               </span>
             </div>
-            <div className="preview_section_column align_right">
+            <div className="preview_section_column align_right no_shrink">
               <span className="preview_details_header">
                 {t("preview.floorPrice")}
               </span>
@@ -154,13 +156,15 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
             <div className="preview_section_header">
               {t("preview.itemsCount")}
             </div>
-            <p>{totalNftCount ?? "-"}</p>
+            <p>{totalNftCount ?? supply ?? "-"}</p>
           </div>
           <div className="preview_section_column align_right">
             <div className="preview_section_header">{t("preview.creator")}</div>
-            <p>
-              {isProbablyEVMAddress(contract) ? truncateAddress(contract) : "-"}
-            </p>
+            {contract?.length ? (
+              <SharedAddress address={contract} elide />
+            ) : (
+              "-"
+            )}
           </div>
         </div>
 
@@ -262,6 +266,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         .preview_section_column {
           display: flex;
           flex-direction: column;
+          min-width: 0;
         }
         .preview_section_row {
           display: flex;
@@ -309,6 +314,9 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           margin-top: 8px;
           gap: 16px;
           justify-content: flex-start;
+        }
+        .no_shrink {
+          flex-shrink: 0;
         }
       `}</style>
     </>
