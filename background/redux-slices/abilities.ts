@@ -1,5 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { Ability, AbilityType, ABILITY_TYPES } from "../abilities"
+import {
+  Ability,
+  AbilityType,
+  ABILITY_TYPES,
+  ABILITY_TYPES_ENABLED,
+} from "../abilities"
 import { HexString, NormalizedEVMAddress } from "../types"
 import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
@@ -27,7 +32,9 @@ type AbilitiesState = {
 
 const typesFilter: FilterType[] = ABILITY_TYPES.map((type) => ({
   type,
-  isEnabled: true,
+  isEnabled: !!ABILITY_TYPES_ENABLED.find(
+    (enabledType) => enabledType === type
+  ),
 }))
 
 const initialState: AbilitiesState = {

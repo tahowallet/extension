@@ -20,18 +20,21 @@ type Unknown = {
 
 export type AbilityRequirement = HoldERC20 | OwnNFT | AllowList | Unknown
 
+export const ABILITY_TYPES_ENABLED = [
+  "mint",
+  "airdrop",
+  "vote",
+  "access",
+] as const
 // https://docs.daylight.xyz/reference/ability-model#ability-types
 export const ABILITY_TYPES = [
+  ...ABILITY_TYPES_ENABLED,
   "claim",
-  "airdrop",
-  "mint",
-  "access",
   "product",
   "event",
   "article",
   "result",
   "misc",
-  "vote",
 ] as const
 
 export type AbilityType = typeof ABILITY_TYPES[number]
