@@ -107,14 +107,19 @@ export const removeAbility = createBackgroundAsyncThunk(
   }
 )
 
-export const reportSpam = createBackgroundAsyncThunk(
-  "abilities/reportSpam",
-  async (payload: {
-    address: NormalizedEVMAddress
-    abilitySlug: string
-    reason: string
-  }) => {
+export const reportAndRemoveAbility = createBackgroundAsyncThunk(
+  "abilities/reportAndRemoveAbility",
+  async (
+    payload: {
+      address: NormalizedEVMAddress
+      abilityId: string
+      abilitySlug: string
+      reason: string
+    },
+    { dispatch }
+  ) => {
     await emitter.emit("reportSpam", payload)
+    dispatch(removeAbility(payload))
   }
 )
 
