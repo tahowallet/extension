@@ -6,7 +6,7 @@ const filterByState = (ability: Ability, state: AbilityState): boolean => {
   switch (state) {
     case "open":
       return ability.completed === false && !ability.removedFromUi
-    case "closed":
+    case "completed":
       return ability.completed === true && !ability.removedFromUi
     case "expired":
       return (

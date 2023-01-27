@@ -25,8 +25,8 @@ const RADIO_BTNS: { value: AbilityState; label: string }[] = [
     label: i18n.t(`${KEY_PREFIX}.abilityState.open`),
   },
   {
-    value: "closed",
-    label: i18n.t(`${KEY_PREFIX}.abilityState.closed`),
+    value: "completed",
+    label: i18n.t(`${KEY_PREFIX}.abilityState.completed`),
   },
   {
     value: "expired",

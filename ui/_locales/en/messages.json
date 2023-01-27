@@ -783,7 +783,7 @@
       "tooltip": "Filter",
       "abilityState": {
         "open": "Open",
-        "closed": "Closed",
+        "completed": "Closed",
         "expired": "Expired",
         "deleted": "Deleted",
         "all": "All"

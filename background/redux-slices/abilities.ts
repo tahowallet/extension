@@ -5,7 +5,7 @@ import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 import { FilterAccount } from "./utils/account-filter-utils"
 
-export type AbilityState = "open" | "closed" | "expired" | "deleted" | "all"
+export type AbilityState = "open" | "completed" | "expired" | "deleted" | "all"
 
 export type FilterType = { type: AbilityType; isEnabled: boolean }
 

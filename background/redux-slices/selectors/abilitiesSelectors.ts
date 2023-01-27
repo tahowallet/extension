@@ -13,7 +13,7 @@ const selectAbilities = createSelector(
   (abilitiesSlice) => abilitiesSlice.abilities
 )
 
-export const selectHideDescription = createSelector(
+export const selectDescriptionHidden = createSelector(
   (state: RootState) => state.abilities.hideDescription,
   (hideDescription) => hideDescription
 )
