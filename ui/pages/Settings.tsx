@@ -32,11 +32,11 @@ const FOOTER_ACTIONS = [
   },
   {
     icon: "twitter",
-    linkTo: "https://twitter.com/TallyCash",
+    linkTo: "https://twitter.com/TallyHoOfficial",
   },
   {
     icon: "icons/m/github",
-    linkTo: "https://github.com/tallycash/extension",
+    linkTo: "https://github.com/tallyhowallet/extension",
   },
 ]
 
@@ -247,6 +247,18 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const customNetworks = {
+    title: "",
+    component: () => (
+      <SettingButton
+        link="/settings/custom-networks"
+        label={t("settings.customNetworks")}
+        ariaLabel={t("settings.customNetworksSettings.ariaLabel")}
+        icon="continue"
+      />
+    ),
+  }
+
   const generalList = [
     setAsDefault,
     hideSmallAssetBalance,
@@ -258,6 +270,9 @@ export default function Settings(): ReactElement {
     ...(isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) ? [analytics] : []),
     ...(isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER)
       ? [notificationBanner]
+      : []),
+    ...(isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)
+      ? [customNetworks]
       : []),
   ]
 

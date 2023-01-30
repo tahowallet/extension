@@ -1,5 +1,16 @@
-import { EVMNetwork, Network } from "../networks"
-import { AVAX, BNB, BTC, ETH, MATIC, OPTIMISTIC_ETH, RBTC } from "./currencies"
+import { FeatureFlags, isEnabled } from "../features"
+import { EVMNetwork } from "../networks"
+import {
+  ARBITRUM_NOVA_ETH,
+  ARBITRUM_ONE_ETH,
+  AVAX,
+  BNB,
+  ETH,
+  GOERLI_ETH,
+  MATIC,
+  OPTIMISTIC_ETH,
+  RBTC,
+} from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
   name: "Ethereum",
@@ -13,6 +24,7 @@ export const ROOTSTOCK: EVMNetwork = {
   name: "Rootstock",
   baseAsset: RBTC,
   chainID: "30",
+  derivationPath: "m/44'/137'/0'/0",
   family: "EVM",
   coingeckoPlatformID: "rootstock",
 }
@@ -27,7 +39,7 @@ export const POLYGON: EVMNetwork = {
 
 export const ARBITRUM_ONE: EVMNetwork = {
   name: "Arbitrum",
-  baseAsset: ETH,
+  baseAsset: ARBITRUM_ONE_ETH,
   chainID: "42161",
   family: "EVM",
   coingeckoPlatformID: "arbitrum-one",
@@ -51,7 +63,7 @@ export const BINANCE_SMART_CHAIN: EVMNetwork = {
 
 export const ARBITRUM_NOVA: EVMNetwork = {
   name: "Arbitrum Nova",
-  baseAsset: ETH,
+  baseAsset: ARBITRUM_NOVA_ETH,
   chainID: "42170",
   family: "EVM",
   coingeckoPlatformID: "arbitrum-nova",
@@ -67,18 +79,25 @@ export const OPTIMISM: EVMNetwork = {
 
 export const GOERLI: EVMNetwork = {
   name: "Goerli",
-  baseAsset: ETH,
+  baseAsset: GOERLI_ETH,
   chainID: "5",
   family: "EVM",
   coingeckoPlatformID: "ethereum",
 }
 
-export const BITCOIN: Network = {
-  name: "Bitcoin",
-  baseAsset: BTC,
-  family: "BTC",
-  coingeckoPlatformID: "bitcoin",
-}
+export const DEFAULT_NETWORKS = [
+  ETHEREUM,
+  POLYGON,
+  OPTIMISM,
+  GOERLI,
+  ARBITRUM_ONE,
+  ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [ROOTSTOCK] : []),
+  ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE) ? [AVALANCHE] : []),
+  ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
+    ? [BINANCE_SMART_CHAIN]
+    : []),
+  ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA) ? [ARBITRUM_NOVA] : []),
+]
 
 export const FORK: EVMNetwork = {
   name: "Ethereum",

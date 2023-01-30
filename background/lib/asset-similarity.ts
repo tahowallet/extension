@@ -97,6 +97,8 @@ export function findClosestAssetIndex(
 export function mergeAssets(asset1: AnyAsset, asset2: AnyAsset): AnyAsset {
   return {
     ...asset1,
+    ...("coinType" in asset1 ? { coinType: asset1.coinType } : {}),
+    ...("coinType" in asset2 ? { coinType: asset2.coinType } : {}),
     metadata: {
       ...asset1.metadata,
       ...asset2.metadata,

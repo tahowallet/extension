@@ -25,7 +25,7 @@ import {
 import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
-import { PermissionMap } from "./utils"
+import { handleRPCErrorResponse, PermissionMap } from "./utils"
 import { toHexChainID } from "../../networks"
 import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 
@@ -218,7 +218,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
           event.request.params,
           origin
         )
-    } else if (event.request.method === "eth_requestAccounts") {
+    } else if (
+      event.request.method === "eth_requestAccounts" ||
+      event.request.method === "eth_accounts"
+    ) {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
 
@@ -478,8 +481,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         }
       }
     } catch (error) {
-      logger.log("error processing request", error)
-      return new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()
+      return handleRPCErrorResponse(error)
     }
   }
 }

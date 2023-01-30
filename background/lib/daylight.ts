@@ -1,19 +1,8 @@
 import { fetchJson } from "@ethersproject/web"
+import { AbilityType } from "../abilities"
+import logger from "./logger"
 
-const DAYLIGHT_BASE_URL = "https://api.daylight.xyz/v1/wallets"
-
-// https://docs.daylight.xyz/reference/ability-model#ability-types
-type DaylightAbilityType =
-  | "vote"
-  | "claim"
-  | "airdrop"
-  | "mint"
-  | "access"
-  | "product"
-  | "event"
-  | "article"
-  | "result"
-  | "misc"
+const DAYLIGHT_BASE_URL = "https://api.daylight.xyz/v1"
 
 type Community = {
   chain: string
@@ -63,7 +52,7 @@ type DaylightAbilityAction = {
 }
 
 export type DaylightAbility = {
-  type: DaylightAbilityType
+  type: AbilityType
   title: string
   description: string | null
   imageUrl: string | null
@@ -85,16 +74,56 @@ type AbilitiesResponse = {
   status: string
 }
 
-// eslint-disable-next-line import/prefer-default-export
+type SpamReportResponse = {
+  success: boolean
+}
+
 export const getDaylightAbilities = async (
   address: string
 ): Promise<DaylightAbility[]> => {
-  const response: AbilitiesResponse = await fetchJson(
-    // Abilities whose deadline has not yet passed - we will probably
-    // want to turn this on once the feature is ready to go live
-    // `${DAYLIGHT_BASE_URL}/${address}/abilities?deadline=set&type=mint&type=airdrop&type=access`
-    `${DAYLIGHT_BASE_URL}/${address}/abilities?type=mint&type=airdrop&type=access`
-  )
+  try {
+    const response: AbilitiesResponse = await fetchJson(
+      `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities?deadline=all`
+    )
 
-  return response.abilities
+    return response.abilities
+  } catch (err) {
+    logger.error("Error getting abilities", err)
+  }
+
+  return []
+}
+
+/**
+ * Report ability as spam.
+ *
+ * Learn more at https://docs.daylight.xyz/reference/create-spam-report
+ *
+ * @param address the address that reports the ability
+ * @param abilitySlug the slug of the ability being reported
+ * @param reason the reason why ability is reported
+ */
+export const createSpamReport = async (
+  address: string,
+  abilitySlug: string,
+  reason: string
+): Promise<boolean> => {
+  try {
+    const options = JSON.stringify({
+      submitter: address,
+      abilitySlug,
+      reason,
+    })
+
+    const response: SpamReportResponse = await fetchJson(
+      `${DAYLIGHT_BASE_URL}/spam-report`,
+      options
+    )
+
+    return response.success
+  } catch (err) {
+    logger.error("Error reporting spam", err)
+  }
+
+  return false
 }

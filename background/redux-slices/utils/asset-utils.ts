@@ -8,8 +8,13 @@ import {
   FungibleAsset,
   UnitPricePoint,
   AnyAsset,
+  CoinGeckoAsset,
 } from "../../assets"
-import { OPTIMISM } from "../../constants"
+import {
+  BUILT_IN_NETWORK_BASE_ASSETS,
+  OPTIMISM,
+  POLYGON,
+} from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { AnyNetwork, NetworkBaseAsset } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
@@ -37,7 +42,7 @@ export type AssetDecimalAmount = {
   localizedDecimalAmount: string
 }
 
-function isBaseAsset(asset: AnyAsset): asset is NetworkBaseAsset {
+function hasCoinType(asset: AnyAsset): asset is NetworkBaseAsset {
   return "coinType" in asset
 }
 
@@ -45,6 +50,13 @@ function isOptimismBaseAsset(asset: AnyAsset) {
   return (
     "contractAddress" in asset &&
     asset.contractAddress === OPTIMISM.baseAsset.contractAddress
+  )
+}
+
+function isPolygonBaseAsset(asset: AnyAsset) {
+  return (
+    "contractAddress" in asset &&
+    asset.contractAddress === POLYGON.baseAsset.contractAddress
   )
 }
 
@@ -58,7 +70,7 @@ function isOptimismBaseAsset(asset: AnyAsset) {
  *
  * @return True if the passed asset is the base asset for the passed network.
  */
-export function isNetworkBaseAsset(
+export function isBuiltInNetworkBaseAsset(
   asset: AnyAsset,
   network: AnyNetwork
 ): asset is NetworkBaseAsset {
@@ -66,11 +78,27 @@ export function isNetworkBaseAsset(
     return true
   }
 
+  if (network.chainID === POLYGON.chainID && isPolygonBaseAsset(asset)) {
+    return true
+  }
+
   return (
-    isBaseAsset(asset) &&
+    hasCoinType(asset) &&
     asset.symbol === network.baseAsset.symbol &&
     asset.coinType === network.baseAsset.coinType &&
     asset.name === network.baseAsset.name
+  )
+}
+
+/**
+ * Return network base asset for chain by asset symbol.
+ */
+export function getBuiltInNetworkBaseAsset(
+  symbol: string,
+  chainID: string
+): (NetworkBaseAsset & Required<CoinGeckoAsset>) | undefined {
+  return BUILT_IN_NETWORK_BASE_ASSETS.find(
+    (asset) => asset.symbol === symbol && asset.chainID === chainID
   )
 }
 

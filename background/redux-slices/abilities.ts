@@ -1,21 +1,46 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { Ability } from "../services/abilities"
+import Emittery from "emittery"
+import { Ability, ABILITY_TYPES_ENABLED } from "../abilities"
 import { HexString, NormalizedEVMAddress } from "../types"
 import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 
+export type Events = {
+  reportSpam: {
+    address: NormalizedEVMAddress
+    abilitySlug: string
+    reason: string
+  }
+}
+
+export const emitter = new Emittery<Events>()
+
+export type State = "open" | "completed" | "expired" | "deleted" | "all"
+
+export type Filter = {
+  state: State
+  types: string[]
+  accounts: string[]
+}
+
 type AbilitiesState = {
-  filter: "all" | "completed" | "incomplete"
+  filter: Filter
   abilities: {
     [address: HexString]: {
       [uuid: string]: Ability
     }
   }
+  hideDescription: boolean
 }
 
 const initialState: AbilitiesState = {
-  filter: "incomplete",
+  filter: {
+    state: "open",
+    types: [...ABILITY_TYPES_ENABLED],
+    accounts: [],
+  },
   abilities: {},
+  hideDescription: false,
 }
 
 const abilitiesSlice = createSlice({
@@ -50,6 +75,28 @@ const abilitiesSlice = createSlice({
       immerState.abilities[payload.address][payload.abilityId].removedFromUi =
         true
     },
+    toggleHideDescription: (immerState, { payload }: { payload: boolean }) => {
+      immerState.hideDescription = payload
+    },
+    updateState: (immerState, { payload: state }: { payload: State }) => {
+      immerState.filter.state = state
+    },
+    addType: (immerState, { payload: type }: { payload: string }) => {
+      immerState.filter.types.push(type)
+    },
+    deleteType: (immerState, { payload: type }: { payload: string }) => {
+      immerState.filter.types = immerState.filter.types.filter(
+        (value) => value !== type
+      )
+    },
+    addAccount: (immerState, { payload: type }: { payload: string }) => {
+      immerState.filter.accounts.push(type)
+    },
+    deleteAccount: (immerState, { payload: account }: { payload: string }) => {
+      immerState.filter.accounts = immerState.filter.accounts.filter(
+        (value) => value !== account
+      )
+    },
   },
 })
 
@@ -58,6 +105,12 @@ export const {
   deleteAbility,
   markAbilityAsCompleted,
   markAbilityAsRemoved,
+  toggleHideDescription,
+  updateState,
+  addType,
+  deleteType,
+  addAccount,
+  deleteAccount,
 } = abilitiesSlice.actions
 
 export const completeAbility = createBackgroundAsyncThunk(
@@ -87,6 +140,22 @@ export const removeAbility = createBackgroundAsyncThunk(
     await main.markAbilityAsRemoved(address, abilityId)
     dispatch(markAbilityAsRemoved({ address, abilityId }))
     dispatch(setSnackbarMessage("Ability deleted"))
+  }
+)
+
+export const reportAndRemoveAbility = createBackgroundAsyncThunk(
+  "abilities/reportAndRemoveAbility",
+  async (
+    payload: {
+      address: NormalizedEVMAddress
+      abilityId: string
+      abilitySlug: string
+      reason: string
+    },
+    { dispatch }
+  ) => {
+    await emitter.emit("reportSpam", payload)
+    dispatch(removeAbility(payload))
   }
 )
 

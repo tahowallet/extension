@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from "react"
+import classNames from "classnames"
+import React, { ReactElement, useEffect, useState } from "react"
 
 type VerticalPosition = "top" | "bottom"
 type HorizontalPosition = "left" | "center" | "right"
@@ -8,6 +9,8 @@ interface Props {
   horizontalPosition?: HorizontalPosition
   width: number
   height?: number
+  type?: "default" | "dark"
+  isOpen?: boolean
   children: React.ReactNode
   // TODO: find a better way to tell the IconComponent that the tooltip it open
   IconComponent?: ({
@@ -48,9 +51,15 @@ export default function SharedTooltip(props: Props): ReactElement {
     horizontalPosition = "center",
     width,
     height = 20,
+    type = "default",
+    isOpen = false,
     IconComponent,
   } = props
-  const [isShowingTooltip, setIsShowingTooltip] = useState(false)
+  const [isShowingTooltip, setIsShowingTooltip] = useState(isOpen)
+
+  useEffect(() => {
+    setIsShowingTooltip(isOpen)
+  }, [isOpen])
 
   return (
     <div
@@ -68,7 +77,15 @@ export default function SharedTooltip(props: Props): ReactElement {
       ) : (
         <div className="info_icon" />
       )}
-      {isShowingTooltip ? <div className="tooltip">{children}</div> : null}
+      {isShowingTooltip ? (
+        <div
+          className={classNames("tooltip", {
+            dark: type === "dark",
+          })}
+        >
+          {children}
+        </div>
+      ) : null}
       <style jsx>
         {`
           .tooltip_wrap {
@@ -100,6 +117,14 @@ export default function SharedTooltip(props: Props): ReactElement {
             z-index: 20;
             ${getVerticalPosition(verticalPosition, height)}
             ${getHorizontalPosition(horizontalPosition, width)}
+          }
+          .dark {
+            background: var(--green-120);
+            border-radius: 4px;
+            font-size: 16px;
+            line-height: 24px;
+            padding: 2px 8px;
+            color: var(--green-40);
           }
         `}
       </style>

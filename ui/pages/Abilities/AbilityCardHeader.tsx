@@ -1,6 +1,11 @@
 import React, { ReactElement } from "react"
-import { Ability } from "@tallyho/tally-background/services/abilities"
+import {
+  AccountTotalList,
+  selectAccountTotalsForOverview,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import { Ability } from "@tallyho/tally-background/abilities"
 import AbilityLabel from "./AbilityLabel"
+import { useBackgroundSelector } from "../../hooks"
 
 const getRequirementLabel = (ability: Ability): string => {
   if (ability.requirement.type === "hold") {
@@ -13,14 +18,26 @@ const getRequirementLabel = (ability: Ability): string => {
   return ""
 }
 
+const getAccountNameOrShortenedAddress = (
+  accounts: AccountTotalList,
+  address: string
+): string => {
+  const account = accounts[address]
+  return account.ensName ?? account.shortenedAddress
+}
+
 function AbilityCardHeader({ ability }: { ability: Ability }): ReactElement {
+  const accountsTotal = useBackgroundSelector(selectAccountTotalsForOverview)
+
   return (
     <>
       <div className="header">
         <AbilityLabel type={ability.type} />
         <div className="requirement_info">
           <span>{getRequirementLabel(ability)}</span>
-          <span>{`${ability.address.slice(0, 8)}...`}</span>
+          <span>
+            {getAccountNameOrShortenedAddress(accountsTotal, ability.address)}
+          </span>
         </div>
       </div>
       <style jsx>{`

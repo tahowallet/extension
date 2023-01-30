@@ -43,10 +43,9 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
       <thead>
         <tr>
           <th>
-            {t("overview.tableHeader.asset")}
             {isEnabled(FeatureFlags.SUPPORT_NFT_TAB)
-              ? `(${assets.length})`
-              : ""}
+              ? `${t("overview.tableHeader.assets")} (${assets.length})`
+              : t("overview.tableHeader.asset")}
           </th>
           <th>{t("overview.tableHeader.price")}</th>
           <th>{t("overview.tableHeader.balance")}</th>
