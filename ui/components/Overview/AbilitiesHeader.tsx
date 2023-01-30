@@ -1,7 +1,7 @@
 import { toggleHideDescription } from "@tallyho/tally-background/redux-slices/abilities"
 import {
   selectAbilityCount,
-  selectHideDescription,
+  selectDescriptionHidden,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
 import React, { ReactElement } from "react"
@@ -16,7 +16,7 @@ export default function AbilitiesHeader(): ReactElement {
     keyPrefix: "abilities",
   })
   const newAbilities = useSelector(selectAbilityCount)
-  const hideDescription = useSelector(selectHideDescription)
+  const hideDescription = useSelector(selectDescriptionHidden)
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
 

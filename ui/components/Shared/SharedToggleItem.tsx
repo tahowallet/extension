@@ -3,23 +3,23 @@ import {
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
 import React, { ReactElement } from "react"
-import SharedToggleButton from "../../Shared/SharedToggleButton"
+import SharedToggleButton from "./SharedToggleButton"
 
 const STARS_GREY_URL = "./images/stars_grey.svg"
 
-type FilterListItemProps = {
+type SharedToggleItemProps = {
   label: string
   thumbnailURL?: string
   checked: boolean
   onChange: (toggleValue: boolean) => void
 }
 
-export default function FilterListItem({
+export default function SharedToggleItem({
   label,
   thumbnailURL,
   checked,
   onChange,
-}: FilterListItemProps): ReactElement {
+}: SharedToggleItemProps): ReactElement {
   return (
     <div className="content">
       <div className="text_wrap">

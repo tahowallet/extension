@@ -1,6 +1,6 @@
 import Dexie from "dexie"
+import { Ability } from "../../abilities"
 import { FeatureFlags, isEnabled } from "../../features"
-import type { Ability } from "."
 import { NormalizedEVMAddress } from "../../types"
 
 export class AbilitiesDatabase extends Dexie {
