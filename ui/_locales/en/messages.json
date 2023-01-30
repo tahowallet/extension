@@ -683,7 +683,8 @@
         "step2": "Click “connect to wallet” in a dapp",
         "step3": "Select one similar to these"
       },
-      "walletConnectInfo": "You can now connect to any dapp that supports Wallet Connect by selecting Tally Ho from desktop tab. <url>Learn more</url>"
+      "walletConnectInfo": "You can now connect to any dapp that supports Wallet Connect by selecting Tally Ho from desktop tab. <url>Learn more</url>",
+      "walletConnectHint": "Check the desktop tab in the connection modal"
     }
   },
   "wallet": {

@@ -46,11 +46,12 @@ function ConnectionDAppGuideline({
             )}
             <div className="panel_wrap">
               {currentPanel === 0 && (
+                // Wallet connect guidelines
                 <div className="wallet_connect_info">
                   <div className="learn_more">
                     <img
                       height="52"
-                      alt="wallet_connect_thumb"
+                      alt="Tally - Wallet Connect"
                       src="/images/tally_wc.png"
                     />
                     <p>
@@ -65,12 +66,14 @@ function ConnectionDAppGuideline({
                   </div>
                   <img
                     width="100%"
-                    alt="wallet_connect_thumb"
+                    alt={t("walletConnectHint")}
                     src="/images/wallet_connect_guideline.png"
                   />
                 </div>
               )}
+
               {currentPanel === 1 && (
+                // Injected wallet guidelines
                 <>
                   <ol className="steps">
                     <li>
