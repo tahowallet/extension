@@ -94,7 +94,7 @@
     "archiver": "^5.3.0",
     "babel-loader": "^8.2.2",
     "copy-webpack-plugin": "^9.0.0",
-    "dexie": "^3.0.3",
+    "dexie": "~3.0.4",
     "dotenv-defaults": "^2.0.2",
     "dotenv-webpack": "^7.0.3",
     "eslint": "^7.28.0",

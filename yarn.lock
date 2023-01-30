@@ -6531,10 +6531,10 @@ detect-node@^2.0.4:
   resolved "https://registry.yarnpkg.com/detect-node/-/detect-node-2.1.0.tgz#c9c70775a49c3d03bc2c06d9a73be550f978f8b1"
   integrity sha512-T0NIuQpnTvFDATNuHN5roPwSBG83rFsuO+MXXH9/3N1eFbn4wcPjttvjMLEPWJ0RGUYgQE7cGgS3tNxbqCGM7g==
 
-dexie@^3.0.3:
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/dexie/-/dexie-3.0.3.tgz#ede63849dfe5f07e13e99bb72a040e8ac1d29dab"
-  integrity sha512-BSFhGpngnCl1DOr+8YNwBDobRMH0ziJs2vts69VilwetHYOtEDcLqo7d/XiIphM0tJZ2rPPyAGd31lgH2Ln3nw==
+dexie@~3.0.4:
+  version "3.0.4"
+  resolved "https://registry.yarnpkg.com/dexie/-/dexie-3.0.4.tgz#18f5e124d525a413fa836716f2c37fbbc36a6662"
+  integrity sha512-rwS3k8BBstjGFJAS/yjYrsRZucqitnrP3NBhqghl9ihWcWABlT3I5f2dZV9T3pmXGAP7G9p1q00g/axcsuOT8A==
 
 dezalgo@^1.0.0:
   version "1.0.3"
