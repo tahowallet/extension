@@ -55,6 +55,7 @@ describe("ProviderBridgeService", () => {
 
   afterEach(async () => {
     await providerBridgeService.stopService()
+    jest.clearAllMocks()
   })
 
   describe("routeContentScriptRPCRequest", () => {
@@ -72,7 +73,7 @@ describe("ProviderBridgeService", () => {
       expect(response).toEqual([enablingPermission.accountAddress])
     })
 
-    it("eth_sendTransaction should call routeSafeRequest when user has permission to sign", async () => {
+    it("eth_sendTransaction should call routeSafeRequest when a user has permission to sign", async () => {
       const { enablingPermission, origin } = BASE_DATA
       const method = "eth_sendTransaction"
       const params = PARAMS[method]
@@ -88,7 +89,7 @@ describe("ProviderBridgeService", () => {
       expect(stub.called).toBe(true)
     })
 
-    it("eth_sendTransaction should not call routeSafeRequest when user has not permission to sign", async () => {
+    it("eth_sendTransaction should not call routeSafeRequest when a user has not permission to sign", async () => {
       const { enablingPermission, origin } = BASE_DATA
       const method = "eth_sendTransaction"
       const params = PARAMS[method]
@@ -105,7 +106,7 @@ describe("ProviderBridgeService", () => {
       expect(response).toBe(EIP1193_ERROR_CODES.unauthorized)
     })
 
-    it("should correctly catch the provider Rpc error", async () => {
+    it("should correctly handle a provider Rpc error", async () => {
       const { enablingPermission, origin } = BASE_DATA
       const method = "eth_sendTransaction"
       const params = PARAMS[method]
@@ -125,7 +126,7 @@ describe("ProviderBridgeService", () => {
       expect(response).toBe(EIP1193_ERROR_CODES.disconnected)
     })
 
-    it("should correctly handle custom error when a message is in the body", async () => {
+    it("should correctly handle a custom error when a message is in the body", async () => {
       const error = {
         body: JSON.stringify({
           error: {
@@ -133,7 +134,6 @@ describe("ProviderBridgeService", () => {
           },
         }),
       }
-
       const { enablingPermission, origin } = BASE_DATA
       const method = "eth_sendTransaction"
       const params = PARAMS[method]
@@ -154,7 +154,7 @@ describe("ProviderBridgeService", () => {
       expect(response).toStrictEqual({ code: 4001, message: "Custom error" })
     })
 
-    it("should correctly handle custom error when a message is in the body", async () => {
+    it("should correctly handle a custom error when a message is in the body", async () => {
       const error = {
         body: JSON.stringify({
           error: {
@@ -162,7 +162,6 @@ describe("ProviderBridgeService", () => {
           },
         }),
       }
-
       const { enablingPermission, origin } = BASE_DATA
       const method = "eth_sendTransaction"
       const params = PARAMS[method]
@@ -183,7 +182,7 @@ describe("ProviderBridgeService", () => {
       expect(response).toStrictEqual({ code: 4001, message: "Custom error" })
     })
 
-    it("should correctly handle custom error when the message is nested", async () => {
+    it("should correctly handle a custom error when a message is nested", async () => {
       const error = {
         error: {
           body: JSON.stringify({
@@ -193,7 +192,6 @@ describe("ProviderBridgeService", () => {
           }),
         },
       }
-
       const { enablingPermission, origin } = BASE_DATA
       const method = "eth_sendTransaction"
       const params = PARAMS[method]
