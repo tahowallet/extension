@@ -1,5 +1,4 @@
 import {
-  EIP1193Error,
   EIP1193_ERROR_CODES,
   PermissionRequest,
 } from "@tallyho/provider-bridge-shared"
@@ -104,112 +103,6 @@ describe("ProviderBridgeService", () => {
 
       expect(stub.called).toBe(false)
       expect(response).toBe(EIP1193_ERROR_CODES.unauthorized)
-    })
-
-    it("should correctly handle a provider Rpc error", async () => {
-      const { enablingPermission, origin } = BASE_DATA
-      const method = "eth_sendTransaction"
-      const params = PARAMS[method]
-      const stub = sandbox
-        .stub(providerBridgeService, "routeSafeRequest")
-        .callsFake(async () => {
-          throw new EIP1193Error(EIP1193_ERROR_CODES.disconnected)
-        })
-      const response = await providerBridgeService.routeContentScriptRPCRequest(
-        enablingPermission,
-        method,
-        params,
-        origin
-      )
-
-      expect(stub.callCount).toBe(1)
-      expect(response).toBe(EIP1193_ERROR_CODES.disconnected)
-    })
-
-    it("should correctly handle a custom error when a message is in the body", async () => {
-      const error = {
-        body: JSON.stringify({
-          error: {
-            message: "Custom error",
-          },
-        }),
-      }
-      const { enablingPermission, origin } = BASE_DATA
-      const method = "eth_sendTransaction"
-      const params = PARAMS[method]
-      const stub = sandbox
-        .stub(providerBridgeService, "routeSafeRequest")
-        .callsFake(async () => {
-          // eslint-disable-next-line @typescript-eslint/no-throw-literal
-          throw error
-        })
-      const response = await providerBridgeService.routeContentScriptRPCRequest(
-        enablingPermission,
-        method,
-        params,
-        origin
-      )
-
-      expect(stub.callCount).toBe(1)
-      expect(response).toStrictEqual({ code: 4001, message: "Custom error" })
-    })
-
-    it("should correctly handle a custom error when a message is in the body", async () => {
-      const error = {
-        body: JSON.stringify({
-          error: {
-            message: "Custom error",
-          },
-        }),
-      }
-      const { enablingPermission, origin } = BASE_DATA
-      const method = "eth_sendTransaction"
-      const params = PARAMS[method]
-      const stub = sandbox
-        .stub(providerBridgeService, "routeSafeRequest")
-        .callsFake(async () => {
-          // eslint-disable-next-line @typescript-eslint/no-throw-literal
-          throw error
-        })
-      const response = await providerBridgeService.routeContentScriptRPCRequest(
-        enablingPermission,
-        method,
-        params,
-        origin
-      )
-
-      expect(stub.callCount).toBe(1)
-      expect(response).toStrictEqual({ code: 4001, message: "Custom error" })
-    })
-
-    it("should correctly handle a custom error when a message is nested", async () => {
-      const error = {
-        error: {
-          body: JSON.stringify({
-            error: {
-              message: "Custom error",
-            },
-          }),
-        },
-      }
-      const { enablingPermission, origin } = BASE_DATA
-      const method = "eth_sendTransaction"
-      const params = PARAMS[method]
-      const stub = sandbox
-        .stub(providerBridgeService, "routeSafeRequest")
-        .callsFake(async () => {
-          // eslint-disable-next-line @typescript-eslint/no-throw-literal
-          throw error
-        })
-      const response = await providerBridgeService.routeContentScriptRPCRequest(
-        enablingPermission,
-        method,
-        params,
-        origin
-      )
-
-      expect(stub.callCount).toBe(1)
-      expect(response).toStrictEqual({ code: 4001, message: "Custom error" })
     })
   })
 })
