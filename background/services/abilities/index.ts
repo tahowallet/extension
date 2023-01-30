@@ -11,44 +11,7 @@ import { AbilitiesDatabase, getOrCreateDB } from "./db"
 import ChainService from "../chain"
 import { FeatureFlags, isEnabled } from "../../features"
 import { normalizeEVMAddress } from "../../lib/utils"
-
-export type AbilityType = "mint" | "airdrop" | "access"
-
-type AbilityRequirement = HoldERC20 | OwnNFT | AllowList | Unknown
-
-type HoldERC20 = {
-  type: "hold"
-  address: string
-}
-
-type OwnNFT = {
-  type: "own"
-  nftAddress: string
-}
-
-type AllowList = {
-  type: "allowList"
-}
-
-type Unknown = {
-  type: "unknown"
-}
-
-export type Ability = {
-  type: AbilityType
-  title: string
-  description: string | null
-  abilityId: string
-  slug: string
-  linkUrl: string
-  imageUrl?: string
-  openAt?: string
-  closeAt?: string
-  completed: boolean
-  removedFromUi: boolean
-  address: NormalizedEVMAddress
-  requirement: AbilityRequirement
-}
+import { Ability, AbilityRequirement } from "../../abilities"
 
 const normalizeDaylightRequirements = (
   requirement: DaylightAbilityRequirement
@@ -85,31 +48,24 @@ const normalizeDaylightAbilities = (
   const normalizedAbilities: Ability[] = []
 
   daylightAbilities.forEach((daylightAbility) => {
-    // Lets start with just mints
-    if (
-      daylightAbility.type === "mint" ||
-      daylightAbility.type === "airdrop" ||
-      daylightAbility.type === "access"
-    ) {
-      normalizedAbilities.push({
-        type: daylightAbility.type,
-        title: daylightAbility.title,
-        description: daylightAbility.description,
-        abilityId: daylightAbility.uid,
-        slug: daylightAbility.slug,
-        linkUrl: daylightAbility.action.linkUrl,
-        imageUrl: daylightAbility.imageUrl || undefined,
-        openAt: daylightAbility.openAt || undefined,
-        closeAt: daylightAbility.closeAt || undefined,
-        completed: false,
-        removedFromUi: false,
-        address: normalizeEVMAddress(address),
-        requirement: normalizeDaylightRequirements(
-          // Just take the 1st requirement for now
-          daylightAbility.requirements[0]
-        ),
-      })
-    }
+    normalizedAbilities.push({
+      type: daylightAbility.type,
+      title: daylightAbility.title,
+      description: daylightAbility.description,
+      abilityId: daylightAbility.uid,
+      slug: daylightAbility.slug,
+      linkUrl: daylightAbility.action.linkUrl,
+      imageUrl: daylightAbility.imageUrl || undefined,
+      openAt: daylightAbility.openAt || undefined,
+      closeAt: daylightAbility.closeAt || undefined,
+      completed: false,
+      removedFromUi: false,
+      address: normalizeEVMAddress(address),
+      requirement: normalizeDaylightRequirements(
+        // Just take the 1st requirement for now
+        daylightAbility.requirements[0]
+      ),
+    })
   })
 
   return normalizedAbilities
@@ -117,6 +73,7 @@ const normalizeDaylightAbilities = (
 
 interface Events extends ServiceLifecycleEvents {
   newAbilities: Ability[]
+  newAccount: string
 }
 export default class AbilitiesService extends BaseService<Events> {
   constructor(
@@ -147,7 +104,9 @@ export default class AbilitiesService extends BaseService<Events> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
     this.chainService.emitter.on("newAccountToTrack", (addressOnNetwork) => {
-      this.pollForAbilities(addressOnNetwork.address)
+      const { address } = addressOnNetwork
+      this.pollForAbilities(address)
+      this.emitter.emit("newAccount", address)
     })
   }
 
