@@ -113,9 +113,11 @@ function isGalxeAchievement(url: string | null | undefined) {
 
 function getChainIDsNames(chainIDs: string[]) {
   return chainIDs
-    .map(
+    .flatMap(
       (chainID) =>
-        CHAIN_ID_TO_NAME[parseInt(chainID, 10) as keyof typeof CHAIN_ID_TO_NAME]
+        CHAIN_ID_TO_NAME[
+          parseInt(chainID, 10) as keyof typeof CHAIN_ID_TO_NAME
+        ] ?? []
     )
     .join(",")
 }

@@ -253,7 +253,8 @@
       "description": "Description",
       "itemsCount": "Items in collection",
       "creator": "Creator",
-      "properties": "Properties"
+      "properties": "Properties",
+      "refresh": "Refresh metadata"
     },
     "units": {
       "nft_one": "NFT",

@@ -132,6 +132,14 @@ export default class NFTsService extends BaseService<Events> {
     )
   }
 
+  async refreshNFTsFromCollection(
+    collectionID: string,
+    account: AddressOnNetwork
+  ): Promise<void> {
+    this.setFreshCollection(collectionID, account.address, false)
+    await this.fetchNFTsFromCollection(collectionID, account)
+  }
+
   async fetchNFTsFromCollection(
     collectionID: string,
     account: AddressOnNetwork
@@ -236,7 +244,8 @@ export default class NFTsService extends BaseService<Events> {
       this.emitter.emit("updateCollections", [updatedCollection])
     }
 
-    this.setFreshCollection(collectionID, account.address, true)
+    // if NFTs were fetched then mark as fresh
+    this.setFreshCollection(collectionID, account.address, !!updatedNFTs.length)
 
     const hasNextPage = !!Object.keys(nextPageURLs).length
 
