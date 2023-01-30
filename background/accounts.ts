@@ -4,7 +4,7 @@ import { HexString } from "./types"
 
 /**
  * An account balance at a particular time and block height, on a particular
- * network. Flexible enough to represent base assets like ETH and BTC as well
+ * network. Flexible enough to represent base assets like ETH as well
  * application-layer tokens like ERC-20s.
  */
 export type AccountBalance = {

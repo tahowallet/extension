@@ -72,6 +72,7 @@ const SIMPLE_HASH_CHAIN_TO_ID = {
   polygon: 137,
   arbitrum: 42161,
   bsc: 56,
+  avalanche: 43114,
 }
 
 function simpleHashNFTModelToNFT(original: SimpleHashNFTModel): NFT {

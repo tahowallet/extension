@@ -2,25 +2,55 @@ import React, { ReactElement } from "react"
 import { Link } from "react-router-dom"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 
+import { useTranslation } from "react-i18next"
+import { isBuiltInNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
 import SharedIconRouterLink from "../../Shared/SharedIconRouterLink"
+import { useBackgroundSelector } from "../../../hooks"
+import { trimWithEllipsis } from "../../../utils/textUtils"
 
-export default function CommonAssetListItem({
-  assetAmount,
-  initializationLoadingTimeExpired,
-}: {
+type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount
   initializationLoadingTimeExpired: boolean
-}): ReactElement {
+  onUntrustedAssetWarningClick?: (asset: CompleteAssetAmount["asset"]) => void
+}
+
+const MAX_SYMBOL_LENGTH = 10
+
+export default function CommonAssetListItem(
+  props: CommonAssetListItemProps
+): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet.trustedAssets",
+  })
+  const {
+    assetAmount,
+    initializationLoadingTimeExpired,
+    onUntrustedAssetWarningClick,
+  } = props
   const isMissingLocalizedUserValue =
     typeof assetAmount.localizedMainCurrencyAmount === "undefined"
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+
+  // NB: non-base assets that don't have any token lists are considered
+  // untrusted. Reifying base assets clearly will improve this check down the
+  // road. Eventually, assets can be flagged as trusted by adding them to an
+  // "internal" token list that users can export and share.
+  const numTokenLists = assetAmount?.asset?.metadata?.tokenLists?.length ?? 0
+  const baseAsset = isBuiltInNetworkBaseAsset(
+    assetAmount?.asset,
+    selectedNetwork
+  )
 
   const contractAddress =
     "contractAddress" in assetAmount.asset
       ? assetAmount.asset.contractAddress
       : undefined
+
+  const assetIsUntrusted = numTokenLists === 0 && !baseAsset
 
   return (
     <Link
@@ -40,23 +70,46 @@ export default function CommonAssetListItem({
               <span className="bold_amount_count">
                 {assetAmount.localizedDecimalAmount}
               </span>
-              {assetAmount.asset.symbol}
+              <span title={assetAmount.asset.symbol}>
+                {trimWithEllipsis(assetAmount.asset.symbol, MAX_SYMBOL_LENGTH)}
+              </span>
             </div>
-            {initializationLoadingTimeExpired && isMissingLocalizedUserValue ? (
-              <></>
-            ) : (
-              <div className="price">
-                {isMissingLocalizedUserValue ? (
-                  <SharedLoadingSpinner size="small" />
-                ) : (
-                  `$${assetAmount.localizedMainCurrencyAmount}`
-                )}
-              </div>
-            )}
+
+            {
+              // @TODO don't fetch prices for untrusted assets in the first place
+              // Only show prices for trusted assets
+              assetIsUntrusted ||
+              (initializationLoadingTimeExpired &&
+                isMissingLocalizedUserValue) ? (
+                <></>
+              ) : (
+                <div className="price">
+                  {isMissingLocalizedUserValue ? (
+                    <SharedLoadingSpinner size="small" />
+                  ) : (
+                    `$${assetAmount.localizedMainCurrencyAmount}`
+                  )}
+                </div>
+              )
+            }
           </div>
         </div>
         <div className="asset_right">
           <>
+            {assetIsUntrusted && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault()
+                  if (onUntrustedAssetWarningClick) {
+                    onUntrustedAssetWarningClick(assetAmount.asset)
+                  }
+                }}
+                className="untrusted_asset_icon"
+              >
+                {t("notTrusted")}
+              </button>
+            )}
             <SharedIconRouterLink
               path="/send"
               state={assetAmount.asset}

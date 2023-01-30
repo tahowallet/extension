@@ -5,6 +5,11 @@ import { setNewSelectedAccount, UIState } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 import { Keyring, KeyringMetadata } from "../services/keyring/index"
 
+type KeyringToVerify = {
+  id: string
+  mnemonic: string[]
+} | null
+
 type KeyringsState = {
   keyrings: Keyring[]
   keyringMetadata: {
@@ -12,10 +17,7 @@ type KeyringsState = {
   }
   importing: false | "pending" | "done"
   status: "locked" | "unlocked" | "uninitialized"
-  keyringToVerify: {
-    id: string
-    mnemonic: string[]
-  } | null
+  keyringToVerify: KeyringToVerify
 }
 
 export const initialState: KeyringsState = {
@@ -30,7 +32,7 @@ export type Events = {
   createPassword: string
   unlockKeyrings: string
   lockKeyrings: never
-  generateNewKeyring: never
+  generateNewKeyring: string | undefined
   deriveAddress: string
   importKeyring: ImportKeyring
 }
@@ -97,7 +99,7 @@ const keyringsSlice = createSlice({
         keyringMetadata,
       }
     },
-    setKeyringToVerify: (state, { payload }) => ({
+    setKeyringToVerify: (state, { payload }: { payload: KeyringToVerify }) => ({
       ...state,
       keyringToVerify: payload,
     }),
@@ -132,8 +134,8 @@ export default keyringsSlice.reducer
 // Async thunk to bubble the generateNewKeyring action from  store to emitter.
 export const generateNewKeyring = createBackgroundAsyncThunk(
   "keyrings/generateNewKeyring",
-  async () => {
-    await emitter.emit("generateNewKeyring")
+  async (path?: string) => {
+    await emitter.emit("generateNewKeyring", path)
   }
 )
 

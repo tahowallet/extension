@@ -18,7 +18,10 @@ export function connectProviderBridge(): void {
       event.data.target === PROVIDER_BRIDGE_TARGET
     ) {
       // if dapp wants to connect let's grab its details
-      if (event.data.request.method === "eth_requestAccounts") {
+      if (
+        event.data.request.method === "eth_requestAccounts" ||
+        event.data.request.method === "eth_accounts"
+      ) {
         const faviconElements: NodeListOf<HTMLLinkElement> =
           window.document.querySelectorAll("link[rel*='icon']")
         const largestFavicon = [...faviconElements].sort((el) =>
