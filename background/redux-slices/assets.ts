@@ -3,6 +3,7 @@ import { ethers } from "ethers"
 import {
   AnyAsset,
   AnyAssetAmount,
+  flipPricePoint,
   isFungibleAsset,
   isSmartContractFungibleAsset,
   PricePoint,
@@ -12,12 +13,15 @@ import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
 import { normalizeEVMAddress } from "../lib/utils"
 import { createBackgroundAsyncThunk } from "./utils"
-import { isNetworkBaseAsset } from "./utils/asset-utils"
+import { isBuiltInNetworkBaseAsset } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
 import { sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
-import { BASE_ASSETS_BY_SYMBOL, FIAT_CURRENCIES_SYMBOL } from "../constants"
+import {
+  BUILT_IN_NETWORK_BASE_ASSETS,
+  FIAT_CURRENCIES_SYMBOL,
+} from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
 
 export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
@@ -66,8 +70,12 @@ const assetsSlice = createSlice({
                   normalizeEVMAddress(asset.contractAddress)) ||
               // Only match base assets by name - since there may be
               // many assets that share a name and symbol across L2's
-              (BASE_ASSETS_BY_SYMBOL[a.symbol] &&
-                BASE_ASSETS_BY_SYMBOL[asset.symbol] &&
+              (BUILT_IN_NETWORK_BASE_ASSETS.some(
+                (baseAsset) => baseAsset.symbol === a.symbol
+              ) &&
+                BUILT_IN_NETWORK_BASE_ASSETS.some(
+                  (baseAsset) => baseAsset.symbol === asset.symbol
+                ) &&
                 a.name === asset.name)
           )
           // if there aren't duplicates, add the asset
@@ -144,7 +152,7 @@ export const transferAsset = createBackgroundAsyncThunk(
     const provider = getProvider()
     const signer = provider.getSigner()
 
-    if (isNetworkBaseAsset(assetAmount.asset, fromNetwork)) {
+    if (isBuiltInNetworkBaseAsset(assetAmount.asset, fromNetwork)) {
       logger.debug(
         `Sending ${assetAmount.amount} ${assetAmount.asset.symbol} from ` +
           `${fromAddress} to ${toAddress} as a base asset transfer.`
@@ -230,12 +238,7 @@ export const selectAssetPricePoint = createSelector(
 
       // Flip it if the price point looks like USD-ETH
       if (pricePoint.pair[0].symbol !== assetToFind.symbol) {
-        const { pair, amounts, time } = pricePoint
-        pricePoint = {
-          pair: [pair[1], pair[0]],
-          amounts: [amounts[1], amounts[0]],
-          time,
-        }
+        pricePoint = flipPricePoint(pricePoint)
       }
 
       const assetDecimals = isFungibleAsset(assetToFind)

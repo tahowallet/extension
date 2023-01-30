@@ -32,7 +32,7 @@ export type Events = {
   createPassword: string
   unlockKeyrings: string
   lockKeyrings: never
-  generateNewKeyring: never
+  generateNewKeyring: string | undefined
   deriveAddress: string
   importKeyring: ImportKeyring
 }
@@ -134,8 +134,8 @@ export default keyringsSlice.reducer
 // Async thunk to bubble the generateNewKeyring action from  store to emitter.
 export const generateNewKeyring = createBackgroundAsyncThunk(
   "keyrings/generateNewKeyring",
-  async () => {
-    await emitter.emit("generateNewKeyring")
+  async (path?: string) => {
+    await emitter.emit("generateNewKeyring", path)
   }
 )
 

@@ -157,7 +157,10 @@ import {
   deleteTransferredNFTs,
 } from "./redux-slices/nfts_update"
 import AbilitiesService from "./services/abilities"
-import { addAbilities } from "./redux-slices/abilities"
+import {
+  addAbilities,
+  emitter as abilitiesSliceEmitter,
+} from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1083,13 +1086,14 @@ export default class Main extends BaseService<never> {
       })
     })
 
-    keyringSliceEmitter.on("generateNewKeyring", async () => {
+    keyringSliceEmitter.on("generateNewKeyring", async (path) => {
       // TODO move unlocking to a reasonable place in the initialization flow
       const generated: {
         id: string
         mnemonic: string[]
       } = await this.keyringService.generateNewKeyring(
-        KeyringTypes.mnemonicBIP39S256
+        KeyringTypes.mnemonicBIP39S256,
+        path
       )
 
       this.store.dispatch(setKeyringToVerify(generated))
@@ -1278,6 +1282,7 @@ export default class Main extends BaseService<never> {
         [{ chainId: network.chainID }],
         TALLY_INTERNAL_ORIGIN
       )
+      this.chainService.pollBlockPricesForNetwork(network.chainID)
       this.store.dispatch(clearCustomGas())
     })
   }
@@ -1515,6 +1520,12 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("newAbilities", async (newAbilities) => {
       this.store.dispatch(addAbilities(newAbilities))
     })
+    abilitiesSliceEmitter.on(
+      "reportSpam",
+      ({ address, abilitySlug, reason }) => {
+        this.abilitiesService.reportSpam(address, abilitySlug, reason)
+      }
+    )
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {

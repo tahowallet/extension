@@ -10,6 +10,7 @@ import {
   useHistory,
   useRouteMatch,
 } from "react-router-dom"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import OnboardingStepsIndicator from "../../../components/Onboarding/OnboardingStepsIndicator"
 import {
   useAreKeyringsUnlocked,
@@ -60,6 +61,7 @@ export default function NewSeed(): ReactElement {
   const mnemonic = useBackgroundSelector(
     (state) => state.keyrings.keyringToVerify?.mnemonic
   )
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
 
@@ -67,9 +69,9 @@ export default function NewSeed(): ReactElement {
   const { path } = useRouteMatch()
 
   const showNewSeedPhrase = () => {
-    dispatch(generateNewKeyring()).then(() =>
-      history.push(NewSeedRoutes.REVIEW_SEED)
-    )
+    dispatch(
+      generateNewKeyring(selectedNetwork.derivationPath ?? "m/44'/60'/0'/0")
+    ).then(() => history.push(NewSeedRoutes.REVIEW_SEED))
   }
 
   const showSeedVerification = () => {

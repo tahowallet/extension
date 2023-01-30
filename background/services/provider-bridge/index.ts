@@ -192,7 +192,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
           event.request.params,
           origin
         )
-    } else if (event.request.method === "eth_requestAccounts") {
+    } else if (
+      event.request.method === "eth_requestAccounts" ||
+      event.request.method === "eth_accounts"
+    ) {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
 

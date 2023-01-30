@@ -2,13 +2,14 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import { HexString, NormalizedEVMAddress } from "../../types"
 import {
+  createSpamReport,
   DaylightAbility,
   DaylightAbilityRequirement,
   getDaylightAbilities,
-} from "./daylight"
+} from "../../lib/daylight"
 import { AbilitiesDatabase, getOrCreateDB } from "./db"
 import ChainService from "../chain"
-import { FeatureFlags } from "../../features"
+import { FeatureFlags, isEnabled } from "../../features"
 import { normalizeEVMAddress } from "../../lib/utils"
 
 export type AbilityType = "mint" | "airdrop" | "access"
@@ -38,8 +39,11 @@ export type Ability = {
   title: string
   description: string | null
   abilityId: string
+  slug: string
   linkUrl: string
   imageUrl?: string
+  openAt?: string
+  closeAt?: string
   completed: boolean
   removedFromUi: boolean
   address: NormalizedEVMAddress
@@ -92,8 +96,11 @@ const normalizeDaylightAbilities = (
         title: daylightAbility.title,
         description: daylightAbility.description,
         abilityId: daylightAbility.uid,
+        slug: daylightAbility.slug,
         linkUrl: daylightAbility.action.linkUrl,
         imageUrl: daylightAbility.imageUrl || undefined,
+        openAt: daylightAbility.openAt || undefined,
+        closeAt: daylightAbility.closeAt || undefined,
         completed: false,
         removedFromUi: false,
         address: normalizeEVMAddress(address),
@@ -145,7 +152,7 @@ export default class AbilitiesService extends BaseService<Events> {
   }
 
   async pollForAbilities(address: HexString): Promise<void> {
-    if (!FeatureFlags.SUPPORT_ABILITIES) {
+    if (!isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
       return
     }
 
@@ -195,5 +202,14 @@ export default class AbilitiesService extends BaseService<Events> {
       // eslint-disable-next-line no-await-in-loop
       await this.pollForAbilities(address)
     }
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async reportSpam(
+    address: NormalizedEVMAddress,
+    abilitySlug: string,
+    reason: string
+  ): Promise<void> {
+    await createSpamReport(address, abilitySlug, reason)
   }
 }
