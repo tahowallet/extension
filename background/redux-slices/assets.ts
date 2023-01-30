@@ -225,7 +225,10 @@ export const selectAssetPricePoint = createSelector(
       )
 
       /* Don't do anything else if this is an untrusted asset and there's no exact match */
-      if ((assetToFind.metadata?.tokenLists.length ?? 0) < 1) {
+      if (
+        (assetToFind.metadata?.tokenLists.length ?? 0) < 1 &&
+        !isBuiltInNetworkBaseAsset(assetToFind, assetToFind.homeNetwork)
+      ) {
         return undefined
       }
     }
