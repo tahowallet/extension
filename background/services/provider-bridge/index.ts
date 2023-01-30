@@ -33,6 +33,7 @@ type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
   initializeAllowedPages: PermissionMap
   setClaimReferrer: string
+  walletConnectInit: string
 }
 
 /**
@@ -147,14 +148,39 @@ export default class ProviderBridgeService extends BaseService<Events> {
         defaultWallet: await this.preferenceService.getDefaultWallet(),
         chainId: toHexChainID(network.chainID),
       }
-    } else if (event.request.method === "tally_setClaimReferrer") {
-      const referrer = event.request.params[0]
-      if (origin !== WEBSITE_ORIGIN || typeof referrer !== "string") {
-        logger.warn(`invalid 'setClaimReferrer' request`)
-        return
-      }
+    } else if (event.request.method.startsWith("tally_")) {
+      switch (event.request.method) {
+        case "tally_setClaimReferrer":
+          if (origin !== WEBSITE_ORIGIN) {
+            logger.warn(
+              `invalid WEBSITE_ORIGIN ${WEBSITE_ORIGIN} when using a custom 'tally_...' method`
+            )
+            return
+          }
 
-      this.emitter.emit("setClaimReferrer", String(referrer))
+          if (typeof event.request.params[0] !== "string") {
+            logger.warn(`invalid 'tally_setClaimReferrer' request`)
+            return
+          }
+
+          this.emitter.emit("setClaimReferrer", String(event.request.params[0]))
+          break
+        case "tally_walletConnectInit":
+          if (typeof event.request.params[0] !== "string") {
+            logger.warn(`invalid 'tally_walletConnectInit' request`)
+            return
+          }
+
+          await this.emitter.emit(
+            "walletConnectInit",
+            String(event.request.params[0])
+          )
+          break
+        default:
+          logger.debug(
+            `Unknown method ${event.request.method} in 'ProviderBridgeService'`
+          )
+      }
 
       response.result = null
     } else if (
