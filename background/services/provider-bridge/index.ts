@@ -9,8 +9,6 @@ import {
   RPCRequest,
   EIP1193_ERROR_CODES,
   isTallyConfigPayload,
-  isEIP1193Error,
-  EIP1193ErrorPayload,
 } from "@tallyho/provider-bridge-shared"
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import BaseService from "../base"
@@ -27,7 +25,7 @@ import {
 import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
-import { getRPCErrorResponse, PermissionMap } from "./utils"
+import { handleRPCErrorResponse, PermissionMap } from "./utils"
 import { toHexChainID } from "../../networks"
 import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 
@@ -454,24 +452,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         }
       }
     } catch (error) {
-      logger.log("error processing request", error)
-      if (typeof error === "object" && error !== null) {
-        if ("eip1193Error" in error) {
-          const { eip1193Error } = error as {
-            eip1193Error: EIP1193ErrorPayload
-          }
-          if (isEIP1193Error(eip1193Error)) {
-            return eip1193Error
-          }
-        }
-        if ("body" in error) {
-          return getRPCErrorResponse(error)
-        }
-        if ("error" in error) {
-          return getRPCErrorResponse((error as { error: string }).error)
-        }
-      }
-      return new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()
+      return handleRPCErrorResponse(error)
     }
   }
 }

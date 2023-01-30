@@ -1,7 +1,11 @@
 import {
-  EIP1193_ERROR_CODES,
   PermissionRequest,
+  EIP1193Error,
+  EIP1193_ERROR_CODES,
+  isEIP1193Error,
+  EIP1193ErrorPayload,
 } from "@tallyho/provider-bridge-shared"
+import logger from "../../lib/logger"
 
 export type PermissionMap = {
   evm: {
@@ -27,19 +31,55 @@ export const keyPermissionsByChainIdAddressOrigin = (
   return map
 }
 
-export function getRPCErrorResponse(error: unknown): {
-  code: number
-  message: string
-} {
-  const parsedError = JSON.parse((error as { body: string }).body)?.error
-  return {
-    /**
-     * The code should be the same as for user rejected requests because otherwise it will not be displayed.
-     */
-    code: 4001,
-    message:
-      "message" in parsedError && parsedError.message
-        ? parsedError.message[0].toUpperCase() + parsedError.message.slice(1)
-        : EIP1193_ERROR_CODES.userRejectedRequest.message,
+export function parsedRPCErrorResponse(error: { body: string }):
+  | {
+      code: number
+      message: string
+    }
+  | undefined {
+  try {
+    const parsedError = JSON.parse(error.body).error
+    return {
+      /**
+       * The code should be the same as for user rejected requests because otherwise it will not be displayed.
+       */
+      code: 4001,
+      message:
+        "message" in parsedError && parsedError.message
+          ? parsedError.message[0].toUpperCase() + parsedError.message.slice(1)
+          : EIP1193_ERROR_CODES.userRejectedRequest.message,
+    }
+  } catch (err) {
+    return undefined
   }
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export function handleRPCErrorResponse(error: unknown) {
+  let response
+  logger.log("error processing request", error)
+  if (typeof error === "object" && error !== null) {
+    // Get error per the RPC method’s specification
+    if ("eip1193Error" in error) {
+      const { eip1193Error } = error as {
+        eip1193Error: EIP1193ErrorPayload
+      }
+      if (isEIP1193Error(eip1193Error)) {
+        response = eip1193Error
+      }
+    }
+    if ("body" in error) {
+      response = parsedRPCErrorResponse(error as { body: string })
+    }
+    if ("error" in error) {
+      response = parsedRPCErrorResponse(
+        (error as { error: { body: string } }).error
+      )
+    }
+  }
+  // If no specific error is obtained return by default
+  return (
+    response ??
+    new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()
+  )
 }
