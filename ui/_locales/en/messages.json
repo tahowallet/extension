@@ -682,7 +682,8 @@
         "step1": "Set Tally Ho as default",
         "step2": "Click “connect to wallet” in a dapp",
         "step3": "Select one similar to these"
-      }
+      },
+      "walletConnectInfo": "You can now connect to any dapp that supports Wallet Connect by selecting Tally Ho from desktop tab. <url>Learn more</url>"
     }
   },
   "wallet": {
@@ -711,7 +712,7 @@
       "assetImported": "Asset imported from transaction history",
       "name": "Name",
       "contract": "Contract address",
-      "close": "Close"      
+      "close": "Close"
     },
     "banner": {
       "bannerTitle": "New Odyssey week!",
