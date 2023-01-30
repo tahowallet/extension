@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import { Ability } from "../services/abilities"
+import { Ability, ABILITY_TYPES_ENABLED } from "../abilities"
 import { HexString, NormalizedEVMAddress } from "../types"
 import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
@@ -15,8 +15,16 @@ export type Events = {
 
 export const emitter = new Emittery<Events>()
 
+export type State = "open" | "completed" | "expired" | "deleted" | "all"
+
+export type Filter = {
+  state: State
+  types: string[]
+  accounts: string[]
+}
+
 type AbilitiesState = {
-  filter: "all" | "completed" | "incomplete"
+  filter: Filter
   abilities: {
     [address: HexString]: {
       [uuid: string]: Ability
@@ -26,7 +34,11 @@ type AbilitiesState = {
 }
 
 const initialState: AbilitiesState = {
-  filter: "incomplete",
+  filter: {
+    state: "open",
+    types: [...ABILITY_TYPES_ENABLED],
+    accounts: [],
+  },
   abilities: {},
   hideDescription: false,
 }
@@ -66,6 +78,25 @@ const abilitiesSlice = createSlice({
     toggleHideDescription: (immerState, { payload }: { payload: boolean }) => {
       immerState.hideDescription = payload
     },
+    updateState: (immerState, { payload: state }: { payload: State }) => {
+      immerState.filter.state = state
+    },
+    addType: (immerState, { payload: type }: { payload: string }) => {
+      immerState.filter.types.push(type)
+    },
+    deleteType: (immerState, { payload: type }: { payload: string }) => {
+      immerState.filter.types = immerState.filter.types.filter(
+        (value) => value !== type
+      )
+    },
+    addAccount: (immerState, { payload: type }: { payload: string }) => {
+      immerState.filter.accounts.push(type)
+    },
+    deleteAccount: (immerState, { payload: account }: { payload: string }) => {
+      immerState.filter.accounts = immerState.filter.accounts.filter(
+        (value) => value !== account
+      )
+    },
   },
 })
 
@@ -75,6 +106,11 @@ export const {
   markAbilityAsCompleted,
   markAbilityAsRemoved,
   toggleHideDescription,
+  updateState,
+  addType,
+  deleteType,
+  addAccount,
+  deleteAccount,
 } = abilitiesSlice.actions
 
 export const completeAbility = createBackgroundAsyncThunk(
