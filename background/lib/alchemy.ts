@@ -44,7 +44,7 @@ export async function getAssetTransfers(
   fromBlock: number,
   toBlock?: number,
   order: "asc" | "desc" = "desc",
-  maxCount = 1000
+  maxCount = 25
 ): Promise<AssetTransfer[]> {
   const { address: account, network } = addressOnNetwork
 

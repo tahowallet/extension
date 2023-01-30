@@ -9,6 +9,7 @@ const icons: Record<
     icon: string
     label: I18nKey
     background: string
+    backgroundHover?: string
     size: number
     style: string
   }
@@ -17,6 +18,7 @@ const icons: Record<
     icon: "close",
     label: i18n.t("nfts.collectionHover.close"),
     background: "var(--green-40)",
+    backgroundHover: "var(--green-20)",
     size: 12,
     style: "",
   },
@@ -50,7 +52,7 @@ export default function NFTsHover(props: {
 }): ReactElement {
   const { isCollection = false, isExpanded = false, onClick } = props
 
-  const { icon, label, background, size, style } = getIcon(
+  const { icon, label, background, backgroundHover, size, style } = getIcon(
     isCollection,
     isExpanded
   )
@@ -99,6 +101,10 @@ export default function NFTsHover(props: {
           width: 32px;
           height: 32px;
           border-radius: 100%;
+          transition: background 200ms ease-in-out;
+        }
+        .nft_hover:hover .nft_hover_icon {
+          background: ${backgroundHover ?? background};
         }
       `}</style>
     </button>

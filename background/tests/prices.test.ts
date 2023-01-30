@@ -2,8 +2,7 @@
 import * as ethers from "@ethersproject/web" // << THIS IS THE IMPORTANT TRICK
 
 import logger from "../lib/logger"
-import { BTC, ETH, FIAT_CURRENCIES, USD } from "../constants"
-import { CoinGeckoAsset } from "../assets"
+import { ETH, FIAT_CURRENCIES, USD } from "../constants"
 import { getPrices } from "../lib/prices"
 import { isValidCoinGeckoPriceResponse } from "../lib/validate"
 
@@ -152,7 +151,7 @@ describe("lib/prices.ts", () => {
           amounts: [639090000000000n, 100000000n],
           pair: [
             { decimals: 10, name: "United States Dollar", symbol: "USD" },
-            BTC,
+            ETH,
           ],
           time: dateNow,
         },
@@ -168,9 +167,9 @@ describe("lib/prices.ts", () => {
 
       jest.spyOn(ethers, "fetchJson").mockResolvedValue(fetchJsonResponse)
 
-      await expect(
-        getPrices([BTC, ETH] as CoinGeckoAsset[], FIAT_CURRENCIES)
-      ).resolves.toEqual(getPricesResponse)
+      await expect(getPrices([ETH], FIAT_CURRENCIES)).resolves.toEqual(
+        getPricesResponse
+      )
       expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
     })
     it("should filter out invalid pairs if the data DOESN'T exist", async () => {
@@ -210,9 +209,9 @@ describe("lib/prices.ts", () => {
       ]
 
       jest.spyOn(ethers, "fetchJson").mockResolvedValue(fetchJsonResponse)
-      await expect(
-        getPrices([ETH, FAKE_COIN] as CoinGeckoAsset[], currencies)
-      ).resolves.toEqual(getPricesResponse)
+      await expect(getPrices([ETH, FAKE_COIN], currencies)).resolves.toEqual(
+        getPricesResponse
+      )
       expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
     })
     it("should return [] if the api response does not fit the schema", async () => {
@@ -220,9 +219,7 @@ describe("lib/prices.ts", () => {
 
       jest.spyOn(ethers, "fetchJson").mockResolvedValue(response)
 
-      await expect(
-        getPrices([ETH] as CoinGeckoAsset[], FIAT_CURRENCIES)
-      ).resolves.toEqual([])
+      await expect(getPrices([ETH], FIAT_CURRENCIES)).resolves.toEqual([])
       expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
     })
   })

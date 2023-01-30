@@ -13,13 +13,14 @@ import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 
 export default function NFTCollection(props: {
   collection: NFTCollectionCached
+  isExpanded: boolean
+  setExpandedID: (id: string | null, owner: string | null) => void
   openPreview: (current: NFTWithCollection) => void
 }): ReactElement {
-  const { collection, openPreview } = props
+  const { collection, openPreview, isExpanded, setExpandedID } = props
   const { id, owner, network, nfts, nftCount, hasNextPage } = collection
   const dispatch = useBackgroundDispatch()
 
-  const [isExpanded, setIsExpanded] = useState(false)
   const [isLoading, setIsLoading] = useState(false) // initial update of collection
   const [isUpdating, setIsUpdating] = useState(false) // update on already loaded collection
   const [wasUpdated, setWasUpdated] = useState(false) // to fetch NFTs data only once during the component lifespan
@@ -104,62 +105,76 @@ export default function NFTCollection(props: {
     }
   }, [fetchCollection, isExpanded, wasUpdated])
 
-  const toggleCollection = () => setIsExpanded((val) => !val)
+  const toggleCollection = () =>
+    isExpanded ? setExpandedID(null, null) : setExpandedID(id, owner)
 
   const onItemClick = (nft: NFT) => openPreview({ nft, collection })
 
   return (
     <>
-      <li
-        ref={collectionRef}
-        className={classNames("nft_collection", {
+      <div
+        className={classNames("nft_collection_wrapper", {
           expanded: isExpanded && !isLoading,
           invisible: !nftCount,
         })}
       >
-        <SharedSkeletonLoader
-          isLoaded={!isLoading && !!nfts.length}
-          width={168}
-          height={168}
-          customStyles="margin: 8px 0 34px;"
+        <li
+          ref={collectionRef}
+          className={classNames("nft_collection", {
+            expanded: isExpanded && !isLoading,
+          })}
         >
-          {nfts.length === 1 ? (
-            <NFTItem
-              item={{
-                ...collection,
-                thumbnailURL: nfts[0].thumbnailURL || collection.thumbnailURL,
-              }}
-              onClick={() => onItemClick(nfts[0])}
-            />
-          ) : (
-            <NFTItem
-              item={{
-                ...collection,
-                thumbnailURL: nfts[0]?.thumbnailURL || collection.thumbnailURL,
-              }}
-              onClick={toggleCollection}
-              isCollection
-              isExpanded={isExpanded}
-            />
-          )}
-          {isExpanded && (
-            <>
-              {nfts.map((nft) => (
-                <NFTItem key={nft.id} item={nft} onClick={onItemClick} />
-              ))}
-              <SharedSkeletonLoader
-                isLoaded={!isUpdating}
-                width={168}
-                height={168}
-                customStyles="margin: 8px 0;"
+          <SharedSkeletonLoader
+            isLoaded={!isLoading && !!nfts.length}
+            width={168}
+            height={168}
+            customStyles="margin: 8px 0 34px;"
+          >
+            {nfts.length === 1 ? (
+              <NFTItem
+                item={{
+                  ...collection,
+                  thumbnailURL: nfts[0].thumbnailURL || collection.thumbnailURL,
+                }}
+                onClick={() => onItemClick(nfts[0])}
               />
-              <div ref={loadMoreRef} className="nft_load_more" />
-            </>
-          )}
-        </SharedSkeletonLoader>
-      </li>
+            ) : (
+              <NFTItem
+                item={{
+                  ...collection,
+                  thumbnailURL:
+                    nfts[0]?.thumbnailURL || collection.thumbnailURL,
+                }}
+                onClick={toggleCollection}
+                isCollection
+                isExpanded={isExpanded}
+              />
+            )}
+            {isExpanded && (
+              <>
+                {nfts.map((nft) => (
+                  <NFTItem key={nft.id} item={nft} onClick={onItemClick} />
+                ))}
+                <SharedSkeletonLoader
+                  isLoaded={!isUpdating}
+                  width={168}
+                  height={168}
+                  customStyles="margin: 8px 0;"
+                />
+                <div ref={loadMoreRef} className="nft_load_more" />
+              </>
+            )}
+          </SharedSkeletonLoader>
+        </li>
+      </div>
       <style jsx>{`
+        .nft_collection_wrapper {
+          position: relative;
+          width: 168px;
+          min-height: 208px;
+        }
         .nft_collection {
+          position: absolute;
           margin: 0;
           padding: 0;
           background: transparent;
@@ -167,16 +182,22 @@ export default function NFTCollection(props: {
           transition: all 200ms ease-in-out;
         }
         .nft_collection.expanded {
+          width: 352px;
+          z-index: 3;
           margin: 8px -16px;
-          width: 100%;
           padding: 8px 16px 6px;
           background: var(--green-120);
+          box-shadow: 0 3px 7px rgb(0 20 19 / 54%),
+            0 14px 16px rgb(0 20 19 / 54%), 0 32px 32px rgb(0 20 19 / 20%);
           border-radius: 16px;
           display: flex;
           flex-wrap: wrap;
           justify-content: space-between;
         }
-        .nft_collection.invisible {
+        .nft_collection_wrapper:nth-child(even) .nft_collection.expanded {
+          right: 0;
+        }
+        .nft_collection_wrapper.invisible {
           opacity: 0;
           pointer-events: none;
           position: absolute;
@@ -185,6 +206,26 @@ export default function NFTCollection(props: {
         .nft_load_more {
           width: 100%;
           height: 1px;
+        }
+      `}</style>
+      <style jsx global>{`
+        @keyframes show {
+          0% {
+            opacity: 0;
+            position: absolute;
+          }
+          50% {
+            position: static;
+          }
+          100% {
+            opacity: 1;
+          }
+        }
+        .nft_collection.expanded .nft_item:not(:first-child),
+        .nft_collection.expanded .skeleton {
+          animation-name: show;
+          animation-timing-function: ease-in-out;
+          animation-duration: 0.8s;
         }
       `}</style>
     </>
