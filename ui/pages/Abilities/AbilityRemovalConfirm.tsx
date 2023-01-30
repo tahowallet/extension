@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { Ability } from "@tallyho/tally-background/services/abilities"
+import { Ability } from "@tallyho/tally-background/abilities"
 import {
   removeAbility,
   reportAndRemoveAbility,
