@@ -83,7 +83,7 @@ export const getDaylightAbilities = async (
 ): Promise<DaylightAbility[]> => {
   try {
     const response: AbilitiesResponse = await fetchJson(
-      `${DAYLIGHT_BASE_URL}/${address}/abilities?deadline=all`
+      `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities?deadline=all`
     )
 
     return response.abilities

@@ -87,10 +87,10 @@ describe("Abilities utils", () => {
     })
   })
   describe("filterByType", () => {
-    test("should return true if a mint ability", () => {
+    test("should return true if it is a mint type", () => {
       expect(filterByType("mint", ["mint"])).toBeTruthy()
     })
-    test("should return false if a airdrop ability", () => {
+    test("should return false if it is an airdrop type", () => {
       expect(filterByType("airdrop", [])).toBeFalsy()
     })
   })

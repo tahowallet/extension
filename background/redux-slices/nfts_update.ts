@@ -27,6 +27,7 @@ export type NFTWithCollection = {
   collection: NFTCollectionCached
   nft: NFT
 }
+
 export type Filter = {
   id: string
   name: string

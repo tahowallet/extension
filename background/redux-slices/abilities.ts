@@ -36,7 +36,7 @@ type AbilitiesState = {
 const initialState: AbilitiesState = {
   filter: {
     state: "open",
-    types: ABILITY_TYPES_ENABLED as unknown as string[],
+    types: [...ABILITY_TYPES_ENABLED],
     accounts: [],
   },
   abilities: {},
