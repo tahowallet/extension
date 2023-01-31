@@ -160,6 +160,8 @@ import AbilitiesService from "./services/abilities"
 import {
   addAbilities,
   addAccount,
+  deleteAccount as deleteAccountFilter,
+  deleteAbilitiesForAccount,
   emitter as abilitiesSliceEmitter,
 } from "./redux-slices/abilities"
 
@@ -613,6 +615,12 @@ export default class Main extends BaseService<never> {
     if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
       this.store.dispatch(deleteNFTsForAddress(address))
       await this.nftsService.removeNFTsForAddress(address)
+    }
+    // remove abilities
+    if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
+      this.store.dispatch(deleteAccountFilter(address))
+      this.store.dispatch(deleteAbilitiesForAccount(address))
+      await this.abilitiesService.deleteAbilitiesForAccount(address)
     }
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))

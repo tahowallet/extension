@@ -18,12 +18,14 @@ const getTimeDetails = (ability: Ability): string => {
   cutOffDate.setDate(cutOffDate.getDate() + DAYS)
 
   if (ability.closeAt) {
-    if (new Date(ability.closeAt) < cutOffDate) {
+    const closeDate = new Date(ability.closeAt)
+    if (new Date() < closeDate && closeDate < cutOffDate) {
       return i18n.t("abilities.timeCloses")
     }
   }
   if (ability.openAt) {
-    if (new Date(ability.openAt) < cutOffDate) {
+    const openDate = new Date(ability.openAt)
+    if (new Date() < openDate && openDate < cutOffDate) {
       return i18n.t("abilities.timeStarting")
     }
   }

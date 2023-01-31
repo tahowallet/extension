@@ -1,19 +1,27 @@
 import { Ability, AbilityType } from "../../abilities"
 import { Filter, State } from "../abilities"
 
+const isDeleted = (ability: Ability): boolean => ability.removedFromUi
+
+const isExpired = (ability: Ability): boolean =>
+  ability.closeAt ? new Date(ability.closeAt) < new Date() : false
+
 export const filterByState = (ability: Ability, state: State): boolean => {
   switch (state) {
     case "open":
-      return ability.completed === false && !ability.removedFromUi
-    case "completed":
-      return ability.completed === true && !ability.removedFromUi
-    case "expired":
       return (
-        (ability.closeAt ? new Date(ability.closeAt) < new Date() : false) &&
-        !ability.removedFromUi
+        !isDeleted(ability) &&
+        !isExpired(ability) &&
+        ability.completed === false
       )
+    case "completed":
+      return (
+        !isDeleted(ability) && !isExpired(ability) && ability.completed === true
+      )
+    case "expired":
+      return !isDeleted(ability) && isExpired(ability)
     case "deleted":
-      return ability.removedFromUi
+      return isDeleted(ability)
     default:
       return true
   }
