@@ -10,6 +10,7 @@ import {
   createAnyEVMTransaction,
   createChainService,
   createLegacyTransactionRequest,
+  MockSerialFallbackProvider,
 } from "../../../tests/factories"
 import { ChainDatabase } from "../db"
 import SerialFallbackProvider from "../serial-fallback-provider"
@@ -191,6 +192,38 @@ describe("ChainService", () => {
         validOptimismEVMTransaction.hash
       )
     ).toBeTruthy()
+  })
+
+  describe("updateSupportedNetworks", () => {
+    it("Should properly update supported networks", async () => {
+      chainService.supportedNetworks = []
+      await chainService.updateSupportedNetworks()
+      expect(chainService.supportedNetworks.length).toBe(8)
+    })
+  })
+
+  describe("addCustomChain", () => {
+    // prettier-ignore
+    const FANTOM_CHAIN_PARAMS = { chainId: "250", blockExplorerUrl: "https://ftmscan.com", chainName: "Fantom Opera", nativeCurrency: { name: "Fantom", symbol: "FTM", decimals: 18, }, rpcUrls: [ "https://fantom-mainnet.gateway.pokt.network/v1/lb/62759259ea1b320039c9e7ac", "https://rpc.ftm.tools", "https://rpc.ankr.com/fantom", "https://rpc.fantom.network", "https://rpc2.fantom.network", "https://rpc3.fantom.network", "https://rpcapi.fantom.network", "https://fantom-mainnet.public.blastapi.io", "https://1rpc.io/ftm", ], blockExplorerUrls: ["https://ftmscan.com"], }
+    it("should update supported networks after adding a chain", async () => {
+      expect(chainService.supportedNetworks.length).toBe(8)
+      await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
+      expect(chainService.supportedNetworks.length).toBe(9)
+    })
+
+    it("should create a provider for the new chain", async () => {
+      expect(chainService.providers.evm["250"]).toBe(undefined)
+      await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
+      expect(chainService.providers.evm["250"]).toBeInstanceOf(
+        MockSerialFallbackProvider
+      )
+    })
+
+    it("should start tracking the new chain", async () => {
+      expect((await chainService.getTrackedNetworks()).length).toBe(1)
+      await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
+      expect((await chainService.getTrackedNetworks()).length).toBe(2)
+    })
   })
 
   describe("populateEVMTransactionNonce", () => {

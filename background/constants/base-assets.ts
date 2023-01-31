@@ -5,26 +5,46 @@ const ETH: NetworkBaseAsset = {
   name: "Ether",
   symbol: "ETH",
   decimals: 18,
+  metadata: {
+    coinGeckoID: "ethereum",
+    tokenLists: [],
+  },
 }
 
 const ARBITRUM_ONE_ETH: NetworkBaseAsset = {
   ...ETH,
   chainID: "42161",
+  metadata: {
+    coinGeckoID: "arbitrum-one",
+    tokenLists: [],
+  },
 }
 
 const ARBITRUM_NOVA_ETH: NetworkBaseAsset = {
   ...ETH,
   chainID: "42170",
+  metadata: {
+    coinGeckoID: "arbitrum-nova",
+    tokenLists: [],
+  },
 }
 
 const OPTIMISTIC_ETH: NetworkBaseAsset = {
   ...ETH,
   chainID: "10",
+  metadata: {
+    coinGeckoID: "optimistic-ethereum",
+    tokenLists: [],
+  },
 }
 
 const GOERLI_ETH: NetworkBaseAsset = {
   ...ETH,
   chainID: "5",
+  metadata: {
+    coinGeckoID: "ethereum",
+    tokenLists: [],
+  },
 }
 
 const RBTC: NetworkBaseAsset = {
@@ -32,6 +52,10 @@ const RBTC: NetworkBaseAsset = {
   name: "RSK Token",
   symbol: "RBTC",
   decimals: 18,
+  metadata: {
+    coinGeckoID: "rootstock",
+    tokenLists: [],
+  },
 }
 
 const MATIC: NetworkBaseAsset = {
@@ -39,6 +63,10 @@ const MATIC: NetworkBaseAsset = {
   name: "Matic Token",
   symbol: "MATIC",
   decimals: 18,
+  metadata: {
+    coinGeckoID: "polygon-pos",
+    tokenLists: [],
+  },
 }
 
 const AVAX: NetworkBaseAsset = {
@@ -46,6 +74,10 @@ const AVAX: NetworkBaseAsset = {
   name: "Avalanche",
   symbol: "AVAX",
   decimals: 18,
+  metadata: {
+    coinGeckoID: "avalanche",
+    tokenLists: [],
+  },
 }
 
 const BNB: NetworkBaseAsset = {
@@ -53,6 +85,10 @@ const BNB: NetworkBaseAsset = {
   name: "Binance Coin",
   symbol: "BNB",
   decimals: 18,
+  metadata: {
+    coinGeckoID: "binance-smart-chain",
+    tokenLists: [],
+  },
 }
 
 export const BASE_ASSETS_BY_CUSTOM_NAME = {

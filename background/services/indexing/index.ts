@@ -637,14 +637,14 @@ export default class IndexingService extends BaseService<Events> {
       return
     }
     this.lastPriceAlarmTime = Date.now()
+
+    const baseAssets = await this.chainService.getNetworkBaseAssets()
+
     // TODO refactor for multiple price sources
     try {
       // TODO include user-preferred currencies
       // get the prices of ETH and BTC vs major currencies
-      const basicPrices = await getPrices(
-        BUILT_IN_NETWORK_BASE_ASSETS,
-        FIAT_CURRENCIES
-      )
+      const basicPrices = await getPrices(baseAssets, FIAT_CURRENCIES)
 
       // kick off db writes and event emission, don't wait for the promises to
       // settle
