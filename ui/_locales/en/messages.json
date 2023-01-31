@@ -253,7 +253,8 @@
       "description": "Description",
       "itemsCount": "Items in collection",
       "creator": "Creator",
-      "properties": "Properties"
+      "properties": "Properties",
+      "refresh": "Refresh metadata"
     },
     "units": {
       "nft_one": "NFT",
@@ -458,7 +459,7 @@
     "beta": "Mainnet (beta)",
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
-    "compatibleChain": "Ethereum-compatible blockchain (beta)",
+    "compatibleChain": "Ethereum-compatible blockchain",
     "avalanche": "Mainnet C-Chain (beta)",
     "connected": "Connected"
   },
@@ -844,12 +845,10 @@
         "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
-        "SUPPORT_AVALANCHE": "Enable Avalanche network",
         "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab",
         "SUPPORT_NFT_SEND": "Enable sending NFTs",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
-        "SUPPORT_BINANCE_SMART_CHAIN": "Enable Binance Smart Chain network",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs"
       }

@@ -37,6 +37,13 @@ describe("Abilities utils", () => {
       }
       expect(filterByState(ability, "open")).toBeFalsy()
     })
+    test("should return false if an ability is open and expired", () => {
+      const ability = {
+        ...ABILITY_DEFAULT,
+        closeAt: "Thu Mar 31 2022",
+      }
+      expect(filterByState(ability, "open")).toBeFalsy()
+    })
     test("should return true if an ability is completed", () => {
       const ability = {
         ...ABILITY_DEFAULT,
@@ -49,6 +56,14 @@ describe("Abilities utils", () => {
         ...ABILITY_DEFAULT,
         completed: true,
         removedFromUi: true,
+      }
+      expect(filterByState(ability, "completed")).toBeFalsy()
+    })
+    test("should return false if an ability is completed and expired", () => {
+      const ability = {
+        ...ABILITY_DEFAULT,
+        completed: true,
+        closeAt: "Thu Mar 31 2022",
       }
       expect(filterByState(ability, "completed")).toBeFalsy()
     })

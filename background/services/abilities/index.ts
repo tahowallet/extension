@@ -163,6 +163,10 @@ export default class AbilitiesService extends BaseService<Events> {
     }
   }
 
+  async deleteAbilitiesForAccount(address: HexString): Promise<void> {
+    await this.db.deleteAbilitiesForAccount(address)
+  }
+
   // eslint-disable-next-line class-methods-use-this
   async reportSpam(
     address: NormalizedEVMAddress,
