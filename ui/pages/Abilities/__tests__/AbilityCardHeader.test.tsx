@@ -10,7 +10,7 @@ import { renderWithProviders } from "../../../tests/test-utils"
 import AbilityCardHeader from "../AbilityCardHeader"
 
 describe("AbilityCardHeader", () => {
-  it("should display an ENS name", async () => {
+  it("should display an ENS name", () => {
     const account = createAccountState()
     const accountData = account.accountsData.evm[ETHEREUM.chainID][
       TEST_ADDRESS
@@ -26,7 +26,7 @@ describe("AbilityCardHeader", () => {
     expect(ui.queryByText(accountData.ens.name)).toBeInTheDocument()
   })
 
-  it("should display a shortened address when an ENS name is unavailable", async () => {
+  it("should display a shortened address when an ENS name is unavailable", () => {
     const account = createAccountState()
     const accountData = createAccountData({ ens: {} })
     account.accountsData.evm[ETHEREUM.chainID][TEST_ADDRESS] = accountData

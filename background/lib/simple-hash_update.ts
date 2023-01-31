@@ -111,11 +111,17 @@ function isGalxeAchievement(url: string | null | undefined) {
   return !!url && (url.includes("galaxy.eco") || url.includes("galxe.com"))
 }
 
+function isKnownAddress(address: string, allAddresses: string[]): boolean {
+  return allAddresses.some((current) => sameEVMAddress(current, address))
+}
+
 function getChainIDsNames(chainIDs: string[]) {
   return chainIDs
-    .map(
+    .flatMap(
       (chainID) =>
-        CHAIN_ID_TO_NAME[parseInt(chainID, 10) as keyof typeof CHAIN_ID_TO_NAME]
+        CHAIN_ID_TO_NAME[
+          parseInt(chainID, 10) as keyof typeof CHAIN_ID_TO_NAME
+        ] ?? []
     )
     .join(",")
 }
@@ -329,23 +335,25 @@ export async function getSimpleHashNFTsTransfers(
 
     const { transfers, next } = result
 
-    const transferDetails: TransferredNFT[] = transfers.flatMap((transfer) =>
-      transfer.nft_id && (transfer.from_address || transfer.to_address)
-        ? {
-            id: transfer.nft_id,
-            chainID: SIMPLE_HASH_CHAIN_TO_ID[transfer.chain].toString(),
-            from: transfer.from_address,
-            to: transfer.to_address,
-            type: addresses.some((address) =>
-              sameEVMAddress(address, transfer.from_address)
-            )
-              ? "sell"
-              : "buy",
-            collectionID:
-              transfer.nft_details?.collection?.collection_id ?? null,
-          }
-        : []
-    )
+    const transferDetails: TransferredNFT[] = transfers.flatMap((transfer) => {
+      const { nft_id: id, from_address: from, to_address: to } = transfer
+      if (id && (from || to)) {
+        const isKnownFromAddress = !!from && isKnownAddress(from, addresses)
+        const isKnownToAddress = !!to && isKnownAddress(to, addresses)
+
+        return {
+          id,
+          chainID: SIMPLE_HASH_CHAIN_TO_ID[transfer.chain].toString(),
+          from,
+          to,
+          isKnownFromAddress,
+          isKnownToAddress,
+          collectionID: transfer.nft_details?.collection?.collection_id ?? null,
+        }
+      }
+
+      return []
+    })
 
     if (next) {
       const nextPageTransferDetails = await getSimpleHashNFTsTransfers(

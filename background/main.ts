@@ -159,6 +159,9 @@ import {
 import AbilitiesService from "./services/abilities"
 import {
   addAbilities,
+  addAccount,
+  deleteAccount as deleteAccountFilter,
+  deleteAbilitiesForAccount,
   emitter as abilitiesSliceEmitter,
 } from "./redux-slices/abilities"
 
@@ -308,7 +311,8 @@ export default class Main extends BaseService<never> {
       ? WalletConnectService.create(
           providerBridgeService,
           internalEthereumProviderService,
-          preferenceService
+          preferenceService,
+          chainService
         )
       : getNoopService<WalletConnectService>()
 
@@ -611,6 +615,12 @@ export default class Main extends BaseService<never> {
     if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
       this.store.dispatch(deleteNFTsForAddress(address))
       await this.nftsService.removeNFTsForAddress(address)
+    }
+    // remove abilities
+    if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
+      this.store.dispatch(deleteAccountFilter(address))
+      this.store.dispatch(deleteAbilitiesForAccount(address))
+      await this.abilitiesService.deleteAbilitiesForAccount(address)
     }
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))
@@ -1507,6 +1517,9 @@ export default class Main extends BaseService<never> {
     nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) =>
       this.nftsService.fetchNFTsFromCollection(collectionID, account)
     )
+    nftsSliceEmitter.on("refetchNFTs", ({ collectionID, account }) =>
+      this.nftsService.refreshNFTsFromCollection(collectionID, account)
+    )
     nftsSliceEmitter.on("fetchMoreNFTs", ({ collectionID, account }) =>
       this.nftsService.fetchNFTsFromNextPage(collectionID, account)
     )
@@ -1523,6 +1536,9 @@ export default class Main extends BaseService<never> {
   connectAbilitiesService(): void {
     this.abilitiesService.emitter.on("newAbilities", async (newAbilities) => {
       this.store.dispatch(addAbilities(newAbilities))
+    })
+    this.abilitiesService.emitter.on("newAccount", async (address) => {
+      this.store.dispatch(addAccount(address))
     })
     abilitiesSliceEmitter.on(
       "reportSpam",

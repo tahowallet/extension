@@ -1,11 +1,40 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-import { Ability } from "../../services/abilities"
+import { Ability } from "../../abilities"
+import { filterAbility } from "../utils/abilities-utils"
 
-const selectAbilities = (state: RootState) => state.abilities.abilities
+const selectAbilities = createSelector(
+  (state: RootState) => state.abilities,
+  (abilitiesSlice) => abilitiesSlice.abilities
+)
 
-const selectAbilityFilter = (state: RootState) => state.abilities.filter
+export const selectDescriptionHidden = createSelector(
+  (state: RootState) => state.abilities.hideDescription,
+  (hideDescription) => hideDescription
+)
 
+/* Filtering selectors */
+const selectAbilityFilter = createSelector(
+  (state: RootState) => state.abilities,
+  (abilitiesSlice) => abilitiesSlice.filter
+)
+
+export const selectAbilityFilterState = createSelector(
+  (state: RootState) => state.abilities,
+  (abilitiesSlice) => abilitiesSlice.filter.state
+)
+
+export const selectAbilityFilterTypes = createSelector(
+  (state: RootState) => state.abilities,
+  (abilitiesSlice) => abilitiesSlice.filter.types
+)
+
+export const selectAbilityFilterAccounts = createSelector(
+  (state: RootState) => state.abilities,
+  (abilitiesSlice) => abilitiesSlice.filter.accounts
+)
+
+/* Items selectors */
 export const selectFilteredAbilities = createSelector(
   selectAbilityFilter,
   selectAbilities,
@@ -13,30 +42,17 @@ export const selectFilteredAbilities = createSelector(
     const activeAbilities: Ability[] = []
     Object.values(abilities).forEach((addressAbilities) => {
       activeAbilities.push(
-        ...Object.values(addressAbilities).filter((ability) => {
-          if (ability.removedFromUi === true) {
-            return false
-          }
-          if (filter === "incomplete") {
-            return ability.completed === false
-          }
-          if (filter === "completed") {
-            return ability.completed === true
-          }
-          return true
-        })
+        ...Object.values(addressAbilities).filter((ability) =>
+          filterAbility(ability, filter)
+        )
       )
     })
     return activeAbilities
   }
 )
 
+/* Counting selectors  */
 export const selectAbilityCount = createSelector(
   selectFilteredAbilities,
   (abilities) => abilities.length
-)
-
-export const selectHideDescription = createSelector(
-  (state: RootState) => state.abilities.hideDescription,
-  (hideDescription) => hideDescription
 )

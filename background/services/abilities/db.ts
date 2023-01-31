@@ -1,7 +1,7 @@
 import Dexie from "dexie"
+import { Ability } from "../../abilities"
 import { FeatureFlags, isEnabled } from "../../features"
-import type { Ability } from "."
-import { NormalizedEVMAddress } from "../../types"
+import { HexString, NormalizedEVMAddress } from "../../types"
 
 export class AbilitiesDatabase extends Dexie {
   private abilities!: Dexie.Table<Ability, string>
@@ -71,6 +71,12 @@ export class AbilitiesDatabase extends Dexie {
       ...ability,
       removedFromUi: true,
     })
+  }
+
+  async deleteAbilitiesForAccount(address: HexString): Promise<void> {
+    await this.abilities
+      .filter((ability) => ability.address === address)
+      .delete()
   }
 }
 
