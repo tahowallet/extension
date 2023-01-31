@@ -1534,7 +1534,9 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(addAbilities(newAbilities))
     })
     this.abilitiesService.emitter.on("newAccount", async (address) => {
-      this.store.dispatch(addAccount(address))
+      if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
+        this.store.dispatch(addAccount(address))
+      }
     })
     abilitiesSliceEmitter.on(
       "reportSpam",

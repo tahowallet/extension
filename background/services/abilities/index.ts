@@ -160,6 +160,7 @@ export default class AbilitiesService extends BaseService<Events> {
     for (const address of addresses) {
       // eslint-disable-next-line no-await-in-loop
       await this.pollForAbilities(address)
+      this.emitter.emit("newAccount", address)
     }
   }
 
