@@ -2,7 +2,7 @@ import Dexie, { DexieOptions } from "dexie"
 import { TokenList } from "@uniswap/token-lists"
 
 import { AccountBalance } from "../../accounts"
-import { Network } from "../../networks"
+import { EVMNetwork } from "../../networks"
 import {
   AnyAsset,
   FungibleAsset,
@@ -248,7 +248,7 @@ export class IndexingDatabase extends Dexie {
 
   async getLatestAccountBalance(
     address: string,
-    network: Network,
+    network: EVMNetwork,
     asset: FungibleAsset
   ): Promise<AccountBalance | null> {
     // TODO this needs to be tightened up, both for performance and specificity
@@ -287,7 +287,7 @@ export class IndexingDatabase extends Dexie {
   }
 
   async getCustomAssetsByNetwork(
-    network: Network
+    network: EVMNetwork
   ): Promise<SmartContractFungibleAsset[]> {
     return this.customAssets
       .where("homeNetwork.name")
@@ -296,7 +296,7 @@ export class IndexingDatabase extends Dexie {
   }
 
   async getCustomAssetByAddressAndNetwork(
-    network: Network,
+    network: EVMNetwork,
     contractAddress: string
   ): Promise<SmartContractFungibleAsset | undefined> {
     return this.customAssets
@@ -306,7 +306,7 @@ export class IndexingDatabase extends Dexie {
   }
 
   async getTrackedAssetByAddressAndNetwork(
-    network: Network,
+    network: EVMNetwork,
     contractAddress: string
   ): Promise<SmartContractFungibleAsset | undefined> {
     return this.assetsToTrack
