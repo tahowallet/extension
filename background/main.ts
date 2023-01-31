@@ -1513,6 +1513,9 @@ export default class Main extends BaseService<never> {
     nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) =>
       this.nftsService.fetchNFTsFromCollection(collectionID, account)
     )
+    nftsSliceEmitter.on("refetchNFTs", ({ collectionID, account }) =>
+      this.nftsService.refreshNFTsFromCollection(collectionID, account)
+    )
     nftsSliceEmitter.on("fetchMoreNFTs", ({ collectionID, account }) =>
       this.nftsService.fetchNFTsFromNextPage(collectionID, account)
     )
