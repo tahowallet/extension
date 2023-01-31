@@ -68,8 +68,9 @@ describe("IndexingService", () => {
     })
 
     sandbox.stub(chainService, "supportedNetworks").value([ETHEREUM, OPTIMISM])
-    // eslint-disable-next-line @typescript-eslint/dot-notation
-    chainService["trackedNetworks"] = [ETHEREUM, OPTIMISM]
+    sandbox
+      .stub(chainService, "getTrackedNetworks")
+      .resolves([ETHEREUM, OPTIMISM])
 
     indexedDB = new IDBFactory()
 
@@ -192,7 +193,6 @@ describe("IndexingService", () => {
       sandbox
         .stub(chainService, "supportedNetworks")
         .value([ETHEREUM, OPTIMISM])
-      // sandbox.stub(chainService, "trackedNetworks").value([ETHEREUM, OPTIMISM])
       const cacheSpy = jest.spyOn(indexingService, "cacheAssetsForNetwork")
 
       const delay = sinon.promise<void>()
