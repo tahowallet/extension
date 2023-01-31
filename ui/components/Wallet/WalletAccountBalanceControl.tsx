@@ -1,10 +1,14 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { selectCurrentAccountSigner } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentAccountSigner,
+  selectCurrentNetwork,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useHistory } from "react-router-dom"
+import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
@@ -18,6 +22,7 @@ type ActionButtonsProps = {
 }
 
 function ActionButtons(props: ActionButtonsProps): ReactElement {
+  const network = useBackgroundSelector(selectCurrentNetwork)
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet",
   })
@@ -41,19 +46,21 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
               {t("send")}
             </SharedSquareButton>
           </div>
-          <div className="button_wrap">
-            <SharedSquareButton
-              icon="icons/s/swap.svg"
-              ariaLabel={t("swap")}
-              onClick={() => history.push("/swap")}
-              iconColor={{
-                color: "var(--trophy-gold)",
-                hoverColor: "var(--gold-80)",
-              }}
-            >
-              {t("swap")}
-            </SharedSquareButton>
-          </div>
+          {NETWORKS_SUPPORTING_SWAPS.has(network.chainID) ? (
+            <div className="button_wrap">
+              <SharedSquareButton
+                icon="icons/s/swap.svg"
+                ariaLabel={t("swap")}
+                onClick={() => history.push("/swap")}
+                iconColor={{
+                  color: "var(--trophy-gold)",
+                  hoverColor: "var(--gold-80)",
+                }}
+              >
+                {t("swap")}
+              </SharedSquareButton>
+            </div>
+          ) : null}
           <div className="button_wrap">
             <SharedSquareButton
               icon="icons/s/receive.svg"
@@ -91,7 +98,7 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
           .action_buttons_wrap {
             display: flex;
             width: 180px;
-            justify-content: space-between;
+            justify-content: center;
           }
           .margin {
             margin: 8px 0 32px;
