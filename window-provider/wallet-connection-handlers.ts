@@ -484,6 +484,7 @@ function addTallyButtonForWalletConnectModal(addedNode: Node): void {
       }
 
       .tally-ho-injected-wc-ui {
+        all: unset;
         max-width: 400px;
         margin: 16px auto 0px;
         background: #F4F4F4;
@@ -497,6 +498,7 @@ function addTallyButtonForWalletConnectModal(addedNode: Node): void {
       }
       
       .tally-ho-injected-wc-ui button {
+        all: unset;
         font-family: 'Segment', 'Open Sans', sans-serif;
         font-style: normal;
         font-weight: 500;
@@ -518,6 +520,7 @@ function addTallyButtonForWalletConnectModal(addedNode: Node): void {
       }
 
       .tally-ho-injected-wc-ui span {
+        all: unset;
         font-family: 'Segment', 'Open Sans', sans-serif;
         font-style: normal;
         font-weight: 500;
