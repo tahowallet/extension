@@ -10,7 +10,7 @@ const TIME_DETAILS = {
 }
 
 describe("AbilityCard", () => {
-  it("should render a component", async () => {
+  it("should render a component", () => {
     const ability = createAbility()
     const ui = renderWithProviders(<AbilityCard ability={ability} />, {
       preloadedState: { account: createAccountState() },
@@ -19,7 +19,7 @@ describe("AbilityCard", () => {
     expect(ui.getByText(ability.title)).toBeInTheDocument()
   })
 
-  it("should not display the time detail message", async () => {
+  it("should not display the time detail message", () => {
     const ui = renderWithProviders(<AbilityCard ability={createAbility()} />, {
       preloadedState: { account: createAccountState() },
     })
@@ -28,7 +28,7 @@ describe("AbilityCard", () => {
     expect(ui.queryByText(TIME_DETAILS.close)).not.toBeInTheDocument()
   })
 
-  it("should display a message that the ability starts within a month", async () => {
+  it("should display a message that the ability starts within a month", () => {
     // The ability start date is in two weeks
     const date = new Date()
     date.setDate(date.getDate() + 2 * 7)
@@ -42,7 +42,7 @@ describe("AbilityCard", () => {
     expect(ui.queryByText(TIME_DETAILS.start)).toBeInTheDocument()
   })
 
-  it("should display a message that the ability closes within a month", async () => {
+  it("should display a message that the ability closes within a month", () => {
     // The deadline for closing ability is in two weeks
     const date = new Date()
     date.setDate(date.getDate() + 2 * 7)
@@ -56,7 +56,7 @@ describe("AbilityCard", () => {
     expect(ui.queryByText(TIME_DETAILS.close)).toBeInTheDocument()
   })
 
-  it("should not display the time detail message when the date does not occur within 30 consecutive days", async () => {
+  it("should not display the time detail message when the date does not occur within 30 consecutive days", () => {
     // Start in 5 weeks
     const openAt = new Date()
     openAt.setDate(openAt.getDate() + 5 * 7)
@@ -71,6 +71,34 @@ describe("AbilityCard", () => {
           closeAt: closeAt.toDateString(),
         })}
       />,
+      {
+        preloadedState: { account: createAccountState() },
+      }
+    )
+    expect(ui.queryByText(TIME_DETAILS.start)).not.toBeInTheDocument()
+    expect(ui.queryByText(TIME_DETAILS.close)).not.toBeInTheDocument()
+  })
+
+  it("should not display the time detail message when the ability is expired", () => {
+    const date = new Date()
+    date.setDate(date.getDate() - 1)
+
+    const ui = renderWithProviders(
+      <AbilityCard ability={createAbility({ closeAt: date.toDateString() })} />,
+      {
+        preloadedState: { account: createAccountState() },
+      }
+    )
+    expect(ui.queryByText(TIME_DETAILS.start)).not.toBeInTheDocument()
+    expect(ui.queryByText(TIME_DETAILS.close)).not.toBeInTheDocument()
+  })
+
+  it("should not display the time detail message when the ability is open", () => {
+    const date = new Date()
+    date.setDate(date.getDate() - 1)
+
+    const ui = renderWithProviders(
+      <AbilityCard ability={createAbility({ openAt: date.toDateString() })} />,
       {
         preloadedState: { account: createAccountState() },
       }
