@@ -222,6 +222,13 @@ export class IndexingDatabase extends Dexie {
         .toCollection()
         .modify(normalizeAssetAddress)
     })
+
+    this.version(5).stores({
+      customAssets:
+        "&[contractAddress+homeNetwork.name],contractAddress,symbol,homeNetwork.chainID,homeNetwork.name",
+      assetsToTrack:
+        "&[contractAddress+homeNetwork.name],symbol,contractAddress,homeNetwork.family,homeNetwork.chainID,homeNetwork.name",
+    })
   }
 
   async savePriceMeasurement(
