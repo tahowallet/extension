@@ -1,5 +1,6 @@
 import { fetchJson } from "@ethersproject/web"
 import sinon, { SinonStub } from "sinon"
+import * as libPrices from "../../../lib/prices"
 import IndexingService from ".."
 import { SmartContractFungibleAsset } from "../../../assets"
 import { ETHEREUM, OPTIMISM } from "../../../constants"
@@ -11,6 +12,19 @@ import {
 import ChainService from "../../chain"
 import PreferenceService from "../../preferences"
 import { getOrCreateDb as getIndexingDB } from "../db"
+
+type MethodSpy<T extends (...args: unknown[]) => unknown> = jest.SpyInstance<
+  ReturnType<T>,
+  Parameters<T>
+>
+
+const getMethodSpy = <T extends (...args: unknown[]) => unknown>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  object: any,
+  property: string
+) => {
+  return jest.spyOn(object, property) as MethodSpy<T>
+}
 
 const fetchJsonStub: SinonStub<
   Parameters<typeof fetchJson>,
@@ -30,6 +44,18 @@ describe("IndexingService", () => {
   let preferenceService: PreferenceService
 
   beforeEach(async () => {
+    fetchJsonStub
+      .withArgs(
+        "https://api.coingecko.com/api/v3/simple/price?ids=ethereum,matic-network,rootstock,avalanche-2,binancecoin&include_last_updated_at=true&vs_currencies=usd"
+      )
+      .resolves({
+        "matic-network": { usd: 1.088, last_updated_at: 1675123143 },
+        ethereum: { usd: 1569.14, last_updated_at: 1675123142 },
+        "avalanche-2": { usd: 19.76, last_updated_at: 1675123166 },
+        binancecoin: { usd: 307.31, last_updated_at: 1675123138 },
+        rootstock: { usd: 22837, last_updated_at: 1675123110 },
+      })
+
     preferenceService = await createPreferenceService()
 
     sandbox.stub(preferenceService, "getTokenListPreferences").resolves({
@@ -42,6 +68,8 @@ describe("IndexingService", () => {
     })
 
     sandbox.stub(chainService, "supportedNetworks").value([ETHEREUM, OPTIMISM])
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    chainService["trackedNetworks"] = [ETHEREUM, OPTIMISM]
 
     indexedDB = new IDBFactory()
 
@@ -156,9 +184,15 @@ describe("IndexingService", () => {
     })
 
     it("should update cache once token lists load", async () => {
+      const spy = getMethodSpy<IndexingService["fetchAndCacheTokenLists"]>(
+        indexingService,
+        "fetchAndCacheTokenLists"
+      )
+
       sandbox
         .stub(chainService, "supportedNetworks")
         .value([ETHEREUM, OPTIMISM])
+      // sandbox.stub(chainService, "trackedNetworks").value([ETHEREUM, OPTIMISM])
       const cacheSpy = jest.spyOn(indexingService, "cacheAssetsForNetwork")
 
       const delay = sinon.promise<void>()
@@ -185,10 +219,14 @@ describe("IndexingService", () => {
       })
 
       delay.resolve(undefined)
+      await spy.mock.results[0].value
 
       await indexingService.emitter.once("assets").then(() => {
-        /* Caches assets for every supported network + 1 active network */
-        expect(cacheSpy).toHaveBeenCalledTimes(5)
+        /**
+         * Caches assets for every tracked network at service start and
+         * for every supported network after tokenlist load
+         */
+        expect(cacheSpy).toHaveBeenCalledTimes(4)
 
         expect(
           indexingService.getCachedAssets(ETHEREUM).map((asset) => asset.symbol)
@@ -226,6 +264,61 @@ describe("IndexingService", () => {
       expect(
         indexingService.getCachedAssets(ETHEREUM).map((assets) => assets.symbol)
       ).toEqual(["ETH", customAsset.symbol, "TEST"])
+    })
+
+    it("should not retrieve token prices for custom assets", async () => {
+      const indexingDb = await getIndexingDB()
+
+      const smartContractAsset: SmartContractFungibleAsset = {
+        metadata: { tokenLists: [{ url: "random.cat", name: "random cat" }] },
+        name: "Test Coin",
+        symbol: "TEST",
+        decimals: 6,
+        homeNetwork: ETHEREUM,
+        contractAddress: "0x111111111117dc0aa78b770fa6a738034120c302",
+      }
+      await indexingDb.addCustomAsset(customAsset)
+      await indexingDb.saveTokenList(
+        "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
+        tokenList
+      )
+
+      await indexingDb.addAssetToTrack(customAsset)
+      await indexingDb.addAssetToTrack(smartContractAsset)
+
+      const getTokenPricesSpy = jest.spyOn(libPrices, "getTokenPrices")
+
+      fetchJsonStub
+        .withArgs(
+          "https://api.coingecko.com/api/v3/simple/token_price/ethereum?vs_currencies=USD&include_last_updated_at=true&contract_addresses=0x111111111117dc0aa78b770fa6a738034120c302"
+        )
+        .resolves({
+          "0x111111111117dc0aa78b770fa6a738034120c302": {
+            usd: 0.511675,
+            last_updated_at: 1675140863,
+          },
+        })
+
+      const spy = getMethodSpy<IndexingService["handlePriceAlarm"]>(
+        indexingService,
+        "handlePriceAlarm"
+      )
+
+      await Promise.all([
+        chainService.startService(),
+        indexingService.startService(),
+      ])
+
+      await indexingService.emitter.once("assets")
+
+      expect(spy).toHaveBeenCalled()
+
+      await spy.mock.results[0].value
+      expect(getTokenPricesSpy).toHaveBeenCalledWith(
+        ["0x111111111117dc0aa78b770fa6a738034120c302"],
+        { name: "United States Dollar", symbol: "USD", decimals: 10 },
+        ETHEREUM
+      )
     })
   })
 })
