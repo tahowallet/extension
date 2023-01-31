@@ -143,7 +143,7 @@ export default class IndexingService extends BaseService<Events> {
         schedule: {
           periodInMinutes: 1,
         },
-        handler: () => this.handleBalanceAlarm(true),
+        handler: () => this.handleBalanceAlarm({ onlyActiveAccounts: true }),
       },
       forceBalance: {
         schedule: {
@@ -163,7 +163,6 @@ export default class IndexingService extends BaseService<Events> {
           periodInMinutes: 10,
         },
         handler: () => this.handlePriceAlarm(),
-        runAtStart: true,
       },
     })
   }
@@ -177,6 +176,8 @@ export default class IndexingService extends BaseService<Events> {
     const tokenListLoad = this.fetchAndCacheTokenLists()
 
     this.chainService.emitter.once("serviceStarted").then(async () => {
+      this.handlePriceAlarm()
+
       const trackedNetworks = await this.chainService.getTrackedNetworks()
 
       // Push any assets we have cached in the db for all active networks
@@ -186,7 +187,12 @@ export default class IndexingService extends BaseService<Events> {
       })
 
       // Force a balance refresh on service start
-      tokenListLoad.then(() => this.handleBalanceAlarm())
+      tokenListLoad.then(() =>
+        this.handleBalanceAlarm({
+          onlyActiveAccounts: false,
+          fetchTokenLists: false,
+        })
+      )
     })
   }
 
@@ -817,9 +823,17 @@ export default class IndexingService extends BaseService<Events> {
     }
   }
 
-  private async handleBalanceAlarm(onlyActiveAccounts = false): Promise<void> {
-    // no need to block here, as the first fetch blocks the entire service init
-    this.fetchAndCacheTokenLists()
+  private async handleBalanceAlarm({
+    onlyActiveAccounts = false,
+    fetchTokenLists = true,
+  }: {
+    onlyActiveAccounts?: boolean
+    fetchTokenLists?: boolean
+  } = {}): Promise<void> {
+    if (fetchTokenLists) {
+      // no need to block here, as the first fetch blocks the entire service init
+      this.fetchAndCacheTokenLists()
+    }
 
     const assetsToTrack = await this.db.getAssetsToTrack()
     const trackedNetworks = await this.chainService.getTrackedNetworks()
