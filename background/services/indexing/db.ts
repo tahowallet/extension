@@ -287,11 +287,13 @@ export class IndexingDatabase extends Dexie {
   }
 
   async getCustomAssetsByNetwork(
-    network: EVMNetwork
+    networks: EVMNetwork | EVMNetwork[]
   ): Promise<SmartContractFungibleAsset[]> {
+    const networksArray = Array.isArray(networks) ? networks : [networks]
+
     return this.customAssets
-      .where("homeNetwork.name")
-      .equals(network.name)
+      .where("homeNetwork.chainID")
+      .anyOf(networksArray.map((network) => network.chainID))
       .toArray()
   }
 
