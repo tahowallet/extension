@@ -56,6 +56,12 @@ const abilitiesSlice = createSlice({
         immerState.abilities[address][ability.abilityId] = ability
       })
     },
+    deleteAbilitiesForAccount: (
+      immerState,
+      { payload: address }: { payload: HexString }
+    ) => {
+      delete immerState.abilities[address]
+    },
     deleteAbility: (
       immerState,
       { payload }: { payload: { address: HexString; abilityId: string } }
@@ -102,6 +108,7 @@ const abilitiesSlice = createSlice({
 
 export const {
   addAbilities,
+  deleteAbilitiesForAccount,
   deleteAbility,
   markAbilityAsCompleted,
   markAbilityAsRemoved,
