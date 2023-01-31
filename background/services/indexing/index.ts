@@ -680,21 +680,16 @@ export default class IndexingService extends BaseService<Events> {
     const assetsToTrack = await this.db.getAssetsToTrack()
     const trackedNetworks = await this.chainService.getTrackedNetworks()
 
-    const customAssets = new Set(
-      (await this.db.getCustomAssetsByNetwork(trackedNetworks)).map(
-        ({ contractAddress, homeNetwork: { chainID } }) =>
-          `${chainID}:${contractAddress}`
-      )
-    )
+    const getAssetId = (asset: SmartContractFungibleAsset) =>
+      `${asset.homeNetwork.chainID}:${asset.contractAddress}`
+
+    const customAssets = await this.db.getCustomAssetsByNetwork(trackedNetworks)
+    const customAssetsById = new Set(customAssets.map(getAssetId))
 
     // Filter all assets based on supported networks
     const activeAssetsToTrack = assetsToTrack.filter((asset) => {
       // Skip custom assets
-      if (
-        customAssets.has(
-          `${asset.homeNetwork.chainID}:${asset.contractAddress}`
-        )
-      ) {
+      if (customAssetsById.has(getAssetId(asset))) {
         return false
       }
 
