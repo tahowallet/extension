@@ -53,6 +53,7 @@ export type NFTsSliceState = {
 
 export type Events = {
   fetchNFTs: { collectionID: string; account: AddressOnNetwork }
+  refetchNFTs: { collectionID: string; account: AddressOnNetwork }
   fetchMoreNFTs: { collectionID: string; account: AddressOnNetwork }
   refetchCollections: never
 }
@@ -349,6 +350,13 @@ export const fetchNFTsFromCollection = createBackgroundAsyncThunk(
   "nfts/fetchNFTsFromCollection",
   async (payload: { collectionID: string; account: AddressOnNetwork }) => {
     await emitter.emit("fetchNFTs", payload)
+  }
+)
+
+export const refetchNFTsFromCollection = createBackgroundAsyncThunk(
+  "nfts/refetchNFTsFromCollection",
+  async (payload: { collectionID: string; account: AddressOnNetwork }) => {
+    await emitter.emit("refetchNFTs", payload)
   }
 )
 

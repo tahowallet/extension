@@ -190,9 +190,6 @@ describe("IndexingService", () => {
         "fetchAndCacheTokenLists"
       )
 
-      sandbox
-        .stub(chainService, "supportedNetworks")
-        .value([ETHEREUM, OPTIMISM])
       const cacheSpy = jest.spyOn(indexingService, "cacheAssetsForNetwork")
 
       const delay = sinon.promise<void>()
@@ -219,6 +216,7 @@ describe("IndexingService", () => {
       })
 
       delay.resolve(undefined)
+
       await spy.mock.results[0].value
 
       await indexingService.emitter.once("assets").then(() => {
@@ -226,7 +224,9 @@ describe("IndexingService", () => {
          * Caches assets for every tracked network at service start and
          * for every supported network after tokenlist load
          */
-        expect(cacheSpy).toHaveBeenCalledTimes(4)
+        expect(cacheSpy).toHaveBeenCalledTimes(
+          chainService.supportedNetworks.length + 2
+        )
 
         expect(
           indexingService.getCachedAssets(ETHEREUM).map((asset) => asset.symbol)
