@@ -629,15 +629,10 @@ export default class IndexingService extends BaseService<Events> {
     }
   }
 
-  private async handlePriceAlarm(): Promise<void> {
-    if (Date.now() < this.lastPriceAlarmTime + 5 * SECOND) {
-      // If this is quickly called multiple times (for example when
-      // using a network for the first time with a wallet loaded
-      // with many accounts) only fetch prices once.
-      return
-    }
-    this.lastPriceAlarmTime = Date.now()
-    // TODO refactor for multiple price sources
+  /**
+   * Loads prices for base network assets
+   */
+  private async getBaseAssetsPrices() {
     try {
       // TODO include user-preferred currencies
       // get the prices of ETH and BTC vs major currencies
@@ -669,32 +664,56 @@ export default class IndexingService extends BaseService<Events> {
         FIAT_CURRENCIES
       )
     }
+  }
 
+  /**
+   * Loads prices for all tracked assets except untrusted/custom network assets
+   */
+  private async getTrackedAssetsPrices() {
     // get the prices of all assets to track and save them
     const assetsToTrack = await this.db.getAssetsToTrack()
     const trackedNetworks = await this.chainService.getTrackedNetworks()
 
-    // Filter all assets based on supported networks
-    const activeAssetsToTrack = assetsToTrack.filter(
-      (asset) =>
-        asset.symbol === "ETH" ||
-        trackedNetworks
-          .map((n) => n.chainID)
-          .includes(asset.homeNetwork.chainID)
+    const customAssets = new Set(
+      (await this.db.getCustomAssetsByNetwork(trackedNetworks)).map(
+        ({ contractAddress, homeNetwork: { chainID } }) =>
+          `${chainID}:${contractAddress}`
+      )
     )
+
+    // Filter all assets based on supported networks
+    const activeAssetsToTrack = assetsToTrack.filter((asset) => {
+      // Skip custom assets
+      if (
+        customAssets.has(
+          `${asset.homeNetwork.chainID}:${asset.contractAddress}`
+        )
+      ) {
+        return false
+      }
+
+      return trackedNetworks.some(
+        (network) => network.chainID === asset.homeNetwork.chainID
+      )
+    })
 
     try {
       // TODO only uses USD
 
       const allActiveAssetsByAddress = getAssetsByAddress(activeAssetsToTrack)
 
-      const activeAssetsByNetwork = trackedNetworks.map((network) => ({
-        activeAssetsByAddress: getActiveAssetsByAddressForNetwork(
+      const activeAssetsByNetwork = trackedNetworks
+        .map((network) => ({
+          activeAssetsByAddress: getActiveAssetsByAddressForNetwork(
+            network,
+            activeAssetsToTrack
+          ),
           network,
-          activeAssetsToTrack
-        ),
-        network,
-      }))
+        }))
+        .filter(
+          ({ activeAssetsByAddress }) =>
+            Object.keys(activeAssetsByAddress).length > 0
+        )
 
       const measuredAt = Date.now()
 
@@ -737,6 +756,20 @@ export default class IndexingService extends BaseService<Events> {
     } catch (err) {
       logger.error("Error getting token prices", activeAssetsToTrack, err)
     }
+  }
+
+  private async handlePriceAlarm(): Promise<void> {
+    if (Date.now() < this.lastPriceAlarmTime + 5 * SECOND) {
+      // If this is quickly called multiple times (for example when
+      // using a network for the first time with a wallet loaded
+      // with many accounts) only fetch prices once.
+      return
+    }
+
+    this.lastPriceAlarmTime = Date.now()
+    // TODO refactor for multiple price sources
+    await this.getBaseAssetsPrices()
+    await this.getTrackedAssetsPrices()
   }
 
   private async fetchAndCacheTokenLists(): Promise<void> {
