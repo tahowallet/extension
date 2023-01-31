@@ -6,14 +6,19 @@ import { normalizeEVMAddress } from "../lib/utils"
 import { NFT, NFTCollection, TransferredNFT } from "../nfts"
 import { createBackgroundAsyncThunk } from "./utils"
 
+export type NFTCached = {
+  chainID: string
+} & Omit<NFT, "network">
+
 export type NFTCollectionCached = {
   floorPrice?: {
     value: number
     tokenSymbol: string
   }
-  nfts: NFT[]
+  nfts: NFTCached[]
   hasNextPage: boolean
-} & Omit<NFTCollection, "floorPrice">
+  chainID: string
+} & Omit<NFTCollection, "floorPrice" | "network">
 
 export type NFTsState = {
   [chainID: string]: {
@@ -25,7 +30,7 @@ export type NFTsState = {
 
 export type NFTWithCollection = {
   collection: NFTCollectionCached
-  nft: NFT
+  nft: NFTCached
 }
 
 export type Filter = {
@@ -88,7 +93,7 @@ function updateCollection(
     totalNftCount,
     nfts: savedCollection.nfts ?? [],
     hasBadges: savedCollection.hasBadges || hasBadges, // once we know it has badges it should stay like that
-    network,
+    chainID,
     owner: ownerAddress,
     thumbnailURL,
     hasNextPage: false,
@@ -147,6 +152,17 @@ function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
     updateFilter(acc, collection, "collections")
   }
   updateFilter(acc, collection, "accounts")
+}
+
+function parseNFTs(nfts: NFT[]): NFTCached[] {
+  return nfts.map((nft) => {
+    const { network, ...cached } = nft
+
+    return {
+      ...cached,
+      chainID: network.chainID,
+    }
+  })
 }
 
 function removeAccountFromFilters(acc: NFTsSliceState, address: string): void {
@@ -228,7 +244,7 @@ const NFTsSlice = createSlice({
           collectionID
         ]
 
-      collectionToUpdate.nfts = nfts
+      collectionToUpdate.nfts = parseNFTs(nfts)
       collectionToUpdate.hasNextPage = hasNextPage
     },
     updateIsReloading: (
