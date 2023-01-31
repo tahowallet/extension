@@ -257,7 +257,7 @@ export default class IndexingService extends BaseService<Events> {
    * lists.
    */
   async cacheAssetsForNetwork(network: EVMNetwork): Promise<void> {
-    const customAssets = await this.db.getCustomAssetsByNetwork(network)
+    const customAssets = await this.db.getCustomAssetsByNetworks([network])
     const tokenListPrefs =
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
@@ -683,7 +683,10 @@ export default class IndexingService extends BaseService<Events> {
     const getAssetId = (asset: SmartContractFungibleAsset) =>
       `${asset.homeNetwork.chainID}:${asset.contractAddress}`
 
-    const customAssets = await this.db.getCustomAssetsByNetwork(trackedNetworks)
+    const customAssets = await this.db.getCustomAssetsByNetworks(
+      trackedNetworks
+    )
+
     const customAssetsById = new Set(customAssets.map(getAssetId))
 
     // Filter all assets based on supported networks
