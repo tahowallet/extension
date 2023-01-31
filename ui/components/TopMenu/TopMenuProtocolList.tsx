@@ -62,7 +62,7 @@ export default function TopMenuProtocolList({
             network={network}
             info={
               productionNetworkInfo[network.chainID] ||
-              i18n.t("protocol.compatibleChain")
+              t("protocol.compatibleChain")
             }
             onSelect={onProtocolChange}
             isDisabled={disabledChainIDs.includes(network.chainID)}

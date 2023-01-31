@@ -21,5 +21,5 @@ export default (
     evmNetworks: {},
   }
 
-  return newState
+  return newState as NewState
 }
