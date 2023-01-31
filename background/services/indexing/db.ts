@@ -223,6 +223,7 @@ export class IndexingDatabase extends Dexie {
         .modify(normalizeAssetAddress)
     })
 
+    // Fix incorrect index on "chainId"
     this.version(5).stores({
       customAssets:
         "&[contractAddress+homeNetwork.name],contractAddress,symbol,homeNetwork.chainID,homeNetwork.name",
