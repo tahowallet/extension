@@ -26,6 +26,13 @@ module.exports = {
       Promise.resolve(undefined as unknown as Tabs.Tab)
     ),
   },
+  windows: {
+    writable: true,
+    value: {
+      getCurrent: () => {},
+      create: () => {},
+    },
+  },
   runtime: {
     ...browserMock.runtime,
     setUninstallURL: jest.fn(),
