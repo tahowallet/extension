@@ -95,8 +95,10 @@ const abilitiesSlice = createSlice({
         (value) => value !== type
       )
     },
-    addAccount: (immerState, { payload: type }: { payload: string }) => {
-      immerState.filter.accounts.push(type)
+    addAccount: (immerState, { payload: account }: { payload: string }) => {
+      if (!immerState.filter.accounts.includes(account)) {
+        immerState.filter.accounts.push(account)
+      }
     },
     deleteAccount: (immerState, { payload: account }: { payload: string }) => {
       immerState.filter.accounts = immerState.filter.accounts.filter(
