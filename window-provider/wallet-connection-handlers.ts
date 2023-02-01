@@ -452,20 +452,30 @@ function findAndReplaceAlpacaFinanceMetamaskOption(addedNode: Node): void {
 }
 
 function addTallyButtonForWalletConnectModal(addedNode: Node): void {
-  // For some reason this fails with children but works with childNodes.
-  // childNodes is a NodeList and Node elements don't have className in their types.
-  // In reality it's there and works well.
-  if (
-    (addedNode?.childNodes[1] as unknown as HTMLElement)?.className !==
-    "walletconnect-search__input"
-  ) {
+  if (!(addedNode instanceof HTMLElement)) {
     return
   }
 
-  const walletButtonsWrapper = (addedNode as unknown as HTMLElement)
-    .children[2] as HTMLElement
+  let container: HTMLElement | null | undefined
 
-  const aWalletButton = walletButtonsWrapper.children[2] as HTMLAnchorElement
+  if (addedNode.children?.[1]?.className === "walletconnect-search__input") {
+    container = addedNode
+    // On slow network connections the connect buttons could appear after the search input
+  } else if (
+    addedNode.className === "walletconnect-connect__button__icon_anchor"
+  ) {
+    container = addedNode.parentElement?.parentElement
+  }
+
+  const walletButtonsWrapper = container?.children[2]
+  const aWalletButton = walletButtonsWrapper?.children[2] as
+    | HTMLAnchorElement
+    | undefined
+
+  if (!walletButtonsWrapper || !aWalletButton) {
+    return
+  }
+
   const aUrl = new URL(aWalletButton.href)
 
   const wcUri = aUrl.searchParams.get("uri")
