@@ -65,7 +65,7 @@ export type Events = {
 
 export const emitter = new Emittery<Events>()
 
-function updateCollection(
+export function updateCollection(
   acc: NFTsSliceState,
   collection: NFTCollection
 ): void {
@@ -107,7 +107,7 @@ function updateCollection(
   }
 }
 
-function updateFilter(
+export function updateFilter(
   acc: NFTsSliceState,
   collection: NFTCollection,
   type: "accounts" | "collections"
@@ -146,7 +146,10 @@ function updateFilter(
   }
 }
 
-function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
+export function updateFilters(
+  acc: NFTsSliceState,
+  collection: NFTCollection
+): void {
   const { nftCount } = collection
   if ((nftCount ?? 0) > 0) {
     updateFilter(acc, collection, "collections")
@@ -154,7 +157,7 @@ function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
   updateFilter(acc, collection, "accounts")
 }
 
-function parseNFTs(nfts: NFT[]): NFTCached[] {
+export function parseNFTs(nfts: NFT[]): NFTCached[] {
   return nfts.map((nft) => {
     const { network, ...cached } = nft
 
@@ -165,7 +168,10 @@ function parseNFTs(nfts: NFT[]): NFTCached[] {
   })
 }
 
-function removeAccountFromFilters(acc: NFTsSliceState, address: string): void {
+export function removeAccountFromFilters(
+  acc: NFTsSliceState,
+  address: string
+): void {
   acc.filters.accounts = acc.filters.accounts.filter(({ id }) => id !== address)
   acc.filters.collections = acc.filters.collections.flatMap((collection) => {
     if (collection.owners?.includes(address)) {
@@ -181,7 +187,9 @@ function removeAccountFromFilters(acc: NFTsSliceState, address: string): void {
   })
 }
 
-function initializeCollections(collections: NFTCollection[]): NFTsSliceState {
+export function initializeCollections(
+  collections: NFTCollection[]
+): NFTsSliceState {
   const state: NFTsSliceState = {
     isReloading: false,
     nfts: {},
