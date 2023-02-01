@@ -528,7 +528,7 @@
       "title": "Custom networks",
       "ariaLabel": "Open custom networks page",
       "chainList": {
-        "description": "Fastest and safest way of adding a custom network is by visiting <link></link>, connecting your wallet and adding the chains you wish to see.",
+        "description": "Fastest and safest way of adding a custom network is by visiting <url></url>, connecting your wallet and adding the chains you wish to see.",
         "addBtn": "Add chains with Chainlist"
       },
       "customRPC": {
@@ -683,7 +683,9 @@
         "step1": "Set Tally Ho as default",
         "step2": "Click “connect to wallet” in a dapp",
         "step3": "Select one similar to these"
-      }
+      },
+      "walletConnectInfo": "You can now connect to any dapp that supports Wallet Connect by selecting Tally Ho from desktop tab. <url>Learn more</url>",
+      "walletConnectHint": "Check the desktop tab in the connection modal"
     }
   },
   "wallet": {
@@ -712,7 +714,7 @@
       "assetImported": "Asset imported from transaction history",
       "name": "Name",
       "contract": "Contract address",
-      "close": "Close"      
+      "close": "Close"
     },
     "banner": {
       "bannerTitle": "New Odyssey week!",
@@ -778,6 +780,7 @@
     "timeCloses": "Closes in 1 month",
     "viewWebsiteBtn": "Visit website",
     "markBtn": "Mark as Completed",
+    "snackbar": "Marked as completed",
     "deleteBtn": "Delete",
     "deleteSlideUpMenu": {
       "title": "Delete ability?",

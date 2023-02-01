@@ -13,9 +13,11 @@ import {
   fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
-import { NFT } from "@tallyho/tally-background/nfts"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
-import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
+import {
+  NFTCached,
+  NFTCollectionCached,
+} from "@tallyho/tally-background/redux-slices/nfts_update"
 import classNames from "classnames"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
@@ -61,7 +63,7 @@ interface SelectAssetMenuContentProps<AssetType extends AnyAsset> {
   setSelectedAssetAndClose: (
     asset: AnyAssetWithOptionalAmount<AssetType>
   ) => void
-  onSelectNFT?: (nft: NFT) => void
+  onSelectNFT?: (nft: NFTCached) => void
 }
 
 // Sorts an AnyAssetWithOptionalAmount by symbol, alphabetically, according to
@@ -313,7 +315,7 @@ interface SelectedAssetButtonProps {
   asset: Asset
   isDisabled: boolean
   toggleIsAssetMenuOpen?: () => void
-  selectedNFT?: NFT
+  selectedNFT?: NFTCached
 }
 
 function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
@@ -416,8 +418,8 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   onBlur?: () => void
   onAmountChange?: (value: string, errorMessage: string | undefined) => void
   NFTCollections?: NFTCollectionCached[]
-  onSelectNFT?: (nft: NFT) => void
-  selectedNFT?: NFT
+  onSelectNFT?: (nft: NFTCached) => void
+  selectedNFT?: NFTCached
 }
 
 function isSameAsset(asset1: Asset, asset2: Asset) {
@@ -530,7 +532,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
     [selectedAssetAndAmount, t]
   )
 
-  const handleSelectNFT = (nft: NFT) => {
+  const handleSelectNFT = (nft: NFTCached) => {
     setOpenAssetMenu(false)
     onSelectNFT?.(nft)
   }
