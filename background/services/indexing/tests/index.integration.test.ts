@@ -2,12 +2,12 @@ import { fetchJson } from "@ethersproject/web"
 import sinon, { SinonStub } from "sinon"
 import * as libPrices from "../../../lib/prices"
 import IndexingService from ".."
-import { SmartContractFungibleAsset } from "../../../assets"
 import { ETHEREUM, OPTIMISM } from "../../../constants"
 import {
   createChainService,
   createIndexingService,
   createPreferenceService,
+  createSmartContractAsset,
 } from "../../../tests/factories"
 import ChainService from "../../chain"
 import PreferenceService from "../../preferences"
@@ -18,7 +18,7 @@ type MethodSpy<T extends (...args: unknown[]) => unknown> = jest.SpyInstance<
   Parameters<T>
 >
 
-const getMethodSpy = <T extends (...args: unknown[]) => unknown>(
+const getPrivateMethodSpy = <T extends (...args: unknown[]) => unknown>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   object: any,
   property: string
@@ -114,22 +114,9 @@ describe("IndexingService", () => {
       ],
     }
 
-    const customAsset: SmartContractFungibleAsset = {
-      metadata: {
-        tokenLists: [
-          {
-            url: "https://bridge.arbitrum.io/token-list-42161.json",
-            name: "Arb Whitelist Era",
-            logoURL: "ipfs://QmTvWJ4kmzq9koK74WJQ594ov8Es1HHurHZmMmhU8VY68y",
-          },
-        ],
-      },
-      name: "USD Coin",
+    const customAsset = createSmartContractAsset({
       symbol: "USDC",
-      decimals: 6,
-      homeNetwork: ETHEREUM,
-      contractAddress: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-    }
+    })
 
     it("should initialize cache with base assets, custom assets and tokenlists stored in the db", async () => {
       const cacheSpy = jest.spyOn(indexingService, "cacheAssetsForNetwork")
@@ -178,17 +165,16 @@ describe("IndexingService", () => {
           indexingService
             .getCachedAssets(ETHEREUM)
             .map((assets) => assets.symbol)
-        ).toEqual(["ETH", "USDC", "TEST"])
+        ).toEqual(["ETH", customAsset.symbol, "TEST"])
       })
 
       delay.resolve(undefined)
     })
 
     it("should update cache once token lists load", async () => {
-      const spy = getMethodSpy<IndexingService["fetchAndCacheTokenLists"]>(
-        indexingService,
-        "fetchAndCacheTokenLists"
-      )
+      const spy = getPrivateMethodSpy<
+        IndexingService["fetchAndCacheTokenLists"]
+      >(indexingService, "fetchAndCacheTokenLists")
 
       const cacheSpy = jest.spyOn(indexingService, "cacheAssetsForNetwork")
 
@@ -269,14 +255,8 @@ describe("IndexingService", () => {
     it("should not retrieve token prices for custom assets", async () => {
       const indexingDb = await getIndexingDB()
 
-      const smartContractAsset: SmartContractFungibleAsset = {
-        metadata: { tokenLists: [{ url: "random.cat", name: "random cat" }] },
-        name: "Test Coin",
-        symbol: "TEST",
-        decimals: 6,
-        homeNetwork: ETHEREUM,
-        contractAddress: "0x111111111117dc0aa78b770fa6a738034120c302",
-      }
+      const smartContractAsset = createSmartContractAsset()
+
       await indexingDb.addCustomAsset(customAsset)
       await indexingDb.saveTokenList(
         "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
@@ -290,16 +270,16 @@ describe("IndexingService", () => {
 
       fetchJsonStub
         .withArgs(
-          "https://api.coingecko.com/api/v3/simple/token_price/ethereum?vs_currencies=USD&include_last_updated_at=true&contract_addresses=0x111111111117dc0aa78b770fa6a738034120c302"
+          `https://api.coingecko.com/api/v3/simple/token_price/ethereum?vs_currencies=USD&include_last_updated_at=true&contract_addresses=${smartContractAsset.contractAddress}`
         )
         .resolves({
-          "0x111111111117dc0aa78b770fa6a738034120c302": {
+          [smartContractAsset.contractAddress]: {
             usd: 0.511675,
             last_updated_at: 1675140863,
           },
         })
 
-      const spy = getMethodSpy<IndexingService["handlePriceAlarm"]>(
+      const spy = getPrivateMethodSpy<IndexingService["handlePriceAlarm"]>(
         indexingService,
         "handlePriceAlarm"
       )
@@ -315,7 +295,7 @@ describe("IndexingService", () => {
 
       await spy.mock.results[0].value
       expect(getTokenPricesSpy).toHaveBeenCalledWith(
-        ["0x111111111117dc0aa78b770fa6a738034120c302"],
+        [smartContractAsset.contractAddress],
         { name: "United States Dollar", symbol: "USD", decimals: 10 },
         ETHEREUM
       )

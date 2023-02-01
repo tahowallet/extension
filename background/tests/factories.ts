@@ -388,7 +388,7 @@ const getRandomStr = (length: number) => {
 export const createSmartContractAsset = (
   overrides: Partial<SmartContractFungibleAsset> = {}
 ): SmartContractFungibleAsset => {
-  const symbol = getRandomStr(3)
+  const symbol = overrides.symbol ?? getRandomStr(3)
   const asset = {
     metadata: {
       logoURL:
