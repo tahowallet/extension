@@ -1,0 +1,12 @@
+import { createSelector } from "@reduxjs/toolkit"
+import { RootState } from ".."
+import { EVMNetwork } from "../../networks"
+
+// Adds chainID to each NFT for convenience in frontend
+// eslint-disable-next-line import/prefer-default-export
+export const selectEVMNetworks = createSelector(
+  (state: RootState) => state.networks.evmNetworks,
+  (evmNetworks): EVMNetwork[] => {
+    return Object.values(evmNetworks)
+  }
+)

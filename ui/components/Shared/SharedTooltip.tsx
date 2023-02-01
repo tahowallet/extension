@@ -1,3 +1,4 @@
+import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
 
 type VerticalPosition = "top" | "bottom"
@@ -8,7 +9,7 @@ interface Props {
   horizontalPosition?: HorizontalPosition
   width: number
   height?: number
-  style?: React.CSSProperties
+  type?: "default" | "dark"
   isOpen?: boolean
   children: React.ReactNode
   // TODO: find a better way to tell the IconComponent that the tooltip it open
@@ -50,7 +51,7 @@ export default function SharedTooltip(props: Props): ReactElement {
     horizontalPosition = "center",
     width,
     height = 20,
-    style,
+    type = "default",
     isOpen = false,
     IconComponent,
   } = props
@@ -77,7 +78,11 @@ export default function SharedTooltip(props: Props): ReactElement {
         <div className="info_icon" />
       )}
       {isShowingTooltip ? (
-        <div className="tooltip" style={style}>
+        <div
+          className={classNames("tooltip", {
+            dark: type === "dark",
+          })}
+        >
           {children}
         </div>
       ) : null}
@@ -112,6 +117,14 @@ export default function SharedTooltip(props: Props): ReactElement {
             z-index: 20;
             ${getVerticalPosition(verticalPosition, height)}
             ${getHorizontalPosition(horizontalPosition, width)}
+          }
+          .dark {
+            background: var(--green-120);
+            border-radius: 4px;
+            font-size: 16px;
+            line-height: 24px;
+            padding: 2px 8px;
+            color: var(--green-40);
           }
         `}
       </style>

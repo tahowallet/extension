@@ -6,14 +6,19 @@ import { normalizeEVMAddress } from "../lib/utils"
 import { NFT, NFTCollection, TransferredNFT } from "../nfts"
 import { createBackgroundAsyncThunk } from "./utils"
 
+export type NFTCached = {
+  chainID: string
+} & Omit<NFT, "network">
+
 export type NFTCollectionCached = {
   floorPrice?: {
     value: number
     tokenSymbol: string
   }
-  nfts: NFT[]
+  nfts: NFTCached[]
   hasNextPage: boolean
-} & Omit<NFTCollection, "floorPrice">
+  chainID: string
+} & Omit<NFTCollection, "floorPrice" | "network">
 
 export type NFTsState = {
   [chainID: string]: {
@@ -25,7 +30,7 @@ export type NFTsState = {
 
 export type NFTWithCollection = {
   collection: NFTCollectionCached
-  nft: NFT
+  nft: NFTCached
 }
 
 export type Filter = {
@@ -53,13 +58,14 @@ export type NFTsSliceState = {
 
 export type Events = {
   fetchNFTs: { collectionID: string; account: AddressOnNetwork }
+  refetchNFTs: { collectionID: string; account: AddressOnNetwork }
   fetchMoreNFTs: { collectionID: string; account: AddressOnNetwork }
   refetchCollections: never
 }
 
 export const emitter = new Emittery<Events>()
 
-function updateCollection(
+export function updateCollection(
   acc: NFTsSliceState,
   collection: NFTCollection
 ): void {
@@ -87,7 +93,7 @@ function updateCollection(
     totalNftCount,
     nfts: savedCollection.nfts ?? [],
     hasBadges: savedCollection.hasBadges || hasBadges, // once we know it has badges it should stay like that
-    network,
+    chainID,
     owner: ownerAddress,
     thumbnailURL,
     hasNextPage: false,
@@ -101,7 +107,7 @@ function updateCollection(
   }
 }
 
-function updateFilter(
+export function updateFilter(
   acc: NFTsSliceState,
   collection: NFTCollection,
   type: "accounts" | "collections"
@@ -140,7 +146,10 @@ function updateFilter(
   }
 }
 
-function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
+export function updateFilters(
+  acc: NFTsSliceState,
+  collection: NFTCollection
+): void {
   const { nftCount } = collection
   if ((nftCount ?? 0) > 0) {
     updateFilter(acc, collection, "collections")
@@ -148,7 +157,21 @@ function updateFilters(acc: NFTsSliceState, collection: NFTCollection): void {
   updateFilter(acc, collection, "accounts")
 }
 
-function removeAccountFromFilters(acc: NFTsSliceState, address: string): void {
+export function parseNFTs(nfts: NFT[]): NFTCached[] {
+  return nfts.map((nft) => {
+    const { network, ...cached } = nft
+
+    return {
+      ...cached,
+      chainID: network.chainID,
+    }
+  })
+}
+
+export function removeAccountFromFilters(
+  acc: NFTsSliceState,
+  address: string
+): void {
   acc.filters.accounts = acc.filters.accounts.filter(({ id }) => id !== address)
   acc.filters.collections = acc.filters.collections.flatMap((collection) => {
     if (collection.owners?.includes(address)) {
@@ -164,7 +187,9 @@ function removeAccountFromFilters(acc: NFTsSliceState, address: string): void {
   })
 }
 
-function initializeCollections(collections: NFTCollection[]): NFTsSliceState {
+export function initializeCollections(
+  collections: NFTCollection[]
+): NFTsSliceState {
   const state: NFTsSliceState = {
     isReloading: false,
     nfts: {},
@@ -227,7 +252,7 @@ const NFTsSlice = createSlice({
           collectionID
         ]
 
-      collectionToUpdate.nfts = nfts
+      collectionToUpdate.nfts = parseNFTs(nfts)
       collectionToUpdate.hasNextPage = hasNextPage
     },
     updateIsReloading: (
@@ -349,6 +374,13 @@ export const fetchNFTsFromCollection = createBackgroundAsyncThunk(
   "nfts/fetchNFTsFromCollection",
   async (payload: { collectionID: string; account: AddressOnNetwork }) => {
     await emitter.emit("fetchNFTs", payload)
+  }
+)
+
+export const refetchNFTsFromCollection = createBackgroundAsyncThunk(
+  "nfts/refetchNFTsFromCollection",
+  async (payload: { collectionID: string; account: AddressOnNetwork }) => {
+    await emitter.emit("refetchNFTs", payload)
   }
 )
 

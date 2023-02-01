@@ -1,22 +1,18 @@
 import { createSlice } from "@reduxjs/toolkit"
-import Emittery from "emittery"
-import { Ability } from "../services/abilities"
+import { Ability, ABILITY_TYPES_ENABLED } from "../abilities"
 import { HexString, NormalizedEVMAddress } from "../types"
-import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 
-export type Events = {
-  reportSpam: {
-    address: NormalizedEVMAddress
-    abilitySlug: string
-    reason: string
-  }
+export type State = "open" | "completed" | "expired" | "deleted" | "all"
+
+export type Filter = {
+  state: State
+  types: string[]
+  accounts: string[]
 }
 
-export const emitter = new Emittery<Events>()
-
 type AbilitiesState = {
-  filter: "all" | "completed" | "incomplete"
+  filter: Filter
   abilities: {
     [address: HexString]: {
       [uuid: string]: Ability
@@ -26,7 +22,11 @@ type AbilitiesState = {
 }
 
 const initialState: AbilitiesState = {
-  filter: "incomplete",
+  filter: {
+    state: "open",
+    types: [...ABILITY_TYPES_ENABLED],
+    accounts: [],
+  },
   abilities: {},
   hideDescription: false,
 }
@@ -44,37 +44,59 @@ const abilitiesSlice = createSlice({
         immerState.abilities[address][ability.abilityId] = ability
       })
     },
+    updateAbility: (immerState, { payload }: { payload: Ability }) => {
+      immerState.abilities[payload.address][payload.abilityId] = payload
+    },
+    deleteAbilitiesForAccount: (
+      immerState,
+      { payload: address }: { payload: HexString }
+    ) => {
+      delete immerState.abilities[address]
+    },
     deleteAbility: (
       immerState,
       { payload }: { payload: { address: HexString; abilityId: string } }
     ) => {
       delete immerState.abilities[payload.address]?.[payload.abilityId]
     },
-    markAbilityAsCompleted: (
-      immerState,
-      { payload }: { payload: { address: HexString; abilityId: string } }
-    ) => {
-      immerState.abilities[payload.address][payload.abilityId].completed = true
-    },
-    markAbilityAsRemoved: (
-      immerState,
-      { payload }: { payload: { address: HexString; abilityId: string } }
-    ) => {
-      immerState.abilities[payload.address][payload.abilityId].removedFromUi =
-        true
-    },
     toggleHideDescription: (immerState, { payload }: { payload: boolean }) => {
       immerState.hideDescription = payload
+    },
+    updateState: (immerState, { payload: state }: { payload: State }) => {
+      immerState.filter.state = state
+    },
+    addType: (immerState, { payload: type }: { payload: string }) => {
+      immerState.filter.types.push(type)
+    },
+    deleteType: (immerState, { payload: type }: { payload: string }) => {
+      immerState.filter.types = immerState.filter.types.filter(
+        (value) => value !== type
+      )
+    },
+    addAccount: (immerState, { payload: account }: { payload: string }) => {
+      if (!immerState.filter.accounts.includes(account)) {
+        immerState.filter.accounts.push(account)
+      }
+    },
+    deleteAccount: (immerState, { payload: account }: { payload: string }) => {
+      immerState.filter.accounts = immerState.filter.accounts.filter(
+        (value) => value !== account
+      )
     },
   },
 })
 
 export const {
   addAbilities,
+  updateAbility,
+  deleteAbilitiesForAccount,
   deleteAbility,
-  markAbilityAsCompleted,
-  markAbilityAsRemoved,
   toggleHideDescription,
+  updateState,
+  addType,
+  deleteType,
+  addAccount,
+  deleteAccount,
 } = abilitiesSlice.actions
 
 export const completeAbility = createBackgroundAsyncThunk(
@@ -84,11 +106,9 @@ export const completeAbility = createBackgroundAsyncThunk(
       address,
       abilityId,
     }: { address: NormalizedEVMAddress; abilityId: string },
-    { dispatch, extra: { main } }
+    { extra: { main } }
   ) => {
     await main.markAbilityAsCompleted(address, abilityId)
-    dispatch(markAbilityAsCompleted({ address, abilityId }))
-    dispatch(setSnackbarMessage("Marked as completed"))
   }
 )
 
@@ -99,27 +119,29 @@ export const removeAbility = createBackgroundAsyncThunk(
       address,
       abilityId,
     }: { address: NormalizedEVMAddress; abilityId: string },
-    { dispatch, extra: { main } }
+    { extra: { main } }
   ) => {
     await main.markAbilityAsRemoved(address, abilityId)
-    dispatch(markAbilityAsRemoved({ address, abilityId }))
-    dispatch(setSnackbarMessage("Ability deleted"))
   }
 )
 
 export const reportAndRemoveAbility = createBackgroundAsyncThunk(
   "abilities/reportAndRemoveAbility",
   async (
-    payload: {
+    {
+      address,
+      abilitySlug,
+      abilityId,
+      reason,
+    }: {
       address: NormalizedEVMAddress
-      abilityId: string
       abilitySlug: string
+      abilityId: string
       reason: string
     },
-    { dispatch }
+    { extra: { main } }
   ) => {
-    await emitter.emit("reportSpam", payload)
-    dispatch(removeAbility(payload))
+    await main.reportAndRemoveAbility(address, abilitySlug, abilityId, reason)
   }
 )
 

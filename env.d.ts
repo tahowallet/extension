@@ -38,6 +38,7 @@ type WalletProvider = {
 
 type TallyProvider = WalletProvider & {
   isTally: true
+  send: (method: string, params: unknown[]) => Promise<void>
 }
 
 type WindowEthereum = WalletProvider & {

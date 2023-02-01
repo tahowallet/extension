@@ -82,6 +82,7 @@ export type TransferredNFT = {
   chainID: string
   from: string | null
   to: string | null
-  type: "sell" | "buy"
+  isKnownFromAddress: boolean
+  isKnownToAddress: boolean
   collectionID: string | null
 }

@@ -135,7 +135,7 @@ export default function FeeSettingsText({
   networkSettings = customNetworkSetting ?? networkSettings
   const baseFeePerGas =
     useBackgroundSelector((state) => {
-      return state.networks.evm[currentNetwork.chainID].baseFeePerGas
+      return state.networks.blockInfo[currentNetwork.chainID].baseFeePerGas
     }) ??
     networkSettings.values?.baseFeePerGas ??
     0n

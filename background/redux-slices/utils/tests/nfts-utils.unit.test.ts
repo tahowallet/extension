@@ -1,17 +1,17 @@
-import { AVAX, BNB, ETH, ETHEREUM, USD } from "../../constants"
-import { AssetsState } from "../assets"
+import { AVAX, BNB, ETH, ETHEREUM, USD } from "../../../constants"
+import { AssetsState } from "../../assets"
 import {
   enrichCollectionWithUSDFloorPrice,
   getTotalFloorPrice,
   sortByPrice,
-} from "./nfts-utils"
-import { createPricePoint } from "../../tests/factories"
+} from "../nfts-utils"
+import { createPricePoint } from "../../../tests/factories"
 
 const COLLECTION_MOCK = {
   id: "",
   name: "",
   owner: "",
-  network: ETHEREUM, // doesn't matter for now
+  chainID: ETHEREUM.chainID, // doesn't matter for now
   hasBadges: false,
   nfts: [], // doesn't matter for now
   hasNextPage: false,
