@@ -42,8 +42,8 @@ export type AssetDecimalAmount = {
   localizedDecimalAmount: string
 }
 
-function hasCoinType(asset: AnyAsset): asset is NetworkBaseAsset {
-  return "coinType" in asset
+function hasChainID(asset: AnyAsset): asset is NetworkBaseAsset {
+  return "chainID" in asset
 }
 
 function isOptimismBaseAsset(asset: AnyAsset) {
@@ -83,9 +83,9 @@ export function isBuiltInNetworkBaseAsset(
   }
 
   return (
-    hasCoinType(asset) &&
+    hasChainID(asset) &&
     asset.symbol === network.baseAsset.symbol &&
-    asset.coinType === network.baseAsset.coinType &&
+    asset.chainID === network.baseAsset.chainID &&
     asset.name === network.baseAsset.name
   )
 }

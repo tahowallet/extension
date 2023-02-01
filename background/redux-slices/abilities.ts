@@ -56,6 +56,12 @@ const abilitiesSlice = createSlice({
         immerState.abilities[address][ability.abilityId] = ability
       })
     },
+    deleteAbilitiesForAccount: (
+      immerState,
+      { payload: address }: { payload: HexString }
+    ) => {
+      delete immerState.abilities[address]
+    },
     deleteAbility: (
       immerState,
       { payload }: { payload: { address: HexString; abilityId: string } }
@@ -89,8 +95,10 @@ const abilitiesSlice = createSlice({
         (value) => value !== type
       )
     },
-    addAccount: (immerState, { payload: type }: { payload: string }) => {
-      immerState.filter.accounts.push(type)
+    addAccount: (immerState, { payload: account }: { payload: string }) => {
+      if (!immerState.filter.accounts.includes(account)) {
+        immerState.filter.accounts.push(account)
+      }
     },
     deleteAccount: (immerState, { payload: account }: { payload: string }) => {
       immerState.filter.accounts = immerState.filter.accounts.filter(
@@ -102,6 +110,7 @@ const abilitiesSlice = createSlice({
 
 export const {
   addAbilities,
+  deleteAbilitiesForAccount,
   deleteAbility,
   markAbilityAsCompleted,
   markAbilityAsRemoved,
