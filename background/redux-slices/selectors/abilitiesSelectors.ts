@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { Ability } from "../../abilities"
-import { filterAbility } from "../utils/abilities-utils"
+import { filterAbility, filterByState } from "../utils/abilities-utils"
 
 const selectAbilities = createSelector(
   (state: RootState) => state.abilities,
@@ -52,7 +52,11 @@ export const selectFilteredAbilities = createSelector(
 )
 
 /* Counting selectors  */
-export const selectAbilityCount = createSelector(
-  selectFilteredAbilities,
-  (abilities) => abilities.length
+export const selectOpenAbilityCount = createSelector(
+  selectAbilities,
+  (abilities) =>
+    Object.values(abilities)
+      .map((address) => Object.values(address))
+      .flat()
+      .filter((ability) => filterByState(ability, "open")).length
 )

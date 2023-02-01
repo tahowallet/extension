@@ -1,5 +1,5 @@
 import { Ability } from "@tallyho/tally-background/abilities"
-import { completeAbility } from "@tallyho/tally-background/redux-slices/abilities"
+import { updateMarkingState } from "@tallyho/tally-background/redux-slices/abilities"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -44,6 +44,8 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   const timeDetails = getTimeDetails(ability)
+
+  const state = ability.completed ? t("uncompleted") : t("completed")
 
   return (
     <>
@@ -97,7 +99,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
           <div className="button_container">
             <SharedTooltip
               horizontalPosition="center"
-              width={144}
+              width={ability.completed ? 166 : 140}
               verticalPosition="bottom"
               type="dark"
               IconComponent={() => (
@@ -110,17 +112,17 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
                   hoverColor="var(--success)"
                   onClick={async () => {
                     await dispatch(
-                      completeAbility({
+                      updateMarkingState({
                         address: ability.address,
                         abilityId: ability.abilityId,
                       })
                     )
-                    dispatch(setSnackbarMessage(t("snackbar")))
+                    dispatch(setSnackbarMessage(t("snackbar", { state })))
                   }}
                 />
               )}
             >
-              {t("markBtn")}
+              {t("markBtn", { state })}
             </SharedTooltip>
             <div className="line" />
             <SharedTooltip
@@ -136,6 +138,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
                   icon="icons/s/garbage.svg"
                   color="var(--green-40)"
                   hoverColor="var(--error)"
+                  disabled={ability.removedFromUi}
                   onClick={() => {
                     setShowRemoveAbilityConfirm(true)
                   }}

@@ -1610,11 +1610,11 @@ export default class Main extends BaseService<never> {
     }
   }
 
-  async markAbilityAsCompleted(
+  async markAbility(
     address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<void> {
-    return this.abilitiesService.markAbilityAsCompleted(address, abilityId)
+    return this.abilitiesService.markAbility(address, abilityId)
   }
 
   async markAbilityAsRemoved(

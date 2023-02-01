@@ -139,11 +139,11 @@ export default class AbilitiesService extends BaseService<Events> {
     }
   }
 
-  async markAbilityAsCompleted(
+  async markAbility(
     address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<void> {
-    const ability = await this.db.markAsCompleted(address, abilityId)
+    const ability = await this.db.markAbility(address, abilityId)
 
     if (ability) {
       this.emitter.emit("updatedAbility", ability)

@@ -773,14 +773,16 @@
     "banner": {
       "description": "Daylight tells you when you qualify for an airdrop, mint or unlock.",
       "seeAbilities": "See your abilities",
-      "new": "New",
+      "open": "Open",
       "none": "None"
     },
     "timeStarting": "Starting in 1 month",
     "timeCloses": "Closes in 1 month",
     "viewWebsiteBtn": "Visit website",
-    "markBtn": "Mark as Completed",
-    "snackbar": "Marked as completed",
+    "uncompleted": "uncompleted",
+    "completed": "completed",
+    "markBtn": "Mark as {{state}}",
+    "snackbar": "Marked as {{state}}",
     "deleteBtn": "Delete",
     "deleteSlideUpMenu": {
       "title": "Delete ability?",

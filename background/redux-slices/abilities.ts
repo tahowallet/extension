@@ -99,8 +99,8 @@ export const {
   deleteAccount,
 } = abilitiesSlice.actions
 
-export const completeAbility = createBackgroundAsyncThunk(
-  "abilities/completeAbility",
+export const updateMarkingState = createBackgroundAsyncThunk(
+  "abilities/updateMarkingState",
   async (
     {
       address,
@@ -108,7 +108,7 @@ export const completeAbility = createBackgroundAsyncThunk(
     }: { address: NormalizedEVMAddress; abilityId: string },
     { extra: { main } }
   ) => {
-    await main.markAbilityAsCompleted(address, abilityId)
+    await main.markAbility(address, abilityId)
   }
 )
 
