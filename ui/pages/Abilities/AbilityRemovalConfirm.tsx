@@ -7,6 +7,7 @@ import {
 import { useTranslation } from "react-i18next"
 
 import classNames from "classnames"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedButton from "../../components/Shared/SharedButton"
 import { i18n } from "../../_locales/i18n"
@@ -58,24 +59,25 @@ export default function AbilityRemovalConfirm({
     }
   }, [showSpamReasons])
 
-  const handleDeleteAbility = () => {
+  const handleDeleteAbility = async () => {
     if (spamReason) {
-      dispatch(
+      await dispatch(
         reportAndRemoveAbility({
           address: ability.address,
-          abilityId: ability.abilityId,
           abilitySlug: ability.slug,
+          abilityId: ability.abilityId,
           reason: spamReason,
         })
       )
     } else {
-      dispatch(
+      await dispatch(
         removeAbility({
           address: ability.address,
           abilityId: ability.abilityId,
         })
       )
     }
+    dispatch(setSnackbarMessage(t(`${KEY_PREFIX}.snackbar`)))
     close()
   }
 

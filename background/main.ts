@@ -157,10 +157,7 @@ import {
   deleteTransferredNFTs,
 } from "./redux-slices/nfts_update"
 import AbilitiesService from "./services/abilities"
-import {
-  addAbilities,
-  emitter as abilitiesSliceEmitter,
-} from "./redux-slices/abilities"
+import { addAbilities, updateAbility } from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1520,12 +1517,10 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("newAbilities", async (newAbilities) => {
       this.store.dispatch(addAbilities(newAbilities))
     })
-    abilitiesSliceEmitter.on(
-      "reportSpam",
-      ({ address, abilitySlug, reason }) => {
-        this.abilitiesService.reportSpam(address, abilitySlug, reason)
-      }
-    )
+
+    this.abilitiesService.emitter.on("updatedAbility", (ability) => {
+      this.store.dispatch(updateAbility(ability))
+    })
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
@@ -1602,6 +1597,20 @@ export default class Main extends BaseService<never> {
     abilityId: string
   ): Promise<void> {
     return this.abilitiesService.markAbilityAsRemoved(address, abilityId)
+  }
+
+  async reportAndRemoveAbility(
+    address: NormalizedEVMAddress,
+    abilitySlug: string,
+    abilityId: string,
+    reason: string
+  ): Promise<void> {
+    this.abilitiesService.reportAndRemoveAbility(
+      address,
+      abilitySlug,
+      abilityId,
+      reason
+    )
   }
 
   private connectPopupMonitor() {

@@ -777,6 +777,7 @@
     "timeCloses": "Closes in 1 month",
     "viewWebsiteBtn": "Visit website",
     "markBtn": "Mark as Completed",
+    "snackbar": "Marked as completed",
     "deleteBtn": "Delete",
     "deleteSlideUpMenu": {
       "title": "Delete ability?",

@@ -1,4 +1,5 @@
 import { completeAbility } from "@tallyho/tally-background/redux-slices/abilities"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { Ability } from "@tallyho/tally-background/services/abilities"
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -113,13 +114,14 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
                   color="var(--green-40)"
                   customStyles="margin-right: 8px;"
                   hoverColor="var(--success)"
-                  onClick={() => {
-                    dispatch(
+                  onClick={async () => {
+                    await dispatch(
                       completeAbility({
                         address: ability.address,
                         abilityId: ability.abilityId,
                       })
                     )
+                    dispatch(setSnackbarMessage(t("snackbar")))
                   }}
                 />
               )}
