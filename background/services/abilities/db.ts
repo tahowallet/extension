@@ -77,8 +77,8 @@ export class AbilitiesDatabase extends Dexie {
     return undefined
   }
 
-  async deleteAbilitiesForAccount(address: HexString): Promise<void> {
-    await this.abilities
+  async deleteAbilitiesForAccount(address: HexString): Promise<number> {
+    return this.abilities
       .filter((ability) => ability.address === address)
       .delete()
   }

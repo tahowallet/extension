@@ -618,8 +618,6 @@ export default class Main extends BaseService<never> {
     }
     // remove abilities
     if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
-      this.store.dispatch(deleteAccountFilter(address))
-      this.store.dispatch(deleteAbilitiesForAccount(address))
       await this.abilitiesService.deleteAbilitiesForAccount(address)
     }
     // remove dApp premissions
@@ -1534,15 +1532,19 @@ export default class Main extends BaseService<never> {
   }
 
   connectAbilitiesService(): void {
-    this.abilitiesService.emitter.on("newAbilities", async (newAbilities) => {
+    this.abilitiesService.emitter.on("newAbilities", (newAbilities) => {
       this.store.dispatch(addAbilities(newAbilities))
     })
 
     this.abilitiesService.emitter.on("updatedAbility", (ability) => {
       this.store.dispatch(updateAbility(ability))
     })
-    this.abilitiesService.emitter.on("newAccount", async (address) => {
+    this.abilitiesService.emitter.on("newAccount", (address) => {
       this.store.dispatch(addAccount(address))
+    })
+    this.abilitiesService.emitter.on("deleteAccount", (address) => {
+      this.store.dispatch(deleteAccountFilter(address))
+      this.store.dispatch(deleteAbilitiesForAccount(address))
     })
   }
 

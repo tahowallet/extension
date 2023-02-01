@@ -75,6 +75,7 @@ interface Events extends ServiceLifecycleEvents {
   newAbilities: Ability[]
   updatedAbility: Ability
   newAccount: string
+  deleteAccount: string
 }
 export default class AbilitiesService extends BaseService<Events> {
   constructor(
@@ -183,6 +184,10 @@ export default class AbilitiesService extends BaseService<Events> {
   }
 
   async deleteAbilitiesForAccount(address: HexString): Promise<void> {
-    await this.db.deleteAbilitiesForAccount(address)
+    const deletedRecords = await this.db.deleteAbilitiesForAccount(address)
+
+    if (deletedRecords > 0) {
+      this.emitter.emit("deleteAccount", address)
+    }
   }
 }
