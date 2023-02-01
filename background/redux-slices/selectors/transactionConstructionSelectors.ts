@@ -49,7 +49,8 @@ export const selectDefaultNetworkFeeSettings = createSelector(
               )?.gasPrice
             : selectedFeesPerGas?.price ?? 0n,
         baseFeePerGas:
-          networks.evm[currentNetwork.chainID]?.baseFeePerGas ?? undefined,
+          networks.blockInfo[currentNetwork.chainID]?.baseFeePerGas ??
+          undefined,
       },
     }
   }

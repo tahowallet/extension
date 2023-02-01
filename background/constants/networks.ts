@@ -91,11 +91,9 @@ export const DEFAULT_NETWORKS = [
   OPTIMISM,
   GOERLI,
   ARBITRUM_ONE,
-  ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [ROOTSTOCK] : []),
-  ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE) ? [AVALANCHE] : []),
-  ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
-    ? [BINANCE_SMART_CHAIN]
-    : []),
+  ROOTSTOCK,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA) ? [ARBITRUM_NOVA] : []),
 ]
 
@@ -185,6 +183,33 @@ export const CHAIN_ID_TO_RPC_URLS: {
     "https://rpc.ankr.com/bsc",
     "https://bsc-dataseed.binance.org",
   ],
+}
+
+// Taken from https://api.coingecko.com/api/v3/asset_platforms
+export const CHAIN_ID_TO_COINGECKO_PLATFORM_ID: {
+  [chainId: string]: string
+} = {
+  "250": "fantom",
+  "122": "fuse",
+  "361": "theta",
+  "199": "bittorent",
+  "106": "velas",
+  "128": "huobi-token",
+  "96": "bitkub-chain",
+  "333999": "polis-chain",
+  "321": "kucoin-community-chain",
+  "1285": "moonriver",
+  "25": "cronos",
+  "10000": "smartbch",
+  "1313161554": "aurora",
+  "88": "tomochain",
+  "1088": "metis-andromeda",
+  "2001": "milkomeda-cardano",
+  "9001": "evmos",
+  "288": "boba",
+  "42220": "celo",
+  "1284": "moonbeam",
+  "66": "okex-chain",
 }
 
 /**

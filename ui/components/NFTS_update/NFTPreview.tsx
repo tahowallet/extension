@@ -1,9 +1,17 @@
+import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import { NFTWithCollection } from "@tallyho/tally-background/redux-slices/nfts_update"
+import {
+  refetchNFTsFromCollection,
+  NFTWithCollection,
+} from "@tallyho/tally-background/redux-slices/nfts_update"
 import { getAccountNameOnChain } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, useMemo } from "react"
+import React, { ReactElement, useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { useBackgroundSelector, useIntersectionObserver } from "../../hooks"
+import {
+  useBackgroundDispatch,
+  useBackgroundSelector,
+  useIntersectionObserver,
+} from "../../hooks"
 import { trimWithEllipsis } from "../../utils/textUtils"
 import SharedAddress from "../Shared/SharedAddress"
 import SharedButton from "../Shared/SharedButton"
@@ -32,18 +40,21 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     previewURL,
     contract,
     name,
-    network,
+    chainID,
     owner,
     description,
     attributes,
     supply,
     isBadge,
   } = nft
-  const { totalNftCount } = collection
+  const { totalNftCount, id: collectionID } = collection
+  const network = NETWORK_BY_CHAIN_ID[chainID]
   const floorPrice =
     "floorPrice" in collection &&
     collection.floorPrice?.value !== undefined &&
     collection.floorPrice
+
+  const dispatch = useBackgroundDispatch()
 
   const ownerName = useBackgroundSelector((state) =>
     getAccountNameOnChain(state, { address: owner, network })
@@ -67,6 +78,17 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts",
   })
+
+  const refetchNFTs = useCallback(
+    () =>
+      dispatch(
+        refetchNFTsFromCollection({
+          collectionID,
+          account: { address: owner, network },
+        })
+      ),
+    [collectionID, owner, network, dispatch]
+  )
 
   return (
     <>
@@ -168,11 +190,21 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           </div>
         </div>
 
-        {!!attributes.length && (
-          <div className="preview_section">
-            <div className="preview_section_header">
-              {t("preview.properties")}
-            </div>
+        <div className="preview_section">
+          <div className="preview_section_header">
+            {t("preview.properties")}
+          </div>
+          <SharedButton
+            type="tertiaryWhite"
+            iconSmall="refresh"
+            iconPosition="left"
+            size="small"
+            style={{ padding: 0 }}
+            onClick={refetchNFTs}
+          >
+            {t("preview.refresh")}
+          </SharedButton>
+          {!!attributes.length && (
             <div className="preview_property_list preview_section_row">
               {attributes.map(
                 ({ trait, value }) =>
@@ -192,8 +224,8 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
                   )
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       <style jsx>{`
         @keyframes progressive-blur {
