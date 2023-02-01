@@ -97,11 +97,8 @@ export default class WalletConnectService extends BaseService<Events> {
     this.#signClientv2 = await createSignClient()
     this.defineEventHandlers()
 
-    this.providerBridgeService.emitter.on(
-      "walletConnectInit",
-      async (wcUri) => {
-        this.performConnection(wcUri)
-      }
+    this.providerBridgeService.emitter.on("walletConnectInit", async (wcUri) =>
+      this.performConnection(wcUri)
     )
   }
 
@@ -126,23 +123,36 @@ export default class WalletConnectService extends BaseService<Events> {
     try {
       const { version } = parseUri(uri)
 
-      // Route the provided URI to the v1 SignClient if URI version indicates it, else use v2.
-      if (version === 1) {
-        WalletConnectService.tempFeatureLog("legacy pairing", parseUri(uri))
-        createLegacySignClient(
-          uri,
-          (payload) => this.sessionProposalListener(true, undefined, payload),
-          (payload) => this.sessionRequestListener(true, undefined, payload)
-        )
-      } else if (version === 2) {
-        await this.signClientv2.pair({ uri })
-        WalletConnectService.tempFeatureLog("pairing request sent")
-      } else {
-        // TODO: decide how to handle this
-        WalletConnectService.tempFeatureLog("unhandled uri")
+      switch (true) {
+        // Route the provided URI to the v1 SignClient if URI version indicates it.
+        case version === 1:
+          WalletConnectService.tempFeatureLog("legacy pairing", parseUri(uri))
+
+          createLegacySignClient(
+            uri,
+            (payload) => this.sessionProposalListener(true, undefined, payload),
+            (payload) => this.sessionRequestListener(true, undefined, payload)
+          )
+          break
+
+        case version === 2:
+          await this.signClientv2.pair({ uri })
+          WalletConnectService.tempFeatureLog("pairing request sent")
+          break
+
+        default:
+          // TODO: decide how to handle this
+          WalletConnectService.tempFeatureLog(
+            "unhandled uri version: ",
+            version
+          )
+          break
       }
     } catch (err: unknown) {
-      WalletConnectService.tempFeatureLog("TODO: handle error", err)
+      WalletConnectService.tempFeatureLog(
+        "TODO: Error while establishing session",
+        err
+      )
     }
   }
 
@@ -229,10 +239,15 @@ export default class WalletConnectService extends BaseService<Events> {
     WalletConnectService.tempFeatureLog("in sessionRequestListener", event)
 
     let request: TranslatedRequestParams | undefined
+
     if (isLegacy && legacyEvent) {
       request = processLegacyRequestParams(legacyEvent)
     } else if (event) {
       request = processRequestParams(event)
+    }
+
+    if (!request) {
+      return
     }
 
     const port = getMetaPort(
@@ -262,10 +277,6 @@ export default class WalletConnectService extends BaseService<Events> {
       }
     )
 
-    if (!request) {
-      return
-    }
-
     await this.providerBridgeService.onMessageListener(port, {
       id: "1400",
       request,
@@ -277,16 +288,26 @@ export default class WalletConnectService extends BaseService<Events> {
     proposal?: SignClientTypes.EventArguments["session_proposal"],
     legacyProposal?: LegacyProposal
   ): Promise<void> {
-    WalletConnectService.tempFeatureLog("in sessionProposalListener", proposal)
+    WalletConnectService.tempFeatureLog(
+      "in sessionProposalListener",
+      proposal ?? legacyProposal
+    )
+
+    let favicon = ""
+    let dAppName = ""
 
     if (isLegacy && legacyProposal) {
       const { params } = legacyProposal
       if (Array.isArray(params) && params.length > 0) {
         this.senderUrl = params[0].peerMeta?.url || ""
+        favicon = params[0].peerMeta.icons?.[0] ?? ""
+        dAppName = params[0].peerMeta.name ?? ""
       }
     } else if (proposal) {
       const { params } = proposal
       this.senderUrl = params.proposer.metadata.url // we can also extract information such as icons and description
+      favicon = params.proposer.metadata.icons?.[0] ?? ""
+      dAppName = params.proposer.metadata.name ?? ""
     }
 
     if (!this.senderUrl) {
@@ -318,7 +339,7 @@ export default class WalletConnectService extends BaseService<Events> {
       id: "1300",
       request: {
         method: "eth_requestAccounts",
-        params: [],
+        params: [dAppName, favicon],
       },
     })
   }
