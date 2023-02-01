@@ -63,7 +63,7 @@ import {
   updateKeyrings,
   setKeyringToVerify,
 } from "./redux-slices/keyrings"
-import { blockSeen } from "./redux-slices/networks"
+import { blockSeen, setEVMNetworks } from "./redux-slices/networks"
 import {
   initializationLoadingTimeHitLimit,
   emitter as uiSliceEmitter,
@@ -159,8 +159,10 @@ import {
 import AbilitiesService from "./services/abilities"
 import {
   addAbilities,
+  updateAbility,
   addAccount,
-  emitter as abilitiesSliceEmitter,
+  deleteAccount as deleteAccountFilter,
+  deleteAbilitiesForAccount,
 } from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -614,6 +616,10 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(deleteNFTsForAddress(address))
       await this.nftsService.removeNFTsForAddress(address)
     }
+    // remove abilities
+    if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
+      await this.abilitiesService.deleteAbilitiesForAccount(address)
+    }
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))
     await this.providerBridgeService.revokePermissionsForAddress(address)
@@ -727,6 +733,16 @@ export default class Main extends BaseService<never> {
           await this.enrichActivitiesForSelectedAccount()
         }
       )
+
+      // Set up initial state.
+      const existingAccounts = await this.chainService.getAccountsToTrack()
+      existingAccounts.forEach(async (addressNetwork) => {
+        // Mark as loading and wire things up.
+        this.store.dispatch(loadAccount(addressNetwork))
+
+        // Force a refresh of the account balance to populate the store.
+        this.chainService.getLatestBaseAccountBalance(addressNetwork)
+      })
     })
 
     // Wire up chain service to account slice.
@@ -737,6 +753,10 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(updateAccountBalance(accountWithBalance))
       }
     )
+
+    this.chainService.emitter.on("supportedNetworks", (supportedNetworks) => {
+      this.store.dispatch(setEVMNetworks(supportedNetworks))
+    })
 
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
@@ -862,16 +882,6 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(signedDataAction(signedData))
       }
     )
-
-    // Set up initial state.
-    const existingAccounts = await this.chainService.getAccountsToTrack()
-    existingAccounts.forEach((addressNetwork) => {
-      // Mark as loading and wire things up.
-      this.store.dispatch(loadAccount(addressNetwork))
-
-      // Force a refresh of the account balance to populate the store.
-      this.chainService.getLatestBaseAccountBalance(addressNetwork)
-    })
 
     this.chainService.emitter.on(
       "blockPrices",
@@ -1522,18 +1532,20 @@ export default class Main extends BaseService<never> {
   }
 
   connectAbilitiesService(): void {
-    this.abilitiesService.emitter.on("newAbilities", async (newAbilities) => {
+    this.abilitiesService.emitter.on("newAbilities", (newAbilities) => {
       this.store.dispatch(addAbilities(newAbilities))
     })
-    this.abilitiesService.emitter.on("newAccount", async (address) => {
+
+    this.abilitiesService.emitter.on("updatedAbility", (ability) => {
+      this.store.dispatch(updateAbility(ability))
+    })
+    this.abilitiesService.emitter.on("newAccount", (address) => {
       this.store.dispatch(addAccount(address))
     })
-    abilitiesSliceEmitter.on(
-      "reportSpam",
-      ({ address, abilitySlug, reason }) => {
-        this.abilitiesService.reportSpam(address, abilitySlug, reason)
-      }
-    )
+    this.abilitiesService.emitter.on("deleteAccount", (address) => {
+      this.store.dispatch(deleteAccountFilter(address))
+      this.store.dispatch(deleteAbilitiesForAccount(address))
+    })
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
@@ -1610,6 +1622,20 @@ export default class Main extends BaseService<never> {
     abilityId: string
   ): Promise<void> {
     return this.abilitiesService.markAbilityAsRemoved(address, abilityId)
+  }
+
+  async reportAndRemoveAbility(
+    address: NormalizedEVMAddress,
+    abilitySlug: string,
+    abilityId: string,
+    reason: string
+  ): Promise<void> {
+    this.abilitiesService.reportAndRemoveAbility(
+      address,
+      abilitySlug,
+      abilityId,
+      reason
+    )
   }
 
   private connectPopupMonitor() {

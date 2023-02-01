@@ -1,5 +1,6 @@
 import { Ability } from "@tallyho/tally-background/abilities"
 import { completeAbility } from "@tallyho/tally-background/redux-slices/abilities"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"
@@ -18,12 +19,14 @@ const getTimeDetails = (ability: Ability): string => {
   cutOffDate.setDate(cutOffDate.getDate() + DAYS)
 
   if (ability.closeAt) {
-    if (new Date(ability.closeAt) < cutOffDate) {
+    const closeDate = new Date(ability.closeAt)
+    if (new Date() < closeDate && closeDate < cutOffDate) {
       return i18n.t("abilities.timeCloses")
     }
   }
   if (ability.openAt) {
-    if (new Date(ability.openAt) < cutOffDate) {
+    const openDate = new Date(ability.openAt)
+    if (new Date() < openDate && openDate < cutOffDate) {
       return i18n.t("abilities.timeStarting")
     }
   }
@@ -105,13 +108,14 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
                   color="var(--green-40)"
                   customStyles="margin-right: 8px;"
                   hoverColor="var(--success)"
-                  onClick={() => {
-                    dispatch(
+                  onClick={async () => {
+                    await dispatch(
                       completeAbility({
                         address: ability.address,
                         abilityId: ability.abilityId,
                       })
                     )
+                    dispatch(setSnackbarMessage(t("snackbar")))
                   }}
                 />
               )}

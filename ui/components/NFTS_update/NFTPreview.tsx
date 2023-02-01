@@ -196,7 +196,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           </div>
           <SharedButton
             type="tertiaryWhite"
-            iconSmall="swap"
+            iconSmall="refresh"
             iconPosition="left"
             size="small"
             style={{ padding: 0 }}
