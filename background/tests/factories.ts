@@ -41,6 +41,7 @@ import {
   LedgerService,
   NameService,
   PreferenceService,
+  ProviderBridgeService,
   SigningService,
 } from "../services"
 import {
@@ -111,6 +112,16 @@ type CreateSigningServiceOverrides = {
   chainService?: Promise<ChainService>
 }
 
+type CreateProviderBridgeServiceOverrides = {
+  internalEthereumProviderService?: Promise<InternalEthereumProviderService>
+  preferenceService?: Promise<PreferenceService>
+}
+
+type CreateInternalEthereumProviderServiceOverrides = {
+  chainService?: Promise<ChainService>
+  preferenceService?: Promise<PreferenceService>
+}
+
 export async function createAnalyticsService(overrides?: {
   chainService?: Promise<ChainService>
   preferenceService?: Promise<PreferenceService>
@@ -134,14 +145,23 @@ export const createSigningService = async (
 }
 
 export const createInternalEthereumProviderService = async (
-  overrides: {
-    chainService?: Promise<ChainService>
-    preferenceService?: Promise<PreferenceService>
-  } = {}
+  overrides: CreateInternalEthereumProviderServiceOverrides = {}
 ): Promise<InternalEthereumProviderService> => {
   return InternalEthereumProviderService.create(
     overrides.chainService ?? createChainService(),
     overrides.preferenceService ?? createPreferenceService()
+  )
+}
+
+export const createProviderBridgeService = async (
+  overrides: CreateProviderBridgeServiceOverrides = {}
+): Promise<ProviderBridgeService> => {
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+  return ProviderBridgeService.create(
+    overrides.internalEthereumProviderService ??
+      createInternalEthereumProviderService({ preferenceService }),
+    preferenceService
   )
 }
 
@@ -328,30 +348,30 @@ export const makeEthersFeeData = (overrides?: Partial<FeeData>): FeeData => {
   }
 }
 
+export class MockSerialFallbackProvider {
+  async getBlock() {
+    return makeEthersBlock()
+  }
+
+  async getBlockNumber() {
+    return 1
+  }
+
+  async getBalance() {
+    return BigNumber.from(100)
+  }
+
+  async getFeeData() {
+    return makeEthersFeeData()
+  }
+
+  async getCode() {
+    return "false"
+  }
+}
+
 export const makeSerialFallbackProvider =
   (): Partial<SerialFallbackProvider> => {
-    class MockSerialFallbackProvider {
-      async getBlock() {
-        return makeEthersBlock()
-      }
-
-      async getBlockNumber() {
-        return 1
-      }
-
-      async getBalance() {
-        return BigNumber.from(100)
-      }
-
-      async getFeeData() {
-        return makeEthersFeeData()
-      }
-
-      async getCode() {
-        return "false"
-      }
-    }
-
     return new MockSerialFallbackProvider()
   }
 

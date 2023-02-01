@@ -63,7 +63,7 @@ import {
   updateKeyrings,
   setKeyringToVerify,
 } from "./redux-slices/keyrings"
-import { blockSeen } from "./redux-slices/networks"
+import { blockSeen, setEVMNetworks } from "./redux-slices/networks"
 import {
   initializationLoadingTimeHitLimit,
   emitter as uiSliceEmitter,
@@ -157,7 +157,13 @@ import {
   deleteTransferredNFTs,
 } from "./redux-slices/nfts_update"
 import AbilitiesService from "./services/abilities"
-import { addAbilities, updateAbility } from "./redux-slices/abilities"
+import {
+  addAbilities,
+  updateAbility,
+  addAccount,
+  deleteAccount as deleteAccountFilter,
+  deleteAbilitiesForAccount,
+} from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -305,7 +311,8 @@ export default class Main extends BaseService<never> {
       ? WalletConnectService.create(
           providerBridgeService,
           internalEthereumProviderService,
-          preferenceService
+          preferenceService,
+          chainService
         )
       : getNoopService<WalletConnectService>()
 
@@ -609,6 +616,12 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(deleteNFTsForAddress(address))
       await this.nftsService.removeNFTsForAddress(address)
     }
+    // remove abilities
+    if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
+      this.store.dispatch(deleteAccountFilter(address))
+      this.store.dispatch(deleteAbilitiesForAccount(address))
+      await this.abilitiesService.deleteAbilitiesForAccount(address)
+    }
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))
     await this.providerBridgeService.revokePermissionsForAddress(address)
@@ -722,6 +735,16 @@ export default class Main extends BaseService<never> {
           await this.enrichActivitiesForSelectedAccount()
         }
       )
+
+      // Set up initial state.
+      const existingAccounts = await this.chainService.getAccountsToTrack()
+      existingAccounts.forEach(async (addressNetwork) => {
+        // Mark as loading and wire things up.
+        this.store.dispatch(loadAccount(addressNetwork))
+
+        // Force a refresh of the account balance to populate the store.
+        this.chainService.getLatestBaseAccountBalance(addressNetwork)
+      })
     })
 
     // Wire up chain service to account slice.
@@ -732,6 +755,10 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(updateAccountBalance(accountWithBalance))
       }
     )
+
+    this.chainService.emitter.on("supportedNetworks", (supportedNetworks) => {
+      this.store.dispatch(setEVMNetworks(supportedNetworks))
+    })
 
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
@@ -857,16 +884,6 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(signedDataAction(signedData))
       }
     )
-
-    // Set up initial state.
-    const existingAccounts = await this.chainService.getAccountsToTrack()
-    existingAccounts.forEach((addressNetwork) => {
-      // Mark as loading and wire things up.
-      this.store.dispatch(loadAccount(addressNetwork))
-
-      // Force a refresh of the account balance to populate the store.
-      this.chainService.getLatestBaseAccountBalance(addressNetwork)
-    })
 
     this.chainService.emitter.on(
       "blockPrices",
@@ -1500,6 +1517,9 @@ export default class Main extends BaseService<never> {
     nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) =>
       this.nftsService.fetchNFTsFromCollection(collectionID, account)
     )
+    nftsSliceEmitter.on("refetchNFTs", ({ collectionID, account }) =>
+      this.nftsService.refreshNFTsFromCollection(collectionID, account)
+    )
     nftsSliceEmitter.on("fetchMoreNFTs", ({ collectionID, account }) =>
       this.nftsService.fetchNFTsFromNextPage(collectionID, account)
     )
@@ -1520,6 +1540,9 @@ export default class Main extends BaseService<never> {
 
     this.abilitiesService.emitter.on("updatedAbility", (ability) => {
       this.store.dispatch(updateAbility(ability))
+    })
+    this.abilitiesService.emitter.on("newAccount", async (address) => {
+      this.store.dispatch(addAccount(address))
     })
   }
 

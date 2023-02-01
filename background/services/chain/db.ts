@@ -12,6 +12,7 @@ import {
 import { FungibleAsset } from "../../assets"
 import {
   BASE_ASSETS,
+  CHAIN_ID_TO_COINGECKO_PLATFORM_ID,
   CHAIN_ID_TO_RPC_URLS,
   DEFAULT_NETWORKS,
   GOERLI,
@@ -77,7 +78,7 @@ export class ChainDatabase extends Dexie {
 
   private networks!: Dexie.Table<EVMNetwork, string>
 
-  private baseAssets!: Dexie.Table<NetworkBaseAsset, number>
+  private baseAssets!: Dexie.Table<NetworkBaseAsset, string>
 
   private rpcUrls!: Dexie.Table<{ chainID: string; rpcUrls: string[] }, string>
 
@@ -218,6 +219,7 @@ export class ChainDatabase extends Dexie {
   }): Promise<void> {
     await this.networks.put({
       name: chainName,
+      coingeckoPlatformID: CHAIN_ID_TO_COINGECKO_PLATFORM_ID[chainID],
       chainID,
       family: "EVM",
       baseAsset: {
@@ -249,6 +251,14 @@ export class ChainDatabase extends Dexie {
       symbol,
       chainID,
     })
+  }
+
+  async getBaseAssetForNetwork(chainID: string): Promise<NetworkBaseAsset> {
+    const baseAsset = await this.baseAssets.get(chainID)
+    if (!baseAsset) {
+      throw new Error(`No Base Asset Found For Network ${chainID}`)
+    }
+    return baseAsset
   }
 
   async getAllBaseAssets(): Promise<NetworkBaseAsset[]> {
