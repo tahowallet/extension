@@ -73,7 +73,9 @@ const normalizeDaylightAbilities = (
 
 interface Events extends ServiceLifecycleEvents {
   newAbilities: Ability[]
+  updatedAbility: Ability
   newAccount: string
+  deleteAccount: string
 }
 export default class AbilitiesService extends BaseService<Events> {
   constructor(
@@ -141,14 +143,22 @@ export default class AbilitiesService extends BaseService<Events> {
     address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<void> {
-    return this.db.markAsCompleted(address, abilityId)
+    const ability = await this.db.markAsCompleted(address, abilityId)
+
+    if (ability) {
+      this.emitter.emit("updatedAbility", ability)
+    }
   }
 
   async markAbilityAsRemoved(
     address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<void> {
-    return this.db.markAsRemoved(address, abilityId)
+    const ability = await this.db.markAsRemoved(address, abilityId)
+
+    if (ability) {
+      this.emitter.emit("updatedAbility", ability)
+    }
   }
 
   async abilitiesAlarm(): Promise<void> {
@@ -163,16 +173,21 @@ export default class AbilitiesService extends BaseService<Events> {
     }
   }
 
-  async deleteAbilitiesForAccount(address: HexString): Promise<void> {
-    await this.db.deleteAbilitiesForAccount(address)
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  async reportSpam(
+  async reportAndRemoveAbility(
     address: NormalizedEVMAddress,
     abilitySlug: string,
+    abilityId: string,
     reason: string
   ): Promise<void> {
     await createSpamReport(address, abilitySlug, reason)
+    this.markAbilityAsRemoved(address, abilityId)
+  }
+
+  async deleteAbilitiesForAccount(address: HexString): Promise<void> {
+    const deletedRecords = await this.db.deleteAbilitiesForAccount(address)
+
+    if (deletedRecords > 0) {
+      this.emitter.emit("deleteAccount", address)
+    }
   }
 }

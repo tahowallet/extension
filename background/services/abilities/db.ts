@@ -48,33 +48,37 @@ export class AbilitiesDatabase extends Dexie {
   async markAsCompleted(
     address: NormalizedEVMAddress,
     abilityId: string
-  ): Promise<void> {
+  ): Promise<Ability | undefined> {
     const ability = await this.getAbility(address, abilityId)
-    if (!ability) {
-      throw new Error("Ability does not exist")
+    if (ability) {
+      const updatedAbility = {
+        ...ability,
+        completed: true,
+      }
+      this.abilities.put(updatedAbility)
+      return updatedAbility
     }
-    this.abilities.put({
-      ...ability,
-      completed: true,
-    })
+    return undefined
   }
 
   async markAsRemoved(
     address: NormalizedEVMAddress,
     abilityId: string
-  ): Promise<void> {
+  ): Promise<Ability | undefined> {
     const ability = await this.getAbility(address, abilityId)
-    if (!ability) {
-      throw new Error("Ability does not exist")
+    if (ability) {
+      const updatedAbility = {
+        ...ability,
+        removedFromUi: true,
+      }
+      this.abilities.put(updatedAbility)
+      return updatedAbility
     }
-    this.abilities.put({
-      ...ability,
-      removedFromUi: true,
-    })
+    return undefined
   }
 
-  async deleteAbilitiesForAccount(address: HexString): Promise<void> {
-    await this.abilities
+  async deleteAbilitiesForAccount(address: HexString): Promise<number> {
+    return this.abilities
       .filter((ability) => ability.address === address)
       .delete()
   }
