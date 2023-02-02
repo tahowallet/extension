@@ -140,7 +140,8 @@ export default function TopMenu(): ReactElement {
                 )
               }}
             >
-              {isConnectedToDApp ? (
+              {isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT) &&
+              isConnectedToDApp ? (
                 <div className="connected-wc" />
               ) : (
                 <div className="connection_img" />
