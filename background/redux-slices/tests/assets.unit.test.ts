@@ -1,7 +1,10 @@
-import { PricePoint, SmartContractFungibleAsset } from "../assets"
-import { POLYGON } from "../constants"
-import { createPricePoint, createSmartContractAsset } from "../tests/factories"
-import { AssetsState, selectAssetPricePoint, SingleAssetState } from "./assets"
+import { PricePoint, SmartContractFungibleAsset } from "../../assets"
+import { POLYGON } from "../../constants"
+import {
+  createPricePoint,
+  createSmartContractAsset,
+} from "../../tests/factories"
+import { AssetsState, selectAssetPricePoint, SingleAssetState } from "../assets"
 
 const asset: SmartContractFungibleAsset = createSmartContractAsset()
 

@@ -349,23 +349,23 @@ export const makeEthersFeeData = (overrides?: Partial<FeeData>): FeeData => {
 }
 
 export class MockSerialFallbackProvider {
-  async getBlock() {
+  async getBlock(): Promise<Block> {
     return makeEthersBlock()
   }
 
-  async getBlockNumber() {
+  async getBlockNumber(): Promise<number> {
     return 1
   }
 
-  async getBalance() {
+  async getBalance(): Promise<BigNumber> {
     return BigNumber.from(100)
   }
 
-  async getFeeData() {
+  async getFeeData(): Promise<FeeData> {
     return makeEthersFeeData()
   }
 
-  async getCode() {
+  async getCode(): Promise<string> {
     return "false"
   }
 }
