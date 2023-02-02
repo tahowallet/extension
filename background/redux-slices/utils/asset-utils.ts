@@ -9,6 +9,7 @@ import {
   UnitPricePoint,
   AnyAsset,
   CoinGeckoAsset,
+  isSmartContractFungibleAsset,
 } from "../../assets"
 import {
   BUILT_IN_NETWORK_BASE_ASSETS,
@@ -47,14 +48,26 @@ function hasChainID(asset: AnyAsset): asset is NetworkBaseAsset {
 }
 
 function isOptimismBaseAsset(asset: AnyAsset) {
+  const hasMatchingChainID =
+    (isSmartContractFungibleAsset(asset) &&
+      asset.homeNetwork.chainID === OPTIMISM.chainID) ||
+    (hasChainID(asset) && asset.chainID === OPTIMISM.chainID)
+
   return (
+    hasMatchingChainID &&
     "contractAddress" in asset &&
     asset.contractAddress === OPTIMISM.baseAsset.contractAddress
   )
 }
 
 function isPolygonBaseAsset(asset: AnyAsset) {
+  const hasMatchingChainID =
+    (isSmartContractFungibleAsset(asset) &&
+      asset.homeNetwork.chainID === POLYGON.chainID) ||
+    (hasChainID(asset) && asset.chainID === POLYGON.chainID)
+
   return (
+    hasMatchingChainID &&
     "contractAddress" in asset &&
     asset.contractAddress === POLYGON.baseAsset.contractAddress
   )
@@ -99,6 +112,37 @@ export function getBuiltInNetworkBaseAsset(
 ): (NetworkBaseAsset & Required<CoinGeckoAsset>) | undefined {
   return BUILT_IN_NETWORK_BASE_ASSETS.find(
     (asset) => asset.symbol === symbol && asset.chainID === chainID
+  )
+}
+
+/**
+ * @param asset1 any asset
+ * @param asset2 any asset
+ * @returns true if both assets are the same network base assets
+ */
+export function sameBuiltInNetworkBaseAsset(
+  asset1: AnyAsset,
+  asset2: AnyAsset
+): boolean {
+  // for base assets with possible homeNetwork field
+  if (isOptimismBaseAsset(asset1) && isOptimismBaseAsset(asset2)) return true
+
+  if (isPolygonBaseAsset(asset1) && isPolygonBaseAsset(asset2)) return true
+
+  // for other base assets
+  if (
+    "homeNetwork" in asset1 ||
+    "homeNetwork" in asset2 ||
+    !hasChainID(asset1) ||
+    !hasChainID(asset2)
+  ) {
+    return false
+  }
+
+  return (
+    asset1.symbol === asset2.symbol &&
+    asset1.chainID === asset2.chainID &&
+    asset1.name === asset2.name
   )
 }
 

@@ -13,7 +13,10 @@ import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
 import { normalizeEVMAddress } from "../lib/utils"
 import { createBackgroundAsyncThunk } from "./utils"
-import { isBuiltInNetworkBaseAsset } from "./utils/asset-utils"
+import {
+  isBuiltInNetworkBaseAsset,
+  sameBuiltInNetworkBaseAsset,
+} from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
 import { sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
@@ -55,33 +58,31 @@ const assetsSlice = createSlice({
         mappedAssets[asset.symbol].push(asset)
       })
       // merge in new assets
-      newAssets.forEach((asset) => {
-        if (mappedAssets[asset.symbol] === undefined) {
-          mappedAssets[asset.symbol] = [{ ...asset, recentPrices: {} }]
+      newAssets.forEach((newAsset) => {
+        if (mappedAssets[newAsset.symbol] === undefined) {
+          mappedAssets[newAsset.symbol] = [{ ...newAsset, recentPrices: {} }]
         } else {
-          const duplicates = mappedAssets[asset.symbol].filter(
-            (a) =>
-              ("homeNetwork" in asset &&
-                "contractAddress" in asset &&
-                "homeNetwork" in a &&
-                "contractAddress" in a &&
-                a.homeNetwork.name === asset.homeNetwork.name &&
-                normalizeEVMAddress(a.contractAddress) ===
-                  normalizeEVMAddress(asset.contractAddress)) ||
+          const duplicates = mappedAssets[newAsset.symbol].filter(
+            (existingAsset) =>
+              ("homeNetwork" in newAsset &&
+                "contractAddress" in newAsset &&
+                "homeNetwork" in existingAsset &&
+                "contractAddress" in existingAsset &&
+                existingAsset.homeNetwork.name === newAsset.homeNetwork.name &&
+                normalizeEVMAddress(existingAsset.contractAddress) ===
+                  normalizeEVMAddress(newAsset.contractAddress)) ||
               // Only match base assets by name - since there may be
               // many assets that share a name and symbol across L2's
-              (BUILT_IN_NETWORK_BASE_ASSETS.some(
-                (baseAsset) => baseAsset.symbol === a.symbol
-              ) &&
-                BUILT_IN_NETWORK_BASE_ASSETS.some(
-                  (baseAsset) => baseAsset.symbol === asset.symbol
-                ) &&
-                a.name === asset.name)
+              BUILT_IN_NETWORK_BASE_ASSETS.some(
+                (baseAsset) =>
+                  sameBuiltInNetworkBaseAsset(baseAsset, newAsset) &&
+                  sameBuiltInNetworkBaseAsset(baseAsset, existingAsset)
+              )
           )
           // if there aren't duplicates, add the asset
           if (duplicates.length === 0) {
-            mappedAssets[asset.symbol].push({
-              ...asset,
+            mappedAssets[newAsset.symbol].push({
+              ...newAsset,
               recentPrices: {},
             })
           }
