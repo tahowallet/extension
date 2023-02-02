@@ -13,7 +13,7 @@ import {
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectShowTestNetworks } from "@tallyho/tally-background/redux-slices/ui"
-import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
+import { selectProductionEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
@@ -50,7 +50,7 @@ export default function TopMenuProtocolList({
   const { t } = useTranslation()
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
-  const productionNetworks = useBackgroundSelector(selectEVMNetworks)
+  const productionNetworks = useBackgroundSelector(selectProductionEVMNetworks)
 
   return (
     <div className="standard_width_padded center_horizontal">
@@ -62,7 +62,7 @@ export default function TopMenuProtocolList({
             network={network}
             info={
               productionNetworkInfo[network.chainID] ||
-              i18n.t("protocol.compatibleChain")
+              t("protocol.compatibleChain")
             }
             onSelect={onProtocolChange}
             isDisabled={disabledChainIDs.includes(network.chainID)}

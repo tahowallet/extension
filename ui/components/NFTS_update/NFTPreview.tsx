@@ -1,3 +1,4 @@
+import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
   refetchNFTsFromCollection,
@@ -39,7 +40,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     previewURL,
     contract,
     name,
-    network,
+    chainID,
     owner,
     description,
     attributes,
@@ -47,6 +48,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     isBadge,
   } = nft
   const { totalNftCount, id: collectionID } = collection
+  const network = NETWORK_BY_CHAIN_ID[chainID]
   const floorPrice =
     "floorPrice" in collection &&
     collection.floorPrice?.value !== undefined &&
@@ -194,7 +196,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           </div>
           <SharedButton
             type="tertiaryWhite"
-            iconSmall="swap"
+            iconSmall="refresh"
             iconPosition="left"
             size="small"
             style={{ padding: 0 }}

@@ -11,6 +11,7 @@ interface Props {
   height?: number
   type?: "default" | "dark"
   isOpen?: boolean
+  disabled?: boolean
   children: React.ReactNode
   // TODO: find a better way to tell the IconComponent that the tooltip it open
   IconComponent?: ({
@@ -53,6 +54,7 @@ export default function SharedTooltip(props: Props): ReactElement {
     height = 20,
     type = "default",
     isOpen = false,
+    disabled = false,
     IconComponent,
   } = props
   const [isShowingTooltip, setIsShowingTooltip] = useState(isOpen)
@@ -77,7 +79,7 @@ export default function SharedTooltip(props: Props): ReactElement {
       ) : (
         <div className="info_icon" />
       )}
-      {isShowingTooltip ? (
+      {!disabled && isShowingTooltip ? (
         <div
           className={classNames("tooltip", {
             dark: type === "dark",

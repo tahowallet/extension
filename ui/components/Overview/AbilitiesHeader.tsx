@@ -1,7 +1,7 @@
 import { toggleHideDescription } from "@tallyho/tally-background/redux-slices/abilities"
 import {
-  selectAbilityCount,
   selectDescriptionHidden,
+  selectOpenAbilityCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
 import React, { ReactElement } from "react"
@@ -15,13 +15,15 @@ export default function AbilitiesHeader(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "abilities",
   })
-  const newAbilities = useSelector(selectAbilityCount)
+  const openAbilities = useSelector(selectOpenAbilityCount)
   const hideDescription = useSelector(selectDescriptionHidden)
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
 
   const abilityCount =
-    newAbilities > 0 ? `${newAbilities} ${t("banner.new")}` : t("banner.none")
+    openAbilities > 0
+      ? `${openAbilities} ${t("banner.open")}`
+      : t("banner.none")
 
   const handleClick = () => {
     if (!hideDescription) {
@@ -141,7 +143,7 @@ export default function AbilitiesHeader(): ReactElement {
           font-size: 14px;
           line-height: 16px;
           letter-spacing: 0.03em;
-          color: var(--${newAbilities > 0 ? "success" : "green-40"});
+          color: var(--${openAbilities > 0 ? "success" : "green-40"});
         }
 
         .desc {
