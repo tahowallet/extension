@@ -45,7 +45,7 @@ export class AbilitiesDatabase extends Dexie {
     ).toArray()
   }
 
-  async markAbility(
+  async markAsCompleted(
     address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<Ability | undefined> {
@@ -53,7 +53,7 @@ export class AbilitiesDatabase extends Dexie {
     if (ability) {
       const updatedAbility = {
         ...ability,
-        completed: !ability.completed,
+        completed: true,
       }
       this.abilities.put(updatedAbility)
       return updatedAbility
