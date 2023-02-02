@@ -100,6 +100,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
               width={144}
               verticalPosition="bottom"
               type="dark"
+              disabled={ability.completed}
               IconComponent={() => (
                 <SharedIcon
                   height={16}
@@ -108,6 +109,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
                   color="var(--green-40)"
                   customStyles="margin-right: 8px;"
                   hoverColor="var(--success)"
+                  disabled={ability.completed}
                   onClick={async () => {
                     await dispatch(
                       completeAbility({
@@ -129,6 +131,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
               verticalPosition="bottom"
               type="dark"
               isOpen={showRemoveAbilityConfirm}
+              disabled={ability.removedFromUi}
               IconComponent={() => (
                 <SharedIcon
                   height={16}
