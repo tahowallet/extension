@@ -52,7 +52,12 @@ export const selectFilteredAbilities = createSelector(
 )
 
 /* Counting selectors  */
-export const selectAbilityCount = createSelector(
-  selectFilteredAbilities,
-  (abilities) => abilities.length
+export const selectOpenAbilityCount = createSelector(
+  selectAbilityFilter,
+  selectAbilities,
+  (filter, abilities) =>
+    Object.values(abilities)
+      .flatMap((address) => Object.values(address))
+      .filter((ability) => filterAbility(ability, { ...filter, state: "open" }))
+      .length
 )

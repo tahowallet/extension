@@ -1,5 +1,9 @@
-import { PricePoint, SmartContractFungibleAsset } from "../../assets"
-import { POLYGON } from "../../constants"
+import {
+  PricePoint,
+  SmartContractFungibleAsset,
+  unitPricePointForPricePoint,
+} from "../../assets"
+import { ETH, POLYGON } from "../../constants"
 import {
   createPricePoint,
   createSmartContractAsset,
@@ -83,6 +87,21 @@ describe("Assets selectors", () => {
         // 6 decimals
         amounts: [1_000_000n, pricePoint.amounts[1]],
       })
+    })
+  })
+})
+
+describe(unitPricePointForPricePoint, () => {
+  // An asset amount of the second asset using the pair's price point data
+  test("should return the unit price of an asset using a price point", () => {
+    const result = unitPricePointForPricePoint(createPricePoint(ETH, 1500))
+
+    expect(result).toMatchObject({
+      unitPrice: {
+        asset: { name: "United States Dollar", symbol: "USD", decimals: 10 },
+        amount: 15000000000000n,
+      },
+      time: expect.any(Number),
     })
   })
 })

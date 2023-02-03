@@ -11,6 +11,7 @@ import { keccak256 } from "ethers/lib/utils"
 import { AccountBalance, AddressOnNetwork } from "../accounts"
 import {
   AnyAsset,
+  AnyAssetAmount,
   flipPricePoint,
   isFungibleAsset,
   PricePoint,
@@ -435,6 +436,16 @@ export const createNetworkBaseAsset = (
   return {
     ...asset,
     ...overrides,
+  }
+}
+
+export const createAssetAmount = (
+  asset: AnyAsset = ETH,
+  amount = 1
+): AnyAssetAmount => {
+  return {
+    asset,
+    amount: BigInt(Math.trunc(1e10 * amount)) * 10n ** 8n,
   }
 }
 
