@@ -7,6 +7,7 @@ import {
   addAccount,
   deleteAccount,
 } from "@tallyho/tally-background/redux-slices/abilities"
+import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   selectAbilityFilterAccounts,
   selectAbilityFilterState,
@@ -15,6 +16,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useCallback } from "react"
 import { useTranslation } from "react-i18next"
+import SharedIcon from "../../components/Shared/SharedIcon"
 import SharedRadio from "../../components/Shared/SharedRadio"
 import SharedSlideUpMenuPanel from "../../components/Shared/SharedSlideUpMenuPanel"
 import SharedToggleItem from "../../components/Shared/SharedToggleItem"
@@ -69,6 +71,9 @@ export default function AbilityFilter(): ReactElement {
   const types = useBackgroundSelector(selectAbilityFilterTypes)
   const accounts = useBackgroundSelector(selectAbilityFilterAccounts)
   const accountTotals = useBackgroundSelector(selectAccountTotals)
+  const filteredAccountTotals = accountTotals.filter(
+    ({ accountType }) => accountType !== AccountType.ReadOnly
+  )
   const dispatch = useBackgroundDispatch()
 
   const handleUpdateState = useCallback(
@@ -133,19 +138,30 @@ export default function AbilityFilter(): ReactElement {
         <div className="simple_text">
           <span className="filter_title">{t("accountsTitle")}</span>
           <div className="filter_list">
-            {accountTotals.map(({ address, name, avatarURL }) => (
-              <SharedToggleItem
-                key={address}
-                label={name || address}
-                thumbnailURL={avatarURL}
-                checked={accounts.includes(address)}
-                onChange={(toggleValue) =>
-                  handleUpdateAccount(address, toggleValue)
-                }
-              />
-            ))}
+            {filteredAccountTotals.length > 0
+              ? filteredAccountTotals.map(({ address, name, avatarURL }) => (
+                  <SharedToggleItem
+                    key={address}
+                    label={name || address}
+                    thumbnailURL={avatarURL}
+                    checked={accounts.includes(address)}
+                    onChange={(toggleValue) =>
+                      handleUpdateAccount(address, toggleValue)
+                    }
+                  />
+                ))
+              : t("noAccounts")}
           </div>
         </div>
+        <span className="accounts_info">
+          <SharedIcon
+            width={24}
+            color="var(--link)"
+            icon="icons/m/notif-announcement.svg"
+            customStyles="flex-shrink:0; margin-right: 18px;"
+          />
+          <span>{t("accountsReadOnlyInfo")}</span>
+        </span>
       </div>
       <style jsx>{`
         .filter {
@@ -165,6 +181,15 @@ export default function AbilityFilter(): ReactElement {
           display: inline-block;
           margin-bottom: 8px;
           width: 100%;
+        }
+        .accounts_info {
+          display: flex;
+          margin: 0 16px 0 4px;
+          color: var(--green-20);
+          font-weight: 500;
+          font-size: 14px;
+          line-height: 16px;
+          letter-spacing: 0.03em;
         }
       `}</style>
     </SharedSlideUpMenuPanel>

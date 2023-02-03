@@ -823,7 +823,9 @@
       },
       "abilityStateTitle": "Show",
       "abilitiesTypesTitle": "Notify me about abilities type",
-      "accountsTitle": "Show/hide accounts"
+      "accountsTitle": "Show/hide accounts",
+      "accountsReadOnlyInfo": "Read-only accounts can’t see abilities. If you can, we recommend you import the address you want o see abilities for.",
+      "noAccounts": "No accounts"
     }
   },
   "globalError": {

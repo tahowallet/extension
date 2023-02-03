@@ -105,11 +105,17 @@ export default class AbilitiesService extends BaseService<Events> {
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
-    this.chainService.emitter.on("newAccountToTrack", (addressOnNetwork) => {
-      const { address } = addressOnNetwork
-      this.pollForAbilities(address)
-      this.emitter.emit("newAccount", address)
-    })
+    //
+    this.chainService.emitter.on(
+      "newAccountToTrack",
+      ({ addressOnNetwork, source }) => {
+        if (source) {
+          const { address } = addressOnNetwork
+          this.pollForAbilities(address)
+          this.emitter.emit("newAccount", address)
+        }
+      }
+    )
   }
 
   async pollForAbilities(address: HexString): Promise<void> {
