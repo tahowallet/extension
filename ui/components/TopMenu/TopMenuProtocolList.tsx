@@ -16,13 +16,11 @@ import { selectShowTestNetworks } from "@tallyho/tally-background/redux-slices/u
 import { selectProductionEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import { useTranslation } from "react-i18next"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import { useHistory } from "react-router-dom"
 import classNames from "classnames"
 import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
+import TopMenuProtocolListFooter from "./TopMenuProtocolListFooter"
 import { i18n } from "../../_locales/i18n"
-import SharedButton from "../Shared/SharedButton"
-import SharedIcon from "../Shared/SharedIcon"
 
 const productionNetworkInfo = {
   [ETHEREUM.chainID]: i18n.t("protocol.mainnet"),
@@ -45,7 +43,7 @@ const testNetworks = [
   },
 ]
 
-interface TopMenuProtocolListProps {
+type TopMenuProtocolListProps = {
   onProtocolChange: () => void
 }
 
@@ -53,7 +51,6 @@ export default function TopMenuProtocolList({
   onProtocolChange,
 }: TopMenuProtocolListProps): ReactElement {
   const { t } = useTranslation()
-  const history = useHistory()
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
   const productionNetworks = useBackgroundSelector(selectProductionEVMNetworks)
@@ -99,107 +96,27 @@ export default function TopMenuProtocolList({
           )}
         </ul>
       </div>
-      {customNetworksEnabled && (
-        <footer className="custom_rpc_footer">
-          <h2>{t("topMenu.protocolList.customRPCFooterTitle")}</h2>
-          <p>{t("topMenu.protocolList.customRPCFooterDesc")}</p>
-          <ul className="custom_rpc_icons">
-            {(
-              [
-                [OPTIMISM, 1],
-                [ARBITRUM_ONE, 0.8],
-                [BINANCE_SMART_CHAIN, 0.7],
-                [POLYGON, 0.5],
-                [ARBITRUM_NOVA, 0.3],
-                [ROOTSTOCK, 0.1],
-              ] as const
-            ).map(([network, opacity]) => {
-              const icon = network.name.replaceAll(" ", "").toLowerCase()
-
-              return (
-                <img
-                  key={icon}
-                  width="24"
-                  height="24"
-                  alt={network.name}
-                  src={`/images/networks/${icon}@2x.png`}
-                  style={{ opacity }}
-                />
-              )
-            })}
-          </ul>
-          <SharedButton
-            size="medium"
-            onClick={() => history.push("/settings/custom-networks")}
-            type="tertiary"
-          >
-            <SharedIcon
-              width={16}
-              height={16}
-              customStyles="margin-right: 4px"
-              icon="icons/s/settings2.svg"
-              color="currentColor"
-            />
-            {t("topMenu.protocolList.networkSettingsBtn")}
-          </SharedButton>
-        </footer>
-      )}
+      {customNetworksEnabled && <TopMenuProtocolListFooter />}
       <style jsx>
         {`
           .networks_list {
             overflow-y: auto;
             overflow-x: hidden;
-            max-height: 304px;
+            max-height: 319px;
           }
-          .custom_rpc_footer {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 8px;
-            margin-bottom: 32px;
-          }
-
-          .custom_rpc_footer ul {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-          }
-
-          .custom_rpc_footer h2 {
-            font-family: "Segment";
-            font-style: normal;
-            font-weight: 600;
-            font-size: 18px;
-            line-height: 24px;
-            color: var(--white);
-            margin: 0;
-          }
-          .custom_rpc_footer p {
-            margin: 0;
-            font-family: "Segment";
-            font-style: normal;
-            font-weight: 500;
-            font-size: 14px;
-            line-height: 16px;
-            line-height: 16px;
-            letter-spacing: 0.03em;
-            color: var(--green-40);
-          }
-
           .protocol_divider {
             display: flex;
-            align-items: center;
             margin-bottom: 16px;
+            gap: 15px;
             margin-top: 32px;
+            position: relative;
           }
           .divider_line {
-            width: 286px;
-            border-bottom-color: var(--green-120);
-            border-bottom-style: solid;
-            border-bottom-width: 1px;
-            margin-left: 19px;
-            position: absolute;
-            right: 0px;
+            flex-grow: 1;
+            align-self: center;
+            background: var(--green-120);
+            height: 1px;
+            margin-top: 1px;
           }
           .divider_label {
             color: var(--green-40);
