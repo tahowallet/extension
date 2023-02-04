@@ -7,6 +7,7 @@ import {
   approveEIP155Request,
   rejectEIP155Request,
 } from "./eip155-request-utils"
+import { SwitchEthereumChainParameter } from "../internal-ethereum-provider"
 
 export type LegacyProposal = {
   id: number
@@ -127,6 +128,7 @@ export function processLegacyRequestParams(
     case "personal_sign":
     case "eth_sendTransaction":
     case "eth_signTransaction":
+    case "wallet_switchEthereumChain":
       return payload
     default:
       return undefined
@@ -137,12 +139,22 @@ export async function postLegacyApprovalResponse(
   event: TranslatedRequestParams,
   payload: any
 ): Promise<void> {
-  const { id } = event
+  const { id, method, params } = event
   const { result } = approveEIP155Request(event, payload)
   legacySignClient?.approveRequest({
     id,
     result,
   })
+
+  if (method === "wallet_switchEthereumChain" && result === null) {
+    legacySignClient?.updateSession({
+      chainId: Number.parseInt(
+        (params[0] as SwitchEthereumChainParameter).chainId,
+        16
+      ),
+      accounts: legacySignClient.accounts,
+    })
+  }
 }
 
 export async function postLegacyRejectionResponse(

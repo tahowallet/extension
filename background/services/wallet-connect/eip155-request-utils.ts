@@ -44,6 +44,7 @@ export function approveEIP155Request(
     case "personal_sign":
     case "eth_signTransaction":
     case "eth_sendTransaction":
+    case "wallet_switchEthereumChain":
       return formatJsonRpcResult(id, signedMessage)
 
     default:
@@ -72,6 +73,7 @@ export function processRequestParams(
     case "personal_sign":
     case "eth_sendTransaction":
     case "eth_signTransaction":
+    case "wallet_switchEthereumChain":
       return {
         id,
         topic,
