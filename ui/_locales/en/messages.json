@@ -364,7 +364,7 @@
         "tip": "You can upgrade a view-only wallet later"
       },
       "unlockWallet": {
-        "title": "Password Required",
+        "title": "Password required",
         "passwordInput": "Signing password",
         "submit": "Confirm"
       },
