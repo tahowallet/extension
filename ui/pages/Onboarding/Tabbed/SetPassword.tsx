@@ -74,6 +74,23 @@ export default function SetPassword(): JSX.Element {
 
   // Unlock Wallet
   if (!isOnboarding && keyringStatus === "locked") {
+    const handleAttemptUnlock: React.FormEventHandler<HTMLFormElement> = async (
+      event
+    ) => {
+      const { currentTarget: form } = event
+      event.preventDefault()
+
+      const input = form.elements.namedItem("password") as HTMLInputElement
+
+      const { success } = await dispatch(unlockKeyrings(input.value))
+
+      if (success) {
+        history.replace(nextPage)
+      } else {
+        setPasswordErrorMessage(t("keyring.unlock.error.incorrect"))
+      }
+    }
+
     return (
       <section className="fadeIn">
         <header className="center_text">
@@ -106,24 +123,7 @@ export default function SetPassword(): JSX.Element {
           </style>
           <h1>{t("onboarding.tabbed.unlockWallet.title")}</h1>
         </header>
-        <form
-          onSubmit={async (event) => {
-            const { currentTarget: form } = event
-            event.preventDefault()
-
-            const input = form.elements.namedItem(
-              "password"
-            ) as HTMLInputElement
-
-            const { success } = await dispatch(unlockKeyrings(input.value))
-
-            if (success) {
-              history.replace(nextPage)
-            } else {
-              setPasswordErrorMessage(t("keyring.unlock.error.incorrect"))
-            }
-          }}
-        >
+        <form onSubmit={handleAttemptUnlock}>
           <PasswordInput
             label={t("onboarding.tabbed.unlockWallet.passwordInput")}
             name="password"
