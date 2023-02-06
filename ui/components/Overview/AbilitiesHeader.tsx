@@ -100,6 +100,7 @@ export default function AbilitiesHeader(): ReactElement {
           padding: 12px 16px 12px 12px;
           width: 100%;
           box-sizing: border-box;
+          margin-bottom: 16px;
         }
 
         .abilities_header.init_state {
