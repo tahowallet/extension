@@ -10,10 +10,13 @@ import {
   createAnyEVMTransaction,
   createChainService,
   createLegacyTransactionRequest,
+  MockSerialFallbackProvider,
 } from "../../../tests/factories"
+import { ChainDatabase } from "../db"
 import SerialFallbackProvider from "../serial-fallback-provider"
 
 type ChainServiceExternalized = Omit<ChainService, ""> & {
+  db: ChainDatabase
   handlePendingTransaction: (transaction: AnyEVMTransaction) => void
   populateEVMTransactionNonce: (
     transactionRequest: TransactionRequest
@@ -45,6 +48,39 @@ describe("ChainService", () => {
           ({ network }) => network.chainID === ETHEREUM.chainID
         )
       ).toHaveLength(1)
+    })
+
+    it("should initialize persisted data in the correct order", async () => {
+      const chainServiceInstance =
+        (await createChainService()) as unknown as ChainServiceExternalized
+
+      const initialize = sandbox.spy(chainServiceInstance.db, "initialize")
+
+      const initializeBaseAssets = sandbox.spy(
+        chainServiceInstance.db,
+        "initializeBaseAssets"
+      )
+      const initializeRPCs = sandbox.spy(
+        chainServiceInstance.db,
+        "initializeRPCs"
+      )
+      const initializeEVMNetworks = sandbox.spy(
+        chainServiceInstance.db,
+        "initializeEVMNetworks"
+      )
+
+      const initializeNetworks = sandbox.spy(
+        chainServiceInstance,
+        "initializeNetworks"
+      )
+
+      await chainServiceInstance.internalStartService()
+
+      expect(initialize.calledBefore(initializeNetworks)).toBe(true)
+      expect(initializeBaseAssets.calledBefore(initializeRPCs)).toBe(true)
+      expect(initializeRPCs.calledBefore(initializeEVMNetworks)).toBe(true)
+      expect(initializeEVMNetworks.calledBefore(initializeNetworks)).toBe(true)
+      expect(initializeNetworks.called).toBe(true)
     })
   })
 
@@ -156,5 +192,259 @@ describe("ChainService", () => {
         validOptimismEVMTransaction.hash
       )
     ).toBeTruthy()
+  })
+
+  describe("updateSupportedNetworks", () => {
+    it("Should properly update supported networks", async () => {
+      chainService.supportedNetworks = []
+      await chainService.updateSupportedNetworks()
+      expect(chainService.supportedNetworks.length).toBe(8)
+    })
+  })
+
+  describe("addCustomChain", () => {
+    // prettier-ignore
+    const FANTOM_CHAIN_PARAMS = { chainId: "250", blockExplorerUrl: "https://ftmscan.com", chainName: "Fantom Opera", nativeCurrency: { name: "Fantom", symbol: "FTM", decimals: 18, }, rpcUrls: [ "https://fantom-mainnet.gateway.pokt.network/v1/lb/62759259ea1b320039c9e7ac", "https://rpc.ftm.tools", "https://rpc.ankr.com/fantom", "https://rpc.fantom.network", "https://rpc2.fantom.network", "https://rpc3.fantom.network", "https://rpcapi.fantom.network", "https://fantom-mainnet.public.blastapi.io", "https://1rpc.io/ftm", ], blockExplorerUrls: ["https://ftmscan.com"], }
+    it("should update supported networks after adding a chain", async () => {
+      expect(chainService.supportedNetworks.length).toBe(8)
+      await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
+      expect(chainService.supportedNetworks.length).toBe(9)
+    })
+
+    it("should create a provider for the new chain", async () => {
+      expect(chainService.providers.evm["250"]).toBe(undefined)
+      await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
+      expect(chainService.providers.evm["250"]).toBeInstanceOf(
+        MockSerialFallbackProvider
+      )
+    })
+
+    it("should start tracking the new chain", async () => {
+      expect((await chainService.getTrackedNetworks()).length).toBe(1)
+      await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
+      expect((await chainService.getTrackedNetworks()).length).toBe(2)
+    })
+  })
+
+  describe("populateEVMTransactionNonce", () => {
+    // The number of transactions address has ever sent
+    const TRANSACTION_COUNT = 100
+    // Nonce for chain. This should be set to the number of transactions ever sent from this address
+    const CHAIN_NONCE = TRANSACTION_COUNT
+
+    beforeEach(() => {
+      chainService.providerForNetworkOrThrow = jest.fn(
+        () =>
+          ({
+            getTransactionCount: async () => TRANSACTION_COUNT,
+          } as unknown as SerialFallbackProvider)
+      )
+    })
+
+    afterEach(() => {
+      jest.clearAllMocks()
+    })
+
+    it("should not overwrite the nonce set on tx request for chains with a mempool", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: ETHEREUM,
+        chainID: ETHEREUM.chainID,
+        nonce: CHAIN_NONCE,
+      })
+
+      const transactionWithNonce =
+        await chainServiceExternalized.populateEVMTransactionNonce(
+          transactionRequest
+        )
+
+      expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
+    })
+
+    it("should not overwrite the nonce set on tx request for chains without a mempool", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: OPTIMISM,
+        chainID: OPTIMISM.chainID,
+        nonce: CHAIN_NONCE,
+      })
+
+      const transactionWithNonce =
+        await chainServiceExternalized.populateEVMTransactionNonce(
+          transactionRequest
+        )
+
+      expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
+    })
+
+    it("should not store the nonce for chains without a mempool when a tx request is set", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: OPTIMISM,
+        chainID: OPTIMISM.chainID,
+        nonce: CHAIN_NONCE,
+      })
+
+      await chainServiceExternalized.populateEVMTransactionNonce(
+        transactionRequest
+      )
+
+      expect(
+        chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+          transactionRequest.chainID
+        ]
+      ).toBe(undefined)
+    })
+
+    it("should set the nonce for tx request for chains with a mempool", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: ETHEREUM,
+        chainID: ETHEREUM.chainID,
+        nonce: undefined,
+      })
+
+      const transactionWithNonce =
+        await chainServiceExternalized.populateEVMTransactionNonce(
+          transactionRequest
+        )
+
+      expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
+    })
+
+    it("should set the nonce for tx request for chains without a mempool", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: OPTIMISM,
+        chainID: OPTIMISM.chainID,
+        nonce: undefined,
+      })
+
+      const transactionWithNonce =
+        await chainServiceExternalized.populateEVMTransactionNonce(
+          transactionRequest
+        )
+
+      expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
+    })
+
+    it("should store the nonce for chains with a mempool when a tx request is set", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: ETHEREUM,
+        chainID: ETHEREUM.chainID,
+        nonce: undefined,
+      })
+
+      await chainServiceExternalized.populateEVMTransactionNonce(
+        transactionRequest
+      )
+
+      expect(
+        chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+          transactionRequest.chainID
+        ][transactionRequest.from]
+      ).toBe(CHAIN_NONCE)
+    })
+
+    it("should not store the nonce for chains without a mempool when a tx request is set", async () => {
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: OPTIMISM,
+        chainID: OPTIMISM.chainID,
+        nonce: undefined,
+      })
+
+      await chainServiceExternalized.populateEVMTransactionNonce(
+        transactionRequest
+      )
+
+      expect(
+        chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+          transactionRequest.chainID
+        ]
+      ).toBe(undefined)
+    })
+  })
+
+  describe("releaseEVMTransactionNonce", () => {
+    it("should release all intervening nonces if the nonce for transaction is below the latest allocated nonce", async () => {
+      /**
+       * Two transactions have been sent: one approving (nonce=11) the other for the swapping (nonce=12).
+       * In case transaction for nonce 11 will has too small gas we should release all intervening nonces.
+       * Nonce for the chain is then 10. Last seen nonce should also be set to this value.
+       */
+      // Actual Swap transaction
+      const LAST_SEEN_NONCE = 12
+      // Approval transaction
+      const NONCE = 11
+      //  Nonce for chain
+      const CHAIN_NONCE = 10
+
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: ETHEREUM,
+        chainID: ETHEREUM.chainID,
+        nonce: NONCE,
+      }) as TransactionRequestWithNonce
+      const { chainID, from } = transactionRequest
+
+      chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+        chainID
+      ] ??= {}
+      chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+        chainID
+      ][from] = LAST_SEEN_NONCE
+
+      await chainServiceExternalized.releaseEVMTransactionNonce(
+        transactionRequest
+      )
+
+      expect(
+        chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+          chainID
+        ][from]
+      ).toBe(CHAIN_NONCE)
+    })
+
+    it("should release all intervening nonces if the nonce for a transaction is equal to the value of the latest allocated nonce", async () => {
+      const LAST_SEEN_NONCE = 11
+      const NONCE = LAST_SEEN_NONCE
+      const CHAIN_NONCE = 10
+
+      const chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+      const transactionRequest = createLegacyTransactionRequest({
+        network: ETHEREUM,
+        chainID: ETHEREUM.chainID,
+        nonce: NONCE,
+      }) as TransactionRequestWithNonce
+      const { chainID, from } = transactionRequest
+
+      chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+        chainID
+      ] ??= {}
+      chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+        chainID
+      ][from] = LAST_SEEN_NONCE
+
+      await chainServiceExternalized.releaseEVMTransactionNonce(
+        transactionRequest
+      )
+
+      expect(
+        chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
+          chainID
+        ][from]
+      ).toBe(CHAIN_NONCE)
+    })
   })
 })

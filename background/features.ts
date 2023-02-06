@@ -26,11 +26,16 @@ export const RuntimeFlag = {
   SUPPORT_FORGOT_PASSWORD: process.env.SUPPORT_FORGOT_PASSWORD === "true",
   ENABLE_ACHIEVEMENTS_TAB: process.env.ENABLE_ACHIEVEMENTS_TAB === "true",
   HIDE_TOKEN_FEATURES: process.env.HIDE_TOKEN_FEATURES === "true",
-  SUPPORT_RSK: process.env.SUPPORT_RSK === "true",
-  SUPPORT_AVALANCHE: process.env.SUPPORT_AVALANCHE === "true",
+  SUPPORT_ARBITRUM_NOVA: process.env.SUPPORT_ARBITRUM_NOVA === "true",
   SUPPORT_ACHIEVEMENTS_BANNER:
     process.env.SUPPORT_ACHIEVEMENTS_BANNER === "true",
   SUPPORT_NFT_TAB: process.env.SUPPORT_NFT_TAB === "true",
+  SUPPORT_NFT_SEND: process.env.SUPPORT_NFT_SEND === "true",
+  SUPPORT_WALLET_CONNECT: process.env.SUPPORT_WALLET_CONNECT === "true",
+  SUPPORT_SWAP_QUOTE_REFRESH: process.env.SUPPORT_SWAP_QUOTE_REFRESH === "true",
+  SUPPORT_ABILITIES: process.env.SUPPORT_ABILITIES === "true",
+  SUPPORT_CUSTOM_NETWORKS: process.env.SUPPORT_CUSTOM_NETWORKS === "true",
+  SUPPORT_CUSTOM_RPCS: process.env.SUPPORT_CUSTOM_RPCS === "true",
 } as const
 
 type BuildTimeFlagType = keyof typeof BuildTimeFlag

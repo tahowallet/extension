@@ -2,6 +2,7 @@ import { BigNumber } from "ethers"
 import { AssetsState, selectAssetPricePoint } from "../assets"
 import { getContract } from "../utils/contract-utils"
 import UNISWAP_V2_PAIR from "../../lib/uniswapPair"
+import { ETHEREUM } from "../../constants"
 
 export const DOGGOETH_PAIR = "0x93a08986ec9a74CB9E001702F30202f3749ceDC4"
 
@@ -19,7 +20,7 @@ const getDoggoPrice = async (
     const { reserve0, reserve1 } = reserves
     const asset0PricePoint = selectAssetPricePoint(
       assets,
-      "WETH",
+      ETHEREUM.baseAsset,
       mainCurrencySymbol
     )
     if (typeof asset0PricePoint?.amounts[1] === "undefined") return 0n

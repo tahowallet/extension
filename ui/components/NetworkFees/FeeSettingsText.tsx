@@ -17,6 +17,7 @@ import {
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   ARBITRUM_ONE,
+  BINANCE_SMART_CHAIN,
   OPTIMISM,
   ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
@@ -102,6 +103,11 @@ const estimateGweiAmount = (options: {
     desiredDecimals = 2
   }
 
+  if (network.chainID === BINANCE_SMART_CHAIN.chainID) {
+    estimatedSpendPerGas = networkSettings.values.gasPrice ?? 0n
+    desiredDecimals = 2
+  }
+
   const estimatedSpendPerGasInGwei = weiToGwei(estimatedSpendPerGas ?? 0n)
   const decimalLength = heuristicDesiredDecimalsForUnitPrice(
     desiredDecimals,
@@ -129,7 +135,7 @@ export default function FeeSettingsText({
   networkSettings = customNetworkSetting ?? networkSettings
   const baseFeePerGas =
     useBackgroundSelector((state) => {
-      return state.networks.evm[currentNetwork.chainID].baseFeePerGas
+      return state.networks.blockInfo[currentNetwork.chainID].baseFeePerGas
     }) ??
     networkSettings.values?.baseFeePerGas ??
     0n

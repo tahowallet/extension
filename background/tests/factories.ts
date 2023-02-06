@@ -1,25 +1,54 @@
 /* eslint-disable class-methods-use-this */
-import { Block, FeeData } from "@ethersproject/abstract-provider"
+import {
+  Block,
+  FeeData,
+  TransactionReceipt,
+  TransactionResponse,
+} from "@ethersproject/abstract-provider"
 import { DexieOptions } from "dexie"
 import { BigNumber } from "ethers"
 import { keccak256 } from "ethers/lib/utils"
 import { AccountBalance, AddressOnNetwork } from "../accounts"
-import { ETH, ETHEREUM, OPTIMISM } from "../constants"
+import {
+  AnyAsset,
+  AnyAssetAmount,
+  flipPricePoint,
+  isFungibleAsset,
+  PricePoint,
+  SmartContractFungibleAsset,
+} from "../assets"
+import {
+  ARBITRUM_ONE,
+  AVALANCHE,
+  ETH,
+  ETHEREUM,
+  OPTIMISM,
+  POLYGON,
+  USD,
+} from "../constants"
 import {
   AnyEVMTransaction,
   LegacyEVMTransactionRequest,
   AnyEVMBlock,
   BlockPrices,
+  NetworkBaseAsset,
 } from "../networks"
 import {
+  AnalyticsService,
   ChainService,
   IndexingService,
+  InternalEthereumProviderService,
   KeyringService,
   LedgerService,
   NameService,
   PreferenceService,
+  ProviderBridgeService,
   SigningService,
 } from "../services"
+import {
+  PriorityQueuedTxToRetrieve,
+  QueuedTxToRetrieve,
+} from "../services/chain"
 import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 
 const createRandom0xHash = () =>
@@ -84,6 +113,28 @@ type CreateSigningServiceOverrides = {
   chainService?: Promise<ChainService>
 }
 
+type CreateProviderBridgeServiceOverrides = {
+  internalEthereumProviderService?: Promise<InternalEthereumProviderService>
+  preferenceService?: Promise<PreferenceService>
+}
+
+type CreateInternalEthereumProviderServiceOverrides = {
+  chainService?: Promise<ChainService>
+  preferenceService?: Promise<PreferenceService>
+}
+
+export async function createAnalyticsService(overrides?: {
+  chainService?: Promise<ChainService>
+  preferenceService?: Promise<PreferenceService>
+}): Promise<AnalyticsService> {
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+  return AnalyticsService.create(
+    overrides?.chainService ?? createChainService({ preferenceService }),
+    preferenceService
+  )
+}
+
 export const createSigningService = async (
   overrides: CreateSigningServiceOverrides = {}
 ): Promise<SigningService> => {
@@ -91,6 +142,27 @@ export const createSigningService = async (
     overrides.keyringService ?? createKeyringService(),
     overrides.ledgerService ?? createLedgerService(),
     overrides.chainService ?? createChainService()
+  )
+}
+
+export const createInternalEthereumProviderService = async (
+  overrides: CreateInternalEthereumProviderServiceOverrides = {}
+): Promise<InternalEthereumProviderService> => {
+  return InternalEthereumProviderService.create(
+    overrides.chainService ?? createChainService(),
+    overrides.preferenceService ?? createPreferenceService()
+  )
+}
+
+export const createProviderBridgeService = async (
+  overrides: CreateProviderBridgeServiceOverrides = {}
+): Promise<ProviderBridgeService> => {
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+  return ProviderBridgeService.create(
+    overrides.internalEthereumProviderService ??
+      createInternalEthereumProviderService({ preferenceService }),
+    preferenceService
   )
 }
 
@@ -206,6 +278,46 @@ export const createBlockPrices = (
   ...overrides,
 })
 
+export const createQueuedTransaction = (
+  overrides: Partial<QueuedTxToRetrieve> = {}
+): QueuedTxToRetrieve => ({
+  network: OPTIMISM,
+  hash: createRandom0xHash(),
+  firstSeen: Date.now(),
+  ...overrides,
+})
+
+export const createTransactionsToRetrieve = (
+  numberOfTx = 100
+): PriorityQueuedTxToRetrieve[] => {
+  const NETWORKS = [ETHEREUM, POLYGON, ARBITRUM_ONE, AVALANCHE, OPTIMISM]
+
+  return [...Array(numberOfTx).keys()].map((_, ind) => ({
+    transaction: createQueuedTransaction({
+      network: NETWORKS[ind % NETWORKS.length],
+    }),
+    priority: 0,
+  }))
+}
+
+export const createTransactionResponse = (
+  overrides: Partial<TransactionResponse> = {}
+): TransactionResponse => ({
+  hash: createRandom0xHash(),
+  blockNumber: 25639147,
+  blockHash: createRandom0xHash(),
+  timestamp: Date.now(),
+  confirmations: 0,
+  from: createRandom0xHash(),
+  nonce: 570,
+  gasLimit: BigNumber.from(15000000),
+  data: "...",
+  value: BigNumber.from(15000000),
+  chainId: Number(OPTIMISM.chainID),
+  wait: () => Promise.resolve({} as TransactionReceipt),
+  ...overrides,
+})
+
 export const makeEthersBlock = (overrides?: Partial<Block>): Block => {
   return {
     hash: "0x20567436620bf18c07cf34b3ec4af3e530d7a2391d7a87fb0661565186f4e834",
@@ -237,25 +349,126 @@ export const makeEthersFeeData = (overrides?: Partial<FeeData>): FeeData => {
   }
 }
 
+export class MockSerialFallbackProvider {
+  async getBlock(): Promise<Block> {
+    return makeEthersBlock()
+  }
+
+  async getBlockNumber(): Promise<number> {
+    return 1
+  }
+
+  async getBalance(): Promise<BigNumber> {
+    return BigNumber.from(100)
+  }
+
+  async getFeeData(): Promise<FeeData> {
+    return makeEthersFeeData()
+  }
+
+  async getCode(): Promise<string> {
+    return "false"
+  }
+}
+
 export const makeSerialFallbackProvider =
   (): Partial<SerialFallbackProvider> => {
-    class MockSerialFallbackProvider {
-      async getBlock() {
-        return makeEthersBlock()
-      }
-
-      async getBlockNumber() {
-        return 1
-      }
-
-      async getBalance() {
-        return BigNumber.from(100)
-      }
-
-      async getFeeData() {
-        return makeEthersFeeData()
-      }
-    }
-
     return new MockSerialFallbackProvider()
   }
+
+const getRandomStr = (length: number) => {
+  let result = ""
+
+  while (result.length < length) {
+    result += Math.random().toString(36).slice(2)
+  }
+
+  return result.slice(0, length)
+}
+
+export const createSmartContractAsset = (
+  overrides: Partial<SmartContractFungibleAsset> = {}
+): SmartContractFungibleAsset => {
+  const symbol = overrides.symbol ?? getRandomStr(3)
+  const asset = {
+    metadata: {
+      logoURL:
+        "https://messari.io/asset-images/0783ede3-4b2c-418a-9f82-f171894c70e2/128.png",
+      tokenLists: [
+        {
+          url: "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
+          name: "Uniswap Labs Default",
+          logoURL: "ipfs://QmNa8mQkrNKp1WEEeGjFezDmDeodkWRevGFN8JCV7b4Xir",
+        },
+      ],
+    },
+    name: `${symbol} Network`,
+    symbol,
+    decimals: 18,
+    homeNetwork: ETHEREUM,
+    contractAddress: createRandom0xHash(),
+  }
+
+  return {
+    ...asset,
+    ...overrides,
+  }
+}
+
+export const createNetworkBaseAsset = (
+  overrides: Partial<NetworkBaseAsset> = {}
+): NetworkBaseAsset => {
+  const symbol = getRandomStr(3)
+  const asset: NetworkBaseAsset = {
+    metadata: {
+      coinGeckoID: "ethereum",
+      logoURL: "http://example.com/foo.png",
+      tokenLists: [],
+    },
+    name: `${symbol} Network`,
+    symbol,
+    decimals: 18,
+    coinType: 60,
+    chainID: "1",
+    contractAddress: createRandom0xHash(),
+  }
+
+  return {
+    ...asset,
+    ...overrides,
+  }
+}
+
+export const createAssetAmount = (
+  asset: AnyAsset = ETH,
+  amount = 1
+): AnyAssetAmount => {
+  return {
+    asset,
+    amount: BigInt(Math.trunc(1e10 * amount)) * 10n ** 8n,
+  }
+}
+
+/**
+ * @param asset Any type of asset
+ * @param price Price, e.g. 1.5 => 1.5$
+ * @param flip Return assets and amounts in reverse order
+ */
+export const createPricePoint = (
+  asset: AnyAsset,
+  price = 1,
+  flip = false
+): PricePoint => {
+  const decimals = isFungibleAsset(asset) ? asset.decimals : 18
+
+  const pricePoint: PricePoint = {
+    pair: [asset, USD],
+    amounts: [10n ** BigInt(decimals), BigInt(Math.trunc(1e10 * price))],
+    time: Math.trunc(Date.now() / 1e3),
+  }
+
+  return flip ? flipPricePoint(pricePoint) : pricePoint
+}
+
+export const createArrayWith0xHash = (length: number): string[] =>
+  Array.from({ length }).map(() => createRandom0xHash())

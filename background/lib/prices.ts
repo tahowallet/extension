@@ -17,11 +17,23 @@ import { USD } from "../constants"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
 
+// @TODO Test Me
 export async function getPrices(
-  assets: (AnyAsset & CoinGeckoAsset)[],
+  assets: AnyAsset[],
   vsCurrencies: FiatCurrency[]
 ): Promise<PricePoint[]> {
-  const coinIds = assets.map((a) => a.metadata.coinGeckoID).join(",")
+  const queryableAssets = assets.filter(
+    (asset): asset is AnyAsset & Required<CoinGeckoAsset> =>
+      "metadata" in asset && !!asset.metadata && "coinGeckoID" in asset.metadata
+  )
+
+  if (queryableAssets.length === 0) {
+    return []
+  }
+
+  const coinIds = [
+    ...new Set([...queryableAssets.map((asset) => asset.metadata.coinGeckoID)]),
+  ].join(",")
 
   const currencySymbols = vsCurrencies
     .map((c) => c.symbol.toLowerCase())
@@ -45,7 +57,7 @@ export async function getPrices(
     }
 
     const resolutionTime = Date.now()
-    return assets.flatMap((asset) => {
+    return queryableAssets.flatMap((asset) => {
       const simpleCoinPrices = json[asset.metadata.coinGeckoID]
 
       return vsCurrencies
@@ -91,6 +103,10 @@ export async function getTokenPrices(
 ): Promise<{
   [contractAddress: string]: UnitPricePoint<FungibleAsset>
 }> {
+  if (tokenAddresses.length < 1) {
+    return {}
+  }
+
   const fiatSymbol = fiatCurrency.symbol
 
   const prices: {

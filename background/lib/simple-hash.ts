@@ -7,7 +7,7 @@ export type SimpleHashNFTModel = {
   description?: string
   token_id: string
   contract_address: string
-  chain: "polygon" | "arbitrum" | "optimism" | "ethereum"
+  chain: "polygon" | "arbitrum" | "optimism" | "ethereum" | "bsc"
   external_url?: string
   audio_url: string | null
   image_url: string | null
@@ -24,6 +24,7 @@ const CHAIN_ID_TO_NAME = {
   137: "polygon",
   42161: "arbitrum",
   43114: "avalanche",
+  56: "bsc",
 }
 
 /**

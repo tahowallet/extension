@@ -4,6 +4,7 @@ import {
   OPTIMISM,
   ARBITRUM_ONE,
   AVALANCHE,
+  BINANCE_SMART_CHAIN,
 } from "./constants"
 import { EVMNetwork } from "./networks"
 // Networks that are not added to this struct will
@@ -16,6 +17,7 @@ export const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
   [OPTIMISM.chainID]: ["simplehash"],
   [ARBITRUM_ONE.chainID]: ["simplehash"],
   [AVALANCHE.chainID]: ["simplehash"],
+  [BINANCE_SMART_CHAIN.chainID]: ["simplehash"],
 }
 
 export const NFT_PROVIDER_TO_CHAIN = {
@@ -26,6 +28,7 @@ export const NFT_PROVIDER_TO_CHAIN = {
     OPTIMISM.chainID,
     ARBITRUM_ONE.chainID,
     AVALANCHE.chainID,
+    BINANCE_SMART_CHAIN.chainID,
   ],
 }
 
@@ -40,18 +43,19 @@ export type NFTsWithPagesResponse = {
 
 export type NFT = {
   id: string
+  tokenId: string
   collectionID: string
   name: string
-  description?: string
-  thumbnail?: string
+  description: string
+  thumbnailURL?: string
+  previewURL?: string
   transferDate?: string
   attributes: { trait: string; value: string }[]
   contract: string
   owner: string
   network: EVMNetwork
-  achievement: null | {
-    url: string
-  }
+  supply?: number // only for POAPs
+  isBadge: boolean // POAPs, Galxe NFTs and OATs
 }
 
 export type NFTCollection = {
@@ -59,13 +63,26 @@ export type NFTCollection = {
   name: string
   owner: string
   network: EVMNetwork
-  thumbnail?: string
+  hasBadges: boolean
+  thumbnailURL?: string
   nftCount?: number
+  totalNftCount?: number
   floorPrice?: {
     value: bigint
     token: {
       name: string
       symbol: string
+      decimals: number
     }
   }
+}
+
+export type TransferredNFT = {
+  id: string
+  chainID: string
+  from: string | null
+  to: string | null
+  isKnownFromAddress: boolean
+  isKnownToAddress: boolean
+  collectionID: string | null
 }

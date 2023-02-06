@@ -78,6 +78,7 @@ function EditSectionForm({
             label=""
             placeholder={t("typeNewName")}
             errorMessage={error}
+            autoFocus
             onChange={(value) => {
               if (!touched) {
                 setTouched(true)

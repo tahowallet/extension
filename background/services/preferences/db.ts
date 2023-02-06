@@ -257,6 +257,36 @@ export class PreferenceDatabase extends Dexie {
         })
     })
 
+    this.version(13).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          storedPreferences.tokenLists.urls.push(
+            "https://tokens.pancakeswap.finance/pancakeswap-default.json"
+          )
+        })
+    })
+
+    this.version(14).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const urls = storedPreferences.tokenLists.urls.filter(
+            (url) =>
+              url !==
+              "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/src/joe.tokenlist-v2.json"
+          )
+
+          urls.push(
+            "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/avalanche.tokenlist.json"
+          )
+
+          Object.assign(storedPreferences.tokenLists, { urls })
+        })
+    })
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works

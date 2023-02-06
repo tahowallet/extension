@@ -1,6 +1,6 @@
 import { BigNumber, ethers, utils } from "ethers"
 import { normalizeHexAddress, toChecksumAddress } from "@tallyho/hd-keyring"
-import { HexString } from "../../types"
+import { NormalizedEVMAddress, UNIXTime } from "../../types"
 import { EVMNetwork } from "../../networks"
 import { ETHEREUM, GOERLI } from "../../constants"
 import { AddressOnNetwork } from "../../accounts"
@@ -25,8 +25,10 @@ export function isMixedCaseAddress(address: string): boolean {
   )
 }
 
-export function normalizeEVMAddress(address: string | Buffer): HexString {
-  return normalizeHexAddress(address)
+export function normalizeEVMAddress(
+  address: string | Buffer
+): NormalizedEVMAddress {
+  return normalizeHexAddress(address) as NormalizedEVMAddress
 }
 
 export function normalizeAddressOnNetwork({
@@ -169,4 +171,8 @@ export const hexToAscii = (hex_: string): string => {
   return str.replace("\x00", "")
 }
 
-export const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+export const wait = (ms: number): Promise<void> =>
+  new Promise<void>((r) => setTimeout(r, ms))
+
+export const getUNIXTimestamp = (time = Date.now()): UNIXTime =>
+  Math.floor(time / 1000)

@@ -9,13 +9,15 @@ export default function SharedAccordion({
   contentElement,
   contentHeight,
   isInitiallyOpen = false,
-  style,
+  style = {},
+  onChange,
 }: {
   headerElement: ReactElement
-  contentElement: ReactElement
+  contentElement: ReactElement | ((isOpen: boolean) => React.ReactNode)
+  onChange?: (isOpen: boolean) => void
   contentHeight?: number
   isInitiallyOpen?: boolean
-  style?: React.CSSProperties
+  style?: React.CSSProperties & Record<string, unknown>
 }): ReactElement {
   const contentRef = useRef<HTMLDivElement>(null)
   const [isOpen, setIsOpen] = useState(isInitiallyOpen)
@@ -34,6 +36,7 @@ export default function SharedAccordion({
   const toggle = () => {
     setWithTransition(true)
     setIsOpen((open) => !open)
+    onChange?.(!isOpen)
   }
 
   useEffect(() => {
@@ -51,7 +54,7 @@ export default function SharedAccordion({
   }, [isOpen])
 
   return (
-    <div className="accordion" style={style}>
+    <div className="accordion" aria-expanded={isOpen} style={style}>
       <div
         className="accordion_header"
         role="button"
@@ -81,30 +84,48 @@ export default function SharedAccordion({
           visible: isOpen,
         })}
       >
-        <div ref={contentRef}>{contentElement}</div>
+        <div ref={contentRef}>
+          {typeof contentElement === "function"
+            ? contentElement(isOpen)
+            : contentElement}
+        </div>
       </div>
       <style jsx>{`
         .accordion {
-          background-color: ${isOpen ? "var(--green-120)" : ""};
+          background-color: ${isOpen
+            ? "var(--background, var(--green-120))"
+            : ""};
         }
+
+        .accordion:not([aria-expanded="true"]):hover {
+          background-color: var(--background-hover, none);
+        }
+
         .accordion_header {
           display: flex;
           align-items: center;
-          padding: 4px 8px;
+          padding: var(--header-padding, "4px 8px");
           cursor: pointer;
         }
+
         .accordion_header_content {
           flex: 1 0 auto;
+          max-width: calc(100% - 24px);
         }
+
         .accordion_content {
           max-height: 0;
           overflow: hidden;
-          transition: max-height ${DELAY}ms ease-out;
+          transition: max-height ${DELAY}ms ease-out,
+            opacity var(--content-fade-in-duration, 130ms) ease-in;
+          opacity: 0;
           padding: 0 8px;
         }
         .accordion_content.visible {
           max-height: ${height + 10}px;
-          transition: max-height ${withTransition ? DELAY : 0}ms ease-in;
+          transition: max-height ${withTransition ? DELAY : 0}ms ease-in,
+            opacity var(--content-fade-in-duration, 130ms) ease-in;
+          opacity: 1;
           overflow: ${isVisible ? "visible" : "hidden"};
         }
       `}</style>

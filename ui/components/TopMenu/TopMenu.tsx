@@ -103,6 +103,7 @@ export default function TopMenu(): ReactElement {
       />
       <SharedSlideUpMenu
         isOpen={isProtocolListOpen}
+        isScrollable
         close={() => {
           setIsProtocolListOpen(false)
         }}
@@ -139,7 +140,12 @@ export default function TopMenu(): ReactElement {
                 )
               }}
             >
-              <div className="connection_img" />
+              {isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT) &&
+              isConnectedToDApp ? (
+                <div className="connected-wc" />
+              ) : (
+                <div className="connection_img" />
+              )}
             </button>
             {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
               <button
@@ -210,6 +216,12 @@ export default function TopMenu(): ReactElement {
               background-color: var(
                 --${isConnectedToDApp ? "success" : "green-20"}
               );
+            }
+            .connected-wc {
+              background: url("./images/connected-wc.svg") center / 24px
+                no-repeat;
+              width: 32px;
+              height: 32px;
             }
             .gift_button {
               background: url("./images/gift@2x.png") center no-repeat;

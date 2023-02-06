@@ -5,12 +5,11 @@
  * Limited extension-specific list of coin types by asset symbol.
  */
 export const coinTypesByAssetSymbol = {
-  BTC: 0,
-  "Testnet BTC": 1,
   ETH: 60,
   RBTC: 137,
   MATIC: 966,
-  AVAX: 9000,
+  AVAX: 9005,
+  BNB: 714,
 } as const
 
 /**

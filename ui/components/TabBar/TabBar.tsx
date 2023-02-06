@@ -1,10 +1,14 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useCallback } from "react"
 
 import { matchPath, useHistory, useLocation } from "react-router-dom"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentNetwork,
+  selectOpenAbilityCount,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants/networks"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { useTranslation } from "react-i18next"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import TabBarIconButton from "./TabBarIconButton"
 import tabs, { defaultTab, TabInfo } from "../../utils/tabs"
 import { useBackgroundSelector } from "../../hooks"
@@ -21,13 +25,33 @@ const isTabSupportedByNetwork = (tab: TabInfo, network: EVMNetwork) => {
 export default function TabBar(): ReactElement {
   const location = useLocation()
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const abilityCount = useBackgroundSelector(
+    isEnabled(FeatureFlags.SUPPORT_ABILITIES) ? selectOpenAbilityCount : () => 0
+  )
+
   const history = useHistory()
   const { t } = useTranslation()
+
+  const noActiveTab = ["abilities"].some((pathName) =>
+    location.pathname.includes(pathName)
+  )
 
   const activeTab =
     tabs.find(({ path }) =>
       matchPath(location.pathname, { path, exact: false })
     ) ?? defaultTab
+
+  const hasNotifications = useCallback(
+    (path: string): boolean => {
+      switch (path) {
+        case "/portfolio":
+          return abilityCount > 0
+        default:
+          return false
+      }
+    },
+    [abilityCount]
+  )
 
   return (
     <nav>
@@ -40,7 +64,8 @@ export default function TabBar(): ReactElement {
               icon={icon}
               title={t(title)}
               onClick={() => history.push(path)}
-              isActive={activeTab.path === path}
+              isActive={noActiveTab ? false : activeTab.path === path}
+              showNotifications={hasNotifications(path)}
             />
           )
         })}

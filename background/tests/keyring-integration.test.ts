@@ -1,4 +1,6 @@
 import { webcrypto } from "crypto"
+import browser from "webextension-polyfill"
+
 import KeyringService, {
   Keyring,
   MAX_KEYRING_IDLE_TIME,

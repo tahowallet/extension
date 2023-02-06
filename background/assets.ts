@@ -1,6 +1,11 @@
 import { TokenList } from "@uniswap/token-lists"
 import { UNIXTime, HexString } from "./types"
-import { NetworkSpecific, SmartContract, Network } from "./networks"
+import {
+  NetworkSpecific,
+  SmartContract,
+  Network,
+  NetworkBaseAsset,
+} from "./networks"
 import { fromFixedPoint } from "./lib/fixed-point"
 
 /**
@@ -51,7 +56,7 @@ export type Asset = {
  * asset id in CoinGecko's records.
  */
 export type CoinGeckoAsset = Asset & {
-  metadata: Asset["metadata"] & {
+  metadata?: Asset["metadata"] & {
     coinGeckoID: string
   }
 }
@@ -115,6 +120,12 @@ export type AnyAsset =
   | FiatCurrency
   | FungibleAsset
   | SmartContractFungibleAsset
+  | NetworkBaseAsset
+
+/**
+ * An asset that can be swapped with our current providers
+ */
+export type SwappableAsset = SmartContractFungibleAsset | NetworkBaseAsset
 
 /**
  * An amount associated with a smart contract; used to carry information like
@@ -184,9 +195,9 @@ export function isFungibleAsset(asset: AnyAsset): asset is FungibleAsset {
 /**
  * Type guard to check if an AnyAsset is actually a SmartContractFungibleAsset.
  */
-export function isSmartContractFungibleAsset(
-  asset: AnyAsset
-): asset is SmartContractFungibleAsset {
+export function isSmartContractFungibleAsset<T extends AnyAsset>(
+  asset: T
+): asset is T & SmartContractFungibleAsset {
   return "homeNetwork" in asset && isFungibleAsset(asset)
 }
 
@@ -200,6 +211,20 @@ export function isFungibleAssetAmount(
   assetAmount: AnyAssetAmount
 ): assetAmount is FungibleAssetAmount {
   return isFungibleAsset(assetAmount.asset)
+}
+/**
+ * Flips `pair` and `amounts` values in the PricePoint object.
+ *
+ * @param pricePoint
+ * @returns pricePoint with flipped pair and amounts
+ */
+export function flipPricePoint(pricePoint: PricePoint): PricePoint {
+  const { pair, amounts, time } = pricePoint
+  return {
+    pair: [pair[1], pair[0]],
+    amounts: [amounts[1], amounts[0]],
+    time,
+  }
 }
 
 /**
