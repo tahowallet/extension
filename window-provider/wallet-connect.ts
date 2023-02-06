@@ -15,7 +15,7 @@ const TALLY_LOGO_SVG = `
 export const WALLET_CONNECT_INJECTED_UI = `
 <div class="tally-ho-injected-wc-ui">
   <button>${TALLY_LOGO_SVG}Tally&nbsp;Ho!</button>
-  <span>(i)You are seeing this because you have Tally Ho! installed.</span>
+  <span>You are seeing this because you have Tally Ho! installed.</span>
   <style>
     @font-face {
       font-family: "Segment";
