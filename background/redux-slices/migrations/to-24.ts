@@ -1,8 +1,25 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default (prevState: Record<string, any>): Record<string, unknown> => {
-  const { networks, ...newState } = prevState
+type OldState = {
+  networks: {
+    evm: unknown
+  }
+}
 
-  newState.networks = { blockInfo: networks.evm, evmNetworks: {} }
+type NewState = {
+  networks: {
+    blockInfo: unknown
+    evmNetworks: Record<string, unknown>
+  }
+}
 
-  return newState
+export default (
+  prevState: Record<string, unknown>
+): Record<string, unknown> => {
+  const { networks, ...newState } = prevState as OldState
+
+  ;(newState as NewState).networks = {
+    blockInfo: networks.evm,
+    evmNetworks: {},
+  }
+
+  return newState as NewState
 }

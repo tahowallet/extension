@@ -28,9 +28,7 @@ export default function SettingsCustomNetworks(): ReactElement {
               t={t}
               i18nKey="chainList.description"
               components={{
-                link: (
-                  <SharedLink text={CHAIN_LIST.name} url={CHAIN_LIST.url} />
-                ),
+                url: <SharedLink text={CHAIN_LIST.name} url={CHAIN_LIST.url} />,
               }}
             />
           </span>

@@ -159,10 +159,10 @@ import {
 import AbilitiesService from "./services/abilities"
 import {
   addAbilities,
+  updateAbility,
   addAccount as addAccountFilter,
   deleteAccount as deleteAccountFilter,
   deleteAbilitiesForAccount,
-  emitter as abilitiesSliceEmitter,
 } from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -618,8 +618,6 @@ export default class Main extends BaseService<never> {
     }
     // remove abilities
     if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
-      this.store.dispatch(deleteAccountFilter(address))
-      this.store.dispatch(deleteAbilitiesForAccount(address))
       await this.abilitiesService.deleteAbilitiesForAccount(address)
     }
     // remove dApp premissions
@@ -1534,20 +1532,22 @@ export default class Main extends BaseService<never> {
   }
 
   connectAbilitiesService(): void {
-    this.abilitiesService.emitter.on("newAbilities", async (newAbilities) => {
+    this.abilitiesService.emitter.on("newAbilities", (newAbilities) => {
       this.store.dispatch(addAbilities(newAbilities))
     })
-    this.abilitiesService.emitter.on("newAccount", async (address) => {
+
+    this.abilitiesService.emitter.on("updatedAbility", (ability) => {
+      this.store.dispatch(updateAbility(ability))
+    })
+    this.abilitiesService.emitter.on("newAccount", (address) => {
       if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
         this.store.dispatch(addAccountFilter(address))
       }
     })
-    abilitiesSliceEmitter.on(
-      "reportSpam",
-      ({ address, abilitySlug, reason }) => {
-        this.abilitiesService.reportSpam(address, abilitySlug, reason)
-      }
-    )
+    this.abilitiesService.emitter.on("deleteAccount", (address) => {
+      this.store.dispatch(deleteAccountFilter(address))
+      this.store.dispatch(deleteAbilitiesForAccount(address))
+    })
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
@@ -1624,6 +1624,20 @@ export default class Main extends BaseService<never> {
     abilityId: string
   ): Promise<void> {
     return this.abilitiesService.markAbilityAsRemoved(address, abilityId)
+  }
+
+  async reportAndRemoveAbility(
+    address: NormalizedEVMAddress,
+    abilitySlug: string,
+    abilityId: string,
+    reason: string
+  ): Promise<void> {
+    this.abilitiesService.reportAndRemoveAbility(
+      address,
+      abilitySlug,
+      abilityId,
+      reason
+    )
   }
 
   private connectPopupMonitor() {
