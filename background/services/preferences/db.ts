@@ -299,7 +299,7 @@ export class PreferenceDatabase extends Dexie {
           )
 
           urls.push(
-            "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/mc.tokenlist.json"
+            "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/1722d8c47a728a64c8dca8ac160b32cf39c5e671/mc.tokenlist.json"
           )
 
           Object.assign(storedPreferences.tokenLists, { urls })
