@@ -174,8 +174,6 @@ export default class AbilitiesService extends BaseService<Events> {
     // 1-by-1 decreases likelihood of hitting rate limit
     // eslint-disable-next-line no-restricted-syntax
     for (const address of addresses) {
-      // eslint-disable-next-line no-await-in-loop
-      await this.pollForAbilities(address)
       this.emitter.emit("newAccount", address)
       this.emitter.emit("initAbilities", address as NormalizedEVMAddress)
     }
