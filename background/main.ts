@@ -163,6 +163,7 @@ import {
   addAccount,
   deleteAccount as deleteAccountFilter,
   deleteAbilitiesForAccount,
+  initAbilities,
 } from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -1535,6 +1536,9 @@ export default class Main extends BaseService<never> {
   }
 
   connectAbilitiesService(): void {
+    this.abilitiesService.emitter.on("initAbilities", (address) => {
+      this.store.dispatch(initAbilities(address))
+    })
     this.abilitiesService.emitter.on("newAbilities", (newAbilities) => {
       this.store.dispatch(addAbilities(newAbilities))
     })
@@ -1611,6 +1615,10 @@ export default class Main extends BaseService<never> {
       logger.info("Error looking up Ethereum address: ", error)
       return undefined
     }
+  }
+
+  async pollForAbilities(address: NormalizedEVMAddress): Promise<void> {
+    return this.abilitiesService.pollForAbilities(address)
   }
 
   async markAbilityAsCompleted(

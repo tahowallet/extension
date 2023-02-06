@@ -138,19 +138,21 @@ export default function AbilityFilter(): ReactElement {
         <div className="simple_text">
           <span className="filter_title">{t("accountsTitle")}</span>
           <div className="filter_list">
-            {filteredAccountTotals.length > 0
-              ? filteredAccountTotals.map(({ address, name, avatarURL }) => (
-                  <SharedToggleItem
-                    key={address}
-                    label={name || address}
-                    thumbnailURL={avatarURL}
-                    checked={accounts.includes(address)}
-                    onChange={(toggleValue) =>
-                      handleUpdateAccount(address, toggleValue)
-                    }
-                  />
-                ))
-              : t("noAccounts")}
+            {filteredAccountTotals.length > 0 ? (
+              filteredAccountTotals.map(({ address, name, avatarURL }) => (
+                <SharedToggleItem
+                  key={address}
+                  label={name || address}
+                  thumbnailURL={avatarURL}
+                  checked={accounts.includes(address)}
+                  onChange={(toggleValue) =>
+                    handleUpdateAccount(address, toggleValue)
+                  }
+                />
+              ))
+            ) : (
+              <span className="no_accounts">{t("noAccounts")}</span>
+            )}
           </div>
         </div>
         <span className="accounts_info">
@@ -190,6 +192,10 @@ export default function AbilityFilter(): ReactElement {
           font-size: 14px;
           line-height: 16px;
           letter-spacing: 0.03em;
+        }
+        .no_accounts {
+          font-size: 18px;
+          color: var(--green-20);
         }
       `}</style>
     </SharedSlideUpMenuPanel>

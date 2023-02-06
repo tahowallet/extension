@@ -76,6 +76,7 @@ interface Events extends ServiceLifecycleEvents {
   updatedAbility: Ability
   newAccount: string
   deleteAccount: string
+  initAbilities: NormalizedEVMAddress
 }
 export default class AbilitiesService extends BaseService<Events> {
   constructor(
@@ -105,7 +106,6 @@ export default class AbilitiesService extends BaseService<Events> {
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
-    //
     this.chainService.emitter.on(
       "newAccountToTrack",
       ({ addressOnNetwork, source }) => {
@@ -174,8 +174,7 @@ export default class AbilitiesService extends BaseService<Events> {
     // 1-by-1 decreases likelihood of hitting rate limit
     // eslint-disable-next-line no-restricted-syntax
     for (const address of addresses) {
-      // eslint-disable-next-line no-await-in-loop
-      await this.pollForAbilities(address)
+      this.emitter.emit("initAbilities", address as NormalizedEVMAddress)
     }
   }
 
