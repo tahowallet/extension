@@ -20,13 +20,16 @@ tallyHoTest("dapp connect", async ({ page, context, extensionId }) => {
   await page.locator("button", { hasText: "Import account" }).click()
 
   const dappPage = await context.newPage()
-  await dappPage.goto("https://cowswap.app/")
-  await dappPage.locator("text=Connect").click()
+  await dappPage.goto("https://swap.cow.fi/")
+  await dappPage
+    .locator("#swap-button")
+    .getByRole("button", { name: "Connect Wallet" })
+    .click()
 
   // Get page after a specific action (e.g. clicking a link)
   const [popupPage] = await Promise.all([
     context.waitForEvent("page"),
-    await dappPage.locator("text=Metamask").click(), // Opens a new tab
+    await dappPage.locator("text=Injected").click(), // Opens a new tab
   ])
   await popupPage.waitForLoadState()
 
@@ -38,6 +41,6 @@ tallyHoTest("dapp connect", async ({ page, context, extensionId }) => {
 
   // The timeouts are here only to pause and show that we are connected/disconnected and can be removed
   await page.waitForTimeout(2000)
-  await page.locator('xpath=//li[contains(., "CowSwap")]//button').click()
+  await page.locator('xpath=//li[contains(., "CoW Swap")]//button').click()
   await page.waitForTimeout(2000)
 })

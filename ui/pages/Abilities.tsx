@@ -52,9 +52,10 @@ export default function Abilities(): ReactElement {
           </div>
         </div>
         {abilities.length > 0 ? (
-          abilities.map((ability) => (
-            <AbilityCard key={ability.abilityId} ability={ability} />
-          ))
+          abilities.map((ability, id) => {
+            const key = `${ability.abilityId}-${id}`
+            return <AbilityCard key={key} ability={ability} />
+          })
         ) : (
           <div className="empty_page">
             <div className="icon_tail" />
