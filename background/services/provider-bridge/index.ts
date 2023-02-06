@@ -218,10 +218,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           event.request.params,
           origin
         )
-    } else if (
-      event.request.method === "eth_requestAccounts" ||
-      event.request.method === "eth_accounts"
-    ) {
+    } else if (event.request.method === "eth_requestAccounts") {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
 
@@ -276,6 +273,27 @@ export default class ProviderBridgeService extends BaseService<Events> {
         response.result = new EIP1193Error(
           EIP1193_ERROR_CODES.userRejectedRequest
         ).toJSON()
+      }
+    } else if (event.request.method === "eth_accounts") {
+      const dAppChainID = Number(
+        (await this.internalEthereumProviderService.routeSafeRPCRequest(
+          "eth_chainId",
+          [],
+          origin
+        )) as string
+      ).toString()
+
+      const permission = await this.checkPermission(origin, dAppChainID)
+
+      response.result = []
+
+      if (permission) {
+        response.result = await this.routeContentScriptRPCRequest(
+          permission,
+          "eth_accounts",
+          event.request.params,
+          origin
+        )
       }
     } else {
       // sorry dear dApp, there is no love for you here
