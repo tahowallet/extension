@@ -43,6 +43,7 @@ import { Eligible } from "./services/doggo/types"
 
 import rootReducer from "./redux-slices"
 import {
+  AccountType,
   deleteAccount,
   loadAccount,
   updateAccountBalance,
@@ -601,7 +602,7 @@ export default class Main extends BaseService<never> {
   ): Promise<void> {
     this.store.dispatch(deleteAccount(address))
 
-    if (signer.type !== "read-only" && lastAddressInAccount) {
+    if (signer.type !== AccountType.ReadOnly && lastAddressInAccount) {
       await this.preferenceService.deleteAccountSignerSettings(signer)
     }
 
@@ -620,7 +621,7 @@ export default class Main extends BaseService<never> {
     // remove abilities
     if (
       isEnabled(FeatureFlags.SUPPORT_ABILITIES) &&
-      signer.type !== "read-only"
+      signer.type !== AccountType.ReadOnly
     ) {
       await this.abilitiesService.deleteAbilitiesForAccount(address)
     }
