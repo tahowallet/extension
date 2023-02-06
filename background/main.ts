@@ -159,7 +159,7 @@ import {
 import AbilitiesService from "./services/abilities"
 import {
   addAbilities,
-  addAccount,
+  addAccount as addAccountFilter,
   deleteAccount as deleteAccountFilter,
   deleteAbilitiesForAccount,
   emitter as abilitiesSliceEmitter,
@@ -1539,7 +1539,7 @@ export default class Main extends BaseService<never> {
     })
     this.abilitiesService.emitter.on("newAccount", async (address) => {
       if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
-        this.store.dispatch(addAccount(address))
+        this.store.dispatch(addAccountFilter(address))
       }
     })
     abilitiesSliceEmitter.on(
