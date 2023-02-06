@@ -18,7 +18,7 @@ const defaultPreferences: Preferences = {
       "https://api-polygon-tokens.polygon.technology/tokenlists/default.tokenlist.json", // Polygon Default Tokens
       "https://static.optimism.io/optimism.tokenlist.json", // Optimism Default Tokens
       "https://bridge.arbitrum.io/token-list-42161.json", // Arbitrum Default tokens
-      "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/avalanche.tokenlist.json", // Trader Joe tokens
+      "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/mc.tokenlist.json", // Trader Joe tokens
       "https://tokens.pancakeswap.finance/pancakeswap-default.json", // PancakeSwap Default List
     ],
   },
