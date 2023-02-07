@@ -46,6 +46,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     attributes,
     supply,
     isBadge,
+    rarityRank,
   } = nft
   const { totalNftCount, id: collectionID } = collection
   const network = NETWORK_BY_CHAIN_ID[chainID]
@@ -129,16 +130,25 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         </div>
 
         <div className="preview_header">
-          <h1 className="ellipsis_multiline">{name || t("noTitle")}</h1>
-          {isEnabled(FeatureFlags.SUPPORT_NFT_SEND) && (
-            <SharedButton
-              type="tertiary"
-              size="small"
-              iconSmall="send"
-              iconPosition="left"
-            >
-              {t("preview.send")}
-            </SharedButton>
+          <div className="preview_section_row">
+            <h1 className="ellipsis_multiline">{name || t("noTitle")}</h1>
+            {isEnabled(FeatureFlags.SUPPORT_NFT_SEND) && (
+              <SharedButton
+                type="tertiary"
+                size="small"
+                iconSmall="send"
+                iconPosition="left"
+              >
+                {t("preview.send")}
+              </SharedButton>
+            )}
+          </div>
+
+          {rarityRank !== null && (
+            <span className="preview_rarity">
+              {t("preview.rank")}:
+              <span className="preview_rarity_rank"> {rarityRank}</span>
+            </span>
           )}
         </div>
 
@@ -274,8 +284,6 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           line-height: 24px;
         }
         .preview_header {
-          display: flex;
-          justify-content: space-between;
           margin: 20px 24px;
         }
         .preview_header h1 {
@@ -346,6 +354,22 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           margin-top: 8px;
           gap: 16px;
           justify-content: flex-start;
+        }
+        .preview_rarity {
+          display: inline-block;
+          background: var(--hunter-green);
+          border: 2px solid var(--green-40);
+          border-radius: 25px;
+          color: var(--green-40);
+          line-height: 24px;
+          font-size: 14px;
+          font-weight: 500;
+          padding: 2px 12px 0;
+          margin: 12px 0 14px;
+        }
+        .preview_rarity_rank {
+          color: var(--white);
+          font-size: 16px;
         }
         .no_shrink {
           flex-shrink: 0;

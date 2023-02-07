@@ -254,7 +254,8 @@
       "itemsCount": "Items in collection",
       "creator": "Creator",
       "properties": "Properties",
-      "refresh": "Refresh metadata"
+      "refresh": "Refresh metadata",
+      "rank": "Rank"
     },
     "units": {
       "nft_one": "NFT",
