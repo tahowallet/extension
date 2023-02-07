@@ -462,7 +462,7 @@
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
     "compatibleChain": "Ethereum-compatible blockchain",
-    "avalanche": "Mainnet C-Chain (beta)",
+    "avalanche": "Mainnet C-Chain",
     "connected": "Connected"
   },
   "readOnly": "Read-only",
