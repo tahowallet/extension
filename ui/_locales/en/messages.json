@@ -620,6 +620,16 @@
       "confirmButtonLabel": "Confirm"
     }
   },
+  "addNewChain": {
+    "subtitle": "Wants to add a main network to TallyHo!",
+    "name": "Name",
+    "chainId": "Chain ID",
+    "currency": "Currency",
+    "rpc": "RPC",
+    "explorer": "BlockExplorer",
+    "submit": "Add network",
+    "cancel": "Reject"
+  },
   "swap": {
     "title": "Swap Assets",
     "from": "Swap from:",

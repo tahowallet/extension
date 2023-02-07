@@ -88,7 +88,7 @@ export type ValidatedAddEthereumChainParameter = {
   rpcUrls: string[]
 }
 
-const validateAddEthereumChainParameter = ({
+export const validateAddEthereumChainParameter = ({
   chainId,
   chainName,
   blockExplorerUrls,
@@ -314,7 +314,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       // TODO - actually allow adding a new ethereum chain - for now wallet_addEthereumChain
       // will just switch to a chain if we already support it - but not add a new one
       case "wallet_addEthereumChain": {
-        const chainInfo = params[0] as AddEthereumChainParameter
+        const chainInfo = params[0] as ValidatedAddEthereumChainParameter
         const { chainId } = chainInfo
         const supportedNetwork = await this.getTrackedNetworkByChainId(chainId)
         if (supportedNetwork) {
@@ -326,8 +326,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
         }
         try {
-          const validatedParam = validateAddEthereumChainParameter(chainInfo)
-          await this.chainService.addCustomChain(validatedParam)
+          await this.chainService.addCustomChain(chainInfo)
           return null
         } catch (e) {
           logger.error(e)

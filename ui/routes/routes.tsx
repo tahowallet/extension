@@ -29,6 +29,7 @@ import FeatureFlagsPanel from "../components/HiddenDevPanel/FeatureFlagsPanel"
 import NFTs from "../pages/NFTs"
 import Abilities from "../pages/Abilities"
 import SettingsCustomNetworks from "../pages/Settings/SettingsCustomNetworks"
+import AddNewEVMChain from "../pages/AddNewEVMChain"
 
 interface PageList {
   path: string
@@ -94,6 +95,13 @@ const pageList: PageList[] = [
   {
     path: "/sign-transaction",
     Component: SignTransaction,
+    hasTabBar: false,
+    hasTopBar: false,
+    persistOnClose: false,
+  },
+  {
+    path: "/add-evm-chain",
+    Component: AddNewEVMChain,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
