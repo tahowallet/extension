@@ -86,6 +86,7 @@ const uiSlice = createSlice({
       settings: {
         ...state.settings,
         collectAnalytics,
+        showAnalyticsNotification: false,
       },
     }),
     setShowAnalyticsNotification: (
