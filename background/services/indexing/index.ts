@@ -240,7 +240,7 @@ export default class IndexingService extends BaseService<Events> {
    *          the codebase. Fiat currencies are not included.
    */
   getCachedAssets(network: EVMNetwork): AnyAsset[] {
-    return this.cachedAssets[network.chainID]
+    return this.cachedAssets[network.chainID] ?? []
   }
 
   /**
