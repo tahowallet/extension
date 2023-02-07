@@ -16,6 +16,7 @@ import { trimWithEllipsis } from "../../utils/textUtils"
 import SharedAddress from "../Shared/SharedAddress"
 import SharedButton from "../Shared/SharedButton"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
+import SharedTooltip from "../Shared/SharedTooltip"
 import ExploreMarketLink, { getRelevantMarketsList } from "./ExploreMarketLink"
 import NFTImage from "./NFTImage"
 
@@ -91,6 +92,9 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     [collectionID, owner, network, dispatch]
   )
 
+  const localizedTotalCount = (totalNftCount ?? supply)?.toLocaleString()
+  const localizedRarityRank = rarityRank?.toLocaleString()
+
   return (
     <>
       <div className="preview_wrapper">
@@ -145,10 +149,26 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           </div>
 
           {rarityRank !== null && (
-            <span className="preview_rarity">
-              {t("preview.rank")}:
-              <span className="preview_rarity_rank"> {rarityRank}</span>
-            </span>
+            <div className="preview_rarity_wrapper">
+              <SharedTooltip
+                height={37}
+                horizontalPosition="right"
+                IconComponent={() => (
+                  <span className="preview_rarity">
+                    {t("preview.rank")}:
+                    <span className="preview_rarity_rank">
+                      {" "}
+                      {localizedRarityRank}
+                    </span>
+                  </span>
+                )}
+              >
+                <div className="no_wrap">
+                  {t("preview.rarityRank")}: {localizedRarityRank} /{" "}
+                  {localizedTotalCount}
+                </div>
+              </SharedTooltip>
+            </div>
           )}
         </div>
 
@@ -188,7 +208,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
             <div className="preview_section_header">
               {t("preview.itemsCount")}
             </div>
-            <p>{totalNftCount ?? supply ?? "-"}</p>
+            <p>{localizedTotalCount ?? "-"}</p>
           </div>
           <div className="preview_section_column align_right">
             <div className="preview_section_header">{t("preview.creator")}</div>
@@ -355,6 +375,9 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           gap: 16px;
           justify-content: flex-start;
         }
+        .preview_rarity_wrapper {
+          margin: 12px -8px 14px;
+        }
         .preview_rarity {
           display: inline-block;
           background: var(--hunter-green);
@@ -365,7 +388,6 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           font-size: 14px;
           font-weight: 500;
           padding: 2px 12px 0;
-          margin: 12px 0 14px;
         }
         .preview_rarity_rank {
           color: var(--white);
@@ -373,6 +395,10 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         }
         .no_shrink {
           flex-shrink: 0;
+        }
+        .no_wrap {
+          overflow: hidden;
+          white-space: nowrap;
         }
       `}</style>
     </>

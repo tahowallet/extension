@@ -255,7 +255,8 @@
       "creator": "Creator",
       "properties": "Properties",
       "refresh": "Refresh metadata",
-      "rank": "Rank"
+      "rank": "Rank",
+      "rarityRank": "Rarity rank"
     },
     "units": {
       "nft_one": "NFT",
