@@ -1599,6 +1599,10 @@ export default class Main extends BaseService<never> {
         )
       }
     )
+
+    uiSliceEmitter.on("deleteAnalyticsData", () => {
+      this.analyticsService.removeAnalyticsData()
+    })
   }
 
   async updateSignerTitle(

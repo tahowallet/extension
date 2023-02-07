@@ -1,6 +1,7 @@
 import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
+  deleteAnalyticsData,
   selectCollectAnalytics,
   updateAnalyticsPreferences,
 } from "@tallyho/tally-background/redux-slices/ui"
@@ -41,6 +42,7 @@ export default function SettingsAnalytics(): ReactElement {
   }
 
   const handleDeleteSubmit = () => {
+    dispatch(deleteAnalyticsData())
     setShowDeleteMenu(false)
   }
 
