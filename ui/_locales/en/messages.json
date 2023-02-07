@@ -254,7 +254,9 @@
       "itemsCount": "Items in collection",
       "creator": "Creator",
       "properties": "Properties",
-      "refresh": "Refresh metadata"
+      "refresh": "Refresh metadata",
+      "rank": "Rank",
+      "rarityRank": "Rarity rank"
     },
     "units": {
       "nft_one": "NFT",
@@ -773,7 +775,7 @@
     "banner": {
       "description": "Daylight tells you when you qualify for an airdrop, mint or unlock.",
       "seeAbilities": "See your abilities",
-      "new": "New",
+      "open": "Open",
       "none": "None"
     },
     "timeStarting": "Starting in 1 month",
@@ -804,7 +806,7 @@
       "tooltip": "Filter",
       "abilityState": {
         "open": "Open",
-        "completed": "Closed",
+        "completed": "Completed",
         "expired": "Expired",
         "deleted": "Deleted",
         "all": "All"
@@ -823,7 +825,9 @@
       },
       "abilityStateTitle": "Show",
       "abilitiesTypesTitle": "Notify me about abilities type",
-      "accountsTitle": "Show/hide accounts"
+      "accountsTitle": "Show/hide accounts",
+      "accountsReadOnlyInfo": "Read-only accounts can’t see abilities. If you can, we recommend you import the address you want to see abilities for.",
+      "noAccounts": "No accounts"
     }
   },
   "globalError": {
