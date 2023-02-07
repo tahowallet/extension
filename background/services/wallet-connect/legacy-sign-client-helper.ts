@@ -17,11 +17,11 @@ export type LegacyEventData = {
   id: number
   topic: string
   method: string
-  params: any[]
+  params: unknown[]
 }
 
 type SessionProposalListener = (payload: LegacyProposal) => void
-type SessionRequestListener = (payload: any) => void
+type SessionRequestListener = (payload: LegacyEventData) => void
 
 let legacySignClient: LegacySignClient | undefined
 
@@ -135,7 +135,7 @@ export function processLegacyRequestParams(
 
 export async function postLegacyApprovalResponse(
   event: TranslatedRequestParams,
-  payload: any
+  payload: string
 ): Promise<void> {
   const { id } = event
   const { result } = approveEIP155Request(event, payload)
