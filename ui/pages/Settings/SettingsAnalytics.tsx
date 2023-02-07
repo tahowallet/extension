@@ -14,9 +14,9 @@ import SharedToggleButton from "../../components/Shared/SharedToggleButton"
 
 /* List items */
 
-const analyticsRecordedItems = ["Orders", "Accounts", "Gas"] as const
+const analyticsRecordedItems = ["Trends", "Usage"] as const
 
-const analyticsNotRecordedItems = ["Seed", "Transactions"] as const
+const analyticsNotRecordedItems = ["Seed", "Info", "Balances"] as const
 
 export default function SettingsAnalytics(): ReactElement {
   const { t } = useTranslation("translation", {
