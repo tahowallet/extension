@@ -38,6 +38,7 @@ export type UIState = {
 
 export type Events = {
   snackbarMessage: string
+  deleteAnalyticsData: never
   newDefaultWalletValue: boolean
   refreshBackgroundPage: null
   newSelectedAccount: AddressOnNetwork
@@ -197,6 +198,13 @@ export const updateAnalyticsPreferences = createBackgroundAsyncThunk(
     await emitter.emit("updateAnalyticsPreferences", {
       isEnabled: collectAnalytics,
     })
+  }
+)
+
+export const deleteAnalyticsData = createBackgroundAsyncThunk(
+  "ui/deleteAnalyticsData",
+  async () => {
+    await emitter.emit("deleteAnalyticsData")
   }
 )
 

@@ -4,8 +4,11 @@ import {
   EIP1193_ERROR_CODES,
   isEIP1193Error,
   EIP1193ErrorPayload,
+  RPCRequest,
 } from "@tallyho/provider-bridge-shared"
 import logger from "../../lib/logger"
+import { sameEVMAddress } from "../../lib/utils"
+import { HexString } from "../../types"
 
 export type PermissionMap = {
   evm: {
@@ -89,4 +92,37 @@ export function handleRPCErrorResponse(error: unknown) {
     response ??
     new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()
   )
+}
+
+/**
+ * Try to fix request params for dapps that are sending requests with flipped params order.
+ * For now it only affects eth_call and personal_sign as message and address order is sometimes reversed.
+ *
+ * @returns JSON RPC request's params - unchanged or flipped
+ */
+export function parseRPCRequestParams(
+  enablingPermission: PermissionRequest,
+  method: string,
+  params: RPCRequest["params"]
+): RPCRequest["params"] {
+  switch (method) {
+    case "eth_sign":
+      return sameEVMAddress(
+        params[0] as HexString,
+        enablingPermission.accountAddress
+      )
+        ? params
+        : [params[1], params[0]]
+
+    case "personal_sign":
+      return sameEVMAddress(
+        params[1] as HexString,
+        enablingPermission.accountAddress
+      )
+        ? params
+        : [params[1], params[0]]
+
+    default:
+      return params
+  }
 }

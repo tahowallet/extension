@@ -6,6 +6,7 @@ import {
   NETWORK_BY_CHAIN_ID,
   POLYGON,
   BINANCE_SMART_CHAIN,
+  ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { AccountTotalList } from "@tallyho/tally-background/redux-slices/selectors"
@@ -20,6 +21,7 @@ const NETWORKS_CHART_COLORS = {
   [OPTIMISM.chainID]: "#CD041C",
   [AVALANCHE.chainID]: "#E84142",
   [BINANCE_SMART_CHAIN.chainID]: "#F3BA2F",
+  [ROOTSTOCK.chainID]: "#F18C30",
 }
 
 const getNetworksPercents = (
