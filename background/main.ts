@@ -161,7 +161,7 @@ import AbilitiesService from "./services/abilities"
 import {
   addAbilities,
   updateAbility,
-  addAccount,
+  addAccount as addAccountFilter,
   deleteAccount as deleteAccountFilter,
   deleteAbilitiesForAccount,
   initAbilities,
@@ -1556,7 +1556,9 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateAbility(ability))
     })
     this.abilitiesService.emitter.on("newAccount", (address) => {
-      this.store.dispatch(addAccount(address))
+      if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
+        this.store.dispatch(addAccountFilter(address))
+      }
     })
     this.abilitiesService.emitter.on("deleteAccount", (address) => {
       this.store.dispatch(deleteAccountFilter(address))
