@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux"
 import { setSelectedNetwork } from "@tallyho/tally-background/redux-slices/ui"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { getNetworkIcon } from "../../utils/networks"
+import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 
 type Props = {
   info: string
@@ -33,7 +34,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
     >
       <div className="left">
         <div className="icon_wrap">
-          <span className="icon" />
+          <SharedNetworkIcon size={24} network={network} />
         </div>
       </div>
       <div className="right">
