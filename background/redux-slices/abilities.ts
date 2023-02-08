@@ -165,10 +165,7 @@ export const reportAndRemoveAbility = createBackgroundAsyncThunk(
 
 export const initAbilities = createBackgroundAsyncThunk(
   "abilities/initAbilities",
-  async (
-    address: NormalizedEVMAddress,
-    { dispatch, getState, extra: { main } }
-  ) => {
+  async (address: NormalizedEVMAddress, { getState, extra: { main } }) => {
     const { ledger, keyrings } = getState() as {
       ledger: LedgerState
       keyrings: KeyringsState
@@ -178,7 +175,6 @@ export const initAbilities = createBackgroundAsyncThunk(
       isLedgerAccount(ledger, address)
     ) {
       await main.pollForAbilities(address)
-      dispatch(addAccount(address))
     }
   }
 )
