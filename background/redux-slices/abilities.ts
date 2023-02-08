@@ -29,7 +29,7 @@ export type Filter = {
   accounts: string[]
 }
 
-export type AbilitiesState = {
+type AbilitiesState = {
   filter: Filter
   abilities: {
     [address: HexString]: {
@@ -37,7 +37,6 @@ export type AbilitiesState = {
     }
   }
   hideDescription: boolean
-  isInitiated: boolean
 }
 
 const initialState: AbilitiesState = {
@@ -48,7 +47,6 @@ const initialState: AbilitiesState = {
   },
   abilities: {},
   hideDescription: false,
-  isInitiated: false,
 }
 
 const abilitiesSlice = createSlice({
