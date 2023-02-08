@@ -88,6 +88,7 @@ export default function SwapTransactionSettingsChooser({
           <SharedSlideUpMenu
             isOpen={isSlideUpMenuOpen}
             size="large"
+            isDark
             close={() => {
               setIsSlideUpMenuOpen(false)
             }}

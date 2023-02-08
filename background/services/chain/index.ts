@@ -107,7 +107,10 @@ interface Events extends ServiceLifecycleEvents {
     transactions: Transaction[]
     account: AddressOnNetwork
   }
-  newAccountToTrack: AddressOnNetwork
+  newAccountToTrack: {
+    addressOnNetwork: AddressOnNetwork
+    source: "import" | "internal" | null
+  }
   supportedNetworks: EVMNetwork[]
   accountsWithBalances: {
     /**
@@ -896,12 +899,18 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
+    const source = await this.keyringService.getKeyringSourceForAddress(
+      addressNetwork.address
+    )
     const isAccountOnNetworkAlreadyTracked =
       await this.db.getTrackedAccountOnNetwork(addressNetwork)
     if (!isAccountOnNetworkAlreadyTracked) {
       // Skip save, emit and savedTransaction emission on resubmission
       await this.db.addAccountToTrack(addressNetwork)
-      this.emitter.emit("newAccountToTrack", addressNetwork)
+      this.emitter.emit("newAccountToTrack", {
+        addressOnNetwork: addressNetwork,
+        source,
+      })
     }
     this.emitSavedTransactions(addressNetwork)
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
@@ -916,11 +925,7 @@ export default class ChainService extends BaseService<Events> {
         e
       )
     })
-    if (
-      (await this.keyringService.getKeyringSourceForAddress(
-        addressNetwork.address
-      )) !== "internal"
-    ) {
+    if (source !== "internal") {
       this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
         logger.error(
           "chainService/addAccountToTrack: Error loading historic asset transfers",

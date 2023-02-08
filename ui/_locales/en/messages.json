@@ -254,7 +254,9 @@
       "itemsCount": "Items in collection",
       "creator": "Creator",
       "properties": "Properties",
-      "refresh": "Refresh metadata"
+      "refresh": "Refresh metadata",
+      "rank": "Rank",
+      "rarityRank": "Rarity rank"
     },
     "units": {
       "nft_one": "NFT",
@@ -826,7 +828,9 @@
       },
       "abilityStateTitle": "Show",
       "abilitiesTypesTitle": "Notify me about abilities type",
-      "accountsTitle": "Show/hide accounts"
+      "accountsTitle": "Show/hide accounts",
+      "accountsReadOnlyInfo": "Read-only accounts can’t see abilities. If you can, we recommend you import the address you want to see abilities for.",
+      "noAccounts": "No accounts"
     }
   },
   "globalError": {

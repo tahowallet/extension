@@ -43,6 +43,7 @@ import { Eligible } from "./services/doggo/types"
 
 import rootReducer from "./redux-slices"
 import {
+  AccountType,
   deleteAccount,
   loadAccount,
   updateAccountBalance,
@@ -160,9 +161,10 @@ import AbilitiesService from "./services/abilities"
 import {
   addAbilities,
   updateAbility,
-  addAccount,
+  addAccount as addAccountFilter,
   deleteAccount as deleteAccountFilter,
   deleteAbilitiesForAccount,
+  initAbilities,
 } from "./redux-slices/abilities"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -600,7 +602,7 @@ export default class Main extends BaseService<never> {
   ): Promise<void> {
     this.store.dispatch(deleteAccount(address))
 
-    if (signer.type !== "read-only" && lastAddressInAccount) {
+    if (signer.type !== AccountType.ReadOnly && lastAddressInAccount) {
       await this.preferenceService.deleteAccountSignerSettings(signer)
     }
 
@@ -617,7 +619,10 @@ export default class Main extends BaseService<never> {
       await this.nftsService.removeNFTsForAddress(address)
     }
     // remove abilities
-    if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
+    if (
+      isEnabled(FeatureFlags.SUPPORT_ABILITIES) &&
+      signer.type !== AccountType.ReadOnly
+    ) {
       await this.abilitiesService.deleteAbilitiesForAccount(address)
     }
     // remove dApp premissions
@@ -1532,6 +1537,9 @@ export default class Main extends BaseService<never> {
   }
 
   connectAbilitiesService(): void {
+    this.abilitiesService.emitter.on("initAbilities", (address) => {
+      this.store.dispatch(initAbilities(address))
+    })
     this.abilitiesService.emitter.on("newAbilities", (newAbilities) => {
       this.store.dispatch(addAbilities(newAbilities))
     })
@@ -1540,7 +1548,9 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateAbility(ability))
     })
     this.abilitiesService.emitter.on("newAccount", (address) => {
-      this.store.dispatch(addAccount(address))
+      if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
+        this.store.dispatch(addAccountFilter(address))
+      }
     })
     this.abilitiesService.emitter.on("deleteAccount", (address) => {
       this.store.dispatch(deleteAccountFilter(address))
@@ -1608,6 +1618,10 @@ export default class Main extends BaseService<never> {
       logger.info("Error looking up Ethereum address: ", error)
       return undefined
     }
+  }
+
+  async pollForAbilities(address: NormalizedEVMAddress): Promise<void> {
+    return this.abilitiesService.pollForAbilities(address)
   }
 
   async markAbilityAsCompleted(
