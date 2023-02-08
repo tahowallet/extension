@@ -1,4 +1,4 @@
-import { DEFAULT_NETWORKS } from "@tallyho/tally-background/constants"
+import { isBuiltInNetwork } from "@tallyho/tally-background/constants"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 
 // From chainlist.org
@@ -70,16 +70,55 @@ export const FALLBACK_ICONS_BY_CHAINID: Record<string, string> = {
   "420420": "https://icons.llamao.fi/icons/chains/rsz_kekchain.jpg",
 }
 
+export const NETWORK_COLORS_FALLBACK = [
+  "#75c128",
+  "#5abf35",
+  "#5cf959",
+  "#68f286",
+  "#09ba58",
+  "#16ad80",
+  "#22ada4",
+  "#43d5f2",
+  "#4da1dd",
+  "#5680ce",
+  "#07168c",
+  "#1b0d72",
+  "#762fef",
+  "#9d3bdb",
+  "#d14ee8",
+  "#e05ed5",
+  "#bf0782",
+  "#ef1a76",
+  "#db294d",
+  "#ce3d35",
+  "#c96a44",
+  "#d89a58",
+  "#f2bb07",
+  "#eaea19",
+]
+
+export function getNetworkIconFallbackColor(network: EVMNetwork): string {
+  return NETWORK_COLORS_FALLBACK[
+    Number.parseInt(network.chainID, 10) % NETWORK_COLORS_FALLBACK.length
+  ]
+}
+
 export function getNetworkIconName(network: EVMNetwork): string {
   return network.name.replaceAll(" ", "").toLowerCase()
 }
 
+export const getNetworkIconSquared = (network: EVMNetwork): string => {
+  if (isBuiltInNetwork(network)) {
+    const iconName = getNetworkIconName(network)
+
+    return `./images/networks/${iconName}-square@2x.png`
+  }
+
+  return ""
+}
+
 export const getNetworkIcon = (network: EVMNetwork): string => {
-  if (
-    DEFAULT_NETWORKS.some(
-      (builtInNetwork) => builtInNetwork.chainID === network.chainID
-    )
-  ) {
+  if (isBuiltInNetwork(network)) {
     const iconName = getNetworkIconName(network)
 
     return `./images/networks/${iconName}@2x.png`
