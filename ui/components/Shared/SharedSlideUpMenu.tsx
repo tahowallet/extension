@@ -22,6 +22,7 @@ interface Props {
   size: SharedSlideUpMenuSize
   isFullScreen?: boolean
   isScrollable?: boolean
+  isDark?: boolean
   alwaysRenderChildren?: boolean
 }
 
@@ -40,6 +41,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
     children,
     customSize,
     isFullScreen,
+    isDark,
     isScrollable,
     alwaysRenderChildren,
   } = props
@@ -63,7 +65,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
       <div className={classNames("overlay", { closed: !isOpen })} />
       <div
         className={classNames("slide_up_menu", {
-          large: size === "large",
+          dark: isDark,
           closed: !isOpen,
         })}
         style={{ "--menu-height": menuHeight } as CSSProperties}
@@ -126,7 +128,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             visiblity: hidden;
             pointer-events: none;
           }
-          .large {
+          .dark {
             background-color: var(--hunter-green);
           }
           .slide_up_menu.closed {

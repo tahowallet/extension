@@ -254,7 +254,9 @@
       "itemsCount": "Items in collection",
       "creator": "Creator",
       "properties": "Properties",
-      "refresh": "Refresh metadata"
+      "refresh": "Refresh metadata",
+      "rank": "Rank",
+      "rarityRank": "Rarity rank"
     },
     "units": {
       "nft_one": "NFT",
@@ -460,7 +462,7 @@
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
     "compatibleChain": "Ethereum-compatible blockchain",
-    "avalanche": "Mainnet C-Chain (beta)",
+    "avalanche": "Mainnet C-Chain",
     "connected": "Connected"
   },
   "readOnly": "Read-only",
@@ -494,26 +496,26 @@
       "title": "Analytics",
       "toggleTitleOn": "Analytics are on",
       "toggleTitleOff": "Analytics are off",
-      "toggleDesc": "Analytics help us understand your needs and empowers us to build a better wallet for you!",
-      "recordTitle": "What we will record",
-      "recordItemOrders": "Number of Swaps / Sends",
-      "recordItemAccounts": "Number of accounts",
-      "recordItemGas": "Gas paid overall",
-      "noRecordTitle": "We will never record",
-      "noRecordItemSeed": "Your seed phrase",
-      "noRecordItemTransactions": "Your address and transactions",
+      "toggleDesc": "Analytics help us understand your needs and empower us to build a better wallet for you",
+      "recordTitle": "Info we collect",
+      "recordItemTrends": "Overall user trends",
+      "recordItemUsage": "Feature usage",
+      "noRecordTitle": "We never collect",
+      "noRecordItemSeed": "Recovery phrase",
+      "noRecordItemInfo": "Personal Information",
+      "noRecordItemBalances": "Addresses, balances, or transactions",
       "policyBtn": "Privacy policy",
       "deleteBtn": "Delete my data",
       "ariaLabel": "Open analytics",
       "analyticsOffSlideUpMenu": {
         "title": "Turn Analytics off?",
-        "desc": "Are you sure you want to turn analytics off? They help us a lot in building a better wallet for you",
+        "desc": "Are you sure you want to turn analytics off?",
         "submitBtn": "Yes, turn off",
-        "snackbar": "Analytics are off, turn back at any time"
+        "snackbar": "Analytics are off, re-enable at any time"
       },
       "deleteSlideUpMenu": {
         "title": "Delete your data?",
-        "desc": "Are you sure you want to delete your data? They help us a lot in building a better wallet for you",
+        "desc": "Are you sure you want to delete your data?",
         "submitBtn": "Yes, delete data",
         "snackbar": "Private data will be removed soon"
       }
@@ -750,8 +752,8 @@
       "tooltip": "Setting Tally Ho as your default wallet means that every time you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
     },
     "analyticsNotification": {
-      "title": "Analytics are on",
-      "description": "They help us improve the wallet for you",
+      "title": "Analytics are enabled",
+      "description": "They help us improve the wallet.  You can disable anytime", 
       "settingsLink": "Change settings"
     }
   },
@@ -823,7 +825,9 @@
       },
       "abilityStateTitle": "Show",
       "abilitiesTypesTitle": "Notify me about abilities type",
-      "accountsTitle": "Show/hide accounts"
+      "accountsTitle": "Show/hide accounts",
+      "accountsReadOnlyInfo": "Read-only accounts can’t see abilities. If you can, we recommend you import the address you want to see abilities for.",
+      "noAccounts": "No accounts"
     }
   },
   "globalError": {

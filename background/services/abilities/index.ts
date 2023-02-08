@@ -12,6 +12,7 @@ import ChainService from "../chain"
 import { FeatureFlags, isEnabled } from "../../features"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { Ability, AbilityRequirement } from "../../abilities"
+import LedgerService from "../ledger"
 
 const normalizeDaylightRequirements = (
   requirement: DaylightAbilityRequirement
@@ -76,11 +77,14 @@ interface Events extends ServiceLifecycleEvents {
   updatedAbility: Ability
   newAccount: string
   deleteAccount: string
+  initAbilities: NormalizedEVMAddress
+  deleteAbilities: string
 }
 export default class AbilitiesService extends BaseService<Events> {
   constructor(
     private db: AbilitiesDatabase,
-    private chainService: ChainService
+    private chainService: ChainService,
+    private ledgerService: LedgerService
   ) {
     super({
       abilitiesAlarm: {
@@ -98,18 +102,30 @@ export default class AbilitiesService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     ServiceLifecycleEvents,
     AbilitiesService,
-    [Promise<ChainService>]
-  > = async (chainService) => {
-    return new this(await getOrCreateDB(), await chainService)
+    [Promise<ChainService>, Promise<LedgerService>]
+  > = async (chainService, ledgerService) => {
+    return new this(
+      await getOrCreateDB(),
+      await chainService,
+      await ledgerService
+    )
   }
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
-    this.chainService.emitter.on("newAccountToTrack", (addressOnNetwork) => {
-      const { address } = addressOnNetwork
-      this.pollForAbilities(address)
-      this.emitter.emit("newAccount", address)
-    })
+    this.chainService.emitter.on(
+      "newAccountToTrack",
+      async ({ addressOnNetwork, source }) => {
+        const { address } = addressOnNetwork
+        const ledgerAccount = await this.ledgerService.getAccountByAddress(
+          address
+        )
+        if (source ?? ledgerAccount) {
+          this.pollForAbilities(address)
+          this.emitter.emit("newAccount", address)
+        }
+      }
+    )
   }
 
   async pollForAbilities(address: HexString): Promise<void> {
@@ -162,14 +178,16 @@ export default class AbilitiesService extends BaseService<Events> {
   }
 
   async abilitiesAlarm(): Promise<void> {
+    if (!isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
+      return
+    }
     const accountsToTrack = await this.chainService.getAccountsToTrack()
     const addresses = new Set(accountsToTrack.map((account) => account.address))
 
     // 1-by-1 decreases likelihood of hitting rate limit
     // eslint-disable-next-line no-restricted-syntax
     for (const address of addresses) {
-      // eslint-disable-next-line no-await-in-loop
-      await this.pollForAbilities(address)
+      this.emitter.emit("initAbilities", address as NormalizedEVMAddress)
     }
   }
 
@@ -187,7 +205,8 @@ export default class AbilitiesService extends BaseService<Events> {
     const deletedRecords = await this.db.deleteAbilitiesForAccount(address)
 
     if (deletedRecords > 0) {
-      this.emitter.emit("deleteAccount", address)
+      this.emitter.emit("deleteAbilities", address)
     }
+    this.emitter.emit("deleteAccount", address)
   }
 }

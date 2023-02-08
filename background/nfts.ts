@@ -51,6 +51,11 @@ export type NFT = {
   previewURL?: string
   transferDate?: string
   attributes: { trait: string; value: string }[]
+  rarity: {
+    rank?: number
+    score?: number
+    uniqueAttributes?: number
+  }
   contract: string
   owner: string
   network: EVMNetwork

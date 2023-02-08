@@ -1,7 +1,25 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { Ability, ABILITY_TYPES_ENABLED } from "../abilities"
 import { HexString, NormalizedEVMAddress } from "../types"
+import { KeyringsState } from "./keyrings"
+import { LedgerState } from "./ledger"
 import { createBackgroundAsyncThunk } from "./utils"
+
+const isLedgerAccount = (
+  ledger: LedgerState,
+  address: NormalizedEVMAddress
+): boolean =>
+  Object.values(ledger.devices)
+    .flatMap((device) =>
+      Object.values(device.accounts).flatMap((account) => account.address ?? "")
+    )
+    .includes(address)
+
+const isImportOrInternalAccount = (
+  keyrings: KeyringsState,
+  address: NormalizedEVMAddress
+): boolean =>
+  keyrings.keyrings.flatMap(({ addresses }) => addresses).includes(address)
 
 export type State = "open" | "completed" | "expired" | "deleted" | "all"
 
@@ -142,6 +160,31 @@ export const reportAndRemoveAbility = createBackgroundAsyncThunk(
     { extra: { main } }
   ) => {
     await main.reportAndRemoveAbility(address, abilitySlug, abilityId, reason)
+  }
+)
+
+export const initAbilities = createBackgroundAsyncThunk(
+  "abilities/initAbilities",
+  async (
+    address: NormalizedEVMAddress,
+    { dispatch, getState, extra: { main } }
+  ) => {
+    const { ledger, keyrings, abilities } = getState() as {
+      ledger: LedgerState
+      keyrings: KeyringsState
+      abilities: AbilitiesState
+    }
+    if (
+      isImportOrInternalAccount(keyrings, address) ||
+      isLedgerAccount(ledger, address)
+    ) {
+      await main.pollForAbilities(address)
+      // Accounts for filter should be enabled after the first initialization.
+      // The state of the filters after each reload should not refresh.
+      if (JSON.stringify(abilities) === JSON.stringify(initialState)) {
+        dispatch(addAccount(address))
+      }
+    }
   }
 )
 

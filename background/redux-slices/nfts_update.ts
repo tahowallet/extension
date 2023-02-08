@@ -8,7 +8,8 @@ import { createBackgroundAsyncThunk } from "./utils"
 
 export type NFTCached = {
   chainID: string
-} & Omit<NFT, "network">
+  rarityRank: number | null
+} & Omit<NFT, "network" | "rarity">
 
 export type NFTCollectionCached = {
   floorPrice?: {
@@ -159,11 +160,12 @@ export function updateFilters(
 
 export function parseNFTs(nfts: NFT[]): NFTCached[] {
   return nfts.map((nft) => {
-    const { network, ...cached } = nft
+    const { network, rarity, ...cached } = nft
 
     return {
       ...cached,
       chainID: network.chainID,
+      rarityRank: rarity.rank ?? null,
     }
   })
 }

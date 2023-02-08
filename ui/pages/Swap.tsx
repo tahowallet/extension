@@ -419,6 +419,7 @@ export default function Swap(): ReactElement {
             dispatch(clearSwapQuote())
           }}
           size="large"
+          isDark
         >
           {quote &&
             typeof sellAsset !== "undefined" &&

@@ -362,6 +362,11 @@ export default class LedgerService extends BaseService<Events> {
     await this.db.removeAccount(address)
   }
 
+  async getAccountByAddress(address: HexString): Promise<LedgerAccount | null> {
+    const ledgerAccount = await this.db.getAccountByAddress(address)
+    return ledgerAccount
+  }
+
   async signTransaction(
     transactionRequest: TransactionRequestWithNonce,
     { deviceID, path: derivationPath }: LedgerAccountSigner
