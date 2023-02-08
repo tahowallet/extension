@@ -28,6 +28,7 @@ export default function AddNewEVMChain(): JSX.Element {
   if (!networkDetails) {
     return <></>
   }
+
   const {
     chainId,
     chainName,
@@ -54,10 +55,10 @@ export default function AddNewEVMChain(): JSX.Element {
           </h1>
           <p>{t("addNewChain.subtitle")}</p>
         </header>
-        <div className="details-container">
-          <div className="add-chain-imgs">
-            <div className="new-chain-logo" />
-            <div className="plus-wrapper">
+        <div className="details-containe_">
+          <div className="add_chain_imgs">
+            <div className="new_chain_logo" />
+            <div className="plus_wrapper">
               <SharedIcon
                 width={16}
                 height={16}
@@ -65,9 +66,9 @@ export default function AddNewEVMChain(): JSX.Element {
                 icon="plus@2x.png"
               />
             </div>
-            <div className="tally-logo" />
+            <div className="tally_logo" />
           </div>
-          <dl className="chain-details">
+          <dl className="chain_details">
             <div className="row">
               <dt>{t("addNewChain.name")}</dt>
               <dd>{chainName}</dd>
@@ -81,7 +82,7 @@ export default function AddNewEVMChain(): JSX.Element {
               <dd>{nativeCurrency.symbol}</dd>
             </div>
             <dt>{t("addNewChain.rpc")}</dt>
-            <dd className="rpcUrl">{rpcUrls[0]}</dd>
+            <dd className="rpc_url">{rpcUrls[0]}</dd>
             <dt>{t("addNewChain.explorer")}</dt>
             <dd>{blockExplorerUrl}</dd>
           </dl>
@@ -104,14 +105,14 @@ export default function AddNewEVMChain(): JSX.Element {
         </footer>
       </form>
       <style jsx>{`
-        .add-chain-imgs {
+        .add_chain_imgs {
           display: flex;
           justify-content: center;
           padding-bottom: 24px;
           border-bottom: 1px solid var(--castle-black);
         }
 
-        .new-chain-logo {
+        .new_chain_logo {
           width: 56px;
           height: 56px;
           border-radius: 8px;
@@ -119,14 +120,14 @@ export default function AddNewEVMChain(): JSX.Element {
           background-color: var(--green-80);
         }
 
-        .tally-logo {
+        .tally_logo {
           background: url("./images/doggo_gold.svg") center / 65px no-repeat;
           height: 56px;
           width: 56px;
           border-radius: 16px;
         }
 
-        .plus-wrapper {
+        .plus_wrapper {
           align-self: center;
           position: relative;
           border: 4px solid var(--green-120);
@@ -167,14 +168,14 @@ export default function AddNewEVMChain(): JSX.Element {
           text-align: center;
         }
 
-        .details-container {
+        .details_container {
           background: var(--green-120);
           border-radius: 16px;
           padding: 16px 24px;
           margin-bottom: 16px;
         }
 
-        .chain-details {
+        .chain_details {
           display: flex;
           flex-direction: column;
           gap: 8px;
@@ -214,7 +215,7 @@ export default function AddNewEVMChain(): JSX.Element {
           text-align: right;
         }
 
-        .rpcUrl {
+        .rpc_url {
           word-break: break-all;
         }
 
