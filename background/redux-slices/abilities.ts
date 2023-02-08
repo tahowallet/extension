@@ -49,15 +49,6 @@ const initialState: AbilitiesState = {
   hideDescription: false,
 }
 
-const isInitialState = (state: AbilitiesState): boolean =>
-  state.filter.state === initialState.filter.state &&
-  state.filter.types.every(
-    (type, idx) => type === initialState.filter.types[idx]
-  ) &&
-  state.filter.accounts.length === 0 &&
-  Object.keys(state.abilities).length === 0 &&
-  state.hideDescription === initialState.hideDescription
-
 const abilitiesSlice = createSlice({
   name: "abilities",
   initialState,
@@ -190,7 +181,7 @@ export const initAbilities = createBackgroundAsyncThunk(
       await main.pollForAbilities(address)
       // Accounts for filter should be enabled after the first initialization.
       // The state of the filters after each reload should not refresh.
-      if (isInitialState(abilities)) {
+      if (JSON.stringify(abilities) === JSON.stringify(initialState)) {
         dispatch(addAccount(address))
       }
     }
