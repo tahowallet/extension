@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import {
-  dispatchAddNetworkUserResponse,
+  addNetworkUserResponse,
   getAddNetworkRequestDetails,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { AddChainRequestData } from "@tallyho/tally-background/services/provider-bridge"
@@ -41,7 +41,7 @@ export default function AddNewEVMChain(): JSX.Element {
   } = networkDetails
 
   function handleUserResponse(success: boolean): void {
-    dispatch(dispatchAddNetworkUserResponse([requestId, success])).then(() =>
+    dispatch(addNetworkUserResponse([requestId, success])).then(() =>
       window.close()
     )
   }

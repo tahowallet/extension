@@ -240,7 +240,7 @@ export const getAddNetworkRequestDetails = createBackgroundAsyncThunk(
   }
 )
 
-export const dispatchAddNetworkUserResponse = createBackgroundAsyncThunk(
+export const addNetworkUserResponse = createBackgroundAsyncThunk(
   "ui/handleAddNetworkConfirmation",
   async ([requestId, result]: [string, boolean]) => {
     emitter.emit("addCustomNetworkResponse", [requestId, result])
