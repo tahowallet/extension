@@ -32,11 +32,22 @@ export default function AbilitiesHeader(): ReactElement {
     history.push("abilities")
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter") {
+      handleClick()
+    }
+  }
+
   return (
     <div
       className={classNames("abilities_header", {
         init_state: !hideDescription,
+        pointer: hideDescription,
       })}
+      tabIndex={0}
+      role="button"
+      onClick={hideDescription ? handleClick : undefined}
+      onKeyDown={hideDescription ? handleKeyDown : undefined}
     >
       <div className="info_container">
         <div className="abilities_info">
@@ -49,19 +60,7 @@ export default function AbilitiesHeader(): ReactElement {
             {t("header")}
           </div>
         </div>
-        <div
-          tabIndex={0}
-          role="button"
-          className="ability_count"
-          onClick={() => handleClick()}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleClick()
-            }
-          }}
-        >
-          {abilityCount}
-        </div>
+        <div className="ability_count">{abilityCount}</div>
       </div>
       {!hideDescription && (
         <div>
@@ -111,7 +110,9 @@ export default function AbilitiesHeader(): ReactElement {
           box-shadow: 0px 16px 16px rgba(7, 17, 17, 0.3),
             0px 6px 8px rgba(7, 17, 17, 0.24), 0px 2px 4px rgba(7, 17, 17, 0.34);
         }
-
+        .abilities_header.pointer {
+          cursor: pointer;
+        }
         .abilities_info {
           display: flex;
           flex-direction: row;
@@ -136,7 +137,6 @@ export default function AbilitiesHeader(): ReactElement {
           background: var(--hunter-green);
           border-radius: 17px;
           padding: 0px 8px;
-          cursor: pointer;
           height: 24px;
 
           font-weight: 500;
