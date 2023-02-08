@@ -61,6 +61,7 @@ function poapNFTModelToNFT(original: PoapNFTModel, owner: string): NFT {
     network: ETHEREUM,
     supply,
     isBadge: true,
+    rarity: {}, // no rarity rankings for POAPs
   }
 }
 

@@ -273,7 +273,6 @@ export default class Main extends BaseService<never> {
     const preferenceService = PreferenceService.create()
     const keyringService = KeyringService.create()
     const chainService = ChainService.create(preferenceService, keyringService)
-    const abilitiesService = AbilitiesService.create(chainService)
     const indexingService = IndexingService.create(
       preferenceService,
       chainService
@@ -308,6 +307,11 @@ export default class Main extends BaseService<never> {
     )
 
     const nftsService = NFTsService.create(chainService)
+
+    const abilitiesService = AbilitiesService.create(
+      chainService,
+      ledgerService
+    )
 
     const walletConnectService = isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT)
       ? WalletConnectService.create(
@@ -1543,7 +1547,9 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("newAbilities", (newAbilities) => {
       this.store.dispatch(addAbilities(newAbilities))
     })
-
+    this.abilitiesService.emitter.on("deleteAbilities", (address) => {
+      this.store.dispatch(deleteAbilitiesForAccount(address))
+    })
     this.abilitiesService.emitter.on("updatedAbility", (ability) => {
       this.store.dispatch(updateAbility(ability))
     })
@@ -1554,7 +1560,6 @@ export default class Main extends BaseService<never> {
     })
     this.abilitiesService.emitter.on("deleteAccount", (address) => {
       this.store.dispatch(deleteAccountFilter(address))
-      this.store.dispatch(deleteAbilitiesForAccount(address))
     })
   }
 
