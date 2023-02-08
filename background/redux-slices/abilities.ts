@@ -49,6 +49,15 @@ const initialState: AbilitiesState = {
   hideDescription: false,
 }
 
+const isInitialState = (state: AbilitiesState): boolean =>
+  state.filter.state === initialState.filter.state &&
+  state.filter.types.every(
+    (type, idx) => type === initialState.filter.types[idx]
+  ) &&
+  state.filter.accounts.length === 0 &&
+  Object.keys(state.abilities).length === 0 &&
+  state.hideDescription === initialState.hideDescription
+
 const abilitiesSlice = createSlice({
   name: "abilities",
   initialState,
@@ -169,16 +178,21 @@ export const initAbilities = createBackgroundAsyncThunk(
     address: NormalizedEVMAddress,
     { dispatch, getState, extra: { main } }
   ) => {
-    const { ledger, keyrings } = getState() as {
+    const { ledger, keyrings, abilities } = getState() as {
       ledger: LedgerState
       keyrings: KeyringsState
+      abilities: AbilitiesState
     }
     if (
       isImportOrInternalAccount(keyrings, address) ||
       isLedgerAccount(ledger, address)
     ) {
       await main.pollForAbilities(address)
-      dispatch(addAccount(address))
+      // Accounts for filter should be enabled after the first initialization.
+      // The state of the filters after each reload should not refresh.
+      if (isInitialState(abilities)) {
+        dispatch(addAccount(address))
+      }
     }
   }
 )
