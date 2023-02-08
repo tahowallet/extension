@@ -330,12 +330,6 @@ export default function SharedButton(
             font-size: 16px;
           }
 
-          .medium {
-            padding: 0 24px;
-            height: 40px;
-            font-size: 16px;
-          }
-
           .warning {
             background-color: var(--attention);
           }
