@@ -1,6 +1,7 @@
 import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
+  deleteAnalyticsData,
   selectCollectAnalytics,
   updateAnalyticsPreferences,
 } from "@tallyho/tally-background/redux-slices/ui"
@@ -14,9 +15,9 @@ import SharedToggleButton from "../../components/Shared/SharedToggleButton"
 
 /* List items */
 
-const analyticsRecordedItems = ["Orders", "Accounts", "Gas"] as const
+const analyticsRecordedItems = ["Trends", "Usage"] as const
 
-const analyticsNotRecordedItems = ["Seed", "Transactions"] as const
+const analyticsNotRecordedItems = ["Seed", "Info", "Balances"] as const
 
 export default function SettingsAnalytics(): ReactElement {
   const { t } = useTranslation("translation", {
@@ -41,6 +42,7 @@ export default function SettingsAnalytics(): ReactElement {
   }
 
   const handleDeleteSubmit = () => {
+    dispatch(deleteAnalyticsData())
     setShowDeleteMenu(false)
   }
 

@@ -5,10 +5,11 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 
 import BaseService from "../base"
 import { AnalyticsDatabase, getOrCreateDB } from "./db"
-import { sendPosthogEvent } from "../../lib/posthog"
+import { deletePerson, getPersonId, sendPosthogEvent } from "../../lib/posthog"
 import ChainService from "../chain"
 import PreferenceService from "../preferences"
 import { FeatureFlags, isEnabled as isFeatureFlagEnabled } from "../../features"
+import logger from "../../lib/logger"
 
 interface Events extends ServiceLifecycleEvents {
   enableDefaultOn: void
@@ -100,6 +101,16 @@ export default class AnalyticsService extends BaseService<Events> {
       const { uuid } = await this.getOrCreateAnalyticsUUID()
 
       sendPosthogEvent(uuid, eventName, payload)
+    }
+  }
+
+  async removeAnalyticsData(): Promise<void> {
+    try {
+      const { uuid } = await this.getOrCreateAnalyticsUUID()
+      const id = await getPersonId(uuid)
+      deletePerson(id)
+    } catch (e) {
+      logger.error("Deleting Analytics Data Failed ", e)
     }
   }
 
