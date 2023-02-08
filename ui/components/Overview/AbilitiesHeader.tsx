@@ -1,7 +1,7 @@
 import { toggleHideDescription } from "@tallyho/tally-background/redux-slices/abilities"
 import {
-  selectAbilityCount,
-  selectHideDescription,
+  selectDescriptionHidden,
+  selectOpenAbilityCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
 import React, { ReactElement } from "react"
@@ -15,13 +15,15 @@ export default function AbilitiesHeader(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "abilities",
   })
-  const newAbilities = useSelector(selectAbilityCount)
-  const hideDescription = useSelector(selectHideDescription)
+  const openAbilities = useSelector(selectOpenAbilityCount)
+  const hideDescription = useSelector(selectDescriptionHidden)
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
 
   const abilityCount =
-    newAbilities > 0 ? `${newAbilities} ${t("banner.new")}` : t("banner.none")
+    openAbilities > 0
+      ? `${openAbilities} ${t("banner.open")}`
+      : t("banner.none")
 
   const handleClick = () => {
     if (!hideDescription) {
@@ -30,11 +32,22 @@ export default function AbilitiesHeader(): ReactElement {
     history.push("abilities")
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter") {
+      handleClick()
+    }
+  }
+
   return (
     <div
       className={classNames("abilities_header", {
         init_state: !hideDescription,
+        pointer: hideDescription,
       })}
+      tabIndex={0}
+      role="button"
+      onClick={hideDescription ? handleClick : undefined}
+      onKeyDown={hideDescription ? handleKeyDown : undefined}
     >
       <div className="info_container">
         <div className="abilities_info">
@@ -47,19 +60,7 @@ export default function AbilitiesHeader(): ReactElement {
             {t("header")}
           </div>
         </div>
-        <div
-          tabIndex={0}
-          role="button"
-          className="ability_count"
-          onClick={() => handleClick()}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleClick()
-            }
-          }}
-        >
-          {abilityCount}
-        </div>
+        <div className="ability_count">{abilityCount}</div>
       </div>
       {!hideDescription && (
         <div>
@@ -109,7 +110,9 @@ export default function AbilitiesHeader(): ReactElement {
           box-shadow: 0px 16px 16px rgba(7, 17, 17, 0.3),
             0px 6px 8px rgba(7, 17, 17, 0.24), 0px 2px 4px rgba(7, 17, 17, 0.34);
         }
-
+        .abilities_header.pointer {
+          cursor: pointer;
+        }
         .abilities_info {
           display: flex;
           flex-direction: row;
@@ -134,14 +137,13 @@ export default function AbilitiesHeader(): ReactElement {
           background: var(--hunter-green);
           border-radius: 17px;
           padding: 0px 8px;
-          cursor: pointer;
           height: 24px;
 
           font-weight: 500;
           font-size: 14px;
           line-height: 16px;
           letter-spacing: 0.03em;
-          color: var(--${newAbilities > 0 ? "success" : "green-40"});
+          color: var(--${openAbilities > 0 ? "success" : "green-40"});
         }
 
         .desc {

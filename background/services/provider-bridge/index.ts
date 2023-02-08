@@ -25,7 +25,7 @@ import {
 import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
-import { PermissionMap } from "./utils"
+import { handleRPCErrorResponse, PermissionMap } from "./utils"
 import { toHexChainID } from "../../networks"
 import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 
@@ -33,6 +33,10 @@ type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
   initializeAllowedPages: PermissionMap
   setClaimReferrer: string
+  /**
+   * Contains the Wallet Connect URI required to pair/connect
+   */
+  walletConnectInit: string
 }
 
 /**
@@ -147,14 +151,38 @@ export default class ProviderBridgeService extends BaseService<Events> {
         defaultWallet: await this.preferenceService.getDefaultWallet(),
         chainId: toHexChainID(network.chainID),
       }
-    } else if (event.request.method === "tally_setClaimReferrer") {
-      const referrer = event.request.params[0]
-      if (origin !== WEBSITE_ORIGIN || typeof referrer !== "string") {
-        logger.warn(`invalid 'setClaimReferrer' request`)
-        return
-      }
+    } else if (event.request.method.startsWith("tally_")) {
+      switch (event.request.method) {
+        case "tally_setClaimReferrer":
+          if (origin !== WEBSITE_ORIGIN) {
+            logger.warn(
+              `invalid WEBSITE_ORIGIN ${WEBSITE_ORIGIN} when using a custom 'tally_...' method`
+            )
+            return
+          }
 
-      this.emitter.emit("setClaimReferrer", String(referrer))
+          if (typeof event.request.params[0] !== "string") {
+            logger.warn(`invalid 'tally_setClaimReferrer' request`)
+            return
+          }
+
+          this.emitter.emit("setClaimReferrer", String(event.request.params[0]))
+          break
+        case "tally_walletConnectInit": {
+          const [wcUri] = event.request.params
+          if (typeof wcUri === "string") {
+            await this.emitter.emit("walletConnectInit", wcUri)
+          } else {
+            logger.warn(`invalid 'tally_walletConnectInit' request`)
+          }
+
+          break
+        }
+        default:
+          logger.debug(
+            `Unknown method ${event.request.method} in 'ProviderBridgeService'`
+          )
+      }
 
       response.result = null
     } else if (
@@ -192,10 +220,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           event.request.params,
           origin
         )
-    } else if (
-      event.request.method === "eth_requestAccounts" ||
-      event.request.method === "eth_accounts"
-    ) {
+    } else if (event.request.method === "eth_requestAccounts") {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
 
@@ -250,6 +275,27 @@ export default class ProviderBridgeService extends BaseService<Events> {
         response.result = new EIP1193Error(
           EIP1193_ERROR_CODES.userRejectedRequest
         ).toJSON()
+      }
+    } else if (event.request.method === "eth_accounts") {
+      const dAppChainID = Number(
+        (await this.internalEthereumProviderService.routeSafeRPCRequest(
+          "eth_chainId",
+          [],
+          origin
+        )) as string
+      ).toString()
+
+      const permission = await this.checkPermission(origin, dAppChainID)
+
+      response.result = []
+
+      if (permission) {
+        response.result = await this.routeContentScriptRPCRequest(
+          permission,
+          "eth_accounts",
+          event.request.params,
+          origin
+        )
       }
     } else {
       // sorry dear dApp, there is no love for you here
@@ -455,8 +501,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         }
       }
     } catch (error) {
-      logger.log("error processing request", error)
-      return new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()
+      return handleRPCErrorResponse(error)
     }
   }
 }

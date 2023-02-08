@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from "react"
+import classNames from "classnames"
+import React, { ReactElement, useEffect, useState } from "react"
 
 type VerticalPosition = "top" | "bottom"
 type HorizontalPosition = "left" | "center" | "right"
@@ -6,9 +7,11 @@ type HorizontalPosition = "left" | "center" | "right"
 interface Props {
   verticalPosition?: VerticalPosition
   horizontalPosition?: HorizontalPosition
-  width: number
+  width?: number
   height?: number
-  style?: React.CSSProperties
+  type?: "default" | "dark"
+  isOpen?: boolean
+  disabled?: boolean
   children: React.ReactNode
   // TODO: find a better way to tell the IconComponent that the tooltip it open
   IconComponent?: ({
@@ -49,10 +52,16 @@ export default function SharedTooltip(props: Props): ReactElement {
     horizontalPosition = "center",
     width,
     height = 20,
-    style,
+    type = "default",
+    isOpen = false,
+    disabled = false,
     IconComponent,
   } = props
-  const [isShowingTooltip, setIsShowingTooltip] = useState(false)
+  const [isShowingTooltip, setIsShowingTooltip] = useState(isOpen)
+
+  useEffect(() => {
+    setIsShowingTooltip(isOpen)
+  }, [isOpen])
 
   return (
     <div
@@ -70,8 +79,12 @@ export default function SharedTooltip(props: Props): ReactElement {
       ) : (
         <div className="info_icon" />
       )}
-      {isShowingTooltip ? (
-        <div className="tooltip" style={style}>
+      {!disabled && isShowingTooltip ? (
+        <div
+          className={classNames("tooltip", {
+            dark: type === "dark",
+          })}
+        >
           {children}
         </div>
       ) : null}
@@ -92,7 +105,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             display: block;
           }
           .tooltip {
-            width: ${width}px;
+            width: ${width !== undefined ? `${width}px` : "auto"};
             position: absolute;
             box-shadow: 0 2px 4px rgba(0, 20, 19, 0.24),
               0 6px 8px rgba(0, 20, 19, 0.14), 0 16px 16px rgba(0, 20, 19, 0.04);
@@ -105,7 +118,17 @@ export default function SharedTooltip(props: Props): ReactElement {
             padding: 12px;
             z-index: 20;
             ${getVerticalPosition(verticalPosition, height)}
-            ${getHorizontalPosition(horizontalPosition, width)}
+            ${width !== undefined
+              ? getHorizontalPosition(horizontalPosition, width)
+              : ""}
+          }
+          .dark {
+            background: var(--green-120);
+            border-radius: 4px;
+            font-size: 16px;
+            line-height: 24px;
+            padding: 2px 8px;
+            color: var(--green-40);
           }
         `}
       </style>

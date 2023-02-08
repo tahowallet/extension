@@ -38,6 +38,8 @@ describe("Enrichment Service Transactions", () => {
         nameServicePromise,
       ])
 
+      await chainService.startService()
+
       await chainService.addAccountToTrack({
         address: "0x9eef87f4c08d8934cb2a3309df4dec5635338115",
         network: ETHEREUM,

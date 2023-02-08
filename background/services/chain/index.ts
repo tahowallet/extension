@@ -18,6 +18,7 @@ import {
   TransactionRequestWithNonce,
   SignedTransaction,
   toHexChainID,
+  NetworkBaseAsset,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import {
@@ -106,7 +107,11 @@ interface Events extends ServiceLifecycleEvents {
     transactions: Transaction[]
     account: AddressOnNetwork
   }
-  newAccountToTrack: AddressOnNetwork
+  newAccountToTrack: {
+    addressOnNetwork: AddressOnNetwork
+    source: "import" | "internal" | null
+  }
+  supportedNetworks: EVMNetwork[]
   accountsWithBalances: {
     /**
      * Retrieved balance for the network's base asset
@@ -348,9 +353,9 @@ export default class ChainService extends BaseService<Events> {
 
   async initializeNetworks(): Promise<void> {
     const rpcUrls = await this.db.getAllRpcUrls()
-    if (!this.supportedNetworks.length) {
-      this.supportedNetworks = await this.db.getAllEVMNetworks()
-    }
+
+    await this.updateSupportedNetworks()
+
     this.lastUserActivityOnNetwork =
       Object.fromEntries(
         this.supportedNetworks.map((network) => [network.chainID, 0])
@@ -361,7 +366,7 @@ export default class ChainService extends BaseService<Events> {
         this.supportedNetworks.map((network) => [
           network.chainID,
           makeSerialFallbackProvider(
-            network,
+            network.chainID,
             rpcUrls.find((v) => v.chainID === network.chainID)?.rpcUrls || []
           ),
         ])
@@ -870,7 +875,7 @@ export default class ChainService extends BaseService<Events> {
       network,
       assetAmount: {
         // Data stored in chain db for network base asset might be stale
-        asset: NETWORK_BY_CHAIN_ID[network.chainID].baseAsset,
+        asset: await this.db.getBaseAssetForNetwork(network.chainID),
         amount: balance.toBigInt(),
       },
       dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
@@ -894,12 +899,18 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
+    const source = await this.keyringService.getKeyringSourceForAddress(
+      addressNetwork.address
+    )
     const isAccountOnNetworkAlreadyTracked =
       await this.db.getTrackedAccountOnNetwork(addressNetwork)
     if (!isAccountOnNetworkAlreadyTracked) {
       // Skip save, emit and savedTransaction emission on resubmission
       await this.db.addAccountToTrack(addressNetwork)
-      this.emitter.emit("newAccountToTrack", addressNetwork)
+      this.emitter.emit("newAccountToTrack", {
+        addressOnNetwork: addressNetwork,
+        source,
+      })
     }
     this.emitSavedTransactions(addressNetwork)
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
@@ -914,11 +925,7 @@ export default class ChainService extends BaseService<Events> {
         e
       )
     })
-    if (
-      (await this.keyringService.getKeyringSourceForAddress(
-        addressNetwork.address
-      )) !== "internal"
-    ) {
+    if (source !== "internal") {
       this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
         logger.error(
           "chainService/addAccountToTrack: Error loading historic asset transfers",
@@ -1865,6 +1872,10 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
+  async getNetworkBaseAssets(): Promise<NetworkBaseAsset[]> {
+    return this.db.getAllBaseAssets()
+  }
+
   // Used to add non-default chains via wallet_addEthereumChain
   async addCustomChain(
     chainInfo: ValidatedAddEthereumChainParameter
@@ -1877,6 +1888,18 @@ export default class ChainService extends BaseService<Events> {
       assetName: chainInfo.nativeCurrency.name,
       rpcUrls: chainInfo.rpcUrls,
     })
-    this.supportedNetworks = await this.db.getAllEVMNetworks()
+    await this.updateSupportedNetworks()
+
+    this.providers.evm[chainInfo.chainId] = makeSerialFallbackProvider(
+      chainInfo.chainId,
+      chainInfo.rpcUrls
+    )
+    await this.startTrackingNetworkOrThrow(chainInfo.chainId)
+  }
+
+  async updateSupportedNetworks(): Promise<void> {
+    const supportedNetworks = await this.db.getAllEVMNetworks()
+    this.supportedNetworks = supportedNetworks
+    this.emitter.emit("supportedNetworks", supportedNetworks)
   }
 }

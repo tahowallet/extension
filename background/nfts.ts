@@ -51,6 +51,11 @@ export type NFT = {
   previewURL?: string
   transferDate?: string
   attributes: { trait: string; value: string }[]
+  rarity: {
+    rank?: number
+    score?: number
+    uniqueAttributes?: number
+  }
   contract: string
   owner: string
   network: EVMNetwork
@@ -82,6 +87,7 @@ export type TransferredNFT = {
   chainID: string
   from: string | null
   to: string | null
-  type: "sell" | "buy"
+  isKnownFromAddress: boolean
+  isKnownToAddress: boolean
   collectionID: string | null
 }

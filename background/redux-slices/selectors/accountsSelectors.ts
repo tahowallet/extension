@@ -88,10 +88,6 @@ const computeCombinedAssetAmountsData = (
   combinedAssetAmounts: CompleteAssetAmount[]
   totalMainCurrencyAmount: number | undefined
 } => {
-  // Keep a tally of the total user value; undefined if no main currency data
-  // is available.
-  let totalMainCurrencyAmount: number | undefined
-
   // Derive account "assets"/assetAmount which include USD values using
   // data from the assets slice
   const combinedAssetAmounts = assetAmounts
@@ -120,11 +116,6 @@ const computeCombinedAssetAmountsData = (
           mainCurrencyEnrichedAssetAmount.unitPrice
         )
       )
-
-      if (typeof fullyEnrichedAssetAmount.mainCurrencyAmount !== "undefined") {
-        totalMainCurrencyAmount ??= 0 // initialize if needed
-        totalMainCurrencyAmount += fullyEnrichedAssetAmount.mainCurrencyAmount
-      }
 
       return fullyEnrichedAssetAmount
     })
@@ -205,6 +196,16 @@ const computeCombinedAssetAmountsData = (
       // If only one asset has a main currency amount, it wins.
       return asset1.mainCurrencyAmount === undefined ? 1 : -1
     })
+
+  // Keep a tally of the total user value; undefined if no main currency data
+  // is available.
+  let totalMainCurrencyAmount: number | undefined
+  combinedAssetAmounts.forEach((assetAmount) => {
+    if (typeof assetAmount.mainCurrencyAmount !== "undefined") {
+      totalMainCurrencyAmount ??= 0 // initialize if needed
+      totalMainCurrencyAmount += assetAmount.mainCurrencyAmount
+    }
+  })
 
   return { combinedAssetAmounts, totalMainCurrencyAmount }
 }

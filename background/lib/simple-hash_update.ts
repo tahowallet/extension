@@ -39,6 +39,11 @@ type SimpleHashNFTModel = {
     }[]
   }
   owners: { owner_address: string; last_acquired_date: string }[]
+  rarity?: {
+    rank: number | null
+    score: number | null
+    unique_attributes: number | null
+  }
   extra_metadata: {
     attributes?: [{ trait_type?: string | null; value?: string | null }]
   }
@@ -111,11 +116,17 @@ function isGalxeAchievement(url: string | null | undefined) {
   return !!url && (url.includes("galaxy.eco") || url.includes("galxe.com"))
 }
 
+function isKnownAddress(address: string, allAddresses: string[]): boolean {
+  return allAddresses.some((current) => sameEVMAddress(current, address))
+}
+
 function getChainIDsNames(chainIDs: string[]) {
   return chainIDs
-    .map(
+    .flatMap(
       (chainID) =>
-        CHAIN_ID_TO_NAME[parseInt(chainID, 10) as keyof typeof CHAIN_ID_TO_NAME]
+        CHAIN_ID_TO_NAME[
+          parseInt(chainID, 10) as keyof typeof CHAIN_ID_TO_NAME
+        ] ?? []
     )
     .join(",")
 }
@@ -164,6 +175,7 @@ function simpleHashNFTModelToNFT(
     external_url: nftURL = "",
     collection: { collection_id: collectionID },
     extra_metadata: metadata,
+    rarity,
   } = original
 
   const thumbnailURL =
@@ -206,6 +218,11 @@ function simpleHashNFTModelToNFT(
     collectionID,
     contract: contractAddress,
     owner,
+    rarity: {
+      rank: rarity?.rank ?? undefined,
+      score: rarity?.score ?? undefined,
+      uniqueAttributes: rarity?.unique_attributes ?? undefined,
+    },
     network: NETWORK_BY_CHAIN_ID[chainID],
     isBadge: isGalxeAchievement(nftURL),
   }
@@ -329,23 +346,25 @@ export async function getSimpleHashNFTsTransfers(
 
     const { transfers, next } = result
 
-    const transferDetails: TransferredNFT[] = transfers.flatMap((transfer) =>
-      transfer.nft_id && (transfer.from_address || transfer.to_address)
-        ? {
-            id: transfer.nft_id,
-            chainID: SIMPLE_HASH_CHAIN_TO_ID[transfer.chain].toString(),
-            from: transfer.from_address,
-            to: transfer.to_address,
-            type: addresses.some((address) =>
-              sameEVMAddress(address, transfer.from_address)
-            )
-              ? "sell"
-              : "buy",
-            collectionID:
-              transfer.nft_details?.collection?.collection_id ?? null,
-          }
-        : []
-    )
+    const transferDetails: TransferredNFT[] = transfers.flatMap((transfer) => {
+      const { nft_id: id, from_address: from, to_address: to } = transfer
+      if (id && (from || to)) {
+        const isKnownFromAddress = !!from && isKnownAddress(from, addresses)
+        const isKnownToAddress = !!to && isKnownAddress(to, addresses)
+
+        return {
+          id,
+          chainID: SIMPLE_HASH_CHAIN_TO_ID[transfer.chain].toString(),
+          from,
+          to,
+          isKnownFromAddress,
+          isKnownToAddress,
+          collectionID: transfer.nft_details?.collection?.collection_id ?? null,
+        }
+      }
+
+      return []
+    })
 
     if (next) {
       const nextPageTransferDetails = await getSimpleHashNFTsTransfers(

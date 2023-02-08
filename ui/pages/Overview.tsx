@@ -51,7 +51,11 @@ function Overview(): ReactElement {
           balance={balance}
           initializationTimeExpired={initializationLoadingTimeExpired}
         />
-        {isEnabled(FeatureFlags.SUPPORT_ABILITIES) ? <AbilitiesHeader /> : null}
+        {isEnabled(FeatureFlags.SUPPORT_ABILITIES) ? (
+          <div className="abilities_wrap">
+            <AbilitiesHeader />
+          </div>
+        ) : null}
         <AccountList
           accountsTotal={accountsTotal}
           accountsCount={accountsCount}
@@ -97,6 +101,9 @@ function Overview(): ReactElement {
           }
           .panel_switcher {
             width: 100%;
+          }
+          .abilities_wrap {
+            margin-bottom: 24px;
           }
         `}
       </style>

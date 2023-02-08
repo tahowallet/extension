@@ -1,9 +1,9 @@
+import { Ability } from "@tallyho/tally-background/abilities"
 import { ETHEREUM } from "@tallyho/tally-background/constants"
 import {
   AccountData,
   AccountState,
 } from "@tallyho/tally-background/redux-slices/accounts"
-import { Ability } from "@tallyho/tally-background/services/abilities"
 import { NormalizedEVMAddress } from "@tallyho/tally-background/types"
 
 export const TEST_ADDRESS =
@@ -52,6 +52,7 @@ export const createAbility = (overrides: Partial<Ability> = {}): Ability => {
     title: "Test Ability",
     description: null,
     abilityId: "",
+    slug: "",
     linkUrl: "",
     completed: false,
     removedFromUi: false,

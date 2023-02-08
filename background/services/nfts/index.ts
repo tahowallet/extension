@@ -85,7 +85,7 @@ export default class NFTsService extends BaseService<Events> {
 
     this.chainService.emitter.on(
       "newAccountToTrack",
-      async (addressOnNetwork) => {
+      async ({ addressOnNetwork }) => {
         this.emitter.emit("isReloadingNFTs", true)
         await this.initializeCollections([addressOnNetwork])
         this.emitter.emit("isReloadingNFTs", false)
@@ -111,7 +111,7 @@ export default class NFTsService extends BaseService<Events> {
 
     const transfers = await this.fetchTransferredNFTs(accountsToFetch)
 
-    if (transfers.sold.length || transfers.bought.length) {
+    if (transfers.length) {
       await this.fetchCollections(accountsToFetch) // refetch only if there are some transfers
     }
     await this.fetchPOAPs(accountsToFetch)
@@ -130,6 +130,14 @@ export default class NFTsService extends BaseService<Events> {
         })
       )
     )
+  }
+
+  async refreshNFTsFromCollection(
+    collectionID: string,
+    account: AddressOnNetwork
+  ): Promise<void> {
+    this.setFreshCollection(collectionID, account.address, false)
+    await this.fetchNFTsFromCollection(collectionID, account)
   }
 
   async fetchNFTsFromCollection(
@@ -236,7 +244,8 @@ export default class NFTsService extends BaseService<Events> {
       this.emitter.emit("updateCollections", [updatedCollection])
     }
 
-    this.setFreshCollection(collectionID, account.address, true)
+    // if NFTs were fetched then mark as fresh
+    this.setFreshCollection(collectionID, account.address, !!updatedNFTs.length)
 
     const hasNextPage = !!Object.keys(nextPageURLs).length
 
@@ -280,45 +289,38 @@ export default class NFTsService extends BaseService<Events> {
 
   async fetchTransferredNFTs(
     accounts: AddressOnNetwork[]
-  ): Promise<{ sold: TransferredNFT[]; bought: TransferredNFT[] }> {
+  ): Promise<TransferredNFT[]> {
     const transfers = await getNFTsTransfers(
       accounts,
       this.#transfersLookupTimestamp
     )
 
     // indexing transfers can take some time, let's add some margin to the timestamp
-    this.#transfersLookupTimestamp = getUNIXTimestamp(Date.now() - 5 * MINUTE)
+    this.#transfersLookupTimestamp = getUNIXTimestamp(Date.now() - 2 * MINUTE)
 
-    const { sold, bought } = transfers.reduce(
-      (acc, transfer) => {
-        if (transfer.type === "buy") {
-          acc.bought.push(transfer)
-        } else {
-          acc.sold.push(transfer)
-        }
-        return acc
-      },
-      { sold: [], bought: [] } as {
-        sold: TransferredNFT[]
-        bought: TransferredNFT[]
+    // mark collections with transferred NFTs to be refetched
+    transfers.forEach((transfer) => {
+      const { collectionID, to, from, isKnownFromAddress, isKnownToAddress } =
+        transfer
+      if (collectionID && to && isKnownToAddress) {
+        this.setFreshCollection(collectionID, to, false)
       }
+      if (collectionID && from && isKnownFromAddress) {
+        this.setFreshCollection(collectionID, from, false)
+      }
+    })
+
+    const knownFromAddress = transfers.filter(
+      (transfer) => transfer.isKnownFromAddress
     )
 
-    if (bought.length) {
-      // mark collections with new NFTs to be refetched
-      bought.forEach((transfer) => {
-        const { collectionID, to } = transfer
-        if (collectionID && to) {
-          this.setFreshCollection(collectionID, to, false)
-        }
-      })
+    if (knownFromAddress.length) {
+      await this.db.removeNFTsByIDs(
+        knownFromAddress.map((transferred) => transferred.id)
+      )
+      this.emitter.emit("removeTransferredNFTs", knownFromAddress)
     }
 
-    if (sold.length) {
-      await this.db.removeNFTsByIDs(sold.map((transferred) => transferred.id))
-      this.emitter.emit("removeTransferredNFTs", sold)
-    }
-
-    return { sold, bought }
+    return transfers
   }
 }

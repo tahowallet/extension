@@ -3,7 +3,7 @@ import {
   ETHEREUM,
 } from "@tallyho/tally-background/constants"
 import { POAP_CONTRACT } from "@tallyho/tally-background/lib/poap_update"
-import { NFT } from "@tallyho/tally-background/nfts"
+import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts_update"
 import React from "react"
 
 type ExploreMarketLinkProps = {
@@ -23,7 +23,7 @@ type MarketDetails = {
   color: string
   icon: string
   hoverIcon?: string
-  getNFTLink: (nft: NFT) => string
+  getNFTLink: (nft: NFTCached) => string
 }
 
 export const MARKET_LINK: Record<string, MarketDetails> = {
@@ -33,13 +33,10 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
     color: "#409FFF",
     hoverColor: "#A8D4FF",
     icon: "opensea.png",
-    getNFTLink: (nft: NFT): string =>
+    getNFTLink: (nft: NFTCached): string =>
       `https://opensea.io/assets/${
         CHAIN_ID_TO_OPENSEA_CHAIN[
-          parseInt(
-            nft.network.chainID,
-            10
-          ) as keyof typeof CHAIN_ID_TO_OPENSEA_CHAIN
+          parseInt(nft.chainID, 10) as keyof typeof CHAIN_ID_TO_OPENSEA_CHAIN
         ]
       }/${nft.contract}/${nft.tokenId}`,
   },
@@ -49,7 +46,7 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
     color: "#2DE370",
     hoverColor: "#B3F5CB",
     icon: "looksrare.png",
-    getNFTLink: (nft: NFT): string =>
+    getNFTLink: (nft: NFTCached): string =>
       `https://looksrare.org/collections/${nft.contract}/${nft.tokenId}`,
   },
   galxe: {
@@ -58,7 +55,7 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
     color: "#D6EAE9",
     hoverColor: "#ffffff",
     icon: "galxe.svg",
-    getNFTLink: (nft: NFT): string =>
+    getNFTLink: (nft: NFTCached): string =>
       `https://galxe.com/nft/${nft.tokenId}/${nft.contract}`,
   },
   poap: {
@@ -68,19 +65,19 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
     hoverColor: "#E8E5FF",
     icon: "poap.png",
     hoverIcon: "poap_white.png",
-    getNFTLink: (nft: NFT): string =>
+    getNFTLink: (nft: NFTCached): string =>
       `https://app.poap.xyz/token/${nft.tokenId}`,
   },
 }
 
-export function getRelevantMarketsList(nft: NFT): MarketDetails[] {
+export function getRelevantMarketsList(nft: NFTCached): MarketDetails[] {
   if (nft.contract === POAP_CONTRACT) {
     return [MARKET_LINK.poap]
   }
   if (nft.isBadge) {
     return [MARKET_LINK.galxe]
   }
-  if (nft.network.chainID !== ETHEREUM.chainID) {
+  if (nft.chainID !== ETHEREUM.chainID) {
     return [MARKET_LINK.opensea]
   }
   return [MARKET_LINK.opensea, MARKET_LINK.looksrare]

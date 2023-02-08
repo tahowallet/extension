@@ -1,3 +1,5 @@
+import { WALLET_CONNECT_INJECTED_UI } from "./wallet-connect"
+
 const TALLY_ICON_URL =
   "https://tally.cash/icons/icon-144x144.png?v=41306c4d4e6795cdeaecc31bd794f68e"
 
@@ -446,6 +448,47 @@ function findAndReplaceAlpacaFinanceMetamaskOption(addedNode: Node): void {
   }
 }
 
+function addTallyButtonForWalletConnectModal(addedNode: Node): void {
+  if (!(addedNode instanceof HTMLElement)) {
+    return
+  }
+
+  let container: HTMLElement | null | undefined
+
+  if (addedNode.children?.[1]?.className === "walletconnect-search__input") {
+    container = addedNode
+    // On slow network connections the connect buttons could appear after the search input
+  } else if (
+    addedNode.className === "walletconnect-connect__button__icon_anchor"
+  ) {
+    container = addedNode.parentElement?.parentElement
+  }
+
+  const walletButtonsWrapper = container?.children[2]
+  const aWalletButton = walletButtonsWrapper?.children[2] as
+    | HTMLAnchorElement
+    | undefined
+
+  if (!walletButtonsWrapper || !aWalletButton) {
+    return
+  }
+
+  const aUrl = new URL(aWalletButton.href)
+
+  const wcUri = aUrl.searchParams.get("uri")
+
+  const injectedUI = document.createElement("div")
+  injectedUI.innerHTML = WALLET_CONNECT_INJECTED_UI
+
+  const tallyButton = injectedUI.querySelector("button")
+  if (tallyButton) {
+    tallyButton.onclick = () => {
+      window?.tally?.send("tally_walletConnectInit", [wcUri])
+    }
+    walletButtonsWrapper.before(injectedUI)
+  }
+}
+
 const hostnameToHandler = {
   "uniswap.org": findAndReplaceUniswapInjectedOption,
   "gmx.io": findAndReplaceGMXMetamaskOption,
@@ -469,4 +512,8 @@ export default function monitorForWalletConnectionPrompts(): void {
       observeMutations(hostnameToHandler[hostname])
     }
   })
+
+  if (process.env.SUPPORT_WALLET_CONNECT === "true") {
+    observeMutations(addTallyButtonForWalletConnectModal)
+  }
 }
