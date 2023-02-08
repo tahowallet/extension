@@ -29,7 +29,7 @@ export type Filter = {
   accounts: string[]
 }
 
-type AbilitiesState = {
+export type AbilitiesState = {
   filter: Filter
   abilities: {
     [address: HexString]: {
@@ -37,6 +37,7 @@ type AbilitiesState = {
     }
   }
   hideDescription: boolean
+  isInitiated: boolean
 }
 
 const initialState: AbilitiesState = {
@@ -47,6 +48,7 @@ const initialState: AbilitiesState = {
   },
   abilities: {},
   hideDescription: false,
+  isInitiated: false,
 }
 
 const abilitiesSlice = createSlice({
@@ -169,16 +171,20 @@ export const initAbilities = createBackgroundAsyncThunk(
     address: NormalizedEVMAddress,
     { dispatch, getState, extra: { main } }
   ) => {
-    const { ledger, keyrings } = getState() as {
+    const { ledger, keyrings, abilities } = getState() as {
       ledger: LedgerState
       keyrings: KeyringsState
+      abilities: AbilitiesState
     }
     if (
       isImportOrInternalAccount(keyrings, address) ||
       isLedgerAccount(ledger, address)
     ) {
       await main.pollForAbilities(address)
-      dispatch(addAccount(address))
+
+      if (abilities.isInitiated) {
+        dispatch(addAccount(address))
+      }
     }
   }
 )
