@@ -171,20 +171,16 @@ export const initAbilities = createBackgroundAsyncThunk(
     address: NormalizedEVMAddress,
     { dispatch, getState, extra: { main } }
   ) => {
-    const { ledger, keyrings, abilities } = getState() as {
+    const { ledger, keyrings } = getState() as {
       ledger: LedgerState
       keyrings: KeyringsState
-      abilities: AbilitiesState
     }
     if (
       isImportOrInternalAccount(keyrings, address) ||
       isLedgerAccount(ledger, address)
     ) {
       await main.pollForAbilities(address)
-
-      if (abilities.isInitiated) {
-        dispatch(addAccount(address))
-      }
+      dispatch(addAccount(address))
     }
   }
 )
