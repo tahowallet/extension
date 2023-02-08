@@ -7,7 +7,7 @@ type HorizontalPosition = "left" | "center" | "right"
 interface Props {
   verticalPosition?: VerticalPosition
   horizontalPosition?: HorizontalPosition
-  width: number
+  width?: number
   height?: number
   type?: "default" | "dark"
   isOpen?: boolean
@@ -105,7 +105,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             display: block;
           }
           .tooltip {
-            width: ${width}px;
+            width: ${width !== undefined ? `${width}px` : "auto"};
             position: absolute;
             box-shadow: 0 2px 4px rgba(0, 20, 19, 0.24),
               0 6px 8px rgba(0, 20, 19, 0.14), 0 16px 16px rgba(0, 20, 19, 0.04);
@@ -118,7 +118,9 @@ export default function SharedTooltip(props: Props): ReactElement {
             padding: 12px;
             z-index: 20;
             ${getVerticalPosition(verticalPosition, height)}
-            ${getHorizontalPosition(horizontalPosition, width)}
+            ${width !== undefined
+              ? getHorizontalPosition(horizontalPosition, width)
+              : ""}
           }
           .dark {
             background: var(--green-120);
