@@ -44,7 +44,14 @@ interface Events extends ServiceLifecycleEvents {
  * and sanitize the communication properly before it can reach the rest of the codebase.
  */
 export default class WalletConnectService extends BaseService<Events> {
-  signClient: SignClient | undefined
+  #signClientv2: SignClient | undefined
+
+  private get signClientv2(): SignClient {
+    if (!this.#signClientv2) {
+      throw new Error("WalletConnect: SignClient v2 has not initialized")
+    }
+    return this.#signClientv2
+  }
 
   senderUrl = ""
 
@@ -87,14 +94,11 @@ export default class WalletConnectService extends BaseService<Events> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    this.signClient = await createSignClient()
+    this.#signClientv2 = await createSignClient()
     this.defineEventHandlers()
 
-    this.providerBridgeService.emitter.on(
-      "walletConnectInit",
-      async (wcUri: string) => {
-        this.performConnection(wcUri)
-      }
+    this.providerBridgeService.emitter.on("walletConnectInit", async (wcUri) =>
+      this.performConnection(wcUri)
     )
   }
 
@@ -106,41 +110,49 @@ export default class WalletConnectService extends BaseService<Events> {
   }
 
   private defineEventHandlers(): void {
-    this.signClient?.on("session_proposal", (proposal) =>
+    this.signClientv2.on("session_proposal", (proposal) =>
       this.sessionProposalListener(false, proposal)
     )
 
-    this.signClient?.on("session_request", (event) =>
+    this.signClientv2.on("session_request", (event) =>
       this.sessionRequestListener(false, event)
     )
   }
 
   async performConnection(uri: string): Promise<void> {
-    if (this.signClient === undefined) {
-      WalletConnectService.tempFeatureLog("signClient undefined")
-      return
-    }
-
     try {
       const { version } = parseUri(uri)
 
-      // Route the provided URI to the v1 SignClient if URI version indicates it, else use v2.
-      if (version === 1) {
-        WalletConnectService.tempFeatureLog("legacy pairing", parseUri(uri))
-        createLegacySignClient(
-          uri,
-          (payload) => this.sessionProposalListener(true, undefined, payload),
-          (payload) => this.sessionRequestListener(true, undefined, payload)
-        )
-      } else if (version === 2) {
-        await this.signClient.pair({ uri })
-        WalletConnectService.tempFeatureLog("pairing request sent")
-      } else {
-        // TODO: decide how to handle this
-        WalletConnectService.tempFeatureLog("unhandled uri")
+      switch (true) {
+        // Route the provided URI to the v1 SignClient if URI version indicates it.
+        case version === 1:
+          WalletConnectService.tempFeatureLog("legacy pairing", parseUri(uri))
+
+          createLegacySignClient(
+            uri,
+            (payload) => this.sessionProposalListener(true, undefined, payload),
+            (payload) => this.sessionRequestListener(true, undefined, payload)
+          )
+          break
+
+        case version === 2:
+          await this.signClientv2.pair({ uri })
+          WalletConnectService.tempFeatureLog("pairing request sent")
+          break
+
+        default:
+          // TODO: decide how to handle this
+          WalletConnectService.tempFeatureLog(
+            "unhandled uri version: ",
+            version
+          )
+          break
       }
     } catch (err: unknown) {
-      WalletConnectService.tempFeatureLog("TODO: handle error", err)
+      WalletConnectService.tempFeatureLog(
+        "TODO: Error while establishing session",
+        err
+      )
     }
   }
 
@@ -176,8 +188,8 @@ export default class WalletConnectService extends BaseService<Events> {
       events: requiredNamespaces[ethNamespaceKey].events,
     }
 
-    if (this.signClient !== undefined && relays.length > 0) {
-      const { acknowledged } = await this.signClient.approve({
+    if (relays.length > 0) {
+      const { acknowledged } = await this.signClientv2.approve({
         id,
         relayProtocol: relays[0].protocol,
         namespaces,
@@ -192,7 +204,7 @@ export default class WalletConnectService extends BaseService<Events> {
   }
 
   private async rejectProposal(id: number) {
-    await this.signClient?.reject({
+    await this.signClientv2.reject({
       id,
       reason: getSdkError("USER_REJECTED_METHODS"),
     })
@@ -200,11 +212,11 @@ export default class WalletConnectService extends BaseService<Events> {
 
   private async postApprovalResponse(
     event: TranslatedRequestParams,
-    payload: any
+    payload: string
   ) {
     const { topic } = event
     const response = approveEIP155Request(event, payload)
-    await this.signClient?.respond({
+    await this.signClientv2.respond({
       topic,
       response,
     })
@@ -213,7 +225,7 @@ export default class WalletConnectService extends BaseService<Events> {
   private async postRejectionResponse(event: TranslatedRequestParams) {
     const { topic } = event
     const response = rejectEIP155Request(event)
-    await this.signClient?.respond({
+    await this.signClientv2.respond({
       topic,
       response,
     })
@@ -227,10 +239,15 @@ export default class WalletConnectService extends BaseService<Events> {
     WalletConnectService.tempFeatureLog("in sessionRequestListener", event)
 
     let request: TranslatedRequestParams | undefined
+
     if (isLegacy && legacyEvent) {
       request = processLegacyRequestParams(legacyEvent)
     } else if (event) {
       request = processRequestParams(event)
+    }
+
+    if (!request) {
+      return
     }
 
     const port = getMetaPort(
@@ -260,10 +277,6 @@ export default class WalletConnectService extends BaseService<Events> {
       }
     )
 
-    if (!request) {
-      return
-    }
-
     await this.providerBridgeService.onMessageListener(port, {
       id: "1400",
       request,
@@ -275,16 +288,26 @@ export default class WalletConnectService extends BaseService<Events> {
     proposal?: SignClientTypes.EventArguments["session_proposal"],
     legacyProposal?: LegacyProposal
   ): Promise<void> {
-    WalletConnectService.tempFeatureLog("in sessionProposalListener", proposal)
+    WalletConnectService.tempFeatureLog(
+      "in sessionProposalListener",
+      proposal ?? legacyProposal
+    )
+
+    let favicon = ""
+    let dAppName = ""
 
     if (isLegacy && legacyProposal) {
       const { params } = legacyProposal
       if (Array.isArray(params) && params.length > 0) {
         this.senderUrl = params[0].peerMeta?.url || ""
+        favicon = params[0].peerMeta.icons?.[0] ?? ""
+        dAppName = params[0].peerMeta.name ?? ""
       }
     } else if (proposal) {
       const { params } = proposal
       this.senderUrl = params.proposer.metadata.url // we can also extract information such as icons and description
+      favicon = params.proposer.metadata.icons?.[0] ?? ""
+      dAppName = params.proposer.metadata.name ?? ""
     }
 
     if (!this.senderUrl) {
@@ -316,7 +339,7 @@ export default class WalletConnectService extends BaseService<Events> {
       id: "1300",
       request: {
         method: "eth_requestAccounts",
-        params: [],
+        params: [dAppName, favicon],
       },
     })
   }

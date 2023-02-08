@@ -39,6 +39,11 @@ type SimpleHashNFTModel = {
     }[]
   }
   owners: { owner_address: string; last_acquired_date: string }[]
+  rarity?: {
+    rank: number | null
+    score: number | null
+    unique_attributes: number | null
+  }
   extra_metadata: {
     attributes?: [{ trait_type?: string | null; value?: string | null }]
   }
@@ -170,6 +175,7 @@ function simpleHashNFTModelToNFT(
     external_url: nftURL = "",
     collection: { collection_id: collectionID },
     extra_metadata: metadata,
+    rarity,
   } = original
 
   const thumbnailURL =
@@ -212,6 +218,11 @@ function simpleHashNFTModelToNFT(
     collectionID,
     contract: contractAddress,
     owner,
+    rarity: {
+      rank: rarity?.rank ?? undefined,
+      score: rarity?.score ?? undefined,
+      uniqueAttributes: rarity?.unique_attributes ?? undefined,
+    },
     network: NETWORK_BY_CHAIN_ID[chainID],
     isBadge: isGalxeAchievement(nftURL),
   }
