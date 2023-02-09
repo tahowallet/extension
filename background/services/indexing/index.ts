@@ -837,6 +837,13 @@ export default class IndexingService extends BaseService<Events> {
         const loadBaseAccountBalance =
           this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
 
+        /**
+         * When the provider supports alchemy we use alchemy_getTokenBalances
+         * to query which assets to track so it's safe to use assets we already
+         * stored as tracked in the db. We use the network's cached assets otherwise
+         * because we don't know exactly what tokens the user is holding, therefore,
+         * we query balances for every token we've seen.
+         */
         const assetsToCheck = provider.supportsAlchemy
           ? activeAssetsToTrack
           : // This doesn't pass assetsToTrack as it assumes they've already been cached
