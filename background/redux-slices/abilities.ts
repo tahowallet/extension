@@ -165,17 +165,25 @@ export const reportAndRemoveAbility = createBackgroundAsyncThunk(
 
 export const initAbilities = createBackgroundAsyncThunk(
   "abilities/initAbilities",
-  async (address: NormalizedEVMAddress, { getState, extra: { main } }) => {
-    const { ledger, keyrings } = getState() as {
+  async (
+    address: NormalizedEVMAddress,
+    { dispatch, getState, extra: { main } }
+  ) => {
+    const { ledger, keyrings, abilities } = getState() as {
       ledger: LedgerState
       keyrings: KeyringsState
+      abilities: AbilitiesState
     }
-
     if (
       isImportOrInternalAccount(keyrings, address) ||
       isLedgerAccount(ledger, address)
     ) {
       await main.pollForAbilities(address)
+      // Accounts for filter should be enabled after the first initialization.
+      // The state of the filters after each reload should not refresh.
+      if (JSON.stringify(abilities) === JSON.stringify(initialState)) {
+        dispatch(addAccount(address))
+      }
     }
   }
 )

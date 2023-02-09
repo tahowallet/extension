@@ -25,7 +25,11 @@ import {
 import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
-import { handleRPCErrorResponse, PermissionMap } from "./utils"
+import {
+  handleRPCErrorResponse,
+  parseRPCRequestParams,
+  PermissionMap,
+} from "./utils"
 import { toHexChainID } from "../../networks"
 import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 
@@ -33,6 +37,9 @@ type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
   initializeAllowedPages: PermissionMap
   setClaimReferrer: string
+  /**
+   * Contains the Wallet Connect URI required to pair/connect
+   */
   walletConnectInit: string
 }
 
@@ -165,17 +172,16 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
           this.emitter.emit("setClaimReferrer", String(event.request.params[0]))
           break
-        case "tally_walletConnectInit":
-          if (typeof event.request.params[0] !== "string") {
+        case "tally_walletConnectInit": {
+          const [wcUri] = event.request.params
+          if (typeof wcUri === "string") {
+            await this.emitter.emit("walletConnectInit", wcUri)
+          } else {
             logger.warn(`invalid 'tally_walletConnectInit' request`)
-            return
           }
 
-          await this.emitter.emit(
-            "walletConnectInit",
-            String(event.request.params[0])
-          )
           break
+        }
         default:
           logger.debug(
             `Unknown method ${event.request.method} in 'ProviderBridgeService'`
@@ -429,9 +435,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
   async routeContentScriptRPCRequest(
     enablingPermission: PermissionRequest,
     method: string,
-    params: RPCRequest["params"],
+    rawParams: RPCRequest["params"],
     origin: string
   ): Promise<unknown> {
+    const params = parseRPCRequestParams(enablingPermission, method, rawParams)
+
     try {
       switch (method) {
         case "eth_requestAccounts":

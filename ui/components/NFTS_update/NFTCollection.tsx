@@ -173,7 +173,7 @@ export default function NFTCollection(props: {
         .nft_collection_wrapper {
           position: relative;
           width: 168px;
-          min-height: 208px;
+          min-height: 212px;
         }
         .nft_collection {
           position: absolute;
