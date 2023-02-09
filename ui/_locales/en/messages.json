@@ -276,6 +276,7 @@
       "nfts": "Explore markets",
       "badge": "Explore badges"
     },
+    "networksBanner": "Didn't see NFTs from all your chains? Activate that chain by switching to it.",
     "filters": {
       "title": "Filter collections",
       "warning": "Changing filters here will affect your Portfolio page as well.",
