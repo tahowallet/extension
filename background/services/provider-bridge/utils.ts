@@ -60,7 +60,7 @@ export function parsedRPCErrorResponse(error: { body: string }):
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function handleRPCErrorResponse(error: unknown) {
   let response
-  logger.log("error processing request", error)
+  logger.error("error processing request", error)
   if (typeof error === "object" && error !== null) {
     /**
      * Get error per the RPC method’s specification
