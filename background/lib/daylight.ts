@@ -82,9 +82,14 @@ export const getDaylightAbilities = async (
   address: string
 ): Promise<DaylightAbility[]> => {
   try {
-    const response: AbilitiesResponse = await fetchJson(
-      `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities?deadline=all`
-    )
+    const response: AbilitiesResponse = await fetchJson({
+      url: `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities?deadline=all`,
+      ...(process.env.DAYLIGHT_API_KEY && {
+        headers: {
+          Authorization: `Bearer ${process.env.DAYLIGHT_API_KEY}`,
+        },
+      }),
+    })
 
     return response.abilities
   } catch (err) {
