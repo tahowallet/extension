@@ -74,7 +74,7 @@ export default function NFTListPortfolio(props: {
           }
           .simple_text {
             color: var(--green-20);
-            margin: 0 10px 0 4px;
+            margin: 0 25px 0 4px;
           }
         `}
       </style>
