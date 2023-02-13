@@ -245,7 +245,7 @@ class Logger {
       .join("\n    ")
 
     const logKey = `logs-${level}`
-    const existingLogs = this.store.get(logKey) ?? ""
+    const existingLogs = this.store.get(logKey)
 
     const fullPrefix = `[${isoDateString}] [${level.toUpperCase()}:${
       this.contextId
@@ -257,9 +257,9 @@ class Logger {
     const purgedData = purgeSensitiveFailSafe(logData)
     const updatedLogs =
       `${existingLogs}${fullPrefix} ${logLabel}\n${purgedData}\n\n`
-        // Restrict each log level to hold 50k characters to avoid excess resource
+        // Restrict each log level to hold the last 50k characters to avoid excess resource
         // usage.
-        .substring(0, 50000)
+        .slice(-50000)
 
     this.store.set(logKey, updatedLogs)
   }
@@ -294,23 +294,31 @@ class Logger {
       return splitLogs
     })
 
-    return (
-      logEntries
-        // Only grab logs from the past hour
-        .filter((logLine) => {
-          return (
-            new Date(logLine.substring(1, iso8601Length)) >
-            new Date(Date.now() - HOUR)
-          )
-        })
-        // Sort by date.
-        .sort((a, b) => {
-          return a
-            .substr(1, iso8601Length)
-            .localeCompare(b.substr(1, iso8601Length))
-        })
-        .join("\n")
-    )
+    // This check is here to safeguard array access in the filter below
+    if (logEntries.length < 1) {
+      return ""
+    }
+
+    const dateFromLogEntry = (dateStr: string) =>
+      new Date(dateStr.substring(1, iso8601Length))
+
+    const entriesByDateAsc = logEntries
+      // Sort by date.
+      .sort((a, b) => {
+        return a
+          .substr(1, iso8601Length)
+          .localeCompare(b.substr(1, iso8601Length))
+      })
+
+    const lastEntry = entriesByDateAsc[entriesByDateAsc.length - 1]
+    const lastEntryDate = dateFromLogEntry(lastEntry)
+
+    return entriesByDateAsc // Only grab logs from the last available hour
+      .filter(
+        (logLine) =>
+          dateFromLogEntry(logLine).getTime() >= lastEntryDate.getTime() - HOUR
+      )
+      .join("\n")
   }
 }
 
