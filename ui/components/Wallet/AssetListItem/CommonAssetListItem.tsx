@@ -5,6 +5,7 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 import { useTranslation } from "react-i18next"
 import { isBuiltInNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
@@ -115,14 +116,16 @@ export default function CommonAssetListItem(
               state={assetAmount.asset}
               iconClass="asset_icon_send"
             />
-            <SharedIconRouterLink
-              path="/swap"
-              state={{
-                symbol: assetAmount.asset.symbol,
-                contractAddress,
-              }}
-              iconClass="asset_icon_swap"
-            />
+            {NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID) && (
+              <SharedIconRouterLink
+                path="/swap"
+                state={{
+                  symbol: assetAmount.asset.symbol,
+                  contractAddress,
+                }}
+                iconClass="asset_icon_swap"
+              />
+            )}
           </>
         </div>
       </div>
