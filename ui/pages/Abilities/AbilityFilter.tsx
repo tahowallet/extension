@@ -7,7 +7,6 @@ import {
   addAccount,
   deleteAccount,
 } from "@tallyho/tally-background/redux-slices/abilities"
-import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   selectAbilityFilterAccounts,
   selectAbilityFilterState,
@@ -71,9 +70,6 @@ export default function AbilityFilter(): ReactElement {
   const types = useBackgroundSelector(selectAbilityFilterTypes)
   const accounts = useBackgroundSelector(selectAbilityFilterAccounts)
   const accountTotals = useBackgroundSelector(selectAccountTotals)
-  const filteredAccountTotals = accountTotals.filter(
-    ({ accountType }) => accountType !== AccountType.ReadOnly
-  )
   const dispatch = useBackgroundDispatch()
 
   const handleUpdateState = useCallback(
@@ -138,8 +134,8 @@ export default function AbilityFilter(): ReactElement {
         <div className="simple_text">
           <span className="filter_title">{t("accountsTitle")}</span>
           <div className="filter_list">
-            {filteredAccountTotals.length > 0 ? (
-              filteredAccountTotals.map(({ address, name, avatarURL }) => (
+            {accountTotals.length > 0 ? (
+              accountTotals.map(({ address, name, avatarURL }) => (
                 <SharedToggleItem
                   key={address}
                   label={name || address}

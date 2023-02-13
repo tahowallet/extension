@@ -623,10 +623,7 @@ export default class Main extends BaseService<never> {
       await this.nftsService.removeNFTsForAddress(address)
     }
     // remove abilities
-    if (
-      isEnabled(FeatureFlags.SUPPORT_ABILITIES) &&
-      signer.type !== AccountType.ReadOnly
-    ) {
+    if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
       await this.abilitiesService.deleteAbilitiesForAccount(address)
     }
     // remove dApp premissions

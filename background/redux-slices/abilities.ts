@@ -5,6 +5,7 @@ import { KeyringsState } from "./keyrings"
 import { LedgerState } from "./ledger"
 import { createBackgroundAsyncThunk } from "./utils"
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const isLedgerAccount = (
   ledger: LedgerState,
   address: NormalizedEVMAddress
@@ -15,6 +16,7 @@ const isLedgerAccount = (
     )
     .includes(address)
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const isImportOrInternalAccount = (
   keyrings: KeyringsState,
   address: NormalizedEVMAddress
@@ -169,21 +171,14 @@ export const initAbilities = createBackgroundAsyncThunk(
     address: NormalizedEVMAddress,
     { dispatch, getState, extra: { main } }
   ) => {
-    const { ledger, keyrings, abilities } = getState() as {
-      ledger: LedgerState
-      keyrings: KeyringsState
+    const { abilities } = getState() as {
       abilities: AbilitiesState
     }
-    if (
-      isImportOrInternalAccount(keyrings, address) ||
-      isLedgerAccount(ledger, address)
-    ) {
-      await main.pollForAbilities(address)
-      // Accounts for filter should be enabled after the first initialization.
-      // The state of the filters after each reload should not refresh.
-      if (JSON.stringify(abilities) === JSON.stringify(initialState)) {
-        dispatch(addAccount(address))
-      }
+    await main.pollForAbilities(address)
+    // Accounts for filter should be enabled after the first initialization.
+    // The state of the filters after each reload should not refresh.
+    if (JSON.stringify(abilities) === JSON.stringify(initialState)) {
+      dispatch(addAccount(address))
     }
   }
 )
