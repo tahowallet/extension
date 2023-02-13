@@ -14,8 +14,6 @@ import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/a
 import BaseService from "../base"
 import InternalEthereumProviderService, {
   AddEthereumChainParameter,
-  validateAddEthereumChainParameter,
-  ValidatedAddEthereumChainParameter,
 } from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -29,7 +27,12 @@ import {
 import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
-import { handleRPCErrorResponse, PermissionMap } from "./utils"
+import {
+  handleRPCErrorResponse,
+  PermissionMap,
+  validateAddEthereumChainParameter,
+  ValidatedAddEthereumChainParameter,
+} from "./utils"
 import { toHexChainID } from "../../networks"
 import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 
