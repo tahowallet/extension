@@ -103,6 +103,10 @@ export async function getTokenPrices(
 ): Promise<{
   [contractAddress: string]: UnitPricePoint<FungibleAsset>
 }> {
+  if (tokenAddresses.length < 1) {
+    return {}
+  }
+
   const fiatSymbol = fiatCurrency.symbol
 
   const prices: {

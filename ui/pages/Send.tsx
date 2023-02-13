@@ -33,8 +33,8 @@ import classNames from "classnames"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
-import { NFT } from "@tallyho/tally-background/nfts"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts_update"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
@@ -60,7 +60,7 @@ export default function Send(): ReactElement {
   )
 
   const [assetType, setAssetType] = useState<"token" | "nft">("token")
-  const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null)
+  const [selectedNFT, setSelectedNFT] = useState<NFTCached | null>(null)
 
   const handleAssetSelect = (asset: FungibleAsset) => {
     setSelectedAsset(asset)

@@ -2,8 +2,8 @@ import React, { ReactElement, useCallback } from "react"
 
 import { matchPath, useHistory, useLocation } from "react-router-dom"
 import {
-  selectAbilityCount,
   selectCurrentNetwork,
+  selectOpenAbilityCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants/networks"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
@@ -26,7 +26,7 @@ export default function TabBar(): ReactElement {
   const location = useLocation()
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const abilityCount = useBackgroundSelector(
-    isEnabled(FeatureFlags.SUPPORT_ABILITIES) ? selectAbilityCount : () => 0
+    isEnabled(FeatureFlags.SUPPORT_ABILITIES) ? selectOpenAbilityCount : () => 0
   )
 
   const history = useHistory()

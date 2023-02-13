@@ -3,6 +3,10 @@ import { v4 as uuidv4 } from "uuid"
 import { FeatureFlags, isEnabled } from "../features"
 import logger from "./logger"
 
+const POSTHOG_PROJECT_ID = "11112"
+
+const PERSON_ENDPOINT = `https://app.posthog.com/api/projects/${POSTHOG_PROJECT_ID}/persons`
+
 export const POSTHOG_URL =
   process.env.POSTHOG_URL ?? "https://app.posthog.com/capture/"
 
@@ -68,4 +72,25 @@ export function sendPosthogEvent(
   } catch (e) {
     logger.debug("Sending analytics event failed with error: ", e)
   }
+}
+
+export async function getPersonId(personUUID: string): Promise<string> {
+  const res = await fetch(`${PERSON_ENDPOINT}?distinct_id=${personUUID}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${process.env.POSTHOG_PERSONAL_API_KEY}`,
+    },
+  })
+
+  const response = await res.json()
+  return response.results[0].id
+}
+
+export function deletePerson(personID: string): void {
+  fetch(`${PERSON_ENDPOINT}/${personID}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${process.env.POSTHOG_PERSONAL_API_KEY}`,
+    },
+  })
 }

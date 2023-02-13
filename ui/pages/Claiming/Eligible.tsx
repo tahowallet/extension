@@ -131,6 +131,7 @@ export default function Eligible(): ReactElement {
         isOpen={showSuccessStep}
         close={handleSuccessModalClose}
         size="large"
+        isDark
       >
         <ClaimSuccessModalContent close={handleSuccessModalClose} />
       </SharedSlideUpMenu>

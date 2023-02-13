@@ -11,6 +11,7 @@ import { keccak256 } from "ethers/lib/utils"
 import { AccountBalance, AddressOnNetwork } from "../accounts"
 import {
   AnyAsset,
+  AnyAssetAmount,
   flipPricePoint,
   isFungibleAsset,
   PricePoint,
@@ -349,23 +350,23 @@ export const makeEthersFeeData = (overrides?: Partial<FeeData>): FeeData => {
 }
 
 export class MockSerialFallbackProvider {
-  async getBlock() {
+  async getBlock(): Promise<Block> {
     return makeEthersBlock()
   }
 
-  async getBlockNumber() {
+  async getBlockNumber(): Promise<number> {
     return 1
   }
 
-  async getBalance() {
+  async getBalance(): Promise<BigNumber> {
     return BigNumber.from(100)
   }
 
-  async getFeeData() {
+  async getFeeData(): Promise<FeeData> {
     return makeEthersFeeData()
   }
 
-  async getCode() {
+  async getCode(): Promise<string> {
     return "false"
   }
 }
@@ -388,7 +389,7 @@ const getRandomStr = (length: number) => {
 export const createSmartContractAsset = (
   overrides: Partial<SmartContractFungibleAsset> = {}
 ): SmartContractFungibleAsset => {
-  const symbol = getRandomStr(3)
+  const symbol = overrides.symbol ?? getRandomStr(3)
   const asset = {
     metadata: {
       logoURL:
@@ -435,6 +436,16 @@ export const createNetworkBaseAsset = (
   return {
     ...asset,
     ...overrides,
+  }
+}
+
+export const createAssetAmount = (
+  asset: AnyAsset = ETH,
+  amount = 1
+): AnyAssetAmount => {
+  return {
+    asset,
+    amount: BigInt(Math.trunc(1e10 * amount)) * 10n ** 8n,
   }
 }
 

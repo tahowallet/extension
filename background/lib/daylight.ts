@@ -3,6 +3,7 @@ import { AbilityType } from "../abilities"
 import logger from "./logger"
 
 const DAYLIGHT_BASE_URL = "https://api.daylight.xyz/v1"
+const DEFAULT_RETRIES = 5 // # of times to retry fetching abilities with "pending" status
 
 type Community = {
   chain: string
@@ -79,12 +80,24 @@ type SpamReportResponse = {
 }
 
 export const getDaylightAbilities = async (
-  address: string
+  address: string,
+  // Amount of times to retry fetching abilities for an address that is not fully synced yet.
+  // https://docs.daylight.xyz/reference/retrieve-wallets-abilities
+  retries = DEFAULT_RETRIES
 ): Promise<DaylightAbility[]> => {
   try {
-    const response: AbilitiesResponse = await fetchJson(
-      `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities?deadline=all`
-    )
+    const response: AbilitiesResponse = await fetchJson({
+      url: `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities?deadline=all`,
+      ...(process.env.DAYLIGHT_API_KEY && {
+        headers: {
+          Authorization: `Bearer ${process.env.DAYLIGHT_API_KEY}`,
+        },
+      }),
+    })
+
+    if (retries > 0 && response.status === "pending") {
+      return await getDaylightAbilities(address, retries - 1)
+    }
 
     return response.abilities
   } catch (err) {

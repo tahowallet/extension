@@ -254,7 +254,9 @@
       "itemsCount": "Items in collection",
       "creator": "Creator",
       "properties": "Properties",
-      "refresh": "Refresh metadata"
+      "refresh": "Refresh properties",
+      "rank": "Rank",
+      "rarityRank": "Rarity rank"
     },
     "units": {
       "nft_one": "NFT",
@@ -274,6 +276,7 @@
       "nfts": "Explore markets",
       "badge": "Explore badges"
     },
+    "networksBanner": "Not seeing NFTs from all your networks? Activate a network by switching to it on the Wallet tab.",
     "filters": {
       "title": "Filter collections",
       "warning": "Changing filters here will affect your Portfolio page as well.",
@@ -471,7 +474,7 @@
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
     "compatibleChain": "Ethereum-compatible blockchain",
-    "avalanche": "Mainnet C-Chain (beta)",
+    "avalanche": "Mainnet C-Chain",
     "connected": "Connected"
   },
   "readOnly": "Read-only",
@@ -505,26 +508,26 @@
       "title": "Analytics",
       "toggleTitleOn": "Analytics are on",
       "toggleTitleOff": "Analytics are off",
-      "toggleDesc": "Analytics help us understand your needs and empowers us to build a better wallet for you!",
-      "recordTitle": "What we will record",
-      "recordItemOrders": "Number of Swaps / Sends",
-      "recordItemAccounts": "Number of accounts",
-      "recordItemGas": "Gas paid overall",
-      "noRecordTitle": "We will never record",
-      "noRecordItemSeed": "Your seed phrase",
-      "noRecordItemTransactions": "Your address and transactions",
+      "toggleDesc": "Analytics help us understand your needs and empower us to build a better wallet for you",
+      "recordTitle": "Info we collect",
+      "recordItemTrends": "Overall user trends",
+      "recordItemUsage": "Feature usage",
+      "noRecordTitle": "We never collect",
+      "noRecordItemSeed": "Recovery phrase",
+      "noRecordItemInfo": "Personal Information",
+      "noRecordItemBalances": "Addresses, balances, or transactions",
       "policyBtn": "Privacy policy",
       "deleteBtn": "Delete my data",
       "ariaLabel": "Open analytics",
       "analyticsOffSlideUpMenu": {
         "title": "Turn Analytics off?",
-        "desc": "Are you sure you want to turn analytics off? They help us a lot in building a better wallet for you",
+        "desc": "Are you sure you want to turn analytics off?",
         "submitBtn": "Yes, turn off",
-        "snackbar": "Analytics are off, turn back at any time"
+        "snackbar": "Analytics are off, re-enable at any time"
       },
       "deleteSlideUpMenu": {
         "title": "Delete your data?",
-        "desc": "Are you sure you want to delete your data? They help us a lot in building a better wallet for you",
+        "desc": "Are you sure you want to delete your data?",
         "submitBtn": "Yes, delete data",
         "snackbar": "Private data will be removed soon"
       }
@@ -539,7 +542,7 @@
       "title": "Custom networks",
       "ariaLabel": "Open custom networks page",
       "chainList": {
-        "description": "Fastest and safest way of adding a custom network is by visiting <link></link>, connecting your wallet and adding the chains you wish to see.",
+        "description": "Fastest and safest way of adding a custom network is by visiting <url></url>, connecting your wallet and adding the chains you wish to see.",
         "addBtn": "Add chains with Chainlist"
       },
       "customRPC": {
@@ -694,7 +697,9 @@
         "step1": "Set Tally Ho as default",
         "step2": "Click “connect to wallet” in a dapp",
         "step3": "Select one similar to these"
-      }
+      },
+      "walletConnectInfo": "You can now connect to any dapp that supports Wallet Connect by selecting Tally Ho from desktop tab. <url>Learn more</url>",
+      "walletConnectHint": "Check the desktop tab in the connection modal"
     }
   },
   "wallet": {
@@ -759,8 +764,8 @@
       "tooltip": "Setting Tally Ho as your default wallet means that every time you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
     },
     "analyticsNotification": {
-      "title": "Analytics are on",
-      "description": "They help us improve the wallet for you",
+      "title": "Analytics are enabled",
+      "description": "They help us improve the wallet.  You can disable anytime", 
       "settingsLink": "Change settings"
     }
   },
@@ -782,13 +787,14 @@
     "banner": {
       "description": "Daylight tells you when you qualify for an airdrop, mint or unlock.",
       "seeAbilities": "See your abilities",
-      "new": "New",
+      "open": "Open",
       "none": "None"
     },
     "timeStarting": "Starting in 1 month",
     "timeCloses": "Closes in 1 month",
     "viewWebsiteBtn": "Visit website",
     "markBtn": "Mark as Completed",
+    "snackbar": "Marked as completed",
     "deleteBtn": "Delete",
     "deleteSlideUpMenu": {
       "title": "Delete ability?",
@@ -812,7 +818,7 @@
       "tooltip": "Filter",
       "abilityState": {
         "open": "Open",
-        "completed": "Closed",
+        "completed": "Completed",
         "expired": "Expired",
         "deleted": "Deleted",
         "all": "All"
@@ -831,7 +837,9 @@
       },
       "abilityStateTitle": "Show",
       "abilitiesTypesTitle": "Notify me about abilities type",
-      "accountsTitle": "Show/hide accounts"
+      "accountsTitle": "Show/hide accounts",
+      "accountsReadOnlyInfo": "Read-only accounts can’t see abilities. If you can, we recommend you import the address you want to see abilities for.",
+      "noAccounts": "No accounts"
     }
   },
   "globalError": {

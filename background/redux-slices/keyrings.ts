@@ -10,7 +10,7 @@ type KeyringToVerify = {
   mnemonic: string[]
 } | null
 
-type KeyringsState = {
+export type KeyringsState = {
   keyrings: Keyring[]
   keyringMetadata: {
     [keyringId: string]: KeyringMetadata

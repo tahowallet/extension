@@ -1,9 +1,9 @@
 import { BUILT_IN_NETWORK_BASE_ASSETS } from "../../constants"
-import { NFT } from "../../nfts"
 import { AssetsState, selectAssetPricePoint } from "../assets"
 import {
   Filter,
   FiltersState,
+  NFTCached,
   NFTCollectionCached,
   SortType,
 } from "../nfts_update"
@@ -76,7 +76,10 @@ const sortByDate = (
   return transferDate1 > transferDate2 ? 1 : -1
 }
 
-const sortNFTsByDate = (type: "new" | "old", nfts: NFT[]): NFT[] => {
+const sortNFTsByDate = (
+  type: "new" | "old",
+  nfts: NFTCached[]
+): NFTCached[] => {
   const sorted = nfts.sort(
     (nft1, nft2) =>
       new Date(nft2.transferDate ?? "").getTime() -

@@ -1,12 +1,13 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
-import { NFT } from "@tallyho/tally-background/nfts"
 import {
   fetchMoreNFTsFromCollection,
   fetchNFTsFromCollection,
+  NFTCached,
   NFTCollectionCached,
   NFTWithCollection,
 } from "@tallyho/tally-background/redux-slices/nfts_update"
 import classNames from "classnames"
+import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import NFTItem from "./NFTItem"
 import { useBackgroundDispatch, useIntersectionObserver } from "../../hooks"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
@@ -18,8 +19,9 @@ export default function NFTCollection(props: {
   openPreview: (current: NFTWithCollection) => void
 }): ReactElement {
   const { collection, openPreview, isExpanded, setExpandedID } = props
-  const { id, owner, network, nfts, nftCount, hasNextPage } = collection
+  const { id, owner, chainID, nfts, nftCount, hasNextPage } = collection
   const dispatch = useBackgroundDispatch()
+  const network = NETWORK_BY_CHAIN_ID[chainID]
 
   const [isLoading, setIsLoading] = useState(false) // initial update of collection
   const [isUpdating, setIsUpdating] = useState(false) // update on already loaded collection
@@ -108,7 +110,9 @@ export default function NFTCollection(props: {
   const toggleCollection = () =>
     isExpanded ? setExpandedID(null, null) : setExpandedID(id, owner)
 
-  const onItemClick = (nft: NFT) => openPreview({ nft, collection })
+  const onItemClick = (nft: NFTCached) => openPreview({ nft, collection })
+
+  if (!nftCount && !isLoading && wasUpdated) return <></>
 
   return (
     <>
@@ -171,7 +175,7 @@ export default function NFTCollection(props: {
         .nft_collection_wrapper {
           position: relative;
           width: 168px;
-          min-height: 208px;
+          min-height: 212px;
         }
         .nft_collection {
           position: absolute;
