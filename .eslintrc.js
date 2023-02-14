@@ -13,6 +13,7 @@ const {
 /* eslint-enable @typescript-eslint/no-var-requires */
 
 module.exports = {
+  root: true,
   extends: [
     "airbnb",
     "airbnb-typescript",
@@ -74,7 +75,16 @@ module.exports = {
     // Don't slap build files for importing devDependencies.
     "import/no-extraneous-dependencies": [
       "error",
-      { devDependencies: ["!+(src/api|ui)/**/*.+(ts|js)"] },
+      {
+        devDependencies: [
+          "./build-utils/**",
+          "./*.config.ts",
+          "./setupJest.*",
+          "./e2e-tests/**",
+          // Any test not already caught by specific subfolder overrides
+          "**/*.test.ts",
+        ],
+      },
     ],
     // dissalow it.only, assert.only, etc..
     "no-only-tests/no-only-tests": ["error"],
@@ -101,6 +111,7 @@ module.exports = {
     "**/validate/*.js",
     "**/local-chain/**",
     "!.github",
+    ".eslintrc.js",
   ],
   parser: "@typescript-eslint/parser",
   parserOptions: {

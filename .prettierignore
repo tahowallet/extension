@@ -2,3 +2,8 @@ dist
 # Ignore weblate json translation formatting
 ui/_locales/**/*.json
 !.github
+.vscode
+size-plugin.json
+local-chain/artifacts
+local-chain/cache
+local-chain/typechain-types
