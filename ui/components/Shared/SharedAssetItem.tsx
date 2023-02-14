@@ -65,8 +65,12 @@ export default function SharedAssetItem<T extends AnyAsset>(
             />
 
             <div className="left_content">
-              <div className="symbol">{asset.symbol}</div>
-              <div className="token_subtitle">{asset.name}</div>
+              <div className="symbol ellipsis" title={asset.symbol}>
+                {asset.symbol}
+              </div>
+              <div className="token_subtitle ellipsis" title={asset.name}>
+                {asset.name}
+              </div>
             </div>
           </div>
 
@@ -94,19 +98,23 @@ export default function SharedAssetItem<T extends AnyAsset>(
         {`
           .left {
             display: flex;
+            min-width: 0;
           }
           .list_item {
             display: flex;
             flex-direction: row;
             justify-content: space-between;
             align-items: center;
+            width: 100%;
           }
           .left_content {
             display: flex;
             flex-direction: column;
             height: 41px;
             justify-content: space-between;
-            margin-left: 16px;
+            margin: 0 8px 0 16px;
+            max-width: 100%;
+            min-width: 0;
           }
           .right_content {
             display: flex;

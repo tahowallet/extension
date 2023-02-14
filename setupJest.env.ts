@@ -1,16 +1,5 @@
-import sinon from "sinon"
-import SerialFallbackProvider, * as serialFallbackProvider from "@tallyho/tally-background/services/chain/serial-fallback-provider"
-import { makeSerialFallbackProvider } from "@tallyho/tally-background/tests/factories"
-
-const sandbox = sinon.createSandbox()
 /* Reset IndexedDB between tests */
 beforeEach(() => {
-  sandbox.restore()
-  sandbox
-    .stub(serialFallbackProvider, "makeSerialFallbackProvider")
-    .callsFake(() => {
-      return makeSerialFallbackProvider() as SerialFallbackProvider
-    })
   global.indexedDB = new IDBFactory()
 })
 
@@ -18,3 +7,24 @@ beforeEach(() => {
 afterEach(() => {
   global.indexedDB = new IDBFactory()
 })
+
+it.flaky = function checkFlaky(label: string, testCase: () => unknown): void {
+  // eslint-disable-next-line no-only-tests/no-only-tests
+  it.only(label, () => {
+    const results = []
+    for (let i = 0; i < 2000; i += 1) {
+      results.push(testCase())
+    }
+    return Promise.all(results)
+  })
+}
+
+// eslint-disable-next-line @typescript-eslint/no-namespace, @typescript-eslint/no-unused-vars
+declare namespace jest {
+  interface It {
+    /**
+     * Used for debugging flaky tests
+     */
+    flaky: (label: string, testCase: () => unknown) => void
+  }
+}
