@@ -10,7 +10,6 @@ import {
   createAnyEVMTransaction,
   createChainService,
   createLegacyTransactionRequest,
-  MockSerialFallbackProvider,
 } from "../../../tests/factories"
 import { ChainDatabase } from "../db"
 import SerialFallbackProvider from "../serial-fallback-provider"
@@ -215,7 +214,7 @@ describe("ChainService", () => {
       expect(chainService.providers.evm["250"]).toBe(undefined)
       await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
       expect(chainService.providers.evm["250"]).toBeInstanceOf(
-        MockSerialFallbackProvider
+        SerialFallbackProvider
       )
     })
 

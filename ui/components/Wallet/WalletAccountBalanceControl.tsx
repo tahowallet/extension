@@ -32,7 +32,7 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
   return (
     <div
       className={classNames("action_buttons_wrap", {
-        margin: isEnabled(FeatureFlags.SUPPORT_NFT_TAB),
+        with_icons: isEnabled(FeatureFlags.SUPPORT_NFT_TAB),
       })}
     >
       {isEnabled(FeatureFlags.SUPPORT_NFT_TAB) ? (
@@ -98,10 +98,12 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
           .action_buttons_wrap {
             display: flex;
             width: 180px;
+            gap: 16px;
             justify-content: center;
           }
-          .margin {
+          .action_buttons_wrap.with_icons {
             margin: 8px 0 32px;
+            gap: 0;
           }
           .button_wrap {
             margin: 0 7px;
