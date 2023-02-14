@@ -293,9 +293,13 @@ export function serializeLogs(): string {
     logEntries
       // Only grab logs from the past hour
       .filter((logLine) => {
+        // There was a problem here with the format of the current date.
+        // The date for the log line was in ISO standard.
+        // Both dates should be created using the same standard.
+        const currentDate = new Date(Date.now() - HOUR).toISOString()
         return (
           new Date(logLine.substring(1, iso8601Length)) >
-          new Date(Date.now() - HOUR)
+          new Date(currentDate.slice(0, -1))
         )
       })
       // Sort by date.
