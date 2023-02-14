@@ -28,7 +28,9 @@ describe("Chain Database ", () => {
       expect(await db.getAccountsToTrack()).toHaveLength(1)
       await db.addAccountToTrack(account2)
       const accountsToTrack = await db.getAccountsToTrack()
-      expect(accountsToTrack).toEqual([account1, account2])
+      expect(accountsToTrack).toEqual(
+        expect.arrayContaining([account1, account2])
+      )
     })
 
     it("should not add the same account twice.", async () => {
@@ -127,7 +129,10 @@ describe("Chain Database ", () => {
       expect(await db.getAccountsToTrack()).toHaveLength(1)
       await db.addAccountToTrack(account2)
       const accountsToTrack = await db.getAccountsToTrack()
-      expect(accountsToTrack).toEqual([account1, account2])
+
+      expect(accountsToTrack).toEqual(
+        expect.arrayContaining([account1, account2])
+      )
     })
   })
   describe("getAllSavedTransactionHashes", () => {

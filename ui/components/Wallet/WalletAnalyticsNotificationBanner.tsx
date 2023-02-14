@@ -26,12 +26,13 @@ export default function WalletAnalyticsNotificationBanner(): ReactElement {
         hide: !showNotification,
       })}
     >
-      <SharedBanner>
+      <SharedBanner customStyles="width: 100%; box-sizing: border-box;">
         <div className="content_container">
           <SharedIcon
             icon="icons/m/notif-correct.svg"
             width={24}
             color="var(--success)"
+            customStyles="flex-shrink:0;"
           />
           <div className="content">
             <h1>{t("wallet.analyticsNotification.title")}</h1>
@@ -54,14 +55,14 @@ export default function WalletAnalyticsNotificationBanner(): ReactElement {
             width={16}
             color="var(--green-40)"
             hoverColor="var(--green-20)"
+            customStyles="flex-shrink:0;"
           />
         </div>
       </SharedBanner>
       <style jsx>{`
         .container {
-          margin: 0 16px;
+          margin: 0 8px;
           max-height: 200px;
-          width: 352px;
           transition: all 500ms ease;
         }
         .container.hide {

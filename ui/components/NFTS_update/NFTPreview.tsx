@@ -230,16 +230,6 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           <div className="preview_section_header">
             {t("preview.properties")}
           </div>
-          <SharedButton
-            type="tertiaryWhite"
-            iconSmall="refresh"
-            iconPosition="left"
-            size="small"
-            style={{ padding: 0 }}
-            onClick={refetchNFTs}
-          >
-            {t("preview.refresh")}
-          </SharedButton>
           {!!attributes.length && (
             <div className="preview_property_list preview_section_row">
               {attributes.map(
@@ -261,6 +251,16 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
               )}
             </div>
           )}
+          <SharedButton
+            type="tertiaryWhite"
+            iconSmall="refresh"
+            iconPosition="left"
+            size="small"
+            style={{ padding: 0 }}
+            onClick={refetchNFTs}
+          >
+            {t("preview.refresh")}
+          </SharedButton>
         </div>
       </div>
       <style jsx>{`
