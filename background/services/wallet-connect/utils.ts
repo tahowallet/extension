@@ -4,7 +4,7 @@ import browser from "webextension-polyfill"
 export const getMetaPort = (
   name: string,
   senderUrl: string,
-  postMessage: (message: any) => void
+  postMessage: browser.Runtime.Port["postMessage"]
 ): Required<browser.Runtime.Port> => {
   const port: browser.Runtime.Port = browser.runtime.connect({
     name,
