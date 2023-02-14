@@ -30,7 +30,6 @@ export const initialState: KeyringsState = {
 
 export type Events = {
   createPassword: string
-  unlockKeyrings: string
   lockKeyrings: never
   generateNewKeyring: string | undefined
   deriveAddress: string
