@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 
 import {
   Route,
@@ -149,7 +149,9 @@ function Navigation({
 }
 
 export default function Root(): ReactElement {
-  const isOnboarding = useIsOnboarding()
+  // This prevents navigation "Onboarding" state from changing
+  // until this component is unmounted
+  const [isOnboarding] = useState(useIsOnboarding())
 
   return (
     <Navigation isOnboarding={isOnboarding}>
