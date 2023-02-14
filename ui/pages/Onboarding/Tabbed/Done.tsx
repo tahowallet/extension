@@ -1,8 +1,74 @@
 import { getAllAddresses } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
+import css from "styled-jsx/css"
 import WalletShortcut from "../../../components/Onboarding/WalletShortcut"
 import { useBackgroundSelector } from "../../../hooks"
+
+const styles = css`
+  section {
+    text-align: center;
+  }
+  header {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    align-items: center;
+    margin-bottom: 32px;
+  }
+
+  header div {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  header h1 {
+    display: inline-block;
+    font-family: "Quincy CF";
+    font-weight: 500;
+    font-size: 36px;
+    line-height: 42px;
+    margin: 0;
+    color: var(--white);
+  }
+
+  header span {
+    font-family: "Segment";
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--green-40);
+  }
+
+  header img {
+    border-radius: 22px;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+  }
+
+  .confetti {
+    position: absolute;
+    display: none;
+    opacity: 0.7;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .shortcut_container {
+    background: var(--green-95);
+    padding: 35px 32px 29px;
+    max-width: 402px;
+    margin: 0 auto;
+    border-radius: 4px;
+  }
+`
 
 export default function Done(): ReactElement {
   const { t } = useTranslation("translation", {
@@ -10,73 +76,6 @@ export default function Done(): ReactElement {
   })
 
   const firstAddress = useBackgroundSelector(getAllAddresses).length === 1
-
-  const styles = (
-    <style jsx>{`
-      section {
-        text-align: center;
-      }
-      header {
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-        align-items: center;
-        margin-bottom: 32px;
-      }
-
-      header div {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      header h1 {
-        display: inline-block;
-        font-family: "Quincy CF";
-        font-weight: 500;
-        font-size: 36px;
-        line-height: 42px;
-        margin: 0;
-        color: var(--white);
-      }
-
-      header span {
-        font-family: "Segment";
-        font-style: normal;
-        font-weight: 400;
-        font-size: 16px;
-        line-height: 24px;
-        color: var(--green-40);
-      }
-
-      header img {
-        border-radius: 22px;
-      }
-
-      .wrapper {
-        position: relative;
-        z-index: 1;
-      }
-
-      .confetti {
-        position: absolute;
-        display: none;
-        opacity: 0.7;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-      }
-
-      .shortcut_container {
-        background: var(--green-95);
-        padding: 35px 32px 29px;
-        max-width: 402px;
-        margin: 0 auto;
-        border-radius: 4px;
-      }
-    `}</style>
-  )
 
   if (!firstAddress) {
     return (
@@ -101,7 +100,7 @@ export default function Done(): ReactElement {
         <div className="shortcut_container">
           <WalletShortcut />
         </div>
-        {styles}
+        <style jsx>{styles}</style>
       </section>
     )
   }
@@ -131,7 +130,7 @@ export default function Done(): ReactElement {
           alt={t("animationAlt")}
         />
       </div>
-      {styles}
+      <style jsx>{styles}</style>
     </section>
   )
 }
