@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { useTranslation } from "react-i18next"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
+import { getNetworkIconName } from "../../utils/networks"
 
 type Props = {
   accountTotal: AccountTotal
@@ -11,12 +12,7 @@ export default function SignTransactionNetworkAccountInfoTopBar({
   accountTotal,
 }: Props): ReactElement {
   const { t } = useTranslation()
-  const {
-    network: { name: networkName },
-    shortenedAddress,
-    name,
-    avatarURL,
-  } = accountTotal
+  const { network, shortenedAddress, name, avatarURL } = accountTotal
 
   return (
     <div className="top_bar_wrap standard_width">
@@ -25,7 +21,7 @@ export default function SignTransactionNetworkAccountInfoTopBar({
           <div className="network_icon" />
         </div>
         <span className="network_name">
-          {networkName ?? t("signTransaction.unknownNetwork")}
+          {network.name ?? t("signTransaction.unknownNetwork")}
         </span>
       </div>
       <div className="row_part account">
@@ -68,9 +64,7 @@ export default function SignTransactionNetworkAccountInfoTopBar({
             background-size: cover;
           }
           .network_icon {
-            background: url("./images/networks/${networkName
-              ?.replaceAll(" ", "")
-              .toLowerCase()}-square@2x.png");
+            background: url("${getNetworkIconName(network)}-square@2x.png");
             background-size: cover;
             height: 16px;
             width: 16px;
