@@ -811,18 +811,8 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   private async loadAccountBalances(onlyActiveAccounts = false): Promise<void> {
-    const assetsToTrack = await this.db.getAssetsToTrack()
-    const trackedNetworks = await this.chainService.getTrackedNetworks()
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
-
-    const trackedChainIds = new Set(
-      trackedNetworks.map((network) => network.chainID)
-    )
-
-    const activeAssetsToTrack = assetsToTrack.filter((asset) =>
-      trackedChainIds.has(asset.homeNetwork.chainID)
-    )
 
     const accounts = await this.chainService.getAccountsToTrack(
       onlyActiveAccounts
@@ -838,15 +828,15 @@ export default class IndexingService extends BaseService<Events> {
           this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
 
         /**
-         * When the provider supports alchemy we use alchemy_getTokenBalances
-         * to query which assets to track so it's safe to use assets we already
-         * stored as tracked in the db. We use the network's cached assets otherwise
-         * because we don't know exactly what tokens the user is holding, therefore,
-         * we query balances for every token we've seen.
+         * When the provider supports alchemy we can use alchemy_getTokenBalances
+         * to query all erc20 token balances without specifying which assets we
+         * need to check. When it does not, we try checking balances for every asset
+         * we've seen in the network.
          */
         const assetsToCheck = provider.supportsAlchemy
-          ? activeAssetsToTrack
-          : // This doesn't pass assetsToTrack as it assumes they've already been cached
+          ? []
+          : // This doesn't pass assetsToTrack stored in the db as
+            // it assumes they've already been cached
             this.getCachedAssets(network).filter(isSmartContractFungibleAsset)
 
         const loadTokenBalances = this.retrieveTokenBalances(
