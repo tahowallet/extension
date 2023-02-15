@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch } from "../hooks"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
+import SharedNetworkIcon from "../components/Shared/SharedNetworkIcon"
 
 export default function AddNewEVMChain(): JSX.Element {
   const parsedQueryString = new URLSearchParams(window.location.search)
@@ -30,7 +31,7 @@ export default function AddNewEVMChain(): JSX.Element {
   }
 
   const {
-    chainId,
+    chainId: chainID,
     chainName,
     nativeCurrency,
     iconUrl,
@@ -48,7 +49,13 @@ export default function AddNewEVMChain(): JSX.Element {
 
   return (
     <div className="standard_width">
-      <form action="#">
+      <form
+        action="#"
+        onSubmit={(e) => {
+          e.preventDefault()
+          handleUserResponse(true)
+        }}
+      >
         <header>
           <h1>
             <img width={24} alt={siteTitle} src={favicon} /> {siteTitle}
@@ -57,7 +64,21 @@ export default function AddNewEVMChain(): JSX.Element {
         </header>
         <div className="details-containe_">
           <div className="add_chain_imgs">
-            <div className="new_chain_logo" />
+            <div className="new_chain_logo_wrapper">
+              {iconUrl ? (
+                <div className="new_chain_logo" />
+              ) : (
+                <SharedNetworkIcon
+                  size={50}
+                  network={{
+                    name: chainName,
+                    chainID,
+                    family: "EVM",
+                    baseAsset: { ...nativeCurrency, chainID },
+                  }}
+                />
+              )}
+            </div>
             <div className="plus_wrapper">
               <SharedIcon
                 width={16}
@@ -75,7 +96,7 @@ export default function AddNewEVMChain(): JSX.Element {
             </div>
             <div className="row">
               <dt>{t("addNewChain.chainId")}</dt>
-              <dd>{chainId}</dd>
+              <dd>{chainID}</dd>
             </div>
             <div className="row">
               <dt>{t("addNewChain.currency")}</dt>
@@ -95,11 +116,7 @@ export default function AddNewEVMChain(): JSX.Element {
           >
             {t("addNewChain.cancel")}
           </SharedButton>
-          <SharedButton
-            size="large"
-            type="primary"
-            onClick={() => handleUserResponse(true)}
-          >
+          <SharedButton size="large" type="primary" isFormSubmit>
             {t("addNewChain.submit")}
           </SharedButton>
         </footer>
@@ -108,16 +125,23 @@ export default function AddNewEVMChain(): JSX.Element {
         .add_chain_imgs {
           display: flex;
           justify-content: center;
+          align-items: center;
           padding-bottom: 24px;
           border-bottom: 1px solid var(--castle-black);
         }
 
-        .new_chain_logo {
-          width: 56px;
-          height: 56px;
+        .new_chain_logo_wrapper {
+          width: 50px;
+          height: 50px;
           border-radius: 8px;
-          ${iconUrl ? `background-image: url("${iconUrl}");` : ""}
-          background-color: var(--green-80);
+          overflow: hidden;
+        }
+
+        .new_chain_logo {
+          width: 50px;
+          height: 50px;
+          border-radius: 8px;
+          background: url("${iconUrl}") center / contain no-repeat;
         }
 
         .tally_logo {
@@ -136,6 +160,7 @@ export default function AddNewEVMChain(): JSX.Element {
           padding: 4px;
           margin-right: -4px;
           margin-left: -4px;
+          z-index: 1;
         }
 
         form {
