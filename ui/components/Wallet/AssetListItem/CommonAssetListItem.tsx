@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 
 import { useTranslation } from "react-i18next"
-import { isBuiltInNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
@@ -36,22 +36,12 @@ export default function CommonAssetListItem(
     typeof assetAmount.localizedMainCurrencyAmount === "undefined"
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
-  // NB: non-base assets that don't have any token lists are considered
-  // untrusted. Reifying base assets clearly will improve this check down the
-  // road. Eventually, assets can be flagged as trusted by adding them to an
-  // "internal" token list that users can export and share.
-  const numTokenLists = assetAmount?.asset?.metadata?.tokenLists?.length ?? 0
-  const baseAsset = isBuiltInNetworkBaseAsset(
-    assetAmount?.asset,
-    selectedNetwork
-  )
-
   const contractAddress =
     "contractAddress" in assetAmount.asset
       ? assetAmount.asset.contractAddress
       : undefined
 
-  const assetIsUntrusted = numTokenLists === 0 && !baseAsset
+  const assetIsUntrusted = isUntrustedAsset(assetAmount?.asset, selectedNetwork)
 
   return (
     <Link

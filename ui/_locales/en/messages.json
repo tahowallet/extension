@@ -254,7 +254,7 @@
       "itemsCount": "Items in collection",
       "creator": "Creator",
       "properties": "Properties",
-      "refresh": "Refresh metadata",
+      "refresh": "Refresh properties",
       "rank": "Rank",
       "rarityRank": "Rarity rank"
     },
@@ -276,7 +276,7 @@
       "nfts": "Explore markets",
       "badge": "Explore badges"
     },
-    "networksBanner": "Didn't see NFTs from all your chains? Activate that chain by switching to it.",
+    "networksBanner": "Not seeing NFTs from all your networks? Activate a network by switching to it on the Wallet tab.",
     "filters": {
       "title": "Filter collections",
       "warning": "Changing filters here will affect your Portfolio page as well.",
@@ -675,7 +675,10 @@
     "copyAddressTooltip": "Copy address",
     "addressCopiedMsg": "Address copied to clipboard",
     "protocolList": {
-      "testnetsSectionTitle": "Testnets"
+      "testnetsSectionTitle": "Testnets",
+      "customRPCFooterTitle": "Activate or add networks",
+      "customRPCFooterDesc": "You can activate any network that is already added to Tally Ho! or you can add any other network.",
+      "networkSettingsBtn": "Network settings"
     },
     "connectedDappInfo": {
       "modalClose": "Background close",
