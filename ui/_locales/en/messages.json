@@ -685,7 +685,10 @@
     "copyAddressTooltip": "Copy address",
     "addressCopiedMsg": "Address copied to clipboard",
     "protocolList": {
-      "testnetsSectionTitle": "Testnets"
+      "testnetsSectionTitle": "Testnets",
+      "customRPCFooterTitle": "Activate or add networks",
+      "customRPCFooterDesc": "You can activate any network that is already added to Tally Ho! or you can add any other network.",
+      "networkSettingsBtn": "Network settings"
     },
     "connectedDappInfo": {
       "modalClose": "Background close",
