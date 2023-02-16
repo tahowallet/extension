@@ -21,18 +21,18 @@ well-organized GitHub issues for features and bugs, as well as organize folks
 to tackle any issues they’re interested in. For the time being, the core team
 will be charged with reviewing, critiquing, and ultimately merging new work.
 
-⭐️ Check out our ["good first issues" tag](https://github.com/tallycash/extension/issues?q=is%3Aopen+is%3Aissue+label%3A%22🐣+good+first+issue%22) for existing bugs that are more approachable.
+⭐️ Check out our ["good first issues" tag](https://github.com/tahowallet/extension/issues?q=is%3Aopen+is%3Aissue+label%3A%22🐣+good+first+issue%22) for existing bugs that are more approachable.
 
 ## Use Feature Flags
 
-When developing a new feature, please put it behind a feature flag. Because this enables you to open PRs in smaller chunks rather than having the feature completely finished, this will help your contributions get merged faster. It'll also help everyone better QA the feature and time its release! Feature flags are set in [`.env.defaults`](https://github.com/tallycash/extension/blob/main/.env.defaults) in tandem with [`features.ts`](https://github.com/tallycash/extension/blob/main/background/features.ts)
+When developing a new feature, please put it behind a feature flag. Because this enables you to open PRs in smaller chunks rather than having the feature completely finished, this will help your contributions get merged faster. It'll also help everyone better QA the feature and time its release! Feature flags are set in [`.env.defaults`](https://github.com/tahowallet/extension/blob/main/.env.defaults) in tandem with [`features.ts`](https://github.com/tahowallet/extension/blob/main/background/features.ts)
 
 ## Getting Started
 
-1. Fork tallycash/tally-extension
+1. Fork tahowallet/tally-extension
 2. Clone your fork
 3. Follow the [setup
-   instructions](https://github.com/tallycash/tally-extension#building-and-developing).
+   instructions](https://github.com/tahowallet/tally-extension#building-and-developing).
 4. If you find an issue you would like to work on, post a comment indicating
    you’d like to pick it up. Otherwise, please file an issue indicating what
    you are intending to do—there could be a duplicate issue, or someone else
