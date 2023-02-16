@@ -29,7 +29,7 @@ import FeatureFlagsPanel from "../components/HiddenDevPanel/FeatureFlagsPanel"
 import NFTs from "../pages/NFTs"
 import Abilities from "../pages/Abilities"
 import SettingsCustomNetworks from "../pages/Settings/SettingsCustomNetworks"
-import AddNewEVMChain from "../pages/AddNewEVMChain"
+import NewCustomNetworkRequest from "../pages/NewCustomNetworkRequest"
 
 interface PageList {
   path: string
@@ -101,7 +101,7 @@ const pageList: PageList[] = [
   },
   {
     path: "/add-evm-chain",
-    Component: AddNewEVMChain,
+    Component: NewCustomNetworkRequest,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,

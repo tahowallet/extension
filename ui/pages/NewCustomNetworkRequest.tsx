@@ -10,7 +10,7 @@ import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedNetworkIcon from "../components/Shared/SharedNetworkIcon"
 
-export default function AddNewEVMChain(): JSX.Element {
+export default function NewCustomNetworkRequest(): JSX.Element {
   const parsedQueryString = new URLSearchParams(window.location.search)
   const { requestId } = Object.fromEntries(parsedQueryString.entries())
 
@@ -62,7 +62,7 @@ export default function AddNewEVMChain(): JSX.Element {
           </h1>
           <p>{t("addNewChain.subtitle")}</p>
         </header>
-        <div className="details-containe_">
+        <div className="details_container">
           <div className="add_chain_imgs">
             <div className="new_chain_logo_wrapper">
               {iconUrl ? (
