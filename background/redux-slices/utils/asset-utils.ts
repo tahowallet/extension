@@ -321,3 +321,23 @@ export function heuristicDesiredDecimalsForUnitPrice(
     minimumDesiredDecimals
   )
 }
+
+/**
+ * NB: non-base assets that don't have any token lists are considered
+ * untrusted. Reifying base assets clearly will improve this check down the
+ * road. Eventually, assets can be flagged as trusted by adding them to an
+ * "internal" token list that users can export and share.
+ *
+ */
+export function isUntrustedAsset(
+  asset: AnyAsset | undefined,
+  selectedNetwork: AnyNetwork
+): boolean {
+  if (asset) {
+    const numTokenLists = asset?.metadata?.tokenLists?.length ?? 0
+    const baseAsset = isBuiltInNetworkBaseAsset(asset, selectedNetwork)
+
+    return numTokenLists === 0 && !baseAsset
+  }
+  return false
+}

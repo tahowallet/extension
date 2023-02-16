@@ -11,6 +11,16 @@ const asset: FungibleAsset = {
   symbol: "FAKE",
   name: "Fake token",
   decimals: 2,
+  metadata: {
+    coinGeckoID: "fake",
+    tokenLists: [
+      {
+        name: "",
+        url: "",
+      },
+    ],
+    websiteURL: "",
+  },
 }
 const assetsAndAmounts = [
   {
@@ -23,6 +33,30 @@ const assetsAndAmounts = [
       symbol: "TST",
       name: "Test token",
       decimals: 2,
+      metadata: {
+        coinGeckoID: "test",
+        tokenLists: [
+          {
+            name: "",
+            url: "",
+          },
+        ],
+        websiteURL: "",
+      },
+    },
+    amount: 300n,
+    localizedDecimalAmount: "3",
+  },
+  {
+    asset: {
+      symbol: "UTT",
+      name: "Untrusted token",
+      decimals: 2,
+      metadata: {
+        coinGeckoID: "test",
+        tokenLists: [],
+        websiteURL: "",
+      },
     },
     amount: 300n,
     localizedDecimalAmount: "3",
@@ -100,6 +134,22 @@ describe("SharedAssetInput", () => {
     expect(searchbox).toHaveValue("Fake")
     expect(ui.queryByText("Fake token")).toBeVisible()
     expect(ui.queryByText("Test token")).not.toBeInTheDocument()
+  })
+
+  test("should not allow to search for untrusted assets with a searchbox", async () => {
+    const ui = renderWithProviders(<SharedAssetInputWithState />)
+    const assetButton = ui.getByText("FAKE")
+
+    await userEvent.click(assetButton)
+    expect(ui.queryByText("Untrusted token")).not.toBeInTheDocument()
+
+    const searchbox = ui.getByPlaceholderText("Search by name or address")
+    expect(searchbox).toHaveValue("")
+
+    await userEvent.type(searchbox, "Untrusted")
+
+    expect(searchbox).toHaveValue("Untrusted")
+    expect(ui.queryByText("Untrusted token")).not.toBeInTheDocument()
   })
 
   test("should allow to select different asset", async () => {
