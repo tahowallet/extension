@@ -7,8 +7,8 @@ export const NETWORK_ERRORS = {
   // 504:
   // 504:
   // internal:
-  UNSUPORTED_NETWORK: "Currently Tally does not support this network",
-  UNSUPORTED_TRANSPORT: "Currently Tally does not support this transport type",
+  UNSUPORTED_NETWORK: "Currently Taho does not support this network",
+  UNSUPORTED_TRANSPORT: "Currently Taho does not support this transport type",
   CONNECT_NOT_SUPPORTED:
     "The provided endpoint does not support socket connections",
   SOCKET_CLOSED: "Connection with node is no longer open",

@@ -1,7 +1,7 @@
 /* Injected at compile time, see webpack config */
 const segmentB64 = `@@@SEGMENT_MEDIUM_BASE64@@@`
 
-const TALLY_LOGO_SVG = `
+const TAHO_LOGO_SVG = `
   <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" fill="none">
     <path
       fill="#002825"
@@ -13,9 +13,9 @@ const TALLY_LOGO_SVG = `
 `.trim()
 
 export const WALLET_CONNECT_INJECTED_UI = `
-<div class="tally-ho-injected-wc-ui">
-  <button>${TALLY_LOGO_SVG}Tally&nbsp;Ho!</button>
-  <span>You are seeing this because you have Tally Ho! installed.</span>
+<div class="taho-injected-wc-ui">
+  <button>${TAHO_LOGO_SVG}Taho</button>
+  <span>You are seeing this because you have Taho installed.</span>
   <style>
     @font-face {
       font-family: "Segment";
@@ -24,7 +24,7 @@ export const WALLET_CONNECT_INJECTED_UI = `
       src: url(data:application/octet-stream;base64,${segmentB64});
     }
 
-    .tally-ho-injected-wc-ui {
+    .taho-injected-wc-ui {
       all: unset;
       max-width: 400px;
       margin: 16px auto 0px;
@@ -39,7 +39,7 @@ export const WALLET_CONNECT_INJECTED_UI = `
       align-items: center;
     }
 
-    .tally-ho-injected-wc-ui button {
+    .taho-injected-wc-ui button {
       all: unset;
       font-family: "Segment", "Open Sans", sans-serif;
       font-style: normal;
@@ -56,12 +56,12 @@ export const WALLET_CONNECT_INJECTED_UI = `
       cursor: pointer;
     }
 
-    .tally-ho-injected-wc-ui button:hover {
+    .taho-injected-wc-ui button:hover {
       background-color: #f0ac55;
       color: #013834;
     }
 
-    .tally-ho-injected-wc-ui span {
+    .taho-injected-wc-ui span {
       all: unset;
       font-family: "Segment", "Open Sans", sans-serif;
       font-style: normal;

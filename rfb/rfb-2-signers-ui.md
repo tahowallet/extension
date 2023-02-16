@@ -2,7 +2,7 @@
 
 ## Background
 
-The Tally Ho wallet has always been meant to support a few things that haven't
+The Taho wallet has always been meant to support a few things that haven't
 yet been implemented. In particular, the wallet is expected to support
 potentially many different types of out-of-memory signing---from connected
 hardware wallets like Ledger and Trezor, to air-gapped hardware wallets like
@@ -27,7 +27,7 @@ the user is still reviewing the transaction.
 
 ### Current Functionality
 
-The initial community edition release of Tally Ho featured a single way to add
+The initial community edition release of Taho featured a single way to add
 an account: via a mnemonic that created an underlying HDKeyring. A keyring is
 an in-memory cryptographic base key that can derive multiple addresses and sign
 for them with private key material. The community edition also supported a

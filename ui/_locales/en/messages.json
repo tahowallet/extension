@@ -21,7 +21,7 @@
       "addAddress": "Add address",
       "readOnly": "Read-only",
       "import": "Import",
-      "internal": "Tally Ho",
+      "internal": "Taho",
       "ledger": "Ledger",
       "category": {
         "readOnly": "Preview",
@@ -123,7 +123,7 @@
       "multipleLedgersDescriptor": "You can select as many as you want",
       "connectSelectedLedger": "Connect selected",
       "doneMessageOne": "Congratulations!",
-      "doneMessageTwo": "You can open Tally Ho now.",
+      "doneMessageTwo": "You can open Taho now.",
       "onboardingSuccessful": "Selected accounts were successfully connected.",
       "closeTab": "Close tab"
     },
@@ -198,7 +198,7 @@
       "rollUp": "Roll-up",
       "estimatedGas": "Estimated Gas",
       "explainerOne": "The estimated gas cost for {{name}} transactions includes an {{name}} fee + an Ethereum roll-up fee (the fee to register transaction on Ethereum chain).",
-      "explainerTwo": "Tally Ho stays in sync with the current {{name}} and Ethereum network fees to estimate the fee for a given transaction.",
+      "explainerTwo": "Taho stays in sync with the current {{name}} and Ethereum network fees to estimate the fee for a given transaction.",
       "explainerThree": "Only in rare cases will the actual fee you pay change by more than 25% from the estimate.",
       "learnMore": "Learn More"
     },
@@ -210,7 +210,7 @@
       "percentage": "percentage",
       "estimatedGas": "Estimated Gas",
       "explainerOne": "The estimated gas price for RSK transactions is calculated by adding 10% to the Minimum Gas Price obtained from the latest mined block.",
-      "explainerTwo": "Tally Ho stays in sync with the current RSK and Ethereum network fees to estimate the fee for a given transaction.",
+      "explainerTwo": "Taho stays in sync with the current RSK and Ethereum network fees to estimate the fee for a given transaction.",
       "explainerThree": "Only in rare cases will the actual fee you pay change by more than 10% from the estimate.",
       "learnMore": "Learn More"
     },
@@ -295,14 +295,14 @@
   },
   "achievements": {
     "empty": "Nothing to see here",
-    "startWith": "You can start with the Tally Ho collection!",
-    "collection": "Tally Ho collection"
+    "startWith": "You can start with the Taho collection!",
+    "collection": "Taho collection"
   },
   "onboarding": {
     "tabbed": {
       "routeBasedContent": {
         "newSeed": {
-          "tip": "If you want an easy way to preview Tally Ho, you can start by adding a view only account",
+          "tip": "If you want an easy way to preview Taho, you can start by adding a view only account",
           "action": "Add preview account"
         },
         "ledger": {
@@ -313,10 +313,10 @@
           "tip": "Some of the code for this was written by Community contributors"
         },
         "viewOnly": {
-          "tip": "A good way to take a peek at what Tally Ho offers"
+          "tip": "A good way to take a peek at what Taho offers"
         },
         "importSeed": {
-          "tip": "Tally Ho offers the possibility of adding multiple recovery phrases"
+          "tip": "Taho offers the possibility of adding multiple recovery phrases"
         },
         "default": {
           "fact1": "Fully owned by the community",
@@ -350,8 +350,8 @@
         },
         "viewOnly": {
           "title": "Read-only address",
-          "subtitle": "Add an Ethereum address or ENS name to view an existing wallet in Tally Ho!",
-          "submit": "Preview Tally Ho!",
+          "subtitle": "Add an Ethereum address or ENS name to view an existing wallet in Taho",
+          "submit": "Preview Taho",
           "tip": "You can upgrade a view-only wallet later"
         }
       },
@@ -378,14 +378,14 @@
         "tip": "If you didn’t write it down, you can <url>start with a new phrase</url>"
       },
       "complete": {
-        "title": "Welcome to Tally Ho!",
-        "subtitle": "For faster access we recommend pinning Tally Ho to your browser",
+        "title": "Welcome to Taho",
+        "subtitle": "For faster access we recommend pinning Taho to your browser",
         "animationAlt": "Pin the wallet"
       }
     },
     "setPassword": {
       "title": "First, let's secure<br /> your wallet",
-      "setAsDefault": "Set Tally Ho as default wallet",
+      "setAsDefault": "Set Taho as default wallet",
       "submit": "Begin the hunt"
     },
     "supportedChains": "Supported Chains",
@@ -472,7 +472,7 @@
     "mainMenu": "Settings",
     "signing": "Signing",
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
-    "setAsDefault": "Use Tally Ho as your default wallet",
+    "setAsDefault": "Use Taho as your default wallet",
     "enableTestNetworks": "Enable test networks",
     "language": "Language",
     "bugReport": "Bug report",
@@ -544,7 +544,7 @@
     "balance": "Balance: {{amount}}"
   },
   "shared": {
-    "tallyHo": "Tally Ho",
+    "taho": "Taho",
     "metaMask": "MetaMask",
     "injected": "Injected",
     "cancelBtn": "Cancel",
@@ -639,7 +639,7 @@
     "rewards": {
       "header": "Swap rewards for community",
       "body": "This week, 240,000 DOGGO tokens will be equally shared as Swap Rewards.",
-      "tooltip": "Tally Ho rewards its users that use swap every week. A council decides weekly prizes and who is eligible.",
+      "tooltip": "Taho rewards its users that use swap every week. A council decides weekly prizes and who is eligible.",
       "detailButton": "Details"
     },
     "error": {
@@ -658,11 +658,11 @@
   },
   "switchWallet": {
     "title": "Want to use another wallet instead?",
-    "tooltip": "You are seeing this because Tally Ho! is set as default wallet, you can change this option in the main menu.",
+    "tooltip": "You are seeing this because Taho is set as default wallet, you can change this option in the main menu.",
     "confirmSwitchWallet": "Yes, switch wallet",
-    "notDefaultWalletMessage": "Tally Ho not Default",
-    "disableWalletExplainer": "We disabled Tally Ho as the default wallet for you. You can always re-enable it from Menu ☰ at any time.",
-    "useTallyHoAsDefaultPrompt": "Use Tally Ho as default wallet",
+    "notDefaultWalletMessage": "Taho not Default",
+    "disableWalletExplainer": "We disabled Taho as the default wallet for you. You can always re-enable it from Menu ☰ at any time.",
+    "useTahoAsDefaultPrompt": "Use Taho as default wallet",
     "closeButton": "Close window"
   },
   "toggle": {
@@ -677,7 +677,7 @@
     "protocolList": {
       "testnetsSectionTitle": "Testnets",
       "customRPCFooterTitle": "Activate or add networks",
-      "customRPCFooterDesc": "You can activate any network that is already added to Tally Ho! or you can add any other network.",
+      "customRPCFooterDesc": "You can activate any network that is already added to Taho or you can add any other network.",
       "networkSettingsBtn": "Network settings"
     },
     "connectedDappInfo": {
@@ -686,17 +686,17 @@
       "dappConnections": "Dapp connections",
       "guideline": {
         "title": "How to connect to dapps",
-        "step1": "Set Tally Ho as default",
+        "step1": "Set Taho as default",
         "step2": "Click “connect to wallet” in a dapp",
         "step3": "Select one similar to these"
       },
-      "walletConnectInfo": "You can now connect to any dapp that supports Wallet Connect by selecting Tally Ho from desktop tab. <url>Learn more</url>",
+      "walletConnectInfo": "You can now connect to any dapp that supports Wallet Connect by selecting Taho from desktop tab. <url>Learn more</url>",
       "walletConnectHint": "Check the desktop tab in the connection modal"
     }
   },
   "wallet": {
     "activities": {
-      "historicalActivityExplainer": "Tally Ho will populate your historical activity over time; this may take an hour or more for accounts that have been active for a long time. For new accounts, new activity will show up here.",
+      "historicalActivityExplainer": "Taho will populate your historical activity over time; this may take an hour or more for accounts that have been active for a long time. For new accounts, new activity will show up here.",
       "endOfList": "You have reached the end of activity list.",
       "moreHistory": "For more history visit",
       "tokenApproved": "Token approval",
@@ -753,7 +753,7 @@
       "snackbar": "You can change this in Settings later",
       "isDefault": "is now your default wallet",
       "notDefault": "is not your default wallet",
-      "tooltip": "Setting Tally Ho as your default wallet means that every time you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
+      "tooltip": "Setting Taho as your default wallet means that every time you connect to a dApp, Taho will open instead of MetaMask or other wallets."
     },
     "analyticsNotification": {
       "title": "Analytics are enabled",
@@ -763,10 +763,10 @@
   },
   "dAppConnect": {
     "switchWallet": {
-      "title": "Tally Ho not Default",
-      "descFirstPart": "We disabled Tally as default wallet for you. You can always enable it back from Settings",
+      "title": "Taho not Default",
+      "descFirstPart": "We disabled Taho as default wallet for you. You can always enable it back from Settings",
       "descSecondPart": "at any time.",
-      "toggleTitle": "Use Tally Ho as default wallet"
+      "toggleTitle": "Use Taho as default wallet"
     }
   },
   "abilities": {
