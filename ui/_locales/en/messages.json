@@ -839,6 +839,11 @@
     "desc": "Looks like you encountered an empty bowl, try refreshing the page to see if something appears",
     "submitBtn": "Refresh page"
   },
+  "globalModal": {
+    "title": "Global modal title!",
+    "description": "Some awesome text here.",
+    "button": "Got it, Awesome!"
+  },
   "devPanel": {
     "title": "Developer Panel",
     "featureFlags": {

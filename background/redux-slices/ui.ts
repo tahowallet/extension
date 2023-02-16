@@ -34,6 +34,7 @@ export type UIState = {
   routeHistoryEntries?: Partial<Location>[]
   slippageTolerance: number
   accountSignerSettings: AccountSignerSettings[]
+  showGlobalModal: boolean
 }
 
 export type Events = {
@@ -61,6 +62,7 @@ export const initialState: UIState = {
   snackbarMessage: "",
   slippageTolerance: 0.01,
   accountSignerSettings: [],
+  showGlobalModal: false,
 }
 
 const uiSlice = createSlice({
@@ -90,6 +92,12 @@ const uiSlice = createSlice({
         showAnalyticsNotification: false,
       },
     }),
+    toggleShowGlobalModal: (
+      immerState,
+      { payload: showGlobalModal }: { payload: boolean }
+    ): void => {
+      immerState.showGlobalModal = showGlobalModal
+    },
     setShowAnalyticsNotification: (
       state,
       { payload: showAnalyticsNotification }: { payload: boolean }
@@ -179,6 +187,7 @@ export const {
   toggleHideDust,
   toggleTestNetworks,
   toggleCollectAnalytics,
+  toggleShowGlobalModal,
   setShowAnalyticsNotification,
   toggleHideBanners,
   setSelectedAccount,
@@ -309,6 +318,11 @@ export const selectSlippageTolerance = createSelector(
 export const selectInitializationTimeExpired = createSelector(
   selectUI,
   (ui) => ui.initializationLoadingTimeExpired
+)
+
+export const selectShowGlobalModal = createSelector(
+  selectUI,
+  (ui) => ui.showGlobalModal
 )
 
 export const selectShowTestNetworks = createSelector(
