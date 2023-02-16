@@ -209,8 +209,10 @@ export default function OnboardingSaveSeed(): ReactElement {
             height: 40px;
           }
           .wordmark {
-            background: url("./images/wordmark@2x.png");
-            background-size: cover;
+            background: url("./images/wordmark.svg");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
             width: 95px;
             height: 25px;
             margin-right: calc(50% - 95px / 2);

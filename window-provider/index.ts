@@ -100,7 +100,7 @@ export default class TallyWindowProvider extends EventEmitter {
   _state?: typeof METAMASK_STATE_MOCK
 
   providerInfo = {
-    label: "Tally Ho!",
+    label: "Taho",
     injectedNamespace: "tally",
     iconURL: "TODO",
     identityFlag: "isTally",

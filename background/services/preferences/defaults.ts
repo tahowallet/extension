@@ -8,7 +8,7 @@ const defaultPreferences: Preferences = {
     urls: [
       storageGatewayURL(
         "ipfs://bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm"
-      ).href, // the Tally community-curated list
+      ).href, // the Taho community-curated list
       "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
       "https://meta.yearn.finance/api/tokens/list", // the Yearn list
       "https://messari.io/tokenlist/messari-verified", // Messari-verified projects
