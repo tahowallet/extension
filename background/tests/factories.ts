@@ -49,7 +49,9 @@ import {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
 } from "../services/chain"
-import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
+
+// We don't want the chain service to use a real provider in tests
+jest.mock("../services/chain/serial-fallback-provider")
 
 const createRandom0xHash = () =>
   keccak256(Buffer.from(Math.random().toString()))
@@ -348,33 +350,6 @@ export const makeEthersFeeData = (overrides?: Partial<FeeData>): FeeData => {
     ...overrides,
   }
 }
-
-export class MockSerialFallbackProvider {
-  async getBlock(): Promise<Block> {
-    return makeEthersBlock()
-  }
-
-  async getBlockNumber(): Promise<number> {
-    return 1
-  }
-
-  async getBalance(): Promise<BigNumber> {
-    return BigNumber.from(100)
-  }
-
-  async getFeeData(): Promise<FeeData> {
-    return makeEthersFeeData()
-  }
-
-  async getCode(): Promise<string> {
-    return "false"
-  }
-}
-
-export const makeSerialFallbackProvider =
-  (): Partial<SerialFallbackProvider> => {
-    return new MockSerialFallbackProvider()
-  }
 
 const getRandomStr = (length: number) => {
   let result = ""

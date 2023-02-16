@@ -10,6 +10,7 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
+import { selectShowAnalyticsNotification } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -62,6 +63,10 @@ export default function Wallet(): ReactElement {
     (background) => background.ui?.initializationLoadingTimeExpired
   )
 
+  const showAnalyticsNotification = useBackgroundSelector(
+    selectShowAnalyticsNotification
+  )
+
   const panelNames = [t("wallet.pages.assets")]
 
   if (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
@@ -73,7 +78,7 @@ export default function Wallet(): ReactElement {
   return (
     <>
       <div className="page_content">
-        <WalletToggleDefaultBanner />
+        {!showAnalyticsNotification && <WalletToggleDefaultBanner />}
         <WalletAnalyticsNotificationBanner />
         <div className="section">
           <WalletAccountBalanceControl

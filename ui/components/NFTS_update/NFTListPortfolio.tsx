@@ -50,14 +50,16 @@ export default function NFTListPortfolio(props: {
             collections={collections}
             expandBadgesCollections={type !== "nfts"}
           />
-          <SharedBanner
-            id="nfts_networks_banner"
-            canBeClosed
-            customStyles="margin: 15px 0 30px;"
-            hasShadow
-          >
-            <div className="simple_text">{t("networksBanner")}</div>
-          </SharedBanner>
+          {!isLoading && (
+            <SharedBanner
+              id="nfts_networks_banner"
+              canBeClosed
+              customStyles="margin: 15px 0 30px;"
+              hasShadow
+            >
+              <div className="simple_text">{t("networksBanner")}</div>
+            </SharedBanner>
+          )}
         </>
       ) : (
         <NoMatchingNFTs type={type} />
@@ -72,7 +74,7 @@ export default function NFTListPortfolio(props: {
           }
           .simple_text {
             color: var(--green-20);
-            margin: 0 10px 0 4px;
+            margin: 0 25px 0 4px;
           }
         `}
       </style>

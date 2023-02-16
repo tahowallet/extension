@@ -6,7 +6,6 @@ import {
   EIP1193ErrorPayload,
   RPCRequest,
 } from "@tallyho/provider-bridge-shared"
-import logger from "../../lib/logger"
 import { sameEVMAddress } from "../../lib/utils"
 import { HexString } from "../../types"
 
@@ -57,10 +56,8 @@ export function parsedRPCErrorResponse(error: { body: string }):
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function handleRPCErrorResponse(error: unknown) {
+export function handleRPCErrorResponse(error: unknown): unknown {
   let response
-  logger.log("error processing request", error)
   if (typeof error === "object" && error !== null) {
     /**
      * Get error per the RPC method’s specification
