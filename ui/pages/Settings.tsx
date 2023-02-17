@@ -24,7 +24,7 @@ import SharedIcon from "../components/Shared/SharedIcon"
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
 const FAQ_URL =
-  "https://taho.notion.site/Tally-Ho-Knowledge-Base-4d95ed5439c64d6db3d3d27abf1fdae5"
+  "https://notion.taho.xyz/Tally-Ho-Knowledge-Base-4d95ed5439c64d6db3d3d27abf1fdae5"
 const FOOTER_ACTIONS = [
   {
     icon: "icons/m/discord",
