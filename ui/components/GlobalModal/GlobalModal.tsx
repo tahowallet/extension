@@ -1,3 +1,4 @@
+import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import {
   selectShowGlobalModal,
   toggleShowGlobalModal,
@@ -8,8 +9,8 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedModal from "../Shared/SharedModal"
 
+const IMG = `${WEBSITE_ORIGIN}/hosted/logo_animation.gif`
 // TODO update
-const IMG = "./images/doggo_gold.svg"
 const LINK = "https://blog.taho.xyz"
 
 export default function GlobalModal(): ReactElement {
@@ -61,6 +62,7 @@ export default function GlobalModal(): ReactElement {
           width: 100%;
           height: 100%;
           gap: 24px;
+          margin-top: 8px;
         }
         .image_wrap {
           align-self: center;
