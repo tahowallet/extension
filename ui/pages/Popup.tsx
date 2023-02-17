@@ -160,7 +160,7 @@ export function Main(): ReactElement {
       <div className="top_menu_wrap_decoy">
         <TopMenu />
       </div>
-      <GlobalModal />
+      <GlobalModal id="meet_taho" />
       <Router initialEntries={routeHistoryEntries}>
         <Route
           render={(routeProps) => {

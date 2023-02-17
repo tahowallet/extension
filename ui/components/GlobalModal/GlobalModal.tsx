@@ -1,11 +1,7 @@
 import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
-import {
-  selectShowGlobalModal,
-  toggleShowGlobalModal,
-} from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import { useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedModal from "../Shared/SharedModal"
 
@@ -13,25 +9,20 @@ const IMG = `${WEBSITE_ORIGIN}/hosted/logo_animation.gif`
 // TODO update
 const LINK = "https://blog.taho.xyz"
 
-export default function GlobalModal(): ReactElement {
+export default function GlobalModal({ id }: { id: string }): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "globalModal" })
 
-  const showModal = useBackgroundSelector(selectShowGlobalModal)
-  const dispatch = useBackgroundDispatch()
-
-  const toggleShowModal = (toggle: boolean) => {
-    dispatch(toggleShowGlobalModal(toggle))
-  }
+  const [showModal, setShowModal] = useLocalStorage(`modal_${id}`, "true")
 
   const handleClick = () => {
-    toggleShowModal(false)
+    setShowModal("false")
     window.open(LINK, "_blank")?.focus()
   }
 
   return (
     <SharedModal
-      isOpen={showModal}
-      onClose={() => toggleShowModal(false)}
+      isOpen={showModal === "true"}
+      onClose={() => setShowModal("false")}
       width="90%"
       minHeight="550px"
       bgColor="var(--green-95)"
