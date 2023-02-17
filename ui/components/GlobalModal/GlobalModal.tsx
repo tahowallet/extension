@@ -37,10 +37,11 @@ export default function GlobalModal(): ReactElement {
       shadowBgColor="var(--green-120)"
     >
       <div className="content">
-        <img className="image" src={IMG} alt="" />
-        <div className="text_wrap">
-          <span className="title">{t("title1")}</span>
-          <span className="title">{t("title2")}</span>
+        <div className="image_wrap">
+          <img className="image" src={IMG} alt="" />
+        </div>
+        <div>
+          <span className="title">{t("title")}</span>
           <div className="description">
             <span>{t("description1")}</span>
             <span>{t("description2")}</span>
@@ -56,18 +57,16 @@ export default function GlobalModal(): ReactElement {
           display: flex;
           flex-direction: column;
           justify-content: center;
-          align-items: center;
+          align-items: flex-start;
           width: 100%;
           height: 100%;
-          gap: 38px;
+          gap: 24px;
+        }
+        .image_wrap {
+          align-self: center;
         }
         .image {
           max-width: 100%;
-        }
-        .text_wrap {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
         }
         .title {
           font-weight: 600;
@@ -76,7 +75,7 @@ export default function GlobalModal(): ReactElement {
           color: var(--trophy-gold);
         }
         .description {
-          margin-top: 20px;
+          margin-top: 16px;
           font-weight: 500;
           font-size: 14px;
           line-height: 16px;
@@ -84,11 +83,8 @@ export default function GlobalModal(): ReactElement {
           color: var(--green-20);
           display: flex;
           flex-direction: column;
-          align-items: center;
-          text-align: center;
+          align-items: flex-start;
           gap: 20px;
-          justify-content: space-between;
-          padding: 0px 32px;
         }
       `}</style>
     </SharedModal>
