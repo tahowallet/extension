@@ -7,7 +7,7 @@ import SharedModal from "../Shared/SharedModal"
 
 const IMG = `${WEBSITE_ORIGIN}/hosted/logo_animation.gif`
 // TODO update
-const LINK = "https://blog.taho.xyz"
+const LINK = "https://blog.taho.xyz/rename-announcement"
 
 export default function GlobalModal({ id }: { id: string }): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "globalModal" })
