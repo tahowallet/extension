@@ -37,7 +37,7 @@ export default function GlobalModal({ id }: { id: string }): ReactElement {
           <div className="description">
             <span>{t("description1")}</span>
             <span>{t("description2")}</span>
-            <span>{t("description3")}</span>
+            <span className="bold">{t("description3")}</span>
           </div>
         </div>
         <SharedButton type="primary" size="medium" onClick={handleClick}>
@@ -78,6 +78,9 @@ export default function GlobalModal({ id }: { id: string }): ReactElement {
           flex-direction: column;
           align-items: flex-start;
           gap: 20px;
+        }
+        .bold {
+          font-weight: 800;
         }
       `}</style>
     </SharedModal>
