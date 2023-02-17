@@ -840,8 +840,11 @@
     "submitBtn": "Refresh page"
   },
   "globalModal": {
-    "title": "Global modal title!",
-    "description": "Some awesome text here.",
+    "title1": "The foxhunt is over.",
+    "title2": "We have bigger things to do.",
+    "description1": "We began by calling out the industry’s biggest and best-funded wallet 🦊 for failing to live up to the values of web3. Eighteen months later, the word is out.",
+    "description2": " Now, it’s time for our mission to grow. We'll continue to evolve as the world’s first and only community-owned wallet, and we’ll also be taking steps to expand the scope of this project and ensure that everyone has fair, equal, and community-controlled access to web3.",
+    "description3": "Web3, meet Taho.",
     "button": "Got it, Awesome!"
   },
   "devPanel": {

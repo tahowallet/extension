@@ -39,8 +39,13 @@ export default function GlobalModal(): ReactElement {
       <div className="content">
         <img className="image" src={IMG} alt="" />
         <div className="text_wrap">
-          <h1 className="title">{t("title")}</h1>
-          <div className="description">{t("description")}</div>
+          <span className="title">{t("title1")}</span>
+          <span className="title">{t("title2")}</span>
+          <div className="description">
+            <span>{t("description1")}</span>
+            <span>{t("description2")}</span>
+            <span>{t("description3")}</span>
+          </div>
         </div>
         <SharedButton type="primary" size="medium" onClick={handleClick}>
           {t("button")}
@@ -71,15 +76,18 @@ export default function GlobalModal(): ReactElement {
           color: var(--trophy-gold);
         }
         .description {
+          margin-top: 20px;
           font-weight: 500;
           font-size: 14px;
           line-height: 16px;
           letter-spacing: 0.03em;
           color: var(--green-20);
-
           display: flex;
-          align-items: flex-end;
+          flex-direction: column;
+          align-items: center;
           text-align: center;
+          gap: 20px;
+          justify-content: space-between;
           padding: 0px 32px;
         }
       `}</style>
