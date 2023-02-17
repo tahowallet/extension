@@ -6,9 +6,8 @@ import {
   createIndexingService,
   createNameService,
   createAnyEVMBlock,
-  makeSerialFallbackProvider,
 } from "../../../tests/factories"
-import SerialFallbackProvider from "../../chain/serial-fallback-provider"
+import { makeSerialFallbackProvider } from "../../chain/serial-fallback-provider"
 import { annotationsFromLogs } from "../transactions"
 
 // These logs reference transaction https://etherscan.io/tx/0x0ba306853f8be38d54327675f14694d582a14759b851f2126dd900bef0aff840
@@ -63,7 +62,7 @@ describe("Enrichment Service Transactions", () => {
 
       sandbox
         .stub(chainService, "providerForNetworkOrThrow")
-        .returns(makeSerialFallbackProvider() as SerialFallbackProvider)
+        .returns(makeSerialFallbackProvider("1", []))
 
       const subannotations = await annotationsFromLogs(
         chainService,

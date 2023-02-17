@@ -189,9 +189,9 @@ export default function SingleAsset(): ReactElement {
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
-            text-align: center;
             text-transform: uppercase;
             margin-left: 8px;
+            word-break: break-word;
           }
           .asset_wrap {
             display: flex;
@@ -223,7 +223,7 @@ export default function SingleAsset(): ReactElement {
             width: 16px;
             height: 16px;
             background-color: var(--green-40);
-            margin-left: 5px;
+            margin: 0 5px;
           }
           .new_tab_link:hover .icon_new_tab {
             background-color: var(--trophy-gold);

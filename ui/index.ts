@@ -5,8 +5,11 @@ import { browser, newProxyStore } from "@tallyho/tally-background"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import "./_locales/i18n"
 import { getAllAddresses } from "@tallyho/tally-background/redux-slices/selectors"
+import logger from "@tallyho/tally-background/lib/logger"
 import Popup from "./pages/Popup"
 import Tab from "./pages/Tab"
+
+logger.contextId = "UI"
 
 export async function attachUIToRootElement(
   component: ComponentType<{ store: Store }>,

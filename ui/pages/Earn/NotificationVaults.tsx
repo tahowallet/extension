@@ -1,3 +1,4 @@
+import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import React, { ReactElement } from "react"
 import SharedBanner from "../../components/Shared/SharedBanner"
 import SharedButton from "../../components/Shared/SharedButton"
@@ -20,7 +21,7 @@ export default function NotificationVaults(): ReactElement {
         size="medium"
         iconSmall="new-tab"
         iconPosition="left"
-        onClick={() => window.open("https://tally.cash/", "_blank")?.focus()}
+        onClick={() => window.open(WEBSITE_ORIGIN, "_blank")?.focus()}
       >
         Read post
       </SharedButton>

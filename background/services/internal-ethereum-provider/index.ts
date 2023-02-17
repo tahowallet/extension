@@ -170,7 +170,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     super()
 
     internalProviderPort.emitter.on("message", async (event) => {
-      logger.log(`internal: request payload: ${JSON.stringify(event)}`)
+      logger.debug(`internal: request payload: ${JSON.stringify(event)}`)
       try {
         const response = {
           id: event.id,
@@ -180,11 +180,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
             TALLY_INTERNAL_ORIGIN
           ),
         }
-        logger.log("internal response:", response)
+        logger.debug("internal response:", response)
 
         internalProviderPort.postResponse(response)
       } catch (error) {
-        logger.log("error processing request", event.id, error)
+        logger.debug("error processing request", event.id, error)
 
         internalProviderPort.postResponse({
           id: event.id,

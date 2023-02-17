@@ -150,14 +150,11 @@ export async function getAssetTransfers(
  */
 export async function getTokenBalances(
   provider: SerialFallbackProvider,
-  { address, network }: AddressOnNetwork,
-  tokens?: HexString[]
+  { address, network }: AddressOnNetwork
 ): Promise<SmartContractAmount[]> {
-  const uniqueTokens = [...new Set(tokens ?? [])]
-
   const json: unknown = await provider.send("alchemy_getTokenBalances", [
     address,
-    uniqueTokens.length > 0 ? uniqueTokens : "DEFAULT_TOKENS",
+    "erc20",
   ])
 
   if (!isValidAlchemyTokenBalanceResponse(json)) {

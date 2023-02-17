@@ -109,7 +109,13 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
             customStyles="border-radius: 0 0 8px 8px;"
           />
           <div className="preview_network">
-            <SharedNetworkIcon network={network} size={24} hasBackground />
+            <SharedNetworkIcon
+              network={network}
+              size={24}
+              padding={6}
+              squared
+              hasBackground
+            />
           </div>
           <div className="preview_details" ref={backdropRef}>
             <div className="preview_section_column">
