@@ -1,7 +1,7 @@
 import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import { useLocalStorage } from "../../hooks"
+import { getLocalStorageItem, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedModal from "../Shared/SharedModal"
 
@@ -12,7 +12,11 @@ const LINK = "https://blog.taho.xyz"
 export default function GlobalModal({ id }: { id: string }): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "globalModal" })
 
-  const [showModal, setShowModal] = useLocalStorage(`modal_${id}`, "true")
+  const [showModal, setShowModal] = useLocalStorage(
+    `modal_${id}`,
+    // Should be false if you don't want new users to see the modal
+    getLocalStorageItem(`modal_${id}`, "false")
+  )
 
   const handleClick = () => {
     setShowModal("false")
