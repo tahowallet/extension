@@ -59,10 +59,10 @@ export default function OnboardingViewOnlyWallet({
         {!embedded && <div className="wordmark" />}
       </div>
       <div className="content">
-        <h1 className="serif_header">Explore Tally Ho!</h1>
+        <h1 className="serif_header">Explore Taho</h1>
         <div className="subtitle">
           Add an Ethereum address, ENS or UNS name to view an existing wallet in
-          Tally Ho.
+          Taho.
         </div>
         <form
           onSubmit={(event) => {
@@ -81,7 +81,7 @@ export default function OnboardingViewOnlyWallet({
             showLoadingOnClick
             isFormSubmit
           >
-            Explore Tally Ho!
+            Explore Taho
           </SharedButton>
         </form>
       </div>
@@ -93,8 +93,10 @@ export default function OnboardingViewOnlyWallet({
             width: 100%;
           }
           .wordmark {
-            background: url("./images/wordmark@2x.png");
-            background-size: cover;
+            background: url("./images/wordmark.svg");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
             width: 95px;
             height: 25px;
             position: absolute;

@@ -123,7 +123,7 @@ export default function AddWallet(): ReactElement {
         <img
           width="80"
           height="80"
-          alt="Tally Ho Gold"
+          alt="Taho Gold"
           src="./images/doggo_gold.svg"
         />
         <div className="bottom_content">
