@@ -14,8 +14,7 @@ export default function GlobalModal({ id }: { id: string }): ReactElement {
 
   const [showModal, setShowModal] = useLocalStorage(
     `modal_${id}`,
-    // Should be false if you don't want new users to see the modal
-    getLocalStorageItem(`modal_${id}`, "false")
+    getLocalStorageItem(`modal_${id}`, "true")
   )
 
   const handleClick = () => {

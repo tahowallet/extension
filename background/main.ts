@@ -341,11 +341,12 @@ export default class Main extends BaseService<never> {
             restoredState as Record<string, unknown>,
             version || undefined
           )
-          // Show global modal for existing users
-          window.localStorage.setItem("modal_meet_taho", "true")
         } else {
           throw new Error(`Unexpected JSON persisted for state: ${state}`)
         }
+      } else {
+        // Should be false if you don't want new users to see the modal
+        window.localStorage.setItem("modal_meet_taho", "false")
       }
     }
 
