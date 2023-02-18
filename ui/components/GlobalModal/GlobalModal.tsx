@@ -1,11 +1,10 @@
-import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { getLocalStorageItem, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedModal from "../Shared/SharedModal"
 
-const IMG = `${WEBSITE_ORIGIN}/hosted/logo_animation.gif`
+const IMG = `/images/tahonamechange.gif`
 // TODO update
 const LINK = "https://blog.taho.xyz/rename-announcement"
 
