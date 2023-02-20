@@ -5,7 +5,7 @@ import logger from "../../lib/logger"
 import { encodeJSON } from "../../lib/utils"
 
 /**
- * The TelemetryService is responsible for tracking usage statistics in Tally.
+ * The TelemetryService is responsible for tracking usage statistics in Taho.
  *
  * Currently we are only tracking extension storage information and logging
  * it to the console.

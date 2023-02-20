@@ -27,6 +27,6 @@ body:
       label: What would you like to be able to do?
       description: >-
         Please describe what you would like to be able to achieve/what problem
-        you would like to be able to solve with Tally that you currently can't.
+        you would like to be able to solve with Taho that you currently can't.
     validations:
       required: true

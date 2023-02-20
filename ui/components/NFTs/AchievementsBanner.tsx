@@ -17,7 +17,7 @@ export default function AchievementsBanner(): ReactElement {
             type="tertiary"
             iconSmall="new-tab"
             onClick={() => {
-              window.open(`https://galxe.com/tallyho`, "_blank")?.focus()
+              window.open(`https://galxe.com/taho`, "_blank")?.focus()
             }}
           >
             {t("achievements.collection")}
