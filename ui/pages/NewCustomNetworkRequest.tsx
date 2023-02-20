@@ -138,8 +138,8 @@ export default function NewCustomNetworkRequest(): JSX.Element {
         }
 
         .new_chain_logo {
-          width: 50px;
-          height: 50px;
+          width: 56px;
+          height: 56px;
           border-radius: 8px;
           background: url("${iconUrl}") center / contain no-repeat;
         }
