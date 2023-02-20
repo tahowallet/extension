@@ -1,7 +1,10 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { useBackgroundSelector } from "../../../hooks"
+import {
+  selectIsTransactionLoaded,
+  selectTransactionData,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { useBackgroundSelector, useDebounce } from "../../../hooks"
 import SharedButton from "../../Shared/SharedButton"
 
 type SignerBaseFrameProps = {
@@ -20,16 +23,33 @@ export default function SignerBaseFrame({
   const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
 
   const transactionDetails = useBackgroundSelector(selectTransactionData)
+  const isTransactionDataReady = useBackgroundSelector(
+    selectIsTransactionLoaded
+  )
   const hasInsufficientFunds =
     transactionDetails?.annotation?.warnings?.includes("insufficient-funds")
 
   const [isOnDelayToSign /* , setIsOnDelayToSign */] = useState(false)
+  // Debounced unlock buttons because dispatching transaction events is async and can happen in batches
+  const [unlockButtons, setUnlockButtons] = useDebounce(
+    isTransactionDataReady,
+    300
+  )
+  useEffect(
+    () => setUnlockButtons(isTransactionDataReady),
+    [isTransactionDataReady, setUnlockButtons]
+  )
 
   return (
     <>
       <div className="signature-details">{children}</div>
       <footer>
-        <SharedButton size="large" type="secondary" onClick={onReject}>
+        <SharedButton
+          size="large"
+          type="secondary"
+          onClick={onReject}
+          isDisabled={!unlockButtons}
+        >
           {t("reject")}
         </SharedButton>
 
@@ -38,9 +58,9 @@ export default function SignerBaseFrame({
           size="large"
           onClick={onConfirm}
           showLoadingOnClick
-          isDisabled={hasInsufficientFunds || isOnDelayToSign}
+          isDisabled={isOnDelayToSign || !unlockButtons || hasInsufficientFunds}
         >
-          {signingActionLabel}
+          {signingActionLabel} TEST
         </SharedButton>
       </footer>
       <style jsx>
