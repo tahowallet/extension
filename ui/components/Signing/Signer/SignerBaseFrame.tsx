@@ -60,7 +60,7 @@ export default function SignerBaseFrame({
           showLoadingOnClick
           isDisabled={isOnDelayToSign || !unlockButtons || hasInsufficientFunds}
         >
-          {signingActionLabel} TEST
+          {signingActionLabel}
         </SharedButton>
       </footer>
       <style jsx>
