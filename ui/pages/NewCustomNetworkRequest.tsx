@@ -49,6 +49,12 @@ export default function NewCustomNetworkRequest(): JSX.Element {
 
   return (
     <div className="standard_width">
+      <style jsx>{`
+        // Hacky, but allows us to override the parent popup container styles
+        :global(main) {
+          background-color: var(--green-95) !important;
+        }
+      `}</style>
       <form
         action="#"
         onSubmit={(e) => {
@@ -58,7 +64,14 @@ export default function NewCustomNetworkRequest(): JSX.Element {
       >
         <header>
           <h1>
-            <img width={24} alt={siteTitle} src={favicon} /> {siteTitle}
+            <img
+              style={{ objectFit: "contain", objectPosition: "center" }}
+              height={24}
+              width={24}
+              alt={siteTitle}
+              src={favicon}
+            />
+            {siteTitle}
           </h1>
           <p>{t("addNewChain.subtitle")}</p>
         </header>
@@ -81,9 +94,10 @@ export default function NewCustomNetworkRequest(): JSX.Element {
             </div>
             <div className="plus_wrapper">
               <SharedIcon
-                width={16}
-                height={16}
+                width={14}
+                height={14}
                 color="var(--trophy-gold)"
+                customStyles="margin: 2px;"
                 icon="plus@2x.png"
               />
             </div>
@@ -154,9 +168,9 @@ export default function NewCustomNetworkRequest(): JSX.Element {
         .plus_wrapper {
           align-self: center;
           position: relative;
-          border: 4px solid var(--green-120);
+          border: 4px solid var(--hunter-green);
           border-radius: 50%;
-          background-color: var(--hunter-green);
+          background-color: var(--green-95);
           padding: 4px;
           margin-right: -4px;
           margin-left: -4px;
@@ -168,7 +182,10 @@ export default function NewCustomNetworkRequest(): JSX.Element {
         }
 
         header {
-          margin: 18px 0 34px;
+          margin: 14px 0 34px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
         }
 
         header h1 {
@@ -191,12 +208,13 @@ export default function NewCustomNetworkRequest(): JSX.Element {
           line-height: 24px;
           letter-spacing: 0em;
           text-align: center;
+          margin: 0;
         }
 
         .details_container {
-          background: var(--green-120);
+          background: var(--hunter-green);
           border-radius: 16px;
-          padding: 16px 24px;
+          padding: 24px;
           margin-bottom: 16px;
         }
 
@@ -204,6 +222,7 @@ export default function NewCustomNetworkRequest(): JSX.Element {
           display: flex;
           flex-direction: column;
           gap: 8px;
+          margin: 24px 0 0;
         }
 
         .row {
@@ -245,8 +264,7 @@ export default function NewCustomNetworkRequest(): JSX.Element {
         }
 
         footer {
-          padding: 16px;
-          padding-bottom: 0;
+          padding-top: 16px;
           display: flex;
           justify-content: space-between;
         }
