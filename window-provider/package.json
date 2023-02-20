@@ -1,7 +1,7 @@
 {
   "name": "@tallyho/window-provider",
   "version": "0.0.1",
-  "description": "Tally Ho, the community owned and operated Web3 wallet: window provider is responsible for creating the in-page object for communication.",
+  "description": "Taho, the community owned and operated Web3 wallet: window provider is responsible for creating the in-page object for communication.",
   "main": "index.ts",
   "repository": "git@github.com:thesis/tally-extension.git",
   "author": "Greg Nagy <gergo.nagy@tally.cash>",
