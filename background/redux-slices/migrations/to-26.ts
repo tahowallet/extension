@@ -18,13 +18,17 @@ export default (
   const { abilities } = typedPrevState
   const { filter } = abilities
 
+  const types = filter.types.includes("claim")
+    ? filter.types
+    : [...filter.types, "claim"]
+
   return {
     ...prevState,
     abilities: {
       ...abilities,
       filter: {
         ...filter,
-        types: [...filter.types, "claim"],
+        types,
       },
     },
   }
