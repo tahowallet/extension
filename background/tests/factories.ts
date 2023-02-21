@@ -257,7 +257,7 @@ export const createAccountBalance = (
 export const createAddressOnNetwork = (
   overrides: Partial<AddressOnNetwork> = {}
 ): AddressOnNetwork => ({
-  address: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+  address: createRandom0xHash(),
   network: ETHEREUM,
   ...overrides,
 })
