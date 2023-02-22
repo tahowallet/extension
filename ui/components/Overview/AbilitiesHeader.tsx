@@ -85,6 +85,8 @@ export default function AbilitiesHeader(): ReactElement {
         .abilities_header {
           background: var(--green-95);
           border-radius: 8px;
+          box-shadow: 0px 8px 8px rgba(7, 17, 17, 0.24),
+            0px 2px 4px rgba(7, 17, 17, 0.12), 0px 2px 2px rgba(7, 17, 17, 0.22);
           background: radial-gradient(
               78.69% 248.21% at 114.77% 133.93%,
               rgba(9, 86, 72, 0.85) 0%,
@@ -99,6 +101,30 @@ export default function AbilitiesHeader(): ReactElement {
           padding: 12px 16px 12px 12px;
           width: 100%;
           box-sizing: border-box;
+          position: relative;
+          z-index: 1;
+        }
+
+        .abilities_header:before {
+          border-radius: 8px;
+          background: radial-gradient(
+            78.69% 248.21% at 114.77% 133.93%,
+            rgba(9, 86, 72, 0.85) 0%,
+            rgba(5, 103, 95, 0.35) 100%
+          );
+          box-shadow: 0px 16px 16px rgba(7, 17, 17, 0.3),
+            0px 6px 8px rgba(7, 17, 17, 0.24), 0px 2px 4px rgba(7, 17, 17, 0.34);
+
+          position: absolute;
+          content: "";
+          inset: 0;
+          z-index: -1;
+          opacity: 0;
+          transition: opacity 0.25s ease-in;
+        }
+
+        .abilities_header:hover::before {
+          opacity: 1;
         }
 
         .abilities_header.init_state {
@@ -110,9 +136,11 @@ export default function AbilitiesHeader(): ReactElement {
           box-shadow: 0px 16px 16px rgba(7, 17, 17, 0.3),
             0px 6px 8px rgba(7, 17, 17, 0.24), 0px 2px 4px rgba(7, 17, 17, 0.34);
         }
+
         .abilities_header.pointer {
           cursor: pointer;
         }
+
         .abilities_info {
           display: flex;
           flex-direction: row;
