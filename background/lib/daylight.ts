@@ -79,31 +79,26 @@ type SpamReportResponse = {
   success: boolean
 }
 
-// More query params
-// https://docs.daylight.xyz/reference/get_v1-wallets-address-abilities
-const QUERY_PARAMS = {
-  // The most interesting abilities will be the first
-  sort: "magic",
-  sortDirection: "desc",
-  // The limit needs to be set. It is set to the highest value.
-  limit: "1000",
-  deadline: "all",
-}
-
 export const getDaylightAbilities = async (
   address: string,
   // Amount of times to retry fetching abilities for an address that is not fully synced yet.
   // https://docs.daylight.xyz/reference/retrieve-wallets-abilities
   retries = DEFAULT_RETRIES
 ): Promise<DaylightAbility[]> => {
+  // Learn more at https://docs.daylight.xyz/reference/get_v1-wallets-address-abilities
+  const requestURL = new URL(
+    `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities`
+  )
+  // The most interesting abilities will be the first
+  requestURL.searchParams.set("sort", "magic")
+  requestURL.searchParams.set("sortDirection", "desc")
+  // The limit needs to be set. It is set to the highest value.
+  requestURL.searchParams.set("limit", "1000")
+  requestURL.searchParams.set("deadline", "all")
+
   try {
-    const params = Object.entries(QUERY_PARAMS)
-      .reduce((result, [key, value]) => {
-        return result.concat("&", `${key}=${value}`)
-      }, "")
-      .substring(1)
     const response: AbilitiesResponse = await fetchJson({
-      url: `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities?${params}`,
+      url: requestURL.toString(),
       ...(process.env.DAYLIGHT_API_KEY && {
         headers: {
           Authorization: `Bearer ${process.env.DAYLIGHT_API_KEY}`,
