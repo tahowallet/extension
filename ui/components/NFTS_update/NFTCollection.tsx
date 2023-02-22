@@ -112,7 +112,7 @@ export default function NFTCollection(props: {
 
   const onItemClick = (nft: NFTCached) => openPreview({ nft, collection })
 
-  if (!nftCount && !isLoading && wasUpdated) return <></>
+  if ((!nftCount || !nfts.length) && !isLoading && wasUpdated) return <></>
 
   return (
     <>

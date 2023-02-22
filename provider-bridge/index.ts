@@ -83,7 +83,7 @@ export function injectTallyWindowProvider(): void {
     container.insertBefore(scriptTag, container.children[0])
   } catch (e) {
     throw new Error(
-      `Tally: oh nos the content-script failed to initilaize the Tally window provider.
+      `Taho: oh nos the content-script failed to initilaize the Taho window provider.
         ${e}
         It's time for a seppuku...🗡`
     )
