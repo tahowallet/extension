@@ -41,8 +41,8 @@ export default function AbilitiesHeader(): ReactElement {
   return (
     <div
       className={classNames("abilities_header", {
-        init_state: !hideDescription,
-        pointer: hideDescription,
+        small_banner: hideDescription,
+        description_banner: !hideDescription,
       })}
       tabIndex={0}
       role="button"
@@ -85,6 +85,13 @@ export default function AbilitiesHeader(): ReactElement {
         .abilities_header {
           background: var(--green-95);
           border-radius: 8px;
+          padding: 12px 16px 12px 12px;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .small_banner {
+          cursor: pointer;
           box-shadow: 0px 8px 8px rgba(7, 17, 17, 0.24),
             0px 2px 4px rgba(7, 17, 17, 0.12), 0px 2px 2px rgba(7, 17, 17, 0.22);
           background: radial-gradient(
@@ -98,14 +105,11 @@ export default function AbilitiesHeader(): ReactElement {
               rgba(19, 48, 46, 0.5) 100%
             );
 
-          padding: 12px 16px 12px 12px;
-          width: 100%;
-          box-sizing: border-box;
           position: relative;
           z-index: 1;
         }
 
-        .abilities_header:before {
+        .small_banner:before {
           border-radius: 8px;
           background: radial-gradient(
             78.69% 248.21% at 114.77% 133.93%,
@@ -123,11 +127,11 @@ export default function AbilitiesHeader(): ReactElement {
           transition: opacity 0.25s ease-in;
         }
 
-        .abilities_header:hover::before {
+        .small_banner:hover::before {
           opacity: 1;
         }
 
-        .abilities_header.init_state {
+        .description_banner {
           background: radial-gradient(
             103.39% 72.17% at -5.73% -7.67%,
             rgb(247, 103, 52, 0.5) 0%,
@@ -135,10 +139,6 @@ export default function AbilitiesHeader(): ReactElement {
           );
           box-shadow: 0px 16px 16px rgba(7, 17, 17, 0.3),
             0px 6px 8px rgba(7, 17, 17, 0.24), 0px 2px 4px rgba(7, 17, 17, 0.34);
-        }
-
-        .abilities_header.pointer {
-          cursor: pointer;
         }
 
         .abilities_info {
