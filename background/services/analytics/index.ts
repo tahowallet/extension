@@ -79,8 +79,6 @@ export default class AnalyticsService extends BaseService<Events> {
       if (isNew) {
         await this.sendAnalyticsEvent("New install")
       }
-
-      await this.sendAnalyticsEvent("Background start")
     }
   }
 

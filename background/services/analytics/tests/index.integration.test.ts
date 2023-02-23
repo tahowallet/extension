@@ -73,13 +73,9 @@ describe("AnalyticsService", () => {
 
       await analyticsService.startService()
     })
-    it("should not send any analytics events when both of the feature flags are off", async () => {
-      await analyticsService.sendAnalyticsEvent("Background start")
 
-      expect(fetch).not.toBeCalled()
-    })
-    it("should not send any analytics events when only the support feature flag is on but the default on is not", async () => {
-      await analyticsService.sendAnalyticsEvent("Background start")
+    it("should not send any analytics events when both of the feature flags are off", async () => {
+      await analyticsService.sendAnalyticsEvent("Some event")
 
       expect(fetch).not.toBeCalled()
     })
@@ -130,25 +126,20 @@ describe("AnalyticsService", () => {
 
     it("should generate a new uuid and save it to database", async () => {
       // Called once for generating the new user uuid
-      // and once for the 'Background start' and once for the `New install' event
-      expect(uuid.v4).toBeCalledTimes(3)
+      // and once for the `New install' event
+      expect(uuid.v4).toBeCalledTimes(2)
 
       expect(analyticsService["db"].setAnalyticsUUID).toBeCalledTimes(1)
     })
 
-    it("should send 'New Install' and 'Background start' events", () => {
+    it("should send 'New Install' event", () => {
       // Posthog events are sent through global.fetch method
       // During initialization we send 2 events
-      expect(fetch).toBeCalledTimes(2)
+      expect(fetch).toBeCalledTimes(1)
 
       expect(posthog.sendPosthogEvent).toHaveBeenCalledWith(
         expect.anything(),
         "New install",
-        undefined
-      )
-      expect(posthog.sendPosthogEvent).toHaveBeenCalledWith(
-        expect.anything(),
-        "Background start",
         undefined
       )
     })
@@ -190,12 +181,7 @@ describe("AnalyticsService", () => {
         preferenceService.updateAnalyticsPreferences
       ).not.toHaveBeenCalled()
     })
-    it("should send 'Background start' event when the service starts", async () => {
-      expect(analyticsService.sendAnalyticsEvent).toBeCalledTimes(1)
-      expect(analyticsService.sendAnalyticsEvent).toBeCalledWith(
-        "Background start"
-      )
-    })
+
     it("should set the uninstall url when the service starts", async () => {
       expect(browser.runtime.setUninstallURL).toBeCalledTimes(1)
     })
@@ -228,7 +214,7 @@ describe("AnalyticsService", () => {
       expect(fetch).not.toBeCalled()
     })
     it("should not send any event when the 'sendAnalyticsEvent()' method is called", async () => {
-      await analyticsService.sendAnalyticsEvent("Background start")
+      await analyticsService.sendAnalyticsEvent("Some event")
       expect(analyticsService.sendAnalyticsEvent).toBeCalledTimes(1)
 
       expect(posthog.sendPosthogEvent).not.toBeCalled()
