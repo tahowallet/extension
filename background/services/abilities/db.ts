@@ -27,6 +27,17 @@ export class AbilitiesDatabase extends Dexie {
       await this.abilities.add(ability)
       return true
     }
+    const { id, ...correctAbility } = existingAbility as Ability & {
+      id: number
+    }
+    if (JSON.stringify(correctAbility) !== JSON.stringify(ability)) {
+      await this.abilities.update(existingAbility, {
+        ...ability,
+        completed: existingAbility.completed,
+        removedFromUi: existingAbility.removedFromUi,
+      })
+      return true
+    }
     return false
   }
 
