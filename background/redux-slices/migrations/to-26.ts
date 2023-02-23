@@ -16,6 +16,11 @@ export default (
   const typedPrevState = prevState as State
 
   const { abilities } = typedPrevState
+
+  if (!abilities) {
+    return prevState
+  }
+
   const { filter } = abilities
 
   const types = filter.types.includes("claim")
