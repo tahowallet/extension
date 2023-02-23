@@ -27,6 +27,14 @@ export class AbilitiesDatabase extends Dexie {
       await this.abilities.add(ability)
       return true
     }
+    if (
+      existingAbility &&
+      existingAbility.completed === false &&
+      existingAbility.completed !== ability.completed
+    ) {
+      this.abilities.put(ability)
+      return true
+    }
     return false
   }
 
