@@ -54,7 +54,7 @@ export default function TabBar(): ReactElement {
   )
 
   return (
-    <nav>
+    <nav aria-label="Main">
       {tabs
         .filter((tab) => isTabSupportedByNetwork(tab, selectedNetwork))
         .map(({ path, title, icon }) => {

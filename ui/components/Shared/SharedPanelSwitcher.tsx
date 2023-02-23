@@ -1,24 +1,32 @@
 import React, { ReactElement } from "react"
 
-interface Props {
+type Props = {
   setPanelNumber: (x: number) => void
   panelNumber: number
   panelNames: string[]
+  panelId?: string
 }
 
 export default function SharedPanelSwitcher(props: Props): ReactElement {
-  const { setPanelNumber, panelNumber, panelNames } = props
+  const {
+    setPanelNumber,
+    panelNumber,
+    panelNames,
+    panelId = "panel_switcher",
+  } = props
 
   // TODO: make these styles work for more than two panels
   // .selected::after is the hardcoded culprit.
   return (
     <nav>
-      <ul>
+      <ul role="tablist" data-testid={panelId}>
         {panelNames.slice(0, 3).map((name, index) => {
           return (
             <li key={name}>
               <button
                 type="button"
+                role="tab"
+                aria-selected={panelNumber === index}
                 onClick={() => {
                   setPanelNumber(index)
                 }}
