@@ -12,7 +12,12 @@ import logger from "../../lib/logger"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
-import { EVMNetwork, SignedTransaction, toHexChainID } from "../../networks"
+import {
+  EVMNetwork,
+  sameChainID,
+  SignedTransaction,
+  toHexChainID,
+} from "../../networks"
 import {
   ethersTransactionFromSignedTransaction,
   transactionRequestFromEthersTransactionRequest,
@@ -32,7 +37,8 @@ import {
   TransactionAnnotation,
 } from "../enrichment"
 import { decodeJSON } from "../../lib/utils"
-import { FeatureFlags } from "../../features"
+import { FeatureFlags, isEnabled } from "../../features"
+import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -72,59 +78,6 @@ export type AddEthereumChainParameter = {
     decimals: number
   }
   rpcUrls?: string[]
-}
-
-// Lets start with all required and work backwards
-export type ValidatedAddEthereumChainParameter = {
-  chainId: string
-  blockExplorerUrl: string
-  chainName: string
-  iconUrl?: string
-  nativeCurrency: {
-    name: string
-    symbol: string
-    decimals: number
-  }
-  rpcUrls: string[]
-}
-
-const validateAddEthereumChainParameter = ({
-  chainId,
-  chainName,
-  blockExplorerUrls,
-  iconUrls,
-  nativeCurrency,
-  rpcUrls,
-}: AddEthereumChainParameter): ValidatedAddEthereumChainParameter => {
-  // @TODO Use AJV
-  if (
-    !chainId ||
-    !chainName ||
-    !nativeCurrency ||
-    !blockExplorerUrls ||
-    !blockExplorerUrls.length ||
-    !rpcUrls ||
-    !rpcUrls.length
-  ) {
-    throw new Error("Missing Chain Property")
-  }
-
-  if (
-    !nativeCurrency.decimals ||
-    !nativeCurrency.name ||
-    !nativeCurrency.symbol
-  ) {
-    throw new Error("Missing Currency Property")
-  }
-
-  return {
-    chainId: chainId.startsWith("0x") ? String(parseInt(chainId, 16)) : chainId,
-    chainName,
-    nativeCurrency,
-    blockExplorerUrl: blockExplorerUrls[0],
-    iconUrl: iconUrls && iconUrls[0],
-    rpcUrls,
-  }
 }
 
 type DAppRequestEvent<T, E> = {
@@ -314,20 +267,19 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       // TODO - actually allow adding a new ethereum chain - for now wallet_addEthereumChain
       // will just switch to a chain if we already support it - but not add a new one
       case "wallet_addEthereumChain": {
-        const chainInfo = params[0] as AddEthereumChainParameter
+        const chainInfo = params[0] as ValidatedAddEthereumChainParameter
         const { chainId } = chainInfo
         const supportedNetwork = await this.getTrackedNetworkByChainId(chainId)
         if (supportedNetwork) {
           this.switchToSupportedNetwork(origin, supportedNetwork)
           return null
         }
-        if (!FeatureFlags.SUPPORT_CUSTOM_NETWORKS) {
+        if (!isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
           // Dissallow adding new chains until feature flag is turned on.
           throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
         }
         try {
-          const validatedParam = validateAddEthereumChainParameter(chainInfo)
-          await this.chainService.addCustomChain(validatedParam)
+          await this.chainService.addCustomChain(chainInfo)
           return null
         } catch (e) {
           logger.error(e)
@@ -448,9 +400,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     chainID: string
   ): Promise<EVMNetwork | undefined> {
     const trackedNetworks = await this.chainService.getTrackedNetworks()
-    const trackedNetwork = trackedNetworks.find(
-      (network) => toHexChainID(network.chainID) === toHexChainID(chainID)
+    const trackedNetwork = trackedNetworks.find((network) =>
+      sameChainID(network.chainID, chainID)
     )
+
     if (trackedNetwork) {
       return trackedNetwork
     }
