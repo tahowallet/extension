@@ -14,6 +14,8 @@ import { Writeable } from "../../../types"
 import PreferenceService from "../../preferences"
 import * as posthog from "../../../lib/posthog"
 
+const { AnalyticsEvent } = posthog
+
 describe("AnalyticsService", () => {
   let analyticsService: AnalyticsService
   let preferenceService: PreferenceService
@@ -75,7 +77,7 @@ describe("AnalyticsService", () => {
     })
 
     it("should not send any analytics events when both of the feature flags are off", async () => {
-      await analyticsService.sendAnalyticsEvent("Some event")
+      await analyticsService.sendAnalyticsEvent(AnalyticsEvent.UI_SHOWN)
 
       expect(fetch).not.toBeCalled()
     })
@@ -173,7 +175,7 @@ describe("AnalyticsService", () => {
 
       expect(analyticsService.sendAnalyticsEvent).not.toHaveBeenCalledWith(
         expect.anything(),
-        "New install",
+        AnalyticsEvent.NEW_INSTALL,
         undefined
       )
 
@@ -214,7 +216,7 @@ describe("AnalyticsService", () => {
       expect(fetch).not.toBeCalled()
     })
     it("should not send any event when the 'sendAnalyticsEvent()' method is called", async () => {
-      await analyticsService.sendAnalyticsEvent("Some event")
+      await analyticsService.sendAnalyticsEvent(AnalyticsEvent.UI_SHOWN)
       expect(analyticsService.sendAnalyticsEvent).toBeCalledTimes(1)
 
       expect(posthog.sendPosthogEvent).not.toBeCalled()

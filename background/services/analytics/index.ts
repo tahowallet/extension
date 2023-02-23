@@ -5,7 +5,12 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 
 import BaseService from "../base"
 import { AnalyticsDatabase, getOrCreateDB } from "./db"
-import { deletePerson, getPersonId, sendPosthogEvent } from "../../lib/posthog"
+import {
+  AnalyticsEvent,
+  deletePerson,
+  getPersonId,
+  sendPosthogEvent,
+} from "../../lib/posthog"
 import ChainService from "../chain"
 import PreferenceService from "../preferences"
 import { FeatureFlags, isEnabled as isFeatureFlagEnabled } from "../../features"
@@ -77,7 +82,7 @@ export default class AnalyticsService extends BaseService<Events> {
       )
 
       if (isNew) {
-        await this.sendAnalyticsEvent("New install")
+        await this.sendAnalyticsEvent(AnalyticsEvent.NEW_INSTALL)
       }
     }
   }
@@ -89,7 +94,7 @@ export default class AnalyticsService extends BaseService<Events> {
   }
 
   async sendAnalyticsEvent(
-    eventName: string,
+    eventName: AnalyticsEvent,
     payload?: Record<string, unknown>
   ): Promise<void> {
     // @TODO: implement event batching
@@ -115,7 +120,7 @@ export default class AnalyticsService extends BaseService<Events> {
   private initializeListeners() {
     // ⚠️ Note: We NEVER send addresses to analytics!
     this.chainService.emitter.on("newAccountToTrack", () => {
-      this.sendAnalyticsEvent("Address added to tracking on network", {
+      this.sendAnalyticsEvent(AnalyticsEvent.NEW_ACCOUNT_TO_TRACK, {
         description: `
             This event is fired when any address on a network is added to the tracked list. 
             
