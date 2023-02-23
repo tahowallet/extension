@@ -97,6 +97,7 @@ export const getDaylightAbilities = async (
   requestURL.searchParams.set("limit", "1000")
   requestURL.searchParams.set("deadline", "all")
   requestURL.searchParams.set("showCompleted", "true")
+  requestURL.searchParams.set("markAsShown", "true")
 
   try {
     const response: AbilitiesResponse = await fetchJson({

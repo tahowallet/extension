@@ -32,7 +32,8 @@ export class AbilitiesDatabase extends Dexie {
       existingAbility.completed === false &&
       existingAbility.completed !== ability.completed
     ) {
-      this.abilities.put(ability)
+      // Update an ability status if it has been completed
+      this.abilities.update(existingAbility, { completed: true })
       return true
     }
     return false
