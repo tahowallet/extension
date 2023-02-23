@@ -1,5 +1,6 @@
 /* eslint-disable no-empty-pattern */
 import { test as base, chromium, Page } from "@playwright/test"
+import { FeatureFlagType, isEnabled } from "@tallyho/tally-background/features"
 import path from "path"
 
 // Re-exporting so we don't mix imports
@@ -135,3 +136,9 @@ export async function createWallet(
   await page.locator("text=Verify recovery phrase").click()
   await page.locator("text=Take me to my wallet").click()
 }
+
+export const skipIfFeatureFlagged = (featureFlag: FeatureFlagType): void =>
+  test.skip(
+    !isEnabled(featureFlag),
+    `Feature Flag: ${featureFlag} has not been turned on for this run`
+  )

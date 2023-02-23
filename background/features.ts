@@ -42,7 +42,7 @@ type BuildTimeFlagType = keyof typeof BuildTimeFlag
 
 export type RuntimeFlagType = keyof typeof RuntimeFlag
 
-type FeatureFlagType = RuntimeFlagType | BuildTimeFlagType
+export type FeatureFlagType = RuntimeFlagType | BuildTimeFlagType
 
 /**
  * Object with all feature flags. The key is the same as the value.
