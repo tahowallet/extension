@@ -139,6 +139,6 @@ export async function createWallet(
 
 export const skipIfFeatureFlagged = (featureFlag: FeatureFlagType): void =>
   test.skip(
-    !isEnabled(featureFlag),
+    !isEnabled(featureFlag, false),
     `Feature Flag: ${featureFlag} has not been turned on for this run`
   )

@@ -61,7 +61,10 @@ export const FeatureFlags = Object.keys({
  * If value is not exist then is read from environment variables.
  * The value for the build time flag is read from environment variables.
  */
-export const isEnabled = (flagName: FeatureFlagType): boolean => {
+export const isEnabled = (
+  flagName: FeatureFlagType,
+  checkBrowserStorage: boolean = BuildTimeFlag.SWITCH_RUNTIME_FLAGS
+): boolean => {
   // Guard to narrow flag type
   const isBuildTimeFlag = (flag: string): flag is BuildTimeFlagType =>
     flag in BuildTimeFlag
@@ -70,7 +73,7 @@ export const isEnabled = (flagName: FeatureFlagType): boolean => {
     return BuildTimeFlag[flagName]
   }
 
-  if (BuildTimeFlag.SWITCH_RUNTIME_FLAGS) {
+  if (checkBrowserStorage) {
     const state = localStorage.getItem(flagName)
     return state !== null ? state === "true" : RuntimeFlag[flagName]
   }
