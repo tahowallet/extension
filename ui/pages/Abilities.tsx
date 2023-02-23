@@ -110,7 +110,7 @@ export default function Abilities(): ReactElement {
           .content {
             display: flex;
             flex-flow: column;
-            padding: 0px 24px;
+            padding: 0px 16px;
             height: 100%;
             overflow-y: scroll;
             overflow-x: hidden;
