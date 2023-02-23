@@ -27,10 +27,10 @@ module.exports = {
     ),
   },
   windows: {
-    writable: true,
-    value: {
-      getCurrent: () => {},
-      create: () => {},
+    getCurrent: () => {},
+    create: () => {},
+    onRemoved: {
+      addListener: () => {},
     },
   },
   runtime: {

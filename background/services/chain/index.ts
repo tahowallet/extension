@@ -19,6 +19,7 @@ import {
   SignedTransaction,
   toHexChainID,
   NetworkBaseAsset,
+  sameChainID,
 } from "../../networks"
 import { AssetTransfer } from "../../assets"
 import {
@@ -63,7 +64,7 @@ import {
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
 import KeyringService from "../keyring"
-import type { ValidatedAddEthereumChainParameter } from "../internal-ethereum-provider"
+import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
 
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
@@ -424,8 +425,8 @@ export default class ChainService extends BaseService<Events> {
    * Adds a supported network to list of active networks.
    */
   async startTrackingNetworkOrThrow(chainID: string): Promise<EVMNetwork> {
-    const trackedNetwork = this.trackedNetworks.find(
-      (ntwrk) => toHexChainID(ntwrk.chainID) === toHexChainID(chainID)
+    const trackedNetwork = this.trackedNetworks.find((network) =>
+      sameChainID(network.chainID, chainID)
     )
 
     if (trackedNetwork) {
@@ -435,9 +436,10 @@ export default class ChainService extends BaseService<Events> {
       return trackedNetwork
     }
 
-    const networkToTrack = this.supportedNetworks.find(
-      (ntwrk) => toHexChainID(ntwrk.chainID) === toHexChainID(chainID)
+    const networkToTrack = this.supportedNetworks.find((ntwrk) =>
+      sameChainID(ntwrk.chainID, chainID)
     )
+
     if (!networkToTrack) {
       throw new Error(`Network with chainID ${chainID} is not supported`)
     }
@@ -1894,11 +1896,13 @@ export default class ChainService extends BaseService<Events> {
       chainInfo.chainId,
       chainInfo.rpcUrls
     )
+
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
   }
 
   async updateSupportedNetworks(): Promise<void> {
     const supportedNetworks = await this.db.getAllEVMNetworks()
+
     this.supportedNetworks = supportedNetworks
     this.emitter.emit("supportedNetworks", supportedNetworks)
   }

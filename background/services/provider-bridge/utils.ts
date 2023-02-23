@@ -6,6 +6,7 @@ import {
   EIP1193ErrorPayload,
   RPCRequest,
 } from "@tallyho/provider-bridge-shared"
+import { AddEthereumChainParameter } from "../internal-ethereum-provider"
 import { sameEVMAddress } from "../../lib/utils"
 import { HexString } from "../../types"
 
@@ -89,6 +90,59 @@ export function handleRPCErrorResponse(error: unknown): unknown {
     response ??
     new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()
   )
+}
+
+// Lets start with all required and work backwards
+export type ValidatedAddEthereumChainParameter = {
+  chainId: string
+  blockExplorerUrl: string
+  chainName: string
+  iconUrl?: string
+  nativeCurrency: {
+    name: string
+    symbol: string
+    decimals: number
+  }
+  rpcUrls: string[]
+}
+
+export const validateAddEthereumChainParameter = ({
+  chainId,
+  chainName,
+  blockExplorerUrls,
+  iconUrls,
+  nativeCurrency,
+  rpcUrls,
+}: AddEthereumChainParameter): ValidatedAddEthereumChainParameter => {
+  // @TODO Use AJV
+  if (
+    !chainId ||
+    !chainName ||
+    !nativeCurrency ||
+    !blockExplorerUrls ||
+    !blockExplorerUrls.length ||
+    !rpcUrls ||
+    !rpcUrls.length
+  ) {
+    throw new Error("Missing Chain Property")
+  }
+
+  if (
+    !nativeCurrency.decimals ||
+    !nativeCurrency.name ||
+    !nativeCurrency.symbol
+  ) {
+    throw new Error("Missing Currency Property")
+  }
+
+  return {
+    chainId: chainId.startsWith("0x") ? String(parseInt(chainId, 16)) : chainId,
+    chainName,
+    nativeCurrency,
+    blockExplorerUrl: blockExplorerUrls[0],
+    iconUrl: iconUrls && iconUrls[0],
+    rpcUrls,
+  }
 }
 
 /**

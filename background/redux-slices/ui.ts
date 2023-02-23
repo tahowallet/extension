@@ -46,6 +46,7 @@ export type Events = {
   userActivityEncountered: AddressOnNetwork
   newSelectedNetwork: EVMNetwork
   updateAnalyticsPreferences: Partial<AnalyticsPreferences>
+  addCustomNetworkResponse: [string, boolean]
 }
 
 export const emitter = new Emittery<Events>()
@@ -237,6 +238,20 @@ export const updateSignerTitle = createBackgroundAsyncThunk(
     { extra: { main } }
   ) => {
     return main.updateSignerTitle(signer, title)
+  }
+)
+
+export const getAddNetworkRequestDetails = createBackgroundAsyncThunk(
+  "ui/getAddNetworkRequestDetails",
+  async (requestId: string, { extra: { main } }) => {
+    return main.getAddNetworkRequestDetails(requestId)
+  }
+)
+
+export const addNetworkUserResponse = createBackgroundAsyncThunk(
+  "ui/handleAddNetworkConfirmation",
+  async ([requestId, result]: [string, boolean]) => {
+    emitter.emit("addCustomNetworkResponse", [requestId, result])
   }
 )
 
