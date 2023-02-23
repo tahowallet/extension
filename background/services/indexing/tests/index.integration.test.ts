@@ -4,6 +4,7 @@ import * as libPrices from "../../../lib/prices"
 import IndexingService from ".."
 import { ETHEREUM, OPTIMISM } from "../../../constants"
 import {
+  createAddressOnNetwork,
   createChainService,
   createIndexingService,
   createPreferenceService,
@@ -18,7 +19,8 @@ type MethodSpy<T extends (...args: unknown[]) => unknown> = jest.SpyInstance<
   Parameters<T>
 >
 
-const getPrivateMethodSpy = <T extends (...args: unknown[]) => unknown>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getPrivateMethodSpy = <T extends (...args: any[]) => unknown>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   object: any,
   property: string
@@ -36,6 +38,27 @@ const fetchJsonStub: SinonStub<
 beforeEach(() => fetchJsonStub.callsFake(async () => ({})))
 
 afterEach(() => fetchJsonStub.resetBehavior())
+
+const tokenList = {
+  name: "Test",
+  timestamp: "2022-05-12T18:15:59+00:00",
+  version: {
+    major: 1,
+    minor: 169,
+    patch: 0,
+  },
+  tokens: [
+    {
+      chainId: 1,
+      address: "0x0000000000000000000000000000000000000000",
+      name: "Some Token",
+      decimals: 18,
+      symbol: "TEST",
+      logoURI: "/logo.svg",
+      tags: ["earn"],
+    },
+  ],
+}
 
 describe("IndexingService", () => {
   const sandbox = sinon.createSandbox()
@@ -93,27 +116,6 @@ describe("IndexingService", () => {
   })
 
   describe("service start", () => {
-    const tokenList = {
-      name: "Test",
-      timestamp: "2022-05-12T18:15:59+00:00",
-      version: {
-        major: 1,
-        minor: 169,
-        patch: 0,
-      },
-      tokens: [
-        {
-          chainId: 1,
-          address: "0x0000000000000000000000000000000000000000",
-          name: "Some Token",
-          decimals: 18,
-          symbol: "TEST",
-          logoURI: "/logo.svg",
-          tags: ["earn"],
-        },
-      ],
-    }
-
     const customAsset = createSmartContractAsset({
       symbol: "USDC",
     })
@@ -298,6 +300,122 @@ describe("IndexingService", () => {
         [smartContractAsset.contractAddress],
         { name: "United States Dollar", symbol: "USD", decimals: 10 },
         ETHEREUM
+      )
+    })
+  })
+
+  describe("loading account balances", () => {
+    it("should query erc20 balances without specifying token addresses when provider supports alchemy", async () => {
+      const indexingDb = await getIndexingDB()
+
+      const smartContractAsset = createSmartContractAsset()
+
+      await indexingDb.saveTokenList(
+        "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
+        tokenList
+      )
+
+      await indexingService.addCustomAsset(smartContractAsset)
+      await indexingDb.addAssetToTrack(smartContractAsset)
+
+      // Skip loading prices at service init
+      getPrivateMethodSpy<IndexingService["handlePriceAlarm"]>(
+        indexingService,
+        "handlePriceAlarm"
+      ).mockResolvedValue(Promise.resolve())
+
+      await Promise.all([
+        chainService.startService(),
+        indexingService.startService(),
+      ])
+
+      const account = createAddressOnNetwork()
+
+      const provider = chainService.providerForNetworkOrThrow(ETHEREUM)
+      provider.supportsAlchemy = true
+
+      jest
+        .spyOn(chainService, "getAccountsToTrack")
+        .mockResolvedValue([account])
+
+      // We don't care about the return value for these calls
+      const baseBalanceSpy = jest
+        .spyOn(chainService, "getLatestBaseAccountBalance")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockImplementation(() => Promise.resolve({} as any))
+
+      const tokenBalanceSpy = getPrivateMethodSpy<
+        IndexingService["retrieveTokenBalances"]
+      >(indexingService, "retrieveTokenBalances").mockImplementation(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        () => Promise.resolve({}) as any
+      )
+
+      // eslint-disable-next-line @typescript-eslint/dot-notation
+      await indexingService["loadAccountBalances"]()
+
+      expect(baseBalanceSpy).toHaveBeenCalledWith(account)
+      expect(tokenBalanceSpy).toHaveBeenCalledWith(account, [])
+    })
+
+    it("should query erc20 balances specifying token addresses when provider doesn't support alchemy", async () => {
+      const indexingDb = await getIndexingDB()
+
+      const smartContractAsset = createSmartContractAsset()
+
+      await indexingDb.saveTokenList(
+        "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
+        tokenList
+      )
+
+      await indexingService.addCustomAsset(smartContractAsset)
+      await indexingDb.addAssetToTrack(smartContractAsset)
+
+      // Skip loading prices at service init
+      getPrivateMethodSpy<IndexingService["handlePriceAlarm"]>(
+        indexingService,
+        "handlePriceAlarm"
+      ).mockResolvedValue(Promise.resolve())
+
+      await Promise.all([
+        chainService.startService(),
+        indexingService.startService(),
+      ])
+
+      const account = createAddressOnNetwork()
+
+      const provider = chainService.providerForNetworkOrThrow(ETHEREUM)
+      provider.supportsAlchemy = false
+
+      jest
+        .spyOn(chainService, "getAccountsToTrack")
+        .mockResolvedValue([account])
+
+      // We don't care about the return value for these calls
+      const baseBalanceSpy = jest
+        .spyOn(chainService, "getLatestBaseAccountBalance")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockImplementation(() => Promise.resolve({} as any))
+
+      const tokenBalanceSpy = getPrivateMethodSpy<
+        IndexingService["retrieveTokenBalances"]
+      >(indexingService, "retrieveTokenBalances").mockImplementation(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        () => Promise.resolve({}) as any
+      )
+
+      await indexingService.cacheAssetsForNetwork(ETHEREUM)
+
+      // eslint-disable-next-line @typescript-eslint/dot-notation
+      await indexingService["loadAccountBalances"]()
+
+      expect(baseBalanceSpy).toHaveBeenCalledWith(account)
+      expect(tokenBalanceSpy).toHaveBeenCalledWith(
+        account,
+        expect.arrayContaining([
+          expect.objectContaining({ symbol: "TEST" }),
+          expect.objectContaining({ symbol: smartContractAsset.symbol }),
+        ])
       )
     })
   })
