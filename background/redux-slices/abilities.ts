@@ -59,7 +59,17 @@ const abilitiesSlice = createSlice({
         if (!immerState.abilities[address]) {
           immerState.abilities[address] = {}
         }
-        immerState.abilities[address][ability.abilityId] = ability
+        if (immerState.abilities[address][ability.abilityId]) {
+          const existingAbility =
+            immerState.abilities[address][ability.abilityId]
+          immerState.abilities[address][ability.abilityId] = {
+            ...ability,
+            completed: existingAbility.completed,
+            removedFromUi: existingAbility.removedFromUi,
+          }
+        } else {
+          immerState.abilities[address][ability.abilityId] = ability
+        }
       })
     },
     updateAbility: (immerState, { payload }: { payload: Ability }) => {
