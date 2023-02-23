@@ -20,7 +20,7 @@ export function connectProviderBridge(): void {
       // if dapp wants to connect let's grab its details
       if (
         event.data.request.method === "eth_requestAccounts" ||
-        event.data.request.method === "eth_accounts"
+        event.data.request.method === "wallet_addEthereumChain"
       ) {
         const faviconElements: NodeListOf<HTMLLinkElement> =
           window.document.querySelectorAll("link[rel*='icon']")
