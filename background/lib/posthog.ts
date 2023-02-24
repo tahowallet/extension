@@ -3,6 +3,12 @@ import { v4 as uuidv4 } from "uuid"
 import { FeatureFlags, isEnabled } from "../features"
 import logger from "./logger"
 
+export enum AnalyticsEvent {
+  NEW_INSTALL = "New install",
+  UI_SHOWN = "UI shown",
+  NEW_ACCOUNT_TO_TRACK = "Address added to tracking on network",
+}
+
 const POSTHOG_PROJECT_ID = "11112"
 
 const PERSON_ENDPOINT = `https://app.posthog.com/api/projects/${POSTHOG_PROJECT_ID}/persons`
