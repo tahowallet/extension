@@ -8,6 +8,7 @@ import {
   OPTIMISM,
   POLYGON,
 } from "@tallyho/tally-background/constants"
+import { getNetworkIcon } from "../../utils/networks"
 
 // @TODO Rethink what networks we show once custom networks are supported
 const productionNetworks = [
@@ -18,12 +19,6 @@ const productionNetworks = [
   AVALANCHE,
   BINANCE_SMART_CHAIN,
 ]
-
-const getNetworkIcon = (networkName: string) => {
-  const icon = networkName.replaceAll(" ", "").toLowerCase()
-
-  return `/images/networks/${icon}@2x.png`
-}
 
 /**
  * Renders a list of production network icons
@@ -39,7 +34,7 @@ export default function SupportedChains(): JSX.Element {
             width="24"
             height="24"
             key={network.chainID}
-            src={getNetworkIcon(network.name)}
+            src={getNetworkIcon(network)}
             alt={network.name}
           />
         ))}

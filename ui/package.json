@@ -1,7 +1,7 @@
 {
   "name": "@tallyho/tally-ui",
   "version": "0.0.1",
-  "description": "Tally Ho, the community owned and operated Web3 wallet: UI package.",
+  "description": "Taho, the community owned and operated Web3 wallet: UI package.",
   "main": "index.ts",
   "repository": "git@github.com:thesis/tally-extension.git",
   "author": "Matt Luongo <matt@thesis.co>",
@@ -51,6 +51,7 @@
     "react-router-dom": "^5.3.0",
     "react-transition-group": "^4.4.2",
     "redux": "^4.1.0",
+    "styled-jsx": "^3.4.4",
     "webextension-polyfill": "^0.8.0",
     "zxcvbn": "^4.4.2"
   },
