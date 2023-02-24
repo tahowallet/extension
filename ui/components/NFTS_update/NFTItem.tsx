@@ -48,6 +48,8 @@ export default function NFTItem<
             size={24}
             hasBackground
             backgroundOpacity={0.75}
+            padding={6}
+            squared
           />
           {!!floorPrice && (
             <div className="nft_item_price">

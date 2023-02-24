@@ -91,12 +91,13 @@ export default function SharedAssetIcon(props: Props): ReactElement {
   )
 
   useEffect(() => {
-    if (!visible) {
+    if (!visible || !logoURL) {
       return
     }
 
     const isIpfsURL = /^ipfs:/.test(logoURL)
     const httpURL = getAsHttpURL(logoURL)
+    setHasError(false)
 
     const img = new Image()
 
@@ -144,7 +145,7 @@ export default function SharedAssetIcon(props: Props): ReactElement {
         <div className="token_icon" />
       ) : (
         <div className={classNames("token_icon_fallback", sizeClass)}>
-          {symbol[0]}
+          {symbol[0].toUpperCase()}
         </div>
       )}
       <style jsx>
