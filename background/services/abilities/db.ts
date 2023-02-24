@@ -27,13 +27,18 @@ export class AbilitiesDatabase extends Dexie {
       await this.abilities.add(ability)
       return true
     }
-    if (
-      existingAbility &&
-      existingAbility.completed === false &&
-      existingAbility.completed !== ability.completed
-    ) {
-      // Update an ability status if it has been completed
-      this.abilities.update(existingAbility, { completed: true })
+    const { id, ...correctAbility } = existingAbility as Ability & {
+      id: number
+    }
+    if (JSON.stringify(correctAbility) !== JSON.stringify(ability)) {
+      const updateCompleted =
+        ability.completed === true && existingAbility.completed === false
+
+      await this.abilities.update(existingAbility, {
+        ...ability,
+        completed: updateCompleted ? true : existingAbility.completed,
+        removedFromUi: existingAbility.removedFromUi,
+      })
       return true
     }
     return false
