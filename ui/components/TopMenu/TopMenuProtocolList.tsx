@@ -6,6 +6,7 @@ import {
   BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
+  isBuiltInNetwork,
   OPTIMISM,
   POLYGON,
   ROOTSTOCK,
@@ -61,19 +62,27 @@ export default function TopMenuProtocolList({
     <div className="standard_width_padded center_horizontal">
       <div className={classNames(customNetworksEnabled && "networks_list")}>
         <ul>
-          {productionNetworks.map((network) => (
-            <TopMenuProtocolListItem
-              isSelected={sameNetwork(currentNetwork, network)}
-              key={network.name}
-              network={network}
-              info={
-                productionNetworkInfo[network.chainID] ||
-                t("protocol.compatibleChain")
+          {productionNetworks
+            .filter((network) => {
+              if (isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
+                // Get rid of this whole filter once custom network support is fully in
+                return true
               }
-              onSelect={onProtocolChange}
-              isDisabled={disabledChainIDs.includes(network.chainID)}
-            />
-          ))}
+              return isBuiltInNetwork(network)
+            })
+            .map((network) => (
+              <TopMenuProtocolListItem
+                isSelected={sameNetwork(currentNetwork, network)}
+                key={network.name}
+                network={network}
+                info={
+                  productionNetworkInfo[network.chainID] ||
+                  t("protocol.compatibleChain")
+                }
+                onSelect={onProtocolChange}
+                isDisabled={disabledChainIDs.includes(network.chainID)}
+              />
+            ))}
           {showTestNetworks && testNetworks.length > 0 && (
             <>
               <li className="protocol_divider">
