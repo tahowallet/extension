@@ -68,6 +68,9 @@ export const test = base.extend<WalletTestFixtures>({
     // for manifest v2:
     let [background] = context.backgroundPages()
     if (!background) background = await context.waitForEvent("backgroundpage")
+
+    await background.waitForResponse(/api\.coingecko\.com/i)
+
     // // for manifest v3:
     // let [background] = context.serviceWorkers();
     // if (!background)
