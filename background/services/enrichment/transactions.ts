@@ -244,7 +244,16 @@ export default async function resolveTransactionAnnotation(
   // If the wallet doesn't have enough base asset to cover gas, push a warning
   if (gasFee + (transaction.value ?? 0n) > baseAssetBalance) {
     txAnnotation.warnings ??= []
-    txAnnotation.warnings.push("insufficient-funds")
+    if (!txAnnotation.warnings.includes("insufficient-funds")) {
+      txAnnotation.warnings.push("insufficient-funds")
+    }
+  } else if (txAnnotation.warnings) {
+    const idx = txAnnotation.warnings.findIndex(
+      (warning) => warning === "insufficient-funds"
+    )
+    if (idx >= 0) {
+      delete txAnnotation.warnings[idx]
+    }
   }
 
   // If the transaction has been mined, get the block and set the timestamp
