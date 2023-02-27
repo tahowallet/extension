@@ -3,7 +3,8 @@ import { parse as parseRawTransaction } from "@ethersproject/transactions"
 import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 
 import { arrayify } from "ethers/lib/utils"
-import { normalizeEVMAddress } from "../../lib/utils"
+import { Wallet } from "ethers"
+import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
 import {
@@ -25,6 +26,19 @@ import logger from "../../lib/logger"
 export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
 export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
 
+export type WalletData = {
+  type: KeyringTypes.singleSECP
+  id: string | null
+  path: null
+  addresses: [string]
+}
+
+export type SerializedWallet = {
+  version: number
+  id: string
+  privateKey: string
+}
+
 export type Keyring = {
   type: KeyringTypes
   id: string | null
@@ -37,22 +51,28 @@ export type KeyringAccountSigner = {
   keyringID: string
 }
 
-export interface KeyringMetadata {
+export interface SignerMetadata {
   source: "import" | "internal"
 }
 
+type SignerWallet = { type: "wallet"; signer: Wallet }
+type SignerHDKeyring = { type: "keyring"; signer: HDKeyring }
+type SignerWithType = SignerWallet | SignerHDKeyring
+
 interface SerializedKeyringData {
+  wallets: SerializedWallet[]
   keyrings: SerializedHDKeyring[]
-  metadata: { [keyringId: string]: KeyringMetadata }
+  metadata: { [signerId: string]: SignerMetadata }
   hiddenAccounts: { [address: HexString]: boolean }
 }
 
 interface Events extends ServiceLifecycleEvents {
   locked: boolean
   keyrings: {
+    wallets: WalletData[]
     keyrings: Keyring[]
-    keyringMetadata: {
-      [keyringId: string]: KeyringMetadata
+    metadata: {
+      [signerId: string]: SignerMetadata
     }
   }
   address: string
@@ -60,6 +80,11 @@ interface Events extends ServiceLifecycleEvents {
   signedTx: SignedTransaction
   signedData: string
 }
+
+const isWallet = (signer: SignerWithType): signer is SignerWallet =>
+  signer.type === "wallet"
+const isKeyring = (signer: SignerWithType): signer is SignerHDKeyring =>
+  signer.type === "keyring"
 
 /*
  * KeyringService is responsible for all key material, as well as applying the
@@ -79,7 +104,9 @@ export default class KeyringService extends BaseService<Events> {
 
   #keyrings: HDKeyring[] = []
 
-  #keyringMetadata: { [keyringId: string]: KeyringMetadata } = {}
+  #signerMetadata: { [keyringId: string]: SignerMetadata } = {}
+
+  #wallets: Wallet[] = []
 
   #hiddenAccounts: { [address: HexString]: boolean } = {}
 
@@ -197,12 +224,17 @@ export default class KeyringService extends BaseService<Events> {
         }
         // hooray! vault is loaded, import any serialized keyrings
         this.#keyrings = []
-        this.#keyringMetadata = {}
+        this.#signerMetadata = {}
+        this.#wallets = []
         plainTextVault.keyrings.forEach((kr) => {
           this.#keyrings.push(HDKeyring.deserialize(kr))
         })
 
-        this.#keyringMetadata = {
+        plainTextVault.wallets?.forEach((wallet) =>
+          this.#wallets.push(new Wallet(wallet.privateKey))
+        )
+
+        this.#signerMetadata = {
           ...plainTextVault.metadata,
         }
 
@@ -234,7 +266,8 @@ export default class KeyringService extends BaseService<Events> {
     this.lastOutsideActivity = undefined
     this.#cachedKey = null
     this.#keyrings = []
-    this.#keyringMetadata = {}
+    this.#signerMetadata = {}
+    this.#wallets = []
     this.emitter.emit("locked", true)
     this.emitKeyrings()
   }
@@ -349,11 +382,22 @@ export default class KeyringService extends BaseService<Events> {
     }
     this.#keyrings.push(newKeyring)
     const [address] = newKeyring.addAddressesSync(1)
-    this.#keyringMetadata[newKeyring.id] = { source }
+    this.#signerMetadata[newKeyring.id] = { source }
     await this.persistKeyrings()
     this.emitter.emit("address", address)
     this.emitKeyrings()
     return newKeyring.id
+  }
+
+  async importWallet(privateKey: string): Promise<void> {
+    this.requireUnlocked()
+
+    const newWallet = new Wallet(privateKey)
+    this.#wallets.push(newWallet)
+    this.#signerMetadata[newWallet.publicKey] = { source: "import" }
+    await this.persistKeyrings()
+    this.emitter.emit("address", newWallet.address)
+    this.emitKeyrings()
   }
 
   /**
@@ -365,7 +409,7 @@ export default class KeyringService extends BaseService<Events> {
   ): Promise<"import" | "internal" | null> {
     try {
       const keyring = await this.#findKeyring(address)
-      return this.#keyringMetadata[keyring.id].source
+      return this.#signerMetadata[keyring.id].source
     } catch (e) {
       // Address is not associated with a keyring
       return null
@@ -391,6 +435,17 @@ export default class KeyringService extends BaseService<Events> {
       ],
       id: kr.id,
       path: kr.path,
+    }))
+  }
+
+  getWallets(): WalletData[] {
+    this.requireUnlocked()
+
+    return this.#wallets.map((wallet) => ({
+      type: KeyringTypes.singleSECP,
+      addresses: [wallet.address],
+      id: wallet.publicKey,
+      path: null,
     }))
   }
 
@@ -430,17 +485,24 @@ export default class KeyringService extends BaseService<Events> {
 
   async hideAccount(address: HexString): Promise<void> {
     this.#hiddenAccounts[address] = true
-    const keyring = await this.#findKeyring(address)
-    const keyringAddresses = await keyring.getAddresses()
-    if (
-      keyringAddresses.every(
-        (keyringAddress) => this.#hiddenAccounts[keyringAddress] === true
-      )
-    ) {
-      keyringAddresses.forEach((keyringAddress) => {
-        delete this.#hiddenAccounts[keyringAddress]
-      })
-      this.#removeKeyring(keyring.id)
+    const signerWithType = await this.#findSigner(address)
+
+    if (isKeyring(signerWithType)) {
+      const { signer } = signerWithType
+      const keyringAddresses = await signer.getAddresses()
+
+      if (
+        keyringAddresses.every(
+          (keyringAddress) => this.#hiddenAccounts[keyringAddress] === true
+        )
+      ) {
+        keyringAddresses.forEach((keyringAddress) => {
+          delete this.#hiddenAccounts[keyringAddress]
+        })
+        this.#removeKeyring(signer.id)
+      }
+    } else {
+      this.#removeWallet(address)
     }
     await this.persistKeyrings()
     this.emitKeyrings()
@@ -460,6 +522,21 @@ export default class KeyringService extends BaseService<Events> {
     return filteredKeyrings
   }
 
+  #removeWallet(address: HexString): Wallet[] {
+    const filteredWallets = this.#wallets.filter((wallet) =>
+      sameEVMAddress(wallet.address, address)
+    )
+
+    if (filteredWallets.length === this.#wallets.length) {
+      throw new Error(
+        `Attempting to remove wallet that does not exist. Address: (${address})`
+      )
+    }
+
+    this.#wallets = filteredWallets
+    return filteredWallets
+  }
+
   /**
    * Find keyring associated with an account.
    *
@@ -470,9 +547,37 @@ export default class KeyringService extends BaseService<Events> {
       kr.getAddressesSync().includes(normalizeEVMAddress(account))
     )
     if (!keyring) {
-      throw new Error("Address keyring not found.")
+      throw new Error(`Keyring not found for address ${account}.`)
     }
     return keyring
+  }
+
+  async #findWallet(account: HexString): Promise<Wallet> {
+    const wallet = this.#wallets.find((item) =>
+      sameEVMAddress(item.address, account)
+    )
+    if (!wallet) {
+      throw new Error(`Wallet not found for address ${account}`)
+    }
+    return wallet
+  }
+
+  async #findSigner(account: HexString): Promise<SignerWithType> {
+    try {
+      return {
+        signer: await this.#findKeyring(account),
+        type: "keyring",
+      }
+    } catch (e1) {
+      try {
+        return {
+          signer: await this.#findWallet(account),
+          type: "wallet",
+        }
+      } catch (e2) {
+        throw new Error(`Signer not found for address ${account}`)
+      }
+    }
   }
 
   /**
@@ -490,13 +595,13 @@ export default class KeyringService extends BaseService<Events> {
     const { address: account, network } = addressOnNetwork
 
     // find the keyring using a linear search
-    const keyring = await this.#findKeyring(account)
+    const { signer } = await this.#findSigner(account)
 
     // ethers has a looser / slightly different request type
     const ethersTxRequest = ethersTransactionFromTransactionRequest(txRequest)
 
     // unfortunately, ethers gives us a serialized signed tx here
-    const signed = await keyring.signTransaction(account, ethersTxRequest)
+    const signed = await signer.signTransaction(account, ethersTxRequest)
 
     // parse the tx, then unpack it as best we can
     const tx = parseRawTransaction(signed)
@@ -591,17 +696,26 @@ export default class KeyringService extends BaseService<Events> {
   }): Promise<string> {
     this.requireUnlocked()
     const { domain, types, message } = typedData
-    // find the keyring using a linear search
-    const keyring = await this.#findKeyring(account)
+    const signerWithType = await this.#findSigner(account)
     // When signing we should not include EIP712Domain type
     const { EIP712Domain, ...typesForSigning } = types
     try {
-      const signature = await keyring.signTypedData(
-        account,
-        domain,
-        typesForSigning,
-        message
-      )
+      let signature: string
+      if (isWallet(signerWithType)) {
+        // eslint-disable-next-line no-underscore-dangle
+        signature = await signerWithType.signer._signTypedData(
+          domain,
+          typesForSigning,
+          message
+        )
+      } else {
+        signature = await signerWithType.signer.signTypedData(
+          account,
+          domain,
+          typesForSigning,
+          message
+        )
+      }
 
       return signature
     } catch (error) {
@@ -625,14 +739,18 @@ export default class KeyringService extends BaseService<Events> {
     account: HexString
   }): Promise<string> {
     this.requireUnlocked()
-
-    // find the keyring using a linear search
-    const keyring = await this.#findKeyring(account)
+    const signerWithType = await this.#findSigner(account)
+    const messageBytes = arrayify(signingData)
     try {
-      const signature = await keyring.signMessageBytes(
-        account,
-        arrayify(signingData)
-      )
+      let signature: string
+      if (isWallet(signerWithType)) {
+        signature = await signerWithType.signer.signMessage(messageBytes)
+      } else {
+        signature = await signerWithType.signer.signMessageBytes(
+          account,
+          messageBytes
+        )
+      }
 
       return signature
     } catch (error) {
@@ -646,12 +764,18 @@ export default class KeyringService extends BaseService<Events> {
 
   private emitKeyrings() {
     if (this.locked()) {
-      this.emitter.emit("keyrings", { keyrings: [], keyringMetadata: {} })
+      this.emitter.emit("keyrings", {
+        wallets: [],
+        keyrings: [],
+        metadata: {},
+      })
     } else {
       const keyrings = this.getKeyrings()
+      const wallets = this.getWallets()
       this.emitter.emit("keyrings", {
+        wallets,
         keyrings,
-        keyringMetadata: { ...this.#keyringMetadata },
+        metadata: { ...this.#signerMetadata },
       })
     }
   }
@@ -665,14 +789,24 @@ export default class KeyringService extends BaseService<Events> {
     // This if guard will always pass due to requireUnlocked, but statically
     // prove it to TypeScript.
     if (this.#cachedKey !== null) {
-      const serializedKeyrings = this.#keyrings.map((kr) => kr.serializeSync())
+      const serializedKeyrings: SerializedHDKeyring[] = this.#keyrings.map(
+        (kr) => kr.serializeSync()
+      )
+      const serializedWallets: SerializedWallet[] = this.#wallets.map(
+        (wallet) => ({
+          version: 1,
+          id: wallet.publicKey,
+          privateKey: wallet.privateKey,
+        })
+      )
       const hiddenAccounts = { ...this.#hiddenAccounts }
-      const keyringMetadata = { ...this.#keyringMetadata }
+      const metadata = { ...this.#signerMetadata }
       serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
       const vault = await encryptVault(
         {
           keyrings: serializedKeyrings,
-          metadata: keyringMetadata,
+          wallets: serializedWallets,
+          metadata,
           hiddenAccounts,
         },
         this.#cachedKey

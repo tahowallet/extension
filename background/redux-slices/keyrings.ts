@@ -3,7 +3,7 @@ import Emittery from "emittery"
 
 import { setNewSelectedAccount, UIState } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
-import { Keyring, KeyringMetadata } from "../services/keyring/index"
+import { Keyring, SignerMetadata, WalletData } from "../services/keyring/index"
 
 type KeyringToVerify = {
   id: string
@@ -11,9 +11,10 @@ type KeyringToVerify = {
 } | null
 
 export type KeyringsState = {
+  wallets: WalletData[]
   keyrings: Keyring[]
-  keyringMetadata: {
-    [keyringId: string]: KeyringMetadata
+  metadata: {
+    [keyringId: string]: SignerMetadata
   }
   importing: false | "pending" | "done"
   status: "locked" | "unlocked" | "uninitialized"
@@ -22,7 +23,8 @@ export type KeyringsState = {
 
 export const initialState: KeyringsState = {
   keyrings: [],
-  keyringMetadata: {},
+  wallets: [],
+  metadata: {},
   importing: false,
   status: "uninitialized",
   keyringToVerify: null,
@@ -77,11 +79,12 @@ const keyringsSlice = createSlice({
     updateKeyrings: (
       state,
       {
-        payload: { keyrings, keyringMetadata },
+        payload: { wallets, keyrings, metadata },
       }: {
         payload: {
+          wallets: WalletData[]
           keyrings: Keyring[]
-          keyringMetadata: { [keyringId: string]: KeyringMetadata }
+          metadata: { [keyringId: string]: SignerMetadata }
         }
       }
     ) => {
@@ -95,8 +98,9 @@ const keyringsSlice = createSlice({
 
       return {
         ...state,
+        wallets,
         keyrings,
-        keyringMetadata,
+        metadata,
       }
     },
     setKeyringToVerify: (state, { payload }: { payload: KeyringToVerify }) => ({

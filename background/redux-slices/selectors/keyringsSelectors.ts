@@ -39,7 +39,7 @@ export const selectKeyringsByAddresses = createSelector(
 
 export const selectSourcesByAddress = createSelector(
   (state: RootState) => state.keyrings.keyrings,
-  (state: RootState) => state.keyrings.keyringMetadata,
+  (state: RootState) => state.keyrings.metadata,
   (
     keyrings,
     keyringMetadata
