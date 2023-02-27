@@ -31,11 +31,10 @@ export class WalletPageHelper {
       await this.page.getByRole("button", { name: "Continue" }).click()
       await this.page
         .getByRole("button", {
-          name: "./images/add_wallet/preview.svg icon Read-only address",
+          name: "Read-only address",
         })
         .click()
-      await this.page.getByPlaceholder(" ").click()
-      await this.page.getByPlaceholder(" ").fill(address)
+      await this.page.getByRole("textbox").fill(address)
       await this.page.getByRole("button", { name: "Explore Taho" }).click()
     })
   }
