@@ -25,11 +25,11 @@ export const ABILITY_TYPES_ENABLED = [
   "airdrop",
   "vote",
   "access",
+  "claim",
 ] as const
 // https://docs.daylight.xyz/reference/ability-model#ability-types
 export const ABILITY_TYPES = [
   ...ABILITY_TYPES_ENABLED,
-  "claim",
   "product",
   "event",
   "article",

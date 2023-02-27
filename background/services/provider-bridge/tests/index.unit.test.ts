@@ -4,8 +4,12 @@ import {
 } from "@tallyho/provider-bridge-shared"
 import sinon from "sinon"
 import browser from "webextension-polyfill"
+import * as featureFlags from "../../../features"
+import { wait } from "../../../lib/utils"
 import { createProviderBridgeService } from "../../../tests/factories"
+import { AddEthereumChainParameter } from "../../internal-ethereum-provider"
 import ProviderBridgeService from "../index"
+import { validateAddEthereumChainParameter } from "../utils"
 
 const WINDOW = {
   focused: true,
@@ -103,6 +107,68 @@ describe("ProviderBridgeService", () => {
 
       expect(stub.called).toBe(false)
       expect(response).toBe(EIP1193_ERROR_CODES.unauthorized)
+    })
+
+    it("should wait for user confirmation before calling wallet_AddEtherumChain", async () => {
+      const params = [
+        {
+          chainId: "0xfa",
+          chainName: "Fantom Opera",
+          nativeCurrency: { name: "Fantom", symbol: "FTM", decimals: 18 },
+          rpcUrls: [
+            "https://fantom-mainnet.gateway.pokt.network/v1/lb/62759259ea1b320039c9e7ac",
+            "https://rpc.ftm.tools",
+            "https://rpc.ankr.com/fantom",
+            "https://rpc.fantom.network",
+          ],
+          blockExplorerUrls: ["https://ftmscan.com"],
+        },
+        "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+        "some site",
+        "favicon.png",
+      ]
+
+      const { enablingPermission } = BASE_DATA
+
+      jest.spyOn(featureFlags, "isEnabled").mockImplementation(() => true)
+
+      const request = providerBridgeService.routeContentScriptRPCRequest(
+        {
+          ...enablingPermission,
+        },
+        "wallet_addEthereumChain",
+        params,
+        enablingPermission.origin
+      )
+
+      // eslint-disable-next-line @typescript-eslint/dot-notation
+      const IEP = providerBridgeService["internalEthereumProviderService"]
+      const spy = jest.spyOn(IEP, "routeSafeRPCRequest")
+
+      await wait(0) // wait next tick to setup popup
+
+      const validatedPayload = validateAddEthereumChainParameter(
+        params[0] as AddEthereumChainParameter
+      )
+
+      expect(providerBridgeService.getNewCustomRPCDetails("0")).toEqual({
+        ...validatedPayload,
+        favicon: "favicon.png",
+        siteTitle: "some site",
+      })
+
+      expect(spy).not.toHaveBeenCalled()
+      providerBridgeService.handleAddNetworkRequest("0", true)
+
+      await wait(0) // wait next tick
+
+      expect(spy).toHaveBeenCalledWith(
+        "wallet_addEthereumChain",
+        [validatedPayload, "0xd8da6bf26964af9d7eed9e03e53415d37aa96045"],
+        BASE_DATA.origin
+      )
+
+      await expect(request).resolves.toEqual(null) // resolves without errors
     })
   })
 })

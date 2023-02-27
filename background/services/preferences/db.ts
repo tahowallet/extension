@@ -7,6 +7,7 @@ import DEFAULT_PREFERENCES from "./defaults"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
 import { AnalyticsPreferences } from "./types"
+import { NETWORK_BY_CHAIN_ID } from "../../constants"
 
 type SignerRecordId = `${AccountSignerWithId["type"]}/${string}`
 
@@ -303,6 +304,18 @@ export class PreferenceDatabase extends Dexie {
           )
 
           Object.assign(storedPreferences.tokenLists, { urls })
+        })
+    })
+
+    // Updates saved accounts stored networks for old installs
+    this.version(16).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const { selectedAccount } = storedPreferences
+          selectedAccount.network =
+            NETWORK_BY_CHAIN_ID[selectedAccount.network.chainID]
         })
     })
 

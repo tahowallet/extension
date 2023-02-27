@@ -13,6 +13,7 @@ import {
   POLYGON,
 } from "@tallyho/tally-background/constants"
 
+import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import SharedBackButton from "../../../components/Shared/SharedBackButton"
 import AddWallet from "./AddWallet"
 import Done from "./Done"
@@ -139,7 +140,7 @@ const WalletShortcut = () => {
   return (
     <div className="wallet_shortcut">
       <span>
-        Did you know that you can open Tally Ho using a keyboard shortcut?
+        Did you know that you can open Taho using a keyboard shortcut?
       </span>
       <img
         height="38"
@@ -200,7 +201,7 @@ function RouteBasedContent() {
       <Route key={OnboardingRoutes.LEDGER} path={OnboardingRoutes.LEDGER}>
         <div className="fadeIn">
           {t("ledger.tip")}
-          <a target="_blank" href="https://tallyho.org/" rel="noreferrer">
+          <a target="_blank" href={WEBSITE_ORIGIN} rel="noreferrer">
             {t("ledger.action")}
           </a>
         </div>

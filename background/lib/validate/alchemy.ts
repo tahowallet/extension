@@ -48,6 +48,9 @@ export const alchemyTokenBalanceJTD = {
       },
     },
   },
+  optionalProperties: {
+    pageKey: { type: "string" },
+  },
   additionalProperties: false,
 } as const
 
