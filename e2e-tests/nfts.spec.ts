@@ -4,7 +4,7 @@ import { skipIfFeatureFlagged, test, expect } from "./utils"
 
 skipIfFeatureFlagged(FeatureFlags.SUPPORT_NFT_TAB)
 
-test.describe("NFTs Update", () => {
+test.describe("NFTs", () => {
   test.use({ viewport: { width: 384, height: 600 } })
 
   test("Shows loading state", async ({
@@ -14,9 +14,23 @@ test.describe("NFTs Update", () => {
   }) => {
     // Set a delay so we don't miss loading states
     await backgroundPage.route(/api\.simplehash\.com/i, async (route) => {
-      const response = await route.fetch()
-      await wait(800)
-      await route.fulfill({ response })
+      const response = await route.fetch().catch((err) => {
+        // Waiting for the response doesn't prevent context disposed errors
+        // consistently
+        if (
+          err instanceof Error &&
+          err.message.includes("Request context disposed")
+        ) {
+          // noop
+        } else {
+          throw err
+        }
+      })
+
+      if (response) {
+        await wait(800)
+        await route.fulfill({ response })
+      }
     })
 
     await walletPageHelper.onboardReadOnlyAddress("bravonaver.eth")
@@ -26,8 +40,6 @@ test.describe("NFTs Update", () => {
 
     // Wait until load finishes
     await expect(page.getByTestId("loading_doggo")).not.toBeVisible()
-
-    await backgroundPage.waitForResponse(/api\.simplehash\.com/i)
   })
 
   test("User can view nft collections, poaps and badges", async ({
