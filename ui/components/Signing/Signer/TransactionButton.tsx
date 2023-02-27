@@ -11,8 +11,8 @@ export default function TransactionButton({
   isDisabled,
   onClick,
   children,
-  reactWindowFocus = false,
-}: SharedButtonProps & { reactWindowFocus?: boolean }): ReactElement {
+  reactForWindowFocus = false,
+}: SharedButtonProps & { reactForWindowFocus?: boolean }): ReactElement {
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
   )
@@ -77,9 +77,9 @@ export default function TransactionButton({
         onClick={onClick}
         showLoadingOnClick
         isDisabled={
-          reactWindowFocus
-            ? isOnDelayToSign
-            : false || !unlockButtons || isDisabled
+          (reactForWindowFocus ? isOnDelayToSign : false) ||
+          !unlockButtons ||
+          isDisabled
         }
       >
         {children}

@@ -36,7 +36,7 @@ export default function SignerBaseFrame({
           onClick={onConfirm}
           isDisabled={hasInsufficientFunds}
           showLoadingOnClick
-          reactWindowFocus
+          reactForWindowFocus
         >
           {signingActionLabel}
         </TransactionButton>
