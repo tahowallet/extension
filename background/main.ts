@@ -166,6 +166,8 @@ import {
   deleteAbilitiesForAccount,
   initAbilities,
 } from "./redux-slices/abilities"
+import { AddChainRequestData } from "./services/provider-bridge"
+import { AnalyticsEvent } from "./lib/posthog"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1315,6 +1317,13 @@ export default class Main extends BaseService<never> {
   }
 
   async connectProviderBridgeService(): Promise<void> {
+    uiSliceEmitter.on("addCustomNetworkResponse", ([requestId, success]) => {
+      return this.providerBridgeService.handleAddNetworkRequest(
+        requestId,
+        success
+      )
+    })
+
     this.providerBridgeService.emitter.on(
       "requestPermission",
       (permissionRequest: PermissionRequest) => {
@@ -1616,6 +1625,10 @@ export default class Main extends BaseService<never> {
     })
   }
 
+  getAddNetworkRequestDetails(requestId: string): AddChainRequestData {
+    return this.providerBridgeService.getNewCustomRPCDetails(requestId)
+  }
+
   async updateSignerTitle(
     signer: AccountSignerWithId,
     title: string
@@ -1674,7 +1687,7 @@ export default class Main extends BaseService<never> {
       const openTime = Date.now()
 
       port.onDisconnect.addListener(() => {
-        this.analyticsService.sendAnalyticsEvent("UI shown", {
+        this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.UI_SHOWN, {
           openTime: new Date(openTime).toISOString(),
           closeTime: new Date().toISOString(),
           openLength: (Date.now() - openTime) / 1e3,

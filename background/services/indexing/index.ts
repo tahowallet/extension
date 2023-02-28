@@ -1,7 +1,3 @@
-import {
-  AlchemyProvider,
-  AlchemyWebSocketProvider,
-} from "@ethersproject/providers"
 import logger from "../../lib/logger"
 import { HexString } from "../../types"
 import { EVMNetwork, sameNetwork } from "../../networks"
@@ -143,7 +139,7 @@ export default class IndexingService extends BaseService<Events> {
         schedule: {
           periodInMinutes: 1,
         },
-        handler: () => this.handleBalanceAlarm({ onlyActiveAccounts: true }),
+        handler: () => this.handleBalanceAlarm(),
       },
       forceBalance: {
         schedule: {
@@ -186,13 +182,8 @@ export default class IndexingService extends BaseService<Events> {
         this.emitter.emit("assets", this.cachedAssets[network.chainID])
       })
 
-      // Force a balance refresh on service start
-      tokenListLoad.then(() =>
-        this.handleBalanceAlarm({
-          onlyActiveAccounts: false,
-          fetchTokenLists: false,
-        })
-      )
+      // Load balances after token lists load
+      tokenListLoad.then(() => this.loadAccountBalances())
     })
   }
 
@@ -249,7 +240,7 @@ export default class IndexingService extends BaseService<Events> {
    *          the codebase. Fiat currencies are not included.
    */
   getCachedAssets(network: EVMNetwork): AnyAsset[] {
-    return this.cachedAssets[network.chainID]
+    return this.cachedAssets[network.chainID] ?? []
   }
 
   /**
@@ -819,58 +810,48 @@ export default class IndexingService extends BaseService<Events> {
     }
   }
 
-  private async handleBalanceAlarm({
-    onlyActiveAccounts = false,
-    fetchTokenLists = true,
-  }: {
-    onlyActiveAccounts?: boolean
-    fetchTokenLists?: boolean
-  } = {}): Promise<void> {
-    if (fetchTokenLists) {
-      // no need to block here, as the first fetch blocks the entire service init
-      this.fetchAndCacheTokenLists()
-    }
-
-    const assetsToTrack = await this.db.getAssetsToTrack()
-    const trackedNetworks = await this.chainService.getTrackedNetworks()
+  private async loadAccountBalances(onlyActiveAccounts = false): Promise<void> {
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
 
-    const trackedChainIds = new Set(
-      trackedNetworks.map((network) => network.chainID)
+    const accounts = await this.chainService.getAccountsToTrack(
+      onlyActiveAccounts
     )
 
-    const activeAssetsToTrack = assetsToTrack.filter((asset) =>
-      trackedChainIds.has(asset.homeNetwork.chainID)
-    )
-
-    // wait on balances being written to the db, don't wait on event emission
     await Promise.allSettled(
-      (
-        await this.chainService.getAccountsToTrack(onlyActiveAccounts)
-      ).map(async (addressOnNetwork) => {
-        const provider = await this.chainService.providerForNetworkOrThrow(
-          addressOnNetwork.network
-        )
-        const isAlchemyProvider =
-          provider instanceof AlchemyProvider ||
-          provider instanceof AlchemyWebSocketProvider
+      accounts.map(async (addressOnNetwork) => {
+        const { network } = addressOnNetwork
 
-        if (isAlchemyProvider) {
-          await this.retrieveTokenBalances(
-            addressOnNetwork,
-            activeAssetsToTrack
-          )
-        } else {
-          await this.retrieveTokenBalances(
-            addressOnNetwork,
-            this.getCachedAssets(addressOnNetwork.network).filter(
-              isSmartContractFungibleAsset
-            )
-          )
-        }
-        await this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
+        const provider = this.chainService.providerForNetworkOrThrow(network)
+
+        const loadBaseAccountBalance =
+          this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
+
+        /**
+         * When the provider supports alchemy we can use alchemy_getTokenBalances
+         * to query all erc20 token balances without specifying which assets we
+         * need to check. When it does not, we try checking balances for every asset
+         * we've seen in the network.
+         */
+        const assetsToCheck = provider.supportsAlchemy
+          ? []
+          : // This doesn't pass assetsToTrack stored in the db as
+            // it assumes they've already been cached
+            this.getCachedAssets(network).filter(isSmartContractFungibleAsset)
+
+        const loadTokenBalances = this.retrieveTokenBalances(
+          addressOnNetwork,
+          assetsToCheck
+        )
+
+        return Promise.all([loadBaseAccountBalance, loadTokenBalances])
       })
+    )
+  }
+
+  private async handleBalanceAlarm(): Promise<void> {
+    await this.fetchAndCacheTokenLists().then(() =>
+      this.loadAccountBalances(true)
     )
   }
 }

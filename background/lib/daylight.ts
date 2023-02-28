@@ -85,9 +85,20 @@ export const getDaylightAbilities = async (
   // https://docs.daylight.xyz/reference/retrieve-wallets-abilities
   retries = DEFAULT_RETRIES
 ): Promise<DaylightAbility[]> => {
+  // Learn more at https://docs.daylight.xyz/reference/get_v1-wallets-address-abilities
+  const requestURL = new URL(
+    `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities`
+  )
+  // The most interesting abilities will be the first
+  requestURL.searchParams.set("sort", "magic")
+  requestURL.searchParams.set("sortDirection", "desc")
+  // The limit needs to be set. It is set to the highest value.
+  requestURL.searchParams.set("limit", "1000")
+  requestURL.searchParams.set("deadline", "all")
+
   try {
     const response: AbilitiesResponse = await fetchJson({
-      url: `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities?deadline=all`,
+      url: requestURL.toString(),
       ...(process.env.DAYLIGHT_API_KEY && {
         headers: {
           Authorization: `Bearer ${process.env.DAYLIGHT_API_KEY}`,
