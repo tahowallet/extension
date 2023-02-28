@@ -87,7 +87,9 @@ export default class NFTsService extends BaseService<Events> {
       this.#transfersLookupTimestamp =
         transfersLookupTimestamp ?? (await this.setTransfersLookupTimestamp())
 
-      this.#freshCollections = freshCollections
+      this.#freshCollections = Object.keys(freshCollections).length
+        ? freshCollections
+        : await this.db.setFreshCollectionsFromSavedData()
 
       this.emitter.emit("initializeNFTs", collections)
       this.emitter.emit("isReloadingNFTs", false)

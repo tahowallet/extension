@@ -1,7 +1,7 @@
 import Dexie from "dexie"
 import { AddressOnNetwork } from "../../accounts"
 import { FeatureFlags, isEnabled } from "../../features"
-import { sameEVMAddress } from "../../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { NFT, NFTCollection } from "../../nfts"
 
 export type FreshCollectionsMap = {
@@ -40,8 +40,12 @@ export class NFTsDatabase extends Dexie {
           preferences: "++id",
         })
         .upgrade((tx) => {
-          tx.table("preferences").put(DEFAULT_PREFERENCES)
+          return tx.db.table("preferences").add(DEFAULT_PREFERENCES)
         })
+
+      this.on("populate", (tx) => {
+        return tx.db.table("preferences").add(DEFAULT_PREFERENCES)
+      })
     }
   }
 
@@ -136,6 +140,21 @@ export class NFTsDatabase extends Dexie {
     freshCollections: FreshCollectionsMap
   ): Promise<void> {
     await this.preferences.toCollection().modify({ freshCollections })
+  }
+
+  async setFreshCollectionsFromSavedData(): Promise<FreshCollectionsMap> {
+    const freshCollections: FreshCollectionsMap = {}
+    const nfts = await this.nfts.toArray()
+    nfts.forEach((nft) => {
+      const { collectionID } = nft
+      const { owner } = nft
+      freshCollections[collectionID] ??= {}
+      freshCollections[collectionID][normalizeEVMAddress(owner)] = true
+    })
+
+    await this.setFreshCollections(freshCollections)
+
+    return freshCollections
   }
 
   async getPreferences(): Promise<Preferences> {
