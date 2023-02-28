@@ -100,7 +100,7 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn lint
   e2e-tests:
-    if: github.ref == 'refs/heads/main'
+    if: (github.ref == 'refs/heads/main') || contains(github.head_ref, 'e2e')
     needs: build
     timeout-minutes: 60
     runs-on: ubuntu-latest
@@ -127,7 +127,7 @@ jobs:
         #env:
         # DEBUG: pw:api*
       - uses: actions/upload-artifact@v3
-        if: always()
+        if: failure()
         with:
           name: debug-output
           path: |

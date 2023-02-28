@@ -15,7 +15,7 @@ export default function TabBarIconButton(
   const { icon, title, isActive, showNotifications = false, onClick } = props
 
   return (
-    <button type="button" onClick={onClick}>
+    <button type="button" role="link" onClick={onClick}>
       <div className={classNames("tab_bar_icon_wrap", { active: isActive })}>
         {showNotifications && (
           <div className="notifications">

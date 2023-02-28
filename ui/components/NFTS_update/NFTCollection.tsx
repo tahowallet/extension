@@ -121,6 +121,7 @@ export default function NFTCollection(props: {
           expanded: isExpanded && !isLoading,
           invisible: !nftCount,
         })}
+        data-testid="nft_list_item"
       >
         <li
           ref={collectionRef}

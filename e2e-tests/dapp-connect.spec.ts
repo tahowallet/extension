@@ -1,6 +1,6 @@
-import { tallyHoTest } from "./utils"
+import { test } from "./utils"
 
-tallyHoTest("dapp connect", async ({ page, context, extensionId }) => {
+test("dapp connect", async ({ page, context, extensionId }) => {
   const passwd = "VoXaXa!239"
   const recoveryPhrase =
     "tilt ski leave code make fantasy rifle learn wash quiz youth inside promote garlic cat album tell pass between hub brush evolve staff imitate"
