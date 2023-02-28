@@ -929,6 +929,7 @@ export default class Main extends BaseService<never> {
     })
 
     uiSliceEmitter.on("userActivityEncountered", (addressOnNetwork) => {
+      this.abilitiesService.refreshAbilities()
       this.chainService.markAccountActivity(addressOnNetwork)
     })
   }
