@@ -51,11 +51,9 @@ function Overview(): ReactElement {
           balance={balance}
           initializationTimeExpired={initializationLoadingTimeExpired}
         />
-        {isEnabled(FeatureFlags.SUPPORT_ABILITIES) ? (
-          <div className="abilities_wrap">
-            <AbilitiesHeader />
-          </div>
-        ) : null}
+        <div className="abilities_wrap">
+          <AbilitiesHeader />
+        </div>
         <AccountList
           accountsTotal={accountsTotal}
           accountsCount={accountsCount}
@@ -130,7 +128,7 @@ function NewOverview(): ReactElement {
         balance={balance}
         initializationTimeExpired={initializationLoadingTimeExpired}
       />
-      {isEnabled(FeatureFlags.SUPPORT_ABILITIES) ? <AbilitiesHeader /> : null}
+      <AbilitiesHeader />
       <AccountList
         accountsTotal={accountsTotal}
         accountsCount={accountsCount}

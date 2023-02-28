@@ -129,10 +129,6 @@ export default class AbilitiesService extends BaseService<Events> {
   }
 
   async pollForAbilities(address: HexString): Promise<void> {
-    if (!isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
-      return
-    }
-
     const daylightAbilities = await getDaylightAbilities(address)
     const normalizedAbilities = normalizeDaylightAbilities(
       daylightAbilities,
@@ -178,9 +174,6 @@ export default class AbilitiesService extends BaseService<Events> {
   }
 
   async abilitiesAlarm(): Promise<void> {
-    if (!isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
-      return
-    }
     const accountsToTrack = await this.chainService.getAccountsToTrack()
     const addresses = new Set(accountsToTrack.map((account) => account.address))
 

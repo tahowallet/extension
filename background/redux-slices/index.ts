@@ -33,9 +33,7 @@ const mainReducer = combineReducers({
   earn: earnReducer,
   ledger: ledgerReducer,
   nfts: nftsReducer,
-  ...(isEnabled(FeatureFlags.SUPPORT_ABILITIES)
-    ? { abilities: abilitiesReducer }
-    : {}),
+  abilities: abilitiesReducer,
   ...(isEnabled(FeatureFlags.SUPPORT_NFT_TAB)
     ? { nftsUpdate: nftsUpdateReducer }
     : {}),
