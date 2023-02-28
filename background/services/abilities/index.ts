@@ -105,19 +105,12 @@ export default class AbilitiesService extends BaseService<Events> {
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
-    this.chainService.emitter.on(
-      "newAccountToTrack",
-      async ({ addressOnNetwork, source }) => {
-        const { address } = addressOnNetwork
-        const ledgerAccount = await this.ledgerService.getAccountByAddress(
-          address
-        )
-        if (source ?? ledgerAccount) {
-          this.pollForAbilities(address)
-          this.emitter.emit("newAccount", address)
-        }
-      }
-    )
+  }
+
+  // Should only be called with ledger or imported accounts
+  async getNewAccountAbilities(address: string): Promise<void> {
+    this.pollForAbilities(address)
+    this.emitter.emit("newAccount", address)
   }
 
   async pollForAbilities(address: HexString): Promise<void> {

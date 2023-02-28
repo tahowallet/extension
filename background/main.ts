@@ -1569,6 +1569,14 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("deleteAccount", (address) => {
       this.store.dispatch(deleteAccountFilter(address))
     })
+
+    this.keyringService.emitter.on("address", (address) =>
+      this.abilitiesService.pollForAbilities(address)
+    )
+
+    this.ledgerService.emitter.on("address", ({ address }) =>
+      this.abilitiesService.pollForAbilities(address)
+    )
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
