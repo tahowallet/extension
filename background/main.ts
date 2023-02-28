@@ -780,6 +780,9 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(
         setSnackbarMessage("Transaction signed, broadcasting...")
       )
+      this.store.dispatch(
+        clearTransactionState(TransactionConstructionStatus.Idle)
+      )
     })
 
     earnSliceEmitter.on("earnDeposit", (message) => {
