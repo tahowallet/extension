@@ -2,6 +2,7 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import {
   selectEstimatedFeesPerGas,
+  selectIsTransactionLoaded,
   selectTransactionData,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { updateTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
@@ -20,6 +21,7 @@ import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionDetailWarning from "./SignTransactionDetailWarning"
+import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 
 export type PanelState = {
   dismissedWarnings: string[]
@@ -49,6 +51,11 @@ export default function SignTransactionDetailPanel({
   // If a transaction request is passed directly, prefer it over Redux.
   const transactionDetails = transactionRequest ?? reduxTransactionData
 
+  const isTransactionDataReady = useBackgroundSelector(
+    selectIsTransactionLoaded
+  )
+  const [showSpinner, setShowSpinner] = useState(!isTransactionDataReady)
+
   const dispatch = useBackgroundDispatch()
 
   const { t } = useTranslation()
@@ -70,6 +77,13 @@ export default function SignTransactionDetailPanel({
     (transactionDetails as EnrichedLegacyTransactionRequest)?.gasPrice,
     (transactionDetails as EnrichedEIP1559TransactionRequest)?.maxFeePerGas,
   ])
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setShowSpinner(!isTransactionDataReady)
+    }, 300)
+    return () => clearTimeout(timeout)
+  }, [isTransactionDataReady, setShowSpinner])
 
   if (transactionDetails === undefined) return <></>
 
@@ -113,14 +127,22 @@ export default function SignTransactionDetailPanel({
           onNetworkSettingsSave={networkSettingsSaved}
         />
       </SharedSlideUpMenu>
-      {hasInsufficientFundsWarning && (
-        <span className="detail_item">
-          <SignTransactionDetailWarning
-            message={t("networkFees.insufficientBaseAsset", {
-              symbol: transactionDetails.network.baseAsset.symbol,
-            })}
-          />
+      {showSpinner ? (
+        <span className="spinner">
+          <SharedLoadingSpinner size="small" />
         </span>
+      ) : (
+        <>
+          {hasInsufficientFundsWarning && (
+            <span className="detail_item">
+              <SignTransactionDetailWarning
+                message={t("networkFees.insufficientBaseAsset", {
+                  symbol: transactionDetails.network.baseAsset.symbol,
+                })}
+              />
+            </span>
+          )}
+        </>
       )}
       {isContractAddress &&
         !panelState.dismissedWarnings.includes("send-to-contract") && (
@@ -164,6 +186,12 @@ export default function SignTransactionDetailPanel({
           .detail_item_right {
             color: var(--green-20);
             font-size: 16px;
+          }
+          .spinner {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
           }
         `}
       </style>
