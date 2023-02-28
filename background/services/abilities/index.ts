@@ -167,6 +167,7 @@ export default class AbilitiesService extends BaseService<Events> {
     ) {
       return
     }
+    localStorage.setItem(this.ABILITY_TIME_KEY, Date.now().toString())
     const accountsToTrack = await this.chainService.getAccountsToTrack()
     const addresses = new Set(accountsToTrack.map((account) => account.address))
 
@@ -175,8 +176,6 @@ export default class AbilitiesService extends BaseService<Events> {
     for (const address of addresses) {
       this.emitter.emit("initAbilities", address as NormalizedEVMAddress)
     }
-
-    localStorage.setItem(this.ABILITY_TIME_KEY, Date.now().toString())
   }
 
   async reportAndRemoveAbility(
