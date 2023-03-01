@@ -157,7 +157,7 @@ export default function Root(): ReactElement {
   return (
     <Navigation isOnboarding={isOnboarding}>
       <Switch>
-        {isOnboarding && (
+        {!isOnboarding && (
           <Redirect
             to={OnboardingRoutes.ADD_WALLET}
             from={OnboardingRoutes.ONBOARDING_START}
