@@ -1,7 +1,7 @@
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import { SignerFrameProps } from ".."
 import SharedButton from "../../../Shared/SharedButton"
@@ -49,9 +49,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
       (typeof request.signingData !== "string" ||
         request.signingData.length > 0))
 
-  const transactionDetails = useBackgroundSelector(selectTransactionData)
-  const hasInsufficientFunds =
-    transactionDetails?.annotation?.warnings?.includes("insufficient-funds")
+  const hasInsufficientFunds = useBackgroundSelector(selectHasInsufficientFunds)
 
   // FIXME Once the legacy signing flow is removed, `useSigningLedgerState` can
   // FIXME be updated to not accept undefined or null and therefore to not
@@ -138,7 +136,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
                 onClick={handleConfirm}
                 isDisabled={hasInsufficientFunds}
                 showLoadingOnClick
-                reactForWindowFocus
+                reactOnWindowFocus
               >
                 {globalT(signingActionLabelI18nKey)}
               </TransactionButton>

@@ -11,8 +11,8 @@ export default function TransactionButton({
   isDisabled,
   onClick,
   children,
-  reactForWindowFocus = false,
-}: SharedButtonProps & { reactForWindowFocus?: boolean }): ReactElement {
+  reactOnWindowFocus = false,
+}: SharedButtonProps & { reactOnWindowFocus?: boolean }): ReactElement {
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
   )
@@ -63,7 +63,7 @@ export default function TransactionButton({
       delaySignButtonTimeout.current = window.setTimeout(() => {
         setIsOnDelayToSign(false)
         // Random delay between 0.5 and 2 seconds
-      }, Math.floor(Math.random() * (5 - 1) + 1) * 500)
+      }, Math.floor(Math.random() * 4 + 1) * 500)
     } else {
       setIsOnDelayToSign(true)
     }
@@ -77,7 +77,7 @@ export default function TransactionButton({
         onClick={onClick}
         showLoadingOnClick
         isDisabled={
-          (reactForWindowFocus ? isOnDelayToSign : false) ||
+          (reactOnWindowFocus ? isOnDelayToSign : false) ||
           !unlockButtons ||
           isDisabled
         }
