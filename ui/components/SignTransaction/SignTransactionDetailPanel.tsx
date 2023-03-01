@@ -16,12 +16,13 @@ import {
   BINANCE_SMART_CHAIN,
   EIP_1559_COMPLIANT_CHAIN_IDS,
 } from "@tallyho/tally-background/constants"
+import classNames from "classnames"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionDetailWarning from "./SignTransactionDetailWarning"
-import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
+import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 
 export type PanelState = {
   dismissedWarnings: string[]
@@ -54,7 +55,7 @@ export default function SignTransactionDetailPanel({
   const isTransactionDataReady = useBackgroundSelector(
     selectIsTransactionLoaded
   )
-  const [showSpinner, setShowSpinner] = useState(!isTransactionDataReady)
+  const [showLoader, setShowLoader] = useState(!isTransactionDataReady)
 
   const dispatch = useBackgroundDispatch()
 
@@ -80,10 +81,10 @@ export default function SignTransactionDetailPanel({
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      setShowSpinner(!isTransactionDataReady)
-    }, 300)
+      setShowLoader(!isTransactionDataReady)
+    }, 400)
     return () => clearTimeout(timeout)
-  }, [isTransactionDataReady, setShowSpinner])
+  }, [isTransactionDataReady, setShowLoader])
 
   if (transactionDetails === undefined) return <></>
 
@@ -127,23 +128,23 @@ export default function SignTransactionDetailPanel({
           onNetworkSettingsSave={networkSettingsSaved}
         />
       </SharedSlideUpMenu>
-      {showSpinner ? (
-        <span className="spinner">
-          <SharedLoadingSpinner size="small" />
-        </span>
-      ) : (
-        <>
-          {hasInsufficientFundsWarning && (
-            <span className="detail_item">
-              <SignTransactionDetailWarning
-                message={t("networkFees.insufficientBaseAsset", {
-                  symbol: transactionDetails.network.baseAsset.symbol,
-                })}
-              />
-            </span>
-          )}
-        </>
-      )}
+      <span
+        className={classNames("warning_content", {
+          visible: showLoader || hasInsufficientFundsWarning,
+        })}
+      >
+        {!showLoader && hasInsufficientFundsWarning ? (
+          <span className="detail_item">
+            <SignTransactionDetailWarning
+              message={t("networkFees.insufficientBaseAsset", {
+                symbol: transactionDetails.network.baseAsset.symbol,
+              })}
+            />
+          </span>
+        ) : (
+          <SharedSkeletonLoader isLoaded={false} height={44} />
+        )}
+      </span>
       {isContractAddress &&
         !panelState.dismissedWarnings.includes("send-to-contract") && (
           <span className="detail_item">
@@ -187,11 +188,15 @@ export default function SignTransactionDetailPanel({
             color: var(--green-20);
             font-size: 16px;
           }
-          .spinner {
-            width: 100%;
-            display: flex;
-            justify-content: center;
+          .warning_content {
             margin-bottom: 10px;
+            max-height: 0px;
+            overflow: hidden;
+            transition: max-height 200ms ease-out;
+          }
+          .warning_content.visible {
+            max-height: 44px;
+            transition: max-height 200ms ease-in;
           }
         `}
       </style>
