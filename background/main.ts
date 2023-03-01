@@ -1571,11 +1571,11 @@ export default class Main extends BaseService<never> {
     })
 
     this.keyringService.emitter.on("address", (address) =>
-      this.abilitiesService.pollForAbilities(address)
+      this.abilitiesService.getNewAccountAbilities(address)
     )
 
     this.ledgerService.emitter.on("address", ({ address }) =>
-      this.abilitiesService.pollForAbilities(address)
+      this.abilitiesService.getNewAccountAbilities(address)
     )
   }
 

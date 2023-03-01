@@ -161,10 +161,7 @@ export default class AbilitiesService extends BaseService<Events> {
   async refreshAbilities(): Promise<void> {
     const lastFetchTime = localStorage.getItem(this.ABILITY_TIME_KEY)
 
-    if (
-      lastFetchTime &&
-      new Date(Number(lastFetchTime)) < new Date(Date.now() + HOUR)
-    ) {
+    if (lastFetchTime && Number(lastFetchTime) + HOUR < Date.now()) {
       return
     }
     localStorage.setItem(this.ABILITY_TIME_KEY, Date.now().toString())

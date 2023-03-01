@@ -8,7 +8,6 @@ export class AbilitiesDatabase extends Dexie {
   constructor() {
     super("tally/abilities")
 
-    // Don't create tables in the public release until the feature flag is off
     this.version(1).stores({
       abilities: "++id, &[abilityId+address], removedFromUi, completed",
     })
