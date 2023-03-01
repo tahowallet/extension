@@ -28,7 +28,12 @@ export default function NFTItem<
 
   const [hasHover, setHasHover] = useState(false)
   return (
-    <div className="nft_item">
+    <div
+      className="nft_item"
+      data-testid={
+        isCollection ? "nft_list_item_collection" : "nft_list_item_single"
+      }
+    >
       <div
         className="nft_image"
         onMouseEnter={() => setHasHover(true)}

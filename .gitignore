@@ -9,3 +9,4 @@ app/extension-scripts/api/playground/
 .DS_Store
 .vscode
 playwright-report
+test-results/

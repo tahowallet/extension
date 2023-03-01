@@ -1,8 +1,8 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useBackgroundSelector } from "../../../hooks"
-import SharedButton from "../../Shared/SharedButton"
+import TransactionButton from "./TransactionButton"
 
 type SignerBaseFrameProps = {
   signingActionLabel: string
@@ -18,30 +18,26 @@ export default function SignerBaseFrame({
   onReject,
 }: SignerBaseFrameProps): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
-
-  const transactionDetails = useBackgroundSelector(selectTransactionData)
-  const hasInsufficientFunds =
-    transactionDetails?.annotation?.warnings?.includes("insufficient-funds")
-
-  const [isOnDelayToSign /* , setIsOnDelayToSign */] = useState(false)
+  const hasInsufficientFunds = useBackgroundSelector(selectHasInsufficientFunds)
 
   return (
     <>
       <div className="signature-details">{children}</div>
       <footer>
-        <SharedButton size="large" type="secondary" onClick={onReject}>
+        <TransactionButton size="large" type="secondary" onClick={onReject}>
           {t("reject")}
-        </SharedButton>
+        </TransactionButton>
 
-        <SharedButton
+        <TransactionButton
           type="primaryGreen"
           size="large"
           onClick={onConfirm}
+          isDisabled={hasInsufficientFunds}
           showLoadingOnClick
-          isDisabled={hasInsufficientFunds || isOnDelayToSign}
+          reactOnWindowFocus
         >
           {signingActionLabel}
-        </SharedButton>
+        </TransactionButton>
       </footer>
       <style jsx>
         {`
