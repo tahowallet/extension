@@ -49,7 +49,11 @@ export default function NFTsHeader(): ReactElement {
 
   return (
     <>
-      <SharedSlideUpMenu isOpen={openFiltersMenu} close={handleToggleClick}>
+      <SharedSlideUpMenu
+        testid="nft_filters_menu"
+        isOpen={openFiltersMenu}
+        close={handleToggleClick}
+      >
         <NFTsFilters />
       </SharedSlideUpMenu>
       <HeaderContainer>
@@ -70,7 +74,10 @@ export default function NFTsHeader(): ReactElement {
           )}
           <div className="stats_totals">
             <span className="currency_sign">{mainCurrencySign}</span>
-            <span className="currency_total">
+            <span
+              className="currency_total"
+              data-testid="nft_header_currency_total"
+            >
               {totalFloorPriceInUSD ?? "0"}
             </span>
             {isLoading && (
@@ -81,17 +88,19 @@ export default function NFTsHeader(): ReactElement {
         </div>
         <ul className="nft_counts">
           <li>
-            <strong>{nftCount}</strong>
+            <strong data-testid="nft_header_nft_count">{nftCount}</strong>
             {t("units.nft", { count: nftCount ?? 0 })}
           </li>
           <li className="spacer" role="presentation" />
           <li>
-            <strong>{collectionCount}</strong>
+            <strong data-testid="nft_header_collection_count">
+              {collectionCount}
+            </strong>
             {t("units.collection", { count: collectionCount ?? 0 })}
           </li>
           <li className="spacer" role="presentation" />
           <li>
-            <strong>{badgeCount}</strong>
+            <strong data-testid="nft_header_badge_count">{badgeCount}</strong>
             {t("units.badge", { count: badgeCount ?? 0 })}
           </li>
         </ul>

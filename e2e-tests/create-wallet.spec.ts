@@ -1,5 +1,5 @@
-import { createWallet, tallyHoTest } from "./utils"
+import { createWallet, test } from "./utils"
 
-tallyHoTest("Create wallet", async ({ page, extensionId }) => {
+test("Create wallet", async ({ page, extensionId }) => {
   await createWallet(page, extensionId)
 })

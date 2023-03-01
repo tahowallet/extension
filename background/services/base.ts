@@ -155,7 +155,8 @@ export default abstract class BaseService<Events extends ServiceLifecycleEvents>
     this.alarmSchedules[alarm.name]?.handler(alarm)
   }
 
-  private serviceState: "unstarted" | "started" | "stopped" = "unstarted"
+  private serviceState: "unstarted" | "starting" | "started" | "stopped" =
+    "unstarted"
 
   /**
    * {@inheritdoc Service.started}
@@ -171,6 +172,7 @@ export default abstract class BaseService<Events extends ServiceLifecycleEvents>
         throw new Error("Service is already stopped and cannot be restarted.")
 
       case "unstarted":
+      case "starting":
         return this.emitter.once("serviceStarted").then(() => this)
 
       default: {
@@ -202,14 +204,16 @@ export default abstract class BaseService<Events extends ServiceLifecycleEvents>
   readonly startService = async (): Promise<void> => {
     switch (this.serviceState) {
       case "started":
+      case "starting":
         return
 
       case "stopped":
         throw new Error("Service is already stopped and cannot be restarted.")
 
       case "unstarted":
-        this.serviceState = "started"
+        this.serviceState = "starting"
         await this.internalStartService()
+        this.serviceState = "started"
         this.emitter.emit("serviceStarted", undefined)
         break
 
@@ -238,9 +242,14 @@ export default abstract class BaseService<Events extends ServiceLifecycleEvents>
       case "stopped":
         return
 
+      case "starting":
+        await this.started()
+        await this.stopService()
+        break
+
       case "started":
-        this.serviceState = "stopped"
         await this.internalStopService()
+        this.serviceState = "stopped"
         this.emitter.emit("serviceStopped", undefined)
         break
 
