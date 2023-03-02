@@ -5,11 +5,15 @@ import KeyringService, {
   Keyring,
   MAX_KEYRING_IDLE_TIME,
   MAX_OUTSIDE_IDLE_TIME,
-} from "../services/keyring"
-import { KeyringTypes } from "../types"
-import { EIP1559TransactionRequest } from "../networks"
-import { ETH, ETHEREUM } from "../constants"
-import logger from "../lib/logger"
+} from ".."
+import { KeyringTypes } from "../../../types"
+import { EIP1559TransactionRequest } from "../../../networks"
+import { ETH, ETHEREUM } from "../../../constants"
+import logger from "../../../lib/logger"
+import {
+  mockLocalStorage,
+  mockLocalStorageWithCalls,
+} from "../../../tests/utils"
 
 const originalCrypto = global.crypto
 beforeEach(() => {
@@ -91,8 +95,7 @@ describe("KeyringService when uninitialized", () => {
   let service: KeyringService
 
   beforeEach(async () => {
-    browser.storage.local.get = jest.fn(() => Promise.resolve({}))
-    browser.storage.local.set = jest.fn(() => Promise.resolve())
+    mockLocalStorage()
     mockAlarms()
 
     service = await startKeyringService()
@@ -167,22 +170,7 @@ describe("KeyringService when initialized", () => {
 
   beforeEach(async () => {
     mockAlarms()
-
-    let localStorage: Record<string, Record<string, unknown>> = {}
-
-    browser.storage.local.get = jest.fn((key) => {
-      if (typeof key === "string" && key in localStorage) {
-        return Promise.resolve({ [key]: localStorage[key] } || {})
-      }
-      return Promise.resolve({})
-    })
-    browser.storage.local.set = jest.fn((values) => {
-      localStorage = {
-        ...localStorage,
-        ...values,
-      }
-      return Promise.resolve()
-    })
+    mockLocalStorage()
 
     service = await startKeyringService()
     await service.unlock(testPassword)
@@ -285,30 +273,13 @@ describe("KeyringService when initialized", () => {
 })
 
 describe("KeyringService when saving keyrings", () => {
-  let localStorage: Record<string, Record<string, unknown>> = {}
   let localStorageCalls: Record<string, unknown>[] = []
 
   beforeEach(() => {
     mockAlarms()
 
-    localStorage = {}
-    localStorageCalls = []
-
-    browser.storage.local.get = jest.fn((key) => {
-      if (typeof key === "string" && key in localStorage) {
-        return Promise.resolve({ [key]: localStorage[key] } || {})
-      }
-      return Promise.resolve({})
-    })
-    browser.storage.local.set = jest.fn((values) => {
-      localStorage = {
-        ...localStorage,
-        ...values,
-      }
-      localStorageCalls.unshift(values)
-
-      return Promise.resolve()
-    })
+    const localStorageMock = mockLocalStorageWithCalls()
+    localStorageCalls = localStorageMock.localStorageCalls
 
     jest.spyOn(Date, "now").mockReturnValue(dateNowValue)
   })
@@ -362,7 +333,7 @@ describe("KeyringService when saving keyrings", () => {
   })
 
   it("loads encrypted data at instantiation time", async () => {
-    localStorage = {
+    browser.storage.local.set({
       tallyVaults: {
         version: 1,
         vaults: [
@@ -377,7 +348,7 @@ describe("KeyringService when saving keyrings", () => {
           },
         ],
       },
-    }
+    })
 
     const storedKeyrings: Keyring[] = []
 
@@ -409,8 +380,7 @@ describe("Keyring service when autolocking", () => {
   let callAutolockHandler: (timeSinceInitialMock: number) => void
 
   beforeEach(async () => {
-    browser.storage.local.get = jest.fn(() => Promise.resolve({}))
-    browser.storage.local.set = jest.fn(() => Promise.resolve())
+    mockLocalStorage()
     browser.alarms.create = jest.fn(() => ({}))
 
     browser.alarms.onAlarm.addListener = jest.fn((handler) => {
