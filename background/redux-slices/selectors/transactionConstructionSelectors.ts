@@ -129,3 +129,9 @@ export const selectCurrentlyChosenNetworkFees = createSelector(
     ],
   (feeData) => feeData
 )
+
+export const selectHasInsufficientFunds = createSelector(
+  selectTransactionData,
+  (transactionDetails) =>
+    !!transactionDetails?.annotation?.warnings?.includes("insufficient-funds")
+)

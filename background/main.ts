@@ -506,8 +506,6 @@ export default class Main extends BaseService<never> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    this.indexingService.started().then(async () => this.chainService.started())
-
     const servicesToBeStarted = [
       this.preferenceService.startService(),
       this.chainService.startService(),

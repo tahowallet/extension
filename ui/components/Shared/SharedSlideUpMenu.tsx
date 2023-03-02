@@ -12,7 +12,7 @@ export type SharedSlideUpMenuSize =
 
 const SLIDE_TRANSITION_MS = 445
 
-interface Props {
+type Props = {
   isOpen: boolean
   close: (
     e: MouseEvent | TouchEvent | React.MouseEvent<HTMLButtonElement, MouseEvent>
@@ -24,6 +24,7 @@ interface Props {
   isScrollable?: boolean
   isDark?: boolean
   alwaysRenderChildren?: boolean
+  testid?: string
 }
 
 const menuHeights: Record<SharedSlideUpMenuSize, string | null> = {
@@ -44,6 +45,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
     isDark,
     isScrollable,
     alwaysRenderChildren,
+    testid = "slide_up_menu",
   } = props
 
   const slideUpMenuRef = useRef(null)
@@ -68,6 +70,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           dark: isDark,
           closed: !isOpen,
         })}
+        data-testid={testid}
         style={{ "--menu-height": menuHeight } as CSSProperties}
         ref={isOpen ? slideUpMenuRef : null}
       >
