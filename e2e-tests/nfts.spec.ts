@@ -7,47 +7,49 @@ skipIfFeatureFlagged(FeatureFlags.SUPPORT_NFT_TAB)
 test.describe("NFTs", () => {
   test.use({ viewport: { width: 384, height: 600 } })
 
-  test("Shows loading state", async ({
+  test("User can view nft collections, poaps and badges", async ({
     page,
     backgroundPage,
     walletPageHelper,
   }) => {
-    // Set a delay so we don't miss loading states
-    await backgroundPage.route(/api\.simplehash\.com/i, async (route) => {
-      const response = await route.fetch().catch((err) => {
-        // Waiting for the response doesn't prevent context disposed errors
-        // consistently
-        if (
-          err instanceof Error &&
-          err.message.includes("Request context disposed")
-        ) {
-          // noop
-        } else {
-          throw err
+    await test.step("Shows loading state", async () => {
+      let shouldInterceptRequests = true
+
+      // Set a delay so we don't miss loading states
+      await backgroundPage.route(/api\.simplehash\.com/i, async (route) => {
+        if (!shouldInterceptRequests) {
+          route.continue()
+          return
+        }
+
+        const response = await route.fetch().catch((err) => {
+          // Waiting for the response doesn't prevent context disposed errors
+          // consistently
+          if (
+            err instanceof Error &&
+            err.message.includes("Request context disposed")
+          ) {
+            // noop
+          } else {
+            throw err
+          }
+        })
+
+        if (response) {
+          await wait(800)
+          await route.fulfill({ response })
         }
       })
 
-      if (response) {
-        await wait(800)
-        await route.fulfill({ response })
-      }
+      await walletPageHelper.onboardReadOnlyAddress("bravonaver.eth")
+      await walletPageHelper.navigateTo("NFTs")
+
+      await expect(page.getByTestId("loading_doggo")).toBeVisible()
+
+      // Wait until load finishes
+      await expect(page.getByTestId("loading_doggo")).not.toBeVisible()
+      shouldInterceptRequests = false
     })
-
-    await walletPageHelper.onboardReadOnlyAddress("bravonaver.eth")
-    await walletPageHelper.navigateTo("NFTs")
-
-    await expect(page.getByTestId("loading_doggo")).toBeVisible()
-
-    // Wait until load finishes
-    await expect(page.getByTestId("loading_doggo")).not.toBeVisible()
-  })
-
-  test("User can view nft collections, poaps and badges", async ({
-    page,
-    walletPageHelper,
-  }) => {
-    await walletPageHelper.onboardReadOnlyAddress("bravonaver.eth")
-    await walletPageHelper.navigateTo("NFTs")
 
     await test.step("Check balances", async () => {
       await expect(
