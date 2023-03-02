@@ -1131,6 +1131,10 @@ export default class Main extends BaseService<never> {
         await this.keyringService.importKeyring(mnemonic, source, path)
       }
     )
+
+    keyringSliceEmitter.on("importPrivateKey", async (privateKey) => {
+      await this.keyringService.importWallet(privateKey)
+    })
   }
 
   async connectInternalEthereumProviderService(): Promise<void> {

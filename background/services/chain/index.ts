@@ -901,7 +901,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
-    const source = await this.keyringService.getKeyringSourceForAddress(
+    const source = await this.keyringService.getSignerSourceForAddress(
       addressNetwork.address
     )
     const isAccountOnNetworkAlreadyTracked =

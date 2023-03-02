@@ -393,10 +393,11 @@ export default class KeyringService extends BaseService<Events> {
     this.requireUnlocked()
 
     const newWallet = new Wallet(privateKey)
+    const normalizedAddress = normalizeEVMAddress(newWallet.address)
     this.#wallets.push(newWallet)
-    this.#signerMetadata[newWallet.publicKey] = { source: "import" }
+    this.#signerMetadata[normalizedAddress] = { source: "import" }
     await this.persistKeyrings()
-    this.emitter.emit("address", newWallet.address)
+    this.emitter.emit("address", normalizedAddress)
     this.emitKeyrings()
   }
 
@@ -404,12 +405,17 @@ export default class KeyringService extends BaseService<Events> {
    * Return the source of a given address' keyring if it exists.  If an
    * address does not have a keyring associated with it - returns null.
    */
-  async getKeyringSourceForAddress(
+  async getSignerSourceForAddress(
     address: string
   ): Promise<"import" | "internal" | null> {
     try {
-      const keyring = await this.#findKeyring(address)
-      return this.#signerMetadata[keyring.id].source
+      const signerWithType = await this.#findSigner(address)
+      if (isKeyring(signerWithType)) {
+        return this.#signerMetadata[signerWithType.signer.id].source
+      }
+      return this.#signerMetadata[
+        normalizeEVMAddress(signerWithType.signer.address)
+      ].source
     } catch (e) {
       // Address is not associated with a keyring
       return null
@@ -523,8 +529,8 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   #removeWallet(address: HexString): Wallet[] {
-    const filteredWallets = this.#wallets.filter((wallet) =>
-      sameEVMAddress(wallet.address, address)
+    const filteredWallets = this.#wallets.filter(
+      (wallet) => !sameEVMAddress(wallet.address, address)
     )
 
     if (filteredWallets.length === this.#wallets.length) {
