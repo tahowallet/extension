@@ -51,20 +51,20 @@ test.describe("NFTs", () => {
       shouldInterceptRequests = false
     })
 
+    // Header stats locators
+    const currencyTotal = page.getByTestId("nft_header_currency_total")
+    const nftCount = page.getByTestId("nft_header_nft_count")
+    const collectionCount = page.getByTestId("nft_header_collection_count")
+    const badgeCount = page.getByTestId("nft_header_badge_count")
+
     await test.step("Check balances", async () => {
-      await expect(
-        page.getByTestId("nft_header_currency_total")
-      ).not.toHaveText(/0.00/)
+      await expect(currencyTotal).not.toHaveText(/0.00/)
 
-      await expect(page.getByTestId("nft_header_nft_count")).not.toHaveText("0")
+      await expect(nftCount).not.toHaveText("0")
 
-      await expect(
-        page.getByTestId("nft_header_collection_count")
-      ).not.toHaveText("0")
+      await expect(collectionCount).not.toHaveText("0")
 
-      await expect(page.getByTestId("nft_header_badge_count")).not.toHaveText(
-        "0"
-      )
+      await expect(badgeCount).not.toHaveText("0")
     })
 
     await test.step("Filtering accounts", async () => {
@@ -81,24 +81,22 @@ test.describe("NFTs", () => {
         .getByRole("button", { name: "Close menu" })
         .click()
 
-      await expect(page.getByTestId("nft_header_currency_total")).toHaveText(
-        /0.00/
-      )
+      // This could match 100.00, however we're checking 0 counts below
+      await expect(currencyTotal).toHaveText(/0.00/)
 
       // Balances should be zero after filtering our only account
-      await expect(page.getByTestId("nft_header_nft_count")).toHaveText("0")
+      await expect(nftCount).toHaveText("0")
 
-      await expect(page.getByTestId("nft_header_collection_count")).toHaveText(
-        "0"
-      )
+      await expect(collectionCount).toHaveText("0")
 
-      await expect(page.getByTestId("nft_header_badge_count")).toHaveText("0")
+      await expect(badgeCount).toHaveText("0")
 
       // Disable account filter
       await page.getByRole("button", { name: "Filter collections" }).click()
 
       await page
         .getByTestId("nft_account_filters")
+        .getByTestId("toggle_item")
         .filter({ hasText: "bravonaver.eth" })
         .getByRole("checkbox")
         .click()
@@ -107,6 +105,52 @@ test.describe("NFTs", () => {
         .getByTestId("nft_filters_menu")
         .getByRole("button", { name: "Close menu" })
         .click()
+    })
+
+    await test.step("Filtering a collection", async () => {
+      await page
+        .getByRole("tablist")
+        .getByRole("tab", { name: "Badges" })
+        .click()
+
+      const badges = await badgeCount.innerText()
+
+      // Filter POAPs
+      await page.getByRole("button", { name: "Filter collections" }).click()
+
+      await page
+        .getByTestId("nft_collection_filters")
+        .getByTestId("toggle_item")
+        .filter({ hasText: "POAP" })
+        .getByRole("checkbox")
+        .click()
+
+      await page
+        .getByTestId("nft_filters_menu")
+        .getByRole("button", { name: "Close menu" })
+        .click()
+
+      // Filtering POAPs should change the header's displayed badge count
+      // unless we don't have any POAPs. We don't check rendered items
+      // because that could break with virtual lists
+      await expect(badgeCount).not.toHaveText(badges)
+
+      // Cleanup
+      await page.getByRole("button", { name: "Filter collections" }).click()
+
+      await page
+        .getByTestId("nft_collection_filters")
+        .getByTestId("toggle_item")
+        .filter({ hasText: "POAP" })
+        .getByRole("checkbox")
+        .click()
+
+      await page
+        .getByTestId("nft_filters_menu")
+        .getByRole("button", { name: "Close menu" })
+        .click()
+
+      await page.getByRole("tablist").getByRole("tab", { name: "NFTs" }).click()
     })
 
     // Check collections
