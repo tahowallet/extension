@@ -1,13 +1,29 @@
 import Dexie from "dexie"
 import { AddressOnNetwork } from "../../accounts"
 import { FeatureFlags, isEnabled } from "../../features"
-import { sameEVMAddress } from "../../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { NFT, NFTCollection } from "../../nfts"
+
+export type FreshCollectionsMap = {
+  [collectionID: string]: { [address: string]: boolean }
+}
+
+type Preferences = {
+  transfersLookupTimestamp: number | undefined
+  freshCollections: FreshCollectionsMap
+}
+
+const DEFAULT_PREFERENCES = {
+  transfersLookupTimestamp: undefined,
+  freshCollections: {},
+}
 
 export class NFTsDatabase extends Dexie {
   private nfts!: Dexie.Table<NFT, number>
 
   private collections!: Dexie.Table<NFTCollection, number>
+
+  private preferences!: Dexie.Table<Preferences>
 
   constructor() {
     super("tally/nfts")
@@ -17,6 +33,18 @@ export class NFTsDatabase extends Dexie {
       this.version(1).stores({
         nfts: "&[id+collectionID+owner+network.chainID]",
         collections: "&[id+owner+network.chainID]",
+      })
+
+      this.version(2)
+        .stores({
+          preferences: "++id",
+        })
+        .upgrade((tx) => {
+          return tx.db.table("preferences").add(DEFAULT_PREFERENCES)
+        })
+
+      this.on("populate", (tx) => {
+        return tx.db.table("preferences").add(DEFAULT_PREFERENCES)
       })
     }
   }
@@ -100,6 +128,37 @@ export class NFTsDatabase extends Dexie {
       .delete()
 
     await nftsToRemove.delete()
+  }
+
+  async setTransfersLookupTimestamp(
+    transfersLookupTimestamp: number
+  ): Promise<void> {
+    await this.preferences.toCollection().modify({ transfersLookupTimestamp })
+  }
+
+  async setFreshCollections(
+    freshCollections: FreshCollectionsMap
+  ): Promise<void> {
+    await this.preferences.toCollection().modify({ freshCollections })
+  }
+
+  async setFreshCollectionsFromSavedData(): Promise<FreshCollectionsMap> {
+    const freshCollections: FreshCollectionsMap = {}
+    const nfts = await this.nfts.toArray()
+    nfts.forEach((nft) => {
+      const { collectionID } = nft
+      const { owner } = nft
+      freshCollections[collectionID] ??= {}
+      freshCollections[collectionID][normalizeEVMAddress(owner)] = true
+    })
+
+    await this.setFreshCollections(freshCollections)
+
+    return freshCollections
+  }
+
+  async getPreferences(): Promise<Preferences> {
+    return (await this.preferences.reverse().first()) ?? DEFAULT_PREFERENCES
   }
 }
 
