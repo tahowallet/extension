@@ -67,6 +67,48 @@ test.describe("NFTs", () => {
       )
     })
 
+    await test.step("Filtering accounts", async () => {
+      await page.getByRole("button", { name: "Filter collections" }).click()
+
+      await page
+        .getByTestId("nft_account_filters")
+        .filter({ hasText: "bravonaver.eth" })
+        .getByRole("checkbox")
+        .click()
+
+      await page
+        .getByTestId("nft_filters_menu")
+        .getByRole("button", { name: "Close menu" })
+        .click()
+
+      await expect(page.getByTestId("nft_header_currency_total")).toHaveText(
+        /0.00/
+      )
+
+      // Balances should be zero after filtering our only account
+      await expect(page.getByTestId("nft_header_nft_count")).toHaveText("0")
+
+      await expect(page.getByTestId("nft_header_collection_count")).toHaveText(
+        "0"
+      )
+
+      await expect(page.getByTestId("nft_header_badge_count")).toHaveText("0")
+
+      // Disable account filter
+      await page.getByRole("button", { name: "Filter collections" }).click()
+
+      await page
+        .getByTestId("nft_account_filters")
+        .filter({ hasText: "bravonaver.eth" })
+        .getByRole("checkbox")
+        .click()
+
+      await page
+        .getByTestId("nft_filters_menu")
+        .getByRole("button", { name: "Close menu" })
+        .click()
+    })
+
     // Check collections
     await test.step("Order by collection count", async () => {
       await page.getByRole("button", { name: "Filter collections" }).click()
