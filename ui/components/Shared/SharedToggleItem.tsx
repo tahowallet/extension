@@ -21,7 +21,7 @@ export default function SharedToggleItem({
   onChange,
 }: SharedToggleItemProps): ReactElement {
   return (
-    <div className="content">
+    <div className="content" role="listitem">
       <div className="text_wrap">
         <div className="thumbnail" role="presentation" />
         <label className="label ellipsis">

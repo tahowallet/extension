@@ -21,7 +21,11 @@ const FilterList = React.forwardRef(
     ref
   ) => {
     return (
-      <div ref={ref as React.RefObject<HTMLDivElement>} className="filter_list">
+      <div
+        ref={ref as React.RefObject<HTMLDivElement>}
+        className="filter_list"
+        role="list"
+      >
         {filters.length > 0 ? (
           <>
             {filters.map((item) => (
