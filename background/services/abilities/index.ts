@@ -9,10 +9,10 @@ import {
 } from "../../lib/daylight"
 import { AbilitiesDatabase, getOrCreateDB } from "./db"
 import ChainService from "../chain"
-import { FeatureFlags, isEnabled } from "../../features"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { Ability, AbilityRequirement } from "../../abilities"
 import LedgerService from "../ledger"
+import { HOUR } from "../../constants"
 
 const normalizeDaylightRequirements = (
   requirement: DaylightAbilityRequirement
@@ -86,18 +86,10 @@ export default class AbilitiesService extends BaseService<Events> {
     private chainService: ChainService,
     private ledgerService: LedgerService
   ) {
-    super({
-      abilitiesAlarm: {
-        schedule: {
-          periodInMinutes: 60,
-        },
-        runAtStart: true,
-        handler: () => {
-          this.abilitiesAlarm()
-        },
-      },
-    })
+    super()
   }
+
+  private ABILITY_TIME_KEY = "LAST_ABILITY_FETCH_TIME"
 
   static create: ServiceCreatorFunction<
     ServiceLifecycleEvents,
@@ -113,26 +105,15 @@ export default class AbilitiesService extends BaseService<Events> {
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
-    this.chainService.emitter.on(
-      "newAccountToTrack",
-      async ({ addressOnNetwork, source }) => {
-        const { address } = addressOnNetwork
-        const ledgerAccount = await this.ledgerService.getAccountByAddress(
-          address
-        )
-        if (source ?? ledgerAccount) {
-          this.pollForAbilities(address)
-          this.emitter.emit("newAccount", address)
-        }
-      }
-    )
+  }
+
+  // Should only be called with ledger or imported accounts
+  async getNewAccountAbilities(address: string): Promise<void> {
+    this.pollForAbilities(address)
+    this.emitter.emit("newAccount", address)
   }
 
   async pollForAbilities(address: HexString): Promise<void> {
-    if (!isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
-      return
-    }
-
     const daylightAbilities = await getDaylightAbilities(address)
     const normalizedAbilities = normalizeDaylightAbilities(
       daylightAbilities,
@@ -177,10 +158,13 @@ export default class AbilitiesService extends BaseService<Events> {
     }
   }
 
-  async abilitiesAlarm(): Promise<void> {
-    if (!isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
+  async refreshAbilities(): Promise<void> {
+    const lastFetchTime = localStorage.getItem(this.ABILITY_TIME_KEY)
+
+    if (lastFetchTime && Number(lastFetchTime) + HOUR > Date.now()) {
       return
     }
+    localStorage.setItem(this.ABILITY_TIME_KEY, Date.now().toString())
     const accountsToTrack = await this.chainService.getAccountsToTrack()
     const addresses = new Set(accountsToTrack.map((account) => account.address))
 
