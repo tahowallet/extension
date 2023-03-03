@@ -156,7 +156,7 @@ export default function WalletAccountBalanceControl(
         >
           <div className="balance_label">{t("totalAccountBalance")}</div>
           <span className="balance_area">
-            <span className="balance">
+            <span className="balance" data-testid="wallet_balance">
               <span className="dollar_sign">$</span>
               {balance ?? 0}
             </span>

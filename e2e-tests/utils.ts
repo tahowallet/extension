@@ -13,6 +13,10 @@ export class WalletPageHelper {
     this.url = `chrome-extension://${extensionId}/popup.html`
   }
 
+  async setViewportSize(): Promise<void> {
+    return this.page.setViewportSize({ width: 384, height: 600 })
+  }
+
   async goToStartPage(): Promise<void> {
     await this.page.goto(this.url)
   }
