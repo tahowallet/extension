@@ -63,6 +63,7 @@ export const test = base.extend<WalletTestFixtures>({
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
       ],
+      permissions: ["clipboard-read", "clipboard-write"],
     })
     await use(context)
     await context.close()
