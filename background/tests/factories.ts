@@ -32,6 +32,8 @@ import {
   AnyEVMBlock,
   BlockPrices,
   NetworkBaseAsset,
+  EIP1559TransactionRequest,
+  TransactionRequestWithNonce,
 } from "../networks"
 import {
   AnalyticsService,
@@ -49,6 +51,7 @@ import {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
 } from "../services/chain"
+import { EIP712TypedData } from "../types"
 
 // We don't want the chain service to use a real provider in tests
 jest.mock("../services/chain/serial-fallback-provider")
@@ -166,6 +169,62 @@ export const createProviderBridgeService = async (
       createInternalEthereumProviderService({ preferenceService }),
     preferenceService
   )
+}
+
+export const createTypedData = (
+  overrides: Partial<EIP712TypedData> = {}
+): EIP712TypedData => {
+  // Example values from ethers docs
+  return {
+    domain: {
+      name: "Ether Mail",
+      version: "1",
+      chainId: ETHEREUM.chainID,
+      verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
+    },
+    types: {
+      Person: [
+        { name: "name", type: "string" },
+        { name: "wallet", type: "address" },
+      ],
+      Mail: [
+        { name: "from", type: "Person" },
+        { name: "to", type: "Person" },
+        { name: "contents", type: "string" },
+      ],
+    },
+    message: {
+      from: {
+        name: "Cow",
+        wallet: "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
+      },
+      to: {
+        name: "Bob",
+        wallet: "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB",
+      },
+      contents: "Hello, Bob!",
+    },
+    primaryType: "Person",
+    ...overrides,
+  }
+}
+
+export const createTransactionRequest = (
+  overrides: Partial<EIP1559TransactionRequest & { nonce: number }> = {}
+): TransactionRequestWithNonce => {
+  return {
+    nonce: 0,
+    from: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    type: 2,
+    input: "0x",
+    value: 0n,
+    maxFeePerGas: 0n,
+    maxPriorityFeePerGas: 0n,
+    gasLimit: 0n,
+    chainID: "0",
+    network: ETHEREUM,
+    ...overrides,
+  }
 }
 
 // Copied from a legacy Optimism transaction generated with our test wallet.

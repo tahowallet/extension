@@ -1,6 +1,11 @@
 import { webcrypto } from "crypto"
 import KeyringService from ".."
-import { createKeyringService } from "../../../tests/factories"
+import { ETHEREUM } from "../../../constants"
+import {
+  createKeyringService,
+  createTransactionRequest,
+  createTypedData,
+} from "../../../tests/factories"
 import { mockLocalStorage } from "../../../tests/utils"
 import { KeyringTypes } from "../../../types"
 
@@ -117,9 +122,40 @@ describe("Keyring Service", () => {
 
       expect(keyrings.length).toBe(1)
     })
-    it.todo("should be able to sign transaction")
-    it.todo("should be able to sign typed data")
-    it.todo("should be able to make a personal sign")
+    it("should be able to sign transaction", async () => {
+      const address = HD_WALLET_MOCK.addresses[0]
+      const signed = await keyringService.signTransaction(
+        { address, network: ETHEREUM },
+        createTransactionRequest({ from: address })
+      )
+
+      expect(signed).toMatchObject({
+        from: expect.stringMatching(new RegExp(address, "i")),
+        r: expect.anything(),
+        s: expect.anything(),
+        v: expect.anything(),
+      })
+    })
+    it("should be able to sign typed data", async () => {
+      const address = HD_WALLET_MOCK.addresses[0]
+      const typedData = createTypedData()
+      const signed = await keyringService.signTypedData({
+        typedData,
+        account: address,
+      })
+
+      expect(signed).toBeDefined()
+    })
+    it("should be able to make a personal sign", async () => {
+      const address = HD_WALLET_MOCK.addresses[0]
+      const signingData = "0x1230"
+      const signed = await keyringService.personalSign({
+        signingData,
+        account: address,
+      })
+
+      expect(signed).toBeDefined()
+    })
   })
 
   describe("wallet imported with private key", () => {
@@ -132,9 +168,7 @@ describe("Keyring Service", () => {
     })
     it("should classify pk wallet as imported", async () => {
       expect(
-        await keyringService.getSignerSourceForAddress(
-          HD_WALLET_MOCK.addresses[0]
-        )
+        await keyringService.getSignerSourceForAddress(PK_WALLET_MOCK.address)
       ).toBe("import")
     })
     it("should be able to remove pk wallet and add it again", async () => {
@@ -144,8 +178,39 @@ describe("Keyring Service", () => {
       await keyringService.importWallet(PK_WALLET_MOCK.privateKey)
       expect(keyringService.getWallets().length).toBe(1)
     })
-    it.todo("should be able to sign transaction")
-    it.todo("should be able to sign typed data")
-    it.todo("should be able to make a personal sign")
+    it("should be able to sign transaction", async () => {
+      const { address } = PK_WALLET_MOCK
+      const signed = await keyringService.signTransaction(
+        { address, network: ETHEREUM },
+        createTransactionRequest({ from: address })
+      )
+
+      expect(signed).toMatchObject({
+        from: expect.stringMatching(new RegExp(address, "i")),
+        r: expect.anything(),
+        s: expect.anything(),
+        v: expect.anything(),
+      })
+    })
+    it("should be able to sign typed data", async () => {
+      const { address } = PK_WALLET_MOCK
+      const typedData = createTypedData()
+      const signed = await keyringService.signTypedData({
+        typedData,
+        account: address,
+      })
+
+      expect(signed).toBeDefined()
+    })
+    it("should be able to make a personal sign", async () => {
+      const { address } = PK_WALLET_MOCK
+      const signingData = "0x1230"
+      const signed = await keyringService.personalSign({
+        signingData,
+        account: address,
+      })
+
+      expect(signed).toBeDefined()
+    })
   })
 })

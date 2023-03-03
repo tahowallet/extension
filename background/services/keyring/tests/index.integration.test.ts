@@ -7,13 +7,13 @@ import KeyringService, {
   MAX_OUTSIDE_IDLE_TIME,
 } from ".."
 import { KeyringTypes } from "../../../types"
-import { EIP1559TransactionRequest } from "../../../networks"
-import { ETH, ETHEREUM } from "../../../constants"
+import { ETHEREUM } from "../../../constants"
 import logger from "../../../lib/logger"
 import {
   mockLocalStorage,
   mockLocalStorageWithCalls,
 } from "../../../tests/utils"
+import { createTransactionRequest } from "../../../tests/factories"
 
 const originalCrypto = global.crypto
 beforeEach(() => {
@@ -40,28 +40,9 @@ const validMnemonics = {
   ],
 }
 
-const validTransactionRequests: {
-  [key: string]: EIP1559TransactionRequest & { nonce: number }
-} = {
-  simple: {
-    from: "0x0",
-    nonce: 0,
-    type: 2,
-    input: "0x",
-    value: 0n,
-    maxFeePerGas: 0n,
-    maxPriorityFeePerGas: 0n,
-    gasLimit: 0n,
-    chainID: "0",
-    network: {
-      name: "none",
-      chainID: "0",
-      baseAsset: ETH,
-      family: "EVM",
-      coingeckoPlatformID: "ethereum",
-    },
-  },
-}
+const validPrivateKey = [
+  "252da775ac59bf1e3a3c2b3b2633e29f8b8236dc3054b7ce9d019c79166ccf14",
+]
 
 const testPassword = "my password"
 
@@ -91,7 +72,7 @@ const mockAlarms = () => {
   browser.alarms.onAlarm.addListener = jest.fn(() => ({}))
 }
 
-describe("KeyringService when uninitialized", () => {
+describe("Keyring Service when uninitialized", () => {
   let service: KeyringService
 
   beforeEach(async () => {
@@ -114,13 +95,17 @@ describe("KeyringService when uninitialized", () => {
           ).rejects.toThrow("KeyringService must be unlocked.")
         )
       )
+
+      await expect(service.importWallet(validPrivateKey[0])).rejects.toThrow(
+        "KeyringService must be unlocked."
+      )
     })
 
     it("won't sign transactions", async () => {
       await expect(
         service.signTransaction(
           { address: "0x0", network: ETHEREUM },
-          validTransactionRequests.simple
+          createTransactionRequest({ from: "0x0" })
         )
       ).rejects.toThrow("KeyringService must be unlocked.")
     })
@@ -164,7 +149,7 @@ describe("KeyringService when uninitialized", () => {
   })
 })
 
-describe("KeyringService when initialized", () => {
+describe("Keyring Service when initialized", () => {
   let service: KeyringService
   let address: string
 
@@ -220,31 +205,8 @@ describe("KeyringService when initialized", () => {
     })
   })
 
-  it("will sign a transaction", async () => {
-    const transactionWithFrom = {
-      ...validTransactionRequests.simple,
-      from: address,
-    }
-
-    await expect(
-      service.signTransaction(
-        { address, network: ETHEREUM },
-        transactionWithFrom
-      )
-    ).resolves.toMatchObject({
-      from: expect.stringMatching(new RegExp(address, "i")), // case insensitive match
-      r: expect.anything(),
-      s: expect.anything(),
-      v: expect.anything(),
-    })
-    // TODO assert correct recovered address
-  })
-
   it("does not overwrite data if unlocked with the wrong password", async () => {
-    const transactionWithFrom = {
-      ...validTransactionRequests.simple,
-      from: address,
-    }
+    const transactionWithFrom = createTransactionRequest({ from: address })
 
     await service.lock()
 
@@ -272,7 +234,7 @@ describe("KeyringService when initialized", () => {
   })
 })
 
-describe("KeyringService when saving keyrings", () => {
+describe("Keyring Service when saving keyrings", () => {
   let localStorageCalls: Record<string, unknown>[] = []
 
   beforeEach(() => {
@@ -433,10 +395,7 @@ describe("Keyring service when autolocking", () => {
     {
       action: "signing a transaction",
       call: async () => {
-        const transactionWithFrom = {
-          ...validTransactionRequests.simple,
-          from: address,
-        }
+        const transactionWithFrom = createTransactionRequest({ from: address })
 
         await service.signTransaction(
           { address, network: ETHEREUM },

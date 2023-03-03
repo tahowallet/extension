@@ -601,13 +601,22 @@ export default class KeyringService extends BaseService<Events> {
     const { address: account, network } = addressOnNetwork
 
     // find the keyring using a linear search
-    const { signer } = await this.#findSigner(account)
+    const signerWithType = await this.#findSigner(account)
 
     // ethers has a looser / slightly different request type
     const ethersTxRequest = ethersTransactionFromTransactionRequest(txRequest)
 
+    let signed: string
+
     // unfortunately, ethers gives us a serialized signed tx here
-    const signed = await signer.signTransaction(account, ethersTxRequest)
+    if (isWallet(signerWithType)) {
+      signed = await signerWithType.signer.signTransaction(ethersTxRequest)
+    } else {
+      signed = await signerWithType.signer.signTransaction(
+        account,
+        ethersTxRequest
+      )
+    }
 
     // parse the tx, then unpack it as best we can
     const tx = parseRawTransaction(signed)
@@ -725,7 +734,7 @@ export default class KeyringService extends BaseService<Events> {
 
       return signature
     } catch (error) {
-      throw new Error("Signing data failed")
+      throw new Error(`Signing data failed`)
     }
   }
 
