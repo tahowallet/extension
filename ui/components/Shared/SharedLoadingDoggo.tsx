@@ -16,7 +16,7 @@ export default function SharedLoadingDoggo({
   animated: animate = true,
 }: SharedLoadingDoggoProps): ReactElement {
   return (
-    <div>
+    <div data-testid="loading_doggo">
       <img
         width={size}
         height={size}
