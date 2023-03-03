@@ -16,6 +16,8 @@ import {
   CHAIN_ID_TO_RPC_URLS,
   DEFAULT_NETWORKS,
   GOERLI,
+  isBuiltInNetwork,
+  NETWORK_BY_CHAIN_ID,
   POLYGON,
 } from "../../constants"
 
@@ -165,6 +167,19 @@ export class ChainDatabase extends Dexie {
 
     this.version(7).stores({
       rpcUrls: "&chainID, rpcUrls",
+    })
+
+    // Updates saved accounts stored networks for old installs
+    this.version(8).upgrade((tx) => {
+      tx.table("accountsToTrack")
+        .toCollection()
+        .modify((account: AddressOnNetwork) => {
+          if (isBuiltInNetwork(account.network)) {
+            Object.assign(account, {
+              network: NETWORK_BY_CHAIN_ID[account.network.chainID],
+            })
+          }
+        })
     })
   }
 

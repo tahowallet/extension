@@ -15,7 +15,7 @@ export default function SharedSkeletonLoader(props: {
   if (isLoaded) return <>{children}</>
 
   return (
-    <div className={classNames("skeleton")}>
+    <div className={classNames("skeleton")} data-testid="loading_skeleton">
       <style jsx>
         {`
           .skeleton {

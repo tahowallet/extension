@@ -80,6 +80,7 @@ export default function NFTList(props: {
         isOpen={isPreviewOpen}
         close={closePreview}
         size="large"
+        testid="nft_preview_menu"
         isFullScreen
       >
         {currentNFTPreview && (
