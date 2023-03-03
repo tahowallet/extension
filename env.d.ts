@@ -64,3 +64,9 @@ interface Window {
   ethereum?: WindowEthereum
   oldEthereum?: WindowEthereum
 }
+
+declare namespace NodeJS {
+  interface ProcessEnv {
+    NODE_ENV: "production" | "development" | "test"
+  }
+}
