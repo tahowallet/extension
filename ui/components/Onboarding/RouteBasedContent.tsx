@@ -1,4 +1,3 @@
-import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
 import React from "react"
 import { useTranslation } from "react-i18next"
 import { Route, Switch } from "react-router-dom"
@@ -29,19 +28,6 @@ export default function RouteBasedContent(): JSX.Element {
             flex-direction: column;
             gap: 16px;
             align-items: center;
-          }
-        `}</style>
-      </Route>
-      <Route key={OnboardingRoutes.LEDGER} path={OnboardingRoutes.LEDGER}>
-        <div className="fadeIn">
-          {t("ledger.tip")}
-          <a target="_blank" href={WEBSITE_ORIGIN} rel="noreferrer">
-            {t("ledger.action")}
-          </a>
-        </div>
-        <style jsx>{`
-          a {
-            color: var(--trophy-gold);
           }
         `}</style>
       </Route>

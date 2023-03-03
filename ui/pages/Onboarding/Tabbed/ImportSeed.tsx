@@ -86,91 +86,95 @@ export default function ImportSeed(props: Props): ReactElement {
     )
 
   return (
-    <>
-      <div className="content fadeIn">
-        <header className="portion">
-          <div className="illustration_import" />
-          <h1 className="serif_header">{t("title")}</h1>
-          <div className="info">{t("subtitle")}</div>
-        </header>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            importWallet()
-          }}
-        >
-          {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
-            <div className="select_wrapper">
-              <OnboardingDerivationPathSelect
-                defaultPath={DefaultPathIndex.bip44}
-                onChange={setPath}
-              />
-            </div>
-          )}
-          <div className="input_wrap">
-            <div
-              id="recovery_phrase"
-              role="textbox"
-              aria-labelledby="recovery_label"
-              tabIndex={0}
-              contentEditable
-              data-empty={recoveryPhrase.length < 1}
-              spellCheck="false"
-              onPaste={(e) => {
-                e.preventDefault()
-                const text = e.clipboardData.getData("text/plain").trim()
-                e.currentTarget.innerText = text
-                setRecoveryPhrase(text)
-              }}
-              onDrop={(e) => {
-                e.preventDefault()
-                const text = e.dataTransfer.getData("text/plain").trim()
-                e.currentTarget.innerText = text
-                setRecoveryPhrase(text)
-              }}
-              onInput={(e) => {
-                setRecoveryPhrase(e.currentTarget.innerText.trim())
-              }}
+    <section className="fadeIn">
+      <header className="portion">
+        <div className="illustration_import" />
+        <h1 className="serif_header">{t("title")}</h1>
+        <div className="info">{t("subtitle")}</div>
+      </header>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          importWallet()
+        }}
+      >
+        {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
+          <div className="select_wrapper">
+            <OnboardingDerivationPathSelect
+              defaultPath={DefaultPathIndex.bip44}
+              onChange={setPath}
             />
-            <div id="recovery_label" className="recovery_label">
-              {t("inputLabel")}
-            </div>
-            {errorMessage && <p className="error">{errorMessage}</p>}
           </div>
-          <div className="portion bottom">
-            <SharedButton
-              style={{ width: "100%", maxWidth: "300px" }}
-              size={
-                isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
-                  ? "medium"
-                  : "large"
-              }
-              type="primary"
-              isDisabled={!recoveryPhrase || isImporting}
-              onClick={importWallet}
-              center
+        )}
+        <div className="input_wrap">
+          <div
+            id="recovery_phrase"
+            role="textbox"
+            aria-labelledby="recovery_label"
+            tabIndex={0}
+            contentEditable
+            data-empty={recoveryPhrase.length < 1}
+            spellCheck="false"
+            onPaste={(e) => {
+              e.preventDefault()
+              const text = e.clipboardData.getData("text/plain").trim()
+              e.currentTarget.innerText = text
+              setRecoveryPhrase(text)
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              const text = e.dataTransfer.getData("text/plain").trim()
+              e.currentTarget.innerText = text
+              setRecoveryPhrase(text)
+            }}
+            onInput={(e) => {
+              setRecoveryPhrase(e.currentTarget.innerText.trim())
+            }}
+          />
+          <div id="recovery_label" className="recovery_label">
+            {t("inputLabel")}
+          </div>
+          {errorMessage && <p className="error">{errorMessage}</p>}
+        </div>
+        <div className="portion bottom">
+          <SharedButton
+            style={{
+              width: "100%",
+              maxWidth: "356px",
+              boxSizing: "border-box",
+            }}
+            size={
+              isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
+                ? "medium"
+                : "large"
+            }
+            type="primary"
+            isDisabled={!recoveryPhrase || isImporting}
+            onClick={importWallet}
+            center
+          >
+            {t("submit")}
+          </SharedButton>
+          {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
+            <button
+              className="help_button"
+              type="button"
+              // TODO External link or information modal?
+              onClick={() => {}}
             >
-              {t("submit")}
-            </SharedButton>
-            {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
-              <button
-                className="help_button"
-                type="button"
-                // TODO External link or information modal?
-                onClick={() => {}}
-              >
-                How do I find the recovery phrase?
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
+              How do I find the recovery phrase?
+            </button>
+          )}
+        </div>
+      </form>
       <style jsx>{`
         form {
           all: unset;
         }
 
-        .content {
+        section {
+          max-width: 450px;
+          margin: 0 auto;
           display: flex;
           align-items: center;
           flex-direction: column;
@@ -298,6 +302,6 @@ export default function ImportSeed(props: Props): ReactElement {
           color: red;
         }
       `}</style>
-    </>
+    </section>
   )
 }
