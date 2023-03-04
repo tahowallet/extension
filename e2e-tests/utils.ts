@@ -9,7 +9,7 @@ export { expect } from "@playwright/test"
 export class WalletPageHelper {
   readonly url: string
 
-  constructor(public readonly page: Page, extensionId: string) {
+  constructor(public readonly page: Page, public readonly extensionId: string) {
     this.url = `chrome-extension://${extensionId}/popup.html`
   }
 
