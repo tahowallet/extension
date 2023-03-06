@@ -24,7 +24,7 @@ const FilterList = React.forwardRef<HTMLDivElement, FilterListProps>(
     } = props
 
     return (
-      <div ref={ref} className="filter_list" role="list" data-testid={testid}>
+      <div ref={ref} className="filter_list" data-testid={testid}>
         {filters.length > 0 ? (
           <>
             {filters.map((item) => (
