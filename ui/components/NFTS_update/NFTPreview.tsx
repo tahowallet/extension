@@ -231,7 +231,10 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
             {t("preview.properties")}
           </div>
           {!!attributes.length && (
-            <div className="preview_property_list preview_section_row">
+            <div
+              className="preview_property_list preview_section_row"
+              data-testid="nft_properties_list"
+            >
               {attributes.map(
                 ({ trait, value }) =>
                   !!value && (
