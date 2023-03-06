@@ -5,27 +5,26 @@ import SharedToggleItem from "../../Shared/SharedToggleItem"
 
 const HEIGHT = 40
 
-const FilterList = React.forwardRef(
-  (
-    {
+type FilterListProps = {
+  filters: Filter[]
+  onChange: (filter: Filter) => void
+  isLoaded?: boolean
+  emptyMessage?: string
+  testid?: string
+}
+
+const FilterList = React.forwardRef<HTMLDivElement, FilterListProps>(
+  (props: FilterListProps, ref) => {
+    const {
       filters,
       isLoaded = true,
       onChange,
       emptyMessage,
-    }: {
-      filters: Filter[]
-      onChange: (filter: Filter) => void
-      isLoaded?: boolean
-      emptyMessage?: string
-    },
-    ref
-  ) => {
+      testid = "nft_filters_list",
+    } = props
+
     return (
-      <div
-        ref={ref as React.RefObject<HTMLDivElement>}
-        className="filter_list"
-        role="list"
-      >
+      <div ref={ref} className="filter_list" role="list" data-testid={testid}>
         {filters.length > 0 ? (
           <>
             {filters.map((item) => (
