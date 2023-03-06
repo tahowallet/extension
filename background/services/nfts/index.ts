@@ -12,7 +12,7 @@ import BaseService from "../base"
 import ChainService from "../chain"
 
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { getOrCreateDB, NFTsDatabase } from "./db"
+import { getOrCreateDB, NFTsDatabase, FreshCollectionsMap } from "./db"
 import { getUNIXTimestamp, normalizeEVMAddress } from "../../lib/utils"
 import { MINUTE } from "../../constants"
 
@@ -30,9 +30,6 @@ interface Events extends ServiceLifecycleEvents {
 }
 
 type NextPageURLsMap = { [collectionID: string]: { [address: string]: string } }
-type FreshCollectionsMap = {
-  [collectionID: string]: { [address: string]: boolean }
-}
 
 export default class NFTsService extends BaseService<Events> {
   #nextPageUrls: NextPageURLsMap = {}
@@ -54,7 +51,7 @@ export default class NFTsService extends BaseService<Events> {
     private chainService: ChainService
   ) {
     super()
-    this.#transfersLookupTimestamp = getUNIXTimestamp()
+    this.#transfersLookupTimestamp = getUNIXTimestamp() // will be discarded when chainService starts
   }
 
   protected override async internalStartService(): Promise<void> {
@@ -75,10 +72,25 @@ export default class NFTsService extends BaseService<Events> {
   private async connectChainServiceEvents(): Promise<void> {
     this.chainService.emitter.once("serviceStarted").then(async () => {
       this.emitter.emit("isReloadingNFTs", true)
-      await this.initializeCollections()
-      this.#transfersLookupTimestamp = getUNIXTimestamp(Date.now() - 5 * MINUTE)
 
-      const collections = await this.db.getAllCollections()
+      const { transfersLookupTimestamp, freshCollections } =
+        await this.db.getPreferences()
+      let collections = await this.db.getAllCollections() // initialize redux from database if possible
+
+      if (!collections.length) {
+        // fetch collections for the first time
+        await this.initializeCollections()
+        collections = await this.db.getAllCollections()
+      }
+
+      // use latest lookup timestamp
+      this.#transfersLookupTimestamp =
+        transfersLookupTimestamp ?? (await this.setTransfersLookupTimestamp())
+
+      this.#freshCollections = Object.keys(freshCollections).length
+        ? freshCollections
+        : await this.db.setFreshCollectionsFromSavedData()
+
       this.emitter.emit("initializeNFTs", collections)
       this.emitter.emit("isReloadingNFTs", false)
     })
@@ -137,6 +149,7 @@ export default class NFTsService extends BaseService<Events> {
     account: AddressOnNetwork
   ): Promise<void> {
     this.setFreshCollection(collectionID, account.address, false)
+    await this.db.setFreshCollections(this.#freshCollections)
     await this.fetchNFTsFromCollection(collectionID, account)
   }
 
@@ -246,6 +259,7 @@ export default class NFTsService extends BaseService<Events> {
 
     // if NFTs were fetched then mark as fresh
     this.setFreshCollection(collectionID, account.address, !!updatedNFTs.length)
+    await this.db.setFreshCollections(this.#freshCollections)
 
     const hasNextPage = !!Object.keys(nextPageURLs).length
 
@@ -285,6 +299,14 @@ export default class NFTsService extends BaseService<Events> {
       }
     })
     await this.db.removeNFTsForAddress(address)
+    await this.db.setFreshCollections(this.#freshCollections)
+  }
+
+  async setTransfersLookupTimestamp(): Promise<number> {
+    // indexing transfers can take some time, let's add some margin to the timestamp
+    const timestamp = getUNIXTimestamp(Date.now() - 2 * MINUTE)
+    await this.db.setTransfersLookupTimestamp(timestamp)
+    return timestamp
   }
 
   async fetchTransferredNFTs(
@@ -295,8 +317,7 @@ export default class NFTsService extends BaseService<Events> {
       this.#transfersLookupTimestamp
     )
 
-    // indexing transfers can take some time, let's add some margin to the timestamp
-    this.#transfersLookupTimestamp = getUNIXTimestamp(Date.now() - 2 * MINUTE)
+    this.#transfersLookupTimestamp = await this.setTransfersLookupTimestamp()
 
     // mark collections with transferred NFTs to be refetched
     transfers.forEach((transfer) => {
@@ -309,6 +330,7 @@ export default class NFTsService extends BaseService<Events> {
         this.setFreshCollection(collectionID, from, false)
       }
     })
+    await this.db.setFreshCollections(this.#freshCollections)
 
     const knownFromAddress = transfers.filter(
       (transfer) => transfer.isKnownFromAddress

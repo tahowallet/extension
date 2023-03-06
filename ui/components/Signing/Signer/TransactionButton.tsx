@@ -1,10 +1,12 @@
 import React, { ReactElement, useEffect, useRef, useState } from "react"
+import { selectSigningData } from "@tallyho/tally-background/redux-slices/signing"
 import { selectIsTransactionLoaded } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useBackgroundSelector, useDebounce } from "../../../hooks"
 import SharedButton, {
   Props as SharedButtonProps,
 } from "../../Shared/SharedButton"
 
+// TODO: Rename this to signing button
 export default function TransactionButton({
   type,
   size,
@@ -13,9 +15,12 @@ export default function TransactionButton({
   children,
   reactOnWindowFocus = false,
 }: SharedButtonProps & { reactOnWindowFocus?: boolean }): ReactElement {
-  const isTransactionDataReady = useBackgroundSelector(
-    selectIsTransactionLoaded
-  )
+  const hasTransactionLoaded = useBackgroundSelector(selectIsTransactionLoaded)
+
+  const hasSignDataRequest = useBackgroundSelector(selectSigningData)
+
+  const isTransactionDataReady = hasTransactionLoaded || hasSignDataRequest
+
   /*
     Prevent shenanigans by disabling the sign button for a bit
     when changing window focus.
