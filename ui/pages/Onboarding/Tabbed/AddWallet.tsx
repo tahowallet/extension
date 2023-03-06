@@ -101,6 +101,12 @@ export default function AddWallet(): ReactElement {
         isAvailable: true,
       },
       {
+        label: t("options.importPrivateKey"),
+        icon: "add_wallet/import_priv_key.svg",
+        url: OnboardingRoutes.IMPORT_PRIVATE_KEY,
+        isAvailable: true,
+      },
+      {
         label: t("options.ledger"),
         icon: "add_wallet/ledger.svg",
         url: OnboardingRoutes.LEDGER,

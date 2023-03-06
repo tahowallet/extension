@@ -334,6 +334,7 @@
         "tip": "You can always add more wallets later",
         "options": {
           "importSeed": "Import recovery phrase",
+          "importPrivateKey": "Private Key import",
           "ledger": "Connect to Ledger",
           "readOnly": "Read-only address"
         },
@@ -347,6 +348,12 @@
             "phraseLengthError": "Must be a 12 or 24 word recovery phrase",
             "invalidPhraseError": "Invalid recovery phrase"
           }
+        },
+        "importPrivateKey": {
+          "title": "Import private key",
+          "subtitle": "Importing a private key does not associate it to any secret recovery phrase, but it’s still protected by the same password",
+          "inputLabel": "Paste private key string",
+          "submit": "Import account"
         },
         "viewOnly": {
           "title": "Read-only address",

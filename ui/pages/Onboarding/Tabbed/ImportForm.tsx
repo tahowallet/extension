@@ -11,8 +11,9 @@ export default function ImportForm(props: Props): ReactElement {
   const { children, title, subtitle, illustration } = props
   return (
     <>
-      <div className="content fadeIn">
+      <div className="centered fadeIn">
         <form
+          className="centered"
           onSubmit={(event) => {
             event.preventDefault()
           }}
@@ -34,7 +35,7 @@ export default function ImportForm(props: Props): ReactElement {
           line-height: 42px;
           margin-bottom: 8px;
         }
-        .content {
+        .centered {
           display: flex;
           align-items: center;
           flex-direction: column;

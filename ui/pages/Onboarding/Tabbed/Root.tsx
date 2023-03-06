@@ -26,6 +26,7 @@ import Ledger from "./Ledger/Ledger"
 
 import SharedButton from "../../../components/Shared/SharedButton"
 import OnboardingRoutes from "./Routes"
+import ImportPrivateKey from "./ImportPrivateKey"
 
 // @TODO Rethink what networks we show once custom networks are supported
 const productionNetworks = [
@@ -230,6 +231,12 @@ function RouteBasedContent() {
         <div className="fadeIn">{t("importSeed.tip")}</div>
       </Route>
       <Route
+        key={OnboardingRoutes.IMPORT_PRIVATE_KEY}
+        path={OnboardingRoutes.IMPORT_PRIVATE_KEY}
+      >
+        <div className="fadeIn">{t("importSeed.tip")}</div>
+      </Route>
+      <Route
         key={OnboardingRoutes.ONBOARDING_COMPLETE}
         path={OnboardingRoutes.ONBOARDING_COMPLETE}
       >
@@ -401,6 +408,9 @@ export default function Root(): ReactElement {
         </Route>
         <Route path={OnboardingRoutes.IMPORT_SEED}>
           <ImportSeed nextPage={OnboardingRoutes.ONBOARDING_COMPLETE} />
+        </Route>
+        <Route path={OnboardingRoutes.IMPORT_PRIVATE_KEY}>
+          <ImportPrivateKey nextPage={OnboardingRoutes.ONBOARDING_COMPLETE} />
         </Route>
         <Route path={OnboardingRoutes.NEW_SEED}>
           <NewSeed />
