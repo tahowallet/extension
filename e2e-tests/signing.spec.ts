@@ -1,6 +1,6 @@
 import { test, expect, createWallet } from "./utils"
 
-test.describe("NFTs", () => {
+test.describe("Signing", () => {
   test.use({ viewport: { width: 384, height: 600 } })
 
   test("User can sign in with Ethereum", async ({
