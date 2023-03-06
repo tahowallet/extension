@@ -8,7 +8,7 @@ test.describe("Signing", () => {
     page,
     walletPageHelper,
   }) => {
-    await createWallet(walletPageHelper.page, walletPageHelper.extensionId)
+    await createWallet(page, walletPageHelper.extensionId)
 
     const siwe = await context.newPage()
     await siwe.goto("https://login.xyz")
@@ -26,11 +26,10 @@ test.describe("Signing", () => {
     const signDataPromptOpens = context.waitForEvent("page")
 
     await signDataPromptOpens.then(async (prompt) => {
-      await prompt.pause()
       await prompt.getByRole("button", { name: "Sign" }).click()
     })
 
     // If we see this then it means we were able to sign in
-    await expect(page.getByText("Vote for your favorite emoji")).toBeVisible()
+    await expect(siwe.getByText("Vote for your favorite emoji")).toBeVisible()
   })
 })
