@@ -34,7 +34,7 @@ describe("FilterList", () => {
         emptyMessage={EMPTY_MESSAGE}
       />
     )
-    const list = ui.getByRole("list")
+    const list = ui.getByTestId("nft_filters_list")
 
     expect(list).toBeInTheDocument()
   })
@@ -60,7 +60,7 @@ describe("FilterList", () => {
         emptyMessage={EMPTY_MESSAGE}
       />
     )
-    const items = ui.getAllByRole("listitem")
+    const items = ui.getAllByTestId("toggle_item")
 
     expect(items.length).toEqual(FILTER_LIST.length)
   })
