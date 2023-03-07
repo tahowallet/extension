@@ -58,8 +58,8 @@ export default function NFTsFilters(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "nfts.filters",
   })
-  const collectionsRef = useRef<HTMLDivElement | undefined>(undefined)
-  const timerRef = useRef<number | undefined>(undefined)
+  const collectionsRef = useRef<HTMLDivElement | null>(null)
+  const timerRef = useRef<number | null>(null)
   const [maxHeight, setMaxHeight] = useState(DEFAULT_MAX_HIGHT)
   const [isLoading, setIsLoading] = useState(false)
   const filters = useBackgroundSelector(selectEnrichedNFTFilters)
@@ -128,6 +128,7 @@ export default function NFTsFilters(): ReactElement {
           <FilterList
             filters={filters.accounts}
             onChange={handleUpdateAccountFilter}
+            testid="nft_account_filters"
           />
         </div>
         <div className="simple_text">
@@ -143,6 +144,7 @@ export default function NFTsFilters(): ReactElement {
               filters={filters.collections}
               onChange={handleUpdateCollectionFilter}
               emptyMessage={t("noCollections")}
+              testid="nft_collection_filters"
             />
           </div>
         </div>
