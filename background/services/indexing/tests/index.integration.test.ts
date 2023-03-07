@@ -296,6 +296,19 @@ describe("IndexingService", () => {
       expect(spy).toHaveBeenCalled()
 
       await spy.mock.results[0].value
+
+      // Check that we're using proper token ids for built in network assets
+      // TODO: Remove once we add an e2e test for balances
+      expect(fetchJsonStub.getCalls()).toContainEqual(
+        expect.objectContaining({
+          args: [
+            expect.stringMatching(
+              /ethereum,matic-network,rootstock,avalanche-2,binancecoin/i
+            ),
+          ],
+        })
+      )
+
       expect(getTokenPricesSpy).toHaveBeenCalledWith(
         [smartContractAsset.contractAddress],
         { name: "United States Dollar", symbol: "USD", decimals: 10 },
