@@ -5,7 +5,6 @@ import { LedgerProductDatabase } from "@tallyho/tally-background/services/ledger
 import { useTranslation } from "react-i18next"
 import LedgerPanelContainer from "../../../../components/Ledger/LedgerPanelContainer"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
-import LedgerConnectPopup from "./LedgerConnectPopup"
 import LedgerImportDone from "./LedgerImportDone"
 import LedgerImportAccounts from "./LedgerImportAccounts"
 import LedgerPrepare from "./LedgerPrepare"
@@ -18,9 +17,9 @@ const filters = Object.values(LedgerProductDatabase).map(
 )
 
 export default function Ledger(): ReactElement {
-  const [phase, setPhase] = useState<
-    "0-prepare" | "1-request" | "2-connect" | "3-done"
-  >("0-prepare")
+  const [phase, setPhase] = useState<"1-prepare" | "2-connect" | "3-done">(
+    "1-prepare"
+  )
 
   const { t } = useTranslation("translation", {
     keyPrefix: "ledger.onboarding",
@@ -47,12 +46,11 @@ export default function Ledger(): ReactElement {
           position: relative;
         }
       `}</style>
-      {(phase === "0-prepare" || connectionError) && (
+      {(phase === "1-prepare" || connectionError) && (
         <LedgerPrepare
-          initialScreen={phase === "0-prepare"}
+          initialScreen={phase === "1-prepare"}
           deviceCount={usbDeviceCount}
           onContinue={async () => {
-            setPhase("1-request")
             try {
               // Open popup for testing
               // TODO: use result (for multiple devices)?
@@ -81,8 +79,6 @@ export default function Ledger(): ReactElement {
           }}
         />
       )}
-
-      {phase === "1-request" && <LedgerConnectPopup />}
       {phase === "2-connect" && !device && connecting && (
         <LedgerPanelContainer
           indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
