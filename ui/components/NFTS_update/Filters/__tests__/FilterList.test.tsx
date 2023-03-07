@@ -52,7 +52,7 @@ describe("FilterList", () => {
     expect(emptyMessage).toBeInTheDocument()
   })
 
-  test("should render two items", () => {
+  test("should render three items", () => {
     const ui = render(
       <FilterList
         filters={FILTER_LIST}
@@ -102,7 +102,7 @@ describe("FilterList", () => {
       />
     )
 
-    const thumbnails = ui.getAllByRole("presentation")
+    const thumbnails = ui.getAllByRole("img")
 
     expect(thumbnails.length).toEqual(FILTER_LIST.length)
     expect(thumbnails[0]).toHaveStyle(
@@ -122,7 +122,7 @@ describe("FilterList", () => {
       />
     )
 
-    const thumbnails = ui.getAllByRole("presentation")
+    const thumbnails = ui.getAllByRole("img")
 
     expect(thumbnails.length).toEqual(FILTER_LIST.length)
     expect(thumbnails[2]).toHaveStyle(

@@ -23,7 +23,7 @@ export default function SharedToggleItem({
   return (
     <div className="content" data-testid="toggle_item">
       <div className="text_wrap">
-        <div className="thumbnail" role="presentation" />
+        <div className="thumbnail" role="img" />
         <label className="label ellipsis">
           {isProbablyEVMAddress(label) ? truncateAddress(label) : label}
         </label>

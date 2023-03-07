@@ -43,7 +43,7 @@ describe("SharedToggleItem", () => {
         onChange={onChange}
       />
     )
-    const thumbnail = ui.getByRole("presentation")
+    const thumbnail = ui.getByRole("img")
 
     expect(thumbnail).toBeInTheDocument()
     expect(thumbnail).toHaveStyle(
@@ -60,7 +60,7 @@ describe("SharedToggleItem", () => {
         onChange={onChange}
       />
     )
-    const thumbnail = ui.getByRole("presentation")
+    const thumbnail = ui.getByRole("img")
 
     expect(thumbnail).toBeInTheDocument()
     expect(thumbnail).toHaveStyle(
