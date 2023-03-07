@@ -67,6 +67,11 @@ export const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
     icon: "./images/stars_grey.svg",
     category: i18n.t("accounts.notificationPanel.category.others"),
   },
+  [AccountType.PrivateKey]: {
+    title: i18n.t("accounts.notificationPanel.internal"),
+    icon: "./images/key.svg",
+    category: i18n.t("accounts.notificationPanel.category.others"),
+  },
   [AccountType.Ledger]: {
     title: i18n.t("accounts.notificationPanel.ledger"),
     icon: "./images/ledger_icon.svg",
@@ -293,6 +298,7 @@ export default function AccountsNotificationPanelAccounts({
   const accountTypes = [
     AccountType.Internal,
     AccountType.Imported,
+    AccountType.PrivateKey,
     AccountType.ReadOnly,
     AccountType.Ledger,
   ]

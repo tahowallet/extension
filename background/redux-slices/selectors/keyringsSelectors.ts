@@ -1,6 +1,6 @@
 import { createSelector, OutputSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-import { Keyring } from "../../services/keyring"
+import { Keyring, WalletData } from "../../services/keyring"
 import { HexString } from "../../types"
 
 export const selectKeyringStatus = createSelector(
@@ -35,6 +35,12 @@ export const selectKeyringsByAddresses = createSelector(
         keyring.addresses.map((address) => [address, keyring])
       )
     )
+)
+
+export const selectWalletsByAddress = createSelector(
+  (state: RootState) => state.keyrings.wallets,
+  (wallets): { [address: HexString]: WalletData } =>
+    Object.fromEntries(wallets.map((wallet) => [wallet.addresses[0], wallet]))
 )
 
 export const selectSourcesByAddress = createSelector(

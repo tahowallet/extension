@@ -22,6 +22,7 @@ export default function SignerFrame<T extends SignOperationType>(
   const { signer } = props
 
   switch (signer.type) {
+    case "privateKey":
     case "keyring":
       return <SignerKeyringFrame {...props} />
     case "ledger":

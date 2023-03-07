@@ -25,6 +25,7 @@ import { convertFixedPoint } from "../lib/fixed-point"
  */
 export const enum AccountType {
   ReadOnly = "read-only",
+  PrivateKey = "privateKey",
   Imported = "imported",
   Ledger = "ledger",
   Internal = "internal",
