@@ -58,7 +58,7 @@ export default function ImportPrivateKey(props: Props): ReactElement {
       <ImportForm
         title={t("title")}
         subtitle={t("subtitle")}
-        illustration="doggo_import_pk.svg"
+        illustration="doggo_private_key.svg"
       >
         <>
           <SharedSeedInput
