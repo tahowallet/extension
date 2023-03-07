@@ -1,5 +1,8 @@
 import React, { ReactElement, useEffect, useRef, useState } from "react"
-import { selectSigningData } from "@tallyho/tally-background/redux-slices/signing"
+import {
+  selectSigningData,
+  selectTypedData,
+} from "@tallyho/tally-background/redux-slices/signing"
 import { selectIsTransactionLoaded } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useBackgroundSelector, useDebounce } from "../../../hooks"
 import SharedButton, {
@@ -17,9 +20,11 @@ export default function TransactionButton({
 }: SharedButtonProps & { reactOnWindowFocus?: boolean }): ReactElement {
   const hasTransactionLoaded = useBackgroundSelector(selectIsTransactionLoaded)
 
-  const hasSignDataRequest = useBackgroundSelector(selectSigningData)
+  const signDataRequest = useBackgroundSelector(selectSigningData)
+  const typedDataRequest = useBackgroundSelector(selectTypedData)
+  const hasSigningRequest = signDataRequest || typedDataRequest
 
-  const isTransactionDataReady = hasTransactionLoaded || hasSignDataRequest
+  const isTransactionDataReady = hasTransactionLoaded || hasSigningRequest
 
   /*
     Prevent shenanigans by disabling the sign button for a bit
