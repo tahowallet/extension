@@ -1,5 +1,5 @@
 import { BaseProvider, Provider } from "@ethersproject/providers"
-import { BigNumber, ethers } from "ethers"
+import { BigNumber, ethers, logger } from "ethers"
 
 import {
   EventFragment,
@@ -93,19 +93,24 @@ export async function getMetadata(
     provider
   )
 
-  const [symbol, name, decimals] = await Promise.all(
-    [
-      ERC20_FUNCTIONS.symbol,
-      ERC20_FUNCTIONS.name,
-      ERC20_FUNCTIONS.decimals,
-    ].map(({ name: functionName }) => token.callStatic[functionName]())
-  )
+  try {
+    const [symbol, name, decimals] = await Promise.all(
+      [
+        ERC20_FUNCTIONS.symbol,
+        ERC20_FUNCTIONS.name,
+        ERC20_FUNCTIONS.decimals,
+      ].map(({ name: functionName }) => token.callStatic[functionName]())
+    )
 
-  return {
-    ...tokenSmartContract,
-    symbol,
-    name,
-    decimals,
+    return {
+      ...tokenSmartContract,
+      symbol,
+      name,
+      decimals,
+    }
+  } catch (error) {
+    logger.warn("Invalid metadata for token", tokenSmartContract)
+    throw new Error("Could not retrieve erc20 token metadata")
   }
 }
 
