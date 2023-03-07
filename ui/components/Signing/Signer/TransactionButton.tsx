@@ -6,6 +6,11 @@ import SharedButton, {
   Props as SharedButtonProps,
 } from "../../Shared/SharedButton"
 
+export type TransactionButtonProps = SharedButtonProps & {
+  reactOnWindowFocus?: boolean
+  showLoading?: boolean
+}
+
 // TODO: Rename this to signing button
 export default function TransactionButton({
   type,
@@ -14,7 +19,9 @@ export default function TransactionButton({
   onClick,
   children,
   reactOnWindowFocus = false,
-}: SharedButtonProps & { reactOnWindowFocus?: boolean }): ReactElement {
+  // Show loading when transaction data is not ready
+  showLoading = false,
+}: TransactionButtonProps): ReactElement {
   const hasTransactionLoaded = useBackgroundSelector(selectIsTransactionLoaded)
 
   const hasSignDataRequest = useBackgroundSelector(selectSigningData)
@@ -86,6 +93,7 @@ export default function TransactionButton({
           !unlockButtons ||
           isDisabled
         }
+        isLoading={showLoading ? !unlockButtons : false}
       >
         {children}
       </SharedButton>

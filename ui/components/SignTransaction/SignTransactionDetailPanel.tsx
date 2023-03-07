@@ -2,7 +2,6 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import {
   selectEstimatedFeesPerGas,
-  selectIsTransactionLoaded,
   selectTransactionData,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { updateTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
@@ -22,7 +21,6 @@ import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionDetailWarning from "./SignTransactionDetailWarning"
-import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 
 export type PanelState = {
   dismissedWarnings: string[]
@@ -52,11 +50,6 @@ export default function SignTransactionDetailPanel({
   // If a transaction request is passed directly, prefer it over Redux.
   const transactionDetails = transactionRequest ?? reduxTransactionData
 
-  const isTransactionDataReady = useBackgroundSelector(
-    selectIsTransactionLoaded
-  )
-  const [showLoader, setShowLoader] = useState(!isTransactionDataReady)
-
   const dispatch = useBackgroundDispatch()
 
   const { t } = useTranslation()
@@ -78,13 +71,6 @@ export default function SignTransactionDetailPanel({
     (transactionDetails as EnrichedLegacyTransactionRequest)?.gasPrice,
     (transactionDetails as EnrichedEIP1559TransactionRequest)?.maxFeePerGas,
   ])
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setShowLoader(!isTransactionDataReady)
-    }, 400)
-    return () => clearTimeout(timeout)
-  }, [isTransactionDataReady, setShowLoader])
 
   if (transactionDetails === undefined) return <></>
 
@@ -128,23 +114,6 @@ export default function SignTransactionDetailPanel({
           onNetworkSettingsSave={networkSettingsSaved}
         />
       </SharedSlideUpMenu>
-      <span
-        className={classNames("warning_content", {
-          visible: showLoader || hasInsufficientFundsWarning,
-        })}
-      >
-        {!showLoader && hasInsufficientFundsWarning ? (
-          <span className="detail_item">
-            <SignTransactionDetailWarning
-              message={t("networkFees.insufficientBaseAsset", {
-                symbol: transactionDetails.network.baseAsset.symbol,
-              })}
-            />
-          </span>
-        ) : (
-          <SharedSkeletonLoader isLoaded={false} height={44} />
-        )}
-      </span>
       {isContractAddress &&
         !panelState.dismissedWarnings.includes("send-to-contract") && (
           <span className="detail_item">
@@ -167,6 +136,17 @@ export default function SignTransactionDetailPanel({
         {t("networkFees.estimatedNetworkFee")}
         <FeeSettingsButton onClick={() => setNetworkSettingsModalOpen(true)} />
       </span>
+      <span
+        className={classNames("detail_item warning", {
+          visible: hasInsufficientFundsWarning,
+        })}
+      >
+        <SignTransactionDetailWarning
+          message={t("networkFees.insufficientBaseAsset", {
+            symbol: transactionDetails.network.baseAsset.symbol,
+          })}
+        />
+      </span>
       <style jsx>
         {`
           .detail_item {
@@ -183,20 +163,19 @@ export default function SignTransactionDetailPanel({
             display: flex;
             margin-top: 21px;
             flex-direction: column;
+            height: 108px;
           }
           .detail_item_right {
             color: var(--green-20);
             font-size: 16px;
           }
-          .warning_content {
-            margin-bottom: 10px;
-            max-height: 0px;
-            overflow: hidden;
-            transition: max-height 200ms ease-out;
+          .warning {
+            width: 384px;
+            transform: translateX(-100%);
+            transition: transform ease-out 0.3s;
           }
-          .warning_content.visible {
-            max-height: 44px;
-            transition: max-height 200ms ease-in;
+          .warning.visible {
+            transform: translateX(0);
           }
         `}
       </style>
