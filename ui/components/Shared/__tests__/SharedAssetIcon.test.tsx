@@ -3,7 +3,7 @@ import { render } from "@testing-library/react"
 import SharedAssetIcon from "../SharedAssetIcon"
 
 describe("SharedAssetIcon", () => {
-  test("smoke test", async () => {
+  test("should render asset icon ", () => {
     const ui = render(
       <SharedAssetIcon
         size="small"
