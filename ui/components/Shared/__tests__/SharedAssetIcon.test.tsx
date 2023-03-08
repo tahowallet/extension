@@ -27,5 +27,6 @@ describe("SharedAssetIcon", () => {
 
     expect(ui.getByRole("img")).toBeInTheDocument()
     expect(ui.getByRole("img")).toBeVisible()
+    expect(ui.getByText("?")).toBeVisible()
   })
 })
