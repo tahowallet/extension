@@ -48,6 +48,7 @@ import ApproveQuoteBtn from "../components/Swap/ApproveQuoteButton"
 import { isSameAsset, useSwapQuote } from "../utils/swap"
 import { useOnMount, usePrevious, useInterval } from "../hooks/react-hooks"
 import SharedLoadingDoggo from "../components/Shared/SharedLoadingDoggo"
+import SharedBackButton from "../components/Shared/SharedBackButton"
 
 const REFRESH_QUOTE_INTERVAL = 10 * SECOND
 
@@ -433,7 +434,10 @@ export default function Swap(): ReactElement {
               />
             )}
         </SharedSlideUpMenu>
-        <div className="standard_width swap_wrap">
+        <div className="standard_width">
+          <div className="back_button_wrap">
+            <SharedBackButton path="/" />
+          </div>
           <div className="header">
             <SharedActivityHeader label={t("swap.title")} activity="swap" />
             <ReadOnlyNotice isLite />
@@ -589,13 +593,11 @@ export default function Swap(): ReactElement {
       </CorePage>
       <style jsx>
         {`
-          .swap_wrap {
-            margin-top: -9px;
-          }
           .header {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            margin-top: 13px;
           }
           .network_fee_group {
             display: flex;
@@ -656,6 +658,12 @@ export default function Swap(): ReactElement {
           }
           .settings_wrap {
             margin-top: 16px;
+          }
+          .back_button_wrap {
+            position: absolute;
+            margin-left: -1px;
+            margin-top: -4px;
+            z-index: 10;
           }
         `}
       </style>
