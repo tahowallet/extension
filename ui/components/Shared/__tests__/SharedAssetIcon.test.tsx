@@ -16,7 +16,7 @@ describe("SharedAssetIcon", () => {
     expect(ui.getByRole("img")).toBeVisible()
   })
 
-  test("should handle assets with invalid symbols", async () => {
+  test("should handle assets with invalid symbols", () => {
     const ui = render(
       <SharedAssetIcon
         size="small"
