@@ -23,6 +23,7 @@
       "import": "Import",
       "internal": "Taho",
       "ledger": "Ledger",
+      "privateKey": "Private key",
       "category": {
         "readOnly": "Preview",
         "ledger": "Hardware wallets",
