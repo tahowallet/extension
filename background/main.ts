@@ -506,8 +506,6 @@ export default class Main extends BaseService<never> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    this.indexingService.started().then(async () => this.chainService.started())
-
     const servicesToBeStarted = [
       this.preferenceService.startService(),
       this.chainService.startService(),
@@ -628,10 +626,7 @@ export default class Main extends BaseService<never> {
       await this.nftsService.removeNFTsForAddress(address)
     }
     // remove abilities
-    if (
-      isEnabled(FeatureFlags.SUPPORT_ABILITIES) &&
-      signer.type !== AccountType.ReadOnly
-    ) {
+    if (signer.type !== AccountType.ReadOnly) {
       await this.abilitiesService.deleteAbilitiesForAccount(address)
     }
     // remove dApp premissions
@@ -659,6 +654,8 @@ export default class Main extends BaseService<never> {
               network,
             }
             await this.chainService.addAccountToTrack(addressNetwork)
+            this.abilitiesService.getNewAccountAbilities(address)
+
             this.store.dispatch(loadAccount(addressNetwork))
           })
         )
@@ -779,6 +776,9 @@ export default class Main extends BaseService<never> {
     this.chainService.emitter.on("transactionSend", () => {
       this.store.dispatch(
         setSnackbarMessage("Transaction signed, broadcasting...")
+      )
+      this.store.dispatch(
+        clearTransactionState(TransactionConstructionStatus.Idle)
       )
     })
 
@@ -932,6 +932,7 @@ export default class Main extends BaseService<never> {
     })
 
     uiSliceEmitter.on("userActivityEncountered", (addressOnNetwork) => {
+      this.abilitiesService.refreshAbilities()
       this.chainService.markAccountActivity(addressOnNetwork)
     })
   }
@@ -1082,6 +1083,7 @@ export default class Main extends BaseService<never> {
           address,
           network,
         })
+        this.abilitiesService.getNewAccountAbilities(address)
       })
     })
 
@@ -1566,9 +1568,7 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateAbility(ability))
     })
     this.abilitiesService.emitter.on("newAccount", (address) => {
-      if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
-        this.store.dispatch(addAccountFilter(address))
-      }
+      this.store.dispatch(addAccountFilter(address))
     })
     this.abilitiesService.emitter.on("deleteAccount", (address) => {
       this.store.dispatch(deleteAccountFilter(address))

@@ -10,9 +10,9 @@ function formatPriceImpact(value: number): number {
 function getPriceImpactColor(value: number | undefined): string {
   if (value) {
     switch (true) {
-      case value < -5:
+      case Math.abs(value) > 5:
         return "error"
-      case value < 0 && value >= -5:
+      case Math.abs(value) > 2:
         return "attention"
       default:
         return "green-40"

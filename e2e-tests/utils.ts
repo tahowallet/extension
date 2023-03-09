@@ -1,11 +1,55 @@
-import { test as base, BrowserContext, chromium, Page } from "@playwright/test"
+/* eslint-disable no-empty-pattern */
+import { test as base, chromium, Page } from "@playwright/test"
+import { FeatureFlagType, isEnabled } from "@tallyho/tally-background/features"
 import path from "path"
 
-export const tallyHoTest = base.extend<{
-  context: BrowserContext
+// Re-exporting so we don't mix imports
+export { expect } from "@playwright/test"
+
+export class WalletPageHelper {
+  readonly url: string
+
+  constructor(public readonly page: Page, public readonly extensionId: string) {
+    this.url = `chrome-extension://${extensionId}/popup.html`
+  }
+
+  async goToStartPage(): Promise<void> {
+    await this.page.goto(this.url)
+  }
+
+  async navigateTo(tab: string): Promise<void> {
+    await this.page
+      .getByRole("navigation", { name: "Main" })
+      .getByRole("link", { name: tab })
+      .click()
+  }
+
+  async onboardReadOnlyAddress(address: string): Promise<void> {
+    await base.step("Onboard w/ReadOnly address", async () => {
+      await this.goToStartPage()
+      await this.page.getByRole("button", { name: "Continue" }).click()
+      await this.page.getByRole("button", { name: "Continue" }).click()
+      await this.page
+        .getByRole("button", {
+          name: "Read-only address",
+        })
+        .click()
+      await this.page.getByRole("textbox").fill(address)
+      await this.page.getByRole("button", { name: "Explore Taho" }).click()
+    })
+  }
+}
+
+type WalletTestFixtures = {
   extensionId: string
-}>({
-  /* eslint-disable-next-line no-empty-pattern */
+  walletPageHelper: WalletPageHelper
+  backgroundPage: Page
+}
+
+/**
+ * Extended instance of playwright's `test` with our fixtures
+ */
+export const test = base.extend<WalletTestFixtures>({
   context: async ({}, use) => {
     const pathToExtension = path.resolve(__dirname, "../dist/chrome")
     const context = await chromium.launchPersistentContext("", {
@@ -19,18 +63,26 @@ export const tallyHoTest = base.extend<{
     await use(context)
     await context.close()
   },
-  extensionId: async ({ context }, use) => {
+  backgroundPage: async ({ context }, use) => {
     // for manifest v2:
     let [background] = context.backgroundPages()
     if (!background) background = await context.waitForEvent("backgroundpage")
+
+    await background.waitForResponse(/api\.coingecko\.com/i)
 
     // // for manifest v3:
     // let [background] = context.serviceWorkers();
     // if (!background)
     //   background = await context.waitForEvent("serviceworker");
-
-    const extensionId = background.url().split("/")[2]
+    await use(background)
+  },
+  extensionId: async ({ backgroundPage }, use) => {
+    const extensionId = backgroundPage.url().split("/")[2]
     await use(extensionId)
+  },
+  walletPageHelper: async ({ page, extensionId }, use) => {
+    const walletOnboarding = new WalletPageHelper(page, extensionId)
+    await use(walletOnboarding)
   },
 })
 
@@ -86,3 +138,9 @@ export async function createWallet(
   await page.locator("text=Verify recovery phrase").click()
   await page.locator("text=Take me to my wallet").click()
 }
+
+export const skipIfFeatureFlagged = (featureFlag: FeatureFlagType): void =>
+  test.skip(
+    !isEnabled(featureFlag, false),
+    `Feature Flag: ${featureFlag} has not been turned on for this run`
+  )

@@ -254,6 +254,47 @@ describe("IndexingService", () => {
       ).toEqual(["ETH", customAsset.symbol, "TEST"])
     })
 
+    // Check that we're using proper token ids for built in network assets
+    // TODO: Remove once we add an e2e test for balances
+    it("should query builtin network asset prices", async () => {
+      const indexingDb = await getIndexingDB()
+
+      const smartContractAsset = createSmartContractAsset()
+
+      await indexingDb.saveTokenList(
+        "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
+        tokenList
+      )
+
+      await indexingDb.addAssetToTrack(smartContractAsset)
+
+      const spy = getPrivateMethodSpy<IndexingService["handlePriceAlarm"]>(
+        indexingService,
+        "handlePriceAlarm"
+      )
+
+      await Promise.all([
+        chainService.startService(),
+        indexingService.startService(),
+      ])
+
+      await indexingService.emitter.once("assets")
+
+      expect(spy).toHaveBeenCalled()
+
+      await spy.mock.results[0].value
+
+      expect(fetchJsonStub.getCalls()).toContainEqual(
+        expect.objectContaining({
+          args: [
+            expect.stringMatching(
+              /ethereum,matic-network,rootstock,avalanche-2,binancecoin/i
+            ),
+          ],
+        })
+      )
+    })
+
     it("should not retrieve token prices for custom assets", async () => {
       const indexingDb = await getIndexingDB()
 
@@ -296,6 +337,7 @@ describe("IndexingService", () => {
       expect(spy).toHaveBeenCalled()
 
       await spy.mock.results[0].value
+
       expect(getTokenPricesSpy).toHaveBeenCalledWith(
         [smartContractAsset.contractAddress],
         { name: "United States Dollar", symbol: "USD", decimals: 10 },

@@ -5,7 +5,7 @@ import { History } from "history"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
 import { PropsWithIcon } from "./types"
 
-type Props = {
+export type Props = {
   children: React.ReactNode
   id?: string
   type:
@@ -28,9 +28,9 @@ type Props = {
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
   isDisabled?: boolean
   linkTo?: History.LocationDescriptor<unknown>
-  showLoadingOnClick: boolean
-  isLoading: boolean
-  isFormSubmit: boolean
+  showLoadingOnClick?: boolean
+  isLoading?: boolean
+  isFormSubmit?: boolean
   center?: boolean
   style?: React.CSSProperties
 }
@@ -44,14 +44,14 @@ export default function SharedButton(
     type,
     size,
     onClick,
-    isDisabled,
+    isDisabled = false,
     iconSmall,
     iconMedium,
-    iconPosition,
-    linkTo,
-    showLoadingOnClick,
-    isLoading,
-    isFormSubmit,
+    iconPosition = "right",
+    linkTo = null,
+    showLoadingOnClick = false,
+    isLoading = false,
+    isFormSubmit = false,
     style,
     center = false,
   } = props
@@ -107,7 +107,9 @@ export default function SharedButton(
     >
       {isShowingLoadingSpinner && (
         <div className="spinner_wrap">
-          <SharedLoadingSpinner />
+          <SharedLoadingSpinner
+            variant={isDisabled ? "transparent" : "dark-gold"}
+          />
         </div>
       )}
       <div
@@ -357,13 +359,4 @@ export default function SharedButton(
       </style>
     </button>
   )
-}
-
-SharedButton.defaultProps = {
-  isDisabled: false,
-  iconPosition: "right",
-  linkTo: null,
-  showLoadingOnClick: false,
-  isLoading: false,
-  isFormSubmit: false,
 }
