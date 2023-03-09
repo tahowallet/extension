@@ -64,7 +64,6 @@ const abilitiesSlice = createSlice({
             immerState.abilities[address][ability.abilityId]
           immerState.abilities[address][ability.abilityId] = {
             ...ability,
-            completed: existingAbility.completed,
             removedFromUi: existingAbility.removedFromUi,
           }
         } else {
