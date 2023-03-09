@@ -1,5 +1,6 @@
 import { Ability } from "@tallyho/tally-background/abilities"
 import { completeAbility } from "@tallyho/tally-background/redux-slices/abilities"
+import { selectAccountTotalsForOverview } from "@tallyho/tally-background/redux-slices/selectors"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -7,7 +8,7 @@ import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 import SharedTooltip from "../../components/Shared/SharedTooltip"
-import { useBackgroundDispatch } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { i18n } from "../../_locales/i18n"
 import AbilityCardHeader from "./AbilityCardHeader"
 import AbilityRemovalConfirm from "./AbilityRemovalConfirm"
@@ -41,9 +42,14 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement {
   const [showRemoveAbilityConfirm, setShowRemoveAbilityConfirm] =
     useState(false)
 
+  const accountsTotal = useBackgroundSelector(selectAccountTotalsForOverview)
   const dispatch = useBackgroundDispatch()
 
   const timeDetails = getTimeDetails(ability)
+
+  // TODO Hotfix. Abilities are fetched for accounts that were loaded during Ledger onboarding but
+  // these accounts could be ignored by user and not imported to the app. Let's ignore these abilities.
+  if (!accountsTotal[ability.address]) return <></>
 
   return (
     <>
