@@ -632,7 +632,7 @@
     }
   },
   "addNewChain": {
-    "subtitle": "Wants to add a main network to Taho!",
+    "subtitle": "Wants to add a main network to Taho",
     "name": "Name",
     "chainId": "Chain ID",
     "currency": "Currency",
