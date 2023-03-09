@@ -1,5 +1,5 @@
 import { BaseProvider, Provider } from "@ethersproject/providers"
-import { BigNumber, ethers, logger } from "ethers"
+import { BigNumber, ethers } from "ethers"
 
 import {
   EventFragment,
@@ -16,6 +16,7 @@ import {
   MULTICALL_ABI,
   MULTICALL_CONTRACT_ADDRESS,
 } from "./multicall"
+import logger from "./logger"
 
 export const ERC20_FUNCTIONS = {
   allowance: FunctionFragment.from(
