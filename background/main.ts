@@ -652,6 +652,8 @@ export default class Main extends BaseService<never> {
               network,
             }
             await this.chainService.addAccountToTrack(addressNetwork)
+            this.abilitiesService.getNewAccountAbilities(address)
+
             this.store.dispatch(loadAccount(addressNetwork))
           })
         )
@@ -1079,6 +1081,7 @@ export default class Main extends BaseService<never> {
           address,
           network,
         })
+        this.abilitiesService.getNewAccountAbilities(address)
       })
     })
 
