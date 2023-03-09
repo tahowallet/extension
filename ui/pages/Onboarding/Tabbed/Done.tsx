@@ -88,7 +88,7 @@ export default function Done(): ReactElement {
             <img
               width="80"
               height="80"
-              alt="Tally Ho Gold"
+              alt="Taho Gold"
               src="./images/doggo_gold.svg"
               className="illustration"
             />
