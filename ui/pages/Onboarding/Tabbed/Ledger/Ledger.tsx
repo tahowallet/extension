@@ -3,11 +3,12 @@ import React, { ReactElement, useState } from "react"
 import { ledgerUSBVendorId } from "@ledgerhq/devices"
 import { LedgerProductDatabase } from "@tallyho/tally-background/services/ledger"
 import { useTranslation } from "react-i18next"
+import { useHistory } from "react-router-dom"
 import LedgerPanelContainer from "../../../../components/Ledger/LedgerPanelContainer"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
-import LedgerImportDone from "./LedgerImportDone"
 import LedgerImportAccounts from "./LedgerImportAccounts"
 import LedgerPrepare from "./LedgerPrepare"
+import OnboardingRoutes from "../Routes"
 
 const filters = Object.values(LedgerProductDatabase).map(
   ({ productId }): USBDeviceFilter => ({
@@ -17,9 +18,7 @@ const filters = Object.values(LedgerProductDatabase).map(
 )
 
 export default function Ledger(): ReactElement {
-  const [phase, setPhase] = useState<"1-prepare" | "2-connect" | "3-done">(
-    "1-prepare"
-  )
+  const [phase, setPhase] = useState<"1-prepare" | "2-connect">("1-prepare")
 
   const { t } = useTranslation("translation", {
     keyPrefix: "ledger.onboarding",
@@ -38,6 +37,8 @@ export default function Ledger(): ReactElement {
   )
 
   const dispatch = useBackgroundDispatch()
+  const history = useHistory()
+
   const connectionError = phase === "2-connect" && !device && !connecting
   return (
     <div>
@@ -89,14 +90,7 @@ export default function Ledger(): ReactElement {
         <LedgerImportAccounts
           device={device}
           onConnect={() => {
-            setPhase("3-done")
-          }}
-        />
-      )}
-      {phase === "3-done" && (
-        <LedgerImportDone
-          onClose={() => {
-            window.close()
+            history.push(OnboardingRoutes.ONBOARDING_COMPLETE)
           }}
         />
       )}

@@ -113,7 +113,8 @@
         "stepsExplainer": "Please follow the steps below and click on Try Again!",
         "step1": "Plug in a single Ledger",
         "step2": "Enter pin to unlock",
-        "step3": "Open Ethereum App"
+        "step3": "Open Ethereum App",
+        "tip": "After clicking continue, select device and click connect"
       },
       "selectDevice": "Select the device",
       "clickConnect": "Click connect",

@@ -2,6 +2,8 @@ import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import LedgerPanelContainer from "../../../../components/Ledger/LedgerPanelContainer"
 
+// FIXME: This component isn't being used anymore in the new onboarding flow
+// due to the styles for the connect usb popup arrows being broken
 export default function LedgerConnectPopup(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "ledger.onboarding",
