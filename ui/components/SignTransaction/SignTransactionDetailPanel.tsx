@@ -15,6 +15,7 @@ import {
   BINANCE_SMART_CHAIN,
   EIP_1559_COMPLIANT_CHAIN_IDS,
 } from "@tallyho/tally-background/constants"
+import classNames from "classnames"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
@@ -113,15 +114,6 @@ export default function SignTransactionDetailPanel({
           onNetworkSettingsSave={networkSettingsSaved}
         />
       </SharedSlideUpMenu>
-      {hasInsufficientFundsWarning && (
-        <span className="detail_item">
-          <SignTransactionDetailWarning
-            message={t("networkFees.insufficientBaseAsset", {
-              symbol: transactionDetails.network.baseAsset.symbol,
-            })}
-          />
-        </span>
-      )}
       {isContractAddress &&
         !panelState.dismissedWarnings.includes("send-to-contract") && (
           <span className="detail_item">
@@ -144,6 +136,17 @@ export default function SignTransactionDetailPanel({
         {t("networkFees.estimatedNetworkFee")}
         <FeeSettingsButton onClick={() => setNetworkSettingsModalOpen(true)} />
       </span>
+      <span
+        className={classNames("detail_item warning", {
+          visible: hasInsufficientFundsWarning,
+        })}
+      >
+        <SignTransactionDetailWarning
+          message={t("networkFees.insufficientBaseAsset", {
+            symbol: transactionDetails.network.baseAsset.symbol,
+          })}
+        />
+      </span>
       <style jsx>
         {`
           .detail_item {
@@ -160,10 +163,19 @@ export default function SignTransactionDetailPanel({
             display: flex;
             margin-top: 21px;
             flex-direction: column;
+            height: 108px;
           }
           .detail_item_right {
             color: var(--green-20);
             font-size: 16px;
+          }
+          .warning {
+            width: 384px;
+            transform: translateX(-100%);
+            transition: transform ease-out 0.3s;
+          }
+          .warning.visible {
+            transform: translateX(0);
           }
         `}
       </style>

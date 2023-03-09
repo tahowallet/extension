@@ -107,7 +107,9 @@ export default function SharedButton(
     >
       {isShowingLoadingSpinner && (
         <div className="spinner_wrap">
-          <SharedLoadingSpinner />
+          <SharedLoadingSpinner
+            variant={isDisabled ? "transparent" : "dark-gold"}
+          />
         </div>
       )}
       <div
