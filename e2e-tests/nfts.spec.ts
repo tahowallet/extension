@@ -7,62 +7,150 @@ skipIfFeatureFlagged(FeatureFlags.SUPPORT_NFT_TAB)
 test.describe("NFTs", () => {
   test.use({ viewport: { width: 384, height: 600 } })
 
-  test("Shows loading state", async ({
+  test("User can view nft collections, poaps and badges", async ({
     page,
     backgroundPage,
     walletPageHelper,
   }) => {
-    // Set a delay so we don't miss loading states
-    await backgroundPage.route(/api\.simplehash\.com/i, async (route) => {
-      const response = await route.fetch().catch((err) => {
-        // Waiting for the response doesn't prevent context disposed errors
-        // consistently
-        if (
-          err instanceof Error &&
-          err.message.includes("Request context disposed")
-        ) {
-          // noop
-        } else {
-          throw err
+    await test.step("Shows loading state", async () => {
+      let shouldInterceptRequests = true
+
+      // Set a delay so we don't miss loading states
+      await backgroundPage.route(/api\.simplehash\.com/i, async (route) => {
+        if (!shouldInterceptRequests) {
+          route.continue()
+          return
+        }
+
+        const response = await route.fetch().catch((err) => {
+          // Waiting for the response doesn't prevent context disposed errors
+          // consistently
+          if (
+            err instanceof Error &&
+            err.message.includes("Request context disposed")
+          ) {
+            // noop
+          } else {
+            throw err
+          }
+        })
+
+        if (response) {
+          await wait(800)
+          await route.fulfill({ response })
         }
       })
 
-      if (response) {
-        await wait(800)
-        await route.fulfill({ response })
-      }
+      await walletPageHelper.onboardReadOnlyAddress("bravonaver.eth")
+      await walletPageHelper.navigateTo("NFTs")
+
+      await expect(page.getByTestId("loading_doggo")).toBeVisible()
+
+      // Wait until load finishes
+      await expect(page.getByTestId("loading_doggo")).not.toBeVisible()
+      shouldInterceptRequests = false
     })
 
-    await walletPageHelper.onboardReadOnlyAddress("bravonaver.eth")
-    await walletPageHelper.navigateTo("NFTs")
-
-    await expect(page.getByTestId("loading_doggo")).toBeVisible()
-
-    // Wait until load finishes
-    await expect(page.getByTestId("loading_doggo")).not.toBeVisible()
-  })
-
-  test("User can view nft collections, poaps and badges", async ({
-    page,
-    walletPageHelper,
-  }) => {
-    await walletPageHelper.onboardReadOnlyAddress("bravonaver.eth")
-    await walletPageHelper.navigateTo("NFTs")
+    // Header stats locators
+    const currencyTotal = page.getByTestId("nft_header_currency_total")
+    const nftCount = page.getByTestId("nft_header_nft_count")
+    const collectionCount = page.getByTestId("nft_header_collection_count")
+    const badgeCount = page.getByTestId("nft_header_badge_count")
 
     await test.step("Check balances", async () => {
-      await expect(
-        page.getByTestId("nft_header_currency_total")
-      ).not.toHaveText(/0.00/)
+      await expect(currencyTotal).not.toHaveText(/0.00/)
 
-      await expect(page.getByTestId("nft_header_nft_count")).not.toHaveText("0")
+      await expect(nftCount).not.toHaveText("0")
 
-      await expect(
-        page.getByTestId("nft_header_collection_count")
-      ).not.toHaveText("0")
+      await expect(collectionCount).not.toHaveText("0")
 
-      await expect(page.getByTestId("nft_header_badge_count")).not.toHaveText(
-        "0"
-      )
+      await expect(badgeCount).not.toHaveText("0")
+    })
+
+    await test.step("Filtering accounts", async () => {
+      await page.getByRole("button", { name: "Filter collections" }).click()
+
+      await page
+        .getByTestId("nft_account_filters")
+        .filter({ hasText: "bravonaver.eth" })
+        .getByRole("checkbox")
+        .click()
+
+      await page
+        .getByTestId("nft_filters_menu")
+        .getByRole("button", { name: "Close menu" })
+        .click()
+
+      // This could match 100.00, however we're checking 0 counts below
+      await expect(currencyTotal).toHaveText(/0.00/)
+
+      // Balances should be zero after filtering our only account
+      await expect(nftCount).toHaveText("0")
+
+      await expect(collectionCount).toHaveText("0")
+
+      await expect(badgeCount).toHaveText("0")
+
+      // Disable account filter
+      await page.getByRole("button", { name: "Filter collections" }).click()
+
+      await page
+        .getByTestId("nft_account_filters")
+        .getByTestId("toggle_item")
+        .filter({ hasText: "bravonaver.eth" })
+        .getByRole("checkbox")
+        .click()
+
+      await page
+        .getByTestId("nft_filters_menu")
+        .getByRole("button", { name: "Close menu" })
+        .click()
+    })
+
+    await test.step("Filtering a collection", async () => {
+      await page
+        .getByRole("tablist")
+        .getByRole("tab", { name: "Badges" })
+        .click()
+
+      const badges = await badgeCount.innerText()
+
+      // Filter POAPs
+      await page.getByRole("button", { name: "Filter collections" }).click()
+
+      await page
+        .getByTestId("nft_collection_filters")
+        .getByTestId("toggle_item")
+        .filter({ hasText: "POAP" })
+        .getByRole("checkbox")
+        .click()
+
+      await page
+        .getByTestId("nft_filters_menu")
+        .getByRole("button", { name: "Close menu" })
+        .click()
+
+      // Filtering POAPs should change the header's displayed badge count
+      // unless we don't have any POAPs. We don't check rendered items
+      // because that could break with virtual lists
+      await expect(badgeCount).not.toHaveText(badges)
+
+      // Cleanup
+      await page.getByRole("button", { name: "Filter collections" }).click()
+
+      await page
+        .getByTestId("nft_collection_filters")
+        .getByTestId("toggle_item")
+        .filter({ hasText: "POAP" })
+        .getByRole("checkbox")
+        .click()
+
+      await page
+        .getByTestId("nft_filters_menu")
+        .getByRole("button", { name: "Close menu" })
+        .click()
+
+      await page.getByRole("tablist").getByRole("tab", { name: "NFTs" }).click()
     })
 
     // Check collections
