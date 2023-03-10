@@ -52,6 +52,8 @@ export default function NewSeedReview({
       </div>
       <style jsx>{`
         section {
+          max-width: 450px;
+          margin: 0 auto;
           display: flex;
           flex-direction: column;
           align-items: center;

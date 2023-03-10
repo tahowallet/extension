@@ -5,7 +5,7 @@ import {
 import React, { ReactElement } from "react"
 import SharedToggleButton from "./SharedToggleButton"
 
-const STARS_GREY_URL = "./images/stars_grey.svg"
+export const STARS_GREY_URL = "./images/stars_grey.svg"
 
 type SharedToggleItemProps = {
   label: string
@@ -23,7 +23,7 @@ export default function SharedToggleItem({
   return (
     <div className="content" data-testid="toggle_item">
       <div className="text_wrap">
-        <div className="thumbnail" />
+        <div className="thumbnail" role="img" />
         <label className="label ellipsis">
           {isProbablyEVMAddress(label) ? truncateAddress(label) : label}
         </label>
