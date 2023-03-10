@@ -332,6 +332,7 @@ export default function NewSeedVerify({
                     {children}
                   </span>
                 )}
+                replace
                 to={OnboardingRoutes.NEW_SEED}
               />
             ),

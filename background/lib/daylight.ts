@@ -60,6 +60,7 @@ export type DaylightAbility = {
   openAt: string | null
   closeAt: string | null
   isClosed: boolean | null
+  walletCompleted: boolean | null
   createdAt: string
   chain: string
   sourceId: string
@@ -95,6 +96,8 @@ export const getDaylightAbilities = async (
   // The limit needs to be set. It is set to the highest value.
   requestURL.searchParams.set("limit", "1000")
   requestURL.searchParams.set("deadline", "all")
+  requestURL.searchParams.set("showCompleted", "true")
+  requestURL.searchParams.set("markAsShown", "true")
 
   try {
     const response: AbilitiesResponse = await fetchJson({

@@ -59,7 +59,7 @@ export const normalizeDaylightAbilities = (
       imageUrl: daylightAbility.imageUrl || undefined,
       openAt: daylightAbility.openAt || undefined,
       closeAt: daylightAbility.closeAt || undefined,
-      completed: false,
+      completed: daylightAbility.walletCompleted || false,
       removedFromUi: false,
       address: normalizeEVMAddress(address),
       requirement: normalizeDaylightRequirements(
