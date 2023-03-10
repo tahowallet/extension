@@ -140,12 +140,16 @@ export default function SharedAssetIcon(props: Props): ReactElement {
     <div
       ref={containerRef}
       className={classNames("token_icon_wrap", sizeClass)}
+      role="img"
     >
       {hasHardcodedIcon || (!isLoading && !error) ? (
         <div className="token_icon" />
       ) : (
-        <div className={classNames("token_icon_fallback", sizeClass)}>
-          {symbol[0].toUpperCase()}
+        <div
+          role="presentation"
+          className={classNames("token_icon_fallback", sizeClass)}
+        >
+          {(symbol?.[0] ?? "?").toUpperCase()}
         </div>
       )}
       <style jsx>

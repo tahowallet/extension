@@ -15,7 +15,7 @@ const ARBITRUM_ONE_ETH: NetworkBaseAsset = {
   ...ETH,
   chainID: "42161",
   metadata: {
-    coinGeckoID: "arbitrum-one",
+    coinGeckoID: "ethereum",
     tokenLists: [],
   },
 }
@@ -24,7 +24,7 @@ const ARBITRUM_NOVA_ETH: NetworkBaseAsset = {
   ...ETH,
   chainID: "42170",
   metadata: {
-    coinGeckoID: "arbitrum-nova",
+    coinGeckoID: "ethereum",
     tokenLists: [],
   },
 }
@@ -33,7 +33,7 @@ const OPTIMISTIC_ETH: NetworkBaseAsset = {
   ...ETH,
   chainID: "10",
   metadata: {
-    coinGeckoID: "optimistic-ethereum",
+    coinGeckoID: "ethereum",
     tokenLists: [],
   },
 }
@@ -64,8 +64,9 @@ const MATIC: NetworkBaseAsset = {
   symbol: "MATIC",
   decimals: 18,
   metadata: {
-    coinGeckoID: "polygon-pos",
+    coinGeckoID: "matic-network",
     tokenLists: [],
+    websiteURL: "https://polygon.technology/",
   },
 }
 
@@ -75,8 +76,9 @@ const AVAX: NetworkBaseAsset = {
   symbol: "AVAX",
   decimals: 18,
   metadata: {
-    coinGeckoID: "avalanche",
+    coinGeckoID: "avalanche-2",
     tokenLists: [],
+    websiteURL: "https://avax.network/",
   },
 }
 
@@ -86,8 +88,9 @@ const BNB: NetworkBaseAsset = {
   symbol: "BNB",
   decimals: 18,
   metadata: {
-    coinGeckoID: "binance-smart-chain",
+    coinGeckoID: "binancecoin",
     tokenLists: [],
+    websiteURL: "https://bnbchain.org",
   },
 }
 
