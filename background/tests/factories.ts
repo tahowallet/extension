@@ -466,7 +466,7 @@ export const createDaylightAbility = (
     linkUrl: "",
     completedBy: [],
   },
-
+  walletCompleted: false,
   ...overrides,
 })
 
