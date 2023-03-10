@@ -168,7 +168,11 @@ export const CHAIN_ID_TO_RPC_URLS: {
   [chainId: string]: Array<string> | undefined
 } = {
   [ROOTSTOCK.chainID]: ["https://public-node.rsk.co"],
-  [POLYGON.chainID]: ["https://polygon-rpc.com", "https://1rpc.io/matic"],
+  [POLYGON.chainID]: [
+    "https://1rpc.io/matic",
+    // This one sometimes returns 0 for eth_getBalance
+    "https://polygon-rpc.com",
+  ],
   [OPTIMISM.chainID]: [
     "https://rpc.ankr.com/optimism",
     "https://1rpc.io/op",
