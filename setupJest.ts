@@ -44,3 +44,23 @@ Object.defineProperty(window, "fetch", {
     console.warn("Uncaught fetch call to: \n", url)
   },
 })
+
+const localStorageMock = (() => {
+  let store: Record<string, string> = {}
+  return {
+    getItem(key: string) {
+      return store[key]
+    },
+    setItem(key: string, value: string) {
+      store[key] = value.toString()
+    },
+    clear() {
+      store = {}
+    },
+    removeItem(key: string) {
+      delete store[key]
+    },
+  }
+})()
+
+Object.defineProperty(window, "localStorage", { value: localStorageMock })

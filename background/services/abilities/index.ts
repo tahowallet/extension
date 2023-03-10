@@ -42,7 +42,7 @@ const normalizeDaylightRequirements = (
   }
 }
 
-const normalizeDaylightAbilities = (
+export const normalizeDaylightAbilities = (
   daylightAbilities: DaylightAbility[],
   address: string
 ): Ability[] => {
