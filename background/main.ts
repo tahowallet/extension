@@ -654,6 +654,8 @@ export default class Main extends BaseService<never> {
               network,
             }
             await this.chainService.addAccountToTrack(addressNetwork)
+            this.abilitiesService.getNewAccountAbilities(address)
+
             this.store.dispatch(loadAccount(addressNetwork))
           })
         )
@@ -1081,6 +1083,7 @@ export default class Main extends BaseService<never> {
           address,
           network,
         })
+        this.abilitiesService.getNewAccountAbilities(address)
       })
     })
 
@@ -1566,14 +1569,6 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("deleteAccount", (address) => {
       this.store.dispatch(deleteAccountFilter(address))
     })
-
-    this.keyringService.emitter.on("address", (address) =>
-      this.abilitiesService.getNewAccountAbilities(address)
-    )
-
-    this.ledgerService.emitter.on("address", ({ address }) =>
-      this.abilitiesService.getNewAccountAbilities(address)
-    )
   }
 
   async unlockKeyrings(password: string): Promise<boolean> {
