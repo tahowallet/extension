@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import LedgerContinueButton from "../../../../components/Ledger/LedgerContinueButton"
 import LedgerPanelContainer from "../../../../components/Ledger/LedgerPanelContainer"
+import OnboardingTip from "../OnboardingTip"
 
 export default function LedgerPrepare({
   onContinue,
@@ -54,10 +55,12 @@ export default function LedgerPrepare({
           {buttonLabel}
         </LedgerContinueButton>
       </div>
+      <OnboardingTip>{t("tip")}</OnboardingTip>
       <style jsx>{`
         .content {
           display: flex;
           flex-direction: column;
+          margin: 0 auto;
         }
 
         .content[data-has-errors="false"] {
@@ -119,10 +122,14 @@ export default function LedgerPrepare({
           padding: 6px;
         }
 
+        .error_container {
+          margin: 16px 0;
+        }
         .error {
           color: var(--error);
           font-weight: 600;
           font-size: 18px;
+          justify-content: center;
         }
 
         .highlight_text {

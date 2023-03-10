@@ -1,5 +1,3 @@
-// @ts-check
-
 import React, { ReactElement, useState } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { useTranslation } from "react-i18next"

@@ -136,6 +136,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
                 onClick={handleConfirm}
                 isDisabled={hasInsufficientFunds}
                 showLoadingOnClick
+                showLoading
                 reactOnWindowFocus
               >
                 {globalT(signingActionLabelI18nKey)}
