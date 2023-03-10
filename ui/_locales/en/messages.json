@@ -114,7 +114,8 @@
         "stepsExplainer": "Please follow the steps below and click on Try Again!",
         "step1": "Plug in a single Ledger",
         "step2": "Enter pin to unlock",
-        "step3": "Open Ethereum App"
+        "step3": "Open Ethereum App",
+        "tip": "After clicking continue, select device and click connect"
       },
       "selectDevice": "Select the device",
       "clickConnect": "Click connect",
@@ -301,23 +302,20 @@
   },
   "onboarding": {
     "tabbed": {
+      "walletShortcut": "Did you know that you can open Taho using a keyboard shortcut?",
       "routeBasedContent": {
         "newSeed": {
-          "tip": "If you want an easy way to preview Taho, you can start by adding a view only account",
+          "tip": "If you want an easy way to preview Taho, you can start by adding a read only account.",
           "action": "Add preview account"
         },
-        "ledger": {
-          "tip": "Trezor integration coming soon, check out the open ",
-          "action": "Gitcoin bounty"
-        },
         "addWallet": {
-          "tip": "Some of the code for this was written by Community contributors"
+          "tip": "Several of Taho's most popular features were developed by our community."
         },
         "viewOnly": {
-          "tip": "A good way to take a peek at what Taho offers"
+          "tip": "A good way to take a peek at what Taho offers."
         },
         "importSeed": {
-          "tip": "Taho offers the possibility of adding multiple recovery phrases"
+          "tip": "Taho offers the possibility of adding multiple recovery phrases."
         },
         "default": {
           "fact1": "Fully owned by the community",
@@ -332,12 +330,16 @@
       },
       "addWallet": {
         "title": "Use existing wallet",
-        "tip": "You can always add more wallets later",
+        "titleExisting": "Add account",
+        "tip": "You can always add more wallets later.",
+        "existingListTitle": "Existing account",
+        "newWalletTitle": "New wallet",
         "options": {
           "importSeed": "Import recovery phrase",
           "importPrivateKey": "Private Key import",
           "ledger": "Connect to Ledger",
-          "readOnly": "Read-only address"
+          "readOnly": "Read-only address",
+          "createNew": "Create new wallet"
         },
         "importSeed": {
           "title": "Import secret recovery phrase",
@@ -360,14 +362,19 @@
           "title": "Read-only address",
           "subtitle": "Add an Ethereum address or ENS name to view an existing wallet in Taho",
           "submit": "Preview Taho",
-          "tip": "You can upgrade a view-only wallet later"
+          "tip": "You can upgrade a read-only wallet later."
         }
       },
       "newWalletIntro": {
         "title": "Before we get started",
         "warning": "It's important to write down your secret recovery phrase and store it somewhere safe.<br /><br />This is the only way to recover your accounts and funds.<br /><br /><u>You will not be able to export your recovery phrase later.</u>",
         "submit": "Create recovery phrase",
-        "tip": "You can upgrade a view-only wallet later"
+        "tip": "You can upgrade a read-only wallet later."
+      },
+      "unlockWallet": {
+        "title": "Password required",
+        "passwordInput": "Signing password",
+        "submit": "Confirm"
       },
       "newWalletReview": {
         "title": "Save and store your recovery phrase",
@@ -383,10 +390,11 @@
         "invalidStateMsg": "Verify the order and remove the ones that aren't in the right position.",
         "verifyValidState": "Verify recovery phrase",
         "submit": "Finalize",
-        "tip": "If you didn’t write it down, you can <url>start with a new phrase</url>"
+        "tip": "If you didn’t write it down, you can <url>start with a new phrase.</url>"
       },
       "complete": {
         "title": "Welcome to Taho",
+        "titleExisting": "Account added to Taho!",
         "subtitle": "For faster access we recommend pinning Taho to your browser",
         "animationAlt": "Pin the wallet"
       }
@@ -632,7 +640,7 @@
     }
   },
   "addNewChain": {
-    "subtitle": "Wants to add a main network to Tally Ho!",
+    "subtitle": "Wants to add a main network to Taho",
     "name": "Name",
     "chainId": "Chain ID",
     "currency": "Currency",

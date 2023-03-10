@@ -1,10 +1,18 @@
 import React, { ReactElement, useEffect, useRef, useState } from "react"
-import { selectSigningData } from "@tallyho/tally-background/redux-slices/signing"
+import {
+  selectSigningData,
+  selectTypedData,
+} from "@tallyho/tally-background/redux-slices/signing"
 import { selectIsTransactionLoaded } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useBackgroundSelector, useDebounce } from "../../../hooks"
 import SharedButton, {
   Props as SharedButtonProps,
 } from "../../Shared/SharedButton"
+
+export type TransactionButtonProps = SharedButtonProps & {
+  reactOnWindowFocus?: boolean
+  showLoading?: boolean
+}
 
 // TODO: Rename this to signing button
 export default function TransactionButton({
@@ -14,12 +22,16 @@ export default function TransactionButton({
   onClick,
   children,
   reactOnWindowFocus = false,
-}: SharedButtonProps & { reactOnWindowFocus?: boolean }): ReactElement {
+  // Show loading when transaction data is not ready
+  showLoading = false,
+}: TransactionButtonProps): ReactElement {
   const hasTransactionLoaded = useBackgroundSelector(selectIsTransactionLoaded)
 
-  const hasSignDataRequest = useBackgroundSelector(selectSigningData)
+  const signDataRequest = useBackgroundSelector(selectSigningData)
+  const typedDataRequest = useBackgroundSelector(selectTypedData)
+  const hasSigningRequest = signDataRequest || typedDataRequest
 
-  const isTransactionDataReady = hasTransactionLoaded || hasSignDataRequest
+  const isTransactionDataReady = hasTransactionLoaded || hasSigningRequest
 
   /*
     Prevent shenanigans by disabling the sign button for a bit
@@ -86,6 +98,7 @@ export default function TransactionButton({
           !unlockButtons ||
           isDisabled
         }
+        isLoading={showLoading ? !unlockButtons : false}
       >
         {children}
       </SharedButton>

@@ -16,6 +16,7 @@ import {
   MULTICALL_ABI,
   MULTICALL_CONTRACT_ADDRESS,
 } from "./multicall"
+import logger from "./logger"
 
 export const ERC20_FUNCTIONS = {
   allowance: FunctionFragment.from(
@@ -93,19 +94,24 @@ export async function getMetadata(
     provider
   )
 
-  const [symbol, name, decimals] = await Promise.all(
-    [
-      ERC20_FUNCTIONS.symbol,
-      ERC20_FUNCTIONS.name,
-      ERC20_FUNCTIONS.decimals,
-    ].map(({ name: functionName }) => token.callStatic[functionName]())
-  )
+  try {
+    const [symbol, name, decimals] = await Promise.all(
+      [
+        ERC20_FUNCTIONS.symbol,
+        ERC20_FUNCTIONS.name,
+        ERC20_FUNCTIONS.decimals,
+      ].map(({ name: functionName }) => token.callStatic[functionName]())
+    )
 
-  return {
-    ...tokenSmartContract,
-    symbol,
-    name,
-    decimals,
+    return {
+      ...tokenSmartContract,
+      symbol,
+      name,
+      decimals,
+    }
+  } catch (error) {
+    logger.warn("Invalid metadata for token", tokenSmartContract)
+    throw new Error("Could not retrieve erc20 token metadata")
   }
 }
 

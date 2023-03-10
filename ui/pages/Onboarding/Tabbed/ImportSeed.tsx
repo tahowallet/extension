@@ -6,7 +6,9 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedButton from "../../../components/Shared/SharedButton"
-import OnboardingDerivationPathSelect from "../../../components/Onboarding/OnboardingDerivationPathSelect"
+import OnboardingDerivationPathSelect, {
+  DefaultPathIndex,
+} from "../../../components/Onboarding/OnboardingDerivationPathSelect"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -93,22 +95,26 @@ export default function ImportSeed(props: Props): ReactElement {
         illustration="doggo_import.svg"
       >
         <>
-          <div className="centered">
-            <SharedSeedInput
-              onChange={(seed) => setRecoveryPhrase(seed)}
-              label={t("inputLabel")}
-              errorMessage={errorMessage}
-            />
-            {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
-              <div className="select_wrapper">
-                <OnboardingDerivationPathSelect onChange={setPath} />
-              </div>
-            )}
-          </div>
-
-          <div className="centered bottom">
+          {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
+            <div className="select_wrapper">
+              <OnboardingDerivationPathSelect
+                defaultPath={DefaultPathIndex.bip44}
+                onChange={setPath}
+              />
+            </div>
+          )}
+          <SharedSeedInput
+            onChange={(seed) => setRecoveryPhrase(seed)}
+            label={t("inputLabel")}
+            errorMessage={errorMessage}
+          />
+          <div className="bottom">
             <SharedButton
-              style={{ width: "100%", maxWidth: "300px" }}
+              style={{
+                width: "100%",
+                maxWidth: "356px",
+                boxSizing: "border-box",
+              }}
               size={
                 isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
                   ? "medium"
@@ -135,14 +141,9 @@ export default function ImportSeed(props: Props): ReactElement {
         </>
       </ImportForm>
       <style jsx>{`
-        .centered {
+        .bottom {
           display: flex;
           flex-direction: column;
-          align-items: center;
-          justify-content: space-between;
-          flex-direction: column;
-        }
-        .bottom {
           margin-top: ${isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
             ? "48px"
             : "24px"};
@@ -168,8 +169,7 @@ export default function ImportSeed(props: Props): ReactElement {
           margin-top: 16px;
         }
         .select_wrapper {
-          margin-top: ${errorMessage ? "4px" : "15px"};
-          width: 320px;
+          margin-bottom: 24px;
         }
       `}</style>
     </>
