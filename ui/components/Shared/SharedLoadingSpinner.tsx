@@ -35,7 +35,7 @@ function getVariantStyles(
 export default function SharedLoadingSpinner(
   props: SharedLoadingSpinnerProps
 ): ReactElement {
-  const { size, variant = "hunter-green" } = props
+  const { size, variant = "dark-green" } = props
 
   const [color, accent] = useMemo(() => getVariantStyles(variant), [variant])
   return (
