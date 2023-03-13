@@ -435,7 +435,14 @@ export default function AccountsNotificationPanelAccounts({
           size="medium"
           iconSmall="add"
           iconPosition="left"
-          linkTo="/onboarding/add-wallet"
+          onClick={() => {
+            if (isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING)) {
+              window.open("/tab.html#onboarding")
+              window.close()
+            } else {
+              history.push("/onboarding/add-wallet")
+            }
+          }}
         >
           {t("accounts.notificationPanel.addWallet")}
         </SharedButton>

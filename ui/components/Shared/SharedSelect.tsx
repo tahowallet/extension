@@ -21,7 +21,7 @@ type Props = {
   onTrigger?: () => void
   showValue?: boolean
   showOptionValue?: boolean
-  width?: number
+  width?: string | number
 }
 
 export default function SharedSelect(props: Props): ReactElement {
@@ -35,8 +35,10 @@ export default function SharedSelect(props: Props): ReactElement {
     onTrigger,
     showValue,
     showOptionValue,
-    width = 320,
+    width = "320px",
   } = props
+
+  const cssWidth = typeof width === "number" ? `${width}px` : width
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(defaultIndex)
@@ -152,7 +154,7 @@ export default function SharedSelect(props: Props): ReactElement {
             box-sizing: border-box;
             display: inline-block;
             position: relative;
-            width: ${width}px;
+            width: ${cssWidth};
             background-color: transparent;
           }
 
@@ -218,7 +220,7 @@ export default function SharedSelect(props: Props): ReactElement {
             position: absolute;
             left: 2px;
             box-sizing: border-box;
-            width: ${width - 4}px;
+            width: calc(${cssWidth} - 4px);
             text-align: right;
             background-color: var(--green-95);
             border-radius: 5px;
