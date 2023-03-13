@@ -27,7 +27,7 @@ export default function LedgerPanelContainer({
         .panel {
           display: flex;
           flex-flow: column;
-          max-width: 24rem;
+          max-width: 450px;
           margin: 0 auto;
           padding: 1rem;
         }

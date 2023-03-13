@@ -25,11 +25,13 @@ export default function OnboardingTip({
             gap: 18px;
             max-width: 350px;
             margin: 0 auto;
+            justify-content: center;
           }
 
           .quote_icon::before,
           .quote_icon::after {
             content: "";
+            max-width: 100px;
             display: inline-block;
             flex-grow: 1;
             border: 0.5px solid var(--green-80);

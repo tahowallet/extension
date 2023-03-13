@@ -1,19 +1,15 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useState } from "react"
 
-import { Route, Switch, matchPath, useLocation } from "react-router-dom"
-
-import { useTranslation } from "react-i18next"
-import browser from "webextension-polyfill"
 import {
-  ARBITRUM_ONE,
-  AVALANCHE,
-  BINANCE_SMART_CHAIN,
-  ETHEREUM,
-  OPTIMISM,
-  POLYGON,
-} from "@tallyho/tally-background/constants"
+  Route,
+  Switch,
+  matchPath,
+  useLocation,
+  Redirect,
+} from "react-router-dom"
 
-import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
+import classNames from "classnames"
+
 import SharedBackButton from "../../../components/Shared/SharedBackButton"
 import AddWallet from "./AddWallet"
 import Done from "./Done"
@@ -23,258 +19,27 @@ import NewSeed, { NewSeedRoutes } from "./NewSeed"
 import InfoIntro from "./Intro"
 import ViewOnlyWallet from "./ViewOnlyWallet"
 import Ledger from "./Ledger/Ledger"
-
-import SharedButton from "../../../components/Shared/SharedButton"
 import OnboardingRoutes from "./Routes"
+import RouteBasedContent from "../../../components/Onboarding/RouteBasedContent"
+import SupportedChains from "../../../components/Onboarding/SupportedChains"
+import { useIsOnboarding } from "../../../hooks"
 
-// @TODO Rethink what networks we show once custom networks are supported
-const productionNetworks = [
-  ETHEREUM,
-  POLYGON,
-  OPTIMISM,
-  ARBITRUM_ONE,
-  AVALANCHE,
-  BINANCE_SMART_CHAIN,
-]
-
-const getNetworkIcon = (networkName: string) => {
-  const icon = networkName.replaceAll(" ", "").toLowerCase()
-
-  return `/images/networks/${icon}@2x.png`
-}
-
-/**
- * Renders a list of production network icons
- */
-function SupportedChains(): ReactElement {
-  const { t } = useTranslation("translation", { keyPrefix: "onboarding" })
-  return (
-    <div className="supported_chains">
-      <span>{t("supportedChains")}</span>
-      <div className="chain_logos">
-        {productionNetworks.map((network) => (
-          <img
-            width="24"
-            height="24"
-            key={network.chainID}
-            src={getNetworkIcon(network.name)}
-            alt={network.name}
-          />
-        ))}
-      </div>
-      <style jsx>{`
-        .supported_chains {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          align-items: center;
-        }
-
-        .supported_chains span {
-          font-size: 12px;
-          line-height: 16px;
-          color: var(--green-40);
-        }
-
-        .chain_logos {
-          display: flex;
-          gap: 10px;
-          opacity: 0.8;
-        }
-      `}</style>
-    </div>
-  )
-}
-
-const WalletShortcut = () => {
-  const [os, setOS] = useState("windows")
-
-  // fetch the OS using the extension API to decide what shortcut to show
-  useEffect(() => {
-    let active = true
-
-    async function loadOS() {
-      if (active) {
-        setOS((await browser.runtime.getPlatformInfo()).os)
-      }
-    }
-
-    loadOS()
-
-    return () => {
-      active = false
-    }
-  }, [])
-
-  // state for alt, t, and option key status
-  const [tPressed, setTPressed] = useState(false)
-  const [altPressed, setAltPressed] = useState(false)
-
-  // add keydown/up listeners for our shortcut code
-  useEffect(() => {
-    const downListener = (e: KeyboardEvent) => {
-      if (e.altKey || e.key === "Alt") {
-        setAltPressed(true)
-      }
-      if (e.key === "t") {
-        setTPressed(true)
-      }
-    }
-    const upListener = (e: KeyboardEvent) => {
-      if (e.altKey || e.key === "Alt") {
-        setAltPressed(false)
-      }
-      if (e.key === "t") {
-        setTPressed(false)
-      }
-    }
-
-    window.addEventListener("keydown", downListener.bind(window))
-    window.addEventListener("keyup", upListener.bind(window))
-
-    return () => {
-      window.removeEventListener("keydown", downListener)
-      window.removeEventListener("keyup", upListener)
-    }
-  })
-  return (
-    <div className="wallet_shortcut">
-      <span>
-        Did you know that you can open Taho using a keyboard shortcut?
-      </span>
-      <img
-        height="38"
-        className="indicator"
-        src={
-          os === "mac"
-            ? `/images/mac-shortcut${altPressed ? "-option" : ""}${
-                tPressed ? "-t" : ""
-              }.svg`
-            : `/images/windows-shortcut${altPressed ? "-alt" : ""}${
-                tPressed ? "-t" : ""
-              }.svg`
-        }
-        alt={os === "mac" ? "option + T" : "alt + T"}
-      />
-      <style jsx>{`
-        .wallet_shortcut {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 22px;
-        }
-
-        .wallet_shortcut > span {
-          text-align: center;
-        }
-      `}</style>
-    </div>
-  )
-}
-
-function RouteBasedContent() {
-  const { t } = useTranslation("translation", {
-    keyPrefix: "onboarding.tabbed.routeBasedContent",
-  })
-  return (
-    <Switch>
-      <Route key={OnboardingRoutes.NEW_SEED} path={OnboardingRoutes.NEW_SEED}>
-        <div className="fadeIn">
-          {t("newSeed.tip")}
-          <SharedButton
-            type="secondary"
-            size="medium"
-            linkTo={OnboardingRoutes.VIEW_ONLY_WALLET}
-          >
-            {t("newSeed.action")}
-          </SharedButton>
-        </div>
-        <style jsx>{`
-          div {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            align-items: center;
-          }
-        `}</style>
-      </Route>
-      <Route key={OnboardingRoutes.LEDGER} path={OnboardingRoutes.LEDGER}>
-        <div className="fadeIn">
-          {t("ledger.tip")}
-          <a target="_blank" href={WEBSITE_ORIGIN} rel="noreferrer">
-            {t("ledger.action")}
-          </a>
-        </div>
-        <style jsx>{`
-          a {
-            color: var(--trophy-gold);
-          }
-        `}</style>
-      </Route>
-      <Route
-        key={OnboardingRoutes.ADD_WALLET}
-        path={OnboardingRoutes.ADD_WALLET}
-      >
-        <div className="fadeIn">{t("addWallet.tip")}</div>
-      </Route>
-      <Route
-        key={OnboardingRoutes.VIEW_ONLY_WALLET}
-        path={OnboardingRoutes.VIEW_ONLY_WALLET}
-      >
-        <div className="fadeIn">{t("viewOnly.tip")}</div>
-      </Route>
-      <Route
-        key={OnboardingRoutes.IMPORT_SEED}
-        path={OnboardingRoutes.IMPORT_SEED}
-      >
-        <div className="fadeIn">{t("importSeed.tip")}</div>
-      </Route>
-      <Route
-        key={OnboardingRoutes.ONBOARDING_COMPLETE}
-        path={OnboardingRoutes.ONBOARDING_COMPLETE}
-      >
-        <div className="fadeIn">
-          <WalletShortcut />
-        </div>
-      </Route>
-      <Route>
-        <div className="onboarding_facts fadeIn">
-          <p>{t("default.fact1")}</p>
-          <p>{t("default.fact2")}</p>
-          <p>{t("default.fact3")}</p>
-          <style jsx>
-            {`
-              .onboarding_facts {
-                color: var(--green-20);
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                gap: 24px;
-              }
-
-              .onboarding_facts p {
-                margin: 0;
-                text-align: left;
-                font-size: 18px;
-                line-height: 24px;
-              }
-
-              .onboarding_facts p::before {
-                content: url("./images/check.svg");
-                width: 16px;
-                height: 16px;
-                margin-right: 16px;
-              }
-            `}
-          </style>
-        </div>
-      </Route>
-    </Switch>
-  )
-}
-
-function Navigation({ children }: { children: React.ReactNode }): ReactElement {
+function Navigation({
+  children,
+  isOnboarding,
+}: {
+  children: React.ReactNode
+  isOnboarding: boolean
+}): ReactElement {
   const location = useLocation()
+
+  const ROUTES_WITHOUT_BACK_BUTTON = [
+    OnboardingRoutes.ONBOARDING_START,
+    OnboardingRoutes.ONBOARDING_COMPLETE,
+    NewSeedRoutes.VERIFY_SEED,
+    !isOnboarding && OnboardingRoutes.ADD_WALLET,
+  ].filter((path): path is Exclude<typeof path, false> => !!path)
+
   return (
     <section className="onboarding_container">
       <style jsx>
@@ -284,6 +49,7 @@ function Navigation({ children }: { children: React.ReactNode }): ReactElement {
             display: flex;
             height: 100%;
             width: 100%;
+            justify-content: center;
           }
 
           .left_container {
@@ -296,6 +62,10 @@ function Navigation({ children }: { children: React.ReactNode }): ReactElement {
             align-items: center;
             overflow-y: hidden;
             box-sizing: border-box;
+          }
+
+          .left_container.hide {
+            display: none;
           }
 
           .right_container {
@@ -346,7 +116,7 @@ function Navigation({ children }: { children: React.ReactNode }): ReactElement {
           }
         `}
       </style>
-      <div className="left_container">
+      <div className={classNames("left_container", { hide: !isOnboarding })}>
         <div className="onboarding_branding">
           <img src="./images/logo_onboarding.svg" alt="Onboarding logo" />
         </div>
@@ -359,11 +129,7 @@ function Navigation({ children }: { children: React.ReactNode }): ReactElement {
       </div>
       <div className="right_container">
         {!matchPath(location.pathname, {
-          path: [
-            OnboardingRoutes.ONBOARDING_START,
-            OnboardingRoutes.ONBOARDING_COMPLETE,
-            NewSeedRoutes.VERIFY_SEED,
-          ],
+          path: ROUTES_WITHOUT_BACK_BUTTON,
           exact: true,
         }) && (
           <div className="back_button">
@@ -384,9 +150,20 @@ function Navigation({ children }: { children: React.ReactNode }): ReactElement {
 }
 
 export default function Root(): ReactElement {
+  // This prevents navigation "Onboarding" state from changing
+  // until this component is unmounted
+  const [isOnboarding] = useState(useIsOnboarding())
+
   return (
-    <Navigation>
+    <Navigation isOnboarding={isOnboarding}>
       <Switch>
+        {!isOnboarding && (
+          <Redirect
+            to={OnboardingRoutes.ADD_WALLET}
+            from={OnboardingRoutes.ONBOARDING_START}
+            exact
+          />
+        )}
         <Route path={OnboardingRoutes.ONBOARDING_START} exact>
           <InfoIntro />
         </Route>
