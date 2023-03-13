@@ -53,7 +53,9 @@ export default function SettingsCustomNetworks(): ReactElement {
                 <li className="custom_network_item" key={item.chainID}>
                   <SharedNetworkIcon size={42} network={item} />
                   <div className="network_label">
-                    <span className="network_name">{item.name}</span>
+                    <span className="network_name" title={item.name}>
+                      {item.name}
+                    </span>
                     <span className="network_type">
                       {t("networksList.typeCustom")}
                     </span>
@@ -159,6 +161,10 @@ export default function SettingsCustomNetworks(): ReactElement {
           letter-spacing: 0em;
           text-align: center;
           color: var(--white);
+          overflow-x: hidden;
+          text-overflow: ellipsis;
+          white-space: pre;
+          max-width: 200px;
         }
         .network_type {
           font-family: Segment;
