@@ -22,6 +22,7 @@ const ABILITY_DEFAULT: Ability = {
     type: "hold",
     address: "",
   },
+  createdAt: Date.now().toString(),
 }
 
 describe("Abilities utils", () => {

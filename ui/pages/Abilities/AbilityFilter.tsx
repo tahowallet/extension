@@ -6,10 +6,13 @@ import {
   deleteType,
   addAccount,
   deleteAccount,
+  Sort,
+  updateSort,
 } from "@tallyho/tally-background/redux-slices/abilities"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   selectAbilityFilterAccounts,
+  selectAbilityFilterSort,
   selectAbilityFilterState,
   selectAbilityFilterTypes,
   selectAccountTotals,
@@ -24,10 +27,11 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { i18n } from "../../_locales/i18n"
 import AbilityFilterCard from "./AbilityFilterCard"
 
-const RADIO_NAME = "sortType"
+const STATE_BTN_NAME = "stateBtn"
+const SORT_BTN_NAME = "sortBtn"
 const KEY_PREFIX = "abilities.filter"
 
-const RADIO_BTNS: { value: State; label: string }[] = [
+const STATE_BTNS: { value: State; label: string }[] = [
   {
     value: "open",
     label: i18n.t(`${KEY_PREFIX}.abilityState.open`),
@@ -50,6 +54,21 @@ const RADIO_BTNS: { value: State; label: string }[] = [
   },
 ]
 
+const SORT_BTNS: { value: Sort; label: string }[] = [
+  {
+    value: "magic",
+    label: i18n.t(`${KEY_PREFIX}.abilitySort.magic`),
+  },
+  {
+    value: "new",
+    label: i18n.t(`${KEY_PREFIX}.abilitySort.new`),
+  },
+  {
+    value: "old",
+    label: i18n.t(`${KEY_PREFIX}.abilitySort.old`),
+  },
+]
+
 const ABILITY_TYPE_DESC = {
   vote: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.vote`),
   claim: i18n.t(`${KEY_PREFIX}.abilityTypeDesc.claim`),
@@ -68,6 +87,7 @@ export default function AbilityFilter(): ReactElement {
     keyPrefix: "abilities.filter",
   })
   const state = useBackgroundSelector(selectAbilityFilterState)
+  const sort = useBackgroundSelector(selectAbilityFilterSort)
   const types = useBackgroundSelector(selectAbilityFilterTypes)
   const accounts = useBackgroundSelector(selectAbilityFilterAccounts)
   const accountTotals = useBackgroundSelector(selectAccountTotals)
@@ -79,6 +99,13 @@ export default function AbilityFilter(): ReactElement {
   const handleUpdateState = useCallback(
     (value: State) => {
       dispatch(updateState(value))
+    },
+    [dispatch]
+  )
+
+  const handleUpdateSort = useCallback(
+    (value: Sort) => {
+      dispatch(updateSort(value))
     },
     [dispatch]
   )
@@ -110,14 +137,27 @@ export default function AbilityFilter(): ReactElement {
       <div className="filter">
         <div className="simple_text">
           <span className="filter_title">{t("abilityStateTitle")}</span>
-          {RADIO_BTNS.map(({ value, label }) => (
+          {STATE_BTNS.map(({ value, label }) => (
             <SharedRadio
               key={value}
               id={`radio_${value}`}
-              name={RADIO_NAME}
+              name={STATE_BTN_NAME}
               value={state === value}
               label={label}
               onChange={() => handleUpdateState(value)}
+            />
+          ))}
+        </div>
+        <div className="simple_text">
+          <span className="filter_title">{t("abilitySortTitle")}</span>
+          {SORT_BTNS.map(({ value, label }) => (
+            <SharedRadio
+              key={value}
+              id={`radio_${value}`}
+              name={SORT_BTN_NAME}
+              value={sort === value}
+              label={label}
+              onChange={() => handleUpdateSort(value)}
             />
           ))}
         </div>

@@ -1,7 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-import { Ability } from "../../abilities"
-import { filterAbility } from "../utils/abilities-utils"
+import { filterAbility, getFilteredAbilities } from "../utils/abilities-utils"
 
 const selectAbilities = createSelector(
   (state: RootState) => state.abilities,
@@ -24,6 +23,11 @@ export const selectAbilityFilterState = createSelector(
   (abilitiesSlice) => abilitiesSlice.filter.state
 )
 
+export const selectAbilityFilterSort = createSelector(
+  (state: RootState) => state.abilities,
+  (abilitiesSlice) => abilitiesSlice.filter.sort
+)
+
 export const selectAbilityFilterTypes = createSelector(
   (state: RootState) => state.abilities,
   (abilitiesSlice) => abilitiesSlice.filter.types
@@ -35,29 +39,24 @@ export const selectAbilityFilterAccounts = createSelector(
 )
 
 /* Items selectors */
+const selectAllAbilities = createSelector(selectAbilities, (abilities) => {
+  return Object.values(abilities).flatMap((addressAbilities) =>
+    Object.values(addressAbilities)
+  )
+})
+
 export const selectFilteredAbilities = createSelector(
   selectAbilityFilter,
-  selectAbilities,
-  (filter, abilities) => {
-    const activeAbilities: Ability[] = []
-    Object.values(abilities).forEach((addressAbilities) => {
-      activeAbilities.push(
-        ...Object.values(addressAbilities).filter((ability) =>
-          filterAbility(ability, filter)
-        )
-      )
-    })
-    return activeAbilities
-  }
+  selectAllAbilities,
+  (filter, abilities) => getFilteredAbilities(abilities, filter)
 )
 
 /* Counting selectors  */
 export const selectOpenAbilityCount = createSelector(
   selectAbilityFilter,
-  selectAbilities,
+  selectAllAbilities,
   (filter, abilities) =>
-    Object.values(abilities)
-      .flatMap((address) => Object.values(address))
-      .filter((ability) => filterAbility(ability, { ...filter, state: "open" }))
-      .length
+    abilities.filter((ability) =>
+      filterAbility(ability, { ...filter, state: "open" })
+    ).length
 )

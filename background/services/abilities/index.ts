@@ -60,6 +60,7 @@ const normalizeDaylightAbilities = (
       openAt: daylightAbility.openAt || undefined,
       closeAt: daylightAbility.closeAt || undefined,
       completed: daylightAbility.walletCompleted || false,
+      createdAt: daylightAbility.createdAt,
       removedFromUi: false,
       address: normalizeEVMAddress(address),
       requirement: normalizeDaylightRequirements(

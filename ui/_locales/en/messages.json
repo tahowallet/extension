@@ -833,6 +833,11 @@
         "deleted": "Deleted",
         "all": "All"
       },
+      "abilitySort": {
+        "magic": "The most interesting",
+        "new": "Newest added",
+        "old": "Oldest added"
+      },
       "abilityTypeDesc": {
         "vote": "A proposal that someone can vote on based on a token they hold.",
         "claim": "On-chain reward that someone can claim that is not a mint or airdrop.",
@@ -846,6 +851,7 @@
         "misc": "An ability that does not fall into any of these types."
       },
       "abilityStateTitle": "Show",
+      "abilitySortTitle": "Sort abilities",
       "abilitiesTypesTitle": "Notify me about abilities type",
       "accountsTitle": "Show/hide accounts",
       "accountsReadOnlyInfo": "Read-only accounts can’t see abilities. If you can, we recommend you import the address you want to see abilities for.",

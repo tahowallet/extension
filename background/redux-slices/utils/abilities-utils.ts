@@ -1,5 +1,5 @@
 import { Ability, AbilityType } from "../../abilities"
-import { Filter, State } from "../abilities"
+import { Filter, Sort, State } from "../abilities"
 
 const isDeleted = (ability: Ability): boolean => ability.removedFromUi
 
@@ -44,4 +44,36 @@ export const filterAbility = (ability: Ability, filter: Filter): boolean => {
     filterByState(ability, filter.state) &&
     filterByType(ability.type, filter.types)
   )
+}
+
+export const sortAbilities = (
+  ability1: Ability,
+  ability2: Ability,
+  type: Sort
+): number => {
+  switch (type) {
+    case "new":
+      return (
+        new Date(ability2.createdAt).getTime() -
+        new Date(ability1.createdAt).getTime()
+      )
+    case "old":
+      return (
+        new Date(ability1.createdAt).getTime() -
+        new Date(ability2.createdAt).getTime()
+      )
+    default:
+      return 0
+  }
+}
+
+export const getFilteredAbilities = (
+  abilities: Ability[],
+  filter: Filter
+): Ability[] => {
+  return abilities
+    .filter((ability) => filterAbility(ability, filter))
+    .sort((ability1, ability2) =>
+      sortAbilities(ability1, ability2, filter.sort)
+    )
 }

@@ -61,6 +61,7 @@ export const createAbility = (overrides: Partial<Ability> = {}): Ability => {
       type: "hold",
       address: "",
     },
+    createdAt: Date.now().toString(),
     ...overrides,
   }
 }

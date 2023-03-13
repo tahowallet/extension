@@ -49,6 +49,7 @@ export type Ability = {
   imageUrl?: string
   openAt?: string
   closeAt?: string
+  createdAt: string
   completed: boolean
   removedFromUi: boolean
   address: NormalizedEVMAddress

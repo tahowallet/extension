@@ -23,8 +23,11 @@ const isImportOrInternalAccount = (
 
 export type State = "open" | "completed" | "expired" | "deleted" | "all"
 
+export type Sort = "new" | "old" | "magic"
+
 export type Filter = {
   state: State
+  sort: Sort
   types: string[]
   accounts: string[]
 }
@@ -42,6 +45,7 @@ type AbilitiesState = {
 const initialState: AbilitiesState = {
   filter: {
     state: "open",
+    sort: "magic",
     types: [...ABILITY_TYPES_ENABLED],
     accounts: [],
   },
@@ -92,6 +96,9 @@ const abilitiesSlice = createSlice({
     updateState: (immerState, { payload: state }: { payload: State }) => {
       immerState.filter.state = state
     },
+    updateSort: (immerState, { payload: sort }: { payload: Sort }) => {
+      immerState.filter.sort = sort
+    },
     addType: (immerState, { payload: type }: { payload: string }) => {
       immerState.filter.types.push(type)
     },
@@ -120,6 +127,7 @@ export const {
   deleteAbility,
   toggleHideDescription,
   updateState,
+  updateSort,
   addType,
   deleteType,
   addAccount,
