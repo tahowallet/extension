@@ -453,7 +453,7 @@ export const createDaylightAbility = (
   createdAt: "2023-02-20T17:24:25.000Z",
   chain: "ethereum",
   sourceId: "",
-  uid: "",
+  uid: getRandomStr(5),
   slug: getRandomStr(5),
   requirements: [
     {
