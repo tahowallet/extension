@@ -140,7 +140,7 @@ export async function encryptVault<V>(
   return {
     salt,
     initializationVector: bufferToBase64(initializationVector),
-    cipherText: bufferToBase64(cipherText as Uint8Array),
+    cipherText: bufferToBase64(cipherText),
   }
 }
 

@@ -26,9 +26,15 @@ import logger from "../../lib/logger"
 export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
 export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
 
-export type WalletData = {
-  type: KeyringTypes.singleSECP
+export type Keyring = {
+  type: KeyringTypes
   id: string | null
+  path: string | null
+  addresses: string[]
+}
+
+export type WalletData = Keyring & {
+  type: KeyringTypes.singleSECP
   path: null
   addresses: [string]
 }
@@ -39,19 +45,12 @@ export type SerializedWallet = {
   privateKey: string
 }
 
-export type Keyring = {
-  type: KeyringTypes
-  id: string | null
-  path: string | null
-  addresses: string[]
-}
-
 export type KeyringAccountSigner = {
   type: "keyring"
   keyringID: string
 }
 
-export interface SignerMetadata {
+export type SignerMetadata = {
   source: "import" | "internal"
 }
 
