@@ -81,6 +81,7 @@ export default function SharedButton(
   }
 
   const isShowingLoadingSpinner = isLoading || (isClicked && showLoadingOnClick)
+  const spinnerVariant = type === "secondary" ? "dark-green" : "hunter-green"
 
   return (
     <button
@@ -108,7 +109,7 @@ export default function SharedButton(
       {isShowingLoadingSpinner && (
         <div className="spinner_wrap">
           <SharedLoadingSpinner
-            variant={isDisabled ? "transparent" : "dark-gold"}
+            variant={isDisabled ? "transparent" : spinnerVariant}
           />
         </div>
       )}
