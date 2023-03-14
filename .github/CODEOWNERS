@@ -2,10 +2,9 @@
 # exfiltration and general "roll your own crypto" mistakes. Newer
 # contributions to keyring code should be assumed insecure, requiring
 # agreement across the team to merge.
-/background/services/keyring/* @shadowfiend @mhluongo
+/background/services/keyring/* @tahowallet/extension-security-auditors
 # Any changes to dependencies deserve extra scrutiny to help prevent supply
 # chain attacks
-package.json @greg-nagy @0xDaedalus @shadowfiend @mhluongo
-yarn.lock @tallyhowallet/extension-dependency-auditors
+yarn.lock @tahowallet/extension-dependency-auditors
 # Any changes to code owners deserve extra scrutiny
-.github/CODEOWNERS @shadowfiend @mhluongo
+.github/CODEOWNERS @tahowallet/extension-security-auditors
