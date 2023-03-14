@@ -1,4 +1,5 @@
-import { importPrivateKey } from "@tallyho/tally-background/redux-slices/keyrings"
+import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
+import { SignerTypes } from "@tallyho/tally-background/services/keyring"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useDispatch } from "react-redux"
@@ -33,7 +34,7 @@ export default function ImportPrivateKey(props: Props): ReactElement {
   const importWallet = useCallback(async () => {
     // TODO: validate key
     setIsImporting(true)
-    dispatch(importPrivateKey(privateKey))
+    dispatch(importSigner({ type: SignerTypes.privateKey, privateKey }))
   }, [dispatch, privateKey])
 
   useEffect(() => {
