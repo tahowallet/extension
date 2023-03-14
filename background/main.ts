@@ -1675,6 +1675,10 @@ export default class Main extends BaseService<never> {
     )
   }
 
+  async removeEVMNetwork(chainID: string): Promise<void> {
+    return this.chainService.removeCustomChain(chainID)
+  }
+
   private connectPopupMonitor() {
     runtime.onConnect.addListener((port) => {
       if (port.name !== popupMonitorPortName) return
