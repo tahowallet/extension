@@ -168,6 +168,7 @@ import {
 } from "./redux-slices/abilities"
 import { AddChainRequestData } from "./services/provider-bridge"
 import { AnalyticsEvent } from "./lib/posthog"
+import { SignerRawWithType } from "./services/keyring"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1122,17 +1123,6 @@ export default class Main extends BaseService<never> {
 
       this.store.dispatch(setKeyringToVerify(generated))
     })
-
-    keyringSliceEmitter.on(
-      "importKeyring",
-      async ({ mnemonic, path, source }) => {
-        await this.keyringService.importKeyring(mnemonic, source, path)
-      }
-    )
-
-    keyringSliceEmitter.on("importPrivateKey", async (privateKey) => {
-      await this.keyringService.importWallet(privateKey)
-    })
   }
 
   async connectInternalEthereumProviderService(): Promise<void> {
@@ -1577,6 +1567,10 @@ export default class Main extends BaseService<never> {
 
   async unlockKeyrings(password: string): Promise<boolean> {
     return this.keyringService.unlock(password)
+  }
+
+  async importSigner(signerRaw: SignerRawWithType): Promise<HexString | null> {
+    return this.keyringService.importSigner(signerRaw)
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {

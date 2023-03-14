@@ -1,10 +1,11 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
-import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
+import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
 import { Redirect, useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { SignerTypes } from "@tallyho/tally-background/services/keyring"
 import SharedButton from "../../../components/Shared/SharedButton"
 import OnboardingDerivationPathSelect, {
   DefaultPathIndex,
@@ -64,7 +65,8 @@ export default function ImportSeed(props: Props): ReactElement {
     } else if (isValidMnemonic(plainRecoveryPhrase)) {
       setIsImporting(true)
       dispatch(
-        importKeyring({
+        importSigner({
+          type: SignerTypes.keyring,
           mnemonic: plainRecoveryPhrase,
           path,
           source: "import",

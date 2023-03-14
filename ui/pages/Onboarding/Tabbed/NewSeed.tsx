@@ -1,6 +1,6 @@
 import {
   generateNewKeyring,
-  importKeyring,
+  importSigner,
 } from "@tallyho/tally-background/redux-slices/keyrings"
 import React, { ReactElement } from "react"
 import {
@@ -11,6 +11,7 @@ import {
   useRouteMatch,
 } from "react-router-dom"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { SignerTypes } from "@tallyho/tally-background/services/keyring"
 import OnboardingStepsIndicator from "../../../components/Onboarding/OnboardingStepsIndicator"
 import {
   useAreKeyringsUnlocked,
@@ -80,7 +81,8 @@ export default function NewSeed(): ReactElement {
 
   const onVerifySuccess = (verifiedMnemonic: string[]) => {
     dispatch(
-      importKeyring({
+      importSigner({
+        type: SignerTypes.keyring,
         mnemonic: verifiedMnemonic.join(" "),
         source: "internal",
       })
