@@ -38,7 +38,7 @@ describe("AbilitiesService", () => {
       jest.clearAllMocks()
     })
 
-    it("should refresh abilities", async () => {
+    it("should load accounts to refresh abilities when the last refresh was over an hour ago", async () => {
       // Sun Jan 01 2023 08:00:00
       const lastFetchTime = +new Date(2023, 0, 1, 8)
       localStorage.setItem("LAST_ABILITY_FETCH_TIME", lastFetchTime.toString())
@@ -49,7 +49,7 @@ describe("AbilitiesService", () => {
       await abilitiesService.refreshAbilities()
       expect(stub.called).toBe(true)
     })
-    it("should not refresh abilities", async () => {
+    it("should not load accounts to refresh abilities when the last refresh was less than an hour ago", async () => {
       // Sun Jan 01 2023 09:30:00
       const lastFetchTime = +new Date(2023, 0, 1, 9, 30)
       localStorage.setItem("LAST_ABILITY_FETCH_TIME", lastFetchTime.toString())
@@ -71,7 +71,7 @@ describe("AbilitiesService", () => {
       jest.clearAllMocks()
     })
 
-    it("should not emit newAbilities to update abilities", async () => {
+    it("should not emit newAbilities if there are no new abilities", async () => {
       const stub = sandbox
         .stub(daylight, "getDaylightAbilities")
         .callsFake(async () => [])
@@ -81,7 +81,7 @@ describe("AbilitiesService", () => {
       expect(abilitiesService.emitter.emit).toBeCalledTimes(0)
     })
 
-    it("should emit newAbilities and notify UI to update abilities", async () => {
+    it("should emit newAbilities if there is a new ability", async () => {
       const daylightAbilities = [createDaylightAbility()]
       const stubAddNewAbility = sandbox
         // eslint-disable-next-line @typescript-eslint/dot-notation
@@ -107,7 +107,7 @@ describe("AbilitiesService", () => {
       )
     })
 
-    it("should emit newAbilities and notify UI to add only one new ability", async () => {
+    it("should emit newAbilities when only one ability is new", async () => {
       const slug = "new-test-daylight"
       const daylightAbilities = [
         createDaylightAbility(),
