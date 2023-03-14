@@ -546,6 +546,11 @@
     "customNetworksSettings": {
       "title": "Custom networks",
       "ariaLabel": "Open custom networks page",
+      "subtitleAdded": "Added chains",
+      "subtitleAddMore": "Add more chains",
+      "networksList": {
+        "typeCustom": "Custom network"
+      },
       "chainList": {
         "description": "Fastest and safest way of adding a custom network is by visiting <url></url>, connecting your wallet and adding the chains you wish to see.",
         "addBtn": "Add chains with Chainlist"
@@ -783,7 +788,7 @@
     },
     "analyticsNotification": {
       "title": "Analytics are enabled",
-      "description": "They help us improve the wallet.  You can disable anytime", 
+      "description": "They help us improve the wallet.  You can disable anytime",
       "settingsLink": "Change settings"
     }
   },

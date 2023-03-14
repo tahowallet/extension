@@ -250,6 +250,21 @@ export class ChainDatabase extends Dexie {
     await this.addRpcUrls(chainID, rpcUrls)
   }
 
+  async removeEVMNetwork(chainID: string): Promise<void> {
+    await this.transaction(
+      "rw",
+      this.networks,
+      this.baseAssets,
+      this.rpcUrls,
+      () =>
+        Promise.all([
+          this.networks.where({ chainID }).delete(),
+          this.baseAssets.where({ chainID }).delete(),
+          this.rpcUrls.where({ chainID }).delete(),
+        ])
+    )
+  }
+
   async getAllEVMNetworks(): Promise<EVMNetwork[]> {
     return this.networks.where("family").equals("EVM").toArray()
   }

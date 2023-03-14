@@ -3,7 +3,12 @@ import Emittery from "emittery"
 
 import { setNewSelectedAccount, UIState } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
-import { Keyring, SignerMetadata, WalletData } from "../services/keyring/index"
+import {
+  Keyring,
+  PrivateKey,
+  SignerMetadata,
+  SignerRawWithType,
+} from "../services/keyring/index"
 
 type KeyringToVerify = {
   id: string
@@ -11,8 +16,8 @@ type KeyringToVerify = {
 } | null
 
 export type KeyringsState = {
-  wallets: WalletData[]
   keyrings: Keyring[]
+  privateKeys: PrivateKey[]
   metadata: {
     [keyringId: string]: SignerMetadata
   }
@@ -23,7 +28,7 @@ export type KeyringsState = {
 
 export const initialState: KeyringsState = {
   keyrings: [],
-  wallets: [],
+  privateKeys: [],
   metadata: {},
   importing: false,
   status: "uninitialized",
@@ -35,26 +40,21 @@ export type Events = {
   lockKeyrings: never
   generateNewKeyring: string | undefined
   deriveAddress: string
-  importKeyring: ImportKeyring
-  importPrivateKey: string
 }
 
 export const emitter = new Emittery<Events>()
 
-interface ImportKeyring {
-  mnemonic: string
-  source: "internal" | "import"
-  path?: string
-}
+export const importSigner = createBackgroundAsyncThunk(
+  "keyrings/importSigner",
+  async (
+    signerRaw: SignerRawWithType,
+    { getState, dispatch, extra: { main } }
+  ) => {
+    const address = await main.importSigner(signerRaw)
 
-// Async thunk to bubble the importKeyring action from  store to emitter.
-export const importKeyring = createBackgroundAsyncThunk(
-  "keyrings/importKeyring",
-  async ({ mnemonic, source, path }: ImportKeyring, { getState, dispatch }) => {
-    await emitter.emit("importKeyring", { mnemonic, path, source })
+    if (!address) return
 
-    const { keyrings, ui } = getState() as {
-      keyrings: KeyringsState
+    const { ui } = getState() as {
       ui: UIState
     }
     // Set the selected account as the first address of the last added keyring,
@@ -63,26 +63,7 @@ export const importKeyring = createBackgroundAsyncThunk(
     // the end of the keyring list.
     dispatch(
       setNewSelectedAccount({
-        address: keyrings.keyrings.slice(-1)[0].addresses[0],
-        network: ui.selectedAccount.network,
-      })
-    )
-  }
-)
-
-export const importPrivateKey = createBackgroundAsyncThunk(
-  "keyrings/importPrivateKey",
-  async (privateKey: string, { getState, dispatch }) => {
-    await emitter.emit("importPrivateKey", privateKey)
-
-    const { keyrings, ui } = getState() as {
-      keyrings: KeyringsState
-      ui: UIState
-    }
-
-    dispatch(
-      setNewSelectedAccount({
-        address: keyrings.wallets.slice(-1)[0].addresses[0],
+        address,
         network: ui.selectedAccount.network,
       })
     )
@@ -98,10 +79,10 @@ const keyringsSlice = createSlice({
     updateKeyrings: (
       state,
       {
-        payload: { wallets, keyrings, metadata },
+        payload: { privateKeys, keyrings, metadata },
       }: {
         payload: {
-          wallets: WalletData[]
+          privateKeys: PrivateKey[]
           keyrings: Keyring[]
           metadata: { [keyringId: string]: SignerMetadata }
         }
@@ -117,8 +98,8 @@ const keyringsSlice = createSlice({
 
       return {
         ...state,
-        wallets,
         keyrings,
+        privateKeys,
         metadata,
       }
     },
@@ -129,17 +110,18 @@ const keyringsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(importKeyring.pending, (state) => {
-        return { ...state, importing: "pending" }
+      .addCase(importSigner.pending, (state) => {
+        return {
+          ...state,
+          importing: "pending",
+        }
       })
-      .addCase(importPrivateKey.pending, (state) => {
-        return { ...state, importing: "pending" }
-      })
-      .addCase(importKeyring.fulfilled, (state) => {
-        return { ...state, importing: "done", keyringToVerify: null }
-      })
-      .addCase(importPrivateKey.fulfilled, (state) => {
-        return { ...state, importing: "done" }
+      .addCase(importSigner.fulfilled, (state) => {
+        return {
+          ...state,
+          importing: "done",
+          keyringToVerify: null,
+        }
       })
   },
 })
