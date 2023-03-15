@@ -447,7 +447,8 @@ export default class IndexingService extends BaseService<Events> {
             ({ smartContract: { contractAddress } }) => contractAddress
           )
         )
-        const cachedAssets = this.cachedAssets[addressOnNetwork.network.chainID]
+        const cachedAssets =
+          this.cachedAssets[addressOnNetwork.network.chainID] ?? []
 
         const otherActiveAssets = cachedAssets
           .filter(isSmartContractFungibleAsset)
