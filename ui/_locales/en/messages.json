@@ -396,7 +396,6 @@
       "setAsDefault": "Set Taho as default wallet",
       "submit": "Begin the hunt"
     },
-    "supportedChains": "Supported Chains",
     "steps": {
       "create": "Create",
       "save": "Save",
