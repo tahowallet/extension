@@ -1,5 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit"
+import type { RootState } from "."
+import { ETHEREUM } from "../constants"
 import { EIP1559Block, AnyEVMBlock, EVMNetwork } from "../networks"
+import { selectCurrentNetwork } from "./selectors/uiSelectors"
+import { setSelectedNetwork } from "./ui"
+import { createBackgroundAsyncThunk } from "./utils"
 
 type NetworkState = {
   blockHeight: number | null
@@ -50,9 +55,22 @@ const networksSlice = createSlice({
           block?.baseFeePerGas ?? null
       }
     },
+    /**
+     * Receives all supported networks as the payload
+     */
     setEVMNetworks: (immerState, { payload }: { payload: EVMNetwork[] }) => {
+      const chainIds = payload.map((network) => network.chainID)
+
       payload.forEach((network) => {
         immerState.evmNetworks[network.chainID] = network
+      })
+
+      // Remove payload missing networks from state
+      Object.keys(immerState.evmNetworks).forEach((chainID) => {
+        if (!chainIds.includes(chainID)) {
+          delete immerState.evmNetworks[chainID]
+          delete immerState.blockInfo[chainID]
+        }
       })
     },
   },
@@ -61,3 +79,17 @@ const networksSlice = createSlice({
 export const { blockSeen, setEVMNetworks } = networksSlice.actions
 
 export default networksSlice.reducer
+
+export const removeCustomChain = createBackgroundAsyncThunk(
+  "networks/removeCustomChain",
+  async (chainID: string, { getState, dispatch, extra: { main } }) => {
+    const store = getState() as RootState
+    const currentNetwork = selectCurrentNetwork(store)
+
+    if (currentNetwork.chainID === chainID) {
+      await dispatch(setSelectedNetwork(ETHEREUM))
+    }
+
+    return main.removeEVMNetwork(chainID)
+  }
+)
