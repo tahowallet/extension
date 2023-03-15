@@ -36,44 +36,40 @@ export default function PriceDetails(props: PriceDetailsProps): ReactElement {
 
   return (
     <div className="simple_text content_wrap">
-      {!isLoading && (
+      {!isLoading && amountMainCurrency === undefined ? (
+        t("noAssetPrice")
+      ) : (
         <>
-          {amountMainCurrency === undefined ? (
-            t("noAssetPrice")
-          ) : (
-            <>
-              {amountMainCurrency === "0.00" && "<"}
-              {mainCurrencySign}
-              {amountMainCurrency || "0.00"}
-              {!!priceImpact && priceImpact > 1 && (
-                <span
-                  data-testid="price_impact_percent"
-                  className="price_impact_percent"
-                >
-                  ({formatPriceImpact(priceImpact)}%
-                  <SharedTooltip
-                    width={180}
-                    height={27}
-                    horizontalPosition="left"
-                    IconComponent={() => (
-                      <SharedIcon
-                        width={16}
-                        icon="icons/m/info.svg"
-                        color={`var(--${getPriceImpactColor(priceImpact)})`}
-                        customStyles="margin-left: -5px;"
-                      />
-                    )}
-                  >
-                    <div>
-                      {t("priceImpactTooltip.firstLine")}
-                      <br />
-                      {t("priceImpactTooltip.secondLine")}
-                    </div>
-                  </SharedTooltip>
-                  )
-                </span>
-              )}
-            </>
+          {amountMainCurrency === "0.00" && "<"}
+          {mainCurrencySign}
+          {amountMainCurrency || "0.00"}
+          {!isLoading && !!priceImpact && priceImpact > 1 && (
+            <span
+              data-testid="price_impact_percent"
+              className="price_impact_percent"
+            >
+              ({formatPriceImpact(priceImpact)}%
+              <SharedTooltip
+                width={180}
+                height={27}
+                horizontalPosition="left"
+                IconComponent={() => (
+                  <SharedIcon
+                    width={16}
+                    icon="icons/m/info.svg"
+                    color={`var(--${getPriceImpactColor(priceImpact)})`}
+                    customStyles="margin-left: -5px;"
+                  />
+                )}
+              >
+                <div>
+                  {t("priceImpactTooltip.firstLine")}
+                  <br />
+                  {t("priceImpactTooltip.secondLine")}
+                </div>
+              </SharedTooltip>
+              )
+            </span>
           )}
         </>
       )}

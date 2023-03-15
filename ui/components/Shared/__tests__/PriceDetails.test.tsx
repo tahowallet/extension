@@ -30,7 +30,7 @@ describe("PriceDetails", () => {
     expect(ui.getByText(`<${hardcodedMainCurrencySign}${amount}`)).toBeVisible()
   })
 
-  test("should not display price details when price is loading", () => {
+  test("should display 0.00 when price is loading", () => {
     const amount = "0.00"
     const ui = render(
       <PriceDetails
@@ -41,9 +41,7 @@ describe("PriceDetails", () => {
       />,
       {}
     )
-    expect(
-      ui.queryByText(`${hardcodedMainCurrencySign}${amount}`)
-    ).not.toBeInTheDocument()
+    expect(ui.getByText(`${hardcodedMainCurrencySign}${amount}`)).toBeVisible()
     expect(ui.queryByTestId("price_impact_percent")).not.toBeInTheDocument()
   })
 
