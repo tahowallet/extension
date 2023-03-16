@@ -757,6 +757,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
           .input_amount_wrap {
             display: flex;
             flex-direction: column;
+            align-items: end;
           }
           .input_amount::placeholder {
             color: var(--green-40);
