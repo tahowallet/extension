@@ -42,7 +42,11 @@ export async function getPrices(
   const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coinIds}&include_last_updated_at=true&vs_currencies=${currencySymbols}`
 
   try {
-    const json = await fetchJson(url)
+    const json = await fetchJson({
+      url,
+      // Prevent throttling
+      throttleCallback: async () => false,
+    })
     // TODO fix loss of precision from json
     // TODO: TESTME
 
@@ -118,7 +122,11 @@ export async function getTokenPrices(
   const url = `${COINGECKO_API_ROOT}/simple/token_price/${network.coingeckoPlatformID}?vs_currencies=${fiatSymbol}&include_last_updated_at=true&contract_addresses=${addys}`
 
   try {
-    const json = await fetchJson(url)
+    const json = await fetchJson({
+      url,
+      // Prevent throttling
+      throttleCallback: async () => false,
+    })
 
     // TODO Improve typing with Ajv validation.
     Object.entries(
