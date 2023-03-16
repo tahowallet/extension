@@ -356,7 +356,8 @@
           "title": "Import private key",
           "subtitle": "Importing a private key does not associate it to any secret recovery phrase, but it’s still protected by the same password",
           "inputLabel": "Paste private key string",
-          "submit": "Import account"
+          "submit": "Import account",
+          "error": "Invalid private key"
         },
         "viewOnly": {
           "title": "Read-only address",
