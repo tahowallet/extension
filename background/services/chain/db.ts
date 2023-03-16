@@ -256,12 +256,21 @@ export class ChainDatabase extends Dexie {
       this.networks,
       this.baseAssets,
       this.rpcUrls,
-      () =>
-        Promise.all([
+      this.accountsToTrack,
+      async () => {
+        await Promise.all([
           this.networks.where({ chainID }).delete(),
           this.baseAssets.where({ chainID }).delete(),
           this.rpcUrls.where({ chainID }).delete(),
         ])
+
+        // @TODO - Deleting accounts inside the Promise.all does not seem
+        // to work, figure out why this is happening and parallelize if possible.
+        const accountsToTrack = await this.accountsToTrack
+          .toCollection()
+          .filter((account) => account.network.chainID === chainID)
+        return accountsToTrack.delete()
+      }
     )
   }
 
