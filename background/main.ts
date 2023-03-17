@@ -145,7 +145,7 @@ import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
-import { isSmartContractFungibleAsset } from "./assets"
+import { isSmartContractFungibleAsset, SmartContractAsset } from "./assets"
 import { FeatureFlags, isEnabled } from "./features"
 import { NFTCollection } from "./nfts"
 import {
@@ -975,7 +975,33 @@ export default class Main extends BaseService<never> {
 
         const filteredBalancesToDispatch: AccountBalance[] = []
 
-        balances.forEach((balance) => {
+        const sortedBalances: AccountBalance[] = []
+
+        balances
+          .filter((balance) => {
+            const isSmartContract =
+              "contractAddress" in balance.assetAmount.asset
+
+            if (!isSmartContract) {
+              sortedBalances.push(balance)
+            }
+
+            return isSmartContract
+          })
+          // Sort trusted last to prevent shadowing assets from token lists
+          // FIXME: Balances should not be indexed by symbol in redux
+          .sort((balance, otherBalance) => {
+            const asset = balance.assetAmount.asset as SmartContractAsset
+            const other = otherBalance.assetAmount.asset as SmartContractAsset
+
+            return (
+              (other.metadata?.tokenLists?.length ?? 0) -
+              (asset.metadata?.tokenLists?.length ?? 0)
+            )
+          })
+          .forEach((balance) => sortedBalances.unshift(balance))
+
+        sortedBalances.forEach((balance) => {
           // TODO support multi-network assets
           const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
             (tracked) =>
@@ -1675,6 +1701,10 @@ export default class Main extends BaseService<never> {
       abilityId,
       reason
     )
+  }
+
+  async removeEVMNetwork(chainID: string): Promise<void> {
+    return this.chainService.removeCustomChain(chainID)
   }
 
   private connectPopupMonitor() {

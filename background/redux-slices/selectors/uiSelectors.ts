@@ -1,5 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
-import { RootState } from ".."
+import type { RootState } from ".."
 import {
   hardcodedMainCurrencySign,
   hardcodedMainCurrencySymbol,
