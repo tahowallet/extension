@@ -54,6 +54,7 @@ export type SignerMetadata = {
 
 export enum SignerTypes {
   privateKey = "privateKey",
+  jsonFile = "jsonFile",
   keyring = "keyring",
 }
 
@@ -70,7 +71,15 @@ type SignerRawHDKeyring = {
   path?: string
 }
 type SignerRawPrivateKey = { type: SignerTypes.privateKey; privateKey: string }
-export type SignerRawWithType = SignerRawPrivateKey | SignerRawHDKeyring
+type SignerRawJSONPrivateKey = {
+  type: SignerTypes.jsonFile
+  jsonFile: string
+  password: string
+}
+export type SignerRawWithType =
+  | SignerRawPrivateKey
+  | SignerRawHDKeyring
+  | SignerRawJSONPrivateKey
 
 type SignerHDKeyring = { type: SignerTypes.keyring; signer: HDKeyring }
 type SignerPrivateKey = { type: SignerTypes.privateKey; signer: Wallet }
@@ -101,6 +110,10 @@ interface Events extends ServiceLifecycleEvents {
 const isRawPrivateKey = (
   signer: SignerRawWithType
 ): signer is SignerRawPrivateKey => signer.type === SignerTypes.privateKey
+
+const isRawJsonPrivateKey = (
+  signer: SignerRawWithType
+): signer is SignerRawJSONPrivateKey => signer.type === SignerTypes.jsonFile
 
 const isPrivateKey = (signer: SignerWithType): signer is SignerPrivateKey =>
   signer.type === SignerTypes.privateKey
@@ -387,6 +400,8 @@ export default class KeyringService extends BaseService<Events> {
 
     if (isRawPrivateKey(signerRaw)) {
       address = await this.#importWallet(signerRaw)
+    } else if (isRawJsonPrivateKey(signerRaw)) {
+      address = await this.#importJSON(signerRaw)
     } else {
       address = await this.#importKeyring(signerRaw)
     }
@@ -430,6 +445,17 @@ export default class KeyringService extends BaseService<Events> {
     const newWallet = new Wallet(privateKey)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
     // TODO: check if this wallet already exists
+    this.#privateKeys.push(newWallet)
+    this.#signerMetadata[normalizedAddress] = { source: "import" }
+    return normalizedAddress
+  }
+
+  async #importJSON(
+    signerRaw: SignerRawJSONPrivateKey
+  ): Promise<string | null> {
+    const { jsonFile, password } = signerRaw
+    const newWallet = await Wallet.fromEncryptedJson(jsonFile, password)
+    const normalizedAddress = normalizeEVMAddress(newWallet.address)
     this.#privateKeys.push(newWallet)
     this.#signerMetadata[normalizedAddress] = { source: "import" }
     return normalizedAddress
