@@ -11,7 +11,7 @@ describe("NFTItem", () => {
   test("should render a component", () => {
     const nft = createNFT()
     const ui = render(<NFTItem item={nft} onClick={onClick} />)
-    const item = ui.getByTestId("nft_list_item_single")
+    const item = ui.container.getElementsByClassName("nft_item")[0]
 
     expect(item).toBeInTheDocument()
   })
@@ -56,7 +56,7 @@ describe("NFTItem", () => {
     const iconUrl = "ethereum-square@2x.png"
     const nft = createNFT()
     const ui = render(<NFTItem item={nft} onClick={onClick} />)
-    const icon = ui.getByTestId("icon_network")
+    const icon = ui.container.getElementsByClassName("icon_network")[0]
 
     expect(icon).toBeInTheDocument()
     expect(icon).toHaveStyle(`background: url(./images/networks/${iconUrl})`)
@@ -66,7 +66,7 @@ describe("NFTItem", () => {
     const thumbnailURL = "thumbnailURL.svg"
     const nft = createNFT({ thumbnailURL })
     const ui = render(<NFTItem item={nft} onClick={onClick} />)
-    const item = ui.getByTestId("nft_image")
+    const item = ui.container.getElementsByClassName("nft_image")[0] as Element
 
     expect(ui.getByRole("img")).toHaveStyle("transform: scale(1)")
     await userEvent.hover(item)
@@ -78,16 +78,16 @@ describe("NFTItem", () => {
   test("should not display a floor price if the price is not available for the collection", () => {
     const nft = createNFTCollection()
     const ui = render(<NFTItem item={nft} onClick={onClick} />)
-    const price = ui.queryByTestId("nft_item_price")
+    const price = ui.container.getElementsByClassName("nft_item_price")[0]
 
-    expect(price).not.toBeInTheDocument()
+    expect(price).toBeUndefined()
   })
 
   test("should display a floor price if the price is available for the collection", () => {
     const floorPrice = { value: 0.003, tokenSymbol: "ETH" }
     const nft = createNFTCollection({ floorPrice })
     const ui = render(<NFTItem item={nft} onClick={onClick} />)
-    const price = ui.queryByTestId("nft_item_price")
+    const price = ui.container.getElementsByClassName("nft_item_price")[0]
 
     expect(price).toBeInTheDocument()
     expect(price).toHaveTextContent(

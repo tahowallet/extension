@@ -36,7 +36,6 @@ export default function NFTItem<
     >
       <div
         className="nft_image"
-        data-testid="nft_image"
         onMouseEnter={() => setHasHover(true)}
         onMouseLeave={() => setHasHover(false)}
       >
@@ -58,7 +57,7 @@ export default function NFTItem<
             squared
           />
           {!!floorPrice && (
-            <div className="nft_item_price" data-testid="nft_item_price">
+            <div className="nft_item_price">
               ~{`${floorPrice.value} ${floorPrice.tokenSymbol}`}
             </div>
           )}
