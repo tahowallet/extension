@@ -1,11 +1,12 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
-import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
+import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { SignerTypes } from "@tallyho/tally-background/services/keyring"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import OnboardingDerivationPathSelect from "../../components/Onboarding/OnboardingDerivationPathSelect"
@@ -145,7 +146,8 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
     } else if (isValidMnemonic(plainRecoveryPhrase)) {
       setIsImporting(true)
       dispatch(
-        importKeyring({
+        importSigner({
+          type: SignerTypes.keyring,
           mnemonic: plainRecoveryPhrase,
           path,
           source: "import",

@@ -1,8 +1,9 @@
 import React, { ReactElement } from "react"
 import { useHistory } from "react-router-dom"
-import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
+import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { SignerTypes } from "@tallyho/tally-background/services/keyring"
 import SharedButton from "../../../components/Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
 import { OnboardingBox, OnboardingMessageHeader } from "../styles"
@@ -40,7 +41,8 @@ function VerifySeedSuccess({
         type="primary"
         onClick={async () => {
           await dispatch(
-            importKeyring({
+            importSigner({
+              type: SignerTypes.keyring,
               mnemonic: mnemonic.join(" "),
               source: "internal",
               path: selectedNetwork.derivationPath ?? "m/44'/60'/0'/0",

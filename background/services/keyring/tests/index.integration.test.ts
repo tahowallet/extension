@@ -5,6 +5,7 @@ import KeyringService, {
   Keyring,
   MAX_KEYRING_IDLE_TIME,
   MAX_OUTSIDE_IDLE_TIME,
+  SignerTypes,
 } from ".."
 import { KeyringTypes } from "../../../types"
 import { ETHEREUM } from "../../../constants"
@@ -85,7 +86,11 @@ describe("Keyring Service when uninitialized", () => {
   describe("and locked", () => {
     it("won't import or create accounts", async () => {
       await expect(
-        service.importKeyring(validMnemonics.metamask[0], "import")
+        service.importSigner({
+          type: SignerTypes.keyring,
+          mnemonic: validMnemonics.metamask[0],
+          source: "import",
+        })
       ).rejects.toThrow("KeyringService must be unlocked.")
 
       await Promise.all(
@@ -96,9 +101,12 @@ describe("Keyring Service when uninitialized", () => {
         )
       )
 
-      await expect(service.importWallet(validPrivateKey[0])).rejects.toThrow(
-        "KeyringService must be unlocked."
-      )
+      await expect(
+        service.importSigner({
+          type: SignerTypes.privateKey,
+          privateKey: validPrivateKey[0],
+        })
+      ).rejects.toThrow("KeyringService must be unlocked.")
     })
 
     it("won't sign transactions", async () => {
@@ -119,7 +127,13 @@ describe("Keyring Service when uninitialized", () => {
     it.each(validMnemonics.metamask)(
       "will import mnemonic '%s'",
       async (mnemonic) => {
-        return expect(service.importKeyring(mnemonic, "import")).resolves
+        return expect(
+          service.importSigner({
+            type: SignerTypes.keyring,
+            mnemonic,
+            source: "import",
+          })
+        ).resolves
       }
     )
 
@@ -165,7 +179,12 @@ describe("Keyring Service when initialized", () => {
     const { mnemonic } = await service.generateNewKeyring(
       KeyringTypes.mnemonicBIP39S256
     )
-    await service.importKeyring(mnemonic.join(" "), "import")
+    await service.importSigner({
+      type: SignerTypes.keyring,
+
+      mnemonic: mnemonic.join(" "),
+      source: "import",
+    })
   })
 
   it("will return keyring IDs and addresses", async () => {
@@ -268,7 +287,12 @@ describe("Keyring Service when saving keyrings", () => {
     const { mnemonic } = await service.generateNewKeyring(
       KeyringTypes.mnemonicBIP39S256
     )
-    await service.importKeyring(mnemonic.join(" "), "import")
+    await service.importSigner({
+      type: SignerTypes.keyring,
+
+      mnemonic: mnemonic.join(" "),
+      source: "import",
+    })
 
     expect(localStorageCalls.shift()).toMatchObject({
       tallyVaults: expect.objectContaining({
@@ -368,7 +392,12 @@ describe("Keyring service when autolocking", () => {
     const { mnemonic } = await service.generateNewKeyring(
       KeyringTypes.mnemonicBIP39S256
     )
-    await service.importKeyring(mnemonic.join(" "), "import")
+    await service.importSigner({
+      type: SignerTypes.keyring,
+
+      mnemonic: mnemonic.join(" "),
+      source: "import",
+    })
   })
 
   it("will autolock after the keyring idle time but not sooner", async () => {
@@ -406,7 +435,11 @@ describe("Keyring service when autolocking", () => {
     {
       action: "importing a keyring",
       call: async () => {
-        await service.importKeyring(validMnemonics.metamask[0], "import")
+        await service.importSigner({
+          type: SignerTypes.keyring,
+          mnemonic: validMnemonics.metamask[0],
+          source: "import",
+        })
       },
     },
     {

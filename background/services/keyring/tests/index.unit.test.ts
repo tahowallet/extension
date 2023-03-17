@@ -1,5 +1,5 @@
 import { webcrypto } from "crypto"
-import KeyringService from ".."
+import KeyringService, { SignerTypes } from ".."
 import { ETHEREUM } from "../../../constants"
 import {
   createKeyringService,
@@ -50,7 +50,11 @@ describe("Keyring Service", () => {
       expect(keyring.id).toBeDefined()
       expect(keyring.mnemonic.length).toBe(24)
 
-      await keyringService.importKeyring(keyring.mnemonic.join(" "), "internal")
+      await keyringService.importSigner({
+        type: SignerTypes.keyring,
+        mnemonic: keyring.mnemonic.join(" "),
+        source: "internal",
+      })
 
       const keyrings = keyringService.getKeyrings()
       expect(keyrings.length).toBe(1)
@@ -63,7 +67,11 @@ describe("Keyring Service", () => {
 
   describe("imported HD wallet", () => {
     beforeEach(async () => {
-      await keyringService.importKeyring(HD_WALLET_MOCK.mnemonic, "import")
+      await keyringService.importSigner({
+        type: SignerTypes.keyring,
+        mnemonic: HD_WALLET_MOCK.mnemonic,
+        source: "import",
+      })
     })
     it("should add HD wallet to keyrings", () => {
       const keyrings = keyringService.getKeyrings()
@@ -117,7 +125,11 @@ describe("Keyring Service", () => {
     })
     it("should be able to remove HD wallet and add it again", async () => {
       await keyringService.hideAccount(HD_WALLET_MOCK.addresses[0])
-      await keyringService.importKeyring(HD_WALLET_MOCK.mnemonic, "import")
+      await keyringService.importSigner({
+        type: SignerTypes.keyring,
+        mnemonic: HD_WALLET_MOCK.mnemonic,
+        source: "import",
+      })
       const keyrings = keyringService.getKeyrings()
 
       expect(keyrings.length).toBe(1)
@@ -160,10 +172,13 @@ describe("Keyring Service", () => {
 
   describe("wallet imported with private key", () => {
     beforeEach(async () => {
-      await keyringService.importWallet(PK_WALLET_MOCK.privateKey)
+      await keyringService.importSigner({
+        type: SignerTypes.privateKey,
+        privateKey: PK_WALLET_MOCK.privateKey,
+      })
     })
     it("should add pk wallet to wallets", () => {
-      const wallets = keyringService.getWallets()
+      const wallets = keyringService.getPrivateKeys()
       expect(wallets.length).toBe(1)
     })
     it("should classify pk wallet as imported", async () => {
@@ -173,10 +188,13 @@ describe("Keyring Service", () => {
     })
     it("should be able to remove pk wallet and add it again", async () => {
       await keyringService.hideAccount(PK_WALLET_MOCK.address)
-      expect(keyringService.getWallets().length).toBe(0)
+      expect(keyringService.getPrivateKeys().length).toBe(0)
 
-      await keyringService.importWallet(PK_WALLET_MOCK.privateKey)
-      expect(keyringService.getWallets().length).toBe(1)
+      await keyringService.importSigner({
+        type: SignerTypes.privateKey,
+        privateKey: PK_WALLET_MOCK.privateKey,
+      })
+      expect(keyringService.getPrivateKeys().length).toBe(1)
     })
     it("should be able to sign transaction", async () => {
       const { address } = PK_WALLET_MOCK

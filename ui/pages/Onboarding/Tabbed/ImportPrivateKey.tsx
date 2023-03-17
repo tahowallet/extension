@@ -1,4 +1,6 @@
-import { importPrivateKey } from "@tallyho/tally-background/redux-slices/keyrings"
+import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
+import { SignerTypes } from "@tallyho/tally-background/services/keyring"
+import { isHexString } from "ethers/lib/utils"
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useDispatch } from "react-redux"
@@ -13,6 +15,20 @@ type Props = {
   nextPage: string
 }
 
+function validatePrivateKey(privateKey = ""): boolean {
+  try {
+    const paddedKey = privateKey.startsWith("0x")
+      ? privateKey
+      : `0x${privateKey}`
+    // valid pk has 32 bytes -> 64 hex characters
+    return (
+      isHexString(paddedKey) && BigInt(paddedKey).toString(16).length === 64
+    )
+  } catch (e) {
+    return false
+  }
+}
+
 export default function ImportPrivateKey(props: Props): ReactElement {
   const { nextPage } = props
 
@@ -25,16 +41,26 @@ export default function ImportPrivateKey(props: Props): ReactElement {
 
   const [privateKey, setPrivateKey] = useState("")
   const [isImporting, setIsImporting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
 
   const { t } = useTranslation("translation", {
     keyPrefix: "onboarding.tabbed.addWallet.importPrivateKey",
   })
 
   const importWallet = useCallback(async () => {
-    // TODO: validate key
-    setIsImporting(true)
-    dispatch(importPrivateKey(privateKey))
-  }, [dispatch, privateKey])
+    const trimmedPrivateKey = privateKey.toLowerCase().trim()
+    if (validatePrivateKey(trimmedPrivateKey)) {
+      setIsImporting(true)
+      dispatch(
+        importSigner({
+          type: SignerTypes.privateKey,
+          privateKey: trimmedPrivateKey,
+        })
+      )
+    } else {
+      setErrorMessage(t("error"))
+    }
+  }, [dispatch, privateKey, t])
 
   useEffect(() => {
     if (areKeyringsUnlocked && keyringImport === "done" && isImporting) {
@@ -64,6 +90,7 @@ export default function ImportPrivateKey(props: Props): ReactElement {
           <SharedSeedInput
             onChange={(pk) => setPrivateKey(pk)}
             label={t("inputLabel")}
+            errorMessage={errorMessage}
           />
           <SharedButton
             style={{ width: "100%", maxWidth: "300px", marginTop: "25px" }}

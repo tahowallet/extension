@@ -1,4 +1,4 @@
-import { WalletData } from "../../services/keyring"
+import { PrivateKey } from "../../services/keyring"
 
 type OldState = {
   keyrings: {
@@ -18,7 +18,7 @@ type NewState = {
         source: "import" | "internal"
       }
     }
-    wallets: WalletData[]
+    privateKeys: PrivateKey[]
     [sliceKey: string]: unknown
   }
 }
@@ -34,7 +34,7 @@ export default (prevState: Record<string, unknown>): NewState => {
     keyrings: {
       ...keyringsState,
       metadata: keyringMetadata,
-      wallets: [],
+      privateKeys: [],
     },
   }
 }
