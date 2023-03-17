@@ -47,7 +47,7 @@ export default function SharedNetworkIcon(props: {
     <div className="icon_network_wrapper">
       {hasBackground && <div className="icon_network_background" />}
       {hasIconAvailable ? (
-        <div className="icon_network" />
+        <div className="icon_network" data-testid="icon_network" />
       ) : (
         <div className="icon_fallback">
           {network.name[0].toUpperCase() ?? network.chainID}
