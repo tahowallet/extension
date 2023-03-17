@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from "react"
-import { createPassword } from "@tallyho/tally-background/redux-slices/keyrings"
+import {
+  createPassword,
+  unlockKeyrings,
+} from "@tallyho/tally-background/redux-slices/keyrings"
 import { Redirect, useHistory, useLocation } from "react-router-dom"
 import { Trans, useTranslation } from "react-i18next"
-import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../../hooks"
+import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  useBackgroundDispatch,
+  useAreKeyringsUnlocked,
+  useBackgroundSelector,
+  useIsOnboarding,
+} from "../../../hooks"
 import SharedButton from "../../../components/Shared/SharedButton"
 import PasswordStrengthBar from "../../../components/Password/PasswordStrengthBar"
 import PasswordInput from "../../../components/Shared/PasswordInput"
@@ -56,10 +65,89 @@ export default function SetPassword(): JSX.Element {
     }
   }
 
+  const keyringStatus = useBackgroundSelector(selectKeyringStatus)
+  const isOnboarding = useIsOnboarding()
+
   if (!nextPage) {
     return <Redirect to={OnboardingRoutes.ONBOARDING_START} />
   }
 
+  // Unlock Wallet
+  if (!isOnboarding && keyringStatus === "locked") {
+    const handleAttemptUnlock: React.FormEventHandler<HTMLFormElement> = async (
+      event
+    ) => {
+      const { currentTarget: form } = event
+      event.preventDefault()
+
+      const input = form.elements.namedItem("password") as HTMLInputElement
+
+      const { success } = await dispatch(unlockKeyrings(input.value))
+
+      if (success) {
+        history.replace(nextPage)
+      } else {
+        setPasswordErrorMessage(t("keyring.unlock.error.incorrect"))
+      }
+    }
+
+    return (
+      <section className="fadeIn">
+        <header className="center_text">
+          <img
+            alt={t("onboarding.tabbed.unlockWallet.title")}
+            width="183"
+            src="./images/illustration_unlock@2x.png"
+          />
+          <style jsx>
+            {`
+              header {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                margin-bottom: 32px;
+              }
+
+              header h1 {
+                font-family: "Quincy CF";
+                font-weight: 500;
+                font-size: 36px;
+                line-height: 42px;
+                margin: 0em;
+              }
+
+              img {
+                margin: 0 auto 24px;
+              }
+            `}
+          </style>
+          <h1>{t("onboarding.tabbed.unlockWallet.title")}</h1>
+        </header>
+        <form onSubmit={handleAttemptUnlock}>
+          <PasswordInput
+            label={t("onboarding.tabbed.unlockWallet.passwordInput")}
+            name="password"
+            errorMessage={passwordErrorMessage}
+          />
+          <SharedButton type="primary" size="medium" isFormSubmit>
+            {t("onboarding.tabbed.unlockWallet.submit")}
+          </SharedButton>
+          <style jsx>{`
+            form {
+              max-width: 290px;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              margin: 0 auto;
+              gap: 40px;
+            }
+          `}</style>
+        </form>
+      </section>
+    )
+  }
+
+  // Set new password
   return (
     <section className="fadeIn">
       <header>

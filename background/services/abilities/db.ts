@@ -1,6 +1,5 @@
 import Dexie from "dexie"
 import { Ability } from "../../abilities"
-import { FeatureFlags, isEnabled } from "../../features"
 import { HexString, NormalizedEVMAddress } from "../../types"
 
 export class AbilitiesDatabase extends Dexie {
@@ -9,12 +8,9 @@ export class AbilitiesDatabase extends Dexie {
   constructor() {
     super("tally/abilities")
 
-    // Don't create tables in the public release until the feature flag is off
-    if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
-      this.version(1).stores({
-        abilities: "++id, &[abilityId+address], removedFromUi, completed",
-      })
-    }
+    this.version(1).stores({
+      abilities: "++id, &[abilityId+address], removedFromUi, completed",
+    })
   }
 
   async addNewAbility(ability: Ability): Promise<boolean> {
@@ -31,9 +27,12 @@ export class AbilitiesDatabase extends Dexie {
       id: number
     }
     if (JSON.stringify(correctAbility) !== JSON.stringify(ability)) {
+      const updateCompleted =
+        ability.completed === true && existingAbility.completed === false
+
       await this.abilities.update(existingAbility, {
         ...ability,
-        completed: existingAbility.completed,
+        completed: updateCompleted ? true : existingAbility.completed,
         removedFromUi: existingAbility.removedFromUi,
       })
       return true

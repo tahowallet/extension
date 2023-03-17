@@ -9,7 +9,7 @@ export { expect } from "@playwright/test"
 export class WalletPageHelper {
   readonly url: string
 
-  constructor(public readonly page: Page, extensionId: string) {
+  constructor(public readonly page: Page, public readonly extensionId: string) {
     this.url = `chrome-extension://${extensionId}/popup.html`
   }
 
@@ -67,6 +67,10 @@ export const test = base.extend<WalletTestFixtures>({
     // for manifest v2:
     let [background] = context.backgroundPages()
     if (!background) background = await context.waitForEvent("backgroundpage")
+
+    await background.route(/app\.posthog\.com/i, async (route) =>
+      route.fulfill({ json: { status: 1 } })
+    )
 
     await background.waitForResponse(/api\.coingecko\.com/i)
 

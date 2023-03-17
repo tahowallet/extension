@@ -145,7 +145,7 @@ import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
-import { isSmartContractFungibleAsset } from "./assets"
+import { isSmartContractFungibleAsset, SmartContractAsset } from "./assets"
 import { FeatureFlags, isEnabled } from "./features"
 import { NFTCollection } from "./nfts"
 import {
@@ -626,10 +626,7 @@ export default class Main extends BaseService<never> {
       await this.nftsService.removeNFTsForAddress(address)
     }
     // remove abilities
-    if (
-      isEnabled(FeatureFlags.SUPPORT_ABILITIES) &&
-      signer.type !== AccountType.ReadOnly
-    ) {
+    if (signer.type !== AccountType.ReadOnly) {
       await this.abilitiesService.deleteAbilitiesForAccount(address)
     }
     // remove dApp premissions
@@ -657,6 +654,8 @@ export default class Main extends BaseService<never> {
               network,
             }
             await this.chainService.addAccountToTrack(addressNetwork)
+            this.abilitiesService.getNewAccountAbilities(address)
+
             this.store.dispatch(loadAccount(addressNetwork))
           })
         )
@@ -933,6 +932,7 @@ export default class Main extends BaseService<never> {
     })
 
     uiSliceEmitter.on("userActivityEncountered", (addressOnNetwork) => {
+      this.abilitiesService.refreshAbilities()
       this.chainService.markAccountActivity(addressOnNetwork)
     })
   }
@@ -975,7 +975,33 @@ export default class Main extends BaseService<never> {
 
         const filteredBalancesToDispatch: AccountBalance[] = []
 
-        balances.forEach((balance) => {
+        const sortedBalances: AccountBalance[] = []
+
+        balances
+          .filter((balance) => {
+            const isSmartContract =
+              "contractAddress" in balance.assetAmount.asset
+
+            if (!isSmartContract) {
+              sortedBalances.push(balance)
+            }
+
+            return isSmartContract
+          })
+          // Sort trusted last to prevent shadowing assets from token lists
+          // FIXME: Balances should not be indexed by symbol in redux
+          .sort((balance, otherBalance) => {
+            const asset = balance.assetAmount.asset as SmartContractAsset
+            const other = otherBalance.assetAmount.asset as SmartContractAsset
+
+            return (
+              (other.metadata?.tokenLists?.length ?? 0) -
+              (asset.metadata?.tokenLists?.length ?? 0)
+            )
+          })
+          .forEach((balance) => sortedBalances.unshift(balance))
+
+        sortedBalances.forEach((balance) => {
           // TODO support multi-network assets
           const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
             (tracked) =>
@@ -1083,6 +1109,7 @@ export default class Main extends BaseService<never> {
           address,
           network,
         })
+        this.abilitiesService.getNewAccountAbilities(address)
       })
     })
 
@@ -1096,10 +1123,6 @@ export default class Main extends BaseService<never> {
 
     keyringSliceEmitter.on("createPassword", async (password) => {
       await this.keyringService.unlock(password, true)
-    })
-
-    keyringSliceEmitter.on("unlockKeyrings", async (password) => {
-      await this.keyringService.unlock(password)
     })
 
     keyringSliceEmitter.on("lockKeyrings", async () => {
@@ -1567,13 +1590,15 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateAbility(ability))
     })
     this.abilitiesService.emitter.on("newAccount", (address) => {
-      if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
-        this.store.dispatch(addAccountFilter(address))
-      }
+      this.store.dispatch(addAccountFilter(address))
     })
     this.abilitiesService.emitter.on("deleteAccount", (address) => {
       this.store.dispatch(deleteAccountFilter(address))
     })
+  }
+
+  async unlockKeyrings(password: string): Promise<boolean> {
+    return this.keyringService.unlock(password)
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
@@ -1676,6 +1701,10 @@ export default class Main extends BaseService<never> {
       abilityId,
       reason
     )
+  }
+
+  async removeEVMNetwork(chainID: string): Promise<void> {
+    return this.chainService.removeCustomChain(chainID)
   }
 
   private connectPopupMonitor() {
