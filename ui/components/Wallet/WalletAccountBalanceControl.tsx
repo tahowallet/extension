@@ -215,7 +215,7 @@ export default function WalletAccountBalanceControl(
             margin-bottom: 20px;
           }
           .balance_label {
-            width: 160px;
+            width: 165px;
             height: 24px;
             color: var(--green-40);
             font-size: 16px;

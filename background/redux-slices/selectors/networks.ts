@@ -1,6 +1,9 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-import { TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
+import {
+  DEFAULT_NETWORKS_BY_CHAIN_ID,
+  TEST_NETWORK_BY_CHAIN_ID,
+} from "../../constants"
 import { EVMNetwork } from "../../networks"
 
 // Adds chainID to each NFT for convenience in frontend
@@ -17,5 +20,13 @@ export const selectProductionEVMNetworks = createSelector(
   (evmNetworks) =>
     evmNetworks.filter(
       (network) => !TEST_NETWORK_BY_CHAIN_ID.has(network.chainID)
+    )
+)
+
+export const selectCustomNetworks = createSelector(
+  selectEVMNetworks,
+  (evmNetworks) =>
+    evmNetworks.filter(
+      (network) => !DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
     )
 )

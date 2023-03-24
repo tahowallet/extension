@@ -179,7 +179,7 @@ export default class IndexingService extends BaseService<Events> {
       // Push any assets we have cached in the db for all active networks
       trackedNetworks.forEach(async (network) => {
         await this.cacheAssetsForNetwork(network)
-        this.emitter.emit("assets", this.cachedAssets[network.chainID])
+        this.emitter.emit("assets", this.getCachedAssets(network))
       })
 
       // Load balances after token lists load
@@ -271,7 +271,7 @@ export default class IndexingService extends BaseService<Events> {
     network: EVMNetwork,
     contractAddress: HexString
   ): SmartContractFungibleAsset | undefined {
-    const knownAssets = this.cachedAssets[network.chainID]
+    const knownAssets = this.getCachedAssets(network)
 
     const searchResult = knownAssets.find(
       (asset): asset is SmartContractFungibleAsset =>
@@ -447,7 +447,7 @@ export default class IndexingService extends BaseService<Events> {
             ({ smartContract: { contractAddress } }) => contractAddress
           )
         )
-        const cachedAssets = this.cachedAssets[addressOnNetwork.network.chainID]
+        const cachedAssets = this.getCachedAssets(addressOnNetwork.network)
 
         const otherActiveAssets = cachedAssets
           .filter(isSmartContractFungibleAsset)
@@ -796,7 +796,7 @@ export default class IndexingService extends BaseService<Events> {
     // may be inactive.
     this.chainService.supportedNetworks.forEach(async (network) => {
       await this.cacheAssetsForNetwork(network)
-      this.emitter.emit("assets", this.cachedAssets[network.chainID])
+      this.emitter.emit("assets", this.getCachedAssets(network))
     })
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if

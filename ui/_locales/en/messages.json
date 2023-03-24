@@ -53,7 +53,11 @@
       "firstLine": "Price impact between assets is high.",
       "secondLine": "This is due to low liquidity of the swap pair."
     },
-    "noAssetPrice": "No price information"
+    "noAssetPrice": "No price information",
+    "noAssetPriceTooltip": {
+      "firstLine": "We're not able to receive prices for these assets now.",
+      "secondLine": "Continuing without price information might lead to a loss in value."
+    }
   },
   "comingSoon": "Coming soon",
   "dappConnection": {
@@ -396,7 +400,6 @@
       "setAsDefault": "Set Taho as default wallet",
       "submit": "Begin the hunt"
     },
-    "supportedChains": "Supported Chains",
     "steps": {
       "create": "Create",
       "save": "Save",
@@ -538,6 +541,11 @@
     "customNetworksSettings": {
       "title": "Custom networks",
       "ariaLabel": "Open custom networks page",
+      "subtitleAdded": "Added chains",
+      "subtitleAddMore": "Add more chains",
+      "networksList": {
+        "typeCustom": "Custom network"
+      },
       "chainList": {
         "description": "Fastest and safest way of adding a custom network is by visiting <url></url>, connecting your wallet and adding the chains you wish to see.",
         "addBtn": "Add chains with Chainlist"
@@ -775,7 +783,7 @@
     },
     "analyticsNotification": {
       "title": "Analytics are enabled",
-      "description": "They help us improve the wallet.  You can disable anytime", 
+      "description": "They help us improve the wallet.  You can disable anytime",
       "settingsLink": "Change settings"
     }
   },
