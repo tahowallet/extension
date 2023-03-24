@@ -75,6 +75,7 @@ import {
   setAccountsSignerSettings,
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
+  setSelectedNetwork,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -767,6 +768,10 @@ export default class Main extends BaseService<never> {
 
     this.chainService.emitter.on("supportedNetworks", (supportedNetworks) => {
       this.store.dispatch(setEVMNetworks(supportedNetworks))
+    })
+
+    this.chainService.emitter.on("selectedNetwork", (network) => {
+      this.store.dispatch(setSelectedNetwork(network))
     })
 
     this.chainService.emitter.on("block", (block) => {
