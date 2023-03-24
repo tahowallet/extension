@@ -103,6 +103,10 @@ export function isBuiltInNetwork(network: EVMNetwork): boolean {
   )
 }
 
+export const DEFAULT_NETWORKS_BY_CHAIN_ID = new Set(
+  DEFAULT_NETWORKS.map((network) => network.chainID)
+)
+
 export const FORK: EVMNetwork = {
   name: "Ethereum",
   baseAsset: ETH,

@@ -1125,10 +1125,6 @@ export default class Main extends BaseService<never> {
       await this.keyringService.unlock(password, true)
     })
 
-    keyringSliceEmitter.on("unlockKeyrings", async (password) => {
-      await this.keyringService.unlock(password)
-    })
-
     keyringSliceEmitter.on("lockKeyrings", async () => {
       await this.keyringService.lock()
     })
@@ -1601,6 +1597,10 @@ export default class Main extends BaseService<never> {
     })
   }
 
+  async unlockKeyrings(password: string): Promise<boolean> {
+    return this.keyringService.unlock(password)
+  }
+
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
     const addressNetwork = this.store.getState().ui.selectedAccount
     const transaction = await this.chainService.getTransaction(
@@ -1701,6 +1701,10 @@ export default class Main extends BaseService<never> {
       abilityId,
       reason
     )
+  }
+
+  async removeEVMNetwork(chainID: string): Promise<void> {
+    return this.chainService.removeCustomChain(chainID)
   }
 
   private connectPopupMonitor() {

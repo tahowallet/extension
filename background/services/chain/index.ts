@@ -1900,6 +1900,11 @@ export default class ChainService extends BaseService<Events> {
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
   }
 
+  async removeCustomChain(chainID: string): Promise<void> {
+    await this.db.removeEVMNetwork(chainID)
+    await this.updateSupportedNetworks()
+  }
+
   async updateSupportedNetworks(): Promise<void> {
     const supportedNetworks = await this.db.getAllEVMNetworks()
 

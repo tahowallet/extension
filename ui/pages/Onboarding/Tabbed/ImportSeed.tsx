@@ -6,7 +6,9 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedButton from "../../../components/Shared/SharedButton"
-import OnboardingDerivationPathSelect from "../../../components/Onboarding/OnboardingDerivationPathSelect"
+import OnboardingDerivationPathSelect, {
+  DefaultPathIndex,
+} from "../../../components/Onboarding/OnboardingDerivationPathSelect"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -84,88 +86,95 @@ export default function ImportSeed(props: Props): ReactElement {
     )
 
   return (
-    <>
-      <div className="content fadeIn">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            importWallet()
-          }}
-        >
-          <div className="portion top">
-            <div className="illustration_import" />
-            <h1 className="serif_header">{t("title")}</h1>
-            <div className="info">{t("subtitle")}</div>
-            <div className="input_wrap">
-              <div
-                id="recovery_phrase"
-                role="textbox"
-                aria-labelledby="recovery_label"
-                tabIndex={0}
-                contentEditable
-                data-empty={recoveryPhrase.length < 1}
-                spellCheck="false"
-                onPaste={(e) => {
-                  e.preventDefault()
-                  const text = e.clipboardData.getData("text/plain").trim()
-                  e.currentTarget.innerText = text
-                  setRecoveryPhrase(text)
-                }}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  const text = e.dataTransfer.getData("text/plain").trim()
-                  e.currentTarget.innerText = text
-                  setRecoveryPhrase(text)
-                }}
-                onInput={(e) => {
-                  setRecoveryPhrase(e.currentTarget.innerText.trim())
-                }}
-              />
-              <div id="recovery_label" className="recovery_label">
-                {t("inputLabel")}
-              </div>
-              {errorMessage && <p className="error">{errorMessage}</p>}
-            </div>
-            {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
-              <div className="select_wrapper">
-                <OnboardingDerivationPathSelect onChange={setPath} />
-              </div>
-            )}
+    <section className="fadeIn">
+      <header className="portion">
+        <div className="illustration_import" />
+        <h1 className="serif_header">{t("title")}</h1>
+        <div className="info">{t("subtitle")}</div>
+      </header>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          importWallet()
+        }}
+      >
+        {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
+          <div className="select_wrapper">
+            <OnboardingDerivationPathSelect
+              defaultPath={DefaultPathIndex.bip44}
+              onChange={setPath}
+            />
           </div>
-          <div className="portion bottom">
-            <SharedButton
-              style={{ width: "100%", maxWidth: "300px" }}
-              size={
-                isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
-                  ? "medium"
-                  : "large"
-              }
-              type="primary"
-              isDisabled={!recoveryPhrase || isImporting}
-              onClick={importWallet}
-              center
+        )}
+        <div className="input_wrap">
+          <div
+            id="recovery_phrase"
+            role="textbox"
+            aria-labelledby="recovery_label"
+            tabIndex={0}
+            contentEditable
+            data-empty={recoveryPhrase.length < 1}
+            spellCheck="false"
+            onPaste={(e) => {
+              e.preventDefault()
+              const text = e.clipboardData.getData("text/plain").trim()
+              e.currentTarget.innerText = text
+              setRecoveryPhrase(text)
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              const text = e.dataTransfer.getData("text/plain").trim()
+              e.currentTarget.innerText = text
+              setRecoveryPhrase(text)
+            }}
+            onInput={(e) => {
+              setRecoveryPhrase(e.currentTarget.innerText.trim())
+            }}
+          />
+          <div id="recovery_label" className="recovery_label">
+            {t("inputLabel")}
+          </div>
+          {errorMessage && <p className="error">{errorMessage}</p>}
+        </div>
+        <div className="portion bottom">
+          <SharedButton
+            style={{
+              width: "100%",
+              maxWidth: "356px",
+              boxSizing: "border-box",
+            }}
+            size={
+              isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
+                ? "medium"
+                : "large"
+            }
+            type="primary"
+            isDisabled={!recoveryPhrase || isImporting}
+            onClick={importWallet}
+            center
+          >
+            {t("submit")}
+          </SharedButton>
+          {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
+            <button
+              className="help_button"
+              type="button"
+              // TODO External link or information modal?
+              onClick={() => {}}
             >
-              {t("submit")}
-            </SharedButton>
-            {!isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH) && (
-              <button
-                className="help_button"
-                type="button"
-                // TODO External link or information modal?
-                onClick={() => {}}
-              >
-                How do I find the recovery phrase?
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
+              How do I find the recovery phrase?
+            </button>
+          )}
+        </div>
+      </form>
       <style jsx>{`
         form {
           all: unset;
         }
 
-        .content {
+        section {
+          max-width: 450px;
+          margin: 0 auto;
           display: flex;
           align-items: center;
           flex-direction: column;
@@ -174,6 +183,7 @@ export default function ImportSeed(props: Props): ReactElement {
 
         h1 {
           margin: unset;
+          text-align: center;
         }
         .portion {
           display: flex;
@@ -224,8 +234,7 @@ export default function ImportSeed(props: Props): ReactElement {
           margin-bottom: 6px;
         }
         .select_wrapper {
-          margin-top: ${errorMessage ? "4px" : "15px"};
-          width: 320px;
+          margin-bottom: 24px;
         }
         .input_wrap {
           position: relative;
@@ -279,6 +288,7 @@ export default function ImportSeed(props: Props): ReactElement {
           padding: 0 6px;
           color: var(--trophy-gold);
           background: var(--hunter-green);
+          border-radius: 4px;
           transition: all 0.2s ease-in-out;
           z-index: 999;
         }
@@ -286,13 +296,12 @@ export default function ImportSeed(props: Props): ReactElement {
         #recovery_phrase:focus {
           border: 2px solid var(--trophy-gold);
           outline: 0;
-          background: var(--hunter-green);
         }
 
         .error {
           color: red;
         }
       `}</style>
-    </>
+    </section>
   )
 }
