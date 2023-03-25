@@ -12,6 +12,8 @@ import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
   isBuiltInNetworkBaseAsset,
+  AssetID,
+  getAssetID,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
@@ -47,7 +49,7 @@ export type AccountData = {
   address: HexString
   network: Network
   balances: {
-    [assetSymbol: string]: AccountBalance
+    [assetID: AssetID]: AccountBalance
   }
   ens: {
     name?: DomainName
@@ -295,7 +297,7 @@ const accountSlice = createSlice({
           network,
           assetAmount: { asset },
         } = updatedAccountBalance
-        const { symbol: updatedAssetSymbol } = asset
+        const assetID = getAssetID(asset, network)
 
         const normalizedAddress = normalizeEVMAddress(address)
         const existingAccountData =
@@ -309,20 +311,19 @@ const accountSlice = createSlice({
         if (existingAccountData !== "loading") {
           if (
             updatedAccountBalance.assetAmount.amount === 0n &&
-            existingAccountData.balances[updatedAssetSymbol] === undefined &&
+            existingAccountData.balances[assetID] === undefined &&
             !isBuiltInNetworkBaseAsset(asset, network) // add base asset even if balance is 0
           ) {
             return
           }
-          existingAccountData.balances[updatedAssetSymbol] =
-            updatedAccountBalance
+          existingAccountData.balances[assetID] = updatedAccountBalance
         } else {
           immerState.accountsData.evm[network.chainID][normalizedAddress] = {
             // TODO Figure out the best way to handle default name assignment
             // TODO across networks.
             ...newAccountData(address, network, immerState),
             balances: {
-              [updatedAssetSymbol]: updatedAccountBalance,
+              [assetID]: updatedAccountBalance,
             },
           }
         }

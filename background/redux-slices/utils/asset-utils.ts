@@ -10,6 +10,7 @@ import {
   AnyAsset,
   CoinGeckoAsset,
   isSmartContractFungibleAsset,
+  SmartContractFungibleAsset,
 } from "../../assets"
 import {
   BUILT_IN_NETWORK_BASE_ASSETS,
@@ -17,7 +18,7 @@ import {
   POLYGON,
 } from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
-import { AnyNetwork, NetworkBaseAsset } from "../../networks"
+import { AnyNetwork, EVMNetwork, NetworkBaseAsset } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
 
 /**
@@ -340,4 +341,19 @@ export function isUntrustedAsset(
     return numTokenLists === 0 && !baseAsset
   }
   return false
+}
+
+type AssetType = "base" | "erc20"
+
+export type AssetID = `${AssetType}/${string}`
+
+export const getAssetID = (
+  asset: NetworkBaseAsset | SmartContractFungibleAsset,
+  network: EVMNetwork
+): AssetID => {
+  if (isBuiltInNetworkBaseAsset(asset, network)) {
+    return `base/${asset.symbol}`
+  }
+
+  return `erc20/${asset.contractAddress}`
 }
