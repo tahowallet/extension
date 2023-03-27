@@ -36,6 +36,10 @@ export const test = base.extend<WalletTestFixtures>({
     let [background] = context.backgroundPages()
     if (!background) background = await context.waitForEvent("backgroundpage")
 
+    await background.route(/app\.posthog\.com/i, async (route) =>
+      route.fulfill({ json: { status: 1 } })
+    )
+
     await background.waitForResponse(/api\.coingecko\.com/i)
 
     // // for manifest v3:
