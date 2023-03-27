@@ -14,6 +14,7 @@ import {
   isBuiltInNetworkBaseAsset,
   AssetID,
   getAssetID,
+  isNetworkBaseAsset,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
@@ -180,13 +181,25 @@ function updateCombinedData(immerState: AccountState) {
 
   immerState.combinedData.assets = Object.values(
     combinedAccountBalances.reduce<{
-      [symbol: string]: AnyAssetAmount
+      [assetID: string]: AnyAssetAmount
     }>((acc, combinedAssetAmount) => {
-      const assetSymbol = combinedAssetAmount.asset.symbol
+      const { asset } = combinedAssetAmount
+      /**
+       * Asset amounts can be aggregated if the asset is a base network asset
+       * or comes from a token list, e.g. ETH on Optimism, Mainnet
+       */
+      const canBeAggregated =
+        isNetworkBaseAsset(asset) ||
+        (asset.metadata?.tokenLists?.length ?? 0) > 0
+
+      const assetID = canBeAggregated
+        ? asset.symbol
+        : `${asset.homeNetwork.chainID}/${getAssetID(asset)}`
+
       let { amount } = combinedAssetAmount
 
-      if (acc[assetSymbol]?.asset) {
-        const accAsset = acc[assetSymbol].asset
+      if (acc[assetID]?.asset) {
+        const accAsset = acc[assetID].asset
         const existingDecimals = isFungibleAsset(accAsset)
           ? accAsset.decimals
           : 0
@@ -199,13 +212,14 @@ function updateCombinedData(immerState: AccountState) {
         }
       }
 
-      if (acc[assetSymbol]) {
-        acc[assetSymbol].amount += amount
+      if (acc[assetID]) {
+        acc[assetID].amount += amount
       } else {
-        acc[assetSymbol] = {
+        acc[assetID] = {
           ...combinedAssetAmount,
         }
       }
+
       return acc
     }, {})
   )
@@ -297,7 +311,7 @@ const accountSlice = createSlice({
           network,
           assetAmount: { asset },
         } = updatedAccountBalance
-        const assetID = getAssetID(asset, network)
+        const assetID = getAssetID(asset)
 
         const normalizedAddress = normalizeEVMAddress(address)
         const existingAccountData =

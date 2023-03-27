@@ -18,7 +18,7 @@ import {
   POLYGON,
 } from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
-import { AnyNetwork, EVMNetwork, NetworkBaseAsset } from "../../networks"
+import { AnyNetwork, NetworkBaseAsset } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
 
 /**
@@ -44,7 +44,10 @@ export type AssetDecimalAmount = {
   localizedDecimalAmount: string
 }
 
-function hasChainID(asset: AnyAsset): asset is NetworkBaseAsset {
+/**
+ * All network base assets have a chainID property
+ */
+export function isNetworkBaseAsset(asset: AnyAsset): asset is NetworkBaseAsset {
   return "chainID" in asset
 }
 
@@ -52,7 +55,7 @@ function isOptimismBaseAsset(asset: AnyAsset) {
   const hasMatchingChainID =
     (isSmartContractFungibleAsset(asset) &&
       asset.homeNetwork.chainID === OPTIMISM.chainID) ||
-    (hasChainID(asset) && asset.chainID === OPTIMISM.chainID)
+    (isNetworkBaseAsset(asset) && asset.chainID === OPTIMISM.chainID)
 
   return (
     hasMatchingChainID &&
@@ -65,7 +68,7 @@ function isPolygonBaseAsset(asset: AnyAsset) {
   const hasMatchingChainID =
     (isSmartContractFungibleAsset(asset) &&
       asset.homeNetwork.chainID === POLYGON.chainID) ||
-    (hasChainID(asset) && asset.chainID === POLYGON.chainID)
+    (isNetworkBaseAsset(asset) && asset.chainID === POLYGON.chainID)
 
   return (
     hasMatchingChainID &&
@@ -97,7 +100,7 @@ export function isBuiltInNetworkBaseAsset(
   }
 
   return (
-    hasChainID(asset) &&
+    isNetworkBaseAsset(asset) &&
     asset.symbol === network.baseAsset.symbol &&
     asset.chainID === network.baseAsset.chainID &&
     asset.name === network.baseAsset.name
@@ -134,8 +137,8 @@ export function sameBuiltInNetworkBaseAsset(
   if (
     "homeNetwork" in asset1 ||
     "homeNetwork" in asset2 ||
-    !hasChainID(asset1) ||
-    !hasChainID(asset2)
+    !isNetworkBaseAsset(asset1) ||
+    !isNetworkBaseAsset(asset2)
   ) {
     return false
   }
@@ -348,10 +351,9 @@ type AssetType = "base" | "erc20"
 export type AssetID = `${AssetType}/${string}`
 
 export const getAssetID = (
-  asset: NetworkBaseAsset | SmartContractFungibleAsset,
-  network: EVMNetwork
+  asset: NetworkBaseAsset | SmartContractFungibleAsset
 ): AssetID => {
-  if (isBuiltInNetworkBaseAsset(asset, network)) {
+  if (isNetworkBaseAsset(asset)) {
     return `base/${asset.symbol}`
   }
 
