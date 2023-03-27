@@ -53,7 +53,11 @@
       "firstLine": "Price impact between assets is high.",
       "secondLine": "This is due to low liquidity of the swap pair."
     },
-    "noAssetPrice": "No price information"
+    "noAssetPrice": "No price information",
+    "noAssetPriceTooltip": {
+      "firstLine": "We're not able to receive prices for these assets now.",
+      "secondLine": "Continuing without price information might lead to a loss in value."
+    }
   },
   "comingSoon": "Coming soon",
   "dappConnection": {
