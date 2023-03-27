@@ -57,6 +57,7 @@ const impersonateMetamaskWhitelist = [
   "bscscan.com",
   "alchemy.com",
   "cow.fi",
+  "tally.xyz",
 ]
 
 const METAMASK_STATE_MOCK = {
