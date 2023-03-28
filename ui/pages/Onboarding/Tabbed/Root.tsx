@@ -23,7 +23,7 @@ import OnboardingRoutes from "./Routes"
 import RouteBasedContent from "../../../components/Onboarding/RouteBasedContent"
 import SupportedChains from "../../../components/Onboarding/SupportedChains"
 import { useIsOnboarding } from "../../../hooks"
-import ImportPrivateKeyJSON from "./ImportPrivateKeyJSON"
+import ImportPrivateKeyForm from "./ImportPrivateKeyForm"
 
 function Navigation({
   children,
@@ -181,7 +181,7 @@ export default function Root(): ReactElement {
           <ImportSeed nextPage={OnboardingRoutes.ONBOARDING_COMPLETE} />
         </Route>
         <Route path={OnboardingRoutes.IMPORT_PRIVATE_KEY}>
-          <ImportPrivateKeyJSON
+          <ImportPrivateKeyForm
             nextPage={OnboardingRoutes.ONBOARDING_COMPLETE}
           />
         </Route>

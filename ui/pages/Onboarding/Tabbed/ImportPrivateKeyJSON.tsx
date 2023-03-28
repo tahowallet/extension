@@ -1,32 +1,23 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Redirect, useHistory } from "react-router-dom"
 import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useDispatch } from "react-redux"
 import { SignerTypes } from "@tallyho/tally-background/services/keyring"
 import SharedButton from "../../../components/Shared/SharedButton"
-import { useAreKeyringsUnlocked, useBackgroundSelector } from "../../../hooks"
-import ImportForm from "./ImportForm"
 import PasswordInput from "../../../components/Shared/PasswordInput"
-import OnboardingRoutes from "./Routes"
 
 type Props = {
-  nextPage: string
+  isImporting: boolean
+  setIsImporting: (value: boolean) => void
 }
 
-export default function ImportPrivateKey(props: Props): ReactElement {
-  const { nextPage } = props
+export default function ImportPrivateKeyJSON(props: Props): ReactElement {
+  const { setIsImporting, isImporting } = props
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
-  const keyringImport = useBackgroundSelector(
-    (state) => state.keyrings.importing
-  )
-  const history = useHistory()
   const dispatch = useDispatch()
 
   const [file, setFile] = useState("")
   const [password, setPassword] = useState("")
-  const [isImporting, setIsImporting] = useState(false)
 
   const { t } = useTranslation("translation", {
     keyPrefix: "onboarding.tabbed.addWallet.importPrivateKey",
@@ -56,51 +47,26 @@ export default function ImportPrivateKey(props: Props): ReactElement {
         password,
       })
     )
-  }, [dispatch, file, password])
-
-  useEffect(() => {
-    if (areKeyringsUnlocked && keyringImport === "done" && isImporting) {
-      setIsImporting(false)
-      history.push(nextPage)
-    }
-  }, [history, areKeyringsUnlocked, keyringImport, nextPage, isImporting])
-
-  if (!areKeyringsUnlocked)
-    return (
-      <Redirect
-        to={{
-          pathname: OnboardingRoutes.SET_PASSWORD,
-          state: { nextPage: OnboardingRoutes.IMPORT_PRIVATE_KEY },
-        }}
-      />
-    )
+  }, [dispatch, file, password, setIsImporting])
 
   return (
     <>
-      <ImportForm
-        title={t("title")}
-        subtitle={t("subtitle")}
-        illustration="doggo_private_key.svg"
+      <input type="file" onChange={handleChange} disabled={isImporting} />
+      <PasswordInput
+        hasPreview
+        label={t("password")}
+        onChange={(value) => setPassword(value)}
+      />
+      <SharedButton
+        style={{ width: "100%", maxWidth: "320px", marginTop: "25px" }}
+        size="medium"
+        type="primary"
+        isDisabled={!(file && password) || isImporting}
+        onClick={importWallet}
+        center
       >
-        <>
-          <input type="file" onChange={handleChange} disabled={isImporting} />
-          <PasswordInput
-            hasPreview
-            label="File password"
-            onChange={(value) => setPassword(value)}
-          />
-          <SharedButton
-            style={{ width: "100%", maxWidth: "300px", marginTop: "25px" }}
-            size="medium"
-            type="primary"
-            isDisabled={!(file && password) || isImporting}
-            onClick={importWallet}
-            center
-          >
-            {isImporting ? "Import in progress..." : t("submit")}
-          </SharedButton>
-        </>
-      </ImportForm>
+        {isImporting ? "Import in progress..." : t("submit")}
+      </SharedButton>
       <style jsx>{`
         input[type="file"] {
           margin-bottom: 25px;

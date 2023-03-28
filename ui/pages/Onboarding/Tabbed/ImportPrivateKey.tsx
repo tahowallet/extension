@@ -1,18 +1,14 @@
 import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
 import { SignerTypes } from "@tallyho/tally-background/services/keyring"
 import { isHexString } from "ethers/lib/utils"
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useDispatch } from "react-redux"
-import { Redirect, useHistory } from "react-router-dom"
 import SharedButton from "../../../components/Shared/SharedButton"
 import SharedSeedInput from "../../../components/Shared/SharedSeedInput"
-import { useAreKeyringsUnlocked, useBackgroundSelector } from "../../../hooks"
-import ImportForm from "./ImportForm"
-import OnboardingRoutes from "./Routes"
 
 type Props = {
-  nextPage: string
+  setIsImporting: (value: boolean) => void
 }
 
 function validatePrivateKey(privateKey = ""): boolean {
@@ -30,17 +26,11 @@ function validatePrivateKey(privateKey = ""): boolean {
 }
 
 export default function ImportPrivateKey(props: Props): ReactElement {
-  const { nextPage } = props
+  const { setIsImporting } = props
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
-  const keyringImport = useBackgroundSelector(
-    (state) => state.keyrings.importing
-  )
-  const history = useHistory()
   const dispatch = useDispatch()
 
   const [privateKey, setPrivateKey] = useState("")
-  const [isImporting, setIsImporting] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
 
   const { t } = useTranslation("translation", {
@@ -60,50 +50,25 @@ export default function ImportPrivateKey(props: Props): ReactElement {
     } else {
       setErrorMessage(t("error"))
     }
-  }, [dispatch, privateKey, t])
-
-  useEffect(() => {
-    if (areKeyringsUnlocked && keyringImport === "done" && isImporting) {
-      setIsImporting(false)
-      history.push(nextPage)
-    }
-  }, [history, areKeyringsUnlocked, keyringImport, nextPage, isImporting])
-
-  if (!areKeyringsUnlocked)
-    return (
-      <Redirect
-        to={{
-          pathname: OnboardingRoutes.SET_PASSWORD,
-          state: { nextPage: OnboardingRoutes.IMPORT_PRIVATE_KEY },
-        }}
-      />
-    )
+  }, [dispatch, privateKey, setIsImporting, t])
 
   return (
     <>
-      <ImportForm
-        title={t("title")}
-        subtitle={t("subtitle")}
-        illustration="doggo_private_key.svg"
+      <SharedSeedInput
+        onChange={(pk) => setPrivateKey(pk)}
+        label={t("inputLabel")}
+        errorMessage={errorMessage}
+      />
+      <SharedButton
+        style={{ width: "100%", maxWidth: "320px", marginTop: "25px" }}
+        size="medium"
+        type="primary"
+        isDisabled={!privateKey}
+        onClick={importWallet}
+        center
       >
-        <>
-          <SharedSeedInput
-            onChange={(pk) => setPrivateKey(pk)}
-            label={t("inputLabel")}
-            errorMessage={errorMessage}
-          />
-          <SharedButton
-            style={{ width: "100%", maxWidth: "300px", marginTop: "25px" }}
-            size="medium"
-            type="primary"
-            isDisabled={!privateKey}
-            onClick={importWallet}
-            center
-          >
-            {t("submit")}
-          </SharedButton>
-        </>
-      </ImportForm>
+        {t("submit")}
+      </SharedButton>
       <style jsx>{`
         .bottom {
           width: 100%;

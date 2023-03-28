@@ -357,7 +357,10 @@
           "subtitle": "Importing a private key does not associate it to any secret recovery phrase, but it’s still protected by the same password",
           "inputLabel": "Paste private key string",
           "submit": "Import account",
-          "error": "Invalid private key"
+          "error": "Invalid private key",
+          "privateKey": "Private key",
+          "password": "JSON file password",
+          "json": "JSON"
         },
         "viewOnly": {
           "title": "Read-only address",
