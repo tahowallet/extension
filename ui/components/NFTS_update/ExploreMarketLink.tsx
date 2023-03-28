@@ -68,7 +68,9 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
     color: "#FEDA03",
     hoverColor: "#EDDF8E",
     getNFTLink: (nft: NFTCached): string =>
-      `https://rarible.com/token/${nft.contract}:${nft.tokenId}`,
+      `https://rarible.com/token/${
+        nft.chainID === POLYGON.chainID ? "polygon/" : ""
+      }${nft.contract}:${nft.tokenId}`,
   },
   galxe: {
     title: "Galxe",
