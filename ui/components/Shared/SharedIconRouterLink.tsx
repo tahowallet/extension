@@ -5,10 +5,27 @@ type Props = {
   path: string
   state: { [key: string]: unknown }
   iconClass: string
+  disabled?: boolean
 }
 
 export default function SharedIconRouterLink(props: Props): ReactElement {
-  const { path, state, iconClass } = props
+  const { path, state, iconClass, disabled } = props
+
+  if (disabled) {
+    return (
+      // @TODO Make accessible
+      // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
+      <div
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+        className="icon_wrapper"
+      >
+        <i className={`asset_icon ${iconClass}`} />
+      </div>
+    )
+  }
 
   return (
     <Link

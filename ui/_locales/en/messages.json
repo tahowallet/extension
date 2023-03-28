@@ -762,6 +762,8 @@
     "totalAccountBalance": "Total account balance",
     "send": "Send",
     "swap": "Swap",
+    "swapDisabledOne": "Swaps aren't supported",
+    "swapDisabledTwo": "on custom networks",
     "receive": "Receive",
     "secureSeed": "First, secure your recovery seed",
     "sendAsset": "Send Asset",
