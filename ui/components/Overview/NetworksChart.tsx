@@ -1,28 +1,24 @@
-import {
-  ETHEREUM,
-  ARBITRUM_ONE,
-  AVALANCHE,
-  OPTIMISM,
-  NETWORK_BY_CHAIN_ID,
-  POLYGON,
-  BINANCE_SMART_CHAIN,
-  ROOTSTOCK,
-} from "@tallyho/tally-background/constants"
+import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { AccountTotalList } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
+import { shuffle } from "lodash"
 
-const NETWORKS_CHART_COLORS = {
-  [ETHEREUM.chainID]: "#62688F",
-  [POLYGON.chainID]: "#8347E5",
-  [ARBITRUM_ONE.chainID]: "#2083C5",
-  [OPTIMISM.chainID]: "#CD041C",
-  [AVALANCHE.chainID]: "#E84142",
-  [BINANCE_SMART_CHAIN.chainID]: "#F3BA2F",
-  [ROOTSTOCK.chainID]: "#F18C30",
-}
+const NETWORK_COLORS = shuffle([
+  "#43B69A",
+  "#CC3C3C",
+  "#EA7E30",
+  "#B64396",
+  "#EAC130",
+  "#D1517F",
+  "#CDA928",
+  "#5184D1",
+  "#9FB643",
+  "#404BB2",
+  "#43B671",
+])
 
 const getNetworksPercents = (
   accountsTotal: AccountTotalList
@@ -57,7 +53,18 @@ export default function NetworksChart({
   networksCount: number
 }): ReactElement {
   const { t } = useTranslation()
-  const percents = getNetworksPercents(accountsTotal)
+  const availableColors = [...NETWORK_COLORS]
+  const percents = getNetworksPercents(accountsTotal).map((percent) => {
+    if (!availableColors.length) {
+      // Reuse colors if we run out
+      availableColors.push(...NETWORK_COLORS)
+    }
+    const color = availableColors.pop()
+    return {
+      ...percent,
+      color,
+    }
+  })
 
   return (
     <>
@@ -71,23 +78,23 @@ export default function NetworksChart({
           {t("overview.networks")} ({networksCount})
         </div>
         <div className="chains_chart">
-          {percents.map(({ chainID, percent }) => (
+          {percents.map(({ chainID, percent, color }) => (
             <div
               key={chainID}
               className="chart_item"
               style={{
                 width: `${percent}%`,
-                background: NETWORKS_CHART_COLORS[chainID],
+                background: color,
               }}
             />
           ))}
         </div>
         <div className="chains_legend">
-          {percents.map(({ chainID, percent }) => (
+          {percents.map(({ chainID, percent, color }) => (
             <div className="chains_legend_item" key={chainID}>
               <div
                 className="chains_legend_dot"
-                style={{ backgroundColor: NETWORKS_CHART_COLORS[chainID] }}
+                style={{ backgroundColor: color }}
               />
               {NETWORK_BY_CHAIN_ID[chainID].name}({percent}%)
             </div>
