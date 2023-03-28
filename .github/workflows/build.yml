@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Read .nvmrc
-        run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+        run: echo "NVMRC=$(cat ./.nvmrc)" >> $GITHUB_OUTPUT
         id: nvm
       - name: Use Node + Yarn
         uses: actions/setup-node@v3
@@ -76,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Read .nvmrc
-        run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+        run: echo "NVMRC=$(cat ./.nvmrc)" >> $GITHUB_OUTPUT
         id: nvm
       - name: Use Node + Yarn
         uses: actions/setup-node@v3
@@ -90,7 +90,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Read .nvmrc
-        run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+        run: echo "NVMRC=$(cat ./.nvmrc)" >> $GITHUB_OUTPUT
         id: nvm
       - name: Use Node + Yarn
         uses: actions/setup-node@v3
@@ -124,7 +124,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Read .nvmrc
-        run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+        run: echo "NVMRC=$(cat ./.nvmrc)" >> $GITHUB_OUTPUT
         id: nvm
       - name: Use Node + Yarn
         uses: actions/setup-node@v3
