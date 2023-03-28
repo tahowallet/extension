@@ -50,6 +50,13 @@ export function isNetworkBaseAsset(asset: AnyAsset): asset is NetworkBaseAsset {
   return "chainID" in asset
 }
 
+export function sameNetworkBaseAsset(
+  asset: NetworkBaseAsset,
+  other: NetworkBaseAsset
+): boolean {
+  return asset.chainID === other.chainID
+}
+
 function isOptimismBaseAsset(asset: AnyAsset) {
   const hasMatchingChainID =
     (isSmartContractFungibleAsset(asset) &&

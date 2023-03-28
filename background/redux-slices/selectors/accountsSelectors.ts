@@ -11,7 +11,6 @@ import {
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
-  getBuiltInNetworkBaseAsset,
   heuristicDesiredDecimalsForUnitPrice,
   isNetworkBaseAsset,
 } from "../utils/asset-utils"
@@ -138,27 +137,11 @@ const computeCombinedAssetAmountsData = (
         return 1
       }
 
-      // Always display the current network's base asset first
-      const networkBaseAsset = currentNetwork.baseAsset
+      const leftIsBaseAsset = isNetworkBaseAsset(asset1.asset)
+      const rightIsBaseAsset = isNetworkBaseAsset(asset2.asset)
 
-      const leftIsNetworkBaseAsset =
-        networkBaseAsset.symbol === asset1.asset.symbol
-      const rightIsNetworkBaseAsset =
-        networkBaseAsset.symbol === asset2.asset.symbol
-
-      if (leftIsNetworkBaseAsset !== rightIsNetworkBaseAsset) {
-        return leftIsNetworkBaseAsset ? -1 : 1
-      }
-      const leftIsBaseAsset = !!getBuiltInNetworkBaseAsset(
-        asset1.asset.symbol,
-        networkBaseAsset.chainID
-      )
-      const rightIsBaseAsset = !!getBuiltInNetworkBaseAsset(
-        asset2.asset.symbol,
-        networkBaseAsset.chainID
-      )
-
-      // Always sort base assets above non-base assets.
+      // Always sort base assets above non-base assets. This also sorts the
+      // current network base asset above the rest
       if (leftIsBaseAsset !== rightIsBaseAsset) {
         return leftIsBaseAsset ? -1 : 1
       }
