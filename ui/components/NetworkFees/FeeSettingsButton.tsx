@@ -32,13 +32,7 @@ export default function FeeSettingsButton({
           verticalPosition="bottom"
           IconComponent={() => <FeeSettingsText />}
         >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
+          <div className="tooltip_container">
             <div>{t("networkFees.settingsDisabledOne")}</div>
             <div>{t("networkFees.settingsDisabledTwo")}</div>
           </div>
@@ -76,6 +70,11 @@ export default function FeeSettingsButton({
           }
           .settings:hover .settings_image {
             filter: brightness(1.5);
+          }
+          .tooltip_container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
           }
         `}
       </style>
