@@ -74,6 +74,10 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
                   <SharedSquareButton
                     icon="icons/s/swap.svg"
                     ariaLabel={t("swap")}
+                    iconColor={{
+                      color: "#3A6565",
+                      hoverColor: "#3A6565",
+                    }}
                     disabled
                   >
                     {t("swap")}
