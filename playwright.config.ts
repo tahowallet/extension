@@ -66,6 +66,7 @@ const config: PlaywrightTestConfig = {
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        // See `utils.ts` for additional options passed to setup extension
       },
     },
   ],
