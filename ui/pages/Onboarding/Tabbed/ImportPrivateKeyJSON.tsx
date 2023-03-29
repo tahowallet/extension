@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux"
 import { SignerTypes } from "@tallyho/tally-background/services/keyring"
 import SharedButton from "../../../components/Shared/SharedButton"
 import PasswordInput from "../../../components/Shared/PasswordInput"
+import SharedFileInput from "../../../components/Shared/SharedFileInput"
 
 type Props = {
   isImporting: boolean
@@ -23,15 +24,11 @@ export default function ImportPrivateKeyJSON(props: Props): ReactElement {
     keyPrefix: "onboarding.tabbed.addWallet.importPrivateKey",
   })
 
-  const handleChange = useCallback((event) => {
-    const fileReader = new FileReader()
-    fileReader.readAsText(event.target.files[0], "UTF-8")
-    fileReader.onload = (e) => {
-      if (e.target?.result) {
-        setFile(e.target?.result.toString())
-      }
+  const onFileLoad = (fileReader: FileReader | null) => {
+    if (fileReader?.result) {
+      setFile(fileReader?.result.toString())
     }
-  }, [])
+  }
 
   const importWallet = useCallback(async () => {
     if (!password || !file) {
@@ -51,7 +48,12 @@ export default function ImportPrivateKeyJSON(props: Props): ReactElement {
 
   return (
     <>
-      <input type="file" onChange={handleChange} disabled={isImporting} />
+      <SharedFileInput
+        onFileLoad={onFileLoad}
+        disabled={isImporting}
+        fileTypeLabel={t("json")}
+        style={{ marginBottom: "16px" }}
+      />
       <PasswordInput
         hasPreview
         label={t("password")}
@@ -70,10 +72,6 @@ export default function ImportPrivateKeyJSON(props: Props): ReactElement {
       <style jsx>{`
         input[type="file"] {
           margin-bottom: 25px;
-        }
-        .bottom {
-          width: 100%;
-          margin: 25px auto 0;
         }
       `}</style>
     </>

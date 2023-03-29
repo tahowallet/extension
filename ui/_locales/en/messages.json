@@ -360,7 +360,8 @@
           "error": "Invalid private key",
           "privateKey": "Private key",
           "password": "JSON file password",
-          "json": "JSON"
+          "json": "JSON",
+          "browseFiles": "<span>Browse files</span> or drag and drop your {{type}} file"
         },
         "viewOnly": {
           "title": "Read-only address",
