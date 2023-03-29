@@ -53,7 +53,11 @@ export default function TopMenuProfileButton(props: {
   }
 
   return (
-    <div className="profile_wrapper" onMouseLeave={hideTooltip}>
+    <div
+      className="profile_wrapper"
+      onMouseLeave={hideTooltip}
+      data-testid="top_menu_profile_button"
+    >
       <button
         className="profile_button"
         type="button"

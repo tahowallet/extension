@@ -12,7 +12,11 @@ export default function TopMenuProtocolSwitcher({
 }: Props): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   return (
-    <button type="button" onClick={() => onClick?.()}>
+    <button
+      type="button"
+      onClick={() => onClick?.()}
+      data-testid="top_menu_network_switcher"
+    >
       <div className="icon_wrap">
         <SharedNetworkIcon
           key={currentNetwork.chainID}
