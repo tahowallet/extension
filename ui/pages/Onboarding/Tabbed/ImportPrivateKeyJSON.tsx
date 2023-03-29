@@ -25,9 +25,7 @@ export default function ImportPrivateKeyJSON(props: Props): ReactElement {
   })
 
   const onFileLoad = (fileReader: FileReader | null) => {
-    if (fileReader?.result) {
-      setFile(fileReader?.result.toString())
-    }
+    setFile(fileReader?.result?.toString() ?? "")
   }
 
   const importWallet = useCallback(async () => {
@@ -52,7 +50,7 @@ export default function ImportPrivateKeyJSON(props: Props): ReactElement {
         onFileLoad={onFileLoad}
         disabled={isImporting}
         fileTypeLabel={t("json")}
-        style={{ marginBottom: "16px" }}
+        style={{ marginBottom: "24px", width: "356px" }}
       />
       <PasswordInput
         hasPreview

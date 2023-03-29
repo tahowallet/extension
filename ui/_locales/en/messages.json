@@ -361,7 +361,10 @@
           "privateKey": "Private key",
           "password": "JSON file password",
           "json": "JSON",
-          "browseFiles": "<span>Browse files</span> or drag and drop your {{type}} file"
+          "browseFiles": "<span>Browse files</span> or drag and drop your {{type}} file",
+          "uploading": "Uploading...",
+          "uploadFail": "Upload failed, try again",
+          "wrongFile": "Wrong file, only {{type}} accepted"
         },
         "viewOnly": {
           "title": "Read-only address",
