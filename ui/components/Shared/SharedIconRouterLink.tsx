@@ -22,7 +22,7 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
         }}
         className="icon_wrapper"
       >
-        <i className={`asset_icon ${iconClass}`} />
+        <i className={`disabled_asset_icon ${iconClass}`} />
       </div>
     )
   }
@@ -36,7 +36,7 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
       className="router_link_container"
     >
       <div className="icon_wrapper">
-        <i className={`asset_icon ${iconClass}`} />
+        <i className={`asset_icon hoverable ${iconClass}`} />
       </div>
       <style jsx global>{`
         .router_link_container {
@@ -46,6 +46,12 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
         .icon_wrapper {
           display: flex;
           padding: 0.5em;
+        }
+        .disabled_asset_icon {
+          mask-size: cover;
+          background-color: var(--green-60);
+          width: 12px;
+          height: 12px;
         }
         .router_link_container:hover {
           background-color: var(--hunter-green);
