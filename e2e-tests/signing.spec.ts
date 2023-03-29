@@ -1,14 +1,11 @@
-import { test, expect, createWallet } from "./utils"
+import { test, expect } from "./utils"
 
 test.describe("Signing", () => {
-  test.use({ viewport: { width: 384, height: 600 } })
-
   test("User can sign in with Ethereum", async ({
     context,
-    page,
     walletPageHelper,
   }) => {
-    await createWallet(page, walletPageHelper.extensionId)
+    await walletPageHelper.onboarding.addNewWallet()
 
     const siwe = await context.newPage()
     await siwe.goto("https://login.xyz")
@@ -32,4 +29,6 @@ test.describe("Signing", () => {
     // If we see this then it means we were able to sign in
     await expect(siwe.getByText("Vote for your favorite emoji")).toBeVisible()
   })
+
+  // test.skip("Typed data signing", async () => {})
 })
