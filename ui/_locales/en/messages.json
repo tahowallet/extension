@@ -364,7 +364,13 @@
           "browseFiles": "<span>Browse files</span> or drag and drop your {{type}} file",
           "uploading": "Uploading...",
           "uploadFail": "Upload failed, try again",
-          "wrongFile": "Wrong file, only {{type}} accepted"
+          "wrongFile": "Wrong file, only {{type}} accepted",
+          "decrypt": "Decrypt file",
+          "decrypting": "Decrypting file",
+          "decryptingTime": "this may take up to 1 minute",
+          "finalize": "Finalize",
+          "completed": "Completed!",
+          "address": "address"
         },
         "viewOnly": {
           "title": "Read-only address",

@@ -40,6 +40,8 @@ export default function ImportForm(props: Props): ReactElement {
           align-items: center;
           flex-direction: column;
           justify-content: space-between;
+          width: 356px;
+          margin: auto;
         }
         h1 {
           margin: unset;

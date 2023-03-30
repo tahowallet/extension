@@ -9,6 +9,7 @@ import SharedSeedInput from "../../../components/Shared/SharedSeedInput"
 
 type Props = {
   setIsImporting: (value: boolean) => void
+  finalize: () => void
 }
 
 function validatePrivateKey(privateKey = ""): boolean {
@@ -26,7 +27,7 @@ function validatePrivateKey(privateKey = ""): boolean {
 }
 
 export default function ImportPrivateKey(props: Props): ReactElement {
-  const { setIsImporting } = props
+  const { setIsImporting, finalize } = props
 
   const dispatch = useDispatch()
 
@@ -41,16 +42,17 @@ export default function ImportPrivateKey(props: Props): ReactElement {
     const trimmedPrivateKey = privateKey.toLowerCase().trim()
     if (validatePrivateKey(trimmedPrivateKey)) {
       setIsImporting(true)
-      dispatch(
+      await dispatch(
         importSigner({
           type: SignerTypes.privateKey,
           privateKey: trimmedPrivateKey,
         })
       )
+      finalize()
     } else {
       setErrorMessage(t("error"))
     }
-  }, [dispatch, privateKey, setIsImporting, t])
+  }, [dispatch, privateKey, setIsImporting, finalize, t])
 
   return (
     <>

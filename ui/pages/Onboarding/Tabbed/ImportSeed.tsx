@@ -114,7 +114,6 @@ export default function ImportSeed(props: Props): ReactElement {
             <SharedButton
               style={{
                 width: "100%",
-                maxWidth: "356px",
                 boxSizing: "border-box",
               }}
               size={
