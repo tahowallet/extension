@@ -1,4 +1,11 @@
-import React, { ChangeEvent, ReactElement, useCallback, useState } from "react"
+import classNames from "classnames"
+import React, {
+  ChangeEvent,
+  ReactElement,
+  useCallback,
+  useRef,
+  useState,
+} from "react"
 import { Trans, useTranslation } from "react-i18next"
 import SharedIcon from "./SharedIcon"
 
@@ -18,6 +25,8 @@ export default function SharedFileInput(props: Props): ReactElement {
   const [isLoading, setIsLoading] = useState(false)
   const [isUploaded, setIsUploaded] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
+
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -58,12 +67,22 @@ export default function SharedFileInput(props: Props): ReactElement {
     [onFileLoad, fileTypeLabel, t]
   )
 
-  const hasStatus = errorMessage || isLoading || isUploaded
+  const handleRemove = () => {
+    if (inputRef.current) {
+      // reset input so it can take the same file again
+      inputRef.current.value = ""
+    }
+    setErrorMessage("")
+    setIsUploaded(false)
+    setIsLoading(false)
+    setFileName("")
+    onFileLoad(null)
+  }
 
   return (
     <div className="file_input" style={style}>
-      <div className="file_drop">
-        {!hasStatus && <div className="file_img" />}
+      <div className={classNames("file_drop", { hidden: fileName })}>
+        <div className="file_img" />
         <div className="file_text simple_text">
           <Trans
             t={t}
@@ -75,40 +94,51 @@ export default function SharedFileInput(props: Props): ReactElement {
           />
         </div>
         <input
+          ref={inputRef}
           type="file"
           onChange={(e) => handleChange(e)}
           disabled={disabled}
         />
       </div>
-      {isLoading && (
-        <div className="file_status status_light">
-          <div className="ellipsis">
-            {t("uploading")} {fileName}
-          </div>
-        </div>
-      )}
-      {!isLoading && !errorMessage && isUploaded && (
-        <div className="file_status">
+
+      <div
+        className={classNames("file_status", {
+          hidden: !fileName,
+        })}
+      >
+        {isLoading && (
+          <SharedIcon
+            icon="icons/m/import.svg"
+            width={24}
+            color="var(--attention)"
+            customStyles="flex-shrink:0;"
+          />
+        )}
+        {!errorMessage && isUploaded && (
           <SharedIcon
             icon="icons/m/notif-correct.svg"
             width={24}
             color="var(--success)"
             customStyles="flex-shrink:0;"
           />
-          <div className="ellipsis">{fileName}</div>
-        </div>
-      )}
-      {!isLoading && errorMessage && (
-        <div className="file_status">
+        )}
+        {errorMessage && (
           <SharedIcon
             color="var(--error)"
             width={24}
             icon="icons/m/notif-wrong.svg"
             customStyles="flex-shrink:0;"
           />
-          {errorMessage}
-        </div>
-      )}
+        )}
+        <div className="ellipsis">{errorMessage || fileName}</div>
+        <SharedIcon
+          color="var(--green-40)"
+          width={16}
+          icon="icons/s/close.svg"
+          customStyles="flex-shrink:0; margin-left: auto;"
+          onClick={handleRemove}
+        />
+      </div>
 
       <style jsx>
         {`
@@ -116,6 +146,8 @@ export default function SharedFileInput(props: Props): ReactElement {
             width: 100%;
           }
           .file_drop {
+            transition: all 300ms ease-in-out;
+            max-height: 152px;
             position: relative;
             display: flex;
             justify-content: center;
@@ -152,9 +184,11 @@ export default function SharedFileInput(props: Props): ReactElement {
             color: var(--trophy-gold);
           }
           .file_status {
+            transition: all 300ms ease-in-out;
+            max-height: 42px;
             display: flex;
+            align-items: center;
             gap: 6px;
-            margin-top: 16px;
             color: #fff;
             font-weight: 600;
             font-size: 18px;
@@ -164,8 +198,11 @@ export default function SharedFileInput(props: Props): ReactElement {
             border-radius: 8px;
             padding: 8px 12px;
           }
-          .status_light {
-            background: transparent;
+          .hidden {
+            opacity: 0;
+            margin: 0;
+            padding: 0;
+            max-height: 0;
           }
         `}
       </style>
