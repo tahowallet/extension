@@ -168,6 +168,7 @@ import {
 } from "./redux-slices/abilities"
 import { AddChainRequestData } from "./services/provider-bridge"
 import { AnalyticsEvent } from "./lib/posthog"
+import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -984,6 +985,19 @@ export default class Main extends BaseService<never> {
 
             if (!isSmartContract) {
               sortedBalances.push(balance)
+            }
+
+            // Network base assets with smart contract addresses from some networks
+            // e.g. Optimism, Polygon might have been retrieved through alchemy as
+            // token balances but they should not be handled here as they would
+            // not be correctly treated as base assets
+            if (
+              isBuiltInNetworkBaseAsset(
+                balance.assetAmount.asset,
+                balance.network
+              )
+            ) {
+              return false
             }
 
             return isSmartContract
