@@ -647,7 +647,9 @@
     "rpc": "RPC",
     "explorer": "BlockExplorer",
     "submit": "Add network",
-    "cancel": "Reject"
+    "cancel": "Reject",
+    "warnAlreadyExistsHeader": "Network already added to Taho wallet.",
+    "warnAlreadyExistsBody": "You can switch to it from Network dropdown"
   },
   "swap": {
     "title": "Swap Assets",
