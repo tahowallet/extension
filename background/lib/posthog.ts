@@ -9,6 +9,10 @@ export enum AnalyticsEvent {
   NEW_ACCOUNT_TO_TRACK = "Address added to tracking on network",
 }
 
+export enum OneTimeAnalyticsEvent {
+  ONBOARDING_STARTED = "Onboarding started",
+}
+
 const POSTHOG_PROJECT_ID = "11112"
 
 const PERSON_ENDPOINT = `https://app.posthog.com/api/projects/${POSTHOG_PROJECT_ID}/persons`

@@ -7,6 +7,8 @@ export interface AnalyticsUUID {
 export class AnalyticsDatabase extends Dexie {
   private analyticsUUID!: Dexie.Table<AnalyticsUUID, number>
 
+  private oneTimeEvent!: Dexie.Table<{ name: string }, number>
+
   constructor() {
     super("tally/analytics")
 
@@ -18,6 +20,10 @@ export class AnalyticsDatabase extends Dexie {
       // https://dexie.org/docs/inbound#example-of-outbound-primary-key
       analyticsUUID: "++,uuid",
     })
+
+    this.version(2).stores({
+      oneTimeEvent: "++,name",
+    })
   }
 
   async getAnalyticsUUID(): Promise<string | undefined> {
@@ -26,6 +32,15 @@ export class AnalyticsDatabase extends Dexie {
 
   async setAnalyticsUUID(uuid: string): Promise<void> {
     await this.analyticsUUID.add({ uuid })
+  }
+
+  async oneTimeEventExists(name: string): Promise<boolean> {
+    const count = await this.oneTimeEvent.where("name").equals(name).count()
+    return !!count
+  }
+
+  async setOneTimeEvent(name: string): Promise<void> {
+    await this.oneTimeEvent.add({ name })
   }
 }
 export async function getOrCreateDB(): Promise<AnalyticsDatabase> {
