@@ -7,6 +7,7 @@ export enum AnalyticsEvent {
   NEW_INSTALL = "New install",
   UI_SHOWN = "UI shown",
   NEW_ACCOUNT_TO_TRACK = "Address added to tracking on network",
+  CUSTOM_CHAIN_ADDED = "Custom chain added",
 }
 
 export enum OneTimeAnalyticsEvent {

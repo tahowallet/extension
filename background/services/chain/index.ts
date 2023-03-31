@@ -132,6 +132,7 @@ interface Events extends ServiceLifecycleEvents {
   block: AnyEVMBlock
   transaction: { forAccounts: string[]; transaction: AnyEVMTransaction }
   blockPrices: { blockPrices: BlockPrices; network: EVMNetwork }
+  customChainAdded: ValidatedAddEthereumChainParameter
 }
 
 export type QueuedTxToRetrieve = {
@@ -1898,6 +1899,8 @@ export default class ChainService extends BaseService<Events> {
     )
 
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
+
+    this.emitter.emit("customChainAdded", chainInfo)
   }
 
   async removeCustomChain(chainID: string): Promise<void> {

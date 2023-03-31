@@ -304,10 +304,7 @@ export default class Main extends BaseService<never> {
       chainService
     )
 
-    const analyticsService = AnalyticsService.create(
-      chainService,
-      preferenceService
-    )
+    const analyticsService = AnalyticsService.create(preferenceService)
 
     const nftsService = NFTsService.create(chainService)
 
@@ -1634,6 +1631,33 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(setShowAnalyticsNotification(true))
     })
 
+    // ⚠️ Note: We NEVER send addresses to analytics!
+    this.chainService.emitter.on("newAccountToTrack", () => {
+      this.analyticsService.sendAnalyticsEvent(
+        AnalyticsEvent.NEW_ACCOUNT_TO_TRACK,
+        {
+          description: `
+                This event is fired when any address on a network is added to the tracked list. 
+                
+                Note: this does not track recovery phrase(ish) import! But when an address is used 
+                on a network for the first time (read-only or recovery phrase/ledger/keyring).
+                `,
+        }
+      )
+    })
+
+    this.chainService.emitter.on("customChainAdded", (chainInfo) => {
+      this.analyticsService.sendAnalyticsEvent(
+        AnalyticsEvent.CUSTOM_CHAIN_ADDED,
+        {
+          description: `
+                This event is fired when a custom chain is added to the wallet.
+                `,
+          chainInfo: chainInfo.chainName,
+        }
+      )
+    })
+
     this.preferenceService.emitter.on(
       "updateAnalyticsPreferences",
       async (analyticsPreferences: AnalyticsPreferences) => {
@@ -1735,11 +1759,20 @@ export default class Main extends BaseService<never> {
 
       const openTime = Date.now()
 
+      const originalNetworkName =
+        this.store.getState().ui.selectedAccount.network.name
+
       port.onDisconnect.addListener(() => {
+        const networkNameAtClose =
+          this.store.getState().ui.selectedAccount.network.name
         this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.UI_SHOWN, {
           openTime: new Date(openTime).toISOString(),
           closeTime: new Date().toISOString(),
           openLength: (Date.now() - openTime) / 1e3,
+          networkName:
+            originalNetworkName === networkNameAtClose
+              ? originalNetworkName
+              : "switched networks",
           unit: "s",
         })
         this.onPopupDisconnected()
