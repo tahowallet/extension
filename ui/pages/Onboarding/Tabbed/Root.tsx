@@ -107,7 +107,7 @@ function Navigation({
             margin-bottom: 40px;
           }
 
-          @media (max-width: 980px) {
+          @media (max-width: 1000px) {
             .left_container {
               display: none;
             }

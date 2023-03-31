@@ -143,6 +143,7 @@ export default function ImportSeed(props: Props): ReactElement {
       </ImportForm>
       <style jsx>{`
         .bottom {
+          width: 100%;
           display: flex;
           flex-direction: column;
           margin-top: ${isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
