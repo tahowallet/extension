@@ -167,7 +167,7 @@ import {
   initAbilities,
 } from "./redux-slices/abilities"
 import { AddChainRequestData } from "./services/provider-bridge"
-import { AnalyticsEvent } from "./lib/posthog"
+import { AnalyticsEvent, OneTimeAnalyticsEvent } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -1659,6 +1659,12 @@ export default class Main extends BaseService<never> {
 
     uiSliceEmitter.on("deleteAnalyticsData", () => {
       this.analyticsService.removeAnalyticsData()
+    })
+
+    uiSliceEmitter.on("onboardingStarted", () => {
+      this.analyticsService.sendOneTimeAnalyticsEvent(
+        OneTimeAnalyticsEvent.ONBOARDING_STARTED
+      )
     })
   }
 

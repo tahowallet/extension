@@ -41,6 +41,7 @@ export type Events = {
   deleteAnalyticsData: never
   newDefaultWalletValue: boolean
   refreshBackgroundPage: null
+  onboardingStarted: null
   newSelectedAccount: AddressOnNetwork
   newSelectedAccountSwitched: AddressOnNetwork
   userActivityEncountered: AddressOnNetwork
@@ -286,6 +287,13 @@ export const refreshBackgroundPage = createBackgroundAsyncThunk(
   "ui/refreshBackgroundPage",
   async () => {
     await emitter.emit("refreshBackgroundPage", null)
+  }
+)
+
+export const onboardingStarted = createBackgroundAsyncThunk(
+  "ui/onboardingStarted",
+  async () => {
+    await emitter.emit("onboardingStarted", null)
   }
 )
 
