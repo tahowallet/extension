@@ -370,7 +370,8 @@
           "decryptingTime": "this may take up to 1 minute",
           "finalize": "Finalize",
           "completed": "Completed!",
-          "address": "address"
+          "address": "address",
+          "wrongPassword": "Wrong password, make sure you enter the password you used when encrypting this file"
         },
         "viewOnly": {
           "title": "Read-only address",

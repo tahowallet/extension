@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
 import { SignerTypes } from "@tallyho/tally-background/services/keyring"
@@ -19,12 +19,17 @@ type Props = {
 export default function ImportPrivateKeyJSON(props: Props): ReactElement {
   const { setIsImporting, isImporting, finalize } = props
 
+  const keyringImportStatus = useBackgroundSelector(
+    (state) => state.keyrings.importing
+  )
+
   const dispatch = useBackgroundDispatch()
   const selectedAccountAddress =
     useBackgroundSelector(selectCurrentAccount).address
   const [file, setFile] = useState("")
   const [password, setPassword] = useState("")
 
+  const [hasError, setHasError] = useState(false)
   const [isImported, setIsImported] = useState(false)
 
   const { t } = useTranslation("translation", {
@@ -39,7 +44,7 @@ export default function ImportPrivateKeyJSON(props: Props): ReactElement {
     if (!password || !file) {
       return
     }
-
+    setHasError(false)
     setIsImporting(true)
 
     await dispatch(
@@ -49,9 +54,17 @@ export default function ImportPrivateKeyJSON(props: Props): ReactElement {
         password,
       })
     )
+
     setIsImporting(false)
     setIsImported(true)
   }, [dispatch, file, password, setIsImporting])
+
+  useEffect(() => {
+    if (keyringImportStatus === "failed" && isImported) {
+      setHasError(true)
+      setIsImported(false)
+    }
+  }, [isImported, keyringImportStatus])
 
   const showJSONForm = !isImporting && !isImported
 
@@ -98,10 +111,15 @@ export default function ImportPrivateKeyJSON(props: Props): ReactElement {
           hasPreview
           label={t("password")}
           onChange={(value) => setPassword(value)}
+          errorMessage={hasError ? t("wrongPassword") : ""}
         />
       </div>
       <SharedButton
-        style={{ width: "100%", maxWidth: "320px", marginTop: "25px" }}
+        style={{
+          width: "100%",
+          maxWidth: "320px",
+          marginTop: hasError ? "50px" : "25px",
+        }}
         size="medium"
         type="primary"
         isDisabled={!(file && password) || isImporting}
