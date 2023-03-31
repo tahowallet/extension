@@ -1,4 +1,5 @@
 import Dexie from "dexie"
+import { OneTimeAnalyticsEvent } from "../../lib/posthog"
 
 export interface AnalyticsUUID {
   uuid: string
@@ -24,6 +25,15 @@ export class AnalyticsDatabase extends Dexie {
     this.version(2).stores({
       oneTimeEvent: "++,name",
     })
+
+    this.version(3).upgrade(async (tx) => {
+      await tx.table("oneTimeEvent").add({
+        name: OneTimeAnalyticsEvent.ONBOARDING_STARTED,
+      })
+      await tx.table("oneTimeEvent").add({
+        name: OneTimeAnalyticsEvent.ONBOARDING_FINISHED,
+      })
+    })
   }
 
   async getAnalyticsUUID(): Promise<string | undefined> {
@@ -35,8 +45,7 @@ export class AnalyticsDatabase extends Dexie {
   }
 
   async oneTimeEventExists(name: string): Promise<boolean> {
-    const count = await this.oneTimeEvent.where("name").equals(name).count()
-    return !!count
+    return (await this.oneTimeEvent.where("name").equals(name).count()) > 0
   }
 
   async setOneTimeEvent(name: string): Promise<void> {

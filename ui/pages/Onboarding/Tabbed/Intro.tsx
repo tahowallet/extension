@@ -1,4 +1,5 @@
-import { onboardingStarted } from "@tallyho/tally-background/redux-slices/ui"
+import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
+import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../../../components/Shared/SharedButton"
@@ -22,7 +23,9 @@ export default function Intro(): ReactElement {
           type="primary"
           size="large"
           linkTo={OnboardingRoutes.ADD_WALLET}
-          onClick={() => dispatch(onboardingStarted())}
+          onClick={() =>
+            dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_STARTED))
+          }
           center
           style={{
             fontSize: "20px",
@@ -36,7 +39,9 @@ export default function Intro(): ReactElement {
           type="secondary"
           size="large"
           linkTo={OnboardingRoutes.NEW_SEED}
-          onClick={() => dispatch(onboardingStarted())}
+          onClick={() =>
+            dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_STARTED))
+          }
           center
           style={{
             fontSize: "20px",

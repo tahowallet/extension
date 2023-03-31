@@ -2,6 +2,7 @@ import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
+import { AnalyticsEvent, OneTimeAnalyticsEvent } from "../lib/posthog"
 import { EVMNetwork } from "../networks"
 import { AnalyticsPreferences } from "../services/preferences/types"
 import { AccountSignerWithId } from "../signing"
@@ -41,7 +42,7 @@ export type Events = {
   deleteAnalyticsData: never
   newDefaultWalletValue: boolean
   refreshBackgroundPage: null
-  onboardingStarted: null
+  sendEvent: AnalyticsEvent | OneTimeAnalyticsEvent
   newSelectedAccount: AddressOnNetwork
   newSelectedAccountSwitched: AddressOnNetwork
   userActivityEncountered: AddressOnNetwork
@@ -290,10 +291,10 @@ export const refreshBackgroundPage = createBackgroundAsyncThunk(
   }
 )
 
-export const onboardingStarted = createBackgroundAsyncThunk(
-  "ui/onboardingStarted",
-  async () => {
-    await emitter.emit("onboardingStarted", null)
+export const sendEvent = createBackgroundAsyncThunk(
+  "ui/sendEvent",
+  async (event: AnalyticsEvent | OneTimeAnalyticsEvent) => {
+    await emitter.emit("sendEvent", event)
   }
 )
 

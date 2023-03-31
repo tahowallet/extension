@@ -10,7 +10,14 @@ export enum AnalyticsEvent {
 }
 
 export enum OneTimeAnalyticsEvent {
-  ONBOARDING_STARTED = "Onboarding started",
+  ONBOARDING_STARTED = "Onboarding Started",
+  ONBOARDING_FINISHED = "Onboarding Finished",
+}
+
+export const isOneTimeAnalyticsEvent = (
+  eventName: string
+): eventName is OneTimeAnalyticsEvent => {
+  return Object.values<string>(OneTimeAnalyticsEvent).includes(eventName)
 }
 
 const POSTHOG_PROJECT_ID = "11112"
