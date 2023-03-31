@@ -3,7 +3,6 @@ import {
   ARBITRUM_ONE,
   AVALANCHE,
   OPTIMISM,
-  NETWORK_BY_CHAIN_ID,
   POLYGON,
   BINANCE_SMART_CHAIN,
   ROOTSTOCK,
@@ -14,6 +13,9 @@ import classNames from "classnames"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { shuffle } from "lodash"
+import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { useBackgroundSelector } from "../../hooks"
 
 const NETWORK_DEFAULT_COLORS = {
   [ETHEREUM.chainID]: "#62688F",
@@ -72,6 +74,14 @@ export default function NetworksChart({
   networksCount: number
 }): ReactElement {
   const { t } = useTranslation()
+
+  const EVMNetworks = useBackgroundSelector(selectEVMNetworks).reduce(
+    (acc: { [chainID: string]: EVMNetwork }, network) => {
+      acc[network.chainID] = network
+      return acc
+    },
+    {}
+  )
   const availableColors = [...NETWORK_COLORS]
   const percents = getNetworksPercents(accountsTotal).map((percent) => {
     if (NETWORK_DEFAULT_COLORS[percent.chainID]) {
@@ -116,13 +126,13 @@ export default function NetworksChart({
           ))}
         </div>
         <div className="chains_legend">
-          {percents.map(({ chainID, percent, color }) => (
+          {percents.map(({ chainID, percent, color }, i) => (
             <div className="chains_legend_item" key={chainID}>
               <div
                 className="chains_legend_dot"
                 style={{ backgroundColor: color }}
               />
-              {NETWORK_BY_CHAIN_ID[chainID].name}({percent}%)
+              {EVMNetworks[chainID]?.name || `Network ${i}`}({percent}%)
             </div>
           ))}
         </div>
