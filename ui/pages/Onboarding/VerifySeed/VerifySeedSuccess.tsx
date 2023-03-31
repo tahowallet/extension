@@ -3,6 +3,7 @@ import { useHistory } from "react-router-dom"
 import { importKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { DEFAULT_DERIVATION_PATH } from "@tallyho/tally-background/constants"
 import SharedButton from "../../../components/Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
 import { OnboardingBox, OnboardingMessageHeader } from "../styles"
@@ -43,7 +44,7 @@ function VerifySeedSuccess({
             importKeyring({
               mnemonic: mnemonic.join(" "),
               source: "internal",
-              path: selectedNetwork.derivationPath ?? "m/44'/60'/0'/0",
+              path: selectedNetwork.derivationPath ?? DEFAULT_DERIVATION_PATH,
             })
           )
           history.push(nextPage)

@@ -7,6 +7,7 @@ import { AnalyticsPreferences } from "../services/preferences/types"
 import { AccountSignerWithId } from "../signing"
 import { AccountSignerSettings } from "../ui"
 import { AccountState, addAddressNetwork } from "./accounts"
+import { setDerivationPath } from "./ledger"
 import { createBackgroundAsyncThunk } from "./utils"
 
 export const defaultSettings = {
@@ -41,6 +42,7 @@ export type Events = {
   deleteAnalyticsData: never
   newDefaultWalletValue: boolean
   refreshBackgroundPage: null
+  derivationPathChange: string
   newSelectedAccount: AddressOnNetwork
   newSelectedAccountSwitched: AddressOnNetwork
   userActivityEncountered: AddressOnNetwork
@@ -271,13 +273,13 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
     emitter.emit("newSelectedNetwork", network)
     // Add any accounts on the currently selected network to the newly
     // selected network - if those accounts don't yet exist on it.
-    Object.keys(account.accountsData.evm[currentlySelectedChainID]).forEach(
-      (address) => {
-        if (!account.accountsData.evm[network.chainID]?.[address]) {
-          dispatch(addAddressNetwork({ address, network }))
-        }
+    Object.keys(
+      account.accountsData.evm[currentlySelectedChainID] ?? []
+    ).forEach((address) => {
+      if (!account.accountsData.evm[network.chainID]?.[address]) {
+        dispatch(addAddressNetwork({ address, network }))
       }
-    )
+    })
     dispatch(setNewSelectedAccount({ ...ui.selectedAccount, network }))
   }
 )
@@ -286,6 +288,14 @@ export const refreshBackgroundPage = createBackgroundAsyncThunk(
   "ui/refreshBackgroundPage",
   async () => {
     await emitter.emit("refreshBackgroundPage", null)
+  }
+)
+
+export const derivationPathChange = createBackgroundAsyncThunk(
+  "ui/derivationPathChange",
+  async (derivationPath: string, { dispatch }) => {
+    await emitter.emit("derivationPathChange", derivationPath)
+    dispatch(setDerivationPath(derivationPath))
   }
 )
 
