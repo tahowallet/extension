@@ -57,32 +57,48 @@ export default function TopMenuProtocolList({
   const productionNetworks = useBackgroundSelector(selectProductionEVMNetworks)
 
   const customNetworksEnabled = isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)
+  const builtinNetworks = productionNetworks.filter(isBuiltInNetwork)
+  const customNetworks = productionNetworks.filter(
+    (network) => !isBuiltInNetwork(network)
+  )
 
   return (
     <div className="standard_width_padded center_horizontal">
       <div className={classNames(customNetworksEnabled && "networks_list")}>
         <ul>
-          {productionNetworks
-            .filter((network) => {
-              if (isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
-                // Get rid of this whole filter once custom network support is fully in
-                return true
+          {builtinNetworks.map((network) => (
+            <TopMenuProtocolListItem
+              isSelected={sameNetwork(currentNetwork, network)}
+              key={network.name}
+              network={network}
+              info={
+                productionNetworkInfo[network.chainID] ||
+                t("protocol.compatibleChain")
               }
-              return isBuiltInNetwork(network)
-            })
-            .map((network) => (
-              <TopMenuProtocolListItem
-                isSelected={sameNetwork(currentNetwork, network)}
-                key={network.name}
-                network={network}
-                info={
-                  productionNetworkInfo[network.chainID] ||
-                  t("protocol.compatibleChain")
-                }
-                onSelect={onProtocolChange}
-                isDisabled={disabledChainIDs.includes(network.chainID)}
-              />
-            ))}
+              onSelect={onProtocolChange}
+              isDisabled={disabledChainIDs.includes(network.chainID)}
+            />
+          ))}
+          {isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) &&
+            customNetworks.length > 0 && (
+              <>
+                <li className="protocol_divider">
+                  <div className="divider_label">
+                    {t("topMenu.protocolList.customNetworksSectionTitle")}
+                  </div>
+                  <div className="divider_line" />
+                </li>
+                {customNetworks.map((network) => (
+                  <TopMenuProtocolListItem
+                    isSelected={sameNetwork(currentNetwork, network)}
+                    key={network.name}
+                    network={network}
+                    info={t("protocol.compatibleChain")}
+                    onSelect={onProtocolChange}
+                  />
+                ))}
+              </>
+            )}
           {showTestNetworks && testNetworks.length > 0 && (
             <>
               <li className="protocol_divider">

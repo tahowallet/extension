@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Read .nvmrc
-        run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+        run: echo "NVMRC=$(cat ./.nvmrc)" >> $GITHUB_OUTPUT
         id: nvm
       - name: Use Node + Yarn
         uses: actions/setup-node@v3
@@ -76,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Read .nvmrc
-        run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+        run: echo "NVMRC=$(cat ./.nvmrc)" >> $GITHUB_OUTPUT
         id: nvm
       - name: Use Node + Yarn
         uses: actions/setup-node@v3
@@ -90,7 +90,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Read .nvmrc
-        run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+        run: echo "NVMRC=$(cat ./.nvmrc)" >> $GITHUB_OUTPUT
         id: nvm
       - name: Use Node + Yarn
         uses: actions/setup-node@v3
@@ -99,15 +99,32 @@ jobs:
           cache: "yarn"
       - run: yarn install --frozen-lockfile
       - run: yarn lint
+  detect-if-flag-changed:
+    runs-on: ubuntu-latest
+    outputs:
+      path-filter: ${{ steps.filter.outputs.path-filter }}
+    steps:
+      - uses: actions/checkout@v3
+        if: github.event_name == 'pull_request'
+      - uses: dorny/paths-filter@v2
+        if: github.event_name == 'pull_request'
+        id: filter
+        with:
+          filters: |
+            path-filter:
+              - '.env.defaults'
   e2e-tests:
-    if: (github.ref == 'refs/heads/main') || contains(github.head_ref, 'e2e')
-    needs: build
+    if: |
+      github.ref == 'refs/heads/main'
+        || contains(github.head_ref, 'e2e')
+        || needs.detect-if-flag-changed.outputs.path-filter == 'true'
+    needs: [build, detect-if-flag-changed]
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Read .nvmrc
-        run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+        run: echo "NVMRC=$(cat ./.nvmrc)" >> $GITHUB_OUTPUT
         id: nvm
       - name: Use Node + Yarn
         uses: actions/setup-node@v3

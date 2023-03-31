@@ -31,6 +31,7 @@ function SeedWord(props: SeedWordProps): ReactElement {
           }
         }}
         role="button"
+        data-testid="verify_seed_word_placeholder"
       >
         <span className="word_index">{index + 1}</span>
         <span className="dash">-</span>
@@ -295,7 +296,10 @@ export default function NewSeedVerify({
             )}
           </>
         ) : (
-          <ul className="remaining_word_list">
+          <ul
+            className="remaining_word_list"
+            data-testid="remaining_seed_words"
+          >
             {remainingWords.map((word, i) => {
               const key = `${word}-${i}`
               return (
