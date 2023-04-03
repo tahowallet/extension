@@ -9,6 +9,7 @@ import {
   AnalyticsEvent,
   deletePerson,
   getPersonId,
+  OneTimeAnalyticsEvent,
   sendPosthogEvent,
 } from "../../lib/posthog"
 import ChainService from "../chain"
@@ -104,6 +105,24 @@ export default class AnalyticsService extends BaseService<Events> {
       const { uuid } = await this.getOrCreateAnalyticsUUID()
 
       sendPosthogEvent(uuid, eventName, payload)
+    }
+  }
+
+  async sendOneTimeAnalyticsEvent(
+    eventName: OneTimeAnalyticsEvent,
+    payload?: Record<string, unknown>
+  ): Promise<void> {
+    if (await this.db.oneTimeEventExists(eventName)) {
+      // Don't send the event if it has already been sent.
+      return
+    }
+
+    const { isEnabled } = await this.preferenceService.getAnalyticsPreferences()
+    if (isEnabled) {
+      const { uuid } = await this.getOrCreateAnalyticsUUID()
+
+      sendPosthogEvent(uuid, eventName, payload)
+      this.db.setOneTimeEvent(eventName)
     }
   }
 

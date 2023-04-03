@@ -647,7 +647,9 @@
     "rpc": "RPC",
     "explorer": "BlockExplorer",
     "submit": "Add network",
-    "cancel": "Reject"
+    "cancel": "Reject",
+    "warnAlreadyExistsHeader": "Network already added to Taho wallet.",
+    "warnAlreadyExistsBody": "You can switch to it from Network dropdown"
   },
   "swap": {
     "title": "Swap Assets",
@@ -702,6 +704,7 @@
     "addressCopiedMsg": "Address copied to clipboard",
     "protocolList": {
       "testnetsSectionTitle": "Testnets",
+      "customNetworksSectionTitle": "Custom networks",
       "customRPCFooterTitle": "Activate or add networks",
       "customRPCFooterDesc": "You can activate any network that is already added to Taho or you can add any other network.",
       "networkSettingsBtn": "Network settings"

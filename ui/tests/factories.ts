@@ -4,6 +4,10 @@ import {
   AccountData,
   AccountState,
 } from "@tallyho/tally-background/redux-slices/accounts"
+import {
+  NFTCached,
+  NFTCollectionCached,
+} from "@tallyho/tally-background/redux-slices/nfts_update"
 import { NormalizedEVMAddress } from "@tallyho/tally-background/types"
 
 export const TEST_ADDRESS =
@@ -61,6 +65,41 @@ export const createAbility = (overrides: Partial<Ability> = {}): Ability => {
       type: "hold",
       address: "",
     },
+    ...overrides,
+  }
+}
+
+export const createNFT = (overrides: Partial<NFTCached> = {}): NFTCached => {
+  return {
+    id: "",
+    tokenId: "",
+    name: "",
+    description: "",
+    thumbnailURL: "",
+    previewURL: "",
+    transferDate: Date.now().toString(),
+    attributes: [],
+    collectionID: "",
+    contract: "",
+    owner: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    isBadge: false,
+    chainID: ETHEREUM.chainID,
+    rarityRank: null,
+    ...overrides,
+  }
+}
+
+export const createNFTCollection = (
+  overrides: Partial<NFTCollectionCached> = {}
+): NFTCollectionCached => {
+  return {
+    id: "",
+    name: "",
+    owner: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    hasBadges: false,
+    nfts: [],
+    hasNextPage: false,
+    chainID: ETHEREUM.chainID,
     ...overrides,
   }
 }
