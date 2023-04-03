@@ -63,7 +63,11 @@ export default class DoggoService extends BaseService<Events> {
     if (!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES)) {
       // Make sure the hunting ground assets are being tracked.
       huntingGrounds.forEach(({ network, asset }) => {
-        this.indexingService.addAssetToTrack({ ...asset, homeNetwork: network })
+        this.indexingService.addAssetToTrack({
+          ...asset,
+          homeNetwork: network,
+          metadata: { tokenLists: [] },
+        })
       })
       this.indexingService.addAssetToTrack(DOGGO)
 
@@ -73,6 +77,7 @@ export default class DoggoService extends BaseService<Events> {
         homeNetwork: ETHEREUM,
         name: "Wrapped Ether",
         symbol: "WETH",
+        metadata: { tokenLists: [] },
       })
 
       // Track referrals for all added accounts and any new ones that are added

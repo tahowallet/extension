@@ -105,6 +105,9 @@ export async function getMetadata(
 
     return {
       ...tokenSmartContract,
+      metadata: {
+        tokenLists: [],
+      },
       symbol,
       name,
       decimals,
