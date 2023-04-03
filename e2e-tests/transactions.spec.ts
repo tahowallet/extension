@@ -1,6 +1,6 @@
 import { test } from "./utils"
 
-test.describe.skip("Transactions", () => {
+test.describe("Transactions", () => {
   /**
    * Let's test sending base assets first, it can be done on any chain or fork
    * but if we won't be able to start with blockchain fork then probably we
