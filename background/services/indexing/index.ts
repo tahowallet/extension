@@ -177,13 +177,14 @@ export default class IndexingService extends BaseService<Events> {
       const trackedNetworks = await this.chainService.getTrackedNetworks()
 
       // Push any assets we have cached in the db for all active networks
-      trackedNetworks.forEach(async (network) => {
-        await this.cacheAssetsForNetwork(network)
-        this.emitter.emit("assets", this.getCachedAssets(network))
-      })
-
-      // Load balances after token lists load
-      tokenListLoad.then(() => this.loadAccountBalances())
+      Promise.allSettled(
+        trackedNetworks.map(async (network) => {
+          await this.cacheAssetsForNetwork(network)
+          this.emitter.emit("assets", this.getCachedAssets(network))
+        })
+        // Load balances after token lists load and after assets are cached, otherwise
+        // we will not load balances on initial balance query
+      ).then(() => tokenListLoad.then(() => this.loadAccountBalances()))
     })
   }
 
@@ -419,7 +420,7 @@ export default class IndexingService extends BaseService<Events> {
             .asset as SmartContractFungibleAsset
           if (fungibleAsset.contractAddress && fungibleAsset.decimals) {
             this.addTokenToTrackByContract(
-              addressNetwork,
+              addressNetwork.network,
               fungibleAsset.contractAddress
             )
           }
@@ -529,7 +530,7 @@ export default class IndexingService extends BaseService<Events> {
             await this.addAssetToTrack(knownAsset)
           } else {
             await this.addTokenToTrackByContract(
-              addressNetwork,
+              addressNetwork.network,
               contractAddress
             )
           }
@@ -587,13 +588,13 @@ export default class IndexingService extends BaseService<Events> {
    *        metadata.
    */
   private async addTokenToTrackByContract(
-    addressOnNetwork: AddressOnNetwork,
+    network: EVMNetwork,
     contractAddress: string
   ): Promise<void> {
     const normalizedAddress = normalizeEVMAddress(contractAddress)
-    const { network } = addressOnNetwork
+
     const knownAsset = this.getKnownSmartContractAsset(
-      addressOnNetwork.network,
+      network,
       normalizedAddress
     )
 
