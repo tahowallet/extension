@@ -31,9 +31,18 @@ export default function FeeSettingsButton({
           horizontalPosition="center"
           verticalPosition="bottom"
           IconComponent={() => (
-            <div className="disabled_settings">
-              <FeeSettingsText />
-            </div>
+            <>
+              <div className="disabled_settings">
+                <FeeSettingsText />
+              </div>
+              <style jsx>
+                {`
+                  .disabled_settings {
+                    font-size: 16px;
+                  }
+                `}
+              </style>
+            </>
           )}
         >
           <div className="tooltip_container">
@@ -62,9 +71,6 @@ export default function FeeSettingsButton({
             padding: 0.3rem;
             border: 1px solid #33514e;
             transition: all 0.3s ease;
-          }
-          .disabled_settings {
-            font-size: 16px;
           }
           .settings_image {
             width: 14px;
