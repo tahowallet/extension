@@ -770,10 +770,6 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(setEVMNetworks(supportedNetworks))
     })
 
-    this.chainService.emitter.on("selectedNetwork", (network) => {
-      this.store.dispatch(setSelectedNetwork(network))
-    })
-
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
     })
@@ -1328,6 +1324,12 @@ export default class Main extends BaseService<never> {
         )
 
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
+      }
+    )
+    this.internalEthereumProviderService.emitter.on(
+      "selectedNetwork",
+      (network) => {
+        this.store.dispatch(setSelectedNetwork(network))
       }
     )
 

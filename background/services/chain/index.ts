@@ -113,7 +113,6 @@ interface Events extends ServiceLifecycleEvents {
     source: "import" | "internal" | null
   }
   supportedNetworks: EVMNetwork[]
-  selectedNetwork: EVMNetwork
   accountsWithBalances: {
     /**
      * Retrieved balance for the network's base asset
@@ -1882,7 +1881,7 @@ export default class ChainService extends BaseService<Events> {
   // Used to add non-default chains via wallet_addEthereumChain
   async addCustomChain(
     chainInfo: ValidatedAddEthereumChainParameter
-  ): Promise<void> {
+  ): Promise<EVMNetwork> {
     const network = await this.db.addEVMNetwork({
       chainName: chainInfo.chainName,
       chainID: chainInfo.chainId,
@@ -1900,7 +1899,7 @@ export default class ChainService extends BaseService<Events> {
 
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
 
-    this.emitter.emit("selectedNetwork", network)
+    return network
   }
 
   async removeCustomChain(chainID: string): Promise<void> {
