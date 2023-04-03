@@ -6,6 +6,11 @@ import { useTranslation } from "react-i18next"
 import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
+import {
+  isSmartContractFungibleAsset,
+  SmartContractFungibleAsset,
+  SwappableAsset,
+} from "@tallyho/tally-background/assets"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
@@ -14,9 +19,11 @@ import { useBackgroundSelector } from "../../../hooks"
 import { trimWithEllipsis } from "../../../utils/textUtils"
 
 type CommonAssetListItemProps = {
-  assetAmount: CompleteAssetAmount
+  assetAmount: CompleteAssetAmount<SwappableAsset>
   initializationLoadingTimeExpired: boolean
-  onUntrustedAssetWarningClick?: (asset: CompleteAssetAmount["asset"]) => void
+  onUntrustedAssetWarningClick?: (
+    asset: CompleteAssetAmount<SmartContractFungibleAsset>["asset"]
+  ) => void
 }
 
 const MAX_SYMBOL_LENGTH = 10
@@ -41,7 +48,9 @@ export default function CommonAssetListItem(
       ? assetAmount.asset.contractAddress
       : undefined
 
-  const assetIsUntrusted = isUntrustedAsset(assetAmount?.asset, selectedNetwork)
+  const assetIsUntrusted =
+    isSmartContractFungibleAsset(assetAmount.asset) &&
+    isUntrustedAsset(assetAmount.asset)
 
   return (
     <Link
@@ -92,7 +101,10 @@ export default function CommonAssetListItem(
                 type="button"
                 onClick={(event) => {
                   event.preventDefault()
-                  if (onUntrustedAssetWarningClick) {
+                  if (
+                    isSmartContractFungibleAsset(assetAmount.asset) &&
+                    onUntrustedAssetWarningClick
+                  ) {
                     onUntrustedAssetWarningClick(assetAmount.asset)
                   }
                 }}

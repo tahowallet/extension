@@ -747,7 +747,9 @@
       "assetImported": "Asset imported from transaction history",
       "name": "Name",
       "contract": "Contract address",
-      "close": "Close"
+      "close": "Close",
+      "hideAsset": "Hide asset",
+      "trustAsset": "Trust asset"
     },
     "banner": {
       "bannerTitle": "New Odyssey week!",

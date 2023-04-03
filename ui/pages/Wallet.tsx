@@ -11,6 +11,8 @@ import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
 import { selectShowAnalyticsNotification } from "@tallyho/tally-background/redux-slices/ui"
+import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { SwappableAsset } from "@tallyho/tally-background/assets"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -105,7 +107,10 @@ export default function Wallet(): ReactElement {
           >
             {panelNumber === 0 && (
               <WalletAssetList
-                assetAmounts={assetAmounts}
+                assetAmounts={
+                  // FIXME: Refactor AnyAsset type
+                  assetAmounts as CompleteAssetAmount<SwappableAsset>[]
+                }
                 initializationLoadingTimeExpired={
                   initializationLoadingTimeExpired
                 }
