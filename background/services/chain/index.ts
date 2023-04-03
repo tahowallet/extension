@@ -21,7 +21,7 @@ import {
   NetworkBaseAsset,
   sameChainID,
 } from "../../networks"
-import { AssetTransfer, SmartContractFungibleAsset } from "../../assets"
+import { AssetTransfer } from "../../assets"
 import {
   HOUR,
   ETHEREUM,
@@ -1917,16 +1917,5 @@ export default class ChainService extends BaseService<Events> {
 
     this.supportedNetworks = supportedNetworks
     this.emitter.emit("supportedNetworks", supportedNetworks)
-  }
-
-  async getTokenMetadata(
-    contractAddress: HexString,
-    network: EVMNetwork
-  ): Promise<SmartContractFungibleAsset | undefined> {
-    const assetMetadata = await this.assetData.getTokenMetadata({
-      homeNetwork: network,
-      contractAddress,
-    })
-    return assetMetadata
   }
 }

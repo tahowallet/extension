@@ -587,7 +587,7 @@ export default class IndexingService extends BaseService<Events> {
    *        fungible asset. Useful in case this asset isn't found in existing
    *        metadata.
    */
-  private async addTokenToTrackByContract(
+  async addTokenToTrackByContract(
     network: EVMNetwork,
     contractAddress: string
   ): Promise<void> {
