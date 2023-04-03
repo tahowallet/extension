@@ -39,6 +39,10 @@ export type AssetMetadata = {
   logoURL?: string
   websiteURL?: string
   tokenLists: TokenListCitation[]
+  /**
+   * Set by the user on assets discovered through transaction annotations
+   */
+  trusted?: boolean
 }
 
 /**
@@ -95,7 +99,8 @@ export type SmartContractAsset = SmartContract & Asset
  * Any fungible asset that is managed by a smart contract; see
  * {@link SmartContract) for information on smart contract objects.
  */
-export type SmartContractFungibleAsset = FungibleAsset & SmartContract
+export type SmartContractFungibleAsset = FungibleAsset &
+  SmartContract & { metadata: AssetMetadata }
 
 /*
  * The primary type representing amounts in fungible or non-fungible asset

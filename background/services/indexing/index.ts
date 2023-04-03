@@ -572,6 +572,14 @@ export default class IndexingService extends BaseService<Events> {
     return balances
   }
 
+  async setAssetTrustStatus(
+    asset: SmartContractFungibleAsset,
+    isTrusted: boolean
+  ): Promise<void> {
+    await this.db.updateAssetMetadata(asset, { trusted: isTrusted })
+    await this.cacheAssetsForNetwork(asset.homeNetwork)
+  }
+
   /**
    * Add an asset to track to a particular account and network, specified by the
    * contract address and optional decimals.
