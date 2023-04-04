@@ -443,6 +443,7 @@ export default function AccountsNotificationPanelAccounts({
                               >
                                 <AccountItemOptionsMenu
                                   accountTotal={accountTotal}
+                                  accountType={accountType}
                                 />
                               </SharedAccountItemSummary>
                             </div>

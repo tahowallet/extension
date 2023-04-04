@@ -13,7 +13,17 @@
       "lastAccountWarningBody": "Are you sure you want to proceed?",
       "removeAddress": "Remove address",
       "copyAddress": "Copy address",
-      "removeConfirm": "Yes, I want to remove it"
+      "removeConfirm": "Yes, I want to remove it",
+      "showPrivateKey": {
+        "header": "Show Private Key",
+        "warningMessage": "Anybody that has your Private Key can move your assets.",
+        "privateKeyInfo": "What is a Private Key?",
+        "exportingPrivateKey": {
+          "header": "Exporting Private Key for:",
+          "confirmationDesc": "I understand that other Private Keys, Recovery Phrases, Ledger or  Read-only accounts will not be saved with this recovery phrase.",
+          "showBtn": "Show Private Key"
+        }
+      }
     },
     "notificationPanel": {
       "accountPanelName": "Accounts",
