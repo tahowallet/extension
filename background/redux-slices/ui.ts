@@ -16,6 +16,7 @@ export const defaultSettings = {
   showTestNetworks: false,
   collectAnalytics: false,
   showAnalyticsNotification: false,
+  showUntrustedAssets: true,
   hideBanners: false,
   showHiddenAssets: false,
 }
@@ -24,12 +25,14 @@ export type UIState = {
   selectedAccount: AddressOnNetwork
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
+  // FIXME: Move these settings to preferences service db
   settings: {
     hideDust: boolean
     defaultWallet: boolean
     showTestNetworks: boolean
     collectAnalytics: boolean
     showAnalyticsNotification: boolean
+    showUntrustedAssets: boolean
     hideBanners: boolean
     showHiddenAssets: boolean
   }
@@ -83,6 +86,12 @@ const uiSlice = createSlice({
       { payload: showTestNetworks }: { payload: boolean }
     ): void => {
       immerState.settings.showTestNetworks = showTestNetworks
+    },
+    toggleUntrustedAssets: (
+      immerState,
+      { payload: showUntrustedAssets }: { payload: boolean }
+    ): void => {
+      immerState.settings.showUntrustedAssets = showUntrustedAssets
     },
     toggleCollectAnalytics: (
       state,
@@ -193,6 +202,7 @@ export const {
   initializationLoadingTimeHitLimit,
   toggleHideDust,
   toggleTestNetworks,
+  toggleUntrustedAssets,
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
   toggleHideBanners,
@@ -351,6 +361,11 @@ export const selectInitializationTimeExpired = createSelector(
 export const selectShowTestNetworks = createSelector(
   selectSettings,
   (settings) => settings?.showTestNetworks
+)
+
+export const selectShowUntrustedAssets = createSelector(
+  selectSettings,
+  (settings) => settings?.showUntrustedAssets
 )
 
 export const selectCollectAnalytics = createSelector(
