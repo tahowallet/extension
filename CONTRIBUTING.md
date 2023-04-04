@@ -29,7 +29,7 @@ When developing a new feature, please put it behind a feature flag. Because this
 
 ## Getting Started
 
-1. Fork tahowallet/tally-extension
+1. Fork tahowallet/extension
 2. Clone your fork
 3. Follow the [setup
    instructions](https://github.com/tahowallet/extension#building-and-developing).
