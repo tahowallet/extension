@@ -17,6 +17,7 @@ export enum AnalyticsEvent {
 export enum OneTimeAnalyticsEvent {
   ONBOARDING_STARTED = "Onboarding Started",
   ONBOARDING_FINISHED = "Onboarding Finished",
+  CHAIN_ADDED = "Chain Added",
 }
 
 export const isOneTimeAnalyticsEvent = (

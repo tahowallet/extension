@@ -17,6 +17,7 @@ import PreferenceService from "../preferences"
 import { FeatureFlags, isEnabled as isFeatureFlagEnabled } from "../../features"
 import logger from "../../lib/logger"
 
+const chainSpecificOneTimeEvents = [OneTimeAnalyticsEvent.CHAIN_ADDED]
 interface Events extends ServiceLifecycleEvents {
   enableDefaultOn: void
 }
@@ -112,18 +113,30 @@ export default class AnalyticsService extends BaseService<Events> {
     eventName: OneTimeAnalyticsEvent,
     payload?: Record<string, unknown>
   ): Promise<void> {
-    if (await this.db.oneTimeEventExists(eventName)) {
+    const { isEnabled } = await this.preferenceService.getAnalyticsPreferences()
+    if (!isEnabled) {
+      return
+    }
+
+    // There are some events that we want to send once per chainId.
+    // Rather than creating a separate event for every chain - lets
+    // keep the event name uniform (while sending the chainId as a payload)
+    // and use the key to track if we've already sent the event for that chainId.
+    const chainId = payload?.chainId
+
+    const key = chainSpecificOneTimeEvents.includes(eventName)
+      ? `${eventName}-${chainId}`
+      : eventName
+
+    if (await this.db.oneTimeEventExists(key)) {
       // Don't send the event if it has already been sent.
       return
     }
 
-    const { isEnabled } = await this.preferenceService.getAnalyticsPreferences()
-    if (isEnabled) {
-      const { uuid } = await this.getOrCreateAnalyticsUUID()
+    const { uuid } = await this.getOrCreateAnalyticsUUID()
 
-      sendPosthogEvent(uuid, eventName, payload)
-      this.db.setOneTimeEvent(eventName)
-    }
+    sendPosthogEvent(uuid, eventName, payload)
+    this.db.setOneTimeEvent(key)
   }
 
   async removeAnalyticsData(): Promise<void> {

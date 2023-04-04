@@ -167,7 +167,11 @@ import {
   initAbilities,
 } from "./redux-slices/abilities"
 import { AddChainRequestData } from "./services/provider-bridge"
-import { AnalyticsEvent, isOneTimeAnalyticsEvent } from "./lib/posthog"
+import {
+  AnalyticsEvent,
+  isOneTimeAnalyticsEvent,
+  OneTimeAnalyticsEvent,
+} from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -1649,6 +1653,17 @@ export default class Main extends BaseService<never> {
   async connectAnalyticsService(): Promise<void> {
     this.analyticsService.emitter.on("enableDefaultOn", () => {
       this.store.dispatch(setShowAnalyticsNotification(true))
+    })
+
+    this.chainService.emitter.on("networkSubscribed", (network) => {
+      this.analyticsService.sendOneTimeAnalyticsEvent(
+        OneTimeAnalyticsEvent.CHAIN_ADDED,
+        {
+          chainId: network.chainID,
+          name: network.name,
+          description: `This event is fired when a chain is subscribed to from the wallet for the first time.`,
+        }
+      )
     })
 
     this.preferenceService.emitter.on(
