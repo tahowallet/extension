@@ -107,7 +107,7 @@ export default function AccountItemOptionsMenu({
           onClick={(e) => e.stopPropagation()}
           style={{ cursor: "default" }}
         >
-          <ShowPrivateKey />
+          <ShowPrivateKey account={accountTotal} />
         </div>
       </SharedSlideUpMenu>
       <SharedDropdown

@@ -1,10 +1,18 @@
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
 import SharedWarningMessage from "../Shared/SharedWarningMessage"
 import SharedButton from "../Shared/SharedButton"
+import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 
-export default function ShowPrivateKey(): ReactElement {
+interface ShowPrivateKeyProps {
+  account: AccountTotal
+}
+
+export default function ShowPrivateKey({
+  account,
+}: ShowPrivateKeyProps): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem.showPrivateKey",
   })
@@ -15,16 +23,17 @@ export default function ShowPrivateKey(): ReactElement {
       <SharedSlideUpMenuPanel header={t("header")} icon="icons/s/key.svg">
         <div className="content simple_text">
           <SharedWarningMessage text={t("warningMessage")} />
-          <div className="exporting_content">
+          <div className="exporting_container">
             <span className="header">{t("exportingPrivateKey.header")}</span>
+            <div className="account_container">
+              <SharedAccountItemSummary accountTotal={account} />
+            </div>
             {showPrivateKey ? (
               // TODO add a new component
               <div>Copy Private key to clipboard</div>
             ) : (
-              <>
-                <span className="confirmation">
-                  {t("exportingPrivateKey.confirmationDesc")}
-                </span>
+              <div className="confirmation_container">
+                <span>{t("exportingPrivateKey.confirmationDesc")}</span>
                 <SharedButton
                   type="primary"
                   size="medium"
@@ -32,7 +41,7 @@ export default function ShowPrivateKey(): ReactElement {
                 >
                   {t("exportingPrivateKey.showBtn")}
                 </SharedButton>
-              </>
+              </div>
             )}
           </div>
           <div>{t("privateKeyInfo")}</div>
@@ -47,14 +56,28 @@ export default function ShowPrivateKey(): ReactElement {
             gap: 16px;
             padding: 0 24px;
           }
-          .exporting_content {
+          .account_container {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid #183736;
+            padding: 8px 0 24px;
+          }
+          .exporting_container {
             box-sizing: border-box;
             width: 100%;
-            padding: 16px 24px;
+            height: 334px;
+            padding: 16px 24px 24px;
             background: var(--green-120);
             border-radius: 8px;
             display: flex;
             flex-direction: column;
+          }
+          .confirmation_container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin-top: 32px;
           }
         `}
       </style>
