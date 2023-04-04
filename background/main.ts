@@ -862,6 +862,9 @@ export default class Main extends BaseService<never> {
           const signedTransactionResult =
             await this.signingService.signTransaction(request, accountSigner)
           await this.store.dispatch(transactionSigned(signedTransactionResult))
+          this.analyticsService.sendAnalyticsEvent(
+            AnalyticsEvent.TRANSACTION_SIGNED
+          )
         } catch (exception) {
           logger.error("Error signing transaction", exception)
           this.store.dispatch(
