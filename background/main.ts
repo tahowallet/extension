@@ -1613,6 +1613,14 @@ export default class Main extends BaseService<never> {
     return this.keyringService.unlock(password)
   }
 
+  async exportMnemonic(walletID: string): Promise<string | null> {
+    return this.keyringService.exportMnemonic(walletID)
+  }
+
+  async exportPrivateKey(address: string): Promise<string | null> {
+    return this.keyringService.exportPrivateKey(address)
+  }
+
   async importSigner(signerRaw: SignerRawWithType): Promise<HexString | null> {
     return this.keyringService.importSigner(signerRaw)
   }

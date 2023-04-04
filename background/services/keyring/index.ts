@@ -386,7 +386,7 @@ export default class KeyringService extends BaseService<Events> {
     let address: HexString | null
 
     if (isRawPrivateKey(signerRaw)) {
-      address = await this.#importWallet(signerRaw)
+      address = await this.#importPrivateKey(signerRaw)
     } else {
       address = await this.#importKeyring(signerRaw)
     }
@@ -425,7 +425,9 @@ export default class KeyringService extends BaseService<Events> {
     return address
   }
 
-  async #importWallet(signerRaw: SignerRawPrivateKey): Promise<string | null> {
+  async #importPrivateKey(
+    signerRaw: SignerRawPrivateKey
+  ): Promise<string | null> {
     const { privateKey } = signerRaw
     const newWallet = new Wallet(privateKey)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
@@ -546,6 +548,29 @@ export default class KeyringService extends BaseService<Events> {
     }
     await this.persistKeyrings()
     this.emitKeyrings()
+  }
+
+  async exportPrivateKey(account: HexString): Promise<string | null> {
+    this.requireUnlocked()
+
+    try {
+      const privateKeyWallet = await this.#findPrivateKey(account)
+      return privateKeyWallet.privateKey
+    } catch (e) {
+      return null
+    }
+  }
+
+  async exportMnemonic(account: HexString): Promise<string | null> {
+    this.requireUnlocked()
+
+    try {
+      const keyring = await this.#findKeyring(account)
+      const { mnemonic } = await keyring.serialize()
+      return mnemonic
+    } catch (e) {
+      return null
+    }
   }
 
   #removeKeyring(keyringId: string): HDKeyring[] {

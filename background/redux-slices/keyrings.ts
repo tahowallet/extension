@@ -9,6 +9,7 @@ import {
   SignerMetadata,
   SignerRawWithType,
 } from "../services/keyring/index"
+import { HexString } from "../types"
 
 type KeyringToVerify = {
   id: string
@@ -168,5 +169,19 @@ export const createPassword = createBackgroundAsyncThunk(
   "keyrings/createPassword",
   async (password: string) => {
     await emitter.emit("createPassword", password)
+  }
+)
+
+export const exportMnemonic = createBackgroundAsyncThunk(
+  "keyrings/exportMnemonic",
+  async (address: HexString, { extra: { main } }) => {
+    return main.exportMnemonic(address)
+  }
+)
+
+export const exportPrivateKey = createBackgroundAsyncThunk(
+  "keyrings/exportPrivateKey",
+  async (address: HexString, { extra: { main } }) => {
+    return main.exportPrivateKey(address)
   }
 )
