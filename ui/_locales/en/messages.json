@@ -23,6 +23,7 @@
       "import": "Import",
       "internal": "Taho",
       "ledger": "Ledger",
+      "privateKey": "Private key",
       "category": {
         "readOnly": "Preview",
         "ledger": "Hardware wallets",
@@ -335,6 +336,7 @@
         "newWalletTitle": "New wallet",
         "options": {
           "importSeed": "Import recovery phrase",
+          "importPrivateKey": "Private Key import",
           "ledger": "Connect to Ledger",
           "readOnly": "Read-only address",
           "createNew": "Create new wallet"
@@ -349,6 +351,13 @@
             "phraseLengthError": "Must be a 12 or 24 word recovery phrase",
             "invalidPhraseError": "Invalid recovery phrase"
           }
+        },
+        "importPrivateKey": {
+          "title": "Import private key",
+          "subtitle": "Importing a private key does not associate it to a secret recovery phrase, but it’s still protected by the same password",
+          "inputLabel": "Paste private key string",
+          "submit": "Import account",
+          "error": "Invalid private key"
         },
         "viewOnly": {
           "title": "Read-only address",
@@ -891,7 +900,8 @@
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
-        "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs"
+        "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
+        "SUPPORT_PRIV_KEYS": "Enable private key import"
       }
     }
   },

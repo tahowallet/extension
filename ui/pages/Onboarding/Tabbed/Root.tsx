@@ -23,6 +23,7 @@ import OnboardingRoutes from "./Routes"
 import RouteBasedContent from "../../../components/Onboarding/RouteBasedContent"
 import SupportedChains from "../../../components/Onboarding/SupportedChains"
 import { useIsOnboarding } from "../../../hooks"
+import ImportPrivateKey from "./ImportPrivateKey"
 
 function Navigation({
   children,
@@ -178,6 +179,9 @@ export default function Root(): ReactElement {
         </Route>
         <Route path={OnboardingRoutes.IMPORT_SEED}>
           <ImportSeed nextPage={OnboardingRoutes.ONBOARDING_COMPLETE} />
+        </Route>
+        <Route path={OnboardingRoutes.IMPORT_PRIVATE_KEY}>
+          <ImportPrivateKey nextPage={OnboardingRoutes.ONBOARDING_COMPLETE} />
         </Route>
         <Route path={OnboardingRoutes.NEW_SEED}>
           <NewSeed />

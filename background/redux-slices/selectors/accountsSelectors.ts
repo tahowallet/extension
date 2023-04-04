@@ -306,6 +306,7 @@ export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
 
 const signerTypeToAccountType: Record<SignerType, AccountType> = {
   keyring: AccountType.Imported,
+  privateKey: AccountType.PrivateKey,
   ledger: AccountType.Ledger,
   "read-only": AccountType.ReadOnly,
 }
@@ -322,6 +323,9 @@ const getAccountType = (
   }
   if (signerTypeToAccountType[signer.type] === "ledger") {
     return AccountType.Ledger
+  }
+  if (signerTypeToAccountType[signer.type] === "privateKey") {
+    return AccountType.PrivateKey
   }
   if (addressSources[address] === "import") {
     return AccountType.Imported

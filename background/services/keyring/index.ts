@@ -43,6 +43,11 @@ export type KeyringAccountSigner = {
   keyringID: string
 }
 
+export type WalletAccountSigner = {
+  type: "privateKey"
+  walletID: string
+}
+
 export type SignerMetadata = {
   source: "import" | "internal"
 }
@@ -478,7 +483,7 @@ export default class KeyringService extends BaseService<Events> {
 
     return this.#privateKeys.map((wallet) => ({
       type: KeyringTypes.singleSECP,
-      addresses: [wallet.address],
+      addresses: [normalizeEVMAddress(wallet.address)],
       id: wallet.publicKey,
       path: null,
     }))

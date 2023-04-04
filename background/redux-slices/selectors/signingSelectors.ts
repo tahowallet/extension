@@ -1,11 +1,17 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { isDefined } from "../../lib/utils/type-guards"
-import { KeyringAccountSigner } from "../../services/keyring"
+import {
+  KeyringAccountSigner,
+  WalletAccountSigner,
+} from "../../services/keyring"
 import { LedgerAccountSigner } from "../../services/ledger"
 import { AccountSigner, ReadOnlyAccountSigner } from "../../services/signing"
 import { HexString } from "../../types"
-import { selectKeyringsByAddresses } from "./keyringsSelectors"
+import {
+  selectKeyringsByAddresses,
+  selectWalletsByAddress,
+} from "./keyringsSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
 
 // FIXME: This has a duplicate in `accountSelectors.ts`, but importing causes a dependency cycle
@@ -24,7 +30,8 @@ export const selectAccountSignersByAddress = createSelector(
   getAllAddresses,
   (state: RootState) => state.ledger.devices,
   selectKeyringsByAddresses,
-  (allAddresses, ledgerDevices, keyringsByAddress) => {
+  selectWalletsByAddress,
+  (allAddresses, ledgerDevices, keyringsByAddress, walletsByAddress) => {
     const allAccountsSeen = new Set<string>()
     const ledgerEntries = Object.values(ledgerDevices).flatMap((device) =>
       Object.values(device.accounts).flatMap(
@@ -62,6 +69,26 @@ export const selectAccountSignersByAddress = createSelector(
       )
       .filter(isDefined)
 
+    const privateKeyEntries = Object.entries(walletsByAddress)
+      .map(
+        ([address, wallet]): [HexString, WalletAccountSigner] | undefined => {
+          if (wallet.id === null) {
+            return undefined
+          }
+
+          allAccountsSeen.add(address)
+
+          return [
+            address,
+            {
+              type: "privateKey",
+              walletID: wallet.id,
+            },
+          ]
+        }
+      )
+      .filter(isDefined)
+
     const readOnlyEntries: [string, typeof ReadOnlyAccountSigner][] =
       allAddresses
         .filter((address) => !allAccountsSeen.has(address))
@@ -69,8 +96,9 @@ export const selectAccountSignersByAddress = createSelector(
 
     const entriesByPriority: [string, AccountSigner][] = [
       ...readOnlyEntries,
+      ...privateKeyEntries,
       ...ledgerEntries,
-      // Give priority to keyring over Ledger, if an address is signable by
+      // Give priority to keyring over Ledger and private key, if an address is signable by
       // both.
       ...keyringEntries,
     ]
