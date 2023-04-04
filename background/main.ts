@@ -167,7 +167,8 @@ import {
   initAbilities,
 } from "./redux-slices/abilities"
 import { AddChainRequestData } from "./services/provider-bridge"
-import { AnalyticsEvent } from "./lib/posthog"
+import { AnalyticsEvent, isOneTimeAnalyticsEvent } from "./lib/posthog"
+import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -975,23 +976,34 @@ export default class Main extends BaseService<never> {
 
         const filteredBalancesToDispatch: AccountBalance[] = []
 
-        balances.forEach((balance) => {
-          // TODO support multi-network assets
-          const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
-            (tracked) =>
-              tracked.symbol === balance.assetAmount.asset.symbol &&
-              isSmartContractFungibleAsset(balance.assetAmount.asset) &&
-              normalizeEVMAddress(tracked.contractAddress) ===
-                normalizeEVMAddress(balance.assetAmount.asset.contractAddress)
-          )
+        balances
+          .filter((balance) => {
+            // Network base assets with smart contract addresses from some networks
+            // e.g. Optimism, Polygon might have been retrieved through alchemy as
+            // token balances but they should not be handled here as they would
+            // not be correctly treated as base assets
+            return !isBuiltInNetworkBaseAsset(
+              balance.assetAmount.asset,
+              balance.network
+            )
+          })
+          .forEach((balance) => {
+            // TODO support multi-network assets
+            const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
+              (tracked) =>
+                tracked.symbol === balance.assetAmount.asset.symbol &&
+                isSmartContractFungibleAsset(balance.assetAmount.asset) &&
+                normalizeEVMAddress(tracked.contractAddress) ===
+                  normalizeEVMAddress(balance.assetAmount.asset.contractAddress)
+            )
 
-          if (
-            balance.assetAmount.amount > 0 ||
-            balanceHasAnAlreadyTrackedAsset
-          ) {
-            filteredBalancesToDispatch.push(balance)
-          }
-        })
+            if (
+              balance.assetAmount.amount > 0 ||
+              balanceHasAnAlreadyTrackedAsset
+            ) {
+              filteredBalancesToDispatch.push(balance)
+            }
+          })
 
         this.store.dispatch(
           updateAccountBalance({
@@ -1367,6 +1379,10 @@ export default class Main extends BaseService<never> {
     )
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
+      this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.DAPP_CONNECTED, {
+        origin: permission.origin,
+        chainId: permission.chainID,
+      })
       await Promise.all(
         this.chainService.supportedNetworks.map(async (network) => {
           await this.providerBridgeService.grantPermission({
@@ -1619,6 +1635,14 @@ export default class Main extends BaseService<never> {
 
     uiSliceEmitter.on("deleteAnalyticsData", () => {
       this.analyticsService.removeAnalyticsData()
+    })
+
+    uiSliceEmitter.on("sendEvent", (event) => {
+      if (isOneTimeAnalyticsEvent(event)) {
+        this.analyticsService.sendOneTimeAnalyticsEvent(event)
+      } else {
+        this.analyticsService.sendAnalyticsEvent(event)
+      }
     })
   }
 

@@ -7,6 +7,18 @@ export enum AnalyticsEvent {
   NEW_INSTALL = "New install",
   UI_SHOWN = "UI shown",
   NEW_ACCOUNT_TO_TRACK = "Address added to tracking on network",
+  DAPP_CONNECTED = "Dapp Connected",
+}
+
+export enum OneTimeAnalyticsEvent {
+  ONBOARDING_STARTED = "Onboarding Started",
+  ONBOARDING_FINISHED = "Onboarding Finished",
+}
+
+export const isOneTimeAnalyticsEvent = (
+  eventName: string
+): eventName is OneTimeAnalyticsEvent => {
+  return Object.values<string>(OneTimeAnalyticsEvent).includes(eventName)
 }
 
 const POSTHOG_PROJECT_ID = "11112"

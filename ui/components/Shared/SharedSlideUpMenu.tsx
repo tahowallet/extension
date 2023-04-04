@@ -25,6 +25,7 @@ type Props = {
   isDark?: boolean
   alwaysRenderChildren?: boolean
   testid?: string
+  customStyles?: React.CSSProperties & Record<string, string>
 }
 
 const menuHeights: Record<SharedSlideUpMenuSize, string | null> = {
@@ -46,6 +47,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
     isScrollable,
     alwaysRenderChildren,
     testid = "slide_up_menu",
+    customStyles = {},
   } = props
 
   const slideUpMenuRef = useRef(null)
@@ -71,7 +73,9 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           closed: !isOpen,
         })}
         data-testid={testid}
-        style={{ "--menu-height": menuHeight } as CSSProperties}
+        style={
+          { "--menu-height": menuHeight, ...customStyles } as CSSProperties
+        }
         ref={isOpen ? slideUpMenuRef : null}
       >
         <div
@@ -144,11 +148,10 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             pointer-events: none;
           }
           .slide_up_close {
-            position: sticky;
+            position: absolute;
             z-index: 2;
-            top: 0px;
+            top: 24px;
             right: 24px;
-            float: right;
           }
           .slide_up_close.hover_content {
             position: absolute;

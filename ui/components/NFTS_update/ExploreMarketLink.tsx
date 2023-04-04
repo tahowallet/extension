@@ -1,20 +1,31 @@
 import {
   CHAIN_ID_TO_OPENSEA_CHAIN,
   ETHEREUM,
+  POLYGON,
 } from "@tallyho/tally-background/constants"
 import { POAP_CONTRACT } from "@tallyho/tally-background/lib/poap_update"
 import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts_update"
-import React from "react"
+import React, { ReactElement } from "react"
+import SharedTooltip from "../Shared/SharedTooltip"
 
-type ExploreMarketLinkProps = {
-  url: string
+type ExploreMarketButtonProps = {
   title: string
   color: string
   hoverColor: string
-  icon?: string
-  hoverIcon?: string
-  type?: "link" | "button"
+  icon: string
+  smallIcon?: string
+  smallHoverIcon?: string
 }
+
+type ExploreMarketIconProps = {
+  title: string
+  icon: string
+}
+
+type ExploreMarketLinkProps = { url: string } & (
+  | ({ type: "button" } & ExploreMarketButtonProps)
+  | ({ type: "icon" } & ExploreMarketIconProps)
+)
 
 type MarketDetails = {
   title: string
@@ -22,7 +33,8 @@ type MarketDetails = {
   hoverColor: string
   color: string
   icon: string
-  hoverIcon?: string
+  smallIcon?: string
+  smallHoverIcon?: string
   getNFTLink: (nft: NFTCached) => string
 }
 
@@ -32,7 +44,7 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
     url: "https://opensea.io/",
     color: "#409FFF",
     hoverColor: "#A8D4FF",
-    icon: "opensea.png",
+    icon: "opensea.svg",
     getNFTLink: (nft: NFTCached): string =>
       `https://opensea.io/assets/${
         CHAIN_ID_TO_OPENSEA_CHAIN[
@@ -45,9 +57,20 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
     url: "https://looksrare.org/",
     color: "#2DE370",
     hoverColor: "#B3F5CB",
-    icon: "looksrare.png",
+    icon: "looksrare.svg",
     getNFTLink: (nft: NFTCached): string =>
       `https://looksrare.org/collections/${nft.contract}/${nft.tokenId}`,
+  },
+  rarible: {
+    title: "Rarible",
+    url: "https://rarible.com/",
+    icon: "rarible.svg",
+    color: "#FEDA03",
+    hoverColor: "#EDDF8E",
+    getNFTLink: (nft: NFTCached): string =>
+      `https://rarible.com/token/${
+        nft.chainID === POLYGON.chainID ? "polygon/" : ""
+      }${nft.contract}:${nft.tokenId}`,
   },
   galxe: {
     title: "Galxe",
@@ -63,45 +86,44 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
     url: "https://poap.xyz/",
     color: "#8076fa",
     hoverColor: "#E8E5FF",
-    icon: "poap.png",
-    hoverIcon: "poap_white.png",
+    icon: "poap.svg",
+    smallIcon: "poap_color.png",
+    smallHoverIcon: "poap_white.png",
     getNFTLink: (nft: NFTCached): string =>
       `https://app.poap.xyz/token/${nft.tokenId}`,
   },
 }
 
 export function getRelevantMarketsList(nft: NFTCached): MarketDetails[] {
-  if (nft.contract === POAP_CONTRACT) {
-    return [MARKET_LINK.poap]
-  }
-  if (nft.isBadge) {
-    return [MARKET_LINK.galxe]
-  }
-  if (nft.chainID !== ETHEREUM.chainID) {
-    return [MARKET_LINK.opensea]
-  }
-  return [MARKET_LINK.opensea, MARKET_LINK.looksrare]
+  if (nft.contract === POAP_CONTRACT) return [MARKET_LINK.poap]
+
+  if (nft.isBadge) return [MARKET_LINK.galxe]
+
+  if (nft.chainID === POLYGON.chainID)
+    return [MARKET_LINK.rarible, MARKET_LINK.opensea]
+
+  if (nft.chainID === ETHEREUM.chainID)
+    return [MARKET_LINK.rarible, MARKET_LINK.looksrare, MARKET_LINK.opensea]
+
+  return [MARKET_LINK.opensea]
 }
 
-export const HARDCODED_MARKETS = [MARKET_LINK.opensea, MARKET_LINK.looksrare]
+export const HARDCODED_MARKETS = [
+  MARKET_LINK.opensea,
+  MARKET_LINK.looksrare,
+  MARKET_LINK.rarible,
+]
 
 export const HARDCODED_BADGES = [MARKET_LINK.galxe, MARKET_LINK.poap]
 
-export default function ExploreMarketLink({
-  url,
-  title,
-  color,
-  hoverColor,
-  icon,
-  hoverIcon,
-  type = "link",
-}: ExploreMarketLinkProps): JSX.Element {
+function ExploreMarketButton(props: ExploreMarketButtonProps): ReactElement {
+  const { title, icon, smallIcon, smallHoverIcon, color, hoverColor } = props
   return (
-    <a className={type} href={url} rel="noreferrer" target="_blank">
+    <div className="market_wrapper">
+      <div className="market_icon" />
       {title}
-      {!!icon && <div className="market_icon" />}
       <style jsx>{`
-        a {
+        .market_wrapper {
           display: flex;
           align-items: center;
           gap: 8px;
@@ -115,31 +137,86 @@ export default function ExploreMarketLink({
           text-align: center;
         }
 
-        a.button {
-          border: 2px solid ${color};
-          border-radius: 4px;
-          padding: 8px 16px;
-        }
-
         .market_icon {
           width: 16px;
           height: 16px;
-          background-image: url("images/${icon}");
+          background-image: url("images/marketplaces/${smallIcon ?? icon}");
           background-size: contain;
           background-repeat: no-repeat;
           background-position: center;
         }
 
-        a:hover {
+        .market_wrapper:hover {
           color: ${hoverColor};
         }
-        a.button:hover {
-          border-color: ${hoverColor};
-        }
-        a:hover .market_icon {
-          background-image: url("images/${hoverIcon ?? icon}");
+
+        .market_wrapper:hover .market_icon {
+          background-image: url("images/marketplaces/${smallHoverIcon ??
+          smallIcon ??
+          icon}");
         }
       `}</style>
+    </div>
+  )
+}
+
+function ExploreMarketIcon(props: ExploreMarketIconProps): ReactElement {
+  const { icon, title } = props
+  return (
+    <div className="market_wrapper">
+      <SharedTooltip
+        type="dark"
+        verticalPosition="bottom"
+        horizontalPosition="center"
+        horizontalShift={10}
+        width={75}
+        height={34}
+        IconComponent={() => <div className="market_icon" />}
+      >
+        <div className="market_title">{title}</div>
+      </SharedTooltip>
+      <style jsx>{`
+        .market_icon {
+          width: 32px;
+          height: 32px;
+          background-image: url("images/marketplaces/${icon}");
+          opacity: 0.8;
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          text-align: center;
+        }
+        .market_title {
+          text-align: center;
+        }
+        .market_wrapper:hover .market_icon {
+          opacity: 1;
+        }
+      `}</style>
+    </div>
+  )
+}
+
+export default function ExploreMarketLink(
+  props: ExploreMarketLinkProps
+): ReactElement {
+  const { type, title, url } = props
+  return (
+    <a
+      className={type}
+      title={title}
+      href={url}
+      rel="noreferrer"
+      target="_blank"
+    >
+      {type === "button" ? (
+        // As we know how props are going to look like let's spread them
+        // eslint-disable-next-line react/jsx-props-no-spreading
+        <ExploreMarketButton {...props} />
+      ) : (
+        // eslint-disable-next-line react/jsx-props-no-spreading
+        <ExploreMarketIcon {...props} />
+      )}
     </a>
   )
 }

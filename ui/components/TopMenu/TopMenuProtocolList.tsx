@@ -57,20 +57,17 @@ export default function TopMenuProtocolList({
   const productionNetworks = useBackgroundSelector(selectProductionEVMNetworks)
 
   const customNetworksEnabled = isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)
+  const builtinNetworks = productionNetworks.filter(isBuiltInNetwork)
+  const customNetworks = productionNetworks.filter(
+    (network) => !isBuiltInNetwork(network)
+  )
 
   return (
-    <div className="standard_width_padded center_horizontal">
-      <div className={classNames(customNetworksEnabled && "networks_list")}>
-        <ul>
-          {productionNetworks
-            .filter((network) => {
-              if (isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
-                // Get rid of this whole filter once custom network support is fully in
-                return true
-              }
-              return isBuiltInNetwork(network)
-            })
-            .map((network) => (
+    <>
+      <div className="standard_width_padded center_horizontal">
+        <div className={classNames(customNetworksEnabled && "networks_list")}>
+          <ul>
+            {builtinNetworks.map((network) => (
               <TopMenuProtocolListItem
                 isSelected={sameNetwork(currentNetwork, network)}
                 key={network.name}
@@ -83,58 +80,79 @@ export default function TopMenuProtocolList({
                 isDisabled={disabledChainIDs.includes(network.chainID)}
               />
             ))}
-          {showTestNetworks && testNetworks.length > 0 && (
-            <>
-              <li className="protocol_divider">
-                <div className="divider_label">
-                  {t("topMenu.protocolList.testnetsSectionTitle")}
-                </div>
-                <div className="divider_line" />
-              </li>
-              {testNetworks.map((info) => (
-                <TopMenuProtocolListItem
-                  isSelected={sameNetwork(currentNetwork, info.network)}
-                  key={info.network.name}
-                  network={info.network}
-                  info={info.info}
-                  onSelect={onProtocolChange}
-                  isDisabled={info.isDisabled ?? false}
-                />
-              ))}
-            </>
-          )}
-        </ul>
+            {isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) &&
+              customNetworks.length > 0 && (
+                <>
+                  <li className="protocol_divider">
+                    <div className="divider_label">
+                      {t("topMenu.protocolList.customNetworksSectionTitle")}
+                    </div>
+                    <div className="divider_line" />
+                  </li>
+                  {customNetworks.map((network) => (
+                    <TopMenuProtocolListItem
+                      isSelected={sameNetwork(currentNetwork, network)}
+                      key={network.name}
+                      network={network}
+                      info={t("protocol.compatibleChain")}
+                      onSelect={onProtocolChange}
+                    />
+                  ))}
+                </>
+              )}
+            {showTestNetworks && testNetworks.length > 0 && (
+              <>
+                <li className="protocol_divider">
+                  <div className="divider_label">
+                    {t("topMenu.protocolList.testnetsSectionTitle")}
+                  </div>
+                  <div className="divider_line" />
+                </li>
+                {testNetworks.map((info) => (
+                  <TopMenuProtocolListItem
+                    isSelected={sameNetwork(currentNetwork, info.network)}
+                    key={info.network.name}
+                    network={info.network}
+                    info={info.info}
+                    onSelect={onProtocolChange}
+                    isDisabled={info.isDisabled ?? false}
+                  />
+                ))}
+              </>
+            )}
+          </ul>
+        </div>
+        <style jsx>
+          {`
+            .networks_list {
+              overflow-y: auto;
+              overflow-x: hidden;
+              max-height: 464px;
+            }
+            .protocol_divider {
+              display: flex;
+              margin-bottom: 16px;
+              gap: 15px;
+              margin-top: 32px;
+              position: relative;
+            }
+            .divider_line {
+              flex-grow: 1;
+              align-self: center;
+              background: var(--green-120);
+              height: 1px;
+              margin-top: 1px;
+            }
+            .divider_label {
+              color: var(--green-40);
+              font-size: 16px;
+              font-weight: 500;
+              line-height: 24px;
+            }
+          `}
+        </style>
       </div>
       {customNetworksEnabled && <TopMenuProtocolListFooter />}
-      <style jsx>
-        {`
-          .networks_list {
-            overflow-y: auto;
-            overflow-x: hidden;
-            max-height: 319px;
-          }
-          .protocol_divider {
-            display: flex;
-            margin-bottom: 16px;
-            gap: 15px;
-            margin-top: 32px;
-            position: relative;
-          }
-          .divider_line {
-            flex-grow: 1;
-            align-self: center;
-            background: var(--green-120);
-            height: 1px;
-            margin-top: 1px;
-          }
-          .divider_label {
-            color: var(--green-40);
-            font-size: 16px;
-            font-weight: 500;
-            line-height: 24px;
-          }
-        `}
-      </style>
-    </div>
+    </>
   )
 }
