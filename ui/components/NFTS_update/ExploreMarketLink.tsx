@@ -200,9 +200,15 @@ function ExploreMarketIcon(props: ExploreMarketIconProps): ReactElement {
 export default function ExploreMarketLink(
   props: ExploreMarketLinkProps
 ): ReactElement {
-  const { type, url } = props
+  const { type, title, url } = props
   return (
-    <a className={type} href={url} rel="noreferrer" target="_blank">
+    <a
+      className={type}
+      title={title}
+      href={url}
+      rel="noreferrer"
+      target="_blank"
+    >
       {type === "button" ? (
         // As we know how props are going to look like let's spread them
         // eslint-disable-next-line react/jsx-props-no-spreading
