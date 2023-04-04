@@ -4,6 +4,8 @@ import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
 import { SignerTypes } from "@tallyho/tally-background/services/keyring"
 import classnames from "classnames"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
+import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
+import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
 import SharedButton from "../../../components/Shared/SharedButton"
 import PasswordInput from "../../../components/Shared/PasswordInput"
 import SharedFileInput from "../../../components/Shared/SharedFileInput"
@@ -64,7 +66,11 @@ export default function ImportPrivateKeyJSON(props: Props): ReactElement {
       setHasError(true)
       setIsImported(false)
     }
-  }, [isImported, keyringImportStatus])
+
+    if (keyringImportStatus === "done" && isImported) {
+      dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
+    }
+  }, [isImported, keyringImportStatus, dispatch])
 
   const showJSONForm = !isImporting && !isImported
 

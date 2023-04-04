@@ -68,7 +68,7 @@ export default function ImportSeed(props: Props): ReactElement {
       setErrorMessage(t("errors.phraseLengthError"))
     } else if (isValidMnemonic(plainRecoveryPhrase)) {
       setIsImporting(true)
-      dispatch(
+      await dispatch(
         importSigner({
           type: SignerTypes.keyring,
           mnemonic: plainRecoveryPhrase,

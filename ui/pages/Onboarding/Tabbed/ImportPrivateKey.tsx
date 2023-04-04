@@ -1,11 +1,13 @@
+import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
 import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
+import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
 import { SignerTypes } from "@tallyho/tally-background/services/keyring"
 import { isHexString } from "ethers/lib/utils"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useDispatch } from "react-redux"
 import SharedButton from "../../../components/Shared/SharedButton"
 import SharedSeedInput from "../../../components/Shared/SharedSeedInput"
+import { useBackgroundDispatch } from "../../../hooks"
 
 type Props = {
   setIsImporting: (value: boolean) => void
@@ -29,7 +31,7 @@ function validatePrivateKey(privateKey = ""): boolean {
 export default function ImportPrivateKey(props: Props): ReactElement {
   const { setIsImporting, finalize } = props
 
-  const dispatch = useDispatch()
+  const dispatch = useBackgroundDispatch()
 
   const [privateKey, setPrivateKey] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
@@ -48,6 +50,7 @@ export default function ImportPrivateKey(props: Props): ReactElement {
           privateKey: trimmedPrivateKey,
         })
       )
+      dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
       finalize()
     } else {
       setErrorMessage(t("error"))
