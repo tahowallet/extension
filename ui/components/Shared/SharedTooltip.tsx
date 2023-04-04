@@ -7,6 +7,7 @@ type HorizontalPosition = "left" | "center" | "right"
 interface Props {
   verticalPosition?: VerticalPosition
   horizontalPosition?: HorizontalPosition
+  horizontalShift?: number
   width?: number
   height?: number
   type?: "default" | "dark"
@@ -21,14 +22,18 @@ interface Props {
   }) => ReactElement
 }
 
-function getHorizontalPosition(horizontal: HorizontalPosition, width: number) {
+function getHorizontalPosition(
+  horizontal: HorizontalPosition,
+  width: number,
+  horizontalShift: number
+) {
   switch (horizontal) {
     case "center":
-      return `right: -${width / 2 + 4}px;`
+      return `right: -${width / 2 + 4 - horizontalShift}px;`
     case "right":
-      return `right: -${width + 8}px;`
+      return `right: -${width + 8 - horizontalShift}px;`
     case "left":
-      return `left: -${width + 8}px;`
+      return `left: -${width + 8 - horizontalShift}px;`
     default:
       return ""
   }
@@ -50,6 +55,7 @@ export default function SharedTooltip(props: Props): ReactElement {
     children,
     verticalPosition = "bottom",
     horizontalPosition = "center",
+    horizontalShift = 0,
     width,
     height = 20,
     type = "default",
@@ -119,7 +125,11 @@ export default function SharedTooltip(props: Props): ReactElement {
             z-index: 20;
             ${getVerticalPosition(verticalPosition, height)}
             ${width !== undefined
-              ? getHorizontalPosition(horizontalPosition, width)
+              ? getHorizontalPosition(
+                  horizontalPosition,
+                  width,
+                  horizontalShift
+                )
               : ""}
           }
           .dark {

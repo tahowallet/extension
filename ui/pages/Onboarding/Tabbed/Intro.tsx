@@ -1,12 +1,16 @@
+import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
+import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../../../components/Shared/SharedButton"
+import { useBackgroundDispatch } from "../../../hooks"
 import OnboardingRoutes from "./Routes"
 
 export default function Intro(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "onboarding.tabbed.intro",
   })
+  const dispatch = useBackgroundDispatch()
 
   return (
     <section className="fadeIn">
@@ -19,6 +23,9 @@ export default function Intro(): ReactElement {
           type="primary"
           size="large"
           linkTo={OnboardingRoutes.ADD_WALLET}
+          onClick={() =>
+            dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_STARTED))
+          }
           center
           style={{
             fontSize: "20px",
@@ -32,6 +39,9 @@ export default function Intro(): ReactElement {
           type="secondary"
           size="large"
           linkTo={OnboardingRoutes.NEW_SEED}
+          onClick={() =>
+            dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_STARTED))
+          }
           center
           style={{
             fontSize: "20px",

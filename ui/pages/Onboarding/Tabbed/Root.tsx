@@ -21,7 +21,6 @@ import ViewOnlyWallet from "./ViewOnlyWallet"
 import Ledger from "./Ledger/Ledger"
 import OnboardingRoutes from "./Routes"
 import RouteBasedContent from "../../../components/Onboarding/RouteBasedContent"
-import SupportedChains from "../../../components/Onboarding/SupportedChains"
 import { useIsOnboarding } from "../../../hooks"
 import ImportPrivateKeyForm from "./ImportPrivateKeyForm"
 
@@ -123,9 +122,6 @@ function Navigation({
         </div>
         <div className="route_based_content">
           <RouteBasedContent />
-        </div>
-        <div className="supported_chains_container">
-          <SupportedChains />
         </div>
       </div>
       <div className="right_container">
