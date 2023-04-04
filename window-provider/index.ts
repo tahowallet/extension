@@ -23,7 +23,7 @@ const impersonateMetamaskWhitelist = [
   "traderjoexyz.com",
   "transferto.xyz",
   "opensea.io",
-  "staking.polygon.technology",
+  "polygon.technology",
   "gmx.io",
   "app.lyra.finance",
   "matcha.xyz",
@@ -57,6 +57,8 @@ const impersonateMetamaskWhitelist = [
   "bscscan.com",
   "alchemy.com",
   "cow.fi",
+  "tally.xyz",
+  "kyberswap.com",
 ]
 
 const METAMASK_STATE_MOCK = {

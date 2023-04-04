@@ -284,15 +284,12 @@ describe("IndexingService", () => {
 
       await spy.mock.results[0].value
 
-      expect(fetchJsonStub.getCalls()).toContainEqual(
-        expect.objectContaining({
-          args: [
-            expect.stringMatching(
-              /ethereum,matic-network,rootstock,avalanche-2,binancecoin/i
-            ),
-          ],
-        })
-      )
+      expect(
+        fetchJsonStub
+          .getCalls()
+          .toString()
+          .match(/ethereum,matic-network,rootstock,avalanche-2,binancecoin/i)
+      ).toBeTruthy()
     })
 
     it("should not retrieve token prices for custom assets", async () => {

@@ -42,6 +42,7 @@ describe("PriceDetails", () => {
       {}
     )
     expect(ui.getByText(`${hardcodedMainCurrencySign}${amount}`)).toBeVisible()
+    expect(ui.queryByTestId("price_impact_percent")).not.toBeInTheDocument()
   })
 
   test("should display price impact", () => {
