@@ -7,6 +7,7 @@ export enum AnalyticsEvent {
   NEW_INSTALL = "New install",
   UI_SHOWN = "UI shown",
   ACCOUNT_NAME_EDITED = "Account Name Edited",
+  ANALYTICS_TOGGLED = "Analytics Toggled",
   DEFAULT_WALLET_TOGGLED = "Default Wallet Toggled",
   TRANSACTION_SIGNED = "Transaction Signed",
   NEW_ACCOUNT_TO_TRACK = "Address added to tracking on network",

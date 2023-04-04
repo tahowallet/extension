@@ -1662,6 +1662,13 @@ export default class Main extends BaseService<never> {
             analyticsPreferences.isEnabled
           )
         )
+
+        this.analyticsService.sendAnalyticsEvent(
+          AnalyticsEvent.ANALYTICS_TOGGLED,
+          {
+            analyticsEnabled: analyticsPreferences.isEnabled,
+          }
+        )
       }
     )
 
