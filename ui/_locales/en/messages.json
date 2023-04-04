@@ -488,6 +488,7 @@
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
     "setAsDefault": "Use Taho as your default wallet",
     "enableTestNetworks": "Enable test networks",
+    "hideUntrustedAssets": "Hide untrusted assets",
     "language": "Language",
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
