@@ -1654,6 +1654,7 @@ export default class Main extends BaseService<never> {
                 This event is fired when a custom chain is added to the wallet.
                 `,
           chainInfo: chainInfo.chainName,
+          chainId: chainInfo.chainId,
         }
       )
     })
