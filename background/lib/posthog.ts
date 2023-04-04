@@ -6,6 +6,7 @@ import logger from "./logger"
 export enum AnalyticsEvent {
   NEW_INSTALL = "New install",
   UI_SHOWN = "UI shown",
+  DEFAULT_WALLET_TOGGLED = "Default Wallet Toggled",
   TRANSACTION_SIGNED = "Transaction Signed",
   NEW_ACCOUNT_TO_TRACK = "Address added to tracking on network",
   DAPP_CONNECTED = "Dapp Connected",

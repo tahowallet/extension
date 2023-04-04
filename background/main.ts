@@ -863,7 +863,10 @@ export default class Main extends BaseService<never> {
             await this.signingService.signTransaction(request, accountSigner)
           await this.store.dispatch(transactionSigned(signedTransactionResult))
           this.analyticsService.sendAnalyticsEvent(
-            AnalyticsEvent.TRANSACTION_SIGNED
+            AnalyticsEvent.TRANSACTION_SIGNED,
+            {
+              chainId: request.chainID,
+            }
           )
         } catch (exception) {
           logger.error("Error signing transaction", exception)
@@ -1509,6 +1512,12 @@ export default class Main extends BaseService<never> {
 
         this.providerBridgeService.notifyContentScriptAboutConfigChange(
           newDefaultWalletValue
+        )
+        this.analyticsService.sendAnalyticsEvent(
+          AnalyticsEvent.DEFAULT_WALLET_TOGGLED,
+          {
+            setToDefault: newDefaultWalletValue,
+          }
         )
       }
     )
