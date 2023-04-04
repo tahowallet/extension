@@ -12,7 +12,7 @@ export default function ShowPrivateKey(): ReactElement {
 
   return (
     <>
-      <SharedSlideUpMenuPanel header={t("header")}>
+      <SharedSlideUpMenuPanel header={t("header")} icon="icons/s/key.svg">
         <div className="content simple_text">
           <SharedWarningMessage text={t("warningMessage")} />
           <div className="exporting_content">
