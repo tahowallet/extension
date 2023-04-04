@@ -601,6 +601,7 @@ export default class Main extends BaseService<never> {
       network,
       name,
     })
+    this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.ACCOUNT_NAME_EDITED)
   }
 
   async removeAccount(
