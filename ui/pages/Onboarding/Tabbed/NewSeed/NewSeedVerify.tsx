@@ -1,9 +1,12 @@
+import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
+import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
 import classNames from "classnames"
 import React, { ReactElement, useMemo, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import SharedButton from "../../../../components/Shared/SharedButton"
 import SharedIcon from "../../../../components/Shared/SharedIcon"
+import { useBackgroundDispatch } from "../../../../hooks"
 import OnboardingTip from "../OnboardingTip"
 import OnboardingRoutes from "../Routes"
 
@@ -120,6 +123,8 @@ export default function NewSeedVerify({
     keyPrefix: "onboarding.tabbed.newWalletVerify",
   })
 
+  const dispatch = useBackgroundDispatch()
+
   const SEED_WORDS_TO_VERIFY = 8
 
   const randomIndexes = useMemo(
@@ -165,6 +170,10 @@ export default function NewSeedVerify({
 
     setSubmitted(true)
     setIsValidSeed(isValid)
+
+    if (isValid) {
+      dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
+    }
   }
 
   const handleAdd = (wordIndex: number) => {

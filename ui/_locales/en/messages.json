@@ -187,6 +187,8 @@
     "toBeDetermined": "TBD",
     "settingsTitle": "Network fees (Gwei)",
     "gasLimit": "Gas limit",
+    "settingsDisabledOne": "Chain doesn't support",
+    "settingsDisabledTwo": "gas settings",
     "estimatedNetworkFee": "Estimated network fee",
     "insufficientBaseAsset": "Not enough {{symbol}} for network fees",
     "totalMax": "Total Max",
@@ -647,7 +649,9 @@
     "rpc": "RPC",
     "explorer": "BlockExplorer",
     "submit": "Add network",
-    "cancel": "Reject"
+    "cancel": "Reject",
+    "warnAlreadyExistsHeader": "Network already added to Taho wallet.",
+    "warnAlreadyExistsBody": "You can switch to it from Network dropdown"
   },
   "swap": {
     "title": "Swap Assets",
@@ -702,9 +706,8 @@
     "addressCopiedMsg": "Address copied to clipboard",
     "protocolList": {
       "testnetsSectionTitle": "Testnets",
-      "customRPCFooterTitle": "Activate or add networks",
-      "customRPCFooterDesc": "You can activate any network that is already added to Taho or you can add any other network.",
-      "networkSettingsBtn": "Network settings"
+      "customNetworksSectionTitle": "Custom networks",
+      "networkSettingsBtn": "Add network"
     },
     "connectedDappInfo": {
       "modalClose": "Background close",
@@ -722,6 +725,7 @@
   },
   "wallet": {
     "activities": {
+      "defaultHistoricalActivityExplainer": "All your new transaction will show up here.",
       "historicalActivityExplainer": "Taho will populate your historical activity over time; this may take an hour or more for accounts that have been active for a long time. For new accounts, new activity will show up here.",
       "endOfList": "You have reached the end of activity list.",
       "moreHistory": "For more history visit",
