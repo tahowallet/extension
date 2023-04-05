@@ -127,6 +127,9 @@ export default function TopMenuProtocolList({
           .networks_list {
             overflow-y: auto;
             overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 511px;
           }
 
           ul {
@@ -137,9 +140,9 @@ export default function TopMenuProtocolList({
 
           .protocol_divider {
             display: flex;
+            margin-top: 8px;
             margin-bottom: 16px;
             gap: 15px;
-            margin-top: 32px;
             position: relative;
           }
           .divider_line {
