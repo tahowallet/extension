@@ -1,11 +1,15 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import { exportPrivateKey } from "@tallyho/tally-background/redux-slices/keyrings"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
 import SharedWarningMessage from "../Shared/SharedWarningMessage"
 import SharedButton from "../Shared/SharedButton"
 import SharedCheckbox from "../Shared/SharedCheckbox"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
+import SharedSecretText from "../Shared/SharedSecretText"
+import { useBackgroundDispatch } from "../../hooks"
 
 interface ShowPrivateKeyProps {
   account: AccountTotal
@@ -17,8 +21,25 @@ export default function ShowPrivateKey({
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem.showPrivateKey",
   })
+  const dispatch = useBackgroundDispatch()
+
+  const [privateKey, setPrivateKey] = useState("")
   const [showPrivateKey, setShowPrivateKey] = useState(false)
   const [isConfirmed, setIsConfirmed] = useState(false)
+
+  useEffect(() => {
+    const fetchPrivateKey = async () => {
+      const key = (await dispatch(
+        exportPrivateKey(account.address)
+      )) as unknown as string | null
+
+      if (key) {
+        setPrivateKey(key)
+      }
+    }
+
+    fetchPrivateKey()
+  }, [dispatch, account.address])
 
   return (
     <>
@@ -31,8 +52,23 @@ export default function ShowPrivateKey({
               <SharedAccountItemSummary accountTotal={account} />
             </div>
             {showPrivateKey ? (
-              // TODO Add a new component
-              <div>Copy Private key to clipboard</div>
+              <>
+                <SharedSecretText text={privateKey} label={t("privateKey")} />
+                <SharedButton
+                  type="tertiary"
+                  size="small"
+                  iconMedium="copy"
+                  onClick={() => {
+                    navigator.clipboard.writeText(privateKey)
+                    dispatch(
+                      setSnackbarMessage(t("exportingPrivateKey.copySuccess"))
+                    )
+                  }}
+                  center
+                >
+                  {t("exportingPrivateKey.copyBtn")}
+                </SharedButton>
+              </>
             ) : (
               <div className="confirmation_container">
                 {/* TODO Fix issue with Checkbox */}

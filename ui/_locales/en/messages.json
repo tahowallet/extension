@@ -18,10 +18,13 @@
         "header": "Show Private Key",
         "warningMessage": "Anybody that has your Private Key can move your assets.",
         "privateKeyInfo": "What is a Private Key?",
+        "privateKey":"Private key",
         "exportingPrivateKey": {
           "header": "Exporting Private Key for:",
           "confirmationDesc": "I understand that other Private Keys, Recovery Phrases, Ledger or  Read-only accounts will not be saved with this recovery phrase.",
-          "showBtn": "Show Private Key"
+          "showBtn": "Show Private Key",
+          "copyBtn": "Copy Private key to clipboard",
+          "copySuccess": "Copied!"
         }
       }
     },
