@@ -21,7 +21,7 @@ const HD_WALLET_MOCK = {
 const PK_WALLET_MOCK = {
   address: "0x0cf98fd79eaf6d27679dc1a328621b5791bd874e",
   privateKey:
-    "252da775ac59bf1e3a3c2b3b2633e29f8b8236dc3054b7ce9d019c79166ccf14",
+    "0x252da775ac59bf1e3a3c2b3b2633e29f8b8236dc3054b7ce9d019c79166ccf14",
 }
 
 describe("Keyring Service", () => {
@@ -134,6 +134,13 @@ describe("Keyring Service", () => {
 
       expect(keyrings.length).toBe(1)
     })
+    it("should be able to export mnemonic", async () => {
+      const mnemonic = await keyringService.exportMnemonic(
+        HD_WALLET_MOCK.addresses[0]
+      )
+
+      expect(mnemonic).toBe(HD_WALLET_MOCK.mnemonic)
+    })
     it("should be able to sign transaction", async () => {
       const address = HD_WALLET_MOCK.addresses[0]
       const signed = await keyringService.signTransaction(
@@ -195,6 +202,13 @@ describe("Keyring Service", () => {
         privateKey: PK_WALLET_MOCK.privateKey,
       })
       expect(keyringService.getPrivateKeys().length).toBe(1)
+    })
+    it("should be able to export private key", async () => {
+      const privateKey = await keyringService.exportPrivateKey(
+        PK_WALLET_MOCK.address
+      )
+
+      expect(privateKey).toBe(PK_WALLET_MOCK.privateKey)
     })
     it("should be able to sign transaction", async () => {
       const { address } = PK_WALLET_MOCK
