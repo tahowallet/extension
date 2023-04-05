@@ -29,7 +29,7 @@ export default function SharedCheckbox(props: Props): ReactElement {
       <style jsx>{`
         .checkbox {
           display: flex;
-          align-items: center;
+          align-items: start;
           position: relative;
           cursor: pointer;
           font-size: 14px;
@@ -45,18 +45,22 @@ export default function SharedCheckbox(props: Props): ReactElement {
         }
 
         .checkmark {
+          top: 5px;
           position: relative;
-          height: 15px;
-          width: 15px;
+          height: 16px;
+          min-width: 16px;
           border-radius: 3px;
-          background-color: var(--green-60);
-          margin-right: 5px;
+          background-color: var(--green-120);
+          margin-right: 10px;
+          border: 2px solid var(--green-40);
+          box-sizing: border-box;
         }
         .checkbox:hover input ~ .checkmark {
           background-color: var(--green-80);
         }
         .checkbox input:checked ~ .checkmark {
           background-color: var(--trophy-gold);
+          border: 0;
         }
         .checkmark:after {
           content: "";
@@ -71,14 +75,16 @@ export default function SharedCheckbox(props: Props): ReactElement {
           top: 2px;
           width: 2px;
           height: 7px;
-          border: solid white;
+          border: 2px solid var(--hunter-green);
           border-width: 0 3px 3px 0;
           transform: rotate(45deg);
         }
         .label {
-          line-height: normal;
           margin-top: 0;
-          color: var(--green-60);
+          color: var(--green-5);
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
         }
       `}</style>
     </div>
