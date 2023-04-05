@@ -181,24 +181,14 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         <div className="preview_section">
           <div className="preview_section_header"> {t("preview.viewOn")}</div>
           <div className="preview_section_row preview_markets">
-            {marketsList.map(
-              ({
-                url,
-                title,
-                color,
-                icon,
-                hoverIcon,
-                hoverColor,
-                getNFTLink,
-              }) => (
-                <ExploreMarketLink
-                  type="button"
-                  key={url}
-                  url={getNFTLink(nft)}
-                  {...{ title, color, icon, hoverColor, hoverIcon }}
-                />
-              )
-            )}
+            {marketsList.map(({ url, title, icon, getNFTLink }) => (
+              <ExploreMarketLink
+                type="icon"
+                key={url}
+                url={getNFTLink(nft)}
+                {...{ title, icon }}
+              />
+            ))}
           </div>
         </div>
 
@@ -381,7 +371,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         }
         .preview_markets {
           margin-top: 8px;
-          gap: 16px;
+          gap: 24px;
           justify-content: flex-start;
         }
         .preview_rarity_wrapper {

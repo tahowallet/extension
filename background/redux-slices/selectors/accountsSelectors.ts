@@ -11,9 +11,8 @@ import {
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
-  getBuiltInNetworkBaseAsset,
   heuristicDesiredDecimalsForUnitPrice,
-  isBuiltInNetworkBaseAsset,
+  isNetworkBaseAsset,
 } from "../utils/asset-utils"
 import {
   AnyAsset,
@@ -37,7 +36,7 @@ import {
   selectSourcesByAddress,
 } from "./keyringsSelectors"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
-import { EVMNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
+import { EVMNetwork, sameNetwork } from "../../networks"
 import { NETWORK_BY_CHAIN_ID, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { FeatureFlags, isEnabled } from "../../features"
@@ -63,19 +62,13 @@ const EXCEPTION_ASSETS_BY_SYMBOL = ["BTC", "sBTC", "WBTC", "tBTC"].map(
 const userValueDustThreshold = 2
 
 const shouldForciblyDisplayAsset = (
-  assetAmount: CompleteAssetAmount<AnyAsset>,
-  network: EVMNetwork,
-  baseAsset?: NetworkBaseAsset
+  assetAmount: CompleteAssetAmount<AnyAsset>
 ) => {
-  if (!baseAsset) {
-    return false
-  }
-
   const isDoggo =
     !isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) &&
     assetAmount.asset.symbol === DOGGO.symbol
 
-  return isDoggo || isBuiltInNetworkBaseAsset(baseAsset, network)
+  return isDoggo || isNetworkBaseAsset(assetAmount.asset)
 }
 
 const computeCombinedAssetAmountsData = (
@@ -120,16 +113,7 @@ const computeCombinedAssetAmountsData = (
       return fullyEnrichedAssetAmount
     })
     .filter((assetAmount) => {
-      const baseAsset = getBuiltInNetworkBaseAsset(
-        assetAmount.asset.symbol,
-        currentNetwork.chainID
-      )
-
-      const isForciblyDisplayed = shouldForciblyDisplayAsset(
-        assetAmount,
-        currentNetwork,
-        baseAsset
-      )
+      const isForciblyDisplayed = shouldForciblyDisplayAsset(assetAmount)
 
       const isNotDust =
         typeof assetAmount.mainCurrencyAmount === "undefined"
@@ -153,27 +137,11 @@ const computeCombinedAssetAmountsData = (
         return 1
       }
 
-      // Always display the current network's base asset first
-      const networkBaseAsset = currentNetwork.baseAsset
+      const leftIsBaseAsset = isNetworkBaseAsset(asset1.asset)
+      const rightIsBaseAsset = isNetworkBaseAsset(asset2.asset)
 
-      const leftIsNetworkBaseAsset =
-        networkBaseAsset.symbol === asset1.asset.symbol
-      const rightIsNetworkBaseAsset =
-        networkBaseAsset.symbol === asset2.asset.symbol
-
-      if (leftIsNetworkBaseAsset !== rightIsNetworkBaseAsset) {
-        return leftIsNetworkBaseAsset ? -1 : 1
-      }
-      const leftIsBaseAsset = !!getBuiltInNetworkBaseAsset(
-        asset1.asset.symbol,
-        networkBaseAsset.chainID
-      )
-      const rightIsBaseAsset = !!getBuiltInNetworkBaseAsset(
-        asset2.asset.symbol,
-        networkBaseAsset.chainID
-      )
-
-      // Always sort base assets above non-base assets.
+      // Always sort base assets above non-base assets. This also sorts the
+      // current network base asset above the rest
       if (leftIsBaseAsset !== rightIsBaseAsset) {
         return leftIsBaseAsset ? -1 : 1
       }

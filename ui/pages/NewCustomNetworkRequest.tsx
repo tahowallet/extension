@@ -5,7 +5,8 @@ import {
 } from "@tallyho/tally-background/redux-slices/ui"
 import { AddChainRequestData } from "@tallyho/tally-background/services/provider-bridge"
 import { useTranslation } from "react-i18next"
-import { useBackgroundDispatch } from "../hooks"
+import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedNetworkIcon from "../components/Shared/SharedNetworkIcon"
@@ -26,9 +27,15 @@ export default function NewCustomNetworkRequest(): JSX.Element {
     )
   }, [dispatch, requestId])
 
+  const allNetworks = useBackgroundSelector(selectEVMNetworks)
+
   if (!networkDetails) {
     return <></>
   }
+
+  const existingNetwork = allNetworks.find(
+    (network) => network.chainID === networkDetails.chainId
+  )
 
   const {
     chainId: chainID,
@@ -83,12 +90,14 @@ export default function NewCustomNetworkRequest(): JSX.Element {
               ) : (
                 <SharedNetworkIcon
                   size={50}
-                  network={{
-                    name: chainName,
-                    chainID,
-                    family: "EVM",
-                    baseAsset: { ...nativeCurrency, chainID },
-                  }}
+                  network={
+                    existingNetwork || {
+                      name: chainName,
+                      chainID,
+                      family: "EVM",
+                      baseAsset: { ...nativeCurrency, chainID },
+                    }
+                  }
                 />
               )}
             </div>
@@ -104,44 +113,91 @@ export default function NewCustomNetworkRequest(): JSX.Element {
             <div className="tally_logo" />
           </div>
           <dl className="chain_details">
-            <div className="row">
-              <dt>{t("addNewChain.name")}</dt>
-              <dd>{chainName}</dd>
-            </div>
-            <div className="row">
-              <dt>{t("addNewChain.chainId")}</dt>
-              <dd>{chainID}</dd>
-            </div>
-            <div className="row">
-              <dt>{t("addNewChain.currency")}</dt>
-              <dd>{nativeCurrency.symbol}</dd>
-            </div>
-            <dt>{t("addNewChain.rpc")}</dt>
-            <dd className="rpc_url">{rpcUrls[0]}</dd>
-            <dt>{t("addNewChain.explorer")}</dt>
-            <dd>{blockExplorerUrl}</dd>
+            {existingNetwork ? (
+              <div className="network_exists_warning">
+                <p>{t("addNewChain.warnAlreadyExistsHeader")}</p>
+                <span>{t("addNewChain.warnAlreadyExistsBody")}</span>
+              </div>
+            ) : (
+              <div className="chain_info">
+                <div className="row">
+                  <dt>{t("addNewChain.name")}</dt>
+                  <dd>{chainName}</dd>
+                </div>
+                <div className="row">
+                  <dt>{t("addNewChain.chainId")}</dt>
+                  <dd>{chainID}</dd>
+                </div>
+                <div className="row">
+                  <dt>{t("addNewChain.currency")}</dt>
+                  <dd>{nativeCurrency.symbol}</dd>
+                </div>
+                <dt>{t("addNewChain.rpc")}</dt>
+                <dd className="rpc_url">{rpcUrls[0]}</dd>
+                <dt>{t("addNewChain.explorer")}</dt>
+                <dd>{blockExplorerUrl}</dd>
+              </div>
+            )}
           </dl>
         </div>
         <footer>
-          <SharedButton
-            size="large"
-            type="secondary"
-            onClick={() => handleUserResponse(false)}
-          >
-            {t("addNewChain.cancel")}
-          </SharedButton>
-          <SharedButton size="large" type="primary" isFormSubmit>
-            {t("addNewChain.submit")}
-          </SharedButton>
+          {existingNetwork ? (
+            <div className="center_horizontal">
+              <SharedButton size="large" type="primary" isFormSubmit>
+                {t("shared.close")}
+              </SharedButton>
+            </div>
+          ) : (
+            <>
+              <SharedButton
+                size="large"
+                type="secondary"
+                onClick={() => handleUserResponse(false)}
+              >
+                {t("addNewChain.cancel")}
+              </SharedButton>
+              <SharedButton size="large" type="primary" isFormSubmit>
+                {t("addNewChain.submit")}
+              </SharedButton>
+            </>
+          )}
         </footer>
       </form>
       <style jsx>{`
+        .network_exists_warning {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .network_exists_warning span {
+          font-family: Segment;
+          font-size: 16px;
+          font-weight: 500;
+          line-height: 24px;
+          letter-spacing: 0em;
+          text-align: center;
+          display: block;
+          color: var(--green-40);
+        }
+
+        .network_exists_warning p {
+          font-family: Segment;
+          font-size: 22px;
+          font-weight: 500;
+          line-height: 32px;
+          letter-spacing: 0em;
+          text-align: center;
+          margin: 0;
+        }
+
         .add_chain_imgs {
           display: flex;
           justify-content: center;
           align-items: center;
           padding-bottom: 24px;
           border-bottom: 1px solid var(--castle-black);
+          max-width: calc(100% - 44px);
+          margin: 0 auto;
         }
 
         .new_chain_logo_wrapper {
@@ -214,7 +270,7 @@ export default function NewCustomNetworkRequest(): JSX.Element {
         .details_container {
           background: var(--hunter-green);
           border-radius: 16px;
-          padding: 24px;
+          padding: 24px 0;
           margin-bottom: 16px;
         }
 
@@ -223,6 +279,10 @@ export default function NewCustomNetworkRequest(): JSX.Element {
           flex-direction: column;
           gap: 8px;
           margin: 24px 0 0;
+        }
+
+        .chain_info {
+          padding: 0 24px;
         }
 
         .row {

@@ -9,6 +9,7 @@ import {
   SignerMetadata,
   SignerRawWithType,
 } from "../services/keyring/index"
+import { HexString } from "../types"
 
 type KeyringToVerify = {
   id: string
@@ -21,7 +22,7 @@ export type KeyringsState = {
   metadata: {
     [keyringId: string]: SignerMetadata
   }
-  importing: false | "pending" | "done"
+  importing: false | "pending" | "done" | "failed"
   status: "locked" | "unlocked" | "uninitialized"
   keyringToVerify: KeyringToVerify
 }
@@ -51,7 +52,6 @@ export const importSigner = createBackgroundAsyncThunk(
     { getState, dispatch, extra: { main } }
   ) => {
     const address = await main.importSigner(signerRaw)
-
     if (!address) return
 
     const { ui } = getState() as {
@@ -123,6 +123,12 @@ const keyringsSlice = createSlice({
           keyringToVerify: null,
         }
       })
+      .addCase(importSigner.rejected, (state) => {
+        return {
+          ...state,
+          importing: "failed",
+        }
+      })
   },
 })
 
@@ -168,5 +174,19 @@ export const createPassword = createBackgroundAsyncThunk(
   "keyrings/createPassword",
   async (password: string) => {
     await emitter.emit("createPassword", password)
+  }
+)
+
+export const exportMnemonic = createBackgroundAsyncThunk(
+  "keyrings/exportMnemonic",
+  async (address: HexString, { extra: { main } }) => {
+    return main.exportMnemonic(address)
+  }
+)
+
+export const exportPrivateKey = createBackgroundAsyncThunk(
+  "keyrings/exportPrivateKey",
+  async (address: HexString, { extra: { main } }) => {
+    return main.exportPrivateKey(address)
   }
 )

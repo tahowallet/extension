@@ -26,6 +26,7 @@ import {
   POLYGON,
   USD,
 } from "../constants"
+import { DaylightAbility } from "../lib/daylight"
 import {
   AnyEVMTransaction,
   LegacyEVMTransactionRequest,
@@ -47,6 +48,7 @@ import {
   ProviderBridgeService,
   SigningService,
 } from "../services"
+import AbilitiesService from "../services/abilities"
 import {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
@@ -118,6 +120,11 @@ type CreateSigningServiceOverrides = {
   chainService?: Promise<ChainService>
 }
 
+type CreateAbilitiesServiceOverrides = {
+  ledgerService?: Promise<LedgerService>
+  chainService?: Promise<ChainService>
+}
+
 type CreateProviderBridgeServiceOverrides = {
   internalEthereumProviderService?: Promise<InternalEthereumProviderService>
   preferenceService?: Promise<PreferenceService>
@@ -147,6 +154,15 @@ export const createSigningService = async (
     overrides.keyringService ?? createKeyringService(),
     overrides.ledgerService ?? createLedgerService(),
     overrides.chainService ?? createChainService()
+  )
+}
+
+export const createAbilitiesService = async (
+  overrides: CreateAbilitiesServiceOverrides = {}
+): Promise<AbilitiesService> => {
+  return AbilitiesService.create(
+    overrides.chainService ?? createChainService(),
+    overrides.ledgerService ?? createLedgerService()
   )
 }
 
@@ -482,6 +498,36 @@ export const createAssetAmount = (
     amount: BigInt(Math.trunc(1e10 * amount)) * 10n ** 8n,
   }
 }
+
+export const createDaylightAbility = (
+  overrides: Partial<DaylightAbility> = {}
+): DaylightAbility => ({
+  type: "mint",
+  title: "Test ability!",
+  description: "Test description",
+  imageUrl: "./images/test.png",
+  openAt: null,
+  closeAt: null,
+  isClosed: false,
+  createdAt: "2023-02-20T17:24:25.000Z",
+  chain: "ethereum",
+  sourceId: "",
+  uid: getRandomStr(5),
+  slug: getRandomStr(5),
+  requirements: [
+    {
+      type: "onAllowlist",
+      chain: "ethereum",
+      addresses: ["0x208e94d5661a73360d9387d3ca169e5c130090cd"],
+    },
+  ],
+  action: {
+    linkUrl: "",
+    completedBy: [],
+  },
+  walletCompleted: false,
+  ...overrides,
+})
 
 /**
  * @param asset Any type of asset
