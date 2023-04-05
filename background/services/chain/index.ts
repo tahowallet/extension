@@ -1888,8 +1888,8 @@ export default class ChainService extends BaseService<Events> {
   // Used to add non-default chains via wallet_addEthereumChain
   async addCustomChain(
     chainInfo: ValidatedAddEthereumChainParameter
-  ): Promise<void> {
-    await this.db.addEVMNetwork({
+  ): Promise<EVMNetwork> {
+    const network = await this.db.addEVMNetwork({
       chainName: chainInfo.chainName,
       chainID: chainInfo.chainId,
       decimals: chainInfo.nativeCurrency.decimals,
@@ -1905,6 +1905,8 @@ export default class ChainService extends BaseService<Events> {
     )
 
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
+
+    return network
   }
 
   async removeCustomChain(chainID: string): Promise<void> {

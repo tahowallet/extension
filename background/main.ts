@@ -75,6 +75,7 @@ import {
   setAccountsSignerSettings,
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
+  setSelectedNetwork,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -1337,6 +1338,12 @@ export default class Main extends BaseService<never> {
         )
 
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
+      }
+    )
+    this.internalEthereumProviderService.emitter.on(
+      "selectedNetwork",
+      (network) => {
+        this.store.dispatch(setSelectedNetwork(network))
       }
     )
 
