@@ -37,7 +37,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes, NormalizedEVMAddress } from "./types"
-import { SignedTransaction } from "./networks"
+import { EVMNetwork, SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -75,6 +75,7 @@ import {
   setAccountsSignerSettings,
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
+  setSelectedNetwork,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -1339,6 +1340,12 @@ export default class Main extends BaseService<never> {
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
       }
     )
+    this.internalEthereumProviderService.emitter.on(
+      "selectedNetwork",
+      (network) => {
+        this.store.dispatch(setSelectedNetwork(network))
+      }
+    )
 
     uiSliceEmitter.on("newSelectedNetwork", (network) => {
       this.internalEthereumProviderService.routeSafeRPCRequest(
@@ -1731,6 +1738,16 @@ export default class Main extends BaseService<never> {
 
   async removeEVMNetwork(chainID: string): Promise<void> {
     return this.chainService.removeCustomChain(chainID)
+  }
+
+  async importTokenViaContractAddress(
+    contractAddress: HexString,
+    network: EVMNetwork
+  ): Promise<void> {
+    return this.indexingService.addTokenToTrackByContract(
+      network,
+      contractAddress
+    )
   }
 
   private connectPopupMonitor() {
