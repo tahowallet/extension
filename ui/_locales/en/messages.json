@@ -589,6 +589,7 @@
     "accountItemSummary": {
       "connectedStatus": "Connected"
     },
+    "mouseOverToShow": "Mouse over to show",
     "selectToken": "Select token",
     "backButtonText": "Back",
     "saveBtn": "Save",
