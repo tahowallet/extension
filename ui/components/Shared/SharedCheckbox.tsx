@@ -1,20 +1,25 @@
-import React, { ReactElement, ChangeEventHandler } from "react"
+import React, { ReactElement, useState, useEffect } from "react"
 
 interface Props {
   label: string
-  onChange: ChangeEventHandler<HTMLInputElement>
-  checked?: boolean
+  onChange: (value: boolean) => void
+  value?: boolean
 }
 
 export default function SharedCheckbox(props: Props): ReactElement {
-  const { label, checked, onChange } = props
+  const { label, value, onChange } = props
+  const [checked, setChecked] = useState(value || false)
+
+  useEffect(() => {
+    setChecked(!!value)
+  }, [value])
 
   return (
     <div className="checkbox">
       <input
         id="checkbox"
-        defaultChecked={checked}
-        onChange={onChange}
+        checked={checked}
+        onChange={() => onChange(!checked)}
         type="checkbox"
       />
       <span className="checkmark" />

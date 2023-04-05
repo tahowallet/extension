@@ -4,6 +4,7 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
 import SharedWarningMessage from "../Shared/SharedWarningMessage"
 import SharedButton from "../Shared/SharedButton"
+import SharedCheckbox from "../Shared/SharedCheckbox"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 
 interface ShowPrivateKeyProps {
@@ -17,6 +18,7 @@ export default function ShowPrivateKey({
     keyPrefix: "accounts.accountItem.showPrivateKey",
   })
   const [showPrivateKey, setShowPrivateKey] = useState(false)
+  const [isConfirmed, setIsConfirmed] = useState(false)
 
   return (
     <>
@@ -29,18 +31,26 @@ export default function ShowPrivateKey({
               <SharedAccountItemSummary accountTotal={account} />
             </div>
             {showPrivateKey ? (
-              // TODO add a new component
+              // TODO Add a new component
               <div>Copy Private key to clipboard</div>
             ) : (
               <div className="confirmation_container">
-                <span>{t("exportingPrivateKey.confirmationDesc")}</span>
-                <SharedButton
-                  type="primary"
-                  size="medium"
-                  onClick={() => setShowPrivateKey(true)}
-                >
-                  {t("exportingPrivateKey.showBtn")}
-                </SharedButton>
+                {/* TODO Fix issue with Checkbox */}
+                <SharedCheckbox
+                  label={t("exportingPrivateKey.confirmationDesc")}
+                  value={isConfirmed}
+                  onChange={(value) => setIsConfirmed(value)}
+                />
+                <div>
+                  <SharedButton
+                    type="primary"
+                    size="medium"
+                    isDisabled={!isConfirmed}
+                    onClick={() => setShowPrivateKey(true)}
+                  >
+                    {t("exportingPrivateKey.showBtn")}
+                  </SharedButton>
+                </div>
               </div>
             )}
           </div>
@@ -77,7 +87,7 @@ export default function ShowPrivateKey({
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            margin-top: 32px;
+            margin-top: 16px;
           }
         `}
       </style>
