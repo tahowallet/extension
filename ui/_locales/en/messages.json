@@ -187,6 +187,8 @@
     "toBeDetermined": "TBD",
     "settingsTitle": "Network fees (Gwei)",
     "gasLimit": "Gas limit",
+    "settingsDisabledOne": "Chain doesn't support",
+    "settingsDisabledTwo": "gas settings",
     "estimatedNetworkFee": "Estimated network fee",
     "insufficientBaseAsset": "Not enough {{symbol}} for network fees",
     "totalMax": "Total Max",
