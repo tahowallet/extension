@@ -138,10 +138,7 @@ export async function createAnalyticsService(overrides?: {
 }): Promise<AnalyticsService> {
   const preferenceService =
     overrides?.preferenceService ?? createPreferenceService()
-  return AnalyticsService.create(
-    overrides?.chainService ?? createChainService({ preferenceService }),
-    preferenceService
-  )
+  return AnalyticsService.create(preferenceService)
 }
 
 export const createSigningService = async (

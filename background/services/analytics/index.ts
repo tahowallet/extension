@@ -12,7 +12,6 @@ import {
   OneTimeAnalyticsEvent,
   sendPosthogEvent,
 } from "../../lib/posthog"
-import ChainService from "../chain"
 import PreferenceService from "../preferences"
 import { FeatureFlags, isEnabled as isFeatureFlagEnabled } from "../../features"
 import logger from "../../lib/logger"
@@ -33,16 +32,15 @@ export default class AnalyticsService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     AnalyticsService,
-    [Promise<ChainService>, Promise<PreferenceService>]
-  > = async (chainService, preferenceService) => {
+    [Promise<PreferenceService>]
+  > = async (preferenceService) => {
     const db = await getOrCreateDB()
 
-    return new this(db, await chainService, await preferenceService)
+    return new this(db, await preferenceService)
   }
 
   private constructor(
     private db: AnalyticsDatabase,
-    private chainService: ChainService,
     private preferenceService: PreferenceService
   ) {
     super()
@@ -74,8 +72,6 @@ export default class AnalyticsService extends BaseService<Events> {
     }
 
     if (isEnabled) {
-      this.initializeListeners()
-
       const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
 
       browser.runtime.setUninstallURL(
@@ -134,20 +130,6 @@ export default class AnalyticsService extends BaseService<Events> {
     } catch (e) {
       logger.error("Deleting Analytics Data Failed ", e)
     }
-  }
-
-  private initializeListeners() {
-    // ⚠️ Note: We NEVER send addresses to analytics!
-    this.chainService.emitter.on("newAccountToTrack", () => {
-      this.sendAnalyticsEvent(AnalyticsEvent.NEW_ACCOUNT_TO_TRACK, {
-        description: `
-            This event is fired when any address on a network is added to the tracked list. 
-            
-            Note: this does not track recovery phrase(ish) import! But when an address is used 
-            on a network for the first time (read-only or recovery phrase/ledger/keyring).
-            `,
-      })
-    })
   }
 
   private async getOrCreateAnalyticsUUID(): Promise<{
