@@ -141,6 +141,13 @@ describe("Keyring Service", () => {
 
       expect(mnemonic).toBe(HD_WALLET_MOCK.mnemonic)
     })
+    it("should be able to export private key from HD wallet addresses", async () => {
+      const privateKey = await keyringService.exportPrivateKey(
+        HD_WALLET_MOCK.addresses[0]
+      )
+
+      expect(privateKey).toBe(PK_WALLET_MOCK.privateKey) // first address from both mocks is the same
+    })
     it("should be able to sign transaction", async () => {
       const address = HD_WALLET_MOCK.addresses[0]
       const signed = await keyringService.signTransaction(
