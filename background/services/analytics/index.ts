@@ -102,7 +102,11 @@ export default class AnalyticsService extends BaseService<Events> {
     // @TODO: implement event batching
 
     const { isEnabled } = await this.preferenceService.getAnalyticsPreferences()
-    if (isEnabled) {
+    // We want to send the ANALYTICS_TOGGLED event to denote that the user
+    // has disabled analytics - and we send the event after disabling, so
+    // we have a special exception here to allow the event to send even
+    // after analytics have been set to disabled in the preferenceService.
+    if (eventName === AnalyticsEvent.ANALYTICS_TOGGLED || isEnabled) {
       const { uuid } = await this.getOrCreateAnalyticsUUID()
 
       sendPosthogEvent(uuid, eventName, payload)
