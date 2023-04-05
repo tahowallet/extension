@@ -707,9 +707,7 @@
     "protocolList": {
       "testnetsSectionTitle": "Testnets",
       "customNetworksSectionTitle": "Custom networks",
-      "customRPCFooterTitle": "Activate or add networks",
-      "customRPCFooterDesc": "You can activate any network that is already added to Taho or you can add any other network.",
-      "networkSettingsBtn": "Network settings"
+      "networkSettingsBtn": "Add network"
     },
     "connectedDappInfo": {
       "modalClose": "Background close",
