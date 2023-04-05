@@ -361,7 +361,21 @@
           "subtitle": "Importing a private key does not associate it to a secret recovery phrase, but it’s still protected by the same password",
           "inputLabel": "Paste private key string",
           "submit": "Import account",
-          "error": "Invalid private key"
+          "error": "Invalid private key",
+          "privateKey": "Private key",
+          "password": "JSON file password",
+          "json": "JSON",
+          "browseFiles": "<span>Browse files</span> or drag and drop your {{type}} file",
+          "uploading": "Uploading...",
+          "uploadFail": "Upload failed, try again",
+          "wrongFile": "Wrong file, only {{type}} accepted",
+          "decrypt": "Decrypt file",
+          "decrypting": "Decrypting file",
+          "decryptingTime": "this may take up to 1 minute",
+          "finalize": "Finalize",
+          "completed": "Completed!",
+          "address": "address",
+          "wrongPassword": "Wrong password, make sure you enter the password you used when encrypting this file"
         },
         "viewOnly": {
           "title": "Read-only address",

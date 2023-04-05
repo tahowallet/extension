@@ -34,12 +34,16 @@ export default function ImportForm(props: Props): ReactElement {
           font-size: 36px;
           line-height: 42px;
           margin-bottom: 8px;
+          width: 500px;
+          text-align: center;
         }
         .centered {
           display: flex;
           align-items: center;
           flex-direction: column;
           justify-content: space-between;
+          width: 356px;
+          margin: auto;
         }
         h1 {
           margin: unset;

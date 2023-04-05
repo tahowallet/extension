@@ -21,7 +21,7 @@ export type KeyringsState = {
   metadata: {
     [keyringId: string]: SignerMetadata
   }
-  importing: false | "pending" | "done"
+  importing: false | "pending" | "done" | "failed"
   status: "locked" | "unlocked" | "uninitialized"
   keyringToVerify: KeyringToVerify
 }
@@ -51,7 +51,6 @@ export const importSigner = createBackgroundAsyncThunk(
     { getState, dispatch, extra: { main } }
   ) => {
     const address = await main.importSigner(signerRaw)
-
     if (!address) return
 
     const { ui } = getState() as {
@@ -121,6 +120,12 @@ const keyringsSlice = createSlice({
           ...state,
           importing: "done",
           keyringToVerify: null,
+        }
+      })
+      .addCase(importSigner.rejected, (state) => {
+        return {
+          ...state,
+          importing: "failed",
         }
       })
   },

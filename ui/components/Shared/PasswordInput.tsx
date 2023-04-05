@@ -42,6 +42,7 @@ export default function PasswordInput(props: PasswordInputProps): ReactElement {
           }
           .wrapper {
             position: relative;
+            width: 100%;
           }
           .icon {
             position: absolute;

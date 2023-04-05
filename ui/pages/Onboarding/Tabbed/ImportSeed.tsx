@@ -68,7 +68,7 @@ export default function ImportSeed(props: Props): ReactElement {
       setErrorMessage(t("errors.phraseLengthError"))
     } else if (isValidMnemonic(plainRecoveryPhrase)) {
       setIsImporting(true)
-      dispatch(
+      await dispatch(
         importSigner({
           type: SignerTypes.keyring,
           mnemonic: plainRecoveryPhrase,
@@ -117,7 +117,6 @@ export default function ImportSeed(props: Props): ReactElement {
             <SharedButton
               style={{
                 width: "100%",
-                maxWidth: "356px",
                 boxSizing: "border-box",
               }}
               size={
@@ -147,6 +146,7 @@ export default function ImportSeed(props: Props): ReactElement {
       </ImportForm>
       <style jsx>{`
         .bottom {
+          width: 100%;
           display: flex;
           flex-direction: column;
           margin-top: ${isEnabled(FeatureFlags.HIDE_IMPORT_DERIVATION_PATH)
