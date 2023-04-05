@@ -10,6 +10,7 @@ import SharedCheckbox from "../Shared/SharedCheckbox"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import SharedSecretText from "../Shared/SharedSecretText"
 import { useBackgroundDispatch } from "../../hooks"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 
 interface ShowPrivateKeyProps {
   account: AccountTotal
@@ -21,11 +22,13 @@ export default function ShowPrivateKey({
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem.showPrivateKey",
   })
+  const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
   const dispatch = useBackgroundDispatch()
 
   const [privateKey, setPrivateKey] = useState("")
   const [showPrivateKey, setShowPrivateKey] = useState(false)
   const [isConfirmed, setIsConfirmed] = useState(false)
+  const [showExplainer, setShowExplainer] = useState(false)
 
   useEffect(() => {
     const fetchPrivateKey = async () => {
@@ -90,9 +93,44 @@ export default function ShowPrivateKey({
               </div>
             )}
           </div>
-          <div>{t("privateKeyInfo")}</div>
+          <SharedButton
+            type="tertiaryGray"
+            size="small"
+            onClick={() => setShowExplainer(true)}
+          >
+            {t("privateKeyInfo")}
+          </SharedButton>
         </div>
       </SharedSlideUpMenuPanel>
+      <SharedSlideUpMenu
+        size="auto"
+        isOpen={showExplainer}
+        close={() => setShowExplainer(false)}
+      >
+        <div className="explainer">
+          <h3 className="simple_text explainer_header">
+            {t("explainer.header")}
+          </h3>
+          {/* TODO: Explainer text is WIP */}
+          <p className="simple_text">{t("explainer.text1")}</p>
+          <p className="simple_text bold">{t("explainer.text2")}</p>
+          <p className="simple_text">{t("explainer.text3")}</p>
+          <div className="explainer_buttons">
+            <SharedButton
+              size="medium"
+              type="tertiary"
+              iconSmall="close"
+              onClick={() => setShowExplainer(false)}
+            >
+              {tShared("close")}
+            </SharedButton>
+            {/* TODO: add link to "Read more" */}
+            <SharedButton size="medium" type="tertiary" iconSmall="new-tab">
+              {tShared("readMore")}
+            </SharedButton>
+          </div>
+        </div>
+      </SharedSlideUpMenu>
       <style jsx>
         {`
           .content {
@@ -124,6 +162,22 @@ export default function ShowPrivateKey({
             flex-direction: column;
             justify-content: space-between;
             margin-top: 16px;
+          }
+          .explainer {
+            font-family: "Segment";
+            padding: 0 24px 5px;
+            margin-top: -20px;
+          }
+          .explainer_header {
+            color: var(--white);
+          }
+          .bold {
+            font-weight: 600;
+            color: var(--white);
+          }
+          .explainer_buttons {
+            display: flex;
+            justify-content: space-between;
           }
         `}
       </style>
