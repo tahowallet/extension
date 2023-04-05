@@ -45,7 +45,9 @@ export default class OnboardingHelper {
       expect(onboarding).toHaveURL(/onboarding/)
     }).toPass()
 
-    const onboarding = this.context.pages().at(-1)
+    const onboarding = this.context
+      .pages()
+      .find((page) => /onboarding/.test(page.url()))
 
     if (!onboarding) {
       // Should never happen

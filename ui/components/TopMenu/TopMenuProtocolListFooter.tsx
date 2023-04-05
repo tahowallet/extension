@@ -1,17 +1,9 @@
 import React from "react"
-import {
-  ARBITRUM_NOVA,
-  ARBITRUM_ONE,
-  BINANCE_SMART_CHAIN,
-  OPTIMISM,
-  POLYGON,
-  ROOTSTOCK,
-} from "@tallyho/tally-background/constants"
+
 import { useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
 import SharedButton from "../Shared/SharedButton"
 import SharedIcon from "../Shared/SharedIcon"
-import { getNetworkIconName } from "../../utils/networks"
 
 export default function TopMenuProtocolListFooter(): JSX.Element {
   const history = useHistory()
@@ -19,33 +11,6 @@ export default function TopMenuProtocolListFooter(): JSX.Element {
 
   return (
     <footer>
-      <h2>{t("topMenu.protocolList.customRPCFooterTitle")}</h2>
-      <p>{t("topMenu.protocolList.customRPCFooterDesc")}</p>
-      <ul className="custom_rpc_icons">
-        {(
-          [
-            [OPTIMISM, 1],
-            [ARBITRUM_ONE, 0.8],
-            [BINANCE_SMART_CHAIN, 0.7],
-            [POLYGON, 0.5],
-            [ARBITRUM_NOVA, 0.3],
-            [ROOTSTOCK, 0.1],
-          ] as const
-        ).map(([network, opacity]) => {
-          const icon = getNetworkIconName(network)
-
-          return (
-            <img
-              key={icon}
-              width="24"
-              height="24"
-              alt={network.name}
-              src={`/images/networks/${icon}@2x.png`}
-              style={{ opacity }}
-            />
-          )
-        })}
-      </ul>
       <SharedButton
         size="medium"
         onClick={() => history.push("/settings/custom-networks")}
@@ -55,7 +20,7 @@ export default function TopMenuProtocolListFooter(): JSX.Element {
           width={16}
           height={16}
           customStyles="margin-right: 4px"
-          icon="icons/s/settings2.svg"
+          icon="icons/s/add.svg"
           color="currentColor"
         />
         {t("topMenu.protocolList.networkSettingsBtn")}
@@ -63,11 +28,12 @@ export default function TopMenuProtocolListFooter(): JSX.Element {
       <style jsx>
         {`
           footer {
+            background: var(--hunter-green);
             display: flex;
             flex-direction: column;
             gap: 8px;
-            margin-top: 8px;
-            margin-bottom: 16px;
+            margin-top: auto;
+            padding: 4px 24px;
           }
 
           footer ul {

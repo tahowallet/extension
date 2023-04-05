@@ -8,6 +8,7 @@ export enum AnalyticsEvent {
   UI_SHOWN = "UI shown",
   NEW_ACCOUNT_TO_TRACK = "Address added to tracking on network",
   CUSTOM_CHAIN_ADDED = "Custom chain added",
+  DAPP_CONNECTED = "Dapp Connected",
 }
 
 export enum OneTimeAnalyticsEvent {
