@@ -124,6 +124,7 @@ interface Events extends ServiceLifecycleEvents {
     addressOnNetwork: AddressOnNetwork
   }
   transactionSend: HexString
+  networkSubscribed: EVMNetwork
   transactionSendFailure: undefined
   assetTransfers: {
     addressNetwork: AddressOnNetwork
@@ -420,6 +421,8 @@ export default class ChainService extends BaseService<Events> {
     } else {
       logger.error(`Couldn't find provider for network ${network.name}`)
     }
+
+    this.emitter.emit("networkSubscribed", network)
   }
 
   /**

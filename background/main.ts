@@ -168,7 +168,11 @@ import {
   initAbilities,
 } from "./redux-slices/abilities"
 import { AddChainRequestData } from "./services/provider-bridge"
-import { AnalyticsEvent, isOneTimeAnalyticsEvent } from "./lib/posthog"
+import {
+  AnalyticsEvent,
+  isOneTimeAnalyticsEvent,
+  OneTimeAnalyticsEvent,
+} from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -599,6 +603,7 @@ export default class Main extends BaseService<never> {
       network,
       name,
     })
+    this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.ACCOUNT_NAME_EDITED)
   }
 
   async removeAccount(
@@ -860,6 +865,12 @@ export default class Main extends BaseService<never> {
           const signedTransactionResult =
             await this.signingService.signTransaction(request, accountSigner)
           await this.store.dispatch(transactionSigned(signedTransactionResult))
+          this.analyticsService.sendAnalyticsEvent(
+            AnalyticsEvent.TRANSACTION_SIGNED,
+            {
+              chainId: request.chainID,
+            }
+          )
         } catch (exception) {
           logger.error("Error signing transaction", exception)
           this.store.dispatch(
@@ -1511,6 +1522,12 @@ export default class Main extends BaseService<never> {
         this.providerBridgeService.notifyContentScriptAboutConfigChange(
           newDefaultWalletValue
         )
+        this.analyticsService.sendAnalyticsEvent(
+          AnalyticsEvent.DEFAULT_WALLET_TOGGLED,
+          {
+            setToDefault: newDefaultWalletValue,
+          }
+        )
       }
     )
 
@@ -1642,6 +1659,17 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(setShowAnalyticsNotification(true))
     })
 
+    this.chainService.emitter.on("networkSubscribed", (network) => {
+      this.analyticsService.sendOneTimeAnalyticsEvent(
+        OneTimeAnalyticsEvent.CHAIN_ADDED,
+        {
+          chainId: network.chainID,
+          name: network.name,
+          description: `This event is fired when a chain is subscribed to from the wallet for the first time.`,
+        }
+      )
+    })
+
     // ⚠️ Note: We NEVER send addresses to analytics!
     this.chainService.emitter.on("newAccountToTrack", () => {
       this.analyticsService.sendAnalyticsEvent(
@@ -1680,6 +1708,13 @@ export default class Main extends BaseService<never> {
             // it's expected that more detailed analytics settings will come
             analyticsPreferences.isEnabled
           )
+        )
+
+        this.analyticsService.sendAnalyticsEvent(
+          AnalyticsEvent.ANALYTICS_TOGGLED,
+          {
+            analyticsEnabled: analyticsPreferences.isEnabled,
+          }
         )
       }
     )
