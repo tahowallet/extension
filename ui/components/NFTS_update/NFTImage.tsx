@@ -2,7 +2,7 @@ import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
 import noop from "../../utils/noop"
 
-const noPreviewLink = "./images/no_preview.svg"
+export const noPreviewLink = "./images/no_preview.svg"
 
 export default function NFTImage({
   width,

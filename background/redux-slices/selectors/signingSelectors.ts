@@ -69,7 +69,7 @@ export const selectAccountSignersByAddress = createSelector(
       )
       .filter(isDefined)
 
-    const privateKeyEntires = Object.entries(walletsByAddress)
+    const privateKeyEntries = Object.entries(walletsByAddress)
       .map(
         ([address, wallet]): [HexString, WalletAccountSigner] | undefined => {
           if (wallet.id === null) {
@@ -96,7 +96,7 @@ export const selectAccountSignersByAddress = createSelector(
 
     const entriesByPriority: [string, AccountSigner][] = [
       ...readOnlyEntries,
-      ...privateKeyEntires,
+      ...privateKeyEntries,
       ...ledgerEntries,
       // Give priority to keyring over Ledger and private key, if an address is signable by
       // both.

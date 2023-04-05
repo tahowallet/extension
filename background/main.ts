@@ -145,7 +145,7 @@ import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
-import { isSmartContractFungibleAsset } from "./assets"
+import { isSmartContractFungibleAsset, SmartContractAsset } from "./assets"
 import { FeatureFlags, isEnabled } from "./features"
 import { NFTCollection } from "./nfts"
 import {
@@ -167,7 +167,8 @@ import {
   initAbilities,
 } from "./redux-slices/abilities"
 import { AddChainRequestData } from "./services/provider-bridge"
-import { AnalyticsEvent } from "./lib/posthog"
+import { AnalyticsEvent, isOneTimeAnalyticsEvent } from "./lib/posthog"
+import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 import { SignerRawWithType } from "./services/keyring"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -976,7 +977,46 @@ export default class Main extends BaseService<never> {
 
         const filteredBalancesToDispatch: AccountBalance[] = []
 
-        balances.forEach((balance) => {
+        const sortedBalances: AccountBalance[] = []
+
+        balances
+          .filter((balance) => {
+            const isSmartContract =
+              "contractAddress" in balance.assetAmount.asset
+
+            if (!isSmartContract) {
+              sortedBalances.push(balance)
+            }
+
+            // Network base assets with smart contract addresses from some networks
+            // e.g. Optimism, Polygon might have been retrieved through alchemy as
+            // token balances but they should not be handled here as they would
+            // not be correctly treated as base assets
+            if (
+              isBuiltInNetworkBaseAsset(
+                balance.assetAmount.asset,
+                balance.network
+              )
+            ) {
+              return false
+            }
+
+            return isSmartContract
+          })
+          // Sort trusted last to prevent shadowing assets from token lists
+          // FIXME: Balances should not be indexed by symbol in redux
+          .sort((balance, otherBalance) => {
+            const asset = balance.assetAmount.asset as SmartContractAsset
+            const other = otherBalance.assetAmount.asset as SmartContractAsset
+
+            return (
+              (other.metadata?.tokenLists?.length ?? 0) -
+              (asset.metadata?.tokenLists?.length ?? 0)
+            )
+          })
+          .forEach((balance) => sortedBalances.unshift(balance))
+
+        sortedBalances.forEach((balance) => {
           // TODO support multi-network assets
           const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
             (tracked) =>
@@ -1361,6 +1401,10 @@ export default class Main extends BaseService<never> {
     )
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
+      this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.DAPP_CONNECTED, {
+        origin: permission.origin,
+        chainId: permission.chainID,
+      })
       await Promise.all(
         this.chainService.supportedNetworks.map(async (network) => {
           await this.providerBridgeService.grantPermission({
@@ -1569,6 +1613,14 @@ export default class Main extends BaseService<never> {
     return this.keyringService.unlock(password)
   }
 
+  async exportMnemonic(walletID: string): Promise<string | null> {
+    return this.keyringService.exportMnemonic(walletID)
+  }
+
+  async exportPrivateKey(address: string): Promise<string | null> {
+    return this.keyringService.exportPrivateKey(address)
+  }
+
   async importSigner(signerRaw: SignerRawWithType): Promise<HexString | null> {
     return this.keyringService.importSigner(signerRaw)
   }
@@ -1617,6 +1669,14 @@ export default class Main extends BaseService<never> {
 
     uiSliceEmitter.on("deleteAnalyticsData", () => {
       this.analyticsService.removeAnalyticsData()
+    })
+
+    uiSliceEmitter.on("sendEvent", (event) => {
+      if (isOneTimeAnalyticsEvent(event)) {
+        this.analyticsService.sendOneTimeAnalyticsEvent(event)
+      } else {
+        this.analyticsService.sendAnalyticsEvent(event)
+      }
     })
   }
 
