@@ -63,7 +63,7 @@ export default function TopMenuProtocolList({
   )
 
   return (
-    <div>
+    <div className="container">
       <div className={classNames(customNetworksEnabled && "networks_list")}>
         <ul className="standard_width center_horizontal">
           {builtinNetworks.map((network) => (
@@ -124,12 +124,16 @@ export default function TopMenuProtocolList({
       </div>
       <style jsx>
         {`
+          .container {
+            overflow-y: auto;
+          }
+
           .networks_list {
             overflow-y: auto;
             overflow-x: hidden;
             display: flex;
             flex-direction: column;
-            min-height: 511px;
+            min-height: 512px;
           }
 
           ul {
