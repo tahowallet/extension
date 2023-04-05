@@ -63,7 +63,7 @@ export default function TopMenuProtocolList({
   )
 
   return (
-    <div className="">
+    <div>
       <div className={classNames(customNetworksEnabled && "networks_list")}>
         <ul className="standard_width center_horizontal">
           {builtinNetworks.map((network) => (
