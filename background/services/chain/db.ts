@@ -280,6 +280,14 @@ export class ChainDatabase extends Dexie {
     return this.networks.where("family").equals("EVM").toArray()
   }
 
+  async getEVMNetworkByChainID(
+    chainID: string
+  ): Promise<EVMNetwork | undefined> {
+    return (await this.networks.where("family").equals("EVM").toArray()).find(
+      (network) => network.chainID === chainID
+    )
+  }
+
   private async addBaseAsset(
     name: string,
     symbol: string,

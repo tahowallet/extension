@@ -446,4 +446,45 @@ describe("ChainService", () => {
       ).toBe(CHAIN_NONCE)
     })
   })
+
+  describe("getNetworksToTrack", () => {
+    it("Should fetch built-in and custom networks to track", async () => {
+      await chainService.addCustomChain({
+        chainName: "Foo",
+        chainId: "12345",
+        nativeCurrency: {
+          name: "FooCoin",
+          symbol: "FOO",
+          decimals: 18,
+        },
+        rpcUrls: ["https://foo.com"],
+        blockExplorerUrl: "https://fooscanner.com",
+      })
+
+      await chainService.addAccountToTrack({
+        address: "0x123",
+        network: {
+          name: "Foo",
+          chainID: "12345",
+          family: "EVM",
+          baseAsset: {
+            decimals: 18,
+            symbol: "FOO",
+            name: "FooCoin",
+            chainID: "12345",
+          },
+        },
+      })
+
+      await chainService.addAccountToTrack({
+        address: "0x123",
+        network: ETHEREUM,
+      })
+      const networksToTrack = await chainService.getNetworksToTrack()
+
+      expect(
+        networksToTrack.find((network) => network.chainID === "12345")
+      ).toBeTruthy()
+    })
+  })
 })

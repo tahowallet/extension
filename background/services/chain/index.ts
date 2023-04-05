@@ -847,10 +847,17 @@ export default class ChainService extends BaseService<Events> {
       // Default to tracking Ethereum so ENS resolution works during onboarding
       return [ETHEREUM]
     }
-    return [...chainIDs].map((chainID) => {
-      const network = NETWORK_BY_CHAIN_ID[chainID]
-      return network
-    })
+
+    const networks = await Promise.all(
+      [...chainIDs].map(async (chainID) => {
+        const network = NETWORK_BY_CHAIN_ID[chainID]
+        if (!network) {
+          return this.db.getEVMNetworkByChainID(chainID)
+        }
+        return network
+      })
+    )
+    return networks.filter((network): network is EVMNetwork => !!network)
   }
 
   async removeAccountToTrack(address: string): Promise<void> {
