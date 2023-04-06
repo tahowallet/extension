@@ -1,7 +1,7 @@
 import { StatusCodes, TransportStatusError } from "@ledgerhq/errors"
 import KeyringService, {
   KeyringAccountSigner,
-  WalletAccountSigner,
+  PrivateKeyAccountSigner,
 } from "../keyring"
 import LedgerService, { LedgerAccountSigner } from "../ledger"
 import {
@@ -56,7 +56,7 @@ export const ReadOnlyAccountSigner = { type: "read-only" } as const
  */
 export type AccountSigner =
   | typeof ReadOnlyAccountSigner
-  | WalletAccountSigner
+  | PrivateKeyAccountSigner
   | KeyringAccountSigner
   | HardwareAccountSigner
 export type HardwareAccountSigner = LedgerAccountSigner
