@@ -43,8 +43,8 @@ export default function ShowPrivateKey({
       }
     }
 
-    fetchPrivateKey()
-  }, [dispatch, account.address])
+    if (showPrivateKey) fetchPrivateKey()
+  }, [dispatch, account.address, showPrivateKey])
 
   return (
     <>

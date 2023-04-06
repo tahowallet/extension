@@ -35,6 +35,16 @@
         }
       },
       "showMnemonic": {
+        "header": "Show Recovery Phrase",
+        "warningMessage": "Anybody that has your recovery phrase can move your assets.",
+        "mnemonicInfo": "Why do i need a recovery phrase?",
+        "exportingMnemonic": {
+          "confirmationDesc": "I understand that other Recovery Phrases, Ledger, Private Keys or Read-only accounts will not be saved with this recovery phrase.",
+          "invalidMessage": "Check the above box to confirm",
+          "showBtn": "Show recovery phrase",
+          "copyBtn": "Copy phrase to clipboard",
+          "copySuccess": "Copied!"
+        },
         "explainer": {
           "header": "Why do i need a recovery phrase?",
           "text1": "You need a recovery phrase in case you loose access to your computer, wallet or you forget your password.",
