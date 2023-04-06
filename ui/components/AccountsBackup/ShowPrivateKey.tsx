@@ -1,25 +1,19 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import {
-  exportPrivateKey,
-  lockKeyrings,
-} from "@tallyho/tally-background/redux-slices/keyrings"
-import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
+import { lockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
 import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
 import SharedWarningMessage from "../Shared/SharedWarningMessage"
 import SharedButton from "../Shared/SharedButton"
-import SharedCheckbox from "../Shared/SharedCheckbox"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
-import SharedSecretText from "../Shared/SharedSecretText"
 import { useAreKeyringsUnlocked, useBackgroundDispatch } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import KeyringUnlock from "../Keyring/KeyringUnlock"
 import Explainer from "./Explainer"
+import ConfirmReveal from "./ConfirmReveal"
+import RevealPrivateKey from "./RevealPrivateKey"
 
-interface ShowPrivateKeyProps {
-  account: AccountTotal
-}
+type ShowPrivateKeyProps = { account: AccountTotal }
 
 export default function ShowPrivateKey({
   account,
@@ -30,26 +24,8 @@ export default function ShowPrivateKey({
   const dispatch = useBackgroundDispatch()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
 
-  const [privateKey, setPrivateKey] = useState("")
   const [showPrivateKey, setShowPrivateKey] = useState(false)
-  const [isConfirmed, setIsConfirmed] = useState(false)
-  // When the user clicks the disabled button should see a message about the selection of the checkbox
-  const [showInvalidMessage, setShowInvalidMessage] = useState(false)
   const [showExplainer, setShowExplainer] = useState(false)
-
-  useEffect(() => {
-    const fetchPrivateKey = async () => {
-      const key = (await dispatch(
-        exportPrivateKey(account.address)
-      )) as unknown as string | null
-
-      if (key) {
-        setPrivateKey(key)
-      }
-    }
-
-    if (showPrivateKey) fetchPrivateKey()
-  }, [dispatch, account.address, showPrivateKey])
 
   useEffect(() => {
     const lockWallet = async () => dispatch(lockKeyrings())
@@ -72,58 +48,14 @@ export default function ShowPrivateKey({
                     <SharedAccountItemSummary accountTotal={account} />
                   </div>
                   {showPrivateKey ? (
-                    <>
-                      <SharedSecretText
-                        text={privateKey}
-                        label={t("privateKey")}
-                      />
-                      <SharedButton
-                        type="tertiary"
-                        size="small"
-                        iconMedium="copy"
-                        onClick={() => {
-                          navigator.clipboard.writeText(privateKey)
-                          dispatch(
-                            setSnackbarMessage(
-                              t("exportingPrivateKey.copySuccess")
-                            )
-                          )
-                        }}
-                        center
-                      >
-                        {t("exportingPrivateKey.copyBtn")}
-                      </SharedButton>
-                    </>
+                    <RevealPrivateKey address={account.address} />
                   ) : (
-                    <div className="confirmation_container">
-                      <SharedCheckbox
-                        label={t("exportingPrivateKey.confirmationDesc")}
-                        message={t("exportingPrivateKey.invalidMessage")}
-                        value={isConfirmed}
-                        invalid={showInvalidMessage && !isConfirmed}
-                        onChange={(value) => {
-                          setIsConfirmed(value)
-                          setShowInvalidMessage(false)
-                        }}
-                      />
-                      <div>
-                        <SharedButton
-                          type="primary"
-                          size="medium"
-                          isDisabled={!isConfirmed}
-                          hideEvents={false}
-                          onClick={() => {
-                            if (isConfirmed) {
-                              setShowPrivateKey(true)
-                            } else {
-                              setShowInvalidMessage(true)
-                            }
-                          }}
-                        >
-                          {t("exportingPrivateKey.showBtn")}
-                        </SharedButton>
-                      </div>
-                    </div>
+                    <ConfirmReveal
+                      description={t("exportingPrivateKey.confirmationDesc")}
+                      invalidMessage={t("exportingPrivateKey.invalidMessage")}
+                      confirmButton={t("exportingPrivateKey.showBtn")}
+                      onConfirm={() => setShowPrivateKey(true)}
+                    />
                   )}
                 </div>
               </>
@@ -182,13 +114,6 @@ export default function ShowPrivateKey({
             border-radius: 8px;
             display: flex;
             flex-direction: column;
-          }
-          .confirmation_container {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            margin-top: 16px;
           }
         `}
       </style>
