@@ -753,7 +753,9 @@
       "contractCreation": "(Contract creation)",
       "transactionTo": "To:",
       "transactionFrom": "From:",
-      "loadingActivities": "Digging deeper..."
+      "loadingActivities": "Digging deeper...",
+      "addCustomAssetPrompt": "Can't find an asset?",
+      "addCustomAssetAction": "add custom asset"
     },
     "trustedAssets": {
       "notTrusted": "Asset isn't trusted",
