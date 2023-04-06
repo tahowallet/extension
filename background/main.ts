@@ -12,6 +12,7 @@ import {
   getEthereumNetwork,
   isProbablyEVMAddress,
   normalizeEVMAddress,
+  sameEVMAddress,
   wait,
 } from "./lib/utils"
 
@@ -146,7 +147,11 @@ import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
-import { isSmartContractFungibleAsset, SmartContractAsset } from "./assets"
+import {
+  isSmartContractFungibleAsset,
+  SmartContractAsset,
+  SmartContractFungibleAsset,
+} from "./assets"
 import { FeatureFlags, isEnabled } from "./features"
 import { NFTCollection } from "./nfts"
 import {
@@ -170,6 +175,7 @@ import {
 import { AddChainRequestData } from "./services/provider-bridge"
 import { AnalyticsEvent, isOneTimeAnalyticsEvent } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
+import { fromFixedPoint } from "./lib/fixed-point"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1738,6 +1744,61 @@ export default class Main extends BaseService<never> {
 
   async removeEVMNetwork(chainID: string): Promise<void> {
     return this.chainService.removeCustomChain(chainID)
+  }
+
+  async queryCustomTokenDetails(
+    contractAddress: NormalizedEVMAddress,
+    addressOnNetwork: AddressOnNetwork
+  ): Promise<{
+    asset: SmartContractFungibleAsset
+    balance: number
+    exists?: boolean
+  }> {
+    const { network } = addressOnNetwork
+
+    const balance = await this.chainService.assetData.getTokenBalance(
+      addressOnNetwork,
+      contractAddress
+    )
+
+    const existingAsset = this.indexingService
+      .getCachedAssets(network)
+      .find(
+        (asset): asset is SmartContractFungibleAsset =>
+          isSmartContractFungibleAsset(asset) &&
+          sameEVMAddress(contractAddress, asset.contractAddress)
+      )
+
+    if (existingAsset) {
+      return {
+        asset: existingAsset,
+        // FIXME: REMOVE FIXED PRECISION
+        balance: fromFixedPoint(balance.amount, existingAsset.decimals, 2),
+        exists: true,
+      }
+    }
+
+    const asset = await this.chainService.assetData
+      .getTokenMetadata({
+        contractAddress,
+        homeNetwork: network,
+      })
+      .catch(() => undefined)
+
+    if (!asset) {
+      throw logger.buildError(
+        "Unable to retrieve metadata for custom asset",
+        contractAddress,
+        "on chain:",
+        network.chainID
+      )
+    }
+
+    return {
+      asset,
+      // FIXME: REMOVE FIXED PRECISION
+      balance: fromFixedPoint(balance.amount, asset.decimals, 2),
+    }
   }
 
   async importTokenViaContractAddress(
