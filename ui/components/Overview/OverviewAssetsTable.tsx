@@ -129,9 +129,6 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
           text-align: right;
           margin-top: 3px;
         }
-        .lighter_color {
-          color: var(--green-60);
-        }
         .asset_name {
           margin-left: 7px;
         }
