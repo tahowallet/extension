@@ -75,7 +75,7 @@ export default function WalletToggleDefaultBanner(): ReactElement {
     >
       <div className="default_toggle">
         <div>
-          <span className="highlight">{t("shared.tallyHo")} </span>
+          <span className="highlight">{t("shared.taho")} </span>
           {isDefaultWallet
             ? t("wallet.defaultToggle.isDefault")
             : t("wallet.defaultToggle.notDefault")}

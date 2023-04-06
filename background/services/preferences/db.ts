@@ -7,6 +7,7 @@ import DEFAULT_PREFERENCES from "./defaults"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
 import { AnalyticsPreferences } from "./types"
+import { NETWORK_BY_CHAIN_ID } from "../../constants"
 
 type SignerRecordId = `${AccountSignerWithId["type"]}/${string}`
 
@@ -265,6 +266,56 @@ export class PreferenceDatabase extends Dexie {
           storedPreferences.tokenLists.urls.push(
             "https://tokens.pancakeswap.finance/pancakeswap-default.json"
           )
+        })
+    })
+
+    this.version(14).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const urls = storedPreferences.tokenLists.urls.filter(
+            (url) =>
+              url !==
+              "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/src/joe.tokenlist-v2.json"
+          )
+
+          urls.push(
+            "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/avalanche.tokenlist.json"
+          )
+
+          Object.assign(storedPreferences.tokenLists, { urls })
+        })
+    })
+
+    this.version(15).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const urls = storedPreferences.tokenLists.urls.filter(
+            (url) =>
+              url !==
+              "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/avalanche.tokenlist.json"
+          )
+
+          urls.push(
+            "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/1722d8c47a728a64c8dca8ac160b32cf39c5e671/mc.tokenlist.json"
+          )
+
+          Object.assign(storedPreferences.tokenLists, { urls })
+        })
+    })
+
+    // Updates saved accounts stored networks for old installs
+    this.version(16).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const { selectedAccount } = storedPreferences
+          selectedAccount.network =
+            NETWORK_BY_CHAIN_ID[selectedAccount.network.chainID]
         })
     })
 

@@ -117,7 +117,7 @@ export default function WalletBanner(): ReactElement {
                 <li>{t("emptyBannerContent")}</li>
               ) : (
                 arbitrumCampaigns?.map(({ name }) => (
-                  <li className="list_item">
+                  <li key={name} className="list_item">
                     <div className="ellipsis">{name}</div>
                   </li>
                 ))

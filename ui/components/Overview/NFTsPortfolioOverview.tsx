@@ -1,24 +1,30 @@
 import React, { ReactElement } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import {
-  selectAllNFTBadgesCount,
-  selectAllNFTCollectionsCount,
-  selectAllNFTsCount,
+  selectFilteredNFTsCount,
+  selectFilteredNFTCollectionsCount,
+  selectFilteredNFTBadgesCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector, useTotalNFTsFloorPrice } from "../../hooks"
+import SharedTooltip from "../Shared/SharedTooltip"
 
 export default function NFTsPortfolioOverview(): ReactElement {
   const { t } = useTranslation()
 
-  const nftCount = useBackgroundSelector(selectAllNFTsCount)
-  const collectionCount = useBackgroundSelector(selectAllNFTCollectionsCount)
-  const badgeCount = useBackgroundSelector(selectAllNFTBadgesCount)
+  const nftCount = useBackgroundSelector(selectFilteredNFTsCount)
+  const collectionCount = useBackgroundSelector(
+    selectFilteredNFTCollectionsCount
+  )
+  const badgeCount = useBackgroundSelector(selectFilteredNFTBadgesCount)
 
   const { totalFloorPriceInUSD } = useTotalNFTsFloorPrice()
   return (
     <section>
       <header>
-        <h5 className="nft-count">NFT({nftCount + badgeCount})</h5>
+        <h5 className="nft-count">NFTs ({nftCount + badgeCount})</h5>
+        <SharedTooltip width={180} horizontalPosition="right">
+          {t("overview.nftsTooltip")}
+        </SharedTooltip>
         <span className="estimate">~${totalFloorPriceInUSD}</span>
       </header>
       <div>
@@ -54,11 +60,13 @@ export default function NFTsPortfolioOverview(): ReactElement {
             font-size: 16px;
             line-height: 24px;
             color: var(--green-20);
+            margin-left: auto;
           }
 
           header {
             display: flex;
-            justify-content: space-between;
+            align-items: center;
+            width: 100%;
           }
 
           div {

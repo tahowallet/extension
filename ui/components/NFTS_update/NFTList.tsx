@@ -3,7 +3,7 @@ import {
   NFTWithCollection,
 } from "@tallyho/tally-background/redux-slices/nfts_update"
 import { selectIsReloadingNFTs } from "@tallyho/tally-background/redux-slices/selectors"
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import { useBackgroundSelector } from "../../hooks"
 import SharedLoadingDoggo from "../Shared/SharedLoadingDoggo"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -19,6 +19,14 @@ export default function NFTList(props: {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [currentNFTPreview, setCurrentNFTPreview] =
     useState<NFTWithCollection | null>(null)
+  const [currentExpandedID, setCurrentExpandedID] = useState<null | string>(
+    null
+  )
+  const setExpandedID = useCallback(
+    (id: string | null, owner: string | null) =>
+      setCurrentExpandedID(`${id}_${owner}`), // TODO: owner can be removed after we will merge collections owned by multiple accounts
+    []
+  )
 
   const isReloading = useBackgroundSelector(selectIsReloadingNFTs)
 
@@ -51,7 +59,7 @@ export default function NFTList(props: {
             collection.nfts.map((nft) => (
               <NFTItem
                 key={`${nft.id}_${nft.owner}`}
-                item={nft}
+                item={{ ...nft, floorPrice: collection.floorPrice }}
                 onClick={() => openPreview({ nft, collection })}
               />
             ))
@@ -60,6 +68,10 @@ export default function NFTList(props: {
               key={`${collection.id}_${collection.owner}`}
               openPreview={openPreview}
               collection={collection}
+              setExpandedID={setExpandedID}
+              isExpanded={
+                `${collection.id}_${collection.owner}` === currentExpandedID
+              }
             />
           )
         )}
@@ -68,6 +80,7 @@ export default function NFTList(props: {
         isOpen={isPreviewOpen}
         close={closePreview}
         size="large"
+        testid="nft_preview_menu"
         isFullScreen
       >
         {currentNFTPreview && (

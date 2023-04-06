@@ -11,6 +11,7 @@ import {
 import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
+  isBuiltInNetworkBaseAsset,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
@@ -29,7 +30,7 @@ export const enum AccountType {
   Internal = "internal",
 }
 
-const availableDefaultNames = [
+export const DEFAULT_ACCOUNT_NAMES = [
   "Phoenix",
   "Matilda",
   "Sirius",
@@ -40,7 +41,9 @@ const availableDefaultNames = [
   "Foz",
 ]
 
-type AccountData = {
+const availableDefaultNames = [...DEFAULT_ACCOUNT_NAMES]
+
+export type AccountData = {
   address: HexString
   network: Network
   balances: {
@@ -290,10 +293,9 @@ const accountSlice = createSlice({
         const {
           address,
           network,
-          assetAmount: {
-            asset: { symbol: updatedAssetSymbol },
-          },
+          assetAmount: { asset },
         } = updatedAccountBalance
+        const { symbol: updatedAssetSymbol } = asset
 
         const normalizedAddress = normalizeEVMAddress(address)
         const existingAccountData =
@@ -307,7 +309,8 @@ const accountSlice = createSlice({
         if (existingAccountData !== "loading") {
           if (
             updatedAccountBalance.assetAmount.amount === 0n &&
-            existingAccountData.balances[updatedAssetSymbol] === undefined
+            existingAccountData.balances[updatedAssetSymbol] === undefined &&
+            !isBuiltInNetworkBaseAsset(asset, network) // add base asset even if balance is 0
           ) {
             return
           }

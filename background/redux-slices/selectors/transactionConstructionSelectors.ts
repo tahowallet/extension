@@ -49,7 +49,8 @@ export const selectDefaultNetworkFeeSettings = createSelector(
               )?.gasPrice
             : selectedFeesPerGas?.price ?? 0n,
         baseFeePerGas:
-          networks.evm[currentNetwork.chainID]?.baseFeePerGas ?? undefined,
+          networks.blockInfo[currentNetwork.chainID]?.baseFeePerGas ??
+          undefined,
       },
     }
   }
@@ -127,4 +128,10 @@ export const selectCurrentlyChosenNetworkFees = createSelector(
       state.transactionConstruction.feeTypeSelected
     ],
   (feeData) => feeData
+)
+
+export const selectHasInsufficientFunds = createSelector(
+  selectTransactionData,
+  (transactionDetails) =>
+    !!transactionDetails?.annotation?.warnings?.includes("insufficient-funds")
 )

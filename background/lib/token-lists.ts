@@ -148,10 +148,9 @@ export function mergeAssets<T extends FungibleAsset>(
         metadata: {
           ...matchingAsset.metadata,
           ...asset.metadata,
-          tokenLists:
-            matchingAsset.metadata?.tokenLists?.concat(
-              asset.metadata?.tokenLists ?? []
-            ) ?? [],
+          tokenLists: (matchingAsset.metadata?.tokenLists || [])?.concat(
+            asset.metadata?.tokenLists ?? []
+          ),
         },
       }
     } else {

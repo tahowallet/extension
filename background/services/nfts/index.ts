@@ -3,7 +3,7 @@ import { FeatureFlags, isEnabled } from "../../features"
 import {
   getNFTCollections,
   getNFTs,
-  getTransferredNFTs,
+  getNFTsTransfers,
 } from "../../lib/nfts_update"
 import { getSimpleHashNFTs } from "../../lib/simple-hash_update"
 import { POAP_COLLECTION_ID } from "../../lib/poap_update"
@@ -12,8 +12,8 @@ import BaseService from "../base"
 import ChainService from "../chain"
 
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { getOrCreateDB, NFTsDatabase } from "./db"
-import { getUNIXTimestamp } from "../../lib/utils"
+import { getOrCreateDB, NFTsDatabase, FreshCollectionsMap } from "./db"
+import { getUNIXTimestamp, normalizeEVMAddress } from "../../lib/utils"
 import { MINUTE } from "../../constants"
 
 interface Events extends ServiceLifecycleEvents {
@@ -36,6 +36,8 @@ export default class NFTsService extends BaseService<Events> {
 
   #transfersLookupTimestamp: number
 
+  #freshCollections: FreshCollectionsMap = {}
+
   static create: ServiceCreatorFunction<
     Events,
     NFTsService,
@@ -49,7 +51,7 @@ export default class NFTsService extends BaseService<Events> {
     private chainService: ChainService
   ) {
     super()
-    this.#transfersLookupTimestamp = getUNIXTimestamp()
+    this.#transfersLookupTimestamp = getUNIXTimestamp() // will be discarded when chainService starts
   }
 
   protected override async internalStartService(): Promise<void> {
@@ -70,21 +72,47 @@ export default class NFTsService extends BaseService<Events> {
   private async connectChainServiceEvents(): Promise<void> {
     this.chainService.emitter.once("serviceStarted").then(async () => {
       this.emitter.emit("isReloadingNFTs", true)
-      await this.refreshCollections()
 
-      const collections = await this.db.getAllCollections()
+      const { transfersLookupTimestamp, freshCollections } =
+        await this.db.getPreferences()
+      let collections = await this.db.getAllCollections() // initialize redux from database if possible
+
+      if (!collections.length) {
+        // fetch collections for the first time
+        await this.initializeCollections()
+        collections = await this.db.getAllCollections()
+      }
+
+      // use latest lookup timestamp
+      this.#transfersLookupTimestamp =
+        transfersLookupTimestamp ?? (await this.setTransfersLookupTimestamp())
+
+      this.#freshCollections = Object.keys(freshCollections).length
+        ? freshCollections
+        : await this.db.setFreshCollectionsFromSavedData()
+
       this.emitter.emit("initializeNFTs", collections)
       this.emitter.emit("isReloadingNFTs", false)
     })
 
     this.chainService.emitter.on(
       "newAccountToTrack",
-      async (addressOnNetwork) => {
+      async ({ addressOnNetwork }) => {
         this.emitter.emit("isReloadingNFTs", true)
-        await this.refreshCollections([addressOnNetwork])
+        await this.initializeCollections([addressOnNetwork])
         this.emitter.emit("isReloadingNFTs", false)
       }
     )
+  }
+
+  async initializeCollections(accounts?: AddressOnNetwork[]): Promise<void> {
+    const accountsToFetch =
+      accounts ?? (await this.chainService.getAccountsToTrack())
+
+    if (accountsToFetch.length) {
+      await this.fetchCollections(accountsToFetch)
+      await this.fetchPOAPs(accountsToFetch)
+    }
   }
 
   async refreshCollections(accounts?: AddressOnNetwork[]): Promise<void> {
@@ -93,14 +121,12 @@ export default class NFTsService extends BaseService<Events> {
 
     if (!accountsToFetch.length) return
 
-    await this.removeTransferredNFTs(accountsToFetch)
-    await this.fetchCollections(accountsToFetch)
-    // prefetch POAPs to avoid loading empty POAPs collections from UI
-    await Promise.allSettled(
-      accountsToFetch.map((account) =>
-        this.fetchNFTsFromCollection(POAP_COLLECTION_ID, account)
-      )
-    )
+    const transfers = await this.fetchTransferredNFTs(accountsToFetch)
+
+    if (transfers.length) {
+      await this.fetchCollections(accountsToFetch) // refetch only if there are some transfers
+    }
+    await this.fetchPOAPs(accountsToFetch)
   }
 
   async fetchCollections(accounts: AddressOnNetwork[]): Promise<void> {
@@ -118,16 +144,53 @@ export default class NFTsService extends BaseService<Events> {
     )
   }
 
+  async refreshNFTsFromCollection(
+    collectionID: string,
+    account: AddressOnNetwork
+  ): Promise<void> {
+    this.setFreshCollection(collectionID, account.address, false)
+    await this.db.setFreshCollections(this.#freshCollections)
+    await this.fetchNFTsFromCollection(collectionID, account)
+  }
+
   async fetchNFTsFromCollection(
     collectionID: string,
     account: AddressOnNetwork
   ): Promise<void> {
+    if (
+      this.#freshCollections[collectionID]?.[
+        normalizeEVMAddress(account.address)
+      ]
+    ) {
+      await this.fetchNFTsFromDatabase(collectionID, account)
+    } else {
+      await Promise.allSettled(
+        getNFTs([account], [collectionID]).map(async (request) => {
+          const { nfts, nextPageURLs } = await request
+          await this.updateSavedNFTs(collectionID, account, nfts, nextPageURLs)
+        })
+      )
+    }
+  }
+
+  async fetchPOAPs(accounts: AddressOnNetwork[]): Promise<void> {
     await Promise.allSettled(
-      getNFTs([account], [collectionID]).map(async (request) => {
-        const { nfts, nextPageURLs } = await request
-        await this.updateSavedNFTs(collectionID, account, nfts, nextPageURLs)
-      })
+      accounts.map((account) =>
+        this.fetchNFTsFromCollection(POAP_COLLECTION_ID, account)
+      )
     )
+  }
+
+  async fetchNFTsFromDatabase(
+    collectionID: string,
+    account: AddressOnNetwork
+  ): Promise<void> {
+    await this.emitter.emit("updateNFTs", {
+      collectionID,
+      account,
+      nfts: await this.db.getCollectionNFTsForAccount(collectionID, account),
+      hasNextPage: !!this.#nextPageUrls[collectionID]?.[account.address],
+    })
   }
 
   async fetchNFTsFromNextPage(
@@ -194,6 +257,10 @@ export default class NFTsService extends BaseService<Events> {
       this.emitter.emit("updateCollections", [updatedCollection])
     }
 
+    // if NFTs were fetched then mark as fresh
+    this.setFreshCollection(collectionID, account.address, !!updatedNFTs.length)
+    await this.db.setFreshCollections(this.#freshCollections)
+
     const hasNextPage = !!Object.keys(nextPageURLs).length
 
     await this.emitter.emit("updateNFTs", {
@@ -213,24 +280,69 @@ export default class NFTsService extends BaseService<Events> {
     )
   }
 
-  async removeNFTsForAddress(address: string): Promise<void> {
-    await this.db.removeNFTsForAddress(address)
+  setFreshCollection(
+    collectionID: string,
+    address: string,
+    isFresh: boolean
+  ): void {
+    // POAPs won't appear in transfers so we don't know if they are stale
+    if (collectionID === POAP_COLLECTION_ID) return
+
+    this.#freshCollections[collectionID] ??= {}
+    this.#freshCollections[collectionID][normalizeEVMAddress(address)] = isFresh
   }
 
-  async removeTransferredNFTs(accounts: AddressOnNetwork[]): Promise<void> {
-    const removedNFTs = await getTransferredNFTs(
+  async removeNFTsForAddress(address: string): Promise<void> {
+    Object.keys(this.#freshCollections).forEach((collectionID) => {
+      if (this.#freshCollections[collectionID][normalizeEVMAddress(address)]) {
+        this.setFreshCollection(collectionID, address, false)
+      }
+    })
+    await this.db.removeNFTsForAddress(address)
+    await this.db.setFreshCollections(this.#freshCollections)
+  }
+
+  async setTransfersLookupTimestamp(): Promise<number> {
+    // indexing transfers can take some time, let's add some margin to the timestamp
+    const timestamp = getUNIXTimestamp(Date.now() - 2 * MINUTE)
+    await this.db.setTransfersLookupTimestamp(timestamp)
+    return timestamp
+  }
+
+  async fetchTransferredNFTs(
+    accounts: AddressOnNetwork[]
+  ): Promise<TransferredNFT[]> {
+    const transfers = await getNFTsTransfers(
       accounts,
       this.#transfersLookupTimestamp
     )
 
-    if (removedNFTs.length) {
-      // indexing transfers can take some time, let's add some margin to the timestamp
-      this.#transfersLookupTimestamp = getUNIXTimestamp(Date.now() - 5 * MINUTE)
+    this.#transfersLookupTimestamp = await this.setTransfersLookupTimestamp()
 
+    // mark collections with transferred NFTs to be refetched
+    transfers.forEach((transfer) => {
+      const { collectionID, to, from, isKnownFromAddress, isKnownToAddress } =
+        transfer
+      if (collectionID && to && isKnownToAddress) {
+        this.setFreshCollection(collectionID, to, false)
+      }
+      if (collectionID && from && isKnownFromAddress) {
+        this.setFreshCollection(collectionID, from, false)
+      }
+    })
+    await this.db.setFreshCollections(this.#freshCollections)
+
+    const knownFromAddress = transfers.filter(
+      (transfer) => transfer.isKnownFromAddress
+    )
+
+    if (knownFromAddress.length) {
       await this.db.removeNFTsByIDs(
-        removedNFTs.map((transferred) => transferred.id)
+        knownFromAddress.map((transferred) => transferred.id)
       )
-      this.emitter.emit("removeTransferredNFTs", removedNFTs)
+      this.emitter.emit("removeTransferredNFTs", knownFromAddress)
     }
+
+    return transfers
   }
 }

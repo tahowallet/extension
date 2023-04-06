@@ -2,6 +2,7 @@ import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
+import { AnalyticsEvent, OneTimeAnalyticsEvent } from "../lib/posthog"
 import { EVMNetwork } from "../networks"
 import { AnalyticsPreferences } from "../services/preferences/types"
 import { AccountSignerWithId } from "../signing"
@@ -38,13 +39,16 @@ export type UIState = {
 
 export type Events = {
   snackbarMessage: string
+  deleteAnalyticsData: never
   newDefaultWalletValue: boolean
   refreshBackgroundPage: null
+  sendEvent: AnalyticsEvent | OneTimeAnalyticsEvent
   newSelectedAccount: AddressOnNetwork
   newSelectedAccountSwitched: AddressOnNetwork
   userActivityEncountered: AddressOnNetwork
   newSelectedNetwork: EVMNetwork
   updateAnalyticsPreferences: Partial<AnalyticsPreferences>
+  addCustomNetworkResponse: [string, boolean]
 }
 
 export const emitter = new Emittery<Events>()
@@ -86,6 +90,7 @@ const uiSlice = createSlice({
       settings: {
         ...state.settings,
         collectAnalytics,
+        showAnalyticsNotification: false,
       },
     }),
     setShowAnalyticsNotification: (
@@ -199,6 +204,13 @@ export const updateAnalyticsPreferences = createBackgroundAsyncThunk(
   }
 )
 
+export const deleteAnalyticsData = createBackgroundAsyncThunk(
+  "ui/deleteAnalyticsData",
+  async () => {
+    await emitter.emit("deleteAnalyticsData")
+  }
+)
+
 // Async thunk to bubble the setNewDefaultWalletValue action from  store to emitter.
 export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
   "ui/setNewDefaultWalletValue",
@@ -228,6 +240,20 @@ export const updateSignerTitle = createBackgroundAsyncThunk(
     { extra: { main } }
   ) => {
     return main.updateSignerTitle(signer, title)
+  }
+)
+
+export const getAddNetworkRequestDetails = createBackgroundAsyncThunk(
+  "ui/getAddNetworkRequestDetails",
+  async (requestId: string, { extra: { main } }) => {
+    return main.getAddNetworkRequestDetails(requestId)
+  }
+)
+
+export const addNetworkUserResponse = createBackgroundAsyncThunk(
+  "ui/handleAddNetworkConfirmation",
+  async ([requestId, result]: [string, boolean]) => {
+    emitter.emit("addCustomNetworkResponse", [requestId, result])
   }
 )
 
@@ -262,6 +288,13 @@ export const refreshBackgroundPage = createBackgroundAsyncThunk(
   "ui/refreshBackgroundPage",
   async () => {
     await emitter.emit("refreshBackgroundPage", null)
+  }
+)
+
+export const sendEvent = createBackgroundAsyncThunk(
+  "ui/sendEvent",
+  async (event: AnalyticsEvent | OneTimeAnalyticsEvent) => {
+    await emitter.emit("sendEvent", event)
   }
 )
 

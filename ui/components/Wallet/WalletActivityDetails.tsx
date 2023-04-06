@@ -123,14 +123,13 @@ export default function WalletActivityDetails(
   const [details, setDetails] = useState<ActivityDetail[]>([])
   const network = useBackgroundSelector(selectCurrentNetwork)
 
+  const scanWebsiteInfo = scanWebsite[network.chainID]
+
   const openExplorer = useCallback(() => {
     window
-      .open(
-        `${scanWebsite[network.chainID].url}/tx/${activityItem.hash}`,
-        "_blank"
-      )
+      .open(`${scanWebsiteInfo.url}/tx/${activityItem.hash}`, "_blank")
       ?.focus()
-  }, [activityItem?.hash, network.chainID])
+  }, [activityItem?.hash, scanWebsiteInfo])
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -150,16 +149,18 @@ export default function WalletActivityDetails(
   return (
     <div className="wrap standard_width center_horizontal">
       <div className="header">
-        <div className="header_button">
-          <SharedButton
-            type="tertiary"
-            size="medium"
-            iconMedium="new-tab"
-            onClick={openExplorer}
-          >
-            {scanWebsite[network.chainID].title}
-          </SharedButton>
-        </div>
+        {scanWebsiteInfo && (
+          <div className="header_button">
+            <SharedButton
+              type="tertiary"
+              size="medium"
+              iconMedium="new-tab"
+              onClick={openExplorer}
+            >
+              {scanWebsiteInfo?.title}
+            </SharedButton>
+          </div>
+        )}
       </div>
       <div className="destination_cards">
         <DestinationCard label="From" address={activityItem.from} />

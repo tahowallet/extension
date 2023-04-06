@@ -7,6 +7,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useTranslation } from "react-i18next"
 import { Activity } from "@tallyho/tally-background/redux-slices/activities"
+import { ALCHEMY_SUPPORTED_CHAIN_IDS } from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import WalletActivityDetails from "./WalletActivityDetails"
@@ -35,6 +36,7 @@ export default function WalletActivityList({
     useState(true)
 
   const network = useBackgroundSelector(selectCurrentNetwork)
+  const scanWebsiteInfo = scanWebsite[network.chainID]
 
   useEffect(() => {
     setInstantlyHideActivityDetails(true)
@@ -45,12 +47,9 @@ export default function WalletActivityList({
 
   const openExplorer = useCallback(() => {
     window
-      .open(
-        `${scanWebsite[network.chainID].url}/address/${currentAccount}`,
-        "_blank"
-      )
+      .open(`${scanWebsiteInfo.url}/address/${currentAccount}`, "_blank")
       ?.focus()
-  }, [network.chainID, currentAccount])
+  }, [scanWebsiteInfo, currentAccount])
 
   const handleOpen = useCallback(
     (activityItem: Activity) => {
@@ -67,7 +66,9 @@ export default function WalletActivityList({
   if (!activities || activities.length === 0)
     return (
       <span>
-        {t("historicalActivityExplainer")}
+        {ALCHEMY_SUPPORTED_CHAIN_IDS.has(network.chainID)
+          ? t("historicalActivityExplainer")
+          : t("defaultHistoricalActivityExplainer")}
         <style jsx>{`
           span {
             width: 316px;
@@ -117,18 +118,20 @@ export default function WalletActivityList({
       <span>
         <div className="hand">✋</div>
         <div>{t("endOfList")}</div>
-        <div className="row">
-          {t("moreHistory")}
-          <SharedButton
-            type="tertiary"
-            size="small"
-            iconSmall="new-tab"
-            onClick={openExplorer}
-            style={{ padding: 0, fontWeight: 400 }}
-          >
-            {scanWebsite[network.chainID].title}
-          </SharedButton>
-        </div>
+        {scanWebsiteInfo && (
+          <div className="row">
+            {t("moreHistory")}
+            <SharedButton
+              type="tertiary"
+              size="small"
+              iconSmall="new-tab"
+              onClick={openExplorer}
+              style={{ padding: 0, fontWeight: 400 }}
+            >
+              {scanWebsiteInfo?.title}
+            </SharedButton>
+          </div>
+        )}
         <style jsx>{`
           span {
             width: 100%;

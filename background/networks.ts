@@ -14,14 +14,15 @@ import type {
  * Each supported network family is generally incompatible with others from a
  * transaction, consensus, and/or wire format perspective.
  */
-export type NetworkFamily = "EVM" | "BTC"
+export type NetworkFamily = "EVM"
 
 // Should be structurally compatible with FungibleAsset or much code will
 // likely explode.
 export type NetworkBaseAsset = FungibleAsset &
   CoinGeckoAsset & {
     contractAddress?: string
-    coinType: Slip44CoinType
+    coinType?: Slip44CoinType
+    chainID: string
   }
 
 /**
@@ -33,7 +34,8 @@ export type Network = {
   baseAsset: NetworkBaseAsset & CoinGeckoAsset
   family: NetworkFamily
   chainID?: string
-  coingeckoPlatformID: string
+  coingeckoPlatformID?: string
+  derivationPath?: string
 }
 
 /**
@@ -132,7 +134,7 @@ export type LegacyEVMTransaction = EVMTransaction & {
  * limit used to limit the gas expenditure on a transaction. This is used to
  * request a signed transaction, and does not include signature fields.
  *
- * Nonce is permitted to be `undefined` as Tally internals can and often do
+ * Nonce is permitted to be `undefined` as Taho internals can and often do
  * populate the nonce immediately before a request is signed.
  *
  * On networks that roll up to ethereum - the rollup fee is directly proportional
@@ -196,7 +198,7 @@ export type EIP1559Transaction = EVMTransaction & {
  * limit the gas expenditure on a transaction. This is used to request a signed
  * transaction, and does not include signature fields.
  *
- * Nonce is permitted to be `undefined` as Tally internals can and often do
+ * Nonce is permitted to be `undefined` as Taho internals can and often do
  * populate the nonce immediately before a request is signed.
  */
 export type EIP1559TransactionRequest = Pick<
@@ -374,6 +376,10 @@ export function toHexChainID(chainID: string | number): string {
     return chainID.toLowerCase()
   }
   return `0x${BigInt(chainID).toString(16)}`
+}
+
+export const sameChainID = (chainID: string, other: string): boolean => {
+  return toHexChainID(chainID) === toHexChainID(other)
 }
 
 // There is probably some clever way to combine the following type guards into one function

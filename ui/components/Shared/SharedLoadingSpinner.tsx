@@ -4,7 +4,7 @@ import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guar
 
 type SharedLoadingSpinnerProps = {
   size: "small" | "medium"
-  variant?: "dark-gold" | "transparent"
+  variant?: "hunter-green" | "dark-green" | "transparent"
 }
 
 function getVariantStyles(
@@ -12,10 +12,15 @@ function getVariantStyles(
 ) {
   let styles: [string, string]
   switch (variant) {
-    case "dark-gold":
-      styles = ["var(--green-80)", "var(--trophygold)"]
+    // use for the primary button
+    case "hunter-green":
+      styles = ["var(--hunter-green)", "var(--trophy-gold)"]
       break
-
+    // use for the secondary button
+    case "dark-green":
+      styles = ["var(--green-80)", "var(--trophy-gold)"]
+      break
+    // use for the disabled button
     case "transparent":
       styles = ["var(--green-20)", "transparent"]
       break
@@ -30,7 +35,7 @@ function getVariantStyles(
 export default function SharedLoadingSpinner(
   props: SharedLoadingSpinnerProps
 ): ReactElement {
-  const { size, variant = "dark-gold" } = props
+  const { size, variant = "dark-green" } = props
 
   const [color, accent] = useMemo(() => getVariantStyles(variant), [variant])
   return (

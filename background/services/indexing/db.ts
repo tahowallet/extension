@@ -2,7 +2,7 @@ import Dexie, { DexieOptions } from "dexie"
 import { TokenList } from "@uniswap/token-lists"
 
 import { AccountBalance } from "../../accounts"
-import { Network } from "../../networks"
+import { EVMNetwork } from "../../networks"
 import {
   AnyAsset,
   FungibleAsset,
@@ -64,7 +64,11 @@ export type CachedTokenList = TokenListCitation & {
  */
 function assetID(asset: AnyAsset): string {
   const id = `${asset.symbol}`
-  if (!("contractAddress" in asset) || "coinType" in asset) {
+  if (
+    !("contractAddress" in asset) ||
+    !("homeNetwork" in asset) ||
+    "coinType" in asset
+  ) {
     return id
   }
   const network = asset.homeNetwork
@@ -218,6 +222,14 @@ export class IndexingDatabase extends Dexie {
         .toCollection()
         .modify(normalizeAssetAddress)
     })
+
+    // Fix incorrect index on "chainId"
+    this.version(5).stores({
+      customAssets:
+        "&[contractAddress+homeNetwork.name],contractAddress,symbol,homeNetwork.chainID,homeNetwork.name",
+      assetsToTrack:
+        "&[contractAddress+homeNetwork.name],symbol,contractAddress,homeNetwork.family,homeNetwork.chainID,homeNetwork.name",
+    })
   }
 
   async savePriceMeasurement(
@@ -237,7 +249,7 @@ export class IndexingDatabase extends Dexie {
 
   async getLatestAccountBalance(
     address: string,
-    network: Network,
+    network: EVMNetwork,
     asset: FungibleAsset
   ): Promise<AccountBalance | null> {
     // TODO this needs to be tightened up, both for performance and specificity
@@ -275,17 +287,17 @@ export class IndexingDatabase extends Dexie {
     )
   }
 
-  async getCustomAssetsByNetwork(
-    network: Network
+  async getCustomAssetsByNetworks(
+    networks: EVMNetwork[]
   ): Promise<SmartContractFungibleAsset[]> {
     return this.customAssets
-      .where("homeNetwork.name")
-      .equals(network.name)
+      .where("homeNetwork.chainID")
+      .anyOf(networks.map((network) => network.chainID))
       .toArray()
   }
 
   async getCustomAssetByAddressAndNetwork(
-    network: Network,
+    network: EVMNetwork,
     contractAddress: string
   ): Promise<SmartContractFungibleAsset | undefined> {
     return this.customAssets
@@ -295,7 +307,7 @@ export class IndexingDatabase extends Dexie {
   }
 
   async getTrackedAssetByAddressAndNetwork(
-    network: Network,
+    network: EVMNetwork,
     contractAddress: string
   ): Promise<SmartContractFungibleAsset | undefined> {
     return this.assetsToTrack

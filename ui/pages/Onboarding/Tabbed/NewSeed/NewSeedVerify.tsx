@@ -1,9 +1,12 @@
+import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
+import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
 import classNames from "classnames"
 import React, { ReactElement, useMemo, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import SharedButton from "../../../../components/Shared/SharedButton"
 import SharedIcon from "../../../../components/Shared/SharedIcon"
+import { useBackgroundDispatch } from "../../../../hooks"
 import OnboardingTip from "../OnboardingTip"
 import OnboardingRoutes from "../Routes"
 
@@ -31,6 +34,7 @@ function SeedWord(props: SeedWordProps): ReactElement {
           }
         }}
         role="button"
+        data-testid="verify_seed_word_placeholder"
       >
         <span className="word_index">{index + 1}</span>
         <span className="dash">-</span>
@@ -119,6 +123,8 @@ export default function NewSeedVerify({
     keyPrefix: "onboarding.tabbed.newWalletVerify",
   })
 
+  const dispatch = useBackgroundDispatch()
+
   const SEED_WORDS_TO_VERIFY = 8
 
   const randomIndexes = useMemo(
@@ -164,6 +170,10 @@ export default function NewSeedVerify({
 
     setSubmitted(true)
     setIsValidSeed(isValid)
+
+    if (isValid) {
+      dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
+    }
   }
 
   const handleAdd = (wordIndex: number) => {
@@ -295,7 +305,10 @@ export default function NewSeedVerify({
             )}
           </>
         ) : (
-          <ul className="remaining_word_list">
+          <ul
+            className="remaining_word_list"
+            data-testid="remaining_seed_words"
+          >
             {remainingWords.map((word, i) => {
               const key = `${word}-${i}`
               return (
@@ -332,6 +345,7 @@ export default function NewSeedVerify({
                     {children}
                   </span>
                 )}
+                replace
                 to={OnboardingRoutes.NEW_SEED}
               />
             ),

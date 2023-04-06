@@ -117,7 +117,7 @@ export function getNFTCollections(
   )
 }
 
-export async function getTransferredNFTs(
+export async function getNFTsTransfers(
   accounts: AddressOnNetwork[],
   timestamp: UNIXTime
 ): Promise<TransferredNFT[]> {
@@ -134,11 +134,11 @@ export async function getTransferredNFTs(
     { addresses: new Set(), chains: new Set() }
   )
 
-  const removedNFTs = await getSimpleHashNFTsTransfers(
+  const transfers = await getSimpleHashNFTsTransfers(
     [...addresses],
     [...chains],
     timestamp
   )
 
-  return removedNFTs
+  return transfers
 }

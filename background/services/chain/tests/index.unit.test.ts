@@ -1,10 +1,14 @@
 import sinon from "sinon"
-import ChainService, { QueuedTxToRetrieve } from ".."
+import ChainService, {
+  PriorityQueuedTxToRetrieve,
+  QueuedTxToRetrieve,
+} from ".."
 import { ETHEREUM, MINUTE, OPTIMISM, POLYGON, SECOND } from "../../../constants"
 import { EVMNetwork } from "../../../networks"
 import * as gas from "../../../lib/gas"
 import {
   createAddressOnNetwork,
+  createArrayWith0xHash,
   createBlockPrices,
   createChainService,
   createTransactionsToRetrieve,
@@ -31,9 +35,10 @@ type ChainServiceExternalized = Omit<ChainService, ""> & {
     incomingOnly: boolean
   ) => Promise<void>
   retrieveTransaction: (queuedTx: QueuedTxToRetrieve) => Promise<void>
-  transactionsToRetrieve: QueuedTxToRetrieve[]
+  transactionsToRetrieve: PriorityQueuedTxToRetrieve[]
   handleQueuedTransactionAlarm: () => Promise<void>
   transactionToRetrieveGranularTimer: NodeJS.Timer | undefined
+  queueTransactionHashToRetrieve: void
 }
 
 describe("Chain Service", () => {
@@ -318,6 +323,76 @@ describe("Chain Service", () => {
         expect(
           chainServiceExternalized.transactionToRetrieveGranularTimer
         ).toBe(undefined)
+      })
+    })
+
+    describe("queueTransactionHashToRetrieve", () => {
+      const NUMBER_OF_TX = 100
+      const PRIORITY_MAX_COUNT = 25
+      let chainServiceExternalized: ChainServiceExternalized
+      let hashesForFirstAccount: string[]
+      let hashesForSecondAccount: string[]
+      let transactionsToRetrieve: PriorityQueuedTxToRetrieve[]
+
+      beforeEach(() => {
+        chainServiceExternalized =
+          chainService as unknown as ChainServiceExternalized
+
+        hashesForFirstAccount = createArrayWith0xHash(NUMBER_OF_TX)
+        hashesForSecondAccount = createArrayWith0xHash(NUMBER_OF_TX)
+
+        const allHashesToAdd = [hashesForFirstAccount, hashesForSecondAccount]
+
+        allHashesToAdd.forEach((hashes) =>
+          hashes.forEach((txHash, idx) =>
+            chainServiceExternalized.queueTransactionHashToRetrieve(
+              ETHEREUM,
+              txHash,
+              Date.now(),
+              idx < PRIORITY_MAX_COUNT ? 1 : 0
+            )
+          )
+        )
+
+        transactionsToRetrieve = chainServiceExternalized.transactionsToRetrieve
+      })
+
+      it("should add transactions to the queue", async () => {
+        expect(transactionsToRetrieve.length).toBe(NUMBER_OF_TX * 2)
+      })
+
+      it(`the first ${PRIORITY_MAX_COUNT} transactions have a higher priority and should come from the first account`, async () => {
+        Array(PRIORITY_MAX_COUNT).forEach((idx) => {
+          expect(transactionsToRetrieve[idx].transaction.hash).toBe(
+            hashesForFirstAccount[idx]
+          )
+        })
+      })
+
+      it(`another ${PRIORITY_MAX_COUNT} transactions have a higher priority and should come from the second account`, async () => {
+        Array(PRIORITY_MAX_COUNT).forEach((idx) => {
+          expect(
+            transactionsToRetrieve[idx + PRIORITY_MAX_COUNT].transaction.hash
+          ).toBe(hashesForSecondAccount[idx])
+        })
+      })
+
+      it("after items with higher priority in the queue should be the next transactions for the first account", async () => {
+        Array(NUMBER_OF_TX - PRIORITY_MAX_COUNT).forEach((idx) => {
+          expect(
+            transactionsToRetrieve[idx + PRIORITY_MAX_COUNT * 2].transaction
+              .hash
+          ).toBe(hashesForFirstAccount[idx + PRIORITY_MAX_COUNT])
+        })
+      })
+
+      it("transactions with lower priority for the second account should be after high-priority items and all items of the first account", async () => {
+        Array(NUMBER_OF_TX - PRIORITY_MAX_COUNT).forEach((idx) => {
+          expect(
+            transactionsToRetrieve[idx + PRIORITY_MAX_COUNT + NUMBER_OF_TX]
+              .transaction.hash
+          ).toBe(hashesForSecondAccount[idx + PRIORITY_MAX_COUNT])
+        })
       })
     })
   })

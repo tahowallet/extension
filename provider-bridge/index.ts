@@ -18,7 +18,10 @@ export function connectProviderBridge(): void {
       event.data.target === PROVIDER_BRIDGE_TARGET
     ) {
       // if dapp wants to connect let's grab its details
-      if (event.data.request.method === "eth_requestAccounts") {
+      if (
+        event.data.request.method === "eth_requestAccounts" ||
+        event.data.request.method === "wallet_addEthereumChain"
+      ) {
         const faviconElements: NodeListOf<HTMLLinkElement> =
           window.document.querySelectorAll("link[rel*='icon']")
         const largestFavicon = [...faviconElements].sort((el) =>
@@ -80,7 +83,7 @@ export function injectTallyWindowProvider(): void {
     container.insertBefore(scriptTag, container.children[0])
   } catch (e) {
     throw new Error(
-      `Tally: oh nos the content-script failed to initilaize the Tally window provider.
+      `Taho: oh nos the content-script failed to initilaize the Taho window provider.
         ${e}
         It's time for a seppuku...🗡`
     )

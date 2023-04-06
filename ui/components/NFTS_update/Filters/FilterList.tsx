@@ -1,27 +1,30 @@
 import { Filter } from "@tallyho/tally-background/redux-slices/nfts_update"
 import React from "react"
 import SharedSkeletonLoader from "../../Shared/SharedSkeletonLoader"
-import FilterListItem from "./FilterListItem"
+import SharedToggleItem from "../../Shared/SharedToggleItem"
 
 const HEIGHT = 40
 
-const FilterList = React.forwardRef(
-  (
-    {
+type FilterListProps = {
+  filters: Filter[]
+  onChange: (filter: Filter) => void
+  isLoaded?: boolean
+  emptyMessage?: string
+  testid?: string
+}
+
+const FilterList = React.forwardRef<HTMLDivElement, FilterListProps>(
+  (props: FilterListProps, ref) => {
+    const {
       filters,
       isLoaded = true,
       onChange,
       emptyMessage,
-    }: {
-      filters: Filter[]
-      onChange: (filter: Filter) => void
-      isLoaded?: boolean
-      emptyMessage?: string
-    },
-    ref
-  ) => {
+      testid = "nft_filters_list",
+    } = props
+
     return (
-      <div ref={ref as React.RefObject<HTMLDivElement>} className="filter_list">
+      <div ref={ref} className="filter_list" data-testid={testid}>
         {filters.length > 0 ? (
           <>
             {filters.map((item) => (
@@ -30,7 +33,7 @@ const FilterList = React.forwardRef(
                 isLoaded={isLoaded}
                 height={HEIGHT}
               >
-                <FilterListItem
+                <SharedToggleItem
                   label={item.name}
                   thumbnailURL={item?.thumbnailURL}
                   checked={item.isEnabled}

@@ -3,6 +3,34 @@ import { v4 as uuidv4 } from "uuid"
 import { FeatureFlags, isEnabled } from "../features"
 import logger from "./logger"
 
+export enum AnalyticsEvent {
+  NEW_INSTALL = "New install",
+  UI_SHOWN = "UI shown",
+  ACCOUNT_NAME_EDITED = "Account Name Edited",
+  ANALYTICS_TOGGLED = "Analytics Toggled",
+  DEFAULT_WALLET_TOGGLED = "Default Wallet Toggled",
+  TRANSACTION_SIGNED = "Transaction Signed",
+  NEW_ACCOUNT_TO_TRACK = "Address added to tracking on network",
+  CUSTOM_CHAIN_ADDED = "Custom chain added",
+  DAPP_CONNECTED = "Dapp Connected",
+}
+
+export enum OneTimeAnalyticsEvent {
+  ONBOARDING_STARTED = "Onboarding Started",
+  ONBOARDING_FINISHED = "Onboarding Finished",
+  CHAIN_ADDED = "Chain Added",
+}
+
+export const isOneTimeAnalyticsEvent = (
+  eventName: string
+): eventName is OneTimeAnalyticsEvent => {
+  return Object.values<string>(OneTimeAnalyticsEvent).includes(eventName)
+}
+
+const POSTHOG_PROJECT_ID = "11112"
+
+const PERSON_ENDPOINT = `https://app.posthog.com/api/projects/${POSTHOG_PROJECT_ID}/persons`
+
 export const POSTHOG_URL =
   process.env.POSTHOG_URL ?? "https://app.posthog.com/capture/"
 
@@ -68,4 +96,25 @@ export function sendPosthogEvent(
   } catch (e) {
     logger.debug("Sending analytics event failed with error: ", e)
   }
+}
+
+export async function getPersonId(personUUID: string): Promise<string> {
+  const res = await fetch(`${PERSON_ENDPOINT}?distinct_id=${personUUID}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${process.env.POSTHOG_PERSONAL_API_KEY}`,
+    },
+  })
+
+  const response = await res.json()
+  return response.results[0].id
+}
+
+export function deletePerson(personID: string): void {
+  fetch(`${PERSON_ENDPOINT}/${personID}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${process.env.POSTHOG_PERSONAL_API_KEY}`,
+    },
+  })
 }

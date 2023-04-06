@@ -12,7 +12,9 @@ import {
 } from "@tallyho/provider-bridge-shared"
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import BaseService from "../base"
-import InternalEthereumProviderService from "../internal-ethereum-provider"
+import InternalEthereumProviderService, {
+  AddEthereumChainParameter,
+} from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import PreferenceService from "../preferences"
@@ -25,14 +27,30 @@ import {
 import showExtensionPopup from "./show-popup"
 import { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
-import { PermissionMap } from "./utils"
+import {
+  handleRPCErrorResponse,
+  PermissionMap,
+  validateAddEthereumChainParameter,
+  ValidatedAddEthereumChainParameter,
+  parseRPCRequestParams,
+} from "./utils"
 import { toHexChainID } from "../../networks"
 import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
+import { FeatureFlags, isEnabled } from "../../features"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
   initializeAllowedPages: PermissionMap
   setClaimReferrer: string
+  /**
+   * Contains the Wallet Connect URI required to pair/connect
+   */
+  walletConnectInit: string
+}
+
+export type AddChainRequestData = ValidatedAddEthereumChainParameter & {
+  favicon: string
+  siteTitle: string
 }
 
 /**
@@ -52,6 +70,16 @@ export default class ProviderBridgeService extends BaseService<Events> {
   #pendingPermissionsRequests: {
     [origin: string]: (value: unknown) => void
   } = {}
+
+  #pendingAddNetworkRequests: {
+    [id: string]: {
+      resolve: () => void
+      reject: () => void
+      data: AddChainRequestData
+    }
+  } = {}
+
+  private addNetworkRequestId = 0
 
   openPorts: Array<Runtime.Port> = []
 
@@ -147,14 +175,38 @@ export default class ProviderBridgeService extends BaseService<Events> {
         defaultWallet: await this.preferenceService.getDefaultWallet(),
         chainId: toHexChainID(network.chainID),
       }
-    } else if (event.request.method === "tally_setClaimReferrer") {
-      const referrer = event.request.params[0]
-      if (origin !== WEBSITE_ORIGIN || typeof referrer !== "string") {
-        logger.warn(`invalid 'setClaimReferrer' request`)
-        return
-      }
+    } else if (event.request.method.startsWith("tally_")) {
+      switch (event.request.method) {
+        case "tally_setClaimReferrer":
+          if (origin !== WEBSITE_ORIGIN) {
+            logger.warn(
+              `invalid WEBSITE_ORIGIN ${WEBSITE_ORIGIN} when using a custom 'tally_...' method`
+            )
+            return
+          }
 
-      this.emitter.emit("setClaimReferrer", String(referrer))
+          if (typeof event.request.params[0] !== "string") {
+            logger.warn(`invalid 'tally_setClaimReferrer' request`)
+            return
+          }
+
+          this.emitter.emit("setClaimReferrer", String(event.request.params[0]))
+          break
+        case "tally_walletConnectInit": {
+          const [wcUri] = event.request.params
+          if (typeof wcUri === "string") {
+            await this.emitter.emit("walletConnectInit", wcUri)
+          } else {
+            logger.warn(`invalid 'tally_walletConnectInit' request`)
+          }
+
+          break
+        }
+        default:
+          logger.debug(
+            `Unknown method ${event.request.method} in 'ProviderBridgeService'`
+          )
+      }
 
       response.result = null
     } else if (
@@ -182,16 +234,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
         event.request.params,
         origin
       )
-    } else if (
-      event.request.method === "wallet_addEthereumChain" ||
-      event.request.method === "wallet_switchEthereumChain"
-    ) {
-      response.result =
-        await this.internalEthereumProviderService.routeSafeRPCRequest(
-          event.request.method,
-          event.request.params,
-          origin
-        )
     } else if (event.request.method === "eth_requestAccounts") {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
@@ -247,6 +289,27 @@ export default class ProviderBridgeService extends BaseService<Events> {
         response.result = new EIP1193Error(
           EIP1193_ERROR_CODES.userRejectedRequest
         ).toJSON()
+      }
+    } else if (event.request.method === "eth_accounts") {
+      const dAppChainID = Number(
+        (await this.internalEthereumProviderService.routeSafeRPCRequest(
+          "eth_chainId",
+          [],
+          origin
+        )) as string
+      ).toString()
+
+      const permission = await this.checkPermission(origin, dAppChainID)
+
+      response.result = []
+
+      if (permission) {
+        response.result = await this.routeContentScriptRPCRequest(
+          permission,
+          "eth_accounts",
+          event.request.params,
+          origin
+        )
       }
     } else {
       // sorry dear dApp, there is no love for you here
@@ -382,9 +445,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
   async routeContentScriptRPCRequest(
     enablingPermission: PermissionRequest,
     method: string,
-    params: RPCRequest["params"],
+    rawParams: RPCRequest["params"],
     origin: string
   ): Promise<unknown> {
+    const params = parseRPCRequestParams(enablingPermission, method, rawParams)
+
     try {
       switch (method) {
         case "eth_requestAccounts":
@@ -443,6 +508,63 @@ export default class ProviderBridgeService extends BaseService<Events> {
             showExtensionPopup(AllowedQueryParamPage.signTransaction)
           )
 
+        case "wallet_switchEthereumChain":
+          return await this.internalEthereumProviderService.routeSafeRPCRequest(
+            method,
+            params,
+            origin
+          )
+
+        case "wallet_addEthereumChain": {
+          if (!isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
+            // Attempt to switch to a chain if its one of the natively supported ones - otherwise fail
+            return await this.internalEthereumProviderService.routeSafeRPCRequest(
+              method,
+              params,
+              origin
+            )
+          }
+
+          const id = this.addNetworkRequestId.toString()
+
+          this.addNetworkRequestId += 1
+
+          const window = await showExtensionPopup(
+            AllowedQueryParamPage.addNewChain,
+            { requestId: id.toString() }
+          )
+
+          browser.windows.onRemoved.addListener((removed) => {
+            if (removed === window.id) {
+              this.handleAddNetworkRequest(id, false)
+            }
+          })
+
+          const [rawChainData, address, siteTitle, favicon] = params
+          const validatedData = validateAddEthereumChainParameter(
+            rawChainData as AddEthereumChainParameter
+          )
+
+          const userConfirmation = new Promise<void>((resolve, reject) => {
+            this.#pendingAddNetworkRequests[id] = {
+              resolve,
+              reject,
+              data: {
+                ...validatedData,
+                favicon: favicon as string,
+                siteTitle: siteTitle as string,
+              },
+            }
+          })
+
+          await userConfirmation
+
+          return await this.internalEthereumProviderService.routeSafeRPCRequest(
+            method,
+            [validatedData, address],
+            origin
+          )
+        }
         default: {
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,
@@ -452,8 +574,21 @@ export default class ProviderBridgeService extends BaseService<Events> {
         }
       }
     } catch (error) {
-      logger.log("error processing request", error)
-      return new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest).toJSON()
+      logger.error("Error processing request", error)
+      return handleRPCErrorResponse(error)
+    }
+  }
+
+  getNewCustomRPCDetails(requestId: string): AddChainRequestData {
+    return this.#pendingAddNetworkRequests[requestId].data
+  }
+
+  handleAddNetworkRequest(id: string, success: boolean): void {
+    const request = this.#pendingAddNetworkRequests[id]
+    if (success) {
+      request.resolve()
+    } else {
+      request.reject()
     }
   }
 }

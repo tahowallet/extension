@@ -5,17 +5,23 @@ type TabBarIconButtonProps = {
   title: string
   icon: string
   isActive: boolean
+  showNotifications?: boolean
   onClick?: React.MouseEventHandler<HTMLButtonElement>
 }
 
 export default function TabBarIconButton(
   props: TabBarIconButtonProps
 ): ReactElement {
-  const { icon, title, isActive, onClick } = props
+  const { icon, title, isActive, showNotifications = false, onClick } = props
 
   return (
-    <button type="button" onClick={onClick}>
+    <button type="button" role="link" onClick={onClick}>
       <div className={classNames("tab_bar_icon_wrap", { active: isActive })}>
+        {showNotifications && (
+          <div className="notifications">
+            <div className="dot" />
+          </div>
+        )}
         <div className={classNames("icon")} />
         <span>{title}</span>
       </div>
@@ -73,6 +79,24 @@ export default function TabBarIconButton(
           }
           .active span {
             color: var(--trophy-gold);
+          }
+          .notifications {
+            width: 10px;
+            height: 10px;
+            right: -2px;
+            top: -2px;
+            background: var(--hunter-green);
+            position: absolute;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+          .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
           }
         `}
       </style>

@@ -77,9 +77,12 @@ export default class DoggoService extends BaseService<Events> {
 
       // Track referrals for all added accounts and any new ones that are added
       // after load.
-      this.chainService.emitter.on("newAccountToTrack", (addressOnNetwork) => {
-        this.trackReferrals(addressOnNetwork)
-      })
+      this.chainService.emitter.on(
+        "newAccountToTrack",
+        ({ addressOnNetwork }) => {
+          this.trackReferrals(addressOnNetwork)
+        }
+      )
       ;(await this.chainService.getAccountsToTrack()).forEach(
         (addressOnNetwork) => {
           this.trackReferrals(addressOnNetwork)

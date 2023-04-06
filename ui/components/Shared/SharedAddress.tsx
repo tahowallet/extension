@@ -74,6 +74,7 @@ export default function SharedAddress({
       <style jsx>{`
         button {
           transition: 300ms color;
+          max-width: 100%;
         }
         button :last-child {
           top: 3px;

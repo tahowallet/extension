@@ -1,19 +1,24 @@
 import React, { ReactElement, useState } from "react"
-import { NFT } from "@tallyho/tally-background/nfts"
-import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
+import {
+  NFTCached,
+  NFTCollectionCached,
+} from "@tallyho/tally-background/redux-slices/nfts_update"
+import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import NFTImage from "./NFTImage"
 import NFTHover from "./NFTHover"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 
-export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
+export default function NFTItem<
+  T extends NFTCached | NFTCollectionCached
+>(props: {
   item: T
   isCollection?: boolean
   isExpanded?: boolean
   onClick: (value: T) => void
 }): ReactElement {
   const { onClick, isCollection = false, isExpanded = false, item } = props
-  const { name = "No title", network, thumbnailURL } = item
-
+  const { name = "No title", chainID, thumbnailURL } = item
+  const network = NETWORK_BY_CHAIN_ID[chainID]
   const floorPrice =
     "floorPrice" in item &&
     item.floorPrice?.value !== undefined &&
@@ -23,7 +28,12 @@ export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
 
   const [hasHover, setHasHover] = useState(false)
   return (
-    <div className="nft_item">
+    <div
+      className="nft_item"
+      data-testid={
+        isCollection ? "nft_list_item_collection" : "nft_list_item_single"
+      }
+    >
       <div
         className="nft_image"
         onMouseEnter={() => setHasHover(true)}
@@ -43,6 +53,8 @@ export default function NFTItem<T extends NFT | NFTCollectionCached>(props: {
             size={24}
             hasBackground
             backgroundOpacity={0.75}
+            padding={6}
+            squared
           />
           {!!floorPrice && (
             <div className="nft_item_price">

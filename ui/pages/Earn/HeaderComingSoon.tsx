@@ -19,7 +19,7 @@ export default function HeaderComingSoon(): ReactElement {
         size="medium"
         iconPosition="left"
         onClick={() => {
-          window.open(`https://chat.tally.cash/`, "_blank")?.focus()
+          window.open(`https://chat.taho.xyz/`, "_blank")?.focus()
         }}
       >
         Join Discord

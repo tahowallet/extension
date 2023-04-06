@@ -5,11 +5,14 @@ import { useOnClickOutside } from "../../hooks"
 
 interface SharedModalProps {
   children: ReactNode
-  header: string
+  header?: string
   onClose: () => void
   isOpen: boolean
   minHeight?: string
+  width?: string
   closeOnOverlayClick?: boolean
+  bgColor?: string
+  shadowBgColor?: string
 }
 
 const modalElement = document.getElementById("tally-root") as HTMLElement
@@ -20,6 +23,9 @@ export default function SharedModal({
   onClose,
   isOpen,
   minHeight,
+  width,
+  bgColor,
+  shadowBgColor,
   closeOnOverlayClick = true,
 }: SharedModalProps): ReactElement {
   const ref = useRef(null)
@@ -41,7 +47,7 @@ export default function SharedModal({
               />
             </button>
             <div className="modal_body">
-              <h2 className="modal_header">{header}</h2>
+              {header && <h2 className="modal_header">{header}</h2>}
               {children}
             </div>
           </div>
@@ -67,7 +73,7 @@ export default function SharedModal({
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: var(--hunter-green);
+            background-color: ${shadowBgColor || "var(--hunter-green)"};
             opacity: 0.7;
           }
           .modal_content {
@@ -76,8 +82,8 @@ export default function SharedModal({
             align-items: center;
             z-index: 1;
             box-sizing: border-box;
-            width: 312px;
-            background-color: var(--green-120);
+            width: ${width || "312px"};
+            background-color: ${bgColor || "var(--green-120)"};
             padding: 24px;
             box-shadow: 0px 24px 24px rgba(0, 20, 19, 0.14),
               0px 14px 16px rgba(0, 20, 19, 0.24),
@@ -91,7 +97,6 @@ export default function SharedModal({
             mask-size: cover;
             width: 11px;
             height: 11px;
-            padding: 2.5px;
             position: absolute;
             right: 16px;
             top: 16px;

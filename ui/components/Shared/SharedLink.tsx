@@ -1,14 +1,19 @@
 import React, { ReactElement } from "react"
 
 type Props = {
-  text: string
   url: string
+  children?: React.ReactNode
+  text?: string
 }
 
-export default function SharedLink({ text, url }: Props): ReactElement {
+export default function SharedLink({
+  text,
+  children,
+  url,
+}: Props): ReactElement {
   return (
     <a href={url} target="_blank" rel="noreferrer" className="link">
-      {text}
+      {text ?? children}
       <style jsx>{`
         .link {
           color: var(--trophy-gold);

@@ -13,10 +13,13 @@ import {
   fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
-import { NFT } from "@tallyho/tally-background/nfts"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
-import { NFTCollectionCached } from "@tallyho/tally-background/redux-slices/nfts_update"
+import {
+  NFTCached,
+  NFTCollectionCached,
+} from "@tallyho/tally-background/redux-slices/nfts_update"
 import classNames from "classnames"
+import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem, {
@@ -61,7 +64,7 @@ interface SelectAssetMenuContentProps<AssetType extends AnyAsset> {
   setSelectedAssetAndClose: (
     asset: AnyAssetWithOptionalAmount<AssetType>
   ) => void
-  onSelectNFT?: (nft: NFT) => void
+  onSelectNFT?: (nft: NFTCached) => void
 }
 
 // Sorts an AnyAssetWithOptionalAmount by symbol, alphabetically, according to
@@ -134,13 +137,18 @@ function SelectAssetMenuContent<T extends AnyAsset>(
   const [searchTerm, setSearchTerm] = useState("")
   const searchInput = useRef<HTMLInputElement | null>(null)
 
+  const trustedAssets = assets.filter(
+    ({ asset }) => !isUntrustedAsset(asset, currentNetwork)
+  )
+
   const filteredAssets =
     searchTerm.trim() === ""
-      ? assets
-      : assets.filter(({ asset }) => {
+      ? trustedAssets
+      : trustedAssets.filter(({ asset }) => {
           return (
             asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
             ("contractAddress" in asset &&
+              asset.contractAddress &&
               searchTerm.startsWith("0x") &&
               normalizeEVMAddress(asset.contractAddress).includes(
                 // The replace handles `normalizeEVMAddress`'s
@@ -312,7 +320,7 @@ interface SelectedAssetButtonProps {
   asset: Asset
   isDisabled: boolean
   toggleIsAssetMenuOpen?: () => void
-  selectedNFT?: NFT
+  selectedNFT?: NFTCached
 }
 
 function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
@@ -415,8 +423,8 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   onBlur?: () => void
   onAmountChange?: (value: string, errorMessage: string | undefined) => void
   NFTCollections?: NFTCollectionCached[]
-  onSelectNFT?: (nft: NFT) => void
-  selectedNFT?: NFT
+  onSelectNFT?: (nft: NFTCached) => void
+  selectedNFT?: NFTCached
 }
 
 function isSameAsset(asset1: Asset, asset2: Asset) {
@@ -529,7 +537,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
     [selectedAssetAndAmount, t]
   )
 
-  const handleSelectNFT = (nft: NFT) => {
+  const handleSelectNFT = (nft: NFTCached) => {
     setOpenAssetMenu(false)
     onSelectNFT?.(nft)
   }
@@ -749,6 +757,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
           .input_amount_wrap {
             display: flex;
             flex-direction: column;
+            align-items: end;
           }
           .input_amount::placeholder {
             color: var(--green-40);

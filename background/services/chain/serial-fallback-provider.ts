@@ -10,12 +10,11 @@ import { utils } from "ethers"
 import { getNetwork } from "@ethersproject/networks"
 import {
   SECOND,
-  CHAIN_ID_TO_RPC_URLS,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
   RPC_METHOD_PROVIDER_ROUTING,
 } from "../../constants"
 import logger from "../../lib/logger"
-import { AnyEVMTransaction, EVMNetwork } from "../../networks"
+import { AnyEVMTransaction } from "../../networks"
 import { AddressOnNetwork } from "../../accounts"
 import { transactionFromEthersTransaction } from "./utils"
 import {
@@ -225,7 +224,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   constructor(
     // Internal network type useful for helper calls, but not exposed to avoid
     // clashing with Ethers's own `network` stuff.
-    private evmNetwork: EVMNetwork,
+    private chainID: string,
     providerCreators: Array<{
       type: "alchemy" | "generic"
       creator: () => WebSocketProvider | JsonRpcProvider
@@ -259,7 +258,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.cleanupStaleCacheEntries()
     }, CACHE_CLEANUP_INTERVAL)
 
-    this.cachedChainId = utils.hexlify(Number(evmNetwork.chainID))
+    this.cachedChainId = utils.hexlify(Number(chainID))
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
   }
 
@@ -569,11 +568,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     { address, network }: AddressOnNetwork,
     handler: (pendingTransaction: AnyEVMTransaction) => void
   ): Promise<void> {
-    if (this.evmNetwork.chainID !== network.chainID) {
+    if (this.chainID !== network.chainID) {
       logger.error(
         `Tried to subscribe to pending transactions for chain id ` +
           `${network.chainID} but provider was on ` +
-          `${this.evmNetwork.chainID}`
+          `${this.chainID}`
       )
       return
     }
@@ -931,39 +930,33 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 }
 
 export function makeSerialFallbackProvider(
-  network: EVMNetwork
+  chainID: string,
+  rpcUrls: string[]
 ): SerialFallbackProvider {
-  const alchemyProviderCreators = ALCHEMY_SUPPORTED_CHAIN_IDS.has(
-    network.chainID
-  )
+  const alchemyProviderCreators = ALCHEMY_SUPPORTED_CHAIN_IDS.has(chainID)
     ? [
         {
           type: "alchemy" as const,
           creator: () =>
-            new AlchemyProvider(
-              getNetwork(Number(network.chainID)),
-              ALCHEMY_KEY
-            ),
+            new AlchemyProvider(getNetwork(Number(chainID)), ALCHEMY_KEY),
         },
         {
           type: "alchemy" as const,
           creator: () =>
             new AlchemyWebSocketProvider(
-              getNetwork(Number(network.chainID)),
+              getNetwork(Number(chainID)),
               ALCHEMY_KEY
             ),
         },
       ]
     : []
 
-  const genericProviders = (CHAIN_ID_TO_RPC_URLS[network.chainID] || []).map(
-    (rpcUrl) => ({
-      type: "generic" as const,
-      creator: () => new JsonRpcProvider(rpcUrl),
-    })
-  )
+  const genericProviders = rpcUrls.map((rpcUrl) => ({
+    type: "generic" as const,
+    creator: () => new JsonRpcProvider(rpcUrl),
+  }))
 
-  return new SerialFallbackProvider(network, [
+  return new SerialFallbackProvider(chainID, [
     // Prefer alchemy as the primary provider when available
     ...genericProviders,
     ...alchemyProviderCreators,

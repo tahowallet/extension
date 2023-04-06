@@ -1,7 +1,7 @@
 {
   "name": "@tallyho/provider-bridge-shared",
   "version": "0.0.1",
-  "description": "Tally Ho, the community owned and operated Web3 wallet: provider bridge to connect the in-page provider with the background script.",
+  "description": "Taho, the community owned and operated Web3 wallet: provider bridge to connect the in-page provider with the background script.",
   "main": "index.ts",
   "repository": "git@github.com:thesis/tally-extension.git",
   "author": "Greg Nagy <gergo.nagy@tally.cash>",

@@ -26,7 +26,7 @@ export default function AnalyticsSlideUpMenu(props: {
     <>
       <SharedSlideUpMenu
         size="custom"
-        customSize="247px"
+        customSize="207px"
         isOpen={isOpen}
         close={() => onCancel()}
       >
@@ -38,14 +38,17 @@ export default function AnalyticsSlideUpMenu(props: {
           <div className="btn_container">
             <SharedButton
               type="primary"
-              size="small"
+              size="medium"
+              style={{
+                marginRight: "20px",
+              }}
               onClick={() => onCancel()}
             >
               {t("shared.cancelBtn")}
             </SharedButton>
             <SharedButton
               type="tertiary"
-              size="small"
+              size="medium"
               onClick={() => handleSubmit()}
             >
               {t(`${prefix}.submitBtn`)}

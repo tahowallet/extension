@@ -1,5 +1,6 @@
 import { SmartContractFungibleAsset } from "../assets"
 import { ETHEREUM } from "./networks"
+import { WEBSITE_ORIGIN } from "./website"
 
 /**
  * The primary token for the wallet's DAO.
@@ -14,6 +15,6 @@ export const DOGGO: SmartContractFungibleAsset = {
   homeNetwork: ETHEREUM,
   metadata: {
     tokenLists: [],
-    websiteURL: "https://tallyho.cash",
+    websiteURL: WEBSITE_ORIGIN,
   },
 }

@@ -7,9 +7,19 @@ import {
   AnyEVMTransaction,
   EVMNetwork,
   Network,
+  NetworkBaseAsset,
 } from "../../networks"
 import { FungibleAsset } from "../../assets"
-import { DEFAULT_NETWORKS, GOERLI, POLYGON } from "../../constants"
+import {
+  BASE_ASSETS,
+  CHAIN_ID_TO_COINGECKO_PLATFORM_ID,
+  CHAIN_ID_TO_RPC_URLS,
+  DEFAULT_NETWORKS,
+  GOERLI,
+  isBuiltInNetwork,
+  NETWORK_BY_CHAIN_ID,
+  POLYGON,
+} from "../../constants"
 
 export type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
@@ -69,6 +79,10 @@ export class ChainDatabase extends Dexie {
   private balances!: Dexie.Table<AccountBalance, number>
 
   private networks!: Dexie.Table<EVMNetwork, string>
+
+  private baseAssets!: Dexie.Table<NetworkBaseAsset, string>
+
+  private rpcUrls!: Dexie.Table<{ chainID: string; rpcUrls: string[] }, string>
 
   constructor(options?: DexieOptions) {
     super("tally/chain", options)
@@ -146,6 +160,33 @@ export class ChainDatabase extends Dexie {
     this.version(5).stores({
       networks: "&chainID,name,family",
     })
+
+    this.version(6).stores({
+      baseAssets: "&chainID,symbol,name",
+    })
+
+    this.version(7).stores({
+      rpcUrls: "&chainID, rpcUrls",
+    })
+
+    // Updates saved accounts stored networks for old installs
+    this.version(8).upgrade((tx) => {
+      tx.table("accountsToTrack")
+        .toCollection()
+        .modify((account: AddressOnNetwork) => {
+          if (isBuiltInNetwork(account.network)) {
+            Object.assign(account, {
+              network: NETWORK_BY_CHAIN_ID[account.network.chainID],
+            })
+          }
+        })
+    })
+  }
+
+  async initialize(): Promise<void> {
+    await this.initializeBaseAssets()
+    await this.initializeRPCs()
+    await this.initializeEVMNetworks()
   }
 
   async getLatestBlock(network: Network): Promise<AnyEVMBlock | null> {
@@ -176,8 +217,115 @@ export class ChainDatabase extends Dexie {
     )
   }
 
+  async addEVMNetwork({
+    chainName,
+    chainID,
+    decimals,
+    symbol,
+    assetName,
+    rpcUrls,
+  }: {
+    chainName: string
+    chainID: string
+    decimals: number
+    symbol: string
+    assetName: string
+    rpcUrls: string[]
+  }): Promise<EVMNetwork> {
+    const network: EVMNetwork = {
+      name: chainName,
+      coingeckoPlatformID: CHAIN_ID_TO_COINGECKO_PLATFORM_ID[chainID],
+      chainID,
+      family: "EVM",
+      baseAsset: {
+        decimals,
+        symbol,
+        name: assetName,
+        chainID,
+      },
+    }
+    await this.networks.put(network)
+    // A bit awkward that we are adding the base asset to the network as well
+    // as to its own separate table - but lets forge on for now.
+    await this.addBaseAsset(assetName, symbol, chainID, decimals)
+    await this.addRpcUrls(chainID, rpcUrls)
+    return network
+  }
+
+  async removeEVMNetwork(chainID: string): Promise<void> {
+    await this.transaction(
+      "rw",
+      this.networks,
+      this.baseAssets,
+      this.rpcUrls,
+      this.accountsToTrack,
+      async () => {
+        await Promise.all([
+          this.networks.where({ chainID }).delete(),
+          this.baseAssets.where({ chainID }).delete(),
+          this.rpcUrls.where({ chainID }).delete(),
+        ])
+
+        // @TODO - Deleting accounts inside the Promise.all does not seem
+        // to work, figure out why this is happening and parallelize if possible.
+        const accountsToTrack = await this.accountsToTrack
+          .toCollection()
+          .filter((account) => account.network.chainID === chainID)
+        return accountsToTrack.delete()
+      }
+    )
+  }
+
   async getAllEVMNetworks(): Promise<EVMNetwork[]> {
     return this.networks.where("family").equals("EVM").toArray()
+  }
+
+  async getEVMNetworkByChainID(
+    chainID: string
+  ): Promise<EVMNetwork | undefined> {
+    return (await this.networks.where("family").equals("EVM").toArray()).find(
+      (network) => network.chainID === chainID
+    )
+  }
+
+  private async addBaseAsset(
+    name: string,
+    symbol: string,
+    chainID: string,
+    decimals: number
+  ) {
+    await this.baseAssets.put({
+      decimals,
+      name,
+      symbol,
+      chainID,
+    })
+  }
+
+  async getBaseAssetForNetwork(chainID: string): Promise<NetworkBaseAsset> {
+    const baseAsset = await this.baseAssets.get(chainID)
+    if (!baseAsset) {
+      throw new Error(`No Base Asset Found For Network ${chainID}`)
+    }
+    return baseAsset
+  }
+
+  async getAllBaseAssets(): Promise<NetworkBaseAsset[]> {
+    return this.baseAssets.toArray()
+  }
+
+  async initializeRPCs(): Promise<void> {
+    await Promise.all(
+      Object.entries(CHAIN_ID_TO_RPC_URLS).map(async ([chainId, rpcUrls]) => {
+        if (rpcUrls) {
+          await this.addRpcUrls(chainId, rpcUrls)
+        }
+      })
+    )
+  }
+
+  async initializeBaseAssets(): Promise<void> {
+    await this.updateBaseAssets(BASE_ASSETS)
   }
 
   async initializeEVMNetworks(): Promise<void> {
@@ -193,6 +341,31 @@ export class ChainDatabase extends Dexie {
         }
       })
     )
+  }
+
+  async getRpcUrlsByChainId(chainId: string): Promise<string[]> {
+    const rpcUrls = await this.rpcUrls.where({ chainId }).first()
+    if (rpcUrls) {
+      return rpcUrls.rpcUrls
+    }
+    throw new Error(`No RPC Found for ${chainId}`)
+  }
+
+  private async addRpcUrls(chainID: string, rpcUrls: string[]): Promise<void> {
+    const existingRpcUrlsForChain = await this.rpcUrls.get(chainID)
+    if (existingRpcUrlsForChain) {
+      existingRpcUrlsForChain.rpcUrls.push(...rpcUrls)
+      existingRpcUrlsForChain.rpcUrls = [
+        ...new Set(existingRpcUrlsForChain.rpcUrls),
+      ]
+      await this.rpcUrls.put(existingRpcUrlsForChain)
+    } else {
+      await this.rpcUrls.put({ chainID, rpcUrls })
+    }
+  }
+
+  async getAllRpcUrls(): Promise<{ chainID: string; rpcUrls: string[] }[]> {
+    return this.rpcUrls.toArray()
   }
 
   async getAllSavedTransactionHashes(): Promise<IndexableTypeArray> {
@@ -341,6 +514,10 @@ export class ChainDatabase extends Dexie {
 
   async addBalance(accountBalance: AccountBalance): Promise<void> {
     await this.balances.add(accountBalance)
+  }
+
+  async updateBaseAssets(baseAssets: NetworkBaseAsset[]): Promise<void> {
+    await this.baseAssets.bulkPut(baseAssets)
   }
 
   async getAccountsToTrack(): Promise<AddressOnNetwork[]> {

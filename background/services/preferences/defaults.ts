@@ -8,7 +8,7 @@ const defaultPreferences: Preferences = {
     urls: [
       storageGatewayURL(
         "ipfs://bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm"
-      ).href, // the Tally community-curated list
+      ).href, // the Taho community-curated list
       "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
       "https://meta.yearn.finance/api/tokens/list", // the Yearn list
       "https://messari.io/tokenlist/messari-verified", // Messari-verified projects
@@ -18,7 +18,7 @@ const defaultPreferences: Preferences = {
       "https://api-polygon-tokens.polygon.technology/tokenlists/default.tokenlist.json", // Polygon Default Tokens
       "https://static.optimism.io/optimism.tokenlist.json", // Optimism Default Tokens
       "https://bridge.arbitrum.io/token-list-42161.json", // Arbitrum Default tokens
-      "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/src/joe.tokenlist-v2.json", // Trader Joe tokens
+      "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/1722d8c47a728a64c8dca8ac160b32cf39c5e671/mc.tokenlist.json", // Trader Joe tokens
       "https://tokens.pancakeswap.finance/pancakeswap-default.json", // PancakeSwap Default List
     ],
   },

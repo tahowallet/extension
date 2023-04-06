@@ -2,49 +2,17 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import { HexString, NormalizedEVMAddress } from "../../types"
 import {
+  createSpamReport,
   DaylightAbility,
   DaylightAbilityRequirement,
   getDaylightAbilities,
-} from "./daylight"
+} from "../../lib/daylight"
 import { AbilitiesDatabase, getOrCreateDB } from "./db"
 import ChainService from "../chain"
-import { FeatureFlags } from "../../features"
 import { normalizeEVMAddress } from "../../lib/utils"
-
-export type AbilityType = "mint" | "airdrop" | "access"
-
-type AbilityRequirement = HoldERC20 | OwnNFT | AllowList | Unknown
-
-type HoldERC20 = {
-  type: "hold"
-  address: string
-}
-
-type OwnNFT = {
-  type: "own"
-  nftAddress: string
-}
-
-type AllowList = {
-  type: "allowList"
-}
-
-type Unknown = {
-  type: "unknown"
-}
-
-export type Ability = {
-  type: AbilityType
-  title: string
-  description: string | null
-  abilityId: string
-  linkUrl: string
-  imageUrl?: string
-  completed: boolean
-  removedFromUi: boolean
-  address: NormalizedEVMAddress
-  requirement: AbilityRequirement
-}
+import { Ability, AbilityRequirement } from "../../abilities"
+import LedgerService from "../ledger"
+import { HOUR } from "../../constants"
 
 const normalizeDaylightRequirements = (
   requirement: DaylightAbilityRequirement
@@ -74,35 +42,31 @@ const normalizeDaylightRequirements = (
   }
 }
 
-const normalizeDaylightAbilities = (
+export const normalizeDaylightAbilities = (
   daylightAbilities: DaylightAbility[],
   address: string
 ): Ability[] => {
   const normalizedAbilities: Ability[] = []
 
   daylightAbilities.forEach((daylightAbility) => {
-    // Lets start with just mints
-    if (
-      daylightAbility.type === "mint" ||
-      daylightAbility.type === "airdrop" ||
-      daylightAbility.type === "access"
-    ) {
-      normalizedAbilities.push({
-        type: daylightAbility.type,
-        title: daylightAbility.title,
-        description: daylightAbility.description,
-        abilityId: daylightAbility.uid,
-        linkUrl: daylightAbility.action.linkUrl,
-        imageUrl: daylightAbility.imageUrl || undefined,
-        completed: false,
-        removedFromUi: false,
-        address: normalizeEVMAddress(address),
-        requirement: normalizeDaylightRequirements(
-          // Just take the 1st requirement for now
-          daylightAbility.requirements[0]
-        ),
-      })
-    }
+    normalizedAbilities.push({
+      type: daylightAbility.type,
+      title: daylightAbility.title,
+      description: daylightAbility.description,
+      abilityId: daylightAbility.uid,
+      slug: daylightAbility.slug,
+      linkUrl: daylightAbility.action.linkUrl,
+      imageUrl: daylightAbility.imageUrl || undefined,
+      openAt: daylightAbility.openAt || undefined,
+      closeAt: daylightAbility.closeAt || undefined,
+      completed: daylightAbility.walletCompleted || false,
+      removedFromUi: false,
+      address: normalizeEVMAddress(address),
+      requirement: normalizeDaylightRequirements(
+        // Just take the 1st requirement for now
+        daylightAbility.requirements[0]
+      ),
+    })
   })
 
   return normalizedAbilities
@@ -110,45 +74,46 @@ const normalizeDaylightAbilities = (
 
 interface Events extends ServiceLifecycleEvents {
   newAbilities: Ability[]
+  updatedAbility: Ability
+  newAccount: string
+  deleteAccount: string
+  initAbilities: NormalizedEVMAddress
+  deleteAbilities: string
 }
 export default class AbilitiesService extends BaseService<Events> {
   constructor(
     private db: AbilitiesDatabase,
-    private chainService: ChainService
+    private chainService: ChainService,
+    private ledgerService: LedgerService
   ) {
-    super({
-      abilitiesAlarm: {
-        schedule: {
-          periodInMinutes: 60,
-        },
-        runAtStart: true,
-        handler: () => {
-          this.abilitiesAlarm()
-        },
-      },
-    })
+    super()
   }
+
+  private ABILITY_TIME_KEY = "LAST_ABILITY_FETCH_TIME"
 
   static create: ServiceCreatorFunction<
     ServiceLifecycleEvents,
     AbilitiesService,
-    [Promise<ChainService>]
-  > = async (chainService) => {
-    return new this(await getOrCreateDB(), await chainService)
+    [Promise<ChainService>, Promise<LedgerService>]
+  > = async (chainService, ledgerService) => {
+    return new this(
+      await getOrCreateDB(),
+      await chainService,
+      await ledgerService
+    )
   }
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
-    this.chainService.emitter.on("newAccountToTrack", (addressOnNetwork) => {
-      this.pollForAbilities(addressOnNetwork.address)
-    })
+  }
+
+  // Should only be called with ledger or imported accounts
+  async getNewAccountAbilities(address: string): Promise<void> {
+    this.pollForAbilities(address)
+    this.emitter.emit("newAccount", address)
   }
 
   async pollForAbilities(address: HexString): Promise<void> {
-    if (!FeatureFlags.SUPPORT_ABILITIES) {
-      return
-    }
-
     const daylightAbilities = await getDaylightAbilities(address)
     const normalizedAbilities = normalizeDaylightAbilities(
       daylightAbilities,
@@ -175,25 +140,57 @@ export default class AbilitiesService extends BaseService<Events> {
     address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<void> {
-    return this.db.markAsCompleted(address, abilityId)
+    const ability = await this.db.markAsCompleted(address, abilityId)
+
+    if (ability) {
+      this.emitter.emit("updatedAbility", ability)
+    }
   }
 
   async markAbilityAsRemoved(
     address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<void> {
-    return this.db.markAsRemoved(address, abilityId)
+    const ability = await this.db.markAsRemoved(address, abilityId)
+
+    if (ability) {
+      this.emitter.emit("updatedAbility", ability)
+    }
   }
 
-  async abilitiesAlarm(): Promise<void> {
+  async refreshAbilities(): Promise<void> {
+    const lastFetchTime = localStorage.getItem(this.ABILITY_TIME_KEY)
+
+    if (lastFetchTime && Number(lastFetchTime) + HOUR > Date.now()) {
+      return
+    }
+    localStorage.setItem(this.ABILITY_TIME_KEY, Date.now().toString())
     const accountsToTrack = await this.chainService.getAccountsToTrack()
     const addresses = new Set(accountsToTrack.map((account) => account.address))
 
     // 1-by-1 decreases likelihood of hitting rate limit
     // eslint-disable-next-line no-restricted-syntax
     for (const address of addresses) {
-      // eslint-disable-next-line no-await-in-loop
-      await this.pollForAbilities(address)
+      this.emitter.emit("initAbilities", address as NormalizedEVMAddress)
     }
+  }
+
+  async reportAndRemoveAbility(
+    address: NormalizedEVMAddress,
+    abilitySlug: string,
+    abilityId: string,
+    reason: string
+  ): Promise<void> {
+    await createSpamReport(address, abilitySlug, reason)
+    this.markAbilityAsRemoved(address, abilityId)
+  }
+
+  async deleteAbilitiesForAccount(address: HexString): Promise<void> {
+    const deletedRecords = await this.db.deleteAbilitiesForAccount(address)
+
+    if (deletedRecords > 0) {
+      this.emitter.emit("deleteAbilities", address)
+    }
+    this.emitter.emit("deleteAccount", address)
   }
 }

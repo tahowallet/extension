@@ -12,7 +12,12 @@ import logger from "../../lib/logger"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
-import { EVMNetwork, SignedTransaction, toHexChainID } from "../../networks"
+import {
+  EVMNetwork,
+  sameChainID,
+  SignedTransaction,
+  toHexChainID,
+} from "../../networks"
 import {
   ethersTransactionFromSignedTransaction,
   transactionRequestFromEthersTransactionRequest,
@@ -32,6 +37,8 @@ import {
   TransactionAnnotation,
 } from "../enrichment"
 import { decodeJSON } from "../../lib/utils"
+import { FeatureFlags, isEnabled } from "../../features"
+import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -59,6 +66,20 @@ export type SwitchEthereumChainParameter = {
   chainId: string
 }
 
+// https://eips.ethereum.org/EIPS/eip-3085
+export type AddEthereumChainParameter = {
+  chainId: string
+  blockExplorerUrls?: string[]
+  chainName?: string
+  iconUrls?: string[]
+  nativeCurrency?: {
+    name: string
+    symbol: string
+    decimals: number
+  }
+  rpcUrls?: string[]
+}
+
 type DAppRequestEvent<T, E> = {
   payload: T
   resolver: (result: E | PromiseLike<E>) => void
@@ -75,6 +96,7 @@ type Events = ServiceLifecycleEvents & {
   >
   signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
   signDataRequest: DAppRequestEvent<MessageSigningRequest, string>
+  selectedNetwork: EVMNetwork
   // connect
   // disconnet
   // account change
@@ -102,7 +124,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     super()
 
     internalProviderPort.emitter.on("message", async (event) => {
-      logger.log(`internal: request payload: ${JSON.stringify(event)}`)
+      logger.debug(`internal: request payload: ${JSON.stringify(event)}`)
       try {
         const response = {
           id: event.id,
@@ -112,11 +134,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
             TALLY_INTERNAL_ORIGIN
           ),
         }
-        logger.log("internal response:", response)
+        logger.debug("internal response:", response)
 
         internalProviderPort.postResponse(response)
       } catch (error) {
-        logger.log("error processing request", event.id, error)
+        logger.debug("error processing request", event.id, error)
 
         internalProviderPort.postResponse({
           id: event.id,
@@ -245,21 +267,40 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         )
       // TODO - actually allow adding a new ethereum chain - for now wallet_addEthereumChain
       // will just switch to a chain if we already support it - but not add a new one
-      case "wallet_addEthereumChain":
+      case "wallet_addEthereumChain": {
+        const chainInfo = params[0] as ValidatedAddEthereumChainParameter
+        const { chainId } = chainInfo
+        const supportedNetwork = await this.getTrackedNetworkByChainId(chainId)
+        if (supportedNetwork) {
+          this.switchToSupportedNetwork(origin, supportedNetwork)
+          this.emitter.emit("selectedNetwork", supportedNetwork)
+          return null
+        }
+        if (!isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
+          // Dissallow adding new chains until feature flag is turned on.
+          throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
+        }
+        try {
+          const customNetwork = await this.chainService.addCustomChain(
+            chainInfo
+          )
+          this.emitter.emit("selectedNetwork", customNetwork)
+          return null
+        } catch (e) {
+          logger.error(e)
+          throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
+        }
+      }
       case "wallet_switchEthereumChain": {
         const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
         const supportedNetwork = await this.getTrackedNetworkByChainId(
           newChainId
         )
         if (supportedNetwork) {
-          const { address } = await this.preferenceService.getSelectedAccount()
-          await this.chainService.markAccountActivity({
-            address,
-            network: supportedNetwork,
-          })
-          await this.db.setCurrentChainIdForOrigin(origin, supportedNetwork)
+          this.switchToSupportedNetwork(origin, supportedNetwork)
           return null
         }
+
         throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
       }
       case "metamask_getProviderState": // --- important MM only methods ---
@@ -364,9 +405,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     chainID: string
   ): Promise<EVMNetwork | undefined> {
     const trackedNetworks = await this.chainService.getTrackedNetworks()
-    const trackedNetwork = trackedNetworks.find(
-      (network) => toHexChainID(network.chainID) === toHexChainID(chainID)
+    const trackedNetwork = trackedNetworks.find((network) =>
+      sameChainID(network.chainID, chainID)
     )
+
     if (trackedNetwork) {
       return trackedNetwork
     }
@@ -389,6 +431,18 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         rejecter: reject,
       })
     })
+  }
+
+  private async switchToSupportedNetwork(
+    origin: string,
+    supportedNetwork: EVMNetwork
+  ) {
+    const { address } = await this.preferenceService.getSelectedAccount()
+    await this.chainService.markAccountActivity({
+      address,
+      network: supportedNetwork,
+    })
+    await this.db.setCurrentChainIdForOrigin(origin, supportedNetwork)
   }
 
   private async signData(

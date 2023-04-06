@@ -17,11 +17,23 @@ import { USD } from "../constants"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
 
+// @TODO Test Me
 export async function getPrices(
-  assets: (AnyAsset & CoinGeckoAsset)[],
+  assets: AnyAsset[],
   vsCurrencies: FiatCurrency[]
 ): Promise<PricePoint[]> {
-  const coinIds = assets.map((a) => a.metadata.coinGeckoID).join(",")
+  const queryableAssets = assets.filter(
+    (asset): asset is AnyAsset & Required<CoinGeckoAsset> =>
+      "metadata" in asset && !!asset.metadata && "coinGeckoID" in asset.metadata
+  )
+
+  if (queryableAssets.length === 0) {
+    return []
+  }
+
+  const coinIds = [
+    ...new Set([...queryableAssets.map((asset) => asset.metadata.coinGeckoID)]),
+  ].join(",")
 
   const currencySymbols = vsCurrencies
     .map((c) => c.symbol.toLowerCase())
@@ -30,7 +42,11 @@ export async function getPrices(
   const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coinIds}&include_last_updated_at=true&vs_currencies=${currencySymbols}`
 
   try {
-    const json = await fetchJson(url)
+    const json = await fetchJson({
+      url,
+      // Prevent throttling
+      throttleCallback: async () => false,
+    })
     // TODO fix loss of precision from json
     // TODO: TESTME
 
@@ -45,7 +61,7 @@ export async function getPrices(
     }
 
     const resolutionTime = Date.now()
-    return assets.flatMap((asset) => {
+    return queryableAssets.flatMap((asset) => {
       const simpleCoinPrices = json[asset.metadata.coinGeckoID]
 
       return vsCurrencies
@@ -91,6 +107,10 @@ export async function getTokenPrices(
 ): Promise<{
   [contractAddress: string]: UnitPricePoint<FungibleAsset>
 }> {
+  if (tokenAddresses.length < 1) {
+    return {}
+  }
+
   const fiatSymbol = fiatCurrency.symbol
 
   const prices: {
@@ -102,7 +122,11 @@ export async function getTokenPrices(
   const url = `${COINGECKO_API_ROOT}/simple/token_price/${network.coingeckoPlatformID}?vs_currencies=${fiatSymbol}&include_last_updated_at=true&contract_addresses=${addys}`
 
   try {
-    const json = await fetchJson(url)
+    const json = await fetchJson({
+      url,
+      // Prevent throttling
+      throttleCallback: async () => false,
+    })
 
     // TODO Improve typing with Ajv validation.
     Object.entries(

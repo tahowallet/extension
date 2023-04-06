@@ -1,7 +1,9 @@
-const TALLY_ICON_URL =
-  "https://tally.cash/icons/icon-144x144.png?v=41306c4d4e6795cdeaecc31bd794f68e"
+import { WALLET_CONNECT_INJECTED_UI } from "./wallet-connect"
 
-const TALLY_NAME = "Tally Ho"
+const TAHO_ICON_URL =
+  "https://taho.xyz/icons/icon-144x144.png?v=41306c4d4e6795cdeaecc31bd794f68e"
+
+const TAHO_NAME = "Taho"
 const METAMASK = "MetaMask"
 const INJECTED = "Injected"
 
@@ -19,7 +21,7 @@ const observeMutations = (handler: (node: Node) => void) => {
   })
 }
 
-const moreThanOneWalletInstalledAndTallyIsNotDefault = (): boolean => {
+const moreThanOneWalletInstalledAndTahoIsNotDefault = (): boolean => {
   if (
     window.ethereum &&
     // OK to use window.ethereum.providers here since we don't strip
@@ -29,12 +31,12 @@ const moreThanOneWalletInstalledAndTallyIsNotDefault = (): boolean => {
   ) {
     // If the user has more than 1 wallet installed
     if (!window.ethereum.tallySetAsDefault) {
-      // And Tally is not set as the default - return true
+      // And Taho is not set as the default - return true
       return true
     }
   }
-  // Otherwise - if the user only has tally installed - or if they have multiple
-  // wallets installed and have Tally as their default wallet - return false
+  // Otherwise - if the user only has Taho installed - or if they have multiple
+  // wallets installed and have Taho as their default wallet - return false
   return false
 }
 
@@ -49,16 +51,16 @@ const findAndReplaceUniswapInjectedOption = (): void => {
     const iconAndTextDiv = maybeButton?.children?.[0]?.children?.[0]
 
     if (iconAndTextDiv && iconAndTextDiv.innerHTML.includes("Injected")) {
-      // Replace the arrow icon with the Tally Ho icon
+      // Replace the arrow icon with the Taho icon
       iconAndTextDiv.innerHTML = iconAndTextDiv.innerHTML.replace(
         /\ssrc="(.+)"\s/,
-        ` src="${TALLY_ICON_URL}" `
+        ` src="${TAHO_ICON_URL}" `
       )
 
-      // Replace the `Injected` text with `Tally Ho`
+      // Replace the `Injected` text with `Taho`
       iconAndTextDiv.innerHTML = iconAndTextDiv.innerHTML.replace(
         "Injected",
-        TALLY_NAME
+        TAHO_NAME
       )
     }
   }
@@ -93,13 +95,13 @@ const findAndReplaceJoeMetamaskOption = (addedNode: Node): void => {
   const img = maybeButton.querySelector("img")
 
   if (textNode && img) {
-    textNode.textContent = TALLY_NAME
-    img.src = TALLY_ICON_URL
+    textNode.textContent = TAHO_NAME
+    img.src = TAHO_ICON_URL
   }
 }
 
 function findAndReplaceGMXMetamaskOption(addedNode: Node): void {
-  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+  if (moreThanOneWalletInstalledAndTahoIsNotDefault()) {
     return
   }
 
@@ -117,11 +119,11 @@ function findAndReplaceGMXMetamaskOption(addedNode: Node): void {
     // eslint-disable-next-line no-restricted-syntax
     for (const option of connectionOptions) {
       if (option.classList.contains("MetaMask-btn")) {
-        option.innerHTML = option.innerHTML.replaceAll(METAMASK, TALLY_NAME)
-        // Replace metamask icon with Tally icon
+        option.innerHTML = option.innerHTML.replaceAll(METAMASK, TAHO_NAME)
+        // Replace metamask icon with Taho icon
         option.innerHTML = option.innerHTML.replace(
           /\ssrc="(.+)"\s/,
-          ` src="${TALLY_ICON_URL}" `
+          ` src="${TAHO_ICON_URL}" `
         )
       }
     }
@@ -140,7 +142,7 @@ const findYieldProtocolMetamaskContainer = (node: Node): Element | undefined =>
   (node as HTMLElement)?.children?.[0]?.children?.[0]?.children?.[0]
 
 function findAndReplaceYieldProtocolMetamaskOption(addedNode: Node): void {
-  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+  if (moreThanOneWalletInstalledAndTahoIsNotDefault()) {
     return
   }
 
@@ -161,7 +163,7 @@ function findAndReplaceYieldProtocolMetamaskOption(addedNode: Node): void {
 
     metamaskText.innerHTML = metamaskText.innerHTML.replace(
       "Metamask",
-      TALLY_NAME
+      TAHO_NAME
     )
 
     const metamaskIcon = container?.children?.[2]
@@ -171,14 +173,14 @@ function findAndReplaceYieldProtocolMetamaskOption(addedNode: Node): void {
     }
 
     metamaskIcon.removeChild(metamaskIcon.children[0])
-    const tallyIcon = document.createElement("img")
-    tallyIcon.src = TALLY_ICON_URL
-    metamaskIcon.appendChild(tallyIcon)
+    const tahoIcon = document.createElement("img")
+    tahoIcon.src = TAHO_ICON_URL
+    metamaskIcon.appendChild(tahoIcon)
   }
 }
 
 function findAndReplaceTofuNftMetamaskOption(addedNode: Node): void {
-  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+  if (moreThanOneWalletInstalledAndTahoIsNotDefault()) {
     return
   }
 
@@ -197,20 +199,20 @@ function findAndReplaceTofuNftMetamaskOption(addedNode: Node): void {
       return
     }
 
-    textNode.innerHTML = textNode.innerHTML.replace(METAMASK, TALLY_NAME)
+    textNode.innerHTML = textNode.innerHTML.replace(METAMASK, TAHO_NAME)
 
     metaMaskContainer.removeChild(metaMaskContainer.children[0])
-    const tallyIcon = document.createElement("img")
-    tallyIcon.src = TALLY_ICON_URL
-    tallyIcon.setAttribute("height", "45px")
-    tallyIcon.setAttribute("width", "45px")
-    metaMaskContainer.appendChild(tallyIcon)
+    const tahoIcon = document.createElement("img")
+    tahoIcon.src = TAHO_ICON_URL
+    tahoIcon.setAttribute("height", "45px")
+    tahoIcon.setAttribute("width", "45px")
+    metaMaskContainer.appendChild(tahoIcon)
     metaMaskContainer.appendChild(metaMaskContainer.children[0])
   }
 }
 
 function findAndReplaceAboardMetamaskOption(addedNode: Node): void {
-  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+  if (moreThanOneWalletInstalledAndTahoIsNotDefault()) {
     return
   }
 
@@ -230,18 +232,18 @@ function findAndReplaceAboardMetamaskOption(addedNode: Node): void {
     if (child.innerHTML.includes("img/metamask")) {
       child.innerHTML = child.innerHTML.replace(
         /\ssrc="(.+)"\s/,
-        ` src="${TALLY_ICON_URL}" `
+        ` src="${TAHO_ICON_URL}" `
       )
     }
   }
 }
 
-const createTallyImg = (): HTMLImageElement => {
-  const tallyIcon = document.createElement("img")
-  tallyIcon.src = TALLY_ICON_URL
-  tallyIcon.setAttribute("height", "48px")
-  tallyIcon.setAttribute("width", "48px")
-  return tallyIcon
+const createTahoImg = (): HTMLImageElement => {
+  const tahoIcon = document.createElement("img")
+  tahoIcon.src = TAHO_ICON_URL
+  tahoIcon.setAttribute("height", "48px")
+  tahoIcon.setAttribute("width", "48px")
+  return tahoIcon
 }
 
 function findAndReplacePancakeSwapInjectedOption(addedNode: Node): void {
@@ -260,10 +262,10 @@ function findAndReplacePancakeSwapInjectedOption(addedNode: Node): void {
         const iconContainer = element.children?.[0].children?.[0]
 
         if (textContainer && iconContainer) {
-          textContainer.textContent = TALLY_NAME
+          textContainer.textContent = TAHO_NAME
 
           iconContainer.removeChild(iconContainer.children[0])
-          iconContainer.appendChild(createTallyImg())
+          iconContainer.appendChild(createTahoImg())
           iconContainer.appendChild(iconContainer.children[0])
         }
       }
@@ -272,7 +274,7 @@ function findAndReplacePancakeSwapInjectedOption(addedNode: Node): void {
 }
 
 function findAndReplaceStargateFinanceMetamaskOption(addedNode: Node): void {
-  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+  if (moreThanOneWalletInstalledAndTahoIsNotDefault()) {
     return
   }
 
@@ -285,14 +287,14 @@ function findAndReplaceStargateFinanceMetamaskOption(addedNode: Node): void {
         const iconContainer = li.children?.[1].children?.[0]
 
         if (textContainer && iconContainer) {
-          textContainer.textContent = TALLY_NAME
+          textContainer.textContent = TAHO_NAME
 
-          const tallyIcon = document.createElement("img")
-          tallyIcon.src = TALLY_ICON_URL
-          tallyIcon.setAttribute("height", "24px")
-          tallyIcon.setAttribute("width", "24px")
+          const tahoIcon = document.createElement("img")
+          tahoIcon.src = TAHO_ICON_URL
+          tahoIcon.setAttribute("height", "24px")
+          tahoIcon.setAttribute("width", "24px")
           iconContainer.removeChild(iconContainer.children[0])
-          iconContainer.appendChild(tallyIcon)
+          iconContainer.appendChild(tahoIcon)
           iconContainer.appendChild(iconContainer.children[0])
         }
       }
@@ -301,7 +303,7 @@ function findAndReplaceStargateFinanceMetamaskOption(addedNode: Node): void {
 }
 
 function findAndReplaceCelerMetamaskOption(addedNode: Node): void {
-  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+  if (moreThanOneWalletInstalledAndTahoIsNotDefault()) {
     return
   }
 
@@ -319,15 +321,15 @@ function findAndReplaceCelerMetamaskOption(addedNode: Node): void {
             const img = element.querySelector("img")
 
             if (textContainer && img) {
-              textContainer.textContent = TALLY_NAME
-              img.src = TALLY_ICON_URL
+              textContainer.textContent = TAHO_NAME
+              img.src = TAHO_ICON_URL
             }
           }
         }
       }
     }
 
-    /* Adding a tally icon after login in the account view */
+    /* Adding a Taho icon after login in the account view */
     if (
       addedNode.querySelector("img") &&
       addedNode.innerText?.includes("...")
@@ -335,7 +337,7 @@ function findAndReplaceCelerMetamaskOption(addedNode: Node): void {
       const img = addedNode.querySelector("img")
 
       if (img) {
-        img.src = TALLY_ICON_URL
+        img.src = TAHO_ICON_URL
       }
     }
   }
@@ -344,7 +346,7 @@ function findAndReplaceCelerMetamaskOption(addedNode: Node): void {
 function findAndReplaceMultchainMetamaskAndInjectedOption(
   addedNode: Node
 ): void {
-  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+  if (moreThanOneWalletInstalledAndTahoIsNotDefault()) {
     return
   }
 
@@ -368,8 +370,8 @@ function findAndReplaceMultchainMetamaskAndInjectedOption(
           const img = btn.querySelector("img")
 
           if (textContainer && img) {
-            textContainer.textContent = TALLY_NAME
-            img.src = TALLY_ICON_URL
+            textContainer.textContent = TAHO_NAME
+            img.src = TAHO_ICON_URL
           }
         }
       }
@@ -378,7 +380,7 @@ function findAndReplaceMultchainMetamaskAndInjectedOption(
 }
 
 function findAndReplaceVenusMetamaskOption(addedNode: Node): void {
-  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+  if (moreThanOneWalletInstalledAndTahoIsNotDefault()) {
     return
   }
 
@@ -395,9 +397,9 @@ function findAndReplaceVenusMetamaskOption(addedNode: Node): void {
         const textContainer = container.children?.[1].children?.[0]
 
         if (container && textContainer) {
-          textContainer.textContent = TALLY_NAME
+          textContainer.textContent = TAHO_NAME
           container.removeChild(container.children[0])
-          const img = createTallyImg()
+          const img = createTahoImg()
           img.style.marginRight = "16px"
           container.appendChild(img)
           container.appendChild(container.children[0])
@@ -411,9 +413,9 @@ function findAndReplaceVenusMetamaskOption(addedNode: Node): void {
           const img = btn.children?.[0]
 
           if (textContainer && img) {
-            textContainer.textContent = TALLY_NAME
+            textContainer.textContent = TAHO_NAME
             btn.removeChild(btn.children[0])
-            btn.appendChild(createTallyImg())
+            btn.appendChild(createTahoImg())
             btn.appendChild(btn.children[0])
           }
         }
@@ -423,7 +425,7 @@ function findAndReplaceVenusMetamaskOption(addedNode: Node): void {
 }
 
 function findAndReplaceAlpacaFinanceMetamaskOption(addedNode: Node): void {
-  if (moreThanOneWalletInstalledAndTallyIsNotDefault()) {
+  if (moreThanOneWalletInstalledAndTahoIsNotDefault()) {
     return
   }
 
@@ -438,11 +440,52 @@ function findAndReplaceAlpacaFinanceMetamaskOption(addedNode: Node): void {
         const img = btn.querySelector("img")
 
         if (textNode && img) {
-          textNode.textContent = TALLY_NAME
-          img.src = TALLY_ICON_URL
+          textNode.textContent = TAHO_NAME
+          img.src = TAHO_ICON_URL
         }
       }
     }
+  }
+}
+
+function addtahoButtonForWalletConnectModal(addedNode: Node): void {
+  if (!(addedNode instanceof HTMLElement)) {
+    return
+  }
+
+  let container: HTMLElement | null | undefined
+
+  if (addedNode.children?.[1]?.className === "walletconnect-search__input") {
+    container = addedNode
+    // On slow network connections the connect buttons could appear after the search input
+  } else if (
+    addedNode.className === "walletconnect-connect__button__icon_anchor"
+  ) {
+    container = addedNode.parentElement?.parentElement
+  }
+
+  const walletButtonsWrapper = container?.children[2]
+  const aWalletButton = walletButtonsWrapper?.children[2] as
+    | HTMLAnchorElement
+    | undefined
+
+  if (!walletButtonsWrapper || !aWalletButton) {
+    return
+  }
+
+  const aUrl = new URL(aWalletButton.href)
+
+  const wcUri = aUrl.searchParams.get("uri")
+
+  const injectedUI = document.createElement("div")
+  injectedUI.innerHTML = WALLET_CONNECT_INJECTED_UI
+
+  const tahoButton = injectedUI.querySelector("button")
+  if (tahoButton) {
+    tahoButton.onclick = () => {
+      window?.tally?.send("tally_walletConnectInit", [wcUri])
+    }
+    walletButtonsWrapper.before(injectedUI)
   }
 }
 
@@ -469,4 +512,8 @@ export default function monitorForWalletConnectionPrompts(): void {
       observeMutations(hostnameToHandler[hostname])
     }
   })
+
+  if (process.env.SUPPORT_WALLET_CONNECT === "true") {
+    observeMutations(addtahoButtonForWalletConnectModal)
+  }
 }

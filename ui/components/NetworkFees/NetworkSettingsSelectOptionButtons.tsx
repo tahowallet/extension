@@ -151,7 +151,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
   const [warningMessage, setWarningMessage] = useState("")
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const baseGasFee = useBackgroundSelector(
-    (state) => state.networks.evm[selectedNetwork.chainID].baseFeePerGas
+    (state) => state.networks.blockInfo[selectedNetwork.chainID].baseFeePerGas
   )
 
   return (

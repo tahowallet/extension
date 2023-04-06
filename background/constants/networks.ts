@@ -1,6 +1,16 @@
 import { FeatureFlags, isEnabled } from "../features"
-import { EVMNetwork, Network } from "../networks"
-import { AVAX, BNB, BTC, ETH, MATIC, OPTIMISTIC_ETH, RBTC } from "./currencies"
+import { EVMNetwork } from "../networks"
+import {
+  ARBITRUM_NOVA_ETH,
+  ARBITRUM_ONE_ETH,
+  AVAX,
+  BNB,
+  ETH,
+  GOERLI_ETH,
+  MATIC,
+  OPTIMISTIC_ETH,
+  RBTC,
+} from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
   name: "Ethereum",
@@ -14,6 +24,7 @@ export const ROOTSTOCK: EVMNetwork = {
   name: "Rootstock",
   baseAsset: RBTC,
   chainID: "30",
+  derivationPath: "m/44'/137'/0'/0",
   family: "EVM",
   coingeckoPlatformID: "rootstock",
 }
@@ -28,7 +39,7 @@ export const POLYGON: EVMNetwork = {
 
 export const ARBITRUM_ONE: EVMNetwork = {
   name: "Arbitrum",
-  baseAsset: ETH,
+  baseAsset: ARBITRUM_ONE_ETH,
   chainID: "42161",
   family: "EVM",
   coingeckoPlatformID: "arbitrum-one",
@@ -52,7 +63,7 @@ export const BINANCE_SMART_CHAIN: EVMNetwork = {
 
 export const ARBITRUM_NOVA: EVMNetwork = {
   name: "Arbitrum Nova",
-  baseAsset: ETH,
+  baseAsset: ARBITRUM_NOVA_ETH,
   chainID: "42170",
   family: "EVM",
   coingeckoPlatformID: "arbitrum-nova",
@@ -68,17 +79,10 @@ export const OPTIMISM: EVMNetwork = {
 
 export const GOERLI: EVMNetwork = {
   name: "Goerli",
-  baseAsset: ETH,
+  baseAsset: GOERLI_ETH,
   chainID: "5",
   family: "EVM",
   coingeckoPlatformID: "ethereum",
-}
-
-export const BITCOIN: Network = {
-  name: "Bitcoin",
-  baseAsset: BTC,
-  family: "BTC",
-  coingeckoPlatformID: "bitcoin",
 }
 
 export const DEFAULT_NETWORKS = [
@@ -87,13 +91,21 @@ export const DEFAULT_NETWORKS = [
   OPTIMISM,
   GOERLI,
   ARBITRUM_ONE,
-  ...(isEnabled(FeatureFlags.SUPPORT_RSK) ? [ROOTSTOCK] : []),
-  ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE) ? [AVALANCHE] : []),
-  ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
-    ? [BINANCE_SMART_CHAIN]
-    : []),
+  ROOTSTOCK,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
   ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA) ? [ARBITRUM_NOVA] : []),
 ]
+
+export function isBuiltInNetwork(network: EVMNetwork): boolean {
+  return DEFAULT_NETWORKS.some(
+    (builtInNetwork) => builtInNetwork.chainID === network.chainID
+  )
+}
+
+export const DEFAULT_NETWORKS_BY_CHAIN_ID = new Set(
+  DEFAULT_NETWORKS.map((network) => network.chainID)
+)
 
 export const FORK: EVMNetwork = {
   name: "Ethereum",
@@ -125,6 +137,7 @@ export const NETWORK_BY_CHAIN_ID = {
   [GOERLI.chainID]: GOERLI,
   [FORK.chainID]: FORK,
 }
+
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(
   [GOERLI].map((network) => network.chainID)
 )
@@ -159,7 +172,11 @@ export const CHAIN_ID_TO_RPC_URLS: {
   [chainId: string]: Array<string> | undefined
 } = {
   [ROOTSTOCK.chainID]: ["https://public-node.rsk.co"],
-  [POLYGON.chainID]: ["https://polygon-rpc.com", "https://1rpc.io/matic"],
+  [POLYGON.chainID]: [
+    "https://1rpc.io/matic",
+    // This one sometimes returns 0 for eth_getBalance
+    "https://polygon-rpc.com",
+  ],
   [OPTIMISM.chainID]: [
     "https://rpc.ankr.com/optimism",
     "https://1rpc.io/op",
@@ -181,6 +198,33 @@ export const CHAIN_ID_TO_RPC_URLS: {
     "https://rpc.ankr.com/bsc",
     "https://bsc-dataseed.binance.org",
   ],
+}
+
+// Taken from https://api.coingecko.com/api/v3/asset_platforms
+export const CHAIN_ID_TO_COINGECKO_PLATFORM_ID: {
+  [chainId: string]: string
+} = {
+  "250": "fantom",
+  "122": "fuse",
+  "361": "theta",
+  "199": "bittorent",
+  "106": "velas",
+  "128": "huobi-token",
+  "96": "bitkub-chain",
+  "333999": "polis-chain",
+  "321": "kucoin-community-chain",
+  "1285": "moonriver",
+  "25": "cronos",
+  "10000": "smartbch",
+  "1313161554": "aurora",
+  "88": "tomochain",
+  "1088": "metis-andromeda",
+  "2001": "milkomeda-cardano",
+  "9001": "evmos",
+  "288": "boba",
+  "42220": "celo",
+  "1284": "moonbeam",
+  "66": "okex-chain",
 }
 
 /**

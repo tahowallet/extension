@@ -45,6 +45,7 @@ import CorePage from "../components/Core/CorePage"
 import ErrorFallback from "./ErrorFallback"
 
 import pageList from "../routes/routes"
+import GlobalModal from "../components/GlobalModal/GlobalModal"
 
 const pagePreferences = Object.fromEntries(
   pageList.map(({ path, hasTabBar, hasTopBar, persistOnClose }) => [
@@ -159,6 +160,7 @@ export function Main(): ReactElement {
       <div className="top_menu_wrap_decoy">
         <TopMenu />
       </div>
+      <GlobalModal id="meet_taho" />
       <Router initialEntries={routeHistoryEntries}>
         <Route
           render={(routeProps) => {

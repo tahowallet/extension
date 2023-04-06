@@ -12,7 +12,7 @@ import { PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { SharedTypedInput } from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
-import capitalize from "../../utils/capitalize"
+import { capitalize } from "../../utils/textUtils"
 import SharedButton from "../Shared/SharedButton"
 
 interface NetworkSettingsSelectProps {

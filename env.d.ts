@@ -38,6 +38,7 @@ type WalletProvider = {
 
 type TallyProvider = WalletProvider & {
   isTally: true
+  send: (method: string, params: unknown[]) => Promise<void>
 }
 
 type WindowEthereum = WalletProvider & {
@@ -62,4 +63,10 @@ interface Window {
   tally?: TallyProvider
   ethereum?: WindowEthereum
   oldEthereum?: WindowEthereum
+}
+
+declare namespace NodeJS {
+  interface ProcessEnv {
+    NODE_ENV: "production" | "development" | "test"
+  }
 }

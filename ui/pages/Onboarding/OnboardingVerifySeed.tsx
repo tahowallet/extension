@@ -58,8 +58,10 @@ export default function OnboardingVerifySeed(): ReactElement {
             height: 47px;
           }
           .wordmark {
-            background: url("./images/wordmark@2x.png");
-            background-size: cover;
+            background: url("./images/wordmark.svg");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
             width: 95px;
             height: 25px;
           }

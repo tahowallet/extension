@@ -8,8 +8,14 @@ import {
   FungibleAsset,
   UnitPricePoint,
   AnyAsset,
+  CoinGeckoAsset,
+  isSmartContractFungibleAsset,
 } from "../../assets"
-import { OPTIMISM } from "../../constants"
+import {
+  BUILT_IN_NETWORK_BASE_ASSETS,
+  OPTIMISM,
+  POLYGON,
+} from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { AnyNetwork, NetworkBaseAsset } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
@@ -37,14 +43,43 @@ export type AssetDecimalAmount = {
   localizedDecimalAmount: string
 }
 
-function isBaseAsset(asset: AnyAsset): asset is NetworkBaseAsset {
-  return "coinType" in asset
+/**
+ * All network base assets have a chainID property
+ */
+export function isNetworkBaseAsset(asset: AnyAsset): asset is NetworkBaseAsset {
+  return "chainID" in asset
+}
+
+export function sameNetworkBaseAsset(
+  asset: NetworkBaseAsset,
+  other: NetworkBaseAsset
+): boolean {
+  return asset.chainID === other.chainID
 }
 
 function isOptimismBaseAsset(asset: AnyAsset) {
+  const hasMatchingChainID =
+    (isSmartContractFungibleAsset(asset) &&
+      asset.homeNetwork.chainID === OPTIMISM.chainID) ||
+    (isNetworkBaseAsset(asset) && asset.chainID === OPTIMISM.chainID)
+
   return (
+    hasMatchingChainID &&
     "contractAddress" in asset &&
     asset.contractAddress === OPTIMISM.baseAsset.contractAddress
+  )
+}
+
+function isPolygonBaseAsset(asset: AnyAsset) {
+  const hasMatchingChainID =
+    (isSmartContractFungibleAsset(asset) &&
+      asset.homeNetwork.chainID === POLYGON.chainID) ||
+    (isNetworkBaseAsset(asset) && asset.chainID === POLYGON.chainID)
+
+  return (
+    hasMatchingChainID &&
+    "contractAddress" in asset &&
+    asset.contractAddress === POLYGON.baseAsset.contractAddress
   )
 }
 
@@ -58,7 +93,7 @@ function isOptimismBaseAsset(asset: AnyAsset) {
  *
  * @return True if the passed asset is the base asset for the passed network.
  */
-export function isNetworkBaseAsset(
+export function isBuiltInNetworkBaseAsset(
   asset: AnyAsset,
   network: AnyNetwork
 ): asset is NetworkBaseAsset {
@@ -66,11 +101,58 @@ export function isNetworkBaseAsset(
     return true
   }
 
+  if (network.chainID === POLYGON.chainID && isPolygonBaseAsset(asset)) {
+    return true
+  }
+
   return (
-    isBaseAsset(asset) &&
+    isNetworkBaseAsset(asset) &&
     asset.symbol === network.baseAsset.symbol &&
-    asset.coinType === network.baseAsset.coinType &&
+    asset.chainID === network.baseAsset.chainID &&
     asset.name === network.baseAsset.name
+  )
+}
+
+/**
+ * Return network base asset for chain by asset symbol.
+ */
+export function getBuiltInNetworkBaseAsset(
+  symbol: string,
+  chainID: string
+): (NetworkBaseAsset & Required<CoinGeckoAsset>) | undefined {
+  return BUILT_IN_NETWORK_BASE_ASSETS.find(
+    (asset) => asset.symbol === symbol && asset.chainID === chainID
+  )
+}
+
+/**
+ * @param asset1 any asset
+ * @param asset2 any asset
+ * @returns true if both assets are the same network base assets
+ */
+export function sameBuiltInNetworkBaseAsset(
+  asset1: AnyAsset,
+  asset2: AnyAsset
+): boolean {
+  // for base assets with possible homeNetwork field
+  if (isOptimismBaseAsset(asset1) && isOptimismBaseAsset(asset2)) return true
+
+  if (isPolygonBaseAsset(asset1) && isPolygonBaseAsset(asset2)) return true
+
+  // for other base assets
+  if (
+    "homeNetwork" in asset1 ||
+    "homeNetwork" in asset2 ||
+    !isNetworkBaseAsset(asset1) ||
+    !isNetworkBaseAsset(asset2)
+  ) {
+    return false
+  }
+
+  return (
+    asset1.symbol === asset2.symbol &&
+    asset1.chainID === asset2.chainID &&
+    asset1.name === asset2.name
   )
 }
 
@@ -248,4 +330,24 @@ export function heuristicDesiredDecimalsForUnitPrice(
     Math.ceil(Math.log10(numericUnitPrice ?? 0)),
     minimumDesiredDecimals
   )
+}
+
+/**
+ * NB: non-base assets that don't have any token lists are considered
+ * untrusted. Reifying base assets clearly will improve this check down the
+ * road. Eventually, assets can be flagged as trusted by adding them to an
+ * "internal" token list that users can export and share.
+ *
+ */
+export function isUntrustedAsset(
+  asset: AnyAsset | undefined,
+  selectedNetwork: AnyNetwork
+): boolean {
+  if (asset) {
+    const numTokenLists = asset?.metadata?.tokenLists?.length ?? 0
+    const baseAsset = isBuiltInNetworkBaseAsset(asset, selectedNetwork)
+
+    return numTokenLists === 0 && !baseAsset
+  }
+  return false
 }

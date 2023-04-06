@@ -27,7 +27,7 @@ export const AccordionPoolInfoContent = ({
   <div className="pool_container">
     <p className="pool_row">
       This is a Yearn vault with a Variable APR (vAPR). It has an APY supplied
-      by a Yearn strategy and an APR, supplied by Tally Ho!
+      by a Yearn strategy and an APR, supplied by Taho
     </p>
     <SharedButton
       type="tertiary"

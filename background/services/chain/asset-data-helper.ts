@@ -49,11 +49,7 @@ export default class AssetDataHelper {
 
     try {
       if (provider.supportsAlchemy) {
-        return await getAlchemyTokenBalances(
-          provider,
-          addressOnNetwork,
-          smartContractAddresses
-        )
+        return await getAlchemyTokenBalances(provider, addressOnNetwork)
       }
       return await getTokenBalances(
         addressOnNetwork,

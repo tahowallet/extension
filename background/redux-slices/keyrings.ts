@@ -10,7 +10,7 @@ type KeyringToVerify = {
   mnemonic: string[]
 } | null
 
-type KeyringsState = {
+export type KeyringsState = {
   keyrings: Keyring[]
   keyringMetadata: {
     [keyringId: string]: KeyringMetadata
@@ -30,9 +30,8 @@ export const initialState: KeyringsState = {
 
 export type Events = {
   createPassword: string
-  unlockKeyrings: string
   lockKeyrings: never
-  generateNewKeyring: never
+  generateNewKeyring: string | undefined
   deriveAddress: string
   importKeyring: ImportKeyring
 }
@@ -134,8 +133,8 @@ export default keyringsSlice.reducer
 // Async thunk to bubble the generateNewKeyring action from  store to emitter.
 export const generateNewKeyring = createBackgroundAsyncThunk(
   "keyrings/generateNewKeyring",
-  async () => {
-    await emitter.emit("generateNewKeyring")
+  async (path?: string) => {
+    await emitter.emit("generateNewKeyring", path)
   }
 )
 
@@ -148,8 +147,8 @@ export const deriveAddress = createBackgroundAsyncThunk(
 
 export const unlockKeyrings = createBackgroundAsyncThunk(
   "keyrings/unlockKeyrings",
-  async (password: string) => {
-    await emitter.emit("unlockKeyrings", password)
+  async (password: string, { extra: { main } }) => {
+    return { success: await main.unlockKeyrings(password) }
   }
 )
 

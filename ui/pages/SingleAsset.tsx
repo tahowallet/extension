@@ -13,6 +13,7 @@ import {
 } from "@tallyho/tally-background/assets"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useTranslation } from "react-i18next"
+import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -145,17 +146,19 @@ export default function SingleAsset(): ReactElement {
                 >
                   {t("shared.send")}
                 </SharedButton>
-                <SharedButton
-                  type="primary"
-                  size="medium"
-                  iconSmall="swap"
-                  linkTo={{
-                    pathname: "/swap",
-                    state: asset,
-                  }}
-                >
-                  {t("shared.swap")}
-                </SharedButton>
+                {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) && (
+                  <SharedButton
+                    type="primary"
+                    size="medium"
+                    iconSmall="swap"
+                    linkTo={{
+                      pathname: "/swap",
+                      state: asset,
+                    }}
+                  >
+                    {t("shared.swap")}
+                  </SharedButton>
+                )}
               </>
             ) : (
               <></>
@@ -186,9 +189,9 @@ export default function SingleAsset(): ReactElement {
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
-            text-align: center;
             text-transform: uppercase;
             margin-left: 8px;
+            word-break: break-word;
           }
           .asset_wrap {
             display: flex;
@@ -220,7 +223,7 @@ export default function SingleAsset(): ReactElement {
             width: 16px;
             height: 16px;
             background-color: var(--green-40);
-            margin-left: 5px;
+            margin: 0 5px;
           }
           .new_tab_link:hover .icon_new_tab {
             background-color: var(--trophy-gold);

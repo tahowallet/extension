@@ -1,14 +1,22 @@
+import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
-  isProbablyEVMAddress,
-  truncateAddress,
-} from "@tallyho/tally-background/lib/utils"
-import { NFTWithCollection } from "@tallyho/tally-background/redux-slices/nfts_update"
-import React, { ReactElement, useMemo } from "react"
+  refetchNFTsFromCollection,
+  NFTWithCollection,
+} from "@tallyho/tally-background/redux-slices/nfts_update"
+import { getAccountNameOnChain } from "@tallyho/tally-background/redux-slices/selectors"
+import React, { ReactElement, useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { useIntersectionObserver } from "../../hooks"
+import {
+  useBackgroundDispatch,
+  useBackgroundSelector,
+  useIntersectionObserver,
+} from "../../hooks"
+import { trimWithEllipsis } from "../../utils/textUtils"
+import SharedAddress from "../Shared/SharedAddress"
 import SharedButton from "../Shared/SharedButton"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
+import SharedTooltip from "../Shared/SharedTooltip"
 import ExploreMarketLink, { getRelevantMarketsList } from "./ExploreMarketLink"
 import NFTImage from "./NFTImage"
 
@@ -19,13 +27,11 @@ const removeMarkdownLinks = (description: string) => {
   return description.replace(LINK_REGEX, "$1")
 }
 
-const trimDescription = (description: string) =>
-  description && description.length > MAX_DESCRIPTION_LENGTH
-    ? `${description.slice(0, MAX_DESCRIPTION_LENGTH)}...`
-    : description
-
 const parseDescription = (description = "") => {
-  return trimDescription(removeMarkdownLinks(description))
+  return trimWithEllipsis(
+    removeMarkdownLinks(description),
+    MAX_DESCRIPTION_LENGTH
+  )
 }
 
 export default function NFTPreview(props: NFTWithCollection): ReactElement {
@@ -35,17 +41,26 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     previewURL,
     contract,
     name,
-    network,
+    chainID,
     owner,
     description,
     attributes,
+    supply,
     isBadge,
+    rarityRank,
   } = nft
-  const { totalNftCount } = collection
+  const { totalNftCount, id: collectionID } = collection
+  const network = NETWORK_BY_CHAIN_ID[chainID]
   const floorPrice =
     "floorPrice" in collection &&
     collection.floorPrice?.value !== undefined &&
     collection.floorPrice
+
+  const dispatch = useBackgroundDispatch()
+
+  const ownerName = useBackgroundSelector((state) =>
+    getAccountNameOnChain(state, { address: owner, network })
+  )
 
   // Chrome seems to have problems when elements with backdrop style are rendered initially
   // out of the viewport - browser is not rendering them at all. This is a workaround
@@ -66,6 +81,20 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     keyPrefix: "nfts",
   })
 
+  const refetchNFTs = useCallback(
+    () =>
+      dispatch(
+        refetchNFTsFromCollection({
+          collectionID,
+          account: { address: owner, network },
+        })
+      ),
+    [collectionID, owner, network, dispatch]
+  )
+
+  const localizedTotalCount = (totalNftCount ?? supply)?.toLocaleString()
+  const localizedRarityRank = rarityRank?.toLocaleString()
+
   return (
     <>
       <div className="preview_wrapper">
@@ -75,11 +104,18 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
             highResolutionSrc={previewURL}
             alt={name}
             width={384}
+            height={isBadge ? 384 : undefined}
             isBadge={isBadge}
             customStyles="border-radius: 0 0 8px 8px;"
           />
           <div className="preview_network">
-            <SharedNetworkIcon network={network} size={24} hasBackground />
+            <SharedNetworkIcon
+              network={network}
+              size={24}
+              padding={6}
+              squared
+              hasBackground
+            />
           </div>
           <div className="preview_details" ref={backdropRef}>
             <div className="preview_section_column">
@@ -87,10 +123,10 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
                 {t("preview.owner")}
               </span>
               <span className="preview_details_value">
-                {truncateAddress(owner)}
+                <SharedAddress address={owner} name={ownerName} elide />
               </span>
             </div>
-            <div className="preview_section_column align_right">
+            <div className="preview_section_column align_right no_shrink">
               <span className="preview_details_header">
                 {t("preview.floorPrice")}
               </span>
@@ -104,40 +140,55 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         </div>
 
         <div className="preview_header">
-          <h1 className="ellipsis_multiline">{name || t("noTitle")}</h1>
-          {isEnabled(FeatureFlags.SUPPORT_NFT_SEND) && (
-            <SharedButton
-              type="tertiary"
-              size="small"
-              iconSmall="send"
-              iconPosition="left"
-            >
-              {t("preview.send")}
-            </SharedButton>
+          <div className="preview_section_row">
+            <h1 className="ellipsis_multiline">{name || t("noTitle")}</h1>
+            {isEnabled(FeatureFlags.SUPPORT_NFT_SEND) && (
+              <SharedButton
+                type="tertiary"
+                size="small"
+                iconSmall="send"
+                iconPosition="left"
+              >
+                {t("preview.send")}
+              </SharedButton>
+            )}
+          </div>
+
+          {rarityRank !== null && (
+            <div className="preview_rarity_wrapper">
+              <SharedTooltip
+                height={37}
+                horizontalPosition="right"
+                IconComponent={() => (
+                  <span className="preview_rarity">
+                    {t("preview.rank")}:
+                    <span className="preview_rarity_rank">
+                      {" "}
+                      {localizedRarityRank}
+                    </span>
+                  </span>
+                )}
+              >
+                <div className="no_wrap">
+                  {t("preview.rarityRank")}: {localizedRarityRank} /{" "}
+                  {localizedTotalCount}
+                </div>
+              </SharedTooltip>
+            </div>
           )}
         </div>
 
         <div className="preview_section">
           <div className="preview_section_header"> {t("preview.viewOn")}</div>
           <div className="preview_section_row preview_markets">
-            {marketsList.map(
-              ({
-                url,
-                title,
-                color,
-                icon,
-                hoverIcon,
-                hoverColor,
-                getNFTLink,
-              }) => (
-                <ExploreMarketLink
-                  type="button"
-                  key={url}
-                  url={getNFTLink(nft)}
-                  {...{ title, color, icon, hoverColor, hoverIcon }}
-                />
-              )
-            )}
+            {marketsList.map(({ url, title, icon, getNFTLink }) => (
+              <ExploreMarketLink
+                type="icon"
+                key={url}
+                url={getNFTLink(nft)}
+                {...{ title, icon }}
+              />
+            ))}
           </div>
         </div>
 
@@ -153,22 +204,27 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
             <div className="preview_section_header">
               {t("preview.itemsCount")}
             </div>
-            <p>{totalNftCount ?? "-"}</p>
+            <p>{localizedTotalCount ?? "-"}</p>
           </div>
           <div className="preview_section_column align_right">
             <div className="preview_section_header">{t("preview.creator")}</div>
-            <p>
-              {isProbablyEVMAddress(contract) ? truncateAddress(contract) : "-"}
-            </p>
+            {contract?.length ? (
+              <SharedAddress address={contract} elide />
+            ) : (
+              "-"
+            )}
           </div>
         </div>
 
-        {!!attributes.length && (
-          <div className="preview_section">
-            <div className="preview_section_header">
-              {t("preview.properties")}
-            </div>
-            <div className="preview_property_list preview_section_row">
+        <div className="preview_section">
+          <div className="preview_section_header">
+            {t("preview.properties")}
+          </div>
+          {!!attributes.length && (
+            <div
+              className="preview_property_list preview_section_row"
+              data-testid="nft_properties_list"
+            >
               {attributes.map(
                 ({ trait, value }) =>
                   !!value && (
@@ -187,8 +243,18 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
                   )
               )}
             </div>
-          </div>
-        )}
+          )}
+          <SharedButton
+            type="tertiaryWhite"
+            iconSmall="refresh"
+            iconPosition="left"
+            size="small"
+            style={{ padding: 0 }}
+            onClick={refetchNFTs}
+          >
+            {t("preview.refresh")}
+          </SharedButton>
+        </div>
       </div>
       <style jsx>{`
         @keyframes progressive-blur {
@@ -237,8 +303,6 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           line-height: 24px;
         }
         .preview_header {
-          display: flex;
-          justify-content: space-between;
           margin: 20px 24px;
         }
         .preview_header h1 {
@@ -261,6 +325,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         .preview_section_column {
           display: flex;
           flex-direction: column;
+          min-width: 0;
         }
         .preview_section_row {
           display: flex;
@@ -306,8 +371,33 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         }
         .preview_markets {
           margin-top: 8px;
-          gap: 16px;
+          gap: 24px;
           justify-content: flex-start;
+        }
+        .preview_rarity_wrapper {
+          margin: 12px -8px 14px;
+        }
+        .preview_rarity {
+          display: inline-block;
+          background: var(--hunter-green);
+          border: 2px solid var(--green-40);
+          border-radius: 25px;
+          color: var(--green-40);
+          line-height: 24px;
+          font-size: 14px;
+          font-weight: 500;
+          padding: 2px 12px 0;
+        }
+        .preview_rarity_rank {
+          color: var(--white);
+          font-size: 16px;
+        }
+        .no_shrink {
+          flex-shrink: 0;
+        }
+        .no_wrap {
+          overflow: hidden;
+          white-space: nowrap;
         }
       `}</style>
     </>

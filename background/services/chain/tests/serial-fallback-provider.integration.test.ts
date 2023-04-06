@@ -20,7 +20,7 @@ describe("Serial Fallback Provider", () => {
     alchemySendStub = sandbox
       .stub(mockAlchemyProvider, "send")
       .callsFake(async () => "success")
-    fallbackProvider = new SerialFallbackProvider(ETHEREUM, [
+    fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
       {
         type: "generic",
         creator: () => mockGenericProvider,

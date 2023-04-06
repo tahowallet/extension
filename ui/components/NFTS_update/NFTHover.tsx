@@ -1,6 +1,7 @@
 /* eslint-disable no-nested-ternary */
 import React, { ReactElement } from "react"
-import { i18n, I18nKey } from "../../_locales/i18n"
+import { useTranslation } from "react-i18next"
+import { I18nKey } from "../../_locales/i18n"
 import SharedIcon from "../Shared/SharedIcon"
 
 const icons: Record<
@@ -9,38 +10,40 @@ const icons: Record<
     icon: string
     label: I18nKey
     background: string
+    backgroundHover?: string
     size: number
     style: string
   }
 > = {
   close: {
     icon: "close",
-    label: i18n.t("nfts.collectionHover.close"),
+    label: "nfts.collectionHover.close",
     background: "var(--green-40)",
+    backgroundHover: "var(--green-20)",
     size: 12,
     style: "",
   },
   expand: {
     icon: "chevron",
-    label: i18n.t("nfts.collectionHover.expand"),
+    label: "nfts.collectionHover.expand",
     background: "var(--success)",
     size: 12,
     style: "margin-bottom: 3px;",
   },
   view: {
     icon: "eye",
-    label: i18n.t("nfts.collectionHover.view"),
+    label: "nfts.collectionHover.view",
     background: "var(--trophy-gold)",
     size: 22,
     style: "",
   },
 }
 
-const getIcon = (isCollection: boolean, isExpanded: boolean) => {
+const getIconType = (isCollection: boolean, isExpanded: boolean) => {
   if (isCollection) {
-    return isExpanded ? icons.close : icons.expand
+    return isExpanded ? "close" : "expand"
   }
-  return icons.view
+  return "view"
 }
 
 export default function NFTsHover(props: {
@@ -49,15 +52,21 @@ export default function NFTsHover(props: {
   onClick: () => void
 }): ReactElement {
   const { isCollection = false, isExpanded = false, onClick } = props
+  const { t } = useTranslation()
 
-  const { icon, label, background, size, style } = getIcon(
-    isCollection,
-    isExpanded
-  )
+  const iconType = getIconType(isCollection, isExpanded)
+
+  const { icon, label, background, backgroundHover, size, style } =
+    icons[iconType]
 
   return (
-    <button type="button" className="nft_hover" onClick={onClick}>
-      <div>{label}</div>
+    <button
+      type="button"
+      className="nft_hover"
+      data-testid={iconType}
+      onClick={onClick}
+    >
+      <div>{t(label)}</div>
       <div className="nft_hover_icon">
         <SharedIcon
           icon={`${icon}@2x.png`}
@@ -99,6 +108,10 @@ export default function NFTsHover(props: {
           width: 32px;
           height: 32px;
           border-radius: 100%;
+          transition: background 200ms ease-in-out;
+        }
+        .nft_hover:hover .nft_hover_icon {
+          background: ${backgroundHover ?? background};
         }
       `}</style>
     </button>

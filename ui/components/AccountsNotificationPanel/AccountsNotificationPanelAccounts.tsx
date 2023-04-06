@@ -11,6 +11,7 @@ import {
   updateSignerTitle,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { deriveAddress } from "@tallyho/tally-background/redux-slices/keyrings"
+import { ROOTSTOCK } from "@tallyho/tally-background/constants"
 import {
   AccountTotal,
   selectCurrentNetworkAccountTotalsByCategory,
@@ -77,12 +78,14 @@ function WalletTypeHeader({
   accountType,
   onClickAddAddress,
   walletNumber,
+  path,
   accountSigner,
 }: {
   accountType: AccountType
   onClickAddAddress?: () => void
   accountSigner: AccountSigner
   walletNumber?: number
+  path?: string | null
 }) {
   const { t } = useTranslation()
   const { title, icon } = walletTypeDetails[accountType]
@@ -103,10 +106,13 @@ function WalletTypeHeader({
   const sectionTitle = useMemo(() => {
     if (accountType === AccountType.ReadOnly) return title
 
-    if (sectionCustomName) return sectionCustomName
+    let networkName = "" // Only for Rootstock
+    if (path === ROOTSTOCK.derivationPath) networkName = `(${ROOTSTOCK.name})`
 
-    return `${title} ${walletNumber}`
-  }, [accountType, title, sectionCustomName, walletNumber])
+    if (sectionCustomName) return `${sectionCustomName} ${networkName}`
+
+    return `${title} ${walletNumber} ${networkName}`
+  }, [accountType, title, sectionCustomName, walletNumber, path])
 
   const history = useHistory()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
@@ -339,6 +345,7 @@ export default function AccountsNotificationPanelAccounts({
                       <WalletTypeHeader
                         accountType={accountType}
                         walletNumber={idx + 1}
+                        path={accountTotalsByKeyringId[0].path}
                         accountSigner={
                           accountTotalsByKeyringId[0].accountSigner
                         }
@@ -428,7 +435,14 @@ export default function AccountsNotificationPanelAccounts({
           size="medium"
           iconSmall="add"
           iconPosition="left"
-          linkTo="/onboarding/add-wallet"
+          onClick={() => {
+            if (isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING)) {
+              window.open("/tab.html#onboarding")
+              window.close()
+            } else {
+              history.push("/onboarding/add-wallet")
+            }
+          }}
         >
           {t("accounts.notificationPanel.addWallet")}
         </SharedButton>
@@ -467,6 +481,7 @@ export default function AccountsNotificationPanelAccounts({
           .switcher_wrap {
             height: 432px;
             overflow-y: scroll;
+            border-top: 1px solid var(--green-120);
           }
           .category_wrap {
             display: flex;

@@ -29,7 +29,7 @@ export default function ClaimManifesto({
             Open source over restrictive licensing
           </div>
           <div className="description">
-            All Tally Ho code is—and will remain—100% free and open source. For
+            All Taho code is—and will remain—100% free and open source. For
             anyone to review, fork, hack, or remix.
           </div>
         </li>

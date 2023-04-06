@@ -18,6 +18,7 @@ import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/sel
 import {
   ARBITRUM_ONE,
   BINANCE_SMART_CHAIN,
+  isBuiltInNetwork,
   OPTIMISM,
   ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
@@ -130,12 +131,13 @@ export default function FeeSettingsText({
   const transactionData = useBackgroundSelector(selectTransactionData)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const currentNetwork = transactionData?.network || selectedNetwork
+  const networkIsBuiltIn = isBuiltInNetwork(currentNetwork)
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
   let networkSettings = useBackgroundSelector(selectDefaultNetworkFeeSettings)
   networkSettings = customNetworkSetting ?? networkSettings
   const baseFeePerGas =
     useBackgroundSelector((state) => {
-      return state.networks.evm[currentNetwork.chainID].baseFeePerGas
+      return state.networks.blockInfo[currentNetwork.chainID].baseFeePerGas
     }) ??
     networkSettings.values?.baseFeePerGas ??
     0n
@@ -181,7 +183,7 @@ export default function FeeSettingsText({
         <>{t("networkFees.toBeDetermined")}</>
       ) : (
         <>
-          <span>~${dollarValue}</span>
+          {networkIsBuiltIn && <span>~${dollarValue}</span>}
           <span className="fee_gwei">({gweiValue})</span>
         </>
       )}

@@ -26,9 +26,12 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
-import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { isBuiltInNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
-import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
+import {
+  NETWORKS_SUPPORTING_SWAPS,
+  SECOND,
+} from "@tallyho/tally-background/constants"
 
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
@@ -43,8 +46,11 @@ import SharedBanner from "../components/Shared/SharedBanner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
 import ApproveQuoteBtn from "../components/Swap/ApproveQuoteButton"
 import { isSameAsset, useSwapQuote } from "../utils/swap"
-import { useOnMount, usePrevious } from "../hooks/react-hooks"
+import { useOnMount, usePrevious, useInterval } from "../hooks/react-hooks"
 import SharedLoadingDoggo from "../components/Shared/SharedLoadingDoggo"
+import SharedBackButton from "../components/Shared/SharedBackButton"
+
+const REFRESH_QUOTE_INTERVAL = 10 * SECOND
 
 export default function Swap(): ReactElement {
   const { t } = useTranslation()
@@ -142,7 +148,7 @@ export default function Swap(): ReactElement {
       }
       if (
         // Explicitly add a network's base asset.
-        isNetworkBaseAsset(asset, currentNetwork)
+        isBuiltInNetworkBaseAsset(asset, currentNetwork)
       ) {
         return true
       }
@@ -348,6 +354,38 @@ export default function Swap(): ReactElement {
     }
   }
 
+  const [amountInputHasFocus, setAmountInputHasFocus] = useState(false)
+
+  useInterval(() => {
+    if (!isEnabled(FeatureFlags.SUPPORT_SWAP_QUOTE_REFRESH)) return
+
+    const isRecentQuote =
+      quote &&
+      // Time passed since last quote
+      Date.now() - quote.timestamp <= 3 * SECOND
+
+    const skipRefresh =
+      loadingQuote || (isRecentQuote && quoteAppliesToCurrentAssets)
+
+    if (
+      !skipRefresh &&
+      !amountInputHasFocus &&
+      sellAsset &&
+      buyAsset &&
+      (sellAmount || buyAmount)
+    ) {
+      const type = sellAmount ? "getBuyAmount" : "getSellAmount"
+      const amount = sellAmount || buyAmount
+
+      requestQuoteUpdate({
+        type,
+        amount,
+        sellAsset,
+        buyAsset,
+      })
+    }
+  }, REFRESH_QUOTE_INTERVAL)
+
   useOnMount(() => {
     // Request a quote on mount
     if (sellAsset && buyAsset && sellAmount) {
@@ -382,6 +420,7 @@ export default function Swap(): ReactElement {
             dispatch(clearSwapQuote())
           }}
           size="large"
+          isDark
         >
           {quote &&
             typeof sellAsset !== "undefined" &&
@@ -395,7 +434,10 @@ export default function Swap(): ReactElement {
               />
             )}
         </SharedSlideUpMenu>
-        <div className="standard_width swap_wrap">
+        <div className="standard_width">
+          <div className="back_button_wrap">
+            <SharedBackButton path="/" />
+          </div>
           <div className="header">
             <SharedActivityHeader label={t("swap.title")} activity="swap" />
             <ReadOnlyNotice isLite />
@@ -445,6 +487,8 @@ export default function Swap(): ReactElement {
                 selectedAsset={sellAsset}
                 isDisabled={loadingSellAmount}
                 onAssetSelect={updateSellAsset}
+                onFocus={() => setAmountInputHasFocus(true)}
+                onBlur={() => setAmountInputHasFocus(false)}
                 mainCurrencySign={mainCurrencySign}
                 onAmountChange={(newAmount, error) => {
                   setSellAmount(newAmount)
@@ -483,6 +527,8 @@ export default function Swap(): ReactElement {
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
                 selectedAsset={buyAsset}
                 isDisabled={loadingBuyAmount}
+                onFocus={() => setAmountInputHasFocus(true)}
+                onBlur={() => setAmountInputHasFocus(false)}
                 showMaxButton={false}
                 mainCurrencySign={mainCurrencySign}
                 onAssetSelect={updateBuyAsset}
@@ -503,13 +549,14 @@ export default function Swap(): ReactElement {
                 }}
                 label={t("swap.to")}
               />
-              {loadingQuote && sellAsset && buyAsset && (
-                <SharedLoadingDoggo
-                  size={54}
-                  message="Fetching price"
-                  margin="15px 0 0 0"
-                />
-              )}
+              <div className="loading_wrapper">
+                {loadingQuote && sellAsset && buyAsset && (
+                  <SharedLoadingDoggo
+                    size={54}
+                    message={t("swap.loadingQuote")}
+                  />
+                )}
+              </div>
             </div>
             <div className="settings_wrap">
               {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
@@ -546,13 +593,11 @@ export default function Swap(): ReactElement {
       </CorePage>
       <style jsx>
         {`
-          .swap_wrap {
-            margin-top: -9px;
-          }
           .header {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            margin-top: 13px;
           }
           .network_fee_group {
             display: flex;
@@ -574,6 +619,12 @@ export default function Swap(): ReactElement {
             font-weight: 500;
             line-height: 32px;
           }
+
+          .loading_wrapper {
+            min-height: 73.5px;
+            margin: 16px 0 32px;
+          }
+
           .footer {
             display: flex;
             justify-content: center;
@@ -607,6 +658,12 @@ export default function Swap(): ReactElement {
           }
           .settings_wrap {
             margin-top: 16px;
+          }
+          .back_button_wrap {
+            position: absolute;
+            margin-left: -1px;
+            margin-top: -4px;
+            z-index: 10;
           }
         `}
       </style>

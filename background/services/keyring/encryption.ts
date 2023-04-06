@@ -42,7 +42,7 @@ function requireCryptoGlobal(message?: string) {
   if (global.crypto === undefined) {
     throw new Error(
       `${
-        message || "Tally"
+        message || "Taho"
       } requires WebCrypto API support — is this being run in a modern browser?`
     )
   }

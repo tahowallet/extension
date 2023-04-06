@@ -1,7 +1,8 @@
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useBackgroundDispatch } from "../../../../hooks"
+import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import { SignerFrameProps } from ".."
 import SharedButton from "../../../Shared/SharedButton"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
@@ -9,6 +10,7 @@ import SignerLedgerConnect from "./SignerLedgerConnect"
 import SignerLedgerSigning from "./SignerLedgerSigning"
 import SignerLedgerConnectionStatus from "./SignerLedgerConnectionStatus"
 import { useSigningLedgerState } from "../../../SignTransaction/useSigningLedgerState"
+import TransactionButton from "../TransactionButton"
 
 export default function SignerLedgerFrame<T extends SignOperationType>({
   children,
@@ -46,6 +48,8 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
     ("signingData" in request &&
       (typeof request.signingData !== "string" ||
         request.signingData.length > 0))
+
+  const hasInsufficientFunds = useBackgroundSelector(selectHasInsufficientFunds)
 
   // FIXME Once the legacy signing flow is removed, `useSigningLedgerState` can
   // FIXME be updated to not accept undefined or null and therefore to not
@@ -107,9 +111,13 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
         <>
           <div className="signature-details">{children}</div>
           <footer>
-            <SharedButton size="large" type="secondary" onClick={handleReject}>
+            <TransactionButton
+              size="large"
+              type="secondary"
+              onClick={handleReject}
+            >
               {tSigning("reject")}
-            </SharedButton>
+            </TransactionButton>
 
             {ledgerCannotSign ? (
               <SharedButton
@@ -122,14 +130,17 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
                 {t("checkLedger")}
               </SharedButton>
             ) : (
-              <SharedButton
+              <TransactionButton
                 type="primary"
                 size="large"
                 onClick={handleConfirm}
+                isDisabled={hasInsufficientFunds}
                 showLoadingOnClick
+                showLoading
+                reactOnWindowFocus
               >
                 {globalT(signingActionLabelI18nKey)}
-              </SharedButton>
+              </TransactionButton>
             )}
           </footer>
           <SharedSlideUpMenu

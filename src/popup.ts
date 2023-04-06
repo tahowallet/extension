@@ -39,6 +39,19 @@ setTimeout(() => {
   }
 }, 1000)
 
-window.resizeBy(0, window.outerHeight - window.innerHeight)
+const POPUP_WIDTH = 384
+// const POPUP_HEIGHT = 600
+
+/**
+ * Because browser.windows.create(...) takes a height and width that includes
+ * the native browser window frame, some popups end up slighty smaller than
+ * the popup triggered by the Tally toolbar icon. To fix this we resize the
+ * window by the window frame's size.
+ */
+const missingWidth = POPUP_WIDTH - window.innerWidth
+// TODO: Change this to use POPUP_HEIGHT and test signing and other popups
+const missingHeight = window.outerHeight - window.innerHeight
+
+window.resizeBy(missingWidth, missingHeight)
 
 attachPopupUIToRootElement()

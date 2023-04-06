@@ -3,6 +3,7 @@ import { ethers } from "ethers"
 import {
   AnyAsset,
   AnyAssetAmount,
+  flipPricePoint,
   isFungibleAsset,
   isSmartContractFungibleAsset,
   PricePoint,
@@ -12,13 +13,20 @@ import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
 import { normalizeEVMAddress } from "../lib/utils"
 import { createBackgroundAsyncThunk } from "./utils"
-import { isNetworkBaseAsset } from "./utils/asset-utils"
+import {
+  isBuiltInNetworkBaseAsset,
+  sameBuiltInNetworkBaseAsset,
+} from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
-import { sameNetwork } from "../networks"
+import { EVMNetwork, sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
-import { BASE_ASSETS_BY_SYMBOL, FIAT_CURRENCIES_SYMBOL } from "../constants"
+import {
+  BUILT_IN_NETWORK_BASE_ASSETS,
+  FIAT_CURRENCIES_SYMBOL,
+} from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
+import { HexString } from "../types"
 
 export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
   recentPrices: {
@@ -51,29 +59,31 @@ const assetsSlice = createSlice({
         mappedAssets[asset.symbol].push(asset)
       })
       // merge in new assets
-      newAssets.forEach((asset) => {
-        if (mappedAssets[asset.symbol] === undefined) {
-          mappedAssets[asset.symbol] = [{ ...asset, recentPrices: {} }]
+      newAssets.forEach((newAsset) => {
+        if (mappedAssets[newAsset.symbol] === undefined) {
+          mappedAssets[newAsset.symbol] = [{ ...newAsset, recentPrices: {} }]
         } else {
-          const duplicates = mappedAssets[asset.symbol].filter(
-            (a) =>
-              ("homeNetwork" in asset &&
-                "contractAddress" in asset &&
-                "homeNetwork" in a &&
-                "contractAddress" in a &&
-                a.homeNetwork.name === asset.homeNetwork.name &&
-                normalizeEVMAddress(a.contractAddress) ===
-                  normalizeEVMAddress(asset.contractAddress)) ||
+          const duplicates = mappedAssets[newAsset.symbol].filter(
+            (existingAsset) =>
+              ("homeNetwork" in newAsset &&
+                "contractAddress" in newAsset &&
+                "homeNetwork" in existingAsset &&
+                "contractAddress" in existingAsset &&
+                existingAsset.homeNetwork.name === newAsset.homeNetwork.name &&
+                normalizeEVMAddress(existingAsset.contractAddress) ===
+                  normalizeEVMAddress(newAsset.contractAddress)) ||
               // Only match base assets by name - since there may be
               // many assets that share a name and symbol across L2's
-              (BASE_ASSETS_BY_SYMBOL[a.symbol] &&
-                BASE_ASSETS_BY_SYMBOL[asset.symbol] &&
-                a.name === asset.name)
+              BUILT_IN_NETWORK_BASE_ASSETS.some(
+                (baseAsset) =>
+                  sameBuiltInNetworkBaseAsset(baseAsset, newAsset) &&
+                  sameBuiltInNetworkBaseAsset(baseAsset, existingAsset)
+              )
           )
           // if there aren't duplicates, add the asset
           if (duplicates.length === 0) {
-            mappedAssets[asset.symbol].push({
-              ...asset,
+            mappedAssets[newAsset.symbol].push({
+              ...newAsset,
               recentPrices: {},
             })
           }
@@ -144,7 +154,7 @@ export const transferAsset = createBackgroundAsyncThunk(
     const provider = getProvider()
     const signer = provider.getSigner()
 
-    if (isNetworkBaseAsset(assetAmount.asset, fromNetwork)) {
+    if (isBuiltInNetworkBaseAsset(assetAmount.asset, fromNetwork)) {
       logger.debug(
         `Sending ${assetAmount.amount} ${assetAmount.asset.symbol} from ` +
           `${fromAddress} to ${toAddress} as a base asset transfer.`
@@ -215,6 +225,14 @@ export const selectAssetPricePoint = createSelector(
           asset.homeNetwork.chainID === assetToFind.homeNetwork.chainID &&
           hasRecentPriceData(asset)
       )
+
+      /* Don't do anything else if this is an untrusted asset and there's no exact match */
+      if (
+        (assetToFind.metadata?.tokenLists.length ?? 0) < 1 &&
+        !isBuiltInNetworkBaseAsset(assetToFind, assetToFind.homeNetwork)
+      ) {
+        return undefined
+      }
     }
 
     /* Otherwise, find a best-effort match by looking for assets with the same symbol  */
@@ -230,12 +248,7 @@ export const selectAssetPricePoint = createSelector(
 
       // Flip it if the price point looks like USD-ETH
       if (pricePoint.pair[0].symbol !== assetToFind.symbol) {
-        const { pair, amounts, time } = pricePoint
-        pricePoint = {
-          pair: [pair[1], pair[0]],
-          amounts: [amounts[1], amounts[0]],
-          time,
-        }
+        pricePoint = flipPricePoint(pricePoint)
       }
 
       const assetDecimals = isFungibleAsset(assetToFind)
@@ -265,5 +278,18 @@ export const selectAssetPricePoint = createSelector(
 
     // If no matching priced asset was found, return undefined.
     return undefined
+  }
+)
+
+export const importTokenViaContractAddress = createBackgroundAsyncThunk(
+  "assets/importTokenViaContractAddress",
+  async (
+    {
+      contractAddress,
+      network,
+    }: { contractAddress: HexString; network: EVMNetwork },
+    { extra: { main } }
+  ) => {
+    await main.importTokenViaContractAddress(contractAddress, network)
   }
 )

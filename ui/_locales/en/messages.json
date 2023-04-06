@@ -21,7 +21,7 @@
       "addAddress": "Add address",
       "readOnly": "Read-only",
       "import": "Import",
-      "internal": "Tally Ho",
+      "internal": "Taho",
       "ledger": "Ledger",
       "category": {
         "readOnly": "Preview",
@@ -53,7 +53,11 @@
       "firstLine": "Price impact between assets is high.",
       "secondLine": "This is due to low liquidity of the swap pair."
     },
-    "noAssetPrice": "No price information"
+    "noAssetPrice": "No price information",
+    "noAssetPriceTooltip": {
+      "firstLine": "We're not able to receive prices for these assets now.",
+      "secondLine": "Continuing without price information might lead to a loss in value."
+    }
   },
   "comingSoon": "Coming soon",
   "dappConnection": {
@@ -113,7 +117,8 @@
         "stepsExplainer": "Please follow the steps below and click on Try Again!",
         "step1": "Plug in a single Ledger",
         "step2": "Enter pin to unlock",
-        "step3": "Open Ethereum App"
+        "step3": "Open Ethereum App",
+        "tip": "After clicking continue, select device and click connect"
       },
       "selectDevice": "Select the device",
       "clickConnect": "Click connect",
@@ -123,8 +128,8 @@
       "multipleLedgersDescriptor": "You can select as many as you want",
       "connectSelectedLedger": "Connect selected",
       "doneMessageOne": "Congratulations!",
-      "doneMessageTwo": "You can open Tally Ho now.",
-      "onboardingSuccessful": "Selected accounts were succesfully connected.",
+      "doneMessageTwo": "You can open Taho now.",
+      "onboardingSuccessful": "Selected accounts were successfully connected.",
       "closeTab": "Close tab"
     },
     "connectionStatus": {
@@ -182,6 +187,8 @@
     "toBeDetermined": "TBD",
     "settingsTitle": "Network fees (Gwei)",
     "gasLimit": "Gas limit",
+    "settingsDisabledOne": "Chain doesn't support",
+    "settingsDisabledTwo": "gas settings",
     "estimatedNetworkFee": "Estimated network fee",
     "insufficientBaseAsset": "Not enough {{symbol}} for network fees",
     "totalMax": "Total Max",
@@ -198,7 +205,7 @@
       "rollUp": "Roll-up",
       "estimatedGas": "Estimated Gas",
       "explainerOne": "The estimated gas cost for {{name}} transactions includes an {{name}} fee + an Ethereum roll-up fee (the fee to register transaction on Ethereum chain).",
-      "explainerTwo": "Tally Ho stays in sync with the current {{name}} and Ethereum network fees to estimate the fee for a given transaction.",
+      "explainerTwo": "Taho stays in sync with the current {{name}} and Ethereum network fees to estimate the fee for a given transaction.",
       "explainerThree": "Only in rare cases will the actual fee you pay change by more than 25% from the estimate.",
       "learnMore": "Learn More"
     },
@@ -210,7 +217,7 @@
       "percentage": "percentage",
       "estimatedGas": "Estimated Gas",
       "explainerOne": "The estimated gas price for RSK transactions is calculated by adding 10% to the Minimum Gas Price obtained from the latest mined block.",
-      "explainerTwo": "Tally Ho stays in sync with the current RSK and Ethereum network fees to estimate the fee for a given transaction.",
+      "explainerTwo": "Taho stays in sync with the current RSK and Ethereum network fees to estimate the fee for a given transaction.",
       "explainerThree": "Only in rare cases will the actual fee you pay change by more than 10% from the estimate.",
       "learnMore": "Learn More"
     },
@@ -253,7 +260,10 @@
       "description": "Description",
       "itemsCount": "Items in collection",
       "creator": "Creator",
-      "properties": "Properties"
+      "properties": "Properties",
+      "refresh": "Refresh properties",
+      "rank": "Rank",
+      "rarityRank": "Rarity rank"
     },
     "units": {
       "nft_one": "NFT",
@@ -264,7 +274,7 @@
       "collection_other": "Collections"
     },
     "header": {
-      "title": "Estimated total NFTs value",
+      "title": "Total NFTs floor price",
       "addAccountCTA": "Add account",
       "emptyTitle": "No NFTs here",
       "emptyDesc": "Add more accounts to see your NFTs, you can also just add read-only accounts"
@@ -273,11 +283,13 @@
       "nfts": "Explore markets",
       "badge": "Explore badges"
     },
+    "networksBanner": "Not seeing NFTs from all your networks? Activate a network by switching to it on the Wallet tab.",
     "filters": {
       "title": "Filter collections",
+      "warning": "Changing filters here will affect your Portfolio page as well.",
       "sortType": {
-        "priceDesc": "Price: Descending",
-        "priceAsc": "Price: Ascending",
+        "priceDesc": "Floor price: Descending",
+        "priceAsc": "Floor price: Ascending",
         "newestAdded": "Newest added",
         "oldestAdded": "Oldest added",
         "numberInOneCollection": "Number (in 1 collection)"
@@ -290,28 +302,25 @@
   },
   "achievements": {
     "empty": "Nothing to see here",
-    "startWith": "You can start with the Tally Ho collection!",
-    "collection": "Tally Ho collection"
+    "startWith": "You can start with the Taho collection!",
+    "collection": "Taho collection"
   },
   "onboarding": {
     "tabbed": {
+      "walletShortcut": "Did you know that you can open Taho using a keyboard shortcut?",
       "routeBasedContent": {
         "newSeed": {
-          "tip": "If you want an easy way to preview Tally Ho, you can start by adding a view only account",
+          "tip": "If you want an easy way to preview Taho, you can start by adding a read only account.",
           "action": "Add preview account"
         },
-        "ledger": {
-          "tip": "Trezor integration coming soon, check out the open ",
-          "action": "Gitcoin bounty"
-        },
         "addWallet": {
-          "tip": "Some of the code for this was written by Community contributors"
+          "tip": "Several of Taho's most popular features were developed by our community."
         },
         "viewOnly": {
-          "tip": "A good way to take a peak at what Tally Ho offers"
+          "tip": "A good way to take a peek at what Taho offers."
         },
         "importSeed": {
-          "tip": "Tally Ho offers the possibility of adding multiple recovery phrases"
+          "tip": "Taho offers the possibility of adding multiple recovery phrases."
         },
         "default": {
           "fact1": "Fully owned by the community",
@@ -326,11 +335,15 @@
       },
       "addWallet": {
         "title": "Use existing wallet",
-        "tip": "You can always add more wallets later",
+        "titleExisting": "Add account",
+        "tip": "You can always add more wallets later.",
+        "existingListTitle": "Existing account",
+        "newWalletTitle": "New wallet",
         "options": {
           "importSeed": "Import recovery phrase",
           "ledger": "Connect to Ledger",
-          "readOnly": "Read-only address"
+          "readOnly": "Read-only address",
+          "createNew": "Create new wallet"
         },
         "importSeed": {
           "title": "Import secret recovery phrase",
@@ -345,16 +358,21 @@
         },
         "viewOnly": {
           "title": "Read-only address",
-          "subtitle": "Add an Ethereum address or ENS name to view an existing wallet in Tally Ho!",
-          "submit": "Preview Tally Ho!",
-          "tip": "You can upgrade a view-only wallet later"
+          "subtitle": "Add an Ethereum address or ENS name to view an existing wallet in Taho",
+          "submit": "Preview Taho",
+          "tip": "You can upgrade a read-only wallet later."
         }
       },
       "newWalletIntro": {
         "title": "Before we get started",
         "warning": "It's important to write down your secret recovery phrase and store it somewhere safe.<br /><br />This is the only way to recover your accounts and funds.<br /><br /><u>You will not be able to export your recovery phrase later.</u>",
         "submit": "Create recovery phrase",
-        "tip": "You can upgrade a view-only wallet later"
+        "tip": "You can upgrade a read-only wallet later."
+      },
+      "unlockWallet": {
+        "title": "Password required",
+        "passwordInput": "Signing password",
+        "submit": "Confirm"
       },
       "newWalletReview": {
         "title": "Save and store your recovery phrase",
@@ -370,20 +388,20 @@
         "invalidStateMsg": "Verify the order and remove the ones that aren't in the right position.",
         "verifyValidState": "Verify recovery phrase",
         "submit": "Finalize",
-        "tip": "If you didn’t write it down, you can <url>start with a new phrase</url>"
+        "tip": "If you didn’t write it down, you can <url>start with a new phrase.</url>"
       },
       "complete": {
-        "title": "Welcome to Tally Ho!",
-        "subtitle": "For faster access we recommend pinning Tally Ho to your browser",
+        "title": "Welcome to Taho",
+        "titleExisting": "Account added to Taho!",
+        "subtitle": "For faster access we recommend pinning Taho to your browser",
         "animationAlt": "Pin the wallet"
       }
     },
     "setPassword": {
       "title": "First, let's secure<br /> your wallet",
-      "setAsDefault": "Set Tally Ho as default wallet",
+      "setAsDefault": "Set Taho as default wallet",
       "submit": "Begin the hunt"
     },
-    "supportedChains": "Supported Chains",
     "steps": {
       "create": "Create",
       "save": "Save",
@@ -391,7 +409,7 @@
     },
     "seedVerification": {
       "seedIsInWrongOrder": "Wrong Order",
-      "seedMismatchExplainer": "We are sorry, the recovery phrase you entered did not match.You can try to re-order them, but make sure you have them written down.",
+      "seedMismatchExplainer": "We are sorry, the recovery phrase you entered did not match. You can try to re-order them, but make sure you have them written down.",
       "createNewWallet": "If you prefer you can <1><0>create a new wallet.<0></1>",
       "retryVerification": "Try again",
       "verifySeedPrompt": "Verify recovery phrase",
@@ -428,6 +446,7 @@
     "assets": "Assets",
     "networks": "Networks",
     "nfts": "{{nfts}} in {{collections}} & {{badges}}",
+    "nftsTooltip": "NFTs here are shown based on your filters in the NFT page.",
     "units": {
       "nft": "<strong>1</strong> NFT",
       "nft_other": "<strong>{{count}}</strong> NFTs",
@@ -438,6 +457,7 @@
     },
     "tableHeader": {
       "asset": "Asset",
+      "assets": "Assets",
       "price": "Price",
       "balance": "Balance"
     }
@@ -455,8 +475,8 @@
     "beta": "Mainnet (beta)",
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
-    "compatibleChain": "Ethereum-compatible blockchain (beta)",
-    "avalanche": "Mainnet C-Chain (beta)",
+    "compatibleChain": "Ethereum-compatible blockchain",
+    "avalanche": "Mainnet C-Chain",
     "connected": "Connected"
   },
   "readOnly": "Read-only",
@@ -465,7 +485,7 @@
     "mainMenu": "Settings",
     "signing": "Signing",
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
-    "setAsDefault": "Use Tally Ho as your default wallet",
+    "setAsDefault": "Use Taho as your default wallet",
     "enableTestNetworks": "Enable test networks",
     "language": "Language",
     "bugReport": "Bug report",
@@ -490,26 +510,26 @@
       "title": "Analytics",
       "toggleTitleOn": "Analytics are on",
       "toggleTitleOff": "Analytics are off",
-      "toggleDesc": "Analytics help us understand your needs and empowers us to build a better wallet for you!",
-      "recordTitle": "What we will record",
-      "recordItemOrders": "Number of Swaps / Sends",
-      "recordItemAccounts": "Number of accounts",
-      "recordItemGas": "Gas paid overall",
-      "noRecordTitle": "We will never record",
-      "noRecordItemSeed": "Your seed phrase",
-      "noRecordItemTransactions": "Your address and transactions",
+      "toggleDesc": "Analytics help us understand your needs and empower us to build a better wallet for you",
+      "recordTitle": "Info we collect",
+      "recordItemTrends": "Overall user trends",
+      "recordItemUsage": "Feature usage",
+      "noRecordTitle": "We never collect",
+      "noRecordItemSeed": "Recovery phrase",
+      "noRecordItemInfo": "Personal Information",
+      "noRecordItemBalances": "Addresses, balances, or transactions",
       "policyBtn": "Privacy policy",
       "deleteBtn": "Delete my data",
       "ariaLabel": "Open analytics",
       "analyticsOffSlideUpMenu": {
         "title": "Turn Analytics off?",
-        "desc": "Are you sure you want to turn analytics off? They help us a lot in building a better wallet for you",
+        "desc": "Are you sure you want to turn analytics off?",
         "submitBtn": "Yes, turn off",
-        "snackbar": "Analytics are off, turn back at any time"
+        "snackbar": "Analytics are off, re-enable at any time"
       },
       "deleteSlideUpMenu": {
         "title": "Delete your data?",
-        "desc": "Are you sure you want to delete your data? They help us a lot in building a better wallet for you",
+        "desc": "Are you sure you want to delete your data?",
         "submitBtn": "Yes, delete data",
         "snackbar": "Private data will be removed soon"
       }
@@ -523,8 +543,13 @@
     "customNetworksSettings": {
       "title": "Custom networks",
       "ariaLabel": "Open custom networks page",
+      "subtitleAdded": "Added chains",
+      "subtitleAddMore": "Add more chains",
+      "networksList": {
+        "typeCustom": "Custom network"
+      },
       "chainList": {
-        "description": "Fastest and safest way of adding a custom network is by visiting <link></link>, connecting your wallet and adding the chains you wish to see.",
+        "description": "Fastest and safest way of adding a custom network is by visiting <url></url>, connecting your wallet and adding the chains you wish to see.",
         "addBtn": "Add chains with Chainlist"
       },
       "customRPC": {
@@ -537,7 +562,7 @@
     "balance": "Balance: {{amount}}"
   },
   "shared": {
-    "tallyHo": "Tally Ho",
+    "taho": "Taho",
     "metaMask": "MetaMask",
     "injected": "Injected",
     "cancelBtn": "Cancel",
@@ -616,6 +641,18 @@
       "confirmButtonLabel": "Confirm"
     }
   },
+  "addNewChain": {
+    "subtitle": "Wants to add a main network to Taho",
+    "name": "Name",
+    "chainId": "Chain ID",
+    "currency": "Currency",
+    "rpc": "RPC",
+    "explorer": "BlockExplorer",
+    "submit": "Add network",
+    "cancel": "Reject",
+    "warnAlreadyExistsHeader": "Network already added to Taho wallet.",
+    "warnAlreadyExistsBody": "You can switch to it from Network dropdown"
+  },
   "swap": {
     "title": "Swap Assets",
     "from": "Swap from:",
@@ -628,10 +665,11 @@
     "swapRewardsTeaser": "Swap rewards coming soon",
     "continueSwap": "Continue Swap",
     "exchangeRoute": "Exchange route",
+    "loadingQuote": "Fetching price",
     "rewards": {
       "header": "Swap rewards for community",
       "body": "This week, 240,000 DOGGO tokens will be equally shared as Swap Rewards.",
-      "tooltip": "Tally Ho rewards it's users that use swap every week. A council decides weekly prizes and who is eligible.",
+      "tooltip": "Taho rewards its users that use swap every week. A council decides weekly prizes and who is eligible.",
       "detailButton": "Details"
     },
     "error": {
@@ -650,11 +688,11 @@
   },
   "switchWallet": {
     "title": "Want to use another wallet instead?",
-    "tooltip": "You are seeing this because Tally Ho! is set as default wallet, you can change this option in the main menu.",
+    "tooltip": "You are seeing this because Taho is set as default wallet, you can change this option in the main menu.",
     "confirmSwitchWallet": "Yes, switch wallet",
-    "notDefaultWalletMessage": "Tally Ho not Default",
-    "disableWalletExplainer": "We disabled Tally Ho as the default wallet for you. You can always re-enable it from Menu ☰ at any time.",
-    "useTallyHoAsDefaultPrompt": "Use Tally Ho as default wallet",
+    "notDefaultWalletMessage": "Taho not Default",
+    "disableWalletExplainer": "We disabled Taho as the default wallet for you. You can always re-enable it from Menu ☰ at any time.",
+    "useTahoAsDefaultPrompt": "Use Taho as default wallet",
     "closeButton": "Close window"
   },
   "toggle": {
@@ -667,7 +705,9 @@
     "copyAddressTooltip": "Copy address",
     "addressCopiedMsg": "Address copied to clipboard",
     "protocolList": {
-      "testnetsSectionTitle": "Testnets"
+      "testnetsSectionTitle": "Testnets",
+      "customNetworksSectionTitle": "Custom networks",
+      "networkSettingsBtn": "Add network"
     },
     "connectedDappInfo": {
       "modalClose": "Background close",
@@ -675,15 +715,18 @@
       "dappConnections": "Dapp connections",
       "guideline": {
         "title": "How to connect to dapps",
-        "step1": "Set Tally Ho as default",
+        "step1": "Set Taho as default",
         "step2": "Click “connect to wallet” in a dapp",
         "step3": "Select one similar to these"
-      }
+      },
+      "walletConnectInfo": "You can now connect to any dapp that supports Wallet Connect by selecting Taho from desktop tab. <url>Learn more</url>",
+      "walletConnectHint": "Check the desktop tab in the connection modal"
     }
   },
   "wallet": {
     "activities": {
-      "historicalActivityExplainer": "Tally Ho will populate your historical activity over time; this may take an hour or more for accounts that have been active for a long time. For new accounts, new activity will show up here.",
+      "defaultHistoricalActivityExplainer": "All your new transaction will show up here.",
+      "historicalActivityExplainer": "Taho will populate your historical activity over time; this may take an hour or more for accounts that have been active for a long time. For new accounts, new activity will show up here.",
       "endOfList": "You have reached the end of activity list.",
       "moreHistory": "For more history visit",
       "tokenApproved": "Token approval",
@@ -699,6 +742,15 @@
       "transactionTo": "To:",
       "transactionFrom": "From:",
       "loadingActivities": "Digging deeper..."
+    },
+    "trustedAssets": {
+      "notTrusted": "Asset isn't trusted",
+      "notVerified": "Asset has not been verified yet!",
+      "trustExplainer": "Only transact with assets you trust.",
+      "assetImported": "Asset imported from transaction history",
+      "name": "Name",
+      "contract": "Contract address",
+      "close": "Close"
     },
     "banner": {
       "bannerTitle": "New Odyssey week!",
@@ -731,26 +783,98 @@
       "snackbar": "You can change this in Settings later",
       "isDefault": "is now your default wallet",
       "notDefault": "is not your default wallet",
-      "tooltip": "Setting Tally Ho as your default wallet means that everytime you connect to a dApp, Tally Ho will open instead of MetaMask or other wallets."
+      "tooltip": "Setting Taho as your default wallet means that every time you connect to a dApp, Taho will open instead of MetaMask or other wallets."
     },
     "analyticsNotification": {
-      "title": "Analytics are on",
-      "description": "They help us improve the wallet for you",
+      "title": "Analytics are enabled",
+      "description": "They help us improve the wallet.  You can disable anytime",
       "settingsLink": "Change settings"
     }
   },
   "dAppConnect": {
     "switchWallet": {
-      "title": "Tally Ho not Default",
-      "descFirstPart": "We disabled Tally as default wallet for you. You can always enable it back from Settings",
+      "title": "Taho not Default",
+      "descFirstPart": "We disabled Taho as default wallet for you. You can always enable it back from Settings",
       "descSecondPart": "at any time.",
-      "toggleTitle": "Use Tally Ho as default wallet"
+      "toggleTitle": "Use Taho as default wallet"
+    }
+  },
+  "abilities": {
+    "header": "Portfolio abilities",
+    "emptyState": {
+      "title": "No abilities here",
+      "desc": "Add more accounts to see your abilities or change filters",
+      "addBtn": "Add account"
+    },
+    "banner": {
+      "description": "Daylight tells you when you qualify for an airdrop, mint or unlock.",
+      "seeAbilities": "See your abilities",
+      "open": "Open",
+      "none": "None"
+    },
+    "timeStarting": "Starting in 1 month",
+    "timeCloses": "Closes in 1 month",
+    "viewWebsiteBtn": "Visit website",
+    "markBtn": "Mark as Completed",
+    "snackbar": "Marked as completed",
+    "deleteBtn": "Delete",
+    "deleteSlideUpMenu": {
+      "title": "Delete ability?",
+      "desc": "If you delete an ability you won't be able to see it anymore",
+      "spamPrompt": "Is this ability spam?",
+      "selectSpamReason": "Select reason for reporting",
+      "spamReason": {
+        "spam": "Spam",
+        "inaccurateInfo": "Inaccurate information",
+        "copyright": "Copyright violation",
+        "scam": "Scam",
+        "duplicate": "Duplicate"
+      },
+      "reportSpamBtn": "Yes, report spam",
+      "submitBtn": "Yes, delete",
+      "submitSpamBtn": "Yes, report & delete",
+      "snackbar": "Ability deleted"
+    },
+    "filter": {
+      "title": "Filter Abilities",
+      "tooltip": "Filter",
+      "abilityState": {
+        "open": "Open",
+        "completed": "Completed",
+        "expired": "Expired",
+        "deleted": "Deleted",
+        "all": "All"
+      },
+      "abilityTypeDesc": {
+        "vote": "A proposal that someone can vote on based on a token they hold.",
+        "claim": "On-chain reward that someone can claim that is not a mint or airdrop.",
+        "airdrop": "A ERC-20 token airdrop, usually not promised in advance.",
+        "mint": "A ERC-721 or ERC-11555 token mint.",
+        "access": "A general off-chain token-gated experience, often a group chat.",
+        "product": "An off-chain product, often a discounted or free item available on an ecommerce store.",
+        "event": "An event, often at a conference or a token-gated online experience.",
+        "article": "A blog post or article about a specific token.",
+        "result": "The result of a vote proposal.",
+        "misc": "An ability that does not fall into any of these types."
+      },
+      "abilityStateTitle": "Show",
+      "abilitiesTypesTitle": "Notify me about abilities type",
+      "accountsTitle": "Show/hide accounts",
+      "accountsReadOnlyInfo": "Read-only accounts can’t see abilities. If you can, we recommend you import the address you want to see abilities for.",
+      "noAccounts": "No accounts"
     }
   },
   "globalError": {
     "title": "Ups, nothing to see here",
     "desc": "Looks like you encountered an empty bowl, try refreshing the page to see if something appears",
     "submitBtn": "Refresh page"
+  },
+  "globalModal": {
+    "title": "Hello World. Meet Taho.",
+    "description1": "In 2021, Tally Ho came into the world on a fox hunt. We set our sights on educating the world about the dangers of centralized wallets, and our name was a playful nod to that.",
+    "description2": "But now, our sights are set on a bigger goal. It's time to update our identity.",
+    "description3": "Tally Ho is now Taho.",
+    "button": "Read more"
   },
   "devPanel": {
     "title": "Developer Panel",
@@ -769,11 +893,10 @@
         "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
-        "SUPPORT_AVALANCHE": "Enable Avalanche network",
         "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab",
         "SUPPORT_NFT_SEND": "Enable sending NFTs",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
-        "SUPPORT_BINANCE_SMART_CHAIN": "Enable Binance Smart Chain network",
+        "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs"
       }

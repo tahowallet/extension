@@ -12,6 +12,7 @@ import {
   isValidAlchemyAssetTransferResponse,
   isValidAlchemyTokenBalanceResponse,
   isValidAlchemyTokenMetadataResponse,
+  ValidatedType,
 } from "./validate"
 import type SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import { AddressOnNetwork } from "../accounts"
@@ -44,7 +45,7 @@ export async function getAssetTransfers(
   fromBlock: number,
   toBlock?: number,
   order: "asc" | "desc" = "desc",
-  maxCount = 1000
+  maxCount = 25
 ): Promise<AssetTransfer[]> {
   const { address: account, network } = addressOnNetwork
 
@@ -150,36 +151,59 @@ export async function getAssetTransfers(
  */
 export async function getTokenBalances(
   provider: SerialFallbackProvider,
-  { address, network }: AddressOnNetwork,
-  tokens?: HexString[]
+  addressOnNetwork: AddressOnNetwork
 ): Promise<SmartContractAmount[]> {
-  const uniqueTokens = [...new Set(tokens ?? [])]
+  const fetchAndValidate = async (address: string, pageKey?: string) => {
+    const json: unknown = await provider.send("alchemy_getTokenBalances", [
+      address,
+      "erc20",
+      ...(pageKey ? [{ pageKey }] : []),
+    ])
 
-  const json: unknown = await provider.send("alchemy_getTokenBalances", [
-    address,
-    uniqueTokens.length > 0 ? uniqueTokens : "DEFAULT_TOKENS",
-  ])
+    if (!isValidAlchemyTokenBalanceResponse(json)) {
+      logger.warn(
+        "Alchemy token balance response didn't validate, did the API change?",
+        json,
+        isValidAlchemyTokenBalanceResponse.errors
+      )
+      return null
+    }
 
-  if (!isValidAlchemyTokenBalanceResponse(json)) {
-    logger.warn(
-      "Alchemy token balance response didn't validate, did the API change?",
-      json,
-      isValidAlchemyTokenBalanceResponse.errors
-    )
-    return []
+    return json
   }
+
+  type TokenBalance = ValidatedType<
+    typeof isValidAlchemyTokenBalanceResponse
+  >["tokenBalances"]
+
+  const balances: TokenBalance = []
+
+  type Awaited<P> = P extends Promise<infer V> ? V : P
+
+  let currentPageKey
+  let response: Awaited<ReturnType<typeof fetchAndValidate>>
+
+  do {
+    // eslint-disable-next-line no-await-in-loop
+    response = await fetchAndValidate(addressOnNetwork.address, currentPageKey)
+
+    if (!response) {
+      break
+    }
+
+    balances.push(...response.tokenBalances)
+
+    currentPageKey = response.pageKey
+  } while (currentPageKey)
 
   // TODO log balances with errors, consider returning an error type
   return (
-    json.tokenBalances
+    balances
       .filter(
         (
           b
-        ): b is typeof json["tokenBalances"][0] & {
-          tokenBalance: Exclude<
-            typeof json["tokenBalances"][0]["tokenBalance"],
-            undefined | null
-          >
+        ): b is TokenBalance[0] & {
+          tokenBalance: NonNullable<TokenBalance[0]["tokenBalance"]>
         } =>
           (b.error === null || !("error" in b)) &&
           "tokenBalance" in b &&
@@ -202,7 +226,7 @@ export async function getTokenBalances(
         return {
           smartContract: {
             contractAddress: tokenBalance.contractAddress,
-            homeNetwork: network,
+            homeNetwork: addressOnNetwork.network,
           },
           amount: BigInt(balance),
         }

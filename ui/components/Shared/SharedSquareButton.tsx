@@ -3,7 +3,7 @@ import React, { ReactElement } from "react"
 const SIZE = 32
 const DEFAULT_COLORS: ColorDetails = {
   color: "var(--green-40)",
-  hoverColor: "var(--trophy-gold)",
+  hoverColor: "var(--gold-80)",
 }
 
 type ColorDetails = {
@@ -70,9 +70,9 @@ export default function SharedSquareButton(props: Props): ReactElement {
             mask-repeat: no-repeat;
             mask-position: center;
             mask-size: cover;
-            mask-size: 60%;
-            width: ${size}px;
-            height: ${size}px;
+            width: ${size / 2}px;
+            height: ${size / 2}px;
+            margin: ${size / 4}px;
             background-color: var(--hunter-green);
           }
         `}

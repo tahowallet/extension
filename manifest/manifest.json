@@ -1,9 +1,9 @@
 {
-  "name": "Tally Ho",
-  "version": "0.18.7",
+  "name": "Taho",
+  "version": "0.29.0",
   "description": "The community owned and operated Web3 wallet.",
-  "homepage_url": "https://tally.cash",
-  "author": "https://tally.cash",
+  "homepage_url": "https://taho.xyz",
+  "author": "https://taho.xyz",
   "manifest_version": 2,
   "content_security_policy": "object-src 'self'; script-src 'self';",
   "web_accessible_resources": ["*.js", "*.json"],
@@ -29,7 +29,7 @@
     "128": "icon-128.png"
   },
   "browser_action": {
-    "default_title": "Tally Ho",
+    "default_title": "Taho",
     "default_popup": "popup.html"
   },
   "permissions": ["alarms", "storage", "unlimitedStorage", "activeTab"],

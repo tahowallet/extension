@@ -1,7 +1,7 @@
 {
   "name": "@tallyho/tally-ui",
   "version": "0.0.1",
-  "description": "Tally Ho, the community owned and operated Web3 wallet: UI package.",
+  "description": "Taho, the community owned and operated Web3 wallet: UI package.",
   "main": "index.ts",
   "repository": "git@github.com:thesis/tally-extension.git",
   "author": "Matt Luongo <matt@thesis.co>",

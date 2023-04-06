@@ -12,7 +12,7 @@ export type SharedSlideUpMenuSize =
 
 const SLIDE_TRANSITION_MS = 445
 
-interface Props {
+type Props = {
   isOpen: boolean
   close: (
     e: MouseEvent | TouchEvent | React.MouseEvent<HTMLButtonElement, MouseEvent>
@@ -22,7 +22,10 @@ interface Props {
   size: SharedSlideUpMenuSize
   isFullScreen?: boolean
   isScrollable?: boolean
+  isDark?: boolean
   alwaysRenderChildren?: boolean
+  testid?: string
+  customStyles?: React.CSSProperties & Record<string, string>
 }
 
 const menuHeights: Record<SharedSlideUpMenuSize, string | null> = {
@@ -40,8 +43,11 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
     children,
     customSize,
     isFullScreen,
+    isDark,
     isScrollable,
     alwaysRenderChildren,
+    testid = "slide_up_menu",
+    customStyles = {},
   } = props
 
   const slideUpMenuRef = useRef(null)
@@ -63,10 +69,13 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
       <div className={classNames("overlay", { closed: !isOpen })} />
       <div
         className={classNames("slide_up_menu", {
-          large: size === "large",
+          dark: isDark,
           closed: !isOpen,
         })}
-        style={{ "--menu-height": menuHeight } as CSSProperties}
+        data-testid={testid}
+        style={
+          { "--menu-height": menuHeight, ...customStyles } as CSSProperties
+        }
         ref={isOpen ? slideUpMenuRef : null}
       >
         <div
@@ -126,7 +135,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             visiblity: hidden;
             pointer-events: none;
           }
-          .large {
+          .dark {
             background-color: var(--hunter-green);
           }
           .slide_up_menu.closed {
@@ -139,11 +148,10 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             pointer-events: none;
           }
           .slide_up_close {
-            position: sticky;
+            position: absolute;
             z-index: 2;
-            top: 0px;
+            top: 24px;
             right: 24px;
-            float: right;
           }
           .slide_up_close.hover_content {
             position: absolute;

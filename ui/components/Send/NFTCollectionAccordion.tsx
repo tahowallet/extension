@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react"
 import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
-import { NFT } from "@tallyho/tally-background/nfts"
 import {
   NFTCollectionCached,
   fetchNFTsFromCollection,
+  NFTCached,
 } from "@tallyho/tally-background/redux-slices/nfts_update"
 import { useBackgroundDispatch } from "../../hooks"
 import { scanWebsite } from "../../utils/constants"
@@ -18,7 +18,7 @@ export default function NFTCollectionAccordion({
   onSelectNFT,
 }: {
   collection: NFTCollectionCached
-  onSelectNFT: (nft: NFT) => void
+  onSelectNFT: (nft: NFTCached) => void
 }): JSX.Element {
   const dispatch = useBackgroundDispatch()
   const [isExpanded, setIsExpanded] = useState(false)
@@ -33,7 +33,7 @@ export default function NFTCollectionAccordion({
           collectionID: collection.id,
           account: {
             address: collection.owner,
-            network: NETWORK_BY_CHAIN_ID[collection.network.chainID],
+            network: NETWORK_BY_CHAIN_ID[collection.chainID],
           },
         })
       ).then(() => setIsLoading(false))
@@ -43,7 +43,7 @@ export default function NFTCollectionAccordion({
     isExpanded,
     collection.id,
     collection.owner,
-    collection.network.chainID,
+    collection.chainID,
   ])
 
   return (
@@ -103,7 +103,7 @@ export default function NFTCollectionAccordion({
             const { contract } = collection.nfts[0] ?? {}
 
             const url = `${
-              scanWebsite[collection.network.chainID].url
+              scanWebsite[collection.chainID].url
             }/token/${contract}`
 
             window.open(url, "_blank")?.focus()

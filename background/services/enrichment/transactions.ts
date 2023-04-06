@@ -8,6 +8,7 @@ import {
 import {
   SmartContractFungibleAsset,
   isSmartContractFungibleAsset,
+  AnyAsset,
 } from "../../assets"
 import { enrichAssetAmountWithDecimalValues } from "../../redux-slices/utils/asset-utils"
 
@@ -20,6 +21,7 @@ import {
   TransactionAnnotation,
   PartialTransactionRequestWithFrom,
   EnrichedEVMTransactionRequest,
+  EnrichedAddressOnNetwork,
 } from "./types"
 import {
   getDistinctRecipentAddressesFromERC20Logs,
@@ -28,64 +30,30 @@ import {
 import { enrichAddressOnNetwork } from "./addresses"
 import { OPTIMISM } from "../../constants"
 import { parseLogsForWrappedDepositsAndWithdrawals } from "../../lib/wrappedAsset"
-import { parseERC20Tx, parseLogsForERC20Transfers } from "../../lib/erc20"
+import {
+  ERC20TransferLog,
+  parseERC20Tx,
+  parseLogsForERC20Transfers,
+} from "../../lib/erc20"
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
 import { unsignedTransactionFromEVMTransaction } from "../chain/utils"
 
-async function annotationsFromLogs(
+async function buildSubannotations(
   chainService: ChainService,
-  indexingService: IndexingService,
   nameService: NameService,
-  logs: EVMLog[],
+  relevantTransferLogs: ERC20TransferLog[],
+  assets: AnyAsset[],
+  addressEnrichmentsByAddress: {
+    [k: string]: EnrichedAddressOnNetwork
+  },
   network: EVMNetwork,
   desiredDecimals: number,
   resolvedTime: number,
   block: AnyEVMBlock | undefined
-): Promise<TransactionAnnotation[]> {
-  const assets = indexingService.getCachedAssets(network)
-
-  const accountAddresses = (await chainService.getAccountsToTrack()).map(
-    (account) => account.address
-  )
-
-  const tokenTransferLogs = [
-    ...parseLogsForERC20Transfers(logs),
-    ...parseLogsForWrappedDepositsAndWithdrawals(logs),
-  ]
-
-  const relevantTransferLogs = getERC20LogsForAddresses(
-    tokenTransferLogs,
-    accountAddresses
-  )
-  const relevantAddresses =
-    getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
-      normalizeEVMAddress
-    )
-
-  // Look up transfer log names, then flatten to an address -> name map.
-  const addressEnrichmentsByAddress = Object.fromEntries(
-    (
-      await Promise.allSettled(
-        relevantAddresses.map(
-          async (address) =>
-            [
-              address,
-              await enrichAddressOnNetwork(chainService, nameService, {
-                address,
-                network,
-              }),
-            ] as const
-        )
-      )
-    )
-      .filter(isFulfilledPromise)
-      .map(({ value }) => value)
-      .filter(([, annotation]) => isDefined(annotation))
-  )
-
+) {
   const subannotations = (
     await Promise.allSettled(
-      tokenTransferLogs.map(
+      relevantTransferLogs.map(
         async ({
           contractAddress,
           amount,
@@ -140,6 +108,73 @@ async function annotationsFromLogs(
     .filter(isFulfilledPromise)
     .map(({ value }) => value)
     .filter(isDefined)
+
+  return subannotations
+}
+
+export async function annotationsFromLogs(
+  chainService: ChainService,
+  indexingService: IndexingService,
+  nameService: NameService,
+  logs: EVMLog[],
+  network: EVMNetwork,
+  desiredDecimals: number,
+  resolvedTime: number,
+  block: AnyEVMBlock | undefined
+): Promise<TransactionAnnotation[]> {
+  const assets = indexingService.getCachedAssets(network)
+
+  const accountAddresses = (await chainService.getAccountsToTrack()).map(
+    (account) => account.address
+  )
+
+  const tokenTransferLogs = [
+    ...parseLogsForERC20Transfers(logs),
+    ...parseLogsForWrappedDepositsAndWithdrawals(logs),
+  ]
+
+  const relevantTransferLogs = getERC20LogsForAddresses(
+    tokenTransferLogs,
+    accountAddresses
+  )
+
+  const relevantAddresses =
+    getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
+      normalizeEVMAddress
+    )
+
+  // Look up transfer log names, then flatten to an address -> name map.
+  const addressEnrichmentsByAddress = Object.fromEntries(
+    (
+      await Promise.allSettled(
+        relevantAddresses.map(
+          async (address) =>
+            [
+              address,
+              await enrichAddressOnNetwork(chainService, nameService, {
+                address,
+                network,
+              }),
+            ] as const
+        )
+      )
+    )
+      .filter(isFulfilledPromise)
+      .map(({ value }) => value)
+      .filter(([, annotation]) => isDefined(annotation))
+  )
+
+  const subannotations = await buildSubannotations(
+    chainService,
+    nameService,
+    relevantTransferLogs,
+    assets,
+    addressEnrichmentsByAddress,
+    network,
+    desiredDecimals,
+    resolvedTime,
+    block
+  )
 
   return subannotations
 }
@@ -206,10 +241,17 @@ export default async function resolveTransactionAnnotation(
         (gasLimit ?? 0n) +
       additionalL1Gas
 
+  txAnnotation.warnings ??= []
+
   // If the wallet doesn't have enough base asset to cover gas, push a warning
   if (gasFee + (transaction.value ?? 0n) > baseAssetBalance) {
-    txAnnotation.warnings ??= []
-    txAnnotation.warnings.push("insufficient-funds")
+    if (!txAnnotation.warnings.includes("insufficient-funds")) {
+      txAnnotation.warnings.push("insufficient-funds")
+    }
+  } else {
+    txAnnotation.warnings = txAnnotation.warnings.filter(
+      (warning) => warning !== "insufficient-funds"
+    )
   }
 
   // If the transaction has been mined, get the block and set the timestamp

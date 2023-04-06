@@ -19,8 +19,8 @@ export const BlocknativeNetworkIds = {
 // TODO Ethereum---either top-level or inside the instance.
 
 /**
- * The Blocknative class wraps access to the Blocknative API for the Tally
- * extension backend. It exposes Tally-specific functionality, and manages
+ * The Blocknative class wraps access to the Blocknative API for the Taho
+ * extension backend. It exposes Taho-specific functionality, and manages
  * connection and disconnection from Blocknative based on registered needs and
  * feedback from the Blocknative system to minimize usage when possible.
  */

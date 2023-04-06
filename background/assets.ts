@@ -56,7 +56,7 @@ export type Asset = {
  * asset id in CoinGecko's records.
  */
 export type CoinGeckoAsset = Asset & {
-  metadata: Asset["metadata"] & {
+  metadata?: Asset["metadata"] & {
     coinGeckoID: string
   }
 }
@@ -120,6 +120,7 @@ export type AnyAsset =
   | FiatCurrency
   | FungibleAsset
   | SmartContractFungibleAsset
+  | NetworkBaseAsset
 
 /**
  * An asset that can be swapped with our current providers
@@ -210,6 +211,20 @@ export function isFungibleAssetAmount(
   assetAmount: AnyAssetAmount
 ): assetAmount is FungibleAssetAmount {
   return isFungibleAsset(assetAmount.asset)
+}
+/**
+ * Flips `pair` and `amounts` values in the PricePoint object.
+ *
+ * @param pricePoint
+ * @returns pricePoint with flipped pair and amounts
+ */
+export function flipPricePoint(pricePoint: PricePoint): PricePoint {
+  const { pair, amounts, time } = pricePoint
+  return {
+    pair: [pair[1], pair[0]],
+    amounts: [amounts[1], amounts[0]],
+    time,
+  }
 }
 
 /**

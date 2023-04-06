@@ -1,7 +1,6 @@
 import Dexie from "dexie"
-import { FeatureFlags, isEnabled } from "../../features"
-import type { Ability } from "."
-import { NormalizedEVMAddress } from "../../types"
+import { Ability } from "../../abilities"
+import { HexString, NormalizedEVMAddress } from "../../types"
 
 export class AbilitiesDatabase extends Dexie {
   private abilities!: Dexie.Table<Ability, string>
@@ -9,12 +8,9 @@ export class AbilitiesDatabase extends Dexie {
   constructor() {
     super("tally/abilities")
 
-    // Don't create tables in the public release until the feature flag is off
-    if (isEnabled(FeatureFlags.SUPPORT_ABILITIES)) {
-      this.version(1).stores({
-        abilities: "++id, &[abilityId+address], removedFromUi, completed",
-      })
-    }
+    this.version(1).stores({
+      abilities: "++id, &[abilityId+address], removedFromUi, completed",
+    })
   }
 
   async addNewAbility(ability: Ability): Promise<boolean> {
@@ -25,6 +21,20 @@ export class AbilitiesDatabase extends Dexie {
     )
     if (!existingAbility) {
       await this.abilities.add(ability)
+      return true
+    }
+    const { id, ...correctAbility } = existingAbility as Ability & {
+      id: number
+    }
+    if (JSON.stringify(correctAbility) !== JSON.stringify(ability)) {
+      const updateCompleted =
+        ability.completed === true && existingAbility.completed === false
+
+      await this.abilities.update(existingAbility, {
+        ...ability,
+        completed: updateCompleted ? true : existingAbility.completed,
+        removedFromUi: existingAbility.removedFromUi,
+      })
       return true
     }
     return false
@@ -48,29 +58,39 @@ export class AbilitiesDatabase extends Dexie {
   async markAsCompleted(
     address: NormalizedEVMAddress,
     abilityId: string
-  ): Promise<void> {
+  ): Promise<Ability | undefined> {
     const ability = await this.getAbility(address, abilityId)
-    if (!ability) {
-      throw new Error("Ability does not exist")
+    if (ability) {
+      const updatedAbility = {
+        ...ability,
+        completed: true,
+      }
+      this.abilities.put(updatedAbility)
+      return updatedAbility
     }
-    this.abilities.put({
-      ...ability,
-      completed: true,
-    })
+    return undefined
   }
 
   async markAsRemoved(
     address: NormalizedEVMAddress,
     abilityId: string
-  ): Promise<void> {
+  ): Promise<Ability | undefined> {
     const ability = await this.getAbility(address, abilityId)
-    if (!ability) {
-      throw new Error("Ability does not exist")
+    if (ability) {
+      const updatedAbility = {
+        ...ability,
+        removedFromUi: true,
+      }
+      this.abilities.put(updatedAbility)
+      return updatedAbility
     }
-    this.abilities.put({
-      ...ability,
-      removedFromUi: true,
-    })
+    return undefined
+  }
+
+  async deleteAbilitiesForAccount(address: HexString): Promise<number> {
+    return this.abilities
+      .filter((ability) => ability.address === address)
+      .delete()
   }
 }
 

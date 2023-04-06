@@ -51,10 +51,16 @@ export type NFT = {
   previewURL?: string
   transferDate?: string
   attributes: { trait: string; value: string }[]
+  rarity: {
+    rank?: number
+    score?: number
+    uniqueAttributes?: number
+  }
   contract: string
   owner: string
   network: EVMNetwork
-  isBadge: boolean
+  supply?: number // only for POAPs
+  isBadge: boolean // POAPs, Galxe NFTs and OATs
 }
 
 export type NFTCollection = {
@@ -79,5 +85,9 @@ export type NFTCollection = {
 export type TransferredNFT = {
   id: string
   chainID: string
-  address: string
+  from: string | null
+  to: string | null
+  isKnownFromAddress: boolean
+  isKnownToAddress: boolean
+  collectionID: string | null
 }

@@ -11,6 +11,8 @@ import { keccak256 } from "ethers/lib/utils"
 import { AccountBalance, AddressOnNetwork } from "../accounts"
 import {
   AnyAsset,
+  AnyAssetAmount,
+  flipPricePoint,
   isFungibleAsset,
   PricePoint,
   SmartContractFungibleAsset,
@@ -24,24 +26,34 @@ import {
   POLYGON,
   USD,
 } from "../constants"
+import { DaylightAbility } from "../lib/daylight"
 import {
   AnyEVMTransaction,
   LegacyEVMTransactionRequest,
   AnyEVMBlock,
   BlockPrices,
+  NetworkBaseAsset,
 } from "../networks"
 import {
   AnalyticsService,
   ChainService,
   IndexingService,
+  InternalEthereumProviderService,
   KeyringService,
   LedgerService,
   NameService,
   PreferenceService,
+  ProviderBridgeService,
   SigningService,
 } from "../services"
-import { QueuedTxToRetrieve } from "../services/chain"
-import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
+import AbilitiesService from "../services/abilities"
+import {
+  PriorityQueuedTxToRetrieve,
+  QueuedTxToRetrieve,
+} from "../services/chain"
+
+// We don't want the chain service to use a real provider in tests
+jest.mock("../services/chain/serial-fallback-provider")
 
 const createRandom0xHash = () =>
   keccak256(Buffer.from(Math.random().toString()))
@@ -105,16 +117,28 @@ type CreateSigningServiceOverrides = {
   chainService?: Promise<ChainService>
 }
 
+type CreateAbilitiesServiceOverrides = {
+  ledgerService?: Promise<LedgerService>
+  chainService?: Promise<ChainService>
+}
+
+type CreateProviderBridgeServiceOverrides = {
+  internalEthereumProviderService?: Promise<InternalEthereumProviderService>
+  preferenceService?: Promise<PreferenceService>
+}
+
+type CreateInternalEthereumProviderServiceOverrides = {
+  chainService?: Promise<ChainService>
+  preferenceService?: Promise<PreferenceService>
+}
+
 export async function createAnalyticsService(overrides?: {
   chainService?: Promise<ChainService>
   preferenceService?: Promise<PreferenceService>
 }): Promise<AnalyticsService> {
   const preferenceService =
     overrides?.preferenceService ?? createPreferenceService()
-  return AnalyticsService.create(
-    overrides?.chainService ?? createChainService({ preferenceService }),
-    preferenceService
-  )
+  return AnalyticsService.create(preferenceService)
 }
 
 export const createSigningService = async (
@@ -124,6 +148,36 @@ export const createSigningService = async (
     overrides.keyringService ?? createKeyringService(),
     overrides.ledgerService ?? createLedgerService(),
     overrides.chainService ?? createChainService()
+  )
+}
+
+export const createAbilitiesService = async (
+  overrides: CreateAbilitiesServiceOverrides = {}
+): Promise<AbilitiesService> => {
+  return AbilitiesService.create(
+    overrides.chainService ?? createChainService(),
+    overrides.ledgerService ?? createLedgerService()
+  )
+}
+
+export const createInternalEthereumProviderService = async (
+  overrides: CreateInternalEthereumProviderServiceOverrides = {}
+): Promise<InternalEthereumProviderService> => {
+  return InternalEthereumProviderService.create(
+    overrides.chainService ?? createChainService(),
+    overrides.preferenceService ?? createPreferenceService()
+  )
+}
+
+export const createProviderBridgeService = async (
+  overrides: CreateProviderBridgeServiceOverrides = {}
+): Promise<ProviderBridgeService> => {
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+  return ProviderBridgeService.create(
+    overrides.internalEthereumProviderService ??
+      createInternalEthereumProviderService({ preferenceService }),
+    preferenceService
   )
 }
 
@@ -216,7 +270,7 @@ export const createAccountBalance = (
 export const createAddressOnNetwork = (
   overrides: Partial<AddressOnNetwork> = {}
 ): AddressOnNetwork => ({
-  address: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+  address: createRandom0xHash(),
   network: ETHEREUM,
   ...overrides,
 })
@@ -250,12 +304,15 @@ export const createQueuedTransaction = (
 
 export const createTransactionsToRetrieve = (
   numberOfTx = 100
-): QueuedTxToRetrieve[] => {
+): PriorityQueuedTxToRetrieve[] => {
   const NETWORKS = [ETHEREUM, POLYGON, ARBITRUM_ONE, AVALANCHE, OPTIMISM]
 
-  return [...Array(numberOfTx).keys()].map((_, ind) =>
-    createQueuedTransaction({ network: NETWORKS[ind % NETWORKS.length] })
-  )
+  return [...Array(numberOfTx).keys()].map((_, ind) => ({
+    transaction: createQueuedTransaction({
+      network: NETWORKS[ind % NETWORKS.length],
+    }),
+    priority: 0,
+  }))
 }
 
 export const createTransactionResponse = (
@@ -307,43 +364,20 @@ export const makeEthersFeeData = (overrides?: Partial<FeeData>): FeeData => {
   }
 }
 
-export const makeSerialFallbackProvider =
-  (): Partial<SerialFallbackProvider> => {
-    class MockSerialFallbackProvider {
-      async getBlock() {
-        return makeEthersBlock()
-      }
+const getRandomStr = (length: number) => {
+  let result = ""
 
-      async getBlockNumber() {
-        return 1
-      }
-
-      async getBalance() {
-        return BigNumber.from(100)
-      }
-
-      async getFeeData() {
-        return makeEthersFeeData()
-      }
-    }
-
-    return new MockSerialFallbackProvider()
+  while (result.length < length) {
+    result += Math.random().toString(36).slice(2)
   }
+
+  return result.slice(0, length)
+}
 
 export const createSmartContractAsset = (
   overrides: Partial<SmartContractFungibleAsset> = {}
 ): SmartContractFungibleAsset => {
-  const getRandomStr = (length: number) => {
-    let result = ""
-
-    while (result.length < length) {
-      result += Math.random().toString(36).slice(2)
-    }
-
-    return result.slice(0, length)
-  }
-
-  const symbol = getRandomStr(3)
+  const symbol = overrides.symbol ?? getRandomStr(3)
   const asset = {
     metadata: {
       logoURL:
@@ -369,6 +403,70 @@ export const createSmartContractAsset = (
   }
 }
 
+export const createNetworkBaseAsset = (
+  overrides: Partial<NetworkBaseAsset> = {}
+): NetworkBaseAsset => {
+  const symbol = getRandomStr(3)
+  const asset: NetworkBaseAsset = {
+    metadata: {
+      coinGeckoID: "ethereum",
+      logoURL: "http://example.com/foo.png",
+      tokenLists: [],
+    },
+    name: `${symbol} Network`,
+    symbol,
+    decimals: 18,
+    coinType: 60,
+    chainID: "1",
+    contractAddress: createRandom0xHash(),
+  }
+
+  return {
+    ...asset,
+    ...overrides,
+  }
+}
+
+export const createAssetAmount = (
+  asset: AnyAsset = ETH,
+  amount = 1
+): AnyAssetAmount => {
+  return {
+    asset,
+    amount: BigInt(Math.trunc(1e10 * amount)) * 10n ** 8n,
+  }
+}
+
+export const createDaylightAbility = (
+  overrides: Partial<DaylightAbility> = {}
+): DaylightAbility => ({
+  type: "mint",
+  title: "Test ability!",
+  description: "Test description",
+  imageUrl: "./images/test.png",
+  openAt: null,
+  closeAt: null,
+  isClosed: false,
+  createdAt: "2023-02-20T17:24:25.000Z",
+  chain: "ethereum",
+  sourceId: "",
+  uid: getRandomStr(5),
+  slug: getRandomStr(5),
+  requirements: [
+    {
+      type: "onAllowlist",
+      chain: "ethereum",
+      addresses: ["0x208e94d5661a73360d9387d3ca169e5c130090cd"],
+    },
+  ],
+  action: {
+    linkUrl: "",
+    completedBy: [],
+  },
+  walletCompleted: false,
+  ...overrides,
+})
+
 /**
  * @param asset Any type of asset
  * @param price Price, e.g. 1.5 => 1.5$
@@ -383,15 +481,12 @@ export const createPricePoint = (
 
   const pricePoint: PricePoint = {
     pair: [asset, USD],
-    amounts: [10n ** BigInt(decimals), BigInt(Math.trunc(1e11 * price))],
+    amounts: [10n ** BigInt(decimals), BigInt(Math.trunc(1e10 * price))],
     time: Math.trunc(Date.now() / 1e3),
   }
 
-  if (flip) {
-    const { pair, amounts } = pricePoint
-    pricePoint.pair = [pair[1], pair[0]]
-    pricePoint.amounts = [amounts[1], amounts[0]]
-  }
-
-  return pricePoint
+  return flip ? flipPricePoint(pricePoint) : pricePoint
 }
+
+export const createArrayWith0xHash = (length: number): string[] =>
+  Array.from({ length }).map(() => createRandom0xHash())

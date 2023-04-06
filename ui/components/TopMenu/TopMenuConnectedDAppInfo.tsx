@@ -1,7 +1,10 @@
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
-import React, { ReactElement } from "react"
-import { useTranslation } from "react-i18next"
+import React, { ReactElement, useState } from "react"
+import { Trans, useTranslation } from "react-i18next"
 import SharedAccordion from "../Shared/SharedAccordion"
+import SharedLink from "../Shared/SharedLink"
+import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import { WalletDefaultToggle } from "../Wallet/WalletToggleDefaultBanner"
 
 function ConnectionDAppGuideline({
@@ -10,47 +13,97 @@ function ConnectionDAppGuideline({
   isConnected: boolean
 }): ReactElement {
   const { t } = useTranslation("translation", {
-    keyPrefix: "topMenu.connectedDappInfo.guideline",
+    keyPrefix: "topMenu.connectedDappInfo",
   })
+  const showWalletConnectInfo = isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT)
   const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
+  const [currentPanel, setCurrentPanel] = useState(
+    showWalletConnectInfo ? 0 : 1
+  )
 
   return (
     <>
       <SharedAccordion
-        contentHeight={231}
+        contentHeight={showWalletConnectInfo ? 298 : 242}
         style={{
-          width: 288,
-          padding: 16,
+          width: 320,
           borderRadius: 8,
           marginTop: 8,
           background: "var(--green-120)",
+          "--panel-switcher-border": "var(--green-80)",
+          "--header-padding": "16px",
+          "--content-fade-in-duration": "200ms",
         }}
         isInitiallyOpen={!isConnected}
-        headerElement={<span className="title">{t("title")}</span>}
+        headerElement={<div className="title">{t("guideline.title")}</div>}
         contentElement={
           <div className="content_wrap">
-            <ol className="steps">
-              <li>
-                <span className="wallet_toggle_wrap">
-                  {t("step1")}
-                  <WalletDefaultToggle />
-                </span>
-              </li>
-              <li>{t("step2")}</li>
-              <li>{t("step3")}</li>
-            </ol>
-            <div className="list_wrap">
-              <span className="item">
-                <img src="./images/tally_token.svg" alt="Tally token" />
-                {tShared("tallyHo")}
-              </span>
-              <span className="item">
-                <img src="./images/icons/s/arrow-right.svg" alt="Arrow right" />
-                {tShared("injected")}
-              </span>
-              <span className="item">
-                <span className="fox">🦊</span> {tShared("metaMask")}
-              </span>
+            {showWalletConnectInfo && (
+              <SharedPanelSwitcher
+                panelNames={["Wallet Connect", "Injected Wallet"]}
+                panelNumber={currentPanel}
+                setPanelNumber={setCurrentPanel}
+              />
+            )}
+            <div className="panel_wrap">
+              {currentPanel === 0 && (
+                // Wallet connect guidelines
+                <div className="wallet_connect_info">
+                  <div className="learn_more">
+                    <img
+                      height="52"
+                      alt="Taho - Wallet Connect"
+                      src="/images/tally_wc.png"
+                    />
+                    <p>
+                      <Trans
+                        t={t}
+                        i18nKey="walletConnectInfo"
+                        components={{
+                          url: <SharedLink url="#" />,
+                        }}
+                      />
+                    </p>
+                  </div>
+                  <img
+                    width="100%"
+                    alt={t("walletConnectHint")}
+                    src="/images/wallet_connect_guideline.png"
+                  />
+                </div>
+              )}
+
+              {currentPanel === 1 && (
+                // Injected wallet guidelines
+                <>
+                  <ol className="steps">
+                    <li>
+                      <span className="wallet_toggle_wrap">
+                        {t("guideline.step1")}
+                        <WalletDefaultToggle />
+                      </span>
+                    </li>
+                    <li>{t("guideline.step2")}</li>
+                    <li>{t("guideline.step3")}</li>
+                  </ol>
+                  <div className="list_wrap">
+                    <span className="item">
+                      <img src="./images/tally_token.svg" alt="Taho token" />
+                      {tShared("taho")}
+                    </span>
+                    <span className="item">
+                      <img
+                        src="./images/icons/s/arrow-right.svg"
+                        alt="Arrow right"
+                      />
+                      {tShared("injected")}
+                    </span>
+                    <span className="item">
+                      <span className="fox">🦊</span> {tShared("metaMask")}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         }
@@ -67,6 +120,23 @@ function ConnectionDAppGuideline({
           flex-direction: column;
           justify-content: space-between;
         }
+        .panel_wrap {
+          padding: ${showWalletConnectInfo ? "16px 8px" : "0 8px 16px"};
+        }
+        .wallet_connect_info p {
+          margin: 0;
+          font-size: 16px;
+          color: var(--green-40);
+          font-family: Segment;
+          font-weight: 500;
+          line-height: 24px;
+          letter-spacing: 0em;
+        }
+        .wallet_connect_info .learn_more {
+          display: flex;
+          gap: 16px;
+        }
+
         .wallet_toggle_wrap {
           display: flex;
           align-items: center;
@@ -100,7 +170,7 @@ function ConnectionDAppGuideline({
           align-items: center;
           justify-content: space-between;
         }
-        img {
+        .item img {
           width: 16px;
         }
         .fox {
@@ -139,6 +209,7 @@ export default function TopMenuConnectedDAppInfo(props: {
   })
   const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
   const { title, url, close, faviconUrl, disconnect, isConnected } = props
+
   return (
     <div className="bg">
       <div className="window">
@@ -191,7 +262,7 @@ export default function TopMenuConnectedDAppInfo(props: {
         }
         .window {
           width: 352px;
-          max-height: 433px;
+          max-height: 90%;
           box-shadow: 0 10px 12px rgba(0, 20, 19, 0.34),
             0 14px 16px rgba(0, 20, 19, 0.24), 0 24px 24px rgba(0, 20, 19, 0.14);
           border-radius: 8px;

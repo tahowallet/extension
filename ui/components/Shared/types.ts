@@ -57,6 +57,7 @@ interface PropsWithSmallIcon {
     | "notif-wrong"
     | "notification"
     | "receive"
+    | "refresh"
     | "send"
     | "settings"
     | "swap"

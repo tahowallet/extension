@@ -23,7 +23,7 @@ const impersonateMetamaskWhitelist = [
   "traderjoexyz.com",
   "transferto.xyz",
   "opensea.io",
-  "staking.polygon.technology",
+  "polygon.technology",
   "gmx.io",
   "app.lyra.finance",
   "matcha.xyz",
@@ -56,6 +56,9 @@ const impersonateMetamaskWhitelist = [
   "mint.xencrypto.io",
   "bscscan.com",
   "alchemy.com",
+  "cow.fi",
+  "tally.xyz",
+  "kyberswap.com",
 ]
 
 const METAMASK_STATE_MOCK = {
@@ -99,7 +102,7 @@ export default class TallyWindowProvider extends EventEmitter {
   _state?: typeof METAMASK_STATE_MOCK
 
   providerInfo = {
-    label: "Tally Ho!",
+    label: "Taho",
     injectedNamespace: "tally",
     iconURL: "TODO",
     identityFlag: "isTally",
@@ -214,7 +217,7 @@ export default class TallyWindowProvider extends EventEmitter {
       reject(result)
     }
 
-    // let's emmit connected on the first successful response from background
+    // let's emit connected on the first successful response from background
     if (!this.connected) {
       this.connected = true
       this.emit("connect", { chainId: this.chainId })

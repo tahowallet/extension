@@ -3,7 +3,7 @@ import logger from "./logger"
 import { ETHEREUM } from "../constants"
 import { NFT, NFTCollection, NFTsWithPagesResponse } from "../nfts"
 
-export const POAP_CONTRACT = "poap_contract"
+export const POAP_CONTRACT = "0x22C1f6050E56d2876009903609a2cC3fEf83B415" // POAP contract address https://etherscan.io/address/0x22C1f6050E56d2876009903609a2cC3fEf83B415
 export const POAP_COLLECTION_ID = "POAP"
 
 type PoapNFTModel = {
@@ -39,6 +39,7 @@ function poapNFTModelToNFT(original: PoapNFTModel, owner: string): NFT {
       country,
       city,
       year,
+      supply,
     },
   } = original
   return {
@@ -58,7 +59,9 @@ function poapNFTModelToNFT(original: PoapNFTModel, owner: string): NFT {
     contract: POAP_CONTRACT, // contract address doesn't make sense for POAPs
     owner,
     network: ETHEREUM,
+    supply,
     isBadge: true,
+    rarity: {}, // no rarity rankings for POAPs
   }
 }
 
@@ -107,6 +110,6 @@ export async function getPoapCollections(
     hasBadges: true,
     network: ETHEREUM,
     floorPrice: undefined, // POAPs don't have floor prices
-    thumbnailURL: "https://poap.xyz/POAP.f74a7300.svg",
+    thumbnailURL: "images/poap_logo.svg",
   }
 }

@@ -6,94 +6,35 @@ import {
   BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
+  isBuiltInNetwork,
   OPTIMISM,
   POLYGON,
   ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectShowTestNetworks } from "@tallyho/tally-background/redux-slices/ui"
+import { selectProductionEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import { useTranslation } from "react-i18next"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import classNames from "classnames"
 import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
+import TopMenuProtocolListFooter from "./TopMenuProtocolListFooter"
 import { i18n } from "../../_locales/i18n"
 
-export const productionNetworks = [
-  {
-    network: ETHEREUM,
-    info: i18n.t("protocol.mainnet"),
-  },
-  {
-    network: POLYGON,
-    info: i18n.t("protocol.l2"),
-  },
-  {
-    network: OPTIMISM,
-    info: i18n.t("protocol.l2"),
-  },
-  {
-    network: ARBITRUM_ONE,
-    info: i18n.t("protocol.l2"),
-    isDisabled: false,
-  },
-  ...(isEnabled(FeatureFlags.SUPPORT_RSK)
-    ? [
-        {
-          network: ROOTSTOCK,
-          info: i18n.t("protocol.beta"),
-        },
-      ]
-    : []),
-  ...(isEnabled(FeatureFlags.SUPPORT_AVALANCHE)
-    ? [
-        {
-          network: AVALANCHE,
-          info: i18n.t("protocol.avalanche"),
-        },
-      ]
-    : [
-        {
-          network: AVALANCHE,
-          info: i18n.t("comingSoon"),
-          isDisabled: true,
-        },
-      ]),
-  ...(isEnabled(FeatureFlags.SUPPORT_BINANCE_SMART_CHAIN)
-    ? [
-        {
-          network: BINANCE_SMART_CHAIN,
-          info: i18n.t("protocol.compatibleChain"),
-        },
-      ]
-    : [
-        {
-          network: BINANCE_SMART_CHAIN,
-          info: i18n.t("comingSoon"),
-          isDisabled: true,
-        },
-      ]),
-  ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA)
-    ? [
-        {
-          network: ARBITRUM_NOVA,
-          info: i18n.t("protocol.mainnet"),
-        },
-      ]
-    : [
-        {
-          network: ARBITRUM_NOVA,
-          info: i18n.t("comingSoon"),
-          isDisabled: true,
-        },
-      ]),
-  // {
-  //   name: "Celo",
-  //   info: "Global payments infrastructure",
-  //   width: 24,
-  //   height: 24,
-  // },
-]
+const productionNetworkInfo = {
+  [ETHEREUM.chainID]: i18n.t("protocol.mainnet"),
+  [POLYGON.chainID]: i18n.t("protocol.l2"),
+  [OPTIMISM.chainID]: i18n.t("protocol.l2"),
+  [ARBITRUM_ONE.chainID]: i18n.t("protocol.l2"),
+  [ROOTSTOCK.chainID]: i18n.t("protocol.beta"),
+  [AVALANCHE.chainID]: i18n.t("protocol.avalanche"),
+  [BINANCE_SMART_CHAIN.chainID]: i18n.t("protocol.compatibleChain"),
+  [ARBITRUM_NOVA.chainID]: i18n.t("comingSoon"),
+}
+
+const disabledChainIDs = [ARBITRUM_NOVA.chainID]
 
 const testNetworks = [
   {
@@ -103,7 +44,7 @@ const testNetworks = [
   },
 ]
 
-interface TopMenuProtocolListProps {
+type TopMenuProtocolListProps = {
   onProtocolChange: () => void
 }
 
@@ -113,57 +54,107 @@ export default function TopMenuProtocolList({
   const { t } = useTranslation()
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
+  const productionNetworks = useBackgroundSelector(selectProductionEVMNetworks)
+
+  const customNetworksEnabled = isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)
+  const builtinNetworks = productionNetworks.filter(isBuiltInNetwork)
+  const customNetworks = productionNetworks.filter(
+    (network) => !isBuiltInNetwork(network)
+  )
 
   return (
-    <div className="standard_width_padded center_horizontal">
-      <ul>
-        {productionNetworks.map((info) => (
-          <TopMenuProtocolListItem
-            isSelected={sameNetwork(currentNetwork, info.network)}
-            key={info.network.name}
-            network={info.network}
-            info={info.info}
-            onSelect={onProtocolChange}
-            isDisabled={info.isDisabled ?? false}
-          />
-        ))}
-        {showTestNetworks && testNetworks.length > 0 && (
-          <>
-            <li className="protocol_divider">
-              <div className="divider_label">
-                {t("topMenu.protocolList.testnetsSectionTitle")}
-              </div>
-              <div className="divider_line" />
-            </li>
-            {testNetworks.map((info) => (
-              <TopMenuProtocolListItem
-                isSelected={sameNetwork(currentNetwork, info.network)}
-                key={info.network.name}
-                network={info.network}
-                info={info.info}
-                onSelect={onProtocolChange}
-                isDisabled={info.isDisabled ?? false}
-              />
-            ))}
-          </>
-        )}
-      </ul>
+    <div className="container">
+      <div className={classNames(customNetworksEnabled && "networks_list")}>
+        <ul className="standard_width center_horizontal">
+          {builtinNetworks.map((network) => (
+            <TopMenuProtocolListItem
+              isSelected={sameNetwork(currentNetwork, network)}
+              key={network.name}
+              network={network}
+              info={
+                productionNetworkInfo[network.chainID] ||
+                t("protocol.compatibleChain")
+              }
+              onSelect={onProtocolChange}
+              isDisabled={disabledChainIDs.includes(network.chainID)}
+            />
+          ))}
+          {isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) &&
+            customNetworks.length > 0 && (
+              <>
+                <li className="protocol_divider">
+                  <div className="divider_label">
+                    {t("topMenu.protocolList.customNetworksSectionTitle")}
+                  </div>
+                  <div className="divider_line" />
+                </li>
+                {customNetworks.map((network) => (
+                  <TopMenuProtocolListItem
+                    isSelected={sameNetwork(currentNetwork, network)}
+                    key={network.name}
+                    network={network}
+                    info={t("protocol.compatibleChain")}
+                    onSelect={onProtocolChange}
+                  />
+                ))}
+              </>
+            )}
+          {showTestNetworks && testNetworks.length > 0 && (
+            <>
+              <li className="protocol_divider">
+                <div className="divider_label">
+                  {t("topMenu.protocolList.testnetsSectionTitle")}
+                </div>
+                <div className="divider_line" />
+              </li>
+              {testNetworks.map((info) => (
+                <TopMenuProtocolListItem
+                  isSelected={sameNetwork(currentNetwork, info.network)}
+                  key={info.network.name}
+                  network={info.network}
+                  info={info.info}
+                  onSelect={onProtocolChange}
+                  isDisabled={info.isDisabled ?? false}
+                />
+              ))}
+            </>
+          )}
+        </ul>
+        {customNetworksEnabled && <TopMenuProtocolListFooter />}
+      </div>
       <style jsx>
         {`
+          .container {
+            overflow-y: auto;
+          }
+
+          .networks_list {
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 512px;
+          }
+
+          ul {
+            display: flex;
+            padding: 0 24px;
+            flex-direction: column;
+          }
+
           .protocol_divider {
             display: flex;
-            align-items: center;
+            margin-top: 8px;
             margin-bottom: 16px;
-            margin-top: 32px;
+            gap: 15px;
+            position: relative;
           }
           .divider_line {
-            width: 286px;
-            border-bottom-color: var(--green-120);
-            border-bottom-style: solid;
-            border-bottom-width: 1px;
-            margin-left: 19px;
-            position: absolute;
-            right: 0px;
+            flex-grow: 1;
+            align-self: center;
+            background: var(--green-120);
+            height: 1px;
+            margin-top: 1px;
           }
           .divider_label {
             color: var(--green-40);
