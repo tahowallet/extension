@@ -1,8 +1,6 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import classNames from "classnames"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 
@@ -34,87 +32,62 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
   }
 
   return (
-    <table
-      className={classNames(
-        "assets_table standard_width",
-        isEnabled(FeatureFlags.SUPPORT_NFT_TAB) && "nft-update"
-      )}
-    >
-      <thead>
-        <tr>
-          <th>
-            {isEnabled(FeatureFlags.SUPPORT_NFT_TAB)
-              ? `${t("overview.tableHeader.assets")} (${assets.length})`
-              : t("overview.tableHeader.asset")}
-          </th>
-          <th>{t("overview.tableHeader.price")}</th>
-          <th>{t("overview.tableHeader.balance")}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {assets.sort(assetSortCompare).map((asset) => (
-          <tr key={asset.asset.metadata?.coinGeckoID || asset.asset.symbol}>
-            <td>
-              <div className="asset_descriptor">
-                <SharedAssetIcon
-                  size="small"
-                  logoURL={asset?.asset?.metadata?.logoURL}
-                  symbol={asset?.asset?.symbol}
-                />
-                <span className="asset_name">{asset.asset.symbol}</span>
-              </div>
-            </td>
-            <td>
-              {asset.localizedUnitPrice ? (
-                <div>
-                  <span className="lighter_color">$</span>
-                  {asset.localizedUnitPrice}
-                </div>
-              ) : (
-                <div className="loading_wrap">
-                  {initializationLoadingTimeExpired ? (
-                    <></>
-                  ) : (
-                    <SharedLoadingSpinner size="small" />
-                  )}
-                </div>
-              )}
-            </td>
-            <td>
-              {asset.localizedMainCurrencyAmount && (
-                <div>
-                  <span className="lighter_color">$</span>
-                  {asset.localizedMainCurrencyAmount}
-                </div>
-              )}
-              <div className="balance_token_amount">
-                {asset.localizedDecimalAmount}
-              </div>
-            </td>
+    <div>
+      <span>{`${t("overview.tableHeader.asset")} (${assets.length})`}</span>
+      <table className="assets_table standard_width">
+        <thead>
+          <tr>
+            <th>{t("overview.tableHeader.assets")}</th>
+            <th>{t("overview.tableHeader.price")}</th>
+            <th>{t("overview.tableHeader.balance")}</th>
           </tr>
-        ))}
-      </tbody>
-      <style jsx>{`
+        </thead>
+        <tbody>
+          {assets.sort(assetSortCompare).map((asset) => (
+            <tr key={asset.asset.metadata?.coinGeckoID || asset.asset.symbol}>
+              <td>
+                <div className="asset_descriptor">
+                  <SharedAssetIcon
+                    size="small"
+                    logoURL={asset?.asset?.metadata?.logoURL}
+                    symbol={asset?.asset?.symbol}
+                  />
+                  <span className="asset_name">{asset.asset.symbol}</span>
+                </div>
+              </td>
+              <td>
+                {asset.localizedUnitPrice ? (
+                  <div>${asset.localizedUnitPrice}</div>
+                ) : (
+                  <div className="loading_wrap">
+                    {initializationLoadingTimeExpired ? (
+                      <></>
+                    ) : (
+                      <SharedLoadingSpinner size="small" />
+                    )}
+                  </div>
+                )}
+              </td>
+              <td>
+                {asset.localizedMainCurrencyAmount && (
+                  <div>${asset.localizedMainCurrencyAmount}</div>
+                )}
+                <div className="balance_token_amount">
+                  {asset.localizedDecimalAmount}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <style jsx>{`
         .assets_table {
-          margin: 8px 0;
+          margin: 20px 0;
         }
         tr {
           height: 55px;
         }
         thead tr {
           height 32px;
-        }
-
-        .assets_table.nft-update{
-          margin: 0;
-        }
-
-        .assets_table.nft-update thead th:first-child{
-          font-family: 'Segment';
-          font-weight: 400;
-          font-size: 16px;
-          line-height: 24px;
-          color: var(--white);
         }
 
         td,
@@ -167,6 +140,7 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
           justify-content: flex-end;
         }
       `}</style>
-    </table>
+      </table>
+    </div>
   )
 }
