@@ -137,8 +137,19 @@ export default function ShowPrivateKey({
             >
               {tShared("close")}
             </SharedButton>
-            {/* TODO: add link to "Read more" */}
-            <SharedButton size="medium" type="tertiary" iconSmall="new-tab">
+            <SharedButton
+              size="medium"
+              type="tertiary"
+              iconSmall="new-tab"
+              onClick={() => {
+                window
+                  .open(
+                    "https://tahowallet.notion.site/Recovery-Phrases-Private-Keys-31274e1abd2e4055aa63dae5297828b3",
+                    "_blank"
+                  )
+                  ?.focus()
+              }}
+            >
               {tShared("readMore")}
             </SharedButton>
           </div>
