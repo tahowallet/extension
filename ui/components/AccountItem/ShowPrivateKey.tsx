@@ -1,7 +1,10 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import { exportPrivateKey } from "@tallyho/tally-background/redux-slices/keyrings"
+import {
+  exportPrivateKey,
+  lockKeyrings,
+} from "@tallyho/tally-background/redux-slices/keyrings"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
 import SharedWarningMessage from "../Shared/SharedWarningMessage"
@@ -9,8 +12,9 @@ import SharedButton from "../Shared/SharedButton"
 import SharedCheckbox from "../Shared/SharedCheckbox"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import SharedSecretText from "../Shared/SharedSecretText"
-import { useBackgroundDispatch } from "../../hooks"
+import { useAreKeyringsUnlocked, useBackgroundDispatch } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import KeyringUnlock from "../Keyring/KeyringUnlock"
 
 interface ShowPrivateKeyProps {
   account: AccountTotal
@@ -24,6 +28,7 @@ export default function ShowPrivateKey({
   })
   const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
   const dispatch = useBackgroundDispatch()
+  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
 
   const [privateKey, setPrivateKey] = useState("")
   const [showPrivateKey, setShowPrivateKey] = useState(false)
@@ -46,64 +51,84 @@ export default function ShowPrivateKey({
     fetchPrivateKey()
   }, [dispatch, account.address])
 
+  useEffect(() => {
+    const lockWallet = async () => dispatch(lockKeyrings())
+    lockWallet()
+  }, [dispatch])
+
   return (
     <>
       <SharedSlideUpMenuPanel header={t("header")} icon="icons/s/key.svg">
-        <div className="content simple_text">
-          <SharedWarningMessage text={t("warningMessage")} />
-          <div className="exporting_container">
-            <span className="header">{t("exportingPrivateKey.header")}</span>
-            <div className="account_container">
-              <SharedAccountItemSummary accountTotal={account} />
-            </div>
-            {showPrivateKey ? (
+        <div className="container simple_text">
+          <div className="content">
+            {areKeyringsUnlocked ? (
               <>
-                <SharedSecretText text={privateKey} label={t("privateKey")} />
-                <SharedButton
-                  type="tertiary"
-                  size="small"
-                  iconMedium="copy"
-                  onClick={() => {
-                    navigator.clipboard.writeText(privateKey)
-                    dispatch(
-                      setSnackbarMessage(t("exportingPrivateKey.copySuccess"))
-                    )
-                  }}
-                  center
-                >
-                  {t("exportingPrivateKey.copyBtn")}
-                </SharedButton>
+                <SharedWarningMessage text={t("warningMessage")} />
+                <div className="exporting_container">
+                  <span className="header">
+                    {t("exportingPrivateKey.header")}
+                  </span>
+                  <div className="account_container">
+                    <SharedAccountItemSummary accountTotal={account} />
+                  </div>
+                  {showPrivateKey ? (
+                    <>
+                      <SharedSecretText
+                        text={privateKey}
+                        label={t("privateKey")}
+                      />
+                      <SharedButton
+                        type="tertiary"
+                        size="small"
+                        iconMedium="copy"
+                        onClick={() => {
+                          navigator.clipboard.writeText(privateKey)
+                          dispatch(
+                            setSnackbarMessage(
+                              t("exportingPrivateKey.copySuccess")
+                            )
+                          )
+                        }}
+                        center
+                      >
+                        {t("exportingPrivateKey.copyBtn")}
+                      </SharedButton>
+                    </>
+                  ) : (
+                    <div className="confirmation_container">
+                      <SharedCheckbox
+                        label={t("exportingPrivateKey.confirmationDesc")}
+                        message={t("exportingPrivateKey.invalidMessage")}
+                        value={isConfirmed}
+                        invalid={showInvalidMessage && !isConfirmed}
+                        onChange={(value) => {
+                          setIsConfirmed(value)
+                          setShowInvalidMessage(false)
+                        }}
+                      />
+                      <div>
+                        <SharedButton
+                          type="primary"
+                          size="medium"
+                          isDisabled={!isConfirmed}
+                          hideEvents={false}
+                          onClick={() => {
+                            if (isConfirmed) {
+                              setShowPrivateKey(true)
+                            } else {
+                              setShowInvalidMessage(true)
+                            }
+                          }}
+                        >
+                          {t("exportingPrivateKey.showBtn")}
+                        </SharedButton>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
-              <div className="confirmation_container">
-                <SharedCheckbox
-                  label={t("exportingPrivateKey.confirmationDesc")}
-                  message={t("exportingPrivateKey.invalidMessage")}
-                  value={isConfirmed}
-                  invalid={showInvalidMessage && !isConfirmed}
-                  onChange={(value) => {
-                    setIsConfirmed(value)
-                    setShowInvalidMessage(false)
-                  }}
-                />
-                <div>
-                  <SharedButton
-                    type="primary"
-                    size="medium"
-                    isDisabled={!isConfirmed}
-                    hideEvents={false}
-                    onClick={() => {
-                      if (isConfirmed) {
-                        setShowPrivateKey(true)
-                      } else {
-                        setShowInvalidMessage(true)
-                      }
-                    }}
-                  >
-                    {t("exportingPrivateKey.showBtn")}
-                  </SharedButton>
-                </div>
-              </div>
+              <KeyringUnlock displayCancelButton={false} />
             )}
           </div>
           <SharedButton
@@ -146,12 +171,20 @@ export default function ShowPrivateKey({
       </SharedSlideUpMenu>
       <style jsx>
         {`
-          .content {
+          .container {
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: space-between;
+            height: 91%;
+            padding: 0 24px 24px;
+          }
+          .content {
+            box-sizing: border-box;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
             gap: 16px;
-            padding: 0 24px;
           }
           .account_container {
             display: flex;
