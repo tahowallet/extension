@@ -21,6 +21,7 @@
         "exportingPrivateKey": {
           "header": "Exporting Private Key for:",
           "confirmationDesc": "I understand that other Private Keys, Recovery Phrases, Ledger or  Read-only accounts will not be saved with this recovery phrase.",
+          "invalidMessage": "Check the above box to confirm",
           "showBtn": "Show Private Key"
         }
       }

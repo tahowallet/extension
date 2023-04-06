@@ -19,6 +19,8 @@ export default function ShowPrivateKey({
   })
   const [showPrivateKey, setShowPrivateKey] = useState(false)
   const [isConfirmed, setIsConfirmed] = useState(false)
+  // When the user clicks the disabled button should see a message about the selection of the checkbox
+  const [showInvalidMessage, setShowInvalidMessage] = useState(false)
 
   return (
     <>
@@ -35,18 +37,29 @@ export default function ShowPrivateKey({
               <div>Copy Private key to clipboard</div>
             ) : (
               <div className="confirmation_container">
-                {/* TODO Fix issue with Checkbox */}
                 <SharedCheckbox
                   label={t("exportingPrivateKey.confirmationDesc")}
+                  message={t("exportingPrivateKey.invalidMessage")}
                   value={isConfirmed}
-                  onChange={(value) => setIsConfirmed(value)}
+                  invalid={showInvalidMessage && !isConfirmed}
+                  onChange={(value) => {
+                    setIsConfirmed(value)
+                    setShowInvalidMessage(false)
+                  }}
                 />
                 <div>
                   <SharedButton
                     type="primary"
                     size="medium"
                     isDisabled={!isConfirmed}
-                    onClick={() => setShowPrivateKey(true)}
+                    hideEvents={false}
+                    onClick={() => {
+                      if (isConfirmed) {
+                        setShowPrivateKey(true)
+                      } else {
+                        setShowInvalidMessage(true)
+                      }
+                    }}
                   >
                     {t("exportingPrivateKey.showBtn")}
                   </SharedButton>
@@ -75,7 +88,7 @@ export default function ShowPrivateKey({
           .exporting_container {
             box-sizing: border-box;
             width: 100%;
-            height: 334px;
+            height: 342px;
             padding: 16px 24px 24px;
             background: var(--green-120);
             border-radius: 8px;

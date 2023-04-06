@@ -27,6 +27,7 @@ export type Props = {
   iconPosition?: "left" | "right"
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
   isDisabled?: boolean
+  hideEvents?: boolean
   linkTo?: History.LocationDescriptor<unknown>
   showLoadingOnClick?: boolean
   isLoading?: boolean
@@ -45,6 +46,7 @@ export default function SharedButton(
     size,
     onClick,
     isDisabled = false,
+    hideEvents = true,
     iconSmall,
     iconMedium,
     iconPosition = "right",
@@ -94,6 +96,7 @@ export default function SharedButton(
         { secondary: type === "secondary" },
         { primaryGreen: type === "primaryGreen" },
         { disabled: isDisabled },
+        { hidden_events: isDisabled && hideEvents },
         { tertiary: type === "tertiary" },
         { "tertiary white": type === "tertiaryWhite" },
         { "tertiary gray": type === "tertiaryGray" },
@@ -220,7 +223,6 @@ export default function SharedButton(
             background-color: var(--green-60);
             border-color: var(--green-60);
             color: var(--green-80);
-            pointer-events: none;
           }
           .disabled .icon_button {
             background-color: var(--green-80);
@@ -238,6 +240,9 @@ export default function SharedButton(
           }
           .disabled:active .icon_button {
             background-color: var(--green-80);
+          }
+          .hidden_events {
+            pointer-events: none;
           }
           .tertiary {
             color: var(--trophy-gold);
