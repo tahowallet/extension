@@ -12,6 +12,7 @@ import SharedSecretText from "../Shared/SharedSecretText"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
 import SharedWarningMessage from "../Shared/SharedWarningMessage"
+import Explainer from "./Explainer"
 
 type ShowMnemonicProps = { accounts: AccountTotal[] }
 
@@ -21,7 +22,6 @@ export default function ShowMnemonic({
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem.showMnemonic",
   })
-  const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
   const dispatch = useBackgroundDispatch()
 
   const [mnemonic, setMnemonic] = useState("")
@@ -125,40 +125,10 @@ export default function ShowMnemonic({
         isOpen={showExplainer}
         close={() => setShowExplainer(false)}
       >
-        <div className="explainer">
-          <h3 className="simple_text explainer_header">
-            {t("explainer.header")}
-          </h3>
-          {/* TODO: Explainer text is WIP */}
-          <p className="simple_text">{t("explainer.text1")}</p>
-          <p className="simple_text bold">{t("explainer.text2")}</p>
-          <p className="simple_text">{t("explainer.text3")}</p>
-          <div className="explainer_buttons">
-            <SharedButton
-              size="medium"
-              type="tertiary"
-              iconSmall="close"
-              onClick={() => setShowExplainer(false)}
-            >
-              {tShared("close")}
-            </SharedButton>
-            <SharedButton
-              size="medium"
-              type="tertiary"
-              iconSmall="new-tab"
-              onClick={() => {
-                window
-                  .open(
-                    "https://tahowallet.notion.site/Recovery-Phrases-Private-Keys-31274e1abd2e4055aa63dae5297828b3",
-                    "_blank"
-                  )
-                  ?.focus()
-              }}
-            >
-              {tShared("readMore")}
-            </SharedButton>
-          </div>
-        </div>
+        <Explainer
+          translation="showMnemonic"
+          close={() => setShowExplainer(false)}
+        />
       </SharedSlideUpMenu>
       <style jsx>{`
         .content {

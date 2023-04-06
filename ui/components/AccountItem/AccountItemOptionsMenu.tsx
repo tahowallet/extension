@@ -8,7 +8,7 @@ import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import AccountItemEditName from "./AccountItemEditName"
 import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
-import ShowPrivateKey from "./ShowPrivateKey"
+import ShowPrivateKey from "../AccountsBackup/ShowPrivateKey"
 
 type AccountItemOptionsMenuProps = {
   accountTotal: AccountTotal

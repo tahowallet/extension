@@ -15,6 +15,7 @@ import SharedSecretText from "../Shared/SharedSecretText"
 import { useAreKeyringsUnlocked, useBackgroundDispatch } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import KeyringUnlock from "../Keyring/KeyringUnlock"
+import Explainer from "./Explainer"
 
 interface ShowPrivateKeyProps {
   account: AccountTotal
@@ -26,7 +27,6 @@ export default function ShowPrivateKey({
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem.showPrivateKey",
   })
-  const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
   const dispatch = useBackgroundDispatch()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
 
@@ -145,40 +145,10 @@ export default function ShowPrivateKey({
         isOpen={showExplainer}
         close={() => setShowExplainer(false)}
       >
-        <div className="explainer">
-          <h3 className="simple_text explainer_header">
-            {t("explainer.header")}
-          </h3>
-          {/* TODO: Explainer text is WIP */}
-          <p className="simple_text">{t("explainer.text1")}</p>
-          <p className="simple_text bold">{t("explainer.text2")}</p>
-          <p className="simple_text">{t("explainer.text3")}</p>
-          <div className="explainer_buttons">
-            <SharedButton
-              size="medium"
-              type="tertiary"
-              iconSmall="close"
-              onClick={() => setShowExplainer(false)}
-            >
-              {tShared("close")}
-            </SharedButton>
-            <SharedButton
-              size="medium"
-              type="tertiary"
-              iconSmall="new-tab"
-              onClick={() => {
-                window
-                  .open(
-                    "https://tahowallet.notion.site/Recovery-Phrases-Private-Keys-31274e1abd2e4055aa63dae5297828b3",
-                    "_blank"
-                  )
-                  ?.focus()
-              }}
-            >
-              {tShared("readMore")}
-            </SharedButton>
-          </div>
-        </div>
+        <Explainer
+          translation="showPrivateKey"
+          close={() => setShowExplainer(false)}
+        />
       </SharedSlideUpMenu>
       <style jsx>
         {`
@@ -219,22 +189,6 @@ export default function ShowPrivateKey({
             flex-direction: column;
             justify-content: space-between;
             margin-top: 16px;
-          }
-          .explainer {
-            font-family: "Segment";
-            padding: 0 24px 5px;
-            margin-top: -20px;
-          }
-          .explainer_header {
-            color: var(--white);
-          }
-          .bold {
-            font-weight: 600;
-            color: var(--white);
-          }
-          .explainer_buttons {
-            display: flex;
-            justify-content: space-between;
           }
         `}
       </style>

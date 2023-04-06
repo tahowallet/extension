@@ -44,7 +44,7 @@ import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import EditSectionForm from "./EditSectionForm"
 import SigningButton from "./SigningButton"
-import ShowMnemonic from "./ShowMnemonic"
+import ShowMnemonic from "../AccountsBackup/ShowMnemonic"
 
 type WalletTypeInfo = {
   title: string
