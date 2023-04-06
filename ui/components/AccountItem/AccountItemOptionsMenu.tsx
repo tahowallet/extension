@@ -96,8 +96,6 @@ export default function AccountItemOptionsMenu({
         </div>
       </SharedSlideUpMenu>
       <SharedSlideUpMenu
-        testid="eloo"
-        size="large"
         isOpen={showPrivateKeyMenu}
         close={(e) => {
           e?.stopPropagation()

@@ -62,10 +62,6 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
 
   const menuHeight = menuHeights[size] ?? customSize ?? menuHeights.medium
 
-  // if (testid === "eloo") {
-  //   console.log("menuHeight ", menuHeight)
-  // }
-
   return (
     <>
       <div className={classNames("overlay", { closed: !isOpen })} />
@@ -75,8 +71,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           closed: !isOpen,
         })}
         data-testid={testid}
-        // style={{ "--menu-height": menuHeight } as CSSProperties}
-        style={{ height: menuHeight } as CSSProperties}
+        style={{ "--menu-height": menuHeight } as CSSProperties}
         ref={isOpen ? slideUpMenuRef : null}
       >
         <div
@@ -101,6 +96,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
         {`
           .slide_up_menu {
             width: 100%;
+            height: var(--menu-height);
             overflow-x: hidden;
             overflow-y: ${isScrollable ? "auto" : "hidden"};
             border-radius: ${isFullScreen ? "0" : "16px 16px 0 0"};
