@@ -18,11 +18,28 @@
         "header": "Show Private Key",
         "warningMessage": "Anybody that has your Private Key can move your assets.",
         "privateKeyInfo": "What is a Private Key?",
+        "privateKey":"Private key",
         "exportingPrivateKey": {
           "header": "Exporting Private Key for:",
           "confirmationDesc": "I understand that other Private Keys, Recovery Phrases, Ledger or  Read-only accounts will not be saved with this recovery phrase.",
           "invalidMessage": "Check the above box to confirm",
-          "showBtn": "Show Private Key"
+          "showBtn": "Show Private Key",
+          "copyBtn": "Copy Private key to clipboard",
+          "copySuccess": "Copied!"
+        },
+        "explainer": {
+          "header": "What is a private key",
+          "text1": "You need a recovery phrase in case you loose access to your computer, wallet or you forget your password.",
+          "text2": "Recovery phrase is the only way to regain access to your funds stored on those addresses.",
+          "text3": "Taho has the option to import or create multiple recovery phrases. If you have multiple, make sure that you have safely save and store them all."
+        }
+      },
+      "showMnemonic": {
+        "explainer": {
+          "header": "Why do i need a recovery phrase?",
+          "text1": "You need a recovery phrase in case you loose access to your computer, wallet or you forget your password.",
+          "text2": "Recovery phrase is the only way to regain access to your funds stored on those addresses.",
+          "text3": "Taho has the option to import or create multiple recovery phrases. If you have multiple, make sure that you have safely save and store them all."
         }
       }
     },
@@ -604,9 +621,11 @@
     "showPasswordHint": "Show Password",
     "hidePasswordHint": "Hide Password",
     "close": "Close",
+    "readMore": "Read more",
     "accountItemSummary": {
       "connectedStatus": "Connected"
     },
+    "mouseOverToShow": "Mouse over to show",
     "selectToken": "Select token",
     "backButtonText": "Back",
     "saveBtn": "Save",
