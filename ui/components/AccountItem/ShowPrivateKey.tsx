@@ -176,7 +176,7 @@ export default function ShowPrivateKey({
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            height: 90%;
+            height: 91%;
             padding: 0 24px 24px;
           }
           .content {
