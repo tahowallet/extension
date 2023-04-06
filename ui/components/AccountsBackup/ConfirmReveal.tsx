@@ -49,7 +49,7 @@ export default function ConfirmReveal({
       </div>
       <style jsx>{`
         .confirmation_container {
-          height: 100%;
+          height: 175px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;

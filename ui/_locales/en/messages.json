@@ -43,7 +43,9 @@
           "invalidMessage": "Check the above box to confirm",
           "showBtn": "Show recovery phrase",
           "copyBtn": "Copy phrase to clipboard",
-          "copySuccess": "Copied!"
+          "copySuccess": "Copied!",
+          "address": "address",
+          "addresses": "addresses"
         },
         "explainer": {
           "header": "Why do i need a recovery phrase?",

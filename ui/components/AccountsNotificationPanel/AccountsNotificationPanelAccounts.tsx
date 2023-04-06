@@ -243,7 +243,7 @@ function WalletTypeHeader({
           setShowExportMnemonicMenu(false)
         }}
       >
-        <ShowMnemonic accounts={accountTotals} />
+        <ShowMnemonic accounts={accountTotals} walletTitle={sectionTitle} />
       </SharedSlideUpMenu>
       <style jsx>{`
         .wallet_title {

@@ -52,6 +52,7 @@ export default function RevealMnemonic({
       <style jsx>{`
         .mnemonic_container {
           display: flex;
+          height: 370px;
         }
       `}</style>
     </>
