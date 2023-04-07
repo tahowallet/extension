@@ -1,10 +1,13 @@
+import classNames from "classnames"
 import React, { CSSProperties, ReactElement, ReactNode } from "react"
+import SharedIcon from "./SharedIcon"
 
 type Props = {
   header: string
   icon?: string
   style?: CSSProperties
   children?: ReactNode
+  type?: "normal" | "small"
 }
 
 export default function SharedSlideUpMenuPanel({
@@ -12,17 +15,22 @@ export default function SharedSlideUpMenuPanel({
   icon,
   style,
   children,
+  type = "normal",
 }: Props): ReactElement {
   return (
     <div>
-      <div className="header_wrap">
+      <div
+        className={classNames("header_wrap", {
+          small: type === "small",
+        })}
+      >
         {icon && (
-          <img
-            width="16"
-            height="16"
-            className="icon"
-            src={`./images/${icon}`}
-            alt={header}
+          <SharedIcon
+            width={16}
+            height={16}
+            icon={icon}
+            customStyles="margin-right: 5px;"
+            color="var(--white)"
           />
         )}
         <h3 style={style}>{header}</h3>
@@ -45,8 +53,10 @@ export default function SharedSlideUpMenuPanel({
           padding-left: 24px;
           padding-bottom: 16px;
         }
-        .icon {
-          margin-right: 5px;
+        .header_wrap.small h3 {
+          font-size: 16px;
+          line-height: 24px;
+          font-weight: 500;
         }
       `}</style>
     </div>

@@ -51,7 +51,7 @@ export default function Explainer({ translation, close }: Props): ReactElement {
       <style jsx>{`
         .explainer {
           font-family: "Segment";
-          padding: 0 24px 5px;
+          padding: 0 24px 10px;
           margin-top: -20px;
         }
         .explainer_header {

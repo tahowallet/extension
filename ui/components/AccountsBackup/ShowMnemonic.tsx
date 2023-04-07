@@ -37,7 +37,11 @@ export default function ShowMnemonic({
 
   return (
     <>
-      <SharedSlideUpMenuPanel header={t("header")} icon="icons/s/lock.svg">
+      <SharedSlideUpMenuPanel
+        header={t("header")}
+        icon="icons/s/lock-bold.svg"
+        type="small"
+      >
         <div className="container simple_text">
           <div className="content">
             {areKeyringsUnlocked ? (

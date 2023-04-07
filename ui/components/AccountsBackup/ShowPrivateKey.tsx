@@ -34,7 +34,11 @@ export default function ShowPrivateKey({
 
   return (
     <>
-      <SharedSlideUpMenuPanel header={t("header")} icon="icons/s/key.svg">
+      <SharedSlideUpMenuPanel
+        header={t("header")}
+        icon="icons/s/key.svg"
+        type="small"
+      >
         <div className="container simple_text">
           <div className="content">
             {areKeyringsUnlocked ? (

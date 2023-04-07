@@ -228,7 +228,7 @@ function WalletTypeHeader({
                 ? {
                     key: "showMnemonic",
                     onClick: () => setShowExportMnemonicMenu(true),
-                    icon: "icons/s/lock.svg",
+                    icon: "icons/s/lock-bold.svg",
                     label: t("accounts.accountItem.showMnemonic.header"),
                   }
                 : undefined,
