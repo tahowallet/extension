@@ -17,10 +17,14 @@ import SharedAssetIcon from "../../components/Shared/SharedAssetIcon"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
 import SharedInput from "../../components/Shared/SharedInput"
+import SharedLink from "../../components/Shared/SharedLink"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 import SharedTooltip from "../../components/Shared/SharedTooltip"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { useSetState } from "../../hooks/react-hooks"
+
+const HELPDESK_CUSTOM_TOKENS_LINK =
+  "https://tahowallet.notion.site/Adding-Custom-Tokens-2facd9b82b5f4685a7d4766caeb05a4c"
 
 const PlaceholderIcon = () => (
   <div>
@@ -167,9 +171,11 @@ export default function SettingsAddCustomAsset(): ReactElement {
                 t={t}
                 i18nKey="input.tooltip"
                 components={{
-                  // FIXME: use correct link
                   url: (
-                    <a href="https://taho.xyz" rel="noopener noreferrer">
+                    <a
+                      href={HELPDESK_CUSTOM_TOKENS_LINK}
+                      rel="noopener noreferrer"
+                    >
                       Help Center
                     </a>
                   ),
@@ -251,7 +257,13 @@ export default function SettingsAddCustomAsset(): ReactElement {
           color: var(--green-40);
         }
       `}</style>
-      <footer>{t("footer.hint")}</footer>
+      <footer>
+        <SharedLink
+          text={t("footer.hint")}
+          url={HELPDESK_CUSTOM_TOKENS_LINK}
+          styles={{ "--link-color": "var(--green-40)" }}
+        />
+      </footer>
       <style jsx>{`
         form {
           all: unset;
@@ -321,7 +333,6 @@ export default function SettingsAddCustomAsset(): ReactElement {
           font-weight: 500;
           font-size: 16px;
           line-height: 24px;
-          color: var(--green-40);
         }
 
         .content {
