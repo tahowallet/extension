@@ -6,6 +6,34 @@ import { useBackgroundDispatch } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSecretText from "../Shared/SharedSecretText"
 
+function MnemonicList(props: {
+  mnemonic: string
+  startIndex: number
+  endIndex?: number
+}): ReactElement {
+  const { mnemonic, startIndex, endIndex } = props
+  if (!mnemonic.length) return <></>
+
+  const splitedMnemonic = mnemonic.split(" ").slice(startIndex, endIndex)
+
+  return (
+    <div className="mnemonic_list">
+      {splitedMnemonic.map((word, index) => (
+        <div key={`${word}}`}>
+          {startIndex + index + 1} - {word}
+        </div>
+      ))}
+      <style jsx>{`
+        .mnemonic_list {
+          display: flex;
+          flex-direction: column;
+          text-align: left;
+        }
+      `}</style>
+    </div>
+  )
+}
+
 export default function RevealMnemonic({
   address,
 }: {
@@ -34,8 +62,16 @@ export default function RevealMnemonic({
   return (
     <>
       <div className="mnemonic_container">
-        <SharedSecretText text={mnemonic} width="50%" />
-        <SharedSecretText text={mnemonic} width="50%" />
+        <SharedSecretText
+          text={
+            <MnemonicList mnemonic={mnemonic} startIndex={0} endIndex={12} />
+          }
+          width="50%"
+        />
+        <SharedSecretText
+          text={<MnemonicList mnemonic={mnemonic} startIndex={12} />}
+          width="50%"
+        />
       </div>
       <SharedButton
         type="tertiary"
