@@ -40,7 +40,7 @@ export default function Wallet(): ReactElement {
   const claimState = useBackgroundSelector((state) => state.claim)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const showHiddenAssets = useBackgroundSelector(selectShowHiddenAssets)
-  const stateOfUntrustedAssets = showHiddenAssets
+  const stateOfHiddenAssets = showHiddenAssets
     ? t("wallet.stateOfHiddenAssets1")
     : t("wallet.stateOfHiddenAssets2")
 
@@ -133,7 +133,7 @@ export default function Wallet(): ReactElement {
                         }
                       >
                         {t("wallet.hiddenAssets", {
-                          stateOfUntrustedAssets,
+                          stateOfHiddenAssets,
                           amount: hiddenAssetAmounts.length,
                         })}
                       </SharedButton>
