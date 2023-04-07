@@ -10,7 +10,11 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
-import { selectShowAnalyticsNotification } from "@tallyho/tally-background/redux-slices/ui"
+import {
+  selectShowAnalyticsNotification,
+  selectShowHiddenAssets,
+  toggleShowHiddenAssets,
+} from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -23,6 +27,7 @@ import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultB
 import WalletBanner from "../components/Wallet/Banner/WalletBanner"
 import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
 import NFTListCurrentWallet from "../components/NFTS_update/NFTListCurrentWallet"
+import SharedButton from "../components/Shared/SharedButton"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation()
@@ -34,6 +39,10 @@ export default function Wallet(): ReactElement {
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
   const claimState = useBackgroundSelector((state) => state.claim)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const showHiddenAssets = useBackgroundSelector(selectShowHiddenAssets)
+  const stateOfUntrustedAssets = showHiddenAssets
+    ? t("wallet.stateOfHiddenAssets1")
+    : t("wallet.stateOfHiddenAssets2")
 
   useEffect(() => {
     dispatch(
@@ -50,10 +59,12 @@ export default function Wallet(): ReactElement {
     }
   }, [selectedNetwork.chainID])
 
-  const { assetAmounts, totalMainCurrencyValue } = accountData ?? {
-    assetAmounts: [],
-    totalMainCurrencyValue: undefined,
-  }
+  const { assetAmounts, hiddenAssetAmounts, totalMainCurrencyValue } =
+    accountData ?? {
+      assetAmounts: [],
+      hiddenAssetAmounts: [],
+      totalMainCurrencyValue: undefined,
+    }
 
   const currentAccountActivities = useBackgroundSelector(
     selectCurrentAccountActivities
@@ -104,12 +115,40 @@ export default function Wallet(): ReactElement {
             })}
           >
             {panelNumber === 0 && (
-              <WalletAssetList
-                assetAmounts={assetAmounts}
-                initializationLoadingTimeExpired={
-                  initializationLoadingTimeExpired
-                }
-              />
+              <>
+                <WalletAssetList
+                  assetAmounts={assetAmounts}
+                  initializationLoadingTimeExpired={
+                    initializationLoadingTimeExpired
+                  }
+                />
+                {hiddenAssetAmounts.length > 0 && (
+                  <>
+                    <div className="hidden_assets_button">
+                      <SharedButton
+                        type="tertiaryGray"
+                        size="small"
+                        onClick={() =>
+                          dispatch(toggleShowHiddenAssets(!showHiddenAssets))
+                        }
+                      >
+                        {t("wallet.hiddenAssets", {
+                          stateOfUntrustedAssets,
+                          amount: hiddenAssetAmounts.length,
+                        })}
+                      </SharedButton>
+                    </div>
+                    {showHiddenAssets && (
+                      <WalletAssetList
+                        assetAmounts={hiddenAssetAmounts}
+                        initializationLoadingTimeExpired={
+                          initializationLoadingTimeExpired
+                        }
+                      />
+                    )}
+                  </>
+                )}
+              </>
             )}
             {panelNumber === 1 &&
               NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) &&
@@ -164,6 +203,12 @@ export default function Wallet(): ReactElement {
           }
           .no_padding {
             padding-top: 0;
+          }
+          .hidden_assets_button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 24px 0;
           }
         `}
       </style>

@@ -779,6 +779,9 @@
       "NFTs": "NFTs",
       "activity": "Activity"
     },
+    "stateOfHiddenAssets1": "Show",
+    "stateOfHiddenAssets2": "Hide",
+    "hiddenAssets": "{{stateOfHiddenAssets}} hidden assets ({{amount}})",
     "defaultToggle": {
       "snackbar": "You can change this in Settings later",
       "isDefault": "is now your default wallet",
