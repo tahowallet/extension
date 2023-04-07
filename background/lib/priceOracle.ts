@@ -121,12 +121,12 @@ export async function getUSDPriceForBaseAsset(
     SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCDecimals
   )
   const denominator = ethers.BigNumber.from(10).pow(network.baseAsset.decimals)
-  const ETHperUSDC = denominator
+  const BaseAssetPerUSD = denominator
     // Convert to cents
     .mul(100)
     .div(ethers.BigNumber.from(rate).mul(numerator).div(denominator))
 
-  const USDPriceOfBaseAsset = Number(ETHperUSDC) / 100
+  const USDPriceOfBaseAsset = Number(BaseAssetPerUSD) / 100
 
   return toUSDPricePoint(network.baseAsset, USDPriceOfBaseAsset)
 }
@@ -143,6 +143,8 @@ export async function getUSDPriceForTokens(
     MULTICALL_ABI,
     provider
   )
+
+  console.log(network.name, assets.map((a) => a.symbol).join(", "))
 
   const response = (await multicall.callStatic.tryBlockAndAggregate(
     // false === don't require all calls to succeed
@@ -163,6 +165,8 @@ export async function getUSDPriceForTokens(
   const pricePoints: {
     [contractAddress: string]: UnitPricePoint<FungibleAsset>
   } = {}
+
+  console.log(network.name, response.returnData)
 
   response.returnData.forEach((data, i) => {
     if (assets[i].symbol === "USDC") {
@@ -205,5 +209,7 @@ export async function getUSDPriceForTokens(
       time: Date.now(),
     }
   })
+
+  console.log(network.name, pricePoints)
   return pricePoints
 }
