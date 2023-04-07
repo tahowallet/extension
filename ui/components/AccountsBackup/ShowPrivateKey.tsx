@@ -2,6 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { lockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
+import { clearSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
 import SharedWarningMessage from "../Shared/SharedWarningMessage"
 import SharedButton from "../Shared/SharedButton"
@@ -28,7 +29,11 @@ export default function ShowPrivateKey({
   const [showExplainer, setShowExplainer] = useState(false)
 
   useEffect(() => {
-    const lockWallet = async () => dispatch(lockKeyrings())
+    const lockWallet = async () => {
+      await dispatch(lockKeyrings())
+      // No need to show that signing got locked
+      dispatch(clearSnackbarMessage())
+    }
     lockWallet()
   }, [dispatch])
 
@@ -108,11 +113,11 @@ export default function ShowPrivateKey({
             width: 100%;
             border-bottom: 1px solid #183736;
             padding: 8px 0 24px;
+            margin-bottom: 20px;
           }
           .exporting_container {
             box-sizing: border-box;
             width: 100%;
-            height: 342px;
             padding: 16px 24px 24px;
             background: var(--green-120);
             border-radius: 8px;

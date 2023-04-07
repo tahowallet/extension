@@ -1,5 +1,6 @@
 import { lockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import { clearSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useAreKeyringsUnlocked, useBackgroundDispatch } from "../../hooks"
@@ -31,7 +32,11 @@ export default function ShowMnemonic({
   const [showExplainer, setShowExplainer] = useState(false)
 
   useEffect(() => {
-    const lockWallet = async () => dispatch(lockKeyrings())
+    const lockWallet = async () => {
+      await dispatch(lockKeyrings())
+      // No need to show that signing got locked
+      dispatch(clearSnackbarMessage())
+    }
     lockWallet()
   }, [dispatch])
 
