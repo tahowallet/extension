@@ -76,7 +76,8 @@ export default function TopMenuProfileButton(props: {
               showKeyring={
                 isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
                 (accountType === AccountType.Imported ||
-                  accountType === AccountType.Internal)
+                  accountType === AccountType.Internal ||
+                  accountType === AccountType.PrivateKey)
               }
             />
           </>

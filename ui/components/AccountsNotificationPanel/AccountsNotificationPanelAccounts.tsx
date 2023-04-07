@@ -389,7 +389,8 @@ export default function AccountsNotificationPanelAccounts({
                 </p>
                 {isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
                   (accountType === AccountType.Imported ||
-                    accountType === AccountType.Internal) && (
+                    accountType === AccountType.Internal ||
+                    accountType === AccountType.PrivateKey) && (
                     <SigningButton
                       onCurrentAddressChange={onCurrentAddressChange}
                     />
