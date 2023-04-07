@@ -237,6 +237,8 @@ function WalletTypeHeader({
         )}
       </header>
       <SharedSlideUpMenu
+        size="custom"
+        customSize="580px"
         isOpen={showExportMnemonicMenu}
         close={(e) => {
           e?.stopPropagation()
@@ -532,6 +534,7 @@ export default function AccountsNotificationPanelAccounts({
             align-items: center;
             padding: 0px 12px;
             box-sizing: border-box;
+            z-index: 11;
           }
           .switcher_wrap {
             height: 432px;

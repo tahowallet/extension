@@ -33,19 +33,28 @@ export default function RevealPrivateKey({
 
   return (
     <>
-      <SharedSecretText text={privateKey} label={t("privateKey")} />
-      <SharedButton
-        type="tertiary"
-        size="small"
-        iconMedium="copy"
-        onClick={() => {
-          navigator.clipboard.writeText(privateKey)
-          dispatch(setSnackbarMessage(t("exportingPrivateKey.copySuccess")))
-        }}
-        center
-      >
-        {t("exportingPrivateKey.copyBtn")}
-      </SharedButton>
+      <div className="key_container">
+        <SharedSecretText text={privateKey} label={t("privateKey")} />
+        <SharedButton
+          type="tertiary"
+          size="small"
+          iconMedium="copy"
+          onClick={() => {
+            navigator.clipboard.writeText(privateKey)
+            dispatch(setSnackbarMessage(t("exportingPrivateKey.copySuccess")))
+          }}
+          center
+        >
+          {t("exportingPrivateKey.copyBtn")}
+        </SharedButton>
+      </div>
+      <style jsx>{`
+        .key_container {
+          display: flex;
+          flex-direction: column;
+          height: 191px;
+        }
+      `}</style>
     </>
   )
 }

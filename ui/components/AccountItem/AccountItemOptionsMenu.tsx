@@ -97,6 +97,8 @@ export default function AccountItemOptionsMenu({
       </SharedSlideUpMenu>
       <SharedSlideUpMenu
         isOpen={showPrivateKeyMenu}
+        size="custom"
+        customSize="580px"
         close={(e) => {
           e?.stopPropagation()
           setShowPrivateKeyMenu(false)
