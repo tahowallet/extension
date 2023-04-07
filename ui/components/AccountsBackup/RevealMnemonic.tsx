@@ -59,17 +59,23 @@ export default function RevealMnemonic({
     fetchMnemonic()
   }, [dispatch, address])
 
+  const splitIndex = mnemonic.split(" ").length === 12 ? 6 : 12
+
   return (
     <>
       <div className="mnemonic_container">
         <SharedSecretText
           text={
-            <MnemonicList mnemonic={mnemonic} startIndex={0} endIndex={12} />
+            <MnemonicList
+              mnemonic={mnemonic}
+              startIndex={0}
+              endIndex={splitIndex}
+            />
           }
           width="50%"
         />
         <SharedSecretText
-          text={<MnemonicList mnemonic={mnemonic} startIndex={12} />}
+          text={<MnemonicList mnemonic={mnemonic} startIndex={splitIndex} />}
           width="50%"
         />
       </div>
