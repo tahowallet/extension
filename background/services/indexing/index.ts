@@ -11,15 +11,23 @@ import {
   SmartContractFungibleAsset,
 } from "../../assets"
 import {
+  ARBITRUM_ONE,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
   BUILT_IN_NETWORK_BASE_ASSETS,
+  ETHEREUM,
   FIAT_CURRENCIES,
   HOUR,
   MINUTE,
   NETWORK_BY_CHAIN_ID,
+  OPTIMISM,
+  POLYGON,
   SECOND,
   USD,
 } from "../../constants"
 import { getPrices, getTokenPrices, getPricePoint } from "../../lib/prices"
+
+import { getUSDPriceForBaseAsset } from "../../lib/priceOracle"
 import {
   fetchAndValidateTokenList,
   mergeAssets,
@@ -635,7 +643,26 @@ export default class IndexingService extends BaseService<Events> {
       // TODO include user-preferred currencies
       // get the prices of ETH and BTC vs major currencies
       const baseAssets = await this.chainService.getNetworkBaseAssets()
-      const basicPrices = await getPrices(baseAssets, FIAT_CURRENCIES)
+      let basicPrices = await getPrices(baseAssets, FIAT_CURRENCIES)
+
+      if (basicPrices.length === 0) {
+        console.log("failing over to price oracle")
+        basicPrices = await Promise.all(
+          [
+            ETHEREUM,
+            ARBITRUM_ONE,
+            OPTIMISM,
+            BINANCE_SMART_CHAIN,
+            POLYGON,
+            AVALANCHE,
+          ].map(async (network: EVMNetwork) => {
+            const provider = await this.chainService.providerForNetworkOrThrow(
+              ETHEREUM
+            )
+            return getUSDPriceForBaseAsset(network, provider)
+          })
+        )
+      }
 
       // kick off db writes and event emission, don't wait for the promises to
       // settle
@@ -654,6 +681,7 @@ export default class IndexingService extends BaseService<Events> {
           )
       })
     } catch (e) {
+      logger.error(e)
       logger.error(
         "Error getting base asset prices",
         BUILT_IN_NETWORK_BASE_ASSETS,
