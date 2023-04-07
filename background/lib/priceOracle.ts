@@ -1,5 +1,12 @@
 import * as ethers from "ethers"
-import { AnyAsset, PricePoint } from "../assets"
+import { Fragment, FunctionFragment } from "ethers/lib/utils"
+import {
+  AnyAsset,
+  FungibleAsset,
+  PricePoint,
+  SmartContractFungibleAsset,
+  UnitPricePoint,
+} from "../assets"
 import {
   ETH,
   ETHEREUM,
@@ -15,6 +22,11 @@ import {
   AVALANCHE,
   AVAX,
 } from "../constants"
+import {
+  MULTICALL_ABI,
+  MULTICALL_CONTRACT_ADDRESS,
+  AggregateContractResponse,
+} from "./multicall"
 import { toFixedPoint } from "./fixed-point"
 import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import { EVMNetwork } from "../networks"
@@ -58,14 +70,18 @@ const SPOT_PRICE_ORACLE_CONSTANTS = {
   },
 }
 
-// eslint-disable-next-line max-len
-const OffChainOracleAbi =
-  '[{"inputs":[{"internalType":"contract MultiWrapper","name":"_multiWrapper","type":"address"},{"internalType":"contract IOracle[]","name":"existingOracles","type":"address[]"},{"internalType":"enum OffchainOracle.OracleType[]","name":"oracleTypes","type":"uint8[]"},{"internalType":"contract IERC20[]","name":"existingConnectors","type":"address[]"},{"internalType":"contract IERC20","name":"wBase","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"contract IERC20","name":"connector","type":"address"}],"name":"ConnectorAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"contract IERC20","name":"connector","type":"address"}],"name":"ConnectorRemoved","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"contract MultiWrapper","name":"multiWrapper","type":"address"}],"name":"MultiWrapperUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"contract IOracle","name":"oracle","type":"address"},{"indexed":false,"internalType":"enum OffchainOracle.OracleType","name":"oracleType","type":"uint8"}],"name":"OracleAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"contract IOracle","name":"oracle","type":"address"},{"indexed":false,"internalType":"enum OffchainOracle.OracleType","name":"oracleType","type":"uint8"}],"name":"OracleRemoved","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"inputs":[{"internalType":"contract IERC20","name":"connector","type":"address"}],"name":"addConnector","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"contract IOracle","name":"oracle","type":"address"},{"internalType":"enum OffchainOracle.OracleType","name":"oracleKind","type":"uint8"}],"name":"addOracle","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"connectors","outputs":[{"internalType":"contract IERC20[]","name":"allConnectors","type":"address[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"contract IERC20","name":"srcToken","type":"address"},{"internalType":"contract IERC20","name":"dstToken","type":"address"},{"internalType":"bool","name":"useWrappers","type":"bool"}],"name":"getRate","outputs":[{"internalType":"uint256","name":"weightedRate","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"contract IERC20","name":"srcToken","type":"address"},{"internalType":"bool","name":"useSrcWrappers","type":"bool"}],"name":"getRateToEth","outputs":[{"internalType":"uint256","name":"weightedRate","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"multiWrapper","outputs":[{"internalType":"contract MultiWrapper","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"oracles","outputs":[{"internalType":"contract IOracle[]","name":"allOracles","type":"address[]"},{"internalType":"enum OffchainOracle.OracleType[]","name":"oracleTypes","type":"uint8[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"contract IERC20","name":"connector","type":"address"}],"name":"removeConnector","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"contract IOracle","name":"oracle","type":"address"},{"internalType":"enum OffchainOracle.OracleType","name":"oracleKind","type":"uint8"}],"name":"removeOracle","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"contract MultiWrapper","name":"_multiWrapper","type":"address"}],"name":"setMultiWrapper","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}]'
-const offChainOracleAddress = "0x07D91f5fb9Bf7798734C3f606dB065549F6893bb"
-const offChainOracleContract = new ethers.Contract(
-  offChainOracleAddress,
-  JSON.parse(OffChainOracleAbi)
-)
+const PRICE_ORACLE_FUNCTIONS = {
+  getRate: FunctionFragment.from(
+    "getRate(address srcToken, address dstToken, bool useWrappers) external view returns (uint256 weightedRate)"
+  ),
+  getRateToEth: FunctionFragment.from(
+    "getRateToEth(address srcToken, bool useSrcWrappers) external view returns (uint256 weightedRate)"
+  ),
+}
+
+const PRICE_ORACLE_ABI = Object.values<Fragment>(PRICE_ORACLE_FUNCTIONS)
+
+const PRICE_ORACLE_INTERFACE = new ethers.utils.Interface(PRICE_ORACLE_ABI)
 
 export const foo = 1
 
@@ -90,9 +106,13 @@ export async function getUSDPriceForBaseAsset(
   network: EVMNetwork,
   provider: SerialFallbackProvider
 ): Promise<PricePoint> {
-  const connected = offChainOracleContract.connect(provider)
+  const offChainOracleContract = new ethers.Contract(
+    SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].oracleAddress,
+    PRICE_ORACLE_ABI,
+    provider
+  )
 
-  const [rate] = await connected.functions.getRateToEth(
+  const rate = await offChainOracleContract.callStatic.getRateToEth(
     SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCAddress,
     true
   )
@@ -100,7 +120,7 @@ export async function getUSDPriceForBaseAsset(
   const numerator = ethers.BigNumber.from(10).pow(
     SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCDecimals
   )
-  const denominator = ethers.BigNumber.from(10).pow(18) // eth decimals
+  const denominator = ethers.BigNumber.from(10).pow(network.baseAsset.decimals)
   const ETHperUSDC = denominator
     // Convert to cents
     .mul(100)
@@ -108,5 +128,82 @@ export async function getUSDPriceForBaseAsset(
 
   const USDPriceOfBaseAsset = Number(ETHperUSDC) / 100
 
-  return toUSDPricePoint(ETH, USDPriceOfBaseAsset)
+  return toUSDPricePoint(network.baseAsset, USDPriceOfBaseAsset)
+}
+
+export async function getUSDPriceForTokens(
+  assets: SmartContractFungibleAsset[],
+  network: EVMNetwork,
+  provider: SerialFallbackProvider
+): Promise<{
+  [contractAddress: string]: UnitPricePoint<FungibleAsset>
+}> {
+  const multicall = new ethers.Contract(
+    MULTICALL_CONTRACT_ADDRESS,
+    MULTICALL_ABI,
+    provider
+  )
+
+  const response = (await multicall.callStatic.tryBlockAndAggregate(
+    // false === don't require all calls to succeed
+    false,
+    assets.map((asset) => {
+      const callData = PRICE_ORACLE_INTERFACE.encodeFunctionData("getRate", [
+        SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCAddress,
+        asset.contractAddress,
+        true,
+      ])
+      return [
+        SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].oracleAddress,
+        callData,
+      ]
+    })
+  )) as AggregateContractResponse
+
+  const pricePoints: {
+    [contractAddress: string]: UnitPricePoint<FungibleAsset>
+  } = {}
+
+  response.returnData.forEach((data, i) => {
+    if (assets[i].symbol === "USDC") {
+      // Oracle won't let us query USDC/USDC, get around this by hardcoding the price
+      pricePoints[assets[i].contractAddress] = {
+        unitPrice: {
+          asset: USD,
+          amount: BigInt(10 ** USD.decimals),
+        },
+        time: Date.now(),
+      }
+      return
+    }
+    if (data.success !== true) {
+      return
+    }
+
+    if (data.returnData === "0x00" || data.returnData === "0x") {
+      return
+    }
+
+    const rate = ethers.BigNumber.from(data.returnData)
+
+    const numerator = ethers.BigNumber.from(10).pow(
+      SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCDecimals
+    )
+    const denominator = ethers.BigNumber.from(10).pow(assets[i].decimals)
+    const tokenPerUSDC = denominator
+      // Convert to cents
+      .mul(100)
+      .div(ethers.BigNumber.from(rate).mul(numerator).div(denominator))
+
+    const USDPriceOfToken = Number(tokenPerUSDC) / 100
+
+    pricePoints[assets[i].contractAddress] = {
+      unitPrice: {
+        asset: USD,
+        amount: BigInt(Math.trunc(USDPriceOfToken * 10 ** USD.decimals)),
+      },
+      time: Date.now(),
+    }
+  })
+  return pricePoints
 }

@@ -27,7 +27,10 @@ import {
 } from "../../constants"
 import { getPrices, getTokenPrices, getPricePoint } from "../../lib/prices"
 
-import { getUSDPriceForBaseAsset } from "../../lib/priceOracle"
+import {
+  getUSDPriceForBaseAsset,
+  getUSDPriceForTokens,
+} from "../../lib/priceOracle"
 import {
   fetchAndValidateTokenList,
   mergeAssets,
@@ -657,7 +660,7 @@ export default class IndexingService extends BaseService<Events> {
             AVALANCHE,
           ].map(async (network: EVMNetwork) => {
             const provider = await this.chainService.providerForNetworkOrThrow(
-              ETHEREUM
+              network
             )
             return getUSDPriceForBaseAsset(network, provider)
           })
@@ -741,8 +744,29 @@ export default class IndexingService extends BaseService<Events> {
 
       // @TODO consider allSettled here
       const activeAssetPricesByNetwork = await Promise.all(
-        activeAssetsByNetwork.map(({ activeAssetsByAddress, network }) =>
-          getTokenPrices(Object.keys(activeAssetsByAddress), USD, network)
+        activeAssetsByNetwork.map(
+          async ({ activeAssetsByAddress, network }) => {
+            const tokenPrices = await getTokenPrices(
+              Object.keys(activeAssetsByAddress),
+              USD,
+              network
+            )
+            if (tokenPrices.length) {
+              return tokenPrices
+            }
+
+            const provider =
+              this.chainService.providerForNetworkOrThrow(network)
+
+            const foo = await getUSDPriceForTokens(
+              Object.values(activeAssetsByAddress),
+              network,
+              provider
+            )
+
+            console.log({ foo })
+            return foo
+          }
         )
       )
 
