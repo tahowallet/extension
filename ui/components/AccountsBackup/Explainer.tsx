@@ -1,11 +1,15 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
+import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
 
 type Props = {
   translation: "showPrivateKey" | "showMnemonic"
   close: () => void
 }
+
+const EXPLAINER_LINK =
+  "https://tahowallet.notion.site/Recovery-Phrases-Private-Keys-31274e1abd2e4055aa63dae5297828b3"
 
 export default function Explainer({ translation, close }: Props): ReactElement {
   const { t } = useTranslation("translation", {
@@ -15,47 +19,38 @@ export default function Explainer({ translation, close }: Props): ReactElement {
 
   return (
     <>
-      <div className="explainer">
-        <h3 className="simple_text explainer_header">
-          {t("explainer.header")}
-        </h3>
-        <p className="simple_text">{t("explainer.text1")}</p>
-        <p className="simple_text bold">{t("explainer.text2")}</p>
-        <p className="simple_text">{t("explainer.text3")}</p>
-        <div className="explainer_buttons">
-          <SharedButton
-            size="medium"
-            type="tertiary"
-            iconSmall="close"
-            onClick={() => close()}
-          >
-            {tShared("close")}
-          </SharedButton>
-          <SharedButton
-            size="medium"
-            type="tertiary"
-            iconSmall="new-tab"
-            onClick={() => {
-              window
-                .open(
-                  "https://tahowallet.notion.site/Recovery-Phrases-Private-Keys-31274e1abd2e4055aa63dae5297828b3",
-                  "_blank"
-                )
-                ?.focus()
-            }}
-          >
-            {tShared("readMore")}
-          </SharedButton>
+      <SharedSlideUpMenuPanel header={t("explainer.header")} type="small">
+        <div className="explainer simple_text">
+          <p>{t("explainer.text1")}</p>
+          <p className="bold">{t("explainer.text2")}</p>
+          <p>{t("explainer.text3")}</p>
+          <div className="explainer_buttons">
+            <SharedButton
+              size="medium"
+              type="tertiary"
+              iconSmall="close"
+              onClick={() => close()}
+            >
+              {tShared("close")}
+            </SharedButton>
+            <SharedButton
+              size="medium"
+              type="tertiary"
+              iconSmall="new-tab"
+              onClick={() => {
+                window.open(EXPLAINER_LINK, "_blank")?.focus()
+              }}
+            >
+              {tShared("readMore")}
+            </SharedButton>
+          </div>
         </div>
-      </div>
+      </SharedSlideUpMenuPanel>
       <style jsx>{`
         .explainer {
           font-family: "Segment";
           padding: 0 24px 10px;
           margin-top: -20px;
-        }
-        .explainer_header {
-          color: var(--white);
         }
         .bold {
           font-weight: 600;
