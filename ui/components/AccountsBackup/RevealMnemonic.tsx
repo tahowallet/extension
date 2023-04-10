@@ -14,11 +14,11 @@ function MnemonicList(props: {
   const { mnemonic, startIndex, endIndex } = props
   if (!mnemonic.length) return <></>
 
-  const splitedMnemonic = mnemonic.split(" ").slice(startIndex, endIndex)
+  const splitMnemonic = mnemonic.split(" ").slice(startIndex, endIndex)
 
   return (
     <div className="mnemonic_list">
-      {splitedMnemonic.map((word, index) => (
+      {splitMnemonic.map((word, index) => (
         <div key={`${word}}`}>
           {startIndex + index + 1} - {word}
         </div>
