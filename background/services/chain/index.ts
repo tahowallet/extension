@@ -6,7 +6,7 @@ import { ethers, utils } from "ethers"
 import { Logger, UnsignedTransaction } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
-import { HexString, UNIXTime } from "../../types"
+import { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyEVMBlock,
@@ -21,7 +21,7 @@ import {
   NetworkBaseAsset,
   sameChainID,
 } from "../../networks"
-import { AssetTransfer } from "../../assets"
+import { AssetTransfer, SmartContractFungibleAsset } from "../../assets"
 import {
   HOUR,
   ETHEREUM,
@@ -65,6 +65,7 @@ import {
 } from "./utils/optimismGasPriceOracle"
 import KeyringService from "../keyring"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
+import { fromFixedPoint } from "../../lib/fixed-point"
 
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
@@ -1919,5 +1920,51 @@ export default class ChainService extends BaseService<Events> {
 
     this.supportedNetworks = supportedNetworks
     this.emitter.emit("supportedNetworks", supportedNetworks)
+  }
+
+  async queryTokenDetails(
+    contractAddress: NormalizedEVMAddress,
+    addressOnNetwork: AddressOnNetwork,
+    existingAsset?: SmartContractFungibleAsset
+  ): Promise<{
+    asset: SmartContractFungibleAsset
+    balance: number
+  }> {
+    const { network } = addressOnNetwork
+
+    const balance = await this.assetData.getTokenBalance(
+      addressOnNetwork,
+      contractAddress
+    )
+
+    if (existingAsset) {
+      return {
+        asset: existingAsset,
+        // FIXME: REMOVE FIXED PRECISION
+        balance: fromFixedPoint(balance.amount, existingAsset.decimals, 2),
+      }
+    }
+
+    const asset = await this.assetData
+      .getTokenMetadata({
+        contractAddress,
+        homeNetwork: network,
+      })
+      .catch(() => undefined)
+
+    if (!asset) {
+      throw logger.buildError(
+        "Unable to retrieve metadata for custom asset",
+        contractAddress,
+        "on chain:",
+        network.chainID
+      )
+    }
+
+    return {
+      asset,
+      // FIXME: REMOVE FIXED PRECISION
+      balance: fromFixedPoint(balance.amount, asset.decimals, 2),
+    }
   }
 }

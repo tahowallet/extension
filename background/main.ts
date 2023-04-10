@@ -175,7 +175,6 @@ import {
 import { AddChainRequestData } from "./services/provider-bridge"
 import { AnalyticsEvent, isOneTimeAnalyticsEvent } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
-import { fromFixedPoint } from "./lib/fixed-point"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1756,12 +1755,7 @@ export default class Main extends BaseService<never> {
   }> {
     const { network } = addressOnNetwork
 
-    const balance = await this.chainService.assetData.getTokenBalance(
-      addressOnNetwork,
-      contractAddress
-    )
-
-    const existingAsset = this.indexingService
+    const cachedAsset = this.indexingService
       .getCachedAssets(network)
       .find(
         (asset): asset is SmartContractFungibleAsset =>
@@ -1769,36 +1763,13 @@ export default class Main extends BaseService<never> {
           sameEVMAddress(contractAddress, asset.contractAddress)
       )
 
-    if (existingAsset) {
-      return {
-        asset: existingAsset,
-        // FIXME: REMOVE FIXED PRECISION
-        balance: fromFixedPoint(balance.amount, existingAsset.decimals, 2),
-        exists: true,
-      }
-    }
+    const result = await this.chainService.queryTokenDetails(
+      contractAddress,
+      addressOnNetwork,
+      cachedAsset
+    )
 
-    const asset = await this.chainService.assetData
-      .getTokenMetadata({
-        contractAddress,
-        homeNetwork: network,
-      })
-      .catch(() => undefined)
-
-    if (!asset) {
-      throw logger.buildError(
-        "Unable to retrieve metadata for custom asset",
-        contractAddress,
-        "on chain:",
-        network.chainID
-      )
-    }
-
-    return {
-      asset,
-      // FIXME: REMOVE FIXED PRECISION
-      balance: fromFixedPoint(balance.amount, asset.decimals, 2),
-    }
+    return { ...result, exists: !!cachedAsset }
   }
 
   async importTokenViaContractAddress(
