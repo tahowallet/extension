@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useEffect, useRef, useState } from "react"
 import {
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
@@ -32,6 +32,8 @@ import SharedButton from "../components/Shared/SharedButton"
 export default function Wallet(): ReactElement {
   const { t } = useTranslation()
   const [panelNumber, setPanelNumber] = useState(0)
+  const hiddenAssetsRef = useRef<HTMLDivElement | null>(null)
+  const [maxHeight, setMaxHeight] = useState(0)
 
   const dispatch = useBackgroundDispatch()
 
@@ -58,6 +60,12 @@ export default function Wallet(): ReactElement {
       setPanelNumber(0)
     }
   }, [selectedNetwork.chainID])
+
+  useEffect(() => {
+    if (hiddenAssetsRef.current) {
+      setMaxHeight(hiddenAssetsRef.current.scrollHeight)
+    }
+  }, [hiddenAssetsRef?.current?.scrollHeight])
 
   const { assetAmounts, hiddenAssetAmounts, totalMainCurrencyValue } =
     accountData ?? {
@@ -138,14 +146,20 @@ export default function Wallet(): ReactElement {
                         })}
                       </SharedButton>
                     </div>
-                    {showHiddenAssets && (
+
+                    <div
+                      ref={hiddenAssetsRef}
+                      className={classNames("hidden_assets", {
+                        visible: showHiddenAssets,
+                      })}
+                    >
                       <WalletAssetList
                         assetAmounts={hiddenAssetAmounts}
                         initializationLoadingTimeExpired={
                           initializationLoadingTimeExpired
                         }
                       />
-                    )}
+                    </div>
                   </>
                 )}
               </>
@@ -204,11 +218,20 @@ export default function Wallet(): ReactElement {
           .no_padding {
             padding-top: 0;
           }
+          .hidden_assets {
+            max-height: 0px;
+            overflow: hidden;
+            transition: max-height 500ms ease-out;
+          }
+          .hidden_assets.visible {
+            max-height: ${maxHeight}px;
+            transition: max-height 500ms ease-in;
+          }
           .hidden_assets_button {
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 24px 0;
+            padding: 8px 0 24px;
           }
         `}
       </style>
