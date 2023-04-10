@@ -28,28 +28,16 @@ const HELPDESK_CUSTOM_TOKENS_LINK =
 
 const PlaceholderIcon = () => (
   <div>
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M9.8125 15.1273L13.2111 11.1623C13.4007 10.9411 13.7383 10.9282 13.9443 11.1341L17.9375 15.1273"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M6.0625 15.1273L7.5916 13.0885C7.77416 12.8451 8.13 12.8198 8.34515 13.035L9.8125 14.5023"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <circle cx="9.5" cy="8.5" r="1.5" fill="currentColor" />
-    </svg>
+    <i />
     <style jsx>{`
+      i {
+        mask-image: url("/images/placeholder.svg");
+        mask-size: cover;
+        display: block;
+        width: 24px;
+        height: 24px;
+        background-color: var(--green-20);
+      }
       div {
         border-radius: 50%;
         display: flex;
