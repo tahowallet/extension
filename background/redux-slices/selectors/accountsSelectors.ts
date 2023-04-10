@@ -165,7 +165,7 @@ const computeCombinedAssetAmountsData = (
         // Hide dust, untrusted assets and missing amounts.
         if (
           isForciblyDisplayed ||
-          (hideDust ? isTrusted && isNotDust && isPresent : isPresent)
+          (isTrusted && (hideDust ? isNotDust && isPresent : isPresent))
         ) {
           combinedAssets.push(assetAmount)
         } else {
