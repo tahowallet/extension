@@ -649,7 +649,6 @@ export default class IndexingService extends BaseService<Events> {
       let basicPrices = await getPrices(baseAssets, FIAT_CURRENCIES)
 
       if (basicPrices.length === 0) {
-        console.log("failing over to price oracle")
         basicPrices = await Promise.all(
           [
             ETHEREUM,
@@ -684,9 +683,8 @@ export default class IndexingService extends BaseService<Events> {
           )
       })
     } catch (e) {
-      logger.error(e)
       logger.error(
-        "Error getting base asset prices",
+        "Error getting base asset prices from coingecko",
         BUILT_IN_NETWORK_BASE_ASSETS,
         FIAT_CURRENCIES
       )
@@ -732,26 +730,23 @@ export default class IndexingService extends BaseService<Events> {
       const activeAssetPricesByNetwork = await Promise.all(
         activeAssetsByNetwork.map(
           async ({ activeAssetsByAddress, network }) => {
-            const tokenPrices = await getTokenPrices(
+            const coingeckoTokenPrices = await getTokenPrices(
               Object.keys(activeAssetsByAddress),
               USD,
               network
             )
-            if (tokenPrices.length) {
-              return tokenPrices
+            if (coingeckoTokenPrices.length) {
+              return coingeckoTokenPrices
             }
 
             const provider =
               this.chainService.providerForNetworkOrThrow(network)
 
-            const foo = await getUSDPriceForTokens(
+            return getUSDPriceForTokens(
               Object.values(activeAssetsByAddress),
               network,
               provider
             )
-
-            console.log({ foo })
-            return foo
           }
         )
       )
@@ -786,7 +781,11 @@ export default class IndexingService extends BaseService<Events> {
         )
       })
     } catch (err) {
-      logger.error("Error getting token prices", activeAssetsToTrack, err)
+      logger.error(
+        "Error getting token prices from coingecko",
+        activeAssetsToTrack,
+        err
+      )
     }
   }
 

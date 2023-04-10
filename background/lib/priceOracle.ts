@@ -83,9 +83,6 @@ const PRICE_ORACLE_ABI = Object.values<Fragment>(PRICE_ORACLE_FUNCTIONS)
 
 const PRICE_ORACLE_INTERFACE = new ethers.utils.Interface(PRICE_ORACLE_ABI)
 
-export const foo = 1
-
-// TODO Better Method Name
 export const toUSDPricePoint = (
   asset: AnyAsset,
   coinPrice: number
@@ -144,8 +141,6 @@ export async function getUSDPriceForTokens(
     provider
   )
 
-  console.log(network.name, assets.map((a) => a.symbol).join(", "))
-
   const response = (await multicall.callStatic.tryBlockAndAggregate(
     // false === don't require all calls to succeed
     false,
@@ -165,8 +160,6 @@ export async function getUSDPriceForTokens(
   const pricePoints: {
     [contractAddress: string]: UnitPricePoint<FungibleAsset>
   } = {}
-
-  console.log(network.name, response.returnData)
 
   response.returnData.forEach((data, i) => {
     if (assets[i].symbol === "USDC") {
@@ -215,6 +208,5 @@ export async function getUSDPriceForTokens(
     }
   })
 
-  console.log(network.name, pricePoints)
   return pricePoints
 }
