@@ -42,9 +42,7 @@ export default function SharedSlideUpMenuPanel({
         }
         .header_wrap {
           position: sticky;
-          top: -25px;
-          padding-top: 25px;
-          margin-top: -25px;
+          margin-top: -6px;
           z-index: 1;
 
           display: flex;
