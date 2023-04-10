@@ -1,6 +1,5 @@
 import { fetchJson } from "@ethersproject/web"
 import sinon, { SinonStub } from "sinon"
-import * as libPrices from "../../../lib/prices"
 import IndexingService from ".."
 import { ETHEREUM, OPTIMISM } from "../../../constants"
 import {
