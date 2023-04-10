@@ -1,9 +1,7 @@
-import { lockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import { clearSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useAreKeyringsUnlocked, useBackgroundDispatch } from "../../hooks"
+import { useAreKeyringsUnlocked, useLockWallet } from "../../hooks"
 import KeyringUnlock from "../Keyring/KeyringUnlock"
 import SharedAccordion from "../Shared/SharedAccordion"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
@@ -25,20 +23,12 @@ export default function ShowMnemonic({
     keyPrefix: "accounts.accountItem.showMnemonic",
   })
 
-  const dispatch = useBackgroundDispatch()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
 
   const [showMnemonic, setShowMnemonic] = useState(false)
   const [showExplainer, setShowExplainer] = useState(false)
 
-  useEffect(() => {
-    const lockWallet = async () => {
-      await dispatch(lockKeyrings())
-      // No need to show that signing got locked
-      dispatch(clearSnackbarMessage())
-    }
-    lockWallet()
-  }, [dispatch])
+  useLockWallet()
 
   return (
     <>
@@ -72,7 +62,10 @@ export default function ShowMnemonic({
                       contentElement={
                         <div className="account_list">
                           {accounts.map((accountTotal) => (
-                            <div className="account_item">
+                            <div
+                              className="account_item"
+                              key={accountTotal.address}
+                            >
                               <SharedAccountItemSummary
                                 accountTotal={accountTotal}
                                 style={{

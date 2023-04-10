@@ -1,13 +1,11 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import { lockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
-import { clearSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
 import SharedWarningMessage from "../Shared/SharedWarningMessage"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
-import { useAreKeyringsUnlocked, useBackgroundDispatch } from "../../hooks"
+import { useAreKeyringsUnlocked, useLockWallet } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import KeyringUnlock from "../Keyring/KeyringUnlock"
 import Explainer from "./Explainer"
@@ -22,20 +20,12 @@ export default function ShowPrivateKey({
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem.showPrivateKey",
   })
-  const dispatch = useBackgroundDispatch()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
 
   const [showPrivateKey, setShowPrivateKey] = useState(false)
   const [showExplainer, setShowExplainer] = useState(false)
 
-  useEffect(() => {
-    const lockWallet = async () => {
-      await dispatch(lockKeyrings())
-      // No need to show that signing got locked
-      dispatch(clearSnackbarMessage())
-    }
-    lockWallet()
-  }, [dispatch])
+  useLockWallet()
 
   return (
     <>
