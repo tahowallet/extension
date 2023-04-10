@@ -184,7 +184,7 @@ export async function getUSDPriceForTokens(
       return
     }
 
-    if (data.returnData === "0x00" || data.returnData === "0x") {
+    if (ethers.BigNumber.from(data.returnData).isZero()) {
       return
     }
 
@@ -193,7 +193,12 @@ export async function getUSDPriceForTokens(
     const numerator = ethers.BigNumber.from(10).pow(
       SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCDecimals
     )
-    const denominator = ethers.BigNumber.from(10).pow(assets[i].decimals)
+    // Tokens with no decimals will have a denominator of 0,
+    // which will cause a divide by zero error, so we set it to 1
+    const denominator = assets[i].decimals
+      ? ethers.BigNumber.from(10).pow(assets[i].decimals)
+      : ethers.BigNumber.from(1)
+
     const tokenPerUSDC = denominator
       // Convert to cents
       .mul(100)
