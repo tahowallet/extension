@@ -248,7 +248,7 @@ export async function getTokenBalances(
 export async function getTokenMetadata(
   provider: SerialFallbackProvider,
   { contractAddress, homeNetwork }: SmartContract
-): Promise<SmartContractFungibleAsset | undefined> {
+): Promise<SmartContractFungibleAsset> {
   const json: unknown = await provider.send("alchemy_getTokenMetadata", [
     contractAddress,
   ])
