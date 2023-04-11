@@ -35,7 +35,7 @@ jobs:
       - name: Dev build
         if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
         run: |
-          echo ${{ steps.env-block.outputs.result }} > .env
+          echo -e ${{ steps.env-block.outputs.result }} > .env
           echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
           yarn build
         env:
