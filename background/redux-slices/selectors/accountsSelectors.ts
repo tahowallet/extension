@@ -84,7 +84,7 @@ const computeCombinedAssetAmountsData = (
 } => {
   // Derive account "assets"/assetAmount which include USD values using
   // data from the assets slice
-  const [combinedAssetAmounts, hiddenAssetAmounts] = assetAmounts
+  const { combinedAssetAmounts, hiddenAssetAmounts } = assetAmounts
     .map<CompleteAssetAmount>((assetAmount) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
@@ -149,8 +149,11 @@ const computeCombinedAssetAmountsData = (
       // If only one asset has a main currency amount, it wins.
       return asset1.mainCurrencyAmount === undefined ? 1 : -1
     })
-    .reduce<[CompleteAssetAmount[], CompleteAssetAmount[]]>(
-      ([combinedAssets, hiddenAssets], assetAmount) => {
+    .reduce<{
+      combinedAssetAmounts: CompleteAssetAmount[]
+      hiddenAssetAmounts: CompleteAssetAmount[]
+    }>(
+      (acc, assetAmount) => {
         const isForciblyDisplayed = shouldForciblyDisplayAsset(assetAmount)
 
         const isNotDust =
@@ -167,13 +170,13 @@ const computeCombinedAssetAmountsData = (
           isForciblyDisplayed ||
           (isTrusted && (hideDust ? isNotDust && isPresent : isPresent))
         ) {
-          combinedAssets.push(assetAmount)
-        } else {
-          hiddenAssets.push(assetAmount)
+          acc.combinedAssetAmounts.push(assetAmount)
+        } else if (isPresent) {
+          acc.hiddenAssetAmounts.push(assetAmount)
         }
-        return [combinedAssets, hiddenAssets]
+        return acc
       },
-      [[], []]
+      { combinedAssetAmounts: [], hiddenAssetAmounts: [] }
     )
 
   // Keep a tally of the total user value; undefined if no main currency data

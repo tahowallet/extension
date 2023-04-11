@@ -155,9 +155,7 @@ export default function Wallet(): ReactElement {
                     >
                       <WalletAssetList
                         assetAmounts={hiddenAssetAmounts}
-                        initializationLoadingTimeExpired={
-                          initializationLoadingTimeExpired
-                        }
+                        initializationLoadingTimeExpired
                       />
                     </div>
                   </>
