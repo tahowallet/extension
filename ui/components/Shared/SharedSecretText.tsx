@@ -44,12 +44,12 @@ export default function SharedSecretText(props: Props): ReactElement {
           overflow-wrap: anywhere;
           padding: 10px;
           opacity: 0.8;
+          filter: blur(6px);
         }
         .secret_blur {
           font-weight: 500;
           font-size: 14px;
           line-height: 16px;
-          backdrop-filter: blur(8px);
           opacity: 1;
         }
         .secret_container:hover .secret_blur {
@@ -58,6 +58,7 @@ export default function SharedSecretText(props: Props): ReactElement {
         }
         .secret_container:hover .secret_text {
           opacity: 1;
+          filter: blur(0px);
         }
         .centered {
           position: absolute;
@@ -72,7 +73,7 @@ export default function SharedSecretText(props: Props): ReactElement {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          transition: opacity 200ms ease-in-out;
+          transition: opacity 200ms ease-in-out, filter 200ms ease-in-out;
         }
       `}</style>
     </>
