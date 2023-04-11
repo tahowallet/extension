@@ -28,13 +28,25 @@
           "copySuccess": "Copied!"
         },
         "explainer": {
-          "header": "What is a private key",
-          "text1": "You need a recovery phrase in case you loose access to your computer, wallet or you forget your password.",
-          "text2": "Recovery phrase is the only way to regain access to your funds stored on those addresses.",
-          "text3": "Taho has the option to import or create multiple recovery phrases. If you have multiple, make sure that you have safely save and store them all."
+          "header": "What is a private key?",
+          "text1": "A private key is also known as a secret key is a string of letter and numbers that allow you to access and manage your assets on one address.",
+          "text2": "A private key only unlocks one address, while a recovery phrase unlocks all addresses that are tied to that phrase.",
+          "text3": "If you don’t use recovery phrase, you need to save a private key for each address."
         }
       },
       "showMnemonic": {
+        "header": "Show Recovery Phrase",
+        "warningMessage": "Anybody that has your recovery phrase can move your assets.",
+        "mnemonicInfo": "Why do i need a recovery phrase?",
+        "exportingMnemonic": {
+          "confirmationDesc": "I understand that other Recovery Phrases, Ledger, Private Keys or Read-only accounts will not be saved with this recovery phrase.",
+          "invalidMessage": "Check the above box to confirm",
+          "showBtn": "Show recovery phrase",
+          "copyBtn": "Copy phrase to clipboard",
+          "copySuccess": "Copied!",
+          "address": "address",
+          "addresses": "addresses"
+        },
         "explainer": {
           "header": "Why do i need a recovery phrase?",
           "text1": "You need a recovery phrase in case you loose access to your computer, wallet or you forget your password.",

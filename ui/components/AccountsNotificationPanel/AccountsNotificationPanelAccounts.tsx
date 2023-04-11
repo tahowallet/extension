@@ -44,6 +44,7 @@ import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import EditSectionForm from "./EditSectionForm"
 import SigningButton from "./SigningButton"
+import ShowMnemonic from "../AccountsBackup/ShowMnemonic"
 
 type WalletTypeInfo = {
   title: string
@@ -110,12 +111,14 @@ const shouldAddHeader = (
 
 function WalletTypeHeader({
   accountType,
+  accountTotals,
   onClickAddAddress,
   walletNumber,
   path,
   accountSigner,
 }: {
   accountType: AccountType
+  accountTotals: AccountTotal[]
   onClickAddAddress?: () => void
   accountSigner: AccountSigner
   walletNumber?: number
@@ -155,6 +158,11 @@ function WalletTypeHeader({
   const history = useHistory()
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
   const [showEditMenu, setShowEditMenu] = useState(false)
+  const [showExportMnemonicMenu, setShowExportMnemonicMenu] = useState(false)
+
+  const hasMnemonic =
+    accountType === AccountType.Imported || accountType === AccountType.Internal
+
   return (
     <>
       {accountSigner.type !== "read-only" && (
@@ -216,10 +224,29 @@ function WalletTypeHeader({
                 icon: "icons/s/add.svg",
                 label: t("accounts.notificationPanel.addAddress"),
               },
+              hasMnemonic
+                ? {
+                    key: "showMnemonic",
+                    onClick: () => setShowExportMnemonicMenu(true),
+                    icon: "icons/s/lock-bold.svg",
+                    label: t("accounts.accountItem.showMnemonic.header"),
+                  }
+                : undefined,
             ]}
           />
         )}
       </header>
+      <SharedSlideUpMenu
+        size="custom"
+        customSize="580px"
+        isOpen={showExportMnemonicMenu}
+        close={(e) => {
+          e?.stopPropagation()
+          setShowExportMnemonicMenu(false)
+        }}
+      >
+        <ShowMnemonic accounts={accountTotals} walletTitle={sectionTitle} />
+      </SharedSlideUpMenu>
       <style jsx>{`
         .wallet_title {
           display: flex;
@@ -362,7 +389,8 @@ export default function AccountsNotificationPanelAccounts({
                 </p>
                 {isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
                   (accountType === AccountType.Imported ||
-                    accountType === AccountType.Internal) && (
+                    accountType === AccountType.Internal ||
+                    accountType === AccountType.PrivateKey) && (
                     <SigningButton
                       onCurrentAddressChange={onCurrentAddressChange}
                     />
@@ -378,6 +406,7 @@ export default function AccountsNotificationPanelAccounts({
                       walletNumber={idx + 1}
                       path={accountTotalsByKeyringId[0].path}
                       accountSigner={accountTotalsByKeyringId[0].accountSigner}
+                      accountTotals={accountTotalsByKeyringId}
                       onClickAddAddress={
                         accountType === "imported" || accountType === "internal"
                           ? () => {
@@ -506,6 +535,7 @@ export default function AccountsNotificationPanelAccounts({
             align-items: center;
             padding: 0px 12px;
             box-sizing: border-box;
+            z-index: 11;
           }
           .switcher_wrap {
             height: 432px;

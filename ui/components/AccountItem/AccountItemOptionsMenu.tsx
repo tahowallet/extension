@@ -8,7 +8,7 @@ import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import AccountItemEditName from "./AccountItemEditName"
 import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
-import ShowPrivateKey from "./ShowPrivateKey"
+import ShowPrivateKey from "../AccountsBackup/ShowPrivateKey"
 
 type AccountItemOptionsMenuProps = {
   accountTotal: AccountTotal
@@ -97,6 +97,8 @@ export default function AccountItemOptionsMenu({
       </SharedSlideUpMenu>
       <SharedSlideUpMenu
         isOpen={showPrivateKeyMenu}
+        size="custom"
+        customSize="580px"
         close={(e) => {
           e?.stopPropagation()
           setShowPrivateKeyMenu(false)
