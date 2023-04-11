@@ -159,14 +159,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
                 t={t}
                 i18nKey="input.tooltip"
                 components={{
-                  url: (
-                    <a
-                      href={HELPDESK_CUSTOM_TOKENS_LINK}
-                      rel="noopener noreferrer"
-                    >
-                      Help Center
-                    </a>
-                  ),
+                  url: <SharedLink url={HELPDESK_CUSTOM_TOKENS_LINK} />,
                 }}
               />
             </SharedTooltip>
