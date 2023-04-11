@@ -30,6 +30,7 @@ import NFTs from "../pages/NFTs"
 import Abilities from "../pages/Abilities"
 import SettingsCustomNetworks from "../pages/Settings/SettingsCustomNetworks"
 import NewCustomNetworkRequest from "../pages/NewCustomNetworkRequest"
+import SettingsAddCustomAsset from "../pages/Settings/SettingsAddCustomAsset"
 
 interface PageList {
   path: string
@@ -165,6 +166,13 @@ const pageList: PageList[] = [
   {
     path: "/settings/custom-networks",
     Component: SettingsCustomNetworks,
+    hasTabBar: true,
+    hasTopBar: false,
+    persistOnClose: true,
+  },
+  {
+    path: "/settings/add-custom-asset",
+    Component: SettingsAddCustomAsset,
     hasTabBar: true,
     hasTopBar: false,
     persistOnClose: true,
