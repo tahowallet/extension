@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useRef, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import {
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
@@ -10,11 +10,7 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
-import {
-  selectShowAnalyticsNotification,
-  selectShowHiddenAssets,
-  toggleShowHiddenAssets,
-} from "@tallyho/tally-background/redux-slices/ui"
+import { selectShowAnalyticsNotification } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -27,13 +23,11 @@ import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultB
 import WalletBanner from "../components/Wallet/Banner/WalletBanner"
 import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
 import NFTListCurrentWallet from "../components/NFTS_update/NFTListCurrentWallet"
-import SharedButton from "../components/Shared/SharedButton"
+import WalletHiddenAssets from "../components/Wallet/WalletHiddenAssets"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation()
   const [panelNumber, setPanelNumber] = useState(0)
-  const hiddenAssetsRef = useRef<HTMLDivElement | null>(null)
-  const [maxHeight, setMaxHeight] = useState(0)
 
   const dispatch = useBackgroundDispatch()
 
@@ -41,10 +35,6 @@ export default function Wallet(): ReactElement {
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
   const claimState = useBackgroundSelector((state) => state.claim)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const showHiddenAssets = useBackgroundSelector(selectShowHiddenAssets)
-  const stateOfHiddenAssets = showHiddenAssets
-    ? t("wallet.stateOfHiddenAssets1")
-    : t("wallet.stateOfHiddenAssets2")
 
   useEffect(() => {
     dispatch(
@@ -60,12 +50,6 @@ export default function Wallet(): ReactElement {
       setPanelNumber(0)
     }
   }, [selectedNetwork.chainID])
-
-  useEffect(() => {
-    if (hiddenAssetsRef.current) {
-      setMaxHeight(hiddenAssetsRef.current.scrollHeight)
-    }
-  }, [hiddenAssetsRef?.current?.scrollHeight])
 
   const { assetAmounts, hiddenAssetAmounts, totalMainCurrencyValue } =
     accountData ?? {
@@ -131,34 +115,7 @@ export default function Wallet(): ReactElement {
                   }
                 />
                 {hiddenAssetAmounts.length > 0 && (
-                  <>
-                    <div className="hidden_assets_button">
-                      <SharedButton
-                        type="tertiaryGray"
-                        size="small"
-                        onClick={() =>
-                          dispatch(toggleShowHiddenAssets(!showHiddenAssets))
-                        }
-                      >
-                        {t("wallet.hiddenAssets", {
-                          stateOfHiddenAssets,
-                          amount: hiddenAssetAmounts.length,
-                        })}
-                      </SharedButton>
-                    </div>
-
-                    <div
-                      ref={hiddenAssetsRef}
-                      className={classNames("hidden_assets", {
-                        visible: showHiddenAssets,
-                      })}
-                    >
-                      <WalletAssetList
-                        assetAmounts={hiddenAssetAmounts}
-                        initializationLoadingTimeExpired
-                      />
-                    </div>
-                  </>
+                  <WalletHiddenAssets assetAmounts={hiddenAssetAmounts} />
                 )}
               </>
             )}
@@ -215,21 +172,6 @@ export default function Wallet(): ReactElement {
           }
           .no_padding {
             padding-top: 0;
-          }
-          .hidden_assets {
-            max-height: 0px;
-            overflow: hidden;
-            transition: max-height 500ms ease-out;
-          }
-          .hidden_assets.visible {
-            max-height: ${maxHeight}px;
-            transition: max-height 500ms ease-in;
-          }
-          .hidden_assets_button {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 8px 0 24px;
           }
         `}
       </style>
