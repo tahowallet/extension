@@ -101,21 +101,23 @@ export const toUSDPricePoint = (
   }
 }
 
-export async function getUSDPriceForBaseAsset(
+const getRateForBaseAsset = async (
   network: EVMNetwork,
   provider: SerialFallbackProvider
-): Promise<PricePoint> {
+): Promise<number> => {
   const offChainOracleContract = new ethers.Contract(
     SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].oracleAddress,
     PRICE_ORACLE_ABI,
     provider
   )
 
-  const rate = await offChainOracleContract.callStatic.getRateToEth(
+  return offChainOracleContract.callStatic.getRateToEth(
     SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCAddress,
     true
   )
+}
 
+const getBaseAssetPriceFromRate = (rate: number, network: EVMNetwork) => {
   const numerator = ethers.BigNumber.from(10).pow(
     SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCDecimals
   )
@@ -125,18 +127,31 @@ export async function getUSDPriceForBaseAsset(
     .mul(100)
     .div(ethers.BigNumber.from(rate).mul(numerator).div(denominator))
 
-  const USDPriceOfBaseAsset = Number(BaseAssetPerUSD) / 100
+  return Number(BaseAssetPerUSD) / 100
+}
 
+export async function getUSDPriceForBaseAsset(
+  network: EVMNetwork,
+  provider: SerialFallbackProvider
+): Promise<PricePoint> {
+  const rate = await getRateForBaseAsset(network, provider)
+  const USDPriceOfBaseAsset = getBaseAssetPriceFromRate(rate, network)
   return toUSDPricePoint(network.baseAsset, USDPriceOfBaseAsset)
 }
 
-export async function getUSDPriceForTokens(
+const getRatesForTokens = async (
   assets: SmartContractFungibleAsset[],
-  network: EVMNetwork,
-  provider: SerialFallbackProvider
-): Promise<{
-  [contractAddress: string]: UnitPricePoint<FungibleAsset>
-}> {
+  provider: SerialFallbackProvider,
+  network: EVMNetwork
+): Promise<
+  {
+    asset: SmartContractFungibleAsset
+    response: {
+      success: boolean
+      returnData: string
+    }
+  }[]
+> => {
   const multicall = new ethers.Contract(
     MULTICALL_CONTRACT_ADDRESS,
     MULTICALL_ABI,
@@ -159,14 +174,51 @@ export async function getUSDPriceForTokens(
     })
   )) as AggregateContractResponse
 
+  return response.returnData.map((data, i) => ({
+    asset: assets[i],
+    response: data,
+  }))
+}
+
+const getTokenPriceFromRate = (
+  rate: ethers.ethers.BigNumber,
+  asset: SmartContractFungibleAsset,
+  network: EVMNetwork
+) => {
+  const numerator = ethers.BigNumber.from(10).pow(
+    SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCDecimals
+  )
+  // Tokens with no decimals will have a denominator of 0,
+  // which will cause a divide by zero error, so we set it to 1
+  const denominator = asset.decimals
+    ? ethers.BigNumber.from(10).pow(asset.decimals)
+    : ethers.BigNumber.from(1)
+
+  const tokenPerUSDC = denominator
+    // Convert to cents
+    .mul(100)
+    .div(ethers.BigNumber.from(rate).mul(numerator).div(denominator))
+
+  return Number(tokenPerUSDC) / 100
+}
+
+export async function getUSDPriceForTokens(
+  assets: SmartContractFungibleAsset[],
+  network: EVMNetwork,
+  provider: SerialFallbackProvider
+): Promise<{
+  [contractAddress: string]: UnitPricePoint<FungibleAsset>
+}> {
+  const tokenRates = await getRatesForTokens(assets, provider, network)
+
   const pricePoints: {
     [contractAddress: string]: UnitPricePoint<FungibleAsset>
   } = {}
 
-  response.returnData.forEach((data, i) => {
-    if (assets[i].symbol === "USDC") {
+  tokenRates.forEach(({ asset, response }) => {
+    if (asset.symbol === "USDC") {
       // Oracle won't let us query USDC/USDC, get around this by hardcoding the price
-      pricePoints[assets[i].contractAddress] = {
+      pricePoints[asset.contractAddress] = {
         unitPrice: {
           asset: USD,
           amount: BigInt(10 ** USD.decimals),
@@ -175,33 +227,21 @@ export async function getUSDPriceForTokens(
       }
       return
     }
-    if (data.success !== true) {
+    if (
+      response.success !== true ||
+      ethers.BigNumber.from(response.returnData).isZero()
+    ) {
+      // Don't add price point if we don't have a valid response or if rate is zero
       return
     }
 
-    if (ethers.BigNumber.from(data.returnData).isZero()) {
-      return
-    }
-
-    const rate = ethers.BigNumber.from(data.returnData)
-
-    const numerator = ethers.BigNumber.from(10).pow(
-      SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCDecimals
+    const USDPriceOfToken = getTokenPriceFromRate(
+      ethers.BigNumber.from(response.returnData),
+      asset,
+      network
     )
-    // Tokens with no decimals will have a denominator of 0,
-    // which will cause a divide by zero error, so we set it to 1
-    const denominator = assets[i].decimals
-      ? ethers.BigNumber.from(10).pow(assets[i].decimals)
-      : ethers.BigNumber.from(1)
 
-    const tokenPerUSDC = denominator
-      // Convert to cents
-      .mul(100)
-      .div(ethers.BigNumber.from(rate).mul(numerator).div(denominator))
-
-    const USDPriceOfToken = Number(tokenPerUSDC) / 100
-
-    pricePoints[assets[i].contractAddress] = {
+    pricePoints[asset.contractAddress] = {
       unitPrice: {
         asset: USD,
         amount: BigInt(Math.trunc(USDPriceOfToken * 10 ** USD.decimals)),
