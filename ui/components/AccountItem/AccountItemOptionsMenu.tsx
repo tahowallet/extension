@@ -3,6 +3,7 @@ import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -37,16 +38,18 @@ export default function AccountItemOptionsMenu({
   const getCustomOptions = useCallback(() => {
     switch (accountType) {
       case AccountType.PrivateKey:
-        return [
-          {
-            key: "key",
-            icon: "icons/s/key.svg",
-            label: t("showPrivateKey.header"),
-            onClick: () => {
-              setShowPrivateKeyMenu(true)
-            },
-          },
-        ]
+        return isEnabled(FeatureFlags.SUPPORT_PRIV_KEYS)
+          ? [
+              {
+                key: "key",
+                icon: "icons/s/key.svg",
+                label: t("showPrivateKey.header"),
+                onClick: () => {
+                  setShowPrivateKeyMenu(true)
+                },
+              },
+            ]
+          : []
       default:
         return []
     }

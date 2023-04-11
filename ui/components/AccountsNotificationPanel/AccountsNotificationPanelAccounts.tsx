@@ -224,7 +224,7 @@ function WalletTypeHeader({
                 icon: "icons/s/add.svg",
                 label: t("accounts.notificationPanel.addAddress"),
               },
-              hasMnemonic
+              hasMnemonic && isEnabled(FeatureFlags.SUPPORT_PRIV_KEYS)
                 ? {
                     key: "showMnemonic",
                     onClick: () => setShowExportMnemonicMenu(true),
