@@ -6,13 +6,19 @@ import logger from "./logger"
 export enum AnalyticsEvent {
   NEW_INSTALL = "New install",
   UI_SHOWN = "UI shown",
+  ACCOUNT_NAME_EDITED = "Account Name Edited",
+  ANALYTICS_TOGGLED = "Analytics Toggled",
+  DEFAULT_WALLET_TOGGLED = "Default Wallet Toggled",
+  TRANSACTION_SIGNED = "Transaction Signed",
   NEW_ACCOUNT_TO_TRACK = "Address added to tracking on network",
+  CUSTOM_CHAIN_ADDED = "Custom chain added",
   DAPP_CONNECTED = "Dapp Connected",
 }
 
 export enum OneTimeAnalyticsEvent {
   ONBOARDING_STARTED = "Onboarding Started",
   ONBOARDING_FINISHED = "Onboarding Finished",
+  CHAIN_ADDED = "Chain Added",
 }
 
 export const isOneTimeAnalyticsEvent = (

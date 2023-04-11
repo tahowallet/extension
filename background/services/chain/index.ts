@@ -124,6 +124,7 @@ interface Events extends ServiceLifecycleEvents {
     addressOnNetwork: AddressOnNetwork
   }
   transactionSend: HexString
+  networkSubscribed: EVMNetwork
   transactionSendFailure: undefined
   assetTransfers: {
     addressNetwork: AddressOnNetwork
@@ -132,6 +133,7 @@ interface Events extends ServiceLifecycleEvents {
   block: AnyEVMBlock
   transaction: { forAccounts: string[]; transaction: AnyEVMTransaction }
   blockPrices: { blockPrices: BlockPrices; network: EVMNetwork }
+  customChainAdded: ValidatedAddEthereumChainParameter
 }
 
 export type QueuedTxToRetrieve = {
@@ -419,6 +421,8 @@ export default class ChainService extends BaseService<Events> {
     } else {
       logger.error(`Couldn't find provider for network ${network.name}`)
     }
+
+    this.emitter.emit("networkSubscribed", network)
   }
 
   /**
@@ -847,10 +851,17 @@ export default class ChainService extends BaseService<Events> {
       // Default to tracking Ethereum so ENS resolution works during onboarding
       return [ETHEREUM]
     }
-    return [...chainIDs].map((chainID) => {
-      const network = NETWORK_BY_CHAIN_ID[chainID]
-      return network
-    })
+
+    const networks = await Promise.all(
+      [...chainIDs].map(async (chainID) => {
+        const network = NETWORK_BY_CHAIN_ID[chainID]
+        if (!network) {
+          return this.db.getEVMNetworkByChainID(chainID)
+        }
+        return network
+      })
+    )
+    return networks.filter((network): network is EVMNetwork => !!network)
   }
 
   async removeAccountToTrack(address: string): Promise<void> {
@@ -1881,8 +1892,8 @@ export default class ChainService extends BaseService<Events> {
   // Used to add non-default chains via wallet_addEthereumChain
   async addCustomChain(
     chainInfo: ValidatedAddEthereumChainParameter
-  ): Promise<void> {
-    await this.db.addEVMNetwork({
+  ): Promise<EVMNetwork> {
+    const network = await this.db.addEVMNetwork({
       chainName: chainInfo.chainName,
       chainID: chainInfo.chainId,
       decimals: chainInfo.nativeCurrency.decimals,
@@ -1898,6 +1909,9 @@ export default class ChainService extends BaseService<Events> {
     )
 
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
+
+    this.emitter.emit("customChainAdded", chainInfo)
+    return network
   }
 
   async removeCustomChain(chainID: string): Promise<void> {

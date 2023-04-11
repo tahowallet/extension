@@ -12,11 +12,11 @@ import {
   OneTimeAnalyticsEvent,
   sendPosthogEvent,
 } from "../../lib/posthog"
-import ChainService from "../chain"
 import PreferenceService from "../preferences"
 import { FeatureFlags, isEnabled as isFeatureFlagEnabled } from "../../features"
 import logger from "../../lib/logger"
 
+const chainSpecificOneTimeEvents = [OneTimeAnalyticsEvent.CHAIN_ADDED]
 interface Events extends ServiceLifecycleEvents {
   enableDefaultOn: void
 }
@@ -33,16 +33,15 @@ export default class AnalyticsService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     AnalyticsService,
-    [Promise<ChainService>, Promise<PreferenceService>]
-  > = async (chainService, preferenceService) => {
+    [Promise<PreferenceService>]
+  > = async (preferenceService) => {
     const db = await getOrCreateDB()
 
-    return new this(db, await chainService, await preferenceService)
+    return new this(db, await preferenceService)
   }
 
   private constructor(
     private db: AnalyticsDatabase,
-    private chainService: ChainService,
     private preferenceService: PreferenceService
   ) {
     super()
@@ -74,8 +73,6 @@ export default class AnalyticsService extends BaseService<Events> {
     }
 
     if (isEnabled) {
-      this.initializeListeners()
-
       const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
 
       browser.runtime.setUninstallURL(
@@ -101,7 +98,11 @@ export default class AnalyticsService extends BaseService<Events> {
     // @TODO: implement event batching
 
     const { isEnabled } = await this.preferenceService.getAnalyticsPreferences()
-    if (isEnabled) {
+    // We want to send the ANALYTICS_TOGGLED event to denote that the user
+    // has disabled analytics - and we send the event after disabling, so
+    // we have a special exception here to allow the event to send even
+    // after analytics have been set to disabled in the preferenceService.
+    if (eventName === AnalyticsEvent.ANALYTICS_TOGGLED || isEnabled) {
       const { uuid } = await this.getOrCreateAnalyticsUUID()
 
       sendPosthogEvent(uuid, eventName, payload)
@@ -112,18 +113,30 @@ export default class AnalyticsService extends BaseService<Events> {
     eventName: OneTimeAnalyticsEvent,
     payload?: Record<string, unknown>
   ): Promise<void> {
-    if (await this.db.oneTimeEventExists(eventName)) {
+    const { isEnabled } = await this.preferenceService.getAnalyticsPreferences()
+    if (!isEnabled) {
+      return
+    }
+
+    // There are some events that we want to send once per chainId.
+    // Rather than creating a separate event for every chain - lets
+    // keep the event name uniform (while sending the chainId as a payload)
+    // and use the key to track if we've already sent the event for that chainId.
+    const chainId = payload?.chainId
+
+    const key = chainSpecificOneTimeEvents.includes(eventName)
+      ? `${eventName}-${chainId}`
+      : eventName
+
+    if (await this.db.oneTimeEventExists(key)) {
       // Don't send the event if it has already been sent.
       return
     }
 
-    const { isEnabled } = await this.preferenceService.getAnalyticsPreferences()
-    if (isEnabled) {
-      const { uuid } = await this.getOrCreateAnalyticsUUID()
+    const { uuid } = await this.getOrCreateAnalyticsUUID()
 
-      sendPosthogEvent(uuid, eventName, payload)
-      this.db.setOneTimeEvent(eventName)
-    }
+    sendPosthogEvent(uuid, eventName, payload)
+    this.db.setOneTimeEvent(key)
   }
 
   async removeAnalyticsData(): Promise<void> {
@@ -134,20 +147,6 @@ export default class AnalyticsService extends BaseService<Events> {
     } catch (e) {
       logger.error("Deleting Analytics Data Failed ", e)
     }
-  }
-
-  private initializeListeners() {
-    // ⚠️ Note: We NEVER send addresses to analytics!
-    this.chainService.emitter.on("newAccountToTrack", () => {
-      this.sendAnalyticsEvent(AnalyticsEvent.NEW_ACCOUNT_TO_TRACK, {
-        description: `
-            This event is fired when any address on a network is added to the tracked list. 
-            
-            Note: this does not track recovery phrase(ish) import! But when an address is used 
-            on a network for the first time (read-only or recovery phrase/ledger/keyring).
-            `,
-      })
-    })
   }
 
   private async getOrCreateAnalyticsUUID(): Promise<{
