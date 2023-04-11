@@ -1,16 +1,22 @@
+import { TEST_NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import {
   isProbablyEVMAddress,
   normalizeEVMAddress,
 } from "@tallyho/tally-background/lib/utils"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
 import {
   checkTokenContractDetails,
   importTokenViaContractAddress,
 } from "@tallyho/tally-background/redux-slices/assets"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
+import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
+import {
+  selectShowTestNetworks,
+  setSnackbarMessage,
+} from "@tallyho/tally-background/redux-slices/ui"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import { HexString } from "@tallyho/tally-background/types"
-import React, { FormEventHandler, ReactElement, useRef } from "react"
+import React, { FormEventHandler, ReactElement, useRef, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
 import SharedAssetIcon from "../../components/Shared/SharedAssetIcon"
@@ -18,8 +24,12 @@ import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
 import SharedInput from "../../components/Shared/SharedInput"
 import SharedLink from "../../components/Shared/SharedLink"
+import SharedNetworkIcon from "../../components/Shared/SharedNetworkIcon"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
+import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 import SharedTooltip from "../../components/Shared/SharedTooltip"
+import { productionNetworkInfo } from "../../components/TopMenu/TopMenuProtocolList"
+import TopMenuProtocolListItem from "../../components/TopMenu/TopMenuProtocolListItem"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { useSetState } from "../../hooks/react-hooks"
 
@@ -55,6 +65,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "settings.addCustomAssetSettings",
   })
+  const { t: sharedT } = useTranslation("translation")
 
   const history = useHistory()
 
@@ -72,6 +83,16 @@ export default function SettingsAddCustomAsset(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const allNetworks = useBackgroundSelector(selectEVMNetworks)
+  const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
+  const networks = allNetworks.filter(
+    (network) =>
+      !TEST_NETWORK_BY_CHAIN_ID.has(network.chainID) ||
+      (showTestNetworks && TEST_NETWORK_BY_CHAIN_ID.has(network.chainID))
+  )
+
+  const [chosenNetwork, setChosenNetwork] = useState<EVMNetwork>(currentNetwork)
+  const [isNetworkSelectOpen, setNetworkSelectOpen] = useState(false)
 
   const requestIdRef = useRef(0)
 
@@ -94,6 +115,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
     const details = (await dispatch(
       checkTokenContractDetails({
         contractAddress: normalizeEVMAddress(contractAddress),
+        network: chosenNetwork,
       })
     )) as unknown as AssetData
 
@@ -141,8 +163,83 @@ export default function SettingsAddCustomAsset(): ReactElement {
           position: relative;
           --input-padding: 0 32px 0 16px;
         }
+
+        .network_select {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          padding: 0 16px;
+        }
+
+        .network_select_title {
+          font-size: 16px;
+          font-weight: 500;
+          line-height: 24px;
+          letter-spacing: 0em;
+          text-align: left;
+        }
+      `}</style>
+      <SharedSlideUpMenu
+        isOpen={isNetworkSelectOpen}
+        isScrollable
+        customStyles={{ display: "flex", flexDirection: "column" }}
+        close={() => setNetworkSelectOpen(false)}
+      >
+        <div className="network_select">
+          <div className="network_select_title">Select Network</div>
+          <ul>
+            {networks.map((network) => (
+              <TopMenuProtocolListItem
+                key={network.chainID}
+                network={network}
+                isSelected={chosenNetwork.chainID === network.chainID}
+                onSelect={(selectedNetwork) => {
+                  setChosenNetwork(selectedNetwork)
+                  setNetworkSelectOpen(false)
+                }}
+                showSelectedText={false}
+                info={
+                  productionNetworkInfo[network.chainID] ||
+                  sharedT("protocol.compatibleChain")
+                }
+              />
+            ))}
+          </ul>
+        </div>
+      </SharedSlideUpMenu>
+      <style jsx>{`
+        .network_select_input:hover {
+          --icon-color: var(--green-5);
+        }
+
+        .network_select_input {
+          border: 2px solid var(--green-60);
+          border-radius: 4px;
+          display: flex;
+          padding: 8px 16px;
+          gap: 8px;
+          align-items: center;
+          cursor: pointer;
+        }
       `}</style>
       <form onSubmit={handleFormSubmit}>
+        <div
+          role="button"
+          onClick={() => setNetworkSelectOpen(true)}
+          onKeyUp={() => setNetworkSelectOpen(true)}
+          className="network_select_input"
+          tabIndex={-1}
+        >
+          <SharedNetworkIcon network={chosenNetwork} size={16} />
+          <span>{chosenNetwork.name}</span>
+          <SharedIcon
+            width={16}
+            height={8}
+            icon="chevron_down.svg"
+            color="var(--icon-color, var(--white))"
+            customStyles="margin-left: auto"
+          />
+        </div>
         <div className="input_container">
           <SharedInput
             label={t("input.contractAddress.label")}
@@ -190,7 +287,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
                   {assetData?.asset?.symbol ?? "Name"}
                 </span>
               </div>
-              <span className="network_name">{currentNetwork.name}</span>
+              <span className="network_name">{chosenNetwork.name}</span>
             </div>
           </div>
           <SharedButton
