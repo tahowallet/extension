@@ -124,6 +124,7 @@ interface Events extends ServiceLifecycleEvents {
     addressOnNetwork: AddressOnNetwork
   }
   transactionSend: HexString
+  networkSubscribed: EVMNetwork
   transactionSendFailure: undefined
   assetTransfers: {
     addressNetwork: AddressOnNetwork
@@ -132,6 +133,7 @@ interface Events extends ServiceLifecycleEvents {
   block: AnyEVMBlock
   transaction: { forAccounts: string[]; transaction: AnyEVMTransaction }
   blockPrices: { blockPrices: BlockPrices; network: EVMNetwork }
+  customChainAdded: ValidatedAddEthereumChainParameter
 }
 
 export type QueuedTxToRetrieve = {
@@ -419,6 +421,8 @@ export default class ChainService extends BaseService<Events> {
     } else {
       logger.error(`Couldn't find provider for network ${network.name}`)
     }
+
+    this.emitter.emit("networkSubscribed", network)
   }
 
   /**
@@ -1906,6 +1910,7 @@ export default class ChainService extends BaseService<Events> {
 
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
 
+    this.emitter.emit("customChainAdded", chainInfo)
     return network
   }
 
