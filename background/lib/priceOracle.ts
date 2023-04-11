@@ -31,6 +31,8 @@ import { toFixedPoint } from "./fixed-point"
 import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import { EVMNetwork } from "../networks"
 
+// Oracle Documentation and Address references can be found
+// at https://docs.1inch.io/docs/spot-price-aggregator/introduction/
 const SPOT_PRICE_ORACLE_CONSTANTS = {
   [ETHEREUM.chainID]: {
     USDCAddress: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
