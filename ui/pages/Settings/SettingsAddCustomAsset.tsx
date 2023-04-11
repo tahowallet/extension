@@ -186,7 +186,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
         close={() => setNetworkSelectOpen(false)}
       >
         <div className="network_select">
-          <div className="network_select_title">Select Network</div>
+          <div className="network_select_title">{t("networkSelect.title")}</div>
           <ul>
             {networks.map((network) => (
               <TopMenuProtocolListItem
@@ -275,9 +275,11 @@ export default function SettingsAddCustomAsset(): ReactElement {
             )}
             <div className="token_details">
               <div className="balance">
-                <strong>{assetData?.balance ?? "Balance"}</strong>
+                <strong>
+                  {assetData?.balance ?? t("asset.label.balance")}
+                </strong>
                 <span className="symbol">
-                  {assetData?.asset?.symbol ?? "Name"}
+                  {assetData?.asset?.symbol ?? t("asset.label.symbol")}
                 </span>
               </div>
               <span className="network_name">{chosenNetwork.name}</span>
