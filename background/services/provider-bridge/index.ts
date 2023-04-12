@@ -564,6 +564,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
           await userConfirmation
 
+          const account = await this.preferenceService.getSelectedAccount()
+
+          await this.grantPermission({
+            ...enablingPermission,
+            key: `${origin}_${account.address}_${validatedData.chainId}`,
+            chainID: validatedData.chainId,
+          })
+
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,
             [validatedData, address],
