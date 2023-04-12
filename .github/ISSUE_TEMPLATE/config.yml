@@ -3,6 +3,6 @@ contact_links:
   - name: "Discord #feature-requests"
     url: https://discord.gg/hxeQC5wxzf
     about: Please discuss feature requests here before filing an issue.
-  - name: "Discord #feedback for bugs"
-    url: https://discord.gg/wn3KDAF5eU
+  - name: "Discord #bug-reports for bugs"
+    url: https://discord.gg/cw84Ae5UQt
     about: Please discuss bugs here before filing an issue.
