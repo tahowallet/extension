@@ -9,6 +9,7 @@ import {
 import WalletAssetList from "./WalletAssetList"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import { useIsMounted } from "../../hooks/react-hooks"
 
 type WalletHiddenAssetsProps = {
   assetAmounts: CompleteAssetAmount[]
@@ -20,6 +21,7 @@ export default function WalletHiddenAssets({
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet",
   })
+  const mountedRef = useIsMounted()
   const hiddenAssetsRef = useRef<HTMLDivElement | null>(null)
   const buttonRef = useRef<HTMLDivElement | null>(null)
   const [maxHeight, setMaxHeight] = useState(0)
@@ -63,8 +65,9 @@ export default function WalletHiddenAssets({
 
       <div
         ref={hiddenAssetsRef}
-        className={classNames("hidden_assets", {
-          visible: showHiddenAssets,
+        className={classNames({
+          hidden_assets: mountedRef.current,
+          visible: mountedRef.current && showHiddenAssets,
         })}
       >
         <WalletAssetList
