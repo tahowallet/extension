@@ -170,6 +170,11 @@ class Logger {
     this.logEvent(LogLevel.error, input)
   }
 
+  buildError(...input: unknown[]): Error {
+    this.error(...input)
+    return new Error(input.join(" "))
+  }
+
   logEvent(level: Exclude<LogLevel, LogLevel.off>, input: unknown[]): void {
     if (logLevels[level] < this.#level) return
 
