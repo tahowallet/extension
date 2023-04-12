@@ -168,7 +168,7 @@ export default function ShowMnemonic({
           color: var(--green-40);
         }
         .account_list {
-          margin: 16px -16px 0;
+          margin: 16px -4px 0;
           display: flex;
           flex-direction: column;
           gap: 16px;
