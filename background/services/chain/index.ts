@@ -1901,6 +1901,7 @@ export default class ChainService extends BaseService<Events> {
       symbol: chainInfo.nativeCurrency.symbol,
       assetName: chainInfo.nativeCurrency.name,
       rpcUrls: chainInfo.rpcUrls,
+      blockExplorerURL: chainInfo.blockExplorerUrl,
     })
     await this.updateSupportedNetworks()
 
