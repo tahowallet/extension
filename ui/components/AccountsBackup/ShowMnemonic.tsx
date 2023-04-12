@@ -121,9 +121,10 @@ export default function ShowMnemonic({
           flex-direction: column;
           align-items: center;
           justify-content: space-between;
-          height: 91%;
+          height: calc(100% - 19px);
+          box-sizing: border-box;
           gap: 16px;
-          padding: 0 24px 24px;
+          padding: 0 24px 16px;
           overflow: scroll;
         }
         .content {
