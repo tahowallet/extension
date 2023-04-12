@@ -81,6 +81,8 @@ export default function SettingsAddCustomAsset(): ReactElement {
     assetData: null,
   })
 
+  const [tokenAddress, setTokenAddress] = useState("")
+
   const dispatch = useBackgroundDispatch()
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const allNetworks = useBackgroundSelector(selectEVMNetworks)
@@ -96,7 +98,10 @@ export default function SettingsAddCustomAsset(): ReactElement {
 
   const requestIdRef = useRef(0)
 
-  const handleContractChange = async (addressLike: HexString) => {
+  const handleTokenInfoChange = async (
+    addressLike: HexString,
+    network: EVMNetwork
+  ) => {
     requestIdRef.current += 1
     const callId = requestIdRef.current
 
@@ -115,7 +120,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
     const details = (await dispatch(
       checkTokenContractDetails({
         contractAddress: normalizeEVMAddress(contractAddress),
-        network: chosenNetwork,
+        network,
       })
     )) as unknown as AssetData
 
@@ -164,6 +169,11 @@ export default function SettingsAddCustomAsset(): ReactElement {
           --input-padding: 0 32px 0 16px;
         }
 
+        .network_select ul {
+          overflow-y: auto;
+          max-height: 460px;
+        }
+
         .network_select {
           display: flex;
           flex-direction: column;
@@ -196,6 +206,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
                 onSelect={(selectedNetwork) => {
                   setChosenNetwork(selectedNetwork)
                   setNetworkSelectOpen(false)
+                  handleTokenInfoChange(tokenAddress, selectedNetwork)
                 }}
                 showSelectedText={false}
                 info={
@@ -244,7 +255,10 @@ export default function SettingsAddCustomAsset(): ReactElement {
           <SharedInput
             label={t("input.contractAddress.label")}
             errorMessage={error ? t("error.invalidToken") : ""}
-            onChange={handleContractChange}
+            onChange={(addressLike) => {
+              setTokenAddress(addressLike)
+              handleTokenInfoChange(addressLike, chosenNetwork)
+            }}
           />
           <div className="tooltip_wrap">
             <SharedTooltip
@@ -365,6 +379,11 @@ export default function SettingsAddCustomAsset(): ReactElement {
           letter-spacing: 0.03em;
           text-align: left;
           color: var(--green-40);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 140px;
+          white-space: pre;
+      }
         }
 
         .token_details_container {
