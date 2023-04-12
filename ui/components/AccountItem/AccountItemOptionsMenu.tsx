@@ -16,6 +16,12 @@ type AccountItemOptionsMenuProps = {
   accountType: AccountType
 }
 
+const allowExportPrivateKeys = [
+  AccountType.PrivateKey,
+  AccountType.Imported,
+  AccountType.Internal,
+]
+
 export default function AccountItemOptionsMenu({
   accountTotal,
   accountType,
@@ -35,24 +41,24 @@ export default function AccountItemOptionsMenu({
     dispatch(setSnackbarMessage("Address copied to clipboard"))
   }, [address, dispatch])
 
-  const getCustomOptions = useCallback(() => {
-    switch (accountType) {
-      case AccountType.PrivateKey:
-        return isEnabled(FeatureFlags.SUPPORT_PRIV_KEYS)
-          ? [
-              {
-                key: "key",
-                icon: "icons/s/key.svg",
-                label: t("showPrivateKey.header"),
-                onClick: () => {
-                  setShowPrivateKeyMenu(true)
-                },
-              },
-            ]
-          : []
-      default:
-        return []
+  const getExportPrivateKeyOption = useCallback(() => {
+    if (
+      allowExportPrivateKeys.includes(accountType) &&
+      isEnabled(FeatureFlags.SUPPORT_PRIV_KEYS)
+    ) {
+      return [
+        {
+          key: "key",
+          icon: "icons/s/key.svg",
+          label: t("showPrivateKey.header"),
+          onClick: () => {
+            setShowPrivateKeyMenu(true)
+          },
+        },
+      ]
     }
+
+    return []
   }, [accountType, t])
 
   return (
@@ -142,7 +148,7 @@ export default function AccountItemOptionsMenu({
               copyAddress()
             },
           },
-          ...getCustomOptions(),
+          ...getExportPrivateKeyOption(),
           {
             key: "remove",
             icon: "garbage@2x.png",
