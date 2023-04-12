@@ -553,6 +553,7 @@
     "language": "Language",
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
+    "addCustomAsset": "Add custom assets",
     "analytics": "Analytics",
     "needHelp": "Need Help?",
     "customNetworks": "Custom networks",
@@ -602,6 +603,17 @@
       "disconnected": "Website disconnected",
       "ariaLabel": "Manage connected websites",
       "emptyList": "Not connected to any websites"
+    },
+    "addCustomAssetSettings": {
+      "title": "Add custom asset",
+      "input.contractAddress.label": "Contract address",
+      "input.tooltip": " Visit your preferred block explorer and find the asset you want to import.<br>Copy and paste the contract address here.<br><br>For more information visit <url>Help Center</url>",
+      "warning.alreadyExists.title": "Asset already exists, you will see it once your balance is over 0",
+      "warning.alreadyExists.desc": "If you still have issues seeing an asset, turn off “hide balance 2$” from Settings",
+      "error.invalidToken": "Invalid contract address",
+      "submit": "Add asset",
+      "snackbar.success": "Asset added successfully",
+      "footer.hint": "How to add a custom asset?"
     },
     "customNetworksSettings": {
       "title": "Custom networks",
@@ -806,7 +818,9 @@
       "contractCreation": "(Contract creation)",
       "transactionTo": "To:",
       "transactionFrom": "From:",
-      "loadingActivities": "Digging deeper..."
+      "loadingActivities": "Digging deeper...",
+      "addCustomAssetPrompt": "Can't find an asset?",
+      "addCustomAssetAction": "add custom asset"
     },
     "trustedAssets": {
       "notTrusted": "Asset isn't trusted",
@@ -844,6 +858,9 @@
       "NFTs": "NFTs",
       "activity": "Activity"
     },
+    "stateOfHiddenAssets1": "Hide",
+    "stateOfHiddenAssets2": "Show",
+    "hiddenAssets": "{{stateOfHiddenAssets}} hidden assets ({{amount}})",
     "defaultToggle": {
       "snackbar": "You can change this in Settings later",
       "isDefault": "is now your default wallet",
