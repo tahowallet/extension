@@ -117,6 +117,7 @@ export default function TopMenu(): ReactElement {
       </SharedSlideUpMenu>
       <SharedSlideUpMenu
         isOpen={isNotificationsOpen}
+        allowOverflow
         close={() => {
           setIsNotificationsOpen(false)
         }}

@@ -2,18 +2,23 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import AccountItemEditName from "./AccountItemEditName"
 import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
+import ShowPrivateKey from "../AccountsBackup/ShowPrivateKey"
 
 type AccountItemOptionsMenuProps = {
   accountTotal: AccountTotal
+  accountType: AccountType
 }
 
 export default function AccountItemOptionsMenu({
   accountTotal,
+  accountType,
 }: AccountItemOptionsMenuProps): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem",
@@ -22,12 +27,33 @@ export default function AccountItemOptionsMenu({
   const { address, network } = accountTotal
   const [showAddressRemoveConfirm, setShowAddressRemoveConfirm] =
     useState(false)
+  const [showPrivateKeyMenu, setShowPrivateKeyMenu] = useState(false)
   const [showEditName, setShowEditName] = useState(false)
 
   const copyAddress = useCallback(() => {
     navigator.clipboard.writeText(address)
     dispatch(setSnackbarMessage("Address copied to clipboard"))
   }, [address, dispatch])
+
+  const getCustomOptions = useCallback(() => {
+    switch (accountType) {
+      case AccountType.PrivateKey:
+        return isEnabled(FeatureFlags.SUPPORT_PRIV_KEYS)
+          ? [
+              {
+                key: "key",
+                icon: "icons/s/key.svg",
+                label: t("showPrivateKey.header"),
+                onClick: () => {
+                  setShowPrivateKeyMenu(true)
+                },
+              },
+            ]
+          : []
+      default:
+        return []
+    }
+  }, [accountType, t])
 
   return (
     <div className="options_menu_wrap">
@@ -72,6 +98,23 @@ export default function AccountItemOptionsMenu({
           />
         </div>
       </SharedSlideUpMenu>
+      <SharedSlideUpMenu
+        isOpen={showPrivateKeyMenu}
+        size="custom"
+        customSize="580px"
+        close={(e) => {
+          e?.stopPropagation()
+          setShowPrivateKeyMenu(false)
+        }}
+      >
+        <div
+          role="presentation"
+          onClick={(e) => e.stopPropagation()}
+          style={{ cursor: "default" }}
+        >
+          <ShowPrivateKey account={accountTotal} />
+        </div>
+      </SharedSlideUpMenu>
       <SharedDropdown
         toggler={(toggle) => (
           <button
@@ -99,6 +142,7 @@ export default function AccountItemOptionsMenu({
               copyAddress()
             },
           },
+          ...getCustomOptions(),
           {
             key: "remove",
             icon: "garbage@2x.png",

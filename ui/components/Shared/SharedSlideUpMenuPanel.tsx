@@ -1,36 +1,60 @@
+import classNames from "classnames"
 import React, { CSSProperties, ReactElement, ReactNode } from "react"
+import SharedIcon from "./SharedIcon"
 
 type Props = {
   header: string
+  icon?: string
   style?: CSSProperties
   children?: ReactNode
+  type?: "normal" | "small"
 }
 
 export default function SharedSlideUpMenuPanel({
   header,
+  icon,
   style,
   children,
+  type = "normal",
 }: Props): ReactElement {
   return (
     <div>
-      <div className="header_wrap">
+      <div
+        className={classNames("header_wrap", {
+          small: type === "small",
+        })}
+      >
+        {icon && (
+          <SharedIcon
+            width={16}
+            height={16}
+            icon={icon}
+            customStyles="margin-right: 5px;"
+            color="var(--white)"
+          />
+        )}
         <h3 style={style}>{header}</h3>
       </div>
       {children}
       <style jsx>{`
         h3 {
-          padding-left: 24px;
-          padding-bottom: 16px;
           margin: 0;
         }
         .header_wrap {
-          width: 100%;
-          background-color: var(--green-95);
           position: sticky;
-          top: -25px;
-          padding-top: 25px;
-          margin-top: -25px;
+          margin-top: -6px;
           z-index: 1;
+
+          display: flex;
+          align-items: center;
+          padding-left: 24px;
+          padding-bottom: 16px;
+        }
+        .header_wrap.small h3 {
+          font-size: 16px;
+          line-height: 24px;
+          font-weight: 500;
+        }
       `}</style>
     </div>
   )
