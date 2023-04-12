@@ -1916,6 +1916,10 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async removeCustomChain(chainID: string): Promise<void> {
+    this.trackedNetworks = this.trackedNetworks.filter(
+      (network) => network.chainID !== chainID
+    )
+
     await this.db.removeEVMNetwork(chainID)
     await this.updateSupportedNetworks()
   }

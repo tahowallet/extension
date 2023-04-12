@@ -274,6 +274,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         origin,
         dAppChainID
       )
+
       if (typeof persistedPermission !== "undefined") {
         // if agrees then let's return the account data
 
@@ -422,6 +423,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
     const currentAddress = selectedAddress
     // TODO make this multi-network friendly
     return this.db.checkPermission(origin, currentAddress, chainID)
+  }
+
+  async revokePermissionsForChain(chainId: string): Promise<void> {
+    await this.db.deletePermissionsByChain(chainId)
   }
 
   async routeSafeRequest(

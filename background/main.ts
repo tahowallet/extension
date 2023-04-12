@@ -1802,7 +1802,13 @@ export default class Main extends BaseService<never> {
   }
 
   async removeEVMNetwork(chainID: string): Promise<void> {
-    return this.chainService.removeCustomChain(chainID)
+    // Per origin chain id settings
+    await this.internalEthereumProviderService.removePrefererencesForChain(
+      chainID
+    )
+    // Connected dApps
+    await this.providerBridgeService.revokePermissionsForChain(chainID)
+    await this.chainService.removeCustomChain(chainID)
   }
 
   async queryCustomTokenDetails(
