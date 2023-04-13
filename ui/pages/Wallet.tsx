@@ -11,6 +11,7 @@ import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
 import { selectShowAnalyticsNotification } from "@tallyho/tally-background/redux-slices/ui"
+import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -23,12 +24,16 @@ import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultB
 import WalletBanner from "../components/Wallet/Banner/WalletBanner"
 import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
 import NFTListCurrentWallet from "../components/NFTS_update/NFTListCurrentWallet"
+import WalletHiddenAssets from "../components/Wallet/WalletHiddenAssets"
+import SharedButton from "../components/Shared/SharedButton"
+import SharedIcon from "../components/Shared/SharedIcon"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation()
   const [panelNumber, setPanelNumber] = useState(0)
 
   const dispatch = useBackgroundDispatch()
+  const history = useHistory()
 
   //  accountLoading, hasWalletErrorCode
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
@@ -50,10 +55,12 @@ export default function Wallet(): ReactElement {
     }
   }, [selectedNetwork.chainID])
 
-  const { assetAmounts, totalMainCurrencyValue } = accountData ?? {
-    assetAmounts: [],
-    totalMainCurrencyValue: undefined,
-  }
+  const { assetAmounts, hiddenAssetAmounts, totalMainCurrencyValue } =
+    accountData ?? {
+      assetAmounts: [],
+      hiddenAssetAmounts: [],
+      totalMainCurrencyValue: undefined,
+    }
 
   const currentAccountActivities = useBackgroundSelector(
     selectCurrentAccountActivities
@@ -104,12 +111,40 @@ export default function Wallet(): ReactElement {
             })}
           >
             {panelNumber === 0 && (
-              <WalletAssetList
-                assetAmounts={assetAmounts}
-                initializationLoadingTimeExpired={
-                  initializationLoadingTimeExpired
-                }
-              />
+              <>
+                <WalletAssetList
+                  assetAmounts={assetAmounts}
+                  initializationLoadingTimeExpired={
+                    initializationLoadingTimeExpired
+                  }
+                />
+                {isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && (
+                  <div
+                    className={classNames("add_custom_asset", {
+                      line: hiddenAssetAmounts.length > 0,
+                    })}
+                  >
+                    <span>{t("wallet.activities.addCustomAssetPrompt")}</span>
+                    <SharedButton
+                      size="medium"
+                      onClick={() => history.push("/settings/add-custom-asset")}
+                      type="tertiary"
+                    >
+                      <SharedIcon
+                        width={16}
+                        height={16}
+                        customStyles="margin-right: 4px"
+                        icon="icons/s/add.svg"
+                        color="currentColor"
+                      />
+                      {t("wallet.activities.addCustomAssetAction")}
+                    </SharedButton>
+                  </div>
+                )}
+                {hiddenAssetAmounts.length > 0 && (
+                  <WalletHiddenAssets assetAmounts={hiddenAssetAmounts} />
+                )}
+              </>
             )}
             {panelNumber === 1 &&
               NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) &&
@@ -164,6 +199,25 @@ export default function Wallet(): ReactElement {
           }
           .no_padding {
             padding-top: 0;
+          }
+          .add_custom_asset {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 0;
+            margin: 0px 16px;
+          }
+          .add_custom_asset span {
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 24px;
+            letter-spacing: 0em;
+            text-align: left;
+            color: var(--green-40);
+          }
+          .line {
+            border-bottom: 1px solid var(--green-80);
+            margin-bottom: 8px;
           }
         `}
       </style>
