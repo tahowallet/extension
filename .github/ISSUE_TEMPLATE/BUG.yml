@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: >-
-        Thanks for taking the time to fill out this bug report! Note that bug reports should start [in Discord](https://discord.gg/wn3KDAF5eU). Please file them as issues only when suggested by a moderator so that issues can be kept organized.
+        Thanks for taking the time to fill out this bug report! Note that bug reports should start [in Discord](https://discord.gg/cw84Ae5UQt). Please file them as issues only when suggested by a moderator so that issues can be kept organized.
   - type: input
     id: discord-link
     attributes:
@@ -51,6 +51,7 @@ body:
       label: Version
       description: What version of the extension are you running?
       options:
+        - v0.29.0
         - v0.28.1
         - v0.28.0
         - v0.27.2
