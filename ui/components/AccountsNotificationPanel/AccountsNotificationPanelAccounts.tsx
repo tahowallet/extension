@@ -78,7 +78,7 @@ export const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   },
   [AccountType.PrivateKey]: {
     title: i18n.t("accounts.notificationPanel.privateKey"),
-    icon: "./images/key.svg",
+    icon: "./images/add_wallet/import_priv_key.svg",
     category: i18n.t("accounts.notificationPanel.category.others"),
   },
   [AccountType.Ledger]: {
