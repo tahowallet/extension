@@ -225,6 +225,18 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const addCustomAsset = {
+    title: "",
+    component: () => (
+      <SettingButton
+        link="/settings/add-custom-asset"
+        label={t("settings.addCustomAsset")}
+        ariaLabel={t("settings.connectedWebsitesSettings.ariaLabel")}
+        icon="continue"
+      />
+    ),
+  }
+
   const analytics = {
     title: "",
     component: () => (
@@ -265,6 +277,9 @@ export default function Settings(): ReactElement {
     ...(isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) ? [languages] : []),
     enableTestNetworks,
     dAppsSettings,
+    ...(isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)
+      ? [addCustomAsset]
+      : []),
     needHelp,
     bugReport,
     ...(isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) ? [analytics] : []),

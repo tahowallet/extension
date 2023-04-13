@@ -20,12 +20,31 @@ export default function NFTsExploreBanner(props: {
     <SharedBanner customStyles="margin-top: 10px;">
       <header>{t(`emptyBannerTitle.${type}`)}</header>
       <nav>
-        {items.map(({ title, url, color, hoverColor, hoverIcon, icon }) => (
-          <ExploreMarketLink
-            key={url}
-            {...{ url, title, color, hoverColor, icon, hoverIcon }}
-          />
-        ))}
+        {items.map(
+          ({
+            title,
+            url,
+            icon,
+            color,
+            hoverColor,
+            smallHoverIcon,
+            smallIcon,
+          }) => (
+            <ExploreMarketLink
+              key={url}
+              type="button"
+              {...{
+                url,
+                title,
+                color,
+                hoverColor,
+                smallIcon,
+                smallHoverIcon,
+                icon,
+              }}
+            />
+          )
+        )}
       </nav>
       <style jsx>{`
         header {

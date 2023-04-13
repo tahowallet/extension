@@ -11,9 +11,8 @@ import {
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
-  getBuiltInNetworkBaseAsset,
   heuristicDesiredDecimalsForUnitPrice,
-  isBuiltInNetworkBaseAsset,
+  isNetworkBaseAsset,
 } from "../utils/asset-utils"
 import {
   AnyAsset,
@@ -37,7 +36,7 @@ import {
   selectSourcesByAddress,
 } from "./keyringsSelectors"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
-import { EVMNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
+import { EVMNetwork, sameNetwork } from "../../networks"
 import { NETWORK_BY_CHAIN_ID, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { FeatureFlags, isEnabled } from "../../features"
@@ -63,19 +62,13 @@ const EXCEPTION_ASSETS_BY_SYMBOL = ["BTC", "sBTC", "WBTC", "tBTC"].map(
 const userValueDustThreshold = 2
 
 const shouldForciblyDisplayAsset = (
-  assetAmount: CompleteAssetAmount<AnyAsset>,
-  network: EVMNetwork,
-  baseAsset?: NetworkBaseAsset
+  assetAmount: CompleteAssetAmount<AnyAsset>
 ) => {
-  if (!baseAsset) {
-    return false
-  }
-
   const isDoggo =
     !isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) &&
     assetAmount.asset.symbol === DOGGO.symbol
 
-  return isDoggo || isBuiltInNetworkBaseAsset(baseAsset, network)
+  return isDoggo || isNetworkBaseAsset(assetAmount.asset)
 }
 
 const computeCombinedAssetAmountsData = (
@@ -86,11 +79,12 @@ const computeCombinedAssetAmountsData = (
   hideDust: boolean
 ): {
   combinedAssetAmounts: CompleteAssetAmount[]
+  hiddenAssetAmounts: CompleteAssetAmount[]
   totalMainCurrencyAmount: number | undefined
 } => {
   // Derive account "assets"/assetAmount which include USD values using
   // data from the assets slice
-  const combinedAssetAmounts = assetAmounts
+  const { combinedAssetAmounts, hiddenAssetAmounts } = assetAmounts
     .map<CompleteAssetAmount>((assetAmount) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
@@ -119,31 +113,6 @@ const computeCombinedAssetAmountsData = (
 
       return fullyEnrichedAssetAmount
     })
-    .filter((assetAmount) => {
-      const baseAsset = getBuiltInNetworkBaseAsset(
-        assetAmount.asset.symbol,
-        currentNetwork.chainID
-      )
-
-      const isForciblyDisplayed = shouldForciblyDisplayAsset(
-        assetAmount,
-        currentNetwork,
-        baseAsset
-      )
-
-      const isNotDust =
-        typeof assetAmount.mainCurrencyAmount === "undefined"
-          ? true
-          : assetAmount.mainCurrencyAmount > userValueDustThreshold
-      const isPresent = assetAmount.decimalAmount > 0
-      const isTrusted = !!(assetAmount.asset?.metadata?.tokenLists.length ?? 0)
-
-      // Hide dust, untrusted assets and missing amounts.
-      return (
-        isForciblyDisplayed ||
-        (hideDust ? isTrusted && isNotDust && isPresent : isPresent)
-      )
-    })
     .sort((asset1, asset2) => {
       // Always sort DOGGO above everything.
       if (asset1.asset.symbol === DOGGO.symbol) {
@@ -153,27 +122,11 @@ const computeCombinedAssetAmountsData = (
         return 1
       }
 
-      // Always display the current network's base asset first
-      const networkBaseAsset = currentNetwork.baseAsset
+      const leftIsBaseAsset = isNetworkBaseAsset(asset1.asset)
+      const rightIsBaseAsset = isNetworkBaseAsset(asset2.asset)
 
-      const leftIsNetworkBaseAsset =
-        networkBaseAsset.symbol === asset1.asset.symbol
-      const rightIsNetworkBaseAsset =
-        networkBaseAsset.symbol === asset2.asset.symbol
-
-      if (leftIsNetworkBaseAsset !== rightIsNetworkBaseAsset) {
-        return leftIsNetworkBaseAsset ? -1 : 1
-      }
-      const leftIsBaseAsset = !!getBuiltInNetworkBaseAsset(
-        asset1.asset.symbol,
-        networkBaseAsset.chainID
-      )
-      const rightIsBaseAsset = !!getBuiltInNetworkBaseAsset(
-        asset2.asset.symbol,
-        networkBaseAsset.chainID
-      )
-
-      // Always sort base assets above non-base assets.
+      // Always sort base assets above non-base assets. This also sorts the
+      // current network base asset above the rest
       if (leftIsBaseAsset !== rightIsBaseAsset) {
         return leftIsBaseAsset ? -1 : 1
       }
@@ -196,6 +149,35 @@ const computeCombinedAssetAmountsData = (
       // If only one asset has a main currency amount, it wins.
       return asset1.mainCurrencyAmount === undefined ? 1 : -1
     })
+    .reduce<{
+      combinedAssetAmounts: CompleteAssetAmount[]
+      hiddenAssetAmounts: CompleteAssetAmount[]
+    }>(
+      (acc, assetAmount) => {
+        const isForciblyDisplayed = shouldForciblyDisplayAsset(assetAmount)
+
+        const isNotDust =
+          typeof assetAmount.mainCurrencyAmount === "undefined"
+            ? true
+            : assetAmount.mainCurrencyAmount > userValueDustThreshold
+        const isPresent = assetAmount.decimalAmount > 0
+        const isTrusted = !!(
+          assetAmount.asset?.metadata?.tokenLists.length ?? 0
+        )
+
+        // Hide dust, untrusted assets and missing amounts.
+        if (
+          isForciblyDisplayed ||
+          (isTrusted && (hideDust ? isNotDust && isPresent : isPresent))
+        ) {
+          acc.combinedAssetAmounts.push(assetAmount)
+        } else if (isPresent) {
+          acc.hiddenAssetAmounts.push(assetAmount)
+        }
+        return acc
+      },
+      { combinedAssetAmounts: [], hiddenAssetAmounts: [] }
+    )
 
   // Keep a tally of the total user value; undefined if no main currency data
   // is available.
@@ -207,7 +189,7 @@ const computeCombinedAssetAmountsData = (
     }
   })
 
-  return { combinedAssetAmounts, totalMainCurrencyAmount }
+  return { combinedAssetAmounts, hiddenAssetAmounts, totalMainCurrencyAmount }
 }
 
 const getAccountState = (state: RootState) => state.account
@@ -250,7 +232,6 @@ export const selectAccountAndTimestampedActivities = createSelector(
     }
   }
 )
-
 export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   getAssetsState,
@@ -266,17 +247,21 @@ export const selectCurrentAccountBalances = createSelector(
       (balance) => balance.assetAmount
     )
 
-    const { combinedAssetAmounts, totalMainCurrencyAmount } =
-      computeCombinedAssetAmountsData(
-        assetAmounts,
-        assets,
-        mainCurrencySymbol,
-        currentNetwork,
-        hideDust
-      )
+    const {
+      combinedAssetAmounts,
+      hiddenAssetAmounts,
+      totalMainCurrencyAmount,
+    } = computeCombinedAssetAmountsData(
+      assetAmounts,
+      assets,
+      mainCurrencySymbol,
+      currentNetwork,
+      hideDust
+    )
 
     return {
       assetAmounts: combinedAssetAmounts,
+      hiddenAssetAmounts,
       totalMainCurrencyValue: totalMainCurrencyAmount
         ? formatCurrencyAmount(
             mainCurrencySymbol,

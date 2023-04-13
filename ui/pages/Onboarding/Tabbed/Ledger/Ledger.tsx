@@ -4,6 +4,8 @@ import { ledgerUSBVendorId } from "@ledgerhq/devices"
 import { LedgerProductDatabase } from "@tallyho/tally-background/services/ledger"
 import { useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
+import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
+import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
 import LedgerPanelContainer from "../../../../components/Ledger/LedgerPanelContainer"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import LedgerImportAccounts from "./LedgerImportAccounts"
@@ -90,6 +92,7 @@ export default function Ledger(): ReactElement {
         <LedgerImportAccounts
           device={device}
           onConnect={() => {
+            dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
             history.push(OnboardingRoutes.ONBOARDING_COMPLETE)
           }}
         />

@@ -177,13 +177,14 @@ export default class IndexingService extends BaseService<Events> {
       const trackedNetworks = await this.chainService.getTrackedNetworks()
 
       // Push any assets we have cached in the db for all active networks
-      trackedNetworks.forEach(async (network) => {
-        await this.cacheAssetsForNetwork(network)
-        this.emitter.emit("assets", this.cachedAssets[network.chainID])
-      })
-
-      // Load balances after token lists load
-      tokenListLoad.then(() => this.loadAccountBalances())
+      Promise.allSettled(
+        trackedNetworks.map(async (network) => {
+          await this.cacheAssetsForNetwork(network)
+          this.emitter.emit("assets", this.getCachedAssets(network))
+        })
+        // Load balances after token lists load and after assets are cached, otherwise
+        // we will not load balances on initial balance query
+      ).then(() => tokenListLoad.then(() => this.loadAccountBalances()))
     })
   }
 
@@ -271,7 +272,7 @@ export default class IndexingService extends BaseService<Events> {
     network: EVMNetwork,
     contractAddress: HexString
   ): SmartContractFungibleAsset | undefined {
-    const knownAssets = this.cachedAssets[network.chainID]
+    const knownAssets = this.getCachedAssets(network)
 
     const searchResult = knownAssets.find(
       (asset): asset is SmartContractFungibleAsset =>
@@ -419,7 +420,7 @@ export default class IndexingService extends BaseService<Events> {
             .asset as SmartContractFungibleAsset
           if (fungibleAsset.contractAddress && fungibleAsset.decimals) {
             this.addTokenToTrackByContract(
-              addressNetwork,
+              addressNetwork.network,
               fungibleAsset.contractAddress
             )
           }
@@ -447,7 +448,7 @@ export default class IndexingService extends BaseService<Events> {
             ({ smartContract: { contractAddress } }) => contractAddress
           )
         )
-        const cachedAssets = this.cachedAssets[addressOnNetwork.network.chainID]
+        const cachedAssets = this.getCachedAssets(addressOnNetwork.network)
 
         const otherActiveAssets = cachedAssets
           .filter(isSmartContractFungibleAsset)
@@ -529,7 +530,7 @@ export default class IndexingService extends BaseService<Events> {
             await this.addAssetToTrack(knownAsset)
           } else {
             await this.addTokenToTrackByContract(
-              addressNetwork,
+              addressNetwork.network,
               contractAddress
             )
           }
@@ -586,14 +587,14 @@ export default class IndexingService extends BaseService<Events> {
    *        fungible asset. Useful in case this asset isn't found in existing
    *        metadata.
    */
-  private async addTokenToTrackByContract(
-    addressOnNetwork: AddressOnNetwork,
+  async addTokenToTrackByContract(
+    network: EVMNetwork,
     contractAddress: string
   ): Promise<void> {
     const normalizedAddress = normalizeEVMAddress(contractAddress)
-    const { network } = addressOnNetwork
+
     const knownAsset = this.getKnownSmartContractAsset(
-      addressOnNetwork.network,
+      network,
       normalizedAddress
     )
 
@@ -796,7 +797,7 @@ export default class IndexingService extends BaseService<Events> {
     // may be inactive.
     this.chainService.supportedNetworks.forEach(async (network) => {
       await this.cacheAssetsForNetwork(network)
-      this.emitter.emit("assets", this.cachedAssets[network.chainID])
+      this.emitter.emit("assets", this.getCachedAssets(network))
     })
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if

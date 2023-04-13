@@ -5,6 +5,7 @@ import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selec
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp"
 import { useTranslation } from "react-i18next"
+import { setSelectedNetwork } from "@tallyho/tally-background/redux-slices/ui"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 
@@ -18,6 +19,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 export default function TopMenu(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "topMenu" })
+
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isBonusProgramOpen, setIsBonusProgramOpen] = useState(false)
@@ -104,12 +106,14 @@ export default function TopMenu(): ReactElement {
       <SharedSlideUpMenu
         isOpen={isProtocolListOpen}
         isScrollable
+        customStyles={{ display: "flex", flexDirection: "column" }}
         close={() => {
           setIsProtocolListOpen(false)
         }}
       >
         <TopMenuProtocolList
-          onProtocolChange={() => {
+          onProtocolChange={(network) => {
+            dispatch(setSelectedNetwork(network))
             setIsProtocolListOpen(false)
           }}
         />

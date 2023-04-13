@@ -231,8 +231,8 @@ export class ChainDatabase extends Dexie {
     symbol: string
     assetName: string
     rpcUrls: string[]
-  }): Promise<void> {
-    await this.networks.put({
+  }): Promise<EVMNetwork> {
+    const network: EVMNetwork = {
       name: chainName,
       coingeckoPlatformID: CHAIN_ID_TO_COINGECKO_PLATFORM_ID[chainID],
       chainID,
@@ -243,11 +243,13 @@ export class ChainDatabase extends Dexie {
         name: assetName,
         chainID,
       },
-    })
+    }
+    await this.networks.put(network)
     // A bit awkward that we are adding the base asset to the network as well
     // as to its own separate table - but lets forge on for now.
     await this.addBaseAsset(assetName, symbol, chainID, decimals)
     await this.addRpcUrls(chainID, rpcUrls)
+    return network
   }
 
   async removeEVMNetwork(chainID: string): Promise<void> {
@@ -256,17 +258,34 @@ export class ChainDatabase extends Dexie {
       this.networks,
       this.baseAssets,
       this.rpcUrls,
-      () =>
-        Promise.all([
+      this.accountsToTrack,
+      async () => {
+        await Promise.all([
           this.networks.where({ chainID }).delete(),
           this.baseAssets.where({ chainID }).delete(),
           this.rpcUrls.where({ chainID }).delete(),
         ])
+
+        // @TODO - Deleting accounts inside the Promise.all does not seem
+        // to work, figure out why this is happening and parallelize if possible.
+        const accountsToTrack = await this.accountsToTrack
+          .toCollection()
+          .filter((account) => account.network.chainID === chainID)
+        return accountsToTrack.delete()
+      }
     )
   }
 
   async getAllEVMNetworks(): Promise<EVMNetwork[]> {
     return this.networks.where("family").equals("EVM").toArray()
+  }
+
+  async getEVMNetworkByChainID(
+    chainID: string
+  ): Promise<EVMNetwork | undefined> {
+    return (await this.networks.where("family").equals("EVM").toArray()).find(
+      (network) => network.chainID === chainID
+    )
   }
 
   private async addBaseAsset(
