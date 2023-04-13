@@ -48,6 +48,11 @@ export default function ImportSeed(props: Props): ReactElement {
 
   const history = useHistory()
 
+  const onInputChange = useCallback((seed: string) => {
+    setRecoveryPhrase(seed)
+    setErrorMessage("")
+  }, [])
+
   useEffect(() => {
     if (areKeyringsUnlocked && keyringImport === "done" && isImporting) {
       setIsImporting(false)
@@ -109,7 +114,7 @@ export default function ImportSeed(props: Props): ReactElement {
             </div>
           )}
           <SharedSeedInput
-            onChange={(seed) => setRecoveryPhrase(seed)}
+            onChange={onInputChange}
             label={t("inputLabel")}
             errorMessage={errorMessage}
           />

@@ -40,6 +40,11 @@ export default function ImportPrivateKey(props: Props): ReactElement {
     keyPrefix: "onboarding.tabbed.addWallet.importPrivateKey",
   })
 
+  const onInputChange = useCallback((pk: string) => {
+    setPrivateKey(pk)
+    setErrorMessage("")
+  }, [])
+
   const importWallet = useCallback(async () => {
     const trimmedPrivateKey = privateKey.toLowerCase().trim()
     if (validatePrivateKey(trimmedPrivateKey)) {
@@ -60,7 +65,7 @@ export default function ImportPrivateKey(props: Props): ReactElement {
   return (
     <>
       <SharedSeedInput
-        onChange={(pk) => setPrivateKey(pk)}
+        onChange={onInputChange}
         label={t("inputLabel")}
         errorMessage={errorMessage}
       />
