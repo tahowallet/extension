@@ -576,22 +576,22 @@ export default class KeyringService extends BaseService<Events> {
     this.emitKeyrings()
   }
 
-  async exportPrivateKey(account: HexString): Promise<string | null> {
+  async exportPrivateKey(address: HexString): Promise<string | null> {
     this.requireUnlocked()
 
     try {
-      const privateKeyWallet = await this.#findPrivateKey(account)
+      const privateKeyWallet = await this.#findPrivateKey(address)
       return privateKeyWallet.privateKey
     } catch (e) {
       return null
     }
   }
 
-  async exportMnemonic(account: HexString): Promise<string | null> {
+  async exportMnemonic(address: HexString): Promise<string | null> {
     this.requireUnlocked()
 
     try {
-      const keyring = await this.#findKeyring(account)
+      const keyring = await this.#findKeyring(address)
       const { mnemonic } = await keyring.serialize()
       return mnemonic
     } catch (e) {
