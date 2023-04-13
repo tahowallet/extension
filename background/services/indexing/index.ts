@@ -447,7 +447,7 @@ export default class IndexingService extends BaseService<Events> {
         const balances = await this.retrieveTokenBalances(addressOnNetwork)
 
         // FIXME Refactor this to only update prices for tokens with balances.
-        await this.handlePriceAlarm()
+        this.handlePriceAlarm()
 
         // Every asset we have that hasn't already been balance checked and is
         // on the currently selected network should be checked once.
@@ -798,9 +798,12 @@ export default class IndexingService extends BaseService<Events> {
     }
 
     this.lastPriceAlarmTime = Date.now()
-    // TODO refactor for multiple price sources
-    await this.getBaseAssetsPrices()
-    await this.getTrackedAssetsPrices()
+
+    // Avoid awaiting here so price fetching can happen in the background
+    // and the extension can go on doing whatever it needs to do while waiting
+    // for prices to come back.
+    this.getBaseAssetsPrices()
+    this.getTrackedAssetsPrices()
   }
 
   private async fetchAndCacheTokenLists(): Promise<void> {
