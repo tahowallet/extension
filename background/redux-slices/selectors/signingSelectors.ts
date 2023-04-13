@@ -3,7 +3,7 @@ import { RootState } from ".."
 import { isDefined } from "../../lib/utils/type-guards"
 import {
   KeyringAccountSigner,
-  WalletAccountSigner,
+  PrivateKeyAccountSigner,
 } from "../../services/keyring"
 import { LedgerAccountSigner } from "../../services/ledger"
 import { AccountSigner, ReadOnlyAccountSigner } from "../../services/signing"
@@ -71,7 +71,9 @@ export const selectAccountSignersByAddress = createSelector(
 
     const privateKeyEntries = Object.entries(walletsByAddress)
       .map(
-        ([address, wallet]): [HexString, WalletAccountSigner] | undefined => {
+        ([address, wallet]):
+          | [HexString, PrivateKeyAccountSigner]
+          | undefined => {
           if (wallet.id === null) {
             return undefined
           }
