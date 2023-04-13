@@ -38,7 +38,7 @@ export type AssetMetadata = {
   coinGeckoID?: string
   logoURL?: string
   websiteURL?: string
-  tokenLists: TokenListCitation[]
+  tokenLists?: TokenListCitation[]
   /**
    * Set by the user on assets discovered through transaction annotations
    */
@@ -99,8 +99,7 @@ export type SmartContractAsset = SmartContract & Asset
  * Any fungible asset that is managed by a smart contract; see
  * {@link SmartContract) for information on smart contract objects.
  */
-export type SmartContractFungibleAsset = FungibleAsset &
-  SmartContract & { metadata: AssetMetadata }
+export type SmartContractFungibleAsset = FungibleAsset & SmartContract
 
 /*
  * The primary type representing amounts in fungible or non-fungible asset

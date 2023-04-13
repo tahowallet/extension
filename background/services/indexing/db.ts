@@ -321,7 +321,6 @@ export class IndexingDatabase extends Dexie {
     this.customAssets.put(asset)
   }
 
-  // TODO WRITE MIGRATION TO FIX METADATA ON ALL CUSTOM ASSETS
   async updateAssetMetadata(
     asset: SmartContractFungibleAsset,
     metadata: Partial<AssetMetadata>

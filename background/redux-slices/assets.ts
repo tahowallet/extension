@@ -123,6 +123,8 @@ const assetsSlice = createSlice({
           sameEVMAddress(targetAsset.contractAddress, asset.contractAddress) &&
           targetAsset.homeNetwork.chainID === asset.homeNetwork.chainID
         ) {
+          // eslint-disable-next-line no-param-reassign
+          asset.metadata ??= {}
           Object.assign(asset.metadata, metadata)
         }
       })
@@ -266,7 +268,7 @@ export const selectAssetPricePoint = createSelector(
 
       /* Don't do anything else if this is an untrusted asset and there's no exact match */
       if (
-        (assetToFind.metadata?.tokenLists.length ?? 0) < 1 &&
+        (assetToFind.metadata?.tokenLists?.length ?? 0) < 1 &&
         !isBuiltInNetworkBaseAsset(assetToFind, assetToFind.homeNetwork)
       ) {
         return undefined

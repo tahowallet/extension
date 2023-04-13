@@ -120,15 +120,14 @@ const computeCombinedAssetAmountsData = (
           ? true
           : assetAmount.mainCurrencyAmount > userValueDustThreshold
       const isPresent = assetAmount.decimalAmount > 0
-      // TODO: Review after adding "add custom token"
-      const isCustomAsset = !!(
-        assetAmount.asset?.metadata?.tokenLists.length ?? 0
-      )
+      const isTrusted =
+        !!(assetAmount.asset?.metadata?.tokenLists?.length ?? 0) ||
+        assetAmount.asset?.metadata?.trusted
 
       // Hide dust, custom assets and missing amounts.
       return (
         isForciblyDisplayed ||
-        (hideDust ? isCustomAsset && isNotDust && isPresent : isPresent)
+        (hideDust ? isTrusted && isNotDust && isPresent : isPresent)
       )
     })
     .sort((asset1, asset2) => {
