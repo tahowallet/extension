@@ -11,7 +11,7 @@ import {
   POLYGON,
   ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
-import { sameNetwork } from "@tallyho/tally-background/networks"
+import { EVMNetwork, sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectShowTestNetworks } from "@tallyho/tally-background/redux-slices/ui"
 import { selectProductionEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
@@ -23,7 +23,7 @@ import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 import TopMenuProtocolListFooter from "./TopMenuProtocolListFooter"
 import { i18n } from "../../_locales/i18n"
 
-const productionNetworkInfo = {
+export const productionNetworkInfo = {
   [ETHEREUM.chainID]: i18n.t("protocol.mainnet"),
   [POLYGON.chainID]: i18n.t("protocol.l2"),
   [OPTIMISM.chainID]: i18n.t("protocol.l2"),
@@ -45,7 +45,7 @@ const testNetworks = [
 ]
 
 type TopMenuProtocolListProps = {
-  onProtocolChange: () => void
+  onProtocolChange: (network: EVMNetwork) => void
 }
 
 export default function TopMenuProtocolList({
