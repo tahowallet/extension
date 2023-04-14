@@ -14,7 +14,11 @@ const DISMISS_MS = 2500
 // dismissed.
 const DISMISS_ANIMATION_MS = 300
 
-export default function Snackbar(): ReactElement {
+export default function Snackbar({
+  isTabbedOnboarding = false,
+}: {
+  isTabbedOnboarding?: boolean
+}): ReactElement {
   const dispatch = useDispatch()
 
   const snackbarMessage = useBackgroundSelector(selectSnackbarMessage)
@@ -52,7 +56,12 @@ export default function Snackbar(): ReactElement {
   }, [clearSnackbarTimeout, dispatch])
 
   return (
-    <div className={classNames("snackbar_container", { hidden: shouldHide })}>
+    <div
+      className={classNames("snackbar_container", {
+        hidden: shouldHide,
+        tab_container: isTabbedOnboarding,
+      })}
+    >
       <div className="snackbar_wrap">{displayMessage}</div>
       <style jsx>
         {`
@@ -97,6 +106,12 @@ export default function Snackbar(): ReactElement {
           .snackbar_container.hidden .snackbar_wrap {
             padding: 0;
             transform: translateY(10px);
+          }
+
+          @media (min-width: 980px) {
+            .tab_container {
+              right: -50%;
+            }
           }
         `}
       </style>
