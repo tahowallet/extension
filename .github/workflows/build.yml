@@ -9,7 +9,70 @@ on:
       - v*
 
 jobs:
+  decide-parameters:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Output environment
+        run: |
+          echo '${{ github.ref }}'
+          echo '${{ toJSON(github.event) }}'
+    outputs:
+      is-dev-build: ${{ github.ref == 'refs/heads/main' }}
+      is-release-build: ${{ startsWith(github.ref, 'refs/tags/') }}
+      is-pr-build: ${{ github.event_name == 'pull_request' }}
+      common-env: >-
+        COMMIT_SHA=${{ github.sha }}
+
+  set-release-env:
+    needs: decide-parameters
+    if: ${{ 'true' == needs.decide-parameters.outputs.is-release-build }}
+    steps:
+      - name: Output parameters
+        run: |
+          echo '${{ toJSON(needs.decide-parameters.outputs) }}'
+    runs-on: ubuntu-latest
+    outputs:
+      env: |-
+        ${{ needs.decide-parameters.outputs.common-env }}
+        ALCHEMY_KEY=${{ secrets.ALCHEMY_API_KEY }}
+        BLOCKNATIVE_API_KEY=${{ secrets.BLOCKNATIVE_API_KEY }}
+        DAYLIGHT_API_KEY=${{ secrets.DAYLIGHT_API_KEY }}
+        USE_ANALYTICS_SOURCE=PROD
+
+        UNS_API_KEY=${{ secrets.UNS_API_KEY }}
+        SIMPLE_HASH_API_KEY=${{ secrets.SIMPLE_HASH_API_KEY }}
+        ZEROX_API_KEY=${{ secrets.ZEROX_API_KEY }}
+        POAP_API_KEY=${{ secrets.POAP_API_KEY }}
+
+  set-development-env:
+    needs: decide-parameters
+    if: ${{ 'false' == needs.decide-parameters.outputs.is-release-build }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Detect env block in PR description
+        id: env-block
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const detectEnvBlock = require("./.github/workflows/builds/detect-env-block.js")
+            return await detectEnvBlock({ github, context })
+    outputs:
+      env: |-
+        ${{ needs.decide-parameters.outputs.common-env }}
+
+        ALCHEMY_KEY=${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
+        BLOCKNATIVE_API_KEY=${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
+        DAYLIGHT_API_KEY=${{ secrets.DAYLIGHT_API_KEY }}
+        USE_ANALYTICS_SOURCE=BETA
+
+        ${{ steps.env-block.outputs.result }}
+
   build:
+    needs: [decide-parameters, set-release-env, set-development-env]
+    if: always() # Make sure if we skip release or development env setting, we still run the build.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -24,39 +87,14 @@ jobs:
           node-version: "${{ steps.nvm.outputs.NVMRC }}"
           cache: "yarn"
       - run: yarn install --frozen-lockfile
-      - name: Detect env block
-        id: env-block
-        if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const detectEnvBlock = require("./.github/workflows/builds/detect-env-block.js")
-            return await detectEnvBlock({ github, context })
-      - name: Dev build
-        if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
+      - name: Build
         run: |
-          echo -e ${{ steps.env-block.outputs.result }} > .env
-          echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
+          echo -e ${{ toJSON(
+            needs.decide-parameters.outputs.is-release-build &&
+              needs.set-release-env.outputs.env ||
+              needs.set-development-env.outputs.env
+          ) }} > .env
           yarn build
-        env:
-          ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
-          BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
-          DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
-          COMMIT_SHA: ${{ github.sha }}
-      - name: Production build
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        run: |
-          echo 'USE_ANALYTICS_SOURCE="PROD"' >> .env
-          yarn build
-        env:
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
-          BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
-          UNS_API_KEY: ${{ secrets.UNS_API_KEY }}
-          SIMPLE_HASH_API_KEY: ${{ secrets.SIMPLE_HASH_API_KEY }}
-          ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}
-          COMMIT_SHA: ${{ github.sha }}
-          POAP_API_KEY: ${{ secrets.POAP_API_KEY }}
-          DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
       - name: Upload build asset
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         uses: actions/upload-artifact@v3
@@ -71,6 +109,7 @@ jobs:
           draft: true
           generate_release_notes: true
           prerelease: ${{ contains(github.ref, '-pre') || contains(github.ref, 'v0.') }}
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -99,6 +138,7 @@ jobs:
           cache: "yarn"
       - run: yarn install --frozen-lockfile
       - run: yarn lint
+
   detect-if-flag-changed:
     runs-on: ubuntu-latest
     outputs:
