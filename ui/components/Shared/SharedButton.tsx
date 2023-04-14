@@ -289,16 +289,16 @@ export default function SharedButton(
             background-color: #ffffff;
           }
           .gray {
-            color: var(--green-60);
+            color: var(--green-20);
           }
           .gray .icon_button {
-            background-color: var(--green-60);
+            background-color: var(--green-20);
           }
           .gray:hover {
-            color: var(--green-40);
+            color: var(--green-20);
           }
           .gray:hover .icon_button {
-            background-color: var(--green-40);
+            background-color: var(--green-20);
           }
           .error {
             color: var(--error);

@@ -2,6 +2,7 @@ import { exportMnemonic } from "@tallyho/tally-background/redux-slices/keyrings"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import classNames from "classnames"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSecretText from "../Shared/SharedSecretText"
@@ -63,7 +64,11 @@ export default function RevealMnemonic({
 
   return (
     <>
-      <div className="mnemonic_container">
+      <div
+        className={classNames("mnemonic_container", {
+          small: splitIndex === 6,
+        })}
+      >
         <SharedSecretText
           text={
             <MnemonicList
@@ -95,6 +100,9 @@ export default function RevealMnemonic({
         .mnemonic_container {
           display: flex;
           height: 370px;
+        }
+        .mnemonic_container.small {
+          height: 240px;
         }
       `}</style>
     </>

@@ -78,7 +78,7 @@ export const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   },
   [AccountType.PrivateKey]: {
     title: i18n.t("accounts.notificationPanel.privateKey"),
-    icon: "./images/key.svg",
+    icon: "./images/add_wallet/import_priv_key.svg",
     category: i18n.t("accounts.notificationPanel.category.others"),
   },
   [AccountType.Ledger]: {
@@ -194,47 +194,48 @@ function WalletTypeHeader({
           </div>
           {sectionTitle}
         </h2>
-        {accountType !== AccountType.ReadOnly && (
-          <SharedDropdown
-            toggler={(toggle) => (
-              <SharedIcon
-                color="var(--green-40)"
-                customStyles="cursor: pointer;"
-                width={24}
-                onClick={() => toggle()}
-                icon="settings.svg"
-              />
-            )}
-            options={[
-              {
-                key: "edit",
-                icon: "icons/s/edit.svg",
-                label: t("accounts.accountItem.editName"),
-                onClick: () => setShowEditMenu(true),
-              },
-              onClickAddAddress && {
-                key: "addAddress",
-                onClick: () => {
-                  if (areKeyringsUnlocked) {
-                    onClickAddAddress()
-                  } else {
-                    history.push("/keyring/unlock")
-                  }
+        {accountType !== AccountType.ReadOnly &&
+          accountType !== AccountType.PrivateKey && (
+            <SharedDropdown
+              toggler={(toggle) => (
+                <SharedIcon
+                  color="var(--green-40)"
+                  customStyles="cursor: pointer;"
+                  width={24}
+                  onClick={() => toggle()}
+                  icon="settings.svg"
+                />
+              )}
+              options={[
+                {
+                  key: "edit",
+                  icon: "icons/s/edit.svg",
+                  label: t("accounts.accountItem.editName"),
+                  onClick: () => setShowEditMenu(true),
                 },
-                icon: "icons/s/add.svg",
-                label: t("accounts.notificationPanel.addAddress"),
-              },
-              hasMnemonic && isEnabled(FeatureFlags.SUPPORT_PRIV_KEYS)
-                ? {
-                    key: "showMnemonic",
-                    onClick: () => setShowExportMnemonicMenu(true),
-                    icon: "icons/s/lock-bold.svg",
-                    label: t("accounts.accountItem.showMnemonic.header"),
-                  }
-                : undefined,
-            ]}
-          />
-        )}
+                onClickAddAddress && {
+                  key: "addAddress",
+                  onClick: () => {
+                    if (areKeyringsUnlocked) {
+                      onClickAddAddress()
+                    } else {
+                      history.push("/keyring/unlock")
+                    }
+                  },
+                  icon: "icons/s/add.svg",
+                  label: t("accounts.notificationPanel.addAddress"),
+                },
+                hasMnemonic && isEnabled(FeatureFlags.SUPPORT_PRIV_KEYS)
+                  ? {
+                      key: "showMnemonic",
+                      onClick: () => setShowExportMnemonicMenu(true),
+                      icon: "icons/s/lock-bold.svg",
+                      label: t("accounts.accountItem.showMnemonic.header"),
+                    }
+                  : undefined,
+              ]}
+            />
+          )}
       </header>
       <SharedSlideUpMenu
         size="custom"
