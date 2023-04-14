@@ -121,9 +121,10 @@ export default function ShowMnemonic({
           flex-direction: column;
           align-items: center;
           justify-content: space-between;
-          height: 91%;
+          height: calc(100% - 19px);
+          box-sizing: border-box;
           gap: 16px;
-          padding: 0 24px 24px;
+          padding: 0 24px 16px;
           overflow: scroll;
         }
         .content {
@@ -167,7 +168,7 @@ export default function ShowMnemonic({
           color: var(--green-40);
         }
         .account_list {
-          margin: 16px -16px 0;
+          margin: 16px -4px 0;
           display: flex;
           flex-direction: column;
           gap: 16px;

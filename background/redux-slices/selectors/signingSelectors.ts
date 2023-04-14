@@ -10,7 +10,7 @@ import { AccountSigner, ReadOnlyAccountSigner } from "../../services/signing"
 import { HexString } from "../../types"
 import {
   selectKeyringsByAddresses,
-  selectWalletsByAddress,
+  selectPrivateKeyWalletsByAddress,
 } from "./keyringsSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
 
@@ -30,8 +30,13 @@ export const selectAccountSignersByAddress = createSelector(
   getAllAddresses,
   (state: RootState) => state.ledger.devices,
   selectKeyringsByAddresses,
-  selectWalletsByAddress,
-  (allAddresses, ledgerDevices, keyringsByAddress, walletsByAddress) => {
+  selectPrivateKeyWalletsByAddress,
+  (
+    allAddresses,
+    ledgerDevices,
+    keyringsByAddress,
+    privateKeyWalletsByAddress
+  ) => {
     const allAccountsSeen = new Set<string>()
     const ledgerEntries = Object.values(ledgerDevices).flatMap((device) =>
       Object.values(device.accounts).flatMap(
@@ -69,7 +74,7 @@ export const selectAccountSignersByAddress = createSelector(
       )
       .filter(isDefined)
 
-    const privateKeyEntries = Object.entries(walletsByAddress)
+    const privateKeyEntries = Object.entries(privateKeyWalletsByAddress)
       .map(
         ([address, wallet]):
           | [HexString, PrivateKeyAccountSigner]
