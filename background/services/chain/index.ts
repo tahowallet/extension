@@ -6,7 +6,7 @@ import { ethers, utils } from "ethers"
 import { Logger, UnsignedTransaction } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
-import { HexString, UNIXTime } from "../../types"
+import { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyEVMBlock,
@@ -21,7 +21,7 @@ import {
   NetworkBaseAsset,
   sameChainID,
 } from "../../networks"
-import { AssetTransfer } from "../../assets"
+import { AssetTransfer, SmartContractFungibleAsset } from "../../assets"
 import {
   HOUR,
   ETHEREUM,
@@ -65,6 +65,7 @@ import {
 } from "./utils/optimismGasPriceOracle"
 import KeyringService from "../keyring"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
+import { fromFixedPoint } from "../../lib/fixed-point"
 
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
@@ -124,6 +125,7 @@ interface Events extends ServiceLifecycleEvents {
     addressOnNetwork: AddressOnNetwork
   }
   transactionSend: HexString
+  networkSubscribed: EVMNetwork
   transactionSendFailure: undefined
   assetTransfers: {
     addressNetwork: AddressOnNetwork
@@ -132,6 +134,7 @@ interface Events extends ServiceLifecycleEvents {
   block: AnyEVMBlock
   transaction: { forAccounts: string[]; transaction: AnyEVMTransaction }
   blockPrices: { blockPrices: BlockPrices; network: EVMNetwork }
+  customChainAdded: ValidatedAddEthereumChainParameter
 }
 
 export type QueuedTxToRetrieve = {
@@ -419,6 +422,8 @@ export default class ChainService extends BaseService<Events> {
     } else {
       logger.error(`Couldn't find provider for network ${network.name}`)
     }
+
+    this.emitter.emit("networkSubscribed", network)
   }
 
   /**
@@ -847,10 +852,17 @@ export default class ChainService extends BaseService<Events> {
       // Default to tracking Ethereum so ENS resolution works during onboarding
       return [ETHEREUM]
     }
-    return [...chainIDs].map((chainID) => {
-      const network = NETWORK_BY_CHAIN_ID[chainID]
-      return network
-    })
+
+    const networks = await Promise.all(
+      [...chainIDs].map(async (chainID) => {
+        const network = NETWORK_BY_CHAIN_ID[chainID]
+        if (!network) {
+          return this.db.getEVMNetworkByChainID(chainID)
+        }
+        return network
+      })
+    )
+    return networks.filter((network): network is EVMNetwork => !!network)
   }
 
   async removeAccountToTrack(address: string): Promise<void> {
@@ -1881,8 +1893,8 @@ export default class ChainService extends BaseService<Events> {
   // Used to add non-default chains via wallet_addEthereumChain
   async addCustomChain(
     chainInfo: ValidatedAddEthereumChainParameter
-  ): Promise<void> {
-    await this.db.addEVMNetwork({
+  ): Promise<EVMNetwork> {
+    const network = await this.db.addEVMNetwork({
       chainName: chainInfo.chainName,
       chainID: chainInfo.chainId,
       decimals: chainInfo.nativeCurrency.decimals,
@@ -1898,6 +1910,9 @@ export default class ChainService extends BaseService<Events> {
     )
 
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
+
+    this.emitter.emit("customChainAdded", chainInfo)
+    return network
   }
 
   async removeCustomChain(chainID: string): Promise<void> {
@@ -1910,5 +1925,51 @@ export default class ChainService extends BaseService<Events> {
 
     this.supportedNetworks = supportedNetworks
     this.emitter.emit("supportedNetworks", supportedNetworks)
+  }
+
+  async queryTokenDetails(
+    contractAddress: NormalizedEVMAddress,
+    addressOnNetwork: AddressOnNetwork,
+    existingAsset?: SmartContractFungibleAsset
+  ): Promise<{
+    asset: SmartContractFungibleAsset
+    balance: number
+  }> {
+    const { network } = addressOnNetwork
+
+    const balance = await this.assetData.getTokenBalance(
+      addressOnNetwork,
+      contractAddress
+    )
+
+    if (existingAsset) {
+      return {
+        asset: existingAsset,
+        // FIXME: REMOVE FIXED PRECISION
+        balance: fromFixedPoint(balance.amount, existingAsset.decimals, 2),
+      }
+    }
+
+    const asset = await this.assetData
+      .getTokenMetadata({
+        contractAddress,
+        homeNetwork: network,
+      })
+      .catch(() => undefined)
+
+    if (!asset) {
+      throw logger.buildError(
+        "Unable to retrieve metadata for custom asset",
+        contractAddress,
+        "on chain:",
+        network.chainID
+      )
+    }
+
+    return {
+      asset,
+      // FIXME: REMOVE FIXED PRECISION
+      balance: fromFixedPoint(balance.amount, asset.decimals, 2),
+    }
   }
 }

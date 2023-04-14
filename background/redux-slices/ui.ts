@@ -2,6 +2,7 @@ import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
+import { AnalyticsEvent, OneTimeAnalyticsEvent } from "../lib/posthog"
 import { EVMNetwork } from "../networks"
 import { AnalyticsPreferences } from "../services/preferences/types"
 import { AccountSignerWithId } from "../signing"
@@ -16,6 +17,7 @@ export const defaultSettings = {
   collectAnalytics: false,
   showAnalyticsNotification: false,
   hideBanners: false,
+  showHiddenAssets: false,
 }
 
 export type UIState = {
@@ -29,6 +31,7 @@ export type UIState = {
     collectAnalytics: boolean
     showAnalyticsNotification: boolean
     hideBanners: boolean
+    showHiddenAssets: boolean
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
@@ -41,6 +44,7 @@ export type Events = {
   deleteAnalyticsData: never
   newDefaultWalletValue: boolean
   refreshBackgroundPage: null
+  sendEvent: AnalyticsEvent | OneTimeAnalyticsEvent
   newSelectedAccount: AddressOnNetwork
   newSelectedAccountSwitched: AddressOnNetwork
   userActivityEncountered: AddressOnNetwork
@@ -109,6 +113,16 @@ const uiSlice = createSlice({
       settings: {
         ...state.settings,
         hideBanners,
+      },
+    }),
+    toggleShowHiddenAssets: (
+      state,
+      { payload: showHiddenAssets }: { payload: boolean }
+    ) => ({
+      ...state,
+      settings: {
+        ...state.settings,
+        showHiddenAssets,
       },
     }),
     setShowingActivityDetail: (
@@ -182,6 +196,7 @@ export const {
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
   toggleHideBanners,
+  toggleShowHiddenAssets,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
@@ -289,6 +304,13 @@ export const refreshBackgroundPage = createBackgroundAsyncThunk(
   }
 )
 
+export const sendEvent = createBackgroundAsyncThunk(
+  "ui/sendEvent",
+  async (event: AnalyticsEvent | OneTimeAnalyticsEvent) => {
+    await emitter.emit("sendEvent", event)
+  }
+)
+
 export const selectUI = createSelector(
   (state: { ui: UIState }): UIState => state.ui,
   (uiState) => uiState
@@ -339,4 +361,9 @@ export const selectCollectAnalytics = createSelector(
 export const selectHideBanners = createSelector(
   selectSettings,
   (settings) => settings?.hideBanners
+)
+
+export const selectShowHiddenAssets = createSelector(
+  selectSettings,
+  (settings) => settings?.showHiddenAssets
 )

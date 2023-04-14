@@ -19,6 +19,7 @@ export default function WalletAssetList(
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet.activities",
   })
+
   const { assetAmounts, initializationLoadingTimeExpired } = props
 
   const [warnedAsset, setWarnedAsset] = useState<

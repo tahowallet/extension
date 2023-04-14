@@ -19,7 +19,7 @@ import {
   sameBuiltInNetworkBaseAsset,
 } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
-import { sameNetwork } from "../networks"
+import { EVMNetwork, sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
 import {
@@ -28,6 +28,8 @@ import {
 } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
 import { updateAssetCache } from "./accounts"
+import { HexString, NormalizedEVMAddress } from "../types"
+import type { RootState } from "."
 
 export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
   recentPrices: {
@@ -318,5 +320,42 @@ export const selectAssetPricePoint = createSelector(
 
     // If no matching priced asset was found, return undefined.
     return undefined
+  }
+)
+
+export const importTokenViaContractAddress = createBackgroundAsyncThunk(
+  "assets/importTokenViaContractAddress",
+  async (
+    {
+      contractAddress,
+      network,
+    }: { contractAddress: HexString; network: EVMNetwork },
+    { extra: { main } }
+  ) => {
+    await main.importTokenViaContractAddress(contractAddress, network)
+  }
+)
+
+export const checkTokenContractDetails = createBackgroundAsyncThunk(
+  "assets/checkTokenContractDetails",
+  async (
+    {
+      contractAddress,
+      network,
+    }: { contractAddress: NormalizedEVMAddress; network: EVMNetwork },
+    { getState, extra: { main } }
+  ) => {
+    const state = getState() as RootState
+    const currentAccount = state.ui.selectedAccount
+
+    try {
+      return await main.queryCustomTokenDetails(contractAddress, {
+        ...currentAccount,
+        network,
+      })
+    } catch (error) {
+      // FIXME: Rejected thunks return undefined instead of throwing
+      return null
+    }
   }
 )
