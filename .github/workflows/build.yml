@@ -18,8 +18,8 @@ jobs:
           echo '${{ toJSON(github.event) }}'
     outputs:
       is-dev-build: ${{ github.ref == 'refs/heads/main' }}
-      is-release-build: ${{ startsWith(github.ref, 'refs/tags/') }}
-      is-pr-build: ${{ github.event_name == 'pull_request' }}
+        #is-release-build: ${{ startsWith(github.ref, 'refs/tags/') }}
+      is-release-build: ${{ github.event_name == 'pull_request' }}
       common-env: >-
         COMMIT_SHA=${{ github.sha }}
 
@@ -34,6 +34,7 @@ jobs:
     outputs:
       env: |-
         ${{ needs.decide-parameters.outputs.common-env }}
+
         ALCHEMY_KEY=${{ secrets.ALCHEMY_API_KEY }}
         BLOCKNATIVE_API_KEY=${{ secrets.BLOCKNATIVE_API_KEY }}
         DAYLIGHT_API_KEY=${{ secrets.DAYLIGHT_API_KEY }}
