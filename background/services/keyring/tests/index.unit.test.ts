@@ -134,20 +134,6 @@ describe("Keyring Service", () => {
 
       expect(keyrings.length).toBe(1)
     })
-    it("should be able to export mnemonic", async () => {
-      const mnemonic = await keyringService.exportMnemonic(
-        HD_WALLET_MOCK.addresses[0]
-      )
-
-      expect(mnemonic).toBe(HD_WALLET_MOCK.mnemonic)
-    })
-    it("should be able to export private key from HD wallet addresses", async () => {
-      const privateKey = await keyringService.exportPrivateKey(
-        HD_WALLET_MOCK.addresses[0]
-      )
-
-      expect(privateKey).toBe(PK_WALLET_MOCK.privateKey) // first address from both mocks is the same
-    })
     it("should be able to sign transaction", async () => {
       const address = HD_WALLET_MOCK.addresses[0]
       const signed = await keyringService.signTransaction(
@@ -210,13 +196,6 @@ describe("Keyring Service", () => {
       })
       expect(keyringService.getPrivateKeys().length).toBe(1)
     })
-    it("should be able to export private key", async () => {
-      const privateKey = await keyringService.exportPrivateKey(
-        PK_WALLET_MOCK.address
-      )
-
-      expect(privateKey).toBe(PK_WALLET_MOCK.privateKey)
-    })
     it("should be able to sign transaction", async () => {
       const { address } = PK_WALLET_MOCK
       const signed = await keyringService.signTransaction(
@@ -250,6 +229,55 @@ describe("Keyring Service", () => {
       })
 
       expect(signed).toBeDefined()
+    })
+  })
+
+  describe("export secrets", () => {
+    beforeEach(async () => {
+      await keyringService.importSigner({
+        type: SignerTypes.privateKey,
+        privateKey: PK_WALLET_MOCK.privateKey,
+      })
+      await keyringService.importSigner({
+        type: SignerTypes.keyring,
+        mnemonic: HD_WALLET_MOCK.mnemonic,
+        source: "import",
+      })
+    })
+    it("should be able to export private key", async () => {
+      const privateKey = await keyringService.exportPrivateKey(
+        PK_WALLET_MOCK.address
+      )
+
+      expect(privateKey).toBe(PK_WALLET_MOCK.privateKey)
+    })
+    it("should be able to export mnemonic", async () => {
+      const mnemonic = await keyringService.exportMnemonic(
+        HD_WALLET_MOCK.addresses[0]
+      )
+
+      expect(mnemonic).toBe(HD_WALLET_MOCK.mnemonic)
+    })
+    it("should be able to export private key from HD wallet addresses", async () => {
+      const privateKey = await keyringService.exportPrivateKey(
+        HD_WALLET_MOCK.addresses[0]
+      )
+
+      expect(privateKey).toBe(PK_WALLET_MOCK.privateKey) // first address from both mocks is the same
+    })
+    it("should require wallet to be unlocked to export secrets", async () => {
+      keyringService.lock()
+
+      const errorMessage = "KeyringService must be unlocked."
+      const exportMnemonic = async () => {
+        await keyringService.exportMnemonic(HD_WALLET_MOCK.addresses[0])
+      }
+      const exportPrivateKey = async () => {
+        await keyringService.exportPrivateKey(PK_WALLET_MOCK.address)
+      }
+
+      expect(exportMnemonic()).rejects.toThrowError(errorMessage)
+      expect(exportPrivateKey()).rejects.toThrowError(errorMessage)
     })
   })
 })
