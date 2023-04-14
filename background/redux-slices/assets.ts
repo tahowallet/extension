@@ -28,7 +28,7 @@ import {
 } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
 import { updateAssetCache } from "./accounts"
-import { HexString, NormalizedEVMAddress } from "../types"
+import { NormalizedEVMAddress } from "../types"
 import type { RootState } from "."
 
 export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
@@ -325,14 +325,8 @@ export const selectAssetPricePoint = createSelector(
 
 export const importTokenViaContractAddress = createBackgroundAsyncThunk(
   "assets/importTokenViaContractAddress",
-  async (
-    {
-      contractAddress,
-      network,
-    }: { contractAddress: HexString; network: EVMNetwork },
-    { extra: { main } }
-  ) => {
-    await main.importTokenViaContractAddress(contractAddress, network)
+  async (asset: SmartContractFungibleAsset, { extra: { main } }) => {
+    await main.importTokenViaContractAddress(asset)
   }
 )
 

@@ -38,7 +38,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes, NormalizedEVMAddress } from "./types"
-import { EVMNetwork, SignedTransaction } from "./networks"
+import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -1840,12 +1840,17 @@ export default class Main extends BaseService<never> {
   }
 
   async importTokenViaContractAddress(
-    contractAddress: HexString,
-    network: EVMNetwork
+    asset: SmartContractFungibleAsset
   ): Promise<void> {
-    return this.indexingService.addTokenToTrackByContract(
-      network,
-      contractAddress
+    // Manually imported tokens are trusted
+    const trustedAsset = { ...asset }
+    trustedAsset.metadata ??= {}
+    trustedAsset.metadata.trusted = true
+
+    await this.indexingService.addCustomAsset(trustedAsset)
+    await this.indexingService.addTokenToTrackByContract(
+      trustedAsset.homeNetwork,
+      trustedAsset.contractAddress
     )
   }
 

@@ -137,12 +137,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
       return
     }
 
-    await dispatch(
-      importTokenViaContractAddress({
-        contractAddress: assetData.asset.contractAddress,
-        network: assetData.asset.homeNetwork,
-      })
-    )
+    await dispatch(importTokenViaContractAddress(assetData.asset))
     await dispatch(setSnackbarMessage(t("snackbar.success")))
     history.push("/")
   }
