@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 import logger from "../../lib/logger"
 import { HexString } from "../../types"
 import { EVMNetwork, sameNetwork } from "../../networks"
@@ -705,7 +706,6 @@ export default class IndexingService extends BaseService<Events> {
         (network) => network.chainID === asset.homeNetwork.chainID
       )
     })
-
     try {
       // TODO only uses USD
 
@@ -735,7 +735,7 @@ export default class IndexingService extends BaseService<Events> {
               USD,
               network
             )
-            if (coingeckoTokenPrices.length) {
+            if (Object.keys(coingeckoTokenPrices).length) {
               return coingeckoTokenPrices
             }
 
