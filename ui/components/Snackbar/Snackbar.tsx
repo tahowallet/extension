@@ -1,11 +1,21 @@
-import React, { ReactElement, useCallback, useEffect, useRef } from "react"
+import React, {
+  ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { useDispatch } from "react-redux"
 import classNames from "classnames"
 import {
   selectSnackbarMessage,
   clearSnackbarMessage,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { useBackgroundSelector, useDelayContentChange } from "../../hooks"
+import {
+  useBackgroundSelector,
+  useDelayContentChange,
+  useIsOnboarding,
+} from "../../hooks"
 
 // Number of ms before a snackbar message dismisses; changing the message will
 // extend visibility by this much.
@@ -20,6 +30,10 @@ export default function Snackbar({
   isTabbedOnboarding?: boolean
 }): ReactElement {
   const dispatch = useDispatch()
+
+  // Snackbar for tabbed onboarding should be displayed under the button in the right container on the page
+  const [isOnboarding] = useState(useIsOnboarding())
+  const showInRightContainer = isTabbedOnboarding ? isOnboarding : false
 
   const snackbarMessage = useBackgroundSelector(selectSnackbarMessage)
   const shouldHide = snackbarMessage.trim() === ""
@@ -59,7 +73,7 @@ export default function Snackbar({
     <div
       className={classNames("snackbar_container", {
         hidden: shouldHide,
-        tab_container: isTabbedOnboarding,
+        right_container: showInRightContainer,
       })}
     >
       <div className="snackbar_wrap">{displayMessage}</div>
@@ -109,7 +123,7 @@ export default function Snackbar({
           }
 
           @media (min-width: 980px) {
-            .tab_container {
+            .right_container {
               right: -50%;
             }
           }
