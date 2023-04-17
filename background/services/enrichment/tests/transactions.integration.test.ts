@@ -48,7 +48,6 @@ describe("Enrichment Service Transactions", () => {
         contractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
         symbol: "USDC",
         name: "USDC Coin",
-        metadata: { tokenLists: [] },
         decimals: 6,
         homeNetwork: ETHEREUM,
       })
@@ -57,7 +56,6 @@ describe("Enrichment Service Transactions", () => {
         contractAddress: "0x853d955aCEf822Db058eb8505911ED77F175b99e",
         symbol: "FRAX",
         name: "FRAX Token",
-        metadata: { tokenLists: [] },
         decimals: 18,
         homeNetwork: ETHEREUM,
       })

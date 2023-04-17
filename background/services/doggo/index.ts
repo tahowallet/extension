@@ -66,7 +66,6 @@ export default class DoggoService extends BaseService<Events> {
         this.indexingService.addAssetToTrack({
           ...asset,
           homeNetwork: network,
-          metadata: { tokenLists: [] },
         })
       })
       this.indexingService.addAssetToTrack(DOGGO)
@@ -77,7 +76,6 @@ export default class DoggoService extends BaseService<Events> {
         homeNetwork: ETHEREUM,
         name: "Wrapped Ether",
         symbol: "WETH",
-        metadata: { tokenLists: [] },
       })
 
       // Track referrals for all added accounts and any new ones that are added
