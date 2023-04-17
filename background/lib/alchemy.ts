@@ -261,7 +261,7 @@ export async function getTokenMetadata(
     throw new Error("Alchemy token metadata response didn't validate.")
   }
   return {
-    decimals: json.decimals,
+    decimals: json.decimals ?? 0,
     name: json.name,
     symbol: json.symbol,
     metadata: {
