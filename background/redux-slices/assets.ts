@@ -93,27 +93,29 @@ const assetsSlice = createSlice({
       })
       return Object.values(mappedAssets).flat()
     },
-    newPricePoint: (
+    newPricePoints: (
       immerState,
-      { payload: pricePoint }: { payload: PricePoint }
+      { payload: pricePoints }: { payload: PricePoint[] }
     ) => {
-      const fiatCurrency = pricePoint.pair.find((asset) =>
-        FIAT_CURRENCIES_SYMBOL.includes(asset.symbol)
-      )
-      const [pricedAsset] = pricePoint.pair.filter(
-        (asset) => asset !== fiatCurrency
-      )
-      if (fiatCurrency && pricedAsset) {
-        const index = findClosestAssetIndex(pricedAsset, immerState)
-        if (typeof index !== "undefined") {
-          immerState[index].recentPrices[fiatCurrency.symbol] = pricePoint
+      pricePoints.forEach((pricePoint) => {
+        const fiatCurrency = pricePoint.pair.find((asset) =>
+          FIAT_CURRENCIES_SYMBOL.includes(asset.symbol)
+        )
+        const [pricedAsset] = pricePoint.pair.filter(
+          (asset) => asset !== fiatCurrency
+        )
+        if (fiatCurrency && pricedAsset) {
+          const index = findClosestAssetIndex(pricedAsset, immerState)
+          if (typeof index !== "undefined") {
+            immerState[index].recentPrices[fiatCurrency.symbol] = pricePoint
+          }
         }
-      }
+      })
     },
   },
 })
 
-export const { assetsLoaded, newPricePoint } = assetsSlice.actions
+export const { assetsLoaded, newPricePoints } = assetsSlice.actions
 
 export default assetsSlice.reducer
 

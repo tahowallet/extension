@@ -51,7 +51,7 @@ import {
   updateAccountName,
   updateENSAvatar,
 } from "./redux-slices/accounts"
-import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
+import { assetsLoaded, newPricePoints } from "./redux-slices/assets"
 import {
   setEligibility,
   setEligibilityLoading,
@@ -1060,8 +1060,8 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(assetsLoaded(assets))
     })
 
-    this.indexingService.emitter.on("price", (pricePoint) => {
-      this.store.dispatch(newPricePoint(pricePoint))
+    this.indexingService.emitter.on("prices", (pricePoints) => {
+      this.store.dispatch(newPricePoints(pricePoints))
     })
   }
 

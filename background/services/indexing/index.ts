@@ -69,7 +69,7 @@ interface Events extends ServiceLifecycleEvents {
      */
     addressOnNetwork: AddressOnNetwork
   }
-  price: PricePoint
+  prices: PricePoint[]
   assets: AnyAsset[]
 }
 
@@ -670,7 +670,6 @@ export default class IndexingService extends BaseService<Events> {
       // settle
       const measuredAt = Date.now()
       basicPrices.forEach((pricePoint) => {
-        this.emitter.emit("price", pricePoint)
         this.db
           .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
           .catch((err) =>
@@ -682,6 +681,7 @@ export default class IndexingService extends BaseService<Events> {
             )
           )
       })
+      this.emitter.emit("prices", basicPrices)
     } catch (e) {
       logger.error(
         "Error getting base asset prices from coingecko",
@@ -751,35 +751,34 @@ export default class IndexingService extends BaseService<Events> {
         )
       )
 
-      activeAssetPricesByNetwork.forEach((activeAssetPrices) => {
-        Object.entries(activeAssetPrices).forEach(
-          ([contractAddress, unitPricePoint]) => {
-            const asset =
-              allActiveAssetsByAddress[contractAddress.toLowerCase()]
-            if (asset) {
-              // TODO look up fiat currency
-              const pricePoint = getPricePoint(asset, unitPricePoint)
-              this.emitter.emit("price", pricePoint)
-              // TODO move the "coingecko" data source elsewhere
-              this.db
-                .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
-                .catch(() =>
-                  logger.error(
-                    "Error saving price point",
-                    pricePoint,
-                    measuredAt
-                  )
-                )
-            } else {
-              logger.warn(
-                "Discarding price from unknown asset",
-                contractAddress,
-                unitPricePoint
+      const activeAssetPrices = activeAssetPricesByNetwork.flatMap(
+        (activeAssetPrice) => {
+          return Object.entries(activeAssetPrice)
+        }
+      )
+
+      const pricePoints = activeAssetPrices
+        .map(([contractAddress, unitPricePoint]) => {
+          const asset = allActiveAssetsByAddress[contractAddress.toLowerCase()]
+          if (asset) {
+            const pricePoint = getPricePoint(asset, unitPricePoint)
+            this.db
+              .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
+              .catch(() =>
+                logger.error("Error saving price point", pricePoint, measuredAt)
               )
-            }
+            return pricePoint
           }
-        )
-      })
+          logger.warn(
+            "Discarding price from unknown asset",
+            contractAddress,
+            unitPricePoint
+          )
+          return null
+        })
+        .filter((pricePoint): pricePoint is PricePoint => pricePoint !== null)
+
+      this.emitter.emit("prices", pricePoints)
     } catch (err) {
       logger.error(
         "Error getting token prices from coingecko",
