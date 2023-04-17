@@ -570,7 +570,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     { address, network }: AddressOnNetwork,
     handler: (pendingTransaction: AnyEVMTransaction) => void
   ): Promise<void> {
-    if (this.chainID !== network.chainID) {
+    if (
+      this.chainID !== network.chainID &&
+      !isEnabled(FeatureFlags.USE_MAINNET_FORK)
+    ) {
       logger.error(
         `Tried to subscribe to pending transactions for chain id ` +
           `${network.chainID} but provider was on ` +
@@ -578,7 +581,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       )
       return
     }
-
     const alchemySubscription =
       await this.alchemySubscribeFullPendingTransactions(
         { address, network },
