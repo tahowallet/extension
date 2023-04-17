@@ -12,6 +12,7 @@ import {
   getEthereumNetwork,
   isProbablyEVMAddress,
   normalizeEVMAddress,
+  sameEVMAddress,
   wait,
 } from "./lib/utils"
 
@@ -37,7 +38,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes, NormalizedEVMAddress } from "./types"
-import { SignedTransaction } from "./networks"
+import { EVMNetwork, SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -75,6 +76,7 @@ import {
   setAccountsSignerSettings,
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
+  setSelectedNetwork,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -145,7 +147,11 @@ import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
-import { isSmartContractFungibleAsset, SmartContractAsset } from "./assets"
+import {
+  isSmartContractFungibleAsset,
+  SmartContractAsset,
+  SmartContractFungibleAsset,
+} from "./assets"
 import { FeatureFlags, isEnabled } from "./features"
 import { NFTCollection } from "./nfts"
 import {
@@ -167,7 +173,11 @@ import {
   initAbilities,
 } from "./redux-slices/abilities"
 import { AddChainRequestData } from "./services/provider-bridge"
-import { AnalyticsEvent, isOneTimeAnalyticsEvent } from "./lib/posthog"
+import {
+  AnalyticsEvent,
+  isOneTimeAnalyticsEvent,
+  OneTimeAnalyticsEvent,
+} from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -304,10 +314,7 @@ export default class Main extends BaseService<never> {
       chainService
     )
 
-    const analyticsService = AnalyticsService.create(
-      chainService,
-      preferenceService
-    )
+    const analyticsService = AnalyticsService.create(preferenceService)
 
     const nftsService = NFTsService.create(chainService)
 
@@ -601,6 +608,7 @@ export default class Main extends BaseService<never> {
       network,
       name,
     })
+    this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.ACCOUNT_NAME_EDITED)
   }
 
   async removeAccount(
@@ -862,6 +870,12 @@ export default class Main extends BaseService<never> {
           const signedTransactionResult =
             await this.signingService.signTransaction(request, accountSigner)
           await this.store.dispatch(transactionSigned(signedTransactionResult))
+          this.analyticsService.sendAnalyticsEvent(
+            AnalyticsEvent.TRANSACTION_SIGNED,
+            {
+              chainId: request.chainID,
+            }
+          )
         } catch (exception) {
           logger.error("Error signing transaction", exception)
           this.store.dispatch(
@@ -1339,6 +1353,12 @@ export default class Main extends BaseService<never> {
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
       }
     )
+    this.internalEthereumProviderService.emitter.on(
+      "selectedNetwork",
+      (network) => {
+        this.store.dispatch(setSelectedNetwork(network))
+      }
+    )
 
     uiSliceEmitter.on("newSelectedNetwork", (network) => {
       this.internalEthereumProviderService.routeSafeRPCRequest(
@@ -1507,6 +1527,12 @@ export default class Main extends BaseService<never> {
         this.providerBridgeService.notifyContentScriptAboutConfigChange(
           newDefaultWalletValue
         )
+        this.analyticsService.sendAnalyticsEvent(
+          AnalyticsEvent.DEFAULT_WALLET_TOGGLED,
+          {
+            setToDefault: newDefaultWalletValue,
+          }
+        )
       }
     )
 
@@ -1638,6 +1664,45 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(setShowAnalyticsNotification(true))
     })
 
+    this.chainService.emitter.on("networkSubscribed", (network) => {
+      this.analyticsService.sendOneTimeAnalyticsEvent(
+        OneTimeAnalyticsEvent.CHAIN_ADDED,
+        {
+          chainId: network.chainID,
+          name: network.name,
+          description: `This event is fired when a chain is subscribed to from the wallet for the first time.`,
+        }
+      )
+    })
+
+    // ⚠️ Note: We NEVER send addresses to analytics!
+    this.chainService.emitter.on("newAccountToTrack", () => {
+      this.analyticsService.sendAnalyticsEvent(
+        AnalyticsEvent.NEW_ACCOUNT_TO_TRACK,
+        {
+          description: `
+                This event is fired when any address on a network is added to the tracked list. 
+                
+                Note: this does not track recovery phrase(ish) import! But when an address is used 
+                on a network for the first time (read-only or recovery phrase/ledger/keyring).
+                `,
+        }
+      )
+    })
+
+    this.chainService.emitter.on("customChainAdded", (chainInfo) => {
+      this.analyticsService.sendAnalyticsEvent(
+        AnalyticsEvent.CUSTOM_CHAIN_ADDED,
+        {
+          description: `
+                This event is fired when a custom chain is added to the wallet.
+                `,
+          chainInfo: chainInfo.chainName,
+          chainId: chainInfo.chainId,
+        }
+      )
+    })
+
     this.preferenceService.emitter.on(
       "updateAnalyticsPreferences",
       async (analyticsPreferences: AnalyticsPreferences) => {
@@ -1648,6 +1713,13 @@ export default class Main extends BaseService<never> {
             // it's expected that more detailed analytics settings will come
             analyticsPreferences.isEnabled
           )
+        )
+
+        this.analyticsService.sendAnalyticsEvent(
+          AnalyticsEvent.ANALYTICS_TOGGLED,
+          {
+            analyticsEnabled: analyticsPreferences.isEnabled,
+          }
         )
       }
     )
@@ -1733,17 +1805,63 @@ export default class Main extends BaseService<never> {
     return this.chainService.removeCustomChain(chainID)
   }
 
+  async queryCustomTokenDetails(
+    contractAddress: NormalizedEVMAddress,
+    addressOnNetwork: AddressOnNetwork
+  ): Promise<{
+    asset: SmartContractFungibleAsset
+    balance: number
+    exists?: boolean
+  }> {
+    const { network } = addressOnNetwork
+
+    const cachedAsset = this.indexingService
+      .getCachedAssets(network)
+      .find(
+        (asset): asset is SmartContractFungibleAsset =>
+          isSmartContractFungibleAsset(asset) &&
+          sameEVMAddress(contractAddress, asset.contractAddress)
+      )
+
+    const result = await this.chainService.queryTokenDetails(
+      contractAddress,
+      addressOnNetwork,
+      cachedAsset
+    )
+
+    return { ...result, exists: !!cachedAsset }
+  }
+
+  async importTokenViaContractAddress(
+    contractAddress: HexString,
+    network: EVMNetwork
+  ): Promise<void> {
+    return this.indexingService.addTokenToTrackByContract(
+      network,
+      contractAddress
+    )
+  }
+
   private connectPopupMonitor() {
     runtime.onConnect.addListener((port) => {
       if (port.name !== popupMonitorPortName) return
 
       const openTime = Date.now()
 
+      const originalNetworkName =
+        this.store.getState().ui.selectedAccount.network.name
+
       port.onDisconnect.addListener(() => {
+        const networkNameAtClose =
+          this.store.getState().ui.selectedAccount.network.name
         this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.UI_SHOWN, {
           openTime: new Date(openTime).toISOString(),
           closeTime: new Date().toISOString(),
           openLength: (Date.now() - openTime) / 1e3,
+          networkName:
+            originalNetworkName === networkNameAtClose
+              ? originalNetworkName
+              : "switched networks",
           unit: "s",
         })
         this.onPopupDisconnected()

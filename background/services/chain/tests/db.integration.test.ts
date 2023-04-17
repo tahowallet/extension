@@ -335,4 +335,26 @@ describe("Chain Database ", () => {
       expect(assetTransferLookups[0].endBlock).toEqual(1n)
     })
   })
+
+  describe("addEVMNetwork", () => {
+    it("Should correctly add a network, baseAsset, and rpcURL(s) when adding an evm network", async () => {
+      await db.addEVMNetwork({
+        chainName: "Foo",
+        chainID: "12345",
+        decimals: 18,
+        symbol: "BAR",
+        assetName: "Foocoin",
+        rpcUrls: ["https://foo.com"],
+      })
+
+      expect(await db.getEVMNetworkByChainID("12345")).toBeTruthy()
+      expect(
+        (await db.getAllRpcUrls()).find((rpcUrl) =>
+          rpcUrl.rpcUrls.includes("https://foo.com")
+        )
+      ).toBeTruthy()
+
+      expect(await db.getBaseAssetForNetwork("12345")).toBeTruthy()
+    })
+  })
 })
