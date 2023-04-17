@@ -15,11 +15,13 @@ import {
   CHAIN_ID_TO_COINGECKO_PLATFORM_ID,
   CHAIN_ID_TO_RPC_URLS,
   DEFAULT_NETWORKS,
+  ETH,
   GOERLI,
   isBuiltInNetwork,
   NETWORK_BY_CHAIN_ID,
   POLYGON,
 } from "../../constants"
+import { FeatureFlags, isEnabled } from "../../features"
 
 export type Transaction = AnyEVMTransaction & {
   dataSource: "alchemy" | "local"
@@ -303,6 +305,9 @@ export class ChainDatabase extends Dexie {
   }
 
   async getBaseAssetForNetwork(chainID: string): Promise<NetworkBaseAsset> {
+    if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
+      return ETH
+    }
     const baseAsset = await this.baseAssets.get(chainID)
     if (!baseAsset) {
       throw new Error(`No Base Asset Found For Network ${chainID}`)
