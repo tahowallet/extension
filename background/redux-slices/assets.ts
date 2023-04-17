@@ -298,14 +298,20 @@ export const importTokenViaContractAddress = createBackgroundAsyncThunk(
 export const checkTokenContractDetails = createBackgroundAsyncThunk(
   "assets/checkTokenContractDetails",
   async (
-    { contractAddress }: { contractAddress: NormalizedEVMAddress },
+    {
+      contractAddress,
+      network,
+    }: { contractAddress: NormalizedEVMAddress; network: EVMNetwork },
     { getState, extra: { main } }
   ) => {
     const state = getState() as RootState
     const currentAccount = state.ui.selectedAccount
 
     try {
-      return await main.queryCustomTokenDetails(contractAddress, currentAccount)
+      return await main.queryCustomTokenDetails(contractAddress, {
+        ...currentAccount,
+        network,
+      })
     } catch (error) {
       // FIXME: Rejected thunks return undefined instead of throwing
       return null
