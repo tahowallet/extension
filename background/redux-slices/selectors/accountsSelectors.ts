@@ -1,5 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
-import { selectHideDust, selectShowUntrustedAssets } from "../ui"
+import { selectHideDust, selectHideUntrustedAssets } from "../ui"
 import { RootState } from ".."
 import {
   AccountType,
@@ -72,13 +72,54 @@ const shouldForciblyDisplayAsset = (
   return isDoggo || isNetworkBaseAsset(assetAmount.asset)
 }
 
+// Hides dust, untrusted assets and missing amounts.
+export function isAssetAmountVisible(
+  assetAmount: CompleteAssetAmount<AnyAsset>,
+  { hideDust, hideUntrusted }: { hideDust: boolean; hideUntrusted: boolean }
+): boolean {
+  const isForciblyDisplayed = shouldForciblyDisplayAsset(assetAmount)
+
+  const isNotDust =
+    typeof assetAmount.mainCurrencyAmount === "undefined"
+      ? true
+      : assetAmount.mainCurrencyAmount > userValueDustThreshold
+  const isPresent = assetAmount.decimalAmount > 0
+  const isCustomAsset =
+    (assetAmount.asset?.metadata?.tokenLists?.length ?? 0) < 1
+
+  const isTrusted =
+    !isCustomAsset || assetAmount.asset.metadata?.trusted === true
+
+  const isSmartContractAmount = isSmartContractFungibleAsset(assetAmount.asset)
+
+  if (isForciblyDisplayed) {
+    return true
+  }
+
+  if (!isPresent) {
+    return false
+  }
+
+  let visible = true
+
+  if (hideDust) {
+    visible = visible && isNotDust
+  }
+
+  if (isSmartContractAmount && hideUntrusted) {
+    visible = visible && isTrusted
+  }
+
+  return visible
+}
+
 const computeCombinedAssetAmountsData = (
   assetAmounts: AnyAssetAmount<AnyAsset>[],
   assets: AssetsState,
   mainCurrencySymbol: string,
   currentNetwork: EVMNetwork,
   hideDust: boolean,
-  showUntrustedAssets: boolean
+  hideUntrusted: boolean
 ): {
   allAssetAmounts: CompleteAssetAmount[]
   combinedAssetAmounts: CompleteAssetAmount[]
@@ -158,42 +199,14 @@ const computeCombinedAssetAmountsData = (
     hiddenAssetAmounts: CompleteAssetAmount[]
   }>(
     (acc, assetAmount) => {
-      const isForciblyDisplayed = shouldForciblyDisplayAsset(assetAmount)
-
-      const isNotDust =
-        typeof assetAmount.mainCurrencyAmount === "undefined"
-          ? true
-          : assetAmount.mainCurrencyAmount > userValueDustThreshold
-      const isPresent = assetAmount.decimalAmount > 0
-      const isTrusted =
-        !!(assetAmount.asset?.metadata?.tokenLists?.length ?? 0) ||
-        assetAmount.asset.metadata?.trusted
-
-      const isCustomAsset =
-        (assetAmount.asset?.metadata?.tokenLists?.length ?? 0) < 1
-
-      const isSmartContractAmount = isSmartContractFungibleAsset(
-        assetAmount.asset
-      )
-
       if (
-        isSmartContractAmount &&
-        showUntrustedAssets &&
-        isCustomAsset &&
-        assetAmount.asset?.metadata?.trusted !== true
-      ) {
-        acc.hiddenAssetAmounts.push(assetAmount)
-
-        return acc
-      }
-
-      // Hide dust, untrusted assets and missing amounts.
-      if (
-        isForciblyDisplayed ||
-        (isTrusted && (hideDust ? isNotDust && isPresent : isPresent))
+        isAssetAmountVisible(assetAmount, {
+          hideDust,
+          hideUntrusted,
+        })
       ) {
         acc.combinedAssetAmounts.push(assetAmount)
-      } else if (isPresent) {
+      } else {
         acc.hiddenAssetAmounts.push(assetAmount)
       }
       return acc
@@ -233,15 +246,14 @@ export const selectAccountAndTimestampedActivities = createSelector(
   getAssetsState,
   selectCurrentNetwork,
   selectHideDust,
-  selectShowUntrustedAssets,
-
+  selectHideUntrustedAssets,
   selectMainCurrencySymbol,
   (
     account,
     assets,
     currentNetwork,
     hideDust,
-    showUntrustedAssets,
+    hideUntrusted,
     mainCurrencySymbol
   ) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
@@ -251,7 +263,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
         mainCurrencySymbol,
         currentNetwork,
         hideDust,
-        showUntrustedAssets
+        hideUntrusted
       )
 
     return {
@@ -274,14 +286,14 @@ export const selectCurrentAccountBalances = createSelector(
   getAssetsState,
   selectCurrentNetwork,
   selectHideDust,
-  selectShowUntrustedAssets,
+  selectHideUntrustedAssets,
   selectMainCurrencySymbol,
   (
     currentAccount,
     assets,
     currentNetwork,
     hideDust,
-    showUntrustedAssets,
+    hideUntrustedAssets,
     mainCurrencySymbol
   ) => {
     if (typeof currentAccount === "undefined" || currentAccount === "loading") {
@@ -303,7 +315,7 @@ export const selectCurrentAccountBalances = createSelector(
       mainCurrencySymbol,
       currentNetwork,
       hideDust,
-      showUntrustedAssets
+      hideUntrustedAssets
     )
 
     return {
