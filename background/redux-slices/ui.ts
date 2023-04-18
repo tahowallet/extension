@@ -16,7 +16,7 @@ export const defaultSettings = {
   showTestNetworks: false,
   collectAnalytics: false,
   showAnalyticsNotification: false,
-  showUntrustedAssets: true,
+  hideUntrustedAssets: true,
   hideBanners: false,
   showHiddenAssets: false,
 }
@@ -32,7 +32,7 @@ export type UIState = {
     showTestNetworks: boolean
     collectAnalytics: boolean
     showAnalyticsNotification: boolean
-    showUntrustedAssets: boolean
+    hideUntrustedAssets: boolean
     hideBanners: boolean
     showHiddenAssets: boolean
   }
@@ -89,9 +89,9 @@ const uiSlice = createSlice({
     },
     toggleUntrustedAssets: (
       immerState,
-      { payload: showUntrustedAssets }: { payload: boolean }
+      { payload: hideUntrustedAssets }: { payload: boolean }
     ): void => {
-      immerState.settings.showUntrustedAssets = showUntrustedAssets
+      immerState.settings.hideUntrustedAssets = hideUntrustedAssets
     },
     toggleCollectAnalytics: (
       state,
@@ -363,9 +363,9 @@ export const selectShowTestNetworks = createSelector(
   (settings) => settings?.showTestNetworks
 )
 
-export const selectShowUntrustedAssets = createSelector(
+export const selectHideUntrustedAssets = createSelector(
   selectSettings,
-  (settings) => settings?.showUntrustedAssets
+  (settings) => settings?.hideUntrustedAssets
 )
 
 export const selectCollectAnalytics = createSelector(

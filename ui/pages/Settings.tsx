@@ -11,7 +11,7 @@ import {
   toggleHideBanners,
   selectHideBanners,
   toggleUntrustedAssets,
-  selectShowUntrustedAssets,
+  selectHideUntrustedAssets,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
@@ -127,7 +127,7 @@ export default function Settings(): ReactElement {
   const hideBanners = useSelector(selectHideBanners)
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
-  const showUntrustedAssets = useSelector(selectShowUntrustedAssets)
+  const hideUntrusted = useSelector(selectHideUntrustedAssets)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
@@ -141,7 +141,7 @@ export default function Settings(): ReactElement {
     dispatch(toggleTestNetworks(defaultWalletValue))
   }
 
-  const toggleShowUntrustedAssets = (defaultWalletValue: boolean) => {
+  const toggleHideUntrustedAssets = (defaultWalletValue: boolean) => {
     dispatch(toggleUntrustedAssets(defaultWalletValue))
   }
 
@@ -166,8 +166,8 @@ export default function Settings(): ReactElement {
     title: t("settings.hideUntrustedAssets"),
     component: () => (
       <SharedToggleButton
-        onChange={(toggleValue) => toggleShowUntrustedAssets(toggleValue)}
-        value={showUntrustedAssets}
+        onChange={(toggleValue) => toggleHideUntrustedAssets(toggleValue)}
+        value={hideUntrusted}
       />
     ),
   }
