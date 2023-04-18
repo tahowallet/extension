@@ -6,7 +6,7 @@ import {
   selectCurrentAccountSigner,
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import {
   AnyAsset,
   isSmartContractFungibleAsset,
@@ -72,12 +72,11 @@ export default function SingleAsset(): ReactElement {
         return undefined
       }
 
-      return balances.assetAmounts.find(({ asset: candidateAsset }) => {
+      return balances.allAssetAmounts.find(({ asset: candidateAsset }) => {
         if (typeof contractAddress !== "undefined") {
           return (
             isSmartContractFungibleAsset(candidateAsset) &&
-            normalizeEVMAddress(candidateAsset.contractAddress) ===
-              normalizeEVMAddress(contractAddress)
+            sameEVMAddress(candidateAsset.contractAddress, contractAddress)
           )
         }
         return candidateAsset.symbol === symbol
