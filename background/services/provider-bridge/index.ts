@@ -284,6 +284,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
           event.request.params,
           origin
         )
+
+        // on dApp connection, persist the current network/origin state
+        await this.internalEthereumProviderService.switchToSupportedNetwork(
+          origin,
+          network
+        )
       } else {
         // if user does NOT agree, then reject
 

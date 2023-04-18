@@ -437,10 +437,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  private async switchToSupportedNetwork(
+  async switchToSupportedNetwork(
     origin: string,
     supportedNetwork: EVMNetwork
-  ) {
+  ): Promise<void> {
     const { address } = await this.preferenceService.getSelectedAccount()
     await this.chainService.markAccountActivity({
       address,
