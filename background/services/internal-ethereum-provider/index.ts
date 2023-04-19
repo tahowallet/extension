@@ -7,6 +7,8 @@ import {
   RPCRequest,
 } from "@tallyho/provider-bridge-shared"
 import { hexlify, toUtf8Bytes } from "ethers/lib/utils"
+import { normalizeHexAddress } from "@tallyho/hd-keyring"
+
 import logger from "../../lib/logger"
 
 import BaseService from "../base"
@@ -322,7 +324,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           : // some dapps send the object directly instead of an array
             (params as unknown as WatchAssetParameters)
         if (type !== "ERC20") {
-          return false
+          throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
         }
 
         if (options.chainId) {
@@ -330,10 +332,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
             String(options.chainId)
           )
           if (!supportedNetwork) {
-            return false
+            throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
           }
           this.emitter.emit("watchAssetRequest", {
-            contractAddress: options.address,
+            contractAddress: normalizeHexAddress(options.address),
             network: supportedNetwork,
           })
           return true
@@ -343,7 +345,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         const network = await this.getCurrentOrDefaultNetworkForOrigin(origin)
 
         this.emitter.emit("watchAssetRequest", {
-          contractAddress: options.address,
+          contractAddress: normalizeHexAddress(options.address),
           network,
         })
         return true
