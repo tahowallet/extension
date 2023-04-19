@@ -2,6 +2,7 @@ import { exportPrivateKey } from "@tallyho/tally-background/redux-slices/keyring
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSecretText from "../Shared/SharedSecretText"
@@ -19,9 +20,9 @@ export default function RevealPrivateKey({
 
   useEffect(() => {
     const fetchPrivateKey = async () => {
-      const key = (await dispatch(exportPrivateKey(address))) as unknown as
-        | string
-        | null
+      const key = (await dispatch(
+        exportPrivateKey(address)
+      )) as unknown as AsyncThunkFulfillmentType<typeof exportPrivateKey>
 
       if (key) {
         setPrivateKey(key)

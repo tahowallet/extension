@@ -3,6 +3,7 @@ import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import classNames from "classnames"
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSecretText from "../Shared/SharedSecretText"
@@ -50,7 +51,7 @@ export default function RevealMnemonic({
     const fetchMnemonic = async () => {
       const mnemonicText = (await dispatch(
         exportMnemonic(address)
-      )) as unknown as string | null
+      )) as unknown as AsyncThunkFulfillmentType<typeof exportMnemonic>
 
       if (mnemonicText) {
         setMnemonic(mnemonicText)
