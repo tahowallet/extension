@@ -142,6 +142,7 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
           }
           .centered_tooltip {
             display: flex;
+            font-size: 14px;
             flex-direction: column;
             justify-content: center;
             align-items: center;
