@@ -345,6 +345,7 @@ describe("Chain Database ", () => {
         symbol: "BAR",
         assetName: "Foocoin",
         rpcUrls: ["https://foo.com"],
+        blockExplorerURL: "https://someurl.com",
       })
 
       expect(await db.getEVMNetworkByChainID("12345")).toBeTruthy()

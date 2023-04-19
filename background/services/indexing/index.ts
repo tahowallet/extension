@@ -581,6 +581,18 @@ export default class IndexingService extends BaseService<Events> {
     await this.cacheAssetsForNetwork(asset.homeNetwork)
   }
 
+  async importAccountCustomToken(
+    asset: SmartContractFungibleAsset,
+    addressNetwork: AddressOnNetwork
+  ): Promise<void> {
+    await this.addCustomAsset(asset)
+    await this.addTokenToTrackByContract(
+      asset.homeNetwork,
+      asset.contractAddress
+    )
+    await this.retrieveTokenBalances(addressNetwork, [asset])
+  }
+
   /**
    * Add an asset to track to a particular account and network, specified by the
    * contract address and optional decimals.

@@ -62,6 +62,10 @@ export type SmartContract = NetworkSpecific & {
 export type EVMNetwork = Network & {
   chainID: string
   family: "EVM"
+  /**
+   * Provided for custom networks
+   */
+  blockExplorerURL?: string
 }
 
 /**

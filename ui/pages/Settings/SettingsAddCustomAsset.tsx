@@ -6,7 +6,7 @@ import {
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import {
   checkTokenContractDetails,
-  importTokenViaContractAddress,
+  importAccountCustomToken,
 } from "@tallyho/tally-background/redux-slices/assets"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
@@ -137,7 +137,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
       return
     }
 
-    await dispatch(importTokenViaContractAddress(assetData.asset))
+    await dispatch(importAccountCustomToken({ asset: assetData.asset }))
     await dispatch(setSnackbarMessage(t("snackbar.success")))
     history.push("/")
   }

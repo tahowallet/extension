@@ -272,7 +272,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         const { chainId } = chainInfo
         const supportedNetwork = await this.getTrackedNetworkByChainId(chainId)
         if (supportedNetwork) {
-          this.switchToSupportedNetwork(origin, supportedNetwork)
+          await this.switchToSupportedNetwork(origin, supportedNetwork)
           this.emitter.emit("selectedNetwork", supportedNetwork)
           return null
         }
@@ -346,6 +346,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       return defaultNetwork
     }
     return currentNetwork
+  }
+
+  async removePrefererencesForChain(chainId: string): Promise<void> {
+    await this.db.removeStoredPreferencesForChain(chainId)
   }
 
   private async signTransaction(
@@ -433,10 +437,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  private async switchToSupportedNetwork(
+  async switchToSupportedNetwork(
     origin: string,
     supportedNetwork: EVMNetwork
-  ) {
+  ): Promise<void> {
     const { address } = await this.preferenceService.getSelectedAccount()
     await this.chainService.markAccountActivity({
       address,

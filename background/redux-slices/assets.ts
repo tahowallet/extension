@@ -323,10 +323,23 @@ export const selectAssetPricePoint = createSelector(
   }
 )
 
-export const importTokenViaContractAddress = createBackgroundAsyncThunk(
-  "assets/importTokenViaContractAddress",
-  async (asset: SmartContractFungibleAsset, { extra: { main } }) => {
-    await main.importTokenViaContractAddress(asset)
+export const importAccountCustomToken = createBackgroundAsyncThunk(
+  "assets/importAccountCustomToken",
+  async (
+    {
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { getState, extra: { main } }
+  ) => {
+    const state = getState() as RootState
+    const currentAccount = state.ui.selectedAccount
+
+    await main.importAccountCustomToken({
+      asset,
+      addressNetwork: currentAccount,
+    })
   }
 )
 

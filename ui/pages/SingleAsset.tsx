@@ -13,7 +13,10 @@ import {
 } from "@tallyho/tally-background/assets"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useTranslation } from "react-i18next"
-import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
+import {
+  DEFAULT_NETWORKS_BY_CHAIN_ID,
+  NETWORKS_SUPPORTING_SWAPS,
+} from "@tallyho/tally-background/constants"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -106,9 +109,13 @@ export default function SingleAsset(): ReactElement {
                   IconComponent={() => (
                     <a
                       className="new_tab_link"
-                      href={`${
-                        scanWebsite[currentNetwork.chainID].url
-                      }/token/${contractAddress}`}
+                      href={
+                        DEFAULT_NETWORKS_BY_CHAIN_ID.has(currentNetwork.chainID)
+                          ? `${
+                              scanWebsite[currentNetwork.chainID].url
+                            }/token/${contractAddress}`
+                          : currentNetwork.blockExplorerURL
+                      }
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -116,9 +123,11 @@ export default function SingleAsset(): ReactElement {
                     </a>
                   )}
                 >
-                  {t("assets.viewAsset", {
-                    siteTitle: scanWebsite[currentNetwork.chainID].title,
-                  })}
+                  {scanWebsite[currentNetwork.chainID]
+                    ? t("assets.viewAsset", {
+                        siteTitle: scanWebsite[currentNetwork.chainID].title,
+                      })
+                    : t("assets.openNetworkExplorer")}
                 </SharedTooltip>
               ) : (
                 <></>
