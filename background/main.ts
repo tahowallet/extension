@@ -1859,7 +1859,14 @@ export default class Main extends BaseService<never> {
     asset: SmartContractFungibleAsset
     addressNetwork: AddressOnNetwork
   }): Promise<void> {
-    await this.indexingService.importAccountCustomToken(asset, addressNetwork)
+    const { metadata = {} } = asset
+    // Manually imported tokens are trusted
+    metadata.trusted = true
+
+    await this.indexingService.importAccountCustomToken(
+      { ...asset, metadata },
+      addressNetwork
+    )
   }
 
   private connectPopupMonitor() {
