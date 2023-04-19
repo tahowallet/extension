@@ -45,6 +45,11 @@ import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import EditSectionForm from "./EditSectionForm"
 import SigningButton from "./SigningButton"
 import ShowMnemonic from "../AccountsBackup/ShowMnemonic"
+import {
+  isAccountSingular,
+  isAccountWithMnemonic,
+  isAccountWithSecrets,
+} from "../../utils/accounts"
 
 type WalletTypeInfo = {
   title: string
@@ -141,11 +146,7 @@ function WalletTypeHeader({
   const sectionCustomName = signerSettings?.title
 
   const sectionTitle = useMemo(() => {
-    if (
-      accountType === AccountType.ReadOnly ||
-      accountType === AccountType.PrivateKey
-    )
-      return title
+    if (isAccountSingular(accountType)) return title
 
     let networkName = "" // Only for Rootstock
     if (path === ROOTSTOCK.derivationPath) networkName = `(${ROOTSTOCK.name})`
@@ -159,9 +160,6 @@ function WalletTypeHeader({
   const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
   const [showEditMenu, setShowEditMenu] = useState(false)
   const [showExportMnemonicMenu, setShowExportMnemonicMenu] = useState(false)
-
-  const hasMnemonic =
-    accountType === AccountType.Imported || accountType === AccountType.Internal
 
   return (
     <>
@@ -194,48 +192,48 @@ function WalletTypeHeader({
           </div>
           {sectionTitle}
         </h2>
-        {accountType !== AccountType.ReadOnly &&
-          accountType !== AccountType.PrivateKey && (
-            <SharedDropdown
-              toggler={(toggle) => (
-                <SharedIcon
-                  color="var(--green-40)"
-                  customStyles="cursor: pointer;"
-                  width={24}
-                  onClick={() => toggle()}
-                  icon="settings.svg"
-                />
-              )}
-              options={[
-                {
-                  key: "edit",
-                  icon: "icons/s/edit.svg",
-                  label: t("accounts.accountItem.editName"),
-                  onClick: () => setShowEditMenu(true),
+        {!isAccountSingular(accountType) && (
+          <SharedDropdown
+            toggler={(toggle) => (
+              <SharedIcon
+                color="var(--green-40)"
+                customStyles="cursor: pointer;"
+                width={24}
+                onClick={() => toggle()}
+                icon="settings.svg"
+              />
+            )}
+            options={[
+              {
+                key: "edit",
+                icon: "icons/s/edit.svg",
+                label: t("accounts.accountItem.editName"),
+                onClick: () => setShowEditMenu(true),
+              },
+              onClickAddAddress && {
+                key: "addAddress",
+                onClick: () => {
+                  if (areKeyringsUnlocked) {
+                    onClickAddAddress()
+                  } else {
+                    history.push("/keyring/unlock")
+                  }
                 },
-                onClickAddAddress && {
-                  key: "addAddress",
-                  onClick: () => {
-                    if (areKeyringsUnlocked) {
-                      onClickAddAddress()
-                    } else {
-                      history.push("/keyring/unlock")
-                    }
-                  },
-                  icon: "icons/s/add.svg",
-                  label: t("accounts.notificationPanel.addAddress"),
-                },
-                hasMnemonic && isEnabled(FeatureFlags.SUPPORT_PRIV_KEYS)
-                  ? {
-                      key: "showMnemonic",
-                      onClick: () => setShowExportMnemonicMenu(true),
-                      icon: "icons/s/lock-bold.svg",
-                      label: t("accounts.accountItem.showMnemonic.header"),
-                    }
-                  : undefined,
-              ]}
-            />
-          )}
+                icon: "icons/s/add.svg",
+                label: t("accounts.notificationPanel.addAddress"),
+              },
+              isAccountWithMnemonic(accountType) &&
+              isEnabled(FeatureFlags.SUPPORT_PRIV_KEYS)
+                ? {
+                    key: "showMnemonic",
+                    onClick: () => setShowExportMnemonicMenu(true),
+                    icon: "icons/s/lock-bold.svg",
+                    label: t("accounts.accountItem.showMnemonic.header"),
+                  }
+                : undefined,
+            ]}
+          />
+        )}
       </header>
       <SharedSlideUpMenu
         size="custom"
@@ -389,9 +387,7 @@ export default function AccountsNotificationPanelAccounts({
                   {walletTypeDetails[accountType].category}
                 </p>
                 {isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
-                  (accountType === AccountType.Imported ||
-                    accountType === AccountType.Internal ||
-                    accountType === AccountType.PrivateKey) && (
+                  isAccountWithSecrets(accountType) && (
                     <SigningButton
                       onCurrentAddressChange={onCurrentAddressChange}
                     />
