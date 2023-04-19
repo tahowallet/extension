@@ -207,6 +207,12 @@ const computeCombinedAssetAmountsData = (
       ) {
         acc.combinedAssetAmounts.push(assetAmount)
       } else {
+        // FIXME: Assets with very low values should still be displayed as dust e.g. "<0,01"
+        const isPresent = assetAmount.decimalAmount > 0
+
+        // Don't display hidden assets whose calculated decimal amount is zero
+        if (!isPresent) return acc
+
         acc.hiddenAssetAmounts.push(assetAmount)
       }
       return acc
