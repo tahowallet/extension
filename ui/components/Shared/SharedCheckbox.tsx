@@ -1,7 +1,7 @@
 import classNames from "classnames"
 import React, { ReactElement, useState, useEffect } from "react"
 
-interface Props {
+type Props = {
   label: string
   onChange: (value: boolean) => void
   value?: boolean
@@ -19,9 +19,8 @@ export default function SharedCheckbox(props: Props): ReactElement {
 
   return (
     <div className="container">
-      <label htmlFor="checkbox" className="checkbox">
+      <label className="checkbox">
         <input
-          id="checkbox"
           checked={checked}
           onChange={() => onChange(!checked)}
           type="checkbox"
@@ -66,14 +65,14 @@ export default function SharedCheckbox(props: Props): ReactElement {
           box-sizing: border-box;
         }
         .checkmark.invalid {
-          border: 2px solid #ff6666;
+          border: 2px solid var(--error);
         }
         .checkbox:hover input ~ .checkmark {
           background-color: var(--green-80);
         }
         .checkbox input:checked ~ .checkmark {
           background-color: var(--trophy-gold);
-          border: 0;
+          border: none;
         }
         .checkmark:after {
           content: "";
@@ -99,7 +98,7 @@ export default function SharedCheckbox(props: Props): ReactElement {
           line-height: 24px;
         }
         .label.invalid {
-          color: #ff6666;
+          color: var(--error);
         }
       `}</style>
     </div>

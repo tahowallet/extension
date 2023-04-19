@@ -37,7 +37,7 @@ export default function ShowMnemonic({
         icon="icons/s/lock-bold.svg"
         type="small"
       >
-        <div className="container simple_text">
+        <div className="container">
           <div className="content">
             {areKeyringsUnlocked ? (
               <>
@@ -53,9 +53,9 @@ export default function ShowMnemonic({
                           <span className="accounts_title">{walletTitle}</span>
                           <span className="accounts_count">
                             {accounts.length}{" "}
-                            {accounts.length < 2
-                              ? t("exportingMnemonic.address")
-                              : t("exportingMnemonic.addresses")}
+                            {t("exportingMnemonic.address", {
+                              count: accounts.length,
+                            })}
                           </span>
                         </div>
                       }

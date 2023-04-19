@@ -20,7 +20,7 @@ function MnemonicList(props: {
   return (
     <div className="mnemonic_list">
       {splitMnemonic.map((word, index) => (
-        <div key={`${word}}`}>
+        <div key={`${word}_${index + 1}}`}>
           {startIndex + index + 1} - {word}
         </div>
       ))}

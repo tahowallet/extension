@@ -44,12 +44,12 @@
           "showBtn": "Show recovery phrase",
           "copyBtn": "Copy phrase to clipboard",
           "copySuccess": "Copied!",
-          "address": "address",
-          "addresses": "addresses"
+          "address_one": "address",
+          "address_other": "addresses"
         },
         "explainer": {
           "header": "Why do i need a recovery phrase?",
-          "text1": "You need a recovery phrase in case you loose access to your computer, wallet or you forget your password.",
+          "text1": "You need a recovery phrase in case you lose access to your computer, wallet or you forget your password.",
           "text2": "Recovery phrase is the only way to regain access to your funds stored on those addresses.",
           "text3": "Taho has the option to import or create multiple recovery phrases. If you have multiple, make sure that you have safely save and store them all."
         }
