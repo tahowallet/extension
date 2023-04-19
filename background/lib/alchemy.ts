@@ -265,7 +265,6 @@ export async function getTokenMetadata(
     name: json.name,
     symbol: json.symbol,
     metadata: {
-      tokenLists: [],
       ...(json.logo ? { logoURL: json.logo } : {}),
     },
     homeNetwork,
