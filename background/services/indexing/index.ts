@@ -497,7 +497,7 @@ export default class IndexingService extends BaseService<Events> {
    * @param addressNetwork
    * @param contractAddresses
    */
-  private async retrieveTokenBalances(
+  async retrieveTokenBalances(
     unsafeAddressNetwork: AddressOnNetwork,
     smartContractAssets?: SmartContractFungibleAsset[]
   ): Promise<SmartContractAmount[]> {
@@ -602,7 +602,7 @@ export default class IndexingService extends BaseService<Events> {
   async addTokenToTrackByContract(
     network: EVMNetwork,
     contractAddress: string
-  ): Promise<void> {
+  ): Promise<SmartContractFungibleAsset | undefined> {
     const normalizedAddress = normalizeEVMAddress(contractAddress)
 
     const knownAsset = this.getKnownSmartContractAsset(
@@ -611,32 +611,35 @@ export default class IndexingService extends BaseService<Events> {
     )
 
     if (knownAsset) {
-      this.addAssetToTrack(knownAsset)
-    } else {
-      let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
-        network,
-        normalizedAddress
-      )
-      if (!customAsset) {
-        // pull metadata from Alchemy
-        customAsset =
-          (await this.chainService.assetData.getTokenMetadata({
-            contractAddress: normalizedAddress,
-            homeNetwork: network,
-          })) || undefined
+      await this.addAssetToTrack(knownAsset)
+      return knownAsset
+    }
+    let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
+      network,
+      normalizedAddress
+    )
+    if (!customAsset) {
+      // pull metadata from Alchemy
+      customAsset =
+        (await this.chainService.assetData.getTokenMetadata({
+          contractAddress: normalizedAddress,
+          homeNetwork: network,
+        })) || undefined
 
-        if (customAsset) {
-          await this.addCustomAsset(customAsset)
-          this.emitter.emit("assets", [customAsset])
-        }
+      if (customAsset) {
+        await this.addCustomAsset(customAsset)
+        this.emitter.emit("assets", [customAsset])
+        return customAsset
       }
 
       // TODO if we still don't have anything, use a contract read + a
       // CoinGecko lookup
       if (customAsset) {
-        this.addAssetToTrack(customAsset)
+        await this.addAssetToTrack(customAsset)
+        return customAsset
       }
     }
+    return customAsset
   }
 
   /**
