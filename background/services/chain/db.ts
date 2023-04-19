@@ -224,6 +224,7 @@ export class ChainDatabase extends Dexie {
     symbol,
     assetName,
     rpcUrls,
+    blockExplorerURL,
   }: {
     chainName: string
     chainID: string
@@ -231,23 +232,27 @@ export class ChainDatabase extends Dexie {
     symbol: string
     assetName: string
     rpcUrls: string[]
-  }): Promise<void> {
-    await this.networks.put({
+    blockExplorerURL: string
+  }): Promise<EVMNetwork> {
+    const network: EVMNetwork = {
       name: chainName,
       coingeckoPlatformID: CHAIN_ID_TO_COINGECKO_PLATFORM_ID[chainID],
       chainID,
       family: "EVM",
+      blockExplorerURL,
       baseAsset: {
         decimals,
         symbol,
         name: assetName,
         chainID,
       },
-    })
+    }
+    await this.networks.put(network)
     // A bit awkward that we are adding the base asset to the network as well
     // as to its own separate table - but lets forge on for now.
     await this.addBaseAsset(assetName, symbol, chainID, decimals)
     await this.addRpcUrls(chainID, rpcUrls)
+    return network
   }
 
   async removeEVMNetwork(chainID: string): Promise<void> {
@@ -276,6 +281,14 @@ export class ChainDatabase extends Dexie {
 
   async getAllEVMNetworks(): Promise<EVMNetwork[]> {
     return this.networks.where("family").equals("EVM").toArray()
+  }
+
+  async getEVMNetworkByChainID(
+    chainID: string
+  ): Promise<EVMNetwork | undefined> {
+    return (await this.networks.where("family").equals("EVM").toArray()).find(
+      (network) => network.chainID === chainID
+    )
   }
 
   private async addBaseAsset(

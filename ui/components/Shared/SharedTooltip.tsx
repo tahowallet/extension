@@ -15,6 +15,7 @@ interface Props {
   isOpen?: boolean
   disabled?: boolean
   children: React.ReactNode
+  customStyles?: React.CSSProperties & Record<string, string>
   // TODO: find a better way to tell the IconComponent that the tooltip it open
   IconComponent?: ({
     isShowingTooltip,
@@ -68,6 +69,7 @@ export default function SharedTooltip(props: Props): ReactElement {
     isOpen = false,
     disabled = false,
     IconComponent,
+    customStyles = {},
   } = props
   const [isShowingTooltip, setIsShowingTooltip] = useState(isOpen)
 
@@ -85,6 +87,7 @@ export default function SharedTooltip(props: Props): ReactElement {
       onMouseLeave={() => {
         setIsShowingTooltip(false)
       }}
+      style={customStyles}
     >
       {IconComponent ? (
         <IconComponent isShowingTooltip={isShowingTooltip} />
@@ -110,8 +113,9 @@ export default function SharedTooltip(props: Props): ReactElement {
             margin: -5px 0 -5px 8px;
           }
           .info_icon {
-            background: url("./images/info@2x.png");
-            background-size: cover;
+            mask-image: url("./images/icons/m/info.svg");
+            mask-size: cover;
+            background-color: var(--tooltip-icon-color, var(--green-40));
             width: 16px;
             height: 16px;
             display: block;

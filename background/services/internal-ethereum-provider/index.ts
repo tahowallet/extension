@@ -96,6 +96,7 @@ type Events = ServiceLifecycleEvents & {
   >
   signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
   signDataRequest: DAppRequestEvent<MessageSigningRequest, string>
+  selectedNetwork: EVMNetwork
   // connect
   // disconnet
   // account change
@@ -271,7 +272,8 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         const { chainId } = chainInfo
         const supportedNetwork = await this.getTrackedNetworkByChainId(chainId)
         if (supportedNetwork) {
-          this.switchToSupportedNetwork(origin, supportedNetwork)
+          await this.switchToSupportedNetwork(origin, supportedNetwork)
+          this.emitter.emit("selectedNetwork", supportedNetwork)
           return null
         }
         if (!isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
@@ -279,7 +281,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
         }
         try {
-          await this.chainService.addCustomChain(chainInfo)
+          const customNetwork = await this.chainService.addCustomChain(
+            chainInfo
+          )
+          this.emitter.emit("selectedNetwork", customNetwork)
           return null
         } catch (e) {
           logger.error(e)
@@ -341,6 +346,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       return defaultNetwork
     }
     return currentNetwork
+  }
+
+  async removePrefererencesForChain(chainId: string): Promise<void> {
+    await this.db.removeStoredPreferencesForChain(chainId)
   }
 
   private async signTransaction(
@@ -428,10 +437,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  private async switchToSupportedNetwork(
+  async switchToSupportedNetwork(
     origin: string,
     supportedNetwork: EVMNetwork
-  ) {
+  ): Promise<void> {
     const { address } = await this.preferenceService.getSelectedAccount()
     await this.chainService.markAccountActivity({
       address,

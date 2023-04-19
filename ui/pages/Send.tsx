@@ -104,7 +104,7 @@ export default function Send(): ReactElement {
 
   const fungibleAssetAmounts =
     // Only look at fungible assets.
-    balanceData?.assetAmounts?.filter(
+    balanceData?.allAssetAmounts?.filter(
       (assetAmount): assetAmount is CompleteAssetAmount<FungibleAsset> =>
         isFungibleAssetAmount(assetAmount)
     )
