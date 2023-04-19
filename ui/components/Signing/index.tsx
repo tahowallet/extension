@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import {
   getAccountTotal,
   selectCurrentAccountSigner,
@@ -13,6 +13,10 @@ import {
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SignTransactionLoader from "../SignTransaction/SignTransactionLoader"
 import SignerFrame from "./Signer/SignerFrame"
+import {
+  SignerFrameContext,
+  SignerFrameContextValue,
+} from "../../utils/signing"
 
 // Signing acts as a dispatcher, so prop spreading is a good tradeoff.
 // The explicit prop and component types ease the linter rule's concern around
@@ -37,6 +41,13 @@ function SigningLoaded<T extends SignOperationType>({
     return getAccountTotal(state, signingAddress)
   })
 
+  const [shouldBlockedSigning, setShouldBlockedSigning] = useState(false)
+
+  const contextValue: SignerFrameContextValue = {
+    shouldBlockedSigning,
+    toggle: (value) => setShouldBlockedSigning(value),
+  }
+
   return (
     <section>
       <SharedSkeletonLoader
@@ -51,9 +62,11 @@ function SigningLoaded<T extends SignOperationType>({
           />
         )}
       </SharedSkeletonLoader>
-      <SignerFrame request={request} {...signatureDetails}>
-        {renderedSigningData}
-      </SignerFrame>
+      <SignerFrameContext.Provider value={contextValue}>
+        <SignerFrame request={request} {...signatureDetails}>
+          {renderedSigningData}
+        </SignerFrame>
+      </SignerFrameContext.Provider>
       <style jsx>
         {`
           section {

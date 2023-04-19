@@ -12,7 +12,7 @@ import { updateTransactionData } from "@tallyho/tally-background/redux-slices/tr
 import { AssetApproval } from "@tallyho/tally-background/services/enrichment"
 import { ethers } from "ethers"
 import { hexlify } from "ethers/lib/utils"
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useContext, useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
 import classNames from "classnames"
 import { Trans, useTranslation } from "react-i18next"
@@ -24,6 +24,7 @@ import SharedAddress from "../../../../Shared/SharedAddress"
 import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryProps"
 import TransactionSignatureSummaryBody from "./TransactionSignatureSummaryBody"
 import SharedSkeletonLoader from "../../../../Shared/SharedSkeletonLoader"
+import { SignerFrameContext } from "../../../../../utils/signing"
 
 export default function SpendApprovalSummary({
   transactionRequest,
@@ -116,6 +117,12 @@ export default function SpendApprovalSummary({
     )
     setIsLoading(false)
   }, [approvalLimit, asset.decimals])
+
+  const signerFrameContext = useContext(SignerFrameContext)
+
+  useEffect(() => {
+    signerFrameContext?.toggle(approvalLimitInput !== null)
+  }, [approvalLimitInput, signerFrameContext])
 
   return (
     <>

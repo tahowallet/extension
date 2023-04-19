@@ -1,5 +1,5 @@
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
-import React, { ReactElement, useCallback, useState } from "react"
+import React, { ReactElement, useCallback, useContext, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
@@ -11,6 +11,7 @@ import SignerLedgerSigning from "./SignerLedgerSigning"
 import SignerLedgerConnectionStatus from "./SignerLedgerConnectionStatus"
 import { useSigningLedgerState } from "../../../SignTransaction/useSigningLedgerState"
 import TransactionButton from "../TransactionButton"
+import { SignerFrameContext } from "../../../../utils/signing"
 
 export default function SignerLedgerFrame<T extends SignOperationType>({
   children,
@@ -29,6 +30,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
 
   const [isSigning, setIsSigning] = useState(false)
   const dispatch = useBackgroundDispatch()
+  const signerFrameContext = useContext(SignerFrameContext)
 
   const handleConfirm = useCallback(() => {
     dispatch(signActionCreator())
@@ -134,7 +136,10 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
                 type="primary"
                 size="large"
                 onClick={handleConfirm}
-                isDisabled={hasInsufficientFunds}
+                isDisabled={
+                  hasInsufficientFunds ||
+                  (signerFrameContext?.shouldBlockedSigning ?? false)
+                }
                 showLoadingOnClick
                 showLoading
                 reactOnWindowFocus
