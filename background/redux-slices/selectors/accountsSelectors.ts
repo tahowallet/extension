@@ -163,7 +163,10 @@ const computeCombinedAssetAmountsData = (
           ? true
           : assetAmount.mainCurrencyAmount > userValueDustThreshold
       const isPresent = assetAmount.decimalAmount > 0
-      const isTrusted = !!(assetAmount.asset?.metadata?.tokenLists.length ?? 0)
+      const isTrusted =
+        "isTrusted" in assetAmount.asset
+          ? assetAmount.asset.isTrusted
+          : !!(assetAmount.asset?.metadata?.tokenLists.length ?? 0)
 
       // Hide dust, untrusted assets and missing amounts.
       if (

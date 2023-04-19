@@ -1958,6 +1958,7 @@ export default class ChainService extends BaseService<Events> {
       .getTokenMetadata({
         contractAddress,
         homeNetwork: network,
+        isTrusted: false,
       })
       .catch(() => undefined)
 

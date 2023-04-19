@@ -120,6 +120,7 @@ export default class AssetDataHelper {
           smartContract: {
             contractAddress: token,
             homeNetwork: FORK,
+            isTrusted: true,
           },
           amount: BigInt(balance.toString()),
         }

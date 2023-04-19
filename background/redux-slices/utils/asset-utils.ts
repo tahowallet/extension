@@ -344,6 +344,9 @@ export function isUntrustedAsset(
   selectedNetwork: AnyNetwork
 ): boolean {
   if (asset) {
+    if ("isTrusted" in asset) {
+      return !asset.isTrusted
+    }
     const numTokenLists = asset?.metadata?.tokenLists?.length ?? 0
     const baseAsset = isBuiltInNetworkBaseAsset(asset, selectedNetwork)
 

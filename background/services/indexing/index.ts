@@ -577,12 +577,16 @@ export default class IndexingService extends BaseService<Events> {
     asset: SmartContractFungibleAsset,
     addressNetwork: AddressOnNetwork
   ): Promise<void> {
-    await this.addCustomAsset(asset)
+    // Since we know that these assets going through this path are being
+    // imported by the user - trust them.
+    await this.addCustomAsset({ ...asset, isTrusted: true })
     await this.addTokenToTrackByContract(
       asset.homeNetwork,
       asset.contractAddress
     )
-    await this.retrieveTokenBalances(addressNetwork, [asset])
+    await this.retrieveTokenBalances(addressNetwork, [
+      { ...asset, isTrusted: true },
+    ])
   }
 
   /**
@@ -622,6 +626,7 @@ export default class IndexingService extends BaseService<Events> {
         customAsset =
           (await this.chainService.assetData.getTokenMetadata({
             contractAddress: normalizedAddress,
+            isTrusted: false,
             homeNetwork: network,
           })) || undefined
 

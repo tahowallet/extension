@@ -222,6 +222,7 @@ export const getTokenBalances = async (
       smartContract: {
         contractAddress: tokenAddresses[i],
         homeNetwork: network,
+        isTrusted: false,
       },
     }
   })

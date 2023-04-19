@@ -63,7 +63,11 @@ export default class DoggoService extends BaseService<Events> {
     if (!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES)) {
       // Make sure the hunting ground assets are being tracked.
       huntingGrounds.forEach(({ network, asset }) => {
-        this.indexingService.addAssetToTrack({ ...asset, homeNetwork: network })
+        this.indexingService.addAssetToTrack({
+          ...asset,
+          homeNetwork: network,
+          isTrusted: true,
+        })
       })
       this.indexingService.addAssetToTrack(DOGGO)
 
@@ -72,6 +76,7 @@ export default class DoggoService extends BaseService<Events> {
         decimals: 18,
         homeNetwork: ETHEREUM,
         name: "Wrapped Ether",
+        isTrusted: true,
         symbol: "WETH",
       })
 

@@ -96,6 +96,7 @@ function tokenListToFungibleAssetsForNetwork(
           ...(tokenMetadata.logoURI ? { logoURL: tokenMetadata.logoURI } : {}),
           tokenLists: [tokenListCitation],
         },
+        isTrusted: true,
         name: tokenMetadata.name,
         symbol: tokenMetadata.symbol,
         decimals: tokenMetadata.decimals,

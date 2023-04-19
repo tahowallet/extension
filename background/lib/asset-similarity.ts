@@ -99,6 +99,12 @@ export function mergeAssets(asset1: AnyAsset, asset2: AnyAsset): AnyAsset {
     ...asset1,
     ...("coinType" in asset1 ? { coinType: asset1.coinType } : {}),
     ...("coinType" in asset2 ? { coinType: asset2.coinType } : {}),
+    ...("isTrusted" in asset1 && asset1.isTrusted
+      ? { isTrusted: asset1.isTrusted }
+      : {}),
+    ...("isTrusted" in asset2 && asset2.isTrusted
+      ? { isTrusted: asset2.isTrusted }
+      : {}),
     metadata: {
       ...asset1.metadata,
       ...asset2.metadata,

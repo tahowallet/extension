@@ -53,6 +53,7 @@ export type NetworkSpecific = {
  * contract address.
  */
 export type SmartContract = NetworkSpecific & {
+  isTrusted: boolean
   contractAddress: HexString
 }
 

@@ -390,6 +390,7 @@ export const createSmartContractAsset = (
         },
       ],
     },
+    isTrusted: true,
     name: `${symbol} Network`,
     symbol,
     decimals: 18,
