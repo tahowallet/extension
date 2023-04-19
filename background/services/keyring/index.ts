@@ -408,6 +408,7 @@ export default class KeyringService extends BaseService<Events> {
 
     if (!address) return null
 
+    this.#hiddenAccounts[address] = false
     await this.persistKeyrings()
     this.emitter.emit("address", address)
     this.emitKeyrings()

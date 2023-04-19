@@ -44,12 +44,12 @@
           "showBtn": "Show recovery phrase",
           "copyBtn": "Copy phrase to clipboard",
           "copySuccess": "Copied!",
-          "address": "address",
-          "addresses": "addresses"
+          "address_one": "address",
+          "address_other": "addresses"
         },
         "explainer": {
           "header": "Why do i need a recovery phrase?",
-          "text1": "You need a recovery phrase in case you loose access to your computer, wallet or you forget your password.",
+          "text1": "You need a recovery phrase in case you lose access to your computer, wallet or you forget your password.",
           "text2": "Recovery phrase is the only way to regain access to your funds stored on those addresses.",
           "text3": "Taho has the option to import or create multiple recovery phrases. If you have multiple, make sure that you have safely save and store them all."
         }
@@ -78,7 +78,8 @@
   },
   "viewAddressOnBlockExplorer": "View address on {{blockExplorer}}",
   "assets": {
-    "viewAsset": "View asset on {{siteTitle}}"
+    "viewAsset": "View asset on {{siteTitle}}",
+    "openNetworkExplorer": "Open network explorer"
   },
   "assetInput": {
     "search": "Search by name or address",
@@ -608,6 +609,9 @@
       "title": "Add custom asset",
       "input.contractAddress.label": "Contract address",
       "input.tooltip": " Visit your preferred block explorer and find the asset you want to import.<br>Copy and paste the contract address here.<br><br>For more information visit <url>Help Center</url>",
+      "asset.label.balance": "Balance",
+      "asset.label.symbol": "Name",
+      "networkSelect.title": "Select Network",
       "warning.alreadyExists.title": "Asset already exists, you will see it once your balance is over 0",
       "warning.alreadyExists.desc": "If you still have issues seeing an asset, turn off “hide balance 2$” from Settings",
       "error.invalidToken": "Invalid contract address",

@@ -1,5 +1,4 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   selectCurrentAccount,
   selectCurrentAccountTotal,
@@ -11,6 +10,7 @@ import { useDispatch } from "react-redux"
 import { useBackgroundSelector } from "../../hooks"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
 import TopMenuProfileTooltip from "./TopMenuProfileTooltip"
+import { isAccountWithSecrets } from "../../utils/accounts"
 
 const TOOLTIP_DELAY = 500
 
@@ -75,9 +75,8 @@ export default function TopMenuProfileButton(props: {
               showHoverStyle
               showKeyring={
                 isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
-                (accountType === AccountType.Imported ||
-                  accountType === AccountType.Internal ||
-                  accountType === AccountType.PrivateKey)
+                accountType &&
+                isAccountWithSecrets(accountType)
               }
             />
           </>

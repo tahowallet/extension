@@ -34,7 +34,7 @@ export default function ShowPrivateKey({
         icon="icons/s/key.svg"
         type="small"
       >
-        <div className="container simple_text">
+        <div className="container">
           <div className="content">
             {areKeyringsUnlocked ? (
               <>
@@ -102,7 +102,7 @@ export default function ShowPrivateKey({
           .account_container {
             display: flex;
             width: 100%;
-            border-bottom: 1px solid #183736;
+            border-bottom: 1px solid var(--green-95);
             padding: 8px 0 24px;
             margin-bottom: 20px;
           }
