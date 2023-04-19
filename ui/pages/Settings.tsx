@@ -291,25 +291,17 @@ export default function Settings(): ReactElement {
   const generalList = [
     setAsDefault,
     hideSmallAssetBalance,
-    ...(isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST)
-      ? [hideUntrustedAssets]
-      : []),
-    ...(isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) ? [languages] : []),
+    isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST) && hideUntrustedAssets,
+    isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
     enableTestNetworks,
     dAppsSettings,
-    ...(isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)
-      ? [addCustomAsset]
-      : []),
+    isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && addCustomAsset,
     needHelp,
     bugReport,
-    ...(isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) ? [analytics] : []),
-    ...(isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER)
-      ? [notificationBanner]
-      : []),
-    ...(isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)
-      ? [customNetworks]
-      : []),
-  ]
+    isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) && analytics,
+    isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && notificationBanner,
+    isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && customNetworks,
+  ].filter((item): item is Exclude<typeof item, boolean> => !!item)
 
   const settings = {
     general: generalList,
