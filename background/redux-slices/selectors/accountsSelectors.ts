@@ -78,12 +78,14 @@ const computeCombinedAssetAmountsData = (
   currentNetwork: EVMNetwork,
   hideDust: boolean
 ): {
+  allAssetAmounts: CompleteAssetAmount[]
   combinedAssetAmounts: CompleteAssetAmount[]
+  hiddenAssetAmounts: CompleteAssetAmount[]
   totalMainCurrencyAmount: number | undefined
 } => {
   // Derive account "assets"/assetAmount which include USD values using
   // data from the assets slice
-  const combinedAssetAmounts = assetAmounts
+  const allAssetAmounts = assetAmounts
     .map<CompleteAssetAmount>((assetAmount) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
@@ -111,22 +113,6 @@ const computeCombinedAssetAmountsData = (
       )
 
       return fullyEnrichedAssetAmount
-    })
-    .filter((assetAmount) => {
-      const isForciblyDisplayed = shouldForciblyDisplayAsset(assetAmount)
-
-      const isNotDust =
-        typeof assetAmount.mainCurrencyAmount === "undefined"
-          ? true
-          : assetAmount.mainCurrencyAmount > userValueDustThreshold
-      const isPresent = assetAmount.decimalAmount > 0
-      const isTrusted = !!(assetAmount.asset?.metadata?.tokenLists.length ?? 0)
-
-      // Hide dust, untrusted assets and missing amounts.
-      return (
-        isForciblyDisplayed ||
-        (hideDust ? isTrusted && isNotDust && isPresent : isPresent)
-      )
     })
     .sort((asset1, asset2) => {
       // Always sort DOGGO above everything.
@@ -165,6 +151,34 @@ const computeCombinedAssetAmountsData = (
       return asset1.mainCurrencyAmount === undefined ? 1 : -1
     })
 
+  const { combinedAssetAmounts, hiddenAssetAmounts } = allAssetAmounts.reduce<{
+    combinedAssetAmounts: CompleteAssetAmount[]
+    hiddenAssetAmounts: CompleteAssetAmount[]
+  }>(
+    (acc, assetAmount) => {
+      const isForciblyDisplayed = shouldForciblyDisplayAsset(assetAmount)
+
+      const isNotDust =
+        typeof assetAmount.mainCurrencyAmount === "undefined"
+          ? true
+          : assetAmount.mainCurrencyAmount > userValueDustThreshold
+      const isPresent = assetAmount.decimalAmount > 0
+      const isTrusted = !!(assetAmount.asset?.metadata?.tokenLists.length ?? 0)
+
+      // Hide dust, untrusted assets and missing amounts.
+      if (
+        isForciblyDisplayed ||
+        (isTrusted && (hideDust ? isNotDust && isPresent : isPresent))
+      ) {
+        acc.combinedAssetAmounts.push(assetAmount)
+      } else if (isPresent) {
+        acc.hiddenAssetAmounts.push(assetAmount)
+      }
+      return acc
+    },
+    { combinedAssetAmounts: [], hiddenAssetAmounts: [] }
+  )
+
   // Keep a tally of the total user value; undefined if no main currency data
   // is available.
   let totalMainCurrencyAmount: number | undefined
@@ -175,7 +189,12 @@ const computeCombinedAssetAmountsData = (
     }
   })
 
-  return { combinedAssetAmounts, totalMainCurrencyAmount }
+  return {
+    allAssetAmounts,
+    combinedAssetAmounts,
+    hiddenAssetAmounts,
+    totalMainCurrencyAmount,
+  }
 }
 
 const getAccountState = (state: RootState) => state.account
@@ -218,7 +237,6 @@ export const selectAccountAndTimestampedActivities = createSelector(
     }
   }
 )
-
 export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   getAssetsState,
@@ -234,17 +252,23 @@ export const selectCurrentAccountBalances = createSelector(
       (balance) => balance.assetAmount
     )
 
-    const { combinedAssetAmounts, totalMainCurrencyAmount } =
-      computeCombinedAssetAmountsData(
-        assetAmounts,
-        assets,
-        mainCurrencySymbol,
-        currentNetwork,
-        hideDust
-      )
+    const {
+      allAssetAmounts,
+      combinedAssetAmounts,
+      hiddenAssetAmounts,
+      totalMainCurrencyAmount,
+    } = computeCombinedAssetAmountsData(
+      assetAmounts,
+      assets,
+      mainCurrencySymbol,
+      currentNetwork,
+      hideDust
+    )
 
     return {
+      allAssetAmounts,
       assetAmounts: combinedAssetAmounts,
+      hiddenAssetAmounts,
       totalMainCurrencyValue: totalMainCurrencyAmount
         ? formatCurrencyAmount(
             mainCurrencySymbol,

@@ -41,7 +41,7 @@ export default function Tab({ store }: { store: Store }): ReactElement {
             </Switch>
           </HashRouter>
         </Container>
-        <Snackbar />
+        <Snackbar isTabbedOnboarding />
       </Provider>
       <>
         <style jsx global>

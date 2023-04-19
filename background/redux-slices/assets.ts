@@ -26,7 +26,7 @@ import {
   FIAT_CURRENCIES_SYMBOL,
 } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
-import { HexString, NormalizedEVMAddress } from "../types"
+import { NormalizedEVMAddress } from "../types"
 import type { RootState } from "."
 
 export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
@@ -286,26 +286,39 @@ export const importTokenViaContractAddress = createBackgroundAsyncThunk(
   "assets/importTokenViaContractAddress",
   async (
     {
-      contractAddress,
-      network,
-    }: { contractAddress: HexString; network: EVMNetwork },
-    { extra: { main } }
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { getState, extra: { main } }
   ) => {
-    await main.importTokenViaContractAddress(contractAddress, network)
+    const state = getState() as RootState
+    const currentAccount = state.ui.selectedAccount
+
+    await main.importAccountCustomToken({
+      asset,
+      addressNetwork: currentAccount,
+    })
   }
 )
 
 export const checkTokenContractDetails = createBackgroundAsyncThunk(
   "assets/checkTokenContractDetails",
   async (
-    { contractAddress }: { contractAddress: NormalizedEVMAddress },
+    {
+      contractAddress,
+      network,
+    }: { contractAddress: NormalizedEVMAddress; network: EVMNetwork },
     { getState, extra: { main } }
   ) => {
     const state = getState() as RootState
     const currentAccount = state.ui.selectedAccount
 
     try {
-      return await main.queryCustomTokenDetails(contractAddress, currentAccount)
+      return await main.queryCustomTokenDetails(contractAddress, {
+        ...currentAccount,
+        network,
+      })
     } catch (error) {
       // FIXME: Rejected thunks return undefined instead of throwing
       return null
