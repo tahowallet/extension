@@ -12,6 +12,7 @@ import {
   getEthereumNetwork,
   isProbablyEVMAddress,
   normalizeEVMAddress,
+  sameEVMAddress,
   wait,
 } from "./lib/utils"
 
@@ -37,7 +38,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes, NormalizedEVMAddress } from "./types"
-import { EVMNetwork, SignedTransaction } from "./networks"
+import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -146,7 +147,11 @@ import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
-import { isSmartContractFungibleAsset, SmartContractAsset } from "./assets"
+import {
+  isSmartContractFungibleAsset,
+  SmartContractAsset,
+  SmartContractFungibleAsset,
+} from "./assets"
 import { FeatureFlags, isEnabled } from "./features"
 import { NFTCollection } from "./nfts"
 import {
@@ -174,6 +179,7 @@ import {
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
+import { fromFixedPoint } from "./lib/fixed-point"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1797,17 +1803,56 @@ export default class Main extends BaseService<never> {
   }
 
   async removeEVMNetwork(chainID: string): Promise<void> {
-    return this.chainService.removeCustomChain(chainID)
+    // Per origin chain id settings
+    await this.internalEthereumProviderService.removePrefererencesForChain(
+      chainID
+    )
+    // Connected dApps
+    await this.providerBridgeService.revokePermissionsForChain(chainID)
+    await this.chainService.removeCustomChain(chainID)
   }
 
-  async importTokenViaContractAddress(
-    contractAddress: HexString,
-    network: EVMNetwork
-  ): Promise<void> {
-    return this.indexingService.addTokenToTrackByContract(
-      network,
-      contractAddress
+  async queryCustomTokenDetails(
+    contractAddress: NormalizedEVMAddress,
+    addressOnNetwork: AddressOnNetwork
+  ): Promise<{
+    asset: SmartContractFungibleAsset
+    amount: bigint
+    balance: number
+    exists?: boolean
+  }> {
+    const { network } = addressOnNetwork
+
+    const cachedAsset = this.indexingService
+      .getCachedAssets(network)
+      .find(
+        (asset): asset is SmartContractFungibleAsset =>
+          isSmartContractFungibleAsset(asset) &&
+          sameEVMAddress(contractAddress, asset.contractAddress)
+      )
+
+    const assetData = await this.chainService.queryAccountTokenDetails(
+      contractAddress,
+      addressOnNetwork,
+      cachedAsset
     )
+
+    return {
+      ...assetData,
+      // FIXME: REMOVE FIXED PRECISION
+      balance: fromFixedPoint(assetData.amount, assetData.asset.decimals, 2),
+      exists: !!cachedAsset,
+    }
+  }
+
+  async importAccountCustomToken({
+    asset,
+    addressNetwork,
+  }: {
+    asset: SmartContractFungibleAsset
+    addressNetwork: AddressOnNetwork
+  }): Promise<void> {
+    await this.indexingService.importAccountCustomToken(asset, addressNetwork)
   }
 
   private connectPopupMonitor() {

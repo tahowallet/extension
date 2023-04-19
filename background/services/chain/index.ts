@@ -6,7 +6,7 @@ import { ethers, utils } from "ethers"
 import { Logger, UnsignedTransaction } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
-import { HexString, UNIXTime } from "../../types"
+import { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyEVMBlock,
@@ -21,7 +21,11 @@ import {
   NetworkBaseAsset,
   sameChainID,
 } from "../../networks"
-import { AssetTransfer } from "../../assets"
+import {
+  AnyAssetAmount,
+  AssetTransfer,
+  SmartContractFungibleAsset,
+} from "../../assets"
 import {
   HOUR,
   ETHEREUM,
@@ -1900,6 +1904,7 @@ export default class ChainService extends BaseService<Events> {
       symbol: chainInfo.nativeCurrency.symbol,
       assetName: chainInfo.nativeCurrency.name,
       rpcUrls: chainInfo.rpcUrls,
+      blockExplorerURL: chainInfo.blockExplorerUrl,
     })
     await this.updateSupportedNetworks()
 
@@ -1915,6 +1920,10 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async removeCustomChain(chainID: string): Promise<void> {
+    this.trackedNetworks = this.trackedNetworks.filter(
+      (network) => network.chainID !== chainID
+    )
+
     await this.db.removeEVMNetwork(chainID)
     await this.updateSupportedNetworks()
   }
@@ -1924,5 +1933,46 @@ export default class ChainService extends BaseService<Events> {
 
     this.supportedNetworks = supportedNetworks
     this.emitter.emit("supportedNetworks", supportedNetworks)
+  }
+
+  async queryAccountTokenDetails(
+    contractAddress: NormalizedEVMAddress,
+    addressOnNetwork: AddressOnNetwork,
+    existingAsset?: SmartContractFungibleAsset
+  ): Promise<AnyAssetAmount<SmartContractFungibleAsset>> {
+    const { network } = addressOnNetwork
+
+    const balance = await this.assetData.getTokenBalance(
+      addressOnNetwork,
+      contractAddress
+    )
+
+    if (existingAsset) {
+      return {
+        asset: existingAsset,
+        amount: balance.amount,
+      }
+    }
+
+    const asset = await this.assetData
+      .getTokenMetadata({
+        contractAddress,
+        homeNetwork: network,
+      })
+      .catch(() => undefined)
+
+    if (!asset) {
+      throw logger.buildError(
+        "Unable to retrieve metadata for custom asset",
+        contractAddress,
+        "on chain:",
+        network.chainID
+      )
+    }
+
+    return {
+      asset,
+      amount: balance.amount,
+    }
   }
 }
