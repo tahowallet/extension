@@ -5,7 +5,11 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 import { useTranslation } from "react-i18next"
 import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
+import { isSmartContractFungibleAsset } from "@tallyho/tally-background/assets"
+import {
+  isBuiltInNetwork,
+  NETWORKS_SUPPORTING_SWAPS,
+} from "@tallyho/tally-background/constants"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
@@ -41,7 +45,13 @@ export default function CommonAssetListItem(
       ? assetAmount.asset.contractAddress
       : undefined
 
-  const assetIsUntrusted = isUntrustedAsset(assetAmount?.asset, selectedNetwork)
+  const isCustomNetworkAsset =
+    isSmartContractFungibleAsset(assetAmount.asset) &&
+    !isBuiltInNetwork(assetAmount?.asset.homeNetwork)
+
+  const assetIsUntrusted =
+    !isCustomNetworkAsset &&
+    isUntrustedAsset(assetAmount?.asset, selectedNetwork)
 
   return (
     <Link

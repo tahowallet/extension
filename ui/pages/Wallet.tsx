@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
 import { selectShowAnalyticsNotification } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
+import { isBuiltInNetwork } from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import WalletAssetList from "../components/Wallet/WalletAssetList"
@@ -55,12 +56,17 @@ export default function Wallet(): ReactElement {
     }
   }, [selectedNetwork.chainID])
 
-  const { assetAmounts, hiddenAssetAmounts, totalMainCurrencyValue } =
-    accountData ?? {
-      assetAmounts: [],
-      hiddenAssetAmounts: [],
-      totalMainCurrencyValue: undefined,
-    }
+  const {
+    allAssetAmounts,
+    assetAmounts,
+    hiddenAssetAmounts,
+    totalMainCurrencyValue,
+  } = accountData ?? {
+    allAssetAmounts: [],
+    assetAmounts: [],
+    hiddenAssetAmounts: [],
+    totalMainCurrencyValue: undefined,
+  }
 
   const currentAccountActivities = useBackgroundSelector(
     selectCurrentAccountActivities
@@ -82,6 +88,7 @@ export default function Wallet(): ReactElement {
 
   panelNames.push(t("wallet.pages.activity"))
 
+  const isCustomNetwork = !isBuiltInNetwork(selectedNetwork)
   return (
     <>
       <div className="page_content">
@@ -113,7 +120,9 @@ export default function Wallet(): ReactElement {
             {panelNumber === 0 && (
               <>
                 <WalletAssetList
-                  assetAmounts={assetAmounts}
+                  assetAmounts={
+                    isCustomNetwork ? allAssetAmounts : assetAmounts
+                  }
                   initializationLoadingTimeExpired={
                     initializationLoadingTimeExpired
                   }
@@ -141,7 +150,7 @@ export default function Wallet(): ReactElement {
                     </SharedButton>
                   </div>
                 )}
-                {hiddenAssetAmounts.length > 0 && (
+                {!isCustomNetwork && hiddenAssetAmounts.length > 0 && (
                   <WalletHiddenAssets assetAmounts={hiddenAssetAmounts} />
                 )}
               </>
