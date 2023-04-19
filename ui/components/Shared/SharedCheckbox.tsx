@@ -1,28 +1,23 @@
 import classNames from "classnames"
-import React, { ReactElement, useState, useEffect } from "react"
+import React, { ReactElement } from "react"
 
 type Props = {
   label: string
   onChange: (value: boolean) => void
-  value?: boolean
+  value: boolean
   invalid?: boolean
   message?: string
 }
 
 export default function SharedCheckbox(props: Props): ReactElement {
   const { label, value, message, invalid, onChange } = props
-  const [checked, setChecked] = useState(value || false)
-
-  useEffect(() => {
-    setChecked(!!value)
-  }, [value])
 
   return (
     <div className="container">
       <label className="checkbox">
         <input
-          checked={checked}
-          onChange={() => onChange(!checked)}
+          checked={value}
+          onChange={() => onChange(!value)}
           type="checkbox"
         />
         <span className={classNames("checkmark", { invalid })} />
