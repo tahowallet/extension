@@ -291,7 +291,9 @@ export default function Settings(): ReactElement {
   const generalList = [
     setAsDefault,
     hideSmallAssetBalance,
-    hideUntrustedAssets,
+    ...(isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST)
+      ? [hideUntrustedAssets]
+      : []),
     ...(isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) ? [languages] : []),
     enableTestNetworks,
     dAppsSettings,
