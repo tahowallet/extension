@@ -953,7 +953,14 @@ export function makeSerialFallbackProvider(
 
   const genericProviders = rpcUrls.map((rpcUrl) => ({
     type: "generic" as const,
-    creator: () => new JsonRpcProvider(rpcUrl),
+    creator: () => {
+      const url = new URL(rpcUrl)
+      if (/^wss?/.test(url.protocol)) {
+        return new WebSocketProvider(rpcUrl)
+      }
+
+      return new JsonRpcProvider(rpcUrl)
+    },
   }))
 
   return new SerialFallbackProvider(chainID, [

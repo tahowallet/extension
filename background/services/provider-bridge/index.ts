@@ -274,6 +274,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         origin,
         dAppChainID
       )
+
       if (typeof persistedPermission !== "undefined") {
         // if agrees then let's return the account data
 
@@ -282,6 +283,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
           "eth_accounts",
           event.request.params,
           origin
+        )
+
+        // on dApp connection, persist the current network/origin state
+        await this.internalEthereumProviderService.switchToSupportedNetwork(
+          origin,
+          network
         )
       } else {
         // if user does NOT agree, then reject
@@ -424,6 +431,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
     return this.db.checkPermission(origin, currentAddress, chainID)
   }
 
+  async revokePermissionsForChain(chainId: string): Promise<void> {
+    await this.db.deletePermissionsByChain(chainId)
+  }
+
   async routeSafeRequest(
     method: string,
     params: unknown[],
@@ -558,6 +569,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
           })
 
           await userConfirmation
+
+          const account = await this.preferenceService.getSelectedAccount()
+
+          await this.grantPermission({
+            ...enablingPermission,
+            key: `${origin}_${account.address}_${validatedData.chainId}`,
+            chainID: validatedData.chainId,
+          })
 
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,
