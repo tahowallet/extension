@@ -41,25 +41,9 @@ export default function AccountItemOptionsMenu({
     dispatch(setSnackbarMessage("Address copied to clipboard"))
   }, [address, dispatch])
 
-  const getExportPrivateKeyOption = useCallback(() => {
-    if (
-      allowExportPrivateKeys.includes(accountType) &&
-      isEnabled(FeatureFlags.SUPPORT_PRIV_KEYS)
-    ) {
-      return [
-        {
-          key: "key",
-          icon: "icons/s/key.svg",
-          label: t("showPrivateKey.header"),
-          onClick: () => {
-            setShowPrivateKeyMenu(true)
-          },
-        },
-      ]
-    }
-
-    return []
-  }, [accountType, t])
+  const canExportPrivateKey =
+    isEnabled(FeatureFlags.SUPPORT_PRIV_KEYS) &&
+    allowExportPrivateKeys.includes(accountType)
 
   return (
     <div className="options_menu_wrap">
@@ -148,7 +132,18 @@ export default function AccountItemOptionsMenu({
               copyAddress()
             },
           },
-          ...getExportPrivateKeyOption(),
+          ...(canExportPrivateKey
+            ? [
+                {
+                  key: "key",
+                  icon: "icons/s/key.svg",
+                  label: t("showPrivateKey.header"),
+                  onClick: () => {
+                    setShowPrivateKeyMenu(true)
+                  },
+                },
+              ]
+            : []),
           {
             key: "remove",
             icon: "garbage@2x.png",
