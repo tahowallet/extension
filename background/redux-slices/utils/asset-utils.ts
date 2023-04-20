@@ -339,13 +339,10 @@ export function heuristicDesiredDecimalsForUnitPrice(
  * "internal" token list that users can export and share.
  *
  */
-export function isUntrustedAsset(
-  asset: AnyAsset | undefined,
-  selectedNetwork: AnyNetwork
-): boolean {
+export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
   if (asset) {
     const numTokenLists = asset?.metadata?.tokenLists?.length ?? 0
-    const baseAsset = isBuiltInNetworkBaseAsset(asset, selectedNetwork)
+    const baseAsset = isNetworkBaseAsset(asset)
 
     return numTokenLists === 0 && !baseAsset
   }
