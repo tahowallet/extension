@@ -1057,8 +1057,8 @@ export default class Main extends BaseService<never> {
       }
     )
 
-    this.indexingService.emitter.on("assets", (assets) => {
-      this.store.dispatch(assetsLoaded(assets))
+    this.indexingService.emitter.on("assets", async (assets) => {
+      await this.store.dispatch(assetsLoaded(assets))
     })
 
     this.indexingService.emitter.on("price", (pricePoint) => {
@@ -1745,6 +1745,13 @@ export default class Main extends BaseService<never> {
         this.analyticsService.sendAnalyticsEvent(event)
       }
     })
+  }
+
+  async setAssetTrustStatus(
+    asset: SmartContractFungibleAsset,
+    isTrusted: boolean
+  ): Promise<void> {
+    await this.indexingService.setAssetTrustStatus(asset, isTrusted)
   }
 
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {

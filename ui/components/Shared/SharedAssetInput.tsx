@@ -137,9 +137,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
   const [searchTerm, setSearchTerm] = useState("")
   const searchInput = useRef<HTMLInputElement | null>(null)
 
-  const trustedAssets = assets.filter(
-    ({ asset }) => !isUntrustedAsset(asset, currentNetwork)
-  )
+  const trustedAssets = assets.filter(({ asset }) => !isUntrustedAsset(asset))
 
   const filteredAssets =
     searchTerm.trim() === ""
