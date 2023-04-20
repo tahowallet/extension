@@ -420,6 +420,7 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   onFocus?: () => void
   onBlur?: () => void
   onAmountChange?: (value: string, errorMessage: string | undefined) => void
+  onErrorMessageChange?: (errorMessage: string) => void
   NFTCollections?: NFTCollectionCached[]
   onSelectNFT?: (nft: NFTCached) => void
   selectedNFT?: NFTCached
@@ -468,6 +469,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
     onAmountChange,
     onFocus = () => {},
     onBlur = () => {},
+    onErrorMessageChange = () => {},
     NFTCollections,
     onSelectNFT,
     selectedNFT,
@@ -541,9 +543,10 @@ export default function SharedAssetInput<T extends AnyAsset>(
   }
 
   useEffect(() => {
-    const error = getErrorMessage(amount)
-    setErrorMessage(error ?? "")
-  }, [amount, getErrorMessage])
+    const error = getErrorMessage(amount) ?? ""
+    setErrorMessage(error)
+    onErrorMessageChange(error)
+  }, [amount, getErrorMessage, onErrorMessageChange])
 
   const setMaxBalance = () => {
     if (
