@@ -172,6 +172,7 @@ export default function SingleAsset(): ReactElement {
                     width={180}
                     horizontalPosition="center"
                     verticalPosition="bottom"
+                    customStyles={{ marginLeft: "0" }}
                     horizontalShift={80}
                     verticalShift={-20}
                     IconComponent={() => (
