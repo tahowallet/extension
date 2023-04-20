@@ -8,7 +8,6 @@ interface Props<T> {
   label?: string
   name?: string
   maxLength?: number
-  focusedLabelBackgroundColor: string
   placeholder?: string
   type: "password" | "text" | "number"
   value?: string | undefined
@@ -32,7 +31,6 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     label,
     placeholder,
     maxLength,
-    focusedLabelBackgroundColor,
     type,
     name,
     onChange,
@@ -158,6 +156,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             color: var(--green-40);
             transition: font-size 0.2s ease, transform 0.2s ease,
               font-weight 0.2s ease, padding 0.2s ease;
+            backdrop-filter: blur(100px);
           }
           input:disabled {
             color: var(--green-40);
@@ -180,7 +179,6 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             font-size: 12px;
             font-weight: 500;
             padding: 0px 6px;
-            background-color: ${focusedLabelBackgroundColor};
           }
           .error ~ label,
           input.error:focus ~ label {
@@ -207,7 +205,6 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
 
 SharedTypedInput.defaultProps = {
   type: "text",
-  focusedLabelBackgroundColor: "var(--hunter-green)",
 }
 
 export default function SharedInput(

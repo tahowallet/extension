@@ -219,7 +219,6 @@ export default function NetworkSettingsSelectArbitrum({
             }}
             label="Gas limit"
             type="number"
-            focusedLabelBackgroundColor="var(--green-95)"
             step={1000}
           />
         </div>

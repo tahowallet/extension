@@ -294,7 +294,6 @@ export default function NetworkSettingsSelect({
               }}
               label={t("networkFees.gasLimit")}
               type="number"
-              focusedLabelBackgroundColor="var(--green-95)"
               step={1000}
             />
           </div>

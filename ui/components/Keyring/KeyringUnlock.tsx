@@ -95,7 +95,6 @@ export default function KeyringUnlock({
                 setErrorMessage("")
               }}
               errorMessage={errorMessage}
-              focusedLabelBackgroundColor="var(--green-95)"
             />
           </div>
           <div>

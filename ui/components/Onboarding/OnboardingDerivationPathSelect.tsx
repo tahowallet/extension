@@ -160,7 +160,6 @@ export default function OnboardingDerivationPathSelect({
                 id="custom_path_label"
                 label={t("pathLabel")}
                 onChange={(value) => setCustomPathLabel(value)}
-                focusedLabelBackgroundColor="var(--green-120)"
                 value={customPathLabel}
               />
             </div>
@@ -169,7 +168,6 @@ export default function OnboardingDerivationPathSelect({
                 id="custom_path_value"
                 label={`${t("customPath")} (m/44'/0'/0)`}
                 onFocus={() => setModalStep(2)}
-                focusedLabelBackgroundColor="var(--green-120)"
                 value={customPathValue}
               />
             </div>
