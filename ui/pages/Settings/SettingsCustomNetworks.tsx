@@ -31,9 +31,7 @@ export default function SettingsCustomNetworks(): ReactElement {
 
   return (
     <div className="standard_width_padded wrapper">
-      <SharedPageHeader withoutBackText backPath="/settings">
-        {t(`title`)}
-      </SharedPageHeader>
+      <SharedPageHeader withoutBackText>{t(`title`)}</SharedPageHeader>
       {customNetworksListItems.length > 0 && (
         <section className="content">
           <h2 className="subheader">{t("subtitleAdded")}</h2>
@@ -66,6 +64,7 @@ export default function SettingsCustomNetworks(): ReactElement {
                       onClick={() => dispatch(removeCustomChain(item.chainID))}
                       icon="icons/s/garbage.svg"
                       color="var(--green-40)"
+                      hoverColor="var(--trophy-gold)"
                     />
                   </div>
                 </li>

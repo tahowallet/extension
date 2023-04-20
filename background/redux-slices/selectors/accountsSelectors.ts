@@ -78,13 +78,14 @@ const computeCombinedAssetAmountsData = (
   currentNetwork: EVMNetwork,
   hideDust: boolean
 ): {
+  allAssetAmounts: CompleteAssetAmount[]
   combinedAssetAmounts: CompleteAssetAmount[]
   hiddenAssetAmounts: CompleteAssetAmount[]
   totalMainCurrencyAmount: number | undefined
 } => {
   // Derive account "assets"/assetAmount which include USD values using
   // data from the assets slice
-  const { combinedAssetAmounts, hiddenAssetAmounts } = assetAmounts
+  const allAssetAmounts = assetAmounts
     .map<CompleteAssetAmount>((assetAmount) => {
       const assetPricePoint = selectAssetPricePoint(
         assets,
@@ -149,35 +150,36 @@ const computeCombinedAssetAmountsData = (
       // If only one asset has a main currency amount, it wins.
       return asset1.mainCurrencyAmount === undefined ? 1 : -1
     })
-    .reduce<{
-      combinedAssetAmounts: CompleteAssetAmount[]
-      hiddenAssetAmounts: CompleteAssetAmount[]
-    }>(
-      (acc, assetAmount) => {
-        const isForciblyDisplayed = shouldForciblyDisplayAsset(assetAmount)
 
-        const isNotDust =
-          typeof assetAmount.mainCurrencyAmount === "undefined"
-            ? true
-            : assetAmount.mainCurrencyAmount > userValueDustThreshold
-        const isPresent = assetAmount.decimalAmount > 0
-        const isTrusted = !!(
-          assetAmount.asset?.metadata?.tokenLists.length ?? 0
-        )
+  const { combinedAssetAmounts, hiddenAssetAmounts } = allAssetAmounts.reduce<{
+    combinedAssetAmounts: CompleteAssetAmount[]
+    hiddenAssetAmounts: CompleteAssetAmount[]
+  }>(
+    (acc, assetAmount) => {
+      const isForciblyDisplayed = shouldForciblyDisplayAsset(assetAmount)
 
-        // Hide dust, untrusted assets and missing amounts.
-        if (
-          isForciblyDisplayed ||
-          (isTrusted && (hideDust ? isNotDust && isPresent : isPresent))
-        ) {
-          acc.combinedAssetAmounts.push(assetAmount)
-        } else if (isPresent) {
-          acc.hiddenAssetAmounts.push(assetAmount)
-        }
-        return acc
-      },
-      { combinedAssetAmounts: [], hiddenAssetAmounts: [] }
-    )
+      const isNotDust =
+        typeof assetAmount.mainCurrencyAmount === "undefined"
+          ? true
+          : assetAmount.mainCurrencyAmount > userValueDustThreshold
+      const isPresent = assetAmount.decimalAmount > 0
+      const isTrusted =
+        !!(assetAmount.asset?.metadata?.tokenLists?.length ?? 0) ||
+        assetAmount.asset.metadata?.trusted
+
+      // Hide dust, untrusted assets and missing amounts.
+      if (
+        isForciblyDisplayed ||
+        (isTrusted && (hideDust ? isNotDust && isPresent : isPresent))
+      ) {
+        acc.combinedAssetAmounts.push(assetAmount)
+      } else if (isPresent) {
+        acc.hiddenAssetAmounts.push(assetAmount)
+      }
+      return acc
+    },
+    { combinedAssetAmounts: [], hiddenAssetAmounts: [] }
+  )
 
   // Keep a tally of the total user value; undefined if no main currency data
   // is available.
@@ -189,7 +191,12 @@ const computeCombinedAssetAmountsData = (
     }
   })
 
-  return { combinedAssetAmounts, hiddenAssetAmounts, totalMainCurrencyAmount }
+  return {
+    allAssetAmounts,
+    combinedAssetAmounts,
+    hiddenAssetAmounts,
+    totalMainCurrencyAmount,
+  }
 }
 
 const getAccountState = (state: RootState) => state.account
@@ -248,6 +255,7 @@ export const selectCurrentAccountBalances = createSelector(
     )
 
     const {
+      allAssetAmounts,
       combinedAssetAmounts,
       hiddenAssetAmounts,
       totalMainCurrencyAmount,
@@ -260,6 +268,7 @@ export const selectCurrentAccountBalances = createSelector(
     )
 
     return {
+      allAssetAmounts,
       assetAmounts: combinedAssetAmounts,
       hiddenAssetAmounts,
       totalMainCurrencyValue: totalMainCurrencyAmount

@@ -6,14 +6,17 @@ import {
   selectCurrentAccountSigner,
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import {
   AnyAsset,
   isSmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useTranslation } from "react-i18next"
-import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
+import {
+  DEFAULT_NETWORKS_BY_CHAIN_ID,
+  NETWORKS_SUPPORTING_SWAPS,
+} from "@tallyho/tally-background/constants"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -69,12 +72,11 @@ export default function SingleAsset(): ReactElement {
         return undefined
       }
 
-      return balances.assetAmounts.find(({ asset: candidateAsset }) => {
+      return balances.allAssetAmounts.find(({ asset: candidateAsset }) => {
         if (typeof contractAddress !== "undefined") {
           return (
             isSmartContractFungibleAsset(candidateAsset) &&
-            normalizeEVMAddress(candidateAsset.contractAddress) ===
-              normalizeEVMAddress(contractAddress)
+            sameEVMAddress(candidateAsset.contractAddress, contractAddress)
           )
         }
         return candidateAsset.symbol === symbol
@@ -107,9 +109,13 @@ export default function SingleAsset(): ReactElement {
                   IconComponent={() => (
                     <a
                       className="new_tab_link"
-                      href={`${
-                        scanWebsite[currentNetwork.chainID].url
-                      }/token/${contractAddress}`}
+                      href={
+                        DEFAULT_NETWORKS_BY_CHAIN_ID.has(currentNetwork.chainID)
+                          ? `${
+                              scanWebsite[currentNetwork.chainID].url
+                            }/token/${contractAddress}`
+                          : currentNetwork.blockExplorerURL
+                      }
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -117,9 +123,11 @@ export default function SingleAsset(): ReactElement {
                     </a>
                   )}
                 >
-                  {t("assets.viewAsset", {
-                    siteTitle: scanWebsite[currentNetwork.chainID].title,
-                  })}
+                  {scanWebsite[currentNetwork.chainID]
+                    ? t("assets.viewAsset", {
+                        siteTitle: scanWebsite[currentNetwork.chainID].title,
+                      })
+                    : t("assets.openNetworkExplorer")}
                 </SharedTooltip>
               ) : (
                 <></>
@@ -146,7 +154,7 @@ export default function SingleAsset(): ReactElement {
                 >
                   {t("shared.send")}
                 </SharedButton>
-                {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) && (
+                {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) ? (
                   <SharedButton
                     type="primary"
                     size="medium"
@@ -158,6 +166,30 @@ export default function SingleAsset(): ReactElement {
                   >
                     {t("shared.swap")}
                   </SharedButton>
+                ) : (
+                  <SharedTooltip
+                    type="dark"
+                    width={180}
+                    horizontalPosition="center"
+                    verticalPosition="bottom"
+                    horizontalShift={80}
+                    verticalShift={-20}
+                    IconComponent={() => (
+                      <SharedButton
+                        type="primary"
+                        size="medium"
+                        isDisabled
+                        iconSmall="swap"
+                      >
+                        {t("shared.swap")}
+                      </SharedButton>
+                    )}
+                  >
+                    <div className="centered_tooltip">
+                      <div>{t("wallet.swapDisabledOne")}</div>
+                      <div>{t("wallet.swapDisabledTwo")}</div>
+                    </div>
+                  </SharedTooltip>
                 )}
               </>
             ) : (

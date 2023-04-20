@@ -1,11 +1,15 @@
 import React, { ReactElement, useState } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { useTranslation } from "react-i18next"
+import {
+  SmartContractFungibleAsset,
+  SwappableAsset,
+} from "@tallyho/tally-background/assets"
 import WalletAssetListItem from "./WalletAssetListItem"
 import AssetWarningSlideUp from "./AssetWarningSlideUp"
 
 type WalletAssetListProps = {
-  assetAmounts: CompleteAssetAmount[]
+  assetAmounts: CompleteAssetAmount<SwappableAsset>[]
   initializationLoadingTimeExpired: boolean
 }
 
@@ -19,17 +23,19 @@ export default function WalletAssetList(
   const { assetAmounts, initializationLoadingTimeExpired } = props
 
   const [warnedAsset, setWarnedAsset] = useState<
-    CompleteAssetAmount["asset"] | null
+    CompleteAssetAmount<SmartContractFungibleAsset>["asset"] | null
   >(null)
 
   if (!assetAmounts) return <></>
 
   return (
     <>
-      <AssetWarningSlideUp
-        asset={warnedAsset}
-        close={() => setWarnedAsset(null)}
-      />
+      {warnedAsset && (
+        <AssetWarningSlideUp
+          asset={warnedAsset}
+          close={() => setWarnedAsset(null)}
+        />
+      )}
       <ul>
         {assetAmounts.map((assetAmount) => (
           <WalletAssetListItem
