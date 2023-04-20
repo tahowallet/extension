@@ -1,12 +1,15 @@
 // @ts-check
 
 import React, { ReactElement } from "react"
-import { AnyAsset } from "@tallyho/tally-background/assets"
+import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
 import { useTranslation } from "react-i18next"
+import { updateAssetTrustStatus } from "@tallyho/tally-background/redux-slices/assets"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedBanner from "../Shared/SharedBanner"
 import SharedButton from "../Shared/SharedButton"
 import SharedAddress from "../Shared/SharedAddress"
+import { useBackgroundDispatch } from "../../hooks"
 
 type TitledSlideUpProps = Parameters<typeof SharedSlideUpMenu>[0] & {
   title: string
@@ -37,7 +40,7 @@ function TitledSlideUpMenu(props: TitledSlideUpProps): ReactElement {
 }
 
 type AssetWarningSlideUpProps = {
-  asset: AnyAsset | null
+  asset: SmartContractFungibleAsset
   close: () => void
 }
 
@@ -47,7 +50,15 @@ export default function AssetWarningSlideUp(
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet.trustedAssets",
   })
+
   const { asset, close } = props
+
+  const dispatch = useBackgroundDispatch()
+
+  const setAssetTrustStatus = async (isTrusted: boolean) => {
+    await dispatch(updateAssetTrustStatus({ asset, trusted: isTrusted }))
+    close()
+  }
   return (
     <TitledSlideUpMenu
       isOpen={asset !== null}
@@ -61,6 +72,7 @@ export default function AssetWarningSlideUp(
           margin-top: 10px !important;
           margin-bottom: 14px;
         }
+
         #close_asset_warning {
           margin-left: 24px;
           margin-top: 34px;
@@ -96,6 +108,13 @@ export default function AssetWarningSlideUp(
           text-overflow: ellipsis;
           -o-text-overflow: ellipsis;
         }
+
+        .asset_trust_actions {
+          display: flex;
+          justify-content: space-between;
+          margin: 0 24px;
+          margin-top: 34px;
+        }
       `}</style>
       <SharedBanner icon="notif-attention" iconColor="var(--attention)">
         <span className="warning_text">{t("notVerified")}</span>
@@ -122,14 +141,33 @@ export default function AssetWarningSlideUp(
           </div>
         </li>
       </ul>
-      <SharedButton
-        size="medium"
-        type="secondary"
-        id="close_asset_warning"
-        onClick={close}
-      >
-        {t("close")}
-      </SharedButton>
+      {isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST) ? (
+        <div className="asset_trust_actions">
+          <SharedButton
+            size="medium"
+            type="secondary"
+            onClick={() => setAssetTrustStatus(false)}
+          >
+            {t("hideAsset")}
+          </SharedButton>
+          <SharedButton
+            size="medium"
+            type="primary"
+            onClick={() => setAssetTrustStatus(true)}
+          >
+            {t("trustAsset")}
+          </SharedButton>
+        </div>
+      ) : (
+        <SharedButton
+          size="medium"
+          type="secondary"
+          id="close_asset_warning"
+          onClick={close}
+        >
+          {t("close")}
+        </SharedButton>
+      )}
     </TitledSlideUpMenu>
   )
 }

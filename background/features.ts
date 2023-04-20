@@ -36,6 +36,7 @@ export const RuntimeFlag = {
   SUPPORT_CUSTOM_NETWORKS: process.env.SUPPORT_CUSTOM_NETWORKS === "true",
   SUPPORT_CUSTOM_RPCS: process.env.SUPPORT_CUSTOM_RPCS === "true",
   SUPPORT_PRIV_KEYS: process.env.SUPPORT_PRIV_KEYS === "true",
+  SUPPORT_ASSET_TRUST: process.env.SUPPORT_ASSET_TRUST === "true",
 } as const
 
 type BuildTimeFlagType = keyof typeof BuildTimeFlag

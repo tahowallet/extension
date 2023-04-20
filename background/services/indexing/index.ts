@@ -573,6 +573,14 @@ export default class IndexingService extends BaseService<Events> {
     return balances
   }
 
+  async setAssetTrustStatus(
+    asset: SmartContractFungibleAsset,
+    isTrusted: boolean
+  ): Promise<void> {
+    await this.db.updateAssetMetadata(asset, { trusted: isTrusted })
+    await this.cacheAssetsForNetwork(asset.homeNetwork)
+  }
+
   async importAccountCustomToken(
     asset: SmartContractFungibleAsset,
     addressNetwork: AddressOnNetwork

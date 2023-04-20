@@ -791,7 +791,9 @@
       "assetImported": "Asset imported from transaction history",
       "name": "Name",
       "contract": "Contract address",
-      "close": "Close"
+      "close": "Close",
+      "hideAsset": "Hide asset",
+      "trustAsset": "Trust asset"
     },
     "banner": {
       "bannerTitle": "New Odyssey week!",
@@ -943,7 +945,8 @@
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
-        "SUPPORT_PRIV_KEYS": "Enable private key import"
+        "SUPPORT_PRIV_KEYS": "Enable private key import",
+        "SUPPORT_ASSET_TRUST": "Enable trusting assets"
       }
     }
   },

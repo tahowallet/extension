@@ -6,7 +6,7 @@ import {
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import {
   checkTokenContractDetails,
-  importTokenViaContractAddress as importAccountCustomToken,
+  importAccountCustomToken,
 } from "@tallyho/tally-background/redux-slices/assets"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
