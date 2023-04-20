@@ -71,10 +71,12 @@ export default function Swap(): ReactElement {
 
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
+  const [hasError, setHasError] = useState(false)
+
   // TODO We're special-casing ETH here in an odd way. Going forward, we should
   // filter by current chain and better handle network-native base assets
   const ownedSellAssetAmounts =
-    accountBalances?.assetAmounts.filter(
+    accountBalances?.allAssetAmounts.filter(
       (assetAmount): assetAmount is CompleteAssetAmount<SwappableAsset> =>
         isSmartContractFungibleAsset(assetAmount.asset) ||
         assetAmount.asset.symbol === currentNetwork.baseAsset.symbol
@@ -489,6 +491,7 @@ export default function Swap(): ReactElement {
                 onAssetSelect={updateSellAsset}
                 onFocus={() => setAmountInputHasFocus(true)}
                 onBlur={() => setAmountInputHasFocus(false)}
+                onErrorMessageChange={(error) => setHasError(!!error)}
                 mainCurrencySign={mainCurrencySign}
                 onAmountChange={(newAmount, error) => {
                   setSellAmount(newAmount)
@@ -567,7 +570,7 @@ export default function Swap(): ReactElement {
               {quoteAppliesToCurrentAssets && quote?.needsApproval ? (
                 <ApproveQuoteBtn
                   isApprovalInProgress={!!isApprovalInProgress}
-                  isDisabled={isReadOnlyAccount || !quote}
+                  isDisabled={isReadOnlyAccount || !quote || hasError}
                   onApproveClick={approveAsset}
                   isLoading={confirmationMenu}
                 />
@@ -579,7 +582,8 @@ export default function Swap(): ReactElement {
                     isReadOnlyAccount ||
                     !quote ||
                     !quoteAppliesToCurrentAssets ||
-                    !quoteAppliesToCurrentAmounts
+                    !quoteAppliesToCurrentAmounts ||
+                    hasError
                   }
                   onClick={getFinalQuote}
                   showLoadingOnClick={!confirmationMenu}

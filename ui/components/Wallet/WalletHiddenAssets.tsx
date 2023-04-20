@@ -6,13 +6,14 @@ import {
   selectShowHiddenAssets,
   toggleShowHiddenAssets,
 } from "@tallyho/tally-background/redux-slices/ui"
+import { SwappableAsset } from "@tallyho/tally-background/assets"
 import WalletAssetList from "./WalletAssetList"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { useIsMounted } from "../../hooks/react-hooks"
 
 type WalletHiddenAssetsProps = {
-  assetAmounts: CompleteAssetAmount[]
+  assetAmounts: CompleteAssetAmount<SwappableAsset>[]
 }
 
 export default function WalletHiddenAssets({

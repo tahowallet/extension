@@ -66,6 +66,7 @@ export default function SettingsCustomNetworks(): ReactElement {
                       onClick={() => dispatch(removeCustomChain(item.chainID))}
                       icon="icons/s/garbage.svg"
                       color="var(--green-40)"
+                      hoverColor="var(--trophy-gold)"
                     />
                   </div>
                 </li>
