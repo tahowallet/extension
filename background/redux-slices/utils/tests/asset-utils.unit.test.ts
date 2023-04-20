@@ -1,4 +1,4 @@
-import { ETH, ETHEREUM } from "../../../constants"
+import { ETH } from "../../../constants"
 import { isUntrustedAsset } from "../asset-utils"
 
 describe("Asset utils", () => {
@@ -14,7 +14,7 @@ describe("Asset utils", () => {
           websiteURL: "",
         },
       }
-      expect(isUntrustedAsset(asset, ETHEREUM)).toBeTruthy()
+      expect(isUntrustedAsset(asset)).toBeTruthy()
     })
     test("should return false if is a trusted asset", () => {
       const asset = {
@@ -32,13 +32,13 @@ describe("Asset utils", () => {
           websiteURL: "",
         },
       }
-      expect(isUntrustedAsset(asset, ETHEREUM)).toBeFalsy()
+      expect(isUntrustedAsset(asset)).toBeFalsy()
     })
     test("should return false if is a base asset", () => {
-      expect(isUntrustedAsset(ETH, ETHEREUM)).toBeFalsy()
+      expect(isUntrustedAsset(ETH)).toBeFalsy()
     })
     test("should return false if an asset is undefined", () => {
-      expect(isUntrustedAsset(undefined, ETHEREUM)).toBeFalsy()
+      expect(isUntrustedAsset(undefined)).toBeFalsy()
     })
   })
 })

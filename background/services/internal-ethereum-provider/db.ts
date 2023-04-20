@@ -35,6 +35,10 @@ export class InternalEthereumProviderDatabase extends Dexie {
       activeNetworks: null,
     })
 
+    this.version(4).stores({
+      currentNetwork: "&origin,network.chainID",
+    })
+
     this.on("populate", (tx) => {
       return tx.db
         .table("currentNetwork")
@@ -54,6 +58,10 @@ export class InternalEthereumProviderDatabase extends Dexie {
   ): Promise<EVMNetwork | undefined> {
     const currentNetwork = await this.currentNetwork.get({ origin })
     return currentNetwork?.network
+  }
+
+  async removeStoredPreferencesForChain(chainID: string): Promise<void> {
+    await this.currentNetwork.where({ "network.chainID": chainID }).delete()
   }
 }
 

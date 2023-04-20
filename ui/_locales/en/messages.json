@@ -37,7 +37,8 @@
   },
   "viewAddressOnBlockExplorer": "View address on {{blockExplorer}}",
   "assets": {
-    "viewAsset": "View asset on {{siteTitle}}"
+    "viewAsset": "View asset on {{siteTitle}}",
+    "openNetworkExplorer": "Open network explorer"
   },
   "assetInput": {
     "search": "Search by name or address",
@@ -767,7 +768,9 @@
       "assetImported": "Asset imported from transaction history",
       "name": "Name",
       "contract": "Contract address",
-      "close": "Close"
+      "close": "Close",
+      "hideAsset": "Hide asset",
+      "trustAsset": "Trust asset"
     },
     "banner": {
       "bannerTitle": "New Odyssey week!",
@@ -783,6 +786,8 @@
     "totalAccountBalance": "Total account balance",
     "send": "Send",
     "swap": "Swap",
+    "swapDisabledOne": "Swaps aren't supported",
+    "swapDisabledTwo": "on this network",
     "receive": "Receive",
     "secureSeed": "First, secure your recovery seed",
     "sendAsset": "Send Asset",
@@ -918,7 +923,8 @@
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
-        "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs"
+        "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
+        "SUPPORT_ASSET_TRUST": "Enable trusting assets"
       }
     }
   },
