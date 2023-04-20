@@ -16,6 +16,7 @@ import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
 import ReadOnlyNotice from "../Shared/ReadOnlyNotice"
 import SharedSquareButton from "../Shared/SharedSquareButton"
+import SharedTooltip from "../Shared/SharedTooltip"
 
 type ActionButtonsProps = {
   onReceive: () => void
@@ -46,7 +47,7 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
               {t("send")}
             </SharedSquareButton>
           </div>
-          {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) && (
+          {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) ? (
             <div className="button_wrap">
               <SharedSquareButton
                 icon="icons/s/swap.svg"
@@ -60,6 +61,35 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
                 {t("swap")}
               </SharedSquareButton>
             </div>
+          ) : (
+            <SharedTooltip
+              type="dark"
+              width={180}
+              horizontalPosition="center"
+              verticalPosition="bottom"
+              verticalShift={-30}
+              horizontalShift={30}
+              IconComponent={() => (
+                <div className="button_wrap">
+                  <SharedSquareButton
+                    icon="icons/s/swap.svg"
+                    ariaLabel={t("swap")}
+                    iconColor={{
+                      color: "#3A6565",
+                      hoverColor: "#3A6565",
+                    }}
+                    disabled
+                  >
+                    {t("swap")}
+                  </SharedSquareButton>
+                </div>
+              )}
+            >
+              <div className="centered_tooltip">
+                <div>{t("swapDisabledOne")}</div>
+                <div>{t("swapDisabledTwo")}</div>
+              </div>
+            </SharedTooltip>
           )}
           <div className="button_wrap">
             <SharedSquareButton
@@ -109,6 +139,13 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
             margin: 0 7px;
             width: 50px;
             text-align: center;
+          }
+          .centered_tooltip {
+            display: flex;
+            font-size: 14px;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
           }
         `}
       </style>
