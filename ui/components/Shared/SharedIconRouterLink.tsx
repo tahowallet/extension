@@ -5,10 +5,27 @@ type Props = {
   path: string
   state: { [key: string]: unknown }
   iconClass: string
+  disabled?: boolean
 }
 
 export default function SharedIconRouterLink(props: Props): ReactElement {
-  const { path, state, iconClass } = props
+  const { path, state, iconClass, disabled } = props
+
+  if (disabled) {
+    return (
+      // @TODO Make accessible
+      // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
+      <div
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+        className="icon_wrapper"
+      >
+        <i className={`disabled_asset_icon ${iconClass}`} />
+      </div>
+    )
+  }
 
   return (
     <Link
@@ -19,7 +36,7 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
       className="router_link_container"
     >
       <div className="icon_wrapper">
-        <i className={`asset_icon ${iconClass}`} />
+        <i className={`asset_icon hoverable ${iconClass}`} />
       </div>
       <style jsx global>{`
         .router_link_container {
@@ -29,6 +46,12 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
         .icon_wrapper {
           display: flex;
           padding: 0.5em;
+        }
+        .disabled_asset_icon {
+          mask-size: cover;
+          background-color: var(--green-60);
+          width: 12px;
+          height: 12px;
         }
         .router_link_container:hover {
           background-color: var(--hunter-green);
