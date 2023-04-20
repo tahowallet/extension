@@ -378,7 +378,7 @@
           "finalize": "Finalize",
           "completed": "Completed!",
           "address": "address",
-          "wrongPassword": "Wrong password, make sure you enter the password you used when encrypting this file"
+          "wrongPassword": "Wrong password or incorrect file. Ensure file is correct and enter the password you used when encrypting it."
         },
         "viewOnly": {
           "title": "Read-only address",
