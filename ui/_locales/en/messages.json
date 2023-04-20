@@ -561,6 +561,9 @@
       "ariaLabel": "Open custom networks page",
       "subtitleAdded": "Added chains",
       "subtitleAddMore": "Add more chains",
+      "deleteModal.title": "Remove custom network?",
+      "deleteModal.desc": "You are removing <name>{{name}}</name> network. This means you won't be able to see assets from it and it won't be in your network selection list. ",
+      "deleteModal.confirm": "Remove",
       "networksList": {
         "typeCustom": "Custom network"
       },
