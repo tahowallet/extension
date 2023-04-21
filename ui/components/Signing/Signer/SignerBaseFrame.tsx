@@ -1,9 +1,9 @@
-import React, { ReactElement, useContext } from "react"
+import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { selectAdditionalSigningStatus } from "@tallyho/tally-background/redux-slices/signing"
 import { useBackgroundSelector } from "../../../hooks"
 import TransactionButton from "./TransactionButton"
-import { SignerFrameContext } from "../../../utils/signing"
 
 type SignerBaseFrameProps = {
   signingActionLabel: string
@@ -20,7 +20,9 @@ export default function SignerBaseFrame({
 }: SignerBaseFrameProps): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
   const hasInsufficientFunds = useBackgroundSelector(selectHasInsufficientFunds)
-  const signerFrameContext = useContext(SignerFrameContext)
+  const additionalSigningStatus = useBackgroundSelector(
+    selectAdditionalSigningStatus
+  )
 
   return (
     <>
@@ -35,8 +37,7 @@ export default function SignerBaseFrame({
           size="large"
           onClick={onConfirm}
           isDisabled={
-            hasInsufficientFunds ||
-            (signerFrameContext?.shouldBlockedSigning ?? false)
+            hasInsufficientFunds || additionalSigningStatus === "editing"
           }
           showLoadingOnClick
           showLoading

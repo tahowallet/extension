@@ -50,6 +50,8 @@ type SigningState = {
 
   signedData: string | undefined
   signDataRequest: MessageSigningRequest | undefined
+
+  additionalSigningStatus: "editing" | undefined
 }
 
 export const initialState: SigningState = {
@@ -58,6 +60,8 @@ export const initialState: SigningState = {
 
   signedData: undefined,
   signDataRequest: undefined,
+
+  additionalSigningStatus: undefined,
 }
 
 export const signTypedData = createBackgroundAsyncThunk(
@@ -121,6 +125,14 @@ const signingSlice = createSlice({
       ...state,
       typedDataRequest: undefined,
       signDataRequest: undefined,
+      additionalSigningStatus: undefined,
+    }),
+    updateAdditionalSigningStatus: (
+      state,
+      { payload }: { payload: "editing" | undefined }
+    ) => ({
+      ...state,
+      additionalSigningStatus: payload,
     }),
   },
 })
@@ -131,6 +143,7 @@ export const {
   signedData,
   signDataRequest,
   clearSigningState,
+  updateAdditionalSigningStatus,
 } = signingSlice.actions
 
 export default signingSlice.reducer
@@ -143,6 +156,11 @@ export const selectTypedData = createSelector(
 export const selectSigningData = createSelector(
   (state: { signing: SigningState }) => state.signing.signDataRequest,
   (signTypes) => signTypes
+)
+
+export const selectAdditionalSigningStatus = createSelector(
+  (state: { signing: SigningState }) => state.signing.additionalSigningStatus,
+  (additionalSigningStatus) => additionalSigningStatus
 )
 
 export const rejectDataSignature = createBackgroundAsyncThunk(
