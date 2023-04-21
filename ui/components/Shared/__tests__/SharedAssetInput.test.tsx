@@ -20,6 +20,7 @@ const asset: FungibleAsset = {
       },
     ],
     websiteURL: "",
+    trusted: true,
   },
 }
 const assetsAndAmounts = [
@@ -42,6 +43,7 @@ const assetsAndAmounts = [
           },
         ],
         websiteURL: "",
+        trusted: true,
       },
     },
     amount: 300n,
@@ -56,6 +58,7 @@ const assetsAndAmounts = [
         coinGeckoID: "test",
         tokenLists: [],
         websiteURL: "",
+        trusted: false,
       },
     },
     amount: 300n,
