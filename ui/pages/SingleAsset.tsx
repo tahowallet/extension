@@ -170,11 +170,11 @@ export default function SingleAsset(): ReactElement {
                   <SharedTooltip
                     type="dark"
                     width={180}
+                    height={48}
                     horizontalPosition="center"
                     verticalPosition="bottom"
                     customStyles={{ marginLeft: "0" }}
-                    horizontalShift={80}
-                    verticalShift={-20}
+                    horizontalShift={94}
                     IconComponent={() => (
                       <SharedButton
                         type="primary"

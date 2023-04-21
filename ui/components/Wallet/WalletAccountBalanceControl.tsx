@@ -66,9 +66,9 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
               <SharedTooltip
                 type="dark"
                 width={180}
+                height={48}
                 horizontalPosition="center"
                 verticalPosition="bottom"
-                verticalShift={-30}
                 horizontalShift={22}
                 customStyles={{
                   marginLeft: "0",
