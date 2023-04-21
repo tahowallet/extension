@@ -1,11 +1,17 @@
+import { cloneDeep } from "lodash"
 import { AccountBalance } from "../../accounts"
 import { SmartContractFungibleAsset } from "../../assets"
 import { ETH, ETHEREUM } from "../../constants"
-import { createSmartContractAsset } from "../../tests/factories"
+import {
+  createAccountData,
+  createAddressOnNetwork,
+  createSmartContractAsset,
+} from "../../tests/factories"
 import reducer, {
   AccountData,
   AccountState,
   updateAccountBalance,
+  updateAssetCache,
 } from "../accounts"
 
 const ADDRESS_MOCK = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
@@ -179,6 +185,92 @@ describe("Accounts redux slice", () => {
 
       expect(updatedBalance?.[ETH.symbol].assetAmount.amount).toBe(1n)
       expect(updatedBalance?.[ASSET_MOCK.symbol].assetAmount.amount).toBe(10n)
+    })
+
+    it("updates cached asset data for all accounts", () => {
+      const asset = createSmartContractAsset()
+      const otherAccount = createAddressOnNetwork()
+      state.accountsData.evm = {
+        [ETHEREUM.chainID]: {
+          [ADDRESS_MOCK]: ACCOUNT_MOCK,
+          [otherAccount.address]: createAccountData({
+            address: otherAccount.address,
+          }),
+        },
+      }
+
+      const firstAccountUpdate = reducer(
+        state,
+        updateAccountBalance({
+          balances: [
+            {
+              ...BALANCE_MOCK,
+              assetAmount: { asset, amount: 10n },
+            },
+          ],
+          addressOnNetwork: { address: ADDRESS_MOCK, network: ETHEREUM },
+        })
+      )
+
+      const secondAccountUpdate = reducer(
+        firstAccountUpdate,
+        updateAccountBalance({
+          balances: [
+            {
+              ...BALANCE_MOCK,
+              address: otherAccount.address,
+              assetAmount: { asset, amount: 10n },
+            },
+          ],
+          addressOnNetwork: {
+            address: otherAccount.address,
+            network: ETHEREUM,
+          },
+        })
+      )
+
+      const firstAccountData = secondAccountUpdate.accountsData.evm[
+        ETHEREUM.chainID
+      ][ADDRESS_MOCK] as AccountData
+
+      const secondAccountData = secondAccountUpdate.accountsData.evm[
+        ETHEREUM.chainID
+      ][otherAccount.address] as AccountData
+
+      expect(
+        firstAccountData.balances[asset.symbol].assetAmount.asset.metadata
+          ?.trusted
+      ).not.toBeDefined()
+      expect(
+        secondAccountData.balances[asset.symbol].assetAmount.asset.metadata
+          ?.trusted
+      ).not.toBeDefined()
+
+      const updatedAsset = cloneDeep(asset)
+      updatedAsset.metadata ??= {}
+      updatedAsset.metadata.trusted = true
+
+      const newState = reducer(
+        secondAccountUpdate,
+        updateAssetCache(updatedAsset)
+      )
+
+      const updatedFirstAccountData = newState.accountsData.evm[
+        ETHEREUM.chainID
+      ][ADDRESS_MOCK] as AccountData
+
+      const updatedSecondAccountData = newState.accountsData.evm[
+        ETHEREUM.chainID
+      ][otherAccount.address] as AccountData
+
+      expect(
+        updatedFirstAccountData.balances[asset.symbol].assetAmount.asset
+          .metadata?.trusted
+      ).toBeTruthy()
+      expect(
+        updatedSecondAccountData.balances[asset.symbol].assetAmount.asset
+          .metadata?.trusted
+      ).toBeTruthy()
     })
   })
 })

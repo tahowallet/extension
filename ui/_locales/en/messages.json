@@ -418,7 +418,7 @@
           "finalize": "Finalize",
           "completed": "Completed!",
           "address": "address",
-          "wrongPassword": "Wrong password, make sure you enter the password you used when encrypting this file"
+          "wrongPassword": "Wrong password or incorrect file. Ensure file is correct and enter the password you used when encrypting it."
         },
         "viewOnly": {
           "title": "Read-only address",
@@ -833,7 +833,9 @@
       "assetImported": "Asset imported from transaction history",
       "name": "Name",
       "contract": "Contract address",
-      "close": "Close"
+      "close": "Close",
+      "hideAsset": "Hide asset",
+      "trustAsset": "Trust asset"
     },
     "banner": {
       "bannerTitle": "New Odyssey week!",
@@ -849,6 +851,8 @@
     "totalAccountBalance": "Total account balance",
     "send": "Send",
     "swap": "Swap",
+    "swapDisabledOne": "Swaps aren't supported",
+    "swapDisabledTwo": "on this network",
     "receive": "Receive",
     "secureSeed": "First, secure your recovery seed",
     "sendAsset": "Send Asset",
@@ -985,7 +989,8 @@
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
-        "SUPPORT_PRIV_KEYS": "Enable private key import"
+        "SUPPORT_PRIVATE_KEYS": "Enable private key import",
+        "SUPPORT_ASSET_TRUST": "Enable trusting assets"
       }
     }
   },
