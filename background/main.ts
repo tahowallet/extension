@@ -1057,8 +1057,8 @@ export default class Main extends BaseService<never> {
       }
     )
 
-    this.indexingService.emitter.on("assets", (assets) => {
-      this.store.dispatch(assetsLoaded(assets))
+    this.indexingService.emitter.on("assets", async (assets) => {
+      await this.store.dispatch(assetsLoaded(assets))
     })
 
     this.indexingService.emitter.on("price", (pricePoint) => {
@@ -1370,6 +1370,26 @@ export default class Main extends BaseService<never> {
       this.chainService.pollBlockPricesForNetwork(network.chainID)
       this.store.dispatch(clearCustomGas())
     })
+
+    this.internalEthereumProviderService.emitter.on(
+      "watchAssetRequest",
+      async ({ contractAddress, network }) => {
+        const { address } = this.store.getState().ui.selectedAccount
+        const asset = await this.indexingService.addTokenToTrackByContract(
+          network,
+          contractAddress
+        )
+        if (asset) {
+          await this.indexingService.retrieveTokenBalances(
+            {
+              address,
+              network,
+            },
+            [asset]
+          )
+        }
+      }
+    )
   }
 
   async connectProviderBridgeService(): Promise<void> {
@@ -1747,6 +1767,13 @@ export default class Main extends BaseService<never> {
     })
   }
 
+  async setAssetTrustStatus(
+    asset: SmartContractFungibleAsset,
+    isTrusted: boolean
+  ): Promise<void> {
+    await this.indexingService.setAssetTrustStatus(asset, isTrusted)
+  }
+
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {
     return this.providerBridgeService.getNewCustomRPCDetails(requestId)
   }
@@ -1852,7 +1879,14 @@ export default class Main extends BaseService<never> {
     asset: SmartContractFungibleAsset
     addressNetwork: AddressOnNetwork
   }): Promise<void> {
-    await this.indexingService.importAccountCustomToken(asset, addressNetwork)
+    const { metadata = {} } = asset
+    // Manually imported tokens are trusted
+    metadata.trusted = true
+
+    await this.indexingService.importAccountCustomToken(
+      { ...asset, metadata },
+      addressNetwork
+    )
   }
 
   private connectPopupMonitor() {

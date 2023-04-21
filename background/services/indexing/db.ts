@@ -5,6 +5,7 @@ import { AccountBalance } from "../../accounts"
 import { EVMNetwork } from "../../networks"
 import {
   AnyAsset,
+  AssetMetadata,
   FungibleAsset,
   PricePoint,
   SmartContractFungibleAsset,
@@ -318,6 +319,18 @@ export class IndexingDatabase extends Dexie {
 
   async addCustomAsset(asset: SmartContractFungibleAsset): Promise<void> {
     this.customAssets.put(asset)
+  }
+
+  async updateAssetMetadata(
+    asset: SmartContractFungibleAsset,
+    metadata: Partial<AssetMetadata>
+  ): Promise<void> {
+    const update: AssetMetadata = {
+      ...asset.metadata,
+      ...metadata,
+    }
+
+    await this.customAssets.put({ ...asset, metadata: update })
   }
 
   async addBalances(accountBalances: AccountBalance[]): Promise<void> {

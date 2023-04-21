@@ -58,7 +58,7 @@ export const alchemyTokenBalanceJTD = {
 // https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api#alchemy_gettokenmetadata
 export const alchemyTokenMetadataJTD = {
   properties: {
-    decimals: { type: "uint32" },
+    decimals: { type: "uint32", nullable: true },
     name: { type: "string" },
     symbol: { type: "string" },
     logo: { type: "string", nullable: true },

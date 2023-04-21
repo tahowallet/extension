@@ -16,6 +16,7 @@ import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
 import ReadOnlyNotice from "../Shared/ReadOnlyNotice"
 import SharedSquareButton from "../Shared/SharedSquareButton"
+import SharedTooltip from "../Shared/SharedTooltip"
 
 type ActionButtonsProps = {
   onReceive: () => void
@@ -46,7 +47,7 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
               {t("send")}
             </SharedSquareButton>
           </div>
-          {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) && (
+          {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) ? (
             <div className="button_wrap">
               <SharedSquareButton
                 icon="icons/s/swap.svg"
@@ -59,6 +60,41 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
               >
                 {t("swap")}
               </SharedSquareButton>
+            </div>
+          ) : (
+            <div className="button_wrap">
+              <SharedTooltip
+                type="dark"
+                width={180}
+                height={48}
+                horizontalPosition="center"
+                verticalPosition="bottom"
+                horizontalShift={22}
+                customStyles={{
+                  marginLeft: "0",
+                  display: "flex",
+                  justifyContent: "center",
+                  width: "100%",
+                }}
+                IconComponent={() => (
+                  <SharedSquareButton
+                    icon="icons/s/swap.svg"
+                    ariaLabel={t("swap")}
+                    iconColor={{
+                      color: "#3A6565",
+                      hoverColor: "#3A6565",
+                    }}
+                    disabled
+                  >
+                    {t("swap")}
+                  </SharedSquareButton>
+                )}
+              >
+                <div className="centered_tooltip">
+                  <div>{t("swapDisabledOne")}</div>
+                  <div>{t("swapDisabledTwo")}</div>
+                </div>
+              </SharedTooltip>
             </div>
           )}
           <div className="button_wrap">
@@ -109,6 +145,13 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
             margin: 0 7px;
             width: 50px;
             text-align: center;
+          }
+          .centered_tooltip {
+            display: flex;
+            font-size: 14px;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
           }
         `}
       </style>
