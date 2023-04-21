@@ -3300,10 +3300,10 @@
   dependencies:
     defer-to-connect "^1.0.1"
 
-"@tallyho/hd-keyring@0.4.0":
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/@tallyho/hd-keyring/-/hd-keyring-0.4.0.tgz#0b78b5f60aa625862a8c54b136a3c934fe67d9df"
-  integrity sha512-IEJHyXAN3XSc3wUy6uEF6MiEpK3wjM63pMSS9uD/uG3c6zWpcGVJz7LxnIBSXo2KBiSXKY5Rr/nMud5PcrcddA==
+"@tallyho/hd-keyring@0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@tallyho/hd-keyring/-/hd-keyring-0.5.0.tgz#e65b54fa3b5e0ef2020440d4b87b0f0a4e481bf0"
+  integrity sha512-AmqDNuFYzbYH78slTi8EykmBJd/2dhXDT0VWS/x6dsiR6XaAhuYR17YW/oyseAsTRC0OSdjUs8APxs4BGhLdfw==
   dependencies:
     "@ethersproject/abstract-provider" "5.6.1"
     "@ethersproject/abstract-signer" "5.6.1"

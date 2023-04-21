@@ -581,8 +581,16 @@ export default class KeyringService extends BaseService<Events> {
     this.requireUnlocked()
 
     try {
-      const privateKeyWallet = await this.#findPrivateKey(address)
-      return privateKeyWallet.privateKey
+      const signerWithType = await this.#findSigner(address)
+
+      if (isPrivateKey(signerWithType)) {
+        return signerWithType.signer.privateKey
+      }
+
+      return signerWithType.signer.exportPrivateKey(
+        address,
+        "I solemnly swear that I am treating this private key material with great care."
+      )
     } catch (e) {
       return null
     }
