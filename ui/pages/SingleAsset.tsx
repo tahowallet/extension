@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import { useLocation } from "react-router-dom"
 import {
   selectCurrentAccountActivities,
@@ -10,6 +10,7 @@ import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import {
   AnyAsset,
   isSmartContractFungibleAsset,
+  SmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useTranslation } from "react-i18next"
@@ -17,13 +18,82 @@ import {
   DEFAULT_NETWORKS_BY_CHAIN_ID,
   NETWORKS_SUPPORTING_SWAPS,
 } from "@tallyho/tally-background/constants"
-import { useBackgroundSelector } from "../hooks"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { updateAssetTrustStatus } from "@tallyho/tally-background/redux-slices/assets"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 import { scanWebsite } from "../utils/constants"
+import SharedIcon from "../components/Shared/SharedIcon"
+import AssetWarningSlideUp from "../components/Wallet/AssetWarningSlideUp"
+
+const TrustToggler = ({
+  asset,
+  onClick,
+}: {
+  asset: SmartContractFungibleAsset
+  onClick: (newStatus: boolean) => void
+}) => {
+  const { t } = useTranslation()
+
+  const assetIsUntrusted = isUntrustedAsset(asset)
+
+  return (
+    <>
+      <style jsx>{`
+        button {
+          font-size: 16px;
+          font-weight: 500;
+          line-height: 24px;
+          letter-spacing: 0em;
+          text-align: left;
+          display: flex;
+          gap: 4px;
+        }
+
+        button.trust_asset:hover {
+          color: var(--white);
+        }
+
+        button.trust_asset {
+          color: var(--success);
+        }
+
+        button.hide_asset:hover {
+          color: var(--green-20);
+        }
+        button.hide_asset {
+          color: var(--green-40);
+        }
+      `}</style>
+      {assetIsUntrusted ? (
+        <button className="trust_asset" type="button">
+          {t("assets.trustAsset")}
+          <SharedIcon
+            color="currentColor"
+            icon="icons/m/eye-on.svg"
+            width={24}
+            onClick={() => onClick(true)}
+          />
+        </button>
+      ) : (
+        <button className="hide_asset" type="button">
+          {t("assets.hideAsset")}
+          <SharedIcon
+            color="currentColor"
+            icon="icons/m/eye-off.svg"
+            width={24}
+            onClick={() => onClick(false)}
+          />
+        </button>
+      )}
+    </>
+  )
+}
 
 export default function SingleAsset(): ReactElement {
   const { t } = useTranslation()
@@ -34,6 +104,8 @@ export default function SingleAsset(): ReactElement {
     "contractAddress" in locationAsset
       ? locationAsset.contractAddress
       : undefined
+
+  const dispatch = useBackgroundDispatch()
 
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
@@ -87,10 +159,69 @@ export default function SingleAsset(): ReactElement {
       localizedDecimalAmount: undefined,
     }
 
+  const assetHasTrustStatus = typeof asset?.metadata?.trusted !== "undefined"
+
+  const [warnedAsset, setWarnedAsset] =
+    useState<SmartContractFungibleAsset | null>(null)
+
   return (
     <>
-      <div className="back_button_wrap standard_width_padded">
+      {warnedAsset && (
+        <AssetWarningSlideUp
+          asset={warnedAsset}
+          close={() => {
+            setWarnedAsset(null)
+          }}
+        />
+      )}
+      <style jsx>{`
+        .unverified_asset_warning:hover {
+          color: var(--gold-20);
+        }
+        .unverified_asset_warning {
+          color: var(--attention);
+          align-items: center;
+          display: flex;
+          gap: 4px;
+          font-size: 16px;
+          font-weight: 500;
+          line-height: 24px;
+          letter-spacing: 0em;
+          text-align: left;
+        }
+
+        .navigation {
+          margin-bottom: 4px;
+          display: flex;
+          justify-content: space-between;
+        }
+      `}</style>
+      <div className="navigation standard_width_padded">
         <SharedBackButton path="/" />
+        {isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST) &&
+          asset &&
+          isSmartContractFungibleAsset(asset) &&
+          (assetHasTrustStatus ? (
+            <TrustToggler
+              asset={asset}
+              onClick={(newStatus) =>
+                dispatch(updateAssetTrustStatus({ asset, trusted: newStatus }))
+              }
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setWarnedAsset(asset)}
+              className="unverified_asset_warning"
+            >
+              {t("assets.unverifiedAsset")}
+              <SharedIcon
+                color="currentColor"
+                icon="/icons/m/notif-attention.svg"
+                width={24}
+              />
+            </button>
+          ))}
       </div>
       {typeof asset === "undefined" ? (
         <></>
@@ -177,9 +308,6 @@ export default function SingleAsset(): ReactElement {
       <WalletActivityList activities={filteredActivities} />
       <style jsx>
         {`
-          .back_button_wrap {
-            margin-bottom: 4px;
-          }
           .header {
             display: flex;
             justify-content: space-between;

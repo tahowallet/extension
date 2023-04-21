@@ -38,7 +38,10 @@
   "viewAddressOnBlockExplorer": "View address on {{blockExplorer}}",
   "assets": {
     "viewAsset": "View asset on {{siteTitle}}",
-    "openNetworkExplorer": "Open network explorer"
+    "openNetworkExplorer": "Open network explorer",
+    "unverifiedAsset": "Asset not verified",
+    "hideAsset": "Hide asset",
+    "trustAsset": "Trust asset"
   },
   "assetInput": {
     "search": "Search by name or address",
