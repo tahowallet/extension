@@ -42,7 +42,7 @@ export default function AccountItemOptionsMenu({
   }, [address, dispatch])
 
   const canExportPrivateKey =
-    isEnabled(FeatureFlags.SUPPORT_PRIV_KEYS) &&
+    isEnabled(FeatureFlags.SUPPORT_PRIVATE_KEYS) &&
     allowExportPrivateKeys.includes(accountType)
 
   return (
