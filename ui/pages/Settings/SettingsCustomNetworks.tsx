@@ -159,7 +159,7 @@ export default function SettingsCustomNetworks(): ReactElement {
                       }}
                       icon="icons/s/garbage.svg"
                       color="var(--green-40)"
-                      hoverColor="var(--trophy-gold)"
+                      hoverColor="var(--error)"
                     />
                   </div>
                 </li>
