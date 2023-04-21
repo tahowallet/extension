@@ -285,7 +285,7 @@ export default function SingleAsset(): ReactElement {
                 >
                   {t("shared.send")}
                 </SharedButton>
-                {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) && (
+                {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) ? (
                   <SharedButton
                     type="primary"
                     size="medium"
@@ -297,6 +297,31 @@ export default function SingleAsset(): ReactElement {
                   >
                     {t("shared.swap")}
                   </SharedButton>
+                ) : (
+                  <SharedTooltip
+                    type="dark"
+                    width={180}
+                    height={48}
+                    horizontalPosition="center"
+                    verticalPosition="bottom"
+                    customStyles={{ marginLeft: "0" }}
+                    horizontalShift={94}
+                    IconComponent={() => (
+                      <SharedButton
+                        type="primary"
+                        size="medium"
+                        isDisabled
+                        iconSmall="swap"
+                      >
+                        {t("shared.swap")}
+                      </SharedButton>
+                    )}
+                  >
+                    <div className="centered_tooltip">
+                      <div>{t("wallet.swapDisabledOne")}</div>
+                      <div>{t("wallet.swapDisabledTwo")}</div>
+                    </div>
+                  </SharedTooltip>
                 )}
               </>
             ) : (

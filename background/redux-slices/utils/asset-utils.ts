@@ -341,9 +341,13 @@ export function heuristicDesiredDecimalsForUnitPrice(
  */
 export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
   if (asset) {
+    if (asset.metadata?.trusted === true) {
+      return false
+    }
+
     const baseAsset = isNetworkBaseAsset(asset)
 
-    return !baseAsset && asset?.metadata?.trusted !== true
+    return !baseAsset
   }
 
   return false

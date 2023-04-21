@@ -17,6 +17,7 @@ import styles from "./styles"
 import SharedIconRouterLink from "../../Shared/SharedIconRouterLink"
 import { useBackgroundSelector } from "../../../hooks"
 import { trimWithEllipsis } from "../../../utils/textUtils"
+import SharedTooltip from "../../Shared/SharedTooltip"
 
 type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount<SwappableAsset>
@@ -32,7 +33,7 @@ export default function CommonAssetListItem(
   props: CommonAssetListItemProps
 ): ReactElement {
   const { t } = useTranslation("translation", {
-    keyPrefix: "wallet.trustedAssets",
+    keyPrefix: "wallet",
   })
   const {
     assetAmount,
@@ -110,7 +111,7 @@ export default function CommonAssetListItem(
                 }}
                 className="untrusted_asset_icon"
               >
-                {t("notTrusted")}
+                {t("trustedAssets.notTrusted")}
               </button>
             )}
             <SharedIconRouterLink
@@ -118,7 +119,7 @@ export default function CommonAssetListItem(
               state={assetAmount.asset}
               iconClass="asset_icon_send"
             />
-            {NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID) && (
+            {NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID) ? (
               <SharedIconRouterLink
                 path="/swap"
                 state={{
@@ -127,6 +128,34 @@ export default function CommonAssetListItem(
                 }}
                 iconClass="asset_icon_swap"
               />
+            ) : (
+              <SharedTooltip
+                type="dark"
+                width={180}
+                height={48}
+                horizontalPosition="left"
+                verticalPosition="bottom"
+                horizontalShift={42}
+                verticalShift={16}
+                IconComponent={() => (
+                  <div className="button_wrap">
+                    <SharedIconRouterLink
+                      path="/swap"
+                      disabled
+                      state={{
+                        symbol: assetAmount.asset.symbol,
+                        contractAddress,
+                      }}
+                      iconClass="asset_icon_swap"
+                    />
+                  </div>
+                )}
+              >
+                <div className="centered_tooltip">
+                  <div>{t("swapDisabledOne")}</div>
+                  <div>{t("swapDisabledTwo")}</div>
+                </div>
+              </SharedTooltip>
             )}
           </>
         </div>
@@ -141,6 +170,12 @@ export default function CommonAssetListItem(
           font-weight: 400;
           letter-spacing: 0.42px;
           line-height: 16px;
+        }
+        .centered_tooltip {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
         }
       `}</style>
     </Link>
