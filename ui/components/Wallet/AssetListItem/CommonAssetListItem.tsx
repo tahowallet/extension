@@ -48,9 +48,7 @@ export default function CommonAssetListItem(
       ? assetAmount.asset.contractAddress
       : undefined
 
-  const assetIsUntrusted =
-    isSmartContractFungibleAsset(assetAmount.asset) &&
-    isUntrustedAsset(assetAmount.asset)
+  const assetIsUntrusted = isUntrustedAsset(assetAmount.asset)
 
   return (
     <Link

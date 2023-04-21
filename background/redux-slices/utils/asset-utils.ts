@@ -341,10 +341,10 @@ export function heuristicDesiredDecimalsForUnitPrice(
  */
 export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
   if (asset) {
-    const numTokenLists = asset?.metadata?.tokenLists?.length ?? 0
     const baseAsset = isNetworkBaseAsset(asset)
 
-    return numTokenLists === 0 && !baseAsset
+    return !baseAsset && asset?.metadata?.trusted !== true
   }
+
   return false
 }
