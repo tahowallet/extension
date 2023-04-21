@@ -49,6 +49,8 @@ export default function CommonAssetListItem(
       : undefined
 
   const assetIsUntrusted = isUntrustedAsset(assetAmount.asset)
+  const assetHasTrustStatus =
+    typeof assetAmount.asset?.metadata?.trusted !== "undefined"
 
   return (
     <Link
@@ -94,7 +96,7 @@ export default function CommonAssetListItem(
         </div>
         <div className="asset_right">
           <>
-            {assetIsUntrusted && (
+            {!assetHasTrustStatus && assetIsUntrusted && (
               <button
                 type="button"
                 onClick={(event) => {
