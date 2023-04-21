@@ -771,6 +771,7 @@
       "contract": "Contract address",
       "close": "Close",
       "hideAsset": "Hide asset",
+      "keepHidden": "Keep hidden",
       "trustAsset": "Trust asset"
     },
     "banner": {

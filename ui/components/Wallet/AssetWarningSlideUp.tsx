@@ -5,11 +5,13 @@ import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
 import { useTranslation } from "react-i18next"
 import { updateAssetTrustStatus } from "@tallyho/tally-background/redux-slices/assets"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { selectHideUntrustedAssets } from "@tallyho/tally-background/redux-slices/ui"
+import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedBanner from "../Shared/SharedBanner"
 import SharedButton from "../Shared/SharedButton"
 import SharedAddress from "../Shared/SharedAddress"
-import { useBackgroundDispatch } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 type TitledSlideUpProps = Parameters<typeof SharedSlideUpMenu>[0] & {
   title: string
@@ -55,10 +57,15 @@ export default function AssetWarningSlideUp(
 
   const dispatch = useBackgroundDispatch()
 
+  const hideUntrusted = useBackgroundSelector(selectHideUntrustedAssets)
+
   const setAssetTrustStatus = async (isTrusted: boolean) => {
     await dispatch(updateAssetTrustStatus({ asset, trusted: isTrusted }))
     close()
   }
+
+  const isUntrusted = isUntrustedAsset(asset)
+
   return (
     <TitledSlideUpMenu
       isOpen={asset !== null}
@@ -143,13 +150,25 @@ export default function AssetWarningSlideUp(
       </ul>
       {isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST) ? (
         <div className="asset_trust_actions">
-          <SharedButton
-            size="medium"
-            type="secondary"
-            onClick={() => setAssetTrustStatus(false)}
-          >
-            {t("hideAsset")}
-          </SharedButton>
+          {hideUntrusted ? (
+            <SharedButton
+              size="medium"
+              type="secondary"
+              onClick={() => {
+                if (isUntrusted) {
+                  close()
+                } else {
+                  setAssetTrustStatus(false)
+                }
+              }}
+            >
+              {isUntrusted ? t("keepHidden") : t("hideAsset")}
+            </SharedButton>
+          ) : (
+            <SharedButton size="medium" type="secondary" onClick={close}>
+              {t("close")}
+            </SharedButton>
+          )}
           <SharedButton
             size="medium"
             type="primary"
