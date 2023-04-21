@@ -144,9 +144,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
 
   return (
     <div className="standard_width_padded wrapper">
-      <SharedPageHeader withoutBackText backPath="/settings">
-        {t(`title`)}
-      </SharedPageHeader>
+      <SharedPageHeader withoutBackText>{t(`title`)}</SharedPageHeader>
       <style jsx>{`
         .tooltip_wrap {
           position: absolute;
