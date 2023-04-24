@@ -66,7 +66,12 @@ export default function SettingsCustomNetworks(): ReactElement {
               t={t}
               i18nKey="deleteModal.desc"
               components={{
-                name: <span className="confirm_menu_network_name" />,
+                name: (
+                  <span
+                    title={networkToDelete?.name}
+                    className="confirm_menu_network_name"
+                  />
+                ),
               }}
               values={{ name: networkToDelete?.name }}
             />
