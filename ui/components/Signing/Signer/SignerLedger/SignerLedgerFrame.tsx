@@ -74,6 +74,11 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
   const ledgerCannotSign =
     ledgerState.state !== "available" || mustEnableArbitraryDataSigning
 
+  const tooltip =
+    additionalSigningStatus === "editing"
+      ? tSigning("unsavedChangesTooltip")
+      : ""
+
   return (
     <>
       <SignerLedgerConnectionStatus
@@ -143,6 +148,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
                 isDisabled={
                   hasInsufficientFunds || additionalSigningStatus === "editing"
                 }
+                tooltip={tooltip}
                 showLoadingOnClick
                 showLoading
                 reactOnWindowFocus

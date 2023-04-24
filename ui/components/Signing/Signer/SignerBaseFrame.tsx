@@ -23,6 +23,8 @@ export default function SignerBaseFrame({
   const additionalSigningStatus = useBackgroundSelector(
     selectAdditionalSigningStatus
   )
+  const tooltip =
+    additionalSigningStatus === "editing" ? t("unsavedChangesTooltip") : ""
 
   return (
     <>
@@ -39,6 +41,7 @@ export default function SignerBaseFrame({
           isDisabled={
             hasInsufficientFunds || additionalSigningStatus === "editing"
           }
+          tooltip={tooltip}
           showLoadingOnClick
           showLoading
           reactOnWindowFocus
