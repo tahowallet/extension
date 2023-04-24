@@ -152,11 +152,6 @@ export default function SettingsAddCustomAsset(): ReactElement {
           right: 16px;
         }
 
-        .tooltip_wrap a {
-          color: inherit;
-          text-decoration: underline;
-        }
-
         .input_container {
           position: relative;
           --input-padding: 0 32px 0 16px;
@@ -263,7 +258,18 @@ export default function SettingsAddCustomAsset(): ReactElement {
                 t={t}
                 i18nKey="input.tooltip"
                 components={{
-                  url: <SharedLink url={HELPDESK_CUSTOM_TOKENS_LINK} />,
+                  url: (
+                    <SharedLink
+                      styles={{
+                        textDecoration: "underline",
+                        "--link-color": "var(--green-95)",
+                        "--hover-color": "var(--green-40)",
+                        marginLeft: "-4px",
+                      }}
+                      type="button"
+                      url={HELPDESK_CUSTOM_TOKENS_LINK}
+                    />
+                  ),
                 }}
               />
             </SharedTooltip>
