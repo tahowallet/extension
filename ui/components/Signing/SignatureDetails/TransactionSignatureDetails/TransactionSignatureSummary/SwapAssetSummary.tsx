@@ -7,6 +7,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
 import { useTranslation } from "react-i18next"
+import { utils } from "ethers"
 import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryProps"
 import { useBackgroundSelector } from "../../../../../hooks"
 import SigningDataTransactionSummaryBody from "./TransactionSignatureSummaryBody"
@@ -43,6 +44,15 @@ export default function SwapAssetSummary({
     enrichAssetAmountWithMainCurrencyValues(toAssetAmount, toAssetPricePoint, 2)
       .localizedMainCurrencyAmount ?? "-"
 
+  const sellAmount = utils.formatUnits(
+    fromAssetAmount.amount,
+    fromAssetAmount.asset.decimals
+  )
+  const buyAmount = utils.formatUnits(
+    toAssetAmount.amount,
+    toAssetAmount.asset.decimals
+  )
+
   return (
     <>
       <h1 className="serif_header title">Swap assets</h1>
@@ -64,13 +74,13 @@ export default function SwapAssetSummary({
           <SwapQuoteAssetCard
             label={t("sellAsset")}
             asset={fromAssetAmount.asset}
-            amount={fromAssetAmount.localizedDecimalAmount}
+            amount={sellAmount}
           />
           <span className="icon_switch" />
           <SwapQuoteAssetCard
             label={t("buyAsset")}
             asset={toAssetAmount.asset}
-            amount={toAssetAmount.localizedDecimalAmount}
+            amount={buyAmount}
           />
         </div>
         <span className="label label_right">
