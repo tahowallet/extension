@@ -7,15 +7,17 @@ name: Add test list to release PRs
 
 on:
   pull_request:
-    types:
-      - opened
+    # TODO: uncomment before merge to main
+    # types:
+    #   - opened
     branches:
       - main
 
 jobs:
   add-release-test-list:
     runs-on: ubuntu-latest
-    if: startsWith(github.head_ref, 'release-')
+    # TODO: remove `|| github.head_ref = 'add-qa-checklist-to-releases'` before merge to main
+    if: startsWith(github.head_ref, 'release-') || github.head_ref == 'add-qa-checklist-to-releases'
     permissions:
       pull-requests: write
     steps:
