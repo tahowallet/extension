@@ -10,20 +10,17 @@ This release checklist should be performed before release will be published.
 
 ---
 
-### Dev tests
+## Dev tests
 
-<details>
-<summary>🚀 Version update</summary>
+### 🚀 Version update
 
 - [ ] update from previous version with some accounts loaded
-</details>
 
 ---
 
-### Manual tests
+## Manual tests
 
-<details>
-<summary>📨 Add account</summary>
+### 📨 Add account
 
 1. Add read-only account with ENS
    - [ ] check assets
@@ -74,27 +71,24 @@ This release checklist should be performed before release will be published.
    - [ ] check abilities
    - [ ] check activities
    - [ ] check overview page
-   </details>
 
-<details>
-<summary>🗑️ Remove account</summary>
+### 🗑️ Remove account
 
-- [ ] remove read-only account
-- [ ] remove address from imported account
-- [ ] add removed address from imported account
-- [ ] remove all addresses from imported account
-- [ ] remove Ledger account
-- [ ] remove selected account
-- [ ] remove not selected account
-- [ ] check if NFTs are removed for removed accounts
-- [ ] check if abilities are removed for removed accounts
-- [ ] check if Portfolio page is updated for removed accounts
-- [ ] remove all accounts
+1. Remove account by type
+   - [ ] remove read-only account
+   - [ ] remove address from imported account
+   - [ ] remove Ledger account
+   - [ ] remove selected account
+   - [ ] remove not selected account
+   - [ ] remove all accounts
+2. Remove account and check functinalities
+   - [ ] add removed address from imported account
+   - [ ] remove all addresses from imported account
+   - [ ] check if NFTs are removed for removed accounts
+   - [ ] check if abilities are removed for removed accounts
+   - [ ] check if Portfolio page is updated for removed accounts
 
-</details>
-
-<details>
-<summary>💌 Send base asset</summary>
+### 💌 Send base asset
 
 1. Ethereum mainnet
    - [ ] check gas settings and gas price
@@ -121,10 +115,7 @@ This release checklist should be performed before release will be published.
    - [ ] sign
    - [ ] check transaction on scan website
 
-</details>
-
-<details>
-<summary>🎁 Send ERC20</summary>
+### 🎁 Send ERC20
 
 1. Ethereum mainnet
    - [ ] check gas settings and gas price
@@ -150,10 +141,8 @@ This release checklist should be performed before release will be published.
    - [ ] check gas settings and gas price
    - [ ] sign
    - [ ] check transaction on scan website
-   </details>
 
-<details>
-<summary>💸 Internal swap</summary>
+### 💸 Internal swap
 
 1. Ethereum mainnet
    - [ ] check token list
@@ -191,10 +180,8 @@ This release checklist should be performed before release will be published.
    - [ ] check gas settings and gas price
    - [ ] sign
    - [ ] check transaction on scan website
-   </details>
 
-<details>
-<summary>📡 dApps connections</summary>
+### 📡 dApps connections
 
 - [ ] connect to [Uniswap](https://app.uniswap.org/)
 - [ ] connect to [Opensea](https://opensea.io/)
@@ -205,17 +192,13 @@ This release checklist should be performed before release will be published.
 - [ ] connect to [Velodrome](https://app.velodrome.finance/swap)
 - [ ] connect to [GMX](https://app.gmx.io/#/trade)
 - [ ] connect to [Mintkudos](https://mintkudos.xyz/)
-</details>
 
-<details>
-<summary>🎭 Sign in with Ethereum</summary>
+### 🎭 Sign in with Ethereum
 
 - [ ] SIWE on [login.xyz](https://login.xyz/)
 - [ ] SIWE on [Taho Pledge](https://taho.xyz/web3pledge)
-</details>
 
-<details>
-<summary>🐶 Default wallet</summary>
+### 🐶 Default wallet
 
 1. Default wallet setting turned OFF
    - [ ] connect with dapp without MM available using Taho
@@ -223,25 +206,19 @@ This release checklist should be performed before release will be published.
 2. Default wallet setting turnef ON
    - [ ] connect with dapp without MM available using Taho
    - [ ] connect with dapp with MM available using Taho
-   </details>
 
-<details>
-<summary>⚙️ Settings</summary>
+### ⚙️ Settings
 
 - [ ] check `hide balance under $2` option
 - [ ] check bug reports - export logs
-</details>
 
-<details>
-<summary>☀️ Abilities</summary>
+### ☀️ Abilities
 
 - [ ] check each filter option
 - [ ] delete ability
 - [ ] mark ability as completed
-</details>
 
-<details>
-<summary>🌠 NFTs page</summary>
+### 🌠 NFTs page
 
 1. NFTs page
    - [ ] browse NFTs
@@ -252,4 +229,3 @@ This release checklist should be performed before release will be published.
    - [ ] check each sort type
    - [ ] disable account
    - [ ] disable collection
-   </details>
