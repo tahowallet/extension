@@ -34,9 +34,11 @@ export default function Abilities(): ReactElement {
           <h1>{t("header")}</h1>
           <div className="filters_container">
             <SharedTooltip
-              horizontalPosition="left"
               width={36}
+              height={32}
               verticalPosition="bottom"
+              horizontalPosition="center"
+              horizontalShift={8}
               type="dark"
               isOpen={openFilterMenu}
               IconComponent={() => (
