@@ -14,6 +14,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import {
+  selectHideDust,
   selectShowTestNetworks,
   setSnackbarMessage,
 } from "@tallyho/tally-background/redux-slices/ui"
@@ -87,9 +88,13 @@ export default function SettingsAddCustomAsset(): ReactElement {
   const [tokenAddress, setTokenAddress] = useState("")
 
   const dispatch = useBackgroundDispatch()
+
+  const hideDustEnabled = useBackgroundSelector(selectHideDust)
+
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const allNetworks = useBackgroundSelector(selectEVMNetworks)
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
+
   const networks = allNetworks.filter(
     (network) =>
       !TEST_NETWORK_BY_CHAIN_ID.has(network.chainID) ||
@@ -287,7 +292,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
             )}
             <div className="token_details">
               <div className="balance">
-                <strong>
+                <strong title={String(assetData?.balance)}>
                   {assetData?.balance ?? t("asset.label.balance")}
                 </strong>
                 <span className="symbol">
@@ -322,9 +327,9 @@ export default function SettingsAddCustomAsset(): ReactElement {
           </div>
         ) : (
           <>
-            {/* TODO change condition, check the price in $ */}
-            {assetData?.balance !== undefined &&
-              assetData?.balance < userValueDustThreshold && (
+            {hideDustEnabled &&
+              assetData?.mainCurrencyAmount !== undefined &&
+              assetData?.mainCurrencyAmount < userValueDustThreshold && (
                 <div className="alert">
                   <SharedIcon
                     color="var(--attention)"
@@ -429,6 +434,10 @@ export default function SettingsAddCustomAsset(): ReactElement {
           font-size: 18px;
           line-height: 24px;
           color: var(--white);
+          text-overflow: ellipsis;
+          overflow-x: hidden;
+          white-space: pre;
+          max-width: 100px;
         }
 
         .symbol {

@@ -5,6 +5,7 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { debounce } from "lodash"
+import { utils } from "ethers"
 
 import {
   decodeJSON,
@@ -120,7 +121,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { OPTIMISM } from "./constants"
+import { OPTIMISM, USD } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
@@ -178,8 +179,11 @@ import {
   isOneTimeAnalyticsEvent,
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
-import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
-import { fromFixedPoint } from "./lib/fixed-point"
+import {
+  enrichAssetAmountWithMainCurrencyValues,
+  isBuiltInNetworkBaseAsset,
+} from "./redux-slices/utils/asset-utils"
+import { getPricePoint, getTokenPrices } from "./lib/prices"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1845,6 +1849,7 @@ export default class Main extends BaseService<never> {
   ): Promise<{
     asset: SmartContractFungibleAsset
     amount: bigint
+    mainCurrencyAmount: number | undefined
     balance: number
     exists?: boolean
   }> {
@@ -1864,10 +1869,23 @@ export default class Main extends BaseService<never> {
       cachedAsset
     )
 
+    const priceData = await getTokenPrices([contractAddress], USD, network)
+
+    const mainCurrencyAmount =
+      contractAddress in priceData
+        ? enrichAssetAmountWithMainCurrencyValues(
+            assetData,
+            getPricePoint(assetData.asset, priceData[contractAddress]),
+            2
+          ).mainCurrencyAmount
+        : undefined
+
     return {
       ...assetData,
-      // FIXME: REMOVE FIXED PRECISION
-      balance: fromFixedPoint(assetData.amount, assetData.asset.decimals, 2),
+      balance: Number.parseFloat(
+        utils.formatUnits(assetData.amount, assetData.asset.decimals)
+      ),
+      mainCurrencyAmount,
       exists: !!cachedAsset,
     }
   }
