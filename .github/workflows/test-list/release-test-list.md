@@ -223,7 +223,7 @@ This release checklist should be performed before release will be published.
 2. Default wallet setting turnef ON
    - [ ] connect with dapp without MM available using Taho
    - [ ] connect with dapp with MM available using Taho
-</details>
+   </details>
 
 <details>
 <summary>⚙️ Settings</summary>
@@ -252,4 +252,4 @@ This release checklist should be performed before release will be published.
    - [ ] check each sort type
    - [ ] disable account
    - [ ] disable collection
- </details>
+   </details>
