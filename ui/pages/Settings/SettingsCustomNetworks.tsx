@@ -57,19 +57,21 @@ export default function SettingsCustomNetworks(): ReactElement {
         isOpen={showConfirmDelete}
         close={() => handleModalCancel()}
         size="custom"
-        customSize="248px"
+        customSize="228px"
       >
         <div className="confirm_menu">
           <h3>{t("deleteModal.title")}</h3>
-          <div className="description">
+          <div className="confirm_menu_description">
             <Trans
               t={t}
               i18nKey="deleteModal.desc"
-              components={{ name: <span className="network_name" /> }}
+              components={{
+                name: <span className="confirm_menu_network_name" />,
+              }}
               values={{ name: networkToDelete?.name }}
             />
           </div>
-          <div className="actions">
+          <div className="confirm_menu_actions">
             <SharedButton
               size="medium"
               type="secondary"
@@ -103,7 +105,7 @@ export default function SettingsCustomNetworks(): ReactElement {
           letter-spacing: 0em;
         }
 
-        .confirm_menu .description {
+        .confirm_menu_description {
           font-size: 16px;
           font-weight: 500;
           line-height: 24px;
@@ -113,16 +115,21 @@ export default function SettingsCustomNetworks(): ReactElement {
           color: var(--green-40);
         }
 
-        .confirm_menu .actions {
+        .confirm_menu_actions {
           display: flex;
           justify-content: space-between;
         }
 
-        .confirm_menu .network_name {
+        .confirm_menu_network_name {
           color: var(--white);
+          display: inline-block;
+          max-width: 99px;
+          vertical-align: bottom;
+          overflow-x: hidden;
+          white-space: pre;
+          text-overflow: ellipsis;
         }
       `}</style>
-
       <SharedPageHeader withoutBackText>{t(`title`)}</SharedPageHeader>
       {customNetworksListItems.length > 0 && (
         <section className="content">
