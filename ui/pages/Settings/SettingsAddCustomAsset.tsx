@@ -304,7 +304,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
             {t("submit")}
           </SharedButton>
         </div>
-        {assetData?.exists && (
+        {assetData?.exists ? (
           <div className="alert">
             <SharedIcon
               color="var(--success)"
@@ -317,6 +317,25 @@ export default function SettingsAddCustomAsset(): ReactElement {
               <div className="desc">{t("warning.alreadyExists.desc")}</div>
             </div>
           </div>
+        ) : (
+          <>
+            {/* TODO change condition */}
+            {assetData?.balance && true && (
+              <div className="alert">
+                <SharedIcon
+                  color="var(--attention)"
+                  width={24}
+                  customStyles="min-width: 24px;"
+                  icon="icons/m/notif-attention.svg"
+                />
+                <div className="alert_content">
+                  <div className="title" style={{ color: "var(--attention)" }}>
+                    {t("warning.dust.title")}
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </form>
       <style jsx>{`
