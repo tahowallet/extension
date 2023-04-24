@@ -44,16 +44,14 @@ export default function SwapAssetSummary({
     enrichAssetAmountWithMainCurrencyValues(toAssetAmount, toAssetPricePoint, 2)
       .localizedMainCurrencyAmount ?? "-"
 
-  const { sellAmount, buyAmount } = {
-    sellAmount: utils.formatUnits(
-      fromAssetAmount.amount,
-      fromAssetAmount.asset.decimals
-    ),
-    buyAmount: utils.formatUnits(
-      toAssetAmount.amount,
-      toAssetAmount.asset.decimals
-    ),
-  }
+  const sellAmount = utils.formatUnits(
+    fromAssetAmount.amount,
+    fromAssetAmount.asset.decimals
+  )
+  const buyAmount = utils.formatUnits(
+    toAssetAmount.amount,
+    toAssetAmount.asset.decimals
+  )
 
   return (
     <>
