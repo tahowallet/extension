@@ -8,7 +8,10 @@ import {
   checkTokenContractDetails,
   importAccountCustomToken,
 } from "@tallyho/tally-background/redux-slices/assets"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentNetwork,
+  userValueDustThreshold,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import {
   selectShowTestNetworks,
@@ -319,22 +322,26 @@ export default function SettingsAddCustomAsset(): ReactElement {
           </div>
         ) : (
           <>
-            {/* TODO change condition */}
-            {assetData?.balance && true && (
-              <div className="alert">
-                <SharedIcon
-                  color="var(--attention)"
-                  width={24}
-                  customStyles="min-width: 24px;"
-                  icon="icons/m/notif-attention.svg"
-                />
-                <div className="alert_content">
-                  <div className="title" style={{ color: "var(--attention)" }}>
-                    {t("warning.dust.title")}
+            {/* TODO change condition, check the price in $ */}
+            {assetData?.balance !== undefined &&
+              assetData?.balance < userValueDustThreshold && (
+                <div className="alert">
+                  <SharedIcon
+                    color="var(--attention)"
+                    width={24}
+                    customStyles="min-width: 24px;"
+                    icon="icons/m/notif-attention.svg"
+                  />
+                  <div className="alert_content">
+                    <div
+                      className="title"
+                      style={{ color: "var(--attention)" }}
+                    >
+                      {t("warning.dust.title")}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
           </>
         )}
       </form>
