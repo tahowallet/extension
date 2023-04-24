@@ -13,7 +13,7 @@ This release checklist should be performed before release will be published.
 ### Dev tests
 
 <details>
-<summary>Version update</summary>
+<summary>🚀 Version update</summary>
 
 - [ ] update from previous version with some accounts loaded
 </details>
@@ -23,7 +23,7 @@ This release checklist should be performed before release will be published.
 ### Manual tests
 
 <details>
-<summary>Add account</summary>
+<summary>📨 Add account</summary>
 
 1. Add read-only account with ENS
    - [ ] check assets
@@ -77,7 +77,7 @@ This release checklist should be performed before release will be published.
    </details>
 
 <details>
-<summary>Remove account</summary>
+<summary>🗑️ Remove account</summary>
 
 - [ ] remove read-only account
 - [ ] remove address from imported account
@@ -94,7 +94,7 @@ This release checklist should be performed before release will be published.
 </details>
 
 <details>
-<summary>Send base asset</summary>
+<summary>💌 Send base asset</summary>
 
 1. Ethereum mainnet
    - [ ] check gas settings and gas price
@@ -124,7 +124,7 @@ This release checklist should be performed before release will be published.
 </details>
 
 <details>
-<summary>Send ERC20</summary>
+<summary>🎁 Send ERC20</summary>
 
 1. Ethereum mainnet
    - [ ] check gas settings and gas price
@@ -153,7 +153,7 @@ This release checklist should be performed before release will be published.
    </details>
 
 <details>
-<summary>Internal swap</summary>
+<summary>💸 Internal swap</summary>
 
 1. Ethereum mainnet
    - [ ] check token list
@@ -194,28 +194,28 @@ This release checklist should be performed before release will be published.
    </details>
 
 <details>
-<summary>dApps connections</summary>
+<summary>📡 dApps connections</summary>
 
-- [ ] connect to Uniswap
-- [ ] connect to Opensea
-- [ ] connect to Galxe
-- [ ] connect to PancakeSwap
-- [ ] connect to TraderJoe
-- [ ] connect to SpookySwap
-- [ ] connect to Velodrome
-- [ ] connect to GMX
-- [ ] connect to Mintkudos
+- [ ] connect to [Uniswap](https://app.uniswap.org/)
+- [ ] connect to [Opensea](https://opensea.io/)
+- [ ] connect to [Galxe](https://galxe.com/)
+- [ ] connect to [PancakeSwap](https://pancakeswap.finance/)
+- [ ] connect to [TraderJoe](https://traderjoexyz.com/avalanche)
+- [ ] connect to [SpookySwap](https://spooky.fi/#/)
+- [ ] connect to [Velodrome](https://app.velodrome.finance/swap)
+- [ ] connect to [GMX](https://app.gmx.io/#/trade)
+- [ ] connect to [Mintkudos](https://mintkudos.xyz/)
 </details>
 
 <details>
-<summary>Sign in with Ethereum</summary>
+<summary>🎭 Sign in with Ethereum</summary>
 
-- [ ] SIWE on login.xyz
-- [ ] SIWE on Taho Pledge
+- [ ] SIWE on [login.xyz](https://login.xyz/)
+- [ ] SIWE on [Taho Pledge](https://taho.xyz/web3pledge)
 </details>
 
 <details>
-<summary>Default wallet</summary>
+<summary>🐶 Default wallet</summary>
 
 1. Default wallet setting turned OFF
    - [ ] connect with dapp without MM available using Taho
@@ -223,17 +223,17 @@ This release checklist should be performed before release will be published.
 2. Default wallet setting turnef ON
    - [ ] connect with dapp without MM available using Taho
    - [ ] connect with dapp with MM available using Taho
-   </details>
+</details>
 
 <details>
-<summary>Settings</summary>
+<summary>⚙️ Settings</summary>
 
 - [ ] check `hide balance under $2` option
 - [ ] check bug reports - export logs
 </details>
 
 <details>
-<summary>Abilities</summary>
+<summary>☀️ Abilities</summary>
 
 - [ ] check each filter option
 - [ ] delete ability
@@ -241,7 +241,7 @@ This release checklist should be performed before release will be published.
 </details>
 
 <details>
-<summary>NFTs page</summary>
+<summary>🌠 NFTs page</summary>
 
 1. NFTs page
    - [ ] browse NFTs
@@ -252,4 +252,4 @@ This release checklist should be performed before release will be published.
    - [ ] check each sort type
    - [ ] disable account
    - [ ] disable collection
-   </details>
+ </details>
