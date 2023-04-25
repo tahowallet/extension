@@ -1,13 +1,15 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { removeCustomChain } from "@tallyho/tally-background/redux-slices/networks"
 import { selectCustomNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
 import SharedLink from "../../components/Shared/SharedLink"
 import SharedNetworkIcon from "../../components/Shared/SharedNetworkIcon"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
+import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { intersperseWith } from "../../utils/lists"
 
@@ -20,6 +22,8 @@ export default function SettingsCustomNetworks(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "settings.customNetworksSettings",
   })
+  const { t: sharedT } = useTranslation("translation")
+
   const dispatch = useBackgroundDispatch()
 
   const allCustomNetworks = useBackgroundSelector(selectCustomNetworks)
@@ -29,8 +33,108 @@ export default function SettingsCustomNetworks(): ReactElement {
     () => "spacer" as const
   )
 
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
+  const [networkToDelete, setNetworkToDelete] = useState<EVMNetwork | null>(
+    null
+  )
+
+  const handleModalConfirm = () => {
+    if (networkToDelete) {
+      dispatch(removeCustomChain(networkToDelete.chainID))
+      setShowConfirmDelete(false)
+      setNetworkToDelete(null)
+    }
+  }
+
+  const handleModalCancel = () => {
+    setShowConfirmDelete(false)
+    setNetworkToDelete(null)
+  }
+
   return (
     <div className="standard_width_padded wrapper">
+      <SharedSlideUpMenu
+        isOpen={showConfirmDelete}
+        close={() => handleModalCancel()}
+        size="custom"
+        customSize="228px"
+      >
+        <div className="confirm_menu">
+          <h3>{t("deleteModal.title")}</h3>
+          <div className="confirm_menu_description">
+            <Trans
+              t={t}
+              i18nKey="deleteModal.desc"
+              components={{
+                name: (
+                  <span
+                    title={networkToDelete?.name}
+                    className="confirm_menu_network_name"
+                  />
+                ),
+              }}
+              values={{ name: networkToDelete?.name }}
+            />
+          </div>
+          <div className="confirm_menu_actions">
+            <SharedButton
+              size="medium"
+              type="secondary"
+              onClick={handleModalCancel}
+            >
+              {sharedT("shared.cancelBtn")}
+            </SharedButton>
+            <SharedButton
+              size="medium"
+              type="primary"
+              onClick={handleModalConfirm}
+            >
+              {t("deleteModal.confirm")}
+            </SharedButton>
+          </div>
+        </div>
+      </SharedSlideUpMenu>
+      <style jsx>{`
+        .confirm_menu {
+          padding: 0 26px 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .confirm_menu h3 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 600;
+          line-height: 24px;
+          letter-spacing: 0em;
+        }
+
+        .confirm_menu_description {
+          font-size: 16px;
+          font-weight: 500;
+          line-height: 24px;
+          letter-spacing: 0em;
+          text-align: left;
+          margin-bottom: 12px;
+          color: var(--green-40);
+        }
+
+        .confirm_menu_actions {
+          display: flex;
+          justify-content: space-between;
+        }
+
+        .confirm_menu_network_name {
+          color: var(--white);
+          display: inline-block;
+          max-width: 99px;
+          vertical-align: bottom;
+          overflow-x: hidden;
+          white-space: pre;
+          text-overflow: ellipsis;
+        }
+      `}</style>
       <SharedPageHeader withoutBackText>{t(`title`)}</SharedPageHeader>
       {customNetworksListItems.length > 0 && (
         <section className="content">
@@ -61,10 +165,13 @@ export default function SettingsCustomNetworks(): ReactElement {
                   <div className="actions">
                     <SharedIcon
                       width={16}
-                      onClick={() => dispatch(removeCustomChain(item.chainID))}
+                      onClick={() => {
+                        setShowConfirmDelete(true)
+                        setNetworkToDelete(item)
+                      }}
                       icon="icons/s/garbage.svg"
                       color="var(--green-40)"
-                      hoverColor="var(--trophy-gold)"
+                      hoverColor="var(--error)"
                     />
                   </div>
                 </li>

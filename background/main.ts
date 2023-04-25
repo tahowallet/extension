@@ -5,6 +5,7 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { debounce } from "lodash"
+import { utils } from "ethers"
 
 import {
   decodeJSON,
@@ -120,7 +121,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { OPTIMISM } from "./constants"
+import { OPTIMISM, USD } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
@@ -148,6 +149,8 @@ import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
 import {
+  assetAmountToDesiredDecimals,
+  convertAssetAmountViaPricePoint,
   isSmartContractFungibleAsset,
   SmartContractAsset,
   SmartContractFungibleAsset,
@@ -179,7 +182,7 @@ import {
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
-import { fromFixedPoint } from "./lib/fixed-point"
+import { getPricePoint, getTokenPrices } from "./lib/prices"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1847,6 +1850,7 @@ export default class Main extends BaseService<never> {
   ): Promise<{
     asset: SmartContractFungibleAsset
     amount: bigint
+    mainCurrencyAmount?: number
     balance: number
     exists?: boolean
   }> {
@@ -1866,10 +1870,26 @@ export default class Main extends BaseService<never> {
       cachedAsset
     )
 
+    const priceData = await getTokenPrices([contractAddress], USD, network)
+
+    const convertedAssetAmount =
+      contractAddress in priceData
+        ? convertAssetAmountViaPricePoint(
+            assetData,
+            getPricePoint(assetData.asset, priceData[contractAddress])
+          )
+        : undefined
+
+    const mainCurrencyAmount = convertedAssetAmount
+      ? assetAmountToDesiredDecimals(convertedAssetAmount, 2)
+      : undefined
+
     return {
       ...assetData,
-      // FIXME: REMOVE FIXED PRECISION
-      balance: fromFixedPoint(assetData.amount, assetData.asset.decimals, 2),
+      balance: Number.parseFloat(
+        utils.formatUnits(assetData.amount, assetData.asset.decimals)
+      ),
+      mainCurrencyAmount,
       exists: !!cachedAsset,
     }
   }
