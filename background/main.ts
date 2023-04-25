@@ -1870,10 +1870,14 @@ export default class Main extends BaseService<never> {
 
     const priceData = await getTokenPrices([contractAddress], USD, network)
 
-    const convertedAssetAmount = convertAssetAmountViaPricePoint(
-      assetData,
-      getPricePoint(assetData.asset, priceData[contractAddress])
-    )
+    const convertedAssetAmount =
+      contractAddress in priceData
+        ? convertAssetAmountViaPricePoint(
+            assetData,
+            getPricePoint(assetData.asset, priceData[contractAddress])
+          )
+        : undefined
+
     const mainCurrencyAmount = convertedAssetAmount
       ? assetAmountToDesiredDecimals(convertedAssetAmount, 2)
       : undefined
