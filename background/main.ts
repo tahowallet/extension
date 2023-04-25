@@ -1668,8 +1668,36 @@ export default class Main extends BaseService<never> {
     return this.keyringService.exportPrivateKey(address)
   }
 
-  async importSigner(signerRaw: SignerRawWithType): Promise<HexString | null> {
-    return this.keyringService.importSigner(signerRaw)
+  async importSigner(
+    signerRaw: SignerRawWithType
+  ): Promise<{ success: boolean; errorMessage?: string }> {
+    let address = null
+
+    try {
+      address = await this.keyringService.importSigner(signerRaw)
+    } catch (error) {
+      return {
+        success: false,
+        errorMessage: `Unexpected error during account import. Error: ${error}`,
+      }
+    }
+
+    if (!address) {
+      return {
+        success: false,
+        errorMessage:
+          "Failed to import new account. Address may already be imported.",
+      }
+    }
+
+    this.store.dispatch(
+      setNewSelectedAccount({
+        address,
+        network: this.store.getState().ui.selectedAccount.network,
+      })
+    )
+
+    return { success: true }
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {

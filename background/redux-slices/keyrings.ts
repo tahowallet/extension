@@ -1,7 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 
-import { setNewSelectedAccount, UIState } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
   Keyring,
@@ -22,7 +21,6 @@ export type KeyringsState = {
   metadata: {
     [keyringId: string]: SignerMetadata
   }
-  importing: false | "pending" | "done" | "failed"
   status: "locked" | "unlocked" | "uninitialized"
   keyringToVerify: KeyringToVerify
 }
@@ -31,7 +29,6 @@ export const initialState: KeyringsState = {
   keyrings: [],
   privateKeys: [],
   metadata: {},
-  importing: false,
   status: "uninitialized",
   keyringToVerify: null,
 }
@@ -47,26 +44,8 @@ export const emitter = new Emittery<Events>()
 
 export const importSigner = createBackgroundAsyncThunk(
   "keyrings/importSigner",
-  async (
-    signerRaw: SignerRawWithType,
-    { getState, dispatch, extra: { main } }
-  ) => {
-    const address = await main.importSigner(signerRaw)
-    if (!address) return
-
-    const { ui } = getState() as {
-      ui: UIState
-    }
-    // Set the selected account as the first address of the last added keyring,
-    // which will correspond to the last imported keyring, AKA this one. Note that
-    // this does rely on the KeyringService's behavior of pushing new keyrings to
-    // the end of the keyring list.
-    dispatch(
-      setNewSelectedAccount({
-        address,
-        network: ui.selectedAccount.network,
-      })
-    )
+  async (signerRaw: SignerRawWithType, { extra: { main } }) => {
+    return main.importSigner(signerRaw)
   }
 )
 
@@ -107,28 +86,6 @@ const keyringsSlice = createSlice({
       ...state,
       keyringToVerify: payload,
     }),
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(importSigner.pending, (state) => {
-        return {
-          ...state,
-          importing: "pending",
-        }
-      })
-      .addCase(importSigner.fulfilled, (state) => {
-        return {
-          ...state,
-          importing: "done",
-          keyringToVerify: null,
-        }
-      })
-      .addCase(importSigner.rejected, (state) => {
-        return {
-          ...state,
-          importing: "failed",
-        }
-      })
   },
 })
 
