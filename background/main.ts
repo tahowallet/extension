@@ -149,6 +149,8 @@ import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
 import {
+  assetAmountToDesiredDecimals,
+  convertAssetAmountViaPricePoint,
   isSmartContractFungibleAsset,
   SmartContractAsset,
   SmartContractFungibleAsset,
@@ -179,10 +181,7 @@ import {
   isOneTimeAnalyticsEvent,
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
-import {
-  enrichAssetAmountWithMainCurrencyValues,
-  isBuiltInNetworkBaseAsset,
-} from "./redux-slices/utils/asset-utils"
+import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -1849,7 +1848,7 @@ export default class Main extends BaseService<never> {
   ): Promise<{
     asset: SmartContractFungibleAsset
     amount: bigint
-    mainCurrencyAmount: number | undefined
+    mainCurrencyAmount?: number
     balance: number
     exists?: boolean
   }> {
@@ -1871,14 +1870,13 @@ export default class Main extends BaseService<never> {
 
     const priceData = await getTokenPrices([contractAddress], USD, network)
 
-    const mainCurrencyAmount =
-      contractAddress in priceData
-        ? enrichAssetAmountWithMainCurrencyValues(
-            assetData,
-            getPricePoint(assetData.asset, priceData[contractAddress]),
-            2
-          ).mainCurrencyAmount
-        : undefined
+    const convertedAssetAmount = convertAssetAmountViaPricePoint(
+      assetData,
+      getPricePoint(assetData.asset, priceData[contractAddress])
+    )
+    const mainCurrencyAmount = convertedAssetAmount
+      ? assetAmountToDesiredDecimals(convertedAssetAmount, 2)
+      : undefined
 
     return {
       ...assetData,

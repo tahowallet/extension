@@ -88,9 +88,6 @@ export default function SettingsAddCustomAsset(): ReactElement {
   const [tokenAddress, setTokenAddress] = useState("")
 
   const dispatch = useBackgroundDispatch()
-
-  const hideDustEnabled = useBackgroundSelector(selectHideDust)
-
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const allNetworks = useBackgroundSelector(selectEVMNetworks)
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
@@ -149,6 +146,12 @@ export default function SettingsAddCustomAsset(): ReactElement {
     await dispatch(setSnackbarMessage(t("snackbar.success")))
     history.push("/")
   }
+
+  const hideDustEnabled = useBackgroundSelector(selectHideDust)
+  const showWarningAboutDust =
+    hideDustEnabled &&
+    assetData?.mainCurrencyAmount !== undefined &&
+    assetData?.mainCurrencyAmount < userValueDustThreshold
 
   return (
     <div className="standard_width_padded wrapper">
@@ -327,26 +330,21 @@ export default function SettingsAddCustomAsset(): ReactElement {
           </div>
         ) : (
           <>
-            {hideDustEnabled &&
-              assetData?.mainCurrencyAmount !== undefined &&
-              assetData?.mainCurrencyAmount < userValueDustThreshold && (
-                <div className="alert">
-                  <SharedIcon
-                    color="var(--attention)"
-                    width={24}
-                    customStyles="min-width: 24px;"
-                    icon="icons/m/notif-attention.svg"
-                  />
-                  <div className="alert_content">
-                    <div
-                      className="title"
-                      style={{ color: "var(--attention)" }}
-                    >
-                      {t("warning.dust.title")}
-                    </div>
+            {showWarningAboutDust && (
+              <div className="alert">
+                <SharedIcon
+                  color="var(--attention)"
+                  width={24}
+                  customStyles="min-width: 24px;"
+                  icon="icons/m/notif-attention.svg"
+                />
+                <div className="alert_content">
+                  <div className="title" style={{ color: "var(--attention)" }}>
+                    {t("warning.dust.title")}
                   </div>
                 </div>
-              )}
+              </div>
+            )}
           </>
         )}
       </form>
