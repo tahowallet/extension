@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { selectAdditionalSigningStatus } from "@tallyho/tally-background/redux-slices/signing"
 import { useBackgroundSelector } from "../../../hooks"
 import TransactionButton from "./TransactionButton"
 
@@ -19,6 +20,11 @@ export default function SignerBaseFrame({
 }: SignerBaseFrameProps): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
   const hasInsufficientFunds = useBackgroundSelector(selectHasInsufficientFunds)
+  const additionalSigningStatus = useBackgroundSelector(
+    selectAdditionalSigningStatus
+  )
+  const tooltip =
+    additionalSigningStatus === "editing" ? t("unsavedChangesTooltip") : ""
 
   return (
     <>
@@ -32,7 +38,10 @@ export default function SignerBaseFrame({
           type="primaryGreen"
           size="large"
           onClick={onConfirm}
-          isDisabled={hasInsufficientFunds}
+          isDisabled={
+            hasInsufficientFunds || additionalSigningStatus === "editing"
+          }
+          tooltip={tooltip}
           showLoadingOnClick
           showLoading
           reactOnWindowFocus

@@ -62,15 +62,21 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
               </SharedSquareButton>
             </div>
           ) : (
-            <SharedTooltip
-              type="dark"
-              width={180}
-              horizontalPosition="center"
-              verticalPosition="bottom"
-              verticalShift={-30}
-              horizontalShift={30}
-              IconComponent={() => (
-                <div className="button_wrap">
+            <div className="button_wrap">
+              <SharedTooltip
+                type="dark"
+                width={180}
+                height={48}
+                horizontalPosition="center"
+                verticalPosition="bottom"
+                horizontalShift={22}
+                customStyles={{
+                  marginLeft: "0",
+                  display: "flex",
+                  justifyContent: "center",
+                  width: "100%",
+                }}
+                IconComponent={() => (
                   <SharedSquareButton
                     icon="icons/s/swap.svg"
                     ariaLabel={t("swap")}
@@ -82,14 +88,14 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
                   >
                     {t("swap")}
                   </SharedSquareButton>
+                )}
+              >
+                <div className="centered_tooltip">
+                  <div>{t("swapDisabledOne")}</div>
+                  <div>{t("swapDisabledTwo")}</div>
                 </div>
-              )}
-            >
-              <div className="centered_tooltip">
-                <div>{t("swapDisabledOne")}</div>
-                <div>{t("swapDisabledTwo")}</div>
-              </div>
-            </SharedTooltip>
+              </SharedTooltip>
+            </div>
           )}
           <div className="button_wrap">
             <SharedSquareButton
