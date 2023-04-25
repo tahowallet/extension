@@ -628,6 +628,7 @@
     "help": "I need help",
     "refresh": "Refresh",
     "confirmButtonLabel": "Sign",
+    "unsavedChangesTooltip": "You have unsaved changed",
     "spendApproval": {
       "title": "Approve asset spend",
       "approveSpender": "Approve <spenderAddress></spenderAddress>",

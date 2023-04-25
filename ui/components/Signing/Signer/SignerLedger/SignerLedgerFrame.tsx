@@ -1,4 +1,7 @@
-import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
+import {
+  SignOperationType,
+  selectAdditionalSigningStatus,
+} from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
@@ -50,6 +53,9 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
         request.signingData.length > 0))
 
   const hasInsufficientFunds = useBackgroundSelector(selectHasInsufficientFunds)
+  const additionalSigningStatus = useBackgroundSelector(
+    selectAdditionalSigningStatus
+  )
 
   // FIXME Once the legacy signing flow is removed, `useSigningLedgerState` can
   // FIXME be updated to not accept undefined or null and therefore to not
@@ -67,6 +73,11 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
 
   const ledgerCannotSign =
     ledgerState.state !== "available" || mustEnableArbitraryDataSigning
+
+  const tooltip =
+    additionalSigningStatus === "editing"
+      ? tSigning("unsavedChangesTooltip")
+      : ""
 
   return (
     <>
@@ -134,7 +145,10 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
                 type="primary"
                 size="large"
                 onClick={handleConfirm}
-                isDisabled={hasInsufficientFunds}
+                isDisabled={
+                  hasInsufficientFunds || additionalSigningStatus === "editing"
+                }
+                tooltip={tooltip}
                 showLoadingOnClick
                 showLoading
                 reactOnWindowFocus
