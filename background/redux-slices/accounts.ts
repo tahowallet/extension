@@ -13,6 +13,7 @@ import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
   isBuiltInNetworkBaseAsset,
+  isCustomAsset,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
@@ -310,10 +311,15 @@ const accountSlice = createSlice({
         if (existingAccountData !== "loading") {
           if (
             updatedAccountBalance.assetAmount.amount === 0n &&
-            existingAccountData.balances[updatedAssetSymbol] === undefined &&
-            !isBuiltInNetworkBaseAsset(asset, network) // add base asset even if balance is 0
+            existingAccountData.balances[updatedAssetSymbol] === undefined
           ) {
-            return
+            // add base asset even if balance is 0 or is a custom asset
+            if (
+              !isCustomAsset(asset) &&
+              !isBuiltInNetworkBaseAsset(asset, network)
+            ) {
+              return
+            }
           }
           existingAccountData.balances[updatedAssetSymbol] =
             updatedAccountBalance
