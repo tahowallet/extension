@@ -551,6 +551,7 @@
       "networkSelect.title": "Select Network",
       "warning.alreadyExists.title": "Asset already exists, you will see it once your balance is over 0",
       "warning.alreadyExists.desc": "If you still have issues seeing an asset, turn off “hide balance 2$” from Settings",
+      "warning.dust.title": "Asset balance is under <$2, you wil see it once your balance is over $2",
       "error.invalidToken": "Invalid contract address",
       "submit": "Add asset",
       "snackbar.success": "Asset added successfully",
@@ -561,6 +562,9 @@
       "ariaLabel": "Open custom networks page",
       "subtitleAdded": "Added chains",
       "subtitleAddMore": "Add more chains",
+      "deleteModal.title": "Remove custom network?",
+      "deleteModal.desc": "You are removing <name>{{name}}</name> network. This means you won't be able to see assets from it and it won't be in your network selection list. ",
+      "deleteModal.confirm": "Remove",
       "networksList": {
         "typeCustom": "Custom network"
       },
