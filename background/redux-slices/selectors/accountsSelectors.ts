@@ -12,6 +12,7 @@ import {
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
   heuristicDesiredDecimalsForUnitPrice,
+  isCustomAsset,
   isNetworkBaseAsset,
 } from "../utils/asset-utils"
 import {
@@ -163,17 +164,17 @@ const computeCombinedAssetAmountsData = (
           ? true
           : assetAmount.mainCurrencyAmount > userValueDustThreshold
       const isPresent = assetAmount.decimalAmount > 0
-      const isTrusted =
-        !!(assetAmount.asset?.metadata?.tokenLists?.length ?? 0) ||
-        assetAmount.asset.metadata?.trusted
+      const isCustom = isCustomAsset(assetAmount.asset)
+      const isTrusted = assetAmount.asset.metadata?.trusted
 
       // Hide dust, untrusted assets and missing amounts.
       if (
         isForciblyDisplayed ||
+        (isCustom && !hideDust) ||
         (isTrusted && (hideDust ? isNotDust && isPresent : isPresent))
       ) {
         acc.combinedAssetAmounts.push(assetAmount)
-      } else if (isPresent) {
+      } else if (!isCustom ? isPresent : true) {
         acc.hiddenAssetAmounts.push(assetAmount)
       }
       return acc
