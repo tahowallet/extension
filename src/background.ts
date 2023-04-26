@@ -6,10 +6,7 @@ import {
 } from "@tallyho/tally-background/features"
 
 browser.runtime.onInstalled.addListener((obj) => {
-  if (
-    obj.reason === "install" &&
-    isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING)
-  ) {
+  if (obj.reason === "install") {
     const url = browser.runtime.getURL("tab.html#onboarding")
     browser.tabs.create({ url })
   }

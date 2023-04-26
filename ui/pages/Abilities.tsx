@@ -1,8 +1,6 @@
 import { selectFilteredAbilities } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useHistory } from "react-router-dom"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import SharedButton from "../components/Shared/SharedButton"
 import AbilityCard from "./Abilities/AbilityCard"
 import { useBackgroundSelector } from "../hooks"
@@ -10,12 +8,12 @@ import SharedIcon from "../components/Shared/SharedIcon"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import AbilityFilter from "./Abilities/AbilityFilter"
+import { ONBOARDING_ROOT } from "./Onboarding/Tabbed/Routes"
 
 export default function Abilities(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "abilities",
   })
-  const history = useHistory()
   const [openFilterMenu, setOpenFilterMenu] = useState(false)
   const abilities = useBackgroundSelector(selectFilteredAbilities)
 
@@ -72,12 +70,8 @@ export default function Abilities(): ReactElement {
               iconSmall="add"
               iconPosition="left"
               onClick={() => {
-                if (isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING)) {
-                  window.open("/tab.html#onboarding")
-                  window.close()
-                } else {
-                  history.push("/onboarding/add-wallet")
-                }
+                window.open(ONBOARDING_ROOT)
+                window.close()
               }}
             >
               {t("emptyState.addBtn")}

@@ -2,7 +2,6 @@
  * Feature flags which are set at build time.
  */
 const BuildTimeFlag = {
-  SUPPORT_TABBED_ONBOARDING: process.env.SUPPORT_TABBED_ONBOARDING === "true",
   SWITCH_RUNTIME_FLAGS: process.env.SWITCH_RUNTIME_FLAGS === "true",
 } as const
 
