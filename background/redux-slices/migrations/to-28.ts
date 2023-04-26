@@ -7,6 +7,7 @@ type OldState = {
         source: "import" | "internal"
       }
     }
+    importing: false | "pending" | "done" | "failed"
     [sliceKey: string]: unknown
   }
 }
@@ -26,7 +27,7 @@ type NewState = {
 export default (prevState: Record<string, unknown>): NewState => {
   const oldState = prevState as OldState
   const {
-    keyrings: { keyringMetadata, ...keyringsState },
+    keyrings: { keyringMetadata, importing, ...keyringsState },
   } = oldState
 
   return {
