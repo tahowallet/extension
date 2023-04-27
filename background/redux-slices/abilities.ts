@@ -23,6 +23,14 @@ const isImportOrInternalAccount = (
     .flatMap(({ addresses }) => addresses)
     .includes(address)
 
+const isPrivateKeyAccount = (
+  internalSigners: InternalSignerState,
+  address: NormalizedEVMAddress
+): boolean =>
+  internalSigners.privateKeys
+    .flatMap(({ addresses }) => addresses)
+    .includes(address)
+
 export type State = "open" | "completed" | "expired" | "deleted" | "all"
 
 export type Filter = {
@@ -187,6 +195,7 @@ export const initAbilities = createBackgroundAsyncThunk(
     }
     if (
       isImportOrInternalAccount(internalSigners, address) ||
+      isPrivateKeyAccount(internalSigners, address) ||
       isLedgerAccount(ledger, address)
     ) {
       await main.pollForAbilities(address)
