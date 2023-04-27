@@ -47,7 +47,7 @@ export type ResolvedSignatureDetails = {
   /**
    * The value determines whether to redirect the user to the activity page after submitting a transaction
    */
-  redirectToActivities?: boolean
+  redirectToActivityPage?: boolean
 }
 
 export function resolveTransactionSignatureDetails({
@@ -64,7 +64,7 @@ export function resolveTransactionSignatureDetails({
     ),
     signActionCreator: () => signTransaction({ request, accountSigner }),
     rejectActionCreator: rejectTransactionSignature,
-    redirectToActivities: annotation?.type === "asset-swap",
+    redirectToActivityPage: annotation?.type === "asset-swap",
   }
 }
 export function resolveDataSignatureDetails({

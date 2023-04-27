@@ -11,7 +11,7 @@ export default function SignerKeyringFrame<T extends SignOperationType>({
   signActionCreator,
   rejectActionCreator,
   signingActionLabelI18nKey,
-  redirectToActivities,
+  redirectToActivityPage,
 }: SignerFrameProps<T>): ReactElement {
   const { t } = useTranslation()
 
@@ -26,7 +26,7 @@ export default function SignerKeyringFrame<T extends SignOperationType>({
     return (
       <SignerKeyringSigning
         signActionCreator={signActionCreator}
-        redirectToActivities={redirectToActivities}
+        redirectToActivityPage={redirectToActivityPage}
       />
     )
   }

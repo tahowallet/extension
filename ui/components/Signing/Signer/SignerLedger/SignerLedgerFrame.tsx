@@ -24,7 +24,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
   signingActionLabelI18nKey,
   signActionCreator,
   rejectActionCreator,
-  redirectToActivities,
+  redirectToActivityPage,
 }: SignerFrameProps<T>): ReactElement {
   const { t: globalT } = useTranslation()
   const { t } = useTranslation("translation", { keyPrefix: "ledger" })
@@ -39,12 +39,12 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
   const handleConfirm = useCallback(() => {
     dispatch(signActionCreator()).finally(() => {
       // Redirect to activity page after submitting
-      if (redirectToActivities) {
+      if (redirectToActivityPage) {
         history.push("/", { goTo: "activity-page" })
       }
     })
     setIsSigning(true)
-  }, [dispatch, history, redirectToActivities, signActionCreator])
+  }, [dispatch, history, redirectToActivityPage, signActionCreator])
 
   const handleReject = useCallback(() => {
     dispatch(rejectActionCreator())

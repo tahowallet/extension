@@ -8,12 +8,12 @@ import KeyringUnlock from "../../../Keyring/KeyringUnlock"
 
 type SignerKeyringSigningProps = {
   signActionCreator: () => AnyAction
-  redirectToActivities?: boolean
+  redirectToActivityPage?: boolean
 }
 
 export default function SignerKeyringSigning({
   signActionCreator,
-  redirectToActivities,
+  redirectToActivityPage,
 }: SignerKeyringSigningProps): ReactElement {
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
@@ -25,7 +25,7 @@ export default function SignerKeyringSigning({
     if (!signingInitiated && keyringStatus === "unlocked") {
       dispatch(signActionCreator()).finally(() => {
         // Redirect to activity page after submitting
-        if (redirectToActivities) {
+        if (redirectToActivityPage) {
           history.push("/", { goTo: "activity-page" })
         }
       })
@@ -38,7 +38,7 @@ export default function SignerKeyringSigning({
     dispatch,
     signActionCreator,
     history,
-    redirectToActivities,
+    redirectToActivityPage,
   ])
 
   // In this construction, keyring unlocking isn't done as a route, but in line
