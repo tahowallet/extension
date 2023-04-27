@@ -1,9 +1,11 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { lockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
 import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
+import { clearSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { useEffect } from "react"
 import { useHistory } from "react-router-dom"
-import { useBackgroundSelector } from "./redux-hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 
 /**
  * Checks and returns whether the keyrings are currently unlocked, redirecting
@@ -46,4 +48,20 @@ export function useIsSignerLocked(signer: AccountSigner | null): boolean {
     : signer?.type === "keyring"
   const areKeyringsUnlocked = useAreKeyringsUnlocked(needsKeyrings)
   return needsKeyrings && !areKeyringsUnlocked
+}
+
+/**
+ * Silently lock wallet when a given component becomes visible
+ */
+export const useLockWallet = (): void => {
+  const dispatch = useBackgroundDispatch()
+
+  useEffect(() => {
+    const lockWallet = async () => {
+      await dispatch(lockKeyrings())
+      // No need to show that signing got locked
+      dispatch(clearSnackbarMessage())
+    }
+    lockWallet()
+  }, [dispatch])
 }

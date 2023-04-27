@@ -1668,7 +1668,7 @@ export default class Main extends BaseService<never> {
     return this.keyringService.exportPrivateKey(address)
   }
 
-  async importSigner(signerRaw: SignerRawWithType): Promise<HexString | null> {
+  async importSigner(signerRaw: SignerRawWithType): Promise<string | null> {
     return this.keyringService.importSigner(signerRaw)
   }
 

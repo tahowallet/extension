@@ -4,6 +4,7 @@ import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { SignerTypes } from "@tallyho/tally-background/services/keyring"
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import SharedButton from "../../../components/Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
 import { OnboardingBox, OnboardingMessageHeader } from "../styles"
@@ -40,15 +41,16 @@ function VerifySeedSuccess({
         size="medium"
         type="primary"
         onClick={async () => {
-          await dispatch(
+          const { success } = (await dispatch(
             importSigner({
               type: SignerTypes.keyring,
               mnemonic: mnemonic.join(" "),
               source: "internal",
               path: selectedNetwork.derivationPath ?? "m/44'/60'/0'/0",
             })
-          )
-          history.push(nextPage)
+          )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
+
+          if (success) history.push(nextPage)
         }}
       >
         {t("successButton")}

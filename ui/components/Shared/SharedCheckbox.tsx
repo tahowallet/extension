@@ -1,57 +1,73 @@
-import React, { ReactElement, ChangeEventHandler } from "react"
+import classNames from "classnames"
+import React, { ReactElement } from "react"
 
-interface Props {
+type Props = {
   label: string
-  onChange: ChangeEventHandler<HTMLInputElement>
-  checked?: boolean
+  onChange: (value: boolean) => void
+  value: boolean
+  invalid?: boolean
+  message?: string
 }
 
 export default function SharedCheckbox(props: Props): ReactElement {
-  const { label, checked, onChange } = props
+  const { label, value, message, invalid, onChange } = props
 
   return (
-    <div className="checkbox">
-      <input
-        id="checkbox"
-        defaultChecked={checked}
-        onChange={onChange}
-        type="checkbox"
-      />
-      <span className="checkmark" />
-      <label htmlFor="checkbox" className="label">
-        {label}
+    <div className="container">
+      <label className="checkbox">
+        <input
+          checked={value}
+          onChange={() => onChange(!value)}
+          type="checkbox"
+        />
+        <span className={classNames("checkmark", { invalid })} />
+        <span className="label">{label}</span>
       </label>
+      {message && invalid && (
+        <span className={classNames("label", { invalid })}>{message}</span>
+      )}
       <style jsx>{`
+        .container {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
         .checkbox {
           display: flex;
-          align-items: center;
+          align-items: start;
+          flex-direction: row;
           position: relative;
           cursor: pointer;
           font-size: 14px;
           color: var(--green-60);
           user-select: none;
         }
-
         .checkbox input {
           position: absolute;
           opacity: 0;
           height: 0;
           width: 0;
         }
-
         .checkmark {
+          top: 5px;
           position: relative;
-          height: 15px;
-          width: 15px;
+          height: 16px;
+          min-width: 16px;
           border-radius: 3px;
-          background-color: var(--green-60);
-          margin-right: 5px;
+          background-color: var(--green-120);
+          margin-right: 10px;
+          border: 2px solid var(--green-40);
+          box-sizing: border-box;
+        }
+        .checkmark.invalid {
+          border: 2px solid var(--error);
         }
         .checkbox:hover input ~ .checkmark {
           background-color: var(--green-80);
         }
         .checkbox input:checked ~ .checkmark {
           background-color: var(--trophy-gold);
+          border: none;
         }
         .checkmark:after {
           content: "";
@@ -66,14 +82,18 @@ export default function SharedCheckbox(props: Props): ReactElement {
           top: 2px;
           width: 2px;
           height: 7px;
-          border: solid white;
+          border: 2px solid var(--hunter-green);
           border-width: 0 3px 3px 0;
           transform: rotate(45deg);
         }
         .label {
-          line-height: normal;
-          margin-top: 0;
-          color: var(--green-60);
+          color: var(--green-5);
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
+        }
+        .label.invalid {
+          color: var(--error);
         }
       `}</style>
     </div>
