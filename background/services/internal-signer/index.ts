@@ -635,6 +635,7 @@ export default class InternalSignerService extends BaseService<Events> {
         "I solemnly swear that I am treating this private key material with great care."
       )
     } catch (e) {
+      logger.error(`Export private key for address ${address} failed:`, e)
       return null
     }
   }
@@ -647,6 +648,7 @@ export default class InternalSignerService extends BaseService<Events> {
       const { mnemonic } = await keyring.serialize()
       return mnemonic
     } catch (e) {
+      logger.error(`Export mnemonic for address ${address} failed:`, e)
       return null
     }
   }
