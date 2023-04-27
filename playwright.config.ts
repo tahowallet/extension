@@ -58,6 +58,14 @@ const config: PlaywrightTestConfig = {
       }
     }
     */
+
+    /* For debugging purposes */
+    // launchOptions: {
+    //   slowMo: 1000,
+    // },
+
+    /* Needed to verify the content of the clipboard */
+    permissions: ["clipboard-read"],
   },
 
   /* Configure projects for major browsers */

@@ -140,13 +140,65 @@ jobs:
       - name: Extract extension
         run: unzip -o chrome.zip -d dist/chrome
       - name: Run Playwright tests
-        run: xvfb-run npx playwright test
+        run: find test -type f ! -name "*-fork.*" -exec xvfb-run npx playwright test {} \;
         #env:
         # DEBUG: pw:api*
       - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: debug-output
+          path: |
+            test-results/
+            #videos/
+          retention-days: 30
+  e2e-tests-fork:
+    # TODO: remove last OR before merging to main
+    if: |
+      github.ref == 'refs/heads/main'
+        || contains(github.head_ref, 'e2e')
+        || needs.detect-if-flag-changed.outputs.path-filter == 'true'
+        || github.ref == 'refs/pull/000/merge'
+    needs: [build, detect-if-flag-changed]
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Read .nvmrc
+        run: echo "NVMRC=$(cat ./.nvmrc)" >> $GITHUB_OUTPUT
+        id: nvm
+      - name: Use Node + Yarn
+        uses: actions/setup-node@v3
+        with:
+          node-version: "${{ steps.nvm.outputs.NVMRC }}"
+          cache: "yarn"
+      - run: yarn install --frozen-lockfile
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@v3
+        with:
+          name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
+      - name: Extract extension
+        run: unzip -o chrome.zip -d dist/chrome
+      - name: Install Hardhat
+        run: |
+          cd ci
+          yarn install --frozen-lockfile
+      - name: Run Hardhat
+        env:
+          CHAIN_API_URL: ${{ secrets.ALCHEMY_URL }}
+          MAINNET_FORK_CHAIN_ID: 1337
+        run: |
+          cd ci
+          npx hardhat node --network hardhat &
+          sleep 20
+      - name: Run Playwright tests designed for fork
+        env:
+          RECOVERY_PHRASE: ${{ secrets.FORK_TEST_WALLET_RECOVERY_PHRASE }}
+        run: find test -type f -name "*-fork.*" -exec xvfb-run npx playwright test {} \;
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: fork-debug-output
           path: |
             test-results/
             #videos/
