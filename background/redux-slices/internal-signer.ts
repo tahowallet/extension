@@ -67,9 +67,10 @@ const internalSignerSlice = createSlice({
         }
       }
     ) => {
-      // When the internal signers are locked, we receive updateInternalSigners with an empty
-      // list as the InternalSignerService clears the in-memory keyrings and keys. For UI
-      // purposes, however, we want to continue tracking the metadata,
+      // When the InternalSigner service is locked, we receive `updateInternalSigners` with
+      // `privateKeys` and `keyrings` being empty lists as the InternalSigner service clears
+      // the in-memory keyrings and private keys.
+      // For UI purposes, however, we want to continue tracking the metadata,
       // so we ignore an empty list if the service is locked.
       if (state.status === "locked") {
         return state
