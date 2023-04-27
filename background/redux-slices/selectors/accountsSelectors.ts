@@ -40,11 +40,7 @@ import { EVMNetwork, sameNetwork } from "../../networks"
 import { NETWORK_BY_CHAIN_ID, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { FeatureFlags, isEnabled } from "../../features"
-import {
-  AccountSigner,
-  ReadOnlyAccountSigner,
-  SignerType,
-} from "../../services/signing"
+import { AccountSigner, SignerType } from "../../services/signing"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -312,19 +308,16 @@ const getAccountType = (
     [address: string]: "import" | "internal"
   }
 ): AccountType => {
-  if (signer === ReadOnlyAccountSigner) {
-    return AccountType.ReadOnly
+  switch (true) {
+    case signerTypeToAccountType[signer.type] === AccountType.ReadOnly:
+    case signerTypeToAccountType[signer.type] === AccountType.Ledger:
+    case signerTypeToAccountType[signer.type] === AccountType.PrivateKey:
+      return signerTypeToAccountType[signer.type]
+    case addressSources[address] === "import":
+      return AccountType.Imported
+    default:
+      return AccountType.Internal
   }
-  if (signerTypeToAccountType[signer.type] === "ledger") {
-    return AccountType.Ledger
-  }
-  if (signerTypeToAccountType[signer.type] === "privateKey") {
-    return AccountType.PrivateKey
-  }
-  if (addressSources[address] === "import") {
-    return AccountType.Imported
-  }
-  return AccountType.Internal
 }
 
 const getTotalBalance = (
