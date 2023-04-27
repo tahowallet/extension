@@ -68,6 +68,21 @@ export default function Wallet(): ReactElement {
     selectCurrentAccountActivities
   )
 
+  useEffect(() => {
+    const locationState = history.location.state
+    if (locationState) {
+      const { prevPath } = locationState as { prevPath?: string }
+      if (prevPath === "/swap") {
+        if (!NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
+          setPanelNumber(1)
+        } else {
+          setPanelNumber(2)
+        }
+        history.location.state = undefined
+      }
+    }
+  }, [history, selectedNetwork.chainID])
+
   const initializationLoadingTimeExpired = useBackgroundSelector(
     (background) => background.ui?.initializationLoadingTimeExpired
   )

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { ReactElement, useCallback } from "react"
 import { utils } from "ethers"
 
@@ -60,7 +61,7 @@ export default function SwapQuote({
       })
     )
 
-    history.push("/")
+    history.push("/", { prevPath: history.location.pathname })
   }, [
     finalQuote,
     dispatch,
