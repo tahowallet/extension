@@ -753,20 +753,20 @@ export default class InternalSignerService extends BaseService<Events> {
     // ethers has a looser / slightly different request type
     const ethersTxRequest = ethersTransactionFromTransactionRequest(txRequest)
 
-    let signed: string
+    let signedRawTx: string
 
     // unfortunately, ethers gives us a serialized signed tx here
     if (isPrivateKey(signerWithType)) {
-      signed = await signerWithType.signer.signTransaction(ethersTxRequest)
+      signedRawTx = await signerWithType.signer.signTransaction(ethersTxRequest)
     } else {
-      signed = await signerWithType.signer.signTransaction(
+      signedRawTx = await signerWithType.signer.signTransaction(
         account,
         ethersTxRequest
       )
     }
 
     // parse the tx, then unpack it as best we can
-    const tx = parseRawTransaction(signed)
+    const tx = parseRawTransaction(signedRawTx)
 
     if (!tx.hash || !tx.from || !tx.r || !tx.s || typeof tx.v === "undefined") {
       throw new Error("Transaction doesn't appear to have been signed.")
