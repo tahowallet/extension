@@ -97,7 +97,7 @@ export default class NFTsService extends BaseService<Events> {
 
     this.chainService.emitter.on(
       "newAccountToTrack",
-      async ({ addressOnNetwork }) => {
+      async (addressOnNetwork) => {
         this.emitter.emit("isReloadingNFTs", true)
         await this.initializeCollections([addressOnNetwork])
         this.emitter.emit("isReloadingNFTs", false)
