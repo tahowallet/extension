@@ -9,6 +9,8 @@ import {
   SignerRawWithType,
 } from "../services/keyring/index"
 import { HexString } from "../types"
+import logger from "../lib/logger"
+import { UIState, setNewSelectedAccount } from "./ui"
 
 type KeyringToVerify = {
   id: string
@@ -44,8 +46,43 @@ export const emitter = new Emittery<Events>()
 
 export const importSigner = createBackgroundAsyncThunk(
   "keyrings/importSigner",
-  async (signerRaw: SignerRawWithType, { extra: { main } }) => {
-    return main.importSigner(signerRaw)
+  async (
+    signerRaw: SignerRawWithType,
+    { getState, dispatch, extra: { main } }
+  ): Promise<{ success: boolean; errorMessage?: string }> => {
+    let address = null
+
+    try {
+      address = await main.importSigner(signerRaw)
+    } catch (error) {
+      logger.error("Internal signer import failed:", error)
+
+      return {
+        success: false,
+        errorMessage: "Unexpected error during account import.",
+      }
+    }
+
+    if (!address) {
+      return {
+        success: false,
+        errorMessage:
+          "Failed to import new account. Address may already be imported.",
+      }
+    }
+
+    const { ui } = getState() as {
+      ui: UIState
+    }
+
+    dispatch(
+      setNewSelectedAccount({
+        address,
+        network: ui.selectedAccount.network,
+      })
+    )
+
+    return { success: true }
   }
 )
 
