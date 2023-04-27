@@ -5,6 +5,7 @@ import {
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import { SignerFrameProps } from ".."
 import SharedButton from "../../../Shared/SharedButton"
@@ -32,11 +33,17 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
 
   const [isSigning, setIsSigning] = useState(false)
   const dispatch = useBackgroundDispatch()
+  const history = useHistory()
 
   const handleConfirm = useCallback(() => {
-    dispatch(signActionCreator())
+    dispatch(signActionCreator()).finally(() => {
+      // Wallet should redirect to activity page after submitting a swap
+      if (history.location.pathname === "/swap") {
+        history.push("/", { prevPath: history.location.pathname })
+      }
+    })
     setIsSigning(true)
-  }, [dispatch, signActionCreator])
+  }, [dispatch, history, signActionCreator])
 
   const handleReject = useCallback(() => {
     dispatch(rejectActionCreator())

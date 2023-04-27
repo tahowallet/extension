@@ -78,7 +78,6 @@ export default function Wallet(): ReactElement {
         } else {
           setPanelNumber(2)
         }
-        history.location.state = undefined
       }
     }
   }, [history, selectedNetwork.chainID])
