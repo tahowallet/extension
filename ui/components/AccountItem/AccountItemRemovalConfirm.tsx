@@ -47,7 +47,6 @@ export default function AccountItemRemovalConfirm({
   }))
 
   const accountSigners = useBackgroundSelector(selectAccountSignersByAddress)
-  const readOnlyAccount = typeof keyring === "undefined" // TODO - this should be fixed?
   const lastAddressInKeyring = keyring?.addresses.length === 1
 
   const ledgerDeviceByAddress = useBackgroundSelector(
@@ -55,8 +54,9 @@ export default function AccountItemRemovalConfirm({
   )
 
   const allAddresses = useBackgroundSelector(getAllAddresses)
-
   const signer = accountSigners[address]
+
+  const readOnlyAccount = signer.type === "readOnly"
 
   const lastAddressInLedger =
     signer.type === "ledger" &&

@@ -150,7 +150,8 @@ export function Main(): ReactElement {
 
   const needsUnlock =
     isTransactionPendingSignature &&
-    currentAccountSigner?.type === "keyring" &&
+    (currentAccountSigner?.type === "keyring" ||
+      currentAccountSigner?.type === "privateKey") &&
     lockStatus !== "unlocked"
 
   useConnectPopupMonitor()
@@ -206,7 +207,7 @@ export function Main(): ReactElement {
                   classNames="page-transition"
                   key={
                     routeProps.location.pathname.includes("onboarding") ||
-                    routeProps.location.pathname.includes("keyring")
+                    routeProps.location.pathname.includes("internal-signer")
                       ? ""
                       : transformedLocation.key
                   }
@@ -231,7 +232,7 @@ export function Main(): ReactElement {
                             path: [
                               "/onboarding",
                               // need to unlock or set new password to import an account
-                              "/keyring",
+                              "/internal-signer",
                               // this route has it's own error message
                               "/dapp-permission",
                             ],
