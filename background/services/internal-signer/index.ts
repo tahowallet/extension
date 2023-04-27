@@ -13,7 +13,12 @@ import {
   encryptVault,
   SaltedKey,
 } from "./encryption"
-import { HexString, KeyringTypes, EIP712TypedData, UNIXTime } from "../../types"
+import {
+  HexString,
+  InternalSignerTypes,
+  EIP712TypedData,
+  UNIXTime,
+} from "../../types"
 import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
 
 import BaseService from "../base"
@@ -23,17 +28,17 @@ import { FeatureFlags, isEnabled } from "../../features"
 import { AddressOnNetwork } from "../../accounts"
 import logger from "../../lib/logger"
 
-export const MAX_KEYRING_IDLE_TIME = 60 * MINUTE
+export const MAX_INTERNAL_SIGNERS_IDLE_TIME = 60 * MINUTE
 export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
 
 export type Keyring = {
-  type: KeyringTypes
+  type: InternalSignerTypes
   id: string | null
   path: string | null
   addresses: string[]
 }
 export type PrivateKey = Keyring & {
-  type: KeyringTypes.singleSECP
+  type: InternalSignerTypes.singleSECP
   path: null
   addresses: [string]
 }
@@ -48,11 +53,11 @@ export type PrivateKeyAccountSigner = {
   walletID: string
 }
 
-export type SignerMetadata = {
+export type InternalSignerSource = {
   source: "import" | "internal"
 }
 
-export enum SignerTypes {
+export enum SignerSourceTypes {
   privateKey = "privateKey",
   jsonFile = "jsonFile",
   keyring = "keyring",
@@ -64,41 +69,50 @@ type SerializedPrivateKey = {
   privateKey: string
 }
 
-type SignerRawHDKeyring = {
-  type: SignerTypes.keyring
+type InternalSignerMetadataHDKeyring = {
+  type: SignerSourceTypes.keyring
   mnemonic: string
   source: "import" | "internal"
   path?: string
 }
-type SignerRawPrivateKey = { type: SignerTypes.privateKey; privateKey: string }
-type SignerRawJSONPrivateKey = {
-  type: SignerTypes.jsonFile
+type InternalSignerMetadataPrivateKey = {
+  type: SignerSourceTypes.privateKey
+  privateKey: string
+}
+type InternalSignerMetadataJSONPrivateKey = {
+  type: SignerSourceTypes.jsonFile
   jsonFile: string
   password: string
 }
-export type SignerRawWithType =
-  | SignerRawPrivateKey
-  | SignerRawHDKeyring
-  | SignerRawJSONPrivateKey
+export type InternalSignerMetadataWithType =
+  | InternalSignerMetadataPrivateKey
+  | InternalSignerMetadataHDKeyring
+  | InternalSignerMetadataJSONPrivateKey
 
-type SignerHDKeyring = { type: SignerTypes.keyring; signer: HDKeyring }
-type SignerPrivateKey = { type: SignerTypes.privateKey; signer: Wallet }
-type SignerWithType = SignerPrivateKey | SignerHDKeyring
+type InternalSignerHDKeyring = {
+  type: SignerSourceTypes.keyring
+  signer: HDKeyring
+}
+type InternalSignerPrivateKey = {
+  type: SignerSourceTypes.privateKey
+  signer: Wallet
+}
+type InternalSignerWithType = InternalSignerPrivateKey | InternalSignerHDKeyring
 
 interface SerializedKeyringData {
   privateKeys: SerializedPrivateKey[]
   keyrings: SerializedHDKeyring[]
-  metadata: { [signerId: string]: SignerMetadata }
+  metadata: { [signerId: string]: InternalSignerSource }
   hiddenAccounts: { [address: HexString]: boolean }
 }
 
 interface Events extends ServiceLifecycleEvents {
   locked: boolean
-  keyrings: {
+  internalSigners: {
     privateKeys: PrivateKey[]
     keyrings: Keyring[]
     metadata: {
-      [signerId: string]: SignerMetadata
+      [signerId: string]: InternalSignerSource
     }
   }
   address: string
@@ -108,56 +122,62 @@ interface Events extends ServiceLifecycleEvents {
 }
 
 const isRawPrivateKey = (
-  signer: SignerRawWithType
-): signer is SignerRawPrivateKey => signer.type === SignerTypes.privateKey
+  signer: InternalSignerMetadataWithType
+): signer is InternalSignerMetadataPrivateKey =>
+  signer.type === SignerSourceTypes.privateKey
 
 const isRawJsonPrivateKey = (
-  signer: SignerRawWithType
-): signer is SignerRawJSONPrivateKey => signer.type === SignerTypes.jsonFile
+  signer: InternalSignerMetadataWithType
+): signer is InternalSignerMetadataJSONPrivateKey =>
+  signer.type === SignerSourceTypes.jsonFile
 
-const isPrivateKey = (signer: SignerWithType): signer is SignerPrivateKey =>
-  signer.type === SignerTypes.privateKey
+const isPrivateKey = (
+  signer: InternalSignerWithType
+): signer is InternalSignerPrivateKey =>
+  signer.type === SignerSourceTypes.privateKey
 
-const isKeyring = (signer: SignerWithType): signer is SignerHDKeyring =>
-  signer.type === SignerTypes.keyring
+const isKeyring = (
+  signer: InternalSignerWithType
+): signer is InternalSignerHDKeyring =>
+  signer.type === SignerSourceTypes.keyring
 
 /*
- * KeyringService is responsible for all key material, as well as applying the
+ * InternalSignerService is responsible for all key material, as well as applying the
  * material to sign messages, sign transactions, and derive child keypairs.
  *
  * The service can be in two states, locked or unlocked, and starts up locked.
- * Keyrings are persisted in encrypted form when the service is locked.
+ * Keys are persisted in encrypted form when the service is locked.
  *
  * When unlocked, the service automatically locks itself after it has not seen
  * activity for a certain amount of time. The service can be notified of
  * outside activity that should be considered for the purposes of keeping the
- * service unlocked. No keyring activity for 30 minutes causes the service to
+ * service unlocked. No keyring or keys activity for 30 minutes causes the service to
  * lock, while no outside activity for 30 minutes has the same effect.
  */
-export default class KeyringService extends BaseService<Events> {
+export default class InternalSignerService extends BaseService<Events> {
   #cachedKey: SaltedKey | null = null
 
   #keyrings: HDKeyring[] = []
 
   #privateKeys: Wallet[] = []
 
-  #signerMetadata: { [keyringId: string]: SignerMetadata } = {}
+  #signerMetadata: { [signerId: string]: InternalSignerSource } = {}
 
   #hiddenAccounts: { [address: HexString]: boolean } = {}
 
   /**
-   * The last time a keyring took an action that required the service to be
+   * The last time a wallet took an action that required the service to be
    * unlocked (signing, adding a keyring, etc).
    */
-  lastKeyringActivity: UNIXTime | undefined
+  lastActivity: UNIXTime | undefined
 
   /**
-   * The last time the keyring was notified of an activity outside of the
-   * keyring. {@see markOutsideActivity}
+   * The last time the service was notified of an outside activity.
+   * {@see markOutsideActivity}
    */
   lastOutsideActivity: UNIXTime | undefined
 
-  static create: ServiceCreatorFunction<Events, KeyringService, []> =
+  static create: ServiceCreatorFunction<Events, InternalSignerService, []> =
     async () => {
       return new this()
     }
@@ -178,7 +198,7 @@ export default class KeyringService extends BaseService<Events> {
   override async internalStartService(): Promise<void> {
     // Emit locked status on startup. Should always be locked, but the main
     // goal is to have external viewers synced to internal state no matter what
-    // it is. Don't emit if there are no keyrings to unlock.
+    // it is. Don't emit if there are no keys to unlock.
     await super.internalStartService()
     if ((await getEncryptedVaults()).vaults.length > 0) {
       this.emitter.emit("locked", this.locked())
@@ -192,7 +212,7 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
-   * @return True if the keyring is locked, false if it is unlocked.
+   * @return True if the service is locked, false if it is unlocked.
    */
   locked(): boolean {
     return this.#cachedKey === null
@@ -202,16 +222,16 @@ export default class KeyringService extends BaseService<Events> {
    * Update activity timestamps and emit unlocked event.
    */
   #unlock(): void {
-    this.lastKeyringActivity = Date.now()
+    this.lastActivity = Date.now()
     this.lastOutsideActivity = Date.now()
     this.emitter.emit("locked", false)
   }
 
   /**
-   * Unlock the keyring with a provided password, initializing from the most
-   * recently persisted keyring vault if one exists.
+   * Unlock the service with a provided password, initializing from the most
+   * recently persisted keys vault if one exists.
    *
-   * @param password A user-chosen string used to encrypt keyring vaults.
+   * @param password A user-chosen string used to encrypt keys vaults.
    *        Unlocking will fail if an existing vault is found, and this password
    *        can't decrypt it.
    *
@@ -220,7 +240,7 @@ export default class KeyringService extends BaseService<Events> {
    * @param ignoreExistingVaults If true, ignore any existing, previously
    *        persisted vaults on unlock, instead starting with a clean slate.
    *        This option makes sense if a user has lost their password, and needs
-   *        to generate a new keyring.
+   *        to generate a new valut.
    *
    *        Note that old vaults aren't deleted, and can still be recovered
    *        later in an emergency.
@@ -232,7 +252,7 @@ export default class KeyringService extends BaseService<Events> {
     ignoreExistingVaults = false
   ): Promise<boolean> {
     if (!this.locked()) {
-      logger.warn("KeyringService is already unlocked!")
+      logger.warn("InternalSignerService is already unlocked!")
       this.#unlock()
       return true
     }
@@ -257,7 +277,7 @@ export default class KeyringService extends BaseService<Events> {
           // if we weren't able to load the vault, don't unlock
           return false
         }
-        // hooray! vault is loaded, import any serialized keyrings
+        // hooray! vault is loaded, import any serialized keys
         this.#keyrings = []
         this.#signerMetadata = {}
         this.#privateKeys = []
@@ -277,7 +297,7 @@ export default class KeyringService extends BaseService<Events> {
           ...plainTextVault.hiddenAccounts,
         }
 
-        this.emitKeyrings()
+        this.emitInternalSigners()
       }
     }
 
@@ -285,7 +305,7 @@ export default class KeyringService extends BaseService<Events> {
     // and unlock
     if (!this.#cachedKey) {
       this.#cachedKey = await deriveSymmetricKeyFromPassword(password)
-      await this.persistKeyrings()
+      await this.persistInternalSigners()
     }
 
     this.#unlock()
@@ -293,22 +313,22 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
-   * Lock the keyring service, deleting references to the cached vault
-   * encryption key and keyrings.
+   * Lock the service, deleting references to the cached vault
+   * encryption keys and keyrings.
    */
   async lock(): Promise<void> {
-    this.lastKeyringActivity = undefined
+    this.lastActivity = undefined
     this.lastOutsideActivity = undefined
     this.#cachedKey = null
     this.#keyrings = []
     this.#signerMetadata = {}
     this.#privateKeys = []
     this.emitter.emit("locked", true)
-    this.emitKeyrings()
+    this.emitInternalSigners()
   }
 
   /**
-   * Notifies the keyring that an outside activity occurred. Outside activities
+   * Notifies the service that an outside activity occurred. Outside activities
    * are used to delay autolocking.
    */
   markOutsideActivity(): void {
@@ -317,16 +337,16 @@ export default class KeyringService extends BaseService<Events> {
     }
   }
 
-  // Locks the keyring if the time since last keyring or outside activity
+  // Locks the service if the time since last service or outside activity
   // exceeds preset levels.
   private async autolockIfNeeded(): Promise<void> {
     if (
-      typeof this.lastKeyringActivity === "undefined" ||
+      typeof this.lastActivity === "undefined" ||
       typeof this.lastOutsideActivity === "undefined"
     ) {
-      // Normally both activity counters should be undefined only if the keyring
+      // Normally both activity counters should be undefined only if the service
       // is locked, otherwise they should both be set; regardless, fail safe if
-      // either is undefined and the keyring is unlocked.
+      // either is undefined and the service is unlocked.
       if (!this.locked()) {
         await this.lock()
       }
@@ -335,24 +355,24 @@ export default class KeyringService extends BaseService<Events> {
     }
 
     const now = Date.now()
-    const timeSinceLastKeyringActivity = now - this.lastKeyringActivity
+    const timeSinceLastActivity = now - this.lastActivity
     const timeSinceLastOutsideActivity = now - this.lastOutsideActivity
 
-    if (timeSinceLastKeyringActivity >= MAX_KEYRING_IDLE_TIME) {
+    if (timeSinceLastActivity >= MAX_INTERNAL_SIGNERS_IDLE_TIME) {
       this.lock()
     } else if (timeSinceLastOutsideActivity >= MAX_OUTSIDE_IDLE_TIME) {
       this.lock()
     }
   }
 
-  // Throw if the keyring is not unlocked; if it is, update the last keyring
+  // Throw if the service is not unlocked; if it is, update the last service
   // activity timestamp.
   private requireUnlocked(): void {
     if (this.locked()) {
-      throw new Error("KeyringService must be unlocked.")
+      throw new Error("InternalSignerService must be unlocked.")
     }
 
-    this.lastKeyringActivity = Date.now()
+    this.lastActivity = Date.now()
     this.markOutsideActivity()
   }
 
@@ -370,14 +390,14 @@ export default class KeyringService extends BaseService<Events> {
    *          accessed at generation time through this return value.
    */
   async generateNewKeyring(
-    type: KeyringTypes,
+    type: InternalSignerTypes,
     path?: string
   ): Promise<{ id: string; mnemonic: string[] }> {
     this.requireUnlocked()
 
-    if (type !== KeyringTypes.mnemonicBIP39S256) {
+    if (type !== InternalSignerTypes.mnemonicBIP39S256) {
       throw new Error(
-        "KeyringService only supports generating 256-bit HD key trees"
+        "InternalSignerService only supports generating 256-bit HD key trees"
       )
     }
 
@@ -394,24 +414,32 @@ export default class KeyringService extends BaseService<Events> {
     return { id: newKeyring.id, mnemonic: mnemonic.split(" ") }
   }
 
-  async importSigner(signerRaw: SignerRawWithType): Promise<HexString | null> {
+  /**
+   * Import new internal signer
+   *
+   * @param signerMetadata any signer with type and metadata
+   * @returns null | string - if new account was added then returns an address
+   */
+  async importSigner(
+    signerMetadata: InternalSignerMetadataWithType
+  ): Promise<HexString | null> {
     this.requireUnlocked()
     let address: HexString | null
 
-    if (isRawPrivateKey(signerRaw)) {
-      address = await this.#importPrivateKey(signerRaw)
-    } else if (isRawJsonPrivateKey(signerRaw)) {
-      address = await this.#importJSON(signerRaw)
+    if (isRawPrivateKey(signerMetadata)) {
+      address = await this.#importPrivateKey(signerMetadata)
+    } else if (isRawJsonPrivateKey(signerMetadata)) {
+      address = await this.#importJSON(signerMetadata)
     } else {
-      address = await this.#importKeyring(signerRaw)
+      address = await this.#importKeyring(signerMetadata)
     }
 
     if (!address) return null
 
     this.#hiddenAccounts[address] = false
-    await this.persistKeyrings()
+    await this.persistInternalSigners()
     this.emitter.emit("address", address)
-    this.emitKeyrings()
+    this.emitInternalSigners()
 
     return address
   }
@@ -420,12 +448,13 @@ export default class KeyringService extends BaseService<Events> {
    * Import keyring and pull the first address from that
    * keyring for system use.
    *
-   * @param mnemonic - a seed phrase
-   * @returns The string ID of the new keyring.
+   * @param signerMetadata - keyring metadata - path, source, mnemonic
+   * @returns address of the first account from the HD keyring
    */
-
-  async #importKeyring(signerRaw: SignerRawHDKeyring): Promise<string | null> {
-    const { mnemonic, source, path } = signerRaw
+  async #importKeyring(
+    signerMetadata: InternalSignerMetadataHDKeyring
+  ): Promise<string | null> {
+    const { mnemonic, source, path } = signerMetadata
 
     const newKeyring = path
       ? new HDKeyring({ mnemonic, path })
@@ -441,10 +470,15 @@ export default class KeyringService extends BaseService<Events> {
     return address
   }
 
+  /**
+   * Import private key with a string
+   * @param signerMetadata - private key metadata - private key string
+   * @returns address of imported account
+   */
   async #importPrivateKey(
-    signerRaw: SignerRawPrivateKey
+    signerMetadata: InternalSignerMetadataPrivateKey
   ): Promise<string | null> {
-    const { privateKey } = signerRaw
+    const { privateKey } = signerMetadata
     const newWallet = new Wallet(privateKey)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
     // TODO: check if this wallet already exists
@@ -453,10 +487,15 @@ export default class KeyringService extends BaseService<Events> {
     return normalizedAddress
   }
 
+  /**
+   * Import private key with JSON file
+   * @param signerMetadata - JSON keystore metadata - stringified contents of JSON file, password
+   * @returns address of imported account
+   */
   async #importJSON(
-    signerRaw: SignerRawJSONPrivateKey
+    signerMetadata: InternalSignerMetadataJSONPrivateKey
   ): Promise<string | null> {
-    const { jsonFile, password } = signerRaw
+    const { jsonFile, password } = signerMetadata
     const newWallet = await Wallet.fromEncryptedJson(jsonFile, password)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
     this.#privateKeys.push(newWallet)
@@ -465,8 +504,8 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
-   * Return the source of a given address' keyring if it exists.  If an
-   * address does not have a keyring associated with it - returns null.
+   * Return the source of a given address' signer if it exists. If an
+   * address does not have a internal signer associated with it - returns null.
    */
   async getSignerSourceForAddress(
     address: string
@@ -480,7 +519,7 @@ export default class KeyringService extends BaseService<Events> {
         normalizeEVMAddress(signerWithType.signer.address)
       ].source
     } catch (e) {
-      // Address is not associated with a keyring
+      // Address is not associated with an internal signer
       return null
     }
   }
@@ -496,7 +535,7 @@ export default class KeyringService extends BaseService<Events> {
       // TODO this type is meanlingless from the library's perspective.
       // Reconsider, or explicitly track which keyrings have been generated vs
       // imported as well as their strength
-      type: KeyringTypes.mnemonicBIP39S256,
+      type: InternalSignerTypes.mnemonicBIP39S256,
       addresses: [
         ...kr
           .getAddressesSync()
@@ -507,11 +546,15 @@ export default class KeyringService extends BaseService<Events> {
     }))
   }
 
+  /**
+   * Returns and array of private keys representations that can safely be stored
+   * and used outside the extension
+   */
   getPrivateKeys(): PrivateKey[] {
     this.requireUnlocked()
 
     return this.#privateKeys.map((wallet) => ({
-      type: KeyringTypes.singleSECP,
+      type: InternalSignerTypes.singleSECP,
       addresses: [normalizeEVMAddress(wallet.address)],
       id: wallet.publicKey,
       path: null,
@@ -544,10 +587,10 @@ export default class KeyringService extends BaseService<Events> {
 
     this.#hiddenAccounts[newAddress] = false
 
-    await this.persistKeyrings()
+    await this.persistInternalSigners()
 
     this.emitter.emit("address", newAddress)
-    this.emitKeyrings()
+    this.emitInternalSigners()
 
     return newAddress
   }
@@ -573,8 +616,8 @@ export default class KeyringService extends BaseService<Events> {
     } else {
       this.#removePrivateKey(address)
     }
-    await this.persistKeyrings()
-    this.emitKeyrings()
+    await this.persistInternalSigners()
+    this.emitInternalSigners()
   }
 
   async exportPrivateKey(address: HexString): Promise<string | null> {
@@ -640,7 +683,8 @@ export default class KeyringService extends BaseService<Events> {
   /**
    * Find keyring associated with an account.
    *
-   * @param account - the account desired to search the keyring for.
+   * @param account - the account address desired to search the keyring for.
+   * @returns HD keyring object
    */
   async #findKeyring(account: HexString): Promise<HDKeyring> {
     const keyring = this.#keyrings.find((kr) =>
@@ -652,6 +696,12 @@ export default class KeyringService extends BaseService<Events> {
     return keyring
   }
 
+  /**
+   * Find a wallet imported with a private key
+   *
+   * @param account - the account address desired to search the wallet for.
+   * @returns Ether's Wallet object
+   */
   async #findPrivateKey(account: HexString): Promise<Wallet> {
     const privateKey = this.#privateKeys.find((item) =>
       sameEVMAddress(item.address, account)
@@ -662,17 +712,20 @@ export default class KeyringService extends BaseService<Events> {
     return privateKey
   }
 
-  async #findSigner(account: HexString): Promise<SignerWithType> {
+  /**
+   * Find a signer object associated with a given account address
+   */
+  async #findSigner(account: HexString): Promise<InternalSignerWithType> {
     try {
       return {
         signer: await this.#findKeyring(account),
-        type: SignerTypes.keyring,
+        type: SignerSourceTypes.keyring,
       }
     } catch (e1) {
       try {
         return {
           signer: await this.#findPrivateKey(account),
-          type: SignerTypes.privateKey,
+          type: SignerSourceTypes.privateKey,
         }
       } catch (e2) {
         throw new Error(`Signer not found for address ${account}`)
@@ -684,7 +737,7 @@ export default class KeyringService extends BaseService<Events> {
    * Sign a transaction.
    *
    * @param account - the account desired to sign the transaction
-   * @param txRequest -
+   * @param txRequest
    */
   async signTransaction(
     addressOnNetwork: AddressOnNetwork,
@@ -694,7 +747,7 @@ export default class KeyringService extends BaseService<Events> {
 
     const { address: account, network } = addressOnNetwork
 
-    // find the keyring using a linear search
+    // find the signer using a linear search
     const signerWithType = await this.#findSigner(account)
 
     // ethers has a looser / slightly different request type
@@ -871,9 +924,9 @@ export default class KeyringService extends BaseService<Events> {
   // PRIVATE METHODS //
   // //////////////////
 
-  private emitKeyrings() {
+  private emitInternalSigners() {
     if (this.locked()) {
-      this.emitter.emit("keyrings", {
+      this.emitter.emit("internalSigners", {
         privateKeys: [],
         keyrings: [],
         metadata: {},
@@ -881,7 +934,7 @@ export default class KeyringService extends BaseService<Events> {
     } else {
       const keyrings = this.getKeyrings()
       const privateKeys = this.getPrivateKeys()
-      this.emitter.emit("keyrings", {
+      this.emitter.emit("internalSigners", {
         privateKeys,
         keyrings,
         metadata: { ...this.#signerMetadata },
@@ -890,9 +943,9 @@ export default class KeyringService extends BaseService<Events> {
   }
 
   /**
-   * Serialize, encrypt, and persist all HDKeyrings.
+   * Serialize, encrypt, and persist all HDKeyrings and private keys.
    */
-  private async persistKeyrings() {
+  private async persistInternalSigners() {
     this.requireUnlocked()
 
     // This if guard will always pass due to requireUnlocked, but statically

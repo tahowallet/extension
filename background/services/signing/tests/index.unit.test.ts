@@ -1,6 +1,6 @@
 import sinon from "sinon"
 import {
-  createKeyringService,
+  createInternalSignerService,
   createLedgerService,
   createSigningService,
 } from "../../../tests/factories"
@@ -43,13 +43,13 @@ describe("Signing Service Unit", () => {
     })
 
     it("should use keyring service to derive from a keyring account", async () => {
-      const keyringService = await createKeyringService()
+      const internalSignerService = await createInternalSignerService()
       const deriveAddressStub = sandbox
-        .stub(keyringService, "deriveAddress")
+        .stub(internalSignerService, "deriveAddress")
         .callsFake(async () => "")
 
       signingService = await createSigningService({
-        keyringService: Promise.resolve(keyringService),
+        internalSignerService: Promise.resolve(internalSignerService),
       })
       await signingService.startService()
 
@@ -64,7 +64,7 @@ describe("Signing Service Unit", () => {
     it("should error when trying to derive from a read-only account", () => {
       expect(
         signingService.deriveAddress({
-          type: "read-only",
+          type: "readOnly",
         })
       ).rejects.toBeTruthy()
     })

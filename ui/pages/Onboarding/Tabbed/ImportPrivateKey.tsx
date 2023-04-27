@@ -1,7 +1,7 @@
 import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
-import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
+import { importSigner } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
-import { SignerTypes } from "@tallyho/tally-background/services/keyring"
+import { SignerSourceTypes } from "@tallyho/tally-background/services/internal-signer"
 import { isHexString } from "ethers/lib/utils"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -52,7 +52,7 @@ export default function ImportPrivateKey(props: Props): ReactElement {
       setIsImporting(true)
       const { success } = (await dispatch(
         importSigner({
-          type: SignerTypes.privateKey,
+          type: SignerSourceTypes.privateKey,
           privateKey: trimmedPrivateKey,
         })
       )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>

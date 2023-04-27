@@ -2,7 +2,7 @@ import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Redirect, useHistory } from "react-router-dom"
 import SharedPanelSwitcher from "../../../components/Shared/SharedPanelSwitcher"
-import { useAreKeyringsUnlocked } from "../../../hooks"
+import { useAreInternalSignersUnlocked } from "../../../hooks"
 import ImportForm from "./ImportForm"
 import ImportPrivateKey from "./ImportPrivateKey"
 import ImportPrivateKeyJSON from "./ImportPrivateKeyJSON"
@@ -14,7 +14,7 @@ type Props = {
 export default function ImportPrivateKeyForm(props: Props): ReactElement {
   const { nextPage } = props
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
   const history = useHistory()
 
   const [isImporting, setIsImporting] = useState(false)
@@ -26,7 +26,7 @@ export default function ImportPrivateKeyForm(props: Props): ReactElement {
 
   const finalize = () => history.push(nextPage)
 
-  if (!areKeyringsUnlocked)
+  if (!areInternalSignersUnlocked)
     return (
       <Redirect
         to={{

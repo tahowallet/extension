@@ -67,7 +67,7 @@ import {
   OPTIMISM_GAS_ORACLE_ABI,
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
-import KeyringService from "../keyring"
+import InternalSignerService from "../internal-signer"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
 
 // The number of blocks to query at a time for historic asset transfers.
@@ -231,9 +231,13 @@ export default class ChainService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     ChainService,
-    [Promise<PreferenceService>, Promise<KeyringService>]
-  > = async (preferenceService, keyringService) => {
-    return new this(createDB(), await preferenceService, await keyringService)
+    [Promise<PreferenceService>, Promise<InternalSignerService>]
+  > = async (preferenceService, internalSignerService) => {
+    return new this(
+      createDB(),
+      await preferenceService,
+      await internalSignerService
+    )
   }
 
   supportedNetworks: EVMNetwork[] = []
@@ -245,7 +249,7 @@ export default class ChainService extends BaseService<Events> {
   private constructor(
     private db: ChainDatabase,
     private preferenceService: PreferenceService,
-    private keyringService: KeyringService
+    private internalSignerService: InternalSignerService
   ) {
     super({
       queuedTransactions: {
@@ -916,7 +920,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
-    const source = await this.keyringService.getSignerSourceForAddress(
+    const source = await this.internalSignerService.getSignerSourceForAddress(
       addressNetwork.address
     )
     const isAccountOnNetworkAlreadyTracked =

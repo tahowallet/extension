@@ -16,7 +16,7 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import {
-  useAreKeyringsUnlocked,
+  useAreInternalSignersUnlocked,
   useBackgroundDispatch,
   useBackgroundSelector,
 } from "../../hooks"
@@ -38,7 +38,7 @@ export default function AccountItemRemovalConfirm({
     keyPrefix: "accounts.accountItem",
   })
   const dispatch = useBackgroundDispatch()
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
   const history = useHistory()
   const keyring = useBackgroundSelector(selectKeyringByAddress(address))
   const { selectedAddress, accountsData } = useBackgroundSelector((state) => ({
@@ -47,7 +47,7 @@ export default function AccountItemRemovalConfirm({
   }))
 
   const accountSigners = useBackgroundSelector(selectAccountSignersByAddress)
-  const readOnlyAccount = typeof keyring === "undefined"
+  const readOnlyAccount = typeof keyring === "undefined" // TODO - this should be fixed?
   const lastAddressInKeyring = keyring?.addresses.length === 1
 
   const ledgerDeviceByAddress = useBackgroundSelector(
@@ -113,7 +113,7 @@ export default function AccountItemRemovalConfirm({
           onClick={(e) => {
             e.stopPropagation()
             // don't prompt for unlock if removing read-only account.
-            if (readOnlyAccount || areKeyringsUnlocked) {
+            if (readOnlyAccount || areInternalSignersUnlocked) {
               dispatch(
                 removeAccount({
                   addressOnNetwork: { address, network },
@@ -146,7 +146,7 @@ export default function AccountItemRemovalConfirm({
               }
               close()
             } else {
-              history.push("/keyring/unlock")
+              history.push("/internal-signer/unlock")
             }
           }}
         >

@@ -1,6 +1,6 @@
 export * from "./activitiesSelectors"
 export * from "./accountsSelectors"
-export * from "./keyringsSelectors"
+export * from "./internalSignerSelectors"
 export * from "./signingSelectors"
 export * from "./dappSelectors"
 export * from "./uiSelectors"

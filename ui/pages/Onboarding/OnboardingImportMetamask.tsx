@@ -1,12 +1,12 @@
 import React, { ReactElement, useCallback, useState } from "react"
-import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
+import { importSigner } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import classNames from "classnames"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { SignerTypes } from "@tallyho/tally-background/services/keyring"
+import { SignerSourceTypes } from "@tallyho/tally-background/services/internal-signer"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
@@ -14,7 +14,7 @@ import OnboardingDerivationPathSelect from "../../components/Onboarding/Onboardi
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
-  useAreKeyringsUnlocked,
+  useAreInternalSignersUnlocked,
 } from "../../hooks"
 
 function TextArea({
@@ -110,7 +110,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
   const { nextPage } = props
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(true)
 
   const [recoveryPhrase, setRecoveryPhrase] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
@@ -138,7 +138,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
 
       const { success } = (await dispatch(
         importSigner({
-          type: SignerTypes.keyring,
+          type: SignerSourceTypes.keyring,
           mnemonic: plainRecoveryPhrase,
           path,
           source: "import",
@@ -155,7 +155,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
     }
   }, [dispatch, recoveryPhrase, path, t, history, nextPage])
 
-  if (!areKeyringsUnlocked) return <></>
+  if (!areInternalSignersUnlocked) return <></>
 
   return (
     <section className="center_horizontal standard_width">

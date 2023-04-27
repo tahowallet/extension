@@ -1,7 +1,7 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
-import { SignerTypes } from "@tallyho/tally-background/services/keyring"
+import { importSigner } from "@tallyho/tally-background/redux-slices/internal-signer"
+import { SignerSourceTypes } from "@tallyho/tally-background/services/internal-signer"
 import classnames from "classnames"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
@@ -48,7 +48,7 @@ export default function ImportPrivateKeyJSON(props: Props): ReactElement {
 
     const { success } = (await dispatch(
       importSigner({
-        type: SignerTypes.jsonFile,
+        type: SignerSourceTypes.jsonFile,
         jsonFile: file,
         password,
       })

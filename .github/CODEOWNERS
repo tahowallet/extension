@@ -1,8 +1,8 @@
-# Any changes to keyring code deserve extra scrutiny to prevent key
+# Any changes to indernal-signer service code deserve extra scrutiny to prevent key
 # exfiltration and general "roll your own crypto" mistakes. Newer
-# contributions to keyring code should be assumed insecure, requiring
+# contributions to internal-signer code should be assumed insecure, requiring
 # agreement across the team to merge.
-/background/services/keyring/* @tahowallet/extension-security-auditors
+/background/services/internal-signer/* @tahowallet/extension-security-auditors
 # Any changes to dependencies deserve extra scrutiny to help prevent supply
 # chain attacks
 yarn.lock @tahowallet/extension-dependency-auditors

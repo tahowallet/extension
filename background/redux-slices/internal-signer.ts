@@ -5,9 +5,9 @@ import { createBackgroundAsyncThunk } from "./utils"
 import {
   Keyring,
   PrivateKey,
-  SignerMetadata,
-  SignerRawWithType,
-} from "../services/keyring/index"
+  InternalSignerSource,
+  InternalSignerMetadataWithType,
+} from "../services/internal-signer/index"
 import { HexString } from "../types"
 
 type KeyringToVerify = {
@@ -15,17 +15,17 @@ type KeyringToVerify = {
   mnemonic: string[]
 } | null
 
-export type KeyringsState = {
+export type InternalSignerState = {
   keyrings: Keyring[]
   privateKeys: PrivateKey[]
   metadata: {
-    [keyringId: string]: SignerMetadata
+    [keyringId: string]: InternalSignerSource
   }
   status: "locked" | "unlocked" | "uninitialized"
   keyringToVerify: KeyringToVerify
 }
 
-export const initialState: KeyringsState = {
+export const initialState: InternalSignerState = {
   keyrings: [],
   privateKeys: [],
   metadata: {},
@@ -35,7 +35,7 @@ export const initialState: KeyringsState = {
 
 export type Events = {
   createPassword: string
-  lockKeyrings: never
+  lockInternalSigners: never
   generateNewKeyring: string | undefined
   deriveAddress: string
 }
@@ -43,19 +43,19 @@ export type Events = {
 export const emitter = new Emittery<Events>()
 
 export const importSigner = createBackgroundAsyncThunk(
-  "keyrings/importSigner",
-  async (signerRaw: SignerRawWithType, { extra: { main } }) => {
+  "internalSigner/importSigner",
+  async (signerRaw: InternalSignerMetadataWithType, { extra: { main } }) => {
     return main.importSigner(signerRaw)
   }
 )
 
-const keyringsSlice = createSlice({
-  name: "keyrings",
+const internalSignerSlice = createSlice({
+  name: "internalSigner",
   initialState,
   reducers: {
-    keyringLocked: (state) => ({ ...state, status: "locked" }),
-    keyringUnlocked: (state) => ({ ...state, status: "unlocked" }),
-    updateKeyrings: (
+    internalSignerLocked: (state) => ({ ...state, status: "locked" }),
+    internalSignerUnlocked: (state) => ({ ...state, status: "unlocked" }),
+    updateInternalSigners: (
       state,
       {
         payload: { privateKeys, keyrings, metadata },
@@ -63,14 +63,14 @@ const keyringsSlice = createSlice({
         payload: {
           privateKeys: PrivateKey[]
           keyrings: Keyring[]
-          metadata: { [keyringId: string]: SignerMetadata }
+          metadata: { [keyringId: string]: InternalSignerSource }
         }
       }
     ) => {
-      // When the keyrings are locked, we receive updateKeyrings with an empty
-      // list as the keyring service clears the in-memory keyrings. For UI
-      // purposes, however, we want to continue tracking the keyring metadata,
-      // so we ignore an empty list if the keyrings are locked.
+      // When the internal signers are locked, we receive updateInternalSigners with an empty
+      // list as the InternalSignerService clears the in-memory keyrings and keys. For UI
+      // purposes, however, we want to continue tracking the metadata,
+      // so we ignore an empty list if the service is locked.
       if (state.status === "locked") {
         return state
       }
@@ -90,59 +90,59 @@ const keyringsSlice = createSlice({
 })
 
 export const {
-  updateKeyrings,
-  keyringLocked,
-  keyringUnlocked,
+  updateInternalSigners,
+  internalSignerLocked,
+  internalSignerUnlocked,
   setKeyringToVerify,
-} = keyringsSlice.actions
+} = internalSignerSlice.actions
 
-export default keyringsSlice.reducer
+export default internalSignerSlice.reducer
 
 // Async thunk to bubble the generateNewKeyring action from  store to emitter.
 export const generateNewKeyring = createBackgroundAsyncThunk(
-  "keyrings/generateNewKeyring",
+  "internalSigner/generateNewKeyring",
   async (path?: string) => {
     await emitter.emit("generateNewKeyring", path)
   }
 )
 
 export const deriveAddress = createBackgroundAsyncThunk(
-  "keyrings/deriveAddress",
+  "internalSigner/deriveAddress",
   async (id: string) => {
     await emitter.emit("deriveAddress", id)
   }
 )
 
-export const unlockKeyrings = createBackgroundAsyncThunk(
-  "keyrings/unlockKeyrings",
+export const unlockInternalSigners = createBackgroundAsyncThunk(
+  "internalSigner/unlockInternalSigners",
   async (password: string, { extra: { main } }) => {
-    return { success: await main.unlockKeyrings(password) }
+    return { success: await main.unlockInternalSigners(password) }
   }
 )
 
-export const lockKeyrings = createBackgroundAsyncThunk(
-  "keyrings/lockKeyrings",
+export const lockInternalSigners = createBackgroundAsyncThunk(
+  "internalSigner/lockInternalSigners",
   async () => {
-    await emitter.emit("lockKeyrings")
+    await emitter.emit("lockInternalSigners")
   }
 )
 
 export const createPassword = createBackgroundAsyncThunk(
-  "keyrings/createPassword",
+  "internalSigner/createPassword",
   async (password: string) => {
     await emitter.emit("createPassword", password)
   }
 )
 
 export const exportMnemonic = createBackgroundAsyncThunk(
-  "keyrings/exportMnemonic",
+  "internalSigner/exportMnemonic",
   async (address: HexString, { extra: { main } }) => {
     return main.exportMnemonic(address)
   }
 )
 
 export const exportPrivateKey = createBackgroundAsyncThunk(
-  "keyrings/exportPrivateKey",
+  "internalSigner/exportPrivateKey",
   async (address: HexString, { extra: { main } }) => {
     return main.exportPrivateKey(address)
   }

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { SignerFrameProps } from ".."
 import { useBackgroundDispatch } from "../../../../hooks"
 import SignerBaseFrame from "../SignerBaseFrame"
-import SignerKeyringSigning from "./SignerKeyringSigning"
+import SignerInternalSigning from "./SignerInternalSigning"
 
 export default function SignerKeyringFrame<T extends SignOperationType>({
   children,
@@ -22,7 +22,7 @@ export default function SignerKeyringFrame<T extends SignOperationType>({
   }, [setIsSigning])
 
   if (isSigning) {
-    return <SignerKeyringSigning signActionCreator={signActionCreator} />
+    return <SignerInternalSigning signActionCreator={signActionCreator} />
   }
 
   return (

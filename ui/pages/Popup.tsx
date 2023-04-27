@@ -25,7 +25,7 @@ import {
   getAddressCount,
   selectCurrentAccountSigner,
   selectCurrentAddressNetwork,
-  selectKeyringStatus,
+  selectInternalSignerStatus,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { Location } from "history"
@@ -57,7 +57,7 @@ const pagePreferences = Object.fromEntries(
 function transformLocation(
   inputLocation: Location,
   isTransactionPendingSignature: boolean,
-  needsKeyringUnlock: boolean,
+  needsUnlock: boolean,
   hasAccounts: boolean
 ): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
@@ -69,15 +69,15 @@ function transformLocation(
   if (
     hasAccounts &&
     isAllowedQueryParamPage(maybePage) &&
-    !inputLocation.pathname.includes("/keyring/")
+    !inputLocation.pathname.includes("/internal-signer/")
   ) {
     pathname = maybePage
   }
 
   if (isTransactionPendingSignature) {
     pathname =
-      !isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI) && needsKeyringUnlock
-        ? "/keyring/unlock"
+      !isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI) && needsUnlock
+        ? "/internal-signer/unlock"
         : "/sign-transaction"
   }
 
@@ -143,15 +143,15 @@ export function Main(): ReactElement {
     selectIsTransactionPendingSignature
   )
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
-  const keyringStatus = useBackgroundSelector(selectKeyringStatus)
+  const lockStatus = useBackgroundSelector(selectInternalSignerStatus)
   const hasAccounts = useBackgroundSelector(
     (state) => getAddressCount(state) > 0
   )
 
-  const needsKeyringUnlock =
+  const needsUnlock =
     isTransactionPendingSignature &&
     currentAccountSigner?.type === "keyring" &&
-    keyringStatus !== "unlocked"
+    lockStatus !== "unlocked"
 
   useConnectPopupMonitor()
 
@@ -167,7 +167,7 @@ export function Main(): ReactElement {
             const transformedLocation = transformLocation(
               routeProps.location,
               isTransactionPendingSignature,
-              needsKeyringUnlock,
+              needsUnlock,
               hasAccounts
             )
 

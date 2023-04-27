@@ -5,9 +5,9 @@ import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
 import SharedWarningMessage from "../Shared/SharedWarningMessage"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
-import { useAreKeyringsUnlocked, useLockWallet } from "../../hooks"
+import { useAreInternalSignersUnlocked, useLockWallet } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import KeyringUnlock from "../Keyring/KeyringUnlock"
+import InternalSignerUnlock from "../InternalSigner/InternalSignerUnlock"
 import Explainer from "./Explainer"
 import ConfirmReveal from "./ConfirmReveal"
 import RevealPrivateKey from "./RevealPrivateKey"
@@ -20,7 +20,7 @@ export default function ShowPrivateKey({
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem.showPrivateKey",
   })
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
 
   const [showPrivateKey, setShowPrivateKey] = useState(false)
   const [showExplainer, setShowExplainer] = useState(false)
@@ -36,7 +36,7 @@ export default function ShowPrivateKey({
       >
         <div className="container">
           <div className="content">
-            {areKeyringsUnlocked ? (
+            {areInternalSignersUnlocked ? (
               <>
                 <SharedWarningMessage text={t("warningMessage")} />
                 <div className="exporting_container">
@@ -59,7 +59,7 @@ export default function ShowPrivateKey({
                 </div>
               </>
             ) : (
-              <KeyringUnlock displayCancelButton={false} />
+              <InternalSignerUnlock displayCancelButton={false} />
             )}
           </div>
           <SharedButton

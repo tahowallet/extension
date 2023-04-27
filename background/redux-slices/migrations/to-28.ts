@@ -1,4 +1,4 @@
-import { PrivateKey } from "../../services/keyring"
+import { PrivateKey } from "../../services/internal-signer"
 
 type OldState = {
   keyrings: {
@@ -13,7 +13,7 @@ type OldState = {
 }
 
 type NewState = {
-  keyrings: {
+  internalSigner: {
     metadata: {
       [keyringId: string]: {
         source: "import" | "internal"
@@ -32,7 +32,7 @@ export default (prevState: Record<string, unknown>): NewState => {
 
   return {
     ...prevState,
-    keyrings: {
+    internalSigner: {
       ...keyringsState,
       metadata: keyringMetadata,
       privateKeys: [],

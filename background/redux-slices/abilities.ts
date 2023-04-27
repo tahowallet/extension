@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { Ability, ABILITY_TYPES_ENABLED } from "../abilities"
 import { HexString, NormalizedEVMAddress } from "../types"
-import { KeyringsState } from "./keyrings"
+import { InternalSignerState } from "./internal-signer"
 import { LedgerState } from "./ledger"
 import { createBackgroundAsyncThunk } from "./utils"
 
@@ -16,10 +16,12 @@ const isLedgerAccount = (
     .includes(address)
 
 const isImportOrInternalAccount = (
-  keyrings: KeyringsState,
+  internalSigners: InternalSignerState,
   address: NormalizedEVMAddress
 ): boolean =>
-  keyrings.keyrings.flatMap(({ addresses }) => addresses).includes(address)
+  internalSigners.keyrings
+    .flatMap(({ addresses }) => addresses)
+    .includes(address)
 
 export type State = "open" | "completed" | "expired" | "deleted" | "all"
 
@@ -178,13 +180,13 @@ export const initAbilities = createBackgroundAsyncThunk(
     address: NormalizedEVMAddress,
     { dispatch, getState, extra: { main } }
   ) => {
-    const { ledger, keyrings, abilities } = getState() as {
+    const { ledger, internalSigners, abilities } = getState() as {
       ledger: LedgerState
-      keyrings: KeyringsState
+      internalSigners: InternalSignerState
       abilities: AbilitiesState
     }
     if (
-      isImportOrInternalAccount(keyrings, address) ||
+      isImportOrInternalAccount(internalSigners, address) ||
       isLedgerAccount(ledger, address)
     ) {
       await main.pollForAbilities(address)

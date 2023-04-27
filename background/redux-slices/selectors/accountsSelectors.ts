@@ -34,7 +34,7 @@ import { selectAccountSignersByAddress } from "./signingSelectors"
 import {
   selectKeyringsByAddresses,
   selectSourcesByAddress,
-} from "./keyringsSelectors"
+} from "./internalSignerSelectors"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { NETWORK_BY_CHAIN_ID, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
@@ -302,7 +302,7 @@ const signerTypeToAccountType: Record<SignerType, AccountType> = {
   keyring: AccountType.Imported,
   privateKey: AccountType.PrivateKey,
   ledger: AccountType.Ledger,
-  "read-only": AccountType.ReadOnly,
+  readOnly: AccountType.ReadOnly,
 }
 
 const getAccountType = (
