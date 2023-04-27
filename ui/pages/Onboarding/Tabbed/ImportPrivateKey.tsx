@@ -5,6 +5,7 @@ import { SignerTypes } from "@tallyho/tally-background/services/keyring"
 import { isHexString } from "ethers/lib/utils"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import SharedButton from "../../../components/Shared/SharedButton"
 import SharedSeedInput from "../../../components/Shared/SharedSeedInput"
 import { useBackgroundDispatch } from "../../../hooks"
@@ -49,14 +50,19 @@ export default function ImportPrivateKey(props: Props): ReactElement {
     const trimmedPrivateKey = privateKey.toLowerCase().trim()
     if (validatePrivateKey(trimmedPrivateKey)) {
       setIsImporting(true)
-      await dispatch(
+      const { success } = (await dispatch(
         importSigner({
           type: SignerTypes.privateKey,
           privateKey: trimmedPrivateKey,
         })
-      )
-      dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
-      finalize()
+      )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
+
+      if (success) {
+        dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
+        finalize()
+      } else {
+        setIsImporting(false)
+      }
     } else {
       setErrorMessage(t("error"))
     }

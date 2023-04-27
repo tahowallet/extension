@@ -1,6 +1,7 @@
 import {
   generateNewKeyring,
   importSigner,
+  setKeyringToVerify,
 } from "@tallyho/tally-background/redux-slices/keyrings"
 import React, { ReactElement } from "react"
 import {
@@ -12,6 +13,7 @@ import {
 } from "react-router-dom"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { SignerTypes } from "@tallyho/tally-background/services/keyring"
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import OnboardingStepsIndicator from "../../../components/Onboarding/OnboardingStepsIndicator"
 import {
   useAreKeyringsUnlocked,
@@ -79,14 +81,19 @@ export default function NewSeed(): ReactElement {
     history.replace(NewSeedRoutes.VERIFY_SEED)
   }
 
-  const onVerifySuccess = (verifiedMnemonic: string[]) => {
-    dispatch(
+  const onVerifySuccess = async (verifiedMnemonic: string[]) => {
+    const { success } = (await dispatch(
       importSigner({
         type: SignerTypes.keyring,
         mnemonic: verifiedMnemonic.join(" "),
         source: "internal",
       })
-    ).then(() => history.push(OnboardingRoutes.ONBOARDING_COMPLETE))
+    )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
+
+    if (success) {
+      dispatch(setKeyringToVerify(null))
+      history.push(OnboardingRoutes.ONBOARDING_COMPLETE)
+    }
   }
 
   if (!areKeyringsUnlocked)
