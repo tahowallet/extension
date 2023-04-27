@@ -1742,7 +1742,7 @@ export default class Main extends BaseService<never> {
                 This event is fired when any address on a network is added to the tracked list. 
                 
                 Note: this does not track recovery phrase(ish) import! But when an address is used 
-                on a network for the first time (read-only or recovery phrase/ledger/keyring).
+                on a network for the first time (read-only or recovery phrase/ledger/keyring/private key).
                 `,
         }
       )
