@@ -7,6 +7,8 @@ import {
   RPCRequest,
 } from "@tallyho/provider-bridge-shared"
 import { hexlify, toUtf8Bytes } from "ethers/lib/utils"
+import { normalizeHexAddress } from "@tallyho/hd-keyring"
+
 import logger from "../../lib/logger"
 
 import BaseService from "../base"
@@ -66,6 +68,18 @@ export type SwitchEthereumChainParameter = {
   chainId: string
 }
 
+// https://eips.ethereum.org/EIPS/eip-747
+type WatchAssetParameters = {
+  type: string // The asset's interface, e.g. 'ERC1046'
+  options: WatchAssetOptions
+}
+
+type WatchAssetOptions = {
+  address: string // The hexadecimal address of the token contract
+  chainId?: number // The chain ID of the asset. If empty, defaults to the current chain ID.
+  // Fields such as symbol and name can be present here as well - but lets just fetch them from the contract
+}
+
 // https://eips.ethereum.org/EIPS/eip-3085
 export type AddEthereumChainParameter = {
   chainId: string
@@ -97,6 +111,7 @@ type Events = ServiceLifecycleEvents & {
   signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
   signDataRequest: DAppRequestEvent<MessageSigningRequest, string>
   selectedNetwork: EVMNetwork
+  watchAssetRequest: { contractAddress: string; network: EVMNetwork }
   // connect
   // disconnet
   // account change
@@ -272,7 +287,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         const { chainId } = chainInfo
         const supportedNetwork = await this.getTrackedNetworkByChainId(chainId)
         if (supportedNetwork) {
-          this.switchToSupportedNetwork(origin, supportedNetwork)
+          await this.switchToSupportedNetwork(origin, supportedNetwork)
           this.emitter.emit("selectedNetwork", supportedNetwork)
           return null
         }
@@ -303,10 +318,41 @@ export default class InternalEthereumProviderService extends BaseService<Events>
 
         throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
       }
+      case "wallet_watchAsset": {
+        const { type, options } = params[0]
+          ? (params[0] as WatchAssetParameters)
+          : // some dapps send the object directly instead of an array
+            (params as unknown as WatchAssetParameters)
+        if (type !== "ERC20") {
+          throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
+        }
+
+        if (options.chainId) {
+          const supportedNetwork = await this.getTrackedNetworkByChainId(
+            String(options.chainId)
+          )
+          if (!supportedNetwork) {
+            throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
+          }
+          this.emitter.emit("watchAssetRequest", {
+            contractAddress: normalizeHexAddress(options.address),
+            network: supportedNetwork,
+          })
+          return true
+        }
+
+        // if chainID is not specified, we assume the current network - as per EIP-747
+        const network = await this.getCurrentOrDefaultNetworkForOrigin(origin)
+
+        this.emitter.emit("watchAssetRequest", {
+          contractAddress: normalizeHexAddress(options.address),
+          network,
+        })
+        return true
+      }
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
       case "wallet_requestPermissions":
-      case "wallet_watchAsset":
       case "estimateGas": // --- eip1193-bridge only method --
       case "eth_coinbase": // --- MM only methods ---
       case "eth_decrypt":
@@ -346,6 +392,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       return defaultNetwork
     }
     return currentNetwork
+  }
+
+  async removePrefererencesForChain(chainId: string): Promise<void> {
+    await this.db.removeStoredPreferencesForChain(chainId)
   }
 
   private async signTransaction(
@@ -433,10 +483,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
-  private async switchToSupportedNetwork(
+  async switchToSupportedNetwork(
     origin: string,
     supportedNetwork: EVMNetwork
-  ) {
+  ): Promise<void> {
     const { address } = await this.preferenceService.getSelectedAccount()
     await this.chainService.markAccountActivity({
       address,

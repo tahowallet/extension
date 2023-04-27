@@ -6,6 +6,7 @@ import {
   AnyAsset,
   AnyAssetAmount,
   isFungibleAsset,
+  isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
 } from "../assets"
 import {
@@ -14,7 +15,7 @@ import {
   isBuiltInNetworkBaseAsset,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
-import { normalizeEVMAddress } from "../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
 import { AccountSigner } from "../services/signing"
 import { TEST_NETWORK_BY_CHAIN_ID } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
@@ -394,6 +395,39 @@ const accountSlice = createSlice({
         ens: { ...baseAccountData.ens, avatarURL: avatar },
       }
     },
+    /**
+     * Updates cached SmartContracts metadata
+     */
+    updateAssetCache: (
+      immerState,
+      { payload: asset }: { payload: SmartContractFungibleAsset }
+    ) => {
+      const allAccounts = immerState.accountsData.evm[asset.homeNetwork.chainID]
+      Object.keys(allAccounts).forEach((address) => {
+        const account = allAccounts[address]
+        if (account !== "loading") {
+          Object.values(account.balances).forEach(({ assetAmount }) => {
+            if (
+              isSmartContractFungibleAsset(assetAmount.asset) &&
+              sameEVMAddress(
+                assetAmount.asset.contractAddress,
+                asset.contractAddress
+              )
+            ) {
+              Object.assign(assetAmount.asset, asset)
+            }
+          })
+        }
+      })
+
+      updateCombinedData(immerState)
+    },
+    removeChainBalances: (
+      immerState,
+      { payload: chainID }: { payload: string }
+    ) => {
+      delete immerState.accountsData.evm[chainID]
+    },
   },
 })
 
@@ -403,6 +437,8 @@ export const {
   updateAccountBalance,
   updateAccountName,
   updateENSAvatar,
+  updateAssetCache,
+  removeChainBalances,
 } = accountSlice.actions
 
 export default accountSlice.reducer

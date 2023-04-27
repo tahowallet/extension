@@ -6,11 +6,15 @@ import {
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import {
   checkTokenContractDetails,
-  importTokenViaContractAddress,
+  importAccountCustomToken,
 } from "@tallyho/tally-background/redux-slices/assets"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentNetwork,
+  userValueDustThreshold,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import {
+  selectHideDust,
   selectShowTestNetworks,
   setSnackbarMessage,
 } from "@tallyho/tally-background/redux-slices/ui"
@@ -87,6 +91,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const allNetworks = useBackgroundSelector(selectEVMNetworks)
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
+
   const networks = allNetworks.filter(
     (network) =>
       !TEST_NETWORK_BY_CHAIN_ID.has(network.chainID) ||
@@ -137,31 +142,25 @@ export default function SettingsAddCustomAsset(): ReactElement {
       return
     }
 
-    await dispatch(
-      importTokenViaContractAddress({
-        contractAddress: assetData.asset.contractAddress,
-        network: assetData.asset.homeNetwork,
-      })
-    )
+    await dispatch(importAccountCustomToken({ asset: assetData.asset }))
     await dispatch(setSnackbarMessage(t("snackbar.success")))
     history.push("/")
   }
 
+  const hideDustEnabled = useBackgroundSelector(selectHideDust)
+  const showWarningAboutDust =
+    hideDustEnabled &&
+    assetData?.mainCurrencyAmount !== undefined &&
+    assetData?.mainCurrencyAmount < userValueDustThreshold
+
   return (
     <div className="standard_width_padded wrapper">
-      <SharedPageHeader withoutBackText backPath="/settings">
-        {t(`title`)}
-      </SharedPageHeader>
+      <SharedPageHeader withoutBackText>{t(`title`)}</SharedPageHeader>
       <style jsx>{`
         .tooltip_wrap {
           position: absolute;
           top: 16px;
           right: 16px;
-        }
-
-        .tooltip_wrap a {
-          color: inherit;
-          text-decoration: underline;
         }
 
         .input_container {
@@ -270,7 +269,17 @@ export default function SettingsAddCustomAsset(): ReactElement {
                 t={t}
                 i18nKey="input.tooltip"
                 components={{
-                  url: <SharedLink url={HELPDESK_CUSTOM_TOKENS_LINK} />,
+                  url: (
+                    <SharedLink
+                      styles={{
+                        textDecoration: "underline",
+                        "--link-color": "var(--green-95)",
+                        "--hover-color": "var(--green-40)",
+                      }}
+                      type="button"
+                      url={HELPDESK_CUSTOM_TOKENS_LINK}
+                    />
+                  ),
                 }}
               />
             </SharedTooltip>
@@ -289,7 +298,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
             )}
             <div className="token_details">
               <div className="balance">
-                <strong>
+                <strong title={String(assetData?.balance)}>
                   {assetData?.balance ?? t("asset.label.balance")}
                 </strong>
                 <span className="symbol">
@@ -309,7 +318,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
             {t("submit")}
           </SharedButton>
         </div>
-        {assetData?.exists && (
+        {assetData?.exists ? (
           <div className="alert">
             <SharedIcon
               color="var(--success)"
@@ -322,6 +331,24 @@ export default function SettingsAddCustomAsset(): ReactElement {
               <div className="desc">{t("warning.alreadyExists.desc")}</div>
             </div>
           </div>
+        ) : (
+          <>
+            {showWarningAboutDust && (
+              <div className="alert">
+                <SharedIcon
+                  color="var(--attention)"
+                  width={24}
+                  customStyles="min-width: 24px;"
+                  icon="icons/m/notif-attention.svg"
+                />
+                <div className="alert_content">
+                  <div className="title" style={{ color: "var(--attention)" }}>
+                    {t("warning.dust.title")}
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </form>
       <style jsx>{`
@@ -408,6 +435,10 @@ export default function SettingsAddCustomAsset(): ReactElement {
           font-size: 18px;
           line-height: 24px;
           color: var(--white);
+          text-overflow: ellipsis;
+          overflow-x: hidden;
+          white-space: pre;
+          max-width: 100px;
         }
 
         .symbol {

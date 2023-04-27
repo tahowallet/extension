@@ -5,6 +5,7 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { debounce } from "lodash"
+import { utils } from "ethers"
 
 import {
   decodeJSON,
@@ -38,7 +39,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes, NormalizedEVMAddress } from "./types"
-import { EVMNetwork, SignedTransaction } from "./networks"
+import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -120,7 +121,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { OPTIMISM } from "./constants"
+import { OPTIMISM, USD } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
@@ -148,6 +149,8 @@ import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
 import {
+  assetAmountToDesiredDecimals,
+  convertAssetAmountViaPricePoint,
   isSmartContractFungibleAsset,
   SmartContractAsset,
   SmartContractFungibleAsset,
@@ -179,6 +182,7 @@ import {
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
+import { getPricePoint, getTokenPrices } from "./lib/prices"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -643,6 +647,8 @@ export default class Main extends BaseService<never> {
     await this.providerBridgeService.revokePermissionsForAddress(address)
     // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signer.type)
+
+    this.nameService.removeAccount(address)
   }
 
   async importLedgerAccounts(
@@ -1056,8 +1062,8 @@ export default class Main extends BaseService<never> {
       }
     )
 
-    this.indexingService.emitter.on("assets", (assets) => {
-      this.store.dispatch(assetsLoaded(assets))
+    this.indexingService.emitter.on("assets", async (assets) => {
+      await this.store.dispatch(assetsLoaded(assets))
     })
 
     this.indexingService.emitter.on("price", (pricePoint) => {
@@ -1369,6 +1375,26 @@ export default class Main extends BaseService<never> {
       this.chainService.pollBlockPricesForNetwork(network.chainID)
       this.store.dispatch(clearCustomGas())
     })
+
+    this.internalEthereumProviderService.emitter.on(
+      "watchAssetRequest",
+      async ({ contractAddress, network }) => {
+        const { address } = this.store.getState().ui.selectedAccount
+        const asset = await this.indexingService.addTokenToTrackByContract(
+          network,
+          contractAddress
+        )
+        if (asset) {
+          await this.indexingService.retrieveTokenBalances(
+            {
+              address,
+              network,
+            },
+            [asset]
+          )
+        }
+      }
+    )
   }
 
   async connectProviderBridgeService(): Promise<void> {
@@ -1746,6 +1772,13 @@ export default class Main extends BaseService<never> {
     })
   }
 
+  async setAssetTrustStatus(
+    asset: SmartContractFungibleAsset,
+    isTrusted: boolean
+  ): Promise<void> {
+    await this.indexingService.setAssetTrustStatus(asset, isTrusted)
+  }
+
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {
     return this.providerBridgeService.getNewCustomRPCDetails(requestId)
   }
@@ -1802,7 +1835,13 @@ export default class Main extends BaseService<never> {
   }
 
   async removeEVMNetwork(chainID: string): Promise<void> {
-    return this.chainService.removeCustomChain(chainID)
+    // Per origin chain id settings
+    await this.internalEthereumProviderService.removePrefererencesForChain(
+      chainID
+    )
+    // Connected dApps
+    await this.providerBridgeService.revokePermissionsForChain(chainID)
+    await this.chainService.removeCustomChain(chainID)
   }
 
   async queryCustomTokenDetails(
@@ -1810,6 +1849,8 @@ export default class Main extends BaseService<never> {
     addressOnNetwork: AddressOnNetwork
   ): Promise<{
     asset: SmartContractFungibleAsset
+    amount: bigint
+    mainCurrencyAmount?: number
     balance: number
     exists?: boolean
   }> {
@@ -1823,22 +1864,50 @@ export default class Main extends BaseService<never> {
           sameEVMAddress(contractAddress, asset.contractAddress)
       )
 
-    const result = await this.chainService.queryTokenDetails(
+    const assetData = await this.chainService.queryAccountTokenDetails(
       contractAddress,
       addressOnNetwork,
       cachedAsset
     )
 
-    return { ...result, exists: !!cachedAsset }
+    const priceData = await getTokenPrices([contractAddress], USD, network)
+
+    const convertedAssetAmount =
+      contractAddress in priceData
+        ? convertAssetAmountViaPricePoint(
+            assetData,
+            getPricePoint(assetData.asset, priceData[contractAddress])
+          )
+        : undefined
+
+    const mainCurrencyAmount = convertedAssetAmount
+      ? assetAmountToDesiredDecimals(convertedAssetAmount, 2)
+      : undefined
+
+    return {
+      ...assetData,
+      balance: Number.parseFloat(
+        utils.formatUnits(assetData.amount, assetData.asset.decimals)
+      ),
+      mainCurrencyAmount,
+      exists: !!cachedAsset,
+    }
   }
 
-  async importTokenViaContractAddress(
-    contractAddress: HexString,
-    network: EVMNetwork
-  ): Promise<void> {
-    return this.indexingService.addTokenToTrackByContract(
-      network,
-      contractAddress
+  async importAccountCustomToken({
+    asset,
+    addressNetwork,
+  }: {
+    asset: SmartContractFungibleAsset
+    addressNetwork: AddressOnNetwork
+  }): Promise<void> {
+    const { metadata = {} } = asset
+    // Manually imported tokens are trusted
+    metadata.trusted = true
+
+    await this.indexingService.importAccountCustomToken(
+      { ...asset, metadata },
+      addressNetwork
     )
   }
 
