@@ -8,10 +8,12 @@ import KeyringUnlock from "../../../Keyring/KeyringUnlock"
 
 type SignerKeyringSigningProps = {
   signActionCreator: () => AnyAction
+  redirectToActivities?: boolean
 }
 
 export default function SignerKeyringSigning({
   signActionCreator,
+  redirectToActivities,
 }: SignerKeyringSigningProps): ReactElement {
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
@@ -22,9 +24,9 @@ export default function SignerKeyringSigning({
   useEffect(() => {
     if (!signingInitiated && keyringStatus === "unlocked") {
       dispatch(signActionCreator()).finally(() => {
-        // Wallet should redirect to activity page after submitting a swap
-        if (history.location.pathname === "/swap") {
-          history.push("/", { prevPath: history.location.pathname })
+        // Redirect to activity page after submitting
+        if (redirectToActivities) {
+          history.push("/", { goTo: "activity-page" })
         }
       })
       setSigningInitiated(true)
@@ -36,6 +38,7 @@ export default function SignerKeyringSigning({
     dispatch,
     signActionCreator,
     history,
+    redirectToActivities,
   ])
 
   // In this construction, keyring unlocking isn't done as a route, but in line

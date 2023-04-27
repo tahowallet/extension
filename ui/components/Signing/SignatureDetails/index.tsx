@@ -18,6 +18,7 @@ import {
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
 import { AnyAction } from "redux"
+import { EnrichedEVMTransactionRequest } from "@tallyho/tally-background/services/enrichment"
 import TransactionSignatureDetails from "./TransactionSignatureDetails"
 import MessageDataSignatureDetails from "./DataSignatureDetails/MessageDataSignatureDetails"
 import TypedDataSignatureDetails from "./DataSignatureDetails/TypedDataSignatureDetails"
@@ -43,12 +44,17 @@ export type ResolvedSignatureDetails = {
     | "signTransaction.signTypedData.confirmButtonLabel"
   signActionCreator: () => AnyAction
   rejectActionCreator: () => AnyAction
+  /**
+   * The value determines whether to redirect the user to the activity page after submitting a transaction
+   */
+  redirectToActivities?: boolean
 }
 
 export function resolveTransactionSignatureDetails({
   request,
   accountSigner,
 }: SignOperation<TransactionRequest>): ResolvedSignatureDetails {
+  const { annotation } = request as EnrichedEVMTransactionRequest
   return {
     signer: accountSigner,
     signingAddress: { address: request.from, network: request.network },
@@ -58,6 +64,7 @@ export function resolveTransactionSignatureDetails({
     ),
     signActionCreator: () => signTransaction({ request, accountSigner }),
     rejectActionCreator: rejectTransactionSignature,
+    redirectToActivities: annotation?.type === "asset-swap",
   }
 }
 export function resolveDataSignatureDetails({

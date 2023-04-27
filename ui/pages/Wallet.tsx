@@ -71,8 +71,8 @@ export default function Wallet(): ReactElement {
   useEffect(() => {
     const locationState = history.location.state
     if (locationState) {
-      const { prevPath } = locationState as { prevPath?: string }
-      if (prevPath === "/swap") {
+      const { goTo } = locationState as { goTo?: string }
+      if (goTo === "activity-page") {
         if (!NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
           setPanelNumber(1)
         } else {
