@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
 import { useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
@@ -7,6 +7,7 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { SignerTypes } from "@tallyho/tally-background/services/keyring"
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 import OnboardingDerivationPathSelect from "../../components/Onboarding/OnboardingDerivationPathSelect"
@@ -119,18 +120,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
   const [isImporting, setIsImporting] = useState(false)
 
   const dispatch = useBackgroundDispatch()
-  const keyringImport = useBackgroundSelector(
-    (state) => state.keyrings.importing
-  )
-
   const history = useHistory()
-
-  useEffect(() => {
-    if (areKeyringsUnlocked && keyringImport === "done" && isImporting) {
-      setIsImporting(false)
-      history.push(nextPage)
-    }
-  }, [history, areKeyringsUnlocked, keyringImport, nextPage, isImporting])
 
   const importWallet = useCallback(async () => {
     const plainRecoveryPhrase = recoveryPhrase
@@ -145,18 +135,25 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
       setErrorMessage(t("phraseLengthError"))
     } else if (isValidMnemonic(plainRecoveryPhrase)) {
       setIsImporting(true)
-      dispatch(
+
+      const { success } = (await dispatch(
         importSigner({
           type: SignerTypes.keyring,
           mnemonic: plainRecoveryPhrase,
           path,
           source: "import",
         })
-      )
+      )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
+
+      setIsImporting(false)
+
+      if (success) {
+        history.push(nextPage)
+      }
     } else {
       setErrorMessage(t("invalidPhraseError"))
     }
-  }, [dispatch, recoveryPhrase, path, t])
+  }, [dispatch, recoveryPhrase, path, t, history, nextPage])
 
   if (!areKeyringsUnlocked) return <></>
 

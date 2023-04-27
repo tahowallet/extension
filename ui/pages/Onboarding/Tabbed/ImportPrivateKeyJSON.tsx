@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
 import { SignerTypes } from "@tallyho/tally-background/services/keyring"
@@ -6,6 +6,7 @@ import classnames from "classnames"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
 import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import SharedButton from "../../../components/Shared/SharedButton"
 import PasswordInput from "../../../components/Shared/PasswordInput"
 import SharedFileInput from "../../../components/Shared/SharedFileInput"
@@ -20,10 +21,6 @@ type Props = {
 
 export default function ImportPrivateKeyJSON(props: Props): ReactElement {
   const { setIsImporting, isImporting, finalize } = props
-
-  const keyringImportStatus = useBackgroundSelector(
-    (state) => state.keyrings.importing
-  )
 
   const dispatch = useBackgroundDispatch()
   const selectedAccountAddress =
@@ -49,28 +46,25 @@ export default function ImportPrivateKeyJSON(props: Props): ReactElement {
     setHasError(false)
     setIsImporting(true)
 
-    await dispatch(
+    const { success } = (await dispatch(
       importSigner({
         type: SignerTypes.jsonFile,
         jsonFile: file,
         password,
       })
-    )
+    )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
 
     setIsImporting(false)
-    setIsImported(true)
-  }, [dispatch, file, password, setIsImporting])
 
-  useEffect(() => {
-    if (keyringImportStatus === "failed" && isImported) {
+    if (success) {
+      setIsImported(true)
+      setHasError(false)
+      dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
+    } else {
       setHasError(true)
       setIsImported(false)
     }
-
-    if (keyringImportStatus === "done" && isImported) {
-      dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
-    }
-  }, [isImported, keyringImportStatus, dispatch])
+  }, [dispatch, file, password, setIsImporting])
 
   const showJSONForm = !isImporting && !isImported
 

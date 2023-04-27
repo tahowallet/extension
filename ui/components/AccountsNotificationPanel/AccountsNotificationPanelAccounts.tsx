@@ -223,7 +223,7 @@ function WalletTypeHeader({
                 label: t("accounts.notificationPanel.addAddress"),
               },
               isAccountWithMnemonic(accountType) &&
-              isEnabled(FeatureFlags.SUPPORT_PRIV_KEYS)
+              isEnabled(FeatureFlags.SUPPORT_PRIVATE_KEYS)
                 ? {
                     key: "showMnemonic",
                     onClick: () => setShowExportMnemonicMenu(true),
