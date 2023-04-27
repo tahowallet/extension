@@ -60,7 +60,7 @@ describe("InternalSignerService", () => {
       expect(keyrings.length).toBe(1)
       expect(keyrings[0].id).toBe(keyring.id)
       expect(
-        await internalSignerService.getSignerSourceForAddress(
+        internalSignerService.getSignerSourceForAddress(
           keyrings[0].addresses[0]
         )
       ).toBe("internal")
@@ -81,7 +81,7 @@ describe("InternalSignerService", () => {
     })
     it("should classify HD wallet as imported", async () => {
       expect(
-        await internalSignerService.getSignerSourceForAddress(
+        internalSignerService.getSignerSourceForAddress(
           HD_WALLET_MOCK.addresses[0]
         )
       ).toBe("import")
@@ -185,9 +185,7 @@ describe("InternalSignerService", () => {
     })
     it("should classify pk wallet as imported", async () => {
       expect(
-        await internalSignerService.getSignerSourceForAddress(
-          PK_WALLET_MOCK.address
-        )
+        internalSignerService.getSignerSourceForAddress(PK_WALLET_MOCK.address)
       ).toBe("import")
     })
     it("should be able to remove pk wallet and add it again", async () => {

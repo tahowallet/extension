@@ -917,7 +917,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
-    const source = await this.internalSignerService.getSignerSourceForAddress(
+    const source = this.internalSignerService.getSignerSourceForAddress(
       addressNetwork.address
     )
     const isAccountOnNetworkAlreadyTracked =
