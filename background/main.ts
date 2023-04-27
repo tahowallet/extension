@@ -1676,9 +1676,11 @@ export default class Main extends BaseService<never> {
     try {
       address = await this.keyringService.importSigner(signerRaw)
     } catch (error) {
+      logger.error("Internal signer import failed:", error)
+
       return {
         success: false,
-        errorMessage: `Unexpected error during account import. Error: ${error}`,
+        errorMessage: "Unexpected error during account import.",
       }
     }
 
