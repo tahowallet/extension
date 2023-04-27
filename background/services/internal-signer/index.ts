@@ -427,11 +427,11 @@ export default class InternalSignerService extends BaseService<Events> {
     let address: HexString | null
 
     if (isRawPrivateKey(signerMetadata)) {
-      address = await this.#importPrivateKey(signerMetadata)
+      address = this.#importPrivateKey(signerMetadata)
     } else if (isRawJsonPrivateKey(signerMetadata)) {
       address = await this.#importJSON(signerMetadata)
     } else {
-      address = await this.#importKeyring(signerMetadata)
+      address = this.#importKeyring(signerMetadata)
     }
 
     if (!address) return null
@@ -451,9 +451,9 @@ export default class InternalSignerService extends BaseService<Events> {
    * @param signerMetadata - keyring metadata - path, source, mnemonic
    * @returns address of the first account from the HD keyring
    */
-  async #importKeyring(
+  #importKeyring(
     signerMetadata: InternalSignerMetadataHDKeyring
-  ): Promise<string | null> {
+  ): string | null {
     const { mnemonic, source, path } = signerMetadata
 
     const newKeyring = path
@@ -475,13 +475,17 @@ export default class InternalSignerService extends BaseService<Events> {
    * @param signerMetadata - private key metadata - private key string
    * @returns address of imported account
    */
-  async #importPrivateKey(
+  #importPrivateKey(
     signerMetadata: InternalSignerMetadataPrivateKey
-  ): Promise<string | null> {
+  ): string | null {
     const { privateKey } = signerMetadata
     const newWallet = new Wallet(privateKey)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
-    // TODO: check if this wallet already exists
+
+    if (this.#findSigner(normalizedAddress)) {
+      return null
+    }
+
     this.#privateKeys.push(newWallet)
     this.#signerMetadata[normalizedAddress] = { source: "import" }
     return normalizedAddress
@@ -498,6 +502,11 @@ export default class InternalSignerService extends BaseService<Events> {
     const { jsonFile, password } = signerMetadata
     const newWallet = await Wallet.fromEncryptedJson(jsonFile, password)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
+
+    if (this.#findSigner(normalizedAddress)) {
+      return null
+    }
+
     this.#privateKeys.push(newWallet)
     this.#signerMetadata[normalizedAddress] = { source: "import" }
     return normalizedAddress
@@ -508,18 +517,16 @@ export default class InternalSignerService extends BaseService<Events> {
    * address does not have a internal signer associated with it - returns null.
    */
   getSignerSourceForAddress(address: string): "import" | "internal" | null {
-    try {
-      const signerWithType = this.#findSigner(address)
-      if (isKeyring(signerWithType)) {
-        return this.#signerMetadata[signerWithType.signer.id].source
-      }
-      return this.#signerMetadata[
-        normalizeEVMAddress(signerWithType.signer.address)
-      ].source
-    } catch (e) {
-      // Address is not associated with an internal signer
-      return null
+    const signerWithType = this.#findSigner(address)
+
+    if (!signerWithType) return null
+
+    if (isKeyring(signerWithType)) {
+      return this.#signerMetadata[signerWithType.signer.id].source
     }
+    return this.#signerMetadata[
+      normalizeEVMAddress(signerWithType.signer.address)
+    ].source
   }
 
   /**
@@ -597,6 +604,8 @@ export default class InternalSignerService extends BaseService<Events> {
     this.#hiddenAccounts[address] = true
     const signerWithType = this.#findSigner(address)
 
+    if (!signerWithType) return
+
     if (isKeyring(signerWithType)) {
       const { signer } = signerWithType
       const keyringAddresses = await signer.getAddresses()
@@ -621,21 +630,21 @@ export default class InternalSignerService extends BaseService<Events> {
   async exportPrivateKey(address: HexString): Promise<string | null> {
     this.requireUnlocked()
 
-    try {
-      const signerWithType = this.#findSigner(address)
+    const signerWithType = this.#findSigner(address)
 
-      if (isPrivateKey(signerWithType)) {
-        return signerWithType.signer.privateKey
-      }
-
-      return signerWithType.signer.exportPrivateKey(
-        address,
-        "I solemnly swear that I am treating this private key material with great care."
-      )
-    } catch (e) {
-      logger.error(`Export private key for address ${address} failed:`, e)
+    if (!signerWithType) {
+      logger.error(`Export private key for address ${address} failed`)
       return null
     }
+
+    if (isPrivateKey(signerWithType)) {
+      return signerWithType.signer.privateKey
+    }
+
+    return signerWithType.signer.exportPrivateKey(
+      address,
+      "I solemnly swear that I am treating this private key material with great care."
+    )
   }
 
   async exportMnemonic(address: HexString): Promise<string | null> {
@@ -712,7 +721,7 @@ export default class InternalSignerService extends BaseService<Events> {
   /**
    * Find a signer object associated with a given account address
    */
-  #findSigner(account: HexString): InternalSignerWithType {
+  #findSigner(account: HexString): InternalSignerWithType | null {
     const keyring = this.#findKeyring(account)
 
     if (keyring) {
@@ -731,7 +740,7 @@ export default class InternalSignerService extends BaseService<Events> {
       }
     }
 
-    throw new Error(`Signer not found for address ${account}`)
+    return null
   }
 
   /**
@@ -750,6 +759,12 @@ export default class InternalSignerService extends BaseService<Events> {
 
     // find the signer using a linear search
     const signerWithType = this.#findSigner(account)
+
+    if (!signerWithType) {
+      throw new Error(
+        `Signing transaction failed. Signer for address ${account} was not found.`
+      )
+    }
 
     // ethers has a looser / slightly different request type
     const ethersTxRequest = ethersTransactionFromTransactionRequest(txRequest)
@@ -860,6 +875,13 @@ export default class InternalSignerService extends BaseService<Events> {
     this.requireUnlocked()
     const { domain, types, message } = typedData
     const signerWithType = this.#findSigner(account)
+
+    if (!signerWithType) {
+      throw new Error(
+        `Signing data failed. Signer for address ${account} was not found.`
+      )
+    }
+
     // When signing we should not include EIP712Domain type
     const { EIP712Domain, ...typesForSigning } = types
     try {
@@ -903,6 +925,13 @@ export default class InternalSignerService extends BaseService<Events> {
   }): Promise<string> {
     this.requireUnlocked()
     const signerWithType = this.#findSigner(account)
+
+    if (!signerWithType) {
+      throw new Error(
+        `Personal sign failed. Signer for address ${account} was not found.`
+      )
+    }
+
     const messageBytes = arrayify(signingData)
     try {
       let signature: string
