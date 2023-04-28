@@ -132,10 +132,11 @@ export default function CommonAssetListItem(
               <SharedTooltip
                 type="dark"
                 width={180}
+                height={48}
                 horizontalPosition="left"
                 verticalPosition="bottom"
-                horizontalShift={30}
-                verticalShift={-20}
+                horizontalShift={42}
+                verticalShift={16}
                 IconComponent={() => (
                   <div className="button_wrap">
                     <SharedIconRouterLink
