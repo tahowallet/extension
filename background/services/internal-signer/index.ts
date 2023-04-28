@@ -33,7 +33,7 @@ export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
 
 export type Keyring = {
   type: InternalSignerTypes
-  id: string | null
+  id: string
   path: string | null
   addresses: string[]
 }
