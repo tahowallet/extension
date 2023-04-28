@@ -1,5 +1,8 @@
 import { webcrypto } from "crypto"
-import InternalSignerService, { SignerSourceTypes } from ".."
+import InternalSignerService, {
+  SignerImportSource,
+  SignerSourceTypes,
+} from ".."
 import { ETHEREUM } from "../../../constants"
 import {
   createInternalSignerService,
@@ -53,7 +56,7 @@ describe("InternalSignerService", () => {
       await internalSignerService.importSigner({
         type: SignerSourceTypes.keyring,
         mnemonic: keyring.mnemonic.join(" "),
-        source: "internal",
+        source: SignerImportSource.internal,
       })
 
       const keyrings = internalSignerService.getKeyrings()
@@ -72,7 +75,7 @@ describe("InternalSignerService", () => {
       await internalSignerService.importSigner({
         type: SignerSourceTypes.keyring,
         mnemonic: HD_WALLET_MOCK.mnemonic,
-        source: "import",
+        source: SignerImportSource.import,
       })
     })
     it("should add HD wallet to keyrings", () => {
@@ -130,7 +133,7 @@ describe("InternalSignerService", () => {
       await internalSignerService.importSigner({
         type: SignerSourceTypes.keyring,
         mnemonic: HD_WALLET_MOCK.mnemonic,
-        source: "import",
+        source: SignerImportSource.import,
       })
       const keyrings = internalSignerService.getKeyrings()
 
@@ -243,7 +246,7 @@ describe("InternalSignerService", () => {
       await internalSignerService.importSigner({
         type: SignerSourceTypes.keyring,
         mnemonic: HD_WALLET_MOCK.mnemonic,
-        source: "import",
+        source: SignerImportSource.import,
       })
     })
     it("should be able to export private key", async () => {

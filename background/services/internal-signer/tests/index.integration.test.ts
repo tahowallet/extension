@@ -5,6 +5,7 @@ import InternalSignerService, {
   Keyring,
   MAX_INTERNAL_SIGNERS_IDLE_TIME,
   MAX_OUTSIDE_IDLE_TIME,
+  SignerImportSource,
   SignerSourceTypes,
 } from ".."
 import { InternalSignerTypes } from "../../../types"
@@ -89,7 +90,7 @@ describe("InternalSignerService when uninitialized", () => {
         service.importSigner({
           type: SignerSourceTypes.keyring,
           mnemonic: validMnemonics.metamask[0],
-          source: "import",
+          source: SignerImportSource.import,
         })
       ).rejects.toThrow("InternalSignerService must be unlocked.")
 
@@ -131,7 +132,7 @@ describe("InternalSignerService when uninitialized", () => {
           service.importSigner({
             type: SignerSourceTypes.keyring,
             mnemonic,
-            source: "import",
+            source: SignerImportSource.import,
           })
         ).resolves
       }
@@ -183,7 +184,7 @@ describe("InternalSignerService when initialized", () => {
       type: SignerSourceTypes.keyring,
 
       mnemonic: mnemonic.join(" "),
-      source: "import",
+      source: SignerImportSource.import,
     })
   })
 
@@ -291,7 +292,7 @@ describe("InternalSignerService when saving keyrings", () => {
       type: SignerSourceTypes.keyring,
 
       mnemonic: mnemonic.join(" "),
-      source: "import",
+      source: SignerImportSource.import,
     })
 
     expect(localStorageCalls.shift()).toMatchObject({
@@ -396,7 +397,7 @@ describe("InternalSignerService when autolocking", () => {
       type: SignerSourceTypes.keyring,
 
       mnemonic: mnemonic.join(" "),
-      source: "import",
+      source: SignerImportSource.import,
     })
   })
 
@@ -438,7 +439,7 @@ describe("InternalSignerService when autolocking", () => {
         await service.importSigner({
           type: SignerSourceTypes.keyring,
           mnemonic: validMnemonics.metamask[0],
-          source: "import",
+          source: SignerImportSource.import,
         })
       },
     },

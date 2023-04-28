@@ -41,6 +41,7 @@ import { NETWORK_BY_CHAIN_ID, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { FeatureFlags, isEnabled } from "../../features"
 import { AccountSigner, SignerType } from "../../services/signing"
+import { SignerImportSource } from "../../services/internal-signer"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -305,7 +306,7 @@ const getAccountType = (
   address: string,
   signer: AccountSigner,
   addressSources: {
-    [address: string]: "import" | "internal"
+    [address: string]: SignerImportSource
   }
 ): AccountType => {
   switch (true) {
@@ -313,7 +314,7 @@ const getAccountType = (
     case signerTypeToAccountType[signer.type] === AccountType.Ledger:
     case signerTypeToAccountType[signer.type] === AccountType.PrivateKey:
       return signerTypeToAccountType[signer.type]
-    case addressSources[address] === "import":
+    case addressSources[address] === SignerImportSource.import:
       return AccountType.Imported
     default:
       return AccountType.Internal

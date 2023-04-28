@@ -5,8 +5,8 @@ import { createBackgroundAsyncThunk } from "./utils"
 import {
   Keyring,
   PrivateKey,
-  InternalSignerSource,
   InternalSignerMetadataWithType,
+  SignerImportSource,
 } from "../services/internal-signer/index"
 import { HexString } from "../types"
 
@@ -19,7 +19,7 @@ export type InternalSignerState = {
   keyrings: Keyring[]
   privateKeys: PrivateKey[]
   metadata: {
-    [keyringId: string]: InternalSignerSource
+    [keyringId: string]: { source: SignerImportSource }
   }
   status: "locked" | "unlocked" | "uninitialized"
   keyringToVerify: KeyringToVerify
@@ -63,7 +63,7 @@ const internalSignerSlice = createSlice({
         payload: {
           privateKeys: PrivateKey[]
           keyrings: Keyring[]
-          metadata: { [keyringId: string]: InternalSignerSource }
+          metadata: { [keyringId: string]: { source: SignerImportSource } }
         }
       }
     ) => {

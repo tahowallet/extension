@@ -53,8 +53,9 @@ export type PrivateKeyAccountSigner = {
   walletID: string
 }
 
-export type InternalSignerSource = {
-  source: "import" | "internal"
+export enum SignerImportSource {
+  import = "import",
+  internal = "internal",
 }
 
 export enum SignerSourceTypes {
@@ -72,7 +73,7 @@ type SerializedPrivateKey = {
 type InternalSignerMetadataHDKeyring = {
   type: SignerSourceTypes.keyring
   mnemonic: string
-  source: "import" | "internal"
+  source: SignerImportSource
   path?: string
 }
 type InternalSignerMetadataPrivateKey = {
@@ -102,7 +103,7 @@ type InternalSignerWithType = InternalSignerPrivateKey | InternalSignerHDKeyring
 interface SerializedKeyringData {
   privateKeys: SerializedPrivateKey[]
   keyrings: SerializedHDKeyring[]
-  metadata: { [signerId: string]: InternalSignerSource }
+  metadata: { [signerId: string]: { source: SignerImportSource } }
   hiddenAccounts: { [address: HexString]: boolean }
 }
 
@@ -112,7 +113,7 @@ interface Events extends ServiceLifecycleEvents {
     privateKeys: PrivateKey[]
     keyrings: Keyring[]
     metadata: {
-      [signerId: string]: InternalSignerSource
+      [signerId: string]: { source: SignerImportSource }
     }
   }
   address: string
@@ -151,7 +152,7 @@ export default class InternalSignerService extends BaseService<Events> {
 
   #privateKeys: Wallet[] = []
 
-  #signerMetadata: { [signerId: string]: InternalSignerSource } = {}
+  #signerMetadata: { [signerId: string]: { source: SignerImportSource } } = {}
 
   #hiddenAccounts: { [address: HexString]: boolean } = {}
 
@@ -439,7 +440,7 @@ export default class InternalSignerService extends BaseService<Events> {
    * keyring for system use.
    *
    * @param signerMetadata - keyring metadata - path, source, mnemonic
-   * @returns address of the first account from the HD keyring
+   * @returns string | null - address of the first account from the HD keyring or null if nothing was imported
    */
   #importKeyring(
     signerMetadata: InternalSignerMetadataHDKeyring
@@ -463,7 +464,7 @@ export default class InternalSignerService extends BaseService<Events> {
   /**
    * Import private key with a string
    * @param signerMetadata - private key metadata - private key string
-   * @returns address of imported account
+   * @returns string | null - address of imported account or null if nothing was imported
    */
   #importPrivateKey(
     signerMetadata: InternalSignerMetadataPrivateKey
@@ -477,14 +478,16 @@ export default class InternalSignerService extends BaseService<Events> {
     }
 
     this.#privateKeys.push(newWallet)
-    this.#signerMetadata[normalizedAddress] = { source: "import" }
+    this.#signerMetadata[normalizedAddress] = {
+      source: SignerImportSource.import,
+    }
     return normalizedAddress
   }
 
   /**
    * Import private key with JSON file
    * @param signerMetadata - JSON keystore metadata - stringified contents of JSON file, password
-   * @returns address of imported account
+   * @returns string | null - address of imported account or null if nothing was imported
    */
   async #importJSON(
     signerMetadata: InternalSignerMetadataJSONPrivateKey
@@ -498,7 +501,9 @@ export default class InternalSignerService extends BaseService<Events> {
     }
 
     this.#privateKeys.push(newWallet)
-    this.#signerMetadata[normalizedAddress] = { source: "import" }
+    this.#signerMetadata[normalizedAddress] = {
+      source: SignerImportSource.import,
+    }
     return normalizedAddress
   }
 
@@ -506,7 +511,7 @@ export default class InternalSignerService extends BaseService<Events> {
    * Return the source of a given address' signer if it exists. If an
    * address does not have a internal signer associated with it - returns null.
    */
-  getSignerSourceForAddress(address: string): "import" | "internal" | null {
+  getSignerSourceForAddress(address: string): SignerImportSource | null {
     const signerWithType = this.#findSigner(address)
 
     if (!signerWithType) return null

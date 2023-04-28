@@ -67,7 +67,7 @@ import {
   OPTIMISM_GAS_ORACLE_ABI,
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
-import InternalSignerService from "../internal-signer"
+import InternalSignerService, { SignerImportSource } from "../internal-signer"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
 
 // The number of blocks to query at a time for historic asset transfers.
@@ -940,7 +940,7 @@ export default class ChainService extends BaseService<Events> {
         e
       )
     })
-    if (source !== "internal") {
+    if (source !== SignerImportSource.internal) {
       this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
         logger.error(
           "chainService/addAccountToTrack: Error loading historic asset transfers",

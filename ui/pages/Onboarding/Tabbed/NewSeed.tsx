@@ -12,7 +12,10 @@ import {
   useRouteMatch,
 } from "react-router-dom"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { SignerSourceTypes } from "@tallyho/tally-background/services/internal-signer"
+import {
+  SignerImportSource,
+  SignerSourceTypes,
+} from "@tallyho/tally-background/services/internal-signer"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import OnboardingStepsIndicator from "../../../components/Onboarding/OnboardingStepsIndicator"
 import {
@@ -86,7 +89,7 @@ export default function NewSeed(): ReactElement {
       importSigner({
         type: SignerSourceTypes.keyring,
         mnemonic: verifiedMnemonic.join(" "),
-        source: "internal",
+        source: SignerImportSource.internal,
       })
     )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
 

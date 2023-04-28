@@ -5,7 +5,10 @@ import { isValidMnemonic } from "@ethersproject/hdnode"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { SignerSourceTypes } from "@tallyho/tally-background/services/internal-signer"
+import {
+  SignerImportSource,
+  SignerSourceTypes,
+} from "@tallyho/tally-background/services/internal-signer"
 import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
 import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
@@ -69,7 +72,7 @@ export default function ImportSeed(props: Props): ReactElement {
           type: SignerSourceTypes.keyring,
           mnemonic: plainRecoveryPhrase,
           path,
-          source: "import",
+          source: SignerImportSource.import,
         })
       )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
 

@@ -1,6 +1,10 @@
 import { createSelector, OutputSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-import { Keyring, PrivateKey } from "../../services/internal-signer"
+import {
+  Keyring,
+  PrivateKey,
+  SignerImportSource,
+} from "../../services/internal-signer"
 import { HexString } from "../../types"
 
 export const selectInternalSignerStatus = createSelector(
@@ -50,7 +54,7 @@ export const selectSourcesByAddress = createSelector(
     keyrings,
     metadata
   ): {
-    [address: HexString]: "import" | "internal"
+    [address: HexString]: SignerImportSource
   } =>
     Object.fromEntries(
       keyrings

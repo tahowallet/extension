@@ -6,7 +6,10 @@ import classNames from "classnames"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { SignerSourceTypes } from "@tallyho/tally-background/services/internal-signer"
+import {
+  SignerImportSource,
+  SignerSourceTypes,
+} from "@tallyho/tally-background/services/internal-signer"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
@@ -141,7 +144,7 @@ export default function OnboardingImportMetamask(props: Props): ReactElement {
           type: SignerSourceTypes.keyring,
           mnemonic: plainRecoveryPhrase,
           path,
-          source: "import",
+          source: SignerImportSource.import,
         })
       )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
 
