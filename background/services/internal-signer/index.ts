@@ -121,16 +121,6 @@ interface Events extends ServiceLifecycleEvents {
   signedData: string
 }
 
-const isRawPrivateKey = (
-  signer: InternalSignerMetadataWithType
-): signer is InternalSignerMetadataPrivateKey =>
-  signer.type === SignerSourceTypes.privateKey
-
-const isRawJsonPrivateKey = (
-  signer: InternalSignerMetadataWithType
-): signer is InternalSignerMetadataJSONPrivateKey =>
-  signer.type === SignerSourceTypes.jsonFile
-
 const isPrivateKey = (
   signer: InternalSignerWithType
 ): signer is InternalSignerPrivateKey =>
@@ -426,9 +416,9 @@ export default class InternalSignerService extends BaseService<Events> {
     this.requireUnlocked()
     let address: HexString | null
 
-    if (isRawPrivateKey(signerMetadata)) {
+    if (signerMetadata.type === SignerSourceTypes.privateKey) {
       address = this.#importPrivateKey(signerMetadata)
-    } else if (isRawJsonPrivateKey(signerMetadata)) {
+    } else if (signerMetadata.type === SignerSourceTypes.jsonFile) {
       address = await this.#importJSON(signerMetadata)
     } else {
       address = this.#importKeyring(signerMetadata)
