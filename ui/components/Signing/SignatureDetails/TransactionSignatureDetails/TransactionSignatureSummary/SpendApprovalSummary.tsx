@@ -16,6 +16,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
 import classNames from "classnames"
 import { Trans, useTranslation } from "react-i18next"
+import { updateAdditionalSigningStatus } from "@tallyho/tally-background/redux-slices/signing"
 import SharedAssetIcon from "../../../../Shared/SharedAssetIcon"
 import SharedButton from "../../../../Shared/SharedButton"
 import SharedInput from "../../../../Shared/SharedInput"
@@ -116,6 +117,14 @@ export default function SpendApprovalSummary({
     )
     setIsLoading(false)
   }, [approvalLimit, asset.decimals])
+
+  useEffect(() => {
+    dispatch(
+      updateAdditionalSigningStatus(
+        approvalLimitInput !== null ? "editing" : undefined
+      )
+    )
+  }, [approvalLimitInput, dispatch])
 
   return (
     <>

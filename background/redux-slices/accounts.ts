@@ -431,6 +431,12 @@ const accountSlice = createSlice({
 
       updateCombinedData(immerState)
     },
+    removeChainBalances: (
+      immerState,
+      { payload: chainID }: { payload: string }
+    ) => {
+      delete immerState.accountsData.evm[chainID]
+    },
   },
 })
 
@@ -441,6 +447,7 @@ export const {
   updateAccountName,
   updateENSAvatar,
   updateAssetCache,
+  removeChainBalances,
 } = accountSlice.actions
 
 export default accountSlice.reducer

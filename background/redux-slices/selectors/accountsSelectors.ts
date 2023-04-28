@@ -56,7 +56,7 @@ const EXCEPTION_ASSETS_BY_SYMBOL = ["BTC", "sBTC", "WBTC", "tBTC"].map(
 )
 
 // TODO Make this a setting.
-const userValueDustThreshold = 2
+export const userValueDustThreshold = 2
 
 const shouldForciblyDisplayAsset = (
   assetAmount: CompleteAssetAmount<AnyAsset>

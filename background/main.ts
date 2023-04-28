@@ -5,6 +5,7 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { debounce } from "lodash"
+import { utils } from "ethers"
 
 import {
   decodeJSON,
@@ -120,7 +121,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { OPTIMISM } from "./constants"
+import { OPTIMISM, USD } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
@@ -148,6 +149,8 @@ import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
 import {
+  assetAmountToDesiredDecimals,
+  convertAssetAmountViaPricePoint,
   isSmartContractFungibleAsset,
   SmartContractAsset,
   SmartContractFungibleAsset,
@@ -180,7 +183,7 @@ import {
 } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 import { InternalSignerMetadataWithType } from "./services/internal-signer"
-import { fromFixedPoint } from "./lib/fixed-point"
+import { getPricePoint, getTokenPrices } from "./lib/prices"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -648,6 +651,8 @@ export default class Main extends BaseService<never> {
     await this.providerBridgeService.revokePermissionsForAddress(address)
     // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signer.type)
+
+    this.nameService.removeAccount(address)
   }
 
   async importLedgerAccounts(
@@ -1673,34 +1678,8 @@ export default class Main extends BaseService<never> {
 
   async importSigner(
     signerRaw: InternalSignerMetadataWithType
-  ): Promise<{ success: boolean; errorMessage?: string }> {
-    let address = null
-
-    try {
-      address = await this.internalSignerService.importSigner(signerRaw)
-    } catch (error) {
-      return {
-        success: false,
-        errorMessage: `Unexpected error during account import. Error: ${error}`,
-      }
-    }
-
-    if (!address) {
-      return {
-        success: false,
-        errorMessage:
-          "Failed to import new account. Address may already be imported.",
-      }
-    }
-
-    this.store.dispatch(
-      setNewSelectedAccount({
-        address,
-        network: this.store.getState().ui.selectedAccount.network,
-      })
-    )
-
-    return { success: true }
+  ): Promise<string | null> {
+    return this.internalSignerService.importSigner(signerRaw)
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
@@ -1882,6 +1861,7 @@ export default class Main extends BaseService<never> {
   ): Promise<{
     asset: SmartContractFungibleAsset
     amount: bigint
+    mainCurrencyAmount?: number
     balance: number
     exists?: boolean
   }> {
@@ -1901,10 +1881,26 @@ export default class Main extends BaseService<never> {
       cachedAsset
     )
 
+    const priceData = await getTokenPrices([contractAddress], USD, network)
+
+    const convertedAssetAmount =
+      contractAddress in priceData
+        ? convertAssetAmountViaPricePoint(
+            assetData,
+            getPricePoint(assetData.asset, priceData[contractAddress])
+          )
+        : undefined
+
+    const mainCurrencyAmount = convertedAssetAmount
+      ? assetAmountToDesiredDecimals(convertedAssetAmount, 2)
+      : undefined
+
     return {
       ...assetData,
-      // FIXME: REMOVE FIXED PRECISION
-      balance: fromFixedPoint(assetData.amount, assetData.asset.decimals, 2),
+      balance: Number.parseFloat(
+        utils.formatUnits(assetData.amount, assetData.asset.decimals)
+      ),
+      mainCurrencyAmount,
       exists: !!cachedAsset,
     }
   }
