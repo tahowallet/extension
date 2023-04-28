@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next"
 import {
   BINANCE_SMART_CHAIN,
   EIP_1559_COMPLIANT_CHAIN_IDS,
-  isBuiltInNetwork,
+  NETWORKS_WITH_FEE_SETTINGS,
 } from "@tallyho/tally-background/constants"
 import classNames from "classnames"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
@@ -146,7 +146,9 @@ export default function SignTransactionDetailPanel({
         className={classNames("detail_item warning", {
           visible: hasInsufficientFundsWarning,
           hidden:
-            !isBuiltInNetwork(currentNetwork) && !hasInsufficientFundsWarning,
+            // Networks that have fee settings should have extra space for warning
+            !NETWORKS_WITH_FEE_SETTINGS.has(currentNetwork.chainID) &&
+            !hasInsufficientFundsWarning,
         })}
       >
         <SignTransactionDetailWarning

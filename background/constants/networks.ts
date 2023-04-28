@@ -260,3 +260,7 @@ export const CHAIN_ID_TO_OPENSEA_CHAIN = {
   [AVALANCHE.chainID]: "avalanche",
   [BINANCE_SMART_CHAIN.chainID]: "bsc",
 }
+
+export const NETWORKS_WITH_FEE_SETTINGS = new Set(
+  [ETHEREUM, POLYGON, ARBITRUM_ONE, AVALANCHE].map((network) => network.chainID)
+)
