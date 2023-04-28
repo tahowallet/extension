@@ -13,12 +13,7 @@ import {
   encryptVault,
   SaltedKey,
 } from "./encryption"
-import {
-  HexString,
-  InternalSignerTypes,
-  EIP712TypedData,
-  UNIXTime,
-} from "../../types"
+import { HexString, EIP712TypedData, UNIXTime } from "../../types"
 import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
 
 import BaseService from "../base"
@@ -30,6 +25,24 @@ import logger from "../../lib/logger"
 
 export const MAX_INTERNAL_SIGNERS_IDLE_TIME = 60 * MINUTE
 export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
+
+export enum InternalSignerTypes {
+  mnemonicBIP39S128 = "mnemonic#bip39:128",
+  mnemonicBIP39S256 = "mnemonic#bip39:256",
+  metamaskMnemonic = "mnemonic#metamask",
+  singleSECP = "single#secp256k1",
+}
+
+export enum SignerImportSource {
+  import = "import",
+  internal = "internal",
+}
+
+export enum SignerSourceTypes {
+  privateKey = "privateKey",
+  jsonFile = "jsonFile",
+  keyring = "keyring",
+}
 
 export type Keyring = {
   type: InternalSignerTypes
@@ -51,17 +64,6 @@ export type KeyringAccountSigner = {
 export type PrivateKeyAccountSigner = {
   type: "privateKey"
   walletID: string
-}
-
-export enum SignerImportSource {
-  import = "import",
-  internal = "internal",
-}
-
-export enum SignerSourceTypes {
-  privateKey = "privateKey",
-  jsonFile = "jsonFile",
-  keyring = "keyring",
 }
 
 type SerializedPrivateKey = {
@@ -157,7 +159,7 @@ export default class InternalSignerService extends BaseService<Events> {
   #hiddenAccounts: { [address: HexString]: boolean } = {}
 
   /**
-   * The last time a wallet took an action that required the service to be
+   * The last time an internal signer took an action that required the service to be
    * unlocked (signing, adding a keyring, etc).
    */
   lastActivity: UNIXTime | undefined
@@ -189,7 +191,7 @@ export default class InternalSignerService extends BaseService<Events> {
   override async internalStartService(): Promise<void> {
     // Emit locked status on startup. Should always be locked, but the main
     // goal is to have external viewers synced to internal state no matter what
-    // it is. Don't emit if there are no keys to unlock.
+    // it is. Don't emit if there are no vaults to unlock.
     await super.internalStartService()
     if ((await getEncryptedVaults()).vaults.length > 0) {
       this.emitter.emit("locked", this.locked())
@@ -231,7 +233,7 @@ export default class InternalSignerService extends BaseService<Events> {
    * @param ignoreExistingVaults If true, ignore any existing, previously
    *        persisted vaults on unlock, instead starting with a clean slate.
    *        This option makes sense if a user has lost their password, and needs
-   *        to generate a new valut.
+   *        to generate a new vault.
    *
    *        Note that old vaults aren't deleted, and can still be recovered
    *        later in an emergency.

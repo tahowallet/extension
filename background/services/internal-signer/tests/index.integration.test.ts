@@ -7,8 +7,8 @@ import InternalSignerService, {
   MAX_OUTSIDE_IDLE_TIME,
   SignerImportSource,
   SignerSourceTypes,
+  InternalSignerTypes,
 } from ".."
-import { InternalSignerTypes } from "../../../types"
 import { ETHEREUM } from "../../../constants"
 import logger from "../../../lib/logger"
 import {

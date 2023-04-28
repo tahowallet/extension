@@ -5,13 +5,13 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import InternalSignerSetPassword from "../../../InternalSigner/InternalSignerSetPassword"
 import InternalSignerUnlock from "../../../InternalSigner/InternalSignerUnlock"
 
-type SignerSigningProps = {
+type SignerInternalSigningProps = {
   signActionCreator: () => AnyAction
 }
 
 export default function SignerInternalSigning({
   signActionCreator,
-}: SignerSigningProps): ReactElement {
+}: SignerInternalSigningProps): ReactElement {
   const dispatch = useBackgroundDispatch()
   const lockStatus = useBackgroundSelector(selectInternalSignerStatus)
   const [signingInitiated, setSigningInitiated] = useState(false)

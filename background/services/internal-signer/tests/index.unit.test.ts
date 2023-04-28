@@ -1,5 +1,6 @@
 import { webcrypto } from "crypto"
 import InternalSignerService, {
+  InternalSignerTypes,
   SignerImportSource,
   SignerSourceTypes,
 } from ".."
@@ -10,7 +11,6 @@ import {
   createTypedData,
 } from "../../../tests/factories"
 import { mockLocalStorage } from "../../../tests/utils"
-import { InternalSignerTypes } from "../../../types"
 
 const originalCrypto = global.crypto
 const HD_WALLET_MOCK = {
