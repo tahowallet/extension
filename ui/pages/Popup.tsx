@@ -46,6 +46,7 @@ import ErrorFallback from "./ErrorFallback"
 
 import pageList from "../routes/routes"
 import GlobalModal from "../components/GlobalModal/GlobalModal"
+import { isSignerWithSecrets } from "../utils/accounts"
 
 const pagePreferences = Object.fromEntries(
   pageList.map(({ path, hasTabBar, hasTopBar, persistOnClose }) => [
@@ -150,8 +151,8 @@ export function Main(): ReactElement {
 
   const needsUnlock =
     isTransactionPendingSignature &&
-    (currentAccountSigner?.type === "keyring" ||
-      currentAccountSigner?.type === "privateKey") &&
+    currentAccountSigner &&
+    isSignerWithSecrets(currentAccountSigner) &&
     lockStatus !== "unlocked"
 
   useConnectPopupMonitor()
