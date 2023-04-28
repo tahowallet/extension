@@ -288,7 +288,7 @@ export default class InternalSignerService extends BaseService<Events> {
           ...plainTextVault.hiddenAccounts,
         }
 
-        this.emitInternalSigners()
+        this.#emitInternalSigners()
       }
     }
 
@@ -296,7 +296,7 @@ export default class InternalSignerService extends BaseService<Events> {
     // and unlock
     if (!this.#cachedKey) {
       this.#cachedKey = await deriveSymmetricKeyFromPassword(password)
-      await this.persistInternalSigners()
+      await this.#persistInternalSigners()
     }
 
     this.#unlock()
@@ -315,7 +315,7 @@ export default class InternalSignerService extends BaseService<Events> {
     this.#signerMetadata = {}
     this.#privateKeys = []
     this.emitter.emit("locked", true)
-    this.emitInternalSigners()
+    this.#emitInternalSigners()
   }
 
   /**
@@ -366,10 +366,6 @@ export default class InternalSignerService extends BaseService<Events> {
     this.lastActivity = Date.now()
     this.markOutsideActivity()
   }
-
-  // ///////////////////////////////////////////
-  // METHODS THAT REQUIRE AN UNLOCKED SERVICE //
-  // ///////////////////////////////////////////
 
   /**
    * Generate a new keyring
@@ -428,9 +424,9 @@ export default class InternalSignerService extends BaseService<Events> {
     if (!address) return null
 
     this.#hiddenAccounts[address] = false
-    await this.persistInternalSigners()
+    await this.#persistInternalSigners()
     this.emitter.emit("address", address)
-    this.emitInternalSigners()
+    this.#emitInternalSigners()
 
     return address
   }
@@ -587,14 +583,19 @@ export default class InternalSignerService extends BaseService<Events> {
 
     this.#hiddenAccounts[newAddress] = false
 
-    await this.persistInternalSigners()
+    await this.#persistInternalSigners()
 
     this.emitter.emit("address", newAddress)
-    this.emitInternalSigners()
+    this.#emitInternalSigners()
 
     return newAddress
   }
 
+  /**
+   * Remove signer from the service's memory.
+   *
+   * @param address account to be hidden from UI
+   */
   async hideAccount(address: HexString): Promise<void> {
     this.#hiddenAccounts[address] = true
     const signerWithType = this.#findSigner(address)
@@ -618,42 +619,8 @@ export default class InternalSignerService extends BaseService<Events> {
     } else {
       this.#removePrivateKey(address)
     }
-    await this.persistInternalSigners()
-    this.emitInternalSigners()
-  }
-
-  async exportPrivateKey(address: HexString): Promise<string | null> {
-    this.requireUnlocked()
-
-    const signerWithType = this.#findSigner(address)
-
-    if (!signerWithType) {
-      logger.error(`Export private key for address ${address} failed`)
-      return null
-    }
-
-    if (isPrivateKey(signerWithType)) {
-      return signerWithType.signer.privateKey
-    }
-
-    return signerWithType.signer.exportPrivateKey(
-      address,
-      "I solemnly swear that I am treating this private key material with great care."
-    )
-  }
-
-  async exportMnemonic(address: HexString): Promise<string | null> {
-    this.requireUnlocked()
-
-    const keyring = this.#findKeyring(address)
-
-    if (!keyring) {
-      logger.error(`Export mnemonic for address ${address} failed.`)
-      return null
-    }
-
-    const { mnemonic } = await keyring.serialize()
-    return mnemonic
+    await this.#persistInternalSigners()
+    this.#emitInternalSigners()
   }
 
   #removeKeyring(keyringId: string): HDKeyring[] {
@@ -683,6 +650,53 @@ export default class InternalSignerService extends BaseService<Events> {
 
     this.#privateKeys = filteredPrivateKeys
     return filteredPrivateKeys
+  }
+
+  /**
+   * Export private key - supprts exporting from both private key wallet signers and
+   * HD Wallet's specific accounts
+   *
+   * @param address
+   * @returns string | null - private key string if it was exported successfully
+   */
+  async exportPrivateKey(address: HexString): Promise<string | null> {
+    this.requireUnlocked()
+
+    const signerWithType = this.#findSigner(address)
+
+    if (!signerWithType) {
+      logger.error(`Export private key for address ${address} failed`)
+      return null
+    }
+
+    if (isPrivateKey(signerWithType)) {
+      return signerWithType.signer.privateKey
+    }
+
+    return signerWithType.signer.exportPrivateKey(
+      address,
+      "I solemnly swear that I am treating this private key material with great care."
+    )
+  }
+
+  /**
+   * Export mnemonic from HD wallet
+   *
+   * @param address
+   * @returns string | null - mnemonic string if it was exported successfully
+   */
+  async exportMnemonic(address: HexString): Promise<string | null> {
+    this.requireUnlocked()
+
+    const keyring = this.#findKeyring(address)
+
+    if (!keyring) {
+      logger.error(`Export mnemonic for address ${address} failed.`)
+      return null
+    }
+
+    const { mnemonic } = await keyring.serialize()
+    return mnemonic
   }
 
   /**
@@ -852,6 +866,7 @@ export default class InternalSignerService extends BaseService<Events> {
 
     return signedTx
   }
+
   /**
    * Sign typed data based on EIP-712 with the usage of eth_signTypedData_v4 method,
    * more information about the EIP can be found at https://eips.ethereum.org/EIPS/eip-712
@@ -859,7 +874,6 @@ export default class InternalSignerService extends BaseService<Events> {
    * @param typedData - the data to be signed
    * @param account - signers account address
    */
-
   async signTypedData({
     typedData,
     account,
@@ -910,7 +924,6 @@ export default class InternalSignerService extends BaseService<Events> {
    * @param signingData - the data to be signed
    * @param account - signers account address
    */
-
   async personalSign({
     signingData,
     account,
@@ -945,11 +958,7 @@ export default class InternalSignerService extends BaseService<Events> {
     }
   }
 
-  // //////////////////
-  // PRIVATE METHODS //
-  // //////////////////
-
-  private emitInternalSigners() {
+  #emitInternalSigners(): void {
     if (this.locked()) {
       this.emitter.emit("internalSigners", {
         privateKeys: [],
@@ -970,7 +979,7 @@ export default class InternalSignerService extends BaseService<Events> {
   /**
    * Serialize, encrypt, and persist all HDKeyrings and private keys.
    */
-  private async persistInternalSigners() {
+  async #persistInternalSigners(): Promise<void> {
     this.requireUnlocked()
 
     // This if guard will always pass due to requireUnlocked, but statically
