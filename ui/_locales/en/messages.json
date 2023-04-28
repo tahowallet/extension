@@ -494,7 +494,7 @@
     "addCustomAsset": "Add custom assets",
     "analytics": "Analytics",
     "needHelp": "Need Help?",
-    "customNetworks": "Custom networks",
+    "customNetworks": "Custom networks (beta)",
     "showBanners": "Show achievement banners",
     "versionLabel": "Version {{version}}",
     "unknownVersionOrCommit": "<unknown>",
@@ -545,22 +545,22 @@
     "addCustomAssetSettings": {
       "title": "Add custom asset",
       "input.contractAddress.label": "Contract address",
-      "input.tooltip": " Visit your preferred block explorer and find the asset you want to import.<br>Copy and paste the contract address here.<br><br>For more information visit <url>Help Center</url>",
+      "input.tooltip": "Find the asset on your favorite block explorer, then copy the contract address here.<br><br>Haven't done this before? Check out <url>Knowledge Center</url> first.",
       "asset.label.balance": "Balance",
       "asset.label.symbol": "Name",
       "networkSelect.title": "Select Network",
       "warning.alreadyExists.title": "Asset already exists, you will see it once your balance is over 0",
-      "warning.alreadyExists.desc": "If you still have issues seeing an asset, turn off “hide balance 2$” from Settings",
+      "warning.alreadyExists.desc": "If you still have issues seeing an asset, turn off “Hide asset balances under 2$” from Settings",
       "warning.dust.title": "Asset balance is under <$2, you wil see it once your balance is over $2",
       "error.invalidToken": "Invalid contract address",
       "submit": "Add asset",
       "snackbar.success": "Asset added successfully",
-      "footer.hint": "How to add a custom asset?"
+      "footer.hint": "How to add a custom asset"
     },
     "customNetworksSettings": {
-      "title": "Custom networks",
+      "title": "Custom networks (beta)",
       "ariaLabel": "Open custom networks page",
-      "subtitleAdded": "Added chains",
+      "subtitleAdded": "Manage chains",
       "subtitleAddMore": "Add more chains",
       "deleteModal.title": "Remove custom network?",
       "deleteModal.desc": "You are removing <name>{{name}}</name> network. This means you won't be able to see assets from it and it won't be in your network selection list. ",
@@ -569,7 +569,7 @@
         "typeCustom": "Custom network"
       },
       "chainList": {
-        "description": "Fastest and safest way of adding a custom network is by visiting <url></url>, connecting your wallet and adding the chains you wish to see.",
+        "description": "<url></url> is the fastest, safest way to add a custom network. Just connect your wallet, search for the network you want to add, and click <strong>Add to Taho</strong>.",
         "addBtn": "Add chains with Chainlist"
       },
       "customRPC": {
@@ -663,7 +663,7 @@
     }
   },
   "addNewChain": {
-    "subtitle": "Wants to add a main network to Taho",
+    "subtitle": "Wants to add a custom network to Taho",
     "name": "Name",
     "chainId": "Chain ID",
     "currency": "Currency",
@@ -671,7 +671,7 @@
     "explorer": "BlockExplorer",
     "submit": "Add network",
     "cancel": "Reject",
-    "warnAlreadyExistsHeader": "Network already added to Taho wallet.",
+    "warnAlreadyExistsHeader": "Network already added to Taho.",
     "warnAlreadyExistsBody": "You can switch to it from Network dropdown"
   },
   "swap": {
@@ -728,7 +728,7 @@
     "protocolList": {
       "testnetsSectionTitle": "Testnets",
       "customNetworksSectionTitle": "Custom networks",
-      "networkSettingsBtn": "Add network"
+      "networkSettingsBtn": "Add network (beta)"
     },
     "connectedDappInfo": {
       "modalClose": "Background close",

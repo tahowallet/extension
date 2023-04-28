@@ -81,6 +81,7 @@ export default function SharedNetworkIcon(props: {
           justify-content: center;
           user-select: none;
           color: var(--white);
+          border-radius: ${size < 24 ? 2 : 3}px;
         }
         .icon_network {
           background: url("${sources[currentSource]}");
