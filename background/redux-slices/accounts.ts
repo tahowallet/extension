@@ -32,6 +32,14 @@ export const enum AccountType {
   Internal = "internal",
 }
 
+export const accountTypes = [
+  AccountType.Internal,
+  AccountType.Imported,
+  AccountType.PrivateKey,
+  AccountType.Ledger,
+  AccountType.ReadOnly,
+]
+
 export const DEFAULT_ACCOUNT_NAMES = [
   "Phoenix",
   "Matilda",

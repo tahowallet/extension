@@ -19,7 +19,10 @@ import {
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useHistory } from "react-router-dom"
-import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
+import {
+  AccountType,
+  accountTypes,
+} from "@tallyho/tally-background/redux-slices/accounts"
 import {
   normalizeEVMAddress,
   sameEVMAddress,
@@ -56,14 +59,6 @@ type WalletTypeInfo = {
   icon: string
   category: string
 }
-
-const accountTypes = [
-  AccountType.Internal,
-  AccountType.Imported,
-  AccountType.PrivateKey,
-  AccountType.Ledger,
-  AccountType.ReadOnly,
-]
 
 export const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   [AccountType.ReadOnly]: {
