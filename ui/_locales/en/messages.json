@@ -494,7 +494,7 @@
     "addCustomAsset": "Add custom assets",
     "analytics": "Analytics",
     "needHelp": "Need Help?",
-    "customNetworks": "Custom networks",
+    "customNetworks": "Custom networks (beta)",
     "showBanners": "Show achievement banners",
     "versionLabel": "Version {{version}}",
     "unknownVersionOrCommit": "<unknown>",
@@ -558,7 +558,7 @@
       "footer.hint": "How to add a custom asset"
     },
     "customNetworksSettings": {
-      "title": "Custom networks",
+      "title": "Custom networks (beta)",
       "ariaLabel": "Open custom networks page",
       "subtitleAdded": "Manage chains",
       "subtitleAddMore": "Add more chains",
@@ -728,7 +728,7 @@
     "protocolList": {
       "testnetsSectionTitle": "Testnets",
       "customNetworksSectionTitle": "Custom networks",
-      "networkSettingsBtn": "Add network"
+      "networkSettingsBtn": "Add network (beta)"
     },
     "connectedDappInfo": {
       "modalClose": "Background close",
