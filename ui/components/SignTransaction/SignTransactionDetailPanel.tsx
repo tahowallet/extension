@@ -14,8 +14,10 @@ import { useTranslation } from "react-i18next"
 import {
   BINANCE_SMART_CHAIN,
   EIP_1559_COMPLIANT_CHAIN_IDS,
+  isBuiltInNetwork,
 } from "@tallyho/tally-background/constants"
 import classNames from "classnames"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
@@ -47,8 +49,12 @@ export default function SignTransactionDetailPanel({
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
   const reduxTransactionData = useBackgroundSelector(selectTransactionData)
+
+  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   // If a transaction request is passed directly, prefer it over Redux.
   const transactionDetails = transactionRequest ?? reduxTransactionData
+
+  const currentNetwork = transactionDetails?.network || selectedNetwork
 
   const dispatch = useBackgroundDispatch()
 
@@ -139,6 +145,8 @@ export default function SignTransactionDetailPanel({
       <span
         className={classNames("detail_item warning", {
           visible: hasInsufficientFundsWarning,
+          hidden:
+            !isBuiltInNetwork(currentNetwork) && !hasInsufficientFundsWarning,
         })}
       >
         <SignTransactionDetailWarning
@@ -163,19 +171,22 @@ export default function SignTransactionDetailPanel({
             display: flex;
             margin-top: 21px;
             flex-direction: column;
-            height: 108px;
+            max-height: 108px;
           }
           .detail_item_right {
             color: var(--green-20);
             font-size: 16px;
           }
           .warning {
-            width: 384px;
-            transform: translateX(-100%);
+            width: 100%;
+            transform: translateX(calc(-100% - 24px));
             transition: transform ease-out 0.3s;
           }
           .warning.visible {
             transform: translateX(0);
+          }
+          .warning.hidden {
+            height: 0;
           }
         `}
       </style>
