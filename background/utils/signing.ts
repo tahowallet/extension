@@ -139,6 +139,7 @@ export function parseSigningData(signingData: string): MessageSigningData {
   }
 }
 
+// TODO - check if this is working?
 export const isSameAccountSignerWithId = (
   signerA: AccountSignerWithId,
   signerB: AccountSignerWithId

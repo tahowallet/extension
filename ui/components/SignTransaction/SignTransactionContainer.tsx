@@ -169,7 +169,8 @@ export default function SignTransactionContainer({
               </SharedButton>
             )}
             {((isLedgerSigning && canLedgerSign) ||
-              accountSigner?.type === "keyring") && (
+              accountSigner?.type === "keyring" ||
+              accountSigner?.type === "privateKey") && (
               <SharedButton
                 type="primaryGreen"
                 size="large"

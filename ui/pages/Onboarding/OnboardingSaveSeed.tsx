@@ -61,7 +61,7 @@ function SeedContainer(): ReactElement {
   const dispatch = useDispatch()
 
   const freshMnemonic = useBackgroundSelector((state) => {
-    return state.keyrings.keyringToVerify?.mnemonic
+    return state.internalSigner.keyringToVerify?.mnemonic
   })
 
   return (

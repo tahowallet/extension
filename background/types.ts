@@ -54,7 +54,7 @@ export type UNIXTime = number
 
 // KEY TYPES
 
-export enum KeyringTypes {
+export enum InternalSignerTypes {
   mnemonicBIP39S128 = "mnemonic#bip39:128",
   mnemonicBIP39S256 = "mnemonic#bip39:256",
   metamaskMnemonic = "mnemonic#metamask",

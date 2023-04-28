@@ -1,8 +1,11 @@
 import React, { ReactElement } from "react"
-import { lockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
+import { lockInternalSigners } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { useHistory } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../hooks"
+import {
+  useBackgroundDispatch,
+  useAreInternalSignersUnlocked,
+} from "../../hooks"
 import SharedIcon from "../Shared/SharedIcon"
 
 type SigningButtonProps = {
@@ -15,39 +18,35 @@ export default function SigningButton({
   const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
 
-  const keyringData = {
-    color: areKeyringsUnlocked ? "error" : "success",
-    icon: areKeyringsUnlocked ? "lock" : "unlock",
+  const buttonData = {
+    color: areInternalSignersUnlocked ? "error" : "success",
+    icon: areInternalSignersUnlocked ? "lock" : "unlock",
   }
 
-  const toggleKeyringStatus = async () => {
-    if (!areKeyringsUnlocked) {
-      history.push("/keyring/unlock")
+  const toggleLockStatus = async () => {
+    if (!areInternalSignersUnlocked) {
+      history.push("/internal-signer/unlock")
     } else {
-      await dispatch(lockKeyrings())
+      await dispatch(lockInternalSigners())
       onCurrentAddressChange("")
     }
   }
 
   return (
     <>
-      <button
-        type="button"
-        className="signing_btn"
-        onClick={toggleKeyringStatus}
-      >
+      <button type="button" className="signing_btn" onClick={toggleLockStatus}>
         {t(
           `accounts.notificationPanel.signing.${
-            areKeyringsUnlocked ? "lock" : "unlock"
+            areInternalSignersUnlocked ? "lock" : "unlock"
           }`
         )}
         <SharedIcon
-          icon={`icons/m/${keyringData.icon}.svg`}
+          icon={`icons/m/${buttonData.icon}.svg`}
           width={25}
           color="var(--green-40)"
-          hoverColor={`var(--${keyringData.color})`}
+          hoverColor={`var(--${buttonData.color})`}
           transitionHoverTime="0.2s"
         />
       </button>
@@ -60,14 +59,14 @@ export default function SigningButton({
             transition: color 0.2s;
           }
           .signing_btn:hover {
-            color: var(--${keyringData.color});
+            color: var(--${buttonData.color});
           }
         `}
       </style>
       <style global jsx>
         {`
           .signing_btn:hover .icon {
-            background-color: var(--${keyringData.color});
+            background-color: var(--${buttonData.color});
           }
         `}
       </style>

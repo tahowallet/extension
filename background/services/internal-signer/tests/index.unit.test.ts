@@ -1,13 +1,16 @@
 import { webcrypto } from "crypto"
-import KeyringService, { SignerTypes } from ".."
+import InternalSignerService, {
+  SignerImportSource,
+  SignerSourceTypes,
+} from ".."
 import { ETHEREUM } from "../../../constants"
 import {
-  createKeyringService,
+  createInternalSignerService,
   createTransactionRequest,
   createTypedData,
 } from "../../../tests/factories"
 import { mockLocalStorage } from "../../../tests/utils"
-import { KeyringTypes } from "../../../types"
+import { InternalSignerTypes } from "../../../types"
 
 const originalCrypto = global.crypto
 const HD_WALLET_MOCK = {
@@ -24,78 +27,80 @@ const PK_WALLET_MOCK = {
     "0x252da775ac59bf1e3a3c2b3b2633e29f8b8236dc3054b7ce9d019c79166ccf14",
 }
 
-describe("Keyring Service", () => {
-  let keyringService: KeyringService
+describe("InternalSignerService", () => {
+  let internalSignerService: InternalSignerService
 
   beforeEach(async () => {
     global.crypto = webcrypto as unknown as Crypto
     mockLocalStorage()
 
-    keyringService = await createKeyringService()
-    await keyringService.startService()
-    await keyringService.unlock("test")
+    internalSignerService = await createInternalSignerService()
+    await internalSignerService.startService()
+    await internalSignerService.unlock("test")
   })
 
   afterEach(async () => {
-    await keyringService.stopService()
+    await internalSignerService.stopService()
     global.crypto = originalCrypto
   })
 
   describe("generated HD wallet", () => {
     it("should generate new HD wallet", async () => {
-      const keyring = await keyringService.generateNewKeyring(
-        KeyringTypes.mnemonicBIP39S256
+      const keyring = await internalSignerService.generateNewKeyring(
+        InternalSignerTypes.mnemonicBIP39S256
       )
 
       expect(keyring.id).toBeDefined()
       expect(keyring.mnemonic.length).toBe(24)
 
-      await keyringService.importSigner({
-        type: SignerTypes.keyring,
+      await internalSignerService.importSigner({
+        type: SignerSourceTypes.keyring,
         mnemonic: keyring.mnemonic.join(" "),
-        source: "internal",
+        source: SignerImportSource.internal,
       })
 
-      const keyrings = keyringService.getKeyrings()
+      const keyrings = internalSignerService.getKeyrings()
       expect(keyrings.length).toBe(1)
       expect(keyrings[0].id).toBe(keyring.id)
       expect(
-        await keyringService.getSignerSourceForAddress(keyrings[0].addresses[0])
+        internalSignerService.getSignerSourceForAddress(
+          keyrings[0].addresses[0]
+        )
       ).toBe("internal")
     })
   })
 
   describe("imported HD wallet", () => {
     beforeEach(async () => {
-      await keyringService.importSigner({
-        type: SignerTypes.keyring,
+      await internalSignerService.importSigner({
+        type: SignerSourceTypes.keyring,
         mnemonic: HD_WALLET_MOCK.mnemonic,
-        source: "import",
+        source: SignerImportSource.import,
       })
     })
     it("should add HD wallet to keyrings", () => {
-      const keyrings = keyringService.getKeyrings()
+      const keyrings = internalSignerService.getKeyrings()
       expect(keyrings.length).toBe(1)
     })
     it("should classify HD wallet as imported", async () => {
       expect(
-        await keyringService.getSignerSourceForAddress(
+        internalSignerService.getSignerSourceForAddress(
           HD_WALLET_MOCK.addresses[0]
         )
       ).toBe("import")
     })
     it("should be able to derive next address", async () => {
-      const [keyring] = keyringService.getKeyrings()
+      const [keyring] = internalSignerService.getKeyrings()
       const [addressMock1, addressMock2] = HD_WALLET_MOCK.addresses
 
       expect(keyring.addresses.length).toBe(1)
 
-      await keyringService.deriveAddress({
+      await internalSignerService.deriveAddress({
         type: "keyring",
         keyringID: keyring.id ?? "",
       })
 
-      const [updatedKeyring] = keyringService.getKeyrings()
+      const [updatedKeyring] = internalSignerService.getKeyrings()
 
       expect(updatedKeyring.addresses.length).toBe(2)
 
@@ -104,39 +109,39 @@ describe("Keyring Service", () => {
       expect(address2).toBe(addressMock2)
     })
     it("should be able to hide address from HD wallet", async () => {
-      const [keyring] = keyringService.getKeyrings()
+      const [keyring] = internalSignerService.getKeyrings()
 
-      const address = await keyringService.deriveAddress({
+      const address = await internalSignerService.deriveAddress({
         type: "keyring",
         keyringID: keyring.id ?? "",
       })
 
-      await keyringService.hideAccount(address)
+      await internalSignerService.hideAccount(address)
 
-      const [updatedKeyring] = keyringService.getKeyrings()
+      const [updatedKeyring] = internalSignerService.getKeyrings()
 
       expect(updatedKeyring.addresses.length).toBe(1)
     })
     it("should be able to remove HD wallet by hiding all addresses", async () => {
-      await keyringService.hideAccount(HD_WALLET_MOCK.addresses[0])
-      const keyrings = keyringService.getKeyrings()
+      await internalSignerService.hideAccount(HD_WALLET_MOCK.addresses[0])
+      const keyrings = internalSignerService.getKeyrings()
 
       expect(keyrings.length).toBe(0)
     })
     it("should be able to remove HD wallet and add it again", async () => {
-      await keyringService.hideAccount(HD_WALLET_MOCK.addresses[0])
-      await keyringService.importSigner({
-        type: SignerTypes.keyring,
+      await internalSignerService.hideAccount(HD_WALLET_MOCK.addresses[0])
+      await internalSignerService.importSigner({
+        type: SignerSourceTypes.keyring,
         mnemonic: HD_WALLET_MOCK.mnemonic,
-        source: "import",
+        source: SignerImportSource.import,
       })
-      const keyrings = keyringService.getKeyrings()
+      const keyrings = internalSignerService.getKeyrings()
 
       expect(keyrings.length).toBe(1)
     })
     it("should be able to sign transaction", async () => {
       const address = HD_WALLET_MOCK.addresses[0]
-      const signed = await keyringService.signTransaction(
+      const signed = await internalSignerService.signTransaction(
         { address, network: ETHEREUM },
         createTransactionRequest({ from: address })
       )
@@ -151,7 +156,7 @@ describe("Keyring Service", () => {
     it("should be able to sign typed data", async () => {
       const address = HD_WALLET_MOCK.addresses[0]
       const typedData = createTypedData()
-      const signed = await keyringService.signTypedData({
+      const signed = await internalSignerService.signTypedData({
         typedData,
         account: address,
       })
@@ -161,7 +166,7 @@ describe("Keyring Service", () => {
     it("should be able to make a personal sign", async () => {
       const address = HD_WALLET_MOCK.addresses[0]
       const signingData = "0x1230"
-      const signed = await keyringService.personalSign({
+      const signed = await internalSignerService.personalSign({
         signingData,
         account: address,
       })
@@ -172,33 +177,33 @@ describe("Keyring Service", () => {
 
   describe("wallet imported with private key", () => {
     beforeEach(async () => {
-      await keyringService.importSigner({
-        type: SignerTypes.privateKey,
+      await internalSignerService.importSigner({
+        type: SignerSourceTypes.privateKey,
         privateKey: PK_WALLET_MOCK.privateKey,
       })
     })
     it("should add pk wallet to wallets", () => {
-      const wallets = keyringService.getPrivateKeys()
+      const wallets = internalSignerService.getPrivateKeys()
       expect(wallets.length).toBe(1)
     })
     it("should classify pk wallet as imported", async () => {
       expect(
-        await keyringService.getSignerSourceForAddress(PK_WALLET_MOCK.address)
+        internalSignerService.getSignerSourceForAddress(PK_WALLET_MOCK.address)
       ).toBe("import")
     })
     it("should be able to remove pk wallet and add it again", async () => {
-      await keyringService.hideAccount(PK_WALLET_MOCK.address)
-      expect(keyringService.getPrivateKeys().length).toBe(0)
+      await internalSignerService.hideAccount(PK_WALLET_MOCK.address)
+      expect(internalSignerService.getPrivateKeys().length).toBe(0)
 
-      await keyringService.importSigner({
-        type: SignerTypes.privateKey,
+      await internalSignerService.importSigner({
+        type: SignerSourceTypes.privateKey,
         privateKey: PK_WALLET_MOCK.privateKey,
       })
-      expect(keyringService.getPrivateKeys().length).toBe(1)
+      expect(internalSignerService.getPrivateKeys().length).toBe(1)
     })
     it("should be able to sign transaction", async () => {
       const { address } = PK_WALLET_MOCK
-      const signed = await keyringService.signTransaction(
+      const signed = await internalSignerService.signTransaction(
         { address, network: ETHEREUM },
         createTransactionRequest({ from: address })
       )
@@ -213,7 +218,7 @@ describe("Keyring Service", () => {
     it("should be able to sign typed data", async () => {
       const { address } = PK_WALLET_MOCK
       const typedData = createTypedData()
-      const signed = await keyringService.signTypedData({
+      const signed = await internalSignerService.signTypedData({
         typedData,
         account: address,
       })
@@ -223,7 +228,7 @@ describe("Keyring Service", () => {
     it("should be able to make a personal sign", async () => {
       const { address } = PK_WALLET_MOCK
       const signingData = "0x1230"
-      const signed = await keyringService.personalSign({
+      const signed = await internalSignerService.personalSign({
         signingData,
         account: address,
       })
@@ -234,46 +239,46 @@ describe("Keyring Service", () => {
 
   describe("export secrets", () => {
     beforeEach(async () => {
-      await keyringService.importSigner({
-        type: SignerTypes.privateKey,
+      await internalSignerService.importSigner({
+        type: SignerSourceTypes.privateKey,
         privateKey: PK_WALLET_MOCK.privateKey,
       })
-      await keyringService.importSigner({
-        type: SignerTypes.keyring,
+      await internalSignerService.importSigner({
+        type: SignerSourceTypes.keyring,
         mnemonic: HD_WALLET_MOCK.mnemonic,
-        source: "import",
+        source: SignerImportSource.import,
       })
     })
     it("should be able to export private key", async () => {
-      const privateKey = await keyringService.exportPrivateKey(
+      const privateKey = await internalSignerService.exportPrivateKey(
         PK_WALLET_MOCK.address
       )
 
       expect(privateKey).toBe(PK_WALLET_MOCK.privateKey)
     })
     it("should be able to export mnemonic", async () => {
-      const mnemonic = await keyringService.exportMnemonic(
+      const mnemonic = await internalSignerService.exportMnemonic(
         HD_WALLET_MOCK.addresses[0]
       )
 
       expect(mnemonic).toBe(HD_WALLET_MOCK.mnemonic)
     })
     it("should be able to export private key from HD wallet addresses", async () => {
-      const privateKey = await keyringService.exportPrivateKey(
+      const privateKey = await internalSignerService.exportPrivateKey(
         HD_WALLET_MOCK.addresses[0]
       )
 
       expect(privateKey).toBe(PK_WALLET_MOCK.privateKey) // first address from both mocks is the same
     })
     it("should require wallet to be unlocked to export secrets", async () => {
-      keyringService.lock()
+      internalSignerService.lock()
 
-      const errorMessage = "KeyringService must be unlocked."
+      const errorMessage = "InternalSignerService must be unlocked."
       const exportMnemonic = async () => {
-        await keyringService.exportMnemonic(HD_WALLET_MOCK.addresses[0])
+        await internalSignerService.exportMnemonic(HD_WALLET_MOCK.addresses[0])
       }
       const exportPrivateKey = async () => {
-        await keyringService.exportPrivateKey(PK_WALLET_MOCK.address)
+        await internalSignerService.exportPrivateKey(PK_WALLET_MOCK.address)
       }
 
       expect(exportMnemonic()).rejects.toThrowError(errorMessage)

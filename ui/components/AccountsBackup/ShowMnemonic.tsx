@@ -1,8 +1,8 @@
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useAreKeyringsUnlocked, useLockWallet } from "../../hooks"
-import KeyringUnlock from "../Keyring/KeyringUnlock"
+import { useAreInternalSignersUnlocked, useLockWallet } from "../../hooks"
+import InternalSignerUnlock from "../InternalSigner/InternalSignerUnlock"
 import SharedAccordion from "../Shared/SharedAccordion"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import SharedButton from "../Shared/SharedButton"
@@ -23,7 +23,7 @@ export default function ShowMnemonic({
     keyPrefix: "accounts.accountItem.showMnemonic",
   })
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
 
   const [showMnemonic, setShowMnemonic] = useState(false)
   const [showExplainer, setShowExplainer] = useState(false)
@@ -39,7 +39,7 @@ export default function ShowMnemonic({
       >
         <div className="container">
           <div className="content">
-            {areKeyringsUnlocked ? (
+            {areInternalSignersUnlocked ? (
               <>
                 <SharedWarningMessage text={t("warningMessage")} />
                 <div>
@@ -93,7 +93,7 @@ export default function ShowMnemonic({
                 </div>
               </>
             ) : (
-              <KeyringUnlock displayCancelButton={false} />
+              <InternalSignerUnlock displayCancelButton={false} />
             )}
           </div>
           <SharedButton

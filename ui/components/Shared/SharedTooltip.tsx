@@ -144,11 +144,14 @@ export default function SharedTooltip(props: Props): ReactElement {
           }
           .dark {
             background: var(--green-120);
+            color: var(--green-20);
             border-radius: 4px;
-            font-size: 16px;
-            line-height: 24px;
-            padding: 2px 8px;
-            color: var(--green-40);
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            line-height: 16px;
+            text-align: center;
+            padding: 8px;
           }
         `}
       </style>

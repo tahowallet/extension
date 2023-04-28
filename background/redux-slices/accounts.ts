@@ -25,12 +25,20 @@ import { convertFixedPoint } from "../lib/fixed-point"
  * internal account types, depending on how the UI chooses to display data.
  */
 export const enum AccountType {
-  ReadOnly = "read-only",
+  ReadOnly = "readOnly",
   PrivateKey = "privateKey",
   Imported = "imported",
   Ledger = "ledger",
   Internal = "internal",
 }
+
+export const accountTypes = [
+  AccountType.Internal,
+  AccountType.Imported,
+  AccountType.PrivateKey,
+  AccountType.Ledger,
+  AccountType.ReadOnly,
+]
 
 export const DEFAULT_ACCOUNT_NAMES = [
   "Phoenix",
@@ -423,6 +431,12 @@ const accountSlice = createSlice({
 
       updateCombinedData(immerState)
     },
+    removeChainBalances: (
+      immerState,
+      { payload: chainID }: { payload: string }
+    ) => {
+      delete immerState.accountsData.evm[chainID]
+    },
   },
 })
 
@@ -433,6 +447,7 @@ export const {
   updateAccountName,
   updateENSAvatar,
   updateAssetCache,
+  removeChainBalances,
 } = accountSlice.actions
 
 export default accountSlice.reducer

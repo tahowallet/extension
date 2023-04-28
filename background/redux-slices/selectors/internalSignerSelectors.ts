@@ -1,10 +1,14 @@
 import { createSelector, OutputSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-import { Keyring, PrivateKey } from "../../services/keyring"
+import {
+  Keyring,
+  PrivateKey,
+  SignerImportSource,
+} from "../../services/internal-signer"
 import { HexString } from "../../types"
 
-export const selectKeyringStatus = createSelector(
-  (state: RootState) => state.keyrings.status,
+export const selectInternalSignerStatus = createSelector(
+  (state: RootState) => state.internalSigner.status,
   (status) => status
 )
 
@@ -16,7 +20,7 @@ export const selectKeyringByAddress = (
   (res: Keyring[]) => Keyring | undefined
 > =>
   createSelector(
-    [(state: RootState) => state.keyrings.keyrings],
+    [(state: RootState) => state.internalSigner.keyrings],
     (keyrings) => {
       const kr = keyrings.find((keyring) => keyring.addresses.includes(address))
       return kr
@@ -24,7 +28,7 @@ export const selectKeyringByAddress = (
   )
 
 export const selectKeyringsByAddresses = createSelector(
-  (state: RootState) => state.keyrings.keyrings,
+  (state: RootState) => state.internalSigner.keyrings,
   (
     keyrings
   ): {
@@ -38,19 +42,19 @@ export const selectKeyringsByAddresses = createSelector(
 )
 
 export const selectPrivateKeyWalletsByAddress = createSelector(
-  (state: RootState) => state.keyrings.privateKeys,
+  (state: RootState) => state.internalSigner.privateKeys,
   (pkWallets): { [address: HexString]: PrivateKey } =>
     Object.fromEntries(pkWallets.map((wallet) => [wallet.addresses[0], wallet]))
 )
 
 export const selectSourcesByAddress = createSelector(
-  (state: RootState) => state.keyrings.keyrings,
-  (state: RootState) => state.keyrings.metadata,
+  (state: RootState) => state.internalSigner.keyrings,
+  (state: RootState) => state.internalSigner.metadata,
   (
     keyrings,
-    keyringMetadata
+    metadata
   ): {
-    [address: HexString]: "import" | "internal"
+    [address: HexString]: SignerImportSource
   } =>
     Object.fromEntries(
       keyrings
@@ -61,7 +65,7 @@ export const selectSourcesByAddress = createSelector(
             address,
             // Guaranteed to exist by the filter above
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            keyringMetadata[keyring.id!]?.source,
+            metadata[keyring.id!]?.source,
           ])
         )
     )

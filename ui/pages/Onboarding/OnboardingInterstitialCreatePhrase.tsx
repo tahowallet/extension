@@ -1,10 +1,10 @@
 import React, { ReactElement, useCallback, useEffect } from "react"
-import { generateNewKeyring } from "@tallyho/tally-background/redux-slices/keyrings"
+import { generateNewKeyring } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { useHistory } from "react-router-dom"
 import {
   useBackgroundDispatch,
-  useAreKeyringsUnlocked,
+  useAreInternalSignersUnlocked,
   useBackgroundSelector,
 } from "../../hooks"
 
@@ -13,16 +13,16 @@ export default function OnboardingInterstitialCreatePhrase(): ReactElement {
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const history = useHistory()
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(true)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(true)
 
   const generateThenContinue = useCallback(
     async function generateThenContinue() {
-      if (areKeyringsUnlocked) {
+      if (areInternalSignersUnlocked) {
         await dispatch(generateNewKeyring(selectedNetwork.derivationPath))
         history.push("/onboarding/save-seed")
       }
     },
-    [areKeyringsUnlocked, dispatch, history, selectedNetwork]
+    [areInternalSignersUnlocked, dispatch, history, selectedNetwork]
   )
 
   useEffect(() => {
