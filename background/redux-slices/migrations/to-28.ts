@@ -1,10 +1,8 @@
-import { PrivateKey, SignerImportSource } from "../../services/internal-signer"
-
 type OldState = {
   keyrings: {
     keyringMetadata: {
       [keyringId: string]: {
-        source: SignerImportSource
+        source: "import" | "internal"
       }
     }
     importing: false | "pending" | "done" | "failed"
@@ -16,10 +14,10 @@ type NewState = {
   internalSigner: {
     metadata: {
       [keyringId: string]: {
-        source: SignerImportSource
+        source: "import" | "internal"
       }
     }
-    privateKeys: PrivateKey[]
+    privateKeys: { type: "single#secp256k1"; path: null; addresses: [string] }[]
     [sliceKey: string]: unknown
   }
 }
