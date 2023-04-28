@@ -92,6 +92,9 @@ const shouldAddHeader = (
   existingAccountTypes: AccountType[],
   currentAccountType: AccountType
 ): boolean => {
+  // Ledger and read-only accounts have their own sections.
+  // Internal accounts, imported with mnemonic or private key are in the same section so we
+  // only need to add that header once when we encounter such an account for the first time.
   switch (currentAccountType) {
     case AccountType.Ledger:
     case AccountType.ReadOnly:
