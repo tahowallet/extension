@@ -75,7 +75,7 @@ export async function getBalance(
   provider: BaseProvider,
   tokenAddress: string,
   account: string
-): Promise<BigInt> {
+): Promise<bigint> {
   const token = new ethers.Contract(tokenAddress, ERC20_ABI, provider)
 
   return BigInt((await token.balanceOf(account)).toString())

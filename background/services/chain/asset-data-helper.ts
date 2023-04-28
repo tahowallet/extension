@@ -37,34 +37,30 @@ export default class AssetDataHelper {
   constructor(private providerTracker: ProviderManager) {}
 
   async getTokenBalance(
-    addressOnNetwork: AddressOnNetwork,
-    smartContractAddress: HexString
+    { address, network }: AddressOnNetwork,
+    contractAddress: HexString
   ): Promise<SmartContractAmount> {
-    const provider = this.providerTracker.providerForNetwork(
-      addressOnNetwork.network
-    )
+    const provider = this.providerTracker.providerForNetwork(network)
 
     if (!provider) {
-      throw logger.buildError(
-        "Could not find a provider for network",
-        addressOnNetwork.network
-      )
+      throw logger.buildError("Could not find a provider for network", network)
     }
 
-    const balances = await getTokenBalances(
-      addressOnNetwork,
-      [smartContractAddress],
-      provider
+    const balance = await getBalance(provider, contractAddress, address).catch(
+      () => null
     )
 
-    if (balances.length < 1) {
+    if (balance === null) {
       throw logger.buildError(
-        "Unable to retrieve balances for contract",
-        smartContractAddress
+        "Unable to retrieve balance for contract",
+        contractAddress
       )
     }
 
-    return balances[0]
+    return {
+      smartContract: { contractAddress, homeNetwork: network },
+      amount: balance,
+    }
   }
 
   async getTokenBalances(
