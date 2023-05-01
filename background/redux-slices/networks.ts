@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import type { RootState } from "."
 import { ETHEREUM } from "../constants"
 import { EIP1559Block, AnyEVMBlock, EVMNetwork } from "../networks"
+import { removeChainBalances } from "./accounts"
 import { selectCurrentNetwork } from "./selectors/uiSelectors"
 import { setSelectedNetwork } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
@@ -89,6 +90,7 @@ export const removeCustomChain = createBackgroundAsyncThunk(
     if (currentNetwork.chainID === chainID) {
       await dispatch(setSelectedNetwork(ETHEREUM))
     }
+    await dispatch(removeChainBalances(chainID))
 
     return main.removeEVMNetwork(chainID)
   }

@@ -19,7 +19,6 @@ import {
   NFTCollectionCached,
 } from "@tallyho/tally-background/redux-slices/nfts_update"
 import classNames from "classnames"
-import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem, {
@@ -137,12 +136,10 @@ function SelectAssetMenuContent<T extends AnyAsset>(
   const [searchTerm, setSearchTerm] = useState("")
   const searchInput = useRef<HTMLInputElement | null>(null)
 
-  const trustedAssets = assets.filter(({ asset }) => !isUntrustedAsset(asset))
-
   const filteredAssets =
     searchTerm.trim() === ""
-      ? trustedAssets
-      : trustedAssets.filter(({ asset }) => {
+      ? assets
+      : assets.filter(({ asset }) => {
           return (
             asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
             ("contractAddress" in asset &&
