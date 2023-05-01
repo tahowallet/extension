@@ -7,7 +7,7 @@ import InternalSignerService, {
   MAX_OUTSIDE_IDLE_TIME,
   SignerImportSource,
   SignerSourceTypes,
-  InternalSignerTypes,
+  SignerInternalTypes,
 } from ".."
 import { ETHEREUM } from "../../../constants"
 import logger from "../../../lib/logger"
@@ -95,9 +95,9 @@ describe("InternalSignerService when uninitialized", () => {
       ).rejects.toThrow("InternalSignerService must be unlocked.")
 
       await Promise.all(
-        Object.keys(InternalSignerTypes).map(async (signerType) =>
+        Object.keys(SignerInternalTypes).map(async (signerType) =>
           expect(
-            service.generateNewKeyring(signerType as InternalSignerTypes)
+            service.generateNewKeyring(signerType as SignerInternalTypes)
           ).rejects.toThrow("InternalSignerService must be unlocked.")
         )
       )
@@ -140,14 +140,14 @@ describe("InternalSignerService when uninitialized", () => {
 
     it("will create multiple distinct BIP-39 S256 accounts and expose mnemonics", async () => {
       const keyringOne = service.generateNewKeyring(
-        InternalSignerTypes.mnemonicBIP39S256
+        SignerInternalTypes.mnemonicBIP39S256
       )
       await expect(keyringOne).resolves.toMatchObject({
         id: expect.stringMatching(/.+/),
       })
 
       const keyringTwo = service.generateNewKeyring(
-        InternalSignerTypes.mnemonicBIP39S256
+        SignerInternalTypes.mnemonicBIP39S256
       )
       await expect(keyringTwo).resolves.toMatchObject({
         id: expect.stringMatching(/.+/),
@@ -178,7 +178,7 @@ describe("InternalSignerService when initialized", () => {
       address = emittedAddress
     })
     const { mnemonic } = await service.generateNewKeyring(
-      InternalSignerTypes.mnemonicBIP39S256
+      SignerInternalTypes.mnemonicBIP39S256
     )
     await service.importSigner({
       type: SignerSourceTypes.keyring,
@@ -286,7 +286,7 @@ describe("InternalSignerService when saving keyrings", () => {
     })
 
     const { mnemonic } = await service.generateNewKeyring(
-      InternalSignerTypes.mnemonicBIP39S256
+      SignerInternalTypes.mnemonicBIP39S256
     )
     await service.importSigner({
       type: SignerSourceTypes.keyring,
@@ -354,7 +354,7 @@ describe("InternalSignerService when saving keyrings", () => {
     ).resolves.toHaveLength(1)
 
     expect(storedKeyrings[0]).toMatchObject({
-      type: InternalSignerTypes.mnemonicBIP39S256,
+      type: SignerInternalTypes.mnemonicBIP39S256,
       id: "0x77555a3b",
       addresses: ["0x3c10745391dfae50df6dc0ee17281f34bbda2fbf"],
     })
@@ -391,7 +391,7 @@ describe("InternalSignerService when autolocking", () => {
       address = emittedAddress
     })
     const { mnemonic } = await service.generateNewKeyring(
-      InternalSignerTypes.mnemonicBIP39S256
+      SignerInternalTypes.mnemonicBIP39S256
     )
     await service.importSigner({
       type: SignerSourceTypes.keyring,
@@ -446,7 +446,7 @@ describe("InternalSignerService when autolocking", () => {
     {
       action: "generating a keyring",
       call: async () => {
-        await service.generateNewKeyring(InternalSignerTypes.mnemonicBIP39S256)
+        await service.generateNewKeyring(SignerInternalTypes.mnemonicBIP39S256)
       },
     },
   ])("will bump keyring activity idle time when $action", async ({ call }) => {
@@ -485,7 +485,7 @@ describe("InternalSignerService when autolocking", () => {
     jest
       .spyOn(Date, "now")
       .mockReturnValue(dateNowValue + MAX_INTERNAL_SIGNERS_IDLE_TIME - 1)
-    await service.generateNewKeyring(InternalSignerTypes.mnemonicBIP39S256)
+    await service.generateNewKeyring(SignerInternalTypes.mnemonicBIP39S256)
 
     callAutolockHandler(MAX_OUTSIDE_IDLE_TIME)
     expect(service.locked()).toEqual(false)

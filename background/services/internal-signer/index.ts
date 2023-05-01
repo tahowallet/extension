@@ -26,7 +26,7 @@ import logger from "../../lib/logger"
 export const MAX_INTERNAL_SIGNERS_IDLE_TIME = 60 * MINUTE
 export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
 
-export enum InternalSignerTypes {
+export enum SignerInternalTypes {
   mnemonicBIP39S128 = "mnemonic#bip39:128",
   mnemonicBIP39S256 = "mnemonic#bip39:256",
   metamaskMnemonic = "mnemonic#metamask",
@@ -45,13 +45,13 @@ export enum SignerSourceTypes {
 }
 
 export type Keyring = {
-  type: InternalSignerTypes
+  type: SignerInternalTypes
   id: string
   path: string | null
   addresses: string[]
 }
 export type PrivateKey = Keyring & {
-  type: InternalSignerTypes.singleSECP
+  type: SignerInternalTypes.singleSECP
   path: null
   addresses: [string]
 }
@@ -72,25 +72,25 @@ type SerializedPrivateKey = {
   privateKey: string
 }
 
-type InternalSignerMetadataHDKeyring = {
+type ImportMetadataHDKeyring = {
   type: SignerSourceTypes.keyring
   mnemonic: string
   source: SignerImportSource
   path?: string
 }
-type InternalSignerMetadataPrivateKey = {
+type ImportMetadataPrivateKey = {
   type: SignerSourceTypes.privateKey
   privateKey: string
 }
-type InternalSignerMetadataJSONPrivateKey = {
+type ImportMetadataJSONPrivateKey = {
   type: SignerSourceTypes.jsonFile
   jsonFile: string
   password: string
 }
-export type InternalSignerMetadataWithType =
-  | InternalSignerMetadataPrivateKey
-  | InternalSignerMetadataHDKeyring
-  | InternalSignerMetadataJSONPrivateKey
+export type SignerImportMetadata =
+  | ImportMetadataPrivateKey
+  | ImportMetadataHDKeyring
+  | ImportMetadataJSONPrivateKey
 
 type InternalSignerHDKeyring = {
   type: SignerSourceTypes.keyring
@@ -379,12 +379,12 @@ export default class InternalSignerService extends BaseService<Events> {
    *          accessed at generation time through this return value.
    */
   async generateNewKeyring(
-    type: InternalSignerTypes,
+    type: SignerInternalTypes,
     path?: string
   ): Promise<{ id: string; mnemonic: string[] }> {
     this.requireUnlocked()
 
-    if (type !== InternalSignerTypes.mnemonicBIP39S256) {
+    if (type !== SignerInternalTypes.mnemonicBIP39S256) {
       throw new Error(
         "InternalSignerService only supports generating 256-bit HD key trees"
       )
@@ -410,7 +410,7 @@ export default class InternalSignerService extends BaseService<Events> {
    * @returns null | string - if new account was added or existing account was found then returns an address
    */
   async importSigner(
-    signerMetadata: InternalSignerMetadataWithType
+    signerMetadata: SignerImportMetadata
   ): Promise<HexString | null> {
     this.requireUnlocked()
     try {
@@ -443,7 +443,7 @@ export default class InternalSignerService extends BaseService<Events> {
    * @param signerMetadata - keyring metadata - path, source, mnemonic
    * @returns string - address of the first account from the HD keyring
    */
-  #importKeyring(signerMetadata: InternalSignerMetadataHDKeyring): string {
+  #importKeyring(signerMetadata: ImportMetadataHDKeyring): string {
     const { mnemonic, source, path } = signerMetadata
 
     const newKeyring = path
@@ -468,7 +468,7 @@ export default class InternalSignerService extends BaseService<Events> {
    * @param signerMetadata - private key metadata - private key string
    * @returns string - address of imported or existing account
    */
-  #importPrivateKey(signerMetadata: InternalSignerMetadataPrivateKey): string {
+  #importPrivateKey(signerMetadata: ImportMetadataPrivateKey): string {
     const { privateKey } = signerMetadata
     const newWallet = new Wallet(privateKey)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
@@ -490,7 +490,7 @@ export default class InternalSignerService extends BaseService<Events> {
    * @returns string - address of imported or existing account
    */
   async #importJSON(
-    signerMetadata: InternalSignerMetadataJSONPrivateKey
+    signerMetadata: ImportMetadataJSONPrivateKey
   ): Promise<string> {
     const { jsonFile, password } = signerMetadata
     const newWallet = await Wallet.fromEncryptedJson(jsonFile, password)
@@ -535,7 +535,7 @@ export default class InternalSignerService extends BaseService<Events> {
       // TODO this type is meanlingless from the library's perspective.
       // Reconsider, or explicitly track which keyrings have been generated vs
       // imported as well as their strength
-      type: InternalSignerTypes.mnemonicBIP39S256,
+      type: SignerInternalTypes.mnemonicBIP39S256,
       addresses: [
         ...kr
           .getAddressesSync()
@@ -554,7 +554,7 @@ export default class InternalSignerService extends BaseService<Events> {
     this.requireUnlocked()
 
     return this.#privateKeys.map((wallet) => ({
-      type: InternalSignerTypes.singleSECP,
+      type: SignerInternalTypes.singleSECP,
       addresses: [normalizeEVMAddress(wallet.address)],
       id: wallet.publicKey,
       path: null,

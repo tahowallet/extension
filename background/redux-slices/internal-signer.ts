@@ -5,7 +5,7 @@ import { createBackgroundAsyncThunk } from "./utils"
 import {
   Keyring,
   PrivateKey,
-  InternalSignerMetadataWithType,
+  SignerImportMetadata,
   SignerImportSource,
 } from "../services/internal-signer/index"
 import { HexString } from "../types"
@@ -46,7 +46,7 @@ export const emitter = new Emittery<Events>()
 export const importSigner = createBackgroundAsyncThunk(
   "internalSigner/importSigner",
   async (
-    signerRaw: InternalSignerMetadataWithType,
+    signerRaw: SignerImportMetadata,
     { getState, dispatch, extra: { main } }
   ): Promise<{ success: boolean; errorMessage?: string }> => {
     const address = await main.importSigner(signerRaw)
