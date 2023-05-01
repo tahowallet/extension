@@ -1,6 +1,6 @@
 import { webcrypto } from "crypto"
 import InternalSignerService, {
-  InternalSignerTypes,
+  SignerInternalTypes,
   SignerImportSource,
   SignerSourceTypes,
 } from ".."
@@ -47,7 +47,7 @@ describe("InternalSignerService", () => {
   describe("generated HD wallet", () => {
     it("should generate new HD wallet", async () => {
       const keyring = await internalSignerService.generateNewKeyring(
-        InternalSignerTypes.mnemonicBIP39S256
+        SignerInternalTypes.mnemonicBIP39S256
       )
 
       expect(keyring.id).toBeDefined()

@@ -183,8 +183,8 @@ import {
 } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 import {
-  InternalSignerMetadataWithType,
-  InternalSignerTypes,
+  SignerImportMetadata,
+  SignerInternalTypes,
 } from "./services/internal-signer"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
 
@@ -1183,7 +1183,7 @@ export default class Main extends BaseService<never> {
         id: string
         mnemonic: string[]
       } = await this.internalSignerService.generateNewKeyring(
-        InternalSignerTypes.mnemonicBIP39S256,
+        SignerInternalTypes.mnemonicBIP39S256,
         path
       )
 
@@ -1679,9 +1679,7 @@ export default class Main extends BaseService<never> {
     return this.internalSignerService.exportPrivateKey(address)
   }
 
-  async importSigner(
-    signerRaw: InternalSignerMetadataWithType
-  ): Promise<string | null> {
+  async importSigner(signerRaw: SignerImportMetadata): Promise<string | null> {
     return this.internalSignerService.importSigner(signerRaw)
   }
 
