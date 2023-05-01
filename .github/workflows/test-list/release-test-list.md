@@ -1,12 +1,12 @@
 # Release checklist
 
-This release checklist should be performed before release will be published.
+This release checklist should be performed before release is published.
 
 - dev tests should be performed by the dev team
 - if something is not working please create an issue and link it here. Checkbox should be checked only if everything was fine
 - in case of serious issues or doubts you should ask the team first
 
-**Don't forget to approve the PR when checklist will be finished ✅**
+**Don't forget to approve the PR when checklist is finished ✅**
 
 ---
 
@@ -211,6 +211,7 @@ This release checklist should be performed before release will be published.
 
 - [ ] check `hide balance under $2` option
 - [ ] check bug reports - export logs
+- [ ] check connected dapp - confirm you are able to disconnect from a dapp
 
 ### ☀️ Abilities
 
