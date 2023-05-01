@@ -10,12 +10,69 @@ export interface AggregateContractResponse {
   }>
 }
 
+const NETWORKS_SUPPORTING_MULTICALL_BY_CHAIN_ID = [
+  "1",
+  "3",
+  "4",
+  "5",
+  "10",
+  "42",
+  "137",
+  "69",
+  "100",
+  "420",
+  "42161",
+  "421611",
+  "421613",
+  "80001",
+  "11155111",
+  "43114",
+  "43113",
+  "4002",
+  "250",
+  "56",
+  "97",
+  "1284",
+  "1285",
+  "1287",
+  "1666600000",
+  "25",
+  "122",
+  "19",
+  "16",
+  "288",
+  "1313161554",
+  "592",
+  "66",
+  "128",
+  "1088",
+  "30",
+  "31",
+  "9001",
+  "9000",
+  "108",
+  "18",
+  "26863",
+  "42220",
+  "71402",
+  "71401",
+  "8217",
+  "2001",
+  "321",
+  "111",
+  "59140",
+]
+
 export const MULTICALL_CONTRACT_ADDRESS =
   "0xca11bde05977b3631167028862be2a173976ca11"
 
 export const CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES = {
   "324": "0x47898B2C52C957663aE9AB46922dCec150a2272c", // zksync era
 } as { [chainId: string]: string }
+
+export const networkSupportsMultiCall = (chainID: string): boolean =>
+  NETWORKS_SUPPORTING_MULTICALL_BY_CHAIN_ID.includes(chainID) ||
+  chainID in CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES
 
 export const MULTICALL_ABI = [
   // https://github.com/mds1/multicall

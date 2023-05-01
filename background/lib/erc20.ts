@@ -7,6 +7,7 @@ import {
   FunctionFragment,
   TransactionDescription,
 } from "ethers/lib/utils"
+import { poll, PollOptions } from "@ethersproject/web"
 import { SmartContractAmount, SmartContractFungibleAsset } from "../assets"
 import { EVMLog, SmartContract } from "../networks"
 import { HexString } from "../types"
@@ -16,8 +17,10 @@ import {
   CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES,
   MULTICALL_ABI,
   MULTICALL_CONTRACT_ADDRESS,
+  networkSupportsMultiCall,
 } from "./multicall"
 import logger from "./logger"
+import { isFulfilledPromise } from "./utils/type-guards"
 
 export const ERC20_FUNCTIONS = {
   allowance: FunctionFragment.from(
@@ -72,7 +75,7 @@ export const ERC2612_INTERFACE = new ethers.utils.Interface(ERC2612_ABI)
  * Get an account's balance from an ERC20-compliant contract.
  */
 export async function getBalance(
-  provider: BaseProvider,
+  provider: Provider,
   tokenAddress: string,
   account: string
 ): Promise<bigint> {
@@ -193,41 +196,82 @@ export const getTokenBalances = async (
   tokenAddresses: HexString[],
   provider: Provider
 ): Promise<SmartContractAmount[]> => {
-  const multicallAddress =
-    CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES[network.chainID] ||
-    MULTICALL_CONTRACT_ADDRESS
+  if (networkSupportsMultiCall(network.chainID)) {
+    const multicallAddress =
+      CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES[network.chainID] ||
+      MULTICALL_CONTRACT_ADDRESS
 
-  const contract = new ethers.Contract(
-    multicallAddress,
-    MULTICALL_ABI,
-    provider
+    const contract = new ethers.Contract(
+      multicallAddress,
+      MULTICALL_ABI,
+      provider
+    )
+
+    const balanceOfCallData = ERC20_INTERFACE.encodeFunctionData("balanceOf", [
+      address,
+    ])
+
+    const response = (await contract.callStatic.tryBlockAndAggregate(
+      // false === don't require all calls to succeed
+      false,
+      tokenAddresses.map((tokenAddress) => [tokenAddress, balanceOfCallData])
+    )) as AggregateContractResponse
+
+    return response.returnData.flatMap((data, i) => {
+      if (data.success !== true) {
+        return []
+      }
+
+      if (data.returnData === "0x00" || data.returnData === "0x") {
+        return []
+      }
+
+      return {
+        amount: BigInt(BigNumber.from(data.returnData).toString()),
+        smartContract: {
+          contractAddress: tokenAddresses[i],
+          homeNetwork: network,
+        },
+      }
+    })
+  }
+
+  const POLL_OPTIONS: PollOptions = {
+    ceiling: 500,
+    timeout: 5000,
+    retryLimit: 2,
+  }
+
+  // Attempt to fetch all balances through multiple RPC requests
+  // There's a risk of going to get rate limited depending on the
+  // number of tokens queried for the network
+
+  const balances = await Promise.allSettled(
+    tokenAddresses.map(
+      async (contractAddress): Promise<SmartContractAmount> => {
+        // Poll will keep retrying until:
+        // - This function doesn't return undefined
+        // - It hits the retry limit, then it rejects
+        // - It reaches the timeout, then it rejects
+        const result = await poll(
+          () =>
+            getBalance(provider, contractAddress, address)
+              .then((amount) => ({
+                smartContract: { contractAddress, homeNetwork: network },
+                amount,
+              }))
+              .catch(() => undefined),
+          POLL_OPTIONS
+        )
+
+        if (!result) {
+          throw new Error("Invalid value returned for token balance")
+        }
+
+        return result
+      }
+    )
   )
 
-  const balanceOfCallData = ERC20_INTERFACE.encodeFunctionData("balanceOf", [
-    address,
-  ])
-
-  const response = (await contract.callStatic.tryBlockAndAggregate(
-    // false === don't require all calls to succeed
-    false,
-    tokenAddresses.map((tokenAddress) => [tokenAddress, balanceOfCallData])
-  )) as AggregateContractResponse
-
-  return response.returnData.flatMap((data, i) => {
-    if (data.success !== true) {
-      return []
-    }
-
-    if (data.returnData === "0x00" || data.returnData === "0x") {
-      return []
-    }
-
-    return {
-      amount: BigInt(BigNumber.from(data.returnData).toString()),
-      smartContract: {
-        contractAddress: tokenAddresses[i],
-        homeNetwork: network,
-      },
-    }
-  })
+  return balances.filter(isFulfilledPromise).map((promise) => promise.value)
 }
