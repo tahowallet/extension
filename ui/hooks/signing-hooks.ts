@@ -6,6 +6,7 @@ import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { useEffect } from "react"
 import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
+import { isSignerWithSecrets } from "../utils/accounts"
 
 /**
  * Checks and returns whether the internal signers service is currently unlocked, redirecting
@@ -45,9 +46,11 @@ export const useAreInternalSignersUnlocked = (
 }
 
 export function useIsSignerLocked(signer: AccountSigner | null): boolean {
-  const needInternalSigner = isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI)
-    ? false
-    : signer?.type === "keyring" || signer?.type === "privateKey"
+  const needInternalSigner =
+    isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI) || !signer
+      ? false
+      : isSignerWithSecrets(signer)
+
   const areInternalSignersUnlocked =
     useAreInternalSignersUnlocked(needInternalSigner)
   return needInternalSigner && !areInternalSignersUnlocked

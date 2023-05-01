@@ -4,7 +4,7 @@ import { SignerFrameProps } from ".."
 import { useBackgroundDispatch } from "../../../../hooks"
 import SharedButton from "../../../Shared/SharedButton"
 
-export default function SignerInternalFrame<T extends SignOperationType>({
+export default function SignerReadOnlyFrame<T extends SignOperationType>({
   children,
   rejectActionCreator,
 }: SignerFrameProps<T>): ReactElement {

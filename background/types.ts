@@ -52,15 +52,6 @@ export type NormalizedEVMAddress = Opaque<
  */
 export type UNIXTime = number
 
-// KEY TYPES
-
-export enum InternalSignerTypes {
-  mnemonicBIP39S128 = "mnemonic#bip39:128",
-  mnemonicBIP39S256 = "mnemonic#bip39:256",
-  metamaskMnemonic = "mnemonic#metamask",
-  singleSECP = "single#secp256k1",
-}
-
 export type EIP712DomainType = {
   name?: string
   version?: string

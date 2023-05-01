@@ -1,4 +1,4 @@
-# Any changes to indernal-signer service code deserve extra scrutiny to prevent key
+# Any changes to internal-signer service code deserve extra scrutiny to prevent key
 # exfiltration and general "roll your own crypto" mistakes. Newer
 # contributions to internal-signer code should be assumed insecure, requiring
 # agreement across the team to merge.

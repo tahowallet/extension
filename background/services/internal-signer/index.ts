@@ -13,12 +13,7 @@ import {
   encryptVault,
   SaltedKey,
 } from "./encryption"
-import {
-  HexString,
-  InternalSignerTypes,
-  EIP712TypedData,
-  UNIXTime,
-} from "../../types"
+import { HexString, EIP712TypedData, UNIXTime } from "../../types"
 import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
 
 import BaseService from "../base"
@@ -30,6 +25,24 @@ import logger from "../../lib/logger"
 
 export const MAX_INTERNAL_SIGNERS_IDLE_TIME = 60 * MINUTE
 export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
+
+export enum InternalSignerTypes {
+  mnemonicBIP39S128 = "mnemonic#bip39:128",
+  mnemonicBIP39S256 = "mnemonic#bip39:256",
+  metamaskMnemonic = "mnemonic#metamask",
+  singleSECP = "single#secp256k1",
+}
+
+export enum SignerImportSource {
+  import = "import",
+  internal = "internal",
+}
+
+export enum SignerSourceTypes {
+  privateKey = "privateKey",
+  jsonFile = "jsonFile",
+  keyring = "keyring",
+}
 
 export type Keyring = {
   type: InternalSignerTypes
@@ -51,17 +64,6 @@ export type KeyringAccountSigner = {
 export type PrivateKeyAccountSigner = {
   type: "privateKey"
   walletID: string
-}
-
-export enum SignerImportSource {
-  import = "import",
-  internal = "internal",
-}
-
-export enum SignerSourceTypes {
-  privateKey = "privateKey",
-  jsonFile = "jsonFile",
-  keyring = "keyring",
 }
 
 type SerializedPrivateKey = {
@@ -157,7 +159,7 @@ export default class InternalSignerService extends BaseService<Events> {
   #hiddenAccounts: { [address: HexString]: boolean } = {}
 
   /**
-   * The last time a wallet took an action that required the service to be
+   * The last time an internal signer took an action that required the service to be
    * unlocked (signing, adding a keyring, etc).
    */
   lastActivity: UNIXTime | undefined
@@ -189,7 +191,7 @@ export default class InternalSignerService extends BaseService<Events> {
   override async internalStartService(): Promise<void> {
     // Emit locked status on startup. Should always be locked, but the main
     // goal is to have external viewers synced to internal state no matter what
-    // it is. Don't emit if there are no keys to unlock.
+    // it is. Don't emit if there are no vaults to unlock.
     await super.internalStartService()
     if ((await getEncryptedVaults()).vaults.length > 0) {
       this.emitter.emit("locked", this.locked())
@@ -231,7 +233,7 @@ export default class InternalSignerService extends BaseService<Events> {
    * @param ignoreExistingVaults If true, ignore any existing, previously
    *        persisted vaults on unlock, instead starting with a clean slate.
    *        This option makes sense if a user has lost their password, and needs
-   *        to generate a new valut.
+   *        to generate a new vault.
    *
    *        Note that old vaults aren't deleted, and can still be recovered
    *        later in an emergency.
@@ -405,30 +407,33 @@ export default class InternalSignerService extends BaseService<Events> {
    * Import new internal signer
    *
    * @param signerMetadata any signer with type and metadata
-   * @returns null | string - if new account was added then returns an address
+   * @returns null | string - if new account was added or existing account was found then returns an address
    */
   async importSigner(
     signerMetadata: InternalSignerMetadataWithType
   ): Promise<HexString | null> {
     this.requireUnlocked()
-    let address: HexString | null
+    try {
+      let address: HexString | null
 
-    if (signerMetadata.type === SignerSourceTypes.privateKey) {
-      address = this.#importPrivateKey(signerMetadata)
-    } else if (signerMetadata.type === SignerSourceTypes.jsonFile) {
-      address = await this.#importJSON(signerMetadata)
-    } else {
-      address = this.#importKeyring(signerMetadata)
+      if (signerMetadata.type === SignerSourceTypes.privateKey) {
+        address = this.#importPrivateKey(signerMetadata)
+      } else if (signerMetadata.type === SignerSourceTypes.jsonFile) {
+        address = await this.#importJSON(signerMetadata)
+      } else {
+        address = this.#importKeyring(signerMetadata)
+      }
+
+      this.#hiddenAccounts[address] = false
+      await this.#persistInternalSigners()
+      this.emitter.emit("address", address)
+      this.#emitInternalSigners()
+
+      return address
+    } catch (error) {
+      logger.error("Signer import failed:", error)
+      return null
     }
-
-    if (!address) return null
-
-    this.#hiddenAccounts[address] = false
-    await this.#persistInternalSigners()
-    this.emitter.emit("address", address)
-    this.#emitInternalSigners()
-
-    return address
   }
 
   /**
@@ -436,19 +441,20 @@ export default class InternalSignerService extends BaseService<Events> {
    * keyring for system use.
    *
    * @param signerMetadata - keyring metadata - path, source, mnemonic
-   * @returns string | null - address of the first account from the HD keyring or null if nothing was imported
+   * @returns string - address of the first account from the HD keyring
    */
-  #importKeyring(
-    signerMetadata: InternalSignerMetadataHDKeyring
-  ): string | null {
+  #importKeyring(signerMetadata: InternalSignerMetadataHDKeyring): string {
     const { mnemonic, source, path } = signerMetadata
 
     const newKeyring = path
       ? new HDKeyring({ mnemonic, path })
       : new HDKeyring({ mnemonic })
 
-    if (this.#keyrings.some((kr) => kr.id === newKeyring.id)) {
-      return null
+    const existingKeyring = this.#keyrings.find((kr) => kr.id === newKeyring.id)
+
+    if (existingKeyring) {
+      const [address] = existingKeyring.getAddressesSync()
+      return address
     }
     this.#keyrings.push(newKeyring)
     const [address] = newKeyring.addAddressesSync(1)
@@ -460,17 +466,15 @@ export default class InternalSignerService extends BaseService<Events> {
   /**
    * Import private key with a string
    * @param signerMetadata - private key metadata - private key string
-   * @returns string | null - address of imported account or null if nothing was imported
+   * @returns string - address of imported or existing account
    */
-  #importPrivateKey(
-    signerMetadata: InternalSignerMetadataPrivateKey
-  ): string | null {
+  #importPrivateKey(signerMetadata: InternalSignerMetadataPrivateKey): string {
     const { privateKey } = signerMetadata
     const newWallet = new Wallet(privateKey)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
 
     if (this.#findSigner(normalizedAddress)) {
-      return null
+      return normalizedAddress
     }
 
     this.#privateKeys.push(newWallet)
@@ -483,17 +487,17 @@ export default class InternalSignerService extends BaseService<Events> {
   /**
    * Import private key with JSON file
    * @param signerMetadata - JSON keystore metadata - stringified contents of JSON file, password
-   * @returns string | null - address of imported account or null if nothing was imported
+   * @returns string - address of imported or existing account
    */
   async #importJSON(
     signerMetadata: InternalSignerMetadataJSONPrivateKey
-  ): Promise<string | null> {
+  ): Promise<string> {
     const { jsonFile, password } = signerMetadata
     const newWallet = await Wallet.fromEncryptedJson(jsonFile, password)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
 
     if (this.#findSigner(normalizedAddress)) {
-      return null
+      return normalizedAddress
     }
 
     this.#privateKeys.push(newWallet)

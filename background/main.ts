@@ -38,7 +38,7 @@ import {
   getNoopService,
 } from "./services"
 
-import { HexString, InternalSignerTypes, NormalizedEVMAddress } from "./types"
+import { HexString, NormalizedEVMAddress } from "./types"
 import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
@@ -182,7 +182,10 @@ import {
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
-import { InternalSignerMetadataWithType } from "./services/internal-signer"
+import {
+  InternalSignerMetadataWithType,
+  InternalSignerTypes,
+} from "./services/internal-signer"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
 
 // This sanitizer runs on store and action data before serializing for remote
