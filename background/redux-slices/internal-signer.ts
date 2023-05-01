@@ -9,7 +9,6 @@ import {
   SignerImportSource,
 } from "../services/internal-signer/index"
 import { HexString } from "../types"
-import logger from "../lib/logger"
 import { UIState, setNewSelectedAccount } from "./ui"
 
 type KeyringToVerify = {
@@ -50,24 +49,12 @@ export const importSigner = createBackgroundAsyncThunk(
     signerRaw: InternalSignerMetadataWithType,
     { getState, dispatch, extra: { main } }
   ): Promise<{ success: boolean; errorMessage?: string }> => {
-    let address = null
-
-    try {
-      address = await main.importSigner(signerRaw)
-    } catch (error) {
-      logger.error("Internal signer import failed:", error)
-
-      return {
-        success: false,
-        errorMessage: "Unexpected error during account import.",
-      }
-    }
+    const address = await main.importSigner(signerRaw)
 
     if (!address) {
       return {
         success: false,
-        errorMessage:
-          "Failed to import new account. Address may already be imported.",
+        errorMessage: "Unexpected error during account import.",
       }
     }
 

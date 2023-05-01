@@ -407,30 +407,33 @@ export default class InternalSignerService extends BaseService<Events> {
    * Import new internal signer
    *
    * @param signerMetadata any signer with type and metadata
-   * @returns null | string - if new account was added then returns an address
+   * @returns null | string - if new account was added or existing account was found then returns an address
    */
   async importSigner(
     signerMetadata: InternalSignerMetadataWithType
   ): Promise<HexString | null> {
     this.requireUnlocked()
-    let address: HexString | null
+    try {
+      let address: HexString | null
 
-    if (signerMetadata.type === SignerSourceTypes.privateKey) {
-      address = this.#importPrivateKey(signerMetadata)
-    } else if (signerMetadata.type === SignerSourceTypes.jsonFile) {
-      address = await this.#importJSON(signerMetadata)
-    } else {
-      address = this.#importKeyring(signerMetadata)
+      if (signerMetadata.type === SignerSourceTypes.privateKey) {
+        address = this.#importPrivateKey(signerMetadata)
+      } else if (signerMetadata.type === SignerSourceTypes.jsonFile) {
+        address = await this.#importJSON(signerMetadata)
+      } else {
+        address = this.#importKeyring(signerMetadata)
+      }
+
+      this.#hiddenAccounts[address] = false
+      await this.#persistInternalSigners()
+      this.emitter.emit("address", address)
+      this.#emitInternalSigners()
+
+      return address
+    } catch (error) {
+      logger.error("Signer import failed:", error)
+      return null
     }
-
-    if (!address) return null
-
-    this.#hiddenAccounts[address] = false
-    await this.#persistInternalSigners()
-    this.emitter.emit("address", address)
-    this.#emitInternalSigners()
-
-    return address
   }
 
   /**
@@ -438,19 +441,20 @@ export default class InternalSignerService extends BaseService<Events> {
    * keyring for system use.
    *
    * @param signerMetadata - keyring metadata - path, source, mnemonic
-   * @returns string | null - address of the first account from the HD keyring or null if nothing was imported
+   * @returns string - address of the first account from the HD keyring
    */
-  #importKeyring(
-    signerMetadata: InternalSignerMetadataHDKeyring
-  ): string | null {
+  #importKeyring(signerMetadata: InternalSignerMetadataHDKeyring): string {
     const { mnemonic, source, path } = signerMetadata
 
     const newKeyring = path
       ? new HDKeyring({ mnemonic, path })
       : new HDKeyring({ mnemonic })
 
-    if (this.#keyrings.some((kr) => kr.id === newKeyring.id)) {
-      return null
+    const existingKeyring = this.#keyrings.find((kr) => kr.id === newKeyring.id)
+
+    if (existingKeyring) {
+      const [address] = existingKeyring.getAddressesSync()
+      return address
     }
     this.#keyrings.push(newKeyring)
     const [address] = newKeyring.addAddressesSync(1)
@@ -462,17 +466,15 @@ export default class InternalSignerService extends BaseService<Events> {
   /**
    * Import private key with a string
    * @param signerMetadata - private key metadata - private key string
-   * @returns string | null - address of imported account or null if nothing was imported
+   * @returns string - address of imported or existing account
    */
-  #importPrivateKey(
-    signerMetadata: InternalSignerMetadataPrivateKey
-  ): string | null {
+  #importPrivateKey(signerMetadata: InternalSignerMetadataPrivateKey): string {
     const { privateKey } = signerMetadata
     const newWallet = new Wallet(privateKey)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
 
     if (this.#findSigner(normalizedAddress)) {
-      return null
+      return normalizedAddress
     }
 
     this.#privateKeys.push(newWallet)
@@ -485,17 +487,17 @@ export default class InternalSignerService extends BaseService<Events> {
   /**
    * Import private key with JSON file
    * @param signerMetadata - JSON keystore metadata - stringified contents of JSON file, password
-   * @returns string | null - address of imported account or null if nothing was imported
+   * @returns string - address of imported or existing account
    */
   async #importJSON(
     signerMetadata: InternalSignerMetadataJSONPrivateKey
-  ): Promise<string | null> {
+  ): Promise<string> {
     const { jsonFile, password } = signerMetadata
     const newWallet = await Wallet.fromEncryptedJson(jsonFile, password)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
 
     if (this.#findSigner(normalizedAddress)) {
-      return null
+      return normalizedAddress
     }
 
     this.#privateKeys.push(newWallet)
