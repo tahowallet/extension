@@ -134,10 +134,13 @@ export default function SettingsCustomNetworks(): ReactElement {
         .confirm_menu_actions {
           display: flex;
           justify-content: space-between;
+          margin-top: -20px;
         }
 
         .confirm_menu_network_name {
           color: var(--white);
+          max-width: 200px;
+          display: inline-block;
           vertical-align: bottom;
           overflow-x: hidden;
           white-space: pre;
