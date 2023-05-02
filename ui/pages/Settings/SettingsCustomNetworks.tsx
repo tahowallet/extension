@@ -62,17 +62,24 @@ export default function SettingsCustomNetworks(): ReactElement {
         <div className="confirm_menu">
           <h3>{t("deleteModal.title")}</h3>
           <div className="confirm_menu_description">
+            <div className="network_name_container">
+              <Trans
+                t={t}
+                i18nKey="deleteModal.desc1"
+                components={{
+                  name: (
+                    <span
+                      title={networkToDelete?.name}
+                      className="confirm_menu_network_name"
+                    />
+                  ),
+                }}
+                values={{ name: networkToDelete?.name }}
+              />
+            </div>
             <Trans
               t={t}
-              i18nKey="deleteModal.desc"
-              components={{
-                name: (
-                  <span
-                    title={networkToDelete?.name}
-                    className="confirm_menu_network_name"
-                  />
-                ),
-              }}
+              i18nKey="deleteModal.desc2"
               values={{ name: networkToDelete?.name }}
             />
           </div>
@@ -118,8 +125,12 @@ export default function SettingsCustomNetworks(): ReactElement {
           text-align: left;
           margin-bottom: 12px;
           color: var(--green-40);
+          display: flex;
+          flex-direction: column;
         }
-
+        .network_name_container {
+          display: inline-block;
+        }
         .confirm_menu_actions {
           display: flex;
           justify-content: space-between;
@@ -127,8 +138,6 @@ export default function SettingsCustomNetworks(): ReactElement {
 
         .confirm_menu_network_name {
           color: var(--white);
-          display: inline-block;
-          max-width: 99px;
           vertical-align: bottom;
           overflow-x: hidden;
           white-space: pre;
