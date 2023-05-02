@@ -1,14 +1,14 @@
 import React, { ReactElement } from "react"
 import classNames from "classnames"
 import SharedIcon from "./SharedIcon"
-import { useAreKeyringsUnlocked } from "../../hooks/signing-hooks"
+import { useAreInternalSignersUnlocked } from "../../hooks/signing-hooks"
 
 type Props = {
   shortenedAddress: string
   name: string | undefined
   avatarURL: string | undefined
   showHoverStyle: boolean
-  showKeyring?: boolean
+  showLockStatus?: boolean
 }
 
 export default function SharedCurrentAccountInformation({
@@ -16,22 +16,22 @@ export default function SharedCurrentAccountInformation({
   name,
   avatarURL,
   showHoverStyle,
-  showKeyring,
+  showLockStatus,
 }: Props): ReactElement {
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
-  const icon = areKeyringsUnlocked ? "unlock" : "lock"
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
+  const icon = areInternalSignersUnlocked ? "unlock" : "lock"
   return (
     <div className={classNames("account_info_wrap", { hover: showHoverStyle })}>
       <span className="account_info_label ellipsis">
         {name ?? shortenedAddress}
       </span>
       <div className="avatar" />
-      {showKeyring && (
-        <div data-testid="keyring" className="keyring_icon_wrap">
+      {showLockStatus && (
+        <div data-testid="lock" className="lock_icon_wrap">
           <SharedIcon
             icon={`icons/s/${icon}-bold.svg`}
             width={16}
-            color={`var(--${areKeyringsUnlocked ? "success" : "error"})`}
+            color={`var(--${areInternalSignersUnlocked ? "success" : "error"})`}
             ariaLabel={icon}
           />
         </div>
@@ -58,7 +58,7 @@ export default function SharedCurrentAccountInformation({
           .hover:hover .account_info_label {
             color: var(--trophy-gold);
           }
-          .keyring_icon_wrap {
+          .lock_icon_wrap {
             background-color: var(--hunter-green);
             padding: 2px 6px 4px 2px;
             border-radius: 8px;

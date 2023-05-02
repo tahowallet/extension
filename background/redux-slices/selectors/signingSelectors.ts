@@ -4,14 +4,14 @@ import { isDefined } from "../../lib/utils/type-guards"
 import {
   KeyringAccountSigner,
   PrivateKeyAccountSigner,
-} from "../../services/keyring"
+} from "../../services/internal-signer"
 import { LedgerAccountSigner } from "../../services/ledger"
 import { AccountSigner, ReadOnlyAccountSigner } from "../../services/signing"
 import { HexString } from "../../types"
 import {
   selectKeyringsByAddresses,
   selectPrivateKeyWalletsByAddress,
-} from "./keyringsSelectors"
+} from "./internalSignerSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
 
 // FIXME: This has a duplicate in `accountSelectors.ts`, but importing causes a dependency cycle

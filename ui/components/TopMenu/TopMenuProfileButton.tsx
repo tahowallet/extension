@@ -73,7 +73,7 @@ export default function TopMenuProfileButton(props: {
               name={name}
               avatarURL={avatarURL}
               showHoverStyle
-              showKeyring={
+              showLockStatus={
                 isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
                 accountType &&
                 isAccountWithSecrets(accountType)

@@ -1,11 +1,11 @@
 import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
-import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
+import { importSigner } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
-import { SignerTypes } from "@tallyho/tally-background/services/keyring"
-import { isHexString } from "ethers/lib/utils"
+import { SignerSourceTypes } from "@tallyho/tally-background/services/internal-signer"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
+import { validatePrivateKey } from "@tallyho/tally-background/utils/internal-signer"
 import SharedButton from "../../../components/Shared/SharedButton"
 import SharedSeedInput from "../../../components/Shared/SharedSeedInput"
 import { useBackgroundDispatch } from "../../../hooks"
@@ -13,20 +13,6 @@ import { useBackgroundDispatch } from "../../../hooks"
 type Props = {
   setIsImporting: (value: boolean) => void
   finalize: () => void
-}
-
-function validatePrivateKey(privateKey = ""): boolean {
-  try {
-    const paddedKey = privateKey.startsWith("0x")
-      ? privateKey
-      : `0x${privateKey}`
-    // valid pk has 32 bytes -> 64 hex characters
-    return (
-      isHexString(paddedKey) && BigInt(paddedKey).toString(16).length === 64
-    )
-  } catch (e) {
-    return false
-  }
 }
 
 export default function ImportPrivateKey(props: Props): ReactElement {
@@ -52,7 +38,7 @@ export default function ImportPrivateKey(props: Props): ReactElement {
       setIsImporting(true)
       const { success } = (await dispatch(
         importSigner({
-          type: SignerTypes.privateKey,
+          type: SignerSourceTypes.privateKey,
           privateKey: trimmedPrivateKey,
         })
       )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>

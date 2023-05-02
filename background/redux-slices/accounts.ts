@@ -25,12 +25,20 @@ import { convertFixedPoint } from "../lib/fixed-point"
  * internal account types, depending on how the UI chooses to display data.
  */
 export const enum AccountType {
-  ReadOnly = "read-only",
+  ReadOnly = "readOnly",
   PrivateKey = "privateKey",
   Imported = "imported",
   Ledger = "ledger",
   Internal = "internal",
 }
+
+export const accountTypes = [
+  AccountType.Internal,
+  AccountType.Imported,
+  AccountType.PrivateKey,
+  AccountType.Ledger,
+  AccountType.ReadOnly,
+]
 
 export const DEFAULT_ACCOUNT_NAMES = [
   "Phoenix",

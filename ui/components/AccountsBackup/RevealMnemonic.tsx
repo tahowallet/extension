@@ -1,4 +1,4 @@
-import { exportMnemonic } from "@tallyho/tally-background/redux-slices/keyrings"
+import { exportMnemonic } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"

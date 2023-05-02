@@ -18,8 +18,8 @@ import Menu from "../pages/Settings"
 import Send from "../pages/Send"
 import Swap from "../pages/Swap"
 import DAppPermissionRequest from "../pages/DAppConnectRequest"
-import KeyringUnlock from "../components/Keyring/KeyringUnlock"
-import KeyringSetPassword from "../components/Keyring/KeyringSetPassword"
+import InternalSignerUnlock from "../components/InternalSigner/InternalSignerUnlock"
+import InternalSignerSetPassword from "../components/InternalSigner/InternalSignerSetPassword"
 import Eligible from "../pages/Claiming/Eligible"
 import SettingsExportLogs from "../pages/Settings/SettingsExportLogs"
 import SettingsAnalytics from "../pages/Settings/SettingsAnalytics"
@@ -45,15 +45,15 @@ interface PageList {
 
 const pageList: PageList[] = [
   {
-    path: "/keyring/set-password",
-    Component: KeyringSetPassword,
+    path: "/internal-signer/set-password",
+    Component: InternalSignerSetPassword,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,
   },
   {
-    path: "/keyring/unlock",
-    Component: KeyringUnlock,
+    path: "/internal-signer/unlock",
+    Component: InternalSignerUnlock,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,

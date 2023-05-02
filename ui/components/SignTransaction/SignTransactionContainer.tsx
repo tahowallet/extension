@@ -20,6 +20,7 @@ import SignTransactionNetworkAccountInfoTopBar from "./SignTransactionNetworkAcc
 import SignTransactionWrongLedgerConnected from "./SignTransactionWrongLedgerConnected"
 import { useSigningLedgerState } from "./useSigningLedgerState"
 import { useDebounce } from "../../hooks"
+import { isSignerWithSecrets } from "../../utils/accounts"
 
 export default function SignTransactionContainer({
   signerAccountTotal,
@@ -169,7 +170,7 @@ export default function SignTransactionContainer({
               </SharedButton>
             )}
             {((isLedgerSigning && canLedgerSign) ||
-              accountSigner?.type === "keyring") && (
+              (accountSigner && isSignerWithSecrets(accountSigner))) && (
               <SharedButton
                 type="primaryGreen"
                 size="large"

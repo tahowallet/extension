@@ -1,4 +1,4 @@
-import { exportPrivateKey } from "@tallyho/tally-background/redux-slices/keyrings"
+import { exportPrivateKey } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"

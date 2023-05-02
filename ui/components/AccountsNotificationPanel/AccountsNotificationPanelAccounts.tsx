@@ -10,7 +10,7 @@ import {
   setSnackbarMessage,
   updateSignerTitle,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { deriveAddress } from "@tallyho/tally-background/redux-slices/keyrings"
+import { deriveAddress } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { ROOTSTOCK } from "@tallyho/tally-background/constants"
 import {
   AccountTotal,
@@ -19,7 +19,10 @@ import {
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useHistory } from "react-router-dom"
-import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
+import {
+  AccountType,
+  accountTypes,
+} from "@tallyho/tally-background/redux-slices/accounts"
 import {
   normalizeEVMAddress,
   sameEVMAddress,
@@ -34,7 +37,7 @@ import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
-  useAreKeyringsUnlocked,
+  useAreInternalSignersUnlocked,
 } from "../../hooks"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import AccountItemOptionsMenu from "../AccountItem/AccountItemOptionsMenu"
@@ -57,14 +60,6 @@ type WalletTypeInfo = {
   category: string
 }
 
-const accountTypes = [
-  AccountType.Internal,
-  AccountType.Imported,
-  AccountType.PrivateKey,
-  AccountType.Ledger,
-  AccountType.ReadOnly,
-]
-
 export const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   [AccountType.ReadOnly]: {
     title: i18n.t("accounts.notificationPanel.readOnly"),
@@ -83,7 +78,7 @@ export const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   },
   [AccountType.PrivateKey]: {
     title: i18n.t("accounts.notificationPanel.privateKey"),
-    icon: "./images/add_wallet/import_priv_key.svg",
+    icon: "./images/key-light.svg",
     category: i18n.t("accounts.notificationPanel.category.others"),
   },
   [AccountType.Ledger]: {
@@ -97,6 +92,9 @@ const shouldAddHeader = (
   existingAccountTypes: AccountType[],
   currentAccountType: AccountType
 ): boolean => {
+  // Ledger and read-only accounts have their own sections.
+  // Internal accounts, imported with mnemonic or private key are in the same section so we
+  // only need to add that header once when we encounter such an account for the first time.
   switch (currentAccountType) {
     case AccountType.Ledger:
     case AccountType.ReadOnly:
@@ -137,7 +135,7 @@ function WalletTypeHeader({
     (state) => state.ui.accountSignerSettings
   )
   const signerSettings =
-    accountSigner.type !== "read-only"
+    accountSigner.type !== "readOnly"
       ? settingsBySigner.find(({ signer }) =>
           isSameAccountSignerWithId(signer, accountSigner)
         )
@@ -157,13 +155,13 @@ function WalletTypeHeader({
   }, [accountType, title, sectionCustomName, walletNumber, path])
 
   const history = useHistory()
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
   const [showEditMenu, setShowEditMenu] = useState(false)
   const [showExportMnemonicMenu, setShowExportMnemonicMenu] = useState(false)
 
   return (
     <>
-      {accountSigner.type !== "read-only" && (
+      {accountSigner.type !== "readOnly" && (
         <SharedSlideUpMenu
           size="small"
           isOpen={showEditMenu}
@@ -213,10 +211,10 @@ function WalletTypeHeader({
               onClickAddAddress && {
                 key: "addAddress",
                 onClick: () => {
-                  if (areKeyringsUnlocked) {
+                  if (areInternalSignersUnlocked) {
                     onClickAddAddress()
                   } else {
-                    history.push("/keyring/unlock")
+                    history.push("/internal-signer/unlock")
                   }
                 },
                 icon: "icons/s/add.svg",
@@ -312,7 +310,7 @@ export default function AccountsNotificationPanelAccounts({
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
   const isMounted = useRef(false)
 
   const accountTotals = useBackgroundSelector(
@@ -349,10 +347,10 @@ export default function AccountsNotificationPanelAccounts({
     // Prevents notifications from displaying when the component is not yet mounted
     if (!isMounted.current) {
       isMounted.current = true
-    } else if (!areKeyringsUnlocked) {
+    } else if (!areInternalSignersUnlocked) {
       dispatch(setSnackbarMessage(t("accounts.notificationPanel.snackbar")))
     }
-  }, [history, areKeyringsUnlocked, dispatch, t])
+  }, [history, areInternalSignersUnlocked, dispatch, t])
 
   const existingAccountTypes = accountTypes.filter(
     (type) => (accountTotals[type]?.length ?? 0) > 0

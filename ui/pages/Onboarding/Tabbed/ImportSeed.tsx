@@ -1,11 +1,14 @@
 import React, { ReactElement, useCallback, useState } from "react"
-import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
+import { importSigner } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { Redirect, useHistory } from "react-router-dom"
 import { isValidMnemonic } from "@ethersproject/hdnode"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { SignerTypes } from "@tallyho/tally-background/services/keyring"
+import {
+  SignerImportSource,
+  SignerSourceTypes,
+} from "@tallyho/tally-background/services/internal-signer"
 import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
 import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
@@ -16,7 +19,7 @@ import OnboardingDerivationPathSelect, {
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
-  useAreKeyringsUnlocked,
+  useAreInternalSignersUnlocked,
 } from "../../../hooks"
 import OnboardingRoutes from "./Routes"
 import SharedSeedInput from "../../../components/Shared/SharedSeedInput"
@@ -29,7 +32,7 @@ type Props = {
 export default function ImportSeed(props: Props): ReactElement {
   const { nextPage } = props
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
 
   const [recoveryPhrase, setRecoveryPhrase] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
@@ -66,10 +69,10 @@ export default function ImportSeed(props: Props): ReactElement {
 
       const { success } = (await dispatch(
         importSigner({
-          type: SignerTypes.keyring,
+          type: SignerSourceTypes.keyring,
           mnemonic: plainRecoveryPhrase,
           path,
-          source: "import",
+          source: SignerImportSource.import,
         })
       )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
 
@@ -84,7 +87,7 @@ export default function ImportSeed(props: Props): ReactElement {
     }
   }, [dispatch, recoveryPhrase, path, t, history, nextPage])
 
-  if (!areKeyringsUnlocked)
+  if (!areInternalSignersUnlocked)
     return (
       <Redirect
         to={{

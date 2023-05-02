@@ -1,8 +1,8 @@
 import { StatusCodes, TransportStatusError } from "@ledgerhq/errors"
-import KeyringService, {
+import InternalSignerService, {
   KeyringAccountSigner,
   PrivateKeyAccountSigner,
-} from "../keyring"
+} from "../internal-signer"
 import LedgerService, { LedgerAccountSigner } from "../ledger"
 import {
   SignedTransaction,
@@ -46,7 +46,7 @@ type Events = ServiceLifecycleEvents & {
  * An AccountSigner that represents a read-only account. Read-only accounts
  * generally cannot sign.
  */
-export const ReadOnlyAccountSigner = { type: "read-only" } as const
+export const ReadOnlyAccountSigner = { type: "readOnly" } as const
 
 /**
  * An AccountSigner carries the appropriate information for a given signer to
@@ -95,17 +95,21 @@ export default class SigningService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     SigningService,
-    [Promise<KeyringService>, Promise<LedgerService>, Promise<ChainService>]
-  > = async (keyringService, ledgerService, chainService) => {
+    [
+      Promise<InternalSignerService>,
+      Promise<LedgerService>,
+      Promise<ChainService>
+    ]
+  > = async (internalSignerService, ledgerService, chainService) => {
     return new this(
-      await keyringService,
+      await internalSignerService,
       await ledgerService,
       await chainService
     )
   }
 
   private constructor(
-    private keyringService: KeyringService,
+    private internalSignerService: InternalSignerService,
     private ledgerService: LedgerService,
     private chainService: ChainService
   ) {
@@ -122,7 +126,7 @@ export default class SigningService extends BaseService<Events> {
     }
 
     if (signerID.type === "keyring") {
-      return this.keyringService.deriveAddress(signerID)
+      return this.internalSignerService.deriveAddress(signerID)
     }
 
     throw new Error(`Unknown signerID: ${signerID}`)
@@ -140,14 +144,14 @@ export default class SigningService extends BaseService<Events> {
         )
       case "privateKey":
       case "keyring":
-        return this.keyringService.signTransaction(
+        return this.internalSignerService.signTransaction(
           {
             address: transactionWithNonce.from,
             network: transactionWithNonce.network,
           },
           transactionWithNonce
         )
-      case "read-only":
+      case "readOnly":
         throw new Error("Read-only signers cannot sign.")
       default:
         return assertUnreachable(accountSigner)
@@ -162,12 +166,12 @@ export default class SigningService extends BaseService<Events> {
       switch (signerType) {
         case "privateKey":
         case "keyring":
-          await this.keyringService.hideAccount(address)
+          await this.internalSignerService.hideAccount(address)
           break
         case "ledger":
           await this.ledgerService.removeAddress(address)
           break
-        case "read-only":
+        case "readOnly":
           break // no additional work here, just account removal below
         default:
           assertUnreachable(signerType)
@@ -249,12 +253,12 @@ export default class SigningService extends BaseService<Events> {
           break
         case "privateKey":
         case "keyring":
-          signedData = await this.keyringService.signTypedData({
+          signedData = await this.internalSignerService.signTypedData({
             typedData,
             account: account.address,
           })
           break
-        case "read-only":
+        case "readOnly":
           throw new Error("Read-only signers cannot sign.")
         default:
           assertUnreachable(accountSigner)
@@ -295,12 +299,12 @@ export default class SigningService extends BaseService<Events> {
           break
         case "privateKey":
         case "keyring":
-          signedData = await this.keyringService.personalSign({
+          signedData = await this.internalSignerService.personalSign({
             signingData: hexDataToSign,
             account: addressOnNetwork.address,
           })
           break
-        case "read-only":
+        case "readOnly":
           throw new Error("Read-only signers cannot sign.")
         default:
           assertUnreachable(accountSigner)

@@ -1,9 +1,12 @@
 import React, { ReactElement } from "react"
 import { useHistory } from "react-router-dom"
-import { importSigner } from "@tallyho/tally-background/redux-slices/keyrings"
+import { importSigner } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { useTranslation } from "react-i18next"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { SignerTypes } from "@tallyho/tally-background/services/keyring"
+import {
+  SignerImportSource,
+  SignerSourceTypes,
+} from "@tallyho/tally-background/services/internal-signer"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import SharedButton from "../../../components/Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
@@ -43,9 +46,9 @@ function VerifySeedSuccess({
         onClick={async () => {
           const { success } = (await dispatch(
             importSigner({
-              type: SignerTypes.keyring,
+              type: SignerSourceTypes.keyring,
               mnemonic: mnemonic.join(" "),
-              source: "internal",
+              source: SignerImportSource.internal,
               path: selectedNetwork.derivationPath ?? "m/44'/60'/0'/0",
             })
           )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
