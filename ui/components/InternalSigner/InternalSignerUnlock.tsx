@@ -83,7 +83,11 @@ export default function InternalSignerUnlock({
       </div>
       <h1 className="serif_header">{t("title")}</h1>
       <div className="simple_text subtitle">{t("subtitle")}</div>
-      <form onSubmit={dispatchUnlockWallet}>
+      <form
+        role="presentation"
+        onSubmit={dispatchUnlockWallet}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <div className="signing_wrap">
           <div className="input_wrap">
             <PasswordInput
