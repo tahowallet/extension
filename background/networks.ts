@@ -416,3 +416,8 @@ export const isEIP1559EnrichedTransactionRequest = (
 ): enrichedTransactionRequest is EnrichedEIP1559TransactionRequest =>
   "maxFeePerGas" in enrichedTransactionRequest &&
   "maxPriorityFeePerGas" in enrichedTransactionRequest
+
+export const isEnrichedEVMTransactionRequest = (
+  transactionRequest: TransactionRequest
+): transactionRequest is EnrichedEVMTransactionRequest =>
+  "annotation" in transactionRequest

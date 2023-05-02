@@ -1,5 +1,8 @@
 import React, { ReactElement } from "react"
-import { TransactionRequest } from "@tallyho/tally-background/networks"
+import {
+  isEnrichedEVMTransactionRequest,
+  TransactionRequest,
+} from "@tallyho/tally-background/networks"
 import {
   rejectDataSignature,
   signData,
@@ -18,7 +21,6 @@ import {
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
 import { AnyAction } from "redux"
-import { EnrichedEVMTransactionRequest } from "@tallyho/tally-background/services/enrichment"
 import TransactionSignatureDetails from "./TransactionSignatureDetails"
 import MessageDataSignatureDetails from "./DataSignatureDetails/MessageDataSignatureDetails"
 import TypedDataSignatureDetails from "./DataSignatureDetails/TypedDataSignatureDetails"
@@ -54,7 +56,10 @@ export function resolveTransactionSignatureDetails({
   request,
   accountSigner,
 }: SignOperation<TransactionRequest>): ResolvedSignatureDetails {
-  const { annotation } = request as EnrichedEVMTransactionRequest
+  const annotation = isEnrichedEVMTransactionRequest(request)
+    ? request.annotation
+    : undefined
+
   return {
     signer: accountSigner,
     signingAddress: { address: request.from, network: request.network },

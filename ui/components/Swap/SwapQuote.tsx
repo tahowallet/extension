@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import React, { ReactElement, useCallback } from "react"
 import { utils } from "ethers"
 
