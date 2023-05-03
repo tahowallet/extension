@@ -5,7 +5,6 @@ import {
   executeSwap,
   ZrxQuote,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
-import { useHistory } from "react-router-dom"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../Shared/SharedButton"
@@ -44,8 +43,6 @@ export default function SwapQuote({
     }),
   }
 
-  const history = useHistory()
-
   const handleConfirmClick = useCallback(async () => {
     const { gasPrice, ...quoteWithoutGasPrice } = finalQuote
 
@@ -59,15 +56,12 @@ export default function SwapQuote({
           gasPrice,
       })
     )
-
-    history.push("/")
   }, [
     finalQuote,
     dispatch,
     sellAsset,
     buyAsset,
     swapTransactionSettings.networkSettings.values.maxFeePerGas,
-    history,
   ])
 
   return (

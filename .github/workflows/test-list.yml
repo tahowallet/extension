@@ -1,0 +1,25 @@
+# This workflow adds a comment with tests list to the PRs with the release
+# candidates (PRs that want to merge `release-*` branches to `main`). The test
+# list is specified in the `./.github/workflows/test-list/release-test-list.md`
+# file. The comment is added only once, right after the PR gets created.
+
+name: Add test list to release PRs
+
+on:
+  pull_request:
+    types:
+      - opened
+    branches:
+      - main
+
+jobs:
+  add-release-test-list:
+    runs-on: ubuntu-latest
+    if: startsWith(github.head_ref, 'release-')
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: mshick/add-pr-comment@v2
+        with:
+          message-path: ./.github/workflows/test-list/release-test-list.md
