@@ -10,10 +10,12 @@ export interface AggregateContractResponse {
   }>
 }
 
-// @TODO Handle chain-specific cases - but this contract should
-// be good enough for all popular chains in the meantime
 export const MULTICALL_CONTRACT_ADDRESS =
   "0xca11bde05977b3631167028862be2a173976ca11"
+
+export const CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES = {
+  "324": "0x47898B2C52C957663aE9AB46922dCec150a2272c", // zksync era
+} as { [chainId: string]: string }
 
 export const MULTICALL_ABI = [
   // https://github.com/mds1/multicall
