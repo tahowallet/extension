@@ -842,8 +842,14 @@
       "open": "Open",
       "none": "None"
     },
-    "timeStarting": "Starting in 1 month",
-    "timeCloses": "Closes in 1 month",
+    "timeDetails": {
+      "units": {
+        "day": "day",
+        "days": "days"
+      },
+      "timeStartingDays": "Starting in {{count}} {{unit}}",
+      "timeClosesDays": "Closes in {{count}} {{unit}}"
+    },
     "viewWebsiteBtn": "Visit website",
     "markBtn": "Mark as Completed",
     "snackbar": "Marked as completed",
