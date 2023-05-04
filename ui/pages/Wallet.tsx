@@ -11,6 +11,8 @@ import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
 import { selectShowAnalyticsNotification } from "@tallyho/tally-background/redux-slices/ui"
+import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { SwappableAsset } from "@tallyho/tally-background/assets"
 import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -66,6 +68,20 @@ export default function Wallet(): ReactElement {
     selectCurrentAccountActivities
   )
 
+  useEffect(() => {
+    const locationState = history.location.state
+    if (locationState) {
+      const { goTo } = locationState as { goTo?: string }
+      if (goTo === "activity-page") {
+        if (!NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
+          setPanelNumber(1)
+        } else {
+          setPanelNumber(2)
+        }
+      }
+    }
+  }, [history, selectedNetwork.chainID])
+
   const initializationLoadingTimeExpired = useBackgroundSelector(
     (background) => background.ui?.initializationLoadingTimeExpired
   )
@@ -113,7 +129,10 @@ export default function Wallet(): ReactElement {
             {panelNumber === 0 && (
               <>
                 <WalletAssetList
-                  assetAmounts={assetAmounts}
+                  assetAmounts={
+                    // FIXME: Refactor AnyAsset type
+                    assetAmounts as CompleteAssetAmount<SwappableAsset>[]
+                  }
                   initializationLoadingTimeExpired={
                     initializationLoadingTimeExpired
                   }
@@ -142,7 +161,12 @@ export default function Wallet(): ReactElement {
                   </div>
                 )}
                 {hiddenAssetAmounts.length > 0 && (
-                  <WalletHiddenAssets assetAmounts={hiddenAssetAmounts} />
+                  <WalletHiddenAssets
+                    assetAmounts={
+                      // FIXME: Refactor AnyAsset type
+                      hiddenAssetAmounts as CompleteAssetAmount<SwappableAsset>[]
+                    }
+                  />
                 )}
               </>
             )}

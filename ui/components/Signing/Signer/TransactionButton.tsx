@@ -8,10 +8,12 @@ import { useBackgroundSelector, useDebounce } from "../../../hooks"
 import SharedButton, {
   Props as SharedButtonProps,
 } from "../../Shared/SharedButton"
+import SharedTooltip from "../../Shared/SharedTooltip"
 
 export type TransactionButtonProps = SharedButtonProps & {
   reactOnWindowFocus?: boolean
   showLoading?: boolean
+  tooltip?: string
 }
 
 // TODO: Rename this to signing button
@@ -24,6 +26,7 @@ export default function TransactionButton({
   reactOnWindowFocus = false,
   // Show loading when transaction data is not ready
   showLoading = false,
+  tooltip = "",
 }: TransactionButtonProps): ReactElement {
   const hasTransactionLoaded = useBackgroundSelector(selectIsTransactionLoaded)
 
@@ -86,22 +89,40 @@ export default function TransactionButton({
     }
   }, [focusChangeNonce])
 
+  const renderButton = () => (
+    <SharedButton
+      type={type}
+      size={size}
+      onClick={onClick}
+      showLoadingOnClick
+      isDisabled={
+        (reactOnWindowFocus ? isOnDelayToSign : false) ||
+        !unlockButtons ||
+        isDisabled
+      }
+      isLoading={showLoading ? !unlockButtons : false}
+    >
+      {children}
+    </SharedButton>
+  )
+
   return (
     <>
-      <SharedButton
-        type={type}
-        size={size}
-        onClick={onClick}
-        showLoadingOnClick
-        isDisabled={
-          (reactOnWindowFocus ? isOnDelayToSign : false) ||
-          !unlockButtons ||
-          isDisabled
-        }
-        isLoading={showLoading ? !unlockButtons : false}
-      >
-        {children}
-      </SharedButton>
+      {tooltip ? (
+        <SharedTooltip
+          width={200}
+          height={60}
+          horizontalPosition="center"
+          verticalPosition="top"
+          horizontalShift={102}
+          type="dark"
+          IconComponent={() => renderButton()}
+        >
+          {tooltip}
+        </SharedTooltip>
+      ) : (
+        renderButton()
+      )}
     </>
   )
 }

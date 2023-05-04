@@ -38,7 +38,11 @@ export type AssetMetadata = {
   coinGeckoID?: string
   logoURL?: string
   websiteURL?: string
-  tokenLists: TokenListCitation[]
+  tokenLists?: TokenListCitation[]
+  /**
+   * Set by the user on assets discovered through transaction annotations
+   */
+  trusted?: boolean
 }
 
 /**

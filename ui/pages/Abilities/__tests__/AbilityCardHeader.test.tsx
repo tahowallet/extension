@@ -1,8 +1,8 @@
 import { ETHEREUM } from "@tallyho/tally-background/constants"
+import { createAccountData } from "@tallyho/tally-background/tests/factories"
 import React from "react"
 import {
   createAbility,
-  createAccountData,
   createAccountState,
   TEST_ADDRESS,
 } from "../../../tests/factories"
