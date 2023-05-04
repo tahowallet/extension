@@ -113,6 +113,21 @@ export default class AbilitiesService extends BaseService<Events> {
     this.emitter.emit("newAccount", address)
   }
 
+  async removeAbilities(
+    address: HexString,
+    abilities: Ability[]
+  ): Promise<void> {
+    const cachedAbilities = await this.db.getAllAbilities()
+    const diffAbilities = cachedAbilities.filter(
+      (ability) =>
+        !abilities.find(({ abilityId }) => ability.abilityId === abilityId)
+    )
+
+    diffAbilities.forEach(({ abilityId }) =>
+      this.markAbilityAsRemoved(normalizeEVMAddress(address), abilityId)
+    )
+  }
+
   async pollForAbilities(address: HexString): Promise<void> {
     const daylightAbilities = await getDaylightAbilities(address)
     const normalizedAbilities = normalizeDaylightAbilities(
@@ -134,6 +149,8 @@ export default class AbilitiesService extends BaseService<Events> {
     if (newAbilities.length) {
       this.emitter.emit("newAbilities", newAbilities)
     }
+    // Update saved abilities if any have been removed from the Daylight API
+    await this.removeAbilities(address, normalizedAbilities)
   }
 
   async markAbilityAsCompleted(

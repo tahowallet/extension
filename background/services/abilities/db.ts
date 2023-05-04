@@ -40,6 +40,10 @@ export class AbilitiesDatabase extends Dexie {
     return false
   }
 
+  async getAllAbilities(): Promise<Ability[]> {
+    return (await this.abilities).toArray()
+  }
+
   async getAbility(
     address: NormalizedEVMAddress,
     abilityId: string
