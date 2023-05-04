@@ -149,7 +149,11 @@ export default class AbilitiesService extends BaseService<Events> {
     if (newAbilities.length) {
       this.emitter.emit("newAbilities", newAbilities)
     }
-    // Update saved abilities if any have been removed from the Daylight API
+    /**
+     * We are not able to get information about the removed abilities from the Daylight API.
+     * To update the cache we have to compare the data with the received abilities.
+     * The ability can be open completed or expired. Therefore, we need to get the abilities for these 3 types.
+     */
     await this.removeAbilities(address, normalizedAbilities)
   }
 
