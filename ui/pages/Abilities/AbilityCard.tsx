@@ -17,42 +17,34 @@ import AbilityRemovalConfirm from "./AbilityRemovalConfirm"
 const DAYS = 30
 const KEY_PREFIX_TIME_DETAILS = "abilities.timeDetails"
 
-const getTimeDetails = (ability: Ability): string => {
+const getMessage = (dateStr: string, keyPrefix: string): string => {
   const cutOffDate = new Date()
   cutOffDate.setHours(0, 0, 0, 0)
 
+  const date = new Date(dateStr)
+  const diffInMs = date.getTime() - cutOffDate.getTime()
+  const days = Math.floor(diffInMs / DAY)
+
+  if (days >= 1 && days <= DAYS) {
+    const unit = i18n.t(
+      `${KEY_PREFIX_TIME_DETAILS}.units.${days === 1 ? "day" : "days"}`
+    )
+    return i18n.t(`${KEY_PREFIX_TIME_DETAILS}.${keyPrefix}`, {
+      count: days,
+      unit,
+    })
+  }
+
+  return ""
+}
+
+const getTimeDetails = (ability: Ability): string => {
   if (ability.closeAt) {
-    const closeDate = new Date(ability.closeAt)
-    const diffInMs = closeDate.getTime() - cutOffDate.getTime()
-    const days = Math.floor(diffInMs / DAY)
-
-    if (days >= 1 && days <= DAYS) {
-      const unit = i18n.t(
-        `${KEY_PREFIX_TIME_DETAILS}.units.${days === 1 ? "day" : "days"}`
-      )
-      return i18n.t(`${KEY_PREFIX_TIME_DETAILS}.timeClosesDays`, {
-        count: days,
-        unit,
-      })
-    }
+    return getMessage(ability.closeAt, "timeClosesDays")
   }
-
   if (ability.openAt) {
-    const openDate = new Date(ability.openAt)
-    const diffInMs = openDate.getTime() - cutOffDate.getTime()
-    const days = Math.floor(diffInMs / DAY)
-
-    if (days >= 1 && days <= DAYS) {
-      const unit = i18n.t(
-        `${KEY_PREFIX_TIME_DETAILS}.units.${days === 1 ? "day" : "days"}`
-      )
-      return i18n.t(`${KEY_PREFIX_TIME_DETAILS}.timeStartingDays`, {
-        count: days,
-        unit,
-      })
-    }
+    return getMessage(ability.openAt, "timeStartingDays")
   }
-
   return ""
 }
 
