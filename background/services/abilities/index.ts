@@ -2,9 +2,11 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import { HexString, NormalizedEVMAddress } from "../../types"
 import {
+  completeAbility,
   createSpamReport,
   DaylightAbility,
   DaylightAbilityRequirement,
+  deleteAbility,
   getDaylightAbilities,
 } from "../../lib/daylight"
 import { AbilitiesDatabase, getOrCreateDB } from "./db"
@@ -157,6 +159,7 @@ export default class AbilitiesService extends BaseService<Events> {
     address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<void> {
+    await completeAbility(address, abilityId)
     const ability = await this.db.markAsCompleted(address, abilityId)
 
     if (ability) {
@@ -168,6 +171,7 @@ export default class AbilitiesService extends BaseService<Events> {
     address: NormalizedEVMAddress,
     abilityId: string
   ): Promise<void> {
+    await deleteAbility(address, abilityId)
     const ability = await this.db.markAsRemoved(address, abilityId)
 
     if (ability) {

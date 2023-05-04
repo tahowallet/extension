@@ -80,6 +80,10 @@ type SpamReportResponse = {
   success: boolean
 }
 
+type AbilityInteractionsResponse = {
+  interactions: Record<string, "complete" | "dismiss">
+}
+
 export const getDaylightAbilities = async (
   address: string,
   // Amount of times to retry fetching abilities for an address that is not fully synced yet.
@@ -152,4 +156,68 @@ export const createSpamReport = async (
   }
 
   return false
+}
+
+export const deleteAbility = async (
+  address: string,
+  abilityId: string
+): Promise<AbilityInteractionsResponse | undefined> => {
+  try {
+    const options = JSON.stringify([
+      {
+        operation: "dismiss",
+        abilityUidOrCommunityAddress: abilityId,
+      },
+    ])
+
+    const response: AbilityInteractionsResponse = await fetchJson(
+      {
+        url: `${DAYLIGHT_BASE_URL}/wallets/${address}/interactions`,
+        ...(process.env.DAYLIGHT_API_KEY && {
+          headers: {
+            Authorization: `Bearer ${process.env.DAYLIGHT_API_KEY}`,
+          },
+        }),
+      },
+      options
+    )
+
+    return response
+  } catch (err) {
+    logger.error("Error deleting ability", err)
+  }
+
+  return undefined
+}
+
+export const completeAbility = async (
+  address: string,
+  abilityId: string
+): Promise<AbilityInteractionsResponse | undefined> => {
+  try {
+    const options = JSON.stringify([
+      {
+        operation: "complete",
+        abilityUidOrCommunityAddress: abilityId,
+      },
+    ])
+
+    const response: AbilityInteractionsResponse = await fetchJson(
+      {
+        url: `${DAYLIGHT_BASE_URL}/wallets/${address}/interactions`,
+        ...(process.env.DAYLIGHT_API_KEY && {
+          headers: {
+            Authorization: `Bearer ${process.env.DAYLIGHT_API_KEY}`,
+          },
+        }),
+      },
+      options
+    )
+
+    return response
+  } catch (err) {
+    logger.error("Error completing ability", err)
+  }
+
+  return undefined
 }
