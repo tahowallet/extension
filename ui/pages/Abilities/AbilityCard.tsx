@@ -26,12 +26,8 @@ const getMessage = (dateStr: string, keyPrefix: string): string => {
   const days = Math.floor(diffInMs / DAY)
 
   if (days >= 1 && days <= DAYS) {
-    const unit = i18n.t(
-      `${KEY_PREFIX_TIME_DETAILS}.units.${days === 1 ? "day" : "days"}`
-    )
     return i18n.t(`${KEY_PREFIX_TIME_DETAILS}.${keyPrefix}`, {
       count: days,
-      unit,
     })
   }
 

@@ -79,7 +79,7 @@ describe("AbilityCard", () => {
     expect(ui.queryByText("Starting in 7 days")).toBeInTheDocument()
   })
 
-  it("should display a message that the ability closes in one day", () => {
+  it("should display a message that the ability is starting in one day", () => {
     const date = new Date()
     date.setDate(date.getDate() + 1)
 
