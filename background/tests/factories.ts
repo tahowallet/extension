@@ -27,6 +27,7 @@ import {
   USD,
 } from "../constants"
 import { DaylightAbility } from "../lib/daylight"
+import { normalizeEVMAddress } from "../lib/utils"
 import {
   AnyEVMTransaction,
   LegacyEVMTransactionRequest,
@@ -34,6 +35,7 @@ import {
   BlockPrices,
   NetworkBaseAsset,
 } from "../networks"
+import { AccountData } from "../redux-slices/accounts"
 import {
   AnalyticsService,
   ChainService,
@@ -138,10 +140,7 @@ export async function createAnalyticsService(overrides?: {
 }): Promise<AnalyticsService> {
   const preferenceService =
     overrides?.preferenceService ?? createPreferenceService()
-  return AnalyticsService.create(
-    overrides?.chainService ?? createChainService({ preferenceService }),
-    preferenceService
-  )
+  return AnalyticsService.create(preferenceService)
 }
 
 export const createSigningService = async (
@@ -273,7 +272,7 @@ export const createAccountBalance = (
 export const createAddressOnNetwork = (
   overrides: Partial<AddressOnNetwork> = {}
 ): AddressOnNetwork => ({
-  address: createRandom0xHash(),
+  address: normalizeEVMAddress(createRandom0xHash()),
   network: ETHEREUM,
   ...overrides,
 })
@@ -316,6 +315,22 @@ export const createTransactionsToRetrieve = (
     }),
     priority: 0,
   }))
+}
+
+export const createAccountData = (
+  overrides: Partial<AccountData> = {}
+): AccountData => {
+  return {
+    address: createAddressOnNetwork().address,
+    network: ETHEREUM,
+    balances: {},
+    ens: {
+      name: "test.crypto",
+    },
+    defaultName: "Test",
+    defaultAvatar: "test.png",
+    ...overrides,
+  }
 }
 
 export const createTransactionResponse = (

@@ -8,12 +8,14 @@ interface Props {
   verticalPosition?: VerticalPosition
   horizontalPosition?: HorizontalPosition
   horizontalShift?: number
+  verticalShift?: number
   width?: number
   height?: number
   type?: "default" | "dark"
   isOpen?: boolean
   disabled?: boolean
   children: React.ReactNode
+  customStyles?: React.CSSProperties & Record<string, string>
   // TODO: find a better way to tell the IconComponent that the tooltip it open
   IconComponent?: ({
     isShowingTooltip,
@@ -39,12 +41,16 @@ function getHorizontalPosition(
   }
 }
 
-function getVerticalPosition(vertical: VerticalPosition, height: number) {
+function getVerticalPosition(
+  vertical: VerticalPosition,
+  height: number,
+  verticalShift: number
+) {
   switch (vertical) {
     case "bottom":
-      return `top: ${height}px; margin-top: 5px;`
+      return `top: ${height - verticalShift}px; margin-top: 5px;`
     case "top":
-      return `bottom: ${height}px; margin-bottom: 5px;`
+      return `bottom: ${height - verticalShift}px; margin-bottom: 5px;`
     default:
       return ""
   }
@@ -56,12 +62,14 @@ export default function SharedTooltip(props: Props): ReactElement {
     verticalPosition = "bottom",
     horizontalPosition = "center",
     horizontalShift = 0,
+    verticalShift = 0,
     width,
     height = 20,
     type = "default",
     isOpen = false,
     disabled = false,
     IconComponent,
+    customStyles = {},
   } = props
   const [isShowingTooltip, setIsShowingTooltip] = useState(isOpen)
 
@@ -79,6 +87,7 @@ export default function SharedTooltip(props: Props): ReactElement {
       onMouseLeave={() => {
         setIsShowingTooltip(false)
       }}
+      style={customStyles}
     >
       {IconComponent ? (
         <IconComponent isShowingTooltip={isShowingTooltip} />
@@ -104,8 +113,9 @@ export default function SharedTooltip(props: Props): ReactElement {
             margin: -5px 0 -5px 8px;
           }
           .info_icon {
-            background: url("./images/info@2x.png");
-            background-size: cover;
+            mask-image: url("./images/icons/m/info.svg");
+            mask-size: cover;
+            background-color: var(--tooltip-icon-color, var(--green-40));
             width: 16px;
             height: 16px;
             display: block;
@@ -123,7 +133,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             border-radius: 3px;
             padding: 12px;
             z-index: 20;
-            ${getVerticalPosition(verticalPosition, height)}
+            ${getVerticalPosition(verticalPosition, height, verticalShift)}
             ${width !== undefined
               ? getHorizontalPosition(
                   horizontalPosition,
@@ -134,11 +144,14 @@ export default function SharedTooltip(props: Props): ReactElement {
           }
           .dark {
             background: var(--green-120);
+            color: var(--green-20);
             border-radius: 4px;
-            font-size: 16px;
-            line-height: 24px;
-            padding: 2px 8px;
-            color: var(--green-40);
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            line-height: 16px;
+            text-align: center;
+            padding: 8px;
           }
         `}
       </style>

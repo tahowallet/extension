@@ -248,7 +248,7 @@ export async function getTokenBalances(
 export async function getTokenMetadata(
   provider: SerialFallbackProvider,
   { contractAddress, homeNetwork }: SmartContract
-): Promise<SmartContractFungibleAsset | undefined> {
+): Promise<SmartContractFungibleAsset> {
   const json: unknown = await provider.send("alchemy_getTokenMetadata", [
     contractAddress,
   ])
@@ -261,11 +261,10 @@ export async function getTokenMetadata(
     throw new Error("Alchemy token metadata response didn't validate.")
   }
   return {
-    decimals: json.decimals,
+    decimals: json.decimals ?? 0,
     name: json.name,
     symbol: json.symbol,
     metadata: {
-      tokenLists: [],
       ...(json.logo ? { logoURL: json.logo } : {}),
     },
     homeNetwork,

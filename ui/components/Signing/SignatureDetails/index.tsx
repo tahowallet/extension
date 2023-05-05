@@ -1,5 +1,8 @@
 import React, { ReactElement } from "react"
-import { TransactionRequest } from "@tallyho/tally-background/networks"
+import {
+  isEnrichedEVMTransactionRequest,
+  TransactionRequest,
+} from "@tallyho/tally-background/networks"
 import {
   rejectDataSignature,
   signData,
@@ -43,12 +46,20 @@ export type ResolvedSignatureDetails = {
     | "signTransaction.signTypedData.confirmButtonLabel"
   signActionCreator: () => AnyAction
   rejectActionCreator: () => AnyAction
+  /**
+   * The value determines whether to redirect the user to the activity page after submitting a transaction
+   */
+  redirectToActivityPage?: boolean
 }
 
 export function resolveTransactionSignatureDetails({
   request,
   accountSigner,
 }: SignOperation<TransactionRequest>): ResolvedSignatureDetails {
+  const annotation = isEnrichedEVMTransactionRequest(request)
+    ? request.annotation
+    : undefined
+
   return {
     signer: accountSigner,
     signingAddress: { address: request.from, network: request.network },
@@ -58,6 +69,7 @@ export function resolveTransactionSignatureDetails({
     ),
     signActionCreator: () => signTransaction({ request, accountSigner }),
     rejectActionCreator: rejectTransactionSignature,
+    redirectToActivityPage: annotation?.type === "asset-swap",
   }
 }
 export function resolveDataSignatureDetails({

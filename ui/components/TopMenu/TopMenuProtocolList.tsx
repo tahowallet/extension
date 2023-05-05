@@ -11,7 +11,7 @@ import {
   POLYGON,
   ROOTSTOCK,
 } from "@tallyho/tally-background/constants"
-import { sameNetwork } from "@tallyho/tally-background/networks"
+import { EVMNetwork, sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectShowTestNetworks } from "@tallyho/tally-background/redux-slices/ui"
 import { selectProductionEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
@@ -23,7 +23,7 @@ import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 import TopMenuProtocolListFooter from "./TopMenuProtocolListFooter"
 import { i18n } from "../../_locales/i18n"
 
-const productionNetworkInfo = {
+export const productionNetworkInfo = {
   [ETHEREUM.chainID]: i18n.t("protocol.mainnet"),
   [POLYGON.chainID]: i18n.t("protocol.l2"),
   [OPTIMISM.chainID]: i18n.t("protocol.l2"),
@@ -45,7 +45,7 @@ const testNetworks = [
 ]
 
 type TopMenuProtocolListProps = {
-  onProtocolChange: () => void
+  onProtocolChange: (network: EVMNetwork) => void
 }
 
 export default function TopMenuProtocolList({
@@ -57,32 +57,48 @@ export default function TopMenuProtocolList({
   const productionNetworks = useBackgroundSelector(selectProductionEVMNetworks)
 
   const customNetworksEnabled = isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)
+  const builtinNetworks = productionNetworks.filter(isBuiltInNetwork)
+  const customNetworks = productionNetworks.filter(
+    (network) => !isBuiltInNetwork(network)
+  )
 
   return (
-    <div className="standard_width_padded center_horizontal">
+    <div className="container">
       <div className={classNames(customNetworksEnabled && "networks_list")}>
-        <ul>
-          {productionNetworks
-            .filter((network) => {
-              if (isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
-                // Get rid of this whole filter once custom network support is fully in
-                return true
+        <ul className="standard_width center_horizontal">
+          {builtinNetworks.map((network) => (
+            <TopMenuProtocolListItem
+              isSelected={sameNetwork(currentNetwork, network)}
+              key={network.name}
+              network={network}
+              info={
+                productionNetworkInfo[network.chainID] ||
+                t("protocol.compatibleChain")
               }
-              return isBuiltInNetwork(network)
-            })
-            .map((network) => (
-              <TopMenuProtocolListItem
-                isSelected={sameNetwork(currentNetwork, network)}
-                key={network.name}
-                network={network}
-                info={
-                  productionNetworkInfo[network.chainID] ||
-                  t("protocol.compatibleChain")
-                }
-                onSelect={onProtocolChange}
-                isDisabled={disabledChainIDs.includes(network.chainID)}
-              />
-            ))}
+              onSelect={onProtocolChange}
+              isDisabled={disabledChainIDs.includes(network.chainID)}
+            />
+          ))}
+          {isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) &&
+            customNetworks.length > 0 && (
+              <>
+                <li className="protocol_divider">
+                  <div className="divider_label">
+                    {t("topMenu.protocolList.customNetworksSectionTitle")}
+                  </div>
+                  <div className="divider_line" />
+                </li>
+                {customNetworks.map((network) => (
+                  <TopMenuProtocolListItem
+                    isSelected={sameNetwork(currentNetwork, network)}
+                    key={network.name}
+                    network={network}
+                    info={t("protocol.compatibleChain")}
+                    onSelect={onProtocolChange}
+                  />
+                ))}
+              </>
+            )}
           {showTestNetworks && testNetworks.length > 0 && (
             <>
               <li className="protocol_divider">
@@ -104,20 +120,33 @@ export default function TopMenuProtocolList({
             </>
           )}
         </ul>
+        {customNetworksEnabled && <TopMenuProtocolListFooter />}
       </div>
-      {customNetworksEnabled && <TopMenuProtocolListFooter />}
       <style jsx>
         {`
+          .container {
+            overflow-y: auto;
+          }
+
           .networks_list {
             overflow-y: auto;
             overflow-x: hidden;
-            max-height: 319px;
+            display: flex;
+            flex-direction: column;
+            min-height: 512px;
           }
+
+          ul {
+            display: flex;
+            padding: 0 24px;
+            flex-direction: column;
+          }
+
           .protocol_divider {
             display: flex;
+            margin-top: 8px;
             margin-bottom: 16px;
             gap: 15px;
-            margin-top: 32px;
             position: relative;
           }
           .divider_line {

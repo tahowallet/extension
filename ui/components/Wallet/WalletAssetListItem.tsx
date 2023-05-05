@@ -1,13 +1,20 @@
 import React, { ReactElement } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 
+import {
+  SmartContractFungibleAsset,
+  SwappableAsset,
+} from "@tallyho/tally-background/assets"
+
 import DoggoAssetListItem from "./AssetListItem/DoggoAssetListItem"
 import CommonAssetListItem from "./AssetListItem/CommonAssetListItem"
 
-interface Props {
-  assetAmount: CompleteAssetAmount
+type Props = {
+  assetAmount: CompleteAssetAmount<SwappableAsset>
   initializationLoadingTimeExpired: boolean
-  onUntrustedAssetWarningClick?: (asset: CompleteAssetAmount["asset"]) => void
+  onUntrustedAssetWarningClick?: (
+    asset: CompleteAssetAmount<SmartContractFungibleAsset>["asset"]
+  ) => void
 }
 
 export default function WalletAssetListItem(props: Props): ReactElement {
