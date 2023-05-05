@@ -17,7 +17,6 @@ import {
   CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES,
   MULTICALL_ABI,
   MULTICALL_CONTRACT_ADDRESS,
-  networkSupportsMultiCall,
 } from "./multicall"
 import logger from "./logger"
 import { isFulfilledPromise } from "./utils/type-guards"
@@ -196,7 +195,7 @@ export const getTokenBalances = async (
   tokenAddresses: HexString[],
   provider: Provider
 ): Promise<SmartContractAmount[]> => {
-  if (networkSupportsMultiCall(network.chainID)) {
+  try {
     const multicallAddress =
       CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES[network.chainID] ||
       MULTICALL_CONTRACT_ADDRESS
@@ -234,44 +233,48 @@ export const getTokenBalances = async (
         },
       }
     })
-  }
-
-  const POLL_OPTIONS: PollOptions = {
-    ceiling: 500,
-    timeout: 5000,
-    retryLimit: 2,
-  }
-
-  // Attempt to fetch all balances through multiple RPC requests
-  // There's a risk of going to get rate limited depending on the
-  // number of tokens queried for the network
-
-  const balances = await Promise.allSettled(
-    tokenAddresses.map(
-      async (contractAddress): Promise<SmartContractAmount> => {
-        // Poll will keep retrying until:
-        // - This function doesn't return undefined
-        // - It hits the retry limit, then it rejects
-        // - It reaches the timeout, then it rejects
-        const result = await poll(
-          () =>
-            getBalance(provider, contractAddress, address)
-              .then((amount) => ({
-                smartContract: { contractAddress, homeNetwork: network },
-                amount,
-              }))
-              .catch(() => undefined),
-          POLL_OPTIONS
-        )
-
-        if (!result) {
-          throw new Error("Invalid value returned for token balance")
-        }
-
-        return result
+  } catch (error) {
+    if (error instanceof Error && !String(error).includes("NETWORK_ERROR")) {
+      const POLL_OPTIONS: PollOptions = {
+        ceiling: 500,
+        timeout: 5000,
+        retryLimit: 1,
       }
-    )
-  )
 
-  return balances.filter(isFulfilledPromise).map((promise) => promise.value)
+      // Attempt to fetch all balances through multiple RPC requests
+      // There's a risk of going to get rate limited depending on the
+      // number of tokens queried for the network
+
+      const balances = await Promise.allSettled(
+        tokenAddresses.map(
+          async (contractAddress): Promise<SmartContractAmount> => {
+            // Poll will keep retrying until:
+            // - This function doesn't return undefined
+            // - It hits the retry limit, then it rejects
+            // - It reaches the timeout, then it rejects
+            const result = await poll(
+              () =>
+                getBalance(provider, contractAddress, address)
+                  .then((amount) => ({
+                    smartContract: { contractAddress, homeNetwork: network },
+                    amount,
+                  }))
+                  .catch(() => undefined),
+              POLL_OPTIONS
+            )
+
+            if (!result) {
+              throw new Error("Invalid value returned for token balance")
+            }
+
+            return result
+          }
+        )
+      )
+
+      return balances.filter(isFulfilledPromise).map((promise) => promise.value)
+    }
+
+    throw error
+  }
 }
