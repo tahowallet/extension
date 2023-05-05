@@ -26,7 +26,7 @@ This release checklist should be performed before release is published.
    - [ ] check assets
    - [ ] check balance
    - [ ] check NFTs
-   - [ ] check abilities
+   - [ ] check abilities (abilities should not be displayed)
    - [ ] check activities
    - [ ] check overview page
 2. Add read-only account with UNS
