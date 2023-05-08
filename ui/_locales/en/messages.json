@@ -772,6 +772,8 @@
       "assetImported": "Asset imported from transaction history",
       "name": "Name",
       "contract": "Contract address",
+      "discoveryTx": "Added from transaction:",
+      "copiedTx": "Transaction copied to clipboard",
       "close": "Close",
       "hideAsset": "Hide asset",
       "keepHidden": "Keep hidden",

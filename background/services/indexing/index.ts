@@ -352,12 +352,6 @@ export default class IndexingService extends BaseService<Events> {
             ])
           ).length > 0
 
-        // TODO Add the concept of an untrusted asset that is displayed in the
-        // TODO UI as such, with the ability to mark the asset as trusted.
-        // Possible approach: make assetLookups include a `baselineTrusted`
-        // field, then include an entry in assets/db that is `trusted`,
-        // defaulted to `baselineTrusted`, and displayed and updatable via
-        // the UI.
         if (baselineTrustedAsset) {
           const assetLookups = trackedAddresesOnNetworks.map(
             (addressOnNetwork) => ({
@@ -416,12 +410,16 @@ export default class IndexingService extends BaseService<Events> {
       "assetTransfers",
       async ({ addressNetwork, assetTransfers }) => {
         assetTransfers.forEach((transfer) => {
-          const fungibleAsset = transfer.assetAmount
-            .asset as SmartContractFungibleAsset
-          if (fungibleAsset.contractAddress && fungibleAsset.decimals) {
+          const fungibleAsset = transfer.assetAmount.asset
+          if (
+            isSmartContractFungibleAsset(fungibleAsset) &&
+            fungibleAsset.contractAddress &&
+            fungibleAsset.decimals
+          ) {
             this.addTokenToTrackByContract(
               addressNetwork.network,
-              fungibleAsset.contractAddress
+              fungibleAsset.contractAddress,
+              { discoveryTx: transfer.txHash }
             )
           }
         })
@@ -609,7 +607,8 @@ export default class IndexingService extends BaseService<Events> {
    */
   async addTokenToTrackByContract(
     network: EVMNetwork,
-    contractAddress: string
+    contractAddress: string,
+    metadata: { discoveryTx?: HexString } = {}
   ): Promise<SmartContractFungibleAsset | undefined> {
     const normalizedAddress = normalizeEVMAddress(contractAddress)
 
@@ -622,10 +621,12 @@ export default class IndexingService extends BaseService<Events> {
       await this.addAssetToTrack(knownAsset)
       return knownAsset
     }
+
     let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
       network,
       normalizedAddress
     )
+
     if (!customAsset) {
       // pull metadata from Alchemy
       customAsset =
@@ -633,20 +634,27 @@ export default class IndexingService extends BaseService<Events> {
           contractAddress: normalizedAddress,
           homeNetwork: network,
         })) || undefined
+    }
 
-      if (customAsset) {
-        await this.addCustomAsset(customAsset)
-        this.emitter.emit("assets", [customAsset])
-        return customAsset
+    if (customAsset) {
+      // console.log(
+      //   "Adding token to track",
+      //   metadata.discoveryTx,
+      //   customAsset.symbol
+      // )
+
+      if (metadata) {
+        customAsset.metadata ??= {}
+        Object.assign(customAsset.metadata, metadata)
       }
 
+      await this.addCustomAsset(customAsset)
+      this.emitter.emit("assets", [customAsset])
       // TODO if we still don't have anything, use a contract read + a
       // CoinGecko lookup
-      if (customAsset) {
-        await this.addAssetToTrack(customAsset)
-        return customAsset
-      }
+      await this.addAssetToTrack(customAsset)
     }
+
     return customAsset
   }
 
