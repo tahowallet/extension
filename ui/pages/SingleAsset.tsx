@@ -71,23 +71,29 @@ const TrustToggler = ({
         }
       `}</style>
       {assetIsUntrusted ? (
-        <button className="trust_asset" type="button">
+        <button
+          className="trust_asset"
+          type="button"
+          onClick={() => onClick(true)}
+        >
           {t("assets.trustAsset")}
           <SharedIcon
             color="currentColor"
             icon="icons/m/eye-on.svg"
             width={24}
-            onClick={() => onClick(true)}
           />
         </button>
       ) : (
-        <button className="hide_asset" type="button">
+        <button
+          className="hide_asset"
+          type="button"
+          onClick={() => onClick(false)}
+        >
           {t("assets.hideAsset")}
           <SharedIcon
             color="currentColor"
             icon="icons/m/eye-off.svg"
             width={24}
-            onClick={() => onClick(false)}
           />
         </button>
       )}
