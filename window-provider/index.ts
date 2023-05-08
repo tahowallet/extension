@@ -59,6 +59,7 @@ const impersonateMetamaskWhitelist = [
   "cow.fi",
   "tally.xyz",
   "kyberswap.com",
+  "space.id",
 ]
 
 const METAMASK_STATE_MOCK = {
