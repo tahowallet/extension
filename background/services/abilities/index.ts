@@ -119,8 +119,10 @@ export default class AbilitiesService extends BaseService<Events> {
   ): Promise<void> {
     const cachedAbilities = await this.db.getAllAbilities()
     const diffAbilities = cachedAbilities.filter(
-      (ability) =>
-        !abilities.find(({ abilityId }) => ability.abilityId === abilityId)
+      (cachedAbility) =>
+        !abilities.find(
+          ({ abilityId }) => cachedAbility.abilityId === abilityId
+        )
     )
 
     diffAbilities.forEach(({ abilityId }) =>

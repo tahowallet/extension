@@ -41,7 +41,7 @@ export class AbilitiesDatabase extends Dexie {
   }
 
   async getAllAbilities(): Promise<Ability[]> {
-    return (await this.abilities).toArray()
+    return this.abilities.toArray()
   }
 
   async getAbility(
