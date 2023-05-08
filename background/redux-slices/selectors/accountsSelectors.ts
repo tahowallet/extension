@@ -174,7 +174,7 @@ const computeCombinedAssetAmountsData = (
         (isTrusted && (hideDust ? isNotDust && isPresent : isPresent))
       ) {
         acc.combinedAssetAmounts.push(assetAmount)
-      } else if (!isCustom ? isPresent : true) {
+      } else if (isCustom || isPresent) {
         acc.hiddenAssetAmounts.push(assetAmount)
       }
       return acc

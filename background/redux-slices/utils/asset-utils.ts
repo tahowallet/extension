@@ -353,9 +353,6 @@ export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
   return false
 }
 
-export function isCustomAsset(asset: AnyAsset | undefined): boolean {
-  if (asset) {
-    return (asset?.metadata?.tokenLists?.length ?? 0) < 1
-  }
-  return false
+export function isCustomAsset(asset: AnyAsset): boolean {
+  return (asset.metadata?.tokenLists?.length ?? 0) < 1
 }

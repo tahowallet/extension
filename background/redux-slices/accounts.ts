@@ -311,15 +311,11 @@ const accountSlice = createSlice({
         if (existingAccountData !== "loading") {
           if (
             updatedAccountBalance.assetAmount.amount === 0n &&
-            existingAccountData.balances[updatedAssetSymbol] === undefined
-          ) {
+            existingAccountData.balances[updatedAssetSymbol] === undefined &&
             // add base asset even if balance is 0 or is a custom asset
-            if (
-              !isCustomAsset(asset) &&
-              !isBuiltInNetworkBaseAsset(asset, network)
-            ) {
-              return
-            }
+            !(isCustomAsset(asset) || isBuiltInNetworkBaseAsset(asset, network))
+          ) {
+            return
           }
           existingAccountData.balances[updatedAssetSymbol] =
             updatedAccountBalance
