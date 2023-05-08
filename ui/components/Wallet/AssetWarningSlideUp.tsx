@@ -5,7 +5,11 @@ import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
 import { useTranslation } from "react-i18next"
 import { updateAssetTrustStatus } from "@tallyho/tally-background/redux-slices/assets"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import { selectHideUntrustedAssets } from "@tallyho/tally-background/redux-slices/ui"
+import {
+  selectHideUntrustedAssets,
+  setSnackbarMessage,
+} from "@tallyho/tally-background/redux-slices/ui"
+import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SharedBanner from "../Shared/SharedBanner"
@@ -69,7 +73,8 @@ export default function AssetWarningSlideUp(
   return (
     <TitledSlideUpMenu
       isOpen={asset !== null}
-      size="small"
+      size="custom"
+      customSize="290"
       title={t("assetImported")}
       close={close}
     >
@@ -107,6 +112,7 @@ export default function AssetWarningSlideUp(
           float: right;
           display: flex;
           align-items: flex-end;
+          color: var(--green-20);
         }
         ul.asset_details > li.asset_name > div {
           max-width: 80%;
@@ -120,7 +126,15 @@ export default function AssetWarningSlideUp(
           display: flex;
           justify-content: space-between;
           margin: 0 24px;
-          margin-top: 34px;
+          margin-top: 28px;
+        }
+
+        .left {
+          color: var(--green-40);
+        }
+
+        .discovery_tx:hover {
+          color: var(--trophy-gold);
         }
       `}</style>
       <SharedBanner icon="notif-attention" iconColor="var(--attention)">
@@ -130,13 +144,13 @@ export default function AssetWarningSlideUp(
       </SharedBanner>
       <ul className="asset_details">
         <li className="asset_name">
-          {t("name")}
+          <div className="left">{t("name")}</div>
           <div className="right">
             <strong>{`${asset?.name} (${asset?.symbol})`}</strong>
           </div>
         </li>
         <li>
-          {t("contract")}
+          <div className="left">{t("contract")}</div>
           <div className="right">
             <SharedAddress
               address={
@@ -147,6 +161,25 @@ export default function AssetWarningSlideUp(
             />
           </div>
         </li>
+        {asset.metadata?.discoveryTx && (
+          <li>
+            <div className="left">{t("discoveryTx")}</div>
+            <div className="right">
+              <button
+                className="discovery_tx"
+                type="button"
+                onClick={() => {
+                  const tx = asset.metadata?.discoveryTx || ""
+                  navigator.clipboard.writeText(tx)
+                  dispatch(setSnackbarMessage(t("copiedTx")))
+                }}
+                title={asset.metadata.discoveryTx}
+              >
+                {truncateAddress(asset.metadata.discoveryTx)}
+              </button>
+            </div>
+          </li>
+        )}
       </ul>
       {isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST) ? (
         <div className="asset_trust_actions">
