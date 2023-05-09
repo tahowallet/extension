@@ -71,7 +71,7 @@ describe("AbilitiesService", () => {
       jest.clearAllMocks()
     })
 
-    it("should not emit newAbilities if there are no new abilities", async () => {
+    it("should not emit newAbilities if there are no abilities", async () => {
       const stub = sandbox
         .stub(daylight, "getDaylightAbilities")
         .callsFake(async () => [])
@@ -81,61 +81,30 @@ describe("AbilitiesService", () => {
       expect(abilitiesService.emitter.emit).toBeCalledTimes(0)
     })
 
-    it("should emit newAbilities if there is a new ability", async () => {
+    it("should emit newAbilities if there is a new abilities", async () => {
       const daylightAbilities = [createDaylightAbility()]
-      const stubAddNewAbility = sandbox
+      const normalizedAbilities = normalizeDaylightAbilities(
+        daylightAbilities,
+        TEST_ADDRESS
+      )
+
+      const stubGetAllAbilities = sandbox
         // eslint-disable-next-line @typescript-eslint/dot-notation
-        .stub(abilitiesService["db"], "addNewAbility")
-        .callsFake(async () => true)
+        .stub(abilitiesService["db"], "getAllAbilities")
+        .callsFake(async () => normalizedAbilities)
       const stubGetAbilities = sandbox
         .stub(daylight, "getDaylightAbilities")
         .callsFake(async () => daylightAbilities)
 
       await abilitiesService.pollForAbilities(TEST_ADDRESS)
 
-      const normalizedAbilities = normalizeDaylightAbilities(
-        daylightAbilities,
-        TEST_ADDRESS
-      )
-
       expect(stubGetAbilities.called).toBe(true)
-      expect(stubAddNewAbility.called).toBe(true)
+      expect(stubGetAllAbilities.called).toBe(true)
       expect(abilitiesService.emitter.emit).toBeCalledTimes(1)
-      expect(abilitiesService.emitter.emit).toBeCalledWith(
-        "newAbilities",
-        normalizedAbilities
-      )
-    })
-
-    it("should emit newAbilities when only one ability is new", async () => {
-      const slug = "new-test-daylight"
-      const daylightAbilities = [
-        createDaylightAbility(),
-        createDaylightAbility({ slug }),
-      ]
-      const stubAddNewAbility = sandbox
-        // eslint-disable-next-line @typescript-eslint/dot-notation
-        .stub(abilitiesService["db"], "addNewAbility")
-        .callsFake(async (ability) => {
-          return ability.slug === slug
-        })
-      const stubGetAbilities = sandbox
-        .stub(daylight, "getDaylightAbilities")
-        .callsFake(async () => daylightAbilities)
-
-      await abilitiesService.pollForAbilities(TEST_ADDRESS)
-
-      const normalizedAbilities = normalizeDaylightAbilities(
-        daylightAbilities,
-        TEST_ADDRESS
-      )
-
-      expect(stubGetAbilities.called).toBe(true)
-      expect(stubAddNewAbility.called).toBe(true)
-      expect(abilitiesService.emitter.emit).toBeCalledTimes(1)
-      expect(abilitiesService.emitter.emit).toBeCalledWith("newAbilities", [
-        normalizedAbilities[1],
-      ])
+      expect(abilitiesService.emitter.emit).toBeCalledWith("newAbilities", {
+        address: TEST_ADDRESS,
+        abilities: normalizedAbilities,
+      })
     })
   })
 })

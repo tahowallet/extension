@@ -73,7 +73,7 @@ export const normalizeDaylightAbilities = (
 }
 
 interface Events extends ServiceLifecycleEvents {
-  newAbilities: Ability[]
+  newAbilities: { address: HexString; abilities: Ability[] }
   updatedAbility: Ability
   newAccount: string
   deleteAccount: string
@@ -120,19 +120,36 @@ export default class AbilitiesService extends BaseService<Events> {
       address
     )
 
-    const newAbilities: Ability[] = []
-
     await Promise.all(
-      normalizedAbilities.map(async (ability) => {
-        const isNewAbility = await this.db.addNewAbility(ability)
-        if (isNewAbility) {
-          newAbilities.push(ability)
-        }
-      })
+      normalizedAbilities.map(async (ability) => this.db.addNewAbility(ability))
     )
+    const cachedAbilities: Ability[] = await this.db.getAllAbilities()
 
-    if (newAbilities.length) {
-      this.emitter.emit("newAbilities", newAbilities)
+    /**
+     * Daylight returns on abilities sorted from the most interesting for the user.
+     * Since we are saving abilities in the cache we should update the state of redux based on the state from indexDB.
+     * This is because we give the user the possibility to save and delete abilities.
+     * We need to compare the arrays and return the sorted array to update the redux state to use Daylight order.
+     */
+    const abilities = cachedAbilities.sort((ability1, ability2) => {
+      const daylightAbility1 = normalizedAbilities.find(
+        ({ abilityId }) => abilityId === ability1.abilityId
+      )
+      const daylightAbility2 = normalizedAbilities.find(
+        ({ abilityId }) => abilityId === ability2.abilityId
+      )
+      if (daylightAbility1 && daylightAbility2) {
+        return (
+          normalizedAbilities.indexOf(daylightAbility1) -
+          normalizedAbilities.indexOf(daylightAbility2)
+        )
+      }
+      // A case where ability has been removed from the daylight API but is still stored in the cache.
+      return 0
+    })
+
+    if (abilities.length) {
+      this.emitter.emit("newAbilities", { address, abilities })
     }
   }
 

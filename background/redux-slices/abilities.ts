@@ -53,32 +53,18 @@ const abilitiesSlice = createSlice({
   name: "abilities",
   initialState,
   reducers: {
-    addAbilities: (immerState, { payload }: { payload: Ability[] }) => {
-      // Data from the API will come sorted using property misc.
-      // This means that the most interesting abilities will come first.
-      // New abilities should display earlier than the previous ones.
-      // For this reason, we rotate the order of the array and the new abilities are added before the old ones.
-      payload.reverse().forEach((ability) => {
-        const { address } = ability
-        if (!immerState.abilities[address]) {
-          immerState.abilities[address] = {}
-        }
-        // Editing an existing ability
-        if (immerState.abilities[address][ability.abilityId]) {
-          const existingAbility =
-            immerState.abilities[address][ability.abilityId]
-          immerState.abilities[address][ability.abilityId] = {
-            ...ability,
-            removedFromUi: existingAbility.removedFromUi,
-          }
-        } else {
-          // Adding a new ability before the old ones
-          immerState.abilities[address] = {
-            [ability.abilityId]: ability,
-            ...immerState.abilities[address],
-          }
-        }
-      })
+    addAbilities: (
+      immerState,
+      { payload }: { payload: { address: HexString; abilities: Ability[] } }
+    ) => {
+      const { address, abilities } = payload
+      immerState.abilities[address] = abilities.reduce(
+        (abilitiesForAddress, ability) => ({
+          ...abilitiesForAddress,
+          [ability.abilityId]: ability,
+        }),
+        {}
+      )
     },
     updateAbility: (immerState, { payload }: { payload: Ability }) => {
       immerState.abilities[payload.address][payload.abilityId] = payload
