@@ -417,11 +417,13 @@ export default class InternalSignerService extends BaseService<Events> {
       let address: HexString | null
 
       if (signerMetadata.type === SignerSourceTypes.privateKey) {
-        address = this.#importPrivateKey(signerMetadata)
+        address = this.#importPrivateKey(signerMetadata.privateKey)
       } else if (signerMetadata.type === SignerSourceTypes.jsonFile) {
-        address = await this.#importJSON(signerMetadata)
+        const { jsonFile, password } = signerMetadata
+        address = await this.#importJSON(jsonFile, password)
       } else {
-        address = this.#importKeyring(signerMetadata)
+        const { mnemonic, source, path } = signerMetadata
+        address = this.#importKeyring(mnemonic, source, path)
       }
 
       this.#hiddenAccounts[address] = false
@@ -443,9 +445,11 @@ export default class InternalSignerService extends BaseService<Events> {
    * @param signerMetadata - keyring metadata - path, source, mnemonic
    * @returns string - address of the first account from the HD keyring
    */
-  #importKeyring(signerMetadata: ImportMetadataHDKeyring): string {
-    const { mnemonic, source, path } = signerMetadata
-
+  #importKeyring(
+    mnemonic: string,
+    source: SignerImportSource,
+    path?: string
+  ): string {
     const newKeyring = path
       ? new HDKeyring({ mnemonic, path })
       : new HDKeyring({ mnemonic })
@@ -465,11 +469,10 @@ export default class InternalSignerService extends BaseService<Events> {
 
   /**
    * Import private key with a string
-   * @param signerMetadata - private key metadata - private key string
+   * @param privateKey - string
    * @returns string - address of imported or existing account
    */
-  #importPrivateKey(signerMetadata: ImportMetadataPrivateKey): string {
-    const { privateKey } = signerMetadata
+  #importPrivateKey(privateKey: string): string {
     const newWallet = new Wallet(privateKey)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
 
@@ -486,13 +489,11 @@ export default class InternalSignerService extends BaseService<Events> {
 
   /**
    * Import private key with JSON file
-   * @param signerMetadata - JSON keystore metadata - stringified contents of JSON file, password
+   * @param jsonFile - stringified JSON file
+   * @param password - string
    * @returns string - address of imported or existing account
    */
-  async #importJSON(
-    signerMetadata: ImportMetadataJSONPrivateKey
-  ): Promise<string> {
-    const { jsonFile, password } = signerMetadata
+  async #importJSON(jsonFile: string, password: string): Promise<string> {
     const newWallet = await Wallet.fromEncryptedJson(jsonFile, password)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
 

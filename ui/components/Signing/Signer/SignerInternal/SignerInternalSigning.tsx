@@ -1,25 +1,34 @@
 import { selectInternalSignerStatus } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useEffect, useState } from "react"
 import { AnyAction } from "redux"
+import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import InternalSignerSetPassword from "../../../InternalSigner/InternalSignerSetPassword"
 import InternalSignerUnlock from "../../../InternalSigner/InternalSignerUnlock"
 
 type SignerInternalSigningProps = {
   signActionCreator: () => AnyAction
+  redirectToActivityPage?: boolean
 }
 
 export default function SignerInternalSigning({
   signActionCreator,
+  redirectToActivityPage,
 }: SignerInternalSigningProps): ReactElement {
   const dispatch = useBackgroundDispatch()
+  const history = useHistory()
   const lockStatus = useBackgroundSelector(selectInternalSignerStatus)
   const [signingInitiated, setSigningInitiated] = useState(false)
 
   // Initiate signing once internal signer service is ready.
   useEffect(() => {
     if (!signingInitiated && lockStatus === "unlocked") {
-      dispatch(signActionCreator())
+      dispatch(signActionCreator()).finally(() => {
+        // Redirect to activity page after submitting
+        if (redirectToActivityPage) {
+          history.push("/", { goTo: "activity-page" })
+        }
+      })
 
       setSigningInitiated(true)
     }
@@ -29,6 +38,8 @@ export default function SignerInternalSigning({
     setSigningInitiated,
     dispatch,
     signActionCreator,
+    history,
+    redirectToActivityPage,
   ])
 
   // In this construction, internal signer service unlocking isn't done as a route, but in line

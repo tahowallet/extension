@@ -371,7 +371,7 @@
         }
       },
       "intro": {
-        "title": "Let's get you setup!",
+        "title": "Let's get you set up!",
         "useExisting": "Use existing wallet",
         "createNew": "Create new wallet"
       },
@@ -539,7 +539,7 @@
     "beta": "Mainnet (beta)",
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
-    "compatibleChain": "Ethereum-compatible blockchain",
+    "compatibleChain": "EVM-compatible blockchain",
     "avalanche": "Mainnet C-Chain",
     "connected": "Connected"
   },
