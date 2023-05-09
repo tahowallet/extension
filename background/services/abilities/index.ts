@@ -118,11 +118,9 @@ export default class AbilitiesService extends BaseService<Events> {
     abilities: Ability[]
   ): Promise<void> {
     const cachedAbilities = await this.db.getAllAbilities()
+    const abilitiesById = new Set(abilities.map(({ abilityId }) => abilityId))
     const diffAbilities = cachedAbilities.filter(
-      (cachedAbility) =>
-        !abilities.find(
-          ({ abilityId }) => cachedAbility.abilityId === abilityId
-        )
+      (cachedAbility) => !abilitiesById.has(cachedAbility.abilityId)
     )
 
     diffAbilities.forEach(({ abilityId }) =>
