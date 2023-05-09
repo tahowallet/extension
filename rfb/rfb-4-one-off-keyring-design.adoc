@@ -1,0 +1,219 @@
+:toc: macro
+
+= RFB 4: One-off Keyring Design
+
+== Background
+
+The Taho wallet allows users to both view data associated with an account
+of theirs, and sign transactions on behalf of that account using private key
+material. Users can set up new accounts rooted in fresh private key material,
+and accounts can derive many addresses via derivation paths as specified in
+BIP33.
+
+To properly interact with key material, the wallet has an underlying
+abstraction called the **keyring**. The abstraction was designed to be safe,
+minimize the possibility to lose key material, and minimize the possibility of
+exfiltrating key material unintentionally. Its structure is fully described in
+RFB 1: Keyring Design.
+
+The keyring service was designed to manage BIP32 compatible hierarchical
+deterministic (HD) wallets defined by BIP39 mnemonics, including allowing for
+the derivation of new addresses at the address index depth defined in BIP44's
+multi-account hierarchy.
+
+However, many Ethereum users (and some on L2s and other chains) don't use HD
+wallets or mnemonics, opting instead to use one-off private keys that don't
+directly support further address derivation. Users can choose to do this due to
+having generated legacy private key wallets in the past and being locked into
+their use, because their tool of choice for wallet generation deals in private
+keys, or for security reasons to only import individual private keys while
+maintaining control of the base mnemonic for secure derivation in a medium
+other than their primary hot wallet.
+
+Additionally, the original design of the keyring service did not expose private
+key material to callers in any way. While more secure, this approach meant that
+key material generated in the extension could never be extracted, leading to
+concerns around data loss and lock-in.
+
+== Proposal
+
+=== Goal
+
+The keyring service, originally focused on HD Wallets, should be expanded to
+handle both HD wallets and private key-based key material. This key material
+should support both primary source types for private key material: a raw hex
+format, and the JSON Crowdsale and JSON Keystore format historically used by
+various wallets and other key material sources.
+
+Additionally, the service should provide the ability to export private key
+material. In the case where an address's export is requested whose
+corresponding key material was imported directly as a private key, the private
+key should be exportable as such. In the case where the address was derived
+from an underlying HDKeyring, the service should allow exporting the private
+key corresponding to that particular address. Finally, the service should allow
+direct export of the underlying mnemonic for HDKeyrings.
+
+=== Implementation
+
+The existing service's functionality is decomposed into the service side and an
+underlying library, `@tallycash/hd-keyring`, whose focus is entirely around
+managing HDKeyring material. To support private key export, the hd-keyring package
+must add export capabilities.
+
+Additionally, the keyring service, which was primarily charged with dealing
+with HDKeyring objects, will be renamed to `InternalSignerService`, to reflect
+the fact that it is managing two different types of signers on behalf of the
+extension: mnemonic-based keyrings and raw private keys.
+
+The sections below cover changes to each.
+
+==== Core Keyring
+
+The hd-keyring package exports two primary constructs: the HDKeyring and the
+SerializedHDKeyring. The HDKeyring is designed to maintain the privacy of all
+sensitive data and only allow access through a defined interface. To this end,
+it leverages ECMAScript private variables to ensure that callers cannot access
+internal data through JavaScript escape hatches. The only way to access
+mnemonic information is through the serialize function, which returns a
+SerializedHDKeyring.
+
+In addition to the hd-keyring package, Taho uses the Ethers library to manage
+private-key-only signers.
+
+None of this changes for the purposes of this RFB. Instead, the export
+capabilities are layered on in the form of one new method, `exportPrivateKey`.
+To make it clear that calling this method is dangerous, a static string is
+required to be passed in asserting that the caller is aware the returned key
+needs to be treated with care.
+
+==== Service
+
+===== Taho Services Abstraction
+
+(This is a repeat of the same section provided in RFB 1.)
+
+Taho services are runtime singletons that are charged with managing a
+single slice of functionality for the extension. They manage data storage and
+interactions with other services, as well as maintaining internal state.
+Triggering a service’s functionality is currently done by invoking a method on
+the service; for example, the KeyringService has an unlock method that is used
+to unlock the extension’s current keyrings.
+
+The service abstraction is intended to prevent leakage of the service’s
+internal storage requirements, as well as to expose a clear availability
+lifecycle for consumers. Generally, services can be created, during which phase
+any asynchronous starting data such as storage and deserialization is resolved.
+Once a service is created, it can be started and stopped. Currently services
+can only walk through their lifecycle once, so once a service is stopped, it
+can no longer be restarted.
+
+Taho services communicate data outwards in two ways:
+
+* All services have a set of events they may broadcast. These are expected to
+  be viewable by any external entity, and should only carry public (to the rest
+  of the extension) data.
+* Service method calls may return data. This data is expected to only be
+  viewable by the caller, though generally any outsider is expected to be able
+  to call into the service. This means the restriction on returned data is
+  effectively the same; namely, the caller should only receive sensitive data
+  they have proven they have access to.
+
+==== The `InternalSignerService`
+
+`InternalSignerService` provides access to zero or more internal keyrings
+(``HDKeyring``s from the core keyring package) and zero or more raw private
+keys. It also persists these keys and keyrings when necessary and loads them
+from storage at unlock time. The internal signer service can be locked or
+unlocked. When unlocked, it has direct access to `HDKeyring` instances and
+their data (including serialized mnemonics), as well as Ethers `Wallet`
+instances and their data (including private keys) and mediates access to those
+signers by the rest of the extension. When locked, the internal signer service
+clears all references to keyrings and private keys.
+
+`InternalSignerService` stores serialized keyrings encrypted by a key derived
+from a user-specified password. Encryption is performed using the
+browser-provided Web Crypto tools, and is designed to avoid hand-rolled
+encryption. Both the key derivation from the password and the encryption of
+serialized keyring data is performed using Web Crypto. Decryption is similarly
+managed by Web Crypto. Previous audits have flagged that the PBKDF2 algorithm used
+with Web Crypto would ideally be replaced by Argon2, but the resources to dig
+into integrating a WebAssembly distribution of Argon2 have not been available
+yet. Web Crypto is likely at least a year out and probably more from directly
+supporting Argon2, unfortunately; see
+https://github.com/WICG/proposals/issues/59 for the proposal that could add
+this.
+
+As with `HDKeyring`, `InternalSignerService` protects access to cached key
+information and keyrings by using ECMAScript private variables so external
+observers cannot use JavaScript features to read the data.
+
+===== Importing and generating keys and keyrings
+
+`InternalSignerService` only allows generating keyrings; private keys cannot be
+generated directly, though they can be exported from keyring-derived addresses.
+
+Private keys and keyrings can both be imported. In the event that a private key
+is imported and corresponds to an address already controlled by a keyring, it
+is not added as a separate private key, but instead the keyring is left to manage
+that private key material.
+
+Importing a keyring after a private key for one of its derived addresses has
+been imported results in dual tracking of the underlying key material: the
+private key is managed explicitly, while the keyring itself can also derive
+the relevant address's key. A future improvement could delete the explicit
+private key when an address is derived that is also controlled by an imported
+private key to make provenance clear.
+
+Private key imports can be done with either a raw format or a JSON format. The
+JSON format uses a password to encrypt the underlying data, while the raw
+format is an unencrypted hex-encoded private key. In each case, an Ethers
+`Wallet` instance is created and then added to the underlying private key
+tracking variables.
+
+===== Exporting keys and mnemonics
+
+`InternalSignerService` allows exporting both private keys and mnemonics. In
+both cases, the export request is done by specifying the address whose material
+is being requested.
+
+If an export private key call is made for an address with explicit private key
+material, that material is used. If an export private key call is made for an
+address with no explicit private key material, the keyring's export is used.
+Finally, if an export private key call is made with an address whose key
+material or mnemonic is not known, nothing is returned.
+
+For mnemonics, only an address that has an associated keyring can export a
+mnemonic. An address with explicit private key underlying it will return
+nothing.
+
+The security expectations of the `InternalSignerService` are as follows:
+
+* When locked, the service should have no access to key material.
+* When unlocked, the service should permit unlimited access to signing
+  requests.
+* When unlocked, the service should never expose mnemonic or private key
+  information, via method call or event, with the three exceptions below.
+* When a new keyring is generated, the service should provide one-time access
+  to the mnemonic to the caller of generateNewKeyring . This mnemonic should
+  not be emitted in an event.
+* When unlocked, the service should expose a mnemonic when the `exportMnemonic`
+  method is called.
+* When unlocked, the service should expose a private key when the
+  `exportPrivateKey` method is called.
+* No interaction with the keyring service should lead to the loss of
+  previously-used key material. In particular, persisting keys should never
+  override previously-persisted keys in a way that could lose old key material.
+  Currently the service does not provide a way to recover older key material,
+  but losing it is strictly avoided by the code.
+* Persisted key material should always be encrypted.
+
+[bibliography]
+== Related Links
+
+* https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki[BIP32:
+  Hierarchical Deterministic Wallets]
+* https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki[BIP39:
+  Mnemonic code for generating deterministic keys]
+* https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki[BIP44:
+  Multi-Account Hierarchy for Deterministic Wallets]
+* https://w3c.github.io/webcrypto/[Web Cryptography API]
