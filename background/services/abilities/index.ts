@@ -115,7 +115,7 @@ export default class AbilitiesService extends BaseService<Events> {
   }
 
   async removeAbilities(abilities: Ability[]): Promise<void> {
-    const cachedAbilities = await this.db.getAllAbilities()
+    const cachedAbilities = await this.db.getAbilities()
     const abilitiesById = new Set(abilities.map(({ abilityId }) => abilityId))
     const diffAbilities = cachedAbilities.filter(
       (cachedAbility) => !abilitiesById.has(cachedAbility.abilityId)
@@ -145,7 +145,7 @@ export default class AbilitiesService extends BaseService<Events> {
      * We allow users to mark abilities as completed or removed, we do not want to overwrite this state.
      * There is an exception when the ability is really completed we want to update this property as well.
      */
-    const cachedAbilities = await this.db.getAllAbilities()
+    const cachedAbilities = await this.db.getAbilities()
     const { updatedAbilitiesByUser, ids } = cachedAbilities.reduce<{
       updatedAbilitiesByUser: Ability[]
       ids: Set<string>
@@ -190,7 +190,7 @@ export default class AbilitiesService extends BaseService<Events> {
     /**
      * 4. Redux status update
      */
-    const abilities: Ability[] = await this.db.getAllAbilities()
+    const abilities: Ability[] = await this.db.getSortedAbilities()
 
     if (updatedAbilities.length) {
       this.emitter.emit("updatedAbilities", {

@@ -20,7 +20,7 @@ export class AbilitiesDatabase extends Dexie {
     this.version(2)
       .stores({
         abilities: null,
-        abilitiesTemp: "&[abilityId+address]",
+        abilitiesTemp: "&[abilityId+address], magicOrderIndex",
       })
       .upgrade(async (tx) => {
         const abilities = await tx.table("abilities").toArray()
@@ -30,7 +30,7 @@ export class AbilitiesDatabase extends Dexie {
     this.version(3)
       .stores({
         abilitiesTemp: null,
-        abilities: "&[abilityId+address]",
+        abilities: "&[abilityId+address], magicOrderIndex",
       })
       .upgrade(async (tx) => {
         const abilities = await tx.table("abilitiesTemp").toArray()
@@ -42,8 +42,12 @@ export class AbilitiesDatabase extends Dexie {
     await this.abilities.bulkPut(abilities)
   }
 
-  async getAllAbilities(): Promise<Ability[]> {
+  async getAbilities(): Promise<Ability[]> {
     return this.abilities.toArray()
+  }
+
+  async getSortedAbilities(): Promise<Ability[]> {
+    return this.abilities.orderBy("magicOrderIndex").toArray()
   }
 
   async getAbility(
