@@ -10,6 +10,7 @@ import * as daylight from "../../../lib/daylight"
 import { NormalizedEVMAddress } from "../../../types"
 import { DaylightAbility } from "../../../lib/daylight"
 import { Ability } from "../../../abilities"
+import { AbilitiesDatabase } from "../db"
 
 const address =
   "0x208e94d5661a73360d9387d3ca169e5c130090cd" as NormalizedEVMAddress
@@ -18,6 +19,10 @@ const sortAbilities = (abilities: Ability[]) =>
   abilities.sort(
     (ability1, ability2) => ability1.magicOrderIndex - ability2.magicOrderIndex
   )
+
+type AbilitiesServiceExternalized = Omit<AbilitiesService, ""> & {
+  db: AbilitiesDatabase
+}
 
 describe("AbilitiesService", () => {
   const sandbox = sinon.createSandbox()
@@ -115,21 +120,26 @@ describe("AbilitiesService", () => {
       })
     })
 
-    it("should emit updatedAbilities with updated removed ability", async () => {
+    it("should emit updatedAbilities with updated ability if there was removed", async () => {
       const stubGetAbilities = sandbox
         .stub(daylight, "getDaylightAbilities")
+        .onCall(0)
         .callsFake(async () => daylightAbilities)
+        .onCall(1)
+        .callsFake(async () => {
+          // remove the last element
+          daylightAbilities.pop()
+          return daylightAbilities
+        })
 
       await abilitiesService.pollForAbilities(address)
-      daylightAbilities.splice(1, 1)
       await abilitiesService.pollForAbilities(address)
 
-      const newAbilities = normalizeDaylightAbilities(
-        daylightAbilities,
-        address
+      const newAbilities = sortAbilities(
+        normalizeDaylightAbilities(daylightAbilities, address)
       )
       const removedAbility = {
-        ...abilities[1],
+        ...abilities[2],
         removedFromUi: true,
       }
       newAbilities.push(removedAbility)
@@ -141,7 +151,73 @@ describe("AbilitiesService", () => {
         "updatedAbilities",
         {
           address,
-          abilities: sortAbilities(newAbilities),
+          abilities: newAbilities,
+        }
+      )
+    })
+
+    it("should emit updatedAbilities with updated ability if there was completed", async () => {
+      const stubGetAbilities = sandbox
+        .stub(daylight, "getDaylightAbilities")
+        .onCall(0)
+        .callsFake(async () => daylightAbilities)
+        .onCall(1)
+        .callsFake(async () => {
+          // mark as completed second ability
+          daylightAbilities[1] = {
+            ...daylightAbilities[1],
+            walletCompleted: true,
+          }
+          return daylightAbilities
+        })
+
+      await abilitiesService.pollForAbilities(address)
+      await abilitiesService.pollForAbilities(address)
+
+      const newAbilities = sortAbilities(
+        normalizeDaylightAbilities(daylightAbilities, address)
+      )
+
+      expect(stubGetAbilities.called).toBe(true)
+      expect(abilitiesService.emitter.emit).toBeCalledTimes(2)
+      expect(abilitiesService.emitter.emit).toHaveBeenNthCalledWith(
+        2,
+        "updatedAbilities",
+        {
+          address,
+          abilities: newAbilities,
+        }
+      )
+    })
+
+    it("should emit updatedAbilities with not updated ability if there was completed by user", async () => {
+      const abilitiesServiceExternalized =
+        abilitiesService as unknown as AbilitiesServiceExternalized
+      const stubGetAbilities = sandbox
+        .stub(daylight, "getDaylightAbilities")
+        .callsFake(async () => daylightAbilities)
+
+      await abilitiesServiceExternalized.pollForAbilities(address)
+      // mark as completed ability
+      await abilitiesServiceExternalized.db.markAsCompleted(
+        address,
+        abilities[1].abilityId
+      )
+      await abilitiesServiceExternalized.pollForAbilities(address)
+
+      abilities[1] = {
+        ...abilities[1],
+        completed: true,
+      }
+
+      expect(stubGetAbilities.called).toBe(true)
+      expect(abilitiesServiceExternalized.emitter.emit).toBeCalledTimes(2)
+      expect(abilitiesServiceExternalized.emitter.emit).toHaveBeenNthCalledWith(
+        2,
+        "updatedAbilities",
+        {
+          address,
+          abilities,
         }
       )
     })

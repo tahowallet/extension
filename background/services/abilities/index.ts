@@ -139,7 +139,7 @@ export default class AbilitiesService extends BaseService<Events> {
      * To update the cache we have to compare the data with the received abilities.
      * The ability can be open completed or expired. Therefore, we need to get the abilities for these 3 types.
      */
-    this.removeAbilities(normalizedAbilities)
+    await this.removeAbilities(normalizedAbilities)
     /**
      * 2. Update existing abilities in the cache
      * We allow users to mark abilities as completed or removed, we do not want to overwrite this state.
@@ -192,7 +192,7 @@ export default class AbilitiesService extends BaseService<Events> {
      */
     const abilities: Ability[] = await this.db.getSortedAbilities()
 
-    if (updatedAbilities.length) {
+    if (abilities.length) {
       this.emitter.emit("updatedAbilities", {
         address,
         abilities,
