@@ -47,6 +47,7 @@ export const createAbility = (overrides: Partial<Ability> = {}): Ability => {
       type: "hold",
       address: "",
     },
+    magicOrderIndex: 0,
     ...overrides,
   }
 }

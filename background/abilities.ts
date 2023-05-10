@@ -53,6 +53,8 @@ export type Ability = {
   removedFromUi: boolean
   address: NormalizedEVMAddress
   requirement: AbilityRequirement
+  /* Order number from the most interesting to the user */
+  magicOrderIndex: number
 }
 
 export const ABILITY_TYPE_COLOR = {

@@ -22,6 +22,7 @@ const ABILITY_DEFAULT: Ability = {
     type: "hold",
     address: "",
   },
+  magicOrderIndex: 0,
 }
 
 describe("Abilities utils", () => {

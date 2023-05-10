@@ -44,11 +44,11 @@ const normalizeDaylightRequirements = (
 
 export const normalizeDaylightAbilities = (
   daylightAbilities: DaylightAbility[],
-  address: string
+  address: NormalizedEVMAddress
 ): Ability[] => {
   const normalizedAbilities: Ability[] = []
 
-  daylightAbilities.forEach((daylightAbility) => {
+  daylightAbilities.forEach((daylightAbility, idx) => {
     normalizedAbilities.push({
       type: daylightAbility.type,
       title: daylightAbility.title,
@@ -61,11 +61,12 @@ export const normalizeDaylightAbilities = (
       closeAt: daylightAbility.closeAt || undefined,
       completed: daylightAbility.walletCompleted || false,
       removedFromUi: false,
-      address: normalizeEVMAddress(address),
+      address,
       requirement: normalizeDaylightRequirements(
         // Just take the 1st requirement for now
         daylightAbility.requirements[0]
       ),
+      magicOrderIndex: idx,
     })
   })
 
@@ -73,7 +74,7 @@ export const normalizeDaylightAbilities = (
 }
 
 interface Events extends ServiceLifecycleEvents {
-  newAbilities: Ability[]
+  updatedAbilities: { address: NormalizedEVMAddress; abilities: Ability[] }
   updatedAbility: Ability
   newAccount: string
   deleteAccount: string
@@ -109,30 +110,93 @@ export default class AbilitiesService extends BaseService<Events> {
 
   // Should only be called with ledger or imported accounts
   async getNewAccountAbilities(address: string): Promise<void> {
-    this.pollForAbilities(address)
+    this.pollForAbilities(normalizeEVMAddress(address))
     this.emitter.emit("newAccount", address)
   }
 
-  async pollForAbilities(address: HexString): Promise<void> {
+  async removeAbilities(abilities: Ability[]): Promise<void> {
+    const cachedAbilities = await this.db.getAllAbilities()
+    const abilitiesById = new Set(abilities.map(({ abilityId }) => abilityId))
+    const diffAbilities = cachedAbilities.filter(
+      (cachedAbility) => !abilitiesById.has(cachedAbility.abilityId)
+    )
+    const removedAbilities = diffAbilities.map((ability) => ({
+      ...ability,
+      removedFromUi: true,
+    }))
+    await this.db.updateAbilities(removedAbilities)
+  }
+
+  async pollForAbilities(address: NormalizedEVMAddress): Promise<void> {
     const daylightAbilities = await getDaylightAbilities(address)
     const normalizedAbilities = normalizeDaylightAbilities(
       daylightAbilities,
       address
     )
-
-    const newAbilities: Ability[] = []
-
-    await Promise.all(
-      normalizedAbilities.map(async (ability) => {
-        const isNewAbility = await this.db.addNewAbility(ability)
-        if (isNewAbility) {
-          newAbilities.push(ability)
+    /**
+     * 1. Remove abilities from the cache
+     * We are not able to get information about the removed abilities from the Daylight API.
+     * To update the cache we have to compare the data with the received abilities.
+     * The ability can be open completed or expired. Therefore, we need to get the abilities for these 3 types.
+     */
+    this.removeAbilities(normalizedAbilities)
+    /**
+     * 2. Update existing abilities in the cache
+     * We allow users to mark abilities as completed or removed, we do not want to overwrite this state.
+     * There is an exception when the ability is really completed we want to update this property as well.
+     */
+    const cachedAbilities = await this.db.getAllAbilities()
+    const { updatedAbilitiesByUser, ids } = cachedAbilities.reduce<{
+      updatedAbilitiesByUser: Ability[]
+      ids: Set<string>
+    }>(
+      (acc, ability) => {
+        if (ability.removedFromUi || ability.completed) {
+          acc.ids.add(ability.abilityId)
+          acc.updatedAbilitiesByUser.push(ability)
         }
-      })
+        return acc
+      },
+      { updatedAbilitiesByUser: [], ids: new Set() }
     )
+    // TODO Let's improve it
+    const updatedAbilities = normalizedAbilities.map((ability) => {
+      if (ids.has(ability.abilityId)) {
+        const existingAbility = updatedAbilitiesByUser.find(
+          ({ abilityId }) => abilityId === ability.abilityId
+        )
+        if (JSON.stringify(ability) !== JSON.stringify(existingAbility)) {
+          const { removedFromUi, completed } = existingAbility ?? {
+            removedFromUi: false,
+            completed: false,
+          }
+          // Update when the ability is really completed but the cache status is not updated
+          const updateCompleted =
+            ability.completed === true && completed === false
 
-    if (newAbilities.length) {
-      this.emitter.emit("newAbilities", newAbilities)
+          return {
+            ...ability,
+            removedFromUi,
+            completed: updateCompleted ? true : completed,
+          }
+        }
+      }
+      return ability
+    })
+    /**
+     * 3. Update the indexDB
+     */
+    await this.db.updateAbilities(updatedAbilities)
+    /**
+     * 4. Redux status update
+     */
+    const abilities: Ability[] = await this.db.getAllAbilities()
+
+    if (updatedAbilities.length) {
+      this.emitter.emit("updatedAbilities", {
+        address,
+        abilities,
+      })
     }
   }
 
@@ -166,12 +230,14 @@ export default class AbilitiesService extends BaseService<Events> {
     }
     localStorage.setItem(this.ABILITY_TIME_KEY, Date.now().toString())
     const accountsToTrack = await this.chainService.getAccountsToTrack()
-    const addresses = new Set(accountsToTrack.map((account) => account.address))
+    const addresses = new Set(
+      accountsToTrack.map((account) => normalizeEVMAddress(account.address))
+    )
 
     // 1-by-1 decreases likelihood of hitting rate limit
     // eslint-disable-next-line no-restricted-syntax
     for (const address of addresses) {
-      this.emitter.emit("initAbilities", address as NormalizedEVMAddress)
+      this.emitter.emit("initAbilities", address)
     }
   }
 

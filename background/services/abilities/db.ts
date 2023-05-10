@@ -9,35 +9,41 @@ export class AbilitiesDatabase extends Dexie {
     super("tally/abilities")
 
     this.version(1).stores({
+      /**
+       * There is no need to use auto-incremented primary key if you want to use the bulkPut method.
+       * Using this primary key causes an error when applying the method.
+       * Boolean can't be indexed. Let's remove the unnecessary indexes.
+       */
       abilities: "++id, &[abilityId+address], removedFromUi, completed",
     })
+
+    this.version(2)
+      .stores({
+        abilities: null,
+        abilitiesTemp: "&[abilityId+address]",
+      })
+      .upgrade(async (tx) => {
+        const abilities = await tx.table("abilities").toArray()
+        await tx.table("abilitiesTemp").bulkAdd(abilities)
+      })
+
+    this.version(3)
+      .stores({
+        abilitiesTemp: null,
+        abilities: "&[abilityId+address]",
+      })
+      .upgrade(async (tx) => {
+        const abilities = await tx.table("abilitiesTemp").toArray()
+        await tx.table("abilities").bulkAdd(abilities)
+      })
   }
 
-  async addNewAbility(ability: Ability): Promise<boolean> {
-    // @TODO Use a cache here
-    const existingAbility = await this.getAbility(
-      ability.address,
-      ability.abilityId
-    )
-    if (!existingAbility) {
-      await this.abilities.add(ability)
-      return true
-    }
-    const { id, ...correctAbility } = existingAbility as Ability & {
-      id: number
-    }
-    if (JSON.stringify(correctAbility) !== JSON.stringify(ability)) {
-      const updateCompleted =
-        ability.completed === true && existingAbility.completed === false
+  async updateAbilities(abilities: Ability[]): Promise<void> {
+    await this.abilities.bulkPut(abilities)
+  }
 
-      await this.abilities.update(existingAbility, {
-        ...ability,
-        completed: updateCompleted ? true : existingAbility.completed,
-        removedFromUi: existingAbility.removedFromUi,
-      })
-      return true
-    }
-    return false
+  async getAllAbilities(): Promise<Ability[]> {
+    return this.abilities.toArray()
   }
 
   async getAbility(
@@ -45,14 +51,6 @@ export class AbilitiesDatabase extends Dexie {
     abilityId: string
   ): Promise<Ability | undefined> {
     return this.abilities.get({ address, abilityId })
-  }
-
-  async getActiveAbilities(): Promise<Ability[]> {
-    return (
-      await this.abilities.where({
-        removedFromUi: false,
-      })
-    ).toArray()
   }
 
   async markAsCompleted(

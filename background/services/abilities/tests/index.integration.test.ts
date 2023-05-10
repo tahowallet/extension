@@ -1,14 +1,15 @@
 import sinon from "sinon"
-import AbilitiesService, { normalizeDaylightAbilities } from ".."
+import AbilitiesService from ".."
 import {
   createAbilitiesService,
   createChainService,
-  createDaylightAbility,
 } from "../../../tests/factories"
 import ChainService from "../../chain"
 import * as daylight from "../../../lib/daylight"
+import { NormalizedEVMAddress } from "../../../types"
 
-const TEST_ADDRESS = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
+const TEST_ADDRESS =
+  "0x208e94d5661a73360d9387d3ca169e5c130090cd" as NormalizedEVMAddress
 
 describe("AbilitiesService", () => {
   const sandbox = sinon.createSandbox()
@@ -71,7 +72,7 @@ describe("AbilitiesService", () => {
       jest.clearAllMocks()
     })
 
-    it("should not emit newAbilities if there are no new abilities", async () => {
+    it("should not emit updatedAbilities if there are no abilities", async () => {
       const stub = sandbox
         .stub(daylight, "getDaylightAbilities")
         .callsFake(async () => [])
@@ -79,63 +80,6 @@ describe("AbilitiesService", () => {
       await abilitiesService.pollForAbilities(TEST_ADDRESS)
       expect(stub.called).toBe(true)
       expect(abilitiesService.emitter.emit).toBeCalledTimes(0)
-    })
-
-    it("should emit newAbilities if there is a new ability", async () => {
-      const daylightAbilities = [createDaylightAbility()]
-      const stubAddNewAbility = sandbox
-        // eslint-disable-next-line @typescript-eslint/dot-notation
-        .stub(abilitiesService["db"], "addNewAbility")
-        .callsFake(async () => true)
-      const stubGetAbilities = sandbox
-        .stub(daylight, "getDaylightAbilities")
-        .callsFake(async () => daylightAbilities)
-
-      await abilitiesService.pollForAbilities(TEST_ADDRESS)
-
-      const normalizedAbilities = normalizeDaylightAbilities(
-        daylightAbilities,
-        TEST_ADDRESS
-      )
-
-      expect(stubGetAbilities.called).toBe(true)
-      expect(stubAddNewAbility.called).toBe(true)
-      expect(abilitiesService.emitter.emit).toBeCalledTimes(1)
-      expect(abilitiesService.emitter.emit).toBeCalledWith(
-        "newAbilities",
-        normalizedAbilities
-      )
-    })
-
-    it("should emit newAbilities when only one ability is new", async () => {
-      const slug = "new-test-daylight"
-      const daylightAbilities = [
-        createDaylightAbility(),
-        createDaylightAbility({ slug }),
-      ]
-      const stubAddNewAbility = sandbox
-        // eslint-disable-next-line @typescript-eslint/dot-notation
-        .stub(abilitiesService["db"], "addNewAbility")
-        .callsFake(async (ability) => {
-          return ability.slug === slug
-        })
-      const stubGetAbilities = sandbox
-        .stub(daylight, "getDaylightAbilities")
-        .callsFake(async () => daylightAbilities)
-
-      await abilitiesService.pollForAbilities(TEST_ADDRESS)
-
-      const normalizedAbilities = normalizeDaylightAbilities(
-        daylightAbilities,
-        TEST_ADDRESS
-      )
-
-      expect(stubGetAbilities.called).toBe(true)
-      expect(stubAddNewAbility.called).toBe(true)
-      expect(abilitiesService.emitter.emit).toBeCalledTimes(1)
-      expect(abilitiesService.emitter.emit).toBeCalledWith("newAbilities", [
-        normalizedAbilities[1],
-      ])
     })
   })
 })
