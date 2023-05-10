@@ -87,6 +87,7 @@ export default function SharedButton(
     <button
       id={id}
       type={isFormSubmit ? "submit" : "button"}
+      aria-disabled={isDisabled}
       className={classNames(
         type !== "unstyled" && "button",
         { large: size === "large" },

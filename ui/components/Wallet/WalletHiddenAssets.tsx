@@ -81,10 +81,12 @@ export default function WalletHiddenAssets({
           max-height: 0px;
           overflow: hidden;
           transition: max-height 500ms ease-out;
+          visibility: hidden;
         }
         .hidden_assets.visible {
           max-height: ${maxHeight}px;
           transition: max-height 500ms ease-in;
+          visibility: visible;
         }
         .hidden_assets_button {
           display: flex;
