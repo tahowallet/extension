@@ -115,11 +115,13 @@ export default function CommonAssetListItem(
             <SharedIconRouterLink
               path="/send"
               state={assetAmount.asset}
+              disabled={assetIsUntrusted}
               iconClass="asset_icon_send"
             />
             {NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID) ? (
               <SharedIconRouterLink
                 path="/swap"
+                disabled={assetIsUntrusted}
                 state={{
                   symbol: assetAmount.asset.symbol,
                   contractAddress,

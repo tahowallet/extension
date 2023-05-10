@@ -50,6 +50,7 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
         .disabled_asset_icon {
           mask-size: cover;
           background-color: var(--green-60);
+          opacity: 0.6;
           width: 12px;
           height: 12px;
         }

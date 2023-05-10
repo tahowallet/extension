@@ -192,6 +192,7 @@ export default function SingleAsset(): ReactElement {
       localizedDecimalAmount: undefined,
     }
 
+  const isUntrusted = isUntrustedAsset(asset)
   const assetHasTrustStatus = typeof asset?.metadata?.trusted !== "undefined"
   const isTokenListAsset = !!asset?.metadata?.tokenLists?.length
 
@@ -312,6 +313,7 @@ export default function SingleAsset(): ReactElement {
                   type="primary"
                   size="medium"
                   iconSmall="send"
+                  isDisabled={isUntrusted}
                   linkTo={{
                     pathname: "/send",
                     state: asset,
@@ -323,6 +325,7 @@ export default function SingleAsset(): ReactElement {
                   <SharedButton
                     type="primary"
                     size="medium"
+                    isDisabled={isUntrusted}
                     iconSmall="swap"
                     linkTo={{
                       pathname: "/swap",

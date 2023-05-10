@@ -637,12 +637,6 @@ export default class IndexingService extends BaseService<Events> {
     }
 
     if (customAsset) {
-      // console.log(
-      //   "Adding token to track",
-      //   metadata.discoveryTx,
-      //   customAsset.symbol
-      // )
-
       if (metadata) {
         customAsset.metadata ??= {}
         Object.assign(customAsset.metadata, metadata)
