@@ -1,15 +1,23 @@
 import sinon from "sinon"
-import AbilitiesService from ".."
+import AbilitiesService, { normalizeDaylightAbilities } from ".."
 import {
   createAbilitiesService,
   createChainService,
+  createDaylightAbility,
 } from "../../../tests/factories"
 import ChainService from "../../chain"
 import * as daylight from "../../../lib/daylight"
 import { NormalizedEVMAddress } from "../../../types"
+import { DaylightAbility } from "../../../lib/daylight"
+import { Ability } from "../../../abilities"
 
-const TEST_ADDRESS =
+const address =
   "0x208e94d5661a73360d9387d3ca169e5c130090cd" as NormalizedEVMAddress
+
+const sortAbilities = (abilities: Ability[]) =>
+  abilities.sort(
+    (ability1, ability2) => ability1.magicOrderIndex - ability2.magicOrderIndex
+  )
 
 describe("AbilitiesService", () => {
   const sandbox = sinon.createSandbox()
@@ -64,8 +72,18 @@ describe("AbilitiesService", () => {
   })
 
   describe("pollForAbilities", () => {
+    let daylightAbilities: DaylightAbility[]
+    let abilities: Ability[]
+
     beforeEach(async () => {
       jest.spyOn(abilitiesService.emitter, "emit")
+
+      daylightAbilities = [
+        createDaylightAbility({ slug: "1" }),
+        createDaylightAbility({ slug: "2" }),
+        createDaylightAbility({ slug: "3" }),
+      ]
+      abilities = normalizeDaylightAbilities(daylightAbilities, address)
     })
 
     afterEach(async () => {
@@ -77,9 +95,55 @@ describe("AbilitiesService", () => {
         .stub(daylight, "getDaylightAbilities")
         .callsFake(async () => [])
 
-      await abilitiesService.pollForAbilities(TEST_ADDRESS)
+      await abilitiesService.pollForAbilities(address)
       expect(stub.called).toBe(true)
       expect(abilitiesService.emitter.emit).toBeCalledTimes(0)
+    })
+
+    it("should emit updatedAbilities if there is a new abilities", async () => {
+      const stubGetAbilities = sandbox
+        .stub(daylight, "getDaylightAbilities")
+        .callsFake(async () => daylightAbilities)
+
+      await abilitiesService.pollForAbilities(address)
+
+      expect(stubGetAbilities.called).toBe(true)
+      expect(abilitiesService.emitter.emit).toBeCalledTimes(1)
+      expect(abilitiesService.emitter.emit).toBeCalledWith("updatedAbilities", {
+        address,
+        abilities,
+      })
+    })
+
+    it("should emit updatedAbilities with updated removed ability", async () => {
+      const stubGetAbilities = sandbox
+        .stub(daylight, "getDaylightAbilities")
+        .callsFake(async () => daylightAbilities)
+
+      await abilitiesService.pollForAbilities(address)
+      daylightAbilities.splice(1, 1)
+      await abilitiesService.pollForAbilities(address)
+
+      const newAbilities = normalizeDaylightAbilities(
+        daylightAbilities,
+        address
+      )
+      const removedAbility = {
+        ...abilities[1],
+        removedFromUi: true,
+      }
+      newAbilities.push(removedAbility)
+
+      expect(stubGetAbilities.called).toBe(true)
+      expect(abilitiesService.emitter.emit).toBeCalledTimes(2)
+      expect(abilitiesService.emitter.emit).toHaveBeenNthCalledWith(
+        2,
+        "updatedAbilities",
+        {
+          address,
+          abilities: sortAbilities(newAbilities),
+        }
+      )
     })
   })
 })
