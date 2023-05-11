@@ -91,7 +91,7 @@ export function isAssetAmountVisible(
     (isTokenListAsset && assetAmount.asset.metadata?.trusted === undefined) ||
     assetAmount.asset.metadata?.trusted === true
 
-  const isSmartContractAmount = isSmartContractFungibleAsset(assetAmount.asset)
+  const isSmartContractAsset = isSmartContractFungibleAsset(assetAmount.asset)
 
   if (isForciblyDisplayed) {
     return true
@@ -107,7 +107,7 @@ export function isAssetAmountVisible(
     visible = visible && isNotDust
   }
 
-  if (isSmartContractAmount && hideUntrusted) {
+  if (isSmartContractAsset && hideUntrusted) {
     visible = visible && isTrusted
   }
 
