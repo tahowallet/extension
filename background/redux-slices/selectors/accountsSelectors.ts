@@ -536,13 +536,20 @@ export const selectCurrentAccountTotal = createSelector(
     findAccountTotal(categorizedAccountTotals, currentAccount)
 )
 
-export const getAllAddresses = createSelector(getAccountState, (account) => [
-  ...new Set(
-    Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
-      Object.keys(chainAddresses)
-    )
-  ),
-])
+export const getAllAddresses = createSelector(getAccountState, (account) => {
+  // On extension install we are using this selector to display onboarding screen,
+  // sometimes frontend is loading faster than background script and we need to
+  // prepare for redux slices to be undefined for a split second
+  return account
+    ? [
+        ...new Set(
+          Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
+            Object.keys(chainAddresses)
+          )
+        ),
+      ]
+    : []
+})
 
 export const getAddressCount = createSelector(
   getAllAddresses,

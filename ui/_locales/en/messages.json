@@ -563,7 +563,7 @@
       "subtitleAdded": "Manage chains",
       "subtitleAddMore": "Add more chains",
       "deleteModal.title": "Remove custom network?",
-      "deleteModal.desc": "You are removing <name>{{name}}</name> network. This means you won't be able to see assets from it and it won't be in your network selection list. ",
+      "deleteModal.desc": "You are removing <name>{{name}}</name>. This means you won't be able to see assets from it and it won't be in your network selection list.",
       "deleteModal.confirm": "Remove",
       "networksList": {
         "typeCustom": "Custom network"
@@ -842,8 +842,14 @@
       "open": "Open",
       "none": "None"
     },
-    "timeStarting": "Starting in 1 month",
-    "timeCloses": "Closes in 1 month",
+    "timeDetails": {
+      "day_one": "day",
+      "day_other": "days",
+      "timeStartingDays_one": "Starting in {{count}} day",
+      "timeStartingDays_other": "Starting in {{count}} days",
+      "timeClosesDays_one": "Closes in {{count}} day",
+      "timeClosesDays_other": "Closes in {{count}} days"
+    },
     "viewWebsiteBtn": "Visit website",
     "markBtn": "Mark as Completed",
     "snackbar": "Marked as completed",
