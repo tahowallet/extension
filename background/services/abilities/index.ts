@@ -114,7 +114,7 @@ export default class AbilitiesService extends BaseService<Events> {
     this.emitter.emit("newAccount", address)
   }
 
-  async removeAbilities(abilities: Ability[]): Promise<void> {
+  async syncRemovedAbilities(abilities: Ability[]): Promise<void> {
     const cachedAbilities = await this.db.getAbilities()
     const abilitiesById = new Set(abilities.map(({ abilityId }) => abilityId))
     const diffAbilities = cachedAbilities.filter(
@@ -125,6 +125,43 @@ export default class AbilitiesService extends BaseService<Events> {
       removedFromUi: true,
     }))
     await this.db.updateAbilities(removedAbilities)
+  }
+
+  async updateAbilities(abilities: Ability[]): Promise<void> {
+    const cachedAbilities = await this.db.getAbilities()
+    const updatedAbilitiesByUser = cachedAbilities.reduce<Map<string, Ability>>(
+      (acc, ability) => {
+        if (ability.removedFromUi || ability.completed) {
+          acc.set(ability.abilityId, ability)
+        }
+        return acc
+      },
+      new Map()
+    )
+    const updatedAbilities = abilities.reduce<Ability[]>((acc, ability) => {
+      if (updatedAbilitiesByUser.has(ability.abilityId)) {
+        const existingAbility = updatedAbilitiesByUser.get(ability.abilityId)
+        if (JSON.stringify(ability) !== JSON.stringify(existingAbility)) {
+          const { removedFromUi, completed } = existingAbility ?? {
+            removedFromUi: false,
+            completed: false,
+          }
+          // Update when the ability is marked as completed by Daylight but the cache status is not updated
+          const updateCompleted = ability.completed && !completed
+
+          acc.push({
+            ...ability,
+            removedFromUi,
+            completed: updateCompleted ? true : completed,
+          })
+        }
+      } else {
+        acc.push(ability)
+      }
+      return acc
+    }, [])
+
+    await this.db.updateAbilities(updatedAbilities)
   }
 
   async pollForAbilities(address: NormalizedEVMAddress): Promise<void> {
@@ -139,69 +176,22 @@ export default class AbilitiesService extends BaseService<Events> {
      * To update the cache we have to compare the data with the received abilities.
      * The ability can be open completed or expired. Therefore, we need to get the abilities for these 3 types.
      */
-    await this.removeAbilities(normalizedAbilities)
+    await this.syncRemovedAbilities(normalizedAbilities)
     /**
      * 2. Update existing abilities in the cache
      * We allow users to mark abilities as completed or removed, we do not want to overwrite this state.
-     * There is an exception when the ability is really completed we want to update this property as well.
+     * There is an exception when the ability is marked as completed by Daylight we want to update this property as well.
      */
-    const cachedAbilities = await this.db.getAbilities()
-    const { updatedAbilitiesByUser, ids } = cachedAbilities.reduce<{
-      updatedAbilitiesByUser: Ability[]
-      ids: Set<string>
-    }>(
-      (acc, ability) => {
-        if (ability.removedFromUi || ability.completed) {
-          acc.ids.add(ability.abilityId)
-          acc.updatedAbilitiesByUser.push(ability)
-        }
-        return acc
-      },
-      { updatedAbilitiesByUser: [], ids: new Set() }
-    )
-    const updatedAbilities = normalizedAbilities.reduce<Ability[]>(
-      (acc, ability) => {
-        if (ids.has(ability.abilityId)) {
-          const existingAbility = updatedAbilitiesByUser.find(
-            ({ abilityId }) => abilityId === ability.abilityId
-          )
-          if (JSON.stringify(ability) !== JSON.stringify(existingAbility)) {
-            const { removedFromUi, completed } = existingAbility ?? {
-              removedFromUi: false,
-              completed: false,
-            }
-            // Update when the ability is really completed but the cache status is not updated
-            const updateCompleted =
-              ability.completed === true && completed === false
-
-            acc.push({
-              ...ability,
-              removedFromUi,
-              completed: updateCompleted ? true : completed,
-            })
-          }
-        } else {
-          acc.push(ability)
-        }
-        return acc
-      },
-      []
-    )
+    await this.updateAbilities(normalizedAbilities)
     /**
-     * 3. Update the indexDB
-     */
-    await this.db.updateAbilities(updatedAbilities)
-    /**
-     * 4. Redux state update
+     * 3. Redux state update
      */
     const abilities: Ability[] = await this.db.getSortedAbilities()
 
-    if (abilities.length) {
-      this.emitter.emit("updatedAbilities", {
-        address,
-        abilities,
-      })
-    }
+    this.emitter.emit("updatedAbilities", {
+      address,
+      abilities,
+    })
   }
 
   async markAbilityAsCompleted(

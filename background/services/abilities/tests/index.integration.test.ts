@@ -95,16 +95,6 @@ describe("AbilitiesService", () => {
       jest.clearAllMocks()
     })
 
-    it("should not emit updatedAbilities if there are no abilities", async () => {
-      const stub = sandbox
-        .stub(daylight, "getDaylightAbilities")
-        .callsFake(async () => [])
-
-      await abilitiesService.pollForAbilities(address)
-      expect(stub.called).toBe(true)
-      expect(abilitiesService.emitter.emit).toBeCalledTimes(0)
-    })
-
     it("should emit updatedAbilities if there are new abilities", async () => {
       const stubGetAbilities = sandbox
         .stub(daylight, "getDaylightAbilities")
