@@ -654,6 +654,8 @@ export default class InternalSignerService extends BaseService<Events> {
       )
     }
     this.#keyrings = filteredKeyrings
+    delete this.#signerMetadata[keyringId]
+
     return filteredKeyrings
   }
 
@@ -669,6 +671,8 @@ export default class InternalSignerService extends BaseService<Events> {
     }
 
     this.#privateKeys = filteredPrivateKeys
+    delete this.#signerMetadata[normalizeEVMAddress(address)]
+
     return filteredPrivateKeys
   }
 
