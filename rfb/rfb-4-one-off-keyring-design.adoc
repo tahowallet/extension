@@ -39,7 +39,7 @@ concerns around data loss and lock-in.
 
 === Goal
 
-The keyring service, originally focused on HD Wallets, should be expanded to
+The keyring service, originally focused on ``HDKeyring``s, should be expanded to
 handle both HD wallets and private key-based key material. This key material
 should support both primary source types for private key material: a raw hex
 format, and the JSON Crowdsale and JSON Keystore format historically used by
