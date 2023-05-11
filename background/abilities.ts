@@ -30,7 +30,6 @@ export const ABILITY_TYPES_ENABLED = [
 // https://docs.daylight.xyz/reference/ability-model#ability-types
 export const ABILITY_TYPES = [
   ...ABILITY_TYPES_ENABLED,
-  "product",
   "event",
   "article",
   "result",
@@ -63,7 +62,6 @@ export const ABILITY_TYPE_COLOR = {
   vote: "#E3C10B",
   result: "#E3C10B",
   access: "#02C0EA",
-  product: "#D824DC",
   event: "#FF8A1E",
   article: "#B2B2B2",
   misc: "#CBCBCB",

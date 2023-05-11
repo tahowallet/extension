@@ -1,5 +1,5 @@
 import Dexie from "dexie"
-import { Ability } from "../../abilities"
+import { ABILITY_TYPES, Ability } from "../../abilities"
 import { HexString, NormalizedEVMAddress } from "../../types"
 
 export class AbilitiesDatabase extends Dexie {
@@ -24,7 +24,11 @@ export class AbilitiesDatabase extends Dexie {
       })
       .upgrade(async (tx) => {
         const abilities = await tx.table("abilities").toArray()
-        await tx.table("abilitiesTemp").bulkAdd(abilities)
+        // Remove abilities from the db whose types are not supported
+        const filteredAbilities = abilities.filter(({ type }) =>
+          ABILITY_TYPES.includes(type)
+        )
+        await tx.table("abilitiesTemp").bulkAdd(filteredAbilities)
       })
 
     this.version(3)
