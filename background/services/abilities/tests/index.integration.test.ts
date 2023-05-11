@@ -84,9 +84,9 @@ describe("AbilitiesService", () => {
       jest.spyOn(abilitiesService.emitter, "emit")
 
       daylightAbilities = [
-        createDaylightAbility({ slug: "1" }),
-        createDaylightAbility({ slug: "2" }),
-        createDaylightAbility({ slug: "3" }),
+        createDaylightAbility(),
+        createDaylightAbility(),
+        createDaylightAbility(),
       ]
       abilities = normalizeDaylightAbilities(daylightAbilities, address)
     })
@@ -105,7 +105,7 @@ describe("AbilitiesService", () => {
       expect(abilitiesService.emitter.emit).toBeCalledTimes(0)
     })
 
-    it("should emit updatedAbilities if there is a new abilities", async () => {
+    it("should emit updatedAbilities if there are new abilities", async () => {
       const stubGetAbilities = sandbox
         .stub(daylight, "getDaylightAbilities")
         .callsFake(async () => daylightAbilities)
@@ -120,7 +120,7 @@ describe("AbilitiesService", () => {
       })
     })
 
-    it("should emit updatedAbilities with updated ability if there was removed", async () => {
+    it("should emit updatedAbilities with updated ability if it has been removed", async () => {
       const stubGetAbilities = sandbox
         .stub(daylight, "getDaylightAbilities")
         .onCall(0)
@@ -156,7 +156,7 @@ describe("AbilitiesService", () => {
       )
     })
 
-    it("should emit updatedAbilities with updated ability if there was completed", async () => {
+    it("should emit updatedAbilities with updated ability if it has been completed", async () => {
       const stubGetAbilities = sandbox
         .stub(daylight, "getDaylightAbilities")
         .onCall(0)
@@ -190,7 +190,7 @@ describe("AbilitiesService", () => {
       )
     })
 
-    it("should emit updatedAbilities with not updated ability if there was completed by user", async () => {
+    it("should emit updatedAbilities with not updated ability if it has been completed by the user", async () => {
       const abilitiesServiceExternalized =
         abilitiesService as unknown as AbilitiesServiceExternalized
       const stubGetAbilities = sandbox
@@ -218,6 +218,71 @@ describe("AbilitiesService", () => {
         {
           address,
           abilities,
+        }
+      )
+    })
+
+    it("should emit updatedAbilities with not updated ability if it has been removed by the user", async () => {
+      const abilitiesServiceExternalized =
+        abilitiesService as unknown as AbilitiesServiceExternalized
+      const stubGetAbilities = sandbox
+        .stub(daylight, "getDaylightAbilities")
+        .callsFake(async () => daylightAbilities)
+
+      await abilitiesServiceExternalized.pollForAbilities(address)
+      // mark as completed ability
+      await abilitiesServiceExternalized.db.markAsRemoved(
+        address,
+        abilities[1].abilityId
+      )
+      await abilitiesServiceExternalized.pollForAbilities(address)
+
+      abilities[1] = {
+        ...abilities[1],
+        removedFromUi: true,
+      }
+
+      expect(stubGetAbilities.called).toBe(true)
+      expect(abilitiesServiceExternalized.emitter.emit).toBeCalledTimes(2)
+      expect(abilitiesServiceExternalized.emitter.emit).toHaveBeenNthCalledWith(
+        2,
+        "updatedAbilities",
+        {
+          address,
+          abilities,
+        }
+      )
+    })
+
+    it("should emit updatedAbilities with changed order of abilities", async () => {
+      // shuffle abilities
+      const shuffledDaylightAbilities = daylightAbilities.sort(
+        () => 0.5 - Math.random()
+      )
+      const stubGetAbilities = sandbox
+        .stub(daylight, "getDaylightAbilities")
+        .onCall(0)
+        .callsFake(async () => daylightAbilities)
+        .onCall(1)
+        .callsFake(async () => {
+          return shuffledDaylightAbilities
+        })
+
+      await abilitiesService.pollForAbilities(address)
+      await abilitiesService.pollForAbilities(address)
+
+      const newAbilities = sortAbilities(
+        normalizeDaylightAbilities(shuffledDaylightAbilities, address)
+      )
+
+      expect(stubGetAbilities.called).toBe(true)
+      expect(abilitiesService.emitter.emit).toBeCalledTimes(2)
+      expect(abilitiesService.emitter.emit).toHaveBeenNthCalledWith(
+        2,
+        "updatedAbilities",
+        {
+          address,
+          abilities: newAbilities,
         }
       )
     })
