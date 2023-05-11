@@ -126,7 +126,7 @@ export default function AssetWarningSlideUp(
           display: flex;
           justify-content: space-between;
           margin: 0 24px;
-          margin-top: 28px;
+          margin-top: ${asset.metadata?.discoveryTx ? 28 : 51}px;
         }
 
         .left {
