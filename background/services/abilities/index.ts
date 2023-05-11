@@ -159,36 +159,40 @@ export default class AbilitiesService extends BaseService<Events> {
       },
       { updatedAbilitiesByUser: [], ids: new Set() }
     )
-    // TODO Let's improve it
-    const updatedAbilities = normalizedAbilities.map((ability) => {
-      if (ids.has(ability.abilityId)) {
-        const existingAbility = updatedAbilitiesByUser.find(
-          ({ abilityId }) => abilityId === ability.abilityId
-        )
-        if (JSON.stringify(ability) !== JSON.stringify(existingAbility)) {
-          const { removedFromUi, completed } = existingAbility ?? {
-            removedFromUi: false,
-            completed: false,
-          }
-          // Update when the ability is really completed but the cache status is not updated
-          const updateCompleted =
-            ability.completed === true && completed === false
+    const updatedAbilities = normalizedAbilities.reduce<Ability[]>(
+      (acc, ability) => {
+        if (ids.has(ability.abilityId)) {
+          const existingAbility = updatedAbilitiesByUser.find(
+            ({ abilityId }) => abilityId === ability.abilityId
+          )
+          if (JSON.stringify(ability) !== JSON.stringify(existingAbility)) {
+            const { removedFromUi, completed } = existingAbility ?? {
+              removedFromUi: false,
+              completed: false,
+            }
+            // Update when the ability is really completed but the cache status is not updated
+            const updateCompleted =
+              ability.completed === true && completed === false
 
-          return {
-            ...ability,
-            removedFromUi,
-            completed: updateCompleted ? true : completed,
+            acc.push({
+              ...ability,
+              removedFromUi,
+              completed: updateCompleted ? true : completed,
+            })
           }
+        } else {
+          acc.push(ability)
         }
-      }
-      return ability
-    })
+        return acc
+      },
+      []
+    )
     /**
      * 3. Update the indexDB
      */
     await this.db.updateAbilities(updatedAbilities)
     /**
-     * 4. Redux status update
+     * 4. Redux state update
      */
     const abilities: Ability[] = await this.db.getSortedAbilities()
 
