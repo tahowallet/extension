@@ -53,6 +53,10 @@ from an underlying HDKeyring, the service should allow exporting the private
 key corresponding to that particular address. Finally, the service should allow
 direct export of the underlying mnemonic for HDKeyrings.
 
+Note that the service will explicitly NOT support exporting any of the
+historical JSON key formats, it will only allow for exporting the raw private
+key.
+
 === Implementation
 
 The existing service's functionality is decomposed into the service side and an
