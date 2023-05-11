@@ -162,17 +162,26 @@ is not added as a separate private key, but instead the keyring is left to manag
 that private key material.
 
 Importing a keyring after a private key for one of its derived addresses has
-been imported results in dual tracking of the underlying key material: the
-private key is managed explicitly, while the keyring itself can also derive
-the relevant address's key. A future improvement could delete the explicit
-private key when an address is derived that is also controlled by an imported
-private key to make provenance clear.
+been imported could result in dual tracking of the underlying key material: the
+private key is managed explicitly, while the keyring itself can also derive the
+relevant address's key. To keep account provenance clear, when a keyring is
+used to derive an address that has an existing private key associated with it,
+the private key is removed and the keyring is considered the canonical source
+of the key.
 
 Private key imports can be done with either a raw format or a JSON format. The
 JSON format uses a password to encrypt the underlying data, while the raw
 format is an unencrypted hex-encoded private key. In each case, an Ethers
 `Wallet` instance is created and then added to the underlying private key
 tracking variables.
+
+NOTE:: In the case that an address X is, say, the 5th derived address of a
+keyring, and is imported via an explicit private key, it will be managed by the
+explicit private key unless and until the keyring has its 5th address derived
+explicitly. Only when the 5th address derivation is explicitly requested will
+the private key be removed. If the 5th address is already derived and the
+private key is imported, the address will continue to be managed by the
+keyring.
 
 ===== Exporting keys and mnemonics
 
