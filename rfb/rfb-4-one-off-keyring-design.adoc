@@ -8,7 +8,7 @@ The Taho wallet allows users to both view data associated with an account
 of theirs, and sign transactions on behalf of that account using private key
 material. Users can set up new accounts rooted in fresh private key material,
 and accounts can derive many addresses via derivation paths as specified in
-BIP33.
+BIP32.
 
 To properly interact with key material, the wallet has an underlying
 abstraction called the **keyring**. The abstraction was designed to be safe,
