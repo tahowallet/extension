@@ -61,28 +61,21 @@ export default function SettingsCustomNetworks(): ReactElement {
       >
         <div className="confirm_menu">
           <h3>{t("deleteModal.title")}</h3>
-          <div className="confirm_menu_description">
-            <div className="network_name_container">
-              <Trans
-                t={t}
-                i18nKey="deleteModal.desc1"
-                components={{
-                  name: (
-                    <span
-                      title={networkToDelete?.name}
-                      className="confirm_menu_network_name"
-                    />
-                  ),
-                }}
-                values={{ name: networkToDelete?.name }}
-              />
-            </div>
+          <p className="confirm_menu_description">
             <Trans
               t={t}
-              i18nKey="deleteModal.desc2"
+              i18nKey="deleteModal.desc"
+              components={{
+                name: (
+                  <span
+                    title={networkToDelete?.name}
+                    className="confirm_menu_network_name"
+                  />
+                ),
+              }}
               values={{ name: networkToDelete?.name }}
             />
-          </div>
+          </p>
           <div className="confirm_menu_actions">
             <SharedButton
               size="medium"
@@ -106,7 +99,9 @@ export default function SettingsCustomNetworks(): ReactElement {
           padding: 0 26px 24px;
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 10px;
+          height: 100%;
+          box-sizing: border-box;
         }
 
         .confirm_menu h3 {
@@ -123,28 +118,19 @@ export default function SettingsCustomNetworks(): ReactElement {
           line-height: 24px;
           letter-spacing: 0em;
           text-align: left;
-          margin-bottom: 12px;
+          margin: 0;
           color: var(--green-40);
-          display: flex;
-          flex-direction: column;
-        }
-        .network_name_container {
-          display: inline-block;
+          flex-grow: 1;
         }
         .confirm_menu_actions {
           display: flex;
           justify-content: space-between;
           margin-top: -20px;
+          flex-shrink: 0;
         }
 
         .confirm_menu_network_name {
           color: var(--white);
-          max-width: 200px;
-          display: inline-block;
-          vertical-align: bottom;
-          overflow-x: hidden;
-          white-space: pre;
-          text-overflow: ellipsis;
         }
       `}</style>
       <SharedPageHeader withoutBackText>{t(`title`)}</SharedPageHeader>
