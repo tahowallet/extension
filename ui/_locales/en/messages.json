@@ -41,7 +41,7 @@
     "openNetworkExplorer": "Open network explorer",
     "unverifiedAsset": "Asset not verified",
     "hideAsset": "Hide asset",
-    "trustAsset": "Trust asset"
+    "trustAsset": "Show asset"
   },
   "assetInput": {
     "search": "Search by name or address",

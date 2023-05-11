@@ -49,6 +49,15 @@ export default function CommonAssetListItem(
       ? assetAmount.asset.contractAddress
       : undefined
 
+  const isTokenListAsset =
+    (assetAmount.asset?.metadata?.tokenLists?.length ?? 0) > 0
+  const assetHasTrustStatus = assetAmount.asset?.metadata?.trusted !== undefined
+
+  const isUnverifiedAsset =
+    isSmartContractFungibleAsset(assetAmount.asset) &&
+    !isTokenListAsset &&
+    !assetHasTrustStatus
+
   const assetIsUntrusted = isUntrustedAsset(assetAmount.asset)
 
   return (
@@ -95,7 +104,7 @@ export default function CommonAssetListItem(
         </div>
         <div className="asset_right">
           <>
-            {assetIsUntrusted && (
+            {isUnverifiedAsset && (
               <button
                 type="button"
                 onClick={(event) => {

@@ -78,17 +78,18 @@ export function isAssetAmountVisible(
   { hideDust, hideUntrusted }: { hideDust: boolean; hideUntrusted: boolean }
 ): boolean {
   const isForciblyDisplayed = shouldForciblyDisplayAsset(assetAmount)
+  const isPresent = assetAmount.decimalAmount > 0
 
   const isNotDust =
     typeof assetAmount.mainCurrencyAmount === "undefined"
       ? true
       : assetAmount.mainCurrencyAmount > userValueDustThreshold
-  const isPresent = assetAmount.decimalAmount > 0
-  const isCustomAsset =
-    (assetAmount.asset?.metadata?.tokenLists?.length ?? 0) < 1
+  const isTokenListAsset =
+    (assetAmount.asset?.metadata?.tokenLists?.length ?? 0) > 0
 
   const isTrusted =
-    !isCustomAsset || assetAmount.asset.metadata?.trusted === true
+    (isTokenListAsset && assetAmount.asset.metadata?.trusted === undefined) ||
+    assetAmount.asset.metadata?.trusted === true
 
   const isSmartContractAmount = isSmartContractFungibleAsset(assetAmount.asset)
 
