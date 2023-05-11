@@ -30,103 +30,7 @@ import SharedTooltip from "../components/Shared/SharedTooltip"
 import { scanWebsite } from "../utils/constants"
 import SharedIcon from "../components/Shared/SharedIcon"
 import AssetWarningSlideUp from "../components/Wallet/AssetWarningSlideUp"
-
-function TrustToggler({
-  asset,
-  onClick,
-}: {
-  asset: SmartContractFungibleAsset
-  onClick: (newStatus: boolean) => void
-}) {
-  const { t } = useTranslation()
-
-  const isTokenListAsset = !!asset?.metadata?.tokenLists?.length
-  const assetHasTrustStatus = typeof asset?.metadata?.trusted !== "undefined"
-  const assetIsUntrusted = isUntrustedAsset(asset)
-
-  const styles = (
-    <style jsx>{`
-      button {
-        font-size: 16px;
-        font-weight: 500;
-        line-height: 24px;
-        letter-spacing: 0em;
-        text-align: left;
-        display: flex;
-        gap: 4px;
-      }
-
-      button.trust_asset:hover {
-        color: var(--white);
-      }
-
-      button.trust_asset {
-        color: var(--success);
-      }
-
-      button.hide_asset:hover {
-        color: var(--green-20);
-      }
-
-      button.hide_asset {
-        color: var(--green-40);
-      }
-    `}</style>
-  )
-
-  if (isTokenListAsset && !assetHasTrustStatus) {
-    return (
-      <>
-        {styles}
-        <button
-          className="hide_asset"
-          type="button"
-          onClick={() => onClick(false)}
-        >
-          {t("assets.hideAsset")}
-          <SharedIcon
-            color="currentColor"
-            icon="icons/m/eye-off.svg"
-            width={24}
-          />
-        </button>
-      </>
-    )
-  }
-
-  return (
-    <>
-      {styles}
-      {assetIsUntrusted ? (
-        <button
-          className="trust_asset"
-          type="button"
-          onClick={() => onClick(true)}
-        >
-          {t("assets.trustAsset")}
-          <SharedIcon
-            color="currentColor"
-            icon="icons/m/eye-on.svg"
-            width={24}
-          />
-        </button>
-      ) : (
-        <button
-          className="hide_asset"
-          type="button"
-          onClick={() => onClick(false)}
-        >
-          {t("assets.hideAsset")}
-          <SharedIcon
-            color="currentColor"
-            icon="icons/m/eye-off.svg"
-            width={24}
-          />
-        </button>
-      )}
-    </>
-  )
-}
+import AssetTrustToggler from "../components/Wallet/AssetTrustToggler"
 
 export default function SingleAsset(): ReactElement {
   const { t } = useTranslation()
@@ -237,7 +141,7 @@ export default function SingleAsset(): ReactElement {
           asset &&
           isSmartContractFungibleAsset(asset) &&
           (isTokenListAsset || assetHasTrustStatus ? (
-            <TrustToggler
+            <AssetTrustToggler
               asset={asset}
               onClick={(newStatus) =>
                 dispatch(updateAssetTrustStatus({ asset, trusted: newStatus }))
