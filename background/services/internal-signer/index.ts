@@ -609,18 +609,21 @@ export default class InternalSignerService extends BaseService<Events> {
 
   /**
    * Remove signer from the service's memory.
+   * If it was imported with a private key then it will be completely removed from the service.
+   * If address belongs to the keyring then we will hide it without removing from underlying keyring.
+   * If that address is the last one from a given keyring then we will remove whole keyring.
    *
-   * @param address account to be hidden from UI
+   * @param address account to be removed from UI
    */
-  async hideAccount(address: HexString): Promise<void> {
+  async removeAccount(address: HexString): Promise<void> {
     this.#hiddenAccounts[address] = true
 
     const keyringSigner = this.#findKeyring(address)
     const privateKeySigner = this.#findPrivateKey(address)
 
-    if (!keyringSigner && !privateKeySigner) return
+    if (keyringSigner === null && privateKeySigner === null) return
 
-    if (keyringSigner) {
+    if (keyringSigner !== null) {
       const keyringAddresses = await keyringSigner.getAddresses()
 
       if (
@@ -635,7 +638,7 @@ export default class InternalSignerService extends BaseService<Events> {
       }
     }
 
-    if (privateKeySigner) {
+    if (privateKeySigner !== null) {
       this.#removePrivateKey(address)
     }
 

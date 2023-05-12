@@ -116,20 +116,20 @@ describe("InternalSignerService", () => {
         keyringID: keyring.id ?? "",
       })
 
-      await internalSignerService.hideAccount(address)
+      await internalSignerService.removeAccount(address)
 
       const [updatedKeyring] = internalSignerService.getKeyrings()
 
       expect(updatedKeyring.addresses.length).toBe(1)
     })
     it("should be able to remove HD wallet by hiding all addresses", async () => {
-      await internalSignerService.hideAccount(HD_WALLET_MOCK.addresses[0])
+      await internalSignerService.removeAccount(HD_WALLET_MOCK.addresses[0])
       const keyrings = internalSignerService.getKeyrings()
 
       expect(keyrings.length).toBe(0)
     })
     it("should be able to remove HD wallet and add it again", async () => {
-      await internalSignerService.hideAccount(HD_WALLET_MOCK.addresses[0])
+      await internalSignerService.removeAccount(HD_WALLET_MOCK.addresses[0])
       await internalSignerService.importSigner({
         type: SignerSourceTypes.keyring,
         mnemonic: HD_WALLET_MOCK.mnemonic,
@@ -192,7 +192,7 @@ describe("InternalSignerService", () => {
       ).toBe("import")
     })
     it("should be able to remove pk wallet and add it again", async () => {
-      await internalSignerService.hideAccount(PK_WALLET_MOCK.address)
+      await internalSignerService.removeAccount(PK_WALLET_MOCK.address)
       expect(internalSignerService.getPrivateKeys().length).toBe(0)
 
       await internalSignerService.importSigner({

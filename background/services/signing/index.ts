@@ -166,7 +166,7 @@ export default class SigningService extends BaseService<Events> {
       switch (signerType) {
         case "privateKey":
         case "keyring":
-          await this.internalSignerService.hideAccount(address)
+          await this.internalSignerService.removeAccount(address)
           break
         case "ledger":
           await this.ledgerService.removeAddress(address)
