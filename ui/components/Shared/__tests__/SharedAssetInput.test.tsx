@@ -139,12 +139,12 @@ describe("SharedAssetInput", () => {
     expect(ui.queryByText("Test token")).not.toBeInTheDocument()
   })
 
-  test("should not allow to search for untrusted assets with a searchbox", async () => {
+  test("should allow to search for untrusted assets with a searchbox", async () => {
     const ui = renderWithProviders(<SharedAssetInputWithState />)
     const assetButton = ui.getByText("FAKE")
 
     await userEvent.click(assetButton)
-    expect(ui.queryByText("Untrusted token")).not.toBeInTheDocument()
+    expect(ui.queryByText("Untrusted token")).toBeInTheDocument()
 
     const searchbox = ui.getByPlaceholderText("Search by name or address")
     expect(searchbox).toHaveValue("")

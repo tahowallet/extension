@@ -34,13 +34,18 @@ import {
 } from "../../utils/signing"
 import { getOrCreateDB, InternalEthereumProviderDatabase } from "./db"
 import { TALLY_INTERNAL_ORIGIN } from "./constants"
+import { ROOTSTOCK } from "../../constants"
 import {
   EnrichedEVMTransactionRequest,
   TransactionAnnotation,
 } from "../enrichment"
-import { decodeJSON } from "../../lib/utils"
 import { FeatureFlags, isEnabled } from "../../features"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
+import {
+  isValidChecksumAddress,
+  isMixedCaseAddress,
+  decodeJSON,
+} from "../../lib/utils"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -410,6 +415,28 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           (decodeJSON(transactionRequest.annotation) as TransactionAnnotation)
         : undefined
 
+    if (!transactionRequest.from) {
+      throw new Error("Transactions must have a from address for signing.")
+    }
+
+    const currentNetwork = await this.getCurrentOrDefaultNetworkForOrigin(
+      origin
+    )
+
+    const isRootstock = currentNetwork.chainID === ROOTSTOCK.chainID
+
+    if (isRootstock) {
+      ;[transactionRequest.from, transactionRequest.to].forEach((address) => {
+        if (
+          address &&
+          isMixedCaseAddress(address) &&
+          !isValidChecksumAddress(address, +currentNetwork.chainID)
+        ) {
+          throw new Error("Bad address checksum")
+        }
+      })
+    }
+
     const { from, ...convertedRequest } =
       transactionRequestFromEthersTransactionRequest({
         // Convert input -> data if necessary; if transactionRequest uses data
@@ -419,15 +446,18 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         data: transactionRequest.input,
         ...transactionRequest,
         gasLimit: transactionRequest.gas, // convert gas -> gasLimit
+        // Etherjs rejects Rootstock checksummed addresses so convert to lowercase
+        from: isRootstock
+          ? normalizeHexAddress(transactionRequest.from)
+          : transactionRequest.from,
+        to: isRootstock
+          ? transactionRequest.to && normalizeHexAddress(transactionRequest.to)
+          : transactionRequest.to,
       })
 
     if (typeof from === "undefined") {
       throw new Error("Transactions must have a from address for signing.")
     }
-
-    const currentNetwork = await this.getCurrentOrDefaultNetworkForOrigin(
-      origin
-    )
 
     return new Promise<SignedTransaction>((resolve, reject) => {
       this.emitter.emit("transactionSignatureRequest", {

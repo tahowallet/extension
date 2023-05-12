@@ -365,9 +365,7 @@ export function sameNetwork(
   network2: AnyNetwork
 ): boolean {
   return (
-    network1.family === network2.family &&
-    network1.chainID === network2.chainID &&
-    network1.name === network2.name
+    network1.family === network2.family && network1.chainID === network2.chainID
   )
 }
 
@@ -418,3 +416,8 @@ export const isEIP1559EnrichedTransactionRequest = (
 ): enrichedTransactionRequest is EnrichedEIP1559TransactionRequest =>
   "maxFeePerGas" in enrichedTransactionRequest &&
   "maxPriorityFeePerGas" in enrichedTransactionRequest
+
+export const isEnrichedEVMTransactionRequest = (
+  transactionRequest: TransactionRequest
+): transactionRequest is EnrichedEVMTransactionRequest =>
+  "annotation" in transactionRequest
