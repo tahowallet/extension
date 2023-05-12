@@ -295,11 +295,11 @@ describe("Accounts redux slice", () => {
       ][otherAccount.address] as AccountData
 
       expect(
-        firstAccountData.balances[asset.symbol].assetAmount.asset.metadata
+        firstAccountData.balances[getAssetID(asset)].assetAmount.asset.metadata
           ?.trusted
       ).not.toBeDefined()
       expect(
-        secondAccountData.balances[asset.symbol].assetAmount.asset.metadata
+        secondAccountData.balances[getAssetID(asset)].assetAmount.asset.metadata
           ?.trusted
       ).not.toBeDefined()
 
@@ -321,11 +321,11 @@ describe("Accounts redux slice", () => {
       ][otherAccount.address] as AccountData
 
       expect(
-        updatedFirstAccountData.balances[asset.symbol].assetAmount.asset
+        updatedFirstAccountData.balances[getAssetID(asset)].assetAmount.asset
           .metadata?.trusted
       ).toBeTruthy()
       expect(
-        updatedSecondAccountData.balances[asset.symbol].assetAmount.asset
+        updatedSecondAccountData.balances[getAssetID(asset)].assetAmount.asset
           .metadata?.trusted
       ).toBeTruthy()
     })
