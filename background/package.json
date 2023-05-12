@@ -63,7 +63,6 @@
     "webextension-polyfill": "^0.8.0"
   },
   "devDependencies": {
-    "@redux-devtools/cli": "^1.0.7",
     "@reduxjs/toolkit": "^1.6.1",
     "@types/sinon": "^10.0.12",
     "@types/uuid": "^8.3.4",
