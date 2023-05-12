@@ -73,6 +73,24 @@ export const normalizeDaylightAbilities = (
   return normalizedAbilities
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sortObjectByKeys = (object: any) =>
+  Object.keys(object)
+    .sort()
+    .reduce<Record<string, unknown>>((acc, key) => {
+      const value = object[key]
+      if (
+        typeof value === "object" &&
+        !Array.isArray(value) &&
+        value !== null
+      ) {
+        acc[key] = sortObjectByKeys(value)
+      } else {
+        acc[key] = value
+      }
+      return acc
+    }, {})
+
 interface Events extends ServiceLifecycleEvents {
   updatedAbilities: { address: NormalizedEVMAddress; abilities: Ability[] }
   updatedAbility: Ability
@@ -141,7 +159,10 @@ export default class AbilitiesService extends BaseService<Events> {
     const updatedAbilities = abilities.reduce<Ability[]>((acc, ability) => {
       if (updatedAbilitiesByUser.has(ability.abilityId)) {
         const existingAbility = updatedAbilitiesByUser.get(ability.abilityId)
-        if (JSON.stringify(ability) !== JSON.stringify(existingAbility)) {
+        if (
+          JSON.stringify(sortObjectByKeys(ability)) !==
+          JSON.stringify(sortObjectByKeys(existingAbility))
+        ) {
           const { removedFromUi, completed } = existingAbility ?? {
             removedFromUi: false,
             completed: false,
