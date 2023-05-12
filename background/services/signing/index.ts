@@ -170,6 +170,23 @@ export default class SigningService extends BaseService<Events> {
     await this.chainService.removeAccountToTrack(address)
   }
 
+  /**
+   * Requests that signers prepare for a signing request. For hardware wallets
+   * in particular, this can include refreshing connection information so that
+   * the status is up to date. For remote wallets, e.g. WalletConnect, it can
+   * include connection setup.
+   *
+   * Currently this method does not take information about the request, but if
+   * the required setup is expensive enough, the `from` address can be passed
+   * in so that signers are only set up when the request applies to them.
+   */
+  async prepareForSigningRequest(): Promise<void> {
+    // Refresh connected Ledger info indiscriminately. No real harm vs doing it
+    // only under certain circumstances, might even be more performant than
+    // testing whether the Ledger can sign for the requested `from` address.
+    await this.ledgerService.refreshConnectedLedger()
+  }
+
   async signTransaction(
     transactionRequest: TransactionRequest,
     accountSigner: AccountSigner

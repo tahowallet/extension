@@ -580,13 +580,4 @@ export default class LedgerService extends BaseService<Events> {
 
     return signatureHex
   }
-
-  async isArbitraryDataSigningEnabled(): Promise<boolean> {
-    if (this.transport) {
-      const eth = new Eth(this.transport)
-      const appConfig = await eth.getAppConfiguration()
-      return appConfig.arbitraryDataEnabled !== 0
-    }
-    return false
-  }
 }
