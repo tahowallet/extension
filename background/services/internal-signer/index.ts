@@ -462,6 +462,12 @@ export default class InternalSignerService extends BaseService<Events> {
     }
     this.#keyrings.push(newKeyring)
     const [address] = newKeyring.addAddressesSync(1)
+
+    // If address was previously imported as a private key then remove it
+    if (this.#findPrivateKey(address)) {
+      this.#removePrivateKey(address)
+    }
+
     this.#signerMetadata[newKeyring.id] = { source }
 
     return address
@@ -588,6 +594,11 @@ export default class InternalSignerService extends BaseService<Events> {
 
     this.#hiddenAccounts[newAddress] = false
 
+    // If address was previously imported as a private key then remove it
+    if (this.#findPrivateKey(newAddress)) {
+      this.#removePrivateKey(newAddress)
+    }
+
     await this.#persistInternalSigners()
 
     this.emitter.emit("address", newAddress)
@@ -598,18 +609,22 @@ export default class InternalSignerService extends BaseService<Events> {
 
   /**
    * Remove signer from the service's memory.
+   * If it was imported with a private key then it will be completely removed from the service.
+   * If address belongs to the keyring then we will hide it without removing from underlying keyring.
+   * If that address is the last one from a given keyring then we will remove whole keyring.
    *
-   * @param address account to be hidden from UI
+   * @param address account to be removed from UI
    */
-  async hideAccount(address: HexString): Promise<void> {
+  async removeAccount(address: HexString): Promise<void> {
     this.#hiddenAccounts[address] = true
-    const signerWithType = this.#findSigner(address)
 
-    if (!signerWithType) return
+    const keyringSigner = this.#findKeyring(address)
+    const privateKeySigner = this.#findPrivateKey(address)
 
-    if (isKeyring(signerWithType)) {
-      const { signer } = signerWithType
-      const keyringAddresses = await signer.getAddresses()
+    if (keyringSigner === null && privateKeySigner === null) return
+
+    if (keyringSigner !== null) {
+      const keyringAddresses = await keyringSigner.getAddresses()
 
       if (
         keyringAddresses.every(
@@ -619,11 +634,14 @@ export default class InternalSignerService extends BaseService<Events> {
         keyringAddresses.forEach((keyringAddress) => {
           delete this.#hiddenAccounts[keyringAddress]
         })
-        this.#removeKeyring(signer.id)
+        this.#removeKeyring(keyringSigner.id)
       }
-    } else {
+    }
+
+    if (privateKeySigner !== null) {
       this.#removePrivateKey(address)
     }
+
     await this.#persistInternalSigners()
     this.#emitInternalSigners()
   }
@@ -639,6 +657,8 @@ export default class InternalSignerService extends BaseService<Events> {
       )
     }
     this.#keyrings = filteredKeyrings
+    delete this.#signerMetadata[keyringId]
+
     return filteredKeyrings
   }
 
@@ -654,6 +674,8 @@ export default class InternalSignerService extends BaseService<Events> {
     }
 
     this.#privateKeys = filteredPrivateKeys
+    delete this.#signerMetadata[normalizeEVMAddress(address)]
+
     return filteredPrivateKeys
   }
 

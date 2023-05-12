@@ -16,18 +16,18 @@ const isLedgerAccount = (
     .includes(address)
 
 const isImportOrInternalAccount = (
-  internalSigners: InternalSignerState,
+  internalSigner: InternalSignerState,
   address: NormalizedEVMAddress
 ): boolean =>
-  internalSigners.keyrings
+  internalSigner.keyrings
     .flatMap(({ addresses }) => addresses)
     .includes(address)
 
 const isPrivateKeyAccount = (
-  internalSigners: InternalSignerState,
+  internalSigner: InternalSignerState,
   address: NormalizedEVMAddress
 ): boolean =>
-  internalSigners.privateKeys
+  internalSigner.privateKeys
     .flatMap(({ addresses }) => addresses)
     .includes(address)
 
@@ -188,14 +188,14 @@ export const initAbilities = createBackgroundAsyncThunk(
     address: NormalizedEVMAddress,
     { dispatch, getState, extra: { main } }
   ) => {
-    const { ledger, internalSigners, abilities } = getState() as {
+    const { ledger, internalSigner, abilities } = getState() as {
       ledger: LedgerState
-      internalSigners: InternalSignerState
+      internalSigner: InternalSignerState
       abilities: AbilitiesState
     }
     if (
-      isImportOrInternalAccount(internalSigners, address) ||
-      isPrivateKeyAccount(internalSigners, address) ||
+      isImportOrInternalAccount(internalSigner, address) ||
+      isPrivateKeyAccount(internalSigner, address) ||
       isLedgerAccount(ledger, address)
     ) {
       await main.pollForAbilities(address)
