@@ -3,6 +3,7 @@ import { ethers } from "ethers"
 import {
   AnyAsset,
   AnyAssetAmount,
+  AssetMetadata,
   flipPricePoint,
   isFungibleAsset,
   isSmartContractFungibleAsset,
@@ -11,7 +12,7 @@ import {
 } from "../assets"
 import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
-import { normalizeEVMAddress } from "../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
   isBuiltInNetworkBaseAsset,
@@ -26,7 +27,8 @@ import {
   FIAT_CURRENCIES_SYMBOL,
 } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
-import { HexString, NormalizedEVMAddress } from "../types"
+import { updateAssetCache } from "./accounts"
+import { NormalizedEVMAddress } from "../types"
 import type { RootState } from "."
 
 export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
@@ -91,6 +93,7 @@ const assetsSlice = createSlice({
           // TODO if there are duplicates... when should we replace assets?
         }
       })
+
       return Object.values(mappedAssets).flat()
     },
     newPricePoints: (
@@ -112,10 +115,29 @@ const assetsSlice = createSlice({
         }
       })
     },
+    updateAssetMetadata: (
+      immerState,
+      {
+        payload: [targetAsset, metadata],
+      }: { payload: [SmartContractFungibleAsset, Partial<AssetMetadata>] }
+    ) => {
+      immerState.forEach((asset) => {
+        if (
+          isSmartContractFungibleAsset(asset) &&
+          sameEVMAddress(targetAsset.contractAddress, asset.contractAddress) &&
+          targetAsset.homeNetwork.chainID === asset.homeNetwork.chainID
+        ) {
+          // eslint-disable-next-line no-param-reassign
+          asset.metadata ??= {}
+          Object.assign(asset.metadata, metadata)
+        }
+      })
+    },
   },
 })
 
-export const { assetsLoaded, newPricePoints } = assetsSlice.actions
+export const { assetsLoaded, newPricePoints, updateAssetMetadata } =
+  assetsSlice.actions
 
 export default assetsSlice.reducer
 
@@ -127,6 +149,25 @@ const selectPairedAssetSymbol = (
   _2: AnyAsset,
   pairedAssetSymbol: string
 ) => pairedAssetSymbol
+
+export const updateAssetTrustStatus = createBackgroundAsyncThunk(
+  "assets/updateAssetTrustStatus",
+  async (
+    { asset, trusted }: { asset: SmartContractFungibleAsset; trusted: boolean },
+    { dispatch, extra: { main } }
+  ) => {
+    await main.setAssetTrustStatus(asset, trusted)
+    // Update assets slice
+    await dispatch(updateAssetMetadata([asset, { trusted }]))
+    // Update accounts slice cached data about this asset
+    await dispatch(
+      updateAssetCache({
+        ...asset,
+        metadata: { ...asset.metadata, trusted },
+      })
+    )
+  }
+)
 
 /**
  * Executes an asset transfer between two addresses, for a set amount. Supports
@@ -231,7 +272,7 @@ export const selectAssetPricePoint = createSelector(
 
       /* Don't do anything else if this is an untrusted asset and there's no exact match */
       if (
-        (assetToFind.metadata?.tokenLists.length ?? 0) < 1 &&
+        (assetToFind.metadata?.tokenLists?.length ?? 0) < 1 &&
         !isBuiltInNetworkBaseAsset(assetToFind, assetToFind.homeNetwork)
       ) {
         return undefined
@@ -284,30 +325,43 @@ export const selectAssetPricePoint = createSelector(
   }
 )
 
-export const importTokenViaContractAddress = createBackgroundAsyncThunk(
-  "assets/importTokenViaContractAddress",
+export const importAccountCustomToken = createBackgroundAsyncThunk(
+  "assets/importAccountCustomToken",
   async (
     {
-      contractAddress,
-      network,
-    }: { contractAddress: HexString; network: EVMNetwork },
-    { extra: { main } }
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { getState, extra: { main } }
   ) => {
-    await main.importTokenViaContractAddress(contractAddress, network)
+    const state = getState() as RootState
+    const currentAccount = state.ui.selectedAccount
+
+    await main.importAccountCustomToken({
+      asset,
+      addressNetwork: currentAccount,
+    })
   }
 )
 
 export const checkTokenContractDetails = createBackgroundAsyncThunk(
   "assets/checkTokenContractDetails",
   async (
-    { contractAddress }: { contractAddress: NormalizedEVMAddress },
+    {
+      contractAddress,
+      network,
+    }: { contractAddress: NormalizedEVMAddress; network: EVMNetwork },
     { getState, extra: { main } }
   ) => {
     const state = getState() as RootState
     const currentAccount = state.ui.selectedAccount
 
     try {
-      return await main.queryCustomTokenDetails(contractAddress, currentAccount)
+      return await main.queryCustomTokenDetails(contractAddress, {
+        ...currentAccount,
+        network,
+      })
     } catch (error) {
       // FIXME: Rejected thunks return undefined instead of throwing
       return null

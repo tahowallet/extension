@@ -1,8 +1,6 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import classNames from "classnames"
-import { useDispatch } from "react-redux"
-import { setSelectedNetwork } from "@tallyho/tally-background/redux-slices/ui"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 
@@ -11,23 +9,27 @@ type Props = {
   network: EVMNetwork
   isSelected: boolean
   isDisabled: boolean
-  onSelect: () => void
+  onSelect: (network: EVMNetwork) => void
+  showSelectedText?: boolean
 }
 
 export default function TopMenuProtocolListItem(props: Props): ReactElement {
   const { t } = useTranslation()
-  const { info, isSelected, network, onSelect, isDisabled } = props
-
-  const dispatch = useDispatch()
+  const {
+    info,
+    isSelected,
+    network,
+    onSelect,
+    isDisabled,
+    showSelectedText = true,
+  } = props
 
   return (
     <li
       className={classNames({ select: isSelected, disabled: isDisabled })}
       onClick={() => {
         if (isDisabled) return
-
-        dispatch(setSelectedNetwork(network))
-        onSelect()
+        onSelect(network)
       }}
       role="presentation"
     >
@@ -40,7 +42,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
         <div className="title">{network.name}</div>
         <div className="sub_title">
           {info}
-          {isSelected && (
+          {isSelected && showSelectedText && (
             <span className="status">{t("protocol.connected")}</span>
           )}
         </div>

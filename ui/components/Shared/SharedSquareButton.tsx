@@ -15,6 +15,7 @@ type Props = {
   icon: string
   iconColor: ColorDetails
   textColor: ColorDetails
+  disabled?: boolean
   size: number
   ariaLabel?: string
   children: React.ReactNode
@@ -22,11 +23,24 @@ type Props = {
 }
 
 export default function SharedSquareButton(props: Props): ReactElement {
-  const { icon, iconColor, textColor, size, ariaLabel, children, onClick } =
-    props
+  const {
+    icon,
+    iconColor,
+    textColor,
+    size,
+    ariaLabel,
+    children,
+    disabled,
+    onClick,
+  } = props
 
   return (
-    <button type="button" aria-label={ariaLabel} onClick={onClick}>
+    <button
+      type="button"
+      className={!disabled ? "hoverable" : undefined}
+      aria-label={ariaLabel}
+      onClick={onClick}
+    >
       <div className="icon_wrap">
         <div className="icon" />
       </div>
@@ -46,7 +60,7 @@ export default function SharedSquareButton(props: Props): ReactElement {
             align-items: center;
             gap: 4px;
           }
-          button:hover {
+          .hoverable:hover {
             color: ${textColor.hoverColor};
           }
           .content_wrap {
@@ -62,7 +76,7 @@ export default function SharedSquareButton(props: Props): ReactElement {
             background-color: ${iconColor.color};
             transition: background-color 0.2s;
           }
-          button:hover .icon_wrap {
+          .hoverable:hover .icon_wrap {
             background-color: ${iconColor.hoverColor};
           }
           .icon {

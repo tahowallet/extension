@@ -4,6 +4,8 @@ import {
 } from "@tallyho/provider-bridge-shared"
 import sinon from "sinon"
 import browser from "webextension-polyfill"
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { waitFor } from "@testing-library/dom"
 import * as featureFlags from "../../../features"
 import { wait } from "../../../lib/utils"
 import { createProviderBridgeService } from "../../../tests/factories"
@@ -160,12 +162,12 @@ describe("ProviderBridgeService", () => {
       expect(spy).not.toHaveBeenCalled()
       providerBridgeService.handleAddNetworkRequest("0", true)
 
-      await wait(0) // wait next tick
-
-      expect(spy).toHaveBeenCalledWith(
-        "wallet_addEthereumChain",
-        [validatedPayload, "0xd8da6bf26964af9d7eed9e03e53415d37aa96045"],
-        BASE_DATA.origin
+      await waitFor(() =>
+        expect(spy).toHaveBeenCalledWith(
+          "wallet_addEthereumChain",
+          [validatedPayload, "0xd8da6bf26964af9d7eed9e03e53415d37aa96045"],
+          BASE_DATA.origin
+        )
       )
 
       await expect(request).resolves.toEqual(null) // resolves without errors

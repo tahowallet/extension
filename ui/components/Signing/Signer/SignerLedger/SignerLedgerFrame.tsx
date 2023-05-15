@@ -1,7 +1,11 @@
-import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
+import {
+  SignOperationType,
+  selectAdditionalSigningStatus,
+} from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import { SignerFrameProps } from ".."
 import SharedButton from "../../../Shared/SharedButton"
@@ -20,6 +24,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
   signingActionLabelI18nKey,
   signActionCreator,
   rejectActionCreator,
+  redirectToActivityPage,
 }: SignerFrameProps<T>): ReactElement {
   const { t: globalT } = useTranslation()
   const { t } = useTranslation("translation", { keyPrefix: "ledger" })
@@ -29,11 +34,17 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
 
   const [isSigning, setIsSigning] = useState(false)
   const dispatch = useBackgroundDispatch()
+  const history = useHistory()
 
   const handleConfirm = useCallback(() => {
-    dispatch(signActionCreator())
+    dispatch(signActionCreator()).finally(() => {
+      // Redirect to activity page after submitting
+      if (redirectToActivityPage) {
+        history.push("/", { goTo: "activity-page" })
+      }
+    })
     setIsSigning(true)
-  }, [dispatch, signActionCreator])
+  }, [dispatch, history, redirectToActivityPage, signActionCreator])
 
   const handleReject = useCallback(() => {
     dispatch(rejectActionCreator())
@@ -50,6 +61,9 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
         request.signingData.length > 0))
 
   const hasInsufficientFunds = useBackgroundSelector(selectHasInsufficientFunds)
+  const additionalSigningStatus = useBackgroundSelector(
+    selectAdditionalSigningStatus
+  )
 
   // FIXME Once the legacy signing flow is removed, `useSigningLedgerState` can
   // FIXME be updated to not accept undefined or null and therefore to not
@@ -67,6 +81,11 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
 
   const ledgerCannotSign =
     ledgerState.state !== "available" || mustEnableArbitraryDataSigning
+
+  const tooltip =
+    additionalSigningStatus === "editing"
+      ? tSigning("unsavedChangesTooltip")
+      : ""
 
   return (
     <>
@@ -134,7 +153,10 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
                 type="primary"
                 size="large"
                 onClick={handleConfirm}
-                isDisabled={hasInsufficientFunds}
+                isDisabled={
+                  hasInsufficientFunds || additionalSigningStatus === "editing"
+                }
+                tooltip={tooltip}
                 showLoadingOnClick
                 showLoading
                 reactOnWindowFocus
