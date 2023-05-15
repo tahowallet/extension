@@ -73,24 +73,6 @@ export const normalizeDaylightAbilities = (
   return normalizedAbilities
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sortObjectByKeys = (object: any) =>
-  Object.keys(object)
-    .sort()
-    .reduce<Record<string, unknown>>((acc, key) => {
-      const value = object[key]
-      if (
-        typeof value === "object" &&
-        !Array.isArray(value) &&
-        value !== null
-      ) {
-        acc[key] = sortObjectByKeys(value)
-      } else {
-        acc[key] = value
-      }
-      return acc
-    }, {})
-
 interface Events extends ServiceLifecycleEvents {
   updatedAbilities: { address: NormalizedEVMAddress; abilities: Ability[] }
   updatedAbility: Ability
@@ -132,86 +114,61 @@ export default class AbilitiesService extends BaseService<Events> {
     this.emitter.emit("newAccount", address)
   }
 
-  async syncRemovedAbilities(abilities: Ability[]): Promise<void> {
+  /**
+   * Syncs a set of new abilities against the ones being tracked in the cache.
+   * Adds new abilities, marks existing ones as completed if the new entry
+   * indicates they've been completed, and marks any abilities that are not in
+   * the new set as removed from the UI.
+   *
+   * @return The latest sorted abilities list.
+   */
+  async syncAbilities(latestAbilities: Ability[]): Promise<Ability[]> {
     const cachedAbilities = await this.db.getAbilities()
-    const abilitiesById = new Set(abilities.map(({ abilityId }) => abilityId))
-    const diffAbilities = cachedAbilities.filter(
-      (cachedAbility) => !abilitiesById.has(cachedAbility.abilityId)
+    const cachedAbilitiesById = Object.fromEntries(
+      cachedAbilities.map((ability) => [ability.abilityId, ability])
     )
-    const removedAbilities = diffAbilities.map((ability) => ({
-      ...ability,
-      removedFromUi: true,
-    }))
-    await this.db.updateAbilities(removedAbilities)
-  }
 
-  async updateAbilities(abilities: Ability[]): Promise<void> {
-    const cachedAbilities = await this.db.getAbilities()
-    const updatedAbilitiesByUser = cachedAbilities.reduce<Map<string, Ability>>(
-      (acc, ability) => {
-        if (ability.removedFromUi || ability.completed) {
-          acc.set(ability.abilityId, ability)
-        }
-        return acc
-      },
-      new Map()
-    )
-    const updatedAbilities = abilities.reduce<Ability[]>((acc, ability) => {
-      if (updatedAbilitiesByUser.has(ability.abilityId)) {
-        const existingAbility = updatedAbilitiesByUser.get(ability.abilityId)
-        if (
-          JSON.stringify(sortObjectByKeys(ability)) !==
-          JSON.stringify(sortObjectByKeys(existingAbility))
-        ) {
-          const { removedFromUi, completed } = existingAbility ?? {
-            removedFromUi: false,
-            completed: false,
-          }
-          // Update when the ability is marked as completed by Daylight but the cache status is not updated
-          const updateCompleted = ability.completed && !completed
+    const syncedAbilities = latestAbilities.map((latestAbility) => {
+      const cachedAbility = cachedAbilitiesById[latestAbility.abilityId]
+      // Delete the cached entry so we can use the final set of ids in
+      // cachedAbilitiesById as a proxy for ids that were not seen in the
+      // latest abilities.
+      delete cachedAbilitiesById[latestAbility.abilityId]
 
-          acc.push({
-            ...ability,
-            removedFromUi,
-            completed: updateCompleted ? true : completed,
-          })
-        }
-      } else {
-        acc.push(ability)
+      const cachedCompleted = cachedAbility?.completed ?? false
+
+      return {
+        ...latestAbility,
+        removedFromUi: cachedAbility?.removedFromUi ?? false,
+        completed: cachedCompleted || latestAbility.completed,
       }
-      return acc
-    }, [])
+    })
 
-    await this.db.updateAbilities(updatedAbilities)
+    await this.db.updateAbilities([
+      ...syncedAbilities,
+      // Remaining abilities here are the ones that were not seen from
+      // Daylight, mark them as removed from the UI.
+      ...Object.values(cachedAbilitiesById).map((ability) => ({
+        ...ability,
+        removedFromUi: true,
+      })),
+    ])
+
+    return this.db.getSortedAbilities()
   }
 
   async pollForAbilities(address: NormalizedEVMAddress): Promise<void> {
-    const daylightAbilities = await getDaylightAbilities(address)
-    const normalizedAbilities = normalizeDaylightAbilities(
-      daylightAbilities,
+    const latestDaylightAbilities = await getDaylightAbilities(address)
+    const latestAbilities = normalizeDaylightAbilities(
+      latestDaylightAbilities,
       address
     )
-    /**
-     * 1. Remove abilities from the cache
-     * We are not able to get information about the removed abilities from the Daylight API.
-     * To update the cache we have to compare the data with the received abilities.
-     * The ability can be open completed or expired. Therefore, we need to get the abilities for these 3 types.
-     */
-    await this.syncRemovedAbilities(normalizedAbilities)
-    /**
-     * 2. Update existing abilities in the cache
-     * We allow users to mark abilities as completed or removed, we do not want to overwrite this state.
-     * There is an exception when the ability is marked as completed by Daylight we want to update this property as well.
-     */
-    await this.updateAbilities(normalizedAbilities)
-    /**
-     * 3. Redux state update
-     */
-    const abilities: Ability[] = await this.db.getSortedAbilities()
+
+    const updatedAbilities = await this.syncAbilities(latestAbilities)
 
     this.emitter.emit("updatedAbilities", {
       address,
-      abilities,
+      abilities: updatedAbilities,
     })
   }
 
