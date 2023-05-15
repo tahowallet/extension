@@ -1,15 +1,16 @@
 import { Ability } from "@tallyho/tally-background/abilities"
 import { ETHEREUM } from "@tallyho/tally-background/constants"
+import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { AccountState } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   NFTCached,
   NFTCollectionCached,
 } from "@tallyho/tally-background/redux-slices/nfts_update"
 import { createAccountData } from "@tallyho/tally-background/tests/factories"
-import { NormalizedEVMAddress } from "@tallyho/tally-background/types"
 
-export const TEST_ADDRESS =
-  "0x208e94d5661a73360d9387d3ca169e5c130090cd" as NormalizedEVMAddress
+export const TEST_ADDRESS = normalizeEVMAddress(
+  "0x208e94d5661a73360d9387d3ca169e5c130090cd"
+)
 
 export const createAccountState = (
   overrides: Partial<AccountState> = {}
@@ -47,7 +48,7 @@ export const createAbility = (overrides: Partial<Ability> = {}): Ability => {
       type: "hold",
       address: "",
     },
-    magicOrderIndex: 0,
+    interestRank: 0,
     ...overrides,
   }
 }

@@ -66,7 +66,7 @@ export const normalizeDaylightAbilities = (
         // Just take the 1st requirement for now
         daylightAbility.requirements[0]
       ),
-      magicOrderIndex: idx,
+      interestRank: idx,
     })
   })
 

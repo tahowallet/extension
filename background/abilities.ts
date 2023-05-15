@@ -52,8 +52,12 @@ export type Ability = {
   removedFromUi: boolean
   address: NormalizedEVMAddress
   requirement: AbilityRequirement
-  /* Order number from the most interesting to the user */
-  magicOrderIndex: number
+  /**
+   * Order number from the most interesting to the user.
+   * A lower number indicates a more interesting ability.
+   * Rank is determined by the order in which data arrives from the Daylight API.
+   */
+  interestRank: number
 }
 
 export const ABILITY_TYPE_COLOR = {

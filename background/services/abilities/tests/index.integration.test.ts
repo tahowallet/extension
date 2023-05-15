@@ -7,17 +7,18 @@ import {
 } from "../../../tests/factories"
 import ChainService from "../../chain"
 import * as daylight from "../../../lib/daylight"
-import { NormalizedEVMAddress } from "../../../types"
 import { DaylightAbility } from "../../../lib/daylight"
 import { Ability } from "../../../abilities"
 import { AbilitiesDatabase } from "../db"
+import { normalizeEVMAddress } from "../../../lib/utils"
 
-const address =
-  "0x208e94d5661a73360d9387d3ca169e5c130090cd" as NormalizedEVMAddress
+const address = normalizeEVMAddress(
+  "0x208e94d5661a73360d9387d3ca169e5c130090cd"
+)
 
 const sortAbilities = (abilities: Ability[]) =>
   abilities.sort(
-    (ability1, ability2) => ability1.magicOrderIndex - ability2.magicOrderIndex
+    (ability1, ability2) => ability1.interestRank - ability2.interestRank
   )
 
 type AbilitiesServiceExternalized = Omit<AbilitiesService, ""> & {

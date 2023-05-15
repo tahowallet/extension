@@ -9,18 +9,15 @@ export class AbilitiesDatabase extends Dexie {
     super("tally/abilities")
 
     this.version(1).stores({
-      /**
-       * There is no need to use auto-incremented primary key if you want to use the bulkPut method.
-       * Using this primary key causes an error when applying the method.
-       * Boolean can't be indexed. Let's remove the unnecessary indexes.
-       */
       abilities: "++id, &[abilityId+address], removedFromUi, completed",
     })
-
+    // There is no need to use auto-incremented primary key if you want to use the bulkPut method.
+    // Using this primary key causes an error when applying the method,
+    // Additionally, Boolean can't be indexed. Let's remove the unnecessary indexes.
     this.version(2)
       .stores({
         abilities: null,
-        abilitiesTemp: "&[abilityId+address], magicOrderIndex",
+        abilitiesTemp: "&[abilityId+address], interestRank",
       })
       .upgrade(async (tx) => {
         const abilities = await tx.table("abilities").toArray()
@@ -34,7 +31,7 @@ export class AbilitiesDatabase extends Dexie {
     this.version(3)
       .stores({
         abilitiesTemp: null,
-        abilities: "&[abilityId+address], magicOrderIndex",
+        abilities: "&[abilityId+address], interestRank",
       })
       .upgrade(async (tx) => {
         const abilities = await tx.table("abilitiesTemp").toArray()
@@ -51,7 +48,7 @@ export class AbilitiesDatabase extends Dexie {
   }
 
   async getSortedAbilities(): Promise<Ability[]> {
-    return this.abilities.orderBy("magicOrderIndex").toArray()
+    return this.abilities.orderBy("interestRank").toArray()
   }
 
   async getAbility(

@@ -58,12 +58,8 @@ const abilitiesSlice = createSlice({
       { payload }: { payload: { address: HexString; abilities: Ability[] } }
     ) => {
       const { address, abilities } = payload
-      immerState.abilities[address] = abilities.reduce(
-        (abilitiesForAddress, ability) => ({
-          ...abilitiesForAddress,
-          [ability.abilityId]: ability,
-        }),
-        {}
+      immerState.abilities[address] = Object.fromEntries(
+        abilities.map((ability) => [ability.abilityId, ability])
       )
     },
     updateAbility: (immerState, { payload }: { payload: Ability }) => {

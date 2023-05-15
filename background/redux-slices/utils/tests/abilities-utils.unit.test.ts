@@ -1,12 +1,14 @@
 import { Ability } from "../../../abilities"
-import { NormalizedEVMAddress } from "../../../types"
+import { normalizeEVMAddress } from "../../../lib/utils"
 import {
   filterByAddress,
   filterByState,
   filterByType,
 } from "../abilities-utils"
 
-const ADDRESS = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
+const ADDRESS = normalizeEVMAddress(
+  "0x208e94d5661a73360d9387d3ca169e5c130090cd"
+)
 
 const ABILITY_DEFAULT: Ability = {
   type: "mint",
@@ -17,12 +19,12 @@ const ABILITY_DEFAULT: Ability = {
   linkUrl: "",
   completed: false,
   removedFromUi: false,
-  address: ADDRESS as NormalizedEVMAddress,
+  address: ADDRESS,
   requirement: {
     type: "hold",
     address: "",
   },
-  magicOrderIndex: 0,
+  interestRank: 0,
 }
 
 describe("Abilities utils", () => {
