@@ -1,9 +1,9 @@
-import Dexie from "dexie"
+import Dexie, { IndexableTypeArrayReadonly } from "dexie"
 import { ABILITY_TYPES, Ability } from "../../abilities"
 import { HexString, NormalizedEVMAddress } from "../../types"
 
 export class AbilitiesDatabase extends Dexie {
-  private abilities!: Dexie.Table<Ability, string>
+  private abilities!: Dexie.Table<Ability, [string, string]>
 
   constructor() {
     super("tally/abilities")
@@ -41,6 +41,12 @@ export class AbilitiesDatabase extends Dexie {
 
   async updateAbilities(abilities: Ability[]): Promise<void> {
     await this.abilities.bulkPut(abilities)
+  }
+
+  async removeAbilities(keys: [string, string][]): Promise<void> {
+    await this.abilities.bulkDelete(
+      keys as unknown as IndexableTypeArrayReadonly
+    )
   }
 
   async getAbilities(): Promise<Ability[]> {

@@ -144,15 +144,15 @@ export default class AbilitiesService extends BaseService<Events> {
       }
     })
 
-    await this.db.updateAbilities([
-      ...syncedAbilities,
-      // Remaining abilities here are the ones that were not seen from
-      // Daylight, mark them as removed from the UI.
-      ...Object.values(cachedAbilitiesById).map((ability) => ({
-        ...ability,
-        removedFromUi: true,
-      })),
-    ])
+    if (Object.keys(cachedAbilitiesById).length > 0) {
+      await this.db.removeAbilities(
+        Object.values(cachedAbilitiesById).map(({ abilityId, address }) => [
+          abilityId,
+          address,
+        ])
+      )
+    }
+    await this.db.updateAbilities(syncedAbilities)
 
     return this.db.getSortedAbilities()
   }

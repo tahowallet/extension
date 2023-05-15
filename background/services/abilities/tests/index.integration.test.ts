@@ -113,7 +113,7 @@ describe("AbilitiesService", () => {
       })
     })
 
-    it("should emit updatedAbilities with updated ability if it has been removed", async () => {
+    it("should emit updatedAbilities with updated abilities without the ability which has been removed", async () => {
       // Update abilities from Daylight API, last ability has been removed from API
       const updatedDaylightAbilities = [
         daylightAbilities[0],
@@ -130,10 +130,11 @@ describe("AbilitiesService", () => {
       await abilitiesService.pollForAbilities(address)
 
       // Normalized abilities that should be returned for redux status updates
-      // We use the default state because we store removed abilities in the cache
-      const abilities = normalizeDaylightAbilities(daylightAbilities, address)
-      // Update state for the removed ability
-      abilities[2].removedFromUi = true
+      // We use the updated state because it should be the same in the cache
+      const abilities = normalizeDaylightAbilities(
+        updatedDaylightAbilities,
+        address
+      )
 
       expect(stubGetAbilities.called).toBe(true)
       expect(abilitiesService.emitter.emit).toBeCalledTimes(2)
