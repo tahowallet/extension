@@ -1,29 +1,19 @@
 import React, { ReactElement, useEffect, useRef, useState } from "react"
 import dayjs from "dayjs"
-import classNames from "classnames"
 import {
   sameEVMAddress,
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
-import { HexString } from "@tallyho/tally-background/types"
 import { useTranslation } from "react-i18next"
-import {
-  Activity,
-  INFINITE_VALUE,
-} from "@tallyho/tally-background/redux-slices/activities"
+import { Activity } from "@tallyho/tally-background/redux-slices/activities"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
+import SharedActivityIcon from "../Shared/SharedActivityIcon"
+import useActivityViewDetails from "../../hooks/activity-hooks"
 
 interface Props {
   onClick: () => void
   activity: Activity
   asAccount: string
-}
-
-function isReceiveActivity(activity: Activity, account: string): boolean {
-  return (
-    activity.type === "asset-transfer" &&
-    sameEVMAddress(activity.recipient?.address, account)
-  )
 }
 
 function isSendActivity(activity: Activity, account: string): boolean {
@@ -54,75 +44,18 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     }
   }, [bottomRef])
 
-  // TODO Replace this with better conditional rendering.
-  let renderDetails: {
-    iconClass?: string
-    label: string
-    recipient: {
-      address?: HexString
-      name?: string
-    }
-    assetLogoURL?: string
-    assetSymbol: string
-    assetValue: string
-  } = {
-    iconClass: undefined,
-    label: t("contractInteraction"),
-    recipient: activity.recipient,
-    assetLogoURL: activity.assetLogoUrl,
-    assetSymbol: activity.assetSymbol,
-    assetValue: activity.value,
-  }
-
-  switch (activity.type) {
-    case "asset-transfer":
-      renderDetails = {
-        ...renderDetails,
-        label: isReceiveActivity(activity, asAccount)
-          ? t("tokenReceived")
-          : t("tokenSent"),
-        iconClass: isReceiveActivity(activity, asAccount)
-          ? "receive_icon"
-          : "send_icon",
-      }
-      break
-    case "asset-approval":
-      renderDetails = {
-        ...renderDetails,
-        label: t("tokenApproved"),
-        iconClass: "approve_icon",
-        assetValue:
-          activity.value === INFINITE_VALUE
-            ? t("infiniteApproval")
-            : activity.value,
-      }
-      break
-    case "asset-swap":
-      renderDetails = {
-        ...renderDetails,
-        iconClass: "swap_icon",
-        label: t("tokenSwapped"),
-      }
-      break
-    case "contract-deployment":
-    case "contract-interaction":
-    default:
-      renderDetails = {
-        ...renderDetails,
-        iconClass: "contract_interaction_icon",
-        label: t("contractInteraction"),
-      }
-  }
+  const activityViewDetails = useActivityViewDetails(activity, asAccount)
 
   return (
     <li>
       <button type="button" className="standard_width" onClick={onClick}>
         <div className="top">
           <div className="left">
-            <div
-              className={classNames("activity_icon", renderDetails.iconClass)}
+            <SharedActivityIcon
+              type={activityViewDetails.iconClass}
+              size={14}
             />
-            {renderDetails.label}
+            {activityViewDetails.label}
             {"status" in activity &&
             activity.blockHash !== null &&
             activity.status !== 1 ? (
@@ -154,30 +87,33 @@ export default function WalletActivityListItem(props: Props): ReactElement {
               <SharedAssetIcon
                 // TODO this should come from a connected component that knows
                 // about all of our asset metadata
-                logoURL={renderDetails.assetLogoURL}
-                symbol={renderDetails.assetSymbol}
+                logoURL={activityViewDetails.assetLogoURL}
+                symbol={activityViewDetails.assetSymbol}
                 size="small"
               />
             </div>
             <div className="amount">
               <span
                 className="bold_amount_count"
-                title={renderDetails.assetValue}
+                title={activityViewDetails.assetValue}
               >
-                {renderDetails.assetValue}
+                {activityViewDetails.assetValue}
               </span>
-              <span className="name">{renderDetails.assetSymbol}</span>
+              <span className="name">{activityViewDetails.assetSymbol}</span>
             </div>
           </div>
           <div ref={outcomeRef} className="right">
             {isSendActivity(activity, asAccount) ? (
-              <div className="outcome" title={renderDetails.recipient.address}>
+              <div
+                className="outcome"
+                title={activityViewDetails.recipient.address}
+              >
                 {t("transactionTo")}
                 {` ${
-                  renderDetails.recipient.name ??
-                  (renderDetails.recipient.address === undefined
+                  activityViewDetails.recipient.name ??
+                  (activityViewDetails.recipient.address === undefined
                     ? t("contractCreation")
-                    : truncateAddress(renderDetails.recipient.address))
+                    : truncateAddress(activityViewDetails.recipient.address))
                 }`}
               </div>
             ) : (
@@ -205,34 +141,6 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           }
           button:hover {
             background-color: var(--green-80);
-          }
-          .activity_icon {
-            background: url("./images/activity_contract_interaction@2x.png");
-            background-size: cover;
-            width: 14px;
-            height: 14px;
-            margin-right: 4px;
-            margin-left: 9px;
-          }
-          .receive_icon {
-            background: url("./images/activity_receive@2x.png");
-            background-size: cover;
-          }
-          .send_icon {
-            background: url("./images/activity_send@2x.png");
-            background-size: cover;
-          }
-          .approve_icon {
-            background: url("./images/activity_approve@2x.png");
-            background-size: cover;
-          }
-          .swap_icon {
-            background: url("./images/activity_swap@2x.png");
-            background-size: cover;
-          }
-          .contract_interaction_icon {
-            background: url("./images/activity_contract_interaction@2x.png");
-            background-size: cover;
           }
           .status:before {
             content: "•";
