@@ -44,11 +44,11 @@ const normalizeDaylightRequirements = (
 
 export const normalizeDaylightAbilities = (
   daylightAbilities: DaylightAbility[],
-  address: string
+  address: NormalizedEVMAddress
 ): Ability[] => {
   const normalizedAbilities: Ability[] = []
 
-  daylightAbilities.forEach((daylightAbility) => {
+  daylightAbilities.forEach((daylightAbility, idx) => {
     normalizedAbilities.push({
       type: daylightAbility.type,
       title: daylightAbility.title,
@@ -61,11 +61,12 @@ export const normalizeDaylightAbilities = (
       closeAt: daylightAbility.closeAt || undefined,
       completed: daylightAbility.walletCompleted || false,
       removedFromUi: false,
-      address: normalizeEVMAddress(address),
+      address,
       requirement: normalizeDaylightRequirements(
         // Just take the 1st requirement for now
         daylightAbility.requirements[0]
       ),
+      interestRank: idx,
     })
   })
 
@@ -73,7 +74,7 @@ export const normalizeDaylightAbilities = (
 }
 
 interface Events extends ServiceLifecycleEvents {
-  newAbilities: Ability[]
+  updatedAbilities: { address: NormalizedEVMAddress; abilities: Ability[] }
   updatedAbility: Ability
   newAccount: string
   deleteAccount: string
@@ -109,31 +110,62 @@ export default class AbilitiesService extends BaseService<Events> {
 
   // Should only be called with ledger or imported accounts
   async getNewAccountAbilities(address: string): Promise<void> {
-    this.pollForAbilities(address)
+    this.pollForAbilities(normalizeEVMAddress(address))
     this.emitter.emit("newAccount", address)
   }
 
-  async pollForAbilities(address: HexString): Promise<void> {
-    const daylightAbilities = await getDaylightAbilities(address)
-    const normalizedAbilities = normalizeDaylightAbilities(
-      daylightAbilities,
+  /**
+   * Syncs a set of new abilities against the ones being tracked in the cache.
+   * Adds new abilities, marks existing ones as completed if the new entry
+   * indicates they've been completed, and marks any abilities that are not in
+   * the new set as removed from the UI.
+   *
+   * @return The latest sorted abilities list.
+   */
+  private async syncAbilities(latestAbilities: Ability[]): Promise<Ability[]> {
+    const cachedAbilities = await this.db.getAbilities()
+    const cachedAbilitiesById = Object.fromEntries(
+      cachedAbilities.map((ability) => [ability.abilityId, ability])
+    )
+
+    const syncedAbilities = latestAbilities.map((latestAbility) => {
+      const cachedAbility = cachedAbilitiesById[latestAbility.abilityId]
+      // Delete the cached entry so we can use the final set of ids in
+      // cachedAbilitiesById as a proxy for ids that were not seen in the
+      // latest abilities.
+      delete cachedAbilitiesById[latestAbility.abilityId]
+
+      const cachedCompleted = cachedAbility?.completed ?? false
+
+      return {
+        ...latestAbility,
+        removedFromUi: cachedAbility?.removedFromUi ?? false,
+        completed: cachedCompleted || latestAbility.completed,
+      }
+    })
+
+    const removedAbilities = Object.values(cachedAbilitiesById)
+    if (removedAbilities.length > 0) {
+      await this.db.removeAbilities(removedAbilities)
+    }
+    await this.db.updateAbilities(syncedAbilities)
+
+    return this.db.getSortedAbilities()
+  }
+
+  async pollForAbilities(address: NormalizedEVMAddress): Promise<void> {
+    const latestDaylightAbilities = await getDaylightAbilities(address)
+    const latestAbilities = normalizeDaylightAbilities(
+      latestDaylightAbilities,
       address
     )
 
-    const newAbilities: Ability[] = []
+    const updatedAbilities = await this.syncAbilities(latestAbilities)
 
-    await Promise.all(
-      normalizedAbilities.map(async (ability) => {
-        const isNewAbility = await this.db.addNewAbility(ability)
-        if (isNewAbility) {
-          newAbilities.push(ability)
-        }
-      })
-    )
-
-    if (newAbilities.length) {
-      this.emitter.emit("newAbilities", newAbilities)
-    }
+    this.emitter.emit("updatedAbilities", {
+      address,
+      abilities: updatedAbilities,
+    })
   }
 
   async markAbilityAsCompleted(
@@ -166,12 +198,14 @@ export default class AbilitiesService extends BaseService<Events> {
     }
     localStorage.setItem(this.ABILITY_TIME_KEY, Date.now().toString())
     const accountsToTrack = await this.chainService.getAccountsToTrack()
-    const addresses = new Set(accountsToTrack.map((account) => account.address))
+    const addresses = new Set(
+      accountsToTrack.map((account) => normalizeEVMAddress(account.address))
+    )
 
     // 1-by-1 decreases likelihood of hitting rate limit
     // eslint-disable-next-line no-restricted-syntax
     for (const address of addresses) {
-      this.emitter.emit("initAbilities", address as NormalizedEVMAddress)
+      this.emitter.emit("initAbilities", address)
     }
   }
 
