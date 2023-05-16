@@ -122,7 +122,7 @@ export default class AbilitiesService extends BaseService<Events> {
    *
    * @return The latest sorted abilities list.
    */
-  async syncAbilities(latestAbilities: Ability[]): Promise<Ability[]> {
+  private async syncAbilities(latestAbilities: Ability[]): Promise<Ability[]> {
     const cachedAbilities = await this.db.getAbilities()
     const cachedAbilitiesById = Object.fromEntries(
       cachedAbilities.map((ability) => [ability.abilityId, ability])
@@ -144,13 +144,9 @@ export default class AbilitiesService extends BaseService<Events> {
       }
     })
 
-    if (Object.keys(cachedAbilitiesById).length > 0) {
-      await this.db.removeAbilities(
-        Object.values(cachedAbilitiesById).map(({ abilityId, address }) => [
-          abilityId,
-          address,
-        ])
-      )
+    const removedAbilities = Object.values(cachedAbilitiesById)
+    if (removedAbilities.length > 0) {
+      await this.db.removeAbilities(removedAbilities)
     }
     await this.db.updateAbilities(syncedAbilities)
 

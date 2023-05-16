@@ -21,7 +21,7 @@ const sortAbilities = (abilities: Ability[]) =>
     (ability1, ability2) => ability1.interestRank - ability2.interestRank
   )
 
-type AbilitiesServiceExternalized = Omit<AbilitiesService, ""> & {
+type AbilitiesServiceExternalized = Omit<AbilitiesService, "db"> & {
   db: AbilitiesDatabase
 }
 
@@ -247,9 +247,10 @@ describe("AbilitiesService", () => {
 
     it("should emit updatedAbilities with changed order of abilities", async () => {
       // Update abilities from Daylight API, shuffle abilities
-      const updatedDaylightAbilities = daylightAbilities.sort(
-        () => 0.5 - Math.random()
-      )
+      const updatedDaylightAbilities = [
+        ...daylightAbilities.slice(-1),
+        ...daylightAbilities.slice(0, -1),
+      ]
       const stubGetAbilities = sandbox
         .stub(daylight, "getDaylightAbilities")
         .onCall(0)

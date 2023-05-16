@@ -43,10 +43,12 @@ export class AbilitiesDatabase extends Dexie {
     await this.abilities.bulkPut(abilities)
   }
 
-  async removeAbilities(keys: [string, string][]): Promise<void> {
-    await this.abilities.bulkDelete(
-      keys as unknown as IndexableTypeArrayReadonly
-    )
+  async removeAbilities(abilities: Ability[]): Promise<void> {
+    const keys = abilities.map(({ abilityId, address }) => [
+      abilityId,
+      address,
+    ]) as unknown as IndexableTypeArrayReadonly
+    await this.abilities.bulkDelete(keys)
   }
 
   async getAbilities(): Promise<Ability[]> {
