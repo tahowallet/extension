@@ -1,11 +1,12 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
-  clearSwapQuote,
   approveTransfer,
   selectLatestQuoteRequest,
   selectInProgressApprovalContract,
   fetchSwapQuote,
+  selectSwapBuyAssets,
+  executeSwap,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
@@ -15,29 +16,24 @@ import {
   selectMainCurrencySign,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
-  AnyAsset,
   isSmartContractFungibleAsset,
   SwappableAsset,
 } from "@tallyho/tally-background/assets"
 import logger from "@tallyho/tally-background/lib/logger"
 import { Redirect, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
-import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
-import { sameNetwork } from "@tallyho/tally-background/networks"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
-import { isBuiltInNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import {
   NETWORKS_SUPPORTING_SWAPS,
   SECOND,
 } from "@tallyho/tally-background/constants"
 
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
-import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
-import SwapQuote from "../components/Swap/SwapQuote"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SwapRewardsCard from "../components/Swap/SwapRewardsCard"
@@ -45,7 +41,12 @@ import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
 import ApproveQuoteBtn from "../components/Swap/ApproveQuoteButton"
-import { isSameAsset, useSwapQuote } from "../utils/swap"
+import {
+  isSameAsset,
+  useSwapQuote,
+  getSellAssetAmounts,
+  getOwnedSellAssetAmounts,
+} from "../utils/swap"
 import { useOnMount, usePrevious, useInterval } from "../hooks/react-hooks"
 import SharedLoadingDoggo from "../components/Shared/SharedLoadingDoggo"
 import SharedBackButton from "../components/Shared/SharedBackButton"
@@ -60,27 +61,19 @@ export default function Swap(): ReactElement {
   >()
 
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
-
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
-
-  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
-
-  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
-
-  const isReadOnlyAccount = currentAccountSigner === ReadOnlyAccountSigner
-
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
-  const [hasError, setHasError] = useState(false)
+  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
+  const isReadOnlyAccount = currentAccountSigner === ReadOnlyAccountSigner
 
-  // TODO We're special-casing ETH here in an odd way. Going forward, we should
-  // filter by current chain and better handle network-native base assets
-  const ownedSellAssetAmounts =
-    accountBalances?.allAssetAmounts.filter(
-      (assetAmount): assetAmount is CompleteAssetAmount<SwappableAsset> =>
-        isSmartContractFungibleAsset(assetAmount.asset) ||
-        assetAmount.asset.symbol === currentNetwork.baseAsset.symbol
-    ) ?? []
+  const [hasError, setHasError] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const ownedSellAssetAmounts = getOwnedSellAssetAmounts(
+    accountBalances?.allAssetAmounts,
+    currentNetwork
+  )
 
   const {
     symbol: locationAssetSymbol,
@@ -99,8 +92,6 @@ export default function Swap(): ReactElement {
     }
   )?.asset
 
-  const [confirmationMenu, setConfirmationMenu] = useState(false)
-
   const savedQuoteRequest = useBackgroundSelector(selectLatestQuoteRequest)
 
   const {
@@ -111,8 +102,12 @@ export default function Swap(): ReactElement {
     assets: { sellAsset: locationAsset },
   }
 
-  const [sellAsset, setSellAsset] = useState(savedSellAsset)
-  const [buyAsset, setBuyAsset] = useState(savedBuyAsset)
+  const [sellAsset, setSellAsset] = useState<SwappableAsset | undefined>(
+    savedSellAsset
+  )
+  const [buyAsset, setBuyAsset] = useState<SwappableAsset | undefined>(
+    savedBuyAsset
+  )
   const [sellAmount, setSellAmount] = useState(
     typeof savedSwapAmount !== "undefined" && "sellAmount" in savedSwapAmount
       ? savedSwapAmount.sellAmount
@@ -126,58 +121,24 @@ export default function Swap(): ReactElement {
 
   const previousChainId = usePrevious(currentNetwork.chainID)
 
-  if (previousChainId !== currentNetwork.chainID && (sellAsset || buyAsset)) {
-    setSellAsset(undefined)
-    setBuyAsset(undefined)
-    setSellAmount("")
-    setBuyAmount("")
-  }
+  useEffect(() => {
+    if (previousChainId !== currentNetwork.chainID) {
+      setSellAsset(undefined)
+      setBuyAsset(undefined)
+      setSellAmount("")
+      setBuyAmount("")
+    }
+  }, [previousChainId, currentNetwork.chainID])
 
   const buyAssets = useBackgroundSelector((state) => {
-    // Some type massaging needed to remind TypeScript how these types fit
-    // together.
-    const knownAssets: AnyAsset[] = state.assets
-    return knownAssets.filter((asset): asset is SwappableAsset => {
-      // We don't want to buy the same asset we're selling.
-      if (asset.symbol === sellAsset?.symbol) {
-        return false
-      }
-
-      if (isSmartContractFungibleAsset(asset)) {
-        if (sameNetwork(asset.homeNetwork, currentNetwork)) {
-          return true
-        }
-      }
-      if (
-        // Explicitly add a network's base asset.
-        isBuiltInNetworkBaseAsset(asset, currentNetwork)
-      ) {
-        return true
-      }
-      return false
-    })
+    const assets = selectSwapBuyAssets(state) as SwappableAsset[]
+    return assets.filter((asset) => asset.symbol !== sellAsset?.symbol)
   })
 
-  const sellAssetAmounts = (
-    ownedSellAssetAmounts.some(
-      ({ asset }) =>
-        typeof sellAsset !== "undefined" && isSameAsset(asset, sellAsset)
-    )
-      ? ownedSellAssetAmounts
-      : ownedSellAssetAmounts.concat(
-          typeof sellAsset === "undefined"
-            ? []
-            : [
-                {
-                  asset: sellAsset,
-                  amount: 0n,
-                  decimalAmount: 0,
-                  localizedDecimalAmount: "0",
-                },
-              ]
-        )
-  ).filter(
-    (sellAssetAmount) => sellAssetAmount.asset.symbol !== buyAsset?.symbol
+  const sellAssetAmounts = getSellAssetAmounts(
+    ownedSellAssetAmounts,
+    sellAsset,
+    buyAsset
   )
 
   useEffect(() => {
@@ -219,29 +180,7 @@ export default function Swap(): ReactElement {
     normalizeEVMAddress(inProgressApprovalContract || "0x") ===
       normalizeEVMAddress(sellAsset?.contractAddress || "0x")
 
-  const finalQuote = useBackgroundSelector((state) => state.swap.finalQuote)
-
-  /* We have to watch the state to determine when the quote is fetched */
-  useEffect(() => {
-    if (typeof finalQuote !== "undefined") {
-      // Now open the asset menu
-      setConfirmationMenu(true)
-    }
-  }, [finalQuote])
-
-  const getFinalQuote = async () => {
-    // The final quote requires a previous non-final quote having been
-    // requested; this is also guarded at the button (by disabling the button).
-    if (!quote) {
-      return false
-    }
-
-    dispatch(fetchSwapQuote(quote.quoteRequest))
-
-    return true
-  }
-
-  const approveAsset = async () => {
+  const approveAsset = useCallback(async () => {
     if (!quote) return
 
     if (typeof sellAsset === "undefined") {
@@ -263,7 +202,7 @@ export default function Swap(): ReactElement {
         approvalTarget: quote.approvalTarget,
       })
     )
-  }
+  }, [dispatch, quote, sellAsset, t])
 
   const updateSellAsset = useCallback(
     (newSellAsset: SwappableAsset) => {
@@ -400,10 +339,30 @@ export default function Swap(): ReactElement {
     }
   })
 
-  const isSwapSupportedByNetwork = () =>
-    NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID)
+  const handleExecuteSwap = useCallback(async () => {
+    if (sellAsset && buyAsset && quote) {
+      const finalQuote = (await dispatch(
+        fetchSwapQuote(quote.quoteRequest)
+      )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapQuote>
 
-  if (!isSwapSupportedByNetwork()) {
+      if (finalQuote) {
+        const { gasPrice, ...quoteWithoutGasPrice } = finalQuote
+
+        await dispatch(
+          executeSwap({
+            ...quoteWithoutGasPrice,
+            sellAsset,
+            buyAsset,
+            gasPrice:
+              quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
+              gasPrice,
+          })
+        )
+      }
+    }
+  }, [dispatch, sellAsset, buyAsset, quote])
+
+  if (!NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID)) {
     return <Redirect to="/" />
   }
 
@@ -413,29 +372,12 @@ export default function Swap(): ReactElement {
       ? sellAmount === quote.amount && buyAmount === quote.quote
       : buyAmount === quote.amount && sellAmount === quote.quote)
 
+  const isLoadingPriceDetails =
+    loadingQuote || !quote?.priceDetails || !quoteAppliesToCurrentAssets
+
   return (
     <>
       <CorePage>
-        <SharedSlideUpMenu
-          isOpen={typeof finalQuote !== "undefined"}
-          close={() => {
-            dispatch(clearSwapQuote())
-          }}
-          size="large"
-          isDark
-        >
-          {quote &&
-            typeof sellAsset !== "undefined" &&
-            typeof buyAsset !== "undefined" &&
-            typeof finalQuote !== "undefined" && (
-              <SwapQuote
-                sellAsset={sellAsset}
-                buyAsset={buyAsset}
-                finalQuote={finalQuote}
-                swapTransactionSettings={quote.swapTransactionSettings}
-              />
-            )}
-        </SharedSlideUpMenu>
         <div className="standard_width">
           <div className="back_button_wrap">
             <SharedBackButton path="/" />
@@ -484,7 +426,7 @@ export default function Swap(): ReactElement {
                     : undefined
                 }
                 showPriceDetails
-                isPriceDetailsLoading={loadingQuote}
+                isPriceDetailsLoading={isLoadingPriceDetails}
                 assetsAndAmounts={sellAssetAmounts}
                 selectedAsset={sellAsset}
                 isDisabled={loadingSellAmount}
@@ -524,7 +466,7 @@ export default function Swap(): ReactElement {
                   buyAmount ? quote?.priceDetails?.buyCurrencyAmount : undefined
                 }
                 priceImpact={quote?.priceDetails?.priceImpact}
-                isPriceDetailsLoading={loadingQuote}
+                isPriceDetailsLoading={isLoadingPriceDetails}
                 showPriceDetails
                 // FIXME: Merge master asset list with account balances.
                 assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
@@ -570,9 +512,11 @@ export default function Swap(): ReactElement {
               {quoteAppliesToCurrentAssets && quote?.needsApproval ? (
                 <ApproveQuoteBtn
                   isApprovalInProgress={!!isApprovalInProgress}
-                  isDisabled={isReadOnlyAccount || !quote || hasError}
+                  isDisabled={
+                    isReadOnlyAccount || !quote || hasError || isLoading
+                  }
                   onApproveClick={approveAsset}
-                  isLoading={confirmationMenu}
+                  isLoading={isLoading}
                 />
               ) : (
                 <SharedButton
@@ -583,12 +527,16 @@ export default function Swap(): ReactElement {
                     !quote ||
                     !quoteAppliesToCurrentAssets ||
                     !quoteAppliesToCurrentAmounts ||
-                    hasError
+                    hasError ||
+                    isLoading
                   }
-                  onClick={getFinalQuote}
-                  showLoadingOnClick={!confirmationMenu}
+                  onClick={() => {
+                    setIsLoading(true)
+                    handleExecuteSwap()
+                  }}
+                  isLoading={isLoading}
                 >
-                  {t("swap.getFinalQuote")}
+                  {t("swap.reviewSwap")}
                 </SharedButton>
               )}
             </div>

@@ -8,7 +8,7 @@ import { fetchJson } from "@ethersproject/web"
 import { BigNumber, ethers, utils } from "ethers"
 
 import { createBackgroundAsyncThunk } from "./utils"
-import { SwappableAsset } from "../assets"
+import { isSmartContractFungibleAsset, SwappableAsset } from "../assets"
 import logger from "../lib/logger"
 import {
   isValidSwapPriceResponse,
@@ -24,15 +24,19 @@ import {
   OPTIMISM,
   OPTIMISTIC_ETH,
 } from "../constants"
-import { EVMNetwork } from "../networks"
+import { EVMNetwork, sameNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
-import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
+import {
+  enrichAssetAmountWithDecimalValues,
+  isBuiltInNetworkBaseAsset,
+} from "./utils/asset-utils"
 import { AssetsState } from "./assets"
 import {
   checkCurrencyAmount,
   PriceDetails,
   SwapQuoteRequest,
 } from "./utils/0x-swap-utils"
+import { selectCurrentNetwork } from "./selectors/uiSelectors"
 
 // This is how 0x represents native token addresses
 const ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS =
@@ -245,7 +249,7 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
       takerAddress: tradeAddress,
     })
 
-    const apiData = await fetchJson({
+    const apiData: ZrxQuote = await fetchJson({
       url: requestUrl.toString(),
       headers: gatedHeaders,
     })
@@ -257,10 +261,12 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
         isValidSwapQuoteResponse.errors
       )
 
-      return
+      return null
     }
 
     dispatch(setFinalSwapQuote(apiData))
+
+    return apiData
   }
 )
 
@@ -502,4 +508,25 @@ export const selectLatestQuoteRequest = createSelector(
 export const selectInProgressApprovalContract = createSelector(
   (state: { swap: SwapState }) => state.swap.inProgressApprovalContract,
   (approvalInProgress) => approvalInProgress
+)
+
+export const selectSwapBuyAssets = createSelector(
+  (state: { assets: AssetsState }) => state.assets,
+  selectCurrentNetwork,
+  (assets, currentNetwork) => {
+    return assets.filter((asset) => {
+      if (isSmartContractFungibleAsset(asset)) {
+        if (sameNetwork(asset.homeNetwork, currentNetwork)) {
+          return true
+        }
+      }
+      if (
+        // Explicitly add a network's base asset.
+        isBuiltInNetworkBaseAsset(asset, currentNetwork)
+      ) {
+        return true
+      }
+      return false
+    })
+  }
 )

@@ -103,7 +103,6 @@
       "nonContractAsset": "嘗試允許傳輸一項非合約資產。"
     },
     "from": "支付：",
-    "getFinalQuote": "取得最終摘要",
     "title": "轉換資產",
     "to": "收到：",
     "transactionSettings": {

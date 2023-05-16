@@ -102,7 +102,6 @@
       "nonContractAsset": "Intentar aprobar la transferencia de un activo no contractual."
     },
     "from": "Intercambiar desde :",
-    "getFinalQuote": "Obtener cotización final",
     "title": "Intercambiar Activos",
     "to": "Cambiar a :",
     "transactionSettings": {

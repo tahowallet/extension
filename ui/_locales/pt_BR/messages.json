@@ -56,7 +56,6 @@
       "nonContractAsset": "Tentativa de aprovar a transferência de um ativo sem contrato."
     },
     "from": "Trocar a partir de:",
-    "getFinalQuote": "Obter cotação final",
     "title": "Trocar Ativos",
     "to": "Trocar para:",
     "transactionSettings": {

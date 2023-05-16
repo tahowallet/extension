@@ -698,7 +698,7 @@
       "noApprovalTarget": "Attempting to approve transfer without an approval target.",
       "nonContractAsset": "Attempting to approve transfer of a non-contract asset."
     },
-    "getFinalQuote": "Get final quote",
+    "reviewSwap": "Review swap",
     "transactionSettings": {
       "title": "Transaction settings",
       "slippageTolerance": "Slippage tolerance",
