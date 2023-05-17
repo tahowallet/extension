@@ -123,7 +123,9 @@ export default function Wallet(): ReactElement {
           />
           <div
             className={classNames("panel standard_width", {
-              no_padding: panelNumber === 1,
+              no_padding:
+                panelNumber === 1 &&
+                NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID),
             })}
           >
             {panelNumber === 0 && (

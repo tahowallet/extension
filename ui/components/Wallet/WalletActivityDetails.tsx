@@ -11,7 +11,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { scanWebsite } from "../../utils/constants"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
-import ActivityIcon from "../Shared/SharedActivityIcon"
+import SharedActivityIcon from "../Shared/SharedActivityIcon"
 import SharedIcon from "../Shared/SharedIcon"
 import useActivityViewDetails from "../../hooks/activity-hooks"
 
@@ -155,13 +155,14 @@ export default function WalletActivityDetails(
   return (
     <div className="wrap standard_width center_horizontal">
       <div className="header">
-        <ActivityIcon type={activityViewDetails.iconClass} size={16} />
+        <SharedActivityIcon type={activityViewDetails.icon} size={16} />
         <span className="header_title">{activityViewDetails.label}</span>
         {scanWebsiteUrl && (
           <SharedIcon
             icon="icons/s/new-tab.svg"
             width={16}
             color="var(--green-40)"
+            hoverColor="var(--trophy-gold)"
             onClick={openExplorer}
           />
         )}

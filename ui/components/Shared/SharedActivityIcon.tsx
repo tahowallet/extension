@@ -1,8 +1,15 @@
 import React, { ReactElement } from "react"
 import classNames from "classnames"
 
+export type ActivityIconType =
+  | "receive"
+  | "send"
+  | "approve"
+  | "swap"
+  | "contract_interaction"
+
 type SharedActivityIconProps = {
-  type: "receive" | "send" | "approve" | "swap" | "contract_interaction"
+  type: ActivityIconType
   size: number
 }
 

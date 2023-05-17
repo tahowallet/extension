@@ -51,10 +51,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
       <button type="button" className="standard_width" onClick={onClick}>
         <div className="top">
           <div className="left">
-            <SharedActivityIcon
-              type={activityViewDetails.iconClass}
-              size={14}
-            />
+            <SharedActivityIcon type={activityViewDetails.icon} size={14} />
             {activityViewDetails.label}
             {"status" in activity &&
             activity.blockHash !== null &&
