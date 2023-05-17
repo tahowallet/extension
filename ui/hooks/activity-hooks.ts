@@ -4,15 +4,25 @@ import {
   INFINITE_VALUE,
 } from "@tallyho/tally-background/redux-slices/activities"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
-import { i18n } from "../_locales/i18n"
-import { ActivityIconType } from "../components/Shared/SharedActivityIcon"
+import { useTranslation } from "react-i18next"
+import { TransactionAnnotation } from "@tallyho/tally-background/services/enrichment"
 
-function isReceiveActivity(activity: Activity, account: string): boolean {
+function isReceiveActivity(
+  activity: Activity,
+  activityInitiatorAddress: string
+): boolean {
   return (
     activity.type === "asset-transfer" &&
-    sameEVMAddress(activity.recipient?.address, account)
+    sameEVMAddress(activity.recipient?.address, activityInitiatorAddress)
   )
 }
+
+// The asset-transfer activity type splits into send and receive actions.
+// Therefore, we exclude it from the activity icon types and add more precise types for it.
+export type ActivityIconType =
+  | Exclude<TransactionAnnotation["type"], "asset-transfer">
+  | "asset-transfer-receive"
+  | "asset-transfer-send"
 
 type ActivityViewDetails = {
   icon: ActivityIconType
@@ -28,40 +38,45 @@ type ActivityViewDetails = {
 
 export default function useActivityViewDetails(
   activity: Activity,
-  address: string
+  activityInitiatorAddress: string
 ): ActivityViewDetails {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet.activities",
+  })
   let details
   switch (activity.type) {
     case "asset-transfer":
       details = {
-        label: isReceiveActivity(activity, address)
-          ? i18n.t("wallet.activities.tokenReceived")
-          : i18n.t("wallet.activities.tokenSent"),
-        icon: isReceiveActivity(activity, address) ? "receive" : "send",
+        label: isReceiveActivity(activity, activityInitiatorAddress)
+          ? t("tokenReceived")
+          : t("tokenSent"),
+        icon: isReceiveActivity(activity, activityInitiatorAddress)
+          ? "asset-transfer-receive"
+          : "asset-transfer-send",
       }
       break
     case "asset-approval":
       details = {
-        label: i18n.t("wallet.activities.tokenApproved"),
-        icon: "approve",
+        label: t("tokenApproved"),
+        icon: "asset-approval",
         assetValue:
           activity.value === INFINITE_VALUE
-            ? i18n.t("wallet.activities.infiniteApproval")
+            ? t("infiniteApproval")
             : activity.value,
       }
       break
     case "asset-swap":
       details = {
-        icon: "swap",
-        label: i18n.t("wallet.activities.tokenSwapped"),
+        icon: "asset-swap",
+        label: t("tokenSwapped"),
       }
       break
     case "contract-deployment":
     case "contract-interaction":
     default:
       details = {
-        icon: "contract_interaction",
-        label: i18n.t("wallet.activities.contractInteraction"),
+        icon: "contract-interaction",
+        label: t("contractInteraction"),
       }
   }
   return {

@@ -43,13 +43,17 @@ export default function WalletActivityList({
     dispatch(setShowingActivityDetail(null))
   }, [dispatch])
 
-  const currentAccount = useBackgroundSelector(selectCurrentAccount).address
+  const activityInitiatorAddress =
+    useBackgroundSelector(selectCurrentAccount).address
 
   const openExplorer = useCallback(() => {
     window
-      .open(`${scanWebsiteInfo.url}/address/${currentAccount}`, "_blank")
+      .open(
+        `${scanWebsiteInfo.url}/address/${activityInitiatorAddress}`,
+        "_blank"
+      )
       ?.focus()
-  }, [scanWebsiteInfo, currentAccount])
+  }, [scanWebsiteInfo, activityInitiatorAddress])
 
   const handleOpen = useCallback(
     (activityItem: Activity) => {
@@ -93,7 +97,7 @@ export default function WalletActivityList({
           {showingActivityDetail ? (
             <WalletActivityDetails
               activityItem={showingActivityDetail}
-              address={currentAccount}
+              activityInitiatorAddress={activityInitiatorAddress}
             />
           ) : (
             <></>
@@ -111,7 +115,7 @@ export default function WalletActivityList({
                 }}
                 key={activityItem?.hash}
                 activity={activityItem}
-                asAccount={currentAccount}
+                activityInitiatorAddress={activityInitiatorAddress}
               />
             )
           }

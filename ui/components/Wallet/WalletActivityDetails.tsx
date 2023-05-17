@@ -113,7 +113,7 @@ function DestinationCard(props: DestinationCardProps): ReactElement {
 
 interface WalletActivityDetailsProps {
   activityItem: Activity
-  address: string
+  activityInitiatorAddress: string
 }
 // Include this "or" type to handle existing placeholder data
 // on the single asset page. TODO: Remove once single asset page
@@ -122,7 +122,7 @@ interface WalletActivityDetailsProps {
 export default function WalletActivityDetails(
   props: WalletActivityDetailsProps
 ): ReactElement {
-  const { activityItem, address } = props
+  const { activityItem, activityInitiatorAddress } = props
   const dispatch = useBackgroundDispatch()
   const [details, setDetails] = useState<ActivityDetail[]>([])
   const network = useBackgroundSelector(selectCurrentNetwork)
@@ -148,7 +148,10 @@ export default function WalletActivityDetails(
     fetchDetails()
   }, [activityItem.hash, dispatch])
 
-  const activityViewDetails = useActivityViewDetails(activityItem, address)
+  const activityViewDetails = useActivityViewDetails(
+    activityItem,
+    activityInitiatorAddress
+  )
 
   return (
     <div className="wrap standard_width center_horizontal">

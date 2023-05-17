@@ -13,12 +13,15 @@ import useActivityViewDetails from "../../hooks/activity-hooks"
 interface Props {
   onClick: () => void
   activity: Activity
-  asAccount: string
+  activityInitiatorAddress: string
 }
 
-function isSendActivity(activity: Activity, account: string): boolean {
+function isSendActivity(
+  activity: Activity,
+  activityInitiatorAddress: string
+): boolean {
   return activity.type === "asset-transfer"
-    ? sameEVMAddress(activity.sender?.address, account)
+    ? sameEVMAddress(activity.sender?.address, activityInitiatorAddress)
     : true
 }
 
@@ -26,7 +29,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet.activities",
   })
-  const { onClick, activity, asAccount } = props
+  const { onClick, activity, activityInitiatorAddress } = props
   const outcomeRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const [outcomeWidth, setOutcomeWidth] = useState(0)
@@ -44,7 +47,10 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     }
   }, [bottomRef])
 
-  const activityViewDetails = useActivityViewDetails(activity, asAccount)
+  const activityViewDetails = useActivityViewDetails(
+    activity,
+    activityInitiatorAddress
+  )
 
   return (
     <li>
@@ -100,7 +106,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             </div>
           </div>
           <div ref={outcomeRef} className="right">
-            {isSendActivity(activity, asAccount) ? (
+            {isSendActivity(activity, activityInitiatorAddress) ? (
               <div
                 className="outcome"
                 title={activityViewDetails.recipient.address}

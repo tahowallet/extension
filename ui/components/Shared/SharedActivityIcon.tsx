@@ -1,12 +1,6 @@
 import React, { ReactElement } from "react"
 import classNames from "classnames"
-
-export type ActivityIconType =
-  | "receive"
-  | "send"
-  | "approve"
-  | "swap"
-  | "contract_interaction"
+import { ActivityIconType } from "../../hooks/activity-hooks"
 
 type SharedActivityIconProps = {
   type: ActivityIconType
@@ -29,23 +23,23 @@ export default function SharedActivityIcon({
           margin-right: 4px;
           margin-left: 9px;
         }
-        .receive {
+        .asset-transfer-receive {
           background: url("./images/activity_receive@2x.png");
           background-size: cover;
         }
-        .send {
+        .asset-transfer-send {
           background: url("./images/activity_send@2x.png");
           background-size: cover;
         }
-        .approve {
+        .asset-approval {
           background: url("./images/activity_approve@2x.png");
           background-size: cover;
         }
-        .swap {
+        .asset-swap {
           background: url("./images/activity_swap@2x.png");
           background-size: cover;
         }
-        .contract_interaction {
+        .contract-interaction {
           background: url("./images/activity_contract_interaction@2x.png");
           background-size: cover;
         }
