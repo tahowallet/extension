@@ -11,7 +11,7 @@ import {
   toggleHideBanners,
   selectHideBanners,
   toggleUntrustedAssets,
-  selectHideUntrustedAssets,
+  selectShowUntrustedAssets,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
@@ -127,7 +127,7 @@ export default function Settings(): ReactElement {
   const hideBanners = useSelector(selectHideBanners)
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
-  const hideUntrusted = useSelector(selectHideUntrustedAssets)
+  const showUntrusted = useSelector(selectShowUntrustedAssets)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
@@ -141,7 +141,7 @@ export default function Settings(): ReactElement {
     dispatch(toggleTestNetworks(defaultWalletValue))
   }
 
-  const toggleHideUntrustedAssets = (defaultWalletValue: boolean) => {
+  const toggleShowUntrustedAssets = (defaultWalletValue: boolean) => {
     dispatch(toggleUntrustedAssets(defaultWalletValue))
   }
 
@@ -162,12 +162,12 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const hideUntrustedAssets = {
-    title: t("settings.hideUntrustedAssets"),
+  const showUntrustedAssets = {
+    title: t("settings.showUntrustedAssets"),
     component: () => (
       <SharedToggleButton
-        onChange={(toggleValue) => toggleHideUntrustedAssets(toggleValue)}
-        value={hideUntrusted}
+        onChange={(toggleValue) => toggleShowUntrustedAssets(toggleValue)}
+        value={showUntrusted}
       />
     ),
   }
@@ -291,7 +291,7 @@ export default function Settings(): ReactElement {
   const generalList = [
     setAsDefault,
     hideSmallAssetBalance,
-    isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST) && hideUntrustedAssets,
+    isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST) && showUntrustedAssets,
     isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
     enableTestNetworks,
     dAppsSettings,

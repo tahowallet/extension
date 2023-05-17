@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 import { updateAssetTrustStatus } from "@tallyho/tally-background/redux-slices/assets"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
-  selectHideUntrustedAssets,
+  selectShowUntrustedAssets,
   setSnackbarMessage,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
@@ -61,7 +61,7 @@ export default function AssetWarningSlideUp(
 
   const dispatch = useBackgroundDispatch()
 
-  const hideUntrusted = useBackgroundSelector(selectHideUntrustedAssets)
+  const showUntrusted = useBackgroundSelector(selectShowUntrustedAssets)
 
   const setAssetTrustStatus = async (isTrusted: boolean) => {
     await dispatch(updateAssetTrustStatus({ asset, trusted: isTrusted }))
@@ -183,7 +183,11 @@ export default function AssetWarningSlideUp(
       </ul>
       {isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST) ? (
         <div className="asset_trust_actions">
-          {hideUntrusted ? (
+          {showUntrusted ? (
+            <SharedButton size="medium" type="secondary" onClick={close}>
+              {t("close")}
+            </SharedButton>
+          ) : (
             <SharedButton
               size="medium"
               type="secondary"
@@ -196,10 +200,6 @@ export default function AssetWarningSlideUp(
               }}
             >
               {isUntrusted ? t("keepHidden") : t("hideAsset")}
-            </SharedButton>
-          ) : (
-            <SharedButton size="medium" type="secondary" onClick={close}>
-              {t("close")}
             </SharedButton>
           )}
           <SharedButton

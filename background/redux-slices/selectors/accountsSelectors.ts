@@ -1,5 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
-import { selectHideDust, selectHideUntrustedAssets } from "../ui"
+import { selectHideDust, selectShowUntrustedAssets } from "../ui"
 import { RootState } from ".."
 import {
   AccountType,
@@ -253,14 +253,14 @@ export const selectAccountAndTimestampedActivities = createSelector(
   getAssetsState,
   selectCurrentNetwork,
   selectHideDust,
-  selectHideUntrustedAssets,
+  selectShowUntrustedAssets,
   selectMainCurrencySymbol,
   (
     account,
     assets,
     currentNetwork,
     hideDust,
-    hideUntrusted,
+    showUntrusted,
     mainCurrencySymbol
   ) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
@@ -270,7 +270,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
         mainCurrencySymbol,
         currentNetwork,
         hideDust,
-        hideUntrusted
+        showUntrusted
       )
 
     return {
@@ -293,14 +293,14 @@ export const selectCurrentAccountBalances = createSelector(
   getAssetsState,
   selectCurrentNetwork,
   selectHideDust,
-  selectHideUntrustedAssets,
+  selectShowUntrustedAssets,
   selectMainCurrencySymbol,
   (
     currentAccount,
     assets,
     currentNetwork,
     hideDust,
-    hideUntrustedAssets,
+    showUntrustedAssets,
     mainCurrencySymbol
   ) => {
     if (typeof currentAccount === "undefined" || currentAccount === "loading") {
@@ -322,7 +322,7 @@ export const selectCurrentAccountBalances = createSelector(
       mainCurrencySymbol,
       currentNetwork,
       hideDust,
-      hideUntrustedAssets
+      showUntrustedAssets
     )
 
     return {
