@@ -168,7 +168,7 @@ import {
 } from "./redux-slices/nfts_update"
 import AbilitiesService from "./services/abilities"
 import {
-  addAbilities,
+  setAbilitiesForAddress,
   updateAbility,
   addAccount as addAccountFilter,
   deleteAccount as deleteAccountFilter,
@@ -1195,17 +1195,8 @@ export default class Main extends BaseService<never> {
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
-        /**
-         * There is a case in which the user changes the settings on the ledger after connection.
-         * For example, it sets disabled blind signing. Before the transaction signature request
-         * ledger should be connected again to refresh the state. Without reconnection,
-         * the user doesn't receive an error message on how to fix it.
-         */
-        const isArbitraryDataSigningEnabled =
-          await this.ledgerService.isArbitraryDataSigningEnabled()
-        if (!isArbitraryDataSigningEnabled) {
-          this.connectLedger()
-        }
+        await this.signingService.prepareForSigningRequest()
+
         this.store.dispatch(
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
@@ -1260,6 +1251,11 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
+        // Don't await, as the below enrichment is expected to take longer than
+        // signer prep. If that assumption breaks, we should probably await the
+        // two in parallel.
+        this.signingService.prepareForSigningRequest()
+
         const enrichedsignTypedDataRequest =
           await this.enrichmentService.enrichSignTypedDataRequest(payload)
         this.store.dispatch(typedDataRequest(enrichedsignTypedDataRequest))
@@ -1313,6 +1309,8 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
+        await this.signingService.prepareForSigningRequest()
+
         this.chainService.pollBlockPricesForNetwork(
           payload.account.network.chainID
         )
@@ -1650,9 +1648,12 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("initAbilities", (address) => {
       this.store.dispatch(initAbilities(address))
     })
-    this.abilitiesService.emitter.on("newAbilities", (newAbilities) => {
-      this.store.dispatch(addAbilities(newAbilities))
-    })
+    this.abilitiesService.emitter.on(
+      "updatedAbilities",
+      ({ address, abilities }) => {
+        this.store.dispatch(setAbilitiesForAddress({ address, abilities }))
+      }
+    )
     this.abilitiesService.emitter.on("deleteAbilities", (address) => {
       this.store.dispatch(deleteAbilitiesForAccount(address))
     })
