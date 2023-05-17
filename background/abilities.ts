@@ -30,7 +30,6 @@ export const ABILITY_TYPES_ENABLED = [
 // https://docs.daylight.xyz/reference/ability-model#ability-types
 export const ABILITY_TYPES = [
   ...ABILITY_TYPES_ENABLED,
-  "product",
   "event",
   "article",
   "result",
@@ -53,6 +52,12 @@ export type Ability = {
   removedFromUi: boolean
   address: NormalizedEVMAddress
   requirement: AbilityRequirement
+  /**
+   * Order number from the most interesting to the user.
+   * A lower number indicates a more interesting ability.
+   * Rank is determined by the order in which data arrives from the Daylight API.
+   */
+  interestRank: number
 }
 
 export const ABILITY_TYPE_COLOR = {
@@ -61,7 +66,6 @@ export const ABILITY_TYPE_COLOR = {
   vote: "#E3C10B",
   result: "#E3C10B",
   access: "#02C0EA",
-  product: "#D824DC",
   event: "#FF8A1E",
   article: "#B2B2B2",
   misc: "#CBCBCB",

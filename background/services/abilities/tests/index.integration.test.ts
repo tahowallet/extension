@@ -7,8 +7,23 @@ import {
 } from "../../../tests/factories"
 import ChainService from "../../chain"
 import * as daylight from "../../../lib/daylight"
+import { DaylightAbility } from "../../../lib/daylight"
+import { Ability } from "../../../abilities"
+import { AbilitiesDatabase } from "../db"
+import { normalizeEVMAddress } from "../../../lib/utils"
 
-const TEST_ADDRESS = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
+const address = normalizeEVMAddress(
+  "0x208e94d5661a73360d9387d3ca169e5c130090cd"
+)
+
+const sortAbilities = (abilities: Ability[]) =>
+  abilities.sort(
+    (ability1, ability2) => ability1.interestRank - ability2.interestRank
+  )
+
+type AbilitiesServiceExternalized = Omit<AbilitiesService, "db"> & {
+  db: AbilitiesDatabase
+}
 
 describe("AbilitiesService", () => {
   const sandbox = sinon.createSandbox()
@@ -63,79 +78,204 @@ describe("AbilitiesService", () => {
   })
 
   describe("pollForAbilities", () => {
+    let daylightAbilities: DaylightAbility[]
+
     beforeEach(async () => {
       jest.spyOn(abilitiesService.emitter, "emit")
+
+      // Default state for abilities from Daylight API
+      daylightAbilities = [
+        createDaylightAbility(),
+        createDaylightAbility(),
+        createDaylightAbility(),
+      ]
     })
 
     afterEach(async () => {
       jest.clearAllMocks()
     })
 
-    it("should not emit newAbilities if there are no new abilities", async () => {
-      const stub = sandbox
-        .stub(daylight, "getDaylightAbilities")
-        .callsFake(async () => [])
-
-      await abilitiesService.pollForAbilities(TEST_ADDRESS)
-      expect(stub.called).toBe(true)
-      expect(abilitiesService.emitter.emit).toBeCalledTimes(0)
-    })
-
-    it("should emit newAbilities if there is a new ability", async () => {
-      const daylightAbilities = [createDaylightAbility()]
-      const stubAddNewAbility = sandbox
-        // eslint-disable-next-line @typescript-eslint/dot-notation
-        .stub(abilitiesService["db"], "addNewAbility")
-        .callsFake(async () => true)
+    it("should emit updatedAbilities if there are new abilities", async () => {
       const stubGetAbilities = sandbox
         .stub(daylight, "getDaylightAbilities")
         .callsFake(async () => daylightAbilities)
 
-      await abilitiesService.pollForAbilities(TEST_ADDRESS)
+      await abilitiesService.pollForAbilities(address)
 
-      const normalizedAbilities = normalizeDaylightAbilities(
-        daylightAbilities,
-        TEST_ADDRESS
-      )
+      // Normalized abilities that should be returned for redux status updates
+      const abilities = normalizeDaylightAbilities(daylightAbilities, address)
 
       expect(stubGetAbilities.called).toBe(true)
-      expect(stubAddNewAbility.called).toBe(true)
       expect(abilitiesService.emitter.emit).toBeCalledTimes(1)
-      expect(abilitiesService.emitter.emit).toBeCalledWith(
-        "newAbilities",
-        normalizedAbilities
-      )
+      expect(abilitiesService.emitter.emit).toBeCalledWith("updatedAbilities", {
+        address,
+        abilities,
+      })
     })
 
-    it("should emit newAbilities when only one ability is new", async () => {
-      const slug = "new-test-daylight"
-      const daylightAbilities = [
-        createDaylightAbility(),
-        createDaylightAbility({ slug }),
+    it("should emit updatedAbilities with updated abilities without the ability which has been removed", async () => {
+      // Update abilities from Daylight API, last ability has been removed from API
+      const updatedDaylightAbilities = [
+        daylightAbilities[0],
+        daylightAbilities[1],
       ]
-      const stubAddNewAbility = sandbox
-        // eslint-disable-next-line @typescript-eslint/dot-notation
-        .stub(abilitiesService["db"], "addNewAbility")
-        .callsFake(async (ability) => {
-          return ability.slug === slug
-        })
+      const stubGetAbilities = sandbox
+        .stub(daylight, "getDaylightAbilities")
+        .onCall(0)
+        .callsFake(async () => daylightAbilities)
+        .onCall(1)
+        .callsFake(async () => updatedDaylightAbilities)
+
+      await abilitiesService.pollForAbilities(address)
+      await abilitiesService.pollForAbilities(address)
+
+      // Normalized abilities that should be returned for redux status updates
+      // We use the updated state because it should be the same in the cache
+      const abilities = normalizeDaylightAbilities(
+        updatedDaylightAbilities,
+        address
+      )
+
+      expect(stubGetAbilities.called).toBe(true)
+      expect(abilitiesService.emitter.emit).toBeCalledTimes(2)
+      expect(abilitiesService.emitter.emit).toHaveBeenNthCalledWith(
+        2,
+        "updatedAbilities",
+        {
+          address,
+          abilities,
+        }
+      )
+    })
+
+    it("should emit updatedAbilities with updated ability if it has been completed", async () => {
+      // Update abilities from Daylight API, the second ability has been marked as completed by Daylight
+      const updatedDaylightAbilities = [...daylightAbilities]
+      daylightAbilities[1].walletCompleted = true
+      const stubGetAbilities = sandbox
+        .stub(daylight, "getDaylightAbilities")
+        .onCall(0)
+        .callsFake(async () => daylightAbilities)
+        .onCall(1)
+        .callsFake(async () => updatedDaylightAbilities)
+
+      await abilitiesService.pollForAbilities(address)
+      await abilitiesService.pollForAbilities(address)
+
+      // Normalized abilities that should be returned for redux status updates
+      // We use the updated state because it should be the same in the cache
+      const abilities = normalizeDaylightAbilities(
+        updatedDaylightAbilities,
+        address
+      )
+
+      expect(stubGetAbilities.called).toBe(true)
+      expect(abilitiesService.emitter.emit).toBeCalledTimes(2)
+      expect(abilitiesService.emitter.emit).toHaveBeenNthCalledWith(
+        2,
+        "updatedAbilities",
+        {
+          address,
+          abilities,
+        }
+      )
+    })
+
+    it("should emit updatedAbilities with not updated ability if it has been completed by the user", async () => {
+      const abilitiesServiceExternalized =
+        abilitiesService as unknown as AbilitiesServiceExternalized
       const stubGetAbilities = sandbox
         .stub(daylight, "getDaylightAbilities")
         .callsFake(async () => daylightAbilities)
 
-      await abilitiesService.pollForAbilities(TEST_ADDRESS)
+      await abilitiesServiceExternalized.pollForAbilities(address)
+      // Mark second ability as completed
+      await abilitiesServiceExternalized.db.markAsCompleted(
+        address,
+        daylightAbilities[1].uid
+      )
+      await abilitiesServiceExternalized.pollForAbilities(address)
 
-      const normalizedAbilities = normalizeDaylightAbilities(
-        daylightAbilities,
-        TEST_ADDRESS
+      // Normalized abilities that should be returned for redux status updates
+      const abilities = normalizeDaylightAbilities(daylightAbilities, address)
+      // Update state for the completed ability
+      abilities[1].completed = true
+
+      expect(stubGetAbilities.called).toBe(true)
+      expect(abilitiesServiceExternalized.emitter.emit).toBeCalledTimes(2)
+      expect(abilitiesServiceExternalized.emitter.emit).toHaveBeenNthCalledWith(
+        2,
+        "updatedAbilities",
+        {
+          address,
+          abilities,
+        }
+      )
+    })
+
+    it("should emit updatedAbilities with not updated ability if it has been removed by the user", async () => {
+      const abilitiesServiceExternalized =
+        abilitiesService as unknown as AbilitiesServiceExternalized
+      const stubGetAbilities = sandbox
+        .stub(daylight, "getDaylightAbilities")
+        .callsFake(async () => daylightAbilities)
+
+      await abilitiesServiceExternalized.pollForAbilities(address)
+      // Mark second ability as removed
+      await abilitiesServiceExternalized.db.markAsRemoved(
+        address,
+        daylightAbilities[1].uid
+      )
+      await abilitiesServiceExternalized.pollForAbilities(address)
+
+      // Normalized abilities that should be returned for redux status updates
+      const abilities = normalizeDaylightAbilities(daylightAbilities, address)
+      // Update state for the removed ability
+      abilities[1].removedFromUi = true
+
+      expect(stubGetAbilities.called).toBe(true)
+      expect(abilitiesServiceExternalized.emitter.emit).toBeCalledTimes(2)
+      expect(abilitiesServiceExternalized.emitter.emit).toHaveBeenNthCalledWith(
+        2,
+        "updatedAbilities",
+        {
+          address,
+          abilities,
+        }
+      )
+    })
+
+    it("should emit updatedAbilities with changed order of abilities", async () => {
+      // Update abilities from Daylight API, shuffle abilities
+      const updatedDaylightAbilities = [
+        ...daylightAbilities.slice(-1),
+        ...daylightAbilities.slice(0, -1),
+      ]
+      const stubGetAbilities = sandbox
+        .stub(daylight, "getDaylightAbilities")
+        .onCall(0)
+        .callsFake(async () => daylightAbilities)
+        .onCall(1)
+        .callsFake(async () => updatedDaylightAbilities)
+
+      await abilitiesService.pollForAbilities(address)
+      await abilitiesService.pollForAbilities(address)
+
+      // Normalized abilities that should be returned for redux status updates
+      const abilities = sortAbilities(
+        normalizeDaylightAbilities(updatedDaylightAbilities, address)
       )
 
       expect(stubGetAbilities.called).toBe(true)
-      expect(stubAddNewAbility.called).toBe(true)
-      expect(abilitiesService.emitter.emit).toBeCalledTimes(1)
-      expect(abilitiesService.emitter.emit).toBeCalledWith("newAbilities", [
-        normalizedAbilities[1],
-      ])
+      expect(abilitiesService.emitter.emit).toBeCalledTimes(2)
+      expect(abilitiesService.emitter.emit).toHaveBeenNthCalledWith(
+        2,
+        "updatedAbilities",
+        {
+          address,
+          abilities,
+        }
+      )
     })
   })
 })
