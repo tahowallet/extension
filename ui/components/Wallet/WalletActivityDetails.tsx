@@ -150,8 +150,6 @@ export default function WalletActivityDetails(
 
   const activityViewDetails = useActivityViewDetails(activityItem, address)
 
-  if (!activityItem) return <></>
-
   return (
     <div className="wrap standard_width center_horizontal">
       <div className="header">
