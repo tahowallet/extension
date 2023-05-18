@@ -43,10 +43,16 @@ export default function useActivityViewDetails(
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet.activities",
   })
-  let details
+  const baseDetails = {
+    recipient: activity.recipient,
+    assetLogoURL: activity.assetLogoUrl,
+    assetSymbol: activity.assetSymbol,
+    assetValue: activity.value,
+  }
   switch (activity.type) {
     case "asset-transfer":
-      details = {
+      return {
+        ...baseDetails,
         label: isReceiveActivity(activity, activityInitiatorAddress)
           ? t("tokenReceived")
           : t("tokenSent"),
@@ -54,9 +60,9 @@ export default function useActivityViewDetails(
           ? "asset-transfer-receive"
           : "asset-transfer-send",
       }
-      break
     case "asset-approval":
-      details = {
+      return {
+        ...baseDetails,
         label: t("tokenApproved"),
         icon: "asset-approval",
         assetValue:
@@ -64,26 +70,19 @@ export default function useActivityViewDetails(
             ? t("infiniteApproval")
             : activity.value,
       }
-      break
     case "asset-swap":
-      details = {
+      return {
+        ...baseDetails,
         icon: "asset-swap",
         label: t("tokenSwapped"),
       }
-      break
     case "contract-deployment":
     case "contract-interaction":
     default:
-      details = {
+      return {
+        ...baseDetails,
         icon: "contract-interaction",
         label: t("contractInteraction"),
       }
   }
-  return {
-    recipient: activity.recipient,
-    assetLogoURL: activity.assetLogoUrl,
-    assetSymbol: activity.assetSymbol,
-    assetValue: activity.value,
-    ...details,
-  } as ActivityViewDetails
 }
