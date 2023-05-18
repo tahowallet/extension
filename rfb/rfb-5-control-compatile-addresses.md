@@ -75,11 +75,15 @@ and correspond to the same user on multiple networks or not.
 
 #### Control Compatibility
 
-To allow the above, we can introduce the concept of a _control-compatible
-address_. This is an address that is known to be controllable by the same
-person across multiple networks. A given address is control-compatible across
-more than one network when the wallet knows for certain that the same user
-can control the address across those networks.
+To allow the above, we can introduce two concepts for any given pair of networks:
+
+- Two networks are _transaction-compatible_ for a given hardware wallet if sign
+  a transaction for both networks from the same key material without requiring
+  any on-wallet manipulation[^2].
+- An _address_ is considered _control-compatible_ across the pair of networks
+  if it is known to be controllable by the same mechanism across those
+  networks; that is, when the wallet knows for certain that the same user can
+  sign for that address across both networks.
 
 These are the cases where the wallet should assume an address is
 control-compatible across 2 networks:
@@ -88,12 +92,31 @@ control-compatible across 2 networks:
   derived from an internal keyring).
 - The address was derived from a hardware wallet that controls private key
   material for the address AND the networks are transaction-compatible[^2].
-- The 2 networks have the same address format (e.g. an address cannot be
-  control-compatible between Ethereum and Bitcoin, since the address formats
-  are different).
 - The address has been resolved via a name service lookup on both networks and
   the owner of the records is the same on both networks. [^3] This can change
   over time, so if the wallet leverages these
+
+In addition to these 3 possible paths, the 2 networks must have the same
+address format; e.g., an address cannot be control-compatible between Ethereum
+and Bitcoin, since the address formats are different).
+
+This table visualizes when an Ethereum address might be control-compatible with
+another network:
+
+| Source             | Network | Control-compatible? | Reason                 |
+| ------------------ | ------- | ------------------- | ---------------------- |
+| New `HDKeyring`    | Polygon | Yes                 | Private key in wallet  |
+| New `HDKeyring`    | RSK     | Yes                 | Private key in wallet  |
+| New `HDKeyring`    | BTC     | No                  | Address format[^4]     |
+| Private key import | Polygon | Yes                 | Private key in wallet  |
+| Private key import | RSK     | Yes                 | Private key in wallet  |
+| Private key import | BTC     | No                  | Address format         |
+| Ledger walllet     | Polygon | Yes                 | Transaction-compatible |
+| Ledger walllet     | RSK     | No                  | Tx compatiblity        |
+| Ledger walllet     | BTC     | No                  | Address format         |
+| Trezor walllet     | Polygon | Yes                 | Transaction-compatible |
+| Trezor walllet     | RSK     | No                  | Tx compatiblity        |
+| Trezor walllet     | BTC     | No                  | Address format         |
 
 [^2]:
     Hardware wallets can in some cases distinguish by which app can operate
@@ -105,9 +128,13 @@ control-compatible across 2 networks:
     distinctions at the Ledger level).
 
 [^3]:
-    Currently, the name services does not externalize ownership information
-    for a resolved name/address, so functionality would need to be expanded to
+    Currently, the name service does not externalize ownership information for
+    a resolved name/address, so functionality would need to be expanded to
     support this use case.
+
+[^4]:
+    This means the same address, i.e. the address corresponding to a given
+    private key, is represented differently on this network than on Ethereum.
 
 ### Implementation
 
