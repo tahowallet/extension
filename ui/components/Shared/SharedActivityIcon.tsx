@@ -21,7 +21,7 @@ export default function SharedActivityIcon({
           width: ${size}px;
           height: ${size}px;
           margin-right: 4px;
-          margin-left: 9px;
+          margin-left: 4px;
         }
         .asset-transfer-receive {
           background: url("./images/activity_receive@2x.png");

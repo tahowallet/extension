@@ -216,7 +216,7 @@ export default function WalletActivityDetails(
           }
           .header_title {
             margin-left: 4px;
-            margin-right: 14px;
+            margin-right: 8px;
             font-family: "Segment";
             font-style: normal;
             font-weight: 600;
