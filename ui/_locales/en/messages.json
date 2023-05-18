@@ -699,6 +699,10 @@
       "nonContractAsset": "Attempting to approve transfer of a non-contract asset."
     },
     "reviewSwap": "Review swap",
+    "transaction": {
+      "header": "Swap assets",
+      "balanceChange": "Balance change"
+    },
     "transactionSettings": {
       "title": "Transaction settings",
       "slippageTolerance": "Slippage tolerance",

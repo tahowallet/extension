@@ -6,6 +6,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { updateTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import type {
+  AssetSwap,
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionRequest,
   EnrichedLegacyTransactionRequest,
@@ -23,6 +24,7 @@ import FeeSettingsButton from "../NetworkFees/FeeSettingsButton"
 import NetworkSettingsChooser from "../NetworkFees/NetworkSettingsChooser"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import SignTransactionDetailWarning from "./SignTransactionDetailWarning"
+import SwapAssetDetails from "../Signing/SignatureDetails/TransactionSignatureDetails/TransactionSignatureSummary/SwapAssetDetails"
 
 export type PanelState = {
   dismissedWarnings: string[]
@@ -90,6 +92,10 @@ export default function SignTransactionDetailPanel({
   const isContractAddress =
     transactionDetails.annotation?.warnings?.includes("send-to-contract")
 
+  const isSwapTransaction =
+    transactionDetails.annotation &&
+    transactionDetails?.annotation?.type === "asset-swap"
+
   const networkSettingsSaved = () => {
     setUpdateNum(updateNum + 1)
 
@@ -139,9 +145,17 @@ export default function SignTransactionDetailPanel({
           </span>
         )}
       <span className="detail_item">
-        {t("networkFees.estimatedNetworkFee")}
+        <div className="detail_label">
+          {t("networkFees.estimatedNetworkFee")}
+        </div>
         <FeeSettingsButton onClick={() => setNetworkSettingsModalOpen(true)} />
       </span>
+      {isSwapTransaction && transactionDetails.annotation && (
+        <SwapAssetDetails
+          transactionRequest={transactionDetails}
+          annotation={transactionDetails.annotation as AssetSwap} // TODO: add a type guard
+        />
+      )}
       <span
         className={classNames("detail_item warning", {
           visible: hasInsufficientFundsWarning,
@@ -178,6 +192,12 @@ export default function SignTransactionDetailPanel({
           .detail_item_right {
             color: var(--green-20);
             font-size: 16px;
+          }
+          .detail_label {
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 16px;
+            letter-spacing: 0.03em;
           }
           .warning {
             width: 100%;
