@@ -1,5 +1,5 @@
 import { fetchJson } from "@ethersproject/web"
-import { AbilityType } from "../abilities"
+import { ABILITY_TYPES, AbilityType } from "../abilities"
 import logger from "./logger"
 
 const DAYLIGHT_BASE_URL = "https://api.daylight.xyz/v1"
@@ -83,7 +83,6 @@ type SpamReportResponse = {
 export const getDaylightAbilities = async (
   address: string,
   // Amount of times to retry fetching abilities for an address that is not fully synced yet.
-  // https://docs.daylight.xyz/reference/retrieve-wallets-abilities
   retries = DEFAULT_RETRIES
 ): Promise<DaylightAbility[]> => {
   // Learn more at https://docs.daylight.xyz/reference/get_v1-wallets-address-abilities
@@ -95,8 +94,10 @@ export const getDaylightAbilities = async (
   requestURL.searchParams.set("sortDirection", "desc")
   // The limit needs to be set. It is set to the highest value.
   requestURL.searchParams.set("limit", "1000")
-  requestURL.searchParams.set("deadline", "all")
-  requestURL.searchParams.set("showCompleted", "true")
+  requestURL.searchParams.append("showOnly", "open")
+  requestURL.searchParams.append("showOnly", "completed")
+  requestURL.searchParams.append("showOnly", "expired")
+  ABILITY_TYPES.forEach((type) => requestURL.searchParams.append("type", type))
   requestURL.searchParams.set("markAsShown", "true")
 
   try {
