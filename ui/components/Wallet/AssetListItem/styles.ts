@@ -27,6 +27,8 @@ export default `
     display: flex;
     justify-content: flex-end;
     align-items: center;
+  }
+  .asset_right .margin {
     margin-right: 16px;
   }
   .asset_amount {
@@ -50,5 +52,17 @@ export default `
     font-weight: 600;
     line-height: 24px;
     margin-right: 4px;
+  }
+  .verify_asset {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    font-family: "Segment";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--attention);
   }
 `

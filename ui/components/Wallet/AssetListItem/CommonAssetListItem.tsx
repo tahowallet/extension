@@ -11,6 +11,7 @@ import {
   SmartContractFungibleAsset,
   SwappableAsset,
 } from "@tallyho/tally-background/assets"
+import classNames from "classnames"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
@@ -18,6 +19,7 @@ import SharedIconRouterLink from "../../Shared/SharedIconRouterLink"
 import { useBackgroundSelector } from "../../../hooks"
 import { trimWithEllipsis } from "../../../utils/textUtils"
 import SharedTooltip from "../../Shared/SharedTooltip"
+import SharedIcon from "../../Shared/SharedIcon"
 
 type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount<SwappableAsset>
@@ -59,6 +61,16 @@ export default function CommonAssetListItem(
     !assetHasTrustStatus
 
   const assetIsUntrusted = isUntrustedAsset(assetAmount.asset)
+
+  const handleVerifyAsset = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    if (
+      isSmartContractFungibleAsset(assetAmount.asset) &&
+      onUntrustedAssetWarningClick
+    ) {
+      onUntrustedAssetWarningClick(assetAmount.asset)
+    }
+  }
 
   return (
     <Link
@@ -102,69 +114,71 @@ export default function CommonAssetListItem(
             }
           </div>
         </div>
-        <div className="asset_right">
+        <div
+          className={classNames("asset_right", { margin: !isUnverifiedAsset })}
+        >
           <>
-            {isUnverifiedAsset && (
+            {isUnverifiedAsset ? (
               <button
                 type="button"
-                onClick={(event) => {
-                  event.preventDefault()
-                  if (
-                    isSmartContractFungibleAsset(assetAmount.asset) &&
-                    onUntrustedAssetWarningClick
-                  ) {
-                    onUntrustedAssetWarningClick(assetAmount.asset)
-                  }
-                }}
-                className="untrusted_asset_icon"
+                className="verify_asset"
+                onClick={(event) => handleVerifyAsset(event)}
               >
-                {t("trustedAssets.notTrusted")}
+                {t("trustedAssets.verifyAsset")}
+                <SharedIcon
+                  icon="icons/m/notif-attention.svg"
+                  width={22}
+                  color="var(--attention)"
+                />
               </button>
-            )}
-            <SharedIconRouterLink
-              path="/send"
-              state={assetAmount.asset}
-              disabled={assetIsUntrusted}
-              iconClass="asset_icon_send"
-            />
-            {NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID) ? (
-              <SharedIconRouterLink
-                path="/swap"
-                disabled={assetIsUntrusted}
-                state={{
-                  symbol: assetAmount.asset.symbol,
-                  contractAddress,
-                }}
-                iconClass="asset_icon_swap"
-              />
             ) : (
-              <SharedTooltip
-                type="dark"
-                width={180}
-                height={48}
-                horizontalPosition="left"
-                verticalPosition="bottom"
-                horizontalShift={42}
-                verticalShift={16}
-                IconComponent={() => (
-                  <div className="button_wrap">
-                    <SharedIconRouterLink
-                      path="/swap"
-                      disabled
-                      state={{
-                        symbol: assetAmount.asset.symbol,
-                        contractAddress,
-                      }}
-                      iconClass="asset_icon_swap"
-                    />
-                  </div>
+              <>
+                <SharedIconRouterLink
+                  path="/send"
+                  state={assetAmount.asset}
+                  disabled={assetIsUntrusted}
+                  iconClass="asset_icon_send"
+                />
+                {NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID) ? (
+                  <SharedIconRouterLink
+                    path="/swap"
+                    disabled={assetIsUntrusted}
+                    state={{
+                      symbol: assetAmount.asset.symbol,
+                      contractAddress,
+                    }}
+                    iconClass="asset_icon_swap"
+                  />
+                ) : (
+                  <SharedTooltip
+                    type="dark"
+                    width={180}
+                    height={48}
+                    horizontalPosition="left"
+                    verticalPosition="bottom"
+                    horizontalShift={42}
+                    verticalShift={16}
+                    IconComponent={() => (
+                      <div className="button_wrap">
+                        <SharedIconRouterLink
+                          path="/swap"
+                          disabled
+                          state={{
+                            symbol: assetAmount.asset.symbol,
+                            contractAddress,
+                          }}
+                          iconClass="asset_icon_swap"
+                        />
+                      </div>
+                    )}
+                  >
+                    <div className="centered_tooltip">
+                      <div>{t("swapDisabledOne")}</div>
+                      <div>{t("swapDisabledTwo")}</div>
+                    </div>
+                  </SharedTooltip>
                 )}
-              >
-                <div className="centered_tooltip">
-                  <div>{t("swapDisabledOne")}</div>
-                  <div>{t("swapDisabledTwo")}</div>
-                </div>
-              </SharedTooltip>
+              </>
             )}
           </>
         </div>

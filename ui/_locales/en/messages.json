@@ -580,6 +580,12 @@
         "description": "You can also add a custom RPC, this can be a bit risky as you might add a malicious RPC without knowing, that could result in loss of funds.",
         "addBtn": "Add custom RPC (Advanced)"
       }
+    },
+    "untrustedAssets": {
+      "tooltip": {
+        "firstPart": "Discover assets that you own but are not on our asset list. Some spam/scam assets will show up, so thread carefully.",
+        "secondPart": "These will show up in the bottom of asset page until you verify them."
+      }
     }
   },
   "send": {
@@ -771,18 +777,20 @@
       "addCustomAssetAction": "add custom asset"
     },
     "trustedAssets": {
-      "notTrusted": "Asset isn't trusted",
-      "notVerified": "Asset has not been verified yet!",
-      "trustExplainer": "Only transact with assets you trust.",
-      "assetImported": "Asset imported from transaction history",
-      "name": "Name",
+      "verifyAsset": "Verify asset",
+      "assetImported": "Asset automatically imported",
+      "symbol": "Symbol",
       "contract": "Contract address",
-      "discoveryTx": "Added from transaction:",
+      "discoveryTx": "Added from transaction",
       "copiedTx": "Transaction copied to clipboard",
       "close": "Close",
       "hideAsset": "Hide asset",
       "keepHidden": "Keep hidden",
-      "trustAsset": "Trust asset"
+      "trustAsset": "Trust asset",
+      "banner": {
+        "title": "Assets not verified",
+        "description": "Be aware of scam and spam assets, only verify assets you trust."
+      }
     },
     "banner": {
       "bannerTitle": "New Odyssey week!",
@@ -814,8 +822,8 @@
       "activity": "Activity"
     },
     "stateOfHiddenAssets1": "Hide",
-    "stateOfHiddenAssets2": "Show",
-    "hiddenAssets": "{{stateOfHiddenAssets}} hidden assets ({{amount}})",
+    "stateOfHiddenAssets2": "See",
+    "hiddenAssets": "{{stateOfHiddenAssets}} unverified assets ({{amount}})",
     "defaultToggle": {
       "snackbar": "You can change this in Settings later",
       "isDefault": "is now your default wallet",

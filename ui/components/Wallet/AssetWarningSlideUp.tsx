@@ -1,5 +1,3 @@
-// @ts-check
-
 import React, { ReactElement } from "react"
 import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
 import { useTranslation } from "react-i18next"
@@ -16,34 +14,7 @@ import SharedBanner from "../Shared/SharedBanner"
 import SharedButton from "../Shared/SharedButton"
 import SharedAddress from "../Shared/SharedAddress"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-
-type TitledSlideUpProps = Parameters<typeof SharedSlideUpMenu>[0] & {
-  title: string
-}
-
-function TitledSlideUpMenu(props: TitledSlideUpProps): ReactElement {
-  const { title, children, ...others } = props
-  return (
-    // eslint-disable-next-line react/jsx-props-no-spreading
-    <SharedSlideUpMenu {...others}>
-      <span className="title">
-        <strong>{title}</strong>
-      </span>
-      {children}
-      <style jsx global>{`
-        div.slide_up_menu {
-          padding-top: 20px !important;
-        }
-        button.icon {
-          margin-top: 4px;
-        }
-        .title {
-          margin-left: 24px;
-        }
-      `}</style>
-    </SharedSlideUpMenu>
-  )
-}
+import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
 
 type AssetWarningSlideUpProps = {
   asset: SmartContractFungibleAsset
@@ -70,156 +41,155 @@ export default function AssetWarningSlideUp(
 
   const isUntrusted = isUntrustedAsset(asset)
 
+  const address =
+    asset && "contractAddress" in asset && asset.contractAddress
+      ? asset.contractAddress
+      : ""
+
+  const discoveryTx = asset.metadata?.discoveryTx
+
+  const handleCopyDiscoveryTx = (tx: string) => {
+    navigator.clipboard.writeText(tx)
+    dispatch(setSnackbarMessage(t("copiedTx")))
+  }
+
   return (
-    <TitledSlideUpMenu
+    <SharedSlideUpMenu
       isOpen={asset !== null}
       size="custom"
-      customSize="290"
-      title={t("assetImported")}
+      customSize="350"
       close={close}
     >
-      <style jsx global>{`
-        .banner_wrap {
-          margin-left: 16px !important;
-          margin-top: 10px !important;
-          margin-bottom: 14px;
-        }
-
-        #close_asset_warning {
-          margin-left: 24px;
-          margin-top: 34px;
-        }
-      `}</style>
+      <SharedSlideUpMenuPanel header={t("assetImported")}>
+        <div className="content">
+          <div>
+            <SharedBanner icon="notif-attention" iconColor="var(--attention)">
+              <div className="banner">
+                <span className="warning_text">{t("banner.title")}</span>
+                <span className="simple_text">{t("banner.description")}</span>
+              </div>
+            </SharedBanner>
+            <ul className="asset_details">
+              <li className="asset_symbol">
+                <div className="left">{t("symbol")}</div>
+                <div className="right ellipsis">{`${asset?.symbol}`}</div>
+              </li>
+              <li>
+                <div className="left">{t("contract")}</div>
+                <div className="right">
+                  <SharedAddress address={address} />
+                </div>
+              </li>
+              {discoveryTx && (
+                <li>
+                  <div className="left">{t("discoveryTx")}</div>
+                  <div className="right">
+                    <button
+                      className="discovery_tx"
+                      type="button"
+                      onClick={() => handleCopyDiscoveryTx(discoveryTx)}
+                      title={discoveryTx}
+                    >
+                      {truncateAddress(discoveryTx)}
+                    </button>
+                  </div>
+                </li>
+              )}
+            </ul>
+          </div>
+          <div>
+            {isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST) ? (
+              <div className="asset_trust_actions">
+                {showUntrusted ? (
+                  <SharedButton size="medium" type="secondary" onClick={close}>
+                    {t("close")}
+                  </SharedButton>
+                ) : (
+                  <SharedButton
+                    size="medium"
+                    type="secondary"
+                    onClick={() => {
+                      if (isUntrusted) {
+                        close()
+                      } else {
+                        setAssetTrustStatus(false)
+                      }
+                    }}
+                  >
+                    {isUntrusted ? t("keepHidden") : t("hideAsset")}
+                  </SharedButton>
+                )}
+                <SharedButton
+                  size="medium"
+                  type="primary"
+                  onClick={() => setAssetTrustStatus(true)}
+                >
+                  {t("trustAsset")}
+                </SharedButton>
+              </div>
+            ) : (
+              <SharedButton
+                size="medium"
+                type="secondary"
+                id="close_asset_warning"
+                onClick={close}
+              >
+                {t("close")}
+              </SharedButton>
+            )}
+          </div>
+        </div>
+      </SharedSlideUpMenuPanel>
       <style jsx>{`
+        .banner {
+          display: flex;
+          flex-direction: column;
+          width: 84%;
+        }
         .warning_text {
           font-size: 16px;
           line-height: 24px;
           font-weight: 500;
           color: var(--attention);
         }
+        .content {
+          padding: 0 16px 16px 16px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          height: 271px;
+        }
         ul.asset_details {
-          margin-bottom: 30px;
+          display: block;
+          margin-top: 16px;
+
+          font-family: "Segment";
+          font-style: normal;
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
         }
         ul.asset_details > li {
-          margin-left: 24px;
-          margin-right: 24px;
           display: flex;
           justify-content: space-between;
-          height: 24px;
           align-items: center;
         }
-        .right {
-          float: right;
-          display: flex;
-          align-items: flex-end;
+        .left {
           color: var(--green-20);
         }
-        ul.asset_details > li.asset_name > div {
-          max-width: 80%;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          -o-text-overflow: ellipsis;
+        .right {
+          color: var(--green-5);
+          width: 60%;
+          text-align: right;
         }
-
         .asset_trust_actions {
           display: flex;
           justify-content: space-between;
-          margin: 0 24px;
-          margin-top: ${asset.metadata?.discoveryTx ? 28 : 51}px;
         }
-
-        .left {
-          color: var(--green-40);
-        }
-
         .discovery_tx:hover {
           color: var(--trophy-gold);
         }
       `}</style>
-      <SharedBanner icon="notif-attention" iconColor="var(--attention)">
-        <span className="warning_text">{t("notVerified")}</span>
-        <br />
-        <span>{t("trustExplainer")}</span>
-      </SharedBanner>
-      <ul className="asset_details">
-        <li className="asset_name">
-          <div className="left">{t("name")}</div>
-          <div className="right">
-            <strong>{`${asset?.name} (${asset?.symbol})`}</strong>
-          </div>
-        </li>
-        <li>
-          <div className="left">{t("contract")}</div>
-          <div className="right">
-            <SharedAddress
-              address={
-                asset && "contractAddress" in asset && asset.contractAddress
-                  ? asset.contractAddress
-                  : ""
-              }
-            />
-          </div>
-        </li>
-        {asset.metadata?.discoveryTx && (
-          <li>
-            <div className="left">{t("discoveryTx")}</div>
-            <div className="right">
-              <button
-                className="discovery_tx"
-                type="button"
-                onClick={() => {
-                  const tx = asset.metadata?.discoveryTx || ""
-                  navigator.clipboard.writeText(tx)
-                  dispatch(setSnackbarMessage(t("copiedTx")))
-                }}
-                title={asset.metadata.discoveryTx}
-              >
-                {truncateAddress(asset.metadata.discoveryTx)}
-              </button>
-            </div>
-          </li>
-        )}
-      </ul>
-      {isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST) ? (
-        <div className="asset_trust_actions">
-          {showUntrusted ? (
-            <SharedButton size="medium" type="secondary" onClick={close}>
-              {t("close")}
-            </SharedButton>
-          ) : (
-            <SharedButton
-              size="medium"
-              type="secondary"
-              onClick={() => {
-                if (isUntrusted) {
-                  close()
-                } else {
-                  setAssetTrustStatus(false)
-                }
-              }}
-            >
-              {isUntrusted ? t("keepHidden") : t("hideAsset")}
-            </SharedButton>
-          )}
-          <SharedButton
-            size="medium"
-            type="primary"
-            onClick={() => setAssetTrustStatus(true)}
-          >
-            {t("trustAsset")}
-          </SharedButton>
-        </div>
-      ) : (
-        <SharedButton
-          size="medium"
-          type="secondary"
-          id="close_asset_warning"
-          onClick={close}
-        >
-          {t("close")}
-        </SharedButton>
-      )}
-    </TitledSlideUpMenu>
+    </SharedSlideUpMenu>
   )
 }

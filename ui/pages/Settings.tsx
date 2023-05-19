@@ -23,6 +23,7 @@ import { getLanguage, setLanguage } from "../_locales/i18n"
 import SettingButton from "./Settings/SettingButton"
 import { useBackgroundSelector } from "../hooks"
 import SharedIcon from "../components/Shared/SharedIcon"
+import SharedTooltip from "../components/Shared/SharedTooltip"
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
 const FAQ_URL =
@@ -107,8 +108,7 @@ function SettingRow(props: {
             display: flex;
             justify-content: space-between;
             align-items: center;
-          }
-          .left {
+
             color: var(--green-20);
             font-size: 18px;
             font-weight: 600;
@@ -163,12 +163,41 @@ export default function Settings(): ReactElement {
   }
 
   const showUntrustedAssets = {
-    title: t("settings.showUntrustedAssets"),
+    title: "",
     component: () => (
-      <SharedToggleButton
-        onChange={(toggleValue) => toggleShowUntrustedAssets(toggleValue)}
-        value={showUntrusted}
-      />
+      <div className="content">
+        <div className="left">
+          {t("settings.showUntrustedAssets")}
+          <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
+            <div className="tooltip">
+              <span>{t("settings.untrustedAssets.tooltip.firstPart")}</span>
+              <span>{t("settings.untrustedAssets.tooltip.secondPart")}</span>
+            </div>
+          </SharedTooltip>
+        </div>
+        <SharedToggleButton
+          onChange={(toggleValue) => toggleShowUntrustedAssets(toggleValue)}
+          value={showUntrusted}
+        />
+        <style jsx>
+          {`
+            .content {
+              display: flex;
+              justify-content: space-between;
+              width: 336px;
+            }
+            .left {
+              display: flex;
+              align-items: center;
+            }
+            .tooltip {
+              display: flex;
+              flex-direction: column;
+              gap: 16px;
+            }
+          `}
+        </style>
+      </div>
     ),
   }
 

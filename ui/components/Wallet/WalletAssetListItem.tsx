@@ -69,16 +69,6 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           .asset_icon_swap {
             mask-image: url("./images/swap_asset.svg");
           }
-          .untrusted_asset_icon {
-            display: inline-block;
-            mask-image: url("./images/icons/m/notif-attention.svg");
-            mask-size: cover;
-            width: 22px;
-            height: 22px;
-            margin-left: 6px;
-            background-color: var(--trophy-gold);
-            font-size: 0;
-          }
         `}
       </style>
     </li>
