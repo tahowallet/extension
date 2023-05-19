@@ -166,7 +166,7 @@ export default function SingleAsset(): ReactElement {
                 size="medium"
                 onClick={() => setWarnedAsset(asset)}
               >
-                {t("wallet.trustedAssets.verifyAsset")}
+                {t("assets.verifyAsset")}
               </SharedButton>
             ) : (
               <>

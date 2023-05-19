@@ -32,8 +32,8 @@ export default function WalletHiddenAssets({
   const showHiddenAssets = useBackgroundSelector(selectShowHiddenAssets)
 
   const stateOfHiddenAssets = showHiddenAssets
-    ? t("stateOfHiddenAssets1")
-    : t("stateOfHiddenAssets2")
+    ? t("unverifiedAssets.stateOfHiddenAssets1")
+    : t("unverifiedAssets.stateOfHiddenAssets2")
 
   useEffect(() => {
     if (hiddenAssetsRef.current) {
@@ -58,7 +58,7 @@ export default function WalletHiddenAssets({
             }, 500)
           }}
         >
-          {t("hiddenAssets", {
+          {t("unverifiedAssets.hiddenAssets", {
             stateOfHiddenAssets,
             amount: assetAmounts.length,
           })}

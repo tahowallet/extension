@@ -39,9 +39,9 @@
   "assets": {
     "viewAsset": "View asset on {{siteTitle}}",
     "openNetworkExplorer": "Open network explorer",
+    "verifyAsset": "Verify asset",
     "unverifiedAsset": "Asset not verified",
-    "hideAsset": "Hide asset",
-    "trustAsset": "Show asset"
+    "verifiedByUser": "Verified by you"
   },
   "assetInput": {
     "search": "Search by name or address",
@@ -491,7 +491,7 @@
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
     "setAsDefault": "Use Taho as your default wallet",
     "enableTestNetworks": "Enable test networks",
-    "showUntrustedAssets": "Show unverified assets",
+    "showUnverifiedAssets": "Show unverified assets",
     "language": "Language",
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
@@ -581,7 +581,7 @@
         "addBtn": "Add custom RPC (Advanced)"
       }
     },
-    "untrustedAssets": {
+    "unverifiedAssets": {
       "tooltip": {
         "firstPart": "Discover assets that you own but are not on our asset list. Some spam/scam assets will show up, so thread carefully.",
         "secondPart": "These will show up in the bottom of asset page until you verify them."
@@ -776,22 +776,6 @@
       "addCustomAssetPrompt": "Can't find an asset?",
       "addCustomAssetAction": "add custom asset"
     },
-    "trustedAssets": {
-      "verifyAsset": "Verify asset",
-      "assetImported": "Asset automatically imported",
-      "symbol": "Symbol",
-      "contract": "Contract address",
-      "discoveryTx": "Added from transaction",
-      "copiedTx": "Transaction copied to clipboard",
-      "close": "Close",
-      "hideAsset": "Hide asset",
-      "keepHidden": "Keep hidden",
-      "trustAsset": "Trust asset",
-      "banner": {
-        "title": "Assets not verified",
-        "description": "Be aware of scam and spam assets, only verify assets you trust."
-      }
-    },
     "banner": {
       "bannerTitle": "New Odyssey week!",
       "emptyBannerContent": "Check out Arbitrum Odyssey campaign",
@@ -821,9 +805,6 @@
       "NFTs": "NFTs",
       "activity": "Activity"
     },
-    "stateOfHiddenAssets1": "Hide",
-    "stateOfHiddenAssets2": "See",
-    "hiddenAssets": "{{stateOfHiddenAssets}} unverified assets ({{amount}})",
     "defaultToggle": {
       "snackbar": "You can change this in Settings later",
       "isDefault": "is now your default wallet",
@@ -834,6 +815,27 @@
       "title": "Analytics are enabled",
       "description": "They help us improve the wallet.  You can disable anytime",
       "settingsLink": "Change settings"
+    },
+    "unverifiedAssets": {
+      "stateOfHiddenAssets1": "Hide",
+      "stateOfHiddenAssets2": "See",
+      "hiddenAssets": "{{stateOfHiddenAssets}} unverified assets ({{amount}})",
+      "verifyAsset": "Verify asset"
+    },
+    "trustedAssets": {
+      "assetImported": "Asset automatically imported",
+      "symbol": "Symbol",
+      "contract": "Contract address",
+      "discoveryTx": "Added from transaction",
+      "copiedTx": "Transaction copied to clipboard",
+      "close": "Close",
+      "hideAsset": "Hide asset",
+      "keepHidden": "Keep hidden",
+      "trustAsset": "Trust asset",
+      "banner": {
+        "title": "Assets not verified",
+        "description": "Be aware of scam and spam assets, only verify assets you trust."
+      }
     }
   },
   "dAppConnect": {

@@ -20,7 +20,6 @@ import {
   AnyAssetAmount,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
-  isSmartContractFungibleAsset,
 } from "../../assets"
 import {
   selectCurrentAccount,
@@ -80,36 +79,18 @@ export function isAssetAmountVisible(
   { hideDust }: { hideDust: boolean }
 ): boolean {
   const isForciblyDisplayed = shouldForciblyDisplayAsset(assetAmount)
-  const isPresent = assetAmount.decimalAmount > 0
 
   const isNotDust =
     typeof assetAmount.mainCurrencyAmount === "undefined"
       ? true
       : assetAmount.mainCurrencyAmount > userValueDustThreshold
-
+  const isPresent = assetAmount.decimalAmount > 0
   const isTrusted = !isUntrustedAsset(assetAmount.asset)
 
-  const isSmartContractAsset = isSmartContractFungibleAsset(assetAmount.asset)
-
-  if (isForciblyDisplayed) {
-    return true
-  }
-
-  if (!isPresent) {
-    return false
-  }
-
-  let visible = true
-
-  if (hideDust) {
-    visible = visible && isNotDust
-  }
-
-  if (isSmartContractAsset) {
-    visible = visible && isTrusted
-  }
-
-  return visible
+  return !!(
+    isForciblyDisplayed ||
+    (isTrusted && (hideDust ? isNotDust && isPresent : isPresent))
+  )
 }
 
 const computeCombinedAssetAmountsData = (

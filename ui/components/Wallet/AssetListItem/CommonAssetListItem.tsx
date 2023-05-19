@@ -120,7 +120,7 @@ export default function CommonAssetListItem(
           <>
             {isUnverifiedAsset ? (
               <AssetTrustToggler
-                text={t("trustedAssets.verifyAsset")}
+                text={t("unverifiedAssets.verifyAsset")}
                 icon="notif-attention"
                 color="var(--attention)"
                 onClick={(event) => handleVerifyAsset(event)}

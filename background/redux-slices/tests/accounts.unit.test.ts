@@ -353,7 +353,7 @@ describe("Utilities", () => {
     })
 
     describe("Trusted assets", () => {
-      it("should display asset amount if trusted regardless of hideUntrusted status", () => {
+      it("should display asset amount if trusted", () => {
         expect(
           isAssetAmountVisible(
             createCompleteAssetAmount(
@@ -387,7 +387,7 @@ describe("Utilities", () => {
         ).toBeTruthy()
       })
 
-      it("should NOT display asset amount if untrusted and hideUntrusted enabled", () => {
+      it("should NOT display asset amount if untrusted", () => {
         expect(
           isAssetAmountVisible(
             createCompleteAssetAmount(
