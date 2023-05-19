@@ -31,14 +31,10 @@ export default function SwapQuoteBalanceChange(
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
-  const fromAmount = truncateDecimalAmount(
-    formatUnits(fromAsset.amount, fromAsset.asset.decimals),
-    2
-  )
-  const toAmount = truncateDecimalAmount(
-    formatUnits(toAsset.amount, toAsset.asset.decimals),
-    2
-  )
+  const rawFromAmount = formatUnits(fromAsset.amount, fromAsset.asset.decimals)
+  const fromAmount = truncateDecimalAmount(rawFromAmount, 2, 8)
+  const rawToAmount = formatUnits(toAsset.amount, toAsset.asset.decimals)
+  const toAmount = truncateDecimalAmount(rawToAmount, 2, 8)
 
   const fromAssetPricePoint = selectAssetPricePoint(
     assets,
@@ -75,7 +71,12 @@ export default function SwapQuoteBalanceChange(
             logoURL={fromAsset.asset.metadata?.logoURL}
             symbol={fromAsset.asset.symbol}
           />
-          <div className="balance_token_value amount ">-{fromAmount}</div>
+          <div
+            className="balance_token_value amount "
+            title={`${rawFromAmount} ${fromAsset.asset.symbol}`}
+          >
+            -{fromAmount}
+          </div>
           <div className="balance_token_value symbol">
             {fromAsset.asset.symbol}
           </div>
@@ -94,7 +95,12 @@ export default function SwapQuoteBalanceChange(
             logoURL={toAsset.asset.metadata?.logoURL}
             symbol={toAsset.asset.symbol}
           />
-          <div className="balance_token_value amount">+{toAmount}</div>
+          <div
+            className="balance_token_value amount"
+            title={`${rawToAmount} ${toAsset.asset.symbol}`}
+          >
+            +{toAmount}
+          </div>
           <div className="balance_token_value symbol">
             {toAsset.asset.symbol}
           </div>

@@ -41,19 +41,48 @@ export function normalizeAddressOnNetwork({
   }
 }
 
+/**
+ * Manually truncate number, try to cut as close to `decimalLength` as possible
+ * but look for significant digits in the decimal up to `maxDecimalLength`
+ * @param value floating point number as a string or number
+ * @param decimalLength desired length of decimal part
+ * @param maxDecimalLength max length of decimal part - will try to look
+ *                        for sgnificant digits up to this point
+ * @returns truncated number
+ */
 export function truncateDecimalAmount(
   value: number | string,
-  decimalLength: number
+  decimalLength: number,
+  maxDecimalLength = decimalLength
 ): string {
   const valueString = value.toString()
+
+  if (!valueString.includes(".")) {
+    return valueString
+  }
+
+  const [integer, decimals] = valueString.split(".")
+
   if (decimalLength === 0) {
-    return valueString.split(".")[0]
+    return integer
   }
-  if (valueString.includes(".")) {
-    const [integers, decimals] = valueString.split(".")
-    return `${integers}.${decimals.substring(0, decimalLength)}`
+
+  const decimalsTruncated = decimals.substring(0, decimalLength)
+  const hasSignificantDigits = [...decimalsTruncated].some(
+    (digit) => digit !== "0"
+  )
+
+  // if integer part is > 0 then decimal part don't need more precision
+  if (integer.length > 1 || integer[0] !== "0") {
+    return hasSignificantDigits ? `${integer}.${decimalsTruncated}` : integer
   }
-  return valueString
+
+  // integer = 0 so we are trying to get better decimal precision
+  if (decimalLength < maxDecimalLength && !hasSignificantDigits) {
+    return truncateDecimalAmount(value, decimalLength + 1, maxDecimalLength)
+  }
+
+  return hasSignificantDigits ? `${integer}.${decimalsTruncated}` : integer
 }
 
 export function sameEVMAddress(
