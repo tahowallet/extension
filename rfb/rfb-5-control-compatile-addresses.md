@@ -9,7 +9,7 @@ ongoing development can deprioritize certain thinking that maintains the
 underlying flexibility needed to rerpesent these differences.
 
 Currently, the code base assumes that a given address is always controlled by
-the same underlying key, keyring, or hardware device, even if it is on a
+the same underlying key, keyring, or external device, even if it is on a
 different network. For regular keys, in practice, this is a fair assumption: if
 Bob has a key that can sign for address `0x0abc` with a derivation path of
 `44'/60'/0'/0/0`, the likelihood that Bob will have a different key that can
@@ -18,11 +18,12 @@ low.
 
 This assumption falls apart when it comes to accounts that are not derived or
 controlled directly by in-memory private keys, however. For example, if Bob is
-viewing the Ethereum network and has a key for `0x0abc` at `44'/60'/0'/0/0` can
-sign a transaction for that address, they can interact with everything as
-expected--dApps, etc. If Bob switches to the Rootstock network, on the other
-hand, and they control that key using a Ledger, Ledger itself might require a
-different app to sign a transaction for that key on Roostock.
+viewing the Ethereum network and has a key stored on a Ledger for `0x0abc` at
+`44'/60'/0'/0/0` can sign a transaction for that address, they can interact
+with everything as expected--dApps, etc. If Bob switches to the Rootstock
+network, on the other hand, and they control that key using a Ledger, Ledger
+itself might require a different app to sign a transaction for that key on
+Roostock.
 
 This is the simplest scenario. A more complex scenario appears if the address
 in question is actually a smart contract or account abstraction-based wallet.
@@ -77,7 +78,7 @@ and correspond to the same user on multiple networks or not.
 
 To allow the above, we can introduce two concepts for any given pair of networks:
 
-- Two networks are _transaction-compatible_ for a given hardware wallet if sign
+- Two networks are _transaction-compatible_ for a given external wallet if sign
   a transaction for both networks from the same key material without requiring
   any on-wallet manipulation[^2].
 - An _address_ is considered _control-compatible_ across the pair of networks
@@ -93,8 +94,11 @@ control-compatible across 2 networks:
 - The address was derived from a hardware wallet that controls private key
   material for the address AND the networks are transaction-compatible[^2].
 - The address has been resolved via a name service lookup on both networks and
-  the owner of the records is the same on both networks. [^3] This can change
-  over time, so if the wallet leverages these
+  the owner of the records is the same on both networks.[^3] This can change
+  over time, so if we choose for the wallet to leverage this condition, it
+  should monitor ownership for changes and adjust its understanding of control
+  compatibility based on that information. _Most likely this is not worth
+  implementing at this time._
 
 In addition to these 3 possible paths, the 2 networks must have the same
 address format; e.g., an address cannot be control-compatible between Ethereum
@@ -103,20 +107,20 @@ and Bitcoin, since the address formats are different).
 This table visualizes when an Ethereum address might be control-compatible with
 another network:
 
-| Source             | Network | Control-compatible? | Reason                 |
-| ------------------ | ------- | ------------------- | ---------------------- |
-| New `HDKeyring`    | Polygon | Yes                 | Private key in wallet  |
-| New `HDKeyring`    | RSK     | Yes                 | Private key in wallet  |
-| New `HDKeyring`    | BTC     | No                  | Address format[^4]     |
-| Private key import | Polygon | Yes                 | Private key in wallet  |
-| Private key import | RSK     | Yes                 | Private key in wallet  |
-| Private key import | BTC     | No                  | Address format         |
-| Ledger walllet     | Polygon | Yes                 | Transaction-compatible |
-| Ledger walllet     | RSK     | No                  | Tx compatiblity        |
-| Ledger walllet     | BTC     | No                  | Address format         |
-| Trezor walllet     | Polygon | Yes                 | Transaction-compatible |
-| Trezor walllet     | RSK     | No                  | Tx compatiblity        |
-| Trezor walllet     | BTC     | No                  | Address format         |
+| Source                 | Network | Control-compatible? | Reason             |
+| ---------------------- | ------- | ------------------- | ------------------ |
+| New `HDKeyring`        | Polygon | Yes                 | Private key        |
+| New `HDKeyring`        | RSK     | Yes                 | Private key        |
+| New `HDKeyring`        | BTC     | No                  | Address format[^4] |
+| Private key import     | Polygon | Yes                 | Private key        |
+| Private key import     | RSK     | Yes                 | Private key        |
+| Private key import     | BTC     | No                  | Address format     |
+| Ledger walllet         | Polygon | Yes                 | Tx compatible      |
+| Ledger walllet         | RSK     | Yes                 | Tx compatible      |
+| Ledger walllet         | BTC     | No                  | Address format     |
+| WalletConnect Safe[^5] | Polygon | No                  | Tx incompatible    |
+| WalletConnect Safe     | RSK     | No                  | Tx incompatible    |
+| WalletConnect Safe     | BTC     | No                  | Address format     |
 
 [^2]:
     Hardware wallets can in some cases distinguish by which app can operate
@@ -130,11 +134,18 @@ another network:
 [^3]:
     Currently, the name service does not externalize ownership information for
     a resolved name/address, so functionality would need to be expanded to
-    support this use case.
+    support this use case, and this condition should not be used to support
+    control-compatibility until that information is available.
 
 [^4]:
     This means the same address, i.e. the address corresponding to a given
     private key, is represented differently on this network than on Ethereum.
+
+[^5]:
+    Note that Taho doesn't currently support adding an external wallet via
+    WalletConnect, but a hypothetical feature that supports this would have to
+    contend with the fact that such a connection is only guaranteed to work on
+    a specific network.
 
 ### Implementation
 
