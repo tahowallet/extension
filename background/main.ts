@@ -168,7 +168,7 @@ import {
 } from "./redux-slices/nfts_update"
 import AbilitiesService from "./services/abilities"
 import {
-  addAbilities,
+  setAbilitiesForAddress,
   updateAbility,
   addAccount as addAccountFilter,
   deleteAccount as deleteAccountFilter,
@@ -1648,9 +1648,12 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("initAbilities", (address) => {
       this.store.dispatch(initAbilities(address))
     })
-    this.abilitiesService.emitter.on("newAbilities", (newAbilities) => {
-      this.store.dispatch(addAbilities(newAbilities))
-    })
+    this.abilitiesService.emitter.on(
+      "updatedAbilities",
+      ({ address, abilities }) => {
+        this.store.dispatch(setAbilitiesForAddress({ address, abilities }))
+      }
+    )
     this.abilitiesService.emitter.on("deleteAbilities", (address) => {
       this.store.dispatch(deleteAbilitiesForAccount(address))
     })

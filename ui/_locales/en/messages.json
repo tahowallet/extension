@@ -891,7 +891,6 @@
         "airdrop": "A ERC-20 token airdrop, usually not promised in advance.",
         "mint": "A ERC-721 or ERC-11555 token mint.",
         "access": "A general off-chain token-gated experience, often a group chat.",
-        "product": "An off-chain product, often a discounted or free item available on an ecommerce store.",
         "event": "An event, often at a conference or a token-gated online experience.",
         "article": "A blog post or article about a specific token.",
         "result": "The result of a vote proposal.",
