@@ -243,7 +243,29 @@ name of the account, because Taho only considered a name to apply to a single
 network. Exploring this problem space led to the development of control
 compatibility as a concept.
 
-// TODO
+For general name resolution, all names should be saved or resolved as on a
+particular network---for example, if a user renames an account while on
+Ethereum mainnet in the UI, the name should be persisted as the name for that
+account on Ethereum. If the ENS resolver on Ethereum mainnet returns an address
+for the name, that address should be considered to be valid on Ethereum
+mainnet. All name resolution requests should thus return an `AddressOnNetwork`,
+as above, that corresponds to the network the address's name was resolved on.
+
+Once that name percolates into the UI, the UI should use control compatibility
+to determine whether to display it in a given context. For example, a keyring
+account's name might be present no matter what network the user is viewing. A
+Ledger account's name, on the other hand, might only display if it's on a
+transaction-compatible network.
+
+Similarly, when entering a recipient address in the Send page, the name should
+only be considered resolved if a resolved name is returned that is
+control-compatible to the requested network. This might be adjusted by giving
+the user warning feedback that the address is known (and allowing the name to
+be used) but not guaranteed to be controlled by the same person.
+
+Note that the generalized problem of displaying accounts that the user controls
+on one network but not another in the Taho UI is not solved, and is a separate
+issue for Taho's design team to tackle.
 
 ## Related Links
 
