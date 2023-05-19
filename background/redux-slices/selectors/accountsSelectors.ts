@@ -46,6 +46,7 @@ import {
   ReadOnlyAccountSigner,
   SignerType,
 } from "../../services/signing"
+import { assertUnreachable } from "../../lib/utils/type-guards"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -343,15 +344,30 @@ export const selectCurrentAccountBalances = createSelector(
 export type AccountTotal = AddressOnNetwork & {
   shortenedAddress: string
   accountType: AccountType
-  // FIXME This is solely used for categorization.
-  // FIXME Add `categoryFor(accountSigner): string` utility function to
-  // FIXME generalize beyond keyrings.
-  keyringId: string | null
+  signerId: string | null
   path: string | null
   accountSigner: AccountSigner
   name?: string
   avatarURL?: string
   localizedTotalMainCurrencyAmount?: string
+}
+
+/**
+ * Given an account signer, resolves a unique id for that signer. Returns null
+ * for read-only accounts. This allows for grouping accounts together by the
+ * signer that can provide signatures for those accounts.
+ */
+function signerIdFor(accountSigner: AccountSigner): string | null {
+  switch (accountSigner.type) {
+    case "keyring":
+      return accountSigner.keyringID
+    case "ledger":
+      return accountSigner.deviceID
+    case "read-only":
+      return null
+    default:
+      return assertUnreachable(accountSigner)
+  }
 }
 
 export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
@@ -432,7 +448,7 @@ function getNetworkAccountTotalsByCategory(
       const shortenedAddress = truncateAddress(address)
 
       const accountSigner = accountSignersByAddress[address]
-      const keyringId = keyringsByAddresses[address]?.id
+      const signerId = signerIdFor(accountSigner)
       const path = keyringsByAddresses[address]?.path
 
       const accountType = getAccountType(
@@ -447,7 +463,7 @@ function getNetworkAccountTotalsByCategory(
           network,
           shortenedAddress,
           accountType,
-          keyringId,
+          signerId,
           path,
           accountSigner,
         }
@@ -458,7 +474,7 @@ function getNetworkAccountTotalsByCategory(
         network,
         shortenedAddress,
         accountType,
-        keyringId,
+        signerId,
         path,
         accountSigner,
         name: accountData.ens.name ?? accountData.defaultName,

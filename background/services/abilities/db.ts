@@ -1,9 +1,9 @@
-import Dexie from "dexie"
-import { Ability } from "../../abilities"
+import Dexie, { IndexableTypeArrayReadonly } from "dexie"
+import { ABILITY_TYPES, Ability } from "../../abilities"
 import { HexString, NormalizedEVMAddress } from "../../types"
 
 export class AbilitiesDatabase extends Dexie {
-  private abilities!: Dexie.Table<Ability, string>
+  private abilities!: Dexie.Table<Ability, [string, string]>
 
   constructor() {
     super("tally/abilities")
@@ -11,33 +11,52 @@ export class AbilitiesDatabase extends Dexie {
     this.version(1).stores({
       abilities: "++id, &[abilityId+address], removedFromUi, completed",
     })
+    // There is no need to use auto-incremented primary key if you want to use the bulkPut method.
+    // Using this primary key causes an error when applying the method,
+    // Additionally, Boolean can't be indexed. Let's remove the unnecessary indexes.
+    this.version(2)
+      .stores({
+        abilities: null,
+        abilitiesTemp: "&[abilityId+address], interestRank",
+      })
+      .upgrade(async (tx) => {
+        const abilities = await tx.table("abilities").toArray()
+        // Remove abilities from the db whose types are not supported
+        const filteredAbilities = abilities.filter(({ type }) =>
+          ABILITY_TYPES.includes(type)
+        )
+        await tx.table("abilitiesTemp").bulkAdd(filteredAbilities)
+      })
+
+    this.version(3)
+      .stores({
+        abilitiesTemp: null,
+        abilities: "&[abilityId+address], interestRank",
+      })
+      .upgrade(async (tx) => {
+        const abilities = await tx.table("abilitiesTemp").toArray()
+        await tx.table("abilities").bulkAdd(abilities)
+      })
   }
 
-  async addNewAbility(ability: Ability): Promise<boolean> {
-    // @TODO Use a cache here
-    const existingAbility = await this.getAbility(
-      ability.address,
-      ability.abilityId
-    )
-    if (!existingAbility) {
-      await this.abilities.add(ability)
-      return true
-    }
-    const { id, ...correctAbility } = existingAbility as Ability & {
-      id: number
-    }
-    if (JSON.stringify(correctAbility) !== JSON.stringify(ability)) {
-      const updateCompleted =
-        ability.completed === true && existingAbility.completed === false
+  async updateAbilities(abilities: Ability[]): Promise<void> {
+    await this.abilities.bulkPut(abilities)
+  }
 
-      await this.abilities.update(existingAbility, {
-        ...ability,
-        completed: updateCompleted ? true : existingAbility.completed,
-        removedFromUi: existingAbility.removedFromUi,
-      })
-      return true
-    }
-    return false
+  async removeAbilities(abilities: Ability[]): Promise<void> {
+    const keys = abilities.map(({ abilityId, address }) => [
+      abilityId,
+      address,
+    ]) as unknown as IndexableTypeArrayReadonly
+    await this.abilities.bulkDelete(keys)
+  }
+
+  async getAbilities(): Promise<Ability[]> {
+    return this.abilities.toArray()
+  }
+
+  async getSortedAbilities(): Promise<Ability[]> {
+    return this.abilities.orderBy("interestRank").toArray()
   }
 
   async getAbility(
@@ -45,14 +64,6 @@ export class AbilitiesDatabase extends Dexie {
     abilityId: string
   ): Promise<Ability | undefined> {
     return this.abilities.get({ address, abilityId })
-  }
-
-  async getActiveAbilities(): Promise<Ability[]> {
-    return (
-      await this.abilities.where({
-        removedFromUi: false,
-      })
-    ).toArray()
   }
 
   async markAsCompleted(
