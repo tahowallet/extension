@@ -485,6 +485,9 @@ export const executeSwap = createBackgroundAsyncThunk(
         type: "asset-swap",
         fromAssetAmount: sellAssetAmount,
         toAssetAmount: buyAssetAmount,
+        estimatedPriceImpact: quote.estimatedPriceImpact
+          ? Number(quote.estimatedPriceImpact)
+          : 0,
         sources: quote.sources
           .map(({ name, proportion }) => {
             return {

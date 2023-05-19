@@ -6,7 +6,7 @@ import SigningDataTransactionSummaryBody from "./TransactionSignatureSummaryBody
 import SwapQuoteBalanceChange from "../../../../Swap/SwapQuoteBalanceChange"
 
 export default function SwapAssetSummary({
-  annotation: { fromAssetAmount, toAssetAmount },
+  annotation: { fromAssetAmount, toAssetAmount, estimatedPriceImpact },
 }: TransactionSignatureSummaryProps<AssetSwap>): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "swap" })
 
@@ -17,6 +17,7 @@ export default function SwapAssetSummary({
         <SwapQuoteBalanceChange
           fromAsset={fromAssetAmount}
           toAsset={toAssetAmount}
+          priceImpact={estimatedPriceImpact}
         />
       </SigningDataTransactionSummaryBody>
       <style jsx>{`

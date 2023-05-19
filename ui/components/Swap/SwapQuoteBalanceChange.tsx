@@ -20,11 +20,12 @@ import PriceDetails from "../Shared/PriceDetails"
 type SwapQuoteBalanceChangeProps = {
   fromAsset: AnyAssetAmount<FungibleAsset> & AssetDecimalAmount
   toAsset: AnyAssetAmount<FungibleAsset> & AssetDecimalAmount
+  priceImpact: number
 }
 export default function SwapQuoteBalanceChange(
   props: SwapQuoteBalanceChangeProps
 ): ReactElement {
-  const { fromAsset, toAsset } = props
+  const { fromAsset, toAsset, priceImpact } = props
   const { t } = useTranslation()
   const assets = useBackgroundSelector(getAssetsState)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
@@ -102,6 +103,7 @@ export default function SwapQuoteBalanceChange(
               amountMainCurrency={toAssetMainCurrencyAmount}
               mainCurrencySign={mainCurrencySign}
               isLoading={false}
+              priceImpact={priceImpact}
             />
           </div>
         </div>
