@@ -289,7 +289,6 @@ describe("Utilities", () => {
           }),
           {
             hideDust: true,
-            hideUntrusted: false,
           }
         )
       ).toBeTruthy()
@@ -305,7 +304,6 @@ describe("Utilities", () => {
             }),
             {
               hideDust: true,
-              hideUntrusted: false,
             }
           )
         ).toBeTruthy()
@@ -319,7 +317,6 @@ describe("Utilities", () => {
             }),
             {
               hideDust: false,
-              hideUntrusted: false,
             }
           )
         ).toBeTruthy()
@@ -335,7 +332,6 @@ describe("Utilities", () => {
             }),
             {
               hideDust: false,
-              hideUntrusted: false,
             }
           )
         ).toBeTruthy()
@@ -350,7 +346,6 @@ describe("Utilities", () => {
             }),
             {
               hideDust: true,
-              hideUntrusted: false,
             }
           )
         ).toBeFalsy()
@@ -371,7 +366,6 @@ describe("Utilities", () => {
             ),
             {
               hideDust: true,
-              hideUntrusted: false,
             }
           )
         ).toBeTruthy()
@@ -388,43 +382,6 @@ describe("Utilities", () => {
             ),
             {
               hideDust: true,
-              hideUntrusted: true,
-            }
-          )
-        ).toBeTruthy()
-      })
-
-      it("should display asset amount if untrusted and hideUntrusted disabled", () => {
-        expect(
-          isAssetAmountVisible(
-            createCompleteAssetAmount(
-              createSmartContractAsset({ metadata: { trusted: false } }),
-              200,
-              {
-                decimalAmount: 200,
-                mainCurrencyAmount: 200,
-              }
-            ),
-            {
-              hideDust: true,
-              hideUntrusted: false,
-            }
-          )
-        ).toBeTruthy()
-
-        expect(
-          isAssetAmountVisible(
-            createCompleteAssetAmount(
-              createSmartContractAsset({ metadata: {} }),
-              200,
-              {
-                decimalAmount: 200,
-                mainCurrencyAmount: 200,
-              }
-            ),
-            {
-              hideDust: true,
-              hideUntrusted: false,
             }
           )
         ).toBeTruthy()
@@ -443,7 +400,6 @@ describe("Utilities", () => {
             ),
             {
               hideDust: true,
-              hideUntrusted: true,
             }
           )
         ).toBeFalsy()
@@ -462,7 +418,6 @@ describe("Utilities", () => {
             ),
             {
               hideDust: true,
-              hideUntrusted: false,
             }
           )
         ).toBeFalsy()
