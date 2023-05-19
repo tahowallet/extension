@@ -6,7 +6,7 @@ import {
   SwappableAsset,
 } from "@tallyho/tally-background/assets"
 import WalletAssetListItem from "./WalletAssetListItem"
-import AssetWarningSlideUp from "./AssetWarningSlideUp"
+import AssetWarningSlideUp from "./UntrustedAsset/AssetWarningSlideUp"
 
 type WalletAssetListProps = {
   assetAmounts: CompleteAssetAmount<SwappableAsset>[]

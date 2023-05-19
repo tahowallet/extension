@@ -19,7 +19,7 @@ import SharedIconRouterLink from "../../Shared/SharedIconRouterLink"
 import { useBackgroundSelector } from "../../../hooks"
 import { trimWithEllipsis } from "../../../utils/textUtils"
 import SharedTooltip from "../../Shared/SharedTooltip"
-import SharedIcon from "../../Shared/SharedIcon"
+import AssetTrustToggler from "../UntrustedAsset/AssetTrustToggler"
 
 type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount<SwappableAsset>
@@ -119,18 +119,12 @@ export default function CommonAssetListItem(
         >
           <>
             {isUnverifiedAsset ? (
-              <button
-                type="button"
-                className="verify_asset"
+              <AssetTrustToggler
+                text={t("trustedAssets.verifyAsset")}
+                icon="notif-attention"
+                color="var(--attention)"
                 onClick={(event) => handleVerifyAsset(event)}
-              >
-                {t("trustedAssets.verifyAsset")}
-                <SharedIcon
-                  icon="icons/m/notif-attention.svg"
-                  width={22}
-                  color="var(--attention)"
-                />
-              </button>
+              />
             ) : (
               <>
                 <SharedIconRouterLink

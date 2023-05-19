@@ -11,7 +11,7 @@ import WalletAssetList from "./WalletAssetList"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { useIsMounted } from "../../hooks/react-hooks"
-import SharedBanner from "../Shared/SharedBanner"
+import UntrustedAssetBanner from "./UntrustedAsset/UntrustedAssetBanner"
 
 type WalletHiddenAssetsProps = {
   assetAmounts: CompleteAssetAmount<SwappableAsset>[]
@@ -72,22 +72,12 @@ export default function WalletHiddenAssets({
           visible: mountedRef.current && showHiddenAssets,
         })}
       >
-        <SharedBanner
-          id="untrusted_assets_banner"
-          icon="notif-attention"
-          iconColor="var(--attention)"
+        <UntrustedAssetBanner
+          id="untrusted_asset_banner"
+          title={t("trustedAssets.banner.title")}
+          description={t("trustedAssets.banner.description")}
           customStyles="margin-bottom: 16px;"
-          canBeClosed
-        >
-          <div className="banner">
-            <span className="warning_text">
-              {t("trustedAssets.banner.title")}
-            </span>
-            <span className="simple_text">
-              {t("trustedAssets.banner.description")}
-            </span>
-          </div>
-        </SharedBanner>
+        />
         <WalletAssetList
           assetAmounts={assetAmounts}
           initializationLoadingTimeExpired
@@ -108,17 +98,6 @@ export default function WalletHiddenAssets({
           justify-content: center;
           align-items: center;
           padding: 8px 0 16px;
-        }
-        .banner {
-          display: flex;
-          flex-direction: column;
-          width: 84%;
-        }
-        .warning_text {
-          font-size: 16px;
-          line-height: 24px;
-          font-weight: 500;
-          color: var(--attention);
         }
       `}</style>
     </>

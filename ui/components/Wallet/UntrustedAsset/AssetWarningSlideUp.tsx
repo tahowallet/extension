@@ -9,12 +9,15 @@ import {
 } from "@tallyho/tally-background/redux-slices/ui"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import SharedBanner from "../Shared/SharedBanner"
-import SharedButton from "../Shared/SharedButton"
-import SharedAddress from "../Shared/SharedAddress"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
+import { DEFAULT_NETWORKS_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import SharedSlideUpMenu from "../../Shared/SharedSlideUpMenu"
+import SharedButton from "../../Shared/SharedButton"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
+import SharedSlideUpMenuPanel from "../../Shared/SharedSlideUpMenuPanel"
+import SharedIcon from "../../Shared/SharedIcon"
+import { scanWebsite } from "../../../utils/constants"
+import UntrustedAssetBanner from "./UntrustedAssetBanner"
 
 type AssetWarningSlideUpProps = {
   asset: SmartContractFungibleAsset
@@ -34,6 +37,8 @@ export default function AssetWarningSlideUp(
 
   const showUntrusted = useBackgroundSelector(selectShowUntrustedAssets)
 
+  const network = useBackgroundSelector(selectCurrentNetwork)
+
   const setAssetTrustStatus = async (isTrusted: boolean) => {
     await dispatch(updateAssetTrustStatus({ asset, trusted: isTrusted }))
     close()
@@ -41,7 +46,7 @@ export default function AssetWarningSlideUp(
 
   const isUntrusted = isUntrustedAsset(asset)
 
-  const address =
+  const contractAddress =
     asset && "contractAddress" in asset && asset.contractAddress
       ? asset.contractAddress
       : ""
@@ -53,6 +58,10 @@ export default function AssetWarningSlideUp(
     dispatch(setSnackbarMessage(t("copiedTx")))
   }
 
+  const scanWebsiteUrl = DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
+    ? `${scanWebsite[network.chainID].url}/token/${contractAddress}`
+    : network.blockExplorerURL
+
   return (
     <SharedSlideUpMenu
       isOpen={asset !== null}
@@ -63,12 +72,10 @@ export default function AssetWarningSlideUp(
       <SharedSlideUpMenuPanel header={t("assetImported")}>
         <div className="content">
           <div>
-            <SharedBanner icon="notif-attention" iconColor="var(--attention)">
-              <div className="banner">
-                <span className="warning_text">{t("banner.title")}</span>
-                <span className="simple_text">{t("banner.description")}</span>
-              </div>
-            </SharedBanner>
+            <UntrustedAssetBanner
+              title={t("banner.title")}
+              description={t("banner.description")}
+            />
             <ul className="asset_details">
               <li className="asset_symbol">
                 <div className="left">{t("symbol")}</div>
@@ -77,7 +84,22 @@ export default function AssetWarningSlideUp(
               <li>
                 <div className="left">{t("contract")}</div>
                 <div className="right">
-                  <SharedAddress address={address} />
+                  <button
+                    type="button"
+                    className="address_button"
+                    onClick={() =>
+                      window.open(scanWebsiteUrl, "_blank")?.focus()
+                    }
+                  >
+                    {truncateAddress(contractAddress)}
+                    <SharedIcon
+                      width={16}
+                      icon="icons/s/new-tab.svg"
+                      color="var(--green-5)"
+                      hoverColor="var(--trophy-gold)"
+                      transitionHoverTime="0.2s"
+                    />
+                  </button>
                 </div>
               </li>
               {discoveryTx && (
@@ -85,8 +107,8 @@ export default function AssetWarningSlideUp(
                   <div className="left">{t("discoveryTx")}</div>
                   <div className="right">
                     <button
-                      className="discovery_tx"
                       type="button"
+                      className="address_button"
                       onClick={() => handleCopyDiscoveryTx(discoveryTx)}
                       title={discoveryTx}
                     >
@@ -141,17 +163,6 @@ export default function AssetWarningSlideUp(
         </div>
       </SharedSlideUpMenuPanel>
       <style jsx>{`
-        .banner {
-          display: flex;
-          flex-direction: column;
-          width: 84%;
-        }
-        .warning_text {
-          font-size: 16px;
-          line-height: 24px;
-          font-weight: 500;
-          color: var(--attention);
-        }
         .content {
           padding: 0 16px 16px 16px;
           display: flex;
@@ -179,17 +190,32 @@ export default function AssetWarningSlideUp(
         }
         .right {
           color: var(--green-5);
-          width: 60%;
+          width: 50%;
           text-align: right;
         }
         .asset_trust_actions {
           display: flex;
           justify-content: space-between;
         }
-        .discovery_tx:hover {
+        .address_button {
+          display: flex;
+          align-items: center;
+          justify-content: end;
+          width: 100%;
+          gap: 4px;
+          transition: color 0.2s;
+        }
+        .address_button:hover {
           color: var(--trophy-gold);
         }
       `}</style>
+      <style global jsx>
+        {`
+          .address_button:hover .icon {
+            background-color: var(--trophy-gold);
+          }
+        `}
+      </style>
     </SharedSlideUpMenu>
   )
 }

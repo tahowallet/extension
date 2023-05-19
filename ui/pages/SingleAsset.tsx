@@ -26,8 +26,8 @@ import WalletActivityList from "../components/Wallet/WalletActivityList"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 import { scanWebsite } from "../utils/constants"
-import SharedIcon from "../components/Shared/SharedIcon"
-import AssetWarningSlideUp from "../components/Wallet/AssetWarningSlideUp"
+import AssetWarningSlideUp from "../components/Wallet/UntrustedAsset/AssetWarningSlideUp"
+import AssetTrustToggler from "../components/Wallet/UntrustedAsset/AssetTrustToggler"
 
 export default function SingleAsset(): ReactElement {
   const { t } = useTranslation()
@@ -105,40 +105,16 @@ export default function SingleAsset(): ReactElement {
           }}
         />
       )}
-      <style jsx>{`
-        .unverified_asset_warning {
-          color: var(--green-20);
-          align-items: center;
-          display: flex;
-          gap: 4px;
-          font-size: 16px;
-          font-weight: 500;
-          line-height: 24px;
-          letter-spacing: 0em;
-          text-align: left;
-        }
-
-        .navigation {
-          margin-bottom: 4px;
-          display: flex;
-          justify-content: space-between;
-        }
-      `}</style>
       <div className="navigation standard_width_padded">
         <SharedBackButton path="/" />
         {isUntrusted && asset && isSmartContractFungibleAsset(asset) && (
-          <button
-            type="button"
+          <AssetTrustToggler
+            text={t("assets.unverifiedAsset")}
+            icon="notif-attention"
+            color="var(--green-20)"
+            hoverColor="var(--green-5)"
             onClick={() => setWarnedAsset(asset)}
-            className="unverified_asset_warning"
-          >
-            {t("assets.unverifiedAsset")}
-            <SharedIcon
-              color="currentColor"
-              icon="/icons/m/notif-attention.svg"
-              width={24}
-            />
-          </button>
+          />
         )}
       </div>
       {asset && (
@@ -149,7 +125,7 @@ export default function SingleAsset(): ReactElement {
                 logoURL={asset?.metadata?.logoURL}
                 symbol={asset?.symbol}
               />
-              <span className="asset_name">{symbol}</span>
+              <span className="asset_name ellipsis">{symbol}</span>
               {contractAddress && (
                 <SharedTooltip
                   width={155}
@@ -274,7 +250,7 @@ export default function SingleAsset(): ReactElement {
             line-height: 32px;
             text-transform: uppercase;
             margin-left: 8px;
-            word-break: break-word;
+            max-width: 150px;
           }
           .asset_wrap {
             display: flex;
@@ -310,6 +286,11 @@ export default function SingleAsset(): ReactElement {
           }
           .new_tab_link:hover .icon_new_tab {
             background-color: var(--trophy-gold);
+          }
+          .navigation {
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
           }
         `}
       </style>
