@@ -159,7 +159,91 @@ fidelity is not lost.
 
 The intent is to allow the UI to manage addresses as tied one-to-one to
 networks, and to allow flexibility behind the scenes for addresses that might
-be known to be controlled by the same address on multiple networks.
+be known to be controlled by the same address on multiple networks. Having the
+address and network (or name and network) is not sufficient to determine
+control compatibility---but if both are available, a given service can query
+the signing service to determine whether that `*OnNetwork` object is
+control-compatible with a different network. The signing service tracks all
+signers available to the wallet, and understands how to coordinate with
+underlying signer types for common functionality like determining control
+compatibility.
+
+#### `SigningService` updates
+
+The `SigningService` should add a new method:
+
+```typescript
+isControlCompatible(objectOnNetwork: AddressOnNetwork | NameOnNetwork,
+otherNetwork: Network): boolean
+
+// Examples
+signingService.isAddressControlCompatible(
+  { address: "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984", network: ETHEREUM },
+  BITCOIN
+) // false
+
+signingService.isAddressControlCompatible(
+  { address: "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984", network: ETHEREUM },
+  POLYGON
+) // => true if we have a signer for it, and if the signer is transaction-compatible
+  //    between Ethereum and Polygon
+```
+
+This method should return `true` if the given networked object (address or
+name) is control-compatible on the specified `otherNetwork`. To check control
+compatibility, the signing service should check:
+
+- If the two networks have incompatible address formats, return `false`.
+- If there is no known signer for that address, return `false`.
+- If there is a known signer (internal, Ledger, or otherwise), the backing service
+  for that signer should have a new implemented method, `isTransactionCompatible`,
+  defined below; return the result of that method.
+
+Additionally
+
+#### Signer service updates
+
+Each account with a signer has an associated service (currently,
+`LedgerService` and `KeyringService`) that coordinates signing for that type of
+`AccountSigner`. Signer service instances are singleton, but manage signing
+across multiple underlying `AccountSigner`s of that type (e.g. multiple
+keyrings).
+
+Each signer service should add a new method that looks roughly like this:
+
+```typescript
+isTransactionCompatible(network: Network, otherNetwork: Network): boolean
+
+// Examples
+ledgerService.isTransactionCompatible(
+  ETHEREUM,
+  ROOTSTOCK
+) // => false irrespective of the signer
+
+keyringService.isTransactionCompatible(
+  ETHEREUM,
+  ROOTSTOCK
+) // => true irrespective of the signer
+```
+
+Note here that the underlying `AccountSigner` is irrelevant---transaction
+compatibility between networks is considered to be a property of the signer
+_type_, not the specific signer. There may be cases where this could differ
+signer-by-signer; if that's the case, the `AccountSigner` could be taken as a
+parameter.
+
+#### Specific case: name resolution
+
+The initial motivation for control compatibility came from wanting to implement
+address book functionality in Taho, and from wanting to extend existing
+behind-the-scenes address book functionality (renaming an account added to Taho
+uses a vestigial address book implementation in the `PreferencesService`). When
+a user renamed an account on one network, switching networks would drop the
+name of the account, because Taho only considered a name to apply to a single
+network. Exploring this problem space led to the development of control
+compatibility as a concept.
+
+// TODO
 
 ## Related Links
 
