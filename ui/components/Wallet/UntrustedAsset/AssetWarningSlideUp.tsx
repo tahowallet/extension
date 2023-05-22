@@ -51,9 +51,9 @@ export default function AssetWarningSlideUp(
       ? asset.contractAddress
       : ""
 
-  const discoveryTx = asset.metadata?.discoveryTx
+  const discoveryTxHash = asset.metadata?.discoveryTxHash
 
-  const handleCopyDiscoveryTx = (tx: string) => {
+  const handleCopyDiscoveryTxHash = (tx: string) => {
     navigator.clipboard.writeText(tx)
     dispatch(setSnackbarMessage(t("copiedTx")))
   }
@@ -102,17 +102,17 @@ export default function AssetWarningSlideUp(
                   </button>
                 </div>
               </li>
-              {discoveryTx && (
+              {discoveryTxHash && (
                 <li>
-                  <div className="left">{t("discoveryTx")}</div>
+                  <div className="left">{t("discoveryTxHash")}</div>
                   <div className="right">
                     <button
                       type="button"
                       className="address_button"
-                      onClick={() => handleCopyDiscoveryTx(discoveryTx)}
-                      title={discoveryTx}
+                      onClick={() => handleCopyDiscoveryTxHash(discoveryTxHash)}
+                      title={discoveryTxHash}
                     >
-                      {truncateAddress(discoveryTx)}
+                      {truncateAddress(discoveryTxHash)}
                     </button>
                   </div>
                 </li>

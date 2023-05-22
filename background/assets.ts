@@ -40,13 +40,14 @@ export type AssetMetadata = {
   websiteURL?: string
   tokenLists?: TokenListCitation[]
   /**
-   * Set by the user on non network base assets
+   * Set by the user to indicate explicitly trust in a
+   * legitimate asset.
    */
   trusted?: boolean
   /**
    * Set on assets discovered through transaction annotations
    */
-  discoveryTx?: HexString
+  discoveryTxHash?: HexString
 }
 
 /**

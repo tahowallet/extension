@@ -27,7 +27,7 @@ import {
   FIAT_CURRENCIES_SYMBOL,
 } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
-import { updateAssetCache } from "./accounts"
+import { updateAssetReferences } from "./accounts"
 import { NormalizedEVMAddress } from "../types"
 import type { RootState } from "."
 
@@ -159,7 +159,7 @@ export const updateAssetTrustStatus = createBackgroundAsyncThunk(
     await dispatch(updateAssetMetadata([asset, { trusted }]))
     // Update accounts slice cached data about this asset
     await dispatch(
-      updateAssetCache({
+      updateAssetReferences({
         ...asset,
         metadata: { ...asset.metadata, trusted },
       })

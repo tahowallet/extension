@@ -826,7 +826,7 @@
       "assetImported": "Asset automatically imported",
       "symbol": "Symbol",
       "contract": "Contract address",
-      "discoveryTx": "Added from transaction",
+      "discoveryTxHash": "Added from transaction",
       "copiedTx": "Transaction copied to clipboard",
       "close": "Close",
       "hideAsset": "Hide asset",

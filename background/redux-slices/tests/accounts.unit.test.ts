@@ -13,9 +13,9 @@ import reducer, {
   AccountData,
   AccountState,
   updateAccountBalance,
-  updateAssetCache,
+  updateAssetReferences,
 } from "../accounts"
-import { isAssetAmountVisible } from "../selectors"
+import { determineAssetDisplayAndTrust } from "../selectors"
 
 const ADDRESS_MOCK = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
 const ACCOUNT_MOCK = {
@@ -255,7 +255,7 @@ describe("Accounts redux slice", () => {
 
       const newState = reducer(
         secondAccountUpdate,
-        updateAssetCache(updatedAsset)
+        updateAssetReferences(updatedAsset)
       )
 
       const updatedFirstAccountData = newState.accountsData.evm[
@@ -279,148 +279,196 @@ describe("Accounts redux slice", () => {
 })
 
 describe("Utilities", () => {
-  describe("isAssetAmountVisible", () => {
+  describe("determineAssetDisplayAndTrust", () => {
     it("should always display base assets", () => {
-      expect(
-        isAssetAmountVisible(
-          createCompleteAssetAmount(createNetworkBaseAsset(), 0, {
+      const { displayAsset } = determineAssetDisplayAndTrust(
+        createCompleteAssetAmount(createNetworkBaseAsset(), 0, {
+          decimalAmount: 0,
+          mainCurrencyAmount: 0,
+        }),
+        {
+          hideDust: true,
+          showUntrusted: false,
+        }
+      )
+      expect(displayAsset).toBeTruthy()
+    })
+
+    describe("Hide dust", () => {
+      it("should display asset amount if NOT dust and hideDust is enabled", () => {
+        const { displayAsset } = determineAssetDisplayAndTrust(
+          createCompleteAssetAmount(createSmartContractAsset(), 200, {
+            decimalAmount: 200,
+            mainCurrencyAmount: 200,
+          }),
+          {
+            hideDust: true,
+            showUntrusted: false,
+          }
+        )
+
+        expect(displayAsset).toBeTruthy()
+      })
+
+      it("should display asset amount if NOT dust and hideDust is disabled", () => {
+        const { displayAsset } = determineAssetDisplayAndTrust(
+          createCompleteAssetAmount(createSmartContractAsset(), 200, {
+            decimalAmount: 200,
+            mainCurrencyAmount: 200,
+          }),
+          {
+            hideDust: false,
+            showUntrusted: false,
+          }
+        )
+
+        expect(displayAsset).toBeTruthy()
+      })
+
+      it("should display asset amount if dust and hideDust is disabled", () => {
+        const { displayAsset } = determineAssetDisplayAndTrust(
+          createCompleteAssetAmount(createSmartContractAsset(), 0, {
+            decimalAmount: 1,
+            mainCurrencyAmount: 0,
+          }),
+          {
+            hideDust: false,
+            showUntrusted: false,
+          }
+        )
+
+        expect(displayAsset).toBeTruthy()
+      })
+
+      it("should NOT display asset amount if dust and hideDust is enabled", () => {
+        const { displayAsset } = determineAssetDisplayAndTrust(
+          createCompleteAssetAmount(createSmartContractAsset(), 0, {
             decimalAmount: 0,
             mainCurrencyAmount: 0,
           }),
           {
             hideDust: true,
+            showUntrusted: false,
           }
         )
-      ).toBeTruthy()
-    })
 
-    describe("Hide dust", () => {
-      it("should display asset amount if NOT dust", () => {
-        expect(
-          isAssetAmountVisible(
-            createCompleteAssetAmount(createSmartContractAsset(), 200, {
-              decimalAmount: 200,
-              mainCurrencyAmount: 200,
-            }),
-            {
-              hideDust: true,
-            }
-          )
-        ).toBeTruthy()
-
-        expect(
-          isAssetAmountVisible(
-            createCompleteAssetAmount(createSmartContractAsset(), 200, {
-              // Decimal amount has to be greater than 0 for an asset to be considered present
-              decimalAmount: 200,
-              mainCurrencyAmount: 200,
-            }),
-            {
-              hideDust: false,
-            }
-          )
-        ).toBeTruthy()
-      })
-
-      it("should display asset amount if dust and hide dust disabled", () => {
-        expect(
-          isAssetAmountVisible(
-            createCompleteAssetAmount(createSmartContractAsset(), 0, {
-              // Decimal amount has to be greater than 0 for an asset to be considered present
-              decimalAmount: 1,
-              mainCurrencyAmount: 0,
-            }),
-            {
-              hideDust: false,
-            }
-          )
-        ).toBeTruthy()
-      })
-
-      it("should NOT display asset amount if dust and hide dust enabled", () => {
-        expect(
-          isAssetAmountVisible(
-            createCompleteAssetAmount(createSmartContractAsset(), 0, {
-              decimalAmount: 0,
-              mainCurrencyAmount: 0,
-            }),
-            {
-              hideDust: true,
-            }
-          )
-        ).toBeFalsy()
+        expect(displayAsset).toBeFalsy()
       })
     })
 
     describe("Trusted assets", () => {
-      it("should display asset amount if trusted", () => {
-        expect(
-          isAssetAmountVisible(
-            createCompleteAssetAmount(
-              createSmartContractAsset({ metadata: { trusted: true } }),
-              200,
-              {
-                decimalAmount: 200,
-                mainCurrencyAmount: 200,
-              }
-            ),
+      it("should display asset amount if trusted and showUntrusted is disabled", () => {
+        const { displayAsset } = determineAssetDisplayAndTrust(
+          createCompleteAssetAmount(
+            createSmartContractAsset({ metadata: { trusted: true } }),
+            200,
             {
-              hideDust: true,
+              decimalAmount: 200,
+              mainCurrencyAmount: 200,
             }
-          )
-        ).toBeTruthy()
+          ),
+          {
+            hideDust: true,
+            showUntrusted: false,
+          }
+        )
 
-        expect(
-          isAssetAmountVisible(
-            createCompleteAssetAmount(
-              createSmartContractAsset({ metadata: { trusted: true } }),
-              200,
-              {
-                decimalAmount: 200,
-                mainCurrencyAmount: 200,
-              }
-            ),
-            {
-              hideDust: true,
-            }
-          )
-        ).toBeTruthy()
+        expect(displayAsset).toBeTruthy()
       })
 
-      it("should NOT display asset amount if untrusted", () => {
-        expect(
-          isAssetAmountVisible(
-            createCompleteAssetAmount(
-              createSmartContractAsset({ metadata: { trusted: false } }),
-              200,
-              {
-                decimalAmount: 200,
-                mainCurrencyAmount: 200,
-              }
-            ),
+      it("should display asset amount if trusted and showUntrusted is enabled", () => {
+        const { displayAsset } = determineAssetDisplayAndTrust(
+          createCompleteAssetAmount(
+            createSmartContractAsset({ metadata: { trusted: true } }),
+            200,
             {
-              hideDust: true,
+              decimalAmount: 200,
+              mainCurrencyAmount: 200,
             }
-          )
-        ).toBeFalsy()
+          ),
+          {
+            hideDust: true,
+            showUntrusted: true,
+          }
+        )
+
+        expect(displayAsset).toBeTruthy()
+      })
+
+      it("should NOT display asset amount if untrusted (trusted value set to false) and showUntrusted is disabled", () => {
+        const { displayAsset } = determineAssetDisplayAndTrust(
+          createCompleteAssetAmount(
+            createSmartContractAsset({ metadata: { trusted: false } }),
+            200,
+            {
+              decimalAmount: 200,
+              mainCurrencyAmount: 200,
+            }
+          ),
+          {
+            hideDust: true,
+            showUntrusted: false,
+          }
+        )
+
+        expect(displayAsset).toBeFalsy()
+      })
+
+      it("should NOT display asset amount if untrusted (empty metadata) and showUntrusted is disabled", () => {
+        const { displayAsset } = determineAssetDisplayAndTrust(
+          createCompleteAssetAmount(
+            createSmartContractAsset({ metadata: {} }),
+            200,
+            {
+              decimalAmount: 200,
+              mainCurrencyAmount: 200,
+            }
+          ),
+          {
+            hideDust: true,
+            showUntrusted: false,
+          }
+        )
+
+        expect(displayAsset).toBeFalsy()
+      })
+
+      it("should display asset amount if untrusted and showUntrusted is enabled", () => {
+        const { displayAsset } = determineAssetDisplayAndTrust(
+          createCompleteAssetAmount(
+            createSmartContractAsset({ metadata: { trusted: false } }),
+            200,
+            {
+              decimalAmount: 200,
+              mainCurrencyAmount: 200,
+            }
+          ),
+          {
+            hideDust: true,
+            showUntrusted: true,
+          }
+        )
+
+        expect(displayAsset).toBeTruthy()
       })
 
       it("should NOT display asset amount if trusted and dust", () => {
-        expect(
-          isAssetAmountVisible(
-            createCompleteAssetAmount(
-              createSmartContractAsset({ metadata: { trusted: true } }),
-              0,
-              {
-                decimalAmount: 0,
-                mainCurrencyAmount: 0,
-              }
-            ),
+        const { displayAsset } = determineAssetDisplayAndTrust(
+          createCompleteAssetAmount(
+            createSmartContractAsset({ metadata: { trusted: true } }),
+            0,
             {
-              hideDust: true,
+              decimalAmount: 0,
+              mainCurrencyAmount: 0,
             }
-          )
-        ).toBeFalsy()
+          ),
+          {
+            hideDust: true,
+            showUntrusted: false,
+          }
+        )
+
+        expect(displayAsset).toBeFalsy()
       })
     })
   })

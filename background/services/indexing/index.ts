@@ -419,7 +419,7 @@ export default class IndexingService extends BaseService<Events> {
             this.addTokenToTrackByContract(
               addressNetwork.network,
               fungibleAsset.contractAddress,
-              { discoveryTx: transfer.txHash }
+              { discoveryTxHash: transfer.txHash }
             )
           }
         })
@@ -608,7 +608,7 @@ export default class IndexingService extends BaseService<Events> {
   async addTokenToTrackByContract(
     network: EVMNetwork,
     contractAddress: string,
-    metadata: { discoveryTx?: HexString } = {}
+    metadata: { discoveryTxHash?: HexString } = {}
   ): Promise<SmartContractFungibleAsset | undefined> {
     const normalizedAddress = normalizeEVMAddress(contractAddress)
 

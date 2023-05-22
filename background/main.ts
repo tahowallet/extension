@@ -50,7 +50,7 @@ import {
   loadAccount,
   updateAccountBalance,
   updateAccountName,
-  updateAssetCache,
+  updateAssetReferences,
   updateENSAvatar,
 } from "./redux-slices/accounts"
 import {
@@ -1074,7 +1074,7 @@ export default class Main extends BaseService<never> {
         await this.store.dispatch(
           updateAssetMetadata([assets[0], assets[0].metadata ?? {}])
         )
-        await this.store.dispatch(updateAssetCache(assets[0]))
+        await this.store.dispatch(updateAssetReferences(assets[0]))
       }
     })
 
