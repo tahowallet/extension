@@ -14,10 +14,8 @@ import { useTranslation } from "react-i18next"
 import {
   BINANCE_SMART_CHAIN,
   EIP_1559_COMPLIANT_CHAIN_IDS,
-  NETWORKS_WITH_FEE_SETTINGS,
 } from "@tallyho/tally-background/constants"
 import classNames from "classnames"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { isSwapAnnotation } from "@tallyho/tally-background/services/enrichment/utils"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
@@ -50,11 +48,8 @@ export default function DetailPanel({
 
   const reduxTransactionData = useBackgroundSelector(selectTransactionData)
 
-  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   // If a transaction request is passed directly, prefer it over Redux.
   const transactionDetails = transactionRequest ?? reduxTransactionData
-
-  const currentNetwork = transactionDetails?.network || selectedNetwork
 
   const dispatch = useBackgroundDispatch()
 
@@ -153,10 +148,6 @@ export default function DetailPanel({
       <span
         className={classNames("detail_item warning", {
           visible: hasInsufficientFundsWarning,
-          hidden:
-            // Networks that have fee settings should have extra space for warning
-            !NETWORKS_WITH_FEE_SETTINGS.has(currentNetwork.chainID) &&
-            !hasInsufficientFundsWarning,
         })}
       >
         <SignTransactionDetailWarning
@@ -175,13 +166,12 @@ export default function DetailPanel({
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
           }
           .detail_items_wrap {
             display: flex;
             margin-top: 21px;
+            gap: 10px;
             flex-direction: column;
-            max-height: 108px;
           }
           .detail_item_right {
             color: var(--green-20);
@@ -195,14 +185,13 @@ export default function DetailPanel({
           }
           .warning {
             width: 100%;
+            max-height: 0;
             transform: translateX(calc(-100% - 24px));
-            transition: transform ease-out 0.3s;
+            transition: transform ease-out 0.2s, max-height ease-out 0.2s;
           }
           .warning.visible {
             transform: translateX(0);
-          }
-          .warning.hidden {
-            height: 0;
+            max-height: 55px;
           }
         `}
       </style>
