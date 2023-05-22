@@ -91,6 +91,7 @@ export default function SingleAsset(): ReactElement {
       localizedDecimalAmount: undefined,
     }
 
+  const isTokenListAsset = !!asset?.metadata?.tokenLists?.length
   const isUntrusted = isUntrustedAsset(asset)
   const [warnedAsset, setWarnedAsset] =
     useState<SmartContractFungibleAsset | null>(null)
@@ -107,12 +108,16 @@ export default function SingleAsset(): ReactElement {
       )}
       <div className="navigation standard_width_padded">
         <SharedBackButton path="/" />
-        {isUntrusted && asset && isSmartContractFungibleAsset(asset) && (
+        {!isTokenListAsset && asset && isSmartContractFungibleAsset(asset) && (
           <AssetTrustToggler
-            text={t("assets.unverifiedAsset")}
-            icon="notif-attention"
+            text={
+              isUntrusted
+                ? t("assets.unverifiedAsset")
+                : t("assets.verifiedByUser")
+            }
+            icon={`notif-${isUntrusted ? "attention" : "correct"}`}
             color="var(--green-20)"
-            hoverColor="var(--green-5)"
+            hoverColor="var(--white)"
             onClick={() => setWarnedAsset(asset)}
           />
         )}
@@ -250,7 +255,7 @@ export default function SingleAsset(): ReactElement {
             line-height: 32px;
             text-transform: uppercase;
             margin-left: 8px;
-            max-width: 150px;
+            max-width: 118px;
           }
           .asset_wrap {
             display: flex;

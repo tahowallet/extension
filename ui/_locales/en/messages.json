@@ -827,13 +827,10 @@
       "symbol": "Symbol",
       "contract": "Contract address",
       "discoveryTxHash": "Added from transaction",
-      "copiedTx": "Transaction copied to clipboard",
-      "close": "Close",
-      "hideAsset": "Hide asset",
-      "keepHidden": "Keep hidden",
-      "trustAsset": "Trust asset",
+      "dontShow": "Don’t show",
+      "addToAssetList": "Add to asset list",
       "banner": {
-        "title": "Assets not verified",
+        "title": "Asset not verified",
         "description": "Be aware of scam and spam assets, only verify assets you trust."
       }
     }
