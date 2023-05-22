@@ -44,6 +44,12 @@ export type AssetMetadata = {
    * legitimate asset.
    */
   trusted?: boolean
+}
+
+/**
+ * Every asset has metadata. Some of them have network-specific metadata.
+ */
+type NetworkSpecificAssetMetadata = AssetMetadata & {
   /**
    * Set on assets discovered through transaction annotations
    */
@@ -92,7 +98,10 @@ export type FiatCurrency = FungibleAsset
  * Any asset that exists on a particular network; see {@link NetworkSpecific)
  * for information on network-specific objects.
  */
-export type NetworkSpecificAsset = NetworkSpecific & Asset
+export type NetworkSpecificAsset = NetworkSpecific &
+  Asset & {
+    metadata?: NetworkSpecificAssetMetadata
+  }
 
 /**
  * Any asset that is managed by a smart contract; see {@link SmartContract) for
@@ -104,7 +113,9 @@ export type SmartContractAsset = SmartContract & Asset
  * Any fungible asset that is managed by a smart contract; see
  * {@link SmartContract) for information on smart contract objects.
  */
-export type SmartContractFungibleAsset = FungibleAsset & SmartContract
+export type SmartContractFungibleAsset = FungibleAsset &
+  SmartContract &
+  NetworkSpecificAsset
 
 /*
  * The primary type representing amounts in fungible or non-fungible asset
