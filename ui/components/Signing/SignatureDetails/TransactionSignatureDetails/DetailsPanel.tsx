@@ -6,7 +6,6 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { updateTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import type {
-  AssetSwap,
   EnrichedEIP1559TransactionRequest,
   EnrichedEVMTransactionRequest,
   EnrichedLegacyTransactionRequest,
@@ -19,6 +18,7 @@ import {
 } from "@tallyho/tally-background/constants"
 import classNames from "classnames"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { isSwapAnnotation } from "@tallyho/tally-background/services/enrichment/utils"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
 import NetworkSettingsChooser from "../../../NetworkFees/NetworkSettingsChooser"
@@ -35,8 +35,6 @@ type DetailPanelProps = {
   defaultPanelState?: PanelState
 }
 
-// FIXME Move all of this into TransactionSignatureDetails/DetailsPanel once
-// FIXME the new signature flow is enabled.
 export default function DetailPanel({
   transactionRequest,
   defaultPanelState,
@@ -92,10 +90,6 @@ export default function DetailPanel({
   const isContractAddress =
     transactionDetails.annotation?.warnings?.includes("send-to-contract")
 
-  const isSwapTransaction =
-    transactionDetails.annotation &&
-    transactionDetails?.annotation?.type === "asset-swap"
-
   const networkSettingsSaved = () => {
     setUpdateNum(updateNum + 1)
 
@@ -150,10 +144,10 @@ export default function DetailPanel({
         </div>
         <FeeSettingsButton onClick={() => setNetworkSettingsModalOpen(true)} />
       </span>
-      {isSwapTransaction && transactionDetails.annotation && (
+      {isSwapAnnotation(transactionDetails.annotation) && (
         <SwapAssetDetails
           transactionRequest={transactionDetails}
-          annotation={transactionDetails.annotation as AssetSwap} // TODO: add a type guard
+          annotation={transactionDetails.annotation}
         />
       )}
       <span

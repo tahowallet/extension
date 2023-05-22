@@ -1,5 +1,10 @@
 import dayjs from "dayjs"
-import { EIP2612SignTypedDataAnnotation, EnrichedEVMTransaction } from "./types"
+import {
+  AssetSwap,
+  EIP2612SignTypedDataAnnotation,
+  EnrichedEVMTransaction,
+  TransactionAnnotation,
+} from "./types"
 import { ETHEREUM } from "../../constants"
 import { SmartContractFungibleAsset } from "../../assets"
 import NameService from "../name"
@@ -160,3 +165,7 @@ export function getRelevantTransactionAddresses(
     )
     .map(({ address }) => normalizeEVMAddress(address))
 }
+
+export const isSwapAnnotation = (
+  annotation?: TransactionAnnotation
+): annotation is AssetSwap => annotation?.type === "asset-swap"
