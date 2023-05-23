@@ -471,5 +471,49 @@ describe("Utilities", () => {
         expect(displayAsset).toBe(false)
       })
     })
+
+    describe("Hide asset", () => {
+      it("should NOT display asset amount if verified and hidden ", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
+          createCompleteAssetAmount(
+            createSmartContractAsset({
+              metadata: { trusted: true, hidden: true },
+            }),
+            200,
+            {
+              decimalAmount: 200,
+              mainCurrencyAmount: 200,
+            }
+          ),
+          {
+            hideDust: false,
+            showUnverified: true,
+          }
+        )
+
+        expect(displayAsset).toBe(false)
+      })
+
+      it("should display asset amount if verified and NOT hidden", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
+          createCompleteAssetAmount(
+            createSmartContractAsset({
+              metadata: { trusted: true, hidden: false },
+            }),
+            200,
+            {
+              decimalAmount: 200,
+              mainCurrencyAmount: 200,
+            }
+          ),
+          {
+            hideDust: true,
+            showUnverified: false,
+          }
+        )
+
+        expect(displayAsset).toBe(true)
+      })
+    })
   })
 })
