@@ -89,13 +89,13 @@ export function determineAssetDisplayAndVerify(
       : assetAmount.mainCurrencyAmount > userValueDustThreshold
   const isPresent = assetAmount.decimalAmount > 0
   const showDust = !hideDust
-  const isHidden = assetAmount.asset.metadata?.hidden ?? false
+  const showAsset = !(assetAmount.asset.metadata?.hidden ?? false)
 
-  const verifiedToBeVisible = !isHidden && (showUnverified || isVerified)
+  const verifiedToBeVisible = showAsset && (showUnverified || isVerified)
   const enoughBalanceToBeVisible = isPresent && (isNotDust || showDust)
 
   return {
-    displayAsset: verifiedToBeVisible && enoughBalanceToBeVisible && !isHidden,
+    displayAsset: verifiedToBeVisible && enoughBalanceToBeVisible,
     verifiedAsset: isVerified,
   }
 }
