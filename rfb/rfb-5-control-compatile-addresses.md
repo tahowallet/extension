@@ -11,27 +11,30 @@ underlying flexibility needed to rerpesent these differences.
 Currently, the code base assumes that a given address is always controlled by
 the same underlying key, keyring, or external device, even if it is on a
 different network. For regular keys, in practice, this is a fair assumption: if
-Bob has a key that can sign for address `0x0abc` with a derivation path of
-`44'/60'/0'/0/0`, the likelihood that Bob will have a different key that can
-sign for address `0x0abc` but at derivation path `44'/137'/0'/0/0` is quite
-low.
+Bob has a mnemonic that can sign for address `0x0abc` with a derivation path of
+`44'/60'/0'/0/0`, it's extremely unlikely that Bob will ALSO have a different
+key that can sign for the same address but at derivation path
+`44'/137'/0'/0/0`. For this to happen, Bob would more or less have to have two
+different mnemonics that derive the same private key at two different
+derivation paths!
 
-This assumption falls apart when it comes to accounts that are not derived or
-controlled directly by in-memory private keys, however. For example, if Bob is
-viewing the Ethereum network and has a key stored on a Ledger for `0x0abc` at
-`44'/60'/0'/0/0` can sign a transaction for that address, they can interact
-with everything as expected--dApps, etc. If Bob switches to the Rootstock
-network, on the other hand, and they control that key using a Ledger, Ledger
-itself might require a different app to sign a transaction for that key on
-Roostock.
+The assumption, however, falls apart when it comes to accounts that are not
+derived or controlled directly by in-memory private keys, however. For example,
+if Bob is viewing the Ethereum network and has a key stored on a Ledger for
+`0x0abc` at `44'/60'/0'/0/0` and can sign a transaction for that address, they
+can interact with everything as expected--dApps, etc. If Bob switches to the
+Rootstock network, on the other hand, and they control that key using a Ledger,
+Ledger itself might require a different app to sign a transaction for that key
+on Roostock, and so may have to take additional steps to be able to control the
+same address.
 
-This is the simplest scenario. A more complex scenario appears if the address
-in question is actually a smart contract or account abstraction-based wallet.
-In these cases, the controls for an address on one network may differ wildly
-from those on a different network. A good example of this scenario is the
-Wintermute Optimism hack, where a market maker provided the Optimism team with
-an Ethereum mainnet multisig address that they did not control on the Optimism
-network, and lost the funds sent to that address on Optimism[^1].
+This is only the simplest scenario. A more complex scenario appears if the
+address in question is actually a smart contract or account abstraction-based
+wallet. In these cases, the controls for an address on one network may differ
+wildly from those on a different network. A good example of this scenario is
+the Wintermute Optimism hack, where a market maker provided the Optimism team
+with an Ethereum mainnet multisig address that they did not control on the
+Optimism network, and lost the funds sent to that address on Optimism[^1].
 
 ### Current Functionality
 
