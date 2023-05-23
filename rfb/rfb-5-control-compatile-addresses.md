@@ -81,9 +81,9 @@ and correspond to the same user on multiple networks or not.
 
 To allow the above, we can introduce two concepts for any given pair of networks:
 
-- Two networks are _transaction-compatible_ for a given external wallet if sign
-  a transaction for both networks from the same key material without requiring
-  any on-wallet manipulation[^2].
+- Two networks are _transaction-compatible_ for a given external wallet if the
+  wallet can sign a transaction for both networks from the same key material
+  without requiring any manipulation on the hardware wallet itself[^2].
 - An _address_ is considered _control-compatible_ across the pair of networks
   if it is known to be controllable by the same mechanism across those
   networks; that is, when the wallet knows for certain that the same user can
@@ -201,8 +201,6 @@ compatibility, the signing service should check:
 - If there is a known signer (internal, Ledger, or otherwise), the backing service
   for that signer should have a new implemented method, `isTransactionCompatible`,
   defined below; return the result of that method.
-
-Additionally
 
 #### Signer service updates
 
