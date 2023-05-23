@@ -8,19 +8,21 @@ import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryP
 export default function SwapAssetDetails({
   annotation: { sources },
 }: TransactionSignatureSummaryProps<AssetSwap>): ReactElement {
-  const { t } = useTranslation("translation", { keyPrefix: "swap" })
+  const { t } = useTranslation()
 
   return (
     <>
       <div className="swap_details">
         <div className="swap_details_row">
           <div className="swap_details_label">
-            {t("transactionSettings.daoFee")}
+            {t("signTransaction.swap.daoFee")}
           </div>
           <div className="swap_details_value">{SWAP_FEE * 100}%</div>
         </div>
         <div className="swap_details_row">
-          <div className="swap_details_label">{t("exchangeRoute")}</div>
+          <div className="swap_details_label">
+            {t("signTransaction.swap.exchangeRoute")}
+          </div>
           <div className="swap_details_value">
             {sources.map((source) => (
               <div className="swap_details_source" key={source.name}>

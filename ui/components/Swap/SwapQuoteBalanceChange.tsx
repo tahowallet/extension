@@ -62,7 +62,7 @@ export default function SwapQuoteBalanceChange(
     <>
       <div className="balance_change">
         <div className="balance_change_header">
-          {t("swap.transaction.balanceChange")}
+          {t("signTransaction.swap.balanceChange")}
         </div>
 
         <div className="balance_token sell">

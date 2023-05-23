@@ -57,14 +57,7 @@
     },
     "from": "Trocar a partir de:",
     "title": "Trocar Ativos",
-    "to": "Trocar para:",
-    "transactionSettings": {
-      "daoFee": "Taxa da DAO",
-      "estimatedFee": "Taxa estimada de rede",
-      "settings": "Definições de transação",
-      "slippageTolerance": "Tolerância de slippage",
-      "title": "Definições de transação"
-    }
+    "to": "Trocar para:"
   },
   "wallet": {
     "assetAmount": "Ativo / Quantidade",

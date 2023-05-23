@@ -660,6 +660,12 @@
       "authorizeDeposit": "Authorize Deposit",
       "signMessage": "Sign {{messageType}}",
       "confirmButtonLabel": "Confirm"
+    },
+    "swap": {
+      "title": "Swap assets",
+      "balanceChange": "Balance change",
+      "daoFee": "DAO fee",
+      "exchangeRoute": "Exchange route"
     }
   },
   "addNewChain": {
@@ -685,7 +691,6 @@
     "switchAssets": "Switch Assets",
     "swapRewardsTeaser": "Swap rewards coming soon",
     "continueSwap": "Continue Swap",
-    "exchangeRoute": "Exchange route",
     "loadingQuote": "Fetching price",
     "rewards": {
       "header": "Swap rewards for community",
@@ -698,18 +703,7 @@
       "noApprovalTarget": "Attempting to approve transfer without an approval target.",
       "nonContractAsset": "Attempting to approve transfer of a non-contract asset."
     },
-    "reviewSwap": "Review swap",
-    "transaction": {
-      "header": "Swap assets",
-      "balanceChange": "Balance change"
-    },
-    "transactionSettings": {
-      "title": "Transaction settings",
-      "slippageTolerance": "Slippage tolerance",
-      "settings": "Transaction settings",
-      "estimatedFee": "Estimated network fee",
-      "daoFee": "DAO fee"
-    }
+    "reviewSwap": "Review swap"
   },
   "switchWallet": {
     "title": "Want to use another wallet instead?",

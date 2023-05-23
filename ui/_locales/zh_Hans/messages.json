@@ -44,14 +44,7 @@
     },
     "from": "换自：",
     "title": "交换资产",
-    "to": "换成：",
-    "transactionSettings": {
-      "daoFee": "DAO 费用",
-      "estimatedFee": "预估网络费用",
-      "settings": "交易设置",
-      "slippageTolerance": "滑动公差",
-      "title": "交易设置"
-    }
+    "to": "换成："
   },
   "wallet": {
     "assetAmount": "资产/金额",

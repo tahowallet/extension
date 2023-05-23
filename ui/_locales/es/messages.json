@@ -103,14 +103,7 @@
     },
     "from": "Intercambiar desde :",
     "title": "Intercambiar Activos",
-    "to": "Cambiar a :",
-    "transactionSettings": {
-      "daoFee": "Comisión DAO",
-      "estimatedFee": "Comisión de la red estimada",
-      "settings": "Ajustes de transacciones",
-      "slippageTolerance": "Tolerancia del deslizamiento",
-      "title": "Configuración de transacciones"
-    }
+    "to": "Cambiar a :"
   },
   "toggle": {
     "collapse": "Colapsar",
