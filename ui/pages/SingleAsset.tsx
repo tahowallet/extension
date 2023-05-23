@@ -18,14 +18,17 @@ import {
   DEFAULT_NETWORKS_BY_CHAIN_ID,
   NETWORKS_SUPPORTING_SWAPS,
 } from "@tallyho/tally-background/constants"
-import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import {
+  hasTokenList,
+  isUntrustedAsset,
+} from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedTooltip from "../components/Shared/SharedTooltip"
-import { scanWebsite } from "../utils/constants"
+import { blockExplorer } from "../utils/constants"
 import AssetWarningSlideUp from "../components/Wallet/UntrustedAsset/AssetWarningSlideUp"
 import AssetTrustToggler from "../components/Wallet/UntrustedAsset/AssetTrustToggler"
 
@@ -91,8 +94,8 @@ export default function SingleAsset(): ReactElement {
       localizedDecimalAmount: undefined,
     }
 
-  const isTokenListAsset = !!asset?.metadata?.tokenLists?.length
-  const isUntrusted = isUntrustedAsset(asset)
+  const isVerified = hasTokenList(asset)
+  const isVerifiedByUser = isUntrustedAsset(asset)
   const [warnedAsset, setWarnedAsset] =
     useState<SmartContractFungibleAsset | null>(null)
 
@@ -108,14 +111,14 @@ export default function SingleAsset(): ReactElement {
       )}
       <div className="navigation standard_width_padded">
         <SharedBackButton path="/" />
-        {!isTokenListAsset && asset && isSmartContractFungibleAsset(asset) && (
+        {!isVerified && asset && isSmartContractFungibleAsset(asset) && (
           <AssetTrustToggler
             text={
-              isUntrusted
+              isVerifiedByUser
                 ? t("assets.unverifiedAsset")
                 : t("assets.verifiedByUser")
             }
-            icon={`notif-${isUntrusted ? "attention" : "correct"}`}
+            icon={`notif-${isVerifiedByUser ? "attention" : "correct"}`}
             color="var(--green-20)"
             hoverColor="var(--white)"
             onClick={() => setWarnedAsset(asset)}
@@ -140,7 +143,7 @@ export default function SingleAsset(): ReactElement {
                       href={
                         DEFAULT_NETWORKS_BY_CHAIN_ID.has(currentNetwork.chainID)
                           ? `${
-                              scanWebsite[currentNetwork.chainID].url
+                              blockExplorer[currentNetwork.chainID].url
                             }/token/${contractAddress}`
                           : currentNetwork.blockExplorerURL
                       }
@@ -151,9 +154,9 @@ export default function SingleAsset(): ReactElement {
                     </a>
                   )}
                 >
-                  {scanWebsite[currentNetwork.chainID]
+                  {blockExplorer[currentNetwork.chainID]
                     ? t("assets.viewAsset", {
-                        siteTitle: scanWebsite[currentNetwork.chainID].title,
+                        siteTitle: blockExplorer[currentNetwork.chainID].title,
                       })
                     : t("assets.openNetworkExplorer")}
                 </SharedTooltip>
@@ -165,7 +168,9 @@ export default function SingleAsset(): ReactElement {
             )}
           </div>
           <div className="right">
-            {isUntrusted && asset && isSmartContractFungibleAsset(asset) ? (
+            {isVerifiedByUser &&
+            asset &&
+            isSmartContractFungibleAsset(asset) ? (
               <SharedButton
                 type="primary"
                 size="medium"

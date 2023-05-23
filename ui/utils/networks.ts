@@ -3,7 +3,7 @@ import {
   isBuiltInNetwork,
 } from "@tallyho/tally-background/constants"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
-import { scanWebsite } from "./constants"
+import { blockExplorer } from "./constants"
 
 // From chainlist.org
 export const FALLBACK_ICONS_BY_CHAINID: Record<string, string> = {
@@ -118,8 +118,10 @@ export const getNetworkIcon = (network: EVMNetwork): string => {
   return FALLBACK_ICONS_BY_CHAINID[network.chainID] ?? ""
 }
 
-export const getScanWebsiteUrl = (network: EVMNetwork): string | undefined => {
+export const getBlockExplorerURL = (
+  network: EVMNetwork
+): string | undefined => {
   return DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
-    ? scanWebsite[network.chainID].url
+    ? blockExplorer[network.chainID].url
     : network.blockExplorerURL
 }

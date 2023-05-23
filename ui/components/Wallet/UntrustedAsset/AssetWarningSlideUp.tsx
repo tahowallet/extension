@@ -12,7 +12,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
 import SharedSlideUpMenuPanel from "../../Shared/SharedSlideUpMenuPanel"
 import SharedIcon from "../../Shared/SharedIcon"
 import UntrustedAssetBanner from "./UntrustedAssetBanner"
-import { getScanWebsiteUrl } from "../../../utils/networks"
+import { getBlockExplorerURL } from "../../../utils/networks"
 
 type AssetWarningSlideUpProps = {
   asset: SmartContractFungibleAsset
@@ -46,7 +46,7 @@ export default function AssetWarningSlideUp(
 
   const discoveryTxHash = asset.metadata?.discoveryTxHash
 
-  const scanWebsiteUrl = getScanWebsiteUrl(network)
+  const blockExplorerUrl = getBlockExplorerURL(network)
 
   return (
     <SharedSlideUpMenu
@@ -73,20 +73,20 @@ export default function AssetWarningSlideUp(
                   <button
                     type="button"
                     className={classNames("address_button", {
-                      no_click: !scanWebsiteUrl,
+                      no_click: !blockExplorerUrl,
                     })}
-                    disabled={!scanWebsiteUrl}
+                    disabled={!blockExplorerUrl}
                     onClick={() =>
                       window
                         .open(
-                          `${scanWebsiteUrl}/token/${contractAddress}`,
+                          `${blockExplorerUrl}/token/${contractAddress}`,
                           "_blank"
                         )
                         ?.focus()
                     }
                   >
                     {truncateAddress(contractAddress)}
-                    {scanWebsiteUrl && (
+                    {blockExplorerUrl && (
                       <SharedIcon
                         width={16}
                         icon="icons/s/new-tab.svg"
@@ -105,12 +105,12 @@ export default function AssetWarningSlideUp(
                     <button
                       type="button"
                       className={classNames("address_button", {
-                        no_click: !scanWebsiteUrl,
+                        no_click: !blockExplorerUrl,
                       })}
                       onClick={() =>
                         window
                           .open(
-                            `${scanWebsiteUrl}/tx/${discoveryTxHash}`,
+                            `${blockExplorerUrl}/tx/${discoveryTxHash}`,
                             "_blank"
                           )
                           ?.focus()

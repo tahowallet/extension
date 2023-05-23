@@ -269,11 +269,11 @@ describe("Accounts redux slice", () => {
       expect(
         updatedFirstAccountData.balances[asset.symbol].assetAmount.asset
           .metadata?.trusted
-      ).toBeTruthy()
+      ).toBe(true)
       expect(
         updatedSecondAccountData.balances[asset.symbol].assetAmount.asset
           .metadata?.trusted
-      ).toBeTruthy()
+      ).toBe(true)
     })
   })
 })
@@ -291,7 +291,7 @@ describe("Utilities", () => {
           showUntrusted: false,
         }
       )
-      expect(displayAsset).toBeTruthy()
+      expect(displayAsset).toBe(true)
     })
 
     describe("Hide dust", () => {
@@ -307,7 +307,7 @@ describe("Utilities", () => {
           }
         )
 
-        expect(displayAsset).toBeTruthy()
+        expect(displayAsset).toBe(true)
       })
 
       it("should display asset amount if NOT dust and hideDust is disabled", () => {
@@ -322,7 +322,7 @@ describe("Utilities", () => {
           }
         )
 
-        expect(displayAsset).toBeTruthy()
+        expect(displayAsset).toBe(true)
       })
 
       it("should display asset amount if dust and hideDust is disabled", () => {
@@ -337,7 +337,7 @@ describe("Utilities", () => {
           }
         )
 
-        expect(displayAsset).toBeTruthy()
+        expect(displayAsset).toBe(true)
       })
 
       it("should NOT display asset amount if dust and hideDust is enabled", () => {
@@ -352,7 +352,7 @@ describe("Utilities", () => {
           }
         )
 
-        expect(displayAsset).toBeFalsy()
+        expect(displayAsset).toBe(false)
       })
     })
 
@@ -373,7 +373,7 @@ describe("Utilities", () => {
           }
         )
 
-        expect(displayAsset).toBeTruthy()
+        expect(displayAsset).toBe(true)
       })
 
       it("should display asset amount if trusted and showUntrusted is enabled", () => {
@@ -392,7 +392,7 @@ describe("Utilities", () => {
           }
         )
 
-        expect(displayAsset).toBeTruthy()
+        expect(displayAsset).toBe(true)
       })
 
       it("should NOT display asset amount if untrusted (trusted value set to false) and showUntrusted is disabled", () => {
@@ -411,7 +411,7 @@ describe("Utilities", () => {
           }
         )
 
-        expect(displayAsset).toBeFalsy()
+        expect(displayAsset).toBe(false)
       })
 
       it("should NOT display asset amount if untrusted (empty metadata) and showUntrusted is disabled", () => {
@@ -430,7 +430,7 @@ describe("Utilities", () => {
           }
         )
 
-        expect(displayAsset).toBeFalsy()
+        expect(displayAsset).toBe(false)
       })
 
       it("should display asset amount if untrusted and showUntrusted is enabled", () => {
@@ -449,7 +449,7 @@ describe("Utilities", () => {
           }
         )
 
-        expect(displayAsset).toBeTruthy()
+        expect(displayAsset).toBe(true)
       })
 
       it("should NOT display asset amount if trusted and dust", () => {
@@ -468,7 +468,7 @@ describe("Utilities", () => {
           }
         )
 
-        expect(displayAsset).toBeFalsy()
+        expect(displayAsset).toBe(false)
       })
     })
   })

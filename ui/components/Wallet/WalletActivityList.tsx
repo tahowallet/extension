@@ -12,7 +12,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import WalletActivityDetails from "./WalletActivityDetails"
 import WalletActivityListItem from "./WalletActivityListItem"
-import { scanWebsite } from "../../utils/constants"
+import { blockExplorer } from "../../utils/constants"
 import SharedButton from "../Shared/SharedButton"
 
 type Props = {
@@ -36,7 +36,7 @@ export default function WalletActivityList({
     useState(true)
 
   const network = useBackgroundSelector(selectCurrentNetwork)
-  const scanWebsiteInfo = scanWebsite[network.chainID]
+  const scanWebsiteInfo = blockExplorer[network.chainID]
 
   useEffect(() => {
     setInstantlyHideActivityDetails(true)

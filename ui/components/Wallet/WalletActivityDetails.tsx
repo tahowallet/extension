@@ -12,7 +12,7 @@ import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedActivityIcon from "../Shared/SharedActivityIcon"
 import SharedIcon from "../Shared/SharedIcon"
 import useActivityViewDetails from "../../hooks/activity-hooks"
-import { getScanWebsiteUrl } from "../../utils/networks"
+import { getBlockExplorerURL } from "../../utils/networks"
 
 function DetailRowItem(props: ActivityDetail): ReactElement {
   const { assetIconUrl, label, value } = props
@@ -126,11 +126,13 @@ export default function WalletActivityDetails(
   const [details, setDetails] = useState<ActivityDetail[]>([])
   const network = useBackgroundSelector(selectCurrentNetwork)
 
-  const scanWebsiteUrl = getScanWebsiteUrl(network)
+  const blockExplorerUrl = getBlockExplorerURL(network)
 
   const openExplorer = useCallback(() => {
-    window.open(`${scanWebsiteUrl}/tx/${activityItem.hash}`, "_blank")?.focus()
-  }, [activityItem?.hash, scanWebsiteUrl])
+    window
+      .open(`${blockExplorerUrl}/tx/${activityItem.hash}`, "_blank")
+      ?.focus()
+  }, [activityItem?.hash, blockExplorerUrl])
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -155,7 +157,7 @@ export default function WalletActivityDetails(
       <div className="header">
         <SharedActivityIcon type={activityViewDetails.icon} size={16} />
         <span className="header_title">{activityViewDetails.label}</span>
-        {scanWebsiteUrl && (
+        {blockExplorerUrl && (
           <SharedIcon
             icon="icons/s/new-tab.svg"
             width={16}

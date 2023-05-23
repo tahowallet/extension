@@ -1,5 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
-import { selectHideDust, selectShowUntrustedAssets } from "../ui"
+import { selectHideDust, selectShowUntrusted } from "../ui"
 import { RootState } from ".."
 import {
   AccountType,
@@ -88,9 +88,10 @@ export function determineAssetDisplayAndTrust(
       ? true
       : assetAmount.mainCurrencyAmount > userValueDustThreshold
   const isPresent = assetAmount.decimalAmount > 0
+  const showDust = !hideDust
 
   const trustedToBeVisible = showUntrusted || isTrusted
-  const enoughBalanceToBeVisible = isPresent && (isNotDust || !hideDust)
+  const enoughBalanceToBeVisible = isPresent && (isNotDust || showDust)
 
   return {
     displayAsset: trustedToBeVisible && enoughBalanceToBeVisible,
@@ -232,7 +233,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
   getAccountState,
   getAssetsState,
   selectHideDust,
-  selectShowUntrustedAssets,
+  selectShowUntrusted,
   selectMainCurrencySymbol,
   (account, assets, hideDust, showUntrusted, mainCurrencySymbol) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
@@ -263,7 +264,7 @@ export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   getAssetsState,
   selectHideDust,
-  selectShowUntrustedAssets,
+  selectShowUntrusted,
   selectMainCurrencySymbol,
   (currentAccount, assets, hideDust, showUntrusted, mainCurrencySymbol) => {
     if (typeof currentAccount === "undefined" || currentAccount === "loading") {

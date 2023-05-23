@@ -10,8 +10,8 @@ import {
   toggleTestNetworks,
   toggleHideBanners,
   selectHideBanners,
-  toggleUntrustedAssets,
-  selectShowUntrustedAssets,
+  selectShowUntrusted,
+  toggleShowUntrusted,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
@@ -127,7 +127,7 @@ export default function Settings(): ReactElement {
   const hideBanners = useSelector(selectHideBanners)
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
-  const showUntrusted = useSelector(selectShowUntrustedAssets)
+  const showUntrusted = useSelector(selectShowUntrusted)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
@@ -142,7 +142,7 @@ export default function Settings(): ReactElement {
   }
 
   const toggleShowUntrustedAssets = (defaultWalletValue: boolean) => {
-    dispatch(toggleUntrustedAssets(defaultWalletValue))
+    dispatch(toggleShowUntrusted(defaultWalletValue))
   }
 
   const toggleHideNotificationBanners = (toggleValue: boolean) => {
@@ -162,7 +162,7 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const showUntrustedAssets = {
+  const untrustedAssets = {
     title: "",
     component: () => (
       <div className="content">
@@ -320,7 +320,7 @@ export default function Settings(): ReactElement {
   const generalList = [
     setAsDefault,
     hideSmallAssetBalance,
-    isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST) && showUntrustedAssets,
+    isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST) && untrustedAssets,
     isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
     enableTestNetworks,
     dAppsSettings,

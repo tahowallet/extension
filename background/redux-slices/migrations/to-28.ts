@@ -12,7 +12,7 @@ type NewState = {
   ui: {
     settings: {
       [settingsKey: string]: unknown
-      showUntrustedAssets: boolean
+      showUntrusted: boolean
     }
     [sliceKey: string]: unknown
   }
@@ -28,7 +28,7 @@ export default (prevState: Record<string, unknown>): NewState => {
       ...typedPrevState.ui,
       settings: {
         ...typedPrevState.ui.settings,
-        showUntrustedAssets: false,
+        showUntrusted: false,
       },
     },
   }
