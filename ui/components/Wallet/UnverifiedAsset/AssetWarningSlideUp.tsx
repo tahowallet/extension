@@ -1,7 +1,10 @@
 import React, { ReactElement } from "react"
-import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
+import {
+  AnyAssetMetadata,
+  SmartContractFungibleAsset,
+} from "@tallyho/tally-background/assets"
 import { useTranslation } from "react-i18next"
-import { updateAssetVerifyStatus } from "@tallyho/tally-background/redux-slices/assets"
+import { updateAssetMetadata } from "@tallyho/tally-background/redux-slices/assets"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
@@ -32,11 +35,6 @@ export default function AssetWarningSlideUp(
 
   const network = useBackgroundSelector(selectCurrentNetwork)
 
-  const setAssetVerifiedStatus = async (isVerified: boolean) => {
-    await dispatch(updateAssetVerifyStatus({ asset, trusted: isVerified }))
-    close()
-  }
-
   const isUnverified = isUnverifiedAssetByUser(asset)
 
   const contractAddress =
@@ -47,6 +45,12 @@ export default function AssetWarningSlideUp(
   const discoveryTxHash = asset.metadata?.discoveryTxHash
 
   const blockExplorerUrl = getBlockExplorerURL(network)
+
+  const handleUpdateAssetMetadata = async (newMetadata: AnyAssetMetadata) => {
+    const metadata = { ...asset.metadata, ...newMetadata }
+    await dispatch(updateAssetMetadata({ asset, metadata }))
+    close()
+  }
 
   return (
     <SharedSlideUpMenu
@@ -126,14 +130,20 @@ export default function AssetWarningSlideUp(
           </div>
           <div>
             <div className="asset_verify_actions">
-              <SharedButton size="medium" type="secondary" onClick={close}>
+              <SharedButton
+                size="medium"
+                type="secondary"
+                onClick={() =>
+                  handleUpdateAssetMetadata({ hidden: true, trusted: false })
+                }
+              >
                 {t("dontShow")}
               </SharedButton>
               {isUnverified && (
                 <SharedButton
                   size="medium"
                   type="primary"
-                  onClick={() => setAssetVerifiedStatus(true)}
+                  onClick={() => handleUpdateAssetMetadata({ trusted: true })}
                 >
                   {t("addToAssetList")}
                 </SharedButton>

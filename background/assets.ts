@@ -44,6 +44,10 @@ export type AssetMetadata = {
    * legitimate asset.
    */
   trusted?: boolean
+  /**
+   * Set by the user to hide assets that have been verified by mistake.
+   */
+  hidden?: boolean
 }
 
 /**
@@ -55,6 +59,8 @@ type NetworkSpecificAssetMetadata = AssetMetadata & {
    */
   discoveryTxHash?: HexString
 }
+
+export type AnyAssetMetadata = AssetMetadata | NetworkSpecificAssetMetadata
 
 /**
  * The name and symbol of an arbitrary asset, fungible or non-fungible,

@@ -4,6 +4,7 @@ import { EVMNetwork, sameNetwork } from "../../networks"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyAsset,
+  AnyAssetMetadata,
   FungibleAsset,
   isSmartContractFungibleAsset,
   PricePoint,
@@ -571,11 +572,11 @@ export default class IndexingService extends BaseService<Events> {
     return balances
   }
 
-  async setAssetVerifyStatus(
+  async updateAssetMetadata(
     asset: SmartContractFungibleAsset,
-    isVerified: boolean
+    metadata: AnyAssetMetadata
   ): Promise<void> {
-    await this.db.updateAssetMetadata(asset, { trusted: isVerified })
+    await this.db.updateAssetMetadata(asset, metadata)
     await this.cacheAssetsForNetwork(asset.homeNetwork)
   }
 

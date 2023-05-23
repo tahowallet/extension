@@ -56,7 +56,7 @@ import {
 import {
   assetsLoaded,
   newPricePoint,
-  updateAssetMetadata,
+  updateMetadata,
 } from "./redux-slices/assets"
 import {
   setEligibility,
@@ -154,6 +154,7 @@ import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
 import {
+  AnyAssetMetadata,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
   isSmartContractFungibleAsset,
@@ -1072,7 +1073,7 @@ export default class Main extends BaseService<never> {
 
       if (isSmartContractFungibleAsset(assets[0])) {
         await this.store.dispatch(
-          updateAssetMetadata([assets[0], assets[0].metadata ?? {}])
+          updateMetadata([assets[0], assets[0].metadata ?? {}])
         )
         await this.store.dispatch(updateAssetReferences(assets[0]))
       }
@@ -1785,11 +1786,11 @@ export default class Main extends BaseService<never> {
     })
   }
 
-  async setAssetVerifyStatus(
+  async updateAssetMetadata(
     asset: SmartContractFungibleAsset,
-    isVerified: boolean
+    metadata: AnyAssetMetadata
   ): Promise<void> {
-    await this.indexingService.setAssetVerifyStatus(asset, isVerified)
+    await this.indexingService.updateAssetMetadata(asset, metadata)
   }
 
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {

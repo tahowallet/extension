@@ -3,6 +3,7 @@ import { ethers } from "ethers"
 import {
   AnyAsset,
   AnyAssetAmount,
+  AnyAssetMetadata,
   AssetMetadata,
   flipPricePoint,
   isFungibleAsset,
@@ -113,7 +114,7 @@ const assetsSlice = createSlice({
         }
       }
     },
-    updateAssetMetadata: (
+    updateMetadata: (
       immerState,
       {
         payload: [targetAsset, metadata],
@@ -134,7 +135,7 @@ const assetsSlice = createSlice({
   },
 })
 
-export const { assetsLoaded, newPricePoint, updateAssetMetadata } =
+export const { assetsLoaded, newPricePoint, updateMetadata } =
   assetsSlice.actions
 
 export default assetsSlice.reducer
@@ -148,20 +149,26 @@ const selectPairedAssetSymbol = (
   pairedAssetSymbol: string
 ) => pairedAssetSymbol
 
-export const updateAssetVerifyStatus = createBackgroundAsyncThunk(
-  "assets/updateAssetVerifyStatus",
+export const updateAssetMetadata = createBackgroundAsyncThunk(
+  "assets/updateAssetMetadata",
   async (
-    { asset, trusted }: { asset: SmartContractFungibleAsset; trusted: boolean },
+    {
+      asset,
+      metadata,
+    }: {
+      asset: SmartContractFungibleAsset
+      metadata: AnyAssetMetadata
+    },
     { dispatch, extra: { main } }
   ) => {
-    await main.setAssetVerifyStatus(asset, trusted)
+    await main.updateAssetMetadata(asset, metadata)
     // Update assets slice
-    await dispatch(updateAssetMetadata([asset, { trusted }]))
+    await dispatch(updateMetadata([asset, metadata]))
     // Update accounts slice cached data about this asset
     await dispatch(
       updateAssetReferences({
         ...asset,
-        metadata: { ...asset.metadata, trusted },
+        metadata,
       })
     )
   }
