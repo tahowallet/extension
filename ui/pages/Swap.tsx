@@ -2,10 +2,7 @@ import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
   approveTransfer,
-  selectLatestQuoteRequest,
-  selectInProgressApprovalContract,
   fetchSwapQuote,
-  selectSwapBuyAssets,
   executeSwap,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
@@ -31,6 +28,11 @@ import {
 } from "@tallyho/tally-background/constants"
 
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
+import {
+  selectLatestQuoteRequest,
+  selectSwapBuyAssets,
+  selectInProgressApprovalContract,
+} from "@tallyho/tally-background/redux-slices/selectors/0xSwapSelectors"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
