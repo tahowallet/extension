@@ -15,7 +15,7 @@ import reducer, {
   updateAccountBalance,
   updateAssetReferences,
 } from "../accounts"
-import { determineAssetDisplayAndTrust } from "../selectors"
+import { determineAssetDisplayAndVerify } from "../selectors"
 
 const ADDRESS_MOCK = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
 const ACCOUNT_MOCK = {
@@ -279,16 +279,16 @@ describe("Accounts redux slice", () => {
 })
 
 describe("Utilities", () => {
-  describe("determineAssetDisplayAndTrust", () => {
+  describe("determineAssetDisplayAndVerify", () => {
     it("should always display base assets", () => {
-      const { displayAsset } = determineAssetDisplayAndTrust(
+      const { displayAsset } = determineAssetDisplayAndVerify(
         createCompleteAssetAmount(createNetworkBaseAsset(), 0, {
           decimalAmount: 0,
           mainCurrencyAmount: 0,
         }),
         {
           hideDust: true,
-          showUntrusted: false,
+          showUnverified: false,
         }
       )
       expect(displayAsset).toBe(true)
@@ -296,14 +296,14 @@ describe("Utilities", () => {
 
     describe("Hide dust", () => {
       it("should display asset amount if NOT dust and hideDust is enabled", () => {
-        const { displayAsset } = determineAssetDisplayAndTrust(
+        const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(createSmartContractAsset(), 200, {
             decimalAmount: 200,
             mainCurrencyAmount: 200,
           }),
           {
             hideDust: true,
-            showUntrusted: false,
+            showUnverified: false,
           }
         )
 
@@ -311,14 +311,14 @@ describe("Utilities", () => {
       })
 
       it("should display asset amount if NOT dust and hideDust is disabled", () => {
-        const { displayAsset } = determineAssetDisplayAndTrust(
+        const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(createSmartContractAsset(), 200, {
             decimalAmount: 200,
             mainCurrencyAmount: 200,
           }),
           {
             hideDust: false,
-            showUntrusted: false,
+            showUnverified: false,
           }
         )
 
@@ -326,14 +326,14 @@ describe("Utilities", () => {
       })
 
       it("should display asset amount if dust and hideDust is disabled", () => {
-        const { displayAsset } = determineAssetDisplayAndTrust(
+        const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(createSmartContractAsset(), 0, {
             decimalAmount: 1,
             mainCurrencyAmount: 0,
           }),
           {
             hideDust: false,
-            showUntrusted: false,
+            showUnverified: false,
           }
         )
 
@@ -341,14 +341,14 @@ describe("Utilities", () => {
       })
 
       it("should NOT display asset amount if dust and hideDust is enabled", () => {
-        const { displayAsset } = determineAssetDisplayAndTrust(
+        const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(createSmartContractAsset(), 0, {
             decimalAmount: 0,
             mainCurrencyAmount: 0,
           }),
           {
             hideDust: true,
-            showUntrusted: false,
+            showUnverified: false,
           }
         )
 
@@ -356,9 +356,9 @@ describe("Utilities", () => {
       })
     })
 
-    describe("Trusted assets", () => {
-      it("should display asset amount if trusted and showUntrusted is disabled", () => {
-        const { displayAsset } = determineAssetDisplayAndTrust(
+    describe("Verified assets", () => {
+      it("should display asset amount if verified and showUnverified is disabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
             createSmartContractAsset({ metadata: { trusted: true } }),
             200,
@@ -369,15 +369,15 @@ describe("Utilities", () => {
           ),
           {
             hideDust: true,
-            showUntrusted: false,
+            showUnverified: false,
           }
         )
 
         expect(displayAsset).toBe(true)
       })
 
-      it("should display asset amount if trusted and showUntrusted is enabled", () => {
-        const { displayAsset } = determineAssetDisplayAndTrust(
+      it("should display asset amount if verified and showUnverified is enabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
             createSmartContractAsset({ metadata: { trusted: true } }),
             200,
@@ -388,15 +388,15 @@ describe("Utilities", () => {
           ),
           {
             hideDust: true,
-            showUntrusted: true,
+            showUnverified: true,
           }
         )
 
         expect(displayAsset).toBe(true)
       })
 
-      it("should NOT display asset amount if untrusted (trusted value set to false) and showUntrusted is disabled", () => {
-        const { displayAsset } = determineAssetDisplayAndTrust(
+      it("should NOT display asset amount if unverified (trusted value set to false) and showUnverified is disabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
             createSmartContractAsset({ metadata: { trusted: false } }),
             200,
@@ -407,15 +407,15 @@ describe("Utilities", () => {
           ),
           {
             hideDust: true,
-            showUntrusted: false,
+            showUnverified: false,
           }
         )
 
         expect(displayAsset).toBe(false)
       })
 
-      it("should NOT display asset amount if untrusted (empty metadata) and showUntrusted is disabled", () => {
-        const { displayAsset } = determineAssetDisplayAndTrust(
+      it("should NOT display asset amount if unverified (empty metadata) and showUnverified is disabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
             createSmartContractAsset({ metadata: {} }),
             200,
@@ -426,15 +426,15 @@ describe("Utilities", () => {
           ),
           {
             hideDust: true,
-            showUntrusted: false,
+            showUnverified: false,
           }
         )
 
         expect(displayAsset).toBe(false)
       })
 
-      it("should display asset amount if untrusted and showUntrusted is enabled", () => {
-        const { displayAsset } = determineAssetDisplayAndTrust(
+      it("should display asset amount if unverified and showUnverified is enabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
             createSmartContractAsset({ metadata: { trusted: false } }),
             200,
@@ -445,15 +445,15 @@ describe("Utilities", () => {
           ),
           {
             hideDust: true,
-            showUntrusted: true,
+            showUnverified: true,
           }
         )
 
         expect(displayAsset).toBe(true)
       })
 
-      it("should NOT display asset amount if trusted and dust", () => {
-        const { displayAsset } = determineAssetDisplayAndTrust(
+      it("should NOT display asset amount if verified and dust", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
             createSmartContractAsset({ metadata: { trusted: true } }),
             0,
@@ -464,7 +464,7 @@ describe("Utilities", () => {
           ),
           {
             hideDust: true,
-            showUntrusted: false,
+            showUnverified: false,
           }
         )
 

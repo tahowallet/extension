@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react"
 import SharedIcon from "../../Shared/SharedIcon"
 
-export default function AssetTrustToggler({
+export default function AssetVerifyToggler({
   text,
   color,
   icon,
@@ -15,7 +15,7 @@ export default function AssetTrustToggler({
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }): ReactElement {
   return (
-    <button type="button" onClick={onClick} className="asset_trust_toggler">
+    <button type="button" onClick={onClick} className="asset_verify_toggler">
       <span className="text">{text} </span>
       <SharedIcon
         icon={`/icons/m/${icon}.svg`}
@@ -25,14 +25,14 @@ export default function AssetTrustToggler({
         transitionHoverTime="0.2s"
       />
       <style jsx>{`
-        .asset_trust_toggler {
+        .asset_verify_toggler {
           color: ${color};
           align-items: center;
           display: flex;
           gap: 4px;
           transition: color 0.2s;
         }
-        .asset_trust_toggler:hover {
+        .asset_verify_toggler:hover {
           color: ${hoverColor};
         }
         .text {
@@ -45,7 +45,7 @@ export default function AssetTrustToggler({
       `}</style>
       <style global jsx>
         {`
-          .asset_trust_toggler:hover .icon {
+          .asset_verify_toggler:hover .icon {
             color: ${hoverColor};
           }
         `}

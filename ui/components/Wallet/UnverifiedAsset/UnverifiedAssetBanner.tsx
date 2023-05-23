@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react"
 import SharedBanner, { CanBeClosedProps } from "../../Shared/SharedBanner"
 
-export default function UntrustedAssetBanner({
+export default function UnverifiedAssetBanner({
   id,
   title,
   description,

@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
 import {
   selectShowAnalyticsNotification,
-  selectShowUntrusted,
+  selectShowUnverified,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
@@ -44,7 +44,7 @@ export default function Wallet(): ReactElement {
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
   const claimState = useBackgroundSelector((state) => state.claim)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const showUntrusted = useBackgroundSelector(selectShowUntrusted)
+  const showUnverified = useBackgroundSelector(selectShowUnverified)
 
   useEffect(() => {
     dispatch(
@@ -61,10 +61,10 @@ export default function Wallet(): ReactElement {
     }
   }, [selectedNetwork.chainID])
 
-  const { assetAmounts, untrustedAssetAmounts, totalMainCurrencyValue } =
+  const { assetAmounts, unverifiedAssetAmounts, totalMainCurrencyValue } =
     accountData ?? {
       assetAmounts: [],
-      untrustedAssetAmounts: [],
+      unverifiedAssetAmounts: [],
       totalMainCurrencyValue: undefined,
     }
 
@@ -95,8 +95,8 @@ export default function Wallet(): ReactElement {
   )
 
   const showHiddenAssets = useMemo(
-    () => showUntrusted && untrustedAssetAmounts.length > 0,
-    [showUntrusted, untrustedAssetAmounts.length]
+    () => showUnverified && unverifiedAssetAmounts.length > 0,
+    [showUnverified, unverifiedAssetAmounts.length]
   )
 
   const panelNames = [t("wallet.pages.assets")]
@@ -175,7 +175,7 @@ export default function Wallet(): ReactElement {
                   <WalletHiddenAssets
                     assetAmounts={
                       // FIXME: Refactor AnyAsset type
-                      untrustedAssetAmounts as CompleteAssetAmount<SwappableAsset>[]
+                      unverifiedAssetAmounts as CompleteAssetAmount<SwappableAsset>[]
                     }
                   />
                 )}

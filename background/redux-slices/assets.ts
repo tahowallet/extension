@@ -148,13 +148,13 @@ const selectPairedAssetSymbol = (
   pairedAssetSymbol: string
 ) => pairedAssetSymbol
 
-export const updateAssetTrustStatus = createBackgroundAsyncThunk(
-  "assets/updateAssetTrustStatus",
+export const updateAssetVerifyStatus = createBackgroundAsyncThunk(
+  "assets/updateAssetVerifyStatus",
   async (
     { asset, trusted }: { asset: SmartContractFungibleAsset; trusted: boolean },
     { dispatch, extra: { main } }
   ) => {
-    await main.setAssetTrustStatus(asset, trusted)
+    await main.setAssetVerifyStatus(asset, trusted)
     // Update assets slice
     await dispatch(updateAssetMetadata([asset, { trusted }]))
     // Update accounts slice cached data about this asset
@@ -268,7 +268,7 @@ export const selectAssetPricePoint = createSelector(
           hasRecentPriceData(asset)
       )
 
-      /* Don't do anything else if this is an untrusted asset and there's no exact match */
+      /* Don't do anything else if this is an unverified asset and there's no exact match */
       if (
         (assetToFind.metadata?.tokenLists?.length ?? 0) < 1 &&
         !isBuiltInNetworkBaseAsset(assetToFind, assetToFind.homeNetwork)

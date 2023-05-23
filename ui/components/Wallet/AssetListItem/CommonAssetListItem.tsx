@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 
 import { useTranslation } from "react-i18next"
-import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { isUnverifiedAssetByUser } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
 import {
@@ -19,12 +19,12 @@ import SharedIconRouterLink from "../../Shared/SharedIconRouterLink"
 import { useBackgroundSelector } from "../../../hooks"
 import { trimWithEllipsis } from "../../../utils/textUtils"
 import SharedTooltip from "../../Shared/SharedTooltip"
-import AssetTrustToggler from "../UntrustedAsset/AssetTrustToggler"
+import AssetVerifyToggler from "../UnverifiedAsset/AssetVerifyToggler"
 
 type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount<SwappableAsset>
   initializationLoadingTimeExpired: boolean
-  onUntrustedAssetWarningClick?: (
+  onUnverifiedAssetWarningClick?: (
     asset: CompleteAssetAmount<SmartContractFungibleAsset>["asset"]
   ) => void
 }
@@ -40,7 +40,7 @@ export default function CommonAssetListItem(
   const {
     assetAmount,
     initializationLoadingTimeExpired,
-    onUntrustedAssetWarningClick,
+    onUnverifiedAssetWarningClick,
   } = props
   const isMissingLocalizedUserValue =
     typeof assetAmount.localizedMainCurrencyAmount === "undefined"
@@ -51,24 +51,15 @@ export default function CommonAssetListItem(
       ? assetAmount.asset.contractAddress
       : undefined
 
-  const isTokenListAsset =
-    (assetAmount.asset?.metadata?.tokenLists?.length ?? 0) > 0
-  const assetHasTrustStatus = assetAmount.asset?.metadata?.trusted !== undefined
-
-  const isUnverifiedAsset =
-    isSmartContractFungibleAsset(assetAmount.asset) &&
-    !isTokenListAsset &&
-    !assetHasTrustStatus
-
-  const assetIsUntrusted = isUntrustedAsset(assetAmount.asset)
+  const isUnverified = isUnverifiedAssetByUser(assetAmount.asset)
 
   const handleVerifyAsset = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     if (
       isSmartContractFungibleAsset(assetAmount.asset) &&
-      onUntrustedAssetWarningClick
+      onUnverifiedAssetWarningClick
     ) {
-      onUntrustedAssetWarningClick(assetAmount.asset)
+      onUnverifiedAssetWarningClick(assetAmount.asset)
     }
   }
 
@@ -96,9 +87,9 @@ export default function CommonAssetListItem(
             </div>
 
             {
-              // @TODO don't fetch prices for untrusted assets in the first place
-              // Only show prices for trusted assets
-              assetIsUntrusted ||
+              // @TODO don't fetch prices for unverified assets in the first place
+              // Only show prices for verified assets
+              isUnverified ||
               (initializationLoadingTimeExpired &&
                 isMissingLocalizedUserValue) ? (
                 <></>
@@ -114,12 +105,10 @@ export default function CommonAssetListItem(
             }
           </div>
         </div>
-        <div
-          className={classNames("asset_right", { margin: !isUnverifiedAsset })}
-        >
+        <div className={classNames("asset_right", { margin: !isUnverified })}>
           <>
-            {isUnverifiedAsset ? (
-              <AssetTrustToggler
+            {isUnverified ? (
+              <AssetVerifyToggler
                 text={t("unverifiedAssets.verifyAsset")}
                 icon="notif-attention"
                 color="var(--attention)"
@@ -130,13 +119,11 @@ export default function CommonAssetListItem(
                 <SharedIconRouterLink
                   path="/send"
                   state={assetAmount.asset}
-                  disabled={assetIsUntrusted}
                   iconClass="asset_icon_send"
                 />
                 {NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID) ? (
                   <SharedIconRouterLink
                     path="/swap"
-                    disabled={assetIsUntrusted}
                     state={{
                       symbol: assetAmount.asset.symbol,
                       contractAddress,

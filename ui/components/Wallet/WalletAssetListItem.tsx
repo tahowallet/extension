@@ -12,7 +12,7 @@ import CommonAssetListItem from "./AssetListItem/CommonAssetListItem"
 type Props = {
   assetAmount: CompleteAssetAmount<SwappableAsset>
   initializationLoadingTimeExpired: boolean
-  onUntrustedAssetWarningClick?: (
+  onUnverifiedAssetWarningClick?: (
     asset: CompleteAssetAmount<SmartContractFungibleAsset>["asset"]
   ) => void
 }
@@ -21,7 +21,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
   const {
     assetAmount,
     initializationLoadingTimeExpired,
-    onUntrustedAssetWarningClick,
+    onUnverifiedAssetWarningClick,
   } = props
 
   const isDoggoAsset = assetAmount.asset.symbol === "DOGGO"
@@ -34,7 +34,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
         <CommonAssetListItem
           assetAmount={assetAmount}
           initializationLoadingTimeExpired={initializationLoadingTimeExpired}
-          onUntrustedAssetWarningClick={onUntrustedAssetWarningClick}
+          onUnverifiedAssetWarningClick={onUnverifiedAssetWarningClick}
         />
       )}
       <style jsx global>

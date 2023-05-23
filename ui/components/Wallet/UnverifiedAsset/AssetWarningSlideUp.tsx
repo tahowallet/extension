@@ -1,17 +1,17 @@
 import React, { ReactElement } from "react"
 import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
 import { useTranslation } from "react-i18next"
-import { updateAssetTrustStatus } from "@tallyho/tally-background/redux-slices/assets"
+import { updateAssetVerifyStatus } from "@tallyho/tally-background/redux-slices/assets"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
-import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { isUnverifiedAssetByUser } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import SharedSlideUpMenu from "../../Shared/SharedSlideUpMenu"
 import SharedButton from "../../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
 import SharedSlideUpMenuPanel from "../../Shared/SharedSlideUpMenuPanel"
 import SharedIcon from "../../Shared/SharedIcon"
-import UntrustedAssetBanner from "./UntrustedAssetBanner"
+import UnverifiedAssetBanner from "./UnverifiedAssetBanner"
 import { getBlockExplorerURL } from "../../../utils/networks"
 
 type AssetWarningSlideUpProps = {
@@ -23,7 +23,7 @@ export default function AssetWarningSlideUp(
   props: AssetWarningSlideUpProps
 ): ReactElement {
   const { t } = useTranslation("translation", {
-    keyPrefix: "wallet.trustedAssets",
+    keyPrefix: "wallet.verifiedAssets",
   })
 
   const { asset, close } = props
@@ -32,12 +32,12 @@ export default function AssetWarningSlideUp(
 
   const network = useBackgroundSelector(selectCurrentNetwork)
 
-  const setAssetTrustStatus = async (isTrusted: boolean) => {
-    await dispatch(updateAssetTrustStatus({ asset, trusted: isTrusted }))
+  const setAssetVerifiedStatus = async (isVerified: boolean) => {
+    await dispatch(updateAssetVerifyStatus({ asset, trusted: isVerified }))
     close()
   }
 
-  const isUntrusted = isUntrustedAsset(asset)
+  const isUnverified = isUnverifiedAssetByUser(asset)
 
   const contractAddress =
     asset && "contractAddress" in asset && asset.contractAddress
@@ -58,7 +58,7 @@ export default function AssetWarningSlideUp(
       <SharedSlideUpMenuPanel header={t("assetImported")}>
         <div className="content">
           <div>
-            <UntrustedAssetBanner
+            <UnverifiedAssetBanner
               title={t("banner.title")}
               description={t("banner.description")}
             />
@@ -125,15 +125,15 @@ export default function AssetWarningSlideUp(
             </ul>
           </div>
           <div>
-            <div className="asset_trust_actions">
+            <div className="asset_verify_actions">
               <SharedButton size="medium" type="secondary" onClick={close}>
                 {t("dontShow")}
               </SharedButton>
-              {isUntrusted && (
+              {isUnverified && (
                 <SharedButton
                   size="medium"
                   type="primary"
-                  onClick={() => setAssetTrustStatus(true)}
+                  onClick={() => setAssetVerifiedStatus(true)}
                 >
                   {t("addToAssetList")}
                 </SharedButton>
@@ -173,7 +173,7 @@ export default function AssetWarningSlideUp(
           width: 50%;
           text-align: right;
         }
-        .asset_trust_actions {
+        .asset_verify_actions {
           display: flex;
           justify-content: space-between;
         }

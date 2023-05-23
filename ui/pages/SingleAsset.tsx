@@ -19,8 +19,8 @@ import {
   NETWORKS_SUPPORTING_SWAPS,
 } from "@tallyho/tally-background/constants"
 import {
-  hasTokenList,
-  isUntrustedAsset,
+  isUnverifiedAsset,
+  isUnverifiedAssetByUser,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
@@ -29,8 +29,8 @@ import WalletActivityList from "../components/Wallet/WalletActivityList"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 import { blockExplorer } from "../utils/constants"
-import AssetWarningSlideUp from "../components/Wallet/UntrustedAsset/AssetWarningSlideUp"
-import AssetTrustToggler from "../components/Wallet/UntrustedAsset/AssetTrustToggler"
+import AssetWarningSlideUp from "../components/Wallet/UnverifiedAsset/AssetWarningSlideUp"
+import AssetVerifyToggler from "../components/Wallet/UnverifiedAsset/AssetVerifyToggler"
 
 export default function SingleAsset(): ReactElement {
   const { t } = useTranslation()
@@ -94,8 +94,8 @@ export default function SingleAsset(): ReactElement {
       localizedDecimalAmount: undefined,
     }
 
-  const isVerified = hasTokenList(asset)
-  const isVerifiedByUser = isUntrustedAsset(asset)
+  const isUnverified = isUnverifiedAsset(asset)
+  const isUnverifiedByUser = isUnverifiedAssetByUser(asset)
   const [warnedAsset, setWarnedAsset] =
     useState<SmartContractFungibleAsset | null>(null)
 
@@ -111,14 +111,14 @@ export default function SingleAsset(): ReactElement {
       )}
       <div className="navigation standard_width_padded">
         <SharedBackButton path="/" />
-        {!isVerified && asset && isSmartContractFungibleAsset(asset) && (
-          <AssetTrustToggler
+        {isUnverified && asset && isSmartContractFungibleAsset(asset) && (
+          <AssetVerifyToggler
             text={
-              isVerifiedByUser
+              isUnverifiedByUser
                 ? t("assets.unverifiedAsset")
                 : t("assets.verifiedByUser")
             }
-            icon={`notif-${isVerifiedByUser ? "attention" : "correct"}`}
+            icon={`notif-${isUnverifiedByUser ? "attention" : "correct"}`}
             color="var(--green-20)"
             hoverColor="var(--white)"
             onClick={() => setWarnedAsset(asset)}
@@ -168,7 +168,7 @@ export default function SingleAsset(): ReactElement {
             )}
           </div>
           <div className="right">
-            {isVerifiedByUser &&
+            {isUnverifiedByUser &&
             asset &&
             isSmartContractFungibleAsset(asset) ? (
               <SharedButton

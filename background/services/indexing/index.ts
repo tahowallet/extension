@@ -334,10 +334,10 @@ export default class IndexingService extends BaseService<Events> {
             annotationAddressesOnNetwork
           )
 
-        // An asset has baseline trust if we are already tracking the asset
-        // (e.g. via a previously baseline-trusted interaction or via a token
+        // An asset has baseline verify if we are already tracking the asset
+        // (e.g. via a previously baseline-verified interaction or via a token
         // list) OR the sender is a tracked address.
-        const baselineTrustedAsset =
+        const baselineVerifiedAsset =
           typeof this.getKnownSmartContractAsset(
             enrichedEVMTransaction.network,
             asset.contractAddress
@@ -352,7 +352,7 @@ export default class IndexingService extends BaseService<Events> {
             ])
           ).length > 0
 
-        if (baselineTrustedAsset) {
+        if (baselineVerifiedAsset) {
           const assetLookups = trackedAddresesOnNetworks.map(
             (addressOnNetwork) => ({
               asset,
@@ -571,11 +571,11 @@ export default class IndexingService extends BaseService<Events> {
     return balances
   }
 
-  async setAssetTrustStatus(
+  async setAssetVerifyStatus(
     asset: SmartContractFungibleAsset,
-    isTrusted: boolean
+    isVerified: boolean
   ): Promise<void> {
-    await this.db.updateAssetMetadata(asset, { trusted: isTrusted })
+    await this.db.updateAssetMetadata(asset, { trusted: isVerified })
     await this.cacheAssetsForNetwork(asset.homeNetwork)
   }
 
@@ -688,7 +688,7 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   /**
-   * Loads prices for all tracked assets except untrusted/custom network assets
+   * Loads prices for all tracked assets except unverified/custom network assets
    */
   private async getTrackedAssetsPrices() {
     // get the prices of all assets to track and save them

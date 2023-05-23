@@ -1027,7 +1027,7 @@ export default class Main extends BaseService<never> {
 
             return isSmartContract
           })
-          // Sort trusted last to prevent shadowing assets from token lists
+          // Sort verified last to prevent shadowing assets from token lists
           // FIXME: Balances should not be indexed by symbol in redux
           .sort((balance, otherBalance) => {
             const asset = balance.assetAmount.asset as SmartContractAsset
@@ -1785,11 +1785,11 @@ export default class Main extends BaseService<never> {
     })
   }
 
-  async setAssetTrustStatus(
+  async setAssetVerifyStatus(
     asset: SmartContractFungibleAsset,
-    isTrusted: boolean
+    isVerified: boolean
   ): Promise<void> {
-    await this.indexingService.setAssetTrustStatus(asset, isTrusted)
+    await this.indexingService.setAssetVerifyStatus(asset, isVerified)
   }
 
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {
@@ -1915,7 +1915,7 @@ export default class Main extends BaseService<never> {
     addressNetwork: AddressOnNetwork
   }): Promise<void> {
     const { metadata = {} } = asset
-    // Manually imported tokens are trusted
+    // Manually imported tokens are verified
     metadata.trusted = true
 
     await this.indexingService.importAccountCustomToken(

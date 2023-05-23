@@ -10,8 +10,8 @@ import {
   toggleTestNetworks,
   toggleHideBanners,
   selectHideBanners,
-  selectShowUntrusted,
-  toggleShowUntrusted,
+  selectShowUnverified,
+  toggleShowUnverified,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
@@ -127,7 +127,7 @@ export default function Settings(): ReactElement {
   const hideBanners = useSelector(selectHideBanners)
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
-  const showUntrusted = useSelector(selectShowUntrusted)
+  const showUnverified = useSelector(selectShowUnverified)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
@@ -141,8 +141,8 @@ export default function Settings(): ReactElement {
     dispatch(toggleTestNetworks(defaultWalletValue))
   }
 
-  const toggleShowUntrustedAssets = (defaultWalletValue: boolean) => {
-    dispatch(toggleShowUntrusted(defaultWalletValue))
+  const toggleShowUnverifiedAssets = (defaultWalletValue: boolean) => {
+    dispatch(toggleShowUnverified(defaultWalletValue))
   }
 
   const toggleHideNotificationBanners = (toggleValue: boolean) => {
@@ -162,7 +162,7 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const untrustedAssets = {
+  const unverifiedAssets = {
     title: "",
     component: () => (
       <div className="content">
@@ -176,8 +176,8 @@ export default function Settings(): ReactElement {
           </SharedTooltip>
         </div>
         <SharedToggleButton
-          onChange={(toggleValue) => toggleShowUntrustedAssets(toggleValue)}
-          value={showUntrusted}
+          onChange={(toggleValue) => toggleShowUnverifiedAssets(toggleValue)}
+          value={showUnverified}
         />
         <style jsx>
           {`
@@ -320,7 +320,7 @@ export default function Settings(): ReactElement {
   const generalList = [
     setAsDefault,
     hideSmallAssetBalance,
-    isEnabled(FeatureFlags.SUPPORT_ASSET_TRUST) && untrustedAssets,
+    isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && unverifiedAssets,
     isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
     enableTestNetworks,
     dAppsSettings,

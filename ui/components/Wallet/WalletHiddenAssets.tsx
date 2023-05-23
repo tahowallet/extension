@@ -11,7 +11,7 @@ import WalletAssetList from "./WalletAssetList"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { useIsMounted } from "../../hooks/react-hooks"
-import UntrustedAssetBanner from "./UntrustedAsset/UntrustedAssetBanner"
+import UnverifiedAssetBanner from "./UnverifiedAsset/UnverifiedAssetBanner"
 
 type WalletHiddenAssetsProps = {
   assetAmounts: CompleteAssetAmount<SwappableAsset>[]
@@ -72,10 +72,10 @@ export default function WalletHiddenAssets({
           visible: mountedRef.current && showHiddenAssets,
         })}
       >
-        <UntrustedAssetBanner
-          id="untrusted_asset_banner"
-          title={t("trustedAssets.banner.title")}
-          description={t("trustedAssets.banner.description")}
+        <UnverifiedAssetBanner
+          id="unverified_asset_banner"
+          title={t("verifiedAssets.banner.title")}
+          description={t("verifiedAssets.banner.description")}
           customStyles="margin-bottom: 16px;"
         />
         <WalletAssetList

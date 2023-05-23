@@ -337,21 +337,21 @@ export function heuristicDesiredDecimalsForUnitPrice(
  * Assets that do not have it are considered unverified.
  *
  */
-export function hasTokenList(asset: AnyAsset | undefined): boolean {
+export function isUnverifiedAsset(asset: AnyAsset | undefined): boolean {
   if (asset) {
-    return !!asset?.metadata?.tokenLists?.length
+    return !asset?.metadata?.tokenLists?.length
   }
   return false
 }
 
 /**
  * NB: non-base assets that don't have any token lists are considered
- * untrusted. Reifying base assets clearly will improve this check down the
- * road. Eventually, assets can be flagged as trusted by adding them to an
+ * unverified. Reifying base assets clearly will improve this check down the
+ * road. Eventually, assets can be flagged as verified by adding them to an
  * "internal" token list that users can export and share.
  *
  */
-export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
+export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
   if (asset) {
     if (asset.metadata?.trusted !== undefined) {
       // If we have trust metadata return it
@@ -359,7 +359,7 @@ export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
     }
 
     const baseAsset = isNetworkBaseAsset(asset)
-    const isUnverified = hasTokenList(asset)
+    const isUnverified = isUnverifiedAsset(asset)
 
     return !baseAsset && isUnverified
   }

@@ -822,7 +822,7 @@
       "hiddenAssets": "{{stateOfHiddenAssets}} unverified assets ({{amount}})",
       "verifyAsset": "Verify asset"
     },
-    "trustedAssets": {
+    "verifiedAssets": {
       "assetImported": "Asset automatically imported",
       "symbol": "Symbol",
       "contract": "Contract address",
@@ -948,7 +948,7 @@
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
-        "SUPPORT_ASSET_TRUST": "Enable trusting assets"
+        "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification"
       }
     }
   },

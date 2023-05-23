@@ -6,7 +6,7 @@ import {
   SwappableAsset,
 } from "@tallyho/tally-background/assets"
 import WalletAssetListItem from "./WalletAssetListItem"
-import AssetWarningSlideUp from "./UntrustedAsset/AssetWarningSlideUp"
+import AssetWarningSlideUp from "./UnverifiedAsset/AssetWarningSlideUp"
 
 type WalletAssetListProps = {
   assetAmounts: CompleteAssetAmount<SwappableAsset>[]
@@ -42,7 +42,7 @@ export default function WalletAssetList(
             assetAmount={assetAmount}
             key={assetAmount.asset.symbol}
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
-            onUntrustedAssetWarningClick={(asset) => setWarnedAsset(asset)}
+            onUnverifiedAssetWarningClick={(asset) => setWarnedAsset(asset)}
           />
         ))}
         {!initializationLoadingTimeExpired && (
