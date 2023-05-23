@@ -42,12 +42,13 @@ export function normalizeAddressOnNetwork({
 }
 
 /**
- * Manually truncate number, try to cut as close to `decimalLength` as possible
- * but look for significant digits in the decimal up to `maxDecimalLength`
+ * Manually truncate number, try to cut as close to `decimalLength` as possible.
+ * If number is less than 1 then look for significant digits in the decimal
+ * up to `maxDecimalLength`.
  * @param value floating point number as a string or number
  * @param decimalLength desired length of decimal part
  * @param maxDecimalLength max length of decimal part - will try to look
- *                        for sgnificant digits up to this point
+ *                        for significant digits up to this point
  * @returns truncated number
  */
 export function truncateDecimalAmount(
