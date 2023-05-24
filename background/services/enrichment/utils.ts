@@ -1,10 +1,5 @@
 import dayjs from "dayjs"
-import {
-  AssetSwap,
-  EIP2612SignTypedDataAnnotation,
-  EnrichedEVMTransaction,
-  TransactionAnnotation,
-} from "./types"
+import { EIP2612SignTypedDataAnnotation, EnrichedEVMTransaction } from "./types"
 import { ETHEREUM } from "../../constants"
 import { SmartContractFungibleAsset } from "../../assets"
 import NameService from "../name"
