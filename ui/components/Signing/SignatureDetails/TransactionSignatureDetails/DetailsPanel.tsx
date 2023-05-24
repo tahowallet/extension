@@ -16,13 +16,12 @@ import {
   EIP_1559_COMPLIANT_CHAIN_IDS,
 } from "@tallyho/tally-background/constants"
 import classNames from "classnames"
-import { isSwapAnnotation } from "@tallyho/tally-background/services/enrichment/utils"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
 import NetworkSettingsChooser from "../../../NetworkFees/NetworkSettingsChooser"
 import SignTransactionDetailWarning from "../../../SignTransaction/SignTransactionDetailWarning"
 import FeeSettingsButton from "../../../NetworkFees/FeeSettingsButton"
-import SwapAssetDetails from "./TransactionSignatureSummary/SwapAssetDetails"
+import TransactionAdditionalDetails from "./TransactionAdditionalDetails"
 
 export type PanelState = {
   dismissedWarnings: string[]
@@ -139,12 +138,10 @@ export default function DetailPanel({
         </div>
         <FeeSettingsButton onClick={() => setNetworkSettingsModalOpen(true)} />
       </span>
-      {isSwapAnnotation(transactionDetails.annotation) && (
-        <SwapAssetDetails
-          transactionRequest={transactionDetails}
-          annotation={transactionDetails.annotation}
-        />
-      )}
+      <TransactionAdditionalDetails
+        transactionRequest={transactionDetails}
+        annotation={transactionDetails.annotation}
+      />
       <span
         className={classNames("detail_item warning", {
           visible: hasInsufficientFundsWarning,

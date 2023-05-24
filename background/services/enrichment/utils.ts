@@ -165,7 +165,3 @@ export function getRelevantTransactionAddresses(
     )
     .map(({ address }) => normalizeEVMAddress(address))
 }
-
-export const isSwapAnnotation = (
-  annotation?: TransactionAnnotation
-): annotation is AssetSwap => annotation?.type === "asset-swap"

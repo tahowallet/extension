@@ -3,7 +3,7 @@ import { AssetSwap } from "@tallyho/tally-background/services/enrichment"
 
 import { useTranslation } from "react-i18next"
 import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
-import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryProps"
+import { TransactionSignatureSummaryProps } from "../TransactionSignatureSummary/TransactionSignatureSummaryProps"
 
 export default function SwapAssetDetails({
   annotation: { sources },
