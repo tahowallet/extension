@@ -10,6 +10,7 @@ import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/sel
 import classNames from "classnames"
 import { isUnverifiedAssetByUser } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import SharedSlideUpMenu from "../../Shared/SharedSlideUpMenu"
 import SharedButton from "../../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
@@ -130,17 +131,31 @@ export default function AssetWarningSlideUp(
           </div>
           <div>
             <div className="asset_verify_actions">
-              {/* TODO Add logic for deleting asset */}
-              <SharedButton size="medium" type="secondary" onClick={() => {}}>
-                {t("dontShow")}
-              </SharedButton>
-              {isUnverified && (
-                <SharedButton
-                  size="medium"
-                  type="primary"
-                  onClick={() => handleUpdateAssetMetadata({ trusted: true })}
-                >
-                  {t("addToAssetList")}
+              {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) ? (
+                <>
+                  {/* TODO Add logic for deleting asset */}
+                  <SharedButton
+                    size="medium"
+                    type="secondary"
+                    onClick={() => {}}
+                  >
+                    {t("dontShow")}
+                  </SharedButton>
+                  {isUnverified && (
+                    <SharedButton
+                      size="medium"
+                      type="primary"
+                      onClick={() =>
+                        handleUpdateAssetMetadata({ trusted: true })
+                      }
+                    >
+                      {t("addToAssetList")}
+                    </SharedButton>
+                  )}
+                </>
+              ) : (
+                <SharedButton size="medium" type="secondary" onClick={close}>
+                  {t("close")}
                 </SharedButton>
               )}
             </div>

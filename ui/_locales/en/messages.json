@@ -827,6 +827,7 @@
       "symbol": "Symbol",
       "contract": "Contract address",
       "discoveryTxHash": "Added from transaction",
+      "close": "Close",
       "dontShow": "Don’t show",
       "addToAssetList": "Add to asset list",
       "snackbar": "Asset added to list",

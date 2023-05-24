@@ -11,6 +11,7 @@ import {
   SmartContractFungibleAsset,
   SwappableAsset,
 } from "@tallyho/tally-background/assets"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
@@ -19,6 +20,7 @@ import { useBackgroundSelector } from "../../../hooks"
 import { trimWithEllipsis } from "../../../utils/textUtils"
 import SharedTooltip from "../../Shared/SharedTooltip"
 import AssetVerifyToggler from "../UnverifiedAsset/AssetVerifyToggler"
+import SharedIcon from "../../Shared/SharedIcon"
 
 type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount<SwappableAsset>
@@ -106,7 +108,8 @@ export default function CommonAssetListItem(
         </div>
         <div className="asset_right">
           <>
-            {isUnverified ? (
+            {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) &&
+            isUnverified ? (
               <AssetVerifyToggler
                 text={t("unverifiedAssets.verifyAsset")}
                 icon="notif-attention"
@@ -115,6 +118,15 @@ export default function CommonAssetListItem(
               />
             ) : (
               <>
+                {!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) &&
+                  isUnverified && (
+                    <SharedIcon
+                      icon="/icons/m/notif-attention.svg"
+                      width={24}
+                      color="var(--attention)"
+                      onClick={(event) => handleVerifyAsset(event)}
+                    />
+                  )}
                 <SharedIconRouterLink
                   path="/send"
                   state={assetAmount.asset}

@@ -22,6 +22,7 @@ import {
   isUntrustedAsset,
   isUnverifiedAssetByUser,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -102,6 +103,10 @@ export default function SingleAsset(): ReactElement {
   const [warnedAsset, setWarnedAsset] =
     useState<SmartContractFungibleAsset | null>(null)
 
+  const showActionButtons = isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)
+    ? !isUnverifiedByUser
+    : true
+
   return (
     <>
       {warnedAsset && (
@@ -114,18 +119,22 @@ export default function SingleAsset(): ReactElement {
       )}
       <div className="navigation standard_width_padded">
         <SharedBackButton path="/" />
-        {isUntrusted &&
-          !isUnverifiedByUser &&
-          asset &&
-          isSmartContractFungibleAsset(asset) && (
-            <AssetVerifyToggler
-              text={t("assets.verifiedByUser")}
-              icon="notif-correct"
-              color="var(--green-20)"
-              hoverColor="var(--white)"
-              onClick={() => setWarnedAsset(asset)}
-            />
-          )}
+        {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
+          <>
+            {isUntrusted &&
+              !isUnverifiedByUser &&
+              asset &&
+              isSmartContractFungibleAsset(asset) && (
+                <AssetVerifyToggler
+                  text={t("assets.verifiedByUser")}
+                  icon="notif-correct"
+                  color="var(--green-20)"
+                  hoverColor="var(--white)"
+                  onClick={() => setWarnedAsset(asset)}
+                />
+              )}
+          </>
+        )}
       </div>
       {asset && (
         <div className="header standard_width_padded">
@@ -172,28 +181,32 @@ export default function SingleAsset(): ReactElement {
             )}
           </div>
           <div className="right">
-            {isUnverifiedByUser && isSmartContractFungibleAsset(asset) && (
-              <div className="unverified_asset_button">
-                <AssetVerifyToggler
-                  text={t("assets.unverifiedAsset")}
-                  icon="notif-attention"
-                  color="var(--green-20)"
-                  hoverColor="var(--white)"
-                  onClick={() => setWarnedAsset(asset)}
-                />
-                <div>
-                  <SharedButton
-                    type="primary"
-                    size="medium"
-                    onClick={() => setWarnedAsset(asset)}
-                  >
-                    {t("assets.verifyAsset")}
-                  </SharedButton>
-                </div>
-              </div>
+            {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
+              <>
+                {isUnverifiedByUser && isSmartContractFungibleAsset(asset) && (
+                  <div className="unverified_asset_button">
+                    <AssetVerifyToggler
+                      text={t("assets.unverifiedAsset")}
+                      icon="notif-attention"
+                      color="var(--green-20)"
+                      hoverColor="var(--white)"
+                      onClick={() => setWarnedAsset(asset)}
+                    />
+                    <div>
+                      <SharedButton
+                        type="primary"
+                        size="medium"
+                        onClick={() => setWarnedAsset(asset)}
+                      >
+                        {t("assets.verifyAsset")}
+                      </SharedButton>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
-            {!isUnverifiedByUser &&
+            {showActionButtons &&
               currentAccountSigner !== ReadOnlyAccountSigner && (
                 <>
                   <SharedButton

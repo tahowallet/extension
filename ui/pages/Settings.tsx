@@ -320,7 +320,7 @@ export default function Settings(): ReactElement {
   const generalList = [
     setAsDefault,
     hideSmallAssetBalance,
-    isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && unverifiedAssets,
+    unverifiedAssets,
     isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
     enableTestNetworks,
     dAppsSettings,
