@@ -829,6 +829,7 @@
       "discoveryTxHash": "Added from transaction",
       "dontShow": "Don’t show",
       "addToAssetList": "Add to asset list",
+      "snackbar": "Asset added to list",
       "banner": {
         "title": "Asset not verified",
         "description": "Be aware of scam and spam assets, only verify assets you trust."

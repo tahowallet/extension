@@ -76,7 +76,11 @@ export default function CommonAssetListItem(
             logoURL={assetAmount?.asset?.metadata?.logoURL}
             symbol={assetAmount?.asset?.symbol}
           />
-          <div className="asset_left_content">
+          <div
+            className={classNames("asset_left_content", {
+              max_width: isUnverified,
+            })}
+          >
             <div className="asset_amount">
               <span className="bold_amount_count">
                 {assetAmount.localizedDecimalAmount}
@@ -105,7 +109,7 @@ export default function CommonAssetListItem(
             }
           </div>
         </div>
-        <div className={classNames("asset_right", { margin: !isUnverified })}>
+        <div className="asset_right">
           <>
             {isUnverified ? (
               <AssetVerifyToggler

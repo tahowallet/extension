@@ -9,6 +9,7 @@ import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
 import { isUnverifiedAssetByUser } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import SharedSlideUpMenu from "../../Shared/SharedSlideUpMenu"
 import SharedButton from "../../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
@@ -49,6 +50,7 @@ export default function AssetWarningSlideUp(
   const handleUpdateAssetMetadata = async (newMetadata: AnyAssetMetadata) => {
     const metadata = { ...asset.metadata, ...newMetadata }
     await dispatch(updateAssetMetadata({ asset, metadata }))
+    dispatch(setSnackbarMessage(t("snackbar")))
     close()
   }
 

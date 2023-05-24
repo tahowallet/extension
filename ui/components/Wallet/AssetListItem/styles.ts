@@ -23,13 +23,13 @@ export default `
     justify-content: center;
     margin-left: 16px;
   }
+  .max_width {
+    max-width: 140px;
+  }
   .asset_right {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-  }
-  .asset_right .margin {
-    margin-right: 16px;
   }
   .asset_amount {
     height: 17px;
