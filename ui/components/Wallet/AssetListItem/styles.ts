@@ -10,6 +10,7 @@ export default `
     margin-bottom: 16px;
     justify-content: space-between;
     align-items: center;
+    gap: 8px
   }
   .asset_list_item:hover {
     background-color: var(--green-80);
@@ -22,9 +23,6 @@ export default `
     flex-direction: column;
     justify-content: center;
     margin-left: 16px;
-  }
-  .max_width {
-    max-width: 140px;
   }
   .asset_right {
     display: flex;

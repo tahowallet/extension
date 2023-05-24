@@ -412,11 +412,7 @@ export default class IndexingService extends BaseService<Events> {
       async ({ addressNetwork, assetTransfers }) => {
         assetTransfers.forEach((transfer) => {
           const fungibleAsset = transfer.assetAmount.asset
-          if (
-            isSmartContractFungibleAsset(fungibleAsset) &&
-            fungibleAsset.contractAddress &&
-            fungibleAsset.decimals
-          ) {
+          if (isSmartContractFungibleAsset(fungibleAsset)) {
             this.addTokenToTrackByContract(
               addressNetwork.network,
               fungibleAsset.contractAddress,

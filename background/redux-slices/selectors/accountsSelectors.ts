@@ -93,11 +93,12 @@ export function determineAssetDisplayAndVerify(
   const isPresent = assetAmount.decimalAmount > 0
   const showDust = !hideDust
 
-  const verifiedToBeVisible = showUnverifiedAssets || isVerified
+  const verificationStatusAllowsVisibility = showUnverifiedAssets || isVerified
   const enoughBalanceToBeVisible = isPresent && (isNotDust || showDust)
 
   return {
-    displayAsset: verifiedToBeVisible && enoughBalanceToBeVisible,
+    displayAsset:
+      verificationStatusAllowsVisibility && enoughBalanceToBeVisible,
     verifiedAsset: isVerified,
   }
 }

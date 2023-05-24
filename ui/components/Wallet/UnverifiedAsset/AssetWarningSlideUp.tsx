@@ -58,7 +58,7 @@ export default function AssetWarningSlideUp(
     <SharedSlideUpMenu
       isOpen={asset !== null}
       size="custom"
-      customSize="350"
+      customSize="320"
       close={close}
     >
       <SharedSlideUpMenuPanel header={t("assetImported")}>
@@ -76,55 +76,53 @@ export default function AssetWarningSlideUp(
               <li>
                 <div className="left">{t("contract")}</div>
                 <div className="right">
-                  <button
-                    type="button"
-                    className={classNames("address_button", {
-                      no_click: !blockExplorerUrl,
-                    })}
-                    disabled={!blockExplorerUrl}
-                    onClick={() =>
-                      window
-                        .open(
-                          `${blockExplorerUrl}/token/${contractAddress}`,
-                          "_blank"
-                        )
-                        ?.focus()
-                    }
-                  >
-                    {truncateAddress(contractAddress)}
-                    {blockExplorerUrl && (
-                      <SharedIcon
-                        width={16}
-                        icon="icons/s/new-tab.svg"
-                        color="var(--green-5)"
-                        hoverColor="var(--trophy-gold)"
-                        transitionHoverTime="0.2s"
-                      />
-                    )}
-                  </button>
+                  <div className="address_button_wrap">
+                    <button
+                      type="button"
+                      className={classNames("address_button", {
+                        no_click: !blockExplorerUrl,
+                      })}
+                      disabled={!blockExplorerUrl}
+                      onClick={() =>
+                        window
+                          .open(
+                            `${blockExplorerUrl}/token/${contractAddress}`,
+                            "_blank"
+                          )
+                          ?.focus()
+                      }
+                    >
+                      {truncateAddress(contractAddress)}
+                      {blockExplorerUrl && (
+                        <SharedIcon
+                          width={16}
+                          icon="icons/s/new-tab.svg"
+                          color="var(--green-5)"
+                          hoverColor="var(--trophy-gold)"
+                          transitionHoverTime="0.2s"
+                        />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </li>
               {discoveryTxHash && (
                 <li>
                   <div className="left">{t("discoveryTxHash")}</div>
                   <div className="right">
-                    <button
-                      type="button"
-                      className={classNames("address_button", {
-                        no_click: !blockExplorerUrl,
-                      })}
-                      onClick={() =>
-                        window
-                          .open(
-                            `${blockExplorerUrl}/tx/${discoveryTxHash}`,
-                            "_blank"
-                          )
-                          ?.focus()
-                      }
-                      title={discoveryTxHash}
-                    >
-                      {truncateAddress(discoveryTxHash)}
-                    </button>
+                    <div className="address_button_wrap">
+                      <button
+                        type="button"
+                        className={classNames("address_button", {
+                          no_click: !blockExplorerUrl,
+                        })}
+                        // TODO Open the activity page. At the moment, the activity is not available in the redux state.
+                        onClick={() => {}}
+                        title={discoveryTxHash}
+                      >
+                        {truncateAddress(discoveryTxHash)}
+                      </button>
+                    </div>
                   </div>
                 </li>
               )}
@@ -155,7 +153,7 @@ export default function AssetWarningSlideUp(
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          height: 271px;
+          height: 82%;
         }
         ul.asset_details {
           display: block;
@@ -184,11 +182,14 @@ export default function AssetWarningSlideUp(
           display: flex;
           justify-content: space-between;
         }
+        .address_button_wrap {
+          display: flex;
+          justify-content: end;
+          width: 100%;
+        }
         .address_button {
           display: flex;
           align-items: center;
-          justify-content: end;
-          width: 100%;
           gap: 4px;
           transition: color 0.2s;
         }

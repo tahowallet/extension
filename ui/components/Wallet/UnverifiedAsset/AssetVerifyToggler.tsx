@@ -31,6 +31,7 @@ export default function AssetVerifyToggler({
           display: flex;
           gap: 4px;
           transition: color 0.2s;
+          white-space: nowrap;
         }
         .asset_verify_toggler:hover {
           color: ${hoverColor};

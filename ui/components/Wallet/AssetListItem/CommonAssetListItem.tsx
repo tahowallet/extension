@@ -11,7 +11,6 @@ import {
   SmartContractFungibleAsset,
   SwappableAsset,
 } from "@tallyho/tally-background/assets"
-import classNames from "classnames"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
@@ -76,11 +75,7 @@ export default function CommonAssetListItem(
             logoURL={assetAmount?.asset?.metadata?.logoURL}
             symbol={assetAmount?.asset?.symbol}
           />
-          <div
-            className={classNames("asset_left_content", {
-              max_width: isUnverified,
-            })}
-          >
+          <div className="asset_left_content">
             <div className="asset_amount">
               <span className="bold_amount_count">
                 {assetAmount.localizedDecimalAmount}

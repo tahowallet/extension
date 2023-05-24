@@ -334,10 +334,10 @@ export function heuristicDesiredDecimalsForUnitPrice(
 
 /**
  * Check if the asset has a list of tokens.
- * Assets that do not have it are considered unverified.
+ * Assets that do not have it are considered untrusted.
  *
  */
-export function isUnverifiedAsset(asset: AnyAsset | undefined): boolean {
+export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
   if (asset) {
     return !asset?.metadata?.tokenLists?.length
   }
@@ -359,9 +359,9 @@ export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
     }
 
     const baseAsset = isNetworkBaseAsset(asset)
-    const isUnverified = isUnverifiedAsset(asset)
+    const isUntrusted = isUntrustedAsset(asset)
 
-    return !baseAsset && isUnverified
+    return !baseAsset && isUntrusted
   }
 
   return false
