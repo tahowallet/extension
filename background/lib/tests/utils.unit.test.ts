@@ -20,7 +20,7 @@ const integersCases: TruncateDecimalAmountType[] = [
 ]
 
 const noLeadingZeros: TruncateDecimalAmountType[] = [
-  { value: 0.123, decimalLength: 0, maxDecimalLength: 5, expected: "0" },
+  { value: 0.123, decimalLength: 0, maxDecimalLength: 5, expected: "0.1" },
   { value: 0.123, decimalLength: 1, maxDecimalLength: 5, expected: "0.1" },
   { value: 0.123, decimalLength: 2, maxDecimalLength: 5, expected: "0.12" },
   { value: 0.123, decimalLength: 3, maxDecimalLength: 5, expected: "0.123" },
@@ -40,7 +40,7 @@ const noLeadingZeros: TruncateDecimalAmountType[] = [
   { value: 1.123, decimalLength: 2, expected: "1.12" },
   { value: 1.123, decimalLength: 3, expected: "1.123" },
 
-  { value: "0.123", decimalLength: 0, maxDecimalLength: 5, expected: "0" },
+  { value: "0.123", decimalLength: 0, maxDecimalLength: 5, expected: "0.1" },
   { value: "0.123", decimalLength: 3, maxDecimalLength: 5, expected: "0.123" },
   { value: "1.123", decimalLength: 0, maxDecimalLength: 5, expected: "1" },
   { value: "1.123", decimalLength: 3, maxDecimalLength: 5, expected: "1.123" },
@@ -57,7 +57,7 @@ const zeroWithLeadingZeros: TruncateDecimalAmountType[] = [
   { value: 0.00123, decimalLength: 3, expected: "0.001" },
   { value: 0.00123, decimalLength: 4, expected: "0.0012" },
 
-  { value: 0.00123, decimalLength: 0, maxDecimalLength: 5, expected: "0" },
+  { value: 0.00123, decimalLength: 0, maxDecimalLength: 5, expected: "0.001" },
   { value: 0.00123, decimalLength: 1, maxDecimalLength: 5, expected: "0.001" },
   { value: 0.00123, decimalLength: 2, maxDecimalLength: 5, expected: "0.001" },
   { value: 0.00123, decimalLength: 3, maxDecimalLength: 5, expected: "0.001" },
@@ -72,7 +72,12 @@ const zeroWithLeadingZeros: TruncateDecimalAmountType[] = [
   { value: "0.00123", decimalLength: 0, expected: "0" },
   { value: "0.00123", decimalLength: 3, expected: "0.001" },
   { value: "0.00123", decimalLength: 4, expected: "0.0012" },
-  { value: "0.00123", decimalLength: 0, maxDecimalLength: 5, expected: "0" },
+  {
+    value: "0.00123",
+    decimalLength: 0,
+    maxDecimalLength: 5,
+    expected: "0.001",
+  },
   {
     value: "0.0001",
     decimalLength: 1,

@@ -64,26 +64,29 @@ export function truncateDecimalAmount(
 
   const [integer, decimals] = valueString.split(".")
 
-  if (decimalLength === 0) {
+  const firstSignificantDecimalDigit =
+    [...decimals].findIndex((digit) => digit !== "0") + 1
+
+  const decimalTruncationLength =
+    integer.length > 1 || integer[0] !== "0"
+      ? // For a value >=1, always respect decimalLength.
+        decimalLength
+      : // For a value <1, use the greater of decimalLength or first
+        // significant decimal digit, up to maxDecimalLength.
+        Math.min(
+          Math.max(decimalLength, firstSignificantDecimalDigit),
+          maxDecimalLength
+        )
+
+  // If the truncation point includes no significant decimals, don't include
+  // the decimal component at all.
+  if (decimalTruncationLength < firstSignificantDecimalDigit) {
     return integer
   }
 
-  const decimalsTruncated = decimals.substring(0, decimalLength)
-  const hasSignificantDigits = [...decimalsTruncated].some(
-    (digit) => digit !== "0"
-  )
+  const decimalsTruncated = decimals.substring(0, decimalTruncationLength)
 
-  // if integer part is > 0 then decimal part don't need more precision
-  if (integer.length > 1 || integer[0] !== "0") {
-    return hasSignificantDigits ? `${integer}.${decimalsTruncated}` : integer
-  }
-
-  // integer = 0 so we are trying to get better decimal precision
-  if (decimalLength < maxDecimalLength && !hasSignificantDigits) {
-    return truncateDecimalAmount(value, decimalLength + 1, maxDecimalLength)
-  }
-
-  return hasSignificantDigits ? `${integer}.${decimalsTruncated}` : integer
+  return `${integer}.${decimalsTruncated}`
 }
 
 export function sameEVMAddress(
