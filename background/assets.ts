@@ -44,10 +44,6 @@ export type AssetMetadata = {
    * legitimate asset.
    */
   trusted?: boolean
-  /**
-   * Set by the user to hide assets that have been verified by mistake.
-   */
-  hidden?: boolean
 }
 
 /**

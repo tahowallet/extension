@@ -130,13 +130,8 @@ export default function AssetWarningSlideUp(
           </div>
           <div>
             <div className="asset_verify_actions">
-              <SharedButton
-                size="medium"
-                type="secondary"
-                onClick={() =>
-                  handleUpdateAssetMetadata({ hidden: true, trusted: false })
-                }
-              >
+              {/* TODO Add logic for deleting asset */}
+              <SharedButton size="medium" type="secondary" onClick={() => {}}>
                 {t("dontShow")}
               </SharedButton>
               {isUnverified && (

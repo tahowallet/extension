@@ -1908,21 +1908,14 @@ export default class Main extends BaseService<never> {
     }
   }
 
-  async importAccountCustomToken({
+  async importCustomToken({
     asset,
     addressNetwork,
   }: {
     asset: SmartContractFungibleAsset
     addressNetwork: AddressOnNetwork
   }): Promise<void> {
-    const { metadata = {} } = asset
-    // Manually imported tokens are verified
-    metadata.trusted = true
-
-    await this.indexingService.importAccountCustomToken(
-      { ...asset, metadata },
-      addressNetwork
-    )
+    await this.indexingService.importCustomToken(asset, addressNetwork)
   }
 
   private connectPopupMonitor() {

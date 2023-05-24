@@ -330,8 +330,8 @@ export const selectAssetPricePoint = createSelector(
   }
 )
 
-export const importAccountCustomToken = createBackgroundAsyncThunk(
-  "assets/importAccountCustomToken",
+export const importCustomToken = createBackgroundAsyncThunk(
+  "assets/importCustomToken",
   async (
     {
       asset,
@@ -343,7 +343,7 @@ export const importAccountCustomToken = createBackgroundAsyncThunk(
     const state = getState() as RootState
     const currentAccount = state.ui.selectedAccount
 
-    await main.importAccountCustomToken({
+    await main.importCustomToken({
       asset,
       addressNetwork: currentAccount,
     })
