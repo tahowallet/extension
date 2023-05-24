@@ -133,7 +133,7 @@ export default function Swap(): ReactElement {
   }, [previousChainId, currentNetwork.chainID])
 
   const buyAssets = useBackgroundSelector((state) => {
-    const assets = selectSwapBuyAssets(state) as SwappableAsset[]
+    const assets = selectSwapBuyAssets(state)
     return assets.filter((asset) => asset.symbol !== sellAsset?.symbol)
   })
 
