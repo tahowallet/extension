@@ -10,8 +10,8 @@ import {
   toggleTestNetworks,
   toggleHideBanners,
   selectHideBanners,
-  selectShowUnverified,
-  toggleShowUnverified,
+  selectShowUnverifiedAssets,
+  toggleShowUnverifiedAssets,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
@@ -127,7 +127,7 @@ export default function Settings(): ReactElement {
   const hideBanners = useSelector(selectHideBanners)
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
-  const showUnverified = useSelector(selectShowUnverified)
+  const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
@@ -141,8 +141,8 @@ export default function Settings(): ReactElement {
     dispatch(toggleTestNetworks(defaultWalletValue))
   }
 
-  const toggleShowUnverifiedAssets = (defaultWalletValue: boolean) => {
-    dispatch(toggleShowUnverified(defaultWalletValue))
+  const toggleShowUnverified = (toggleValue: boolean) => {
+    dispatch(toggleShowUnverifiedAssets(toggleValue))
   }
 
   const toggleHideNotificationBanners = (toggleValue: boolean) => {
@@ -176,8 +176,8 @@ export default function Settings(): ReactElement {
           </SharedTooltip>
         </div>
         <SharedToggleButton
-          onChange={(toggleValue) => toggleShowUnverifiedAssets(toggleValue)}
-          value={showUnverified}
+          onChange={(toggleValue) => toggleShowUnverified(toggleValue)}
+          value={showUnverifiedAssets}
         />
         <style jsx>
           {`

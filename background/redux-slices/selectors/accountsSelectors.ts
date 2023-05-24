@@ -1,5 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
-import { selectHideDust, selectShowUnverified } from "../ui"
+import { selectHideDust, selectShowUnverifiedAssets } from "../ui"
 import { RootState } from ".."
 import {
   AccountType,
@@ -75,7 +75,10 @@ const shouldForciblyDisplayAsset = (
 
 export function determineAssetDisplayAndVerify(
   assetAmount: CompleteAssetAmount<AnyAsset>,
-  { hideDust, showUnverified }: { hideDust: boolean; showUnverified: boolean }
+  {
+    hideDust,
+    showUnverifiedAssets,
+  }: { hideDust: boolean; showUnverifiedAssets: boolean }
 ): { displayAsset: boolean; verifiedAsset: boolean } {
   const isVerified = !isUnverifiedAssetByUser(assetAmount.asset)
 
@@ -90,7 +93,7 @@ export function determineAssetDisplayAndVerify(
   const isPresent = assetAmount.decimalAmount > 0
   const showDust = !hideDust
 
-  const verifiedToBeVisible = showUnverified || isVerified
+  const verifiedToBeVisible = showUnverifiedAssets || isVerified
   const enoughBalanceToBeVisible = isPresent && (isNotDust || showDust)
 
   return {
@@ -104,7 +107,7 @@ const computeCombinedAssetAmountsData = (
   assets: AssetsState,
   mainCurrencySymbol: string,
   hideDust: boolean,
-  showUnverified: boolean
+  showUnverifiedAssets: boolean
 ): {
   allAssetAmounts: CompleteAssetAmount[]
   combinedAssetAmounts: CompleteAssetAmount[]
@@ -187,7 +190,7 @@ const computeCombinedAssetAmountsData = (
       (acc, assetAmount) => {
         const { displayAsset, verifiedAsset } = determineAssetDisplayAndVerify(
           assetAmount,
-          { hideDust, showUnverified }
+          { hideDust, showUnverifiedAssets }
         )
 
         if (displayAsset) {
@@ -233,16 +236,16 @@ export const selectAccountAndTimestampedActivities = createSelector(
   getAccountState,
   getAssetsState,
   selectHideDust,
-  selectShowUnverified,
+  selectShowUnverifiedAssets,
   selectMainCurrencySymbol,
-  (account, assets, hideDust, showUnverified, mainCurrencySymbol) => {
+  (account, assets, hideDust, showUnverifiedAssets, mainCurrencySymbol) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
       computeCombinedAssetAmountsData(
         account.combinedData.assets,
         assets,
         mainCurrencySymbol,
         hideDust,
-        showUnverified
+        showUnverifiedAssets
       )
 
     return {
@@ -264,9 +267,15 @@ export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   getAssetsState,
   selectHideDust,
-  selectShowUnverified,
+  selectShowUnverifiedAssets,
   selectMainCurrencySymbol,
-  (currentAccount, assets, hideDust, showUnverified, mainCurrencySymbol) => {
+  (
+    currentAccount,
+    assets,
+    hideDust,
+    showUnverifiedAssets,
+    mainCurrencySymbol
+  ) => {
     if (typeof currentAccount === "undefined" || currentAccount === "loading") {
       return undefined
     }
@@ -285,7 +294,7 @@ export const selectCurrentAccountBalances = createSelector(
       assets,
       mainCurrencySymbol,
       hideDust,
-      showUnverified
+      showUnverifiedAssets
     )
 
     return {

@@ -288,7 +288,7 @@ describe("Utilities", () => {
         }),
         {
           hideDust: true,
-          showUnverified: false,
+          showUnverifiedAssets: false,
         }
       )
       expect(displayAsset).toBe(true)
@@ -303,7 +303,7 @@ describe("Utilities", () => {
           }),
           {
             hideDust: true,
-            showUnverified: false,
+            showUnverifiedAssets: false,
           }
         )
 
@@ -318,7 +318,7 @@ describe("Utilities", () => {
           }),
           {
             hideDust: false,
-            showUnverified: false,
+            showUnverifiedAssets: false,
           }
         )
 
@@ -333,7 +333,7 @@ describe("Utilities", () => {
           }),
           {
             hideDust: false,
-            showUnverified: false,
+            showUnverifiedAssets: false,
           }
         )
 
@@ -348,7 +348,7 @@ describe("Utilities", () => {
           }),
           {
             hideDust: true,
-            showUnverified: false,
+            showUnverifiedAssets: false,
           }
         )
 
@@ -357,7 +357,7 @@ describe("Utilities", () => {
     })
 
     describe("Verified assets", () => {
-      it("should display asset amount if verified and showUnverified is disabled", () => {
+      it("should display asset amount if verified and showUnverifiedAssets is disabled", () => {
         const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
             createSmartContractAsset({ metadata: { trusted: true } }),
@@ -369,14 +369,14 @@ describe("Utilities", () => {
           ),
           {
             hideDust: true,
-            showUnverified: false,
+            showUnverifiedAssets: false,
           }
         )
 
         expect(displayAsset).toBe(true)
       })
 
-      it("should display asset amount if verified and showUnverified is enabled", () => {
+      it("should display asset amount if verified and showUnverifiedAssets is enabled", () => {
         const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
             createSmartContractAsset({ metadata: { trusted: true } }),
@@ -388,14 +388,14 @@ describe("Utilities", () => {
           ),
           {
             hideDust: true,
-            showUnverified: true,
+            showUnverifiedAssets: true,
           }
         )
 
         expect(displayAsset).toBe(true)
       })
 
-      it("should NOT display asset amount if unverified (trusted value set to false) and showUnverified is disabled", () => {
+      it("should NOT display asset amount if unverified (trusted value set to false) and showUnverifiedAssets is disabled", () => {
         const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
             createSmartContractAsset({ metadata: { trusted: false } }),
@@ -407,14 +407,14 @@ describe("Utilities", () => {
           ),
           {
             hideDust: true,
-            showUnverified: false,
+            showUnverifiedAssets: false,
           }
         )
 
         expect(displayAsset).toBe(false)
       })
 
-      it("should NOT display asset amount if unverified (empty metadata) and showUnverified is disabled", () => {
+      it("should NOT display asset amount if unverified (empty metadata) and showUnverifiedAssets is disabled", () => {
         const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
             createSmartContractAsset({ metadata: {} }),
@@ -426,14 +426,14 @@ describe("Utilities", () => {
           ),
           {
             hideDust: true,
-            showUnverified: false,
+            showUnverifiedAssets: false,
           }
         )
 
         expect(displayAsset).toBe(false)
       })
 
-      it("should display asset amount if unverified and showUnverified is enabled", () => {
+      it("should display asset amount if unverified and showUnverifiedAssets is enabled", () => {
         const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
             createSmartContractAsset({ metadata: { trusted: false } }),
@@ -445,7 +445,7 @@ describe("Utilities", () => {
           ),
           {
             hideDust: true,
-            showUnverified: true,
+            showUnverifiedAssets: true,
           }
         )
 
@@ -464,7 +464,7 @@ describe("Utilities", () => {
           ),
           {
             hideDust: true,
-            showUnverified: false,
+            showUnverifiedAssets: false,
           }
         )
 

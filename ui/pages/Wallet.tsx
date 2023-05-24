@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
 import {
   selectShowAnalyticsNotification,
-  selectShowUnverified,
+  selectShowUnverifiedAssets,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
@@ -44,7 +44,7 @@ export default function Wallet(): ReactElement {
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
   const claimState = useBackgroundSelector((state) => state.claim)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const showUnverified = useBackgroundSelector(selectShowUnverified)
+  const showUnverifiedAssets = useBackgroundSelector(selectShowUnverifiedAssets)
 
   useEffect(() => {
     dispatch(
@@ -95,8 +95,8 @@ export default function Wallet(): ReactElement {
   )
 
   const showHiddenAssets = useMemo(
-    () => showUnverified && unverifiedAssetAmounts.length > 0,
-    [showUnverified, unverifiedAssetAmounts.length]
+    () => showUnverifiedAssets && unverifiedAssetAmounts.length > 0,
+    [showUnverifiedAssets, unverifiedAssetAmounts.length]
   )
 
   const panelNames = [t("wallet.pages.assets")]
