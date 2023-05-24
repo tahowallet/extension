@@ -346,8 +346,8 @@ export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
 
 /**
  * NB: non-base assets that don't have any token lists are considered
- * unverified. Reifying base assets clearly will improve this check down the
- * road. Eventually, assets can be flagged as verified by adding them to an
+ * untrusted. Reifying base assets clearly will improve this check down the
+ * road. Eventually, assets can be flagged as trusted by adding them to an
  * "internal" token list that users can export and share.
  *
  */

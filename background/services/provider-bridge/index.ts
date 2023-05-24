@@ -58,7 +58,7 @@ export type AddChainRequestData = ValidatedAddEthereumChainParameter & {
  * provider-bridge (content-script).
  *
  * The main purpose for this service/layer is to provide a transition
- * between the unverified communication from the window-provider - which runs
+ * between the untrusted communication from the window-provider - which runs
  * in shared dapp space and can be modified by other extensions - and our
  * internal service layer.
  *

@@ -688,7 +688,7 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   /**
-   * Loads prices for all tracked assets except unverified/custom network assets
+   * Loads prices for all tracked assets except untrusted/custom network assets
    */
   private async getTrackedAssetsPrices() {
     // get the prices of all assets to track and save them
