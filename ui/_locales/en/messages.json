@@ -833,7 +833,8 @@
       "snackbar": "Asset added to list",
       "banner": {
         "title": "Asset not verified",
-        "description": "Be aware of scam and spam assets, only verify assets you trust."
+        "description": "Be aware of scam and spam assets, only verify assets you trust.",
+        "oldDescription": "Only transact with assets you trust."
       }
     }
   },

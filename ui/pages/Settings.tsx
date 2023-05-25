@@ -171,7 +171,9 @@ export default function Settings(): ReactElement {
           <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
             <div className="tooltip">
               <span>{t("settings.unverifiedAssets.tooltip.firstPart")}</span>
-              <span>{t("settings.unverifiedAssets.tooltip.secondPart")}</span>
+              {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
+                <span>{t("settings.unverifiedAssets.tooltip.secondPart")}</span>
+              )}
             </div>
           </SharedTooltip>
         </div>

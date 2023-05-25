@@ -7,6 +7,7 @@ import {
   toggleShowHiddenAssets,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import WalletAssetList from "./WalletAssetList"
 import SharedButton from "../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -72,12 +73,14 @@ export default function WalletHiddenAssets({
           visible: mountedRef.current && showHiddenAssets,
         })}
       >
-        <UnverifiedAssetBanner
-          id="unverified_asset_banner"
-          title={t("verifiedAssets.banner.title")}
-          description={t("verifiedAssets.banner.description")}
-          customStyles="margin-bottom: 16px;"
-        />
+        {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
+          <UnverifiedAssetBanner
+            id="unverified_asset_banner"
+            title={t("verifiedAssets.banner.title")}
+            description={t("verifiedAssets.banner.description")}
+            customStyles="margin-bottom: 16px;"
+          />
+        )}
         <WalletAssetList
           assetAmounts={assetAmounts}
           initializationLoadingTimeExpired

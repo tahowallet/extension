@@ -67,7 +67,11 @@ export default function AssetWarningSlideUp(
           <div>
             <UnverifiedAssetBanner
               title={t("banner.title")}
-              description={t("banner.description")}
+              description={
+                isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)
+                  ? t("banner.description")
+                  : t("banner.oldDescription")
+              }
             />
             <ul className="asset_details">
               <li className="asset_symbol">
@@ -115,7 +119,9 @@ export default function AssetWarningSlideUp(
                       <button
                         type="button"
                         className={classNames("address_button", {
-                          no_click: !blockExplorerUrl,
+                          // TODO Delete when the option to open the activity page is available.
+                          no_click: true,
+                          // no_click: !blockExplorerUrl,
                         })}
                         // TODO Open the activity page. At the moment, the activity is not available in the redux state.
                         onClick={() => {}}
