@@ -289,8 +289,6 @@ export function getOwnedSellAssetAmounts(
   assetAmounts: CompleteAssetAmount[] | undefined,
   currentNetwork: EVMNetwork
 ): CompleteAssetAmount<SwappableAsset>[] {
-  // TODO We're special-casing ETH here in an odd way. Going forward, we should
-  // filter by current chain and better handle network-native base assets
   return (
     assetAmounts?.filter(
       (assetAmount): assetAmount is CompleteAssetAmount<SwappableAsset> =>
