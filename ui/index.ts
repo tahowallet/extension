@@ -7,6 +7,7 @@ import { getAllAddresses } from "@tallyho/tally-background/redux-slices/selector
 import logger from "@tallyho/tally-background/lib/logger"
 import Popup from "./pages/Popup"
 import Tab from "./pages/Tab"
+import { ONBOARDING_ROOT } from "./pages/Onboarding/Tabbed/Routes"
 
 logger.contextId = "UI"
 
@@ -50,7 +51,7 @@ export async function attachPopupUIToRootElement(): Promise<void> {
       await browser.tabs.update(tabs[0].id, { active: true })
     } else {
       await browser.tabs.create({
-        url: browser.runtime.getURL("tab.html#onboarding"),
+        url: browser.runtime.getURL(ONBOARDING_ROOT),
       })
     }
     window.close()
