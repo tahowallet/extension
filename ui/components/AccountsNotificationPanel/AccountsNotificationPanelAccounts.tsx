@@ -300,136 +300,135 @@ export default function AccountsNotificationPanelAccounts({
 
   return (
     <div className="switcher_wrap">
-      {accountTypes
-        .filter((type) => (accountTotals[type]?.length ?? 0) > 0)
-        .map((accountType) => {
-          // Known-non-null due to above filter.
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const accountTotalsByType = accountTotals[accountType]!.reduce(
-            (acc, accountTypeTotal) => {
-              if (accountTypeTotal.keyringId) {
-                acc[accountTypeTotal.keyringId] ??= []
-                // Known-non-null due to above ??=
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                acc[accountTypeTotal.keyringId].push(accountTypeTotal)
-              } else {
-                acc.readOnly ??= []
-                acc.readOnly.push(accountTypeTotal)
-              }
-              return acc
-            },
-            {} as { [keyringId: string]: AccountTotal[] }
-          )
-          return (
-            <>
-              {!(
-                accountType === AccountType.Imported &&
-                (accountTotals[AccountType.Internal]?.length ?? 0)
-              ) && (
-                <div className="category_wrap simple_text">
-                  <p className="category_title">
-                    {walletTypeDetails[accountType].category}
-                  </p>
-                  {isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
-                    (accountType === AccountType.Imported ||
-                      accountType === AccountType.Internal) && (
-                      <SigningButton
-                        onCurrentAddressChange={onCurrentAddressChange}
-                      />
-                    )}
-                </div>
-              )}
-              {Object.values(accountTotalsByType).map(
-                (accountTotalsByKeyringId, idx) => {
-                  return (
-                    <section key={accountType}>
-                      <WalletTypeHeader
-                        accountType={accountType}
-                        walletNumber={idx + 1}
-                        path={accountTotalsByKeyringId[0].path}
-                        accountSigner={
-                          accountTotalsByKeyringId[0].accountSigner
-                        }
-                        onClickAddAddress={
-                          accountType === "imported" ||
-                          accountType === "internal"
-                            ? () => {
-                                if (accountTotalsByKeyringId[0].keyringId) {
-                                  dispatch(
-                                    deriveAddress(
-                                      accountTotalsByKeyringId[0].keyringId
-                                    )
+      {accountTypes.map((accountType) => {
+        const accountTypeTotals = accountTotals[accountType]
+
+        // If there are no account totals for the given type, skip the section.
+        if (accountTypeTotals === undefined || accountTypeTotals.length <= 0) {
+          return <></>
+        }
+
+        const accountTotalsByType = accountTypeTotals.reduce(
+          (acc, accountTypeTotal) => {
+            if (accountTypeTotal.signerId) {
+              acc[accountTypeTotal.signerId] ??= []
+              acc[accountTypeTotal.signerId].push(accountTypeTotal)
+            } else {
+              acc.readOnly ??= []
+              acc.readOnly.push(accountTypeTotal)
+            }
+            return acc
+          },
+          {} as { [signerId: string]: AccountTotal[] }
+        )
+
+        return (
+          <>
+            {!(
+              accountType === AccountType.Imported &&
+              (accountTotals[AccountType.Internal]?.length ?? 0)
+            ) && (
+              <div className="category_wrap simple_text">
+                <p className="category_title">
+                  {walletTypeDetails[accountType].category}
+                </p>
+                {isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
+                  (accountType === AccountType.Imported ||
+                    accountType === AccountType.Internal) && (
+                    <SigningButton
+                      onCurrentAddressChange={onCurrentAddressChange}
+                    />
+                  )}
+              </div>
+            )}
+            {Object.values(accountTotalsByType).map(
+              (accountTotalsBySignerId, idx) => {
+                return (
+                  <section key={accountType}>
+                    <WalletTypeHeader
+                      accountType={accountType}
+                      walletNumber={idx + 1}
+                      path={accountTotalsBySignerId[0].path}
+                      accountSigner={accountTotalsBySignerId[0].accountSigner}
+                      onClickAddAddress={
+                        accountType === "imported" || accountType === "internal"
+                          ? () => {
+                              if (accountTotalsBySignerId[0].signerId) {
+                                dispatch(
+                                  deriveAddress(
+                                    accountTotalsBySignerId[0].signerId
                                   )
-                                }
+                                )
                               }
-                            : undefined
-                        }
-                      />
-                      <ul>
-                        {accountTotalsByKeyringId.map((accountTotal) => {
-                          const normalizedAddress = normalizeEVMAddress(
-                            accountTotal.address
-                          )
+                            }
+                          : undefined
+                      }
+                    />
+                    <ul>
+                      {accountTotalsBySignerId.map((accountTotal) => {
+                        const normalizedAddress = normalizeEVMAddress(
+                          accountTotal.address
+                        )
 
-                          const isSelected = sameEVMAddress(
-                            normalizedAddress,
-                            selectedAccountAddress
-                          )
+                        const isSelected = sameEVMAddress(
+                          normalizedAddress,
+                          selectedAccountAddress
+                        )
 
-                          return (
-                            <li
-                              key={normalizedAddress}
-                              // We use these event handlers in leiu of :hover so that we can prevent child hovering
-                              // from affecting the hover state of this li.
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "var(--hunter-green)"
+                        return (
+                          <li
+                            key={normalizedAddress}
+                            // We use these event handlers in leiu of :hover so that we can prevent child hovering
+                            // from affecting the hover state of this li.
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.backgroundColor =
+                                "var(--hunter-green)"
+                            }}
+                            onFocus={(e) => {
+                              e.currentTarget.style.backgroundColor =
+                                "var(--hunter-green)"
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.backgroundColor = ""
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.backgroundColor = ""
+                            }}
+                          >
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  updateCurrentAccount(normalizedAddress)
+                                }
                               }}
-                              onFocus={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "var(--hunter-green)"
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.backgroundColor = ""
-                              }}
-                              onBlur={(e) => {
-                                e.currentTarget.style.backgroundColor = ""
+                              onClick={() => {
+                                dispatch(resetClaimFlow())
+                                updateCurrentAccount(normalizedAddress)
                               }}
                             >
-                              <div
-                                role="button"
-                                tabIndex={0}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    updateCurrentAccount(normalizedAddress)
-                                  }
-                                }}
-                                onClick={() => {
-                                  dispatch(resetClaimFlow())
-                                  updateCurrentAccount(normalizedAddress)
-                                }}
+                              <SharedAccountItemSummary
+                                key={normalizedAddress}
+                                accountTotal={accountTotal}
+                                isSelected={isSelected}
                               >
-                                <SharedAccountItemSummary
-                                  key={normalizedAddress}
+                                <AccountItemOptionsMenu
                                   accountTotal={accountTotal}
-                                  isSelected={isSelected}
-                                >
-                                  <AccountItemOptionsMenu
-                                    accountTotal={accountTotal}
-                                  />
-                                </SharedAccountItemSummary>
-                              </div>
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    </section>
-                  )
-                }
-              )}
-            </>
-          )
-        })}
+                                />
+                              </SharedAccountItemSummary>
+                            </div>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </section>
+                )
+              }
+            )}
+          </>
+        )
+      })}
       <footer>
         <SharedButton
           type="tertiary"

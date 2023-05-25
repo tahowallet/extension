@@ -4,6 +4,7 @@ import { selectAccountTotalsForOverview } from "@tallyho/tally-background/redux-
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { DAY } from "@tallyho/tally-background/constants"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
@@ -14,24 +15,32 @@ import AbilityCardHeader from "./AbilityCardHeader"
 import AbilityRemovalConfirm from "./AbilityRemovalConfirm"
 
 const DAYS = 30
+const KEY_PREFIX_TIME_DETAILS = "abilities.timeDetails"
+
+const getMessage = (dateStr: string, keyPrefix: string): string => {
+  const cutOffDate = new Date()
+  cutOffDate.setHours(0, 0, 0, 0)
+
+  const date = new Date(dateStr)
+  const diffInMs = date.getTime() - cutOffDate.getTime()
+  const days = Math.floor(diffInMs / DAY)
+
+  if (days >= 1 && days <= DAYS) {
+    return i18n.t(`${KEY_PREFIX_TIME_DETAILS}.${keyPrefix}`, {
+      count: days,
+    })
+  }
+
+  return ""
+}
 
 const getTimeDetails = (ability: Ability): string => {
-  const cutOffDate = new Date()
-  cutOffDate.setDate(cutOffDate.getDate() + DAYS)
-
   if (ability.closeAt) {
-    const closeDate = new Date(ability.closeAt)
-    if (new Date() < closeDate && closeDate < cutOffDate) {
-      return i18n.t("abilities.timeCloses")
-    }
+    return getMessage(ability.closeAt, "timeClosesDays")
   }
   if (ability.openAt) {
-    const openDate = new Date(ability.openAt)
-    if (new Date() < openDate && openDate < cutOffDate) {
-      return i18n.t("abilities.timeStarting")
-    }
+    return getMessage(ability.openAt, "timeStartingDays")
   }
-
   return ""
 }
 

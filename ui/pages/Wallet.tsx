@@ -68,6 +68,20 @@ export default function Wallet(): ReactElement {
     selectCurrentAccountActivities
   )
 
+  useEffect(() => {
+    const locationState = history.location.state
+    if (locationState) {
+      const { goTo } = locationState as { goTo?: string }
+      if (goTo === "activity-page") {
+        if (!NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
+          setPanelNumber(1)
+        } else {
+          setPanelNumber(2)
+        }
+      }
+    }
+  }, [history, selectedNetwork.chainID])
+
   const initializationLoadingTimeExpired = useBackgroundSelector(
     (background) => background.ui?.initializationLoadingTimeExpired
   )
@@ -109,7 +123,9 @@ export default function Wallet(): ReactElement {
           />
           <div
             className={classNames("panel standard_width", {
-              no_padding: panelNumber === 1,
+              no_padding:
+                panelNumber === 1 &&
+                NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID),
             })}
           >
             {panelNumber === 0 && (
