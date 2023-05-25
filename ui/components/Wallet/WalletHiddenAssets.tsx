@@ -4,10 +4,12 @@ import { useTranslation } from "react-i18next"
 import classNames from "classnames"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import WalletAssetList from "./WalletAssetList"
 import SharedButton from "../Shared/SharedButton"
 import { useIsMounted } from "../../hooks/react-hooks"
 import UnverifiedAssetBanner from "./UnverifiedAsset/UnverifiedAssetBanner"
+import { useBackgroundSelector } from "../../hooks"
 
 type WalletHiddenAssetsProps = {
   assetAmounts: CompleteAssetAmount<SwappableAsset>[]
@@ -19,6 +21,8 @@ export default function WalletHiddenAssets({
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet",
   })
+  const selectedAccount = useBackgroundSelector(selectCurrentAccount)
+
   const mountedRef = useIsMounted()
   const hiddenAssetsRef = useRef<HTMLDivElement | null>(null)
   const buttonRef = useRef<HTMLDivElement | null>(null)
@@ -34,6 +38,10 @@ export default function WalletHiddenAssets({
       setMaxHeight(hiddenAssetsRef.current.scrollHeight)
     }
   }, [hiddenAssetsRef?.current?.scrollHeight])
+
+  useEffect(() => {
+    setIsOpen(false)
+  }, [selectedAccount])
 
   return (
     <>
