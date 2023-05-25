@@ -12,7 +12,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import WalletActivityDetails from "./WalletActivityDetails"
 import WalletActivityListItem from "./WalletActivityListItem"
-import { scanWebsite } from "../../utils/constants"
+import { blockExplorer } from "../../utils/constants"
 import SharedButton from "../Shared/SharedButton"
 
 type Props = {
@@ -36,7 +36,7 @@ export default function WalletActivityList({
     useState(true)
 
   const network = useBackgroundSelector(selectCurrentNetwork)
-  const scanWebsiteInfo = scanWebsite[network.chainID]
+  const blockExplorerInfo = blockExplorer[network.chainID]
 
   useEffect(() => {
     setInstantlyHideActivityDetails(true)
@@ -49,11 +49,11 @@ export default function WalletActivityList({
   const openExplorer = useCallback(() => {
     window
       .open(
-        `${scanWebsiteInfo.url}/address/${activityInitiatorAddress}`,
+        `${blockExplorerInfo.url}/address/${activityInitiatorAddress}`,
         "_blank"
       )
       ?.focus()
-  }, [scanWebsiteInfo, activityInitiatorAddress])
+  }, [blockExplorerInfo, activityInitiatorAddress])
 
   const handleOpen = useCallback(
     (activityItem: Activity) => {
@@ -125,7 +125,7 @@ export default function WalletActivityList({
       <span>
         <div className="hand">✋</div>
         <div>{t("endOfList")}</div>
-        {scanWebsiteInfo && (
+        {blockExplorerInfo && (
           <div className="row">
             {t("moreHistory")}
             <SharedButton
@@ -135,7 +135,7 @@ export default function WalletActivityList({
               onClick={openExplorer}
               style={{ padding: 0, fontWeight: 400 }}
             >
-              {scanWebsiteInfo?.title}
+              {blockExplorerInfo?.title}
             </SharedButton>
           </div>
         )}
