@@ -1,7 +1,7 @@
 import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import { SigningLedgerState } from "../../../SignTransaction/useSigningLedgerState"
+import { SigningLedgerState } from "../../../../hooks"
 
 type SignerLedgerConnectionStatusProps = {
   ledgerState: SigningLedgerState
