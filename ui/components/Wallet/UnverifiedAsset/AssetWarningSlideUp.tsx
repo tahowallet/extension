@@ -30,6 +30,9 @@ export default function AssetWarningSlideUp(
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet.verifiedAssets",
   })
+  const { t: sharedT } = useTranslation("translation", {
+    keyPrefix: "shared",
+  })
 
   const { asset, close } = props
 
@@ -165,7 +168,7 @@ export default function AssetWarningSlideUp(
                 </>
               ) : (
                 <SharedButton size="medium" type="secondary" onClick={close}>
-                  {t("close")}
+                  {sharedT("close")}
                 </SharedButton>
               )}
             </div>
