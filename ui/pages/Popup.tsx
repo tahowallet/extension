@@ -1,11 +1,5 @@
 import React, { ReactElement, useState, useEffect } from "react"
-import {
-  MemoryRouter as Router,
-  Switch,
-  Route,
-  Redirect,
-  matchPath,
-} from "react-router-dom"
+import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
 import { ErrorBoundary } from "react-error-boundary"
 
 import classNames from "classnames"
@@ -221,23 +215,6 @@ export function Main(): ReactElement {
                       <TopMenu />
                     </div>
                     <Switch location={transformedLocation}>
-                      {
-                        // If there are no existing accounts, display onboarding
-                        // (if we're not there already)
-                        //
-                        !isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING) &&
-                          !hasAccounts &&
-                          !matchPath(transformedLocation.pathname, {
-                            path: [
-                              "/onboarding",
-                              // need to unlock or set new password to import an account
-                              "/keyring",
-                              // this route has it's own error message
-                              "/dapp-permission",
-                            ],
-                            exact: false,
-                          }) && <Redirect to="/onboarding/info-intro" />
-                      }
                       {pageList.map(
                         ({ path, Component, hasTopBar, hasTabBar }) => {
                           return (
