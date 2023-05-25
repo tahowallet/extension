@@ -137,10 +137,10 @@ export default function SwapQuoteBalanceChange(
           align-items: center;
         }
         .sell {
-          color: var(--trading-sell);
+          color: var(--trading-outgoing);
         }
         .buy {
-          color: var(--trading-buy);
+          color: var(--trading-incoming);
         }
         .balance_token_value {
           font-weight: 500;
