@@ -44,6 +44,10 @@ export type AssetMetadata = {
    * legitimate asset.
    */
   verified?: boolean
+  /**
+   * Set by the user to remove asset that has been verified by mistake.
+   */
+  removed?: boolean
 }
 
 /**

@@ -830,7 +830,8 @@
       "close": "Close",
       "dontShow": "Don’t show",
       "addToAssetList": "Add to asset list",
-      "snackbar": "Asset added to list",
+      "verifyAssetSnackbar":  "Asset added to list",
+      "removeAssetSnackbar": "Asset removed from list",
       "banner": {
         "title": "Asset not verified",
         "description": "Be aware of scam and spam assets, only verify assets you trust."

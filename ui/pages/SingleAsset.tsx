@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from "react"
-import { useLocation } from "react-router-dom"
+import { useHistory, useLocation } from "react-router-dom"
 import {
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
@@ -38,6 +38,7 @@ const MAX_SYMBOL_LENGTH = 10
 
 export default function SingleAsset(): ReactElement {
   const { t } = useTranslation()
+  const history = useHistory()
   const location = useLocation<AnyAsset>()
   const locationAsset = location.state
   const { symbol } = locationAsset
@@ -114,6 +115,7 @@ export default function SingleAsset(): ReactElement {
           asset={warnedAsset}
           close={() => {
             setWarnedAsset(null)
+            history.push("/")
           }}
         />
       )}

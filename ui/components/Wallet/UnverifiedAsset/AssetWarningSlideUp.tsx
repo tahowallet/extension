@@ -48,10 +48,13 @@ export default function AssetWarningSlideUp(
 
   const blockExplorerUrl = getBlockExplorerURL(network)
 
-  const handleUpdateAssetMetadata = async (newMetadata: AnyAssetMetadata) => {
+  const handleUpdateAssetMetadata = async (
+    newMetadata: AnyAssetMetadata,
+    snackbar: string
+  ) => {
     const metadata = { ...asset.metadata, ...newMetadata }
     await dispatch(updateAssetMetadata({ asset, metadata }))
-    dispatch(setSnackbarMessage(t("snackbar")))
+    dispatch(setSnackbarMessage(snackbar))
     close()
   }
 
@@ -133,11 +136,15 @@ export default function AssetWarningSlideUp(
             <div className="asset_verify_actions">
               {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) ? (
                 <>
-                  {/* TODO Add logic for deleting asset */}
                   <SharedButton
                     size="medium"
                     type="secondary"
-                    onClick={() => {}}
+                    onClick={() =>
+                      handleUpdateAssetMetadata(
+                        { removed: true },
+                        t("removeAssetSnackbar")
+                      )
+                    }
                   >
                     {t("dontShow")}
                   </SharedButton>
@@ -146,7 +153,10 @@ export default function AssetWarningSlideUp(
                       size="medium"
                       type="primary"
                       onClick={() =>
-                        handleUpdateAssetMetadata({ verified: true })
+                        handleUpdateAssetMetadata(
+                          { verified: true },
+                          t("verifyAssetSnackbar")
+                        )
                       }
                     >
                       {t("addToAssetList")}
