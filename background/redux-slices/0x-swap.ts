@@ -362,14 +362,16 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
           quoteRequest.assets.buyAsset,
           assets,
           quote.buyAmount,
-          quoteRequest.network
+          quoteRequest.network,
+          dispatch
         ),
         sellCurrencyAmount: await checkCurrencyAmount(
           Number(quote.sellTokenToEthRate),
           quoteRequest.assets.sellAsset,
           assets,
           quote.sellAmount,
-          quoteRequest.network
+          quoteRequest.network,
+          dispatch
         ),
       }
 

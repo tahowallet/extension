@@ -1,3 +1,4 @@
+import { AnyAction, ThunkDispatch } from "@reduxjs/toolkit"
 import { PricePoint, SwappableAsset } from "../../assets"
 import { USD } from "../../constants"
 import {
@@ -7,11 +8,13 @@ import {
 } from "../../lib/fixed-point"
 import { getPricePoint, getTokenPrices } from "../../lib/prices"
 import { EVMNetwork } from "../../networks"
-import { AssetsState, selectAssetPricePoint, SingleAssetState } from "../assets"
 import {
-  AssetMainCurrencyAmount,
-  enrichAssetAmountWithMainCurrencyValues,
-} from "./asset-utils"
+  AssetsState,
+  newPricePoint,
+  selectAssetPricePoint,
+  SingleAssetState,
+} from "../assets"
+import { enrichAssetAmountWithMainCurrencyValues } from "./asset-utils"
 import { hardcodedMainCurrencySymbol } from "./constants"
 
 type SwapAssets = {
@@ -69,19 +72,29 @@ export async function getAssetPricePoint(
     : getPricePoint(asset, unitPricePoint)
 }
 
-export async function getAssetAmount(
-  assets: AssetsState,
+export async function checkCurrencyAmount(
+  tokenToEthRate: number,
   asset: SwappableAsset,
+  assets: AssetsState,
   amount: string,
-  network: EVMNetwork
-): Promise<
-  | ({
-      asset: SwappableAsset
-      amount: bigint
-    } & AssetMainCurrencyAmount)
-  | undefined
-> {
-  const fixedPointAmount = parseToFixedPointNumber(amount.toString())
+  network: EVMNetwork,
+  dispatch: ThunkDispatch<unknown, unknown, AnyAction>
+): Promise<string | undefined> {
+  /**
+   * If the tokenToEthRate of a is less than 0.1
+   * we will probably not get information about the price of the asset.
+   * The goal is to reduce the number of price requests sent to CoinGecko.
+   */
+  if (tokenToEthRate < 0.1) {
+    return undefined
+  }
+
+  const fixedPointAmount = parseToFixedPointNumber(
+    fixedPointNumberToString({
+      amount: BigInt(amount),
+      decimals: asset.decimals,
+    }).toString()
+  )
   if (typeof fixedPointAmount === "undefined") {
     return undefined
   }
@@ -90,48 +103,27 @@ export async function getAssetAmount(
     asset.decimals
   )
 
-  const assetPricePoint = selectAssetPricePoint(
+  let assetPricePoint = selectAssetPricePoint(
     assets,
     asset,
     hardcodedMainCurrencySymbol
   )
+
+  if (!assetPricePoint) {
+    const newAssetPricePoint = await getAssetPricePoint(asset, assets, network)
+
+    if (newAssetPricePoint) {
+      dispatch(newPricePoint(newAssetPricePoint))
+      assetPricePoint = newAssetPricePoint
+    }
+  }
 
   return enrichAssetAmountWithMainCurrencyValues(
     {
       asset,
       amount: decimalMatched.amount,
     },
-    assetPricePoint ?? (await getAssetPricePoint(asset, assets, network)),
+    assetPricePoint,
     2
-  )
-}
-
-/**
- * If the tokenToEthRate of a is less than 0.1
- * we will probably not get information about the price of the asset.
- * The goal is to reduce the number of price requests sent to CoinGecko.
- */
-export async function checkCurrencyAmount(
-  tokenToEthRate: number,
-  asset: SwappableAsset,
-  assets: AssetsState,
-  amount: string,
-  network: EVMNetwork
-): Promise<string | undefined> {
-  const currencyAmount =
-    tokenToEthRate >= 0.1
-      ? (
-          await getAssetAmount(
-            assets,
-            asset,
-            fixedPointNumberToString({
-              amount: BigInt(amount),
-              decimals: asset.decimals,
-            }),
-            network
-          )
-        )?.localizedMainCurrencyAmount
-      : undefined
-
-  return currencyAmount
+  )?.localizedMainCurrencyAmount
 }
