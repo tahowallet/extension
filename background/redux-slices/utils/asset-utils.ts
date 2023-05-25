@@ -353,9 +353,9 @@ export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
  */
 export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
   if (asset) {
-    if (asset.metadata?.trusted !== undefined) {
-      // If we have trust metadata return it
-      return !asset.metadata.trusted
+    if (asset.metadata?.verified !== undefined) {
+      // If we have verified metadata return it
+      return !asset.metadata.verified
     }
 
     const baseAsset = isNetworkBaseAsset(asset)

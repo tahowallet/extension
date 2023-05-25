@@ -43,7 +43,7 @@ export type AssetMetadata = {
    * Set by the user to indicate explicitly trust in a
    * legitimate asset.
    */
-  trusted?: boolean
+  verified?: boolean
 }
 
 /**

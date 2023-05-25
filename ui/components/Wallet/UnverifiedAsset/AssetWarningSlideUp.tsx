@@ -146,7 +146,7 @@ export default function AssetWarningSlideUp(
                       size="medium"
                       type="primary"
                       onClick={() =>
-                        handleUpdateAssetMetadata({ trusted: true })
+                        handleUpdateAssetMetadata({ verified: true })
                       }
                     >
                       {t("addToAssetList")}

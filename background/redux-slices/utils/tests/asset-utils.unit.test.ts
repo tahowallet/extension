@@ -30,7 +30,7 @@ describe("Asset utils", () => {
             },
           ],
           websiteURL: "",
-          trusted: true,
+          verified: true,
         },
       }
       expect(isUnverifiedAssetByUser(asset)).toBeFalsy()

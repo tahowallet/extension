@@ -242,16 +242,16 @@ describe("Accounts redux slice", () => {
 
       expect(
         firstAccountData.balances[asset.symbol].assetAmount.asset.metadata
-          ?.trusted
+          ?.verified
       ).not.toBeDefined()
       expect(
         secondAccountData.balances[asset.symbol].assetAmount.asset.metadata
-          ?.trusted
+          ?.verified
       ).not.toBeDefined()
 
       const updatedAsset = cloneDeep(asset)
       updatedAsset.metadata ??= {}
-      updatedAsset.metadata.trusted = true
+      updatedAsset.metadata.verified = true
 
       const newState = reducer(
         secondAccountUpdate,
@@ -268,11 +268,11 @@ describe("Accounts redux slice", () => {
 
       expect(
         updatedFirstAccountData.balances[asset.symbol].assetAmount.asset
-          .metadata?.trusted
+          .metadata?.verified
       ).toBe(true)
       expect(
         updatedSecondAccountData.balances[asset.symbol].assetAmount.asset
-          .metadata?.trusted
+          .metadata?.verified
       ).toBe(true)
     })
   })
@@ -360,7 +360,7 @@ describe("Utilities", () => {
       it("should display asset amount if verified and showUnverifiedAssets is disabled", () => {
         const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
-            createSmartContractAsset({ metadata: { trusted: true } }),
+            createSmartContractAsset({ metadata: { verified: true } }),
             200,
             {
               decimalAmount: 200,
@@ -379,7 +379,7 @@ describe("Utilities", () => {
       it("should display asset amount if verified and showUnverifiedAssets is enabled", () => {
         const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
-            createSmartContractAsset({ metadata: { trusted: true } }),
+            createSmartContractAsset({ metadata: { verified: true } }),
             200,
             {
               decimalAmount: 200,
@@ -398,7 +398,7 @@ describe("Utilities", () => {
       it("should NOT display asset amount if unverified (trusted value set to false) and showUnverifiedAssets is disabled", () => {
         const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
-            createSmartContractAsset({ metadata: { trusted: false } }),
+            createSmartContractAsset({ metadata: { verified: false } }),
             200,
             {
               decimalAmount: 200,
@@ -436,7 +436,7 @@ describe("Utilities", () => {
       it("should display asset amount if unverified and showUnverifiedAssets is enabled", () => {
         const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
-            createSmartContractAsset({ metadata: { trusted: false } }),
+            createSmartContractAsset({ metadata: { verified: false } }),
             200,
             {
               decimalAmount: 200,
@@ -455,7 +455,7 @@ describe("Utilities", () => {
       it("should NOT display asset amount if verified and dust", () => {
         const { displayAsset } = determineAssetDisplayAndVerify(
           createCompleteAssetAmount(
-            createSmartContractAsset({ metadata: { trusted: true } }),
+            createSmartContractAsset({ metadata: { verified: true } }),
             0,
             {
               decimalAmount: 0,
