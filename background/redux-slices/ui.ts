@@ -18,7 +18,6 @@ export const defaultSettings = {
   showAnalyticsNotification: false,
   showUnverifiedAssets: false,
   hideBanners: false,
-  showHiddenAssets: false,
 }
 
 export type UIState = {
@@ -34,7 +33,6 @@ export type UIState = {
     showAnalyticsNotification: boolean
     showUnverifiedAssets: boolean
     hideBanners: boolean
-    showHiddenAssets: boolean
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
@@ -124,16 +122,6 @@ const uiSlice = createSlice({
         hideBanners,
       },
     }),
-    toggleShowHiddenAssets: (
-      state,
-      { payload: showHiddenAssets }: { payload: boolean }
-    ) => ({
-      ...state,
-      settings: {
-        ...state.settings,
-        showHiddenAssets,
-      },
-    }),
     setShowingActivityDetail: (
       state,
       { payload: transactionID }: { payload: string | null }
@@ -206,7 +194,6 @@ export const {
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
   toggleHideBanners,
-  toggleShowHiddenAssets,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
@@ -376,9 +363,4 @@ export const selectCollectAnalytics = createSelector(
 export const selectHideBanners = createSelector(
   selectSettings,
   (settings) => settings?.hideBanners
-)
-
-export const selectShowHiddenAssets = createSelector(
-  selectSettings,
-  (settings) => settings?.showHiddenAssets
 )

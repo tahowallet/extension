@@ -21,6 +21,7 @@ type NewState = {
 
 export default (prevState: Record<string, unknown>): NewState => {
   const typedPrevState = prevState as OldState
+  delete typedPrevState.ui.settings.showHiddenAssets
 
   return {
     ...prevState,

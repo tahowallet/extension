@@ -47,7 +47,7 @@ export default function AssetVerifyToggler({
       <style global jsx>
         {`
           .asset_verify_toggler:hover .icon {
-            color: ${hoverColor};
+            background-color: ${hoverColor};
           }
         `}
       </style>

@@ -114,6 +114,7 @@ export default function CommonAssetListItem(
                 text={t("unverifiedAssets.verifyAsset")}
                 icon="notif-attention"
                 color="var(--attention)"
+                hoverColor="var(--white)"
                 onClick={(event) => handleVerifyAsset(event)}
               />
             ) : (

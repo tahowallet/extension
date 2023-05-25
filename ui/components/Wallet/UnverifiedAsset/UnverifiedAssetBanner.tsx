@@ -29,7 +29,7 @@ export default function UnverifiedAssetBanner({
         .banner {
           display: flex;
           flex-direction: column;
-          width: 84%;
+          width: 90%;
         }
         .warning_text {
           font-size: 16px;

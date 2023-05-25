@@ -66,7 +66,11 @@ export default function AssetWarningSlideUp(
         <div className="content">
           <div>
             <UnverifiedAssetBanner
-              title={t("banner.title")}
+              title={
+                isUnverified
+                  ? t("banner.titleUnverified")
+                  : t("banner.titleVerified")
+              }
               description={
                 isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)
                   ? t("banner.description")
