@@ -61,6 +61,7 @@ interface Events extends ServiceLifecycleEvents {
   }
   price: PricePoint
   assets: AnyAsset[]
+  updateAssetReferences: SmartContractFungibleAsset
 }
 
 const getAssetsByAddress = (assets: SmartContractFungibleAsset[]) => {
@@ -644,6 +645,7 @@ export default class IndexingService extends BaseService<Events> {
 
       await this.addCustomAsset(customAsset)
       this.emitter.emit("assets", [customAsset])
+      this.emitter.emit("updateAssetReferences", customAsset)
       // TODO if we still don't have anything, use a contract read + a
       // CoinGecko lookup
       await this.addAssetToTrack(customAsset)

@@ -65,7 +65,13 @@ const assetsSlice = createSlice({
       // merge in new assets
       newAssets.forEach((newAsset) => {
         if (mappedAssets[newAsset.symbol] === undefined) {
-          mappedAssets[newAsset.symbol] = [{ ...newAsset, recentPrices: {} }]
+          mappedAssets[newAsset.symbol] = [
+            {
+              ...newAsset,
+              metadata: newAsset.metadata ?? {},
+              recentPrices: {},
+            },
+          ]
         } else {
           const duplicates = mappedAssets[newAsset.symbol].filter(
             (existingAsset) =>
@@ -88,6 +94,7 @@ const assetsSlice = createSlice({
           if (duplicates.length === 0) {
             mappedAssets[newAsset.symbol].push({
               ...newAsset,
+              metadata: newAsset.metadata ?? {},
               recentPrices: {},
             })
           }
