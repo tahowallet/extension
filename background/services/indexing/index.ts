@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop */
 import logger from "../../lib/logger"
 import { HexString } from "../../types"
 import { EVMNetwork, sameNetwork } from "../../networks"
@@ -682,9 +681,8 @@ export default class IndexingService extends BaseService<Events> {
             POLYGON,
             AVALANCHE,
           ].map(async (network: EVMNetwork) => {
-            const provider = await this.chainService.providerForNetworkOrThrow(
-              network
-            )
+            const provider =
+              this.chainService.providerForNetworkOrThrow(network)
             return getUSDPriceForBaseAsset(network, provider)
           })
         )
