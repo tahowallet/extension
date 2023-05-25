@@ -44,6 +44,7 @@ import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import EditSectionForm from "./EditSectionForm"
 import SigningButton from "./SigningButton"
+import { ONBOARDING_ROOT } from "../../pages/Onboarding/Tabbed/Routes"
 
 type WalletTypeInfo = {
   title: string
@@ -435,12 +436,8 @@ export default function AccountsNotificationPanelAccounts({
           iconSmall="add"
           iconPosition="left"
           onClick={() => {
-            if (isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING)) {
-              window.open("/tab.html#onboarding")
-              window.close()
-            } else {
-              history.push("/onboarding/add-wallet")
-            }
+            window.open(ONBOARDING_ROOT)
+            window.close()
           }}
         >
           {t("accounts.notificationPanel.addWallet")}

@@ -1,3 +1,5 @@
+export const ONBOARDING_ROOT = "/tab.html#onboarding"
+
 const OnboardingRoutes = {
   ONBOARDING_START: "/onboarding",
   ADD_WALLET: "/onboarding/add-wallet",
