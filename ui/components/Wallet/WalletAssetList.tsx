@@ -11,7 +11,6 @@ import AssetWarningSlideUp from "./UnverifiedAsset/AssetWarningSlideUp"
 type WalletAssetListProps = {
   assetAmounts: CompleteAssetAmount<SwappableAsset>[]
   initializationLoadingTimeExpired: boolean
-  onCloseWarningSlideUp?: () => void
 }
 
 export default function WalletAssetList(
@@ -21,11 +20,7 @@ export default function WalletAssetList(
     keyPrefix: "wallet.activities",
   })
 
-  const {
-    assetAmounts,
-    initializationLoadingTimeExpired,
-    onCloseWarningSlideUp,
-  } = props
+  const { assetAmounts, initializationLoadingTimeExpired } = props
 
   const [warnedAsset, setWarnedAsset] = useState<
     CompleteAssetAmount<SmartContractFungibleAsset>["asset"] | null
@@ -40,9 +35,6 @@ export default function WalletAssetList(
           asset={warnedAsset}
           close={() => {
             setWarnedAsset(null)
-            if (onCloseWarningSlideUp) {
-              onCloseWarningSlideUp()
-            }
           }}
         />
       )}
