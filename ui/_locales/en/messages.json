@@ -670,6 +670,12 @@
       "authorizeDeposit": "Authorize Deposit",
       "signMessage": "Sign {{messageType}}",
       "confirmButtonLabel": "Confirm"
+    },
+    "swap": {
+      "title": "Swap assets",
+      "balanceChange": "Balance change",
+      "daoFee": "DAO fee",
+      "exchangeRoute": "Exchange route"
     }
   },
   "addNewChain": {
@@ -695,7 +701,6 @@
     "switchAssets": "Switch Assets",
     "swapRewardsTeaser": "Swap rewards coming soon",
     "continueSwap": "Continue Swap",
-    "exchangeRoute": "Exchange route",
     "loadingQuote": "Fetching price",
     "rewards": {
       "header": "Swap rewards for community",
@@ -708,14 +713,7 @@
       "noApprovalTarget": "Attempting to approve transfer without an approval target.",
       "nonContractAsset": "Attempting to approve transfer of a non-contract asset."
     },
-    "getFinalQuote": "Get final quote",
-    "transactionSettings": {
-      "title": "Transaction settings",
-      "slippageTolerance": "Slippage tolerance",
-      "settings": "Transaction settings",
-      "estimatedFee": "Estimated network fee",
-      "daoFee": "DAO fee"
-    }
+    "reviewSwap": "Review swap"
   },
   "switchWallet": {
     "title": "Want to use another wallet instead?",
@@ -827,14 +825,15 @@
       "symbol": "Symbol",
       "contract": "Contract address",
       "discoveryTxHash": "Added from transaction",
-      "close": "Close",
       "dontShow": "Don’t show",
       "addToAssetList": "Add to asset list",
       "verifyAssetSnackbar":  "Asset added to list",
       "removeAssetSnackbar": "Asset removed from list",
       "banner": {
-        "title": "Asset not verified",
-        "description": "Be aware of scam and spam assets, only verify assets you trust."
+        "titleUnverified": "Asset not verified",
+        "titleVerified": "Asset verified by you",
+        "description": "Be aware of scam and spam assets, only interact with assets you trust.",
+        "oldDescription": "Only transact with assets you trust."
       }
     }
   },

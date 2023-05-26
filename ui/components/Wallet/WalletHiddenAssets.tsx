@@ -2,16 +2,14 @@ import React, { ReactElement, useEffect, useRef, useState } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { useTranslation } from "react-i18next"
 import classNames from "classnames"
-import {
-  selectShowHiddenAssets,
-  toggleShowHiddenAssets,
-} from "@tallyho/tally-background/redux-slices/ui"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import WalletAssetList from "./WalletAssetList"
 import SharedButton from "../Shared/SharedButton"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { useIsMounted } from "../../hooks/react-hooks"
 import UnverifiedAssetBanner from "./UnverifiedAsset/UnverifiedAssetBanner"
+import { useBackgroundSelector } from "../../hooks"
 
 type WalletHiddenAssetsProps = {
   assetAmounts: CompleteAssetAmount<SwappableAsset>[]
@@ -23,15 +21,15 @@ export default function WalletHiddenAssets({
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet",
   })
+  const selectedAccount = useBackgroundSelector(selectCurrentAccount)
+
   const mountedRef = useIsMounted()
   const hiddenAssetsRef = useRef<HTMLDivElement | null>(null)
   const buttonRef = useRef<HTMLDivElement | null>(null)
   const [maxHeight, setMaxHeight] = useState(0)
+  const [isOpen, setIsOpen] = useState(false)
 
-  const dispatch = useBackgroundDispatch()
-  const showHiddenAssets = useBackgroundSelector(selectShowHiddenAssets)
-
-  const stateOfHiddenAssets = showHiddenAssets
+  const stateOfHiddenAssets = isOpen
     ? t("unverifiedAssets.stateOfHiddenAssets1")
     : t("unverifiedAssets.stateOfHiddenAssets2")
 
@@ -41,6 +39,10 @@ export default function WalletHiddenAssets({
     }
   }, [hiddenAssetsRef?.current?.scrollHeight])
 
+  useEffect(() => {
+    setIsOpen(false)
+  }, [selectedAccount])
+
   return (
     <>
       <div className="hidden_assets_button" ref={buttonRef}>
@@ -48,9 +50,9 @@ export default function WalletHiddenAssets({
           type="tertiaryGray"
           size="small"
           onClick={() => {
-            dispatch(toggleShowHiddenAssets(!showHiddenAssets))
+            setIsOpen((prevState) => !prevState)
             setTimeout(() => {
-              if (!showHiddenAssets) {
+              if (!isOpen) {
                 buttonRef.current?.scrollIntoView({
                   behavior: "smooth",
                 })
@@ -69,18 +71,21 @@ export default function WalletHiddenAssets({
         ref={hiddenAssetsRef}
         className={classNames({
           hidden_assets: mountedRef.current,
-          visible: mountedRef.current && showHiddenAssets,
+          visible: mountedRef.current && isOpen,
         })}
       >
-        <UnverifiedAssetBanner
-          id="unverified_asset_banner"
-          title={t("verifiedAssets.banner.title")}
-          description={t("verifiedAssets.banner.description")}
-          customStyles="margin-bottom: 16px;"
-        />
+        {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
+          <UnverifiedAssetBanner
+            id="unverified_asset_banner"
+            title={t("verifiedAssets.banner.titleUnverified")}
+            description={t("verifiedAssets.banner.description")}
+            customStyles="margin-bottom: 16px;"
+          />
+        )}
         <WalletAssetList
           assetAmounts={assetAmounts}
           initializationLoadingTimeExpired
+          onCloseWarningSlideUp={() => setIsOpen(false)}
         />
       </div>
       <style jsx>{`

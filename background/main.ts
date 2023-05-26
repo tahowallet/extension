@@ -53,11 +53,7 @@ import {
   updateAssetReferences,
   updateENSAvatar,
 } from "./redux-slices/accounts"
-import {
-  assetsLoaded,
-  newPricePoint,
-  updateMetadata,
-} from "./redux-slices/assets"
+import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
 import {
   setEligibility,
   setEligibilityLoading,
@@ -1070,13 +1066,10 @@ export default class Main extends BaseService<never> {
 
     this.indexingService.emitter.on("assets", async (assets) => {
       await this.store.dispatch(assetsLoaded(assets))
+    })
 
-      if (isSmartContractFungibleAsset(assets[0])) {
-        await this.store.dispatch(
-          updateMetadata([assets[0], assets[0].metadata ?? {}])
-        )
-        await this.store.dispatch(updateAssetReferences(assets[0]))
-      }
+    this.indexingService.emitter.on("updateAssetReferences", async (asset) => {
+      await this.store.dispatch(updateAssetReferences(asset))
     })
 
     this.indexingService.emitter.on("price", (pricePoint) => {
