@@ -333,22 +333,36 @@ export function heuristicDesiredDecimalsForUnitPrice(
 }
 
 /**
+ * Check if the asset has a list of tokens.
+ * Assets that do not have it are considered untrusted.
+ *
+ */
+export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
+  if (asset) {
+    return !asset?.metadata?.tokenLists?.length
+  }
+  return false
+}
+
+/**
  * NB: non-base assets that don't have any token lists are considered
  * untrusted. Reifying base assets clearly will improve this check down the
  * road. Eventually, assets can be flagged as trusted by adding them to an
  * "internal" token list that users can export and share.
  *
  */
-export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
+export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
   if (asset) {
-    if (asset.metadata?.trusted === true) {
-      return false
+    if (asset.metadata?.verified !== undefined) {
+      // If we have verified metadata return it
+      return !asset.metadata.verified
     }
 
-    const numTokenLists = asset?.metadata?.tokenLists?.length ?? 0
     const baseAsset = isNetworkBaseAsset(asset)
+    const isUntrusted = isUntrustedAsset(asset)
 
-    return numTokenLists === 0 && !baseAsset
+    return !baseAsset && isUntrusted
   }
+
   return false
 }

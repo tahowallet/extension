@@ -16,22 +16,23 @@ export const defaultSettings = {
   showTestNetworks: false,
   collectAnalytics: false,
   showAnalyticsNotification: false,
+  showUnverifiedAssets: false,
   hideBanners: false,
-  showHiddenAssets: false,
 }
 
 export type UIState = {
   selectedAccount: AddressOnNetwork
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
+  // FIXME: Move these settings to preferences service db
   settings: {
     hideDust: boolean
     defaultWallet: boolean
     showTestNetworks: boolean
     collectAnalytics: boolean
     showAnalyticsNotification: boolean
+    showUnverifiedAssets: boolean
     hideBanners: boolean
-    showHiddenAssets: boolean
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
@@ -84,6 +85,12 @@ const uiSlice = createSlice({
     ): void => {
       immerState.settings.showTestNetworks = showTestNetworks
     },
+    toggleShowUnverifiedAssets: (
+      immerState,
+      { payload: showUnverifiedAssets }: { payload: boolean }
+    ): void => {
+      immerState.settings.showUnverifiedAssets = showUnverifiedAssets
+    },
     toggleCollectAnalytics: (
       state,
       { payload: collectAnalytics }: { payload: boolean }
@@ -113,16 +120,6 @@ const uiSlice = createSlice({
       settings: {
         ...state.settings,
         hideBanners,
-      },
-    }),
-    toggleShowHiddenAssets: (
-      state,
-      { payload: showHiddenAssets }: { payload: boolean }
-    ) => ({
-      ...state,
-      settings: {
-        ...state.settings,
-        showHiddenAssets,
       },
     }),
     setShowingActivityDetail: (
@@ -193,10 +190,10 @@ export const {
   initializationLoadingTimeHitLimit,
   toggleHideDust,
   toggleTestNetworks,
+  toggleShowUnverifiedAssets,
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
   toggleHideBanners,
-  toggleShowHiddenAssets,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
@@ -353,6 +350,11 @@ export const selectShowTestNetworks = createSelector(
   (settings) => settings?.showTestNetworks
 )
 
+export const selectShowUnverifiedAssets = createSelector(
+  selectSettings,
+  (settings) => settings?.showUnverifiedAssets
+)
+
 export const selectCollectAnalytics = createSelector(
   selectSettings,
   (settings) => settings?.collectAnalytics
@@ -361,9 +363,4 @@ export const selectCollectAnalytics = createSelector(
 export const selectHideBanners = createSelector(
   selectSettings,
   (settings) => settings?.hideBanners
-)
-
-export const selectShowHiddenAssets = createSelector(
-  selectSettings,
-  (settings) => settings?.showHiddenAssets
 )

@@ -12,7 +12,7 @@ import CommonAssetListItem from "./AssetListItem/CommonAssetListItem"
 type Props = {
   assetAmount: CompleteAssetAmount<SwappableAsset>
   initializationLoadingTimeExpired: boolean
-  onUntrustedAssetWarningClick?: (
+  onUnverifiedAssetWarningClick?: (
     asset: CompleteAssetAmount<SmartContractFungibleAsset>["asset"]
   ) => void
 }
@@ -21,7 +21,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
   const {
     assetAmount,
     initializationLoadingTimeExpired,
-    onUntrustedAssetWarningClick,
+    onUnverifiedAssetWarningClick,
   } = props
 
   const isDoggoAsset = assetAmount.asset.symbol === "DOGGO"
@@ -34,7 +34,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
         <CommonAssetListItem
           assetAmount={assetAmount}
           initializationLoadingTimeExpired={initializationLoadingTimeExpired}
-          onUntrustedAssetWarningClick={onUntrustedAssetWarningClick}
+          onUnverifiedAssetWarningClick={onUnverifiedAssetWarningClick}
         />
       )}
       <style jsx global>
@@ -68,16 +68,6 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           }
           .asset_icon_swap {
             mask-image: url("./images/swap_asset.svg");
-          }
-          .untrusted_asset_icon {
-            display: inline-block;
-            mask-image: url("./images/icons/m/notif-attention.svg");
-            mask-size: cover;
-            width: 22px;
-            height: 22px;
-            margin-left: 6px;
-            background-color: var(--trophy-gold);
-            font-size: 0;
           }
         `}
       </style>

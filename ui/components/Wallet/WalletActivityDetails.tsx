@@ -5,15 +5,14 @@ import {
   Activity,
   fetchSelectedActivityDetails,
 } from "@tallyho/tally-background/redux-slices/activities"
-import { DEFAULT_NETWORKS_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import SharedAddress from "../Shared/SharedAddress"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import { scanWebsite } from "../../utils/constants"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedActivityIcon from "../Shared/SharedActivityIcon"
 import SharedIcon from "../Shared/SharedIcon"
 import useActivityViewDetails from "../../hooks/activity-hooks"
+import { getBlockExplorerURL } from "../../utils/networks"
 
 function DetailRowItem(props: ActivityDetail): ReactElement {
   const { assetIconUrl, label, value } = props
@@ -127,13 +126,13 @@ export default function WalletActivityDetails(
   const [details, setDetails] = useState<ActivityDetail[]>([])
   const network = useBackgroundSelector(selectCurrentNetwork)
 
-  const scanWebsiteUrl = DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
-    ? scanWebsite[network.chainID].url
-    : network.blockExplorerURL
+  const blockExplorerUrl = getBlockExplorerURL(network)
 
   const openExplorer = useCallback(() => {
-    window.open(`${scanWebsiteUrl}/tx/${activityItem.hash}`, "_blank")?.focus()
-  }, [activityItem?.hash, scanWebsiteUrl])
+    window
+      .open(`${blockExplorerUrl}/tx/${activityItem.hash}`, "_blank")
+      ?.focus()
+  }, [activityItem?.hash, blockExplorerUrl])
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -158,7 +157,7 @@ export default function WalletActivityDetails(
       <div className="header">
         <SharedActivityIcon type={activityViewDetails.icon} size={16} />
         <span className="header_title">{activityViewDetails.label}</span>
-        {scanWebsiteUrl && (
+        {blockExplorerUrl && (
           <SharedIcon
             icon="icons/s/new-tab.svg"
             width={16}

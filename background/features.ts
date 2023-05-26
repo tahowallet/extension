@@ -2,7 +2,6 @@
  * Feature flags which are set at build time.
  */
 const BuildTimeFlag = {
-  SUPPORT_TABBED_ONBOARDING: process.env.SUPPORT_TABBED_ONBOARDING === "true",
   SWITCH_RUNTIME_FLAGS: process.env.SWITCH_RUNTIME_FLAGS === "true",
 } as const
 
@@ -35,7 +34,7 @@ export const RuntimeFlag = {
   SUPPORT_SWAP_QUOTE_REFRESH: process.env.SUPPORT_SWAP_QUOTE_REFRESH === "true",
   SUPPORT_CUSTOM_NETWORKS: process.env.SUPPORT_CUSTOM_NETWORKS === "true",
   SUPPORT_CUSTOM_RPCS: process.env.SUPPORT_CUSTOM_RPCS === "true",
-  SUPPORT_ASSET_TRUST: process.env.SUPPORT_ASSET_TRUST === "true",
+  SUPPORT_UNVERIFIED_ASSET: process.env.SUPPORT_UNVERIFIED_ASSET === "true",
 } as const
 
 type BuildTimeFlagType = keyof typeof BuildTimeFlag

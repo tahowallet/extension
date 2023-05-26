@@ -3,6 +3,7 @@ import { ethers } from "ethers"
 import {
   AnyAsset,
   AnyAssetAmount,
+  AnyAssetMetadata,
   AssetMetadata,
   flipPricePoint,
   isFungibleAsset,
@@ -27,7 +28,7 @@ import {
   FIAT_CURRENCIES_SYMBOL,
 } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
-import { updateAssetCache } from "./accounts"
+import { updateAssetReferences } from "./accounts"
 import { NormalizedEVMAddress } from "../types"
 import type { RootState } from "."
 
@@ -64,7 +65,13 @@ const assetsSlice = createSlice({
       // merge in new assets
       newAssets.forEach((newAsset) => {
         if (mappedAssets[newAsset.symbol] === undefined) {
-          mappedAssets[newAsset.symbol] = [{ ...newAsset, recentPrices: {} }]
+          mappedAssets[newAsset.symbol] = [
+            {
+              ...newAsset,
+              metadata: newAsset.metadata ?? {},
+              recentPrices: {},
+            },
+          ]
         } else {
           const duplicates = mappedAssets[newAsset.symbol].filter(
             (existingAsset) =>
@@ -87,6 +94,7 @@ const assetsSlice = createSlice({
           if (duplicates.length === 0) {
             mappedAssets[newAsset.symbol].push({
               ...newAsset,
+              metadata: newAsset.metadata ?? {},
               recentPrices: {},
             })
           }
@@ -113,7 +121,7 @@ const assetsSlice = createSlice({
         }
       }
     },
-    updateAssetMetadata: (
+    updateMetadata: (
       immerState,
       {
         payload: [targetAsset, metadata],
@@ -134,7 +142,7 @@ const assetsSlice = createSlice({
   },
 })
 
-export const { assetsLoaded, newPricePoint, updateAssetMetadata } =
+export const { assetsLoaded, newPricePoint, updateMetadata } =
   assetsSlice.actions
 
 export default assetsSlice.reducer
@@ -148,20 +156,26 @@ const selectPairedAssetSymbol = (
   pairedAssetSymbol: string
 ) => pairedAssetSymbol
 
-export const updateAssetTrustStatus = createBackgroundAsyncThunk(
-  "assets/updateAssetTrustStatus",
+export const updateAssetMetadata = createBackgroundAsyncThunk(
+  "assets/updateAssetMetadata",
   async (
-    { asset, trusted }: { asset: SmartContractFungibleAsset; trusted: boolean },
+    {
+      asset,
+      metadata,
+    }: {
+      asset: SmartContractFungibleAsset
+      metadata: AnyAssetMetadata
+    },
     { dispatch, extra: { main } }
   ) => {
-    await main.setAssetTrustStatus(asset, trusted)
+    await main.updateAssetMetadata(asset, metadata)
     // Update assets slice
-    await dispatch(updateAssetMetadata([asset, { trusted }]))
+    await dispatch(updateMetadata([asset, metadata]))
     // Update accounts slice cached data about this asset
     await dispatch(
-      updateAssetCache({
+      updateAssetReferences({
         ...asset,
-        metadata: { ...asset.metadata, trusted },
+        metadata,
       })
     )
   }
@@ -268,7 +282,7 @@ export const selectAssetPricePoint = createSelector(
           hasRecentPriceData(asset)
       )
 
-      /* Don't do anything else if this is an untrusted asset and there's no exact match */
+      /* Don't do anything else if this is an unverified asset and there's no exact match */
       if (
         (assetToFind.metadata?.tokenLists?.length ?? 0) < 1 &&
         !isBuiltInNetworkBaseAsset(assetToFind, assetToFind.homeNetwork)
@@ -323,8 +337,8 @@ export const selectAssetPricePoint = createSelector(
   }
 )
 
-export const importAccountCustomToken = createBackgroundAsyncThunk(
-  "assets/importAccountCustomToken",
+export const importCustomToken = createBackgroundAsyncThunk(
+  "assets/importCustomToken",
   async (
     {
       asset,
@@ -336,7 +350,7 @@ export const importAccountCustomToken = createBackgroundAsyncThunk(
     const state = getState() as RootState
     const currentAccount = state.ui.selectedAccount
 
-    await main.importAccountCustomToken({
+    await main.importCustomToken({
       asset,
       addressNetwork: currentAccount,
     })

@@ -24,12 +24,13 @@ import to24 from "./to-24"
 import to25 from "./to-25"
 import to26 from "./to-26"
 import to27 from "./to-27"
+import to28 from "./to-28"
 
 /**
  * The version of persisted Redux state the extension is expecting. Any previous
  * state without this version, or with a lower version, ought to be migrated.
  */
-export const REDUX_STATE_VERSION = 27
+export const REDUX_STATE_VERSION = 28
 
 /**
  * Common type for all migration functions.
@@ -66,6 +67,7 @@ const allMigrations: { [targetVersion: string]: Migration } = {
   25: to25,
   26: to26,
   27: to27,
+  28: to28,
 }
 
 /**
