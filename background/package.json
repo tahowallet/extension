@@ -68,7 +68,7 @@
     "webextension-polyfill": "^0.8.0"
   },
   "devDependencies": {
-    "@reduxjs/toolkit": "^1.6.1",
+    "@reduxjs/toolkit": "^1.9.4",
     "@types/argon2-browser": "^1.18.1",
     "@types/sinon": "^10.0.12",
     "@types/uuid": "^8.3.4",

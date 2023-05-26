@@ -1,4 +1,4 @@
-import { createSelector, OutputSelector } from "@reduxjs/toolkit"
+import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import {
   Keyring,
@@ -12,20 +12,16 @@ export const selectInternalSignerStatus = createSelector(
   (status) => status
 )
 
-export const selectKeyringByAddress = (
-  address: string
-): OutputSelector<
-  RootState,
-  Keyring | undefined,
-  (res: Keyring[]) => Keyring | undefined
-> =>
-  createSelector(
-    [(state: RootState) => state.internalSigner.keyrings],
-    (keyrings) => {
-      const kr = keyrings.find((keyring) => keyring.addresses.includes(address))
-      return kr
-    }
-  )
+export const selectKeyringByAddress = createSelector(
+  [
+    (state: RootState) => state.internalSigner.keyrings,
+    (_, address: HexString) => address,
+  ],
+  (keyrings, address) => {
+    const kr = keyrings.find((keyring) => keyring.addresses.includes(address))
+    return kr
+  }
+)
 
 export const selectKeyringsByAddresses = createSelector(
   (state: RootState) => state.internalSigner.keyrings,

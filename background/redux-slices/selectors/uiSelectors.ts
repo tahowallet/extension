@@ -42,12 +42,12 @@ export const selectCurrentAddressNetwork = createSelector(
 )
 
 export const selectMainCurrencySymbol = createSelector(
-  () => null,
+  (_: RootState) => null,
   () => hardcodedMainCurrencySymbol
 )
 
 export const selectMainCurrencySign = createSelector(
-  () => null,
+  (_: RootState) => null,
   () => hardcodedMainCurrencySign
 )
 

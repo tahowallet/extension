@@ -79,10 +79,12 @@ export const selectBaseAsset = createSelector(
 )
 
 export const selectTransactionMainCurrencyPricePoint = createSelector(
-  selectBaseAsset, // Base asset for transaction
-  getPricesState,
-  (state) => selectMainCurrencySymbol(state),
-  selectCurrentNetwork,
+  [
+    selectBaseAsset, // Base asset for transaction
+    getPricesState,
+    (state) => selectMainCurrencySymbol(state),
+    selectCurrentNetwork,
+  ],
   (
     baseAsset,
     prices,

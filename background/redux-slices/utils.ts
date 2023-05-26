@@ -68,6 +68,31 @@ const asyncThunkProperties = (() => {
   return exhaustiveList
 })()
 
+declare const BackgroundAsyncThunkReturnTypeSymbol: unique symbol
+
+/**
+ * Special type used to represent Actions produced by BackgroundAsyncThunks
+ * while preserving their return types. These return types are later extracted
+ * to properly type useDispatch values so that thunks are handled properly in
+ * the type system.
+ */
+export type BackgroundAsyncThunkAction<
+  TypePrefix extends string,
+  Returned
+> = Action<TypePrefix> & {
+  readonly [BackgroundAsyncThunkReturnTypeSymbol]?: Returned
+}
+
+export type BackgroundAsyncThunk<
+  TypePrefix extends string,
+  Returned,
+  ThunkArg = void,
+  ThunkApiConfig = { extra: { main: Main } }
+> = ((
+  payload: ThunkArg
+) => BackgroundAsyncThunkAction<TypePrefix, Returned> & { payload: ThunkArg }) &
+  Pick<AsyncThunk<Returned, ThunkArg, ThunkApiConfig>, AsyncThunkProps>
+
 // Extracts a @reduxjs/toolkit internal type for type alignment in the below
 // function types.
 type AsyncThunkConfig = ReturnType<typeof createAsyncThunk> extends AsyncThunk<
@@ -123,8 +148,7 @@ export function createBackgroundAsyncThunk<
   typePrefix: TypePrefix,
   payloadCreator: AsyncThunkPayloadCreator<Returned, ThunkArg, ThunkApiConfig>,
   options?: AsyncThunkOptions<ThunkArg, ThunkApiConfig>
-): ((payload: ThunkArg) => Action<TypePrefix> & { payload: ThunkArg }) &
-  Pick<AsyncThunk<Returned, ThunkArg, ThunkApiConfig>, AsyncThunkProps> {
+): BackgroundAsyncThunk<TypePrefix, Returned, ThunkArg, ThunkApiConfig> {
   // Exit early if this type prefix is already aliased for handling in the
   // background script.
   if (allAliases[typePrefix]) {
@@ -132,9 +156,14 @@ export function createBackgroundAsyncThunk<
   }
 
   // Use reduxtools' createAsyncThunk to build the infrastructure.
-  const baseThunkActionCreator = createAsyncThunk(
+  const baseThunkActionCreator = createAsyncThunk<
+    ReturnType<typeof payloadCreator>,
+    ThunkArg
+  >(
     typePrefix,
-    async (...args: Parameters<typeof payloadCreator>) => {
+    async (
+      ...args: Parameters<typeof payloadCreator>
+    ): Promise<ReturnType<typeof payloadCreator>> => {
       try {
         return await payloadCreator(...args)
       } catch (error) {

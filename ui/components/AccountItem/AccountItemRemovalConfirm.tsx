@@ -40,7 +40,9 @@ export default function AccountItemRemovalConfirm({
   const dispatch = useBackgroundDispatch()
   const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
   const history = useHistory()
-  const keyring = useBackgroundSelector(selectKeyringByAddress(address))
+  const keyring = useBackgroundSelector((state) =>
+    selectKeyringByAddress(state, address)
+  )
   const { selectedAddress, accountsData } = useBackgroundSelector((state) => ({
     selectedAddress: state.ui.selectedAccount.address,
     accountsData: state.account.accountsData,
