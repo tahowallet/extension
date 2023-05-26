@@ -4,7 +4,6 @@ import {
   AnyAsset,
   AnyAssetAmount,
   AnyAssetMetadata,
-  AssetMetadata,
   flipPricePoint,
   isFungibleAsset,
   isSmartContractFungibleAsset,
@@ -13,7 +12,7 @@ import {
 } from "../assets"
 import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
-import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
+import { normalizeEVMAddress } from "../lib/utils"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
   isBuiltInNetworkBaseAsset,
@@ -68,13 +67,14 @@ const assetsSlice = createSlice({
           mappedAssets[newAsset.symbol] = [
             {
               ...newAsset,
-              metadata: newAsset.metadata ?? {},
               recentPrices: {},
             },
           ]
         } else {
-          const duplicates = mappedAssets[newAsset.symbol].filter(
-            (existingAsset) =>
+          const duplicateIndexes = mappedAssets[newAsset.symbol].reduce<
+            number[]
+          >((acc, existingAsset, id) => {
+            if (
               ("homeNetwork" in newAsset &&
                 "contractAddress" in newAsset &&
                 "homeNetwork" in existingAsset &&
@@ -89,16 +89,28 @@ const assetsSlice = createSlice({
                   sameBuiltInNetworkBaseAsset(baseAsset, newAsset) &&
                   sameBuiltInNetworkBaseAsset(baseAsset, existingAsset)
               )
-          )
+            ) {
+              acc.push(id)
+            }
+            return acc
+          }, [])
+
           // if there aren't duplicates, add the asset
-          if (duplicates.length === 0) {
+          if (duplicateIndexes.length === 0) {
             mappedAssets[newAsset.symbol].push({
               ...newAsset,
-              metadata: newAsset.metadata ?? {},
               recentPrices: {},
             })
+          } else {
+            // TODO if there are duplicates... when should we replace assets?
+            duplicateIndexes.forEach((id) => {
+              // Update only the metadata for the duplicate
+              mappedAssets[newAsset.symbol][id] = {
+                ...mappedAssets[newAsset.symbol][id],
+                metadata: newAsset.metadata,
+              }
+            })
           }
-          // TODO if there are duplicates... when should we replace assets?
         }
       })
 
@@ -121,29 +133,10 @@ const assetsSlice = createSlice({
         }
       }
     },
-    updateMetadata: (
-      immerState,
-      {
-        payload: [targetAsset, metadata],
-      }: { payload: [SmartContractFungibleAsset, Partial<AssetMetadata>] }
-    ) => {
-      immerState.forEach((asset) => {
-        if (
-          isSmartContractFungibleAsset(asset) &&
-          sameEVMAddress(targetAsset.contractAddress, asset.contractAddress) &&
-          targetAsset.homeNetwork.chainID === asset.homeNetwork.chainID
-        ) {
-          // eslint-disable-next-line no-param-reassign
-          asset.metadata ??= {}
-          Object.assign(asset.metadata, metadata)
-        }
-      })
-    },
   },
 })
 
-export const { assetsLoaded, newPricePoint, updateMetadata } =
-  assetsSlice.actions
+export const { assetsLoaded, newPricePoint } = assetsSlice.actions
 
 export default assetsSlice.reducer
 
@@ -166,18 +159,26 @@ export const updateAssetMetadata = createBackgroundAsyncThunk(
       asset: SmartContractFungibleAsset
       metadata: AnyAssetMetadata
     },
-    { dispatch, extra: { main } }
+    { extra: { main } }
   ) => {
     await main.updateAssetMetadata(asset, metadata)
+  }
+)
+
+export const refreshAsset = createBackgroundAsyncThunk(
+  "assets/refreshAsset",
+  async (
+    {
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { dispatch }
+  ) => {
     // Update assets slice
-    await dispatch(updateMetadata([asset, metadata]))
+    await dispatch(assetsLoaded([asset]))
     // Update accounts slice cached data about this asset
-    await dispatch(
-      updateAssetReferences({
-        ...asset,
-        metadata,
-      })
-    )
+    await dispatch(updateAssetReferences(asset))
   }
 )
 
