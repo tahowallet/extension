@@ -11,6 +11,7 @@ import classNames from "classnames"
 import { isUnverifiedAssetByUser } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { useHistory } from "react-router-dom"
 import SharedSlideUpMenu from "../../Shared/SharedSlideUpMenu"
 import SharedButton from "../../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
@@ -37,6 +38,8 @@ export default function AssetWarningSlideUp(
   const { asset, close } = props
 
   const dispatch = useBackgroundDispatch()
+
+  const history = useHistory()
 
   const network = useBackgroundSelector(selectCurrentNetwork)
 
@@ -152,12 +155,13 @@ export default function AssetWarningSlideUp(
                   <SharedButton
                     size="medium"
                     type="secondary"
-                    onClick={() =>
+                    onClick={() => {
                       handleUpdateAssetMetadata(
                         { removed: true },
                         t("removeAssetSnackbar")
                       )
-                    }
+                      history.push("/")
+                    }}
                   >
                     {t("dontShow")}
                   </SharedButton>

@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from "react"
-import { useHistory, useLocation } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import {
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
@@ -38,7 +38,6 @@ const MAX_SYMBOL_LENGTH = 10
 
 export default function SingleAsset(): ReactElement {
   const { t } = useTranslation()
-  const history = useHistory()
   const location = useLocation<AnyAsset>()
   const locationAsset = location.state
   const { symbol } = locationAsset
@@ -113,10 +112,7 @@ export default function SingleAsset(): ReactElement {
       {warnedAsset && (
         <AssetWarningSlideUp
           asset={warnedAsset}
-          close={() => {
-            setWarnedAsset(null)
-            history.push("/")
-          }}
+          close={() => setWarnedAsset(null)}
         />
       )}
       <div className="navigation standard_width_padded">
