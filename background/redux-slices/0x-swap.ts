@@ -1,9 +1,4 @@
-import {
-  AnyAction,
-  createSelector,
-  createSlice,
-  ThunkDispatch,
-} from "@reduxjs/toolkit"
+import { AnyAction, createSlice, ThunkDispatch } from "@reduxjs/toolkit"
 import { fetchJson } from "@ethersproject/web"
 import { BigNumber, ethers, utils } from "ethers"
 
@@ -245,7 +240,7 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
       takerAddress: tradeAddress,
     })
 
-    const apiData = await fetchJson({
+    const apiData: unknown = await fetchJson({
       url: requestUrl.toString(),
       headers: gatedHeaders,
     })
@@ -257,10 +252,12 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
         isValidSwapQuoteResponse.errors
       )
 
-      return
+      return null
     }
 
     dispatch(setFinalSwapQuote(apiData))
+
+    return apiData
   }
 )
 
@@ -479,6 +476,9 @@ export const executeSwap = createBackgroundAsyncThunk(
         type: "asset-swap",
         fromAssetAmount: sellAssetAmount,
         toAssetAmount: buyAssetAmount,
+        estimatedPriceImpact: quote.estimatedPriceImpact
+          ? Number(quote.estimatedPriceImpact)
+          : 0,
         sources: quote.sources
           .map(({ name, proportion }) => {
             return {
@@ -492,14 +492,4 @@ export const executeSwap = createBackgroundAsyncThunk(
       },
     })
   }
-)
-
-export const selectLatestQuoteRequest = createSelector(
-  (state: { swap: SwapState }) => state.swap.latestQuoteRequest,
-  (latestQuoteRequest) => latestQuoteRequest
-)
-
-export const selectInProgressApprovalContract = createSelector(
-  (state: { swap: SwapState }) => state.swap.inProgressApprovalContract,
-  (approvalInProgress) => approvalInProgress
 )
