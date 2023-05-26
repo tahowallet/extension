@@ -366,3 +366,17 @@ export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
 
   return false
 }
+
+/**
+ * Check if the asset can be added as a custom asset.
+ * If the asset exists, we should check that
+ * it has not been removed by the user to add it again.
+ *
+ */
+export function canBeAddedCustomAsset(asset: AnyAsset | undefined): boolean {
+  if (asset) {
+    const isRemoved = asset?.metadata?.removed ?? false
+    return isRemoved
+  }
+  return true
+}

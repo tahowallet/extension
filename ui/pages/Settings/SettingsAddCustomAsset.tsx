@@ -312,13 +312,13 @@ export default function SettingsAddCustomAsset(): ReactElement {
             type="primary"
             size="medium"
             isFormSubmit
-            isDisabled={!assetData || loading || error || assetData.exists}
+            isDisabled={!assetData || loading || error || !assetData.canBeAdded}
             isLoading={loading}
           >
             {t("submit")}
           </SharedButton>
         </div>
-        {assetData?.exists ? (
+        {assetData && !assetData.canBeAdded ? (
           <div className="alert">
             <SharedIcon
               color="var(--success)"

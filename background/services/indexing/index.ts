@@ -582,8 +582,9 @@ export default class IndexingService extends BaseService<Events> {
     addressNetwork: AddressOnNetwork
   ): Promise<void> {
     const { metadata = {} } = asset
-    // Manually imported tokens are verified
+    // Manually imported tokens are verified and not removed
     metadata.verified = true
+    metadata.removed = false
 
     await this.addTokenToTrackByContract(
       asset.homeNetwork,

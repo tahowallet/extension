@@ -183,7 +183,10 @@ import {
   isOneTimeAnalyticsEvent,
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
-import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
+import {
+  canBeAddedCustomAsset,
+  isBuiltInNetworkBaseAsset,
+} from "./redux-slices/utils/asset-utils"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -1859,7 +1862,7 @@ export default class Main extends BaseService<never> {
     amount: bigint
     mainCurrencyAmount?: number
     balance: number
-    exists?: boolean
+    canBeAdded: boolean
   }> {
     const { network } = addressOnNetwork
 
@@ -1870,6 +1873,8 @@ export default class Main extends BaseService<never> {
           isSmartContractFungibleAsset(asset) &&
           sameEVMAddress(contractAddress, asset.contractAddress)
       )
+
+    const canBeAdded = canBeAddedCustomAsset(cachedAsset)
 
     const assetData = await this.chainService.queryAccountTokenDetails(
       contractAddress,
@@ -1897,7 +1902,7 @@ export default class Main extends BaseService<never> {
         utils.formatUnits(assetData.amount, assetData.asset.decimals)
       ),
       mainCurrencyAmount,
-      exists: !!cachedAsset,
+      canBeAdded,
     }
   }
 
