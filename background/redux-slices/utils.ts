@@ -87,7 +87,7 @@ export type BackgroundAsyncThunk<
   TypePrefix extends string,
   Returned,
   ThunkArg = void,
-  ThunkApiConfig = { extra: { main: Main } }
+  ThunkApiConfig extends AsyncThunkConfig = { extra: { main: Main } }
 > = ((
   payload: ThunkArg
 ) => BackgroundAsyncThunkAction<TypePrefix, Returned> & { payload: ThunkArg }) &

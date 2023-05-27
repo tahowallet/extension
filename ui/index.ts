@@ -1,5 +1,5 @@
 import React, { ComponentType } from "react"
-import ReactDOM from "react-dom"
+import ReactDOM from "react-dom/client"
 import { Store } from "webext-redux"
 import { browser, newProxyStore } from "@tallyho/tally-background"
 import "./_locales/i18n"
@@ -25,10 +25,8 @@ export async function attachUIToRootElement(
 
   const backgroundStore = store ?? (await newProxyStore())
 
-  ReactDOM.render(
-    React.createElement(component, { store: backgroundStore }),
-    rootElement
-  )
+  const root = ReactDOM.createRoot(rootElement)
+  root.render(React.createElement(component, { store: backgroundStore }))
 }
 
 export async function attachTabUIToRootElement(): Promise<void> {

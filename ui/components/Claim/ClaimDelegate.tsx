@@ -33,7 +33,7 @@ function CustomDelegatePanel({
   }, [dispatch, selectedDelegate.enteredBy])
 
   const handleAddressInputChange = useCallback(
-    (value) => {
+    (value: string) => {
       if (isAddress(value)) {
         setErrorMessage("")
         dispatch(chooseDelegate({ address: value, enteredBy: "custom" }))

@@ -49,7 +49,7 @@ export default function NFTCollection(props: {
     [id, owner, network, dispatch]
   )
 
-  const intersectionCallback = useCallback(
+  const intersectionCallback = useCallback<IntersectionObserverCallback>(
     ([element]) => {
       if (element.isIntersecting && !wasUpdated) {
         // if collection doesn't have nfts then load some
@@ -79,7 +79,7 @@ export default function NFTCollection(props: {
     { threshold: 0.1 }
   )
 
-  const loadMoreCallback = useCallback(
+  const loadMoreCallback = useCallback<IntersectionObserverCallback>(
     ([element]) => {
       if (element.isIntersecting && !isUpdating) {
         if (hasNextPage) setIsUpdating(true) // if next page is known show loader
