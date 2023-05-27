@@ -32,7 +32,6 @@ import {
   SECOND,
 } from "@tallyho/tally-background/constants"
 
-import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import {
   selectLatestQuoteRequest,
   selectSwapBuyAssets,
@@ -347,9 +346,7 @@ export default function Swap(): ReactElement {
 
   const handleExecuteSwap = useCallback(async () => {
     if (sellAsset && buyAsset && quote) {
-      const finalQuote = (await dispatch(
-        fetchSwapQuote(quote.quoteRequest)
-      )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapQuote>
+      const finalQuote = await dispatch(fetchSwapQuote(quote.quoteRequest))
 
       if (finalQuote) {
         const { gasPrice, ...quoteWithoutGasPrice } = finalQuote

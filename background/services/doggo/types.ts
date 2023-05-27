@@ -3,7 +3,7 @@ import { HexString } from "../../types"
 export interface Eligible {
   index: HexString
   account: HexString
-  amount: BigInt
+  amount: bigint
   proof: HexString[]
 }
 
