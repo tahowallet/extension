@@ -426,6 +426,7 @@ export const makeEthersFeeData = (overrides?: Partial<FeeData>): FeeData => ({
   maxFeePerGas: BigNumber.from(123274909666),
   maxPriorityFeePerGas: BigNumber.from(2500000000),
   gasPrice: BigNumber.from(91426599419),
+  lastBaseFeePerGas: overrides?.lastBaseFeePerGas ?? null,
   ...overrides,
 })
 

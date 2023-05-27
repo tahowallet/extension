@@ -78,7 +78,7 @@
     "window-provider"
   ],
   "dependencies": {
-    "@ethersproject/providers": "5.5.3",
+    "@ethersproject/providers": "5.7.2",
     "@fortawesome/fontawesome-free": "^5.15.2",
     "@reduxjs/toolkit": "^1.9.4",
     "@tallyho/provider-bridge": "0.0.1",
