@@ -177,10 +177,9 @@ export default class WalletConnectService extends BaseService<Events> {
     }
 
     const namespaces: SessionTypes.Namespaces = {}
-    const accounts: string[] = []
-    ethNamespace.chains.forEach((chain) => {
-      selectedAccounts.map((acc) => accounts.push(`${chain}:${acc}`))
-    })
+    const accounts = (ethNamespace.chains ?? []).flatMap((chain) =>
+      selectedAccounts.map((selectedAccount) => `${chain}:${selectedAccount}`)
+    )
     namespaces[ethNamespaceKey] = {
       accounts,
       methods: requiredNamespaces[ethNamespaceKey].methods,

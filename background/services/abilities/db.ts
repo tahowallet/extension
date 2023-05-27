@@ -1,4 +1,4 @@
-import Dexie, { IndexableTypeArrayReadonly } from "dexie"
+import Dexie from "dexie"
 import { ABILITY_TYPES, Ability } from "../../abilities"
 import { HexString, NormalizedEVMAddress } from "../../types"
 
@@ -44,10 +44,10 @@ export class AbilitiesDatabase extends Dexie {
   }
 
   async removeAbilities(abilities: Ability[]): Promise<void> {
-    const keys = abilities.map(({ abilityId, address }) => [
+    const keys = abilities.map(({ abilityId, address }): [string, string] => [
       abilityId,
       address,
-    ]) as unknown as IndexableTypeArrayReadonly
+    ])
     await this.abilities.bulkDelete(keys)
   }
 
