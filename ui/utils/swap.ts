@@ -18,6 +18,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
 import { debounce, DebouncedFunc } from "lodash"
 import { useState, useRef, useCallback } from "react"
+import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import { useValueRef, useIsMounted, useSetState } from "../hooks/react-hooks"
 
@@ -282,4 +283,45 @@ export function useSwapQuote(useSwapConfig: {
     loadingBuyAmount,
     requestQuoteUpdate: debouncedRequest,
   }
+}
+
+export function getOwnedSellAssetAmounts(
+  assetAmounts: CompleteAssetAmount[] | undefined,
+  currentNetwork: EVMNetwork
+): CompleteAssetAmount<SwappableAsset>[] {
+  return (
+    assetAmounts?.filter(
+      (assetAmount): assetAmount is CompleteAssetAmount<SwappableAsset> =>
+        isSmartContractFungibleAsset(assetAmount.asset) ||
+        assetAmount.asset.symbol === currentNetwork.baseAsset.symbol
+    ) ?? []
+  )
+}
+
+export function getSellAssetAmounts(
+  ownedSellAssetAmounts: CompleteAssetAmount<SwappableAsset>[],
+  sellAsset?: SwappableAsset,
+  buyAsset?: SwappableAsset
+): CompleteAssetAmount<SwappableAsset>[] {
+  return (
+    ownedSellAssetAmounts.some(
+      ({ asset }) =>
+        typeof sellAsset !== "undefined" && isSameAsset(asset, sellAsset)
+    )
+      ? ownedSellAssetAmounts
+      : ownedSellAssetAmounts.concat(
+          typeof sellAsset === "undefined"
+            ? []
+            : [
+                {
+                  asset: sellAsset,
+                  amount: 0n,
+                  decimalAmount: 0,
+                  localizedDecimalAmount: "0",
+                },
+              ]
+        )
+  ).filter(
+    (sellAssetAmount) => sellAssetAmount.asset.symbol !== buyAsset?.symbol
+  )
 }

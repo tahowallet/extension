@@ -1,11 +1,11 @@
 import React, { ReactElement } from "react"
-import SignTransactionDetailPanel from "./SignTransactionDetailPanel"
+import DetailPanel from "../Signing/SignatureDetails/TransactionSignatureDetails/DetailsPanel"
 import SignTransactionRawDataPanel from "./SignTransactionRawDataPanel"
 
 export default function SignTransactionPanelCombined(): ReactElement {
   return (
     <>
-      <SignTransactionDetailPanel
+      <DetailPanel
         // Don't display for contract interactions
         defaultPanelState={{ dismissedWarnings: ["send-to-contract"] }}
       />
