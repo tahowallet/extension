@@ -12,7 +12,6 @@ import {
 } from "../assets"
 import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
-import { normalizeEVMAddress } from "../lib/utils"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
   isBuiltInNetworkBaseAsset,
@@ -22,14 +21,12 @@ import { getProvider } from "./utils/contract-utils"
 import { EVMNetwork, sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
-import {
-  BUILT_IN_NETWORK_BASE_ASSETS,
-  FIAT_CURRENCIES_SYMBOL,
-} from "../constants"
+import { FIAT_CURRENCIES_SYMBOL } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
 import { updateAssetReferences } from "./accounts"
 import { NormalizedEVMAddress } from "../types"
 import type { RootState } from "."
+import { sameAddress } from "../lib/utils"
 
 export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
   recentPrices: {
@@ -76,19 +73,15 @@ const assetsSlice = createSlice({
           >((acc, existingAsset, id) => {
             if (
               ("homeNetwork" in newAsset &&
-                "contractAddress" in newAsset &&
                 "homeNetwork" in existingAsset &&
+                sameNetwork(existingAsset.homeNetwork, newAsset.homeNetwork) &&
+                "contractAddress" in newAsset &&
                 "contractAddress" in existingAsset &&
-                existingAsset.homeNetwork.name === newAsset.homeNetwork.name &&
-                normalizeEVMAddress(existingAsset.contractAddress) ===
-                  normalizeEVMAddress(newAsset.contractAddress)) ||
-              // Only match base assets by name - since there may be
-              // many assets that share a name and symbol across L2's
-              BUILT_IN_NETWORK_BASE_ASSETS.some(
-                (baseAsset) =>
-                  sameBuiltInNetworkBaseAsset(baseAsset, newAsset) &&
-                  sameBuiltInNetworkBaseAsset(baseAsset, existingAsset)
-              )
+                sameAddress(
+                  existingAsset.contractAddress,
+                  newAsset.contractAddress
+                )) ||
+              sameBuiltInNetworkBaseAsset(newAsset, existingAsset)
             ) {
               acc.push(id)
             }
