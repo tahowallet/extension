@@ -50,10 +50,13 @@ import {
   loadAccount,
   updateAccountBalance,
   updateAccountName,
-  updateAssetReferences,
   updateENSAvatar,
 } from "./redux-slices/accounts"
-import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
+import {
+  assetsLoaded,
+  newPricePoint,
+  refreshAsset,
+} from "./redux-slices/assets"
 import {
   setEligibility,
   setEligibilityLoading,
@@ -1068,12 +1071,16 @@ export default class Main extends BaseService<never> {
       await this.store.dispatch(assetsLoaded(assets))
     })
 
-    this.indexingService.emitter.on("updateAssetReferences", async (asset) => {
-      await this.store.dispatch(updateAssetReferences(asset))
-    })
-
     this.indexingService.emitter.on("price", (pricePoint) => {
       this.store.dispatch(newPricePoint(pricePoint))
+    })
+
+    this.indexingService.emitter.on("refreshAsset", (asset) => {
+      this.store.dispatch(
+        refreshAsset({
+          asset,
+        })
+      )
     })
   }
 

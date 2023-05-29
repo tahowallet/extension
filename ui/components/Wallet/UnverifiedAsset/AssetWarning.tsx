@@ -86,7 +86,10 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
           <ul className="asset_details">
             <li className="asset_symbol">
               <div className="left">{t("symbol")}</div>
-              <div className="right ellipsis">{`${asset?.symbol}`}</div>
+              <div
+                className="right ellipsis"
+                title={asset?.symbol}
+              >{`${asset?.symbol}`}</div>
             </li>
             <li>
               <div className="left">{t("contract")}</div>
