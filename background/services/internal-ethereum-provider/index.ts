@@ -6,7 +6,7 @@ import {
   EIP1193_ERROR_CODES,
   RPCRequest,
 } from "@tallyho/provider-bridge-shared"
-import { hexlify, toUtf8Bytes } from "ethers/lib/utils"
+import { hexlify, toUtf8Bytes, _TypedDataEncoder } from "ethers/lib/utils"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
 
 import logger from "../../lib/logger"
@@ -504,9 +504,32 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   }
 
   private async signTypedData(params: SignTypedDataRequest) {
+    // Ethers does not want to see the EIP712Domain field, extract it.
+    const { EIP712Domain, ...typesForSigning } = params.typedData.types
+
+    // Ask Ethers to give us a filtered payload that only includes types
+    // specified in the `types` object.
+    const filteredTypedDataPayload = _TypedDataEncoder.getPayload(
+      params.typedData.domain,
+      typesForSigning,
+      params.typedData.message
+    )
+
+    const filteredRequest = {
+      ...params,
+      typedData: {
+        ...filteredTypedDataPayload,
+        types: {
+          // If there was an EIP712Domain field in the `types`, pass it along.
+          ...(EIP712Domain === undefined ? {} : { EIP712Domain }),
+          ...filteredTypedDataPayload.types,
+        },
+      },
+    }
+
     return new Promise<string>((resolve, reject) => {
       this.emitter.emit("signTypedDataRequest", {
-        payload: params,
+        payload: filteredRequest,
         resolver: resolve,
         rejecter: reject,
       })

@@ -52,7 +52,11 @@ import {
   updateAccountName,
   updateENSAvatar,
 } from "./redux-slices/accounts"
-import { assetsLoaded, newPricePoints } from "./redux-slices/assets"
+import {
+  assetsLoaded,
+  newPricePoints,
+  refreshAsset,
+} from "./redux-slices/assets"
 import {
   setEligibility,
   setEligibilityLoading,
@@ -149,6 +153,7 @@ import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
 import {
+  AnyAssetMetadata,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
   isSmartContractFungibleAsset,
@@ -168,7 +173,7 @@ import {
 } from "./redux-slices/nfts_update"
 import AbilitiesService from "./services/abilities"
 import {
-  addAbilities,
+  setAbilitiesForAddress,
   updateAbility,
   addAccount as addAccountFilter,
   deleteAccount as deleteAccountFilter,
@@ -1022,7 +1027,7 @@ export default class Main extends BaseService<never> {
 
             return isSmartContract
           })
-          // Sort trusted last to prevent shadowing assets from token lists
+          // Sort verified last to prevent shadowing assets from token lists
           // FIXME: Balances should not be indexed by symbol in redux
           .sort((balance, otherBalance) => {
             const asset = balance.assetAmount.asset as SmartContractAsset
@@ -1068,6 +1073,14 @@ export default class Main extends BaseService<never> {
 
     this.indexingService.emitter.on("prices", (pricePoints) => {
       this.store.dispatch(newPricePoints(pricePoints))
+    })
+
+    this.indexingService.emitter.on("refreshAsset", (asset) => {
+      this.store.dispatch(
+        refreshAsset({
+          asset,
+        })
+      )
     })
   }
 
@@ -1648,9 +1661,12 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("initAbilities", (address) => {
       this.store.dispatch(initAbilities(address))
     })
-    this.abilitiesService.emitter.on("newAbilities", (newAbilities) => {
-      this.store.dispatch(addAbilities(newAbilities))
-    })
+    this.abilitiesService.emitter.on(
+      "updatedAbilities",
+      ({ address, abilities }) => {
+        this.store.dispatch(setAbilitiesForAddress({ address, abilities }))
+      }
+    )
     this.abilitiesService.emitter.on("deleteAbilities", (address) => {
       this.store.dispatch(deleteAbilitiesForAccount(address))
     })
@@ -1770,11 +1786,11 @@ export default class Main extends BaseService<never> {
     })
   }
 
-  async setAssetTrustStatus(
+  async updateAssetMetadata(
     asset: SmartContractFungibleAsset,
-    isTrusted: boolean
+    metadata: AnyAssetMetadata
   ): Promise<void> {
-    await this.indexingService.setAssetTrustStatus(asset, isTrusted)
+    await this.indexingService.updateAssetMetadata(asset, metadata)
   }
 
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {
@@ -1892,21 +1908,14 @@ export default class Main extends BaseService<never> {
     }
   }
 
-  async importAccountCustomToken({
+  async importCustomToken({
     asset,
     addressNetwork,
   }: {
     asset: SmartContractFungibleAsset
     addressNetwork: AddressOnNetwork
   }): Promise<void> {
-    const { metadata = {} } = asset
-    // Manually imported tokens are trusted
-    metadata.trusted = true
-
-    await this.indexingService.importAccountCustomToken(
-      { ...asset, metadata },
-      addressNetwork
-    )
+    await this.indexingService.importCustomToken(asset, addressNetwork)
   }
 
   private connectPopupMonitor() {

@@ -4,6 +4,7 @@ import { EVMNetwork, sameNetwork } from "../../networks"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyAsset,
+  AnyAssetMetadata,
   FungibleAsset,
   isSmartContractFungibleAsset,
   PricePoint,
@@ -71,6 +72,7 @@ interface Events extends ServiceLifecycleEvents {
   }
   prices: PricePoint[]
   assets: AnyAsset[]
+  refreshAsset: SmartContractFungibleAsset
 }
 
 const getAssetsByAddress = (assets: SmartContractFungibleAsset[]) => {
@@ -226,7 +228,7 @@ export default class IndexingService extends BaseService<Events> {
    * @param asset The custom asset
    */
   async addCustomAsset(asset: SmartContractFungibleAsset): Promise<void> {
-    await this.db.addCustomAsset(asset)
+    await this.db.addOrUpdateCustomAsset(asset)
     await this.cacheAssetsForNetwork(asset.homeNetwork)
   }
 
@@ -363,12 +365,6 @@ export default class IndexingService extends BaseService<Events> {
             ])
           ).length > 0
 
-        // TODO Add the concept of an untrusted asset that is displayed in the
-        // TODO UI as such, with the ability to mark the asset as trusted.
-        // Possible approach: make assetLookups include a `baselineTrusted`
-        // field, then include an entry in assets/db that is `trusted`,
-        // defaulted to `baselineTrusted`, and displayed and updatable via
-        // the UI.
         if (baselineTrustedAsset) {
           const assetLookups = trackedAddresesOnNetworks.map(
             (addressOnNetwork) => ({
@@ -427,12 +423,12 @@ export default class IndexingService extends BaseService<Events> {
       "assetTransfers",
       async ({ addressNetwork, assetTransfers }) => {
         assetTransfers.forEach((transfer) => {
-          const fungibleAsset = transfer.assetAmount
-            .asset as SmartContractFungibleAsset
-          if (fungibleAsset.contractAddress && fungibleAsset.decimals) {
+          const fungibleAsset = transfer.assetAmount.asset
+          if (isSmartContractFungibleAsset(fungibleAsset)) {
             this.addTokenToTrackByContract(
               addressNetwork.network,
-              fungibleAsset.contractAddress
+              fungibleAsset.contractAddress,
+              { discoveryTxHash: transfer.txHash }
             )
           }
         })
@@ -584,19 +580,31 @@ export default class IndexingService extends BaseService<Events> {
     return balances
   }
 
-  async setAssetTrustStatus(
+  async updateAssetMetadata(
     asset: SmartContractFungibleAsset,
-    isTrusted: boolean
+    metadata: AnyAssetMetadata
   ): Promise<void> {
-    await this.db.updateAssetMetadata(asset, { trusted: isTrusted })
+    const updatedAsset: SmartContractFungibleAsset = {
+      ...asset,
+      metadata: {
+        ...asset.metadata,
+        ...metadata,
+      },
+    }
+
+    await this.db.addOrUpdateCustomAsset(updatedAsset)
     await this.cacheAssetsForNetwork(asset.homeNetwork)
+    this.emitter.emit("refreshAsset", updatedAsset)
   }
 
-  async importAccountCustomToken(
+  async importCustomToken(
     asset: SmartContractFungibleAsset,
     addressNetwork: AddressOnNetwork
   ): Promise<void> {
-    await this.addCustomAsset(asset)
+    const { metadata = {} } = asset
+    // Manually imported tokens are verified
+    metadata.verified = true
+
     await this.addTokenToTrackByContract(
       asset.homeNetwork,
       asset.contractAddress
@@ -620,7 +628,8 @@ export default class IndexingService extends BaseService<Events> {
    */
   async addTokenToTrackByContract(
     network: EVMNetwork,
-    contractAddress: string
+    contractAddress: string,
+    metadata: { discoveryTxHash?: HexString } = {}
   ): Promise<SmartContractFungibleAsset | undefined> {
     const normalizedAddress = normalizeEVMAddress(contractAddress)
 
@@ -633,10 +642,12 @@ export default class IndexingService extends BaseService<Events> {
       await this.addAssetToTrack(knownAsset)
       return knownAsset
     }
+
     let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
       network,
       normalizedAddress
     )
+
     if (!customAsset) {
       // pull metadata from Alchemy
       customAsset =
@@ -644,20 +655,21 @@ export default class IndexingService extends BaseService<Events> {
           contractAddress: normalizedAddress,
           homeNetwork: network,
         })) || undefined
+    }
 
-      if (customAsset) {
-        await this.addCustomAsset(customAsset)
-        this.emitter.emit("assets", [customAsset])
-        return customAsset
+    if (customAsset) {
+      if (metadata) {
+        customAsset.metadata ??= {}
+        Object.assign(customAsset.metadata, metadata)
       }
 
+      await this.addCustomAsset(customAsset)
+      this.emitter.emit("refreshAsset", customAsset)
       // TODO if we still don't have anything, use a contract read + a
       // CoinGecko lookup
-      if (customAsset) {
-        await this.addAssetToTrack(customAsset)
-        return customAsset
-      }
+      await this.addAssetToTrack(customAsset)
     }
+
     return customAsset
   }
 

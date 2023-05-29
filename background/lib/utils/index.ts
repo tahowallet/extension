@@ -41,19 +41,52 @@ export function normalizeAddressOnNetwork({
   }
 }
 
+/**
+ * Manually truncate number, try to cut as close to `decimalLength` as possible.
+ * If number is less than 1 then look for significant digits in the decimal
+ * up to `maxDecimalLength`.
+ * @param value floating point number as a string or number
+ * @param decimalLength desired length of decimal part
+ * @param maxDecimalLength max length of decimal part - will try to look
+ *                        for significant digits up to this point
+ * @returns truncated number
+ */
 export function truncateDecimalAmount(
   value: number | string,
-  decimalLength: number
+  decimalLength: number,
+  maxDecimalLength = decimalLength
 ): string {
   const valueString = value.toString()
-  if (decimalLength === 0) {
-    return valueString.split(".")[0]
+
+  if (!valueString.includes(".")) {
+    return valueString
   }
-  if (valueString.includes(".")) {
-    const [integers, decimals] = valueString.split(".")
-    return `${integers}.${decimals.substring(0, decimalLength)}`
+
+  const [integer, decimals] = valueString.split(".")
+
+  const firstSignificantDecimalDigit =
+    [...decimals].findIndex((digit) => digit !== "0") + 1
+
+  const decimalTruncationLength =
+    integer.length > 1 || integer[0] !== "0"
+      ? // For a value >=1, always respect decimalLength.
+        decimalLength
+      : // For a value <1, use the greater of decimalLength or first
+        // significant decimal digit, up to maxDecimalLength.
+        Math.min(
+          Math.max(decimalLength, firstSignificantDecimalDigit),
+          maxDecimalLength
+        )
+
+  // If the truncation point includes no significant decimals, don't include
+  // the decimal component at all.
+  if (decimalTruncationLength < firstSignificantDecimalDigit) {
+    return integer
   }
-  return valueString
+
+  const decimalsTruncated = decimals.substring(0, decimalTruncationLength)
+
+  return `${integer}.${decimalsTruncated}`
 }
 
 export function sameEVMAddress(

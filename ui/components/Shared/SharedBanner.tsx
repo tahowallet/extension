@@ -12,7 +12,7 @@ type BannerProps = {
   customStyles?: string
 }
 
-type CanBeClosedProps =
+export type CanBeClosedProps =
   | { canBeClosed: true; id: string }
   | { canBeClosed?: false; id?: never }
 
