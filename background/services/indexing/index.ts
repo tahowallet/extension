@@ -61,7 +61,7 @@ interface Events extends ServiceLifecycleEvents {
   }
   price: PricePoint
   assets: AnyAsset[]
-  updateAssetReferences: SmartContractFungibleAsset
+  refreshAsset: SmartContractFungibleAsset
 }
 
 const getAssetsByAddress = (assets: SmartContractFungibleAsset[]) => {
@@ -217,7 +217,7 @@ export default class IndexingService extends BaseService<Events> {
    * @param asset The custom asset
    */
   async addCustomAsset(asset: SmartContractFungibleAsset): Promise<void> {
-    await this.db.addCustomAsset(asset)
+    await this.db.addOrUpdateCustomAsset(asset)
     await this.cacheAssetsForNetwork(asset.homeNetwork)
   }
 
@@ -573,8 +573,17 @@ export default class IndexingService extends BaseService<Events> {
     asset: SmartContractFungibleAsset,
     metadata: AnyAssetMetadata
   ): Promise<void> {
-    await this.db.updateAssetMetadata(asset, metadata)
+    const updatedAsset: SmartContractFungibleAsset = {
+      ...asset,
+      metadata: {
+        ...asset.metadata,
+        ...metadata,
+      },
+    }
+
+    await this.db.addOrUpdateCustomAsset(updatedAsset)
     await this.cacheAssetsForNetwork(asset.homeNetwork)
+    this.emitter.emit("refreshAsset", updatedAsset)
   }
 
   async importCustomToken(
@@ -645,8 +654,7 @@ export default class IndexingService extends BaseService<Events> {
       }
 
       await this.addCustomAsset(customAsset)
-      this.emitter.emit("assets", [customAsset])
-      this.emitter.emit("updateAssetReferences", customAsset)
+      this.emitter.emit("refreshAsset", customAsset)
       // TODO if we still don't have anything, use a contract read + a
       // CoinGecko lookup
       await this.addAssetToTrack(customAsset)

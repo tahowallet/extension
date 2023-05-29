@@ -6,12 +6,12 @@ import {
   SwappableAsset,
 } from "@tallyho/tally-background/assets"
 import WalletAssetListItem from "./WalletAssetListItem"
-import AssetWarningSlideUp from "./UnverifiedAsset/AssetWarningSlideUp"
+import AssetWarning from "./UnverifiedAsset/AssetWarning"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 
 type WalletAssetListProps = {
   assetAmounts: CompleteAssetAmount<SwappableAsset>[]
   initializationLoadingTimeExpired: boolean
-  onCloseWarningSlideUp?: () => void
 }
 
 export default function WalletAssetList(
@@ -21,11 +21,7 @@ export default function WalletAssetList(
     keyPrefix: "wallet.activities",
   })
 
-  const {
-    assetAmounts,
-    initializationLoadingTimeExpired,
-    onCloseWarningSlideUp,
-  } = props
+  const { assetAmounts, initializationLoadingTimeExpired } = props
 
   const [warnedAsset, setWarnedAsset] = useState<
     CompleteAssetAmount<SmartContractFungibleAsset>["asset"] | null
@@ -35,17 +31,20 @@ export default function WalletAssetList(
 
   return (
     <>
-      {warnedAsset && (
-        <AssetWarningSlideUp
-          asset={warnedAsset}
-          close={() => {
-            setWarnedAsset(null)
-            if (onCloseWarningSlideUp) {
-              onCloseWarningSlideUp()
-            }
-          }}
-        />
-      )}
+      <SharedSlideUpMenu
+        isOpen={!!warnedAsset}
+        size="auto"
+        close={() => setWarnedAsset(null)}
+      >
+        {warnedAsset && (
+          <AssetWarning
+            asset={warnedAsset}
+            close={() => {
+              setWarnedAsset(null)
+            }}
+          />
+        )}
+      </SharedSlideUpMenu>
       <ul>
         {assetAmounts.map((assetAmount) => (
           <WalletAssetListItem

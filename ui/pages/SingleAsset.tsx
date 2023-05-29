@@ -30,9 +30,10 @@ import WalletActivityList from "../components/Wallet/WalletActivityList"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 import { blockExplorer } from "../utils/constants"
-import AssetWarningSlideUp from "../components/Wallet/UnverifiedAsset/AssetWarningSlideUp"
+import AssetWarning from "../components/Wallet/UnverifiedAsset/AssetWarning"
 import AssetVerifyToggler from "../components/Wallet/UnverifiedAsset/AssetVerifyToggler"
 import { trimWithEllipsis } from "../utils/textUtils"
+import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 
 const MAX_SYMBOL_LENGTH = 10
 
@@ -109,12 +110,20 @@ export default function SingleAsset(): ReactElement {
 
   return (
     <>
-      {warnedAsset && (
-        <AssetWarningSlideUp
-          asset={warnedAsset}
-          close={() => setWarnedAsset(null)}
-        />
-      )}
+      <SharedSlideUpMenu
+        isOpen={!!warnedAsset}
+        size="auto"
+        close={() => setWarnedAsset(null)}
+      >
+        {warnedAsset && (
+          <AssetWarning
+            asset={warnedAsset}
+            close={() => {
+              setWarnedAsset(null)
+            }}
+          />
+        )}
+      </SharedSlideUpMenu>
       <div className="navigation standard_width_padded">
         <SharedBackButton path="/" />
         {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (

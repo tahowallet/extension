@@ -50,13 +50,6 @@ export function isNetworkBaseAsset(asset: AnyAsset): asset is NetworkBaseAsset {
   return "chainID" in asset
 }
 
-export function sameNetworkBaseAsset(
-  asset: NetworkBaseAsset,
-  other: NetworkBaseAsset
-): boolean {
-  return asset.chainID === other.chainID
-}
-
 function isOptimismBaseAsset(asset: AnyAsset) {
   const hasMatchingChainID =
     (isSmartContractFungibleAsset(asset) &&
@@ -130,7 +123,7 @@ export function getBuiltInNetworkBaseAsset(
  * @param asset2 any asset
  * @returns true if both assets are the same network base assets
  */
-export function sameBuiltInNetworkBaseAsset(
+export function sameNetworkBaseAsset(
   asset1: AnyAsset,
   asset2: AnyAsset
 ): boolean {
@@ -153,6 +146,20 @@ export function sameBuiltInNetworkBaseAsset(
     asset1.symbol === asset2.symbol &&
     asset1.chainID === asset2.chainID &&
     asset1.name === asset2.name
+  )
+}
+
+/**
+ * Tests whether two assets should be considered the same built in network base asset.
+ */
+export function sameBuiltInNetworkBaseAsset(
+  asset1: AnyAsset,
+  asset2: AnyAsset
+): boolean {
+  return BUILT_IN_NETWORK_BASE_ASSETS.some(
+    (baseAsset) =>
+      sameNetworkBaseAsset(baseAsset, asset1) &&
+      sameNetworkBaseAsset(baseAsset, asset2)
   )
 }
 
