@@ -1,7 +1,7 @@
 {
   "name": "@tallyho/tally-extension",
   "private": true,
-  "version": "0.31.0",
+  "version": "0.34.0",
   "description": "Taho, the community owned and operated Web3 wallet.",
   "main": "index.js",
   "repository": "git@github.com:thesis/tally-extension.git",
@@ -28,7 +28,7 @@
     "dapp"
   ],
   "scripts": {
-    "start": "run-p devtools \"dev {@}\" --",
+    "start": "run-p -n -l devtools \"dev {@}\" --",
     "generate:validators": "ts-node background/generate-validators.ts",
     "build": "webpack --mode=production",
     "dev": "patch-package && webpack --mode=development --watch",
@@ -81,6 +81,7 @@
     "@babel/preset-typescript": "^7.15.0",
     "@babel/register": "^7.14.5",
     "@playwright/test": "^1.31",
+    "@redux-devtools/cli": "^1.0.7",
     "@types/archiver": "^5.1.0",
     "@types/copy-webpack-plugin": "^8.0.0",
     "@types/dotenv-webpack": "^7.0.3",

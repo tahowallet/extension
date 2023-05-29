@@ -34,8 +34,6 @@ const PRIMARY_PROVIDER_RECONNECT_INTERVAL = 10 * SECOND
 const WAIT_BEFORE_SUBSCRIBING = 2 * SECOND
 // Wait 100ms before attempting another send if a websocket provider is still connecting.
 const WAIT_BEFORE_SEND_AGAIN = 100
-// Percentage of .send calls to route to alchemy
-const ALCHEMY_RPC_CALL_PERCENTAGE = 0
 // How long before a cached balance is considered stale
 const BALANCE_TTL = 1 * SECOND
 // How often to cleanup our hasCode and balance caches.
@@ -321,14 +319,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         }
       }
 
-      if (
-        this.alchemyProvider &&
-        Math.random() < ALCHEMY_RPC_CALL_PERCENTAGE / 100
-      ) {
-        const result = await this.alchemyProvider.send(method, params)
-        delete this.messagesToSend[messageId]
-        return result
-      }
       const result = await this.currentProvider.send(method, params)
       // If https://github.com/tc39/proposal-decorators ever gets out of Stage 3
       // cleaning up the messageToSend object seems like a great job for a decorator

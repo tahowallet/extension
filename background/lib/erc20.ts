@@ -13,6 +13,7 @@ import { HexString } from "../types"
 import { AddressOnNetwork } from "../accounts"
 import {
   AggregateContractResponse,
+  CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES,
   MULTICALL_ABI,
   MULTICALL_CONTRACT_ADDRESS,
 } from "./multicall"
@@ -192,8 +193,12 @@ export const getTokenBalances = async (
   tokenAddresses: HexString[],
   provider: Provider
 ): Promise<SmartContractAmount[]> => {
+  const multicallAddress =
+    CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES[network.chainID] ||
+    MULTICALL_CONTRACT_ADDRESS
+
   const contract = new ethers.Contract(
-    MULTICALL_CONTRACT_ADDRESS,
+    multicallAddress,
     MULTICALL_ABI,
     provider
   )

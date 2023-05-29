@@ -11,7 +11,7 @@ import { NFT } from "@tallyho/tally-background/redux-slices/nfts"
 import { useTranslation } from "react-i18next"
 import SharedIcon from "../Shared/SharedIcon"
 import NFTsImage from "./NFTsImage"
-import { scanWebsite } from "../../utils/constants"
+import { blockExplorer } from "../../utils/constants"
 
 function getPreviewLink(nft: NFT) {
   const {
@@ -33,7 +33,7 @@ function getPreviewLink(nft: NFT) {
     [AVALANCHE.chainID]: `/token/${contractAddress}?a=${parsedTokenID}`,
   }
 
-  return `${scanWebsite[chainID].url}${previewURL[chainID]}`
+  return `${blockExplorer[chainID].url}${previewURL[chainID]}`
 }
 
 export default function NFTsSlideUpPreviewContent({
