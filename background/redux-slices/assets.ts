@@ -26,7 +26,7 @@ import { convertFixedPoint } from "../lib/fixed-point"
 import { updateAssetReferences } from "./accounts"
 import { NormalizedEVMAddress } from "../types"
 import type { RootState } from "."
-import { sameAddress } from "../lib/utils"
+import { sameEVMAddress } from "../lib/utils"
 
 export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
   recentPrices: {
@@ -77,7 +77,7 @@ const assetsSlice = createSlice({
                 sameNetwork(existingAsset.homeNetwork, newAsset.homeNetwork) &&
                 "contractAddress" in newAsset &&
                 "contractAddress" in existingAsset &&
-                sameAddress(
+                sameEVMAddress(
                   existingAsset.contractAddress,
                   newAsset.contractAddress
                 )) ||

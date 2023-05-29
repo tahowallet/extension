@@ -209,10 +209,3 @@ export const wait = (ms: number): Promise<void> =>
 
 export const getUNIXTimestamp = (time = Date.now()): UNIXTime =>
   Math.floor(time / 1000)
-
-/**
- * Tests whether two addresses should be considered the same.
- */
-export function sameAddress(address1: string, address2: string): boolean {
-  return normalizeEVMAddress(address1) === normalizeEVMAddress(address2)
-}
