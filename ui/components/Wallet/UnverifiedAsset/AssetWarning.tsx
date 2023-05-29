@@ -63,10 +63,8 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
   const currentAccountActivities = useBackgroundSelector(
     selectCurrentAccountActivities
   )
-  const activityItem = asset?.metadata?.discoveryTxHash
-    ? currentAccountActivities.find(
-        ({ hash }) => hash === asset?.metadata?.discoveryTxHash
-      )
+  const activityItem = discoveryTxHash
+    ? currentAccountActivities.find(({ hash }) => hash === discoveryTxHash)
     : undefined
 
   return (
@@ -133,9 +131,7 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
                       className={classNames("address_button", {
                         no_click: !activityItem || !blockExplorerUrl,
                       })}
-                      onClick={() => {
-                        openActivityDetails(activityItem)
-                      }}
+                      onClick={() => openActivityDetails(activityItem)}
                       title={discoveryTxHash}
                     >
                       {truncateAddress(discoveryTxHash)}

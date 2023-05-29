@@ -39,9 +39,7 @@ export default function AssetWarningWrapper(
         {asset && (
           <AssetWarning
             asset={asset}
-            close={() => {
-              close()
-            }}
+            close={() => close()}
             openActivityDetails={(activity) => {
               setActivityItem(activity)
               setShowAssetWarning(false)
