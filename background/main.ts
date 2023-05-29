@@ -1251,10 +1251,7 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
-        // Don't await, as the below enrichment is expected to take longer than
-        // signer prep. If that assumption breaks, we should probably await the
-        // two in parallel.
-        this.signingService.prepareForSigningRequest()
+        await this.signingService.prepareForSigningRequest()
 
         const enrichedsignTypedDataRequest =
           await this.enrichmentService.enrichSignTypedDataRequest(payload)

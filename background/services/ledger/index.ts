@@ -306,7 +306,9 @@ export default class LedgerService extends BaseService<Events> {
     }
 
     if (usbDeviceArray.length === 1) {
-      await this.onConnection(usbDeviceArray[0].productId)
+      // Don't await connection because Ledger may not be connected until user
+      // manually unlocks the device
+      this.onConnection(usbDeviceArray[0].productId)
     }
 
     return this.#currentLedgerId
