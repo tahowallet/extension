@@ -3,18 +3,16 @@ import {
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
   getBuiltInNetworkBaseAsset,
-  sameBuiltInNetworkBaseAsset,
+  sameNetworkBaseAsset,
 } from "../utils/asset-utils"
 import { NetworkBaseAsset } from "../../networks"
 import { createAssetAmount, createPricePoint } from "../../tests/factories"
 
-describe(sameBuiltInNetworkBaseAsset, () => {
+describe(sameNetworkBaseAsset, () => {
   test("should handle built in network base assets", () => {
-    expect(sameBuiltInNetworkBaseAsset(MATIC, MATIC)).toBe(true)
+    expect(sameNetworkBaseAsset(MATIC, MATIC)).toBe(true)
 
-    expect(sameBuiltInNetworkBaseAsset(OPTIMISTIC_ETH, OPTIMISTIC_ETH)).toBe(
-      true
-    )
+    expect(sameNetworkBaseAsset(OPTIMISTIC_ETH, OPTIMISTIC_ETH)).toBe(true)
   })
 
   test("should handle other network base assets", () => {
@@ -25,9 +23,9 @@ describe(sameBuiltInNetworkBaseAsset, () => {
       decimals: 18,
     }
 
-    expect(sameBuiltInNetworkBaseAsset(MATIC, baseAsset)).toBe(false)
+    expect(sameNetworkBaseAsset(MATIC, baseAsset)).toBe(false)
     expect(
-      sameBuiltInNetworkBaseAsset(AVAX, {
+      sameNetworkBaseAsset(AVAX, {
         chainID: "43114",
         name: "Avalanche",
         symbol: "AVAX",
