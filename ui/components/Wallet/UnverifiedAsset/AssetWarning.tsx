@@ -60,6 +60,11 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
     close()
   }
 
+  const copyTxHash = (txHash: string) => {
+    navigator.clipboard.writeText(txHash)
+    dispatch(setSnackbarMessage(sharedT("copyTextSnackbar")))
+  }
+
   const currentAccountActivities = useBackgroundSelector(
     selectCurrentAccountActivities
   )
@@ -132,9 +137,15 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
                     <button
                       type="button"
                       className={classNames("address_button", {
-                        no_click: !activityItem || !blockExplorerUrl,
+                        no_click: !blockExplorerUrl,
                       })}
-                      onClick={() => openActivityDetails(activityItem)}
+                      onClick={() => {
+                        if (activityItem) {
+                          openActivityDetails(activityItem)
+                        } else {
+                          copyTxHash(discoveryTxHash)
+                        }
+                      }}
                       title={discoveryTxHash}
                     >
                       {truncateAddress(discoveryTxHash)}
