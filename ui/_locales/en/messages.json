@@ -946,7 +946,6 @@
         "SUPPORT_NFT_SEND": "Enable sending NFTs",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
-        "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
         "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification"
       }
