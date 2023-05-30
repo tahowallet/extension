@@ -179,6 +179,11 @@ jobs:
           name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
       - name: Extract extension
         run: unzip -o chrome.zip -d dist/chrome
+      - name: Cache Hardhat
+        uses: actions/cache@v2
+        with:
+          path: ci/cache
+          key: ${{ runner.os }}-hardhat-${{ hashFiles('ci/cache/*.json') }}
       - name: Install Hardhat
         run: |
           cd ci
@@ -194,7 +199,7 @@ jobs:
       - name: Run Playwright tests designed for fork
         env:
           RECOVERY_PHRASE: ${{ secrets.FORK_TEST_WALLET_RECOVERY_PHRASE }}
-        run: find test -type f -name "*-fork.*" -exec xvfb-run npx playwright test {} \;
+        run: find e2e-tests -type f -name "*-fork.*" -exec xvfb-run npx playwright test {} \;
       - uses: actions/upload-artifact@v3
         if: failure()
         with:
