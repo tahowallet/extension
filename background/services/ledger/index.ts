@@ -114,9 +114,13 @@ type Events = ServiceLifecycleEvents & {
 export const idDerivationPath = "44'/60'/0'/0/0"
 
 async function deriveAddressOnLedger(path: string, eth: Eth) {
-  const derivedIdentifiers = await eth.getAddress(path)
-  const address = ethersGetAddress(derivedIdentifiers.address)
-  return address
+  try {
+    const derivedIdentifiers = await eth.getAddress(path)
+    const address = ethersGetAddress(derivedIdentifiers.address)
+    return address
+  } catch (err) {
+    return undefined
+  }
 }
 
 async function generateLedgerId(
@@ -329,10 +333,13 @@ export default class LedgerService extends BaseService<Events> {
         }
 
         const eth = new Eth(this.transport)
+        const address = await deriveAddressOnLedger(derivationPath, eth)
 
-        const accountAddress = normalizeEVMAddress(
-          await deriveAddressOnLedger(derivationPath, eth)
-        )
+        if (!address) {
+          throw new Error("Failed to derive address")
+        }
+
+        const accountAddress = normalizeEVMAddress(address)
 
         this.emitter.emit("address", {
           ledgerID: this.#currentLedgerId,
