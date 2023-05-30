@@ -171,7 +171,7 @@ export function parseNFTs(nfts: NFT[]): NFTCached[] {
 }
 
 const NFTsSlice = createSlice({
-  name: "nftsUpdate",
+  name: "nfts",
   initialState: {
     isReloading: false,
     nfts: {},

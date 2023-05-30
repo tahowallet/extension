@@ -13,13 +13,13 @@ import { getAssetsState, selectAccountTotals } from "./accountsSelectors"
 import { selectCurrentAccount, selectMainCurrencySymbol } from "./uiSelectors"
 
 const selectNFTs = createSelector(
-  (state: RootState) => state.nftsUpdate,
-  (slice) => slice.nfts
+  (state: RootState) => state.nfts,
+  (nftsSlice) => nftsSlice.nfts
 )
 
 export const selectIsReloadingNFTs = createSelector(
-  (state: RootState) => state.nftsUpdate,
-  (slice) => slice.isReloading
+  (state: RootState) => state.nfts,
+  (nftsSlice) => nftsSlice.isReloading
 )
 
 export const selectCurrentAccountNFTs = createSelector(
@@ -35,7 +35,7 @@ export const selectCurrentAccountNFTs = createSelector(
 
 /* Filtering selectors */
 const selectNFTFilters = createSelector(
-  (state: RootState) => state.nftsUpdate,
+  (state: RootState) => state.nfts,
   (nftsSlice) => nftsSlice.filters
 )
 
