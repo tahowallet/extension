@@ -149,7 +149,9 @@ test.describe("Transactions", () => {
         await expect(
           popup
             .getByText(
-              "Taho will populate your historical activity over time; this may take an hour or more for accounts that have been active for a long time. For new accounts, new activity will show up here."
+              `Taho will populate your historical activity over time; this may
+              take an hour or more for accounts that have been active for a long
+              time. For new accounts, new activity will show up here.`
             )
             .first()
         ).toBeVisible()
@@ -168,7 +170,9 @@ test.describe("Transactions", () => {
         await expect(
           popup
             .getByText(
-              "Taho will populate your historical activity over time; this may take an hour or more for accounts that have been active for a long time. For new accounts, new activity will show up here."
+              `Taho will populate your historical activity over time; this may
+            take an hour or more for accounts that have been active for a long
+            time. For new accounts, new activity will show up here.`
             )
             .first()
         ).toBeVisible()
@@ -323,7 +327,9 @@ test.describe("Transactions", () => {
       await expect(
         popup
           .getByText(
-            "Taho will populate your historical activity over time; this may take an hour or more for accounts that have been active for a long time. For new accounts, new activity will show up here."
+            `Taho will populate your historical activity over time; this may
+          take an hour or more for accounts that have been active for a long
+          time. For new accounts, new activity will show up here.`
           )
           .first()
       ).toBeVisible()
@@ -537,7 +543,9 @@ test.describe("Transactions", () => {
         await expect(
           popup
             .getByText(
-              "Taho will populate your historical activity over time; this may take an hour or more for accounts that have been active for a long time. For new accounts, new activity will show up here."
+              `Taho will populate your historical activity over time; this may
+            take an hour or more for accounts that have been active for a long
+            time. For new accounts, new activity will show up here.`
             )
             .first()
         ).toBeVisible()
