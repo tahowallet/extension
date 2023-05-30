@@ -1930,6 +1930,10 @@ export default class ChainService extends BaseService<Events> {
       (network) => network.chainID !== chainID
     )
 
+    this.subscribedNetworks = this.subscribedNetworks.filter(
+      ({ network }) => network.chainID !== chainID
+    )
+
     await this.db.removeEVMNetwork(chainID)
     await this.updateSupportedNetworks()
   }
