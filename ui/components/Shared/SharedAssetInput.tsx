@@ -17,7 +17,7 @@ import { EVMNetwork } from "@tallyho/tally-background/networks"
 import {
   NFTCached,
   NFTCollectionCached,
-} from "@tallyho/tally-background/redux-slices/nfts_update"
+} from "@tallyho/tally-background/redux-slices/nfts"
 import classNames from "classnames"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"

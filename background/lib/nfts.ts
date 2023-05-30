@@ -3,12 +3,8 @@ import {
   getSimpleHashCollections,
   getSimpleHashNFTs,
   getSimpleHashNFTsTransfers,
-} from "./simple-hash_update"
-import {
-  getPoapNFTs,
-  getPoapCollections,
-  POAP_COLLECTION_ID,
-} from "./poap_update"
+} from "./simple-hash"
+import { getPoapNFTs, getPoapCollections, POAP_COLLECTION_ID } from "./poap"
 import {
   NFT,
   CHAIN_ID_TO_NFT_METADATA_PROVIDER,

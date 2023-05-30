@@ -14,7 +14,7 @@ import claimReducer from "./claim"
 import ledgerReducer from "./ledger"
 import signingReducer from "./signing"
 import earnReducer from "./earn"
-import nftsUpdateReducer from "./nfts_update"
+import nftsUpdateReducer from "./nfts"
 
 const mainReducer = combineReducers({
   account: accountsReducer,

@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
 import { normalizeEVMAddress } from "../../lib/utils"
-import { Filter } from "../nfts_update"
+import { Filter } from "../nfts"
 import {
   AccountData,
   getAdditionalDataForFilter,

@@ -169,7 +169,7 @@ import {
   deleteNFTsForAddress,
   updateIsReloading,
   deleteTransferredNFTs,
-} from "./redux-slices/nfts_update"
+} from "./redux-slices/nfts"
 import AbilitiesService from "./services/abilities"
 import {
   setAbilitiesForAddress,

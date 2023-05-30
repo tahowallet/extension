@@ -3,7 +3,7 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
   refetchNFTsFromCollection,
   NFTWithCollection,
-} from "@tallyho/tally-background/redux-slices/nfts_update"
+} from "@tallyho/tally-background/redux-slices/nfts"
 import { getAccountNameOnChain } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"

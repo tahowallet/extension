@@ -1,11 +1,7 @@
 import { AddressOnNetwork } from "../../accounts"
-import {
-  getNFTCollections,
-  getNFTs,
-  getNFTsTransfers,
-} from "../../lib/nfts_update"
-import { getSimpleHashNFTs } from "../../lib/simple-hash_update"
-import { POAP_COLLECTION_ID } from "../../lib/poap_update"
+import { getNFTCollections, getNFTs, getNFTsTransfers } from "../../lib/nfts"
+import { getSimpleHashNFTs } from "../../lib/simple-hash"
+import { POAP_COLLECTION_ID } from "../../lib/poap"
 import { NFTCollection, NFT, TransferredNFT } from "../../nfts"
 import BaseService from "../base"
 import ChainService from "../chain"

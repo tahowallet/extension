@@ -3,8 +3,8 @@ import {
   ETHEREUM,
   POLYGON,
 } from "@tallyho/tally-background/constants"
-import { POAP_CONTRACT } from "@tallyho/tally-background/lib/poap_update"
-import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts_update"
+import { POAP_CONTRACT } from "@tallyho/tally-background/lib/poap"
+import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts"
 import React, { ReactElement } from "react"
 import SharedTooltip from "../Shared/SharedTooltip"
 

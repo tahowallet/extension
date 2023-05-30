@@ -34,7 +34,7 @@ import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signin
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts_update"
+import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
