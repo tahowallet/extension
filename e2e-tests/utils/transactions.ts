@@ -117,10 +117,16 @@ export default class TransactionsHelper {
     await this.popup
       .getByText("Details", { exact: true })
       .click({ trial: true })
-    const estimatedFee = this.popup.getByText("Estimated network fee")
-    await expect(estimatedFee.getByText(/^~\$\d+\.\d{2}$/)).toBeVisible()
-    await expect(estimatedFee.getByText(/^\(\d+\.\d{2} Gwei\)$/)).toBeVisible()
-    await estimatedFee.getByRole("button").click({ trial: true })
+    const estimatedFeeContainer = this.popup
+      .locator("span")
+      .filter({ hasText: "Estimated network fee" })
+    await expect(
+      estimatedFeeContainer.getByText(/^~\$\d+\.\d{2}$/)
+    ).toBeVisible()
+    await expect(
+      estimatedFeeContainer.getByText(/^\(\d+\.\d{2} Gwei\)$/)
+    ).toBeVisible()
+    await estimatedFeeContainer.getByRole("button").click({ trial: true })
     // TODO: Add network fees this.popup verification
 
     await this.popup.getByText("Raw data", { exact: true }).click()
