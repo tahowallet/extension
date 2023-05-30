@@ -23,7 +23,7 @@ import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
 import { FIAT_CURRENCIES_SYMBOL } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
-import { updateAssetReferences } from "./accounts"
+import { removeAssetReferences, updateAssetReferences } from "./accounts"
 import { NormalizedEVMAddress } from "../types"
 import type { RootState } from "."
 import { sameEVMAddress } from "../lib/utils"
@@ -126,10 +126,23 @@ const assetsSlice = createSlice({
         }
       }
     },
+    removeAsset: (
+      immerState,
+      { payload: removedAsset }: { payload: AnyAsset }
+    ) => {
+      return immerState.filter(
+        (asset) =>
+          !(
+            "contractAddress" in asset &&
+            "contractAddress" in removedAsset &&
+            sameEVMAddress(asset.contractAddress, removedAsset.contractAddress)
+          )
+      )
+    },
   },
 })
 
-export const { assetsLoaded, newPricePoint } = assetsSlice.actions
+export const { assetsLoaded, newPricePoint, removeAsset } = assetsSlice.actions
 
 export default assetsSlice.reducer
 
@@ -172,6 +185,35 @@ export const refreshAsset = createBackgroundAsyncThunk(
     await dispatch(assetsLoaded([asset]))
     // Update accounts slice cached data about this asset
     await dispatch(updateAssetReferences(asset))
+  }
+)
+
+export const hideAsset = createBackgroundAsyncThunk(
+  "assets/hideAsset",
+  async (
+    {
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { extra: { main } }
+  ) => {
+    await main.hideAsset(asset)
+  }
+)
+
+export const removeAssetData = createBackgroundAsyncThunk(
+  "assets/removeAssetData",
+  async (
+    {
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { dispatch }
+  ) => {
+    await dispatch(removeAsset(asset))
+    await dispatch(removeAssetReferences(asset))
   }
 )
 

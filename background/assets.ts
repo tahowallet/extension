@@ -44,16 +44,12 @@ export type AssetMetadata = {
    * legitimate asset.
    */
   verified?: boolean
-  /**
-   * Set by the user to remove asset that has been verified by mistake.
-   */
-  removed?: boolean
 }
 
 /**
  * Every asset has metadata. Some of them have network-specific metadata.
  */
-type NetworkSpecificAssetMetadata = AssetMetadata & {
+export type NetworkSpecificAssetMetadata = AssetMetadata & {
   /**
    * Set on assets discovered through transaction annotations
    */

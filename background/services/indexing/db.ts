@@ -6,6 +6,7 @@ import { EVMNetwork } from "../../networks"
 import {
   AnyAsset,
   FungibleAsset,
+  NetworkSpecificAssetMetadata,
   PricePoint,
   SmartContractFungibleAsset,
   TokenListCitation,
@@ -56,6 +57,10 @@ export type PriceMeasurement = IndexedPricePoint & {
 export type CachedTokenList = TokenListCitation & {
   retrievedAt: number
   list: TokenList
+}
+
+type CustomAsset = Omit<SmartContractFungibleAsset, "metadata"> & {
+  metadata?: NetworkSpecificAssetMetadata & { removed?: boolean }
 }
 
 /*
@@ -125,7 +130,7 @@ export class IndexingDatabase extends Dexie {
   /*
    * User- and contract-supplied fungible asset metadata.
    */
-  private customAssets!: Dexie.Table<SmartContractFungibleAsset, number>
+  private customAssets!: Dexie.Table<CustomAsset, number>
 
   /*
    * Tokens whose balances should be checked periodically. It might make sense
@@ -287,22 +292,24 @@ export class IndexingDatabase extends Dexie {
     )
   }
 
-  async getCustomAssetsByNetworks(
+  async getActiveCustomAssetsByNetworks(
     networks: EVMNetwork[]
   ): Promise<SmartContractFungibleAsset[]> {
-    return this.customAssets
-      .where("homeNetwork.chainID")
-      .anyOf(networks.map((network) => network.chainID))
-      .toArray()
+    return (
+      await this.customAssets
+        .where("homeNetwork.chainID")
+        .anyOf(networks.map((network) => network.chainID))
+        .toArray()
+    ).filter((asset) => asset?.metadata?.removed !== true)
   }
 
   async getCustomAssetByAddressAndNetwork(
     network: EVMNetwork,
     contractAddress: string
-  ): Promise<SmartContractFungibleAsset | undefined> {
+  ): Promise<CustomAsset | undefined> {
     return this.customAssets
       .where("[contractAddress+homeNetwork.name]")
-      .equals([network.name, contractAddress])
+      .equals([contractAddress, network.name])
       .first()
   }
 
@@ -312,7 +319,7 @@ export class IndexingDatabase extends Dexie {
   ): Promise<SmartContractFungibleAsset | undefined> {
     return this.assetsToTrack
       .where("[contractAddress+homeNetwork.name]")
-      .equals([network.name, contractAddress])
+      .equals([contractAddress, network.name])
       .first()
   }
 

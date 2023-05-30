@@ -1,10 +1,10 @@
 import React, { ReactElement } from "react"
-import {
-  AnyAssetMetadata,
-  SmartContractFungibleAsset,
-} from "@tallyho/tally-background/assets"
+import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
 import { useTranslation } from "react-i18next"
-import { updateAssetMetadata } from "@tallyho/tally-background/redux-slices/assets"
+import {
+  hideAsset,
+  updateAssetMetadata,
+} from "@tallyho/tally-background/redux-slices/assets"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
@@ -51,14 +51,18 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
 
   const blockExplorerUrl = getBlockExplorerURL(network)
 
-  const handleUpdateAssetMetadata = async (
-    newMetadata: AnyAssetMetadata,
-    snackbar: string
-  ) => {
-    const metadata = { ...asset.metadata, ...newMetadata }
+  const handleVerifyAsset = async () => {
+    const metadata = { ...asset.metadata, verified: true }
     await dispatch(updateAssetMetadata({ asset, metadata }))
-    dispatch(setSnackbarMessage(snackbar))
+    dispatch(setSnackbarMessage(t("verifyAssetSnackbar")))
     close()
+  }
+
+  const handleHideAsset = async () => {
+    await dispatch(hideAsset({ asset }))
+    dispatch(setSnackbarMessage(t("removeAssetSnackbar")))
+    close()
+    history.push("/")
   }
 
   return (
@@ -149,13 +153,7 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
                 <SharedButton
                   size="medium"
                   type="secondary"
-                  onClick={() => {
-                    handleUpdateAssetMetadata(
-                      { removed: true },
-                      t("removeAssetSnackbar")
-                    )
-                    history.push("/")
-                  }}
+                  onClick={() => handleHideAsset()}
                 >
                   {t("dontShow")}
                 </SharedButton>
@@ -163,12 +161,7 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
                   <SharedButton
                     size="medium"
                     type="primary"
-                    onClick={() =>
-                      handleUpdateAssetMetadata(
-                        { verified: true },
-                        t("verifyAssetSnackbar")
-                      )
-                    }
+                    onClick={() => handleVerifyAsset()}
                   >
                     {t("addToAssetList")}
                   </SharedButton>

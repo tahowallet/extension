@@ -56,6 +56,7 @@ import {
   assetsLoaded,
   newPricePoint,
   refreshAsset,
+  removeAssetData,
 } from "./redux-slices/assets"
 import {
   setEligibility,
@@ -186,10 +187,7 @@ import {
   isOneTimeAnalyticsEvent,
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
-import {
-  canBeAddedCustomAsset,
-  isBuiltInNetworkBaseAsset,
-} from "./redux-slices/utils/asset-utils"
+import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -1085,6 +1083,10 @@ export default class Main extends BaseService<never> {
         })
       )
     })
+
+    this.indexingService.emitter.on("removeAssetData", (asset) => {
+      this.store.dispatch(removeAssetData({ asset }))
+    })
   }
 
   async connectEnrichmentService(): Promise<void> {
@@ -1796,6 +1798,10 @@ export default class Main extends BaseService<never> {
     await this.indexingService.updateAssetMetadata(asset, metadata)
   }
 
+  async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {
+    await this.indexingService.hideAsset(asset)
+  }
+
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {
     return this.providerBridgeService.getNewCustomRPCDetails(requestId)
   }
@@ -1869,7 +1875,7 @@ export default class Main extends BaseService<never> {
     amount: bigint
     mainCurrencyAmount?: number
     balance: number
-    canBeAdded: boolean
+    exists?: boolean
   }> {
     const { network } = addressOnNetwork
 
@@ -1880,8 +1886,6 @@ export default class Main extends BaseService<never> {
           isSmartContractFungibleAsset(asset) &&
           sameEVMAddress(contractAddress, asset.contractAddress)
       )
-
-    const canBeAdded = canBeAddedCustomAsset(cachedAsset)
 
     const assetData = await this.chainService.queryAccountTokenDetails(
       contractAddress,
@@ -1909,7 +1913,7 @@ export default class Main extends BaseService<never> {
         utils.formatUnits(assetData.amount, assetData.asset.decimals)
       ),
       mainCurrencyAmount,
-      canBeAdded,
+      exists: !!cachedAsset,
     }
   }
 

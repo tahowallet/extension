@@ -44,7 +44,7 @@ describe("Enrichment Service Transactions", () => {
         network: ETHEREUM,
       })
 
-      await indexingService.addCustomAsset({
+      await indexingService.addOrUpdateCustomAsset({
         contractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
         symbol: "USDC",
         name: "USDC Coin",
@@ -52,7 +52,7 @@ describe("Enrichment Service Transactions", () => {
         homeNetwork: ETHEREUM,
       })
 
-      await indexingService.addCustomAsset({
+      await indexingService.addOrUpdateCustomAsset({
         contractAddress: "0x853d955aCEf822Db058eb8505911ED77F175b99e",
         symbol: "FRAX",
         name: "FRAX Token",

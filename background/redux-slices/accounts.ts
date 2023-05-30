@@ -422,6 +422,20 @@ const accountSlice = createSlice({
 
       updateCombinedData(immerState)
     },
+    removeAssetReferences: (
+      immerState,
+      { payload: asset }: { payload: SmartContractFungibleAsset }
+    ) => {
+      const allAccounts = immerState.accountsData.evm[asset.homeNetwork.chainID]
+      Object.keys(allAccounts).forEach((address) => {
+        const account = allAccounts[address]
+        if (account !== "loading") {
+          delete account.balances[asset.symbol]
+        }
+      })
+
+      updateCombinedData(immerState)
+    },
     removeChainBalances: (
       immerState,
       { payload: chainID }: { payload: string }
@@ -438,6 +452,7 @@ export const {
   updateAccountName,
   updateENSAvatar,
   updateAssetReferences,
+  removeAssetReferences,
   removeChainBalances,
 } = accountSlice.actions
 
