@@ -139,7 +139,6 @@ import {
 } from "./redux-slices/migrations"
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
-import { deleteNFts } from "./redux-slices/nfts"
 import {
   ActivityDetail,
   addActivity,
@@ -584,11 +583,7 @@ export default class Main extends BaseService<never> {
     this.connectAnalyticsService()
     this.connectWalletConnectService()
     this.connectAbilitiesService()
-
-    // Nothing else beside creating a service should happen when feature flag is off
-    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
-      this.connectNFTsService()
-    }
+    this.connectNFTsService()
 
     await this.connectChainService()
 
@@ -636,13 +631,11 @@ export default class Main extends BaseService<never> {
     }
 
     this.store.dispatch(removeActivities(address))
-    this.store.dispatch(deleteNFts(address))
 
     // remove NFTs
-    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
-      this.store.dispatch(deleteNFTsForAddress(address))
-      await this.nftsService.removeNFTsForAddress(address)
-    }
+    this.store.dispatch(deleteNFTsForAddress(address))
+    await this.nftsService.removeNFTsForAddress(address)
+
     // remove abilities
     if (signer.type !== AccountType.ReadOnly) {
       await this.abilitiesService.deleteAbilitiesForAccount(address)

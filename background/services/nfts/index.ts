@@ -1,5 +1,4 @@
 import { AddressOnNetwork } from "../../accounts"
-import { FeatureFlags, isEnabled } from "../../features"
 import {
   getNFTCollections,
   getNFTs,
@@ -57,10 +56,7 @@ export default class NFTsService extends BaseService<Events> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    // Nothing else beside creating a service should happen when feature flag is off
-    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
-      this.connectChainServiceEvents()
-    }
+    this.connectChainServiceEvents()
   }
 
   protected override async internalStopService(): Promise<void> {

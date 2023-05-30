@@ -28,7 +28,6 @@ export const RuntimeFlag = {
   SUPPORT_ARBITRUM_NOVA: process.env.SUPPORT_ARBITRUM_NOVA === "true",
   SUPPORT_ACHIEVEMENTS_BANNER:
     process.env.SUPPORT_ACHIEVEMENTS_BANNER === "true",
-  SUPPORT_NFT_TAB: process.env.SUPPORT_NFT_TAB === "true",
   SUPPORT_NFT_SEND: process.env.SUPPORT_NFT_SEND === "true",
   SUPPORT_WALLET_CONNECT: process.env.SUPPORT_WALLET_CONNECT === "true",
   SUPPORT_SWAP_QUOTE_REFRESH: process.env.SUPPORT_SWAP_QUOTE_REFRESH === "true",

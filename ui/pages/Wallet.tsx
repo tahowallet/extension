@@ -23,12 +23,10 @@ import WalletAssetList from "../components/Wallet/WalletAssetList"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
 import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
-import NFTsWallet from "../components/NFTs/NFTsWallet"
-import SharedBanner from "../components/Shared/SharedBanner"
 import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultBanner"
 import WalletBanner from "../components/Wallet/Banner/WalletBanner"
 import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
-import NFTListCurrentWallet from "../components/NFTS_update/NFTListCurrentWallet"
+import NFTListCurrentWallet from "../components/NFTs/NFTListCurrentWallet"
 import WalletHiddenAssets from "../components/Wallet/WalletHiddenAssets"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
@@ -182,23 +180,9 @@ export default function Wallet(): ReactElement {
               </>
             )}
             {panelNumber === 1 &&
-              NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) &&
-              (isEnabled(FeatureFlags.SUPPORT_NFT_TAB) ? (
+              NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) && (
                 <NFTListCurrentWallet />
-              ) : (
-                <>
-                  <SharedBanner
-                    icon="notif-announcement"
-                    iconColor="var(--link)"
-                    canBeClosed
-                    id="nft_soon"
-                    customStyles="margin: 8px 0;"
-                  >
-                    {t("nfts.NFTPricingComingSoon")}
-                  </SharedBanner>
-                  <NFTsWallet />
-                </>
-              ))}
+              )}
             {panelNumber ===
               (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)
                 ? 2
