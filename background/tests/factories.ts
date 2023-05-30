@@ -35,7 +35,7 @@ import {
   BlockPrices,
   NetworkBaseAsset,
 } from "../networks"
-import { AccountData } from "../redux-slices/accounts"
+import { AccountData, CompleteAssetAmount } from "../redux-slices/accounts"
 import {
   AnalyticsService,
   ChainService,
@@ -452,6 +452,20 @@ export const createAssetAmount = (
   return {
     asset,
     amount: BigInt(Math.trunc(1e10 * amount)) * 10n ** 8n,
+  }
+}
+
+export const createCompleteAssetAmount = (
+  asset: AnyAsset = ETH,
+  amount = 1,
+  overrides: Partial<CompleteAssetAmount<AnyAsset>> = {}
+): CompleteAssetAmount<AnyAsset> => {
+  const assetAmount = createAssetAmount(asset, amount)
+  return {
+    ...assetAmount,
+    decimalAmount: amount,
+    localizedDecimalAmount: amount.toFixed(2),
+    ...overrides,
   }
 }
 

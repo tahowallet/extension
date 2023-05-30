@@ -38,7 +38,10 @@
   "viewAddressOnBlockExplorer": "View address on {{blockExplorer}}",
   "assets": {
     "viewAsset": "View asset on {{siteTitle}}",
-    "openNetworkExplorer": "Open network explorer"
+    "openNetworkExplorer": "Open network explorer",
+    "verifyAsset": "Verify asset",
+    "unverifiedAsset": "Asset not verified",
+    "verifiedByUser": "Verified by you"
   },
   "assetInput": {
     "search": "Search by name or address",
@@ -378,8 +381,7 @@
       "newWalletReview": {
         "title": "Save and store your recovery phrase",
         "submit": "I wrote it down",
-        "copyAddressAction": "Copy phrase to clipboard",
-        "copyAddressSnackbar": "Copied to clipboard"
+        "copyAddressAction": "Copy phrase to clipboard"
       },
       "newWalletVerify": {
         "title": "Verify recovery phrase",
@@ -488,6 +490,7 @@
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
     "setAsDefault": "Use Taho as your default wallet",
     "enableTestNetworks": "Enable test networks",
+    "showUnverifiedAssets": "Show unverified assets",
     "language": "Language",
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
@@ -576,6 +579,12 @@
         "description": "You can also add a custom RPC, this can be a bit risky as you might add a malicious RPC without knowing, that could result in loss of funds.",
         "addBtn": "Add custom RPC (Advanced)"
       }
+    },
+    "unverifiedAssets": {
+      "tooltip": {
+        "firstPart": "Discover assets that you own but are not on our asset list. Some spam/scam assets will show up, so tread carefully.",
+        "secondPart": "These will show up on the bottom of the asset page until you verify them."
+      }
     }
   },
   "send": {
@@ -598,7 +607,8 @@
     "selectToken": "Select token",
     "backButtonText": "Back",
     "saveBtn": "Save",
-    "closeWindow": "Close window"
+    "closeWindow": "Close window",
+    "copyTextSnackbar": "Copied to clipboard"
   },
   "signing": {
     "signatureRequired": "Your signature is required",
@@ -764,17 +774,6 @@
       "addCustomAssetPrompt": "Can't find an asset?",
       "addCustomAssetAction": "add custom asset"
     },
-    "trustedAssets": {
-      "notTrusted": "Asset isn't trusted",
-      "notVerified": "Asset has not been verified yet!",
-      "trustExplainer": "Only transact with assets you trust.",
-      "assetImported": "Asset imported from transaction history",
-      "name": "Name",
-      "contract": "Contract address",
-      "close": "Close",
-      "hideAsset": "Hide asset",
-      "trustAsset": "Trust asset"
-    },
     "banner": {
       "bannerTitle": "New Odyssey week!",
       "emptyBannerContent": "Check out Arbitrum Odyssey campaign",
@@ -804,9 +803,6 @@
       "NFTs": "NFTs",
       "activity": "Activity"
     },
-    "stateOfHiddenAssets1": "Hide",
-    "stateOfHiddenAssets2": "Show",
-    "hiddenAssets": "{{stateOfHiddenAssets}} hidden assets ({{amount}})",
     "defaultToggle": {
       "snackbar": "You can change this in Settings later",
       "isDefault": "is now your default wallet",
@@ -817,6 +813,27 @@
       "title": "Analytics are enabled",
       "description": "They help us improve the wallet.  You can disable anytime",
       "settingsLink": "Change settings"
+    },
+    "unverifiedAssets": {
+      "stateOfHiddenAssets1": "Hide",
+      "stateOfHiddenAssets2": "See",
+      "hiddenAssets": "{{stateOfHiddenAssets}} unverified assets ({{amount}})",
+      "verifyAsset": "Verify asset"
+    },
+    "verifiedAssets": {
+      "assetImported": "Asset automatically imported",
+      "symbol": "Symbol",
+      "contract": "Contract address",
+      "discoveryTxHash": "Added from transaction",
+      "dontShow": "Don’t show",
+      "addToAssetList": "Add to asset list",
+      "snackbar": "Asset added to list",
+      "banner": {
+        "titleUnverified": "Asset not verified",
+        "titleVerified": "Asset verified by you",
+        "description": "Be aware of scam and spam assets, only interact with assets you trust.",
+        "oldDescription": "Only transact with assets you trust."
+      }
     }
   },
   "dAppConnect": {
@@ -932,7 +949,7 @@
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
-        "SUPPORT_ASSET_TRUST": "Enable trusting assets"
+        "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification"
       }
     }
   },

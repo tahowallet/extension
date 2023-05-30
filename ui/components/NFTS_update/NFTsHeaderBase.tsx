@@ -1,7 +1,6 @@
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import { useHistory } from "react-router-dom"
+import { ONBOARDING_ROOT } from "../../pages/Onboarding/Tabbed/Routes"
 import SharedButton from "../Shared/SharedButton"
 
 export function HeaderContainer({
@@ -56,8 +55,6 @@ export function EmptyHeader(): ReactElement {
     keyPrefix: "nfts",
   })
 
-  const history = useHistory()
-
   return (
     <div className="container">
       <h1>{t("header.emptyTitle")}</h1>
@@ -68,12 +65,8 @@ export function EmptyHeader(): ReactElement {
         type="secondary"
         size="large"
         onClick={() => {
-          if (isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING)) {
-            window.open("/tab.html#onboarding")
-            window.close()
-          } else {
-            history.push("/onboarding/add-wallet")
-          }
+          window.open(ONBOARDING_ROOT)
+          window.close()
         }}
       >
         {t("header.addAccountCTA")}

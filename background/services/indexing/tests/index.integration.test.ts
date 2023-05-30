@@ -125,7 +125,7 @@ describe("IndexingService", () => {
 
       const indexingDb = await getIndexingDB()
 
-      await indexingDb.addCustomAsset(customAsset)
+      await indexingDb.addOrUpdateCustomAsset(customAsset)
 
       await indexingDb.saveTokenList(
         "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
@@ -297,7 +297,7 @@ describe("IndexingService", () => {
 
       const smartContractAsset = createSmartContractAsset()
 
-      await indexingDb.addCustomAsset(customAsset)
+      await indexingDb.addOrUpdateCustomAsset(customAsset)
       await indexingDb.saveTokenList(
         "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
         tokenList

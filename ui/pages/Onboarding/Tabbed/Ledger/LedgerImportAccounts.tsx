@@ -15,7 +15,7 @@ import SharedButton from "../../../../components/Shared/SharedButton"
 import LedgerContinueButton from "../../../../components/Ledger/LedgerContinueButton"
 import LedgerPanelContainer from "../../../../components/Ledger/LedgerPanelContainer"
 import OnboardingDerivationPathSelectAlt from "../../../../components/Onboarding/OnboardingDerivationPathSelect"
-import { scanWebsite } from "../../../../utils/constants"
+import { blockExplorer } from "../../../../utils/constants"
 
 const addressesPerPage = 6
 
@@ -179,7 +179,7 @@ function LedgerAccountList({
                           window
                             .open(
                               `${
-                                scanWebsite[selectedNetwork.chainID].url
+                                blockExplorer[selectedNetwork.chainID].url
                               }/address/${address}`,
                               "_blank"
                             )
