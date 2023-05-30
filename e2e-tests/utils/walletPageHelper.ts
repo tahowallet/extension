@@ -57,7 +57,7 @@ export default class WalletPageHelper {
     const accountLabelRegEx = new RegExp(`^${regexAccountLabel}$`)
     await expect(
       this.popup.getByTestId("top_menu_profile_button").last()
-    ).toHaveText(accountLabelRegEx)
+    ).toHaveText(accountLabelRegEx, { timeout: 240000 })
     await this.popup
       .getByTestId("top_menu_profile_button")
       .last()
@@ -92,8 +92,8 @@ export default class WalletPageHelper {
     regexAccountLabel: string // an account label in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
   ): Promise<void> {
     await expect(this.popup.getByText("Total account balance")).toBeVisible({
-      timeout: 120000,
-    }) // we need longer timeout, because it takes longer to load this section
+      timeout: 240000,
+    }) // we need longer timeout, because on fork it often takes long to load this section
     await expect(this.popup.getByTestId("wallet_balance")).toHaveText(
       /^\$(0|\d+\.\d{2})$/
     )

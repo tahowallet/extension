@@ -15,7 +15,7 @@ const CI_ENV = typeof process.env.CI === "string"
 const config: PlaywrightTestConfig = {
   testDir: "./e2e-tests",
   /* Maximum time one test can run for. */
-  timeout: 120 * SECOND,
+  timeout: 240 * SECOND,
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
