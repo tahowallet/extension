@@ -59,6 +59,13 @@ export type CachedTokenList = TokenListCitation & {
   list: TokenList
 }
 
+/*
+ * CustomAsset provides the ability to mark an asset as removed in the database.
+ * This state should only be stored in the db and not percolated to the user interface.
+ * The UI sees the asset as actually removed but the db tracks that it once existed and was removed.
+ * Used only for checking if an unverified, discovered (not added) asset should be added to the asset list.
+ *
+ */
 type CustomAsset = Omit<SmartContractFungibleAsset, "metadata"> & {
   metadata?: NetworkSpecificAssetMetadata & { removed?: boolean }
 }

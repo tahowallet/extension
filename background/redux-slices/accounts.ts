@@ -13,6 +13,7 @@ import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
   isBuiltInNetworkBaseAsset,
+  isSameAsset,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
@@ -430,7 +431,11 @@ const accountSlice = createSlice({
       Object.keys(allAccounts).forEach((address) => {
         const account = allAccounts[address]
         if (account !== "loading") {
-          delete account.balances[asset.symbol]
+          Object.values(account.balances).forEach(({ assetAmount }) => {
+            if (isSameAsset(assetAmount.asset, asset)) {
+              delete account.balances[assetAmount.asset.symbol]
+            }
+          })
         }
       })
 

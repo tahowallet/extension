@@ -15,6 +15,7 @@ import { findClosestAssetIndex } from "../lib/asset-similarity"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
   isBuiltInNetworkBaseAsset,
+  isSameAsset,
   sameBuiltInNetworkBaseAsset,
 } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
@@ -130,14 +131,7 @@ const assetsSlice = createSlice({
       immerState,
       { payload: removedAsset }: { payload: AnyAsset }
     ) => {
-      return immerState.filter(
-        (asset) =>
-          !(
-            "contractAddress" in asset &&
-            "contractAddress" in removedAsset &&
-            sameEVMAddress(asset.contractAddress, removedAsset.contractAddress)
-          )
-      )
+      return immerState.filter((asset) => !isSameAsset(asset, removedAsset))
     },
   },
 })
@@ -202,6 +196,10 @@ export const hideAsset = createBackgroundAsyncThunk(
   }
 )
 
+/**
+ * Removes the custom asset from the user interface.
+ * The token should be removed from the assets list and all references associated with it.
+ */
 export const removeAssetData = createBackgroundAsyncThunk(
   "assets/removeAssetData",
   async (

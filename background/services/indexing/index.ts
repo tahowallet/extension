@@ -593,10 +593,11 @@ export default class IndexingService extends BaseService<Events> {
 
   async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {
     const metadata = {
-      ...(asset.metadata ?? {}),
+      ...asset.metadata,
       removed: true,
     }
 
+    // The updated metadata should only be sent to the db
     await this.db.addOrUpdateCustomAsset({ ...asset, metadata })
     await this.cacheAssetsForNetwork(asset.homeNetwork)
     this.emitter.emit("removeAssetData", asset)
@@ -669,20 +670,24 @@ export default class IndexingService extends BaseService<Events> {
     }
 
     if (customAsset) {
-      if (metadata) {
-        customAsset.metadata ??= {}
-        Object.assign(customAsset.metadata, metadata)
+      const isRemoved = customAsset?.metadata?.removed ?? false
+      const isVerified = metadata.verified ?? false
+      // If the asset has been removed, it should be added again when the user did it manually by import.
+      if (!isRemoved || (isRemoved && isVerified)) {
+        if (metadata) {
+          customAsset.metadata ??= {}
+          Object.assign(customAsset.metadata, metadata)
 
-        if (metadata.verified) {
-          customAsset.metadata.removed = false
+          if (isRemoved) {
+            customAsset.metadata.removed = false
+          }
         }
+        await this.addOrUpdateCustomAsset(customAsset)
+        this.emitter.emit("refreshAsset", customAsset)
+        // TODO if we still don't have anything, use a contract read + a
+        // CoinGecko lookup
+        await this.addAssetToTrack(customAsset)
       }
-
-      await this.addOrUpdateCustomAsset(customAsset)
-      this.emitter.emit("refreshAsset", customAsset)
-      // TODO if we still don't have anything, use a contract read + a
-      // CoinGecko lookup
-      await this.addAssetToTrack(customAsset)
     }
 
     return customAsset
