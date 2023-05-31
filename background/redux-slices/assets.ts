@@ -197,7 +197,7 @@ export const hideAsset = createBackgroundAsyncThunk(
 )
 
 /**
- * Removes the custom asset from the user interface.
+ * Removes the asset from the user interface.
  * The token should be removed from the assets list and all references associated with it.
  */
 export const removeAssetData = createBackgroundAsyncThunk(

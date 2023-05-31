@@ -301,7 +301,7 @@ export class IndexingDatabase extends Dexie {
 
   async getActiveCustomAssetsByNetworks(
     networks: EVMNetwork[]
-  ): Promise<SmartContractFungibleAsset[]> {
+  ): Promise<CustomAsset[]> {
     return (
       await this.customAssets
         .where("homeNetwork.chainID")
