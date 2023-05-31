@@ -674,7 +674,7 @@ export default class IndexingService extends BaseService<Events> {
       const isVerified = metadata.verified ?? false
       // If the asset has been removed, it should be added again when the user did it manually by import.
       if (!isRemoved || (isRemoved && isVerified)) {
-        if (metadata) {
+        if (Object.keys(metadata).length !== 0) {
           customAsset.metadata ??= {}
           Object.assign(customAsset.metadata, metadata)
 
