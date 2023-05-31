@@ -590,15 +590,21 @@ export default class IndexingService extends BaseService<Events> {
     asset: SmartContractFungibleAsset,
     addressNetwork: AddressOnNetwork
   ): Promise<void> {
-    const { metadata = {} } = asset
-    // Manually imported tokens are verified
-    metadata.verified = true
+    const customAsset = {
+      ...asset,
+      metadata: {
+        ...(asset.metadata ?? {}),
+        // Manually imported tokens are verified
+        verified: true,
+      },
+    }
 
     await this.addTokenToTrackByContract(
       asset.homeNetwork,
-      asset.contractAddress
+      asset.contractAddress,
+      customAsset.metadata
     )
-    await this.retrieveTokenBalances(addressNetwork, [asset])
+    await this.retrieveTokenBalances(addressNetwork, [customAsset])
   }
 
   /**
@@ -618,7 +624,7 @@ export default class IndexingService extends BaseService<Events> {
   async addTokenToTrackByContract(
     network: EVMNetwork,
     contractAddress: string,
-    metadata: { discoveryTxHash?: HexString } = {}
+    metadata: { discoveryTxHash?: HexString; verified?: boolean } = {}
   ): Promise<SmartContractFungibleAsset | undefined> {
     const normalizedAddress = normalizeEVMAddress(contractAddress)
 
