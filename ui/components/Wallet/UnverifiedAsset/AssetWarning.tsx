@@ -1,10 +1,10 @@
 import React, { ReactElement } from "react"
-import {
-  AnyAssetMetadata,
-  SmartContractFungibleAsset,
-} from "@tallyho/tally-background/assets"
+import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
 import { useTranslation } from "react-i18next"
-import { updateAssetMetadata } from "@tallyho/tally-background/redux-slices/assets"
+import {
+  hideAsset,
+  updateAssetMetadata,
+} from "@tallyho/tally-background/redux-slices/assets"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import {
   selectCurrentAccountActivities,
@@ -14,6 +14,7 @@ import classNames from "classnames"
 import { isUnverifiedAssetByUser } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { useHistory } from "react-router-dom"
 import { Activity } from "@tallyho/tally-background/redux-slices/activities"
 import SharedButton from "../../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
@@ -40,6 +41,8 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
 
   const dispatch = useBackgroundDispatch()
 
+  const history = useHistory()
+
   const network = useBackgroundSelector(selectCurrentNetwork)
 
   const isUnverified = isUnverifiedAssetByUser(asset)
@@ -53,11 +56,18 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
 
   const blockExplorerUrl = getBlockExplorerURL(network)
 
-  const handleUpdateAssetMetadata = async (newMetadata: AnyAssetMetadata) => {
-    const metadata = { ...asset.metadata, ...newMetadata }
+  const handleVerifyAsset = async () => {
+    const metadata = { ...asset.metadata, verified: true }
     await dispatch(updateAssetMetadata({ asset, metadata }))
-    dispatch(setSnackbarMessage(t("snackbar")))
+    dispatch(setSnackbarMessage(t("verifyAssetSnackbar")))
     close()
+  }
+
+  const handleHideAsset = async () => {
+    await dispatch(hideAsset({ asset }))
+    dispatch(setSnackbarMessage(t("removeAssetSnackbar")))
+    close()
+    history.push("/")
   }
 
   const copyTxHash = (txHash: string) => {
@@ -160,17 +170,18 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
           <div className="asset_verify_actions">
             {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) ? (
               <>
-                {/* TODO Add logic for deleting asset */}
-                <SharedButton size="medium" type="secondary" onClick={() => {}}>
+                <SharedButton
+                  size="medium"
+                  type="secondary"
+                  onClick={() => handleHideAsset()}
+                >
                   {t("dontShow")}
                 </SharedButton>
                 {isUnverified && (
                   <SharedButton
                     size="medium"
                     type="primary"
-                    onClick={() =>
-                      handleUpdateAssetMetadata({ verified: true })
-                    }
+                    onClick={() => handleVerifyAsset()}
                   >
                     {t("addToAssetList")}
                   </SharedButton>

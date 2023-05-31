@@ -49,7 +49,7 @@ export type AssetMetadata = {
 /**
  * Every asset has metadata. Some of them have network-specific metadata.
  */
-type NetworkSpecificAssetMetadata = AssetMetadata & {
+export type NetworkSpecificAssetMetadata = AssetMetadata & {
   /**
    * Set on assets discovered through transaction annotations
    */

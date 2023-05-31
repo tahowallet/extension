@@ -36,9 +36,11 @@ import { productionNetworkInfo } from "../../components/TopMenu/TopMenuProtocolL
 import TopMenuProtocolListItem from "../../components/TopMenu/TopMenuProtocolListItem"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { useSetState } from "../../hooks/react-hooks"
+import { trimWithEllipsis } from "../../utils/textUtils"
 
 const HELPDESK_CUSTOM_TOKENS_LINK =
   "https://tahowallet.notion.site/Adding-Custom-Tokens-2facd9b82b5f4685a7d4766caeb05a4c"
+const MAX_SYMBOL_LENGTH = 10
 
 const PlaceholderIcon = () => (
   <div>
@@ -302,7 +304,12 @@ export default function SettingsAddCustomAsset(): ReactElement {
                   {assetData?.balance ?? t("asset.label.balance")}
                 </strong>
                 <span className="symbol">
-                  {assetData?.asset?.symbol ?? t("asset.label.symbol")}
+                  {assetData?.asset?.symbol
+                    ? trimWithEllipsis(
+                        assetData.asset.symbol,
+                        MAX_SYMBOL_LENGTH
+                      )
+                    : t("asset.label.symbol")}
                 </span>
               </div>
               <span className="network_name">{chosenNetwork.name}</span>
