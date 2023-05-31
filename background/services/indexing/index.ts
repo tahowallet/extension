@@ -590,19 +590,21 @@ export default class IndexingService extends BaseService<Events> {
     asset: SmartContractFungibleAsset,
     addressNetwork: AddressOnNetwork
   ): Promise<void> {
-    // eslint-disable-next-line no-param-reassign
-    asset.metadata = {
-      ...(asset.metadata ?? {}),
-      // Manually imported tokens are verified
-      verified: true,
+    const customAsset = {
+      ...asset,
+      metadata: {
+        ...(asset.metadata ?? {}),
+        // Manually imported tokens are verified
+        verified: true,
+      },
     }
 
     await this.addTokenToTrackByContract(
       asset.homeNetwork,
       asset.contractAddress,
-      asset.metadata
+      customAsset.metadata
     )
-    await this.retrieveTokenBalances(addressNetwork, [asset])
+    await this.retrieveTokenBalances(addressNetwork, [customAsset])
   }
 
   /**
