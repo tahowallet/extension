@@ -59,6 +59,11 @@ export const GOERLI_ETH: NetworkBaseAsset & Required<CoinGeckoAsset> = {
   ...ETH_DATA,
 }
 
+export const ZK_SYNC_ETH: NetworkBaseAsset & Required<CoinGeckoAsset> = {
+  ...BASE_ASSETS_BY_CUSTOM_NAME.ZK_SYNC_ETH,
+  ...ETH_DATA,
+}
+
 export const MATIC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
   ...BASE_ASSETS_BY_CUSTOM_NAME.MATIC,
   coinType: coinTypesByAssetSymbol.MATIC,
