@@ -17,6 +17,7 @@ import {
   POLYGON,
 } from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
+import { normalizeEVMAddress } from "../../lib/utils"
 import { AnyNetwork, NetworkBaseAsset } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
 
@@ -48,13 +49,6 @@ export type AssetDecimalAmount = {
  */
 export function isNetworkBaseAsset(asset: AnyAsset): asset is NetworkBaseAsset {
   return "chainID" in asset
-}
-
-export function sameNetworkBaseAsset(
-  asset: NetworkBaseAsset,
-  other: NetworkBaseAsset
-): boolean {
-  return asset.chainID === other.chainID
 }
 
 function isOptimismBaseAsset(asset: AnyAsset) {
@@ -130,7 +124,7 @@ export function getBuiltInNetworkBaseAsset(
  * @param asset2 any asset
  * @returns true if both assets are the same network base assets
  */
-export function sameBuiltInNetworkBaseAsset(
+export function sameNetworkBaseAsset(
   asset1: AnyAsset,
   asset2: AnyAsset
 ): boolean {
@@ -153,6 +147,20 @@ export function sameBuiltInNetworkBaseAsset(
     asset1.symbol === asset2.symbol &&
     asset1.chainID === asset2.chainID &&
     asset1.name === asset2.name
+  )
+}
+
+/**
+ * Tests whether two assets should be considered the same built in network base asset.
+ */
+export function sameBuiltInNetworkBaseAsset(
+  asset1: AnyAsset,
+  asset2: AnyAsset
+): boolean {
+  return BUILT_IN_NETWORK_BASE_ASSETS.some(
+    (baseAsset) =>
+      sameNetworkBaseAsset(baseAsset, asset1) &&
+      sameNetworkBaseAsset(baseAsset, asset2)
   )
 }
 
@@ -333,22 +341,62 @@ export function heuristicDesiredDecimalsForUnitPrice(
 }
 
 /**
+ * Check if the asset has a list of tokens.
+ * Assets that do not have it are considered untrusted.
+ *
+ */
+export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
+  if (asset) {
+    return !asset?.metadata?.tokenLists?.length
+  }
+  return false
+}
+
+/**
  * NB: non-base assets that don't have any token lists are considered
  * untrusted. Reifying base assets clearly will improve this check down the
  * road. Eventually, assets can be flagged as trusted by adding them to an
  * "internal" token list that users can export and share.
  *
  */
-export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
+export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
   if (asset) {
-    if (asset.metadata?.trusted === true) {
-      return false
+    if (asset.metadata?.verified !== undefined) {
+      // If we have verified metadata return it
+      return !asset.metadata.verified
     }
 
-    const numTokenLists = asset?.metadata?.tokenLists?.length ?? 0
     const baseAsset = isNetworkBaseAsset(asset)
+    const isUntrusted = isUntrustedAsset(asset)
 
-    return numTokenLists === 0 && !baseAsset
+    return !baseAsset && isUntrusted
   }
+
   return false
+}
+
+// FIXME Unify once asset similarity code is unified.
+export function isSameAsset(asset1: AnyAsset, asset2: AnyAsset): boolean {
+  if (typeof asset1 === "undefined" || typeof asset2 === "undefined") {
+    return false
+  }
+
+  if (
+    isSmartContractFungibleAsset(asset1) &&
+    isSmartContractFungibleAsset(asset2)
+  ) {
+    return (
+      normalizeEVMAddress(asset1.contractAddress) ===
+      normalizeEVMAddress(asset2.contractAddress)
+    )
+  }
+
+  if (
+    isSmartContractFungibleAsset(asset1) ||
+    isSmartContractFungibleAsset(asset2)
+  ) {
+    return false
+  }
+
+  return asset1.symbol === asset2.symbol
 }

@@ -52,7 +52,12 @@ import {
   updateAccountName,
   updateENSAvatar,
 } from "./redux-slices/accounts"
-import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
+import {
+  assetsLoaded,
+  newPricePoint,
+  refreshAsset,
+  removeAssetData,
+} from "./redux-slices/assets"
 import {
   setEligibility,
   setEligibilityLoading,
@@ -149,6 +154,7 @@ import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
 import {
+  AnyAssetMetadata,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
   isSmartContractFungibleAsset,
@@ -1022,7 +1028,7 @@ export default class Main extends BaseService<never> {
 
             return isSmartContract
           })
-          // Sort trusted last to prevent shadowing assets from token lists
+          // Sort verified last to prevent shadowing assets from token lists
           // FIXME: Balances should not be indexed by symbol in redux
           .sort((balance, otherBalance) => {
             const asset = balance.assetAmount.asset as SmartContractAsset
@@ -1068,6 +1074,18 @@ export default class Main extends BaseService<never> {
 
     this.indexingService.emitter.on("price", (pricePoint) => {
       this.store.dispatch(newPricePoint(pricePoint))
+    })
+
+    this.indexingService.emitter.on("refreshAsset", (asset) => {
+      this.store.dispatch(
+        refreshAsset({
+          asset,
+        })
+      )
+    })
+
+    this.indexingService.emitter.on("removeAssetData", (asset) => {
+      this.store.dispatch(removeAssetData({ asset }))
     })
   }
 
@@ -1773,11 +1791,15 @@ export default class Main extends BaseService<never> {
     })
   }
 
-  async setAssetTrustStatus(
+  async updateAssetMetadata(
     asset: SmartContractFungibleAsset,
-    isTrusted: boolean
+    metadata: AnyAssetMetadata
   ): Promise<void> {
-    await this.indexingService.setAssetTrustStatus(asset, isTrusted)
+    await this.indexingService.updateAssetMetadata(asset, metadata)
+  }
+
+  async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {
+    await this.indexingService.hideAsset(asset)
   }
 
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {
@@ -1895,21 +1917,14 @@ export default class Main extends BaseService<never> {
     }
   }
 
-  async importAccountCustomToken({
+  async importCustomToken({
     asset,
     addressNetwork,
   }: {
     asset: SmartContractFungibleAsset
     addressNetwork: AddressOnNetwork
   }): Promise<void> {
-    const { metadata = {} } = asset
-    // Manually imported tokens are trusted
-    metadata.trusted = true
-
-    await this.indexingService.importAccountCustomToken(
-      { ...asset, metadata },
-      addressNetwork
-    )
+    await this.indexingService.importCustomToken(asset, addressNetwork)
   }
 
   private connectPopupMonitor() {

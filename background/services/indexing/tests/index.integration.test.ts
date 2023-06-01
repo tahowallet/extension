@@ -125,7 +125,7 @@ describe("IndexingService", () => {
 
       const indexingDb = await getIndexingDB()
 
-      await indexingDb.addCustomAsset(customAsset)
+      await indexingDb.addOrUpdateCustomAsset(customAsset)
 
       await indexingDb.saveTokenList(
         "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
@@ -245,7 +245,7 @@ describe("IndexingService", () => {
         ).toEqual(["ETH", "TEST"])
       })
 
-      await indexingService.addCustomAsset(customAsset)
+      await indexingService.addOrUpdateCustomAsset(customAsset)
 
       expect(cacheSpy).toHaveBeenCalled()
 
@@ -297,7 +297,7 @@ describe("IndexingService", () => {
 
       const smartContractAsset = createSmartContractAsset()
 
-      await indexingDb.addCustomAsset(customAsset)
+      await indexingDb.addOrUpdateCustomAsset(customAsset)
       await indexingDb.saveTokenList(
         "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
         tokenList
@@ -354,7 +354,7 @@ describe("IndexingService", () => {
         tokenList
       )
 
-      await indexingService.addCustomAsset(smartContractAsset)
+      await indexingService.addOrUpdateCustomAsset(smartContractAsset)
       await indexingDb.addAssetToTrack(smartContractAsset)
 
       // Skip loading prices at service init
@@ -407,7 +407,7 @@ describe("IndexingService", () => {
         tokenList
       )
 
-      await indexingService.addCustomAsset(smartContractAsset)
+      await indexingService.addOrUpdateCustomAsset(smartContractAsset)
       await indexingDb.addAssetToTrack(smartContractAsset)
 
       // Skip loading prices at service init

@@ -1,5 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
-import { selectHideDust } from "../ui"
+import { selectHideDust, selectShowUnverifiedAssets } from "../ui"
 import { RootState } from ".."
 import {
   AccountType,
@@ -13,6 +13,7 @@ import {
   formatCurrencyAmount,
   heuristicDesiredDecimalsForUnitPrice,
   isNetworkBaseAsset,
+  isUnverifiedAssetByUser,
 } from "../utils/asset-utils"
 import {
   AnyAsset,
@@ -72,16 +73,46 @@ const shouldForciblyDisplayAsset = (
   return isDoggo || isNetworkBaseAsset(assetAmount.asset)
 }
 
+export function determineAssetDisplayAndVerify(
+  assetAmount: CompleteAssetAmount<AnyAsset>,
+  {
+    hideDust,
+    showUnverifiedAssets,
+  }: { hideDust: boolean; showUnverifiedAssets: boolean }
+): { displayAsset: boolean; verifiedAsset: boolean } {
+  const isVerified = !isUnverifiedAssetByUser(assetAmount.asset)
+
+  if (shouldForciblyDisplayAsset(assetAmount)) {
+    return { displayAsset: true, verifiedAsset: isVerified }
+  }
+
+  const isNotDust =
+    typeof assetAmount.mainCurrencyAmount === "undefined"
+      ? true
+      : assetAmount.mainCurrencyAmount > userValueDustThreshold
+  const isPresent = assetAmount.decimalAmount > 0
+  const showDust = !hideDust
+
+  const verificationStatusAllowsVisibility = showUnverifiedAssets || isVerified
+  const enoughBalanceToBeVisible = isPresent && (isNotDust || showDust)
+
+  return {
+    displayAsset:
+      verificationStatusAllowsVisibility && enoughBalanceToBeVisible,
+    verifiedAsset: isVerified,
+  }
+}
+
 const computeCombinedAssetAmountsData = (
   assetAmounts: AnyAssetAmount<AnyAsset>[],
   assets: AssetsState,
   mainCurrencySymbol: string,
-  currentNetwork: EVMNetwork,
-  hideDust: boolean
+  hideDust: boolean,
+  showUnverifiedAssets: boolean
 ): {
   allAssetAmounts: CompleteAssetAmount[]
   combinedAssetAmounts: CompleteAssetAmount[]
-  hiddenAssetAmounts: CompleteAssetAmount[]
+  unverifiedAssetAmounts: CompleteAssetAmount[]
   totalMainCurrencyAmount: number | undefined
 } => {
   // Derive account "assets"/assetAmount which include USD values using
@@ -152,35 +183,28 @@ const computeCombinedAssetAmountsData = (
       return asset1.mainCurrencyAmount === undefined ? 1 : -1
     })
 
-  const { combinedAssetAmounts, hiddenAssetAmounts } = allAssetAmounts.reduce<{
-    combinedAssetAmounts: CompleteAssetAmount[]
-    hiddenAssetAmounts: CompleteAssetAmount[]
-  }>(
-    (acc, assetAmount) => {
-      const isForciblyDisplayed = shouldForciblyDisplayAsset(assetAmount)
+  const { combinedAssetAmounts, unverifiedAssetAmounts } =
+    allAssetAmounts.reduce<{
+      combinedAssetAmounts: CompleteAssetAmount[]
+      unverifiedAssetAmounts: CompleteAssetAmount[]
+    }>(
+      (acc, assetAmount) => {
+        const { displayAsset, verifiedAsset } = determineAssetDisplayAndVerify(
+          assetAmount,
+          { hideDust, showUnverifiedAssets }
+        )
 
-      const isNotDust =
-        typeof assetAmount.mainCurrencyAmount === "undefined"
-          ? true
-          : assetAmount.mainCurrencyAmount > userValueDustThreshold
-      const isPresent = assetAmount.decimalAmount > 0
-      const isTrusted =
-        !!(assetAmount.asset?.metadata?.tokenLists?.length ?? 0) ||
-        assetAmount.asset.metadata?.trusted
-
-      // Hide dust, untrusted assets and missing amounts.
-      if (
-        isForciblyDisplayed ||
-        (isTrusted && (hideDust ? isNotDust && isPresent : isPresent))
-      ) {
-        acc.combinedAssetAmounts.push(assetAmount)
-      } else if (isPresent) {
-        acc.hiddenAssetAmounts.push(assetAmount)
-      }
-      return acc
-    },
-    { combinedAssetAmounts: [], hiddenAssetAmounts: [] }
-  )
+        if (displayAsset) {
+          if (verifiedAsset) {
+            acc.combinedAssetAmounts.push(assetAmount)
+          } else {
+            acc.unverifiedAssetAmounts.push(assetAmount)
+          }
+        }
+        return acc
+      },
+      { combinedAssetAmounts: [], unverifiedAssetAmounts: [] }
+    )
 
   // Keep a tally of the total user value; undefined if no main currency data
   // is available.
@@ -195,7 +219,7 @@ const computeCombinedAssetAmountsData = (
   return {
     allAssetAmounts,
     combinedAssetAmounts,
-    hiddenAssetAmounts,
+    unverifiedAssetAmounts,
     totalMainCurrencyAmount,
   }
 }
@@ -212,17 +236,17 @@ export const getAssetsState = (state: RootState): AssetsState => state.assets
 export const selectAccountAndTimestampedActivities = createSelector(
   getAccountState,
   getAssetsState,
-  selectCurrentNetwork,
   selectHideDust,
+  selectShowUnverifiedAssets,
   selectMainCurrencySymbol,
-  (account, assets, currentNetwork, hideDust, mainCurrencySymbol) => {
+  (account, assets, hideDust, showUnverifiedAssets, mainCurrencySymbol) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
       computeCombinedAssetAmountsData(
         account.combinedData.assets,
         assets,
         mainCurrencySymbol,
-        currentNetwork,
-        hideDust
+        hideDust,
+        showUnverifiedAssets
       )
 
     return {
@@ -243,10 +267,16 @@ export const selectAccountAndTimestampedActivities = createSelector(
 export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   getAssetsState,
-  selectCurrentNetwork,
   selectHideDust,
+  selectShowUnverifiedAssets,
   selectMainCurrencySymbol,
-  (currentAccount, assets, currentNetwork, hideDust, mainCurrencySymbol) => {
+  (
+    currentAccount,
+    assets,
+    hideDust,
+    showUnverifiedAssets,
+    mainCurrencySymbol
+  ) => {
     if (typeof currentAccount === "undefined" || currentAccount === "loading") {
       return undefined
     }
@@ -258,20 +288,20 @@ export const selectCurrentAccountBalances = createSelector(
     const {
       allAssetAmounts,
       combinedAssetAmounts,
-      hiddenAssetAmounts,
+      unverifiedAssetAmounts,
       totalMainCurrencyAmount,
     } = computeCombinedAssetAmountsData(
       assetAmounts,
       assets,
       mainCurrencySymbol,
-      currentNetwork,
-      hideDust
+      hideDust,
+      showUnverifiedAssets
     )
 
     return {
       allAssetAmounts,
       assetAmounts: combinedAssetAmounts,
-      hiddenAssetAmounts,
+      unverifiedAssetAmounts,
       totalMainCurrencyValue: totalMainCurrencyAmount
         ? formatCurrencyAmount(
             mainCurrencySymbol,
