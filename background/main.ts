@@ -39,7 +39,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes, NormalizedEVMAddress } from "./types"
-import { SignedTransaction } from "./networks"
+import { EVMNetwork, SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -1917,14 +1917,11 @@ export default class Main extends BaseService<never> {
     }
   }
 
-  async importCustomToken({
-    asset,
-    addressNetwork,
-  }: {
-    asset: SmartContractFungibleAsset
-    addressNetwork: AddressOnNetwork
-  }): Promise<void> {
-    await this.indexingService.importCustomToken(asset, addressNetwork)
+  async importCustomToken(
+    asset: SmartContractFungibleAsset,
+    network: EVMNetwork
+  ): Promise<void> {
+    await this.indexingService.importCustomToken(asset, network)
   }
 
   private connectPopupMonitor() {

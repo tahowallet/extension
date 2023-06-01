@@ -376,18 +376,14 @@ export const importCustomToken = createBackgroundAsyncThunk(
   async (
     {
       asset,
+      network,
     }: {
       asset: SmartContractFungibleAsset
+      network: EVMNetwork
     },
-    { getState, extra: { main } }
+    { extra: { main } }
   ) => {
-    const state = getState() as RootState
-    const currentAccount = state.ui.selectedAccount
-
-    await main.importCustomToken({
-      asset,
-      addressNetwork: currentAccount,
-    })
+    await main.importCustomToken(asset, network)
   }
 )
 

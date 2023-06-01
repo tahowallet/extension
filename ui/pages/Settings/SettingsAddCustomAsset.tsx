@@ -144,7 +144,9 @@ export default function SettingsAddCustomAsset(): ReactElement {
       return
     }
 
-    await dispatch(importCustomToken({ asset: assetData.asset }))
+    await dispatch(
+      importCustomToken({ asset: assetData.asset, network: chosenNetwork })
+    )
     await dispatch(setSnackbarMessage(t("snackbar.success")))
     history.push("/")
   }

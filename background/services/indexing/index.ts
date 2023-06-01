@@ -605,7 +605,7 @@ export default class IndexingService extends BaseService<Events> {
 
   async importCustomToken(
     asset: SmartContractFungibleAsset,
-    addressNetwork: AddressOnNetwork
+    network: EVMNetwork
   ): Promise<void> {
     const customAsset = {
       ...asset,
@@ -621,7 +621,15 @@ export default class IndexingService extends BaseService<Events> {
       asset.contractAddress,
       customAsset.metadata
     )
-    await this.retrieveTokenBalances(addressNetwork, [customAsset])
+
+    const accounts = await this.chainService.getAccountsToTrackByNetwork(
+      network
+    )
+    await Promise.all(
+      accounts.map(async (addressNetwork) => {
+        await this.retrieveTokenBalances(addressNetwork, [customAsset])
+      })
+    )
   }
 
   /**
