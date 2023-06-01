@@ -40,4 +40,5 @@ The E2E tests are located in the `../e2e-tests` directory. Only those with
 To run specific test, go to root and run `npx playwright test <file_name>`.
 
 To run all tests designed for the fork, go to root and run
-`find e2e-tests -type f -name "*-fork.*" -exec npx playwright test {} \;`.
+`yarn run test:e2e-fork` ( or its equivalent
+`find e2e-tests -type f -name "*-fork.*" -exec npx playwright test {} \;`).
