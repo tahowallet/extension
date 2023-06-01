@@ -25,9 +25,9 @@ When run on `1337`:
 :heavy_plus_sign: we can use specific block as a start.  
 :heavy_plus_sign: we can send txs and do swaps (balances updated)  
 :heavy_plus_sign: we can browse NFTs  
-:heavy_minus_sign: we can't browse Activities  
+:heavy_minus_sign: the activities are not loading
 :heavy_minus_sign: wallet shows strange assets  
-:heavy_minus_sign: if no cashe exists, loading assets takes long, account
+:heavy_minus_sign: if no cache exists, loading assets takes long, account
 avatars may look strange
 
 State of the network is lost after Hardhat reset.
@@ -37,9 +37,7 @@ State of the network is lost after Hardhat reset.
 The E2E tests are located in the `../e2e-tests` directory. Only those with
 `-fork` suffix are meant to be run on forked Mainnet.
 
-To run those tests, go to `..` and run `npx playwright test` .
+To run specific test, go to root and run `npx playwright test <file_name>`.
 
-To run specific test, go to `..` and run `npx playwright test <file_name>`.
-
-To run all tests designed for fork, go to `..` and run
+To run all tests designed for the fork, go to root and run
 `find e2e-tests -type f -name "*-fork.*" -exec npx playwright test {} \;`.
