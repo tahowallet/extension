@@ -56,6 +56,7 @@ import {
   assetsLoaded,
   newPricePoint,
   refreshAsset,
+  removeAssetData,
 } from "./redux-slices/assets"
 import {
   setEligibility,
@@ -1082,6 +1083,10 @@ export default class Main extends BaseService<never> {
         })
       )
     })
+
+    this.indexingService.emitter.on("removeAssetData", (asset) => {
+      this.store.dispatch(removeAssetData({ asset }))
+    })
   }
 
   async connectEnrichmentService(): Promise<void> {
@@ -1791,6 +1796,10 @@ export default class Main extends BaseService<never> {
     metadata: AnyAssetMetadata
   ): Promise<void> {
     await this.indexingService.updateAssetMetadata(asset, metadata)
+  }
+
+  async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {
+    await this.indexingService.hideAsset(asset)
   }
 
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {

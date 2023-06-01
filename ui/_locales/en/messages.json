@@ -827,7 +827,8 @@
       "discoveryTxHash": "Added from transaction",
       "dontShow": "Don’t show",
       "addToAssetList": "Add to asset list",
-      "snackbar": "Asset added to list",
+      "verifyAssetSnackbar":  "Asset added to list",
+      "removeAssetSnackbar": "Asset removed from list",
       "banner": {
         "titleUnverified": "Asset not verified",
         "titleVerified": "Asset verified by you",
