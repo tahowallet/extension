@@ -184,10 +184,6 @@ jobs:
         with:
           path: ci/cache
           key: ${{ runner.os }}-hardhat-${{ hashFiles('ci/cache/*.json') }}
-      - name: Install Hardhat
-        run: |
-          cd ci
-          yarn install --frozen-lockfile
       - name: Run Hardhat
         env:
           CHAIN_API_URL: ${{ secrets.ALCHEMY_URL }}

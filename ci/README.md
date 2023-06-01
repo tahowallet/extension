@@ -10,12 +10,10 @@ To run the extension on a forked Mainnet:
    `CHAIN_API_URL=<Insert_your_API_URL_here>` (needed for running Hardhat, may
    be e.g. Alchemy or Infura API URL)
 
-2. Run the following commands:  
-   `cd ..`
+2. Run the following commands from root:  
    `yarn install`  
    `yarn start` (or `yarn build`)  
    `cd ci`  
-   `yarn install`  
    `npx hardhat node --network hardhat`
 
 3. Unpack `./dist/chrome` to Chrome Extensions.
