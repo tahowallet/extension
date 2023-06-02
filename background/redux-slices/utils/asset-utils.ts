@@ -17,8 +17,8 @@ import {
   POLYGON,
 } from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
-import { normalizeEVMAddress } from "../../lib/utils"
-import { AnyNetwork, NetworkBaseAsset } from "../../networks"
+import { sameEVMAddress } from "../../lib/utils"
+import { AnyNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
 
 /**
@@ -386,8 +386,8 @@ export function isSameAsset(asset1: AnyAsset, asset2: AnyAsset): boolean {
     isSmartContractFungibleAsset(asset2)
   ) {
     return (
-      normalizeEVMAddress(asset1.contractAddress) ===
-      normalizeEVMAddress(asset2.contractAddress)
+      sameNetwork(asset1.homeNetwork, asset2.homeNetwork) &&
+      sameEVMAddress(asset1.contractAddress, asset2.contractAddress)
     )
   }
 
@@ -396,6 +396,10 @@ export function isSameAsset(asset1: AnyAsset, asset2: AnyAsset): boolean {
     isSmartContractFungibleAsset(asset2)
   ) {
     return false
+  }
+
+  if (isNetworkBaseAsset(asset1) && isNetworkBaseAsset(asset2)) {
+    return asset1.chainID === asset2.chainID
   }
 
   return asset1.symbol === asset2.symbol
