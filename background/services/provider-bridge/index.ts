@@ -67,7 +67,7 @@ export type AddChainRequestData = ValidatedAddEthereumChainParameter & {
  */
 export default class ProviderBridgeService extends BaseService<Events> {
   #pendingPermissionsRequests: {
-    [origin: string]: (value: unknown) => void
+    [origin: string]: (_: unknown) => void
   } = {}
 
   #pendingAddNetworkRequests: {
@@ -86,13 +86,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
     Events,
     ProviderBridgeService,
     [Promise<InternalEthereumProviderService>, Promise<PreferenceService>]
-  > = async (internalEthereumProviderService, preferenceService) => {
-    return new this(
+  > = async (internalEthereumProviderService, preferenceService) =>
+    new this(
       await getOrCreateDB(),
       await internalEthereumProviderService,
       await preferenceService
     )
-  }
 
   private constructor(
     private db: ProviderBridgeServiceDatabase,
@@ -185,7 +184,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           }
 
           if (typeof event.request.params[0] !== "string") {
-            logger.warn(`invalid 'tally_setClaimReferrer' request`)
+            logger.warn("invalid 'tally_setClaimReferrer' request")
             return
           }
 
@@ -196,7 +195,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           if (typeof wcUri === "string") {
             await this.emitter.emit("walletConnectInit", wcUri)
           } else {
-            logger.warn(`invalid 'tally_walletConnectInit' request`)
+            logger.warn("invalid 'tally_walletConnectInit' request")
           }
 
           break

@@ -1,4 +1,10 @@
-import React, { ReactElement, useRef, useState } from "react"
+import React, {
+  ReactElement,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { useTranslation } from "react-i18next"
 import { useOnClickOutside } from "../../hooks"
 import AccountitemOptionLabel from "../AccountItem/AccountItemOptionLabel"
@@ -39,11 +45,19 @@ type ContentProps = {
 
 function DropdownContainer({ children }: DropdownContainerProps): ReactElement {
   const [isOpen, setIsOpen] = useState(false)
+  const dropdownToggle = useCallback(
+    (value?: boolean) =>
+      setIsOpen(value ?? ((existingValue) => !existingValue)),
+    [setIsOpen]
+  )
 
-  const contextValue: DropdownContextValue = {
-    isOpen,
-    toggle: (value) => setIsOpen(value ?? ((p) => !p)),
-  }
+  const contextValue: DropdownContextValue = useMemo<DropdownContextValue>(
+    () => ({
+      isOpen,
+      toggle: dropdownToggle,
+    }),
+    [isOpen, dropdownToggle]
+  )
 
   return (
     <DropdownContext.Provider value={contextValue}>

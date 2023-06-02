@@ -27,21 +27,13 @@ export const filterByState = (ability: Ability, state: State): boolean => {
   }
 }
 
-export const filterByType = (type: AbilityType, types: string[]): boolean => {
-  return types.includes(type)
-}
+export const filterByType = (type: AbilityType, types: string[]): boolean =>
+  types.includes(type)
 
-export const filterByAddress = (
-  address: string,
-  accounts: string[]
-): boolean => {
-  return accounts.includes(address)
-}
+export const filterByAddress = (address: string, accounts: string[]): boolean =>
+  accounts.includes(address)
 
-export const filterAbility = (ability: Ability, filter: Filter): boolean => {
-  return (
-    filterByAddress(ability.address, filter.accounts) &&
-    filterByState(ability, filter.state) &&
-    filterByType(ability.type, filter.types)
-  )
-}
+export const filterAbility = (ability: Ability, filter: Filter): boolean =>
+  filterByAddress(ability.address, filter.accounts) &&
+  filterByState(ability, filter.state) &&
+  filterByType(ability.type, filter.types)

@@ -89,13 +89,12 @@ export const selectTransactionMainCurrencyPricePoint = createSelector(
     assets,
     mainCurrencySymbol,
     currentNetwork
-  ): PricePoint | undefined => {
-    return selectAssetPricePoint(
+  ): PricePoint | undefined =>
+    selectAssetPricePoint(
       assets,
       baseAsset ?? currentNetwork.baseAsset, // Fallback to current network's base asset
       mainCurrencySymbol
     )
-  }
 )
 
 export const selectTransactionData = createSelector(

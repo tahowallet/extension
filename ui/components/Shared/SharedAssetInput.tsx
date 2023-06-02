@@ -139,8 +139,8 @@ function SelectAssetMenuContent<T extends AnyAsset>(
   const filteredAssets =
     searchTerm.trim() === ""
       ? assets
-      : assets.filter(({ asset }) => {
-          return (
+      : assets.filter(
+          ({ asset }) =>
             asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
             ("contractAddress" in asset &&
               asset.contractAddress &&
@@ -152,8 +152,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
                 normalizeEVMAddress(searchTerm).replace(/^0x0?/, "0x")
               ) &&
               asset.contractAddress.length >= searchTerm.length)
-          )
-        })
+        )
 
   const sortedFilteredAssets = filteredAssets.sort(
     searchTerm.trim() === ""
@@ -588,23 +587,19 @@ export default function SharedAssetInput<T extends AnyAsset>(
         {label}
       </label>
 
-      {displayedBalance ? (
+      {displayedBalance && (
         <div className="amount_controls">
           <span className="available">
             {t("send.balance", {
               amount: displayedBalance,
             })}
           </span>
-          {isMaxButtonVisible ? (
+          {isMaxButtonVisible && (
             <button type="button" className="max" onClick={setMaxBalance}>
               Max
             </button>
-          ) : (
-            <></>
           )}
         </div>
-      ) : (
-        <></>
       )}
 
       <SharedSlideUpMenu

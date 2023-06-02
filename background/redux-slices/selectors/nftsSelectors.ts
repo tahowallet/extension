@@ -24,12 +24,11 @@ export const selectIsReloadingNFTs = createSelector(
 export const selectCurrentAccountNFTs = createSelector(
   selectNFTs,
   selectCurrentAccount,
-  (nfts, account) => {
-    return Object.values(
+  (nfts, account) =>
+    Object.values(
       nfts[account.network.chainID]?.[normalizeEVMAddress(account.address)] ??
         {}
     )
-  }
 )
 
 /* Filtering selectors */
@@ -74,13 +73,13 @@ export const selectEnrichedNFTFilters = createSelector(
 )
 
 /* Items selectors */
-const selectAllCollections = createSelector(selectNFTs, (nfts) => {
-  return Object.values(nfts).flatMap((byAddress) =>
+const selectAllCollections = createSelector(selectNFTs, (nfts) =>
+  Object.values(nfts).flatMap((byAddress) =>
     Object.values(byAddress).flatMap((byCollection) =>
       Object.values(byCollection)
     )
   )
-})
+)
 
 const selectAllNFTCollections = createSelector(
   selectAllCollections,

@@ -179,22 +179,18 @@ export function Main(): ReactElement {
                   <div>
                     <Switch location={transformedLocation}>
                       {pageList.map(
-                        ({ path, Component, hasTopBar, hasTabBar }) => {
-                          return (
-                            <Route path={path} key={path}>
-                              <CorePage
-                                hasTopBar={hasTopBar}
-                                hasTabBar={hasTabBar}
-                              >
-                                <ErrorBoundary
-                                  FallbackComponent={ErrorFallback}
-                                >
-                                  <Component location={transformedLocation} />
-                                </ErrorBoundary>
-                              </CorePage>
-                            </Route>
-                          )
-                        }
+                        ({ path, Component, hasTopBar, hasTabBar }) => (
+                          <Route path={path} key={path}>
+                            <CorePage
+                              hasTopBar={hasTopBar}
+                              hasTabBar={hasTabBar}
+                            >
+                              <ErrorBoundary FallbackComponent={ErrorFallback}>
+                                <Component location={transformedLocation} />
+                              </ErrorBoundary>
+                            </CorePage>
+                          </Route>
+                        )
                       )}
                     </Switch>
                   </div>
@@ -204,31 +200,27 @@ export function Main(): ReactElement {
           }}
         />
       </Router>
-      <>
-        <style jsx global>
-          {`
-            ::-webkit-scrollbar {
-              width: 0px;
-              background: transparent;
-            }
+      <style jsx global>
+        {`
+          ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+          }
 
-            ${animationStyles(isDirectionRight)}
+          ${animationStyles(isDirectionRight)}
 
-            .hide {
-              opacity: 0;
-            }
-          `}
-        </style>
-      </>
-      {isDappPopup && (
-        <style jsx global>
-          {`
+          .hide {
+            opacity: 0;
+          }
+
+          ${isDappPopup &&
+          `
             body {
               height: 100%;
             }
-          `}
-        </style>
-      )}
+           `}
+        `}
+      </style>
     </>
   )
 }

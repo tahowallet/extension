@@ -59,12 +59,10 @@ export default function EarnCard({ vault }: EarnCardProps): ReactElement {
           </div>
           <span className="token_name">{vault?.asset?.symbol}</span>
           {stage === EarnStages.ComingSoon && (
-            <>
-              <div className="coming_soon">
-                <div className="coming_soon_dots">...</div>
-                Coming soon
-              </div>
-            </>
+            <div className="coming_soon">
+              <div className="coming_soon_dots">...</div>
+              Coming soon
+            </div>
           )}
           {stage === EarnStages.PartialyLive && (
             <>

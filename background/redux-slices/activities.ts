@@ -185,7 +185,6 @@ export default activitiesSlice.reducer
 
 export const fetchSelectedActivityDetails = createBackgroundAsyncThunk(
   "activities/fetchSelectedActivityDetails",
-  async (activityHash: string, { extra: { main } }) => {
-    return main.getActivityDetails(activityHash)
-  }
+  async (activityHash: string, { extra: { main } }) =>
+    main.getActivityDetails(activityHash)
 )

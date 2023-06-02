@@ -23,16 +23,11 @@ import NFTImage from "./NFTImage"
 const MAX_DESCRIPTION_LENGTH = 180
 const LINK_REGEX = /\[([\w\s\d]+)\]\((https?:\/\/[\w\d./?=#]+)\)/gm
 
-const removeMarkdownLinks = (description: string) => {
-  return description.replace(LINK_REGEX, "$1")
-}
+const removeMarkdownLinks = (description: string) =>
+  description.replace(LINK_REGEX, "$1")
 
-const parseDescription = (description = "") => {
-  return trimWithEllipsis(
-    removeMarkdownLinks(description),
-    MAX_DESCRIPTION_LENGTH
-  )
-}
+const parseDescription = (description = "") =>
+  trimWithEllipsis(removeMarkdownLinks(description), MAX_DESCRIPTION_LENGTH)
 
 export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const { nft, collection } = props

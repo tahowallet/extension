@@ -127,13 +127,8 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     Events,
     InternalEthereumProviderService,
     [Promise<ChainService>, Promise<PreferenceService>]
-  > = async (chainService, preferenceService) => {
-    return new this(
-      await getOrCreateDB(),
-      await chainService,
-      await preferenceService
-    )
-  }
+  > = async (chainService, preferenceService) =>
+    new this(await getOrCreateDB(), await chainService, await preferenceService)
 
   private constructor(
     private db: InternalEthereumProviderDatabase,
@@ -421,7 +416,11 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     const isRootstock = currentNetwork.chainID === ROOTSTOCK.chainID
 
     if (isRootstock) {
-      ;[transactionRequest.from, transactionRequest.to].forEach((address) => {
+      const transactionAddresses = [
+        transactionRequest.from,
+        transactionRequest.to,
+      ]
+      transactionAddresses.forEach((address) => {
         if (
           address &&
           isMixedCaseAddress(address) &&

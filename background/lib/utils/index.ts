@@ -179,9 +179,7 @@ export function truncateAddress(address: string): string {
 export const getNumericStringValueFromBigNumber = (
   value: BigNumber,
   tokenDecimals: number
-): string => {
-  return Number(value.toBigInt() / 10n ** BigInt(tokenDecimals)).toString()
-}
+): string => Number(value.toBigInt() / 10n ** BigInt(tokenDecimals)).toString()
 
 export const numberTo32BytesHex = (value: string, decimals: number): string => {
   const withDecimals = BigInt(value) * 10n ** BigInt(decimals)
@@ -189,9 +187,8 @@ export const numberTo32BytesHex = (value: string, decimals: number): string => {
   return hex
 }
 
-export const isMaxUint256 = (amount: BigNumber | bigint | string): boolean => {
-  return ethers.BigNumber.from(amount).eq(ethers.constants.MaxUint256)
-}
+export const isMaxUint256 = (amount: BigNumber | bigint | string): boolean =>
+  ethers.BigNumber.from(amount).eq(ethers.constants.MaxUint256)
 
 /**
  * Converts a string of hexidecimals bytes to ascii text
@@ -205,7 +202,9 @@ export const hexToAscii = (hex_: string): string => {
 }
 
 export const wait = (ms: number): Promise<void> =>
-  new Promise<void>((r) => setTimeout(r, ms))
+  new Promise<void>((r) => {
+    setTimeout(r, ms)
+  })
 
 export const getUNIXTimestamp = (time = Date.now()): UNIXTime =>
   Math.floor(time / 1000)

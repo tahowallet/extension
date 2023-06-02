@@ -73,14 +73,13 @@ export default class WalletConnectService extends BaseService<Events> {
     internalEthereumProviderService,
     preferenceService,
     chainService
-  ) => {
-    return new this(
+  ) =>
+    new this(
       await providerBridgeService,
       await internalEthereumProviderService,
       await preferenceService,
       await chainService
     )
-  }
 
   private constructor(
     private providerBridgeService: ProviderBridgeService,

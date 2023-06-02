@@ -90,19 +90,17 @@ function tokenListToFungibleAssetsForNetwork(
         // Filter out assets with the same symbol as the network base asset
         symbol !== network.baseAsset.symbol
     )
-    .map((tokenMetadata) => {
-      return {
-        metadata: {
-          ...(tokenMetadata.logoURI ? { logoURL: tokenMetadata.logoURI } : {}),
-          tokenLists: [tokenListCitation],
-        },
-        name: tokenMetadata.name,
-        symbol: tokenMetadata.symbol,
-        decimals: tokenMetadata.decimals,
-        homeNetwork: network,
-        contractAddress: normalizeEVMAddress(tokenMetadata.address),
-      }
-    })
+    .map((tokenMetadata) => ({
+      metadata: {
+        ...(tokenMetadata.logoURI ? { logoURL: tokenMetadata.logoURI } : {}),
+        tokenLists: [tokenListCitation],
+      },
+      name: tokenMetadata.name,
+      symbol: tokenMetadata.symbol,
+      decimals: tokenMetadata.decimals,
+      homeNetwork: network,
+      contractAddress: normalizeEVMAddress(tokenMetadata.address),
+    }))
 }
 
 /**
@@ -176,9 +174,9 @@ export function mergeAssets<T extends FungibleAsset>(
 // As for cache key generation we are using the total number of assets that were provided.
 // This is not 100% accurate, but given that we are dealing with token lists it seems to be
 // a safe bet. The chances are slim that 1 asset is added and 1 is removed in 1 minute.
-export const memoizedMergeAssets = memoize(mergeAssets, (...assetLists) => {
-  return assetLists.reduce((acc, curr) => acc + curr.length, 0)
-})
+export const memoizedMergeAssets = memoize(mergeAssets, (...assetLists) =>
+  assetLists.reduce((acc, curr) => acc + curr.length, 0)
+)
 
 /*
  * Return all tokens in the provided lists, de-duplicated and structured in our

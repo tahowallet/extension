@@ -99,9 +99,8 @@ export function migrateReduxState(
       .filter(([version]) => parseInt(version, 10) > resolvedVersion)
       .map(([, migration]) => migration)
     migratedState = outstandingMigrations.reduce(
-      (state: Record<string, unknown>, migration: Migration) => {
-        return migration(state)
-      },
+      (state: Record<string, unknown>, migration: Migration) =>
+        migration(state),
       migratedState
     )
   }

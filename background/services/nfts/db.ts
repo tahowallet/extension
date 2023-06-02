@@ -36,13 +36,11 @@ export class NFTsDatabase extends Dexie {
       .stores({
         preferences: "++id",
       })
-      .upgrade((tx) => {
-        return tx.db.table("preferences").add(DEFAULT_PREFERENCES)
-      })
+      .upgrade((tx) => tx.db.table("preferences").add(DEFAULT_PREFERENCES))
 
-    this.on("populate", (tx) => {
-      return tx.db.table("preferences").add(DEFAULT_PREFERENCES)
-    })
+    this.on("populate", (tx) =>
+      tx.db.table("preferences").add(DEFAULT_PREFERENCES)
+    )
   }
 
   async updateNFTs(nfts: NFT[]): Promise<void> {

@@ -1,5 +1,5 @@
 /* Injected at compile time, see webpack config */
-const segmentB64 = `@@@SEGMENT_MEDIUM_BASE64@@@`
+const segmentB64 = "@@@SEGMENT_MEDIUM_BASE64@@@"
 
 const TAHO_LOGO_SVG = `
   <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" fill="none">

@@ -4,7 +4,7 @@ import { getLocalStorageItem, useLocalStorage } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedModal from "../Shared/SharedModal"
 
-const IMG = `/images/tahonamechange.gif`
+const IMG = "/images/tahonamechange.gif"
 // TODO update
 const LINK = "https://blog.taho.xyz/rename-announcement"
 

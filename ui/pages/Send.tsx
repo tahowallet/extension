@@ -250,14 +250,12 @@ export default function Send(): ReactElement {
                 resolved_address: resolvedNameToAddress,
               })}
             />
-            {addressIsValidating ? (
+            {addressIsValidating && (
               <p className="validating">
                 <SharedLoadingSpinner />
               </p>
-            ) : (
-              <></>
             )}
-            {resolvedNameToAddress ? (
+            {resolvedNameToAddress && (
               <button
                 type="button"
                 className="address"
@@ -270,13 +268,9 @@ export default function Send(): ReactElement {
                 />
                 {destinationAddress}
               </button>
-            ) : (
-              <></>
             )}
-            {addressErrorMessage !== undefined ? (
+            {addressErrorMessage !== undefined && (
               <p className="error">{addressErrorMessage}</p>
-            ) : (
-              <></>
             )}
           </div>
           <div className="send_footer standard_width_padded">

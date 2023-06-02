@@ -5,7 +5,11 @@ import {
   fetchSwapQuote,
   executeSwap,
 } from "@tallyho/tally-background/redux-slices/0x-swap"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import {
+  FeatureFlags,
+  isDisabled,
+  isEnabled,
+} from "@tallyho/tally-background/features"
 import {
   selectCurrentAccountBalances,
   selectCurrentAccountSigner,
@@ -383,172 +387,162 @@ export default function Swap(): ReactElement {
 
   return (
     <>
-      <>
-        <div className="standard_width">
-          <div className="back_button_wrap">
-            <SharedBackButton path="/" />
-          </div>
-          <div className="header">
-            <SharedActivityHeader label={t("swap.title")} activity="swap" />
-            <ReadOnlyNotice isLite />
-            {isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) ? (
-              <></>
-            ) : (
-              !isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) && (
-                // TODO: Add onClick function after design is ready
-                <SharedIcon
-                  icon="cog@2x.png"
-                  width={20}
-                  color="var(--green-60)"
-                  hoverColor="#fff"
-                  customStyles="margin: 17px 0 25px;"
-                />
-              )
+      <div className="standard_width">
+        <div className="back_button_wrap">
+          <SharedBackButton path="/" />
+        </div>
+        <div className="header">
+          <SharedActivityHeader label={t("swap.title")} activity="swap" />
+          <ReadOnlyNotice isLite />
+          {isDisabled(FeatureFlags.HIDE_TOKEN_FEATURES) &&
+            isDisabled(FeatureFlags.HIDE_SWAP_REWARDS) && (
+              // TODO: Add onClick function after design is ready
+              <SharedIcon
+                icon="cog@2x.png"
+                width={20}
+                color="var(--green-60)"
+                hoverColor="#fff"
+                customStyles="margin: 17px 0 25px;"
+              />
             )}
-          </div>
-          {isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) ? (
-            <></>
-          ) : (
-            isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) && (
-              <SharedBanner
-                id="swap_rewards"
-                canBeClosed
-                icon="notif-announcement"
-                iconColor="var(--link)"
-                customStyles="margin-bottom: 16px"
-              >
-                {t("swap.swapRewardsTeaser")}
-              </SharedBanner>
-            )
-          )}
-          <div className="form">
-            <div className="form_input">
-              <SharedAssetInput<SwappableAsset>
-                currentNetwork={currentNetwork}
-                amount={sellAmount}
-                amountMainCurrency={
-                  sellAmount
-                    ? quote?.priceDetails?.sellCurrencyAmount
-                    : undefined
-                }
-                showPriceDetails
-                isPriceDetailsLoading={isLoadingPriceDetails}
-                assetsAndAmounts={sellAssetAmounts}
-                selectedAsset={sellAsset}
-                isDisabled={loadingSellAmount}
-                onAssetSelect={updateSellAsset}
-                onFocus={() => setAmountInputHasFocus(true)}
-                onBlur={() => setAmountInputHasFocus(false)}
-                onErrorMessageChange={(error) => setHasError(!!error)}
-                mainCurrencySign={mainCurrencySign}
-                onAmountChange={(newAmount, error) => {
-                  setSellAmount(newAmount)
-
-                  if (!error) {
-                    requestQuoteUpdate({
-                      type: "getBuyAmount",
-                      amount: newAmount,
-                      sellAsset,
-                      buyAsset,
-                    })
-                  }
-                }}
-                label={t("swap.from")}
-              />
-            </div>
-            <button
-              className="icon_change"
-              type="button"
-              onClick={flipSwap}
-              disabled={loadingQuote}
+        </div>
+        {isDisabled(FeatureFlags.HIDE_TOKEN_FEATURES) &&
+          isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) && (
+            <SharedBanner
+              id="swap_rewards"
+              canBeClosed
+              icon="notif-announcement"
+              iconColor="var(--link)"
+              customStyles="margin-bottom: 16px"
             >
-              {t("swap.switchAssets")}
-            </button>
-            <div className="form_input">
-              <SharedAssetInput<SwappableAsset>
-                currentNetwork={currentNetwork}
-                amount={buyAmount}
-                amountMainCurrency={
-                  buyAmount ? quote?.priceDetails?.buyCurrencyAmount : undefined
+              {t("swap.swapRewardsTeaser")}
+            </SharedBanner>
+          )}
+        <div className="form">
+          <div className="form_input">
+            <SharedAssetInput<SwappableAsset>
+              currentNetwork={currentNetwork}
+              amount={sellAmount}
+              amountMainCurrency={
+                sellAmount ? quote?.priceDetails?.sellCurrencyAmount : undefined
+              }
+              showPriceDetails
+              isPriceDetailsLoading={isLoadingPriceDetails}
+              assetsAndAmounts={sellAssetAmounts}
+              selectedAsset={sellAsset}
+              isDisabled={loadingSellAmount}
+              onAssetSelect={updateSellAsset}
+              onFocus={() => setAmountInputHasFocus(true)}
+              onBlur={() => setAmountInputHasFocus(false)}
+              onErrorMessageChange={(error) => setHasError(!!error)}
+              mainCurrencySign={mainCurrencySign}
+              onAmountChange={(newAmount, error) => {
+                setSellAmount(newAmount)
+
+                if (!error) {
+                  requestQuoteUpdate({
+                    type: "getBuyAmount",
+                    amount: newAmount,
+                    sellAsset,
+                    buyAsset,
+                  })
                 }
-                priceImpact={quote?.priceDetails?.priceImpact}
-                isPriceDetailsLoading={isLoadingPriceDetails}
-                showPriceDetails
-                // FIXME: Merge master asset list with account balances.
-                assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
-                selectedAsset={buyAsset}
-                isDisabled={loadingBuyAmount}
-                onFocus={() => setAmountInputHasFocus(true)}
-                onBlur={() => setAmountInputHasFocus(false)}
-                showMaxButton={false}
-                mainCurrencySign={mainCurrencySign}
-                onAssetSelect={updateBuyAsset}
-                onAmountChange={(newAmount, error) => {
-                  setBuyAmount(newAmount)
-                  if (error) {
-                    requestQuoteUpdate.cancel()
-                    return
-                  }
-                  if (newAmount) {
-                    requestQuoteUpdate({
-                      type: "getSellAmount",
-                      amount: newAmount,
-                      sellAsset,
-                      buyAsset,
-                    })
-                  }
-                }}
-                label={t("swap.to")}
-              />
-              <div className="loading_wrapper">
-                {loadingQuote && sellAsset && buyAsset && (
-                  <SharedLoadingDoggo
-                    size={54}
-                    message={t("swap.loadingQuote")}
-                  />
-                )}
-              </div>
-            </div>
-            {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
-              <div className="settings_wrap">
-                <SwapRewardsCard />
-              </div>
-            ) : null}
-            <div className="footer standard_width_padded">
-              {quoteAppliesToCurrentAssets && quote?.needsApproval ? (
-                <ApproveQuoteBtn
-                  isApprovalInProgress={!!isApprovalInProgress}
-                  isDisabled={
-                    isReadOnlyAccount || !quote || hasError || isLoading
-                  }
-                  onApproveClick={approveAsset}
-                  isLoading={isLoading}
+              }}
+              label={t("swap.from")}
+            />
+          </div>
+          <button
+            className="icon_change"
+            type="button"
+            onClick={flipSwap}
+            disabled={loadingQuote}
+          >
+            {t("swap.switchAssets")}
+          </button>
+          <div className="form_input">
+            <SharedAssetInput<SwappableAsset>
+              currentNetwork={currentNetwork}
+              amount={buyAmount}
+              amountMainCurrency={
+                buyAmount ? quote?.priceDetails?.buyCurrencyAmount : undefined
+              }
+              priceImpact={quote?.priceDetails?.priceImpact}
+              isPriceDetailsLoading={isLoadingPriceDetails}
+              showPriceDetails
+              // FIXME: Merge master asset list with account balances.
+              assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
+              selectedAsset={buyAsset}
+              isDisabled={loadingBuyAmount}
+              onFocus={() => setAmountInputHasFocus(true)}
+              onBlur={() => setAmountInputHasFocus(false)}
+              showMaxButton={false}
+              mainCurrencySign={mainCurrencySign}
+              onAssetSelect={updateBuyAsset}
+              onAmountChange={(newAmount, error) => {
+                setBuyAmount(newAmount)
+                if (error) {
+                  requestQuoteUpdate.cancel()
+                  return
+                }
+                if (newAmount) {
+                  requestQuoteUpdate({
+                    type: "getSellAmount",
+                    amount: newAmount,
+                    sellAsset,
+                    buyAsset,
+                  })
+                }
+              }}
+              label={t("swap.to")}
+            />
+            <div className="loading_wrapper">
+              {loadingQuote && sellAsset && buyAsset && (
+                <SharedLoadingDoggo
+                  size={54}
+                  message={t("swap.loadingQuote")}
                 />
-              ) : (
-                <SharedButton
-                  type="primary"
-                  size="large"
-                  isDisabled={
-                    isReadOnlyAccount ||
-                    !quote ||
-                    !quoteAppliesToCurrentAssets ||
-                    !quoteAppliesToCurrentAmounts ||
-                    hasError ||
-                    isLoading
-                  }
-                  onClick={() => {
-                    setIsLoading(true)
-                    handleExecuteSwap()
-                  }}
-                  isLoading={isLoading}
-                >
-                  {t("swap.reviewSwap")}
-                </SharedButton>
               )}
             </div>
           </div>
+          {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
+            <div className="settings_wrap">
+              <SwapRewardsCard />
+            </div>
+          ) : null}
+          <div className="footer standard_width_padded">
+            {quoteAppliesToCurrentAssets && quote?.needsApproval ? (
+              <ApproveQuoteBtn
+                isApprovalInProgress={!!isApprovalInProgress}
+                isDisabled={
+                  isReadOnlyAccount || !quote || hasError || isLoading
+                }
+                onApproveClick={approveAsset}
+                isLoading={isLoading}
+              />
+            ) : (
+              <SharedButton
+                type="primary"
+                size="large"
+                isDisabled={
+                  isReadOnlyAccount ||
+                  !quote ||
+                  !quoteAppliesToCurrentAssets ||
+                  !quoteAppliesToCurrentAmounts ||
+                  hasError ||
+                  isLoading
+                }
+                onClick={() => {
+                  setIsLoading(true)
+                  handleExecuteSwap()
+                }}
+                isLoading={isLoading}
+              >
+                {t("swap.reviewSwap")}
+              </SharedButton>
+            )}
+          </div>
         </div>
-      </>
+      </div>
       <style jsx>
         {`
           .header {

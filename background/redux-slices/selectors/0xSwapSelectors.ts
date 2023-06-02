@@ -19,8 +19,8 @@ export const selectInProgressApprovalContract = createSelector(
 export const selectSwapBuyAssets = createSelector(
   (state: RootState) => state.assets,
   selectCurrentNetwork,
-  (assets, currentNetwork) => {
-    return assets.filter(
+  (assets, currentNetwork) =>
+    assets.filter(
       (
         asset
       ): asset is SwappableAsset & {
@@ -35,5 +35,4 @@ export const selectSwapBuyAssets = createSelector(
         return isTrustedAsset(asset) && assetIsOnCurrentNetwork
       }
     )
-  }
 )

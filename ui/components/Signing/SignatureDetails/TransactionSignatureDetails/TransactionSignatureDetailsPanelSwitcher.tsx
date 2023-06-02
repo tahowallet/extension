@@ -8,7 +8,7 @@ export default function TransactionDataPanelSwitcher({
   transactionRequest,
 }: {
   transactionRequest: EnrichedEVMTransactionRequest
-}): ReactElement {
+}): ReactElement | null {
   const switchablePanels = useSwitchablePanels([
     {
       name: "Details",
@@ -24,5 +24,5 @@ export default function TransactionDataPanelSwitcher({
     },
   ])
 
-  return <>{switchablePanels}</>
+  return switchablePanels
 }
