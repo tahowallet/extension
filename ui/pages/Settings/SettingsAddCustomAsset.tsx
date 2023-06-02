@@ -102,6 +102,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
 
   const [chosenNetwork, setChosenNetwork] = useState<EVMNetwork>(currentNetwork)
   const [isNetworkSelectOpen, setNetworkSelectOpen] = useState(false)
+  const [isImportingToken, setIsImportingToken] = useState(false)
 
   const requestIdRef = useRef(0)
 
@@ -144,9 +145,14 @@ export default function SettingsAddCustomAsset(): ReactElement {
       return
     }
 
-    await dispatch(importCustomToken({ asset: assetData.asset }))
-    await dispatch(setSnackbarMessage(t("snackbar.success")))
-    history.push("/")
+    try {
+      setIsImportingToken(true)
+      await dispatch(importCustomToken({ asset: assetData.asset }))
+      await dispatch(setSnackbarMessage(t("snackbar.success")))
+    } finally {
+      setIsImportingToken(false)
+      history.push("/")
+    }
   }
 
   const hideDustEnabled = useBackgroundSelector(selectHideDust)
@@ -319,8 +325,14 @@ export default function SettingsAddCustomAsset(): ReactElement {
             type="primary"
             size="medium"
             isFormSubmit
-            isDisabled={!assetData || loading || error || assetData.exists}
-            isLoading={loading}
+            isDisabled={
+              !assetData ||
+              loading ||
+              error ||
+              assetData.exists ||
+              isImportingToken
+            }
+            isLoading={loading || isImportingToken}
           >
             {t("submit")}
           </SharedButton>
