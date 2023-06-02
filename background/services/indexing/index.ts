@@ -603,10 +603,7 @@ export default class IndexingService extends BaseService<Events> {
     this.emitter.emit("removeAssetData", asset)
   }
 
-  async importCustomToken(
-    asset: SmartContractFungibleAsset,
-    network: EVMNetwork
-  ): Promise<void> {
+  async importCustomToken(asset: SmartContractFungibleAsset): Promise<void> {
     const customAsset = {
       ...asset,
       metadata: {
@@ -622,14 +619,18 @@ export default class IndexingService extends BaseService<Events> {
       customAsset.metadata
     )
 
-    const accounts = await this.chainService.getAccountsToTrackByNetwork(
-      network
-    )
-    await Promise.all(
-      accounts.map(async (addressNetwork) => {
-        await this.retrieveTokenBalances(addressNetwork, [customAsset])
-      })
-    )
+    try {
+      const accounts = await this.chainService.getAccountsToTrackByNetwork(
+        asset.homeNetwork
+      )
+      await Promise.allSettled(
+        accounts.map(async (addressNetwork) => {
+          await this.retrieveTokenBalances(addressNetwork, [customAsset])
+        })
+      )
+    } catch (error) {
+      logger.error("Error retrieving token balances: ", error)
+    }
   }
 
   /**

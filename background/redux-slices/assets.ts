@@ -376,14 +376,12 @@ export const importCustomToken = createBackgroundAsyncThunk(
   async (
     {
       asset,
-      network,
     }: {
       asset: SmartContractFungibleAsset
-      network: EVMNetwork
     },
     { extra: { main } }
   ) => {
-    await main.importCustomToken(asset, network)
+    await main.importCustomToken(asset)
   }
 )
 
