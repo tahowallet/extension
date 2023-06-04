@@ -1,9 +1,7 @@
 import { test, expect } from "./utils"
-import { getOnboardingPage } from "./utils/onboarding"
 
 test.describe("Transactions", () => {
-  test.skip("User can send base asset (on Goerli testnet)", async ({
-    context,
+  test("User can send base asset (on Goerli testnet)", async ({
     page: popup,
     walletPageHelper,
     transactionsHelper,
@@ -12,20 +10,12 @@ test.describe("Transactions", () => {
       /**
        * Onboard using walletPageHelper
        */
-      const page = await getOnboardingPage(context)
       const recoveryPhrase = process.env.RECOVERY_PHRASE
-
-      if (recoveryPhrase !== undefined) {
-        await walletPageHelper.onboarding.addAccountFromSeed({
-          phrase: recoveryPhrase,
-          onboardingPage: page,
-        })
+      if (recoveryPhrase) {
+        await walletPageHelper.onboardWithSeedPhrase(recoveryPhrase)
       } else {
         throw new Error("RECOVERY_PHRASE environment variable is not defined.")
       }
-
-      await walletPageHelper.setViewportSize()
-      await walletPageHelper.goToStartPage()
 
       /**
        * Verify we're on Ethereum network. Verify common elements on the main page.

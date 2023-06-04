@@ -37,6 +37,19 @@ export default class WalletPageHelper {
       .click()
   }
 
+  /**
+   * Onboard using walletPageHelper
+   */
+  async onboardWithSeedPhrase(recoveryPhrase: string): Promise<void> {
+    const onboardingPage = await this.onboarding.getOnboardingPage()
+    await this.onboarding.addAccountFromSeed({
+      phrase: recoveryPhrase,
+      onboardingPage,
+    })
+    await this.setViewportSize()
+    await this.goToStartPage()
+  }
+
   async verifyTopWrap(
     regexNetwork: string, // a network in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
     regexAccountLabel: string // an account label in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
