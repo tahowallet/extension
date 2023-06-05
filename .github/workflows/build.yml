@@ -63,6 +63,39 @@ jobs:
         with:
           name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
           path: dist/*.zip
+      - name: Dev build on Mainnet fork
+        if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo -e ${{ steps.env-block.outputs.result }} > .env
+          echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
+          yarn build
+        env:
+          ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
+          BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
+          DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
+          COMMIT_SHA: ${{ github.sha }}
+          USE_MAINNET_FORK: true
+      - name: Production build on Mainnet fork
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
+          yarn build
+        env:
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+          BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
+          UNS_API_KEY: ${{ secrets.UNS_API_KEY }}
+          SIMPLE_HASH_API_KEY: ${{ secrets.SIMPLE_HASH_API_KEY }}
+          ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}
+          COMMIT_SHA: ${{ github.sha }}
+          POAP_API_KEY: ${{ secrets.POAP_API_KEY }}
+          DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
+          USE_MAINNET_FORK: true
+      - name: Upload build asset
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: extension-builds-fork-${{ github.event.number || github.event.head_commit.id }}
+          path: dist/*.zip
       - name: Create Release and Upload Artifacts
         uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # v1
         if: startsWith(github.ref, 'refs/tags/')
@@ -176,7 +209,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - uses: actions/download-artifact@v3
         with:
-          name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
+          name: extension-builds-fork-${{ github.event.number || github.event.head_commit.id }}
       - name: Extract extension
         run: unzip -o chrome.zip -d dist/chrome
       - name: Cache Hardhat
