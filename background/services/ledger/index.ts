@@ -205,47 +205,55 @@ export default class LedgerService extends BaseService<Events> {
         return
       }
 
-      this.transport = await TransportWebUSB.create()
+      try {
+        this.transport = await TransportWebUSB.create()
 
-      const eth = new Eth(this.transport)
+        const eth = new Eth(this.transport)
 
-      const [id, type] = await generateLedgerId(this.transport, eth)
+        const [id, type] = await generateLedgerId(this.transport, eth)
 
-      if (!id) {
-        throw new Error("Can't derive meaningful identification address!")
-      }
+        if (!id) {
+          throw new Error("Can't derive meaningful identification address!")
+        }
 
-      const appData = await eth.getAppConfiguration()
+        const appData = await eth.getAppConfiguration()
 
-      const normalizedID = normalizeEVMAddress(id)
+        const normalizedID = normalizeEVMAddress(id)
 
-      this.#currentLedgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
+        this.#currentLedgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
 
-      this.emitter.emit("connected", {
-        id: this.#currentLedgerId,
-        type,
-        metadata: {
-          ethereumVersion: appData.version,
-          isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
-          displayDetails: DisplayDetailsByLedgerType[type],
-        },
-      })
-
-      const knownAddresses = await this.db.getAllAccountsByLedgerId(
-        this.#currentLedgerId
-      )
-
-      if (!knownAddresses.length) {
-        this.emitter.emit("ledgerAdded", {
+        this.emitter.emit("connected", {
           id: this.#currentLedgerId,
           type,
-          accountIDs: [idDerivationPath],
           metadata: {
             ethereumVersion: appData.version,
             isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
             displayDetails: DisplayDetailsByLedgerType[type],
           },
         })
+
+        const knownAddresses = await this.db.getAllAccountsByLedgerId(
+          this.#currentLedgerId
+        )
+
+        if (!knownAddresses.length) {
+          this.emitter.emit("ledgerAdded", {
+            id: this.#currentLedgerId,
+            type,
+            accountIDs: [idDerivationPath],
+            metadata: {
+              ethereumVersion: appData.version,
+              isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
+              displayDetails: DisplayDetailsByLedgerType[type],
+            },
+          })
+        }
+      } catch (error) {
+        logger.error(
+          "Treating Ledger as having disconnected due to a connection error:",
+          error
+        )
+        await this.#handleUSBDisconnect()
       }
     })
   }
