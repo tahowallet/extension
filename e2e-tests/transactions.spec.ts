@@ -21,8 +21,8 @@ test.describe("Transactions", () => {
        * Verify we're on Ethereum network. Verify common elements on the main page.
        */
       await walletPageHelper.verifyCommonElements(
-        "Ethereum",
-        "testertesting\\.eth"
+        /^Goerli$/,
+        /^testertesting\.eth$/
       )
       await walletPageHelper.verifyAnalyticsBanner()
 
@@ -51,8 +51,8 @@ test.describe("Transactions", () => {
         .last()
         .click()
       await walletPageHelper.verifyCommonElements(
-        "Goerli",
-        "testertesting\\.eth"
+        /^Goerli$/,
+        /^testertesting\.eth$/
       )
       await walletPageHelper.verifyAnalyticsBanner()
 
@@ -79,8 +79,8 @@ test.describe("Transactions", () => {
        * isn't active.
        */
       await transactionsHelper.verifyUnfilledSendAssetScreen(
-        "Goerli",
-        "testertesting\\.eth",
+        /^Goerli$/,
+        /^testertesting\.eth$/,
         "ETH",
         "\\d+\\.\\d{4}",
         true
@@ -148,9 +148,9 @@ test.describe("Transactions", () => {
          * Verify elements on the asset activity screen
          */
         await transactionsHelper.verifyAssetActivityScreen(
-          "Goerli",
-          "testertesting\\.eth",
-          "ETH",
+          /^Goerli$/,
+          /^testertesting\.eth$/,
+          /^ETH$/,
           /^\d+\.\d{2,4}$/,
           true
         )
@@ -252,8 +252,8 @@ test.describe("Transactions", () => {
          * Verify elements on the activity screen
          */
         await walletPageHelper.verifyCommonElements(
-          "Goerli",
-          "testertesting\\.eth"
+          /^Goerli$/,
+          /^testertesting\.eth$/
         )
         await walletPageHelper.verifyAnalyticsBanner()
 

@@ -12,8 +12,8 @@ export default class TransactionsHelper {
    * Makes sure `Continue` button isn't active.
    */
   async verifyUnfilledSendAssetScreen(
-    regexNetwork: string, // a network in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
-    regexAccountLabel: string, // an account label in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
+    network: RegExp,
+    accountLabel: RegExp,
     assetSymbol: string,
     regexAssetBalance: string, // a balance of the asset in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
     baseAsset: boolean
@@ -22,7 +22,7 @@ export default class TransactionsHelper {
       this.popup.getByRole("heading", { name: "Send Asset", exact: true })
     ).toBeVisible()
 
-    await this.walletPageHelper.verifyTopWrap(regexNetwork, regexAccountLabel)
+    await this.walletPageHelper.verifyTopWrap(network, accountLabel)
 
     await this.popup
       .getByRole("button", { name: "Back", exact: true })
@@ -72,8 +72,8 @@ export default class TransactionsHelper {
     regexAccountLabel: string, // an account label in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
     sendToAddressFull: string,
     sendToAddressShortened: string,
-    regexSpendAmount: string,
-    assetSymbol: string,
+    regexSpendAmount: string, // a spend amount in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
+    regexAssetSymbol: string, // an asset symbol in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
     baseAsset: boolean
   ): Promise<void> {
     await expect(
@@ -110,7 +110,9 @@ export default class TransactionsHelper {
     const spendAmountContainer = this.popup
       .locator(".container")
       .filter({ hasText: "Spend Amount" })
-    const spendAmountRegEx = new RegExp(`^${regexSpendAmount} ${assetSymbol}$`)
+    const spendAmountRegEx = new RegExp(
+      `^${regexSpendAmount} ${regexAssetSymbol}$`
+    )
     await expect(spendAmountContainer.getByText(spendAmountRegEx)).toBeVisible()
     await expect(spendAmountContainer.getByText(/^\$\d+\.\d{2}$/)).toBeVisible()
 
@@ -157,14 +159,14 @@ export default class TransactionsHelper {
    * This function verifies elements on the asset activity screen.
    */
   async verifyAssetActivityScreen(
-    regexNetwork: string, // a network in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
-    regexAccountLabel: string, // an account label in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
-    assetSymbol: string, // an asset symbol in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`assetSymbol: string // an asset symbol in RegEx syntax, without leading `/^` and ending `$/`
+    network: RegExp,
+    accountLabel: RegExp,
+    assetSymbol: RegExp,
     expectedBalance: RegExp,
     baseAsset: boolean,
     tokenLink?: string
   ): Promise<void> {
-    await this.walletPageHelper.verifyTopWrap(regexNetwork, regexAccountLabel)
+    await this.walletPageHelper.verifyTopWrap(network, accountLabel)
 
     await this.popup
       .getByRole("button", { name: "Back", exact: true })
@@ -182,9 +184,8 @@ export default class TransactionsHelper {
     /**
      * Verify the token balance gets updated to the right value
      */
-    const assetSymbolRegEx = new RegExp(`^${assetSymbol}$`)
     const activityLeftContainer = this.popup.locator(".left").filter({
-      has: this.popup.locator("span").filter({ hasText: assetSymbolRegEx }),
+      has: this.popup.locator("span").filter({ hasText: assetSymbol }),
     })
     await expect(async () => {
       const balance = await activityLeftContainer

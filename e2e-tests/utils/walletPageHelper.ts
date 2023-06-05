@@ -50,16 +50,12 @@ export default class WalletPageHelper {
     await this.goToStartPage()
   }
 
-  async verifyTopWrap(
-    regexNetwork: string, // a network in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
-    regexAccountLabel: string // an account label in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
-  ): Promise<void> {
+  async verifyTopWrap(network: RegExp, accountLabel: RegExp): Promise<void> {
     // TODO: maybe we could also verify graphical elements (network icon, profile picture, etc)?
 
-    const networkRegEx = new RegExp(`^${regexNetwork}$`)
     await expect(
       this.popup.getByTestId("top_menu_network_switcher").last()
-    ).toHaveText(networkRegEx)
+    ).toHaveText(network)
     await this.popup
       .getByTestId("top_menu_network_switcher")
       .last()
@@ -67,10 +63,9 @@ export default class WalletPageHelper {
 
     await this.popup.locator(".connection_button").last().click({ trial: true })
 
-    const accountLabelRegEx = new RegExp(`^${regexAccountLabel}$`)
     await expect(
       this.popup.getByTestId("top_menu_profile_button").last()
-    ).toHaveText(accountLabelRegEx, { timeout: 240000 })
+    ).toHaveText(accountLabel, { timeout: 240000 })
     await this.popup
       .getByTestId("top_menu_profile_button")
       .last()
@@ -101,8 +96,8 @@ export default class WalletPageHelper {
    *  The function checks elements of the main page that should always be present.
    */
   async verifyCommonElements(
-    regexNetwork: string, // a network in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
-    regexAccountLabel: string // an account label in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
+    network: RegExp,
+    accountLabel: RegExp
   ): Promise<void> {
     await expect(this.popup.getByText("Total account balance")).toBeVisible({
       timeout: 240000,
@@ -111,7 +106,7 @@ export default class WalletPageHelper {
       /^\$(0|\d+\.\d{2})$/
     )
 
-    await this.verifyTopWrap(regexNetwork, regexAccountLabel)
+    await this.verifyTopWrap(network, accountLabel)
 
     await this.popup
       .getByRole("button", { name: "Send", exact: true })

@@ -22,8 +22,8 @@ test.describe("Transactions", () => {
        * page.
        */
       await walletPageHelper.verifyCommonElements(
-        "Ethereum",
-        "testertesting\\.eth"
+        /^Ethereum$/,
+        /^testertesting\.eth$/
       )
       await walletPageHelper.verifyAnalyticsBanner()
 
@@ -50,8 +50,8 @@ test.describe("Transactions", () => {
        * isn't active.
        */
       await transactionsHelper.verifyUnfilledSendAssetScreen(
-        "Ethereum",
-        "testertesting\\.eth",
+        /^Ethereum$/,
+        /^testertesting\.eth$/,
         "ETH",
         "0\\.1021",
         true
@@ -119,9 +119,9 @@ test.describe("Transactions", () => {
          * Verify elements on the asset activity screen
          */
         await transactionsHelper.verifyAssetActivityScreen(
-          "Ethereum",
-          "testertesting\\.eth",
-          "ETH",
+          /^Ethereum$/,
+          /^testertesting\.eth$/,
+          /^ETH$/,
           /^0\.0914$/,
           true
         )
@@ -168,8 +168,8 @@ test.describe("Transactions", () => {
         ).toBeVisible()
 
         await walletPageHelper.verifyCommonElements(
-          "Ethereum",
-          "testertesting\\.eth"
+          /^Ethereum$/,
+          /^testertesting\.eth$/
         )
         await walletPageHelper.verifyAnalyticsBanner()
       }
@@ -198,8 +198,8 @@ test.describe("Transactions", () => {
        * page.
        */
       await walletPageHelper.verifyCommonElements(
-        "Ethereum",
-        "testertesting\\.eth"
+        /^Ethereum$/,
+        /^testertesting\.eth$/
       )
       await walletPageHelper.verifyAnalyticsBanner()
 
@@ -231,8 +231,8 @@ test.describe("Transactions", () => {
        * isn't active.
        */
       await transactionsHelper.verifyUnfilledSendAssetScreen(
-        "Ethereum",
-        "testertesting\\.eth",
+        /^Ethereum$/,
+        /^testertesting\.eth$/,
         "KEEP",
         "65\\.88",
         false
@@ -298,9 +298,9 @@ test.describe("Transactions", () => {
        * Verify elements on the asset activity screen
        */
       await transactionsHelper.verifyAssetActivityScreen(
-        "Ethereum",
-        "testertesting\\.eth",
-        "KEEP",
+        /^Ethereum$/,
+        /^testertesting\.eth$/,
+        /^KEEP$/,
         /^65\.88$/,
         false,
         "https://etherscan.io/token/0x85eee30c52b0b379b046fb0f85f4f3dc3009afec"
@@ -339,8 +339,8 @@ test.describe("Transactions", () => {
        * page.
        */
       await walletPageHelper.verifyCommonElements(
-        "Ethereum",
-        "testertesting\\.eth"
+        /^Ethereum$/,
+        /^testertesting\.eth$/
       )
       await walletPageHelper.verifyAnalyticsBanner()
 
@@ -372,8 +372,8 @@ test.describe("Transactions", () => {
        * isn't active.
        */
       await transactionsHelper.verifyUnfilledSendAssetScreen(
-        "Ethereum",
-        "testertesting\\.eth",
+        /^Ethereum$/,
+        /^testertesting\.eth$/,
         "ETH",
         "\\d+\\.\\d{4}",
         true
@@ -426,8 +426,8 @@ test.describe("Transactions", () => {
        * `Continue` isn't active.
        */
       await transactionsHelper.verifyUnfilledSendAssetScreen(
-        "Ethereum",
-        "testertesting\\.eth",
+        /^Ethereum$/,
+        /^testertesting\.eth$/,
         "KEEP",
         "65\\.88",
         false
@@ -495,9 +495,9 @@ test.describe("Transactions", () => {
          * Verify elements on the asset activity screen
          */
         await transactionsHelper.verifyAssetActivityScreen(
-          "Ethereum",
-          "testertesting\\.eth",
-          "KEEP",
+          /^Ethereum$/,
+          /^testertesting\.eth$/,
+          /^KEEP$/,
           /^53\.54$/,
           false,
           "https://etherscan.io/token/0x85eee30c52b0b379b046fb0f85f4f3dc3009afec"
@@ -545,8 +545,8 @@ test.describe("Transactions", () => {
         ).toBeVisible()
 
         await walletPageHelper.verifyCommonElements(
-          "Ethereum",
-          "testertesting\\.eth"
+          /^Ethereum$/,
+          /^testertesting\.eth$/
         )
         await walletPageHelper.verifyAnalyticsBanner()
       }
