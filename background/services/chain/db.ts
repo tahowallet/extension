@@ -527,7 +527,7 @@ export class ChainDatabase extends Dexie {
     return this.accountsToTrack.toArray()
   }
 
-  async getAccountsToTrackByNetwork(
+  async getTrackedAddressesOnNetwork(
     network: EVMNetwork
   ): Promise<AddressOnNetwork[]> {
     return this.accountsToTrack

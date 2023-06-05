@@ -381,7 +381,7 @@ export const importCustomToken = createBackgroundAsyncThunk(
     },
     { extra: { main } }
   ) => {
-    await main.importCustomToken(asset)
+    return { success: await main.importCustomToken(asset) }
   }
 )
 

@@ -849,10 +849,10 @@ export default class ChainService extends BaseService<Events> {
     return accounts
   }
 
-  async getAccountsToTrackByNetwork(
+  async getTrackedAddressesOnNetwork(
     network: EVMNetwork
   ): Promise<AddressOnNetwork[]> {
-    return this.db.getAccountsToTrackByNetwork(network)
+    return this.db.getTrackedAddressesOnNetwork(network)
   }
 
   async getNetworksToTrack(): Promise<EVMNetwork[]> {
