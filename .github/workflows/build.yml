@@ -176,14 +176,17 @@ jobs:
         run: find test -type f ! -name "*-fork.*" -exec xvfb-run npx playwright test {} \;
         #env:
         # DEBUG: pw:api*
-      - uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: debug-output
-          path: |
-            test-results/
-            #videos/
-          retention-days: 30
+      # Upload of Playwright artifacts commented out until we change the method
+      # of account import in the tests from seed to JSON (we don't want to leak
+      # the seed phrase in logs/recordings from tests).
+      # - uses: actions/upload-artifact@v3
+      #   if: failure()
+      #   with:
+      #     name: debug-output
+      #     path: |
+      #       test-results/
+      #       #videos/
+      #     retention-days: 30
   e2e-tests-fork:
     # TODO: remove last OR before merging to main
     if: |
@@ -234,11 +237,14 @@ jobs:
         env:
           RECOVERY_PHRASE: ${{ secrets.FORK_TEST_WALLET_RECOVERY_PHRASE }}
         run: find e2e-tests -type f -name "*-fork.*" -exec xvfb-run npx playwright test {} \;
-      - uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: fork-debug-output
-          path: |
-            test-results/
-            #videos/
-          retention-days: 30
+      # Upload of Playwright artifacts commented out until we change the method
+      # of account import in the tests from seed to JSON (we don't want to leak
+      # the seed phrase in logs/recordings from tests).
+      # - uses: actions/upload-artifact@v3
+      #   if: failure()
+      #   with:
+      #     name: fork-debug-output
+      #     path: |
+      #       test-results/
+      #       #videos/
+      #     retention-days: 30
