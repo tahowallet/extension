@@ -399,7 +399,7 @@ export function isSameAsset(asset1: AnyAsset, asset2: AnyAsset): boolean {
   }
 
   if (isNetworkBaseAsset(asset1) && isNetworkBaseAsset(asset2)) {
-    return asset1.chainID === asset2.chainID
+    return sameNetworkBaseAsset(asset1, asset2)
   }
 
   return asset1.symbol === asset2.symbol
