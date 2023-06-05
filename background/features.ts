@@ -48,16 +48,24 @@ export const FeatureFlags = Object.keys({
 }
 
 /**
- * Checks the status of the feature flag.
- * If the SWITCH_RUNTIME_FLAGS is off all flags are read from environment variables.
- * If the SWITCH_RUNTIME_FLAGS is on then value for run time flag is read from Local Storage.
- * If value is not exist then is read from environment variables.
- * The value for the build time flag is read from environment variables.
+ * Checks the status of the feature flag and returns `true` if the flag is set
+ * to `true`. Note that some historical flags might have inverted meaning by
+ * default (e.g. `HIDE_...`, when set to `true`, might indicate disabling a
+ * feature).
+ *
+ * If the `SWITCH_RUNTIME_FLAGS` feature flag is disabled all flags are read from
+ * environment variables.
+ *
+ * If the `SWITCH_RUNTIME_FLAGS` feature flag is on then the value for runtime
+ * flags are read from localStorage first, and, if the value does not exist in
+ * localStorage, then it is read from the environment variables.
+ *
+ * The value for build time flags is always read from environment variables.
  */
-export const isEnabled = (
+export function isEnabled(
   flagName: FeatureFlagType,
   checkBrowserStorage: boolean = BuildTimeFlag.SWITCH_RUNTIME_FLAGS
-): boolean => {
+): boolean {
   // Guard to narrow flag type
   const isBuildTimeFlag = (flag: string): flag is BuildTimeFlagType =>
     flag in BuildTimeFlag
