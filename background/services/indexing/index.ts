@@ -629,7 +629,7 @@ export default class IndexingService extends BaseService<Events> {
         })
       )
     } catch (error) {
-      logger.error("Error retrieving token balances: ", error)
+      logger.error("Error retrieving new custom token balances for ", asset, ": ", error)
     }
   }
 
