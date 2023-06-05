@@ -122,7 +122,7 @@ test.describe("Transactions", () => {
           "Ethereum",
           "testertesting\\.eth",
           "ETH",
-          0.0921,
+          /^0\.0914$/,
           true
         )
         // This is what we expect currently on forked network. If ve ever fix
@@ -301,7 +301,7 @@ test.describe("Transactions", () => {
         "Ethereum",
         "testertesting\\.eth",
         "KEEP",
-        65.88,
+        /^65\.88$/,
         false,
         "https://etherscan.io/token/0x85eee30c52b0b379b046fb0f85f4f3dc3009afec"
       )
@@ -498,7 +498,7 @@ test.describe("Transactions", () => {
           "Ethereum",
           "testertesting\\.eth",
           "KEEP",
-          53.54,
+          /^53\.54$/,
           false,
           "https://etherscan.io/token/0x85eee30c52b0b379b046fb0f85f4f3dc3009afec"
         )

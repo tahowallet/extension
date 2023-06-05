@@ -160,7 +160,7 @@ export default class TransactionsHelper {
     regexNetwork: string, // a network in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
     regexAccountLabel: string, // an account label in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
     assetSymbol: string, // an asset symbol in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`assetSymbol: string // an asset symbol in RegEx syntax, without leading `/^` and ending `$/`
-    expectedMaxBalance: number,
+    expectedBalance: RegExp,
     baseAsset: boolean,
     tokenLink?: string
   ): Promise<void> {
@@ -190,11 +190,11 @@ export default class TransactionsHelper {
       const balance = await activityLeftContainer
         .getByText(/^\d+\.\d{2,4}$/)
         .textContent()
-      const parsedValue = balance !== null ? parseFloat(balance) : NaN
-      expect(parsedValue).toBeLessThanOrEqual(expectedMaxBalance)
+      expect(balance).toMatch(expectedBalance)
     }).toPass({
       timeout: 120000,
     })
+
     await expect(
       activityLeftContainer.getByText(/^\$\d+\.\d{2}$/)
     ).toBeVisible()

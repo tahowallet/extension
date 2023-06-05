@@ -151,7 +151,7 @@ test.describe("Transactions", () => {
           "Goerli",
           "testertesting\\.eth",
           "ETH",
-          1000, // TODO: modify verifyAssetActivityScreen to allow for regex value
+          /^\d+\.\d{2,4}$/,
           true
         )
 
