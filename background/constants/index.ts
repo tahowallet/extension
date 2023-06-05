@@ -1,11 +1,3 @@
-import {
-  ARBITRUM_ONE,
-  AVALANCHE,
-  BINANCE_SMART_CHAIN,
-  OPTIMISM,
-  POLYGON,
-} from "./networks"
-
 export const STATE_KEY = "tally"
 
 export const NETWORK_TYPES = {
@@ -35,13 +27,7 @@ export const DEFAULT_COMMUNITY_MULTISIG_ADDRESS =
   "0x99b36fDbC582D113aF36A21EBa06BFEAb7b9bE12"
 
 // TODO add correct addresses
-export const COMMUNITY_MULTISIG_ADDRESS = {
-  [OPTIMISM.chainID]: "",
-  [ARBITRUM_ONE.chainID]: "",
-  [POLYGON.chainID]: "",
-  [BINANCE_SMART_CHAIN.chainID]: "",
-  [AVALANCHE.chainID]: "",
-}
+export const COMMUNITY_MULTISIG_ADDRESS: Record<string, string> = {}
 
 export enum EarnStages {
   ComingSoon = "ComingSoon",
