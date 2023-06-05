@@ -376,7 +376,7 @@ export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
 }
 
 // FIXME Unify once asset similarity code is unified.
-export function isSameAsset(asset1: AnyAsset, asset2: AnyAsset): boolean {
+export function isSameAsset(asset1?: AnyAsset, asset2?: AnyAsset): boolean {
   if (typeof asset1 === "undefined" || typeof asset2 === "undefined") {
     return false
   }
