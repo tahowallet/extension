@@ -772,7 +772,7 @@
       "transactionFrom": "From:",
       "loadingActivities": "Digging deeper...",
       "addCustomAssetPrompt": "Can't find an asset?",
-      "addCustomAssetAction": "add custom asset"
+      "addCustomAssetAction": "Add custom asset"
     },
     "banner": {
       "bannerTitle": "New Odyssey week!",
@@ -827,7 +827,7 @@
       "discoveryTxHash": "Added from transaction",
       "dontShow": "Don’t show",
       "addToAssetList": "Add to asset list",
-      "verifyAssetSnackbar":  "Asset added to list",
+      "verifyAssetSnackbar": "Asset added to list",
       "removeAssetSnackbar": "Asset removed from list",
       "banner": {
         "titleUnverified": "Asset not verified",
