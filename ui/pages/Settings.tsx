@@ -326,12 +326,12 @@ export default function Settings(): ReactElement {
     isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
     enableTestNetworks,
     dAppsSettings,
-    isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && addCustomAsset,
+    addCustomAsset,
     needHelp,
     bugReport,
     analytics,
     isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && notificationBanner,
-    isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && customNetworks,
+    customNetworks,
   ].filter((item): item is Exclude<typeof item, boolean> => !!item)
 
   const settings = {
