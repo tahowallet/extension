@@ -937,8 +937,6 @@
         "HIDE_SWAP_REWARDS": "Hide swap rewards",
         "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
         "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
-        "SUPPORT_ANALYTICS": "Show Analytics page on the settings page",
-        "SUPPORT_FORGOT_PASSWORD": "Enable to forgot password",
         "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",

@@ -329,7 +329,7 @@ export default function Settings(): ReactElement {
     isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && addCustomAsset,
     needHelp,
     bugReport,
-    isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) && analytics,
+    analytics,
     isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && notificationBanner,
     isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && customNetworks,
   ].filter((item): item is Exclude<typeof item, boolean> => !!item)
