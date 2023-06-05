@@ -81,3 +81,14 @@ export function isEnabled(
 
   return RuntimeFlag[flagName]
 }
+
+/**
+ * Checks the inverse of `isEnabled`; used for clarity as an alternative to
+ * `!isEnabled`.
+ */
+export function isDisabled(
+  flagName: FeatureFlagType,
+  checkBrowserStorage: boolean = BuildTimeFlag.SWITCH_RUNTIME_FLAGS
+): boolean {
+  return !isEnabled(flagName, checkBrowserStorage)
+}
