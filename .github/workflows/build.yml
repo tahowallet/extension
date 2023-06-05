@@ -147,10 +147,12 @@ jobs:
             path-filter:
               - '.env.defaults'
   e2e-tests:
+    # TODO: remove last OR before merging to main
     if: |
       github.ref == 'refs/heads/main'
         || contains(github.head_ref, 'e2e')
         || needs.detect-if-flag-changed.outputs.path-filter == 'true'
+        || github.ref == 'refs/pull/3418/merge'
     needs: [build, detect-if-flag-changed]
     timeout-minutes: 60
     runs-on: ubuntu-latest
@@ -193,7 +195,7 @@ jobs:
       github.ref == 'refs/heads/main'
         || contains(github.head_ref, 'e2e')
         || needs.detect-if-flag-changed.outputs.path-filter == 'true'
-        || github.ref == 'refs/pull/000/merge'
+        || github.ref == 'refs/pull/3418/merge'
     needs: [build, detect-if-flag-changed]
     timeout-minutes: 60
     runs-on: ubuntu-latest
