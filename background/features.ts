@@ -10,7 +10,6 @@ const BuildTimeFlag = {
  */
 export const RuntimeFlag = {
   USE_MAINNET_FORK: process.env.USE_MAINNET_FORK === "true",
-  RESOLVE_RNS_NAMES: process.env.RESOLVE_RNS_NAMES === "true",
   HIDE_IMPORT_DERIVATION_PATH:
     process.env.HIDE_IMPORT_DERIVATION_PATH === "true",
   HIDE_SWAP_REWARDS: process.env.HIDE_SWAP_REWARDS === "true",
@@ -21,8 +20,6 @@ export const RuntimeFlag = {
     process.env.ENABLE_ANALYTICS_DEFAULT_ON === "true",
   SHOW_ANALYTICS_DELETE_DATA_BUTTON:
     process.env.SHOW_ANALYTICS_DELETE_DATA_BUTTON === "true",
-  SUPPORT_KEYRING_LOCKING: process.env.SUPPORT_KEYRING_LOCKING === "true",
-  SUPPORT_FORGOT_PASSWORD: process.env.SUPPORT_FORGOT_PASSWORD === "true",
   ENABLE_ACHIEVEMENTS_TAB: process.env.ENABLE_ACHIEVEMENTS_TAB === "true",
   HIDE_TOKEN_FEATURES: process.env.HIDE_TOKEN_FEATURES === "true",
   SUPPORT_ARBITRUM_NOVA: process.env.SUPPORT_ARBITRUM_NOVA === "true",
