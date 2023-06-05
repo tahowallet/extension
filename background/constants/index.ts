@@ -1,3 +1,11 @@
+import {
+  ARBITRUM_ONE,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
+  OPTIMISM,
+  POLYGON,
+} from "./networks"
+
 export const STATE_KEY = "tally"
 
 export const NETWORK_TYPES = {
@@ -23,8 +31,17 @@ export const MINUTE = 60 * SECOND
 export const HOUR = 60 * MINUTE
 export const DAY = 24 * HOUR
 
-export const COMMUNITY_MULTISIG_ADDRESS =
+export const DEFAULT_COMMUNITY_MULTISIG_ADDRESS =
   "0x99b36fDbC582D113aF36A21EBa06BFEAb7b9bE12"
+
+// TODO add correct addresses
+export const COMMUNITY_MULTISIG_ADDRESS = {
+  [OPTIMISM.chainID]: "",
+  [ARBITRUM_ONE.chainID]: "",
+  [POLYGON.chainID]: "",
+  [BINANCE_SMART_CHAIN.chainID]: "",
+  [AVALANCHE.chainID]: "",
+}
 
 export enum EarnStages {
   ComingSoon = "ComingSoon",

@@ -15,6 +15,7 @@ import { ERC20_ABI } from "../lib/erc20"
 import {
   CHAIN_ID_TO_0X_API_BASE,
   COMMUNITY_MULTISIG_ADDRESS,
+  DEFAULT_COMMUNITY_MULTISIG_ADDRESS,
   ETHEREUM,
   OPTIMISM,
   OPTIMISTIC_ETH,
@@ -133,11 +134,23 @@ const get0xApiBase = (network: EVMNetwork) => {
   return `${prefix}${base}`
 }
 
-const gatedParameters = {
-  affiliateAddress: COMMUNITY_MULTISIG_ADDRESS,
-  feeRecipient: COMMUNITY_MULTISIG_ADDRESS,
-  buyTokenPercentageFee: SWAP_FEE,
+const getMultisigAddressByNetwork = (network: EVMNetwork) => {
+  // Look up the community multisig address for a specific chain
+  return (
+    COMMUNITY_MULTISIG_ADDRESS[network.chainID] ??
+    DEFAULT_COMMUNITY_MULTISIG_ADDRESS
+  )
 }
+
+const getGatedParameters = (network: EVMNetwork) => {
+  const address = getMultisigAddressByNetwork(network)
+  return {
+    affiliateAddress: address,
+    feeRecipient: address,
+    buyTokenPercentageFee: SWAP_FEE,
+  }
+}
+
 const gatedHeaders: { [header: string]: string } =
   typeof process.env.ZEROX_API_KEY !== "undefined" &&
   process.env.ZEROX_API_KEY.trim() !== ""
@@ -203,7 +216,7 @@ function build0xUrlFromSwapRequest(
     gasPrice: gasPrice.toString(),
     slippagePercentage: slippageTolerance.toString(),
     [tradeField]: tradeAmount.toString(),
-    ...gatedParameters,
+    ...getGatedParameters(selectedNetwork),
     ...additionalParameters,
   }).forEach(([parameter, value]) => {
     // Do not set buyTokenPercentageFee if swapping to ETH. Currently the 0x
