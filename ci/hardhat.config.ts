@@ -13,7 +13,7 @@ const config: HardhatUserConfig = {
       forking: {
         enabled: true,
         url: process.env.CHAIN_API_URL || "",
-        blockNumber: 17094516,
+        blockNumber: parseInt(process.env.FORKING_BLOCK ?? "", 10),
       },
       chainId: parseInt(process.env.MAINNET_FORK_CHAIN_ID ?? "1337", 10),
     },

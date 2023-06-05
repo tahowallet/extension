@@ -9,6 +9,8 @@ To run the extension on a forked Mainnet:
    suggested and a default value)  
    `CHAIN_API_URL=<Insert_your_API_URL_here>` (needed for running Hardhat, may
    be e.g. Alchemy or Infura API URL)
+   `FORKING_BLOCK=<Insert_forking_block_here>` (needed for running Hardhat, if
+   not specified, current block will be used)
 
 2. Run the following commands from root:  
    `yarn install`  

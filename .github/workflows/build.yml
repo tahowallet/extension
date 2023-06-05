@@ -221,6 +221,11 @@ jobs:
         env:
           CHAIN_API_URL: ${{ secrets.ALCHEMY_URL }}
           MAINNET_FORK_CHAIN_ID: 1337
+          # We're using a fixed block number as a start of the fork to get
+          # consistent behavior in tests. The `17094516` block is a block at
+          # which the wallet used in tests (`testertesting.eth`) had multiple
+          # assets.
+          FORKING_BLOCK: 17094516
         run: |
           cd ci
           npx hardhat node --network hardhat &
