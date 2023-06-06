@@ -24,6 +24,7 @@ import SettingButton from "./Settings/SettingButton"
 import { useBackgroundSelector } from "../hooks"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedTooltip from "../components/Shared/SharedTooltip"
+import { excludeFalsyValues } from "../utils/lists"
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
 const FAQ_URL =
@@ -104,7 +105,7 @@ function SettingRow(props: {
       <style jsx>
         {`
           li {
-            height: 50px;
+            padding-top: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -319,36 +320,50 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const generalList = [
-    setAsDefault,
-    hideSmallAssetBalance,
-    unverifiedAssets,
-    isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
-    enableTestNetworks,
-    dAppsSettings,
-    isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && addCustomAsset,
-    needHelp,
-    bugReport,
-    isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) && analytics,
-    isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && notificationBanner,
-    isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && customNetworks,
-  ].filter((item): item is Exclude<typeof item, boolean> => !!item)
-
-  const settings = {
-    general: generalList,
-  }
+  const settings = Object.values({
+    general: {
+      title: t("settings.group.general"),
+      items: [
+        setAsDefault,
+        dAppsSettings,
+        isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) && analytics,
+        isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
+        isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) &&
+          notificationBanner,
+      ],
+    },
+    walletOptions: {
+      title: t("settings.group.walletOptions"),
+      items: [
+        hideSmallAssetBalance,
+        unverifiedAssets,
+        isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && customNetworks,
+        isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && addCustomAsset,
+        enableTestNetworks,
+      ],
+    },
+    helpCenter: {
+      title: t("settings.group.helpCenter"),
+      items: [bugReport, needHelp],
+    },
+  }).map(({ title, items }) => ({ title, items: excludeFalsyValues(items) }))
 
   return (
     <section className="standard_width_padded">
       <div className="menu">
         <h1>{t("settings.mainMenu")}</h1>
         <ul>
-          {settings.general.map((setting) => (
-            <SettingRow
-              key={setting.title}
-              title={setting.title}
-              component={setting.component}
-            />
+          {settings.map(({ title, items }) => (
+            <div className="group">
+              <span className="group_title">{title}</span>
+              {items.map((item) => (
+                <SettingRow
+                  key={item.title}
+                  title={item.title}
+                  component={item.component}
+                />
+              ))}
+            </div>
           ))}
         </ul>
       </div>
@@ -389,7 +404,7 @@ export default function Settings(): ReactElement {
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
-            margin-bottom: 5px;
+            margin-bottom: 28px;
           }
           span {
             color: var(--green-40);
@@ -413,6 +428,24 @@ export default function Settings(): ReactElement {
             display: flex;
             justify-content: center;
             gap: 24px;
+          }
+          .group {
+            border-bottom: 1px solid var(--green-80);
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+          }
+          .group:last-child {
+            border-bottom: none;
+            padding: 0px;
+            margin: 0px;
+          }
+          .group_title {
+            color: var(--green-20);
+            font-family: "Segment";
+            font-style: normal;
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 24px;
           }
         `}
       </style>
