@@ -1,10 +1,10 @@
 import { connectLedger } from "@tallyho/tally-background/redux-slices/ledger"
 import React, { ReactElement, ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { useBackgroundDispatch } from "../../hooks"
-import SharedButton from "../Shared/SharedButton"
+import { useBackgroundDispatch } from "../../../../../hooks"
+import SharedButton from "../../../../Shared/SharedButton"
 
-export default function SignTransactionSlideUpContentLayout({
+export default function SlideUpContentLayout({
   title,
   helpMessage,
   steps,

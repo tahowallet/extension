@@ -2,10 +2,10 @@ import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { HexString } from "@tallyho/tally-background/types"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import SharedButton from "../Shared/SharedButton"
-import SignTransactionSlideUpContentLayout from "./SignTransactionSlideUpContentLayout"
+import SharedButton from "../../../../Shared/SharedButton"
+import SlideUpContentLayout from "./SlideUpLayout"
 
-export default function SignTransactionWrongLedgerConnected({
+export default function WrongLedgerConnected({
   requiredAddress,
 }: {
   requiredAddress: HexString
@@ -15,7 +15,7 @@ export default function SignTransactionWrongLedgerConnected({
   })
 
   return (
-    <SignTransactionSlideUpContentLayout
+    <SlideUpContentLayout
       title={t("title")}
       helpMessage={t("helpMessage")}
       steps={[

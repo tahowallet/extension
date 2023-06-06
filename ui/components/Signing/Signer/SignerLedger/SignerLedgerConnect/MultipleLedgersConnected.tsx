@@ -1,13 +1,13 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import SignTransactionSlideUpContentLayout from "./SignTransactionSlideUpContentLayout"
+import SlideUpContentLayout from "./SlideUpLayout"
 
-export default function SignTransactionLedgerNotConnected(): ReactElement {
+export default function MultipleLedgersConnected(): ReactElement {
   const { t } = useTranslation("translation", {
-    keyPrefix: "ledger.notConnected",
+    keyPrefix: "ledger.multipleLedgersConnected",
   })
   return (
-    <SignTransactionSlideUpContentLayout
+    <SlideUpContentLayout
       title={t("title")}
       helpMessage={t("helpMessage")}
       steps={[<>{t("step1")}</>, <>{t("step2")}</>, <>{t("step3")}</>]}
