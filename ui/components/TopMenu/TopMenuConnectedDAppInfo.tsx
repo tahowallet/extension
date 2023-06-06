@@ -1,6 +1,6 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useCallback, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import SharedAccordion from "../Shared/SharedAccordion"
 import SharedLink from "../Shared/SharedLink"
@@ -210,14 +210,26 @@ export default function TopMenuConnectedDAppInfo(props: {
   const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
   const { title, url, close, faviconUrl, disconnect, isConnected } = props
 
+  const [isClosing, setIsClosing] = useState(false)
+
+  const animateThenClose = useCallback(() => {
+    setIsClosing(true)
+    setTimeout(close, 300)
+  }, [close])
+
   return (
-    <div className="bg">
+    <div
+      className={classNames("bg", {
+        fadeIn: !isClosing,
+        "fade-out": isClosing,
+      })}
+    >
       <div className="window">
         <button
           type="button"
           className="icon_close"
           aria-label={tShared("close")}
-          onClick={close}
+          onClick={animateThenClose}
         />
         <div className="content">
           <h1>{t(`${isConnected ? "dAppTitle" : "dappConnections"}`)}</h1>
@@ -247,7 +259,7 @@ export default function TopMenuConnectedDAppInfo(props: {
         aria-label={t("modalClose")}
         type="button"
         className="void_space"
-        onClick={close}
+        onClick={animateThenClose}
       />
       <style jsx>{`
         .bg {
