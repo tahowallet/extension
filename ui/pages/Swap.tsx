@@ -33,6 +33,7 @@ import {
   selectSwapBuyAssets,
   selectInProgressApprovalContract,
 } from "@tallyho/tally-background/redux-slices/selectors/0xSwapSelectors"
+import { isSameAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
@@ -44,7 +45,6 @@ import SharedBanner from "../components/Shared/SharedBanner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
 import ApproveQuoteBtn from "../components/Swap/ApproveQuoteButton"
 import {
-  isSameAsset,
   useSwapQuote,
   getSellAssetAmounts,
   getOwnedSellAssetAmounts,

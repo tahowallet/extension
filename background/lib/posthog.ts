@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from "uuid"
 
-import { FeatureFlags, isEnabled } from "../features"
 import logger from "./logger"
 
 export enum AnalyticsEvent {
@@ -39,9 +38,7 @@ export const POSTHOG_URL =
 export const USE_ANALYTICS_SOURCE = process.env.USE_ANALYTICS_SOURCE
 
 export function shouldSendPosthogEvents(): boolean {
-  return (
-    isEnabled(FeatureFlags.SUPPORT_ANALYTICS) && !!process.env.POSTHOG_API_KEY
-  )
+  return !!process.env.POSTHOG_API_KEY
 }
 
 export function createPosthogPayload(
