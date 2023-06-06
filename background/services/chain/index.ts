@@ -786,16 +786,17 @@ export default class ChainService extends BaseService<Events> {
    * where multiple nonces were seen in a row, this will make internally
    * available for reuse all intervening nonces.
    */
-  releaseEVMTransactionNonce(
+  async releaseEVMTransactionNonce(
     transactionRequest:
       | TransactionRequestWithNonce
       | SignedTransaction
       | AnyEVMTransaction
-  ): void {
+  ): Promise<void> {
     const chainID =
       "chainID" in transactionRequest
         ? transactionRequest.chainID
         : transactionRequest.network.chainID
+
     if (CHAINS_WITH_MEMPOOL.has(chainID)) {
       const { nonce } = transactionRequest
       const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
@@ -813,12 +814,23 @@ export default class ChainService extends BaseService<Events> {
           normalizedAddress
         ]
 
+      const networkTransactions = await this.db.getTransactionsForNetwork(
+        transactionRequest.network
+      )
+
+      const hasReplacementTransaction =
+        networkTransactions.filter(
+          (tx) =>
+            sameEVMAddress(tx.from, transactionRequest.from) &&
+            tx.nonce === transactionRequest.nonce
+        ).length > 1
+
       // TODO Currently this assumes that the only place this nonce could have
       // TODO been used is this service; however, another wallet or service
       // TODO could have broadcast a transaction with this same nonce, in which
       // TODO case the nonce release shouldn't take effect! This should be a
       // TODO relatively rare edge case, but we should handle it at some point.
-      if (nonce === lastSeenNonce) {
+      if (nonce === lastSeenNonce && !hasReplacementTransaction) {
         this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
           normalizedAddress
         ] -= 1
