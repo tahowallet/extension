@@ -293,7 +293,7 @@ const NFTsSlice = createSlice({
             )
 
             // let's update NFT count manually in case of multiple transfers from the same collection
-            collection.nftCount = (collection.nftCount ?? 1) - 1
+            collection.nftCount = (collection.nftCount || 1) - 1
 
             if (hasCachedTransferredNFT || hasLastNFT) {
               if (collection.nfts.length === 1 || hasLastNFT) {
