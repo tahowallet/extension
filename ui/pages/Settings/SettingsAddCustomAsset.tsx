@@ -168,6 +168,8 @@ export default function SettingsAddCustomAsset(): ReactElement {
       if (success) {
         await dispatch(setSnackbarMessage(t("snackbar.success")))
         history.push("/")
+      } else {
+        await dispatch(setSnackbarMessage(t("snackbar.failed")))
       }
     } finally {
       setIsImportingToken(false)
