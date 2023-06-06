@@ -7,7 +7,6 @@ import {
   selectAccountTotalsForOverview,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../hooks"
 import OverviewAssetsTable from "../components/Overview/OverviewAssetsTable"
 import BalanceHeader from "../components/Overview/BalanceHeader"
@@ -15,12 +14,6 @@ import NetworksChart from "../components/Overview/NetworksChart"
 import AccountList from "../components/Overview/AccountList"
 import NFTsPortfolioOverview from "../components/Overview/NFTsPortfolioOverview"
 import AbilitiesHeader from "../components/Overview/AbilitiesHeader"
-
-const panelNames = ["Assets", "NFTs"]
-
-if (isEnabled(FeatureFlags.ENABLE_ACHIEVEMENTS_TAB)) {
-  panelNames.push("Achievements")
-}
 
 export default function Overview(): ReactElement {
   const accountsTotal = useBackgroundSelector(selectAccountTotalsForOverview)
