@@ -105,7 +105,11 @@ export function getRelevantMarketsList(nft: NFTCached): MarketDetails[] {
   if (nft.chainID === ETHEREUM.chainID)
     return [MARKET_LINK.rarible, MARKET_LINK.looksrare, MARKET_LINK.opensea]
 
-  return [MARKET_LINK.opensea]
+  if (CHAIN_ID_TO_OPENSEA_CHAIN[nft.chainID]) {
+    return [MARKET_LINK.opensea]
+  }
+
+  return []
 }
 
 export const HARDCODED_MARKETS = [

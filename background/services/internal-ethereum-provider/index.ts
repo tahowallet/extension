@@ -39,7 +39,6 @@ import {
   EnrichedEVMTransactionRequest,
   TransactionAnnotation,
 } from "../enrichment"
-import { FeatureFlags, isEnabled } from "../../features"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
 import {
   isValidChecksumAddress,
@@ -295,10 +294,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           await this.switchToSupportedNetwork(origin, supportedNetwork)
           this.emitter.emit("selectedNetwork", supportedNetwork)
           return null
-        }
-        if (!isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
-          // Dissallow adding new chains until feature flag is turned on.
-          throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
         }
         try {
           const customNetwork = await this.chainService.addCustomChain(

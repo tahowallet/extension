@@ -62,6 +62,7 @@ interface Events extends ServiceLifecycleEvents {
   price: PricePoint
   assets: AnyAsset[]
   refreshAsset: SmartContractFungibleAsset
+  removeAssetData: SmartContractFungibleAsset
 }
 
 const getAssetsByAddress = (assets: SmartContractFungibleAsset[]) => {
@@ -213,10 +214,12 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   /**
-   * Adds a custom asset, invalidates internal cache for asset network
+   * Adds/updates a custom asset, invalidates internal cache for asset network
    * @param asset The custom asset
    */
-  async addCustomAsset(asset: SmartContractFungibleAsset): Promise<void> {
+  async addOrUpdateCustomAsset(
+    asset: SmartContractFungibleAsset
+  ): Promise<void> {
     await this.db.addOrUpdateCustomAsset(asset)
     await this.cacheAssetsForNetwork(asset.homeNetwork)
   }
@@ -251,7 +254,9 @@ export default class IndexingService extends BaseService<Events> {
    * lists.
    */
   async cacheAssetsForNetwork(network: EVMNetwork): Promise<void> {
-    const customAssets = await this.db.getCustomAssetsByNetworks([network])
+    const customAssets = await this.db.getActiveCustomAssetsByNetworks([
+      network,
+    ])
     const tokenListPrefs =
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
@@ -586,19 +591,37 @@ export default class IndexingService extends BaseService<Events> {
     this.emitter.emit("refreshAsset", updatedAsset)
   }
 
+  async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {
+    const metadata = {
+      ...asset.metadata,
+      removed: true,
+    }
+
+    // The updated metadata should only be sent to the db
+    await this.db.addOrUpdateCustomAsset({ ...asset, metadata })
+    await this.cacheAssetsForNetwork(asset.homeNetwork)
+    this.emitter.emit("removeAssetData", asset)
+  }
+
   async importCustomToken(
     asset: SmartContractFungibleAsset,
     addressNetwork: AddressOnNetwork
   ): Promise<void> {
-    const { metadata = {} } = asset
-    // Manually imported tokens are verified
-    metadata.verified = true
+    const customAsset = {
+      ...asset,
+      metadata: {
+        ...(asset.metadata ?? {}),
+        // Manually imported tokens are verified
+        verified: true,
+      },
+    }
 
     await this.addTokenToTrackByContract(
       asset.homeNetwork,
-      asset.contractAddress
+      asset.contractAddress,
+      customAsset.metadata
     )
-    await this.retrieveTokenBalances(addressNetwork, [asset])
+    await this.retrieveTokenBalances(addressNetwork, [customAsset])
   }
 
   /**
@@ -618,7 +641,7 @@ export default class IndexingService extends BaseService<Events> {
   async addTokenToTrackByContract(
     network: EVMNetwork,
     contractAddress: string,
-    metadata: { discoveryTxHash?: HexString } = {}
+    metadata: { discoveryTxHash?: HexString; verified?: boolean } = {}
   ): Promise<SmartContractFungibleAsset | undefined> {
     const normalizedAddress = normalizeEVMAddress(contractAddress)
 
@@ -647,16 +670,24 @@ export default class IndexingService extends BaseService<Events> {
     }
 
     if (customAsset) {
-      if (metadata) {
-        customAsset.metadata ??= {}
-        Object.assign(customAsset.metadata, metadata)
-      }
+      const isRemoved = customAsset?.metadata?.removed ?? false
+      const isVerified = metadata.verified ?? false
+      // If the asset has been removed, it should be added again when the user did it manually by import.
+      if (!isRemoved || (isRemoved && isVerified)) {
+        if (Object.keys(metadata).length !== 0) {
+          customAsset.metadata ??= {}
+          Object.assign(customAsset.metadata, metadata)
 
-      await this.addCustomAsset(customAsset)
-      this.emitter.emit("refreshAsset", customAsset)
-      // TODO if we still don't have anything, use a contract read + a
-      // CoinGecko lookup
-      await this.addAssetToTrack(customAsset)
+          if (isRemoved) {
+            customAsset.metadata.removed = false
+          }
+        }
+        await this.addOrUpdateCustomAsset(customAsset)
+        this.emitter.emit("refreshAsset", customAsset)
+        // TODO if we still don't have anything, use a contract read + a
+        // CoinGecko lookup
+        await this.addAssetToTrack(customAsset)
+      }
     }
 
     return customAsset
@@ -708,7 +739,7 @@ export default class IndexingService extends BaseService<Events> {
     const getAssetId = (asset: SmartContractFungibleAsset) =>
       `${asset.homeNetwork.chainID}:${asset.contractAddress}`
 
-    const customAssets = await this.db.getCustomAssetsByNetworks(
+    const customAssets = await this.db.getActiveCustomAssetsByNetworks(
       trackedNetworks
     )
 

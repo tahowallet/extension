@@ -1,20 +1,14 @@
-type OldState = {
-  nfts: unknown
-  nftsUpdate: unknown
-  [otherSlice: string]: unknown
-}
+// This migration ensures the assets collection is cleared of duplicated
+// base assets https://github.com/tahowallet/extension/issues/3445
 
-type NewState = {
-  nfts: unknown
-  [otherSlice: string]: unknown
-}
+export default (
+  prevState: Record<string, unknown>
+): Record<string, unknown> => {
+  const { assets, ...newState } = prevState
 
-// Remove old nfts slice and rename updated nfts slice
-export default (prevState: Record<string, unknown>): NewState => {
-  const { nfts, nftsUpdate, ...otherState } = prevState as OldState
+  // Clear assets collection; these should be immediately repopulated by the
+  // IndexingService in startService.
+  newState.assets = []
 
-  return {
-    ...otherState,
-    nfts: nftsUpdate,
-  }
+  return newState
 }

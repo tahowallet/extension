@@ -6,14 +6,17 @@ import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useHistory } from "react-router-dom"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
+import {
+  useBackgroundDispatch,
+  useBackgroundSelector,
+  useSigningLedgerState,
+} from "../../../../hooks"
 import { SignerFrameProps } from ".."
 import SharedButton from "../../../Shared/SharedButton"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
 import SignerLedgerConnect from "./SignerLedgerConnect"
 import SignerLedgerSigning from "./SignerLedgerSigning"
 import SignerLedgerConnectionStatus from "./SignerLedgerConnectionStatus"
-import { useSigningLedgerState } from "../../../SignTransaction/useSigningLedgerState"
 import TransactionButton from "../TransactionButton"
 
 export default function SignerLedgerFrame<T extends SignOperationType>({

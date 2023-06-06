@@ -56,6 +56,7 @@ import {
   assetsLoaded,
   newPricePoint,
   refreshAsset,
+  removeAssetData,
 } from "./redux-slices/assets"
 import {
   setEligibility,
@@ -1075,6 +1076,10 @@ export default class Main extends BaseService<never> {
         })
       )
     })
+
+    this.indexingService.emitter.on("removeAssetData", (asset) => {
+      this.store.dispatch(removeAssetData({ asset }))
+    })
   }
 
   async connectEnrichmentService(): Promise<void> {
@@ -1257,14 +1262,13 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
-        // Don't await, as the below enrichment is expected to take longer than
-        // signer prep. If that assumption breaks, we should probably await the
-        // two in parallel.
-        this.signingService.prepareForSigningRequest()
+        // Run signer preparation and enrichment in parallel.
+        const [, enrichedSignTypedDataRequest] = await Promise.all([
+          this.signingService.prepareForSigningRequest(),
+          this.enrichmentService.enrichSignTypedDataRequest(payload),
+        ])
 
-        const enrichedsignTypedDataRequest =
-          await this.enrichmentService.enrichSignTypedDataRequest(payload)
-        this.store.dispatch(typedDataRequest(enrichedsignTypedDataRequest))
+        this.store.dispatch(typedDataRequest(enrichedSignTypedDataRequest))
 
         const clear = () => {
           this.signingService.emitter.off(
@@ -1784,6 +1788,10 @@ export default class Main extends BaseService<never> {
     metadata: AnyAssetMetadata
   ): Promise<void> {
     await this.indexingService.updateAssetMetadata(asset, metadata)
+  }
+
+  async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {
+    await this.indexingService.hideAsset(asset)
   }
 
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {
