@@ -19,9 +19,9 @@ import classNames from "classnames"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
 import NetworkSettingsChooser from "../../../NetworkFees/NetworkSettingsChooser"
-import SignTransactionDetailWarning from "../../../SignTransaction/SignTransactionDetailWarning"
 import FeeSettingsButton from "../../../NetworkFees/FeeSettingsButton"
 import TransactionAdditionalDetails from "./TransactionAdditionalDetails"
+import TransactionSignatureDetailsWarning from "./TransactionSignatureDetailsWarning"
 
 export type PanelState = {
   dismissedWarnings: string[]
@@ -117,7 +117,7 @@ export default function DetailPanel({
       {isContractAddress &&
         !panelState.dismissedWarnings.includes("send-to-contract") && (
           <span className="detail_item">
-            <SignTransactionDetailWarning
+            <TransactionSignatureDetailsWarning
               message={t("wallet.sendToContractWarning")}
               dismissable
               onDismiss={() =>
@@ -147,7 +147,7 @@ export default function DetailPanel({
           visible: hasInsufficientFundsWarning,
         })}
       >
-        <SignTransactionDetailWarning
+        <TransactionSignatureDetailsWarning
           message={t("networkFees.insufficientBaseAsset", {
             symbol: transactionDetails.network.baseAsset.symbol,
           })}

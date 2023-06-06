@@ -603,10 +603,7 @@ export default class IndexingService extends BaseService<Events> {
     this.emitter.emit("removeAssetData", asset)
   }
 
-  async importCustomToken(
-    asset: SmartContractFungibleAsset,
-    addressNetwork: AddressOnNetwork
-  ): Promise<void> {
+  async importCustomToken(asset: SmartContractFungibleAsset): Promise<boolean> {
     const customAsset = {
       ...asset,
       metadata: {
@@ -621,7 +618,26 @@ export default class IndexingService extends BaseService<Events> {
       asset.contractAddress,
       customAsset.metadata
     )
-    await this.retrieveTokenBalances(addressNetwork, [customAsset])
+
+    try {
+      const addresses = await this.chainService.getTrackedAddressesOnNetwork(
+        asset.homeNetwork
+      )
+      await Promise.allSettled(
+        addresses.map(async (addressNetwork) => {
+          await this.retrieveTokenBalances(addressNetwork, [customAsset])
+        })
+      )
+      return true
+    } catch (error) {
+      logger.error(
+        "Error retrieving new custom token balances for ",
+        asset,
+        ": ",
+        error
+      )
+      return false
+    }
   }
 
   /**

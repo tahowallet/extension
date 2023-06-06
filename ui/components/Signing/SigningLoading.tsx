@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 
-export default function SignTransactionLoader(): ReactElement {
+export default function SigningLoading(): ReactElement {
   return (
     <div className="loading_transaction">
       <div className="header">

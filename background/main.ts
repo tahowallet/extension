@@ -1916,14 +1916,8 @@ export default class Main extends BaseService<never> {
     }
   }
 
-  async importCustomToken({
-    asset,
-    addressNetwork,
-  }: {
-    asset: SmartContractFungibleAsset
-    addressNetwork: AddressOnNetwork
-  }): Promise<void> {
-    await this.indexingService.importCustomToken(asset, addressNetwork)
+  async importCustomToken(asset: SmartContractFungibleAsset): Promise<boolean> {
+    return this.indexingService.importCustomToken(asset)
   }
 
   private connectPopupMonitor() {
