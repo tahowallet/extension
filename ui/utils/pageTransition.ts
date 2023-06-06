@@ -64,15 +64,11 @@ export function animationStyles(isDirectionRight: boolean): string {
         transition: transform cubic-bezier(0.25, 0.4, 0.55, 1.4) 250ms,
           opacity 250ms;
       }
-      .page-transition-exit > main {
+      .page-transition-exit {
         opacity: 1;
-        transform: translateX(0px);
       }
-      .page-transition-exit-active > main {
+      .page-transition-exit-active {
         opacity: 0;
-        transform: ${isDirectionRight ? `translateX(-7px)` : `translateX(7px)`};
-        transition: transform cubic-bezier(0.25, 0.4, 0.55, 1.4) 250ms,
-          opacity 250ms;
       }
       `
 }
