@@ -27,7 +27,6 @@ import {
 import { clearSignature } from "@tallyho/tally-background/redux-slices/earn"
 import { resetClaimFlow } from "@tallyho/tally-background/redux-slices/claim"
 import { useTranslation } from "react-i18next"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { isSameAccountSignerWithId } from "@tallyho/tally-background/utils/signing"
 import SharedButton from "../Shared/SharedButton"
@@ -332,13 +331,12 @@ export default function AccountsNotificationPanelAccounts({
                 <p className="category_title">
                   {walletTypeDetails[accountType].category}
                 </p>
-                {isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
-                  (accountType === AccountType.Imported ||
-                    accountType === AccountType.Internal) && (
-                    <SigningButton
-                      onCurrentAddressChange={onCurrentAddressChange}
-                    />
-                  )}
+                {(accountType === AccountType.Imported ||
+                  accountType === AccountType.Internal) && (
+                  <SigningButton
+                    onCurrentAddressChange={onCurrentAddressChange}
+                  />
+                )}
               </div>
             )}
             {Object.values(accountTotalsByType).map(

@@ -36,7 +36,6 @@ import {
 } from "./utils"
 import { toHexChainID } from "../../networks"
 import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
-import { FeatureFlags, isEnabled } from "../../features"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -527,15 +526,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
           )
 
         case "wallet_addEthereumChain": {
-          if (!isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
-            // Attempt to switch to a chain if its one of the natively supported ones - otherwise fail
-            return await this.internalEthereumProviderService.routeSafeRPCRequest(
-              method,
-              params,
-              origin
-            )
-          }
-
           const id = this.addNetworkRequestId.toString()
 
           this.addNetworkRequestId += 1
