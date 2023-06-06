@@ -134,114 +134,101 @@ export default function TopMenu(): ReactElement {
         />
       </SharedSlideUpMenu>
       {isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && <></>}
-      <div className="nav_wrap">
-        <nav className="standard_width_padded">
-          <TopMenuProtocolSwitcher
-            onClick={() => setIsProtocolListOpen(true)}
-          />
-          <div className="profile_group">
-            {isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && (
-              <button
-                type="button"
-                aria-label={t("showCurrentDappConnection")}
-                className="connection_button"
-                onClick={() => {
-                  setIsActiveDAppConnectionInfoOpen(
-                    !isActiveDAppConnectionInfoOpen
-                  )
-                }}
-              >
-                {isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT) &&
-                isConnectedToDApp ? (
-                  <div className="connected-wc" />
-                ) : (
-                  <div className="connection_img" />
-                )}
-              </button>
-            )}
-            {isDisabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
-              <button
-                type="button"
-                aria-label={t("rewardsProgram")}
-                className="gift_button"
-                onClick={() => {
-                  setIsBonusProgramOpen(!isBonusProgramOpen)
-                }}
-              />
-            )}
-            <TopMenuProfileButton
+      <nav>
+        <TopMenuProtocolSwitcher onClick={() => setIsProtocolListOpen(true)} />
+        <div className="profile_group">
+          {isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && (
+            <button
+              type="button"
+              aria-label={t("showCurrentDappConnection")}
+              className="connection_button"
               onClick={() => {
-                setIsNotificationsOpen(!isNotificationsOpen)
+                setIsActiveDAppConnectionInfoOpen(
+                  !isActiveDAppConnectionInfoOpen
+                )
+              }}
+            >
+              {isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT) &&
+              isConnectedToDApp ? (
+                <div className="connected-wc" />
+              ) : (
+                <div className="connection_img" />
+              )}
+            </button>
+          )}
+          {isDisabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
+            <button
+              type="button"
+              aria-label={t("rewardsProgram")}
+              className="gift_button"
+              onClick={() => {
+                setIsBonusProgramOpen(!isBonusProgramOpen)
               }}
             />
-          </div>
-        </nav>
+          )}
+          <TopMenuProfileButton
+            onClick={() => {
+              setIsNotificationsOpen(!isNotificationsOpen)
+            }}
+          />
+        </div>
+      </nav>
 
-        <style jsx>
-          {`
-            nav {
-              flex-shrink: 0;
-              height: 52px;
-              margin-top: 6px;
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              padding-right: 0;
-              gap: 8px;
-            }
-            .nav_wrap {
-              width: 100%;
-              box-shadow: 0px 6px 11px var(--hunter-green);
-              margin-bottom: 6px;
-              z-index: inherit;
-            }
-            .profile_group {
-              display: flex;
-              align-items: center;
-              min-width: 0; // Allow the account address/name to collapse to an ellipsis.
-            }
-            button {
-              border-radius: 12px;
-              border: solid 3px var(--hunter-green);
-              width: 32px;
-              height: 32px;
-              margin-right: 2px;
-            }
-            button:hover {
-              background-color: var(--green-80);
-            }
-            .connection_button:hover .connection_img {
-              background-color: var(--success);
-            }
-            .connection_button {
-              width: 32px;
-              height: 32px;
-            }
-            .connection_img {
-              mask-image: url("./images/bolt@2x.png");
-              mask-repeat: no-repeat;
-              mask-position: center;
-              mask-size: cover;
-              mask-size: 35%;
-              width: 32px;
-              height: 32px;
-              background-color: var(
-                --${isConnectedToDApp ? "success" : "green-20"}
-              );
-            }
-            .connected-wc {
-              background: url("./images/connected-wc.svg") center / 24px
-                no-repeat;
-              width: 32px;
-              height: 32px;
-            }
-            .gift_button {
-              background: url("./images/gift@2x.png") center no-repeat;
-              background-size: 24px 24px;
-            }
-          `}
-        </style>
-      </div>
+      <style jsx>
+        {`
+          nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+
+            padding: 0 16px 0 13px;
+          }
+          .profile_group {
+            display: flex;
+            align-items: center;
+            min-width: 0; // Allow the account address/name to collapse to an ellipsis.
+          }
+          button {
+            border-radius: 12px;
+            border: solid 3px var(--hunter-green);
+            width: 32px;
+            height: 32px;
+            margin-right: 2px;
+          }
+          button:hover {
+            background-color: var(--green-80);
+          }
+          .connection_button:hover .connection_img {
+            background-color: var(--success);
+          }
+          .connection_button {
+            width: 32px;
+            height: 32px;
+          }
+          .connection_img {
+            mask-image: url("./images/bolt@2x.png");
+            mask-repeat: no-repeat;
+            mask-position: center;
+            mask-size: cover;
+            mask-size: 35%;
+            width: 32px;
+            height: 32px;
+            background-color: var(
+              --${isConnectedToDApp ? "success" : "green-20"}
+            );
+          }
+          .connected-wc {
+            background: url("./images/connected-wc.svg") center / 24px no-repeat;
+            width: 32px;
+            height: 32px;
+          }
+          .gift_button {
+            background: url("./images/gift@2x.png") center no-repeat;
+            background-size: 24px 24px;
+          }
+        `}
+      </style>
     </>
   )
 }
