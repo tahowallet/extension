@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react"
-import SharedBanner from "../Shared/SharedBanner"
-import SharedIcon from "../Shared/SharedIcon"
+import SharedBanner from "../../../Shared/SharedBanner"
+import SharedIcon from "../../../Shared/SharedIcon"
 
 type DismissableProps =
   | {
@@ -14,7 +14,7 @@ type DismissableProps =
 
 type WarningProps = { message: string } & DismissableProps
 
-export default function SignTransactionDetailWarning(
+export default function TransactionSignatureDetailsWarning(
   props: WarningProps
 ): ReactElement {
   const { message, dismissable = false, onDismiss } = props

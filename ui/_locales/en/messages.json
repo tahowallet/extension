@@ -772,7 +772,7 @@
       "transactionFrom": "From:",
       "loadingActivities": "Digging deeper...",
       "addCustomAssetPrompt": "Can't find an asset?",
-      "addCustomAssetAction": "add custom asset"
+      "addCustomAssetAction": "Add custom asset"
     },
     "banner": {
       "bannerTitle": "New Odyssey week!",
@@ -827,7 +827,7 @@
       "discoveryTxHash": "Added from transaction",
       "dontShow": "Don’t show",
       "addToAssetList": "Add to asset list",
-      "verifyAssetSnackbar":  "Asset added to list",
+      "verifyAssetSnackbar": "Asset added to list",
       "removeAssetSnackbar": "Asset removed from list",
       "banner": {
         "titleUnverified": "Asset not verified",
@@ -933,14 +933,10 @@
       "title": "Feature flags",
       "flags": {
         "USE_MAINNET_FORK": "Use mainnet fork",
-        "RESOLVE_RNS_NAMES": "Resolve RNS names",
         "HIDE_IMPORT_DERIVATION_PATH": "Hide import derivation path",
         "HIDE_SWAP_REWARDS": "Hide swap rewards",
         "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
         "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
-        "SUPPORT_ANALYTICS": "Show Analytics page on the settings page",
-        "SUPPORT_KEYRING_LOCKING": "Enable to lock/unlock accounts ",
-        "SUPPORT_FORGOT_PASSWORD": "Enable to forgot password",
         "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",

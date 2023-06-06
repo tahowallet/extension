@@ -17,8 +17,8 @@ import {
   POLYGON,
 } from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
-import { normalizeEVMAddress } from "../../lib/utils"
-import { AnyNetwork, NetworkBaseAsset } from "../../networks"
+import { sameEVMAddress } from "../../lib/utils"
+import { AnyNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
 
 /**
@@ -376,7 +376,7 @@ export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
 }
 
 // FIXME Unify once asset similarity code is unified.
-export function isSameAsset(asset1: AnyAsset, asset2: AnyAsset): boolean {
+export function isSameAsset(asset1?: AnyAsset, asset2?: AnyAsset): boolean {
   if (typeof asset1 === "undefined" || typeof asset2 === "undefined") {
     return false
   }
@@ -386,8 +386,8 @@ export function isSameAsset(asset1: AnyAsset, asset2: AnyAsset): boolean {
     isSmartContractFungibleAsset(asset2)
   ) {
     return (
-      normalizeEVMAddress(asset1.contractAddress) ===
-      normalizeEVMAddress(asset2.contractAddress)
+      sameNetwork(asset1.homeNetwork, asset2.homeNetwork) &&
+      sameEVMAddress(asset1.contractAddress, asset2.contractAddress)
     )
   }
 
@@ -396,6 +396,10 @@ export function isSameAsset(asset1: AnyAsset, asset2: AnyAsset): boolean {
     isSmartContractFungibleAsset(asset2)
   ) {
     return false
+  }
+
+  if (isNetworkBaseAsset(asset1) && isNetworkBaseAsset(asset2)) {
+    return sameNetworkBaseAsset(asset1, asset2)
   }
 
   return asset1.symbol === asset2.symbol

@@ -8,7 +8,7 @@ type Props = {
   accountTotal: AccountTotal
 }
 
-export default function SignTransactionNetworkAccountInfoTopBar({
+export default function SigningNetworkAccountInfoTopBar({
   accountTotal,
 }: Props): ReactElement {
   const { t } = useTranslation()
