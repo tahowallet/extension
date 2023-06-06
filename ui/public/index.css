@@ -1,15 +1,15 @@
 :root {
-  --hunter-green: #002825;
+  --hunter-green: #0d2321;
   --castle-black: #0a0806;
-  --green-120: #001413;
-  --green-95: #013834;
-  --green-80: #074b48;
-  --green-60: #497270;
-  --green-40: #7da19f;
-  --green-20: #b8d1d0;
-  --green-5: #ebfffe;
+  --green-120: #071111;
+  --green-95: #122b29;
+  --green-80: #183736;
+  --green-60: #315a5a;
+  --green-40: #588382;
+  --green-20: #81aba8;
+  --green-5: #d6eae9;
 
-  --trophy-gold: #ef9c32;
+  --trophy-gold: #ed9a26;
   --gold-120: #b57017;
   --gold-80: #f0ac55;
   --gold-60: #efbf81;
@@ -18,7 +18,7 @@
   --gold-5: #fdf6ed;
   --white: #d6eae9;
 
-  --error: #FF6666;
+  --error: #f55252;
   --error-80: #B04443;
   --error-20: #372a29;
 
