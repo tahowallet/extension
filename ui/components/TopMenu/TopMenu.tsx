@@ -20,6 +20,7 @@ import TopMenuConnectedDAppInfo from "./TopMenuConnectedDAppInfo"
 import TopMenuProtocolList from "./TopMenuProtocolList"
 
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import DAppConnection from "../DAppConnection/DAppConnection"
 
 export default function TopMenu(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "topMenu" })
@@ -133,7 +134,9 @@ export default function TopMenu(): ReactElement {
           onCurrentAddressChange={() => setIsNotificationsOpen(false)}
         />
       </SharedSlideUpMenu>
-      {isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && <></>}
+      {isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && (
+        <DAppConnection />
+      )}
       <nav>
         <TopMenuProtocolSwitcher onClick={() => setIsProtocolListOpen(true)} />
         <div className="profile_group">
