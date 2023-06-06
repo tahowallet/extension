@@ -160,18 +160,17 @@ export default function SettingsAddCustomAsset(): ReactElement {
       return
     }
 
-    try {
-      setIsImportingToken(true)
-      const { success } = await dispatch(
-        importCustomToken({ asset: assetData.asset })
-      )
-      if (success) {
-        await dispatch(setSnackbarMessage(t("snackbar.success")))
-        history.push("/")
-      } else {
-        await dispatch(setSnackbarMessage(t("snackbar.failed")))
-      }
-    } finally {
+    setIsImportingToken(true)
+
+    const { success } = await dispatch(
+      importCustomToken({ asset: assetData.asset })
+    )
+    if (success) {
+      await dispatch(setSnackbarMessage(t("snackbar.success")))
+      setIsImportingToken(false)
+      history.push("/")
+    } else {
+      await dispatch(setSnackbarMessage(t("snackbar.failed")))
       setIsImportingToken(false)
     }
   }
