@@ -148,29 +148,27 @@ export default function Wallet(): ReactElement {
                     initializationLoadingTimeExpired
                   }
                 />
-                {isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && (
-                  <div
-                    className={classNames("add_custom_asset", {
-                      line: showHiddenAssets,
-                    })}
+                <div
+                  className={classNames("add_custom_asset", {
+                    line: showHiddenAssets,
+                  })}
+                >
+                  <span>{t("wallet.activities.addCustomAssetPrompt")}</span>
+                  <SharedButton
+                    size="medium"
+                    onClick={() => history.push("/settings/add-custom-asset")}
+                    type="tertiary"
                   >
-                    <span>{t("wallet.activities.addCustomAssetPrompt")}</span>
-                    <SharedButton
-                      size="medium"
-                      onClick={() => history.push("/settings/add-custom-asset")}
-                      type="tertiary"
-                    >
-                      <SharedIcon
-                        width={16}
-                        height={16}
-                        customStyles="margin-right: 4px"
-                        icon="icons/s/add.svg"
-                        color="currentColor"
-                      />
-                      {t("wallet.activities.addCustomAssetAction")}
-                    </SharedButton>
-                  </div>
-                )}
+                    <SharedIcon
+                      width={16}
+                      height={16}
+                      customStyles="margin-right: 4px"
+                      icon="icons/s/add.svg"
+                      color="currentColor"
+                    />
+                    {t("wallet.activities.addCustomAssetAction")}
+                  </SharedButton>
+                </div>
                 {showHiddenAssets && (
                   <WalletHiddenAssets
                     assetAmounts={
