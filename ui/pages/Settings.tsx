@@ -326,7 +326,7 @@ export default function Settings(): ReactElement {
       items: [
         setAsDefault,
         dAppsSettings,
-        isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) && analytics,
+        analytics,
         isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
         isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) &&
           notificationBanner,
@@ -337,8 +337,8 @@ export default function Settings(): ReactElement {
       items: [
         hideSmallAssetBalance,
         unverifiedAssets,
-        isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && customNetworks,
-        isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && addCustomAsset,
+        customNetworks,
+        addCustomAsset,
         enableTestNetworks,
       ],
     },

@@ -1269,14 +1269,13 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
-        // Don't await, as the below enrichment is expected to take longer than
-        // signer prep. If that assumption breaks, we should probably await the
-        // two in parallel.
-        this.signingService.prepareForSigningRequest()
+        // Run signer preparation and enrichment in parallel.
+        const [, enrichedSignTypedDataRequest] = await Promise.all([
+          this.signingService.prepareForSigningRequest(),
+          this.enrichmentService.enrichSignTypedDataRequest(payload),
+        ])
 
-        const enrichedsignTypedDataRequest =
-          await this.enrichmentService.enrichSignTypedDataRequest(payload)
-        this.store.dispatch(typedDataRequest(enrichedsignTypedDataRequest))
+        this.store.dispatch(typedDataRequest(enrichedSignTypedDataRequest))
 
         const clear = () => {
           this.signingService.emitter.off(
@@ -1917,14 +1916,8 @@ export default class Main extends BaseService<never> {
     }
   }
 
-  async importCustomToken({
-    asset,
-    addressNetwork,
-  }: {
-    asset: SmartContractFungibleAsset
-    addressNetwork: AddressOnNetwork
-  }): Promise<void> {
-    await this.indexingService.importCustomToken(asset, addressNetwork)
+  async importCustomToken(asset: SmartContractFungibleAsset): Promise<boolean> {
+    return this.indexingService.importCustomToken(asset)
   }
 
   private connectPopupMonitor() {

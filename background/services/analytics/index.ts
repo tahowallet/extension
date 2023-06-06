@@ -13,7 +13,6 @@ import {
   sendPosthogEvent,
 } from "../../lib/posthog"
 import PreferenceService from "../preferences"
-import { FeatureFlags, isEnabled as isFeatureFlagEnabled } from "../../features"
 import logger from "../../lib/logger"
 
 const chainSpecificOneTimeEvents = [OneTimeAnalyticsEvent.CHAIN_ADDED]
@@ -53,10 +52,7 @@ export default class AnalyticsService extends BaseService<Events> {
     let { isEnabled, hasDefaultOnBeenTurnedOn } =
       await this.preferenceService.getAnalyticsPreferences()
 
-    if (
-      isFeatureFlagEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) &&
-      !hasDefaultOnBeenTurnedOn
-    ) {
+    if (!hasDefaultOnBeenTurnedOn) {
       // this handles the edge case where we have already shipped analytics
       // but with default turned off and now we want to turn default on
       // and show a notification to the user

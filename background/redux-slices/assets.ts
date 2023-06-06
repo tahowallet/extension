@@ -13,11 +13,7 @@ import {
 import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
 import { createBackgroundAsyncThunk } from "./utils"
-import {
-  isBuiltInNetworkBaseAsset,
-  isSameAsset,
-  sameBuiltInNetworkBaseAsset,
-} from "./utils/asset-utils"
+import { isBuiltInNetworkBaseAsset, isSameAsset } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
 import { EVMNetwork, sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
@@ -27,7 +23,6 @@ import { convertFixedPoint } from "../lib/fixed-point"
 import { removeAssetReferences, updateAssetReferences } from "./accounts"
 import { NormalizedEVMAddress } from "../types"
 import type { RootState } from "."
-import { sameEVMAddress } from "../lib/utils"
 
 export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
   recentPrices: {
@@ -72,18 +67,7 @@ const assetsSlice = createSlice({
           const duplicateIndexes = mappedAssets[newAsset.symbol].reduce<
             number[]
           >((acc, existingAsset, id) => {
-            if (
-              ("homeNetwork" in newAsset &&
-                "homeNetwork" in existingAsset &&
-                sameNetwork(existingAsset.homeNetwork, newAsset.homeNetwork) &&
-                "contractAddress" in newAsset &&
-                "contractAddress" in existingAsset &&
-                sameEVMAddress(
-                  existingAsset.contractAddress,
-                  newAsset.contractAddress
-                )) ||
-              sameBuiltInNetworkBaseAsset(newAsset, existingAsset)
-            ) {
+            if (isSameAsset(newAsset, existingAsset)) {
               acc.push(id)
             }
             return acc
@@ -379,15 +363,9 @@ export const importCustomToken = createBackgroundAsyncThunk(
     }: {
       asset: SmartContractFungibleAsset
     },
-    { getState, extra: { main } }
+    { extra: { main } }
   ) => {
-    const state = getState() as RootState
-    const currentAccount = state.ui.selectedAccount
-
-    await main.importCustomToken({
-      asset,
-      addressNetwork: currentAccount,
-    })
+    return { success: await main.importCustomToken(asset) }
   }
 )
 
