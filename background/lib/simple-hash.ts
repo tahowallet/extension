@@ -120,6 +120,8 @@ const SIMPLE_HASH_CHAIN_TO_ID = {
   "zksync-era": 324,
 }
 
+const SIMPLE_HASH_BASE_URL = "https://api.simplehash.com/api/v0/nfts"
+
 function isGalxeAchievement(url: string | null | undefined) {
   return !!url && (url.includes("galaxy.eco") || url.includes("galxe.com"))
 }
@@ -257,7 +259,7 @@ export async function getSimpleHashNFTs(
   if (nextPageURL) {
     requestURL = new URL(nextPageURL)
   } else {
-    requestURL = new URL("https://api.simplehash.com/api/v0/nfts/owners")
+    requestURL = new URL(`${SIMPLE_HASH_BASE_URL}/owners`)
     requestURL.searchParams.set("chains", getChainIDsNames(chainIDs))
     requestURL.searchParams.set("wallet_addresses", address)
     requestURL.searchParams.set("collection_id", collectionID)
@@ -298,9 +300,7 @@ export async function getSimpleHashCollections(
   address: string,
   chainIDs: string[]
 ): Promise<NFTCollection[]> {
-  const requestURL = new URL(
-    "https://api.simplehash.com/api/v0/nfts/collections_by_wallets"
-  )
+  const requestURL = new URL(`${SIMPLE_HASH_BASE_URL}/collections_by_wallets`)
   requestURL.searchParams.set("chains", getChainIDsNames(chainIDs))
   requestURL.searchParams.set("wallet_addresses", address)
 
@@ -335,9 +335,7 @@ export async function getSimpleHashNFTsTransfers(
   if (nextPageURL) {
     requestURL = new URL(nextPageURL)
   } else {
-    requestURL = new URL(
-      "https://api.simplehash.com/api/v0/nfts/transfers/wallets"
-    )
+    requestURL = new URL(`${SIMPLE_HASH_BASE_URL}/transfers/wallets`)
     requestURL.searchParams.set("chains", getChainIDsNames(chainIDs))
     requestURL.searchParams.set("wallet_addresses", addresses.join(","))
     requestURL.searchParams.set("from_timestamp", fromTimestamp.toString())
