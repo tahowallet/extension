@@ -180,7 +180,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
         </div>
       )}
       {panelNumber === 0 && (
-        <div className={classNames(shouldDisplayNFTs && "nfts_update")}>
+        <div className={classNames({ has_nfts: shouldDisplayNFTs })}>
           <div className="standard_width_padded center_horizontal">
             <div className="search_label">{t("shared.selectToken")}</div>
             <div className="search_wrap">
@@ -218,7 +218,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
         </div>
       )}
       {panelNumber === 1 && (
-        <div className="nfts_update standard_width_padded center_horizontal">
+        <div className="standard_width_padded center_horizontal has_nfts">
           <div className="search_wrap">
             <input
               type="text"
@@ -246,7 +246,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
           .panel_switcher {
             width: 100%;
           }
-          .nfts_update > div {
+          .has_nfts > div {
             margin-top: 16px;
           }
 
