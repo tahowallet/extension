@@ -4,11 +4,14 @@ import {
   selectDefaultWallet,
   setNewDefaultWalletValue,
 } from "@tallyho/tally-background/redux-slices/ui"
+import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedIcon from "../Shared/SharedIcon"
 import SharedToggleButton from "../Shared/SharedToggleButton"
 
 export default function DAppConnectionDefaultToggle(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "topMenu" })
+
   const dispatch = useBackgroundDispatch()
 
   const isDefaultWallet = useBackgroundSelector(selectDefaultWallet)
@@ -22,11 +25,11 @@ export default function DAppConnectionDefaultToggle(): ReactElement {
     <>
       {hasDetectedOtherWallets && (
         <p className="default_wallet">
-          Connect to website using:
+          {t("connectToWebsiteUsing")}
           <SharedIcon
             width={20}
             icon="taho-connect-icon.svg"
-            ariaLabel="Taho"
+            ariaLabel={t("setTahoAsDefault")}
             color={isDefaultWallet ? "var(--success)" : "var(--green-20)"}
             onClick={() => toggleDefaultWallet(true)}
           />
@@ -40,7 +43,7 @@ export default function DAppConnectionDefaultToggle(): ReactElement {
           <SharedIcon
             width={24}
             icon="other-wallet-connect-icon.svg"
-            ariaLabel="Other Wallet"
+            ariaLabel={t("setOtherAsDefault")}
             color={isDefaultWallet ? "var(--green-20)" : "var(--white)"}
             onClick={() => toggleDefaultWallet(false)}
           />
