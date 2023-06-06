@@ -199,3 +199,17 @@ label {
     opacity: 1;
   }
 }
+
+.fade-out {
+  animation: fade-out ease-out var(--fade-in-duration, 250ms);
+  opacity: 0;
+}
+
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
