@@ -6,13 +6,13 @@ import {
   NFT_MOCK,
   TRANSFER_MOCK,
   extractCollection,
-} from "./nfts_update.utils"
+} from "./nfts.utils"
 import reducer, {
   deleteTransferredNFTs,
   NFTsSliceState,
   updateNFTsCollections,
   updateNFTs,
-} from "../nfts_update"
+} from "../nfts"
 
 describe("NFTs redux slice", () => {
   describe("Delete transferred NFTs from state", () => {

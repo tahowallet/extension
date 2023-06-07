@@ -4,9 +4,9 @@ import {
   selectAllNFTsCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
-import NFTsHeader from "../components/NFTS_update/NFTsHeader"
+import NFTsHeader from "../components/NFTs/NFTsHeader"
 import { useBackgroundSelector, useNFTsReload } from "../hooks"
-import NFTListPortfolio from "../components/NFTS_update/NFTListPortfolio"
+import NFTListPortfolio from "../components/NFTs/NFTListPortfolio"
 import SharedButtonUp from "../components/Shared/SharedButtonUp"
 
 const PANEL_NAMES = ["NFTs", "Badges"]
