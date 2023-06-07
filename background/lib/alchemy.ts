@@ -325,17 +325,3 @@ export function transactionFromAlchemyWebsocketTransaction(
     network,
   }
 }
-
-export type AlchemyNFTItem = {
-  error?: string
-  media: { gateway?: string }[]
-  id: {
-    tokenId: string
-  }
-  contract: { address: string }
-  title: string
-  chainID: number
-  metadata: {
-    external_link: string | null
-  }
-}
