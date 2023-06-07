@@ -2,7 +2,11 @@ import React, { ReactElement, useState, useEffect, useCallback } from "react"
 import { browser } from "@tallyho/tally-background"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selectors"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import {
+  FeatureFlags,
+  isDisabled,
+  isEnabled,
+} from "@tallyho/tally-background/features"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp"
 import { useTranslation } from "react-i18next"
 import { setSelectedNetwork } from "@tallyho/tally-background/redux-slices/ui"
@@ -85,7 +89,8 @@ export default function TopMenu(): ReactElement {
 
   return (
     <>
-      {isActiveDAppConnectionInfoOpen ? (
+      {isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) &&
+      isActiveDAppConnectionInfoOpen ? (
         <TopMenuConnectedDAppInfo
           title={currentPermission.title}
           url={currentPermission.origin}
@@ -128,30 +133,33 @@ export default function TopMenu(): ReactElement {
           onCurrentAddressChange={() => setIsNotificationsOpen(false)}
         />
       </SharedSlideUpMenu>
+      {isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && <></>}
       <div className="nav_wrap">
         <nav className="standard_width_padded">
           <TopMenuProtocolSwitcher
             onClick={() => setIsProtocolListOpen(true)}
           />
           <div className="profile_group">
-            <button
-              type="button"
-              aria-label={t("showCurrentDappConnection")}
-              className="connection_button"
-              onClick={() => {
-                setIsActiveDAppConnectionInfoOpen(
-                  !isActiveDAppConnectionInfoOpen
-                )
-              }}
-            >
-              {isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT) &&
-              isConnectedToDApp ? (
-                <div className="connected-wc" />
-              ) : (
-                <div className="connection_img" />
-              )}
-            </button>
-            {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
+            {isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && (
+              <button
+                type="button"
+                aria-label={t("showCurrentDappConnection")}
+                className="connection_button"
+                onClick={() => {
+                  setIsActiveDAppConnectionInfoOpen(
+                    !isActiveDAppConnectionInfoOpen
+                  )
+                }}
+              >
+                {isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT) &&
+                isConnectedToDApp ? (
+                  <div className="connected-wc" />
+                ) : (
+                  <div className="connection_img" />
+                )}
+              </button>
+            )}
+            {isDisabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
               <button
                 type="button"
                 aria-label={t("rewardsProgram")}

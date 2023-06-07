@@ -551,6 +551,7 @@
       "error.invalidToken": "Invalid contract address",
       "submit": "Add asset",
       "snackbar.success": "Asset added successfully",
+      "snackbar.failed": "Failed to look up token details",
       "footer.hint": "How to add a custom asset"
     },
     "customNetworksSettings": {
