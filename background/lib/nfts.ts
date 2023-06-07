@@ -1,166 +1,140 @@
 import { AddressOnNetwork } from "../accounts"
 import {
-  ETHEREUM,
-  POLYGON,
-  OPTIMISM,
-  AVALANCHE,
-  ARBITRUM_ONE,
-  NETWORK_BY_CHAIN_ID,
-  BINANCE_SMART_CHAIN,
-} from "../constants"
-import { getNFTs as alchemyGetNFTs, AlchemyNFTItem } from "./alchemy"
-import { getNFTs as simpleHashGetNFTs, SimpleHashNFTModel } from "./simple-hash"
-import { getNFTs as poapGetNFTs, PoapNFTModel } from "./poap"
-import { EVMNetwork } from "../networks"
+  getSimpleHashCollections,
+  getSimpleHashNFTs,
+  getSimpleHashNFTsTransfers,
+} from "./simple-hash"
+import { getPoapNFTs, getPoapCollections, POAP_COLLECTION_ID } from "./poap"
+import {
+  NFT,
+  CHAIN_ID_TO_NFT_METADATA_PROVIDER,
+  NFT_PROVIDER_TO_CHAIN,
+  NFTCollection,
+  TransferredNFT,
+} from "../nfts"
+import { UNIXTime } from "../types"
 
-export type NFT = {
-  name: string
-  description?: string
-  tokenID: string
-  network: EVMNetwork
-  media: {
-    type: "image" | "video" | "audio"
-    url: string
-  }[]
-  contract: { address: string }
-  isAchievement: boolean
-  achievementUrl: string | null
+function groupChainsByAddress(accounts: AddressOnNetwork[]) {
+  return accounts.reduce<{ [address: string]: string[] }>((acc, account) => {
+    const {
+      address,
+      network: { chainID },
+    } = account
+    if (CHAIN_ID_TO_NFT_METADATA_PROVIDER[chainID]) {
+      acc[address] ??= []
+      acc[address].push(chainID)
+    }
+    return acc
+  }, {})
 }
 
-// TODO: REMOVE AFTER NFTS UPDATE
-const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
-  [chainID: string]: ("alchemy" | "simplehash" | "poap")[]
-} = {
-  [ETHEREUM.chainID]: ["alchemy", "poap"],
-  [POLYGON.chainID]: ["alchemy"],
-  [OPTIMISM.chainID]: ["simplehash"],
-  [ARBITRUM_ONE.chainID]: ["simplehash"],
-  [AVALANCHE.chainID]: ["simplehash"],
-  [BINANCE_SMART_CHAIN.chainID]: ["simplehash"],
+export function getNFTs(
+  accounts: AddressOnNetwork[],
+  collections: string[]
+): Promise<{
+  nfts: NFT[]
+  nextPageURLs: { [collectionID: string]: { [address: string]: string } }
+}>[] {
+  const chainIDsByAddress = groupChainsByAddress(accounts)
+
+  return Object.entries(chainIDsByAddress).flatMap(
+    async ([address, chainIDs]) => {
+      const nfts: NFT[] = []
+      const nextPageURLs: {
+        [collectionID: string]: { [address: string]: string }
+      } = {}
+
+      const poapChains = chainIDs.filter((chainID) =>
+        NFT_PROVIDER_TO_CHAIN.poap.includes(chainID)
+      )
+
+      if (poapChains.length && collections.includes(POAP_COLLECTION_ID)) {
+        const { nfts: poapNFTs } = await getPoapNFTs(address)
+        nfts.push(...poapNFTs)
+      }
+
+      const simpleHashChains = chainIDs.filter((chainID) =>
+        NFT_PROVIDER_TO_CHAIN.simplehash.includes(chainID)
+      )
+
+      if (simpleHashChains.length) {
+        await Promise.allSettled(
+          collections.map(async (collectionID) => {
+            if (collectionID === POAP_COLLECTION_ID) return // Don't fetch POAP from SimpleHash
+
+            const { nfts: simpleHashNFTs, nextPageURL } =
+              await getSimpleHashNFTs(address, collectionID, simpleHashChains)
+
+            nfts.push(...simpleHashNFTs)
+
+            if (nextPageURL) {
+              nextPageURLs[collectionID] ??= {}
+              nextPageURLs[collectionID][address] = nextPageURL
+            }
+          })
+        )
+      }
+
+      return {
+        nfts,
+        nextPageURLs,
+      }
+    }
+  )
 }
 
-function isGalxeAchievement(url: string | null | undefined) {
-  return !!url && (url.includes("galaxy.eco") || url.includes("galxe.com"))
+export function getNFTCollections(
+  accounts: AddressOnNetwork[]
+): Promise<NFTCollection[]>[] {
+  const chainIDsByAddress = groupChainsByAddress(accounts)
+
+  return Object.entries(chainIDsByAddress).flatMap(
+    async ([address, chainIDs]) => {
+      const collections: NFTCollection[] = []
+
+      const poapChains = chainIDs.filter((chainID) =>
+        NFT_PROVIDER_TO_CHAIN.poap.includes(chainID)
+      )
+
+      if (poapChains.length) {
+        collections.push(await getPoapCollections(address))
+      }
+
+      const simpleHashChains = chainIDs.filter((chainID) =>
+        NFT_PROVIDER_TO_CHAIN.simplehash.includes(chainID)
+      )
+
+      if (simpleHashChains.length) {
+        collections.push(...(await getSimpleHashCollections(address, chainIDs)))
+      }
+
+      return collections
+    }
+  )
 }
 
-function alchemyNFTtoNFT(original: AlchemyNFTItem): NFT {
-  const { contract, chainID } = original
-  const achievementUrl = original.metadata?.external_link ?? null
-  const isAchievement = isGalxeAchievement(achievementUrl)
-  return {
-    contract,
-    name: original.title,
-    tokenID: original.id.tokenId,
-    media: original.media
-      .filter((m) => m.gateway)
-      .map((m) => ({
-        url: m.gateway,
-        type: "image" as const,
-      })) as NFT["media"],
-    network:
-      NETWORK_BY_CHAIN_ID[
-        chainID.toString() as keyof typeof NETWORK_BY_CHAIN_ID
-      ],
-    isAchievement,
-    achievementUrl: isAchievement ? achievementUrl : null,
-  }
-}
+export async function getNFTsTransfers(
+  accounts: AddressOnNetwork[],
+  timestamp: UNIXTime
+): Promise<TransferredNFT[]> {
+  const { addresses, chains } = accounts.reduce<{
+    addresses: Set<string>
+    chains: Set<string>
+  }>(
+    (acc, account) => {
+      acc.addresses.add(account.address)
+      acc.chains.add(account.network.chainID)
 
-const SIMPLE_HASH_CHAIN_TO_ID = {
-  ethereum: 1,
-  optimism: 10,
-  polygon: 137,
-  arbitrum: 42161,
-  bsc: 56,
-  avalanche: 43114,
-}
-
-function simpleHashNFTModelToNFT(original: SimpleHashNFTModel): NFT {
-  const {
-    name,
-    description,
-    token_id: tokenID,
-    contract_address: contractAddress,
-    chain,
-  } = original
-  const achievementUrl = original.external_url ?? null
-  const isAchievement = isGalxeAchievement(achievementUrl)
-  const media = [
-    {
-      type: "image",
-      url: original.image_url,
+      return acc
     },
-    {
-      type: "video",
-      url: original.video_url,
-    },
-    {
-      type: "audio",
-      url: original.audio_url,
-    },
-  ].filter((m) => m.url)
-  const chainID = SIMPLE_HASH_CHAIN_TO_ID[chain]
-  return {
-    name,
-    description,
-    contract: { address: contractAddress },
-    tokenID,
-    media: media as NFT["media"],
-    network: NETWORK_BY_CHAIN_ID[chainID],
-    isAchievement,
-    achievementUrl: isAchievement ? achievementUrl : null,
-  }
-}
+    { addresses: new Set(), chains: new Set() }
+  )
 
-function poapNFTModelToNFT(original: PoapNFTModel): NFT {
-  const {
-    tokenId,
-    event: { name, image_url: url, description },
-  } = original
-  return {
-    name,
-    description,
-    tokenID: tokenId,
-    network: ETHEREUM,
-    media: [
-      {
-        type: "image",
-        url,
-      },
-    ],
-    contract: { address: "" },
-    isAchievement: true,
-    achievementUrl: `https://app.poap.xyz/token/${tokenId}`,
-  }
-}
+  const transfers = await getSimpleHashNFTsTransfers(
+    [...addresses],
+    [...chains],
+    timestamp
+  )
 
-// eslint-disable-next-line import/prefer-default-export
-export async function getNFTs({
-  address,
-  network,
-}: AddressOnNetwork): Promise<NFT[]> {
-  return (
-    await Promise.all(
-      CHAIN_ID_TO_NFT_METADATA_PROVIDER[network.chainID]?.map(
-        async (provider) => {
-          if (provider === "alchemy") {
-            return (await alchemyGetNFTs({ address, network })).map(
-              alchemyNFTtoNFT
-            )
-          }
-          if (provider === "simplehash") {
-            return (await simpleHashGetNFTs({ address, network })).map(
-              simpleHashNFTModelToNFT
-            )
-          }
-          if (provider === "poap") {
-            return (await poapGetNFTs({ address, network })).map(
-              poapNFTModelToNFT
-            )
-          }
-          return []
-        }
-      ) ?? []
-    )
-  ).flat()
+  return transfers
 }
