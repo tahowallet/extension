@@ -16,12 +16,17 @@ import {
   EIP_1559_COMPLIANT_CHAIN_IDS,
 } from "@tallyho/tally-background/constants"
 import classNames from "classnames"
+import {
+  selectUseFlashbots,
+  toggleFlashbots,
+} from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
 import NetworkSettingsChooser from "../../../NetworkFees/NetworkSettingsChooser"
 import FeeSettingsButton from "../../../NetworkFees/FeeSettingsButton"
 import TransactionAdditionalDetails from "./TransactionAdditionalDetails"
 import TransactionSignatureDetailsWarning from "./TransactionSignatureDetailsWarning"
+import SharedToggleButton from "../../../Shared/SharedToggleButton"
 
 export type PanelState = {
   dismissedWarnings: string[]
@@ -44,6 +49,8 @@ export default function DetailPanel({
   const [updateNum, setUpdateNum] = useState(0)
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
+
+  const useFlashbots = useBackgroundSelector(selectUseFlashbots)
 
   const reduxTransactionData = useBackgroundSelector(selectTransactionData)
 
@@ -90,6 +97,9 @@ export default function DetailPanel({
     setNetworkSettingsModalOpen(false)
   }
 
+  const toggleFlashbotsRPC = (value: boolean) =>
+    dispatch(toggleFlashbots(value))
+
   const getHightForSlideUpMenu = () => {
     return `${
       transactionDetails.network.name === BINANCE_SMART_CHAIN.name
@@ -133,6 +143,13 @@ export default function DetailPanel({
           </span>
         )}
       <span className="detail_item">
+        <div className="detail_label">{t("wallet.useFlashbots")}</div>
+        <SharedToggleButton
+          value={useFlashbots}
+          onChange={toggleFlashbotsRPC}
+        />
+      </span>
+      <span className="detail_item">
         <div className="detail_label">
           {t("networkFees.estimatedNetworkFee")}
         </div>
@@ -169,10 +186,6 @@ export default function DetailPanel({
             margin-top: 21px;
             gap: 10px;
             flex-direction: column;
-          }
-          .detail_item_right {
-            color: var(--green-20);
-            font-size: 16px;
           }
           .detail_label {
             font-weight: 500;

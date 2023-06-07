@@ -11,7 +11,10 @@ import { getNetwork } from "@ethersproject/networks"
 import {
   SECOND,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
-  RPC_METHOD_PROVIDER_ROUTING,
+  ALCHEMY_RPC_METHOD_PROVIDER_ROUTING,
+  FLASHBOTS_SUPPORTED_CHAIN_IDS,
+  FLASHBOTS_RPC_URL,
+  FLASHBOTS_RPC_METHOD_PROVIDER_ROUTING,
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction } from "../../networks"
@@ -113,12 +116,18 @@ function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
  */
 function alchemyOrDefaultProvider(chainID: string, method: string): boolean {
   return (
-    RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
+    ALCHEMY_RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
       method.startsWith(m)
     ) ||
-    (RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some((m: string) =>
-      method.startsWith(m)
+    (ALCHEMY_RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some(
+      (m: string) => method.startsWith(m)
     )
+  )
+}
+
+function flashbotsOrDefaultProvider(chainID: string, method: string): boolean {
+  return (FLASHBOTS_RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some(
+    (m: string) => method.startsWith(m)
   )
 }
 
@@ -148,6 +157,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   private alchemyProvider: JsonRpcProvider | undefined
 
+  private flashbotsProvider: JsonRpcProvider | undefined
+
   /**
    * This object holds all messages that are either being sent to a provider
    * and waiting for a response, or are in the process of being backed off due
@@ -167,6 +178,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     | undefined
 
   supportsAlchemy = false
+
+  private flashbotsProviderCreator: (() => JsonRpcProvider) | undefined
+
+  supportsFlashbots = false
+
+  shouldUseFlashbots = false
 
   /**
    * Since our architecture follows a pattern of using distinct provider instances
@@ -224,12 +241,22 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     // clashing with Ethers's own `network` stuff.
     private chainID: string,
     providerCreators: Array<{
-      type: "alchemy" | "generic"
+      type: "alchemy" | "flashbots" | "generic"
       creator: () => WebSocketProvider | JsonRpcProvider
     }>
   ) {
+    const flashbotsProviderCreator = providerCreators.find(
+      (creator) => creator.type === "flashbots"
+    )
+
+    const alchemyProviderCreator = providerCreators.find(
+      (creator) => creator.type === "alchemy"
+    )
+
     const [firstProviderCreator, ...remainingProviderCreators] =
-      providerCreators.map((pc) => pc.creator)
+      providerCreators.flatMap((pc) =>
+        pc.type === "flashbots" ? [] : pc.creator
+      )
 
     const firstProvider = firstProviderCreator()
 
@@ -237,14 +264,16 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
     this.currentProvider = firstProvider
 
-    const alchemyProviderCreator = providerCreators.find(
-      (creator) => creator.type === "alchemy"
-    )
-
     if (alchemyProviderCreator) {
       this.supportsAlchemy = true
       this.alchemyProviderCreator = alchemyProviderCreator.creator
       this.alchemyProvider = this.alchemyProviderCreator()
+    }
+
+    if (flashbotsProviderCreator) {
+      this.supportsFlashbots = true
+      this.flashbotsProviderCreator = flashbotsProviderCreator.creator
+      this.flashbotsProvider = this.flashbotsProviderCreator()
     }
 
     setInterval(() => {
@@ -299,22 +328,23 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
 
       if (
+        this.shouldUseFlashbots &&
+        this.flashbotsProvider &&
+        flashbotsOrDefaultProvider(this.cachedChainId, method)
+      ) {
+        const result = await this.flashbotsProvider.send(method, params)
+        delete this.messagesToSend[messageId]
+        return result
+      }
+
+      if (
         // Force some methods to be handled by alchemy if we're on an alchemy supported chain
         this.alchemyProvider &&
         alchemyOrDefaultProvider(this.cachedChainId, method)
       ) {
-        if (this.alchemyProvider) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const result = await this.alchemyProvider.send(method, params)
-          delete this.messagesToSend[messageId]
-          return result
-        }
-        if (/^alchemy_|^eth_subscribe$/.test(method)) {
-          delete this.messagesToSend[messageId]
-          throw new Error(
-            `Calling ${method} is not supported on ${this.currentProvider.network.name}`
-          )
-        }
+        const result = await this.alchemyProvider.send(method, params)
+        delete this.messagesToSend[messageId]
+        return result
       }
 
       const result = await this.currentProvider.send(method, params)
@@ -384,6 +414,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       delete this.messagesToSend[messageId]
       throw error
     }
+  }
+
+  toggleFlashbotsProvider(shouldUseFlashbots: boolean): void {
+    this.shouldUseFlashbots = shouldUseFlashbots
   }
 
   /**
@@ -941,6 +975,15 @@ export function makeSerialFallbackProvider(
       ]
     : []
 
+  const flashbotsProviderCreator = FLASHBOTS_SUPPORTED_CHAIN_IDS.has(chainID)
+    ? [
+        {
+          type: "flashbots" as const,
+          creator: () => new JsonRpcProvider(FLASHBOTS_RPC_URL),
+        },
+      ]
+    : []
+
   const genericProviders = rpcUrls.map((rpcUrl) => ({
     type: "generic" as const,
     creator: () => {
@@ -957,5 +1000,6 @@ export function makeSerialFallbackProvider(
     // Prefer alchemy as the primary provider when available
     ...genericProviders,
     ...alchemyProviderCreators,
+    ...flashbotsProviderCreator,
   ])
 }

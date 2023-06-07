@@ -391,6 +391,12 @@ export default class ChainService extends BaseService<Events> {
       : this.providers.evm[network.chainID]
   }
 
+  toggleFlashbotsProvider(shouldUseFlashbots: boolean): void {
+    this.providers.evm[ETHEREUM.chainID]?.toggleFlashbotsProvider(
+      shouldUseFlashbots
+    )
+  }
+
   /**
    * Pulls the list of tracked networks from memory or indexedDB.
    * Defaults to ethereum in the case that neither exist.

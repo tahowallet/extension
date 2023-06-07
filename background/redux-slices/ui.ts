@@ -18,6 +18,7 @@ export const defaultSettings = {
   showAnalyticsNotification: false,
   showUnverifiedAssets: false,
   hideBanners: false,
+  useFlashbots: false,
 }
 
 export type UIState = {
@@ -33,6 +34,7 @@ export type UIState = {
     showAnalyticsNotification: boolean
     showUnverifiedAssets: boolean
     hideBanners: boolean
+    useFlashbots: boolean
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
@@ -90,6 +92,12 @@ const uiSlice = createSlice({
       { payload: showUnverifiedAssets }: { payload: boolean }
     ): void => {
       immerState.settings.showUnverifiedAssets = showUnverifiedAssets
+    },
+    toggleUseFlashbots: (
+      immerState,
+      { payload: useFlashbots }: { payload: boolean }
+    ): void => {
+      immerState.settings.useFlashbots = useFlashbots
     },
     toggleCollectAnalytics: (
       state,
@@ -192,6 +200,7 @@ export const {
   toggleTestNetworks,
   toggleShowUnverifiedAssets,
   toggleCollectAnalytics,
+  toggleUseFlashbots,
   setShowAnalyticsNotification,
   toggleHideBanners,
   setSelectedAccount,
@@ -308,6 +317,14 @@ export const sendEvent = createBackgroundAsyncThunk(
   }
 )
 
+export const toggleFlashbots = createBackgroundAsyncThunk(
+  "ui/toggleFlashbots",
+  async (value: boolean, { dispatch, extra: { main } }) => {
+    dispatch(toggleUseFlashbots(value))
+    await main.toggleFlashbotsProvider(value)
+  }
+)
+
 export const selectUI = createSelector(
   (state: { ui: UIState }): UIState => state.ui,
   (uiState) => uiState
@@ -363,4 +380,9 @@ export const selectCollectAnalytics = createSelector(
 export const selectHideBanners = createSelector(
   selectSettings,
   (settings) => settings?.hideBanners
+)
+
+export const selectUseFlashbots = createSelector(
+  selectSettings,
+  (settings) => settings?.useFlashbots
 )

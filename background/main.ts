@@ -1866,6 +1866,10 @@ export default class Main extends BaseService<never> {
     await this.chainService.removeCustomChain(chainID)
   }
 
+  async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {
+    this.chainService.toggleFlashbotsProvider(shouldUseFlashbots)
+  }
+
   async queryCustomTokenDetails(
     contractAddress: NormalizedEVMAddress,
     addressOnNetwork: AddressOnNetwork

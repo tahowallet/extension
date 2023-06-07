@@ -177,6 +177,9 @@ export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
   )
 )
 
+export const FLASHBOTS_SUPPORTED_CHAIN_IDS = new Set([ETHEREUM.chainID])
+export const FLASHBOTS_RPC_URL = "https://rpc.flashbots.net"
+
 export const CHAIN_ID_TO_RPC_URLS: {
   [chainId: string]: Array<string> | undefined
 } = {
@@ -246,7 +249,7 @@ export const CHAIN_ID_TO_COINGECKO_PLATFORM_ID: {
  * The structure is network specific with an extra `everyChain` option.
  * The methods in this array will be directed towards alchemy on every network.
  */
-export const RPC_METHOD_PROVIDER_ROUTING = {
+export const ALCHEMY_RPC_METHOD_PROVIDER_ROUTING = {
   everyChain: [
     "alchemy_", // alchemy specific api calls start with this
     "eth_sendRawTransaction", // broadcast should always go to alchemy
@@ -260,6 +263,10 @@ export const RPC_METHOD_PROVIDER_ROUTING = {
     "eth_call", // this is causing issues on arbitrum with ankr and is used heavily by uniswap
   ],
 } as const
+
+export const FLASHBOTS_RPC_METHOD_PROVIDER_ROUTING = {
+  [ETHEREUM.chainID]: ["eth_sendRawTransaction"],
+}
 
 export const CHAIN_ID_TO_OPENSEA_CHAIN = {
   [ETHEREUM.chainID]: "ethereum",

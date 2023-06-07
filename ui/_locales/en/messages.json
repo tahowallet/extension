@@ -799,6 +799,7 @@
     "sendButton": "Continue",
     "receiveAddress": "Receive address",
     "sendToContractWarning": "This is a contract address, sending assets could result in loss of funds.",
+    "useFlashbots": "Use Flashbots RPC",
     "pages": {
       "assets": "Assets",
       "NFTs": "NFTs",
