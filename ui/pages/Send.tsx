@@ -27,7 +27,10 @@ import {
   transferAsset,
 } from "@tallyho/tally-background/redux-slices/assets"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
-import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import {
+  canBeUsedForTransaction,
+  enrichAssetAmountWithMainCurrencyValues,
+} from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { useHistory, useLocation } from "react-router-dom"
 import classNames from "classnames"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
@@ -103,10 +106,13 @@ export default function Send(): ReactElement {
   })
 
   const fungibleAssetAmounts =
-    // Only look at fungible assets.
+    // Only look at fungible assets that have a balance greater than zero.
+    // To be able to send an asset needs to be trusted or verified by the user.
     balanceData?.allAssetAmounts?.filter(
       (assetAmount): assetAmount is CompleteAssetAmount<FungibleAsset> =>
-        isFungibleAssetAmount(assetAmount)
+        isFungibleAssetAmount(assetAmount) &&
+        assetAmount.decimalAmount > 0 &&
+        canBeUsedForTransaction(assetAmount.asset)
     )
   const assetPricePoint = useBackgroundSelector((state) =>
     selectAssetPricePoint(state.assets, selectedAsset, mainCurrencySymbol)

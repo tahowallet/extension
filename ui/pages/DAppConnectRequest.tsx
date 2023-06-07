@@ -9,6 +9,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/dapp"
 
 import { Redirect } from "react-router-dom"
+import { FeatureFlags, isDisabled } from "@tallyho/tally-background/features"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import DAppConnectPage from "./DAppConnect/DAppConnectPage"
 import SwitchWalletPage from "./DAppConnect/SwitchWalletPage"
@@ -69,7 +70,8 @@ export default function DAppConnectRequest(): ReactElement {
 
   return (
     <div className="page">
-      {showSwitchWallet ? (
+      {showSwitchWallet &&
+      isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) ? (
         <SwitchWalletPage close={deny} />
       ) : (
         <DAppConnectPage
