@@ -134,16 +134,11 @@ const get0xApiBase = (network: EVMNetwork) => {
   return `${prefix}${base}`
 }
 
-function getMultisigAddressByNetwork(network: EVMNetwork) {
+function getGatedParameters(network: EVMNetwork) {
   // Look up the community multisig address for a specific chain
-  return (
+  const address =
     COMMUNITY_MULTISIG_ADDRESS_BY_CHAINID[network.chainID] ??
     DEFAULT_COMMUNITY_MULTISIG_ADDRESS
-  )
-}
-
-function getGatedParameters(network: EVMNetwork) {
-  const address = getMultisigAddressByNetwork(network)
   return {
     affiliateAddress: address,
     feeRecipient: address,
