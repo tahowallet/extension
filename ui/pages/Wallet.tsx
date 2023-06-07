@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useEffect, useMemo, useState } from "react"
 import {
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
@@ -10,7 +10,10 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
-import { selectShowAnalyticsNotification } from "@tallyho/tally-background/redux-slices/ui"
+import {
+  selectShowAnalyticsNotification,
+  selectShowUnverifiedAssets,
+} from "@tallyho/tally-background/redux-slices/ui"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
 import { useHistory } from "react-router-dom"
@@ -41,6 +44,7 @@ export default function Wallet(): ReactElement {
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
   const claimState = useBackgroundSelector((state) => state.claim)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const showUnverifiedAssets = useBackgroundSelector(selectShowUnverifiedAssets)
 
   useEffect(() => {
     dispatch(
@@ -57,10 +61,10 @@ export default function Wallet(): ReactElement {
     }
   }, [selectedNetwork.chainID])
 
-  const { assetAmounts, hiddenAssetAmounts, totalMainCurrencyValue } =
+  const { assetAmounts, unverifiedAssetAmounts, totalMainCurrencyValue } =
     accountData ?? {
       assetAmounts: [],
-      hiddenAssetAmounts: [],
+      unverifiedAssetAmounts: [],
       totalMainCurrencyValue: undefined,
     }
 
@@ -88,6 +92,11 @@ export default function Wallet(): ReactElement {
 
   const showAnalyticsNotification = useBackgroundSelector(
     selectShowAnalyticsNotification
+  )
+
+  const showHiddenAssets = useMemo(
+    () => showUnverifiedAssets && unverifiedAssetAmounts.length > 0,
+    [showUnverifiedAssets, unverifiedAssetAmounts.length]
   )
 
   const panelNames = [t("wallet.pages.assets")]
@@ -123,7 +132,9 @@ export default function Wallet(): ReactElement {
           />
           <div
             className={classNames("panel standard_width", {
-              no_padding: panelNumber === 1,
+              no_padding:
+                panelNumber === 1 &&
+                NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID),
             })}
           >
             {panelNumber === 0 && (
@@ -137,34 +148,32 @@ export default function Wallet(): ReactElement {
                     initializationLoadingTimeExpired
                   }
                 />
-                {isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && (
-                  <div
-                    className={classNames("add_custom_asset", {
-                      line: hiddenAssetAmounts.length > 0,
-                    })}
+                <div
+                  className={classNames("add_custom_asset", {
+                    line: showHiddenAssets,
+                  })}
+                >
+                  <span>{t("wallet.activities.addCustomAssetPrompt")}</span>
+                  <SharedButton
+                    size="medium"
+                    onClick={() => history.push("/settings/add-custom-asset")}
+                    type="tertiary"
                   >
-                    <span>{t("wallet.activities.addCustomAssetPrompt")}</span>
-                    <SharedButton
-                      size="medium"
-                      onClick={() => history.push("/settings/add-custom-asset")}
-                      type="tertiary"
-                    >
-                      <SharedIcon
-                        width={16}
-                        height={16}
-                        customStyles="margin-right: 4px"
-                        icon="icons/s/add.svg"
-                        color="currentColor"
-                      />
-                      {t("wallet.activities.addCustomAssetAction")}
-                    </SharedButton>
-                  </div>
-                )}
-                {hiddenAssetAmounts.length > 0 && (
+                    <SharedIcon
+                      width={16}
+                      height={16}
+                      customStyles="margin-right: 4px"
+                      icon="icons/s/add.svg"
+                      color="currentColor"
+                    />
+                    {t("wallet.activities.addCustomAssetAction")}
+                  </SharedButton>
+                </div>
+                {showHiddenAssets && (
                   <WalletHiddenAssets
                     assetAmounts={
                       // FIXME: Refactor AnyAsset type
-                      hiddenAssetAmounts as CompleteAssetAmount<SwappableAsset>[]
+                      unverifiedAssetAmounts as CompleteAssetAmount<SwappableAsset>[]
                     }
                   />
                 )}

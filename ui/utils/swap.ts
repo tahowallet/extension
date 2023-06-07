@@ -1,12 +1,10 @@
 import {
-  AnyAsset,
   isSmartContractFungibleAsset,
   SwappableAsset,
 } from "@tallyho/tally-background/assets"
 import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import logger from "@tallyho/tally-background/lib/logger"
-import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { fetchSwapPrice } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
@@ -18,6 +16,8 @@ import {
 } from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
 import { debounce, DebouncedFunc } from "lodash"
 import { useState, useRef, useCallback } from "react"
+import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { isSameAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import { useValueRef, useIsMounted, useSetState } from "../hooks/react-hooks"
 
@@ -125,32 +125,6 @@ export const fetchQuote = async ({
 }
 
 export type QuoteType = "getSellAmount" | "getBuyAmount"
-
-// FIXME Unify once asset similarity code is unified.
-export function isSameAsset(asset1: AnyAsset, asset2: AnyAsset): boolean {
-  if (typeof asset1 === "undefined" || typeof asset2 === "undefined") {
-    return false
-  }
-
-  if (
-    isSmartContractFungibleAsset(asset1) &&
-    isSmartContractFungibleAsset(asset2)
-  ) {
-    return (
-      normalizeEVMAddress(asset1.contractAddress) ===
-      normalizeEVMAddress(asset2.contractAddress)
-    )
-  }
-
-  if (
-    isSmartContractFungibleAsset(asset1) ||
-    isSmartContractFungibleAsset(asset2)
-  ) {
-    return false
-  }
-
-  return asset1.symbol === asset2.symbol
-}
 
 type RequestQuoteUpdateConfig = {
   type: QuoteType
@@ -282,4 +256,45 @@ export function useSwapQuote(useSwapConfig: {
     loadingBuyAmount,
     requestQuoteUpdate: debouncedRequest,
   }
+}
+
+export function getOwnedSellAssetAmounts(
+  assetAmounts: CompleteAssetAmount[] | undefined,
+  currentNetwork: EVMNetwork
+): CompleteAssetAmount<SwappableAsset>[] {
+  return (
+    assetAmounts?.filter(
+      (assetAmount): assetAmount is CompleteAssetAmount<SwappableAsset> =>
+        isSmartContractFungibleAsset(assetAmount.asset) ||
+        assetAmount.asset.symbol === currentNetwork.baseAsset.symbol
+    ) ?? []
+  )
+}
+
+export function getSellAssetAmounts(
+  ownedSellAssetAmounts: CompleteAssetAmount<SwappableAsset>[],
+  sellAsset?: SwappableAsset,
+  buyAsset?: SwappableAsset
+): CompleteAssetAmount<SwappableAsset>[] {
+  return (
+    ownedSellAssetAmounts.some(
+      ({ asset }) =>
+        typeof sellAsset !== "undefined" && isSameAsset(asset, sellAsset)
+    )
+      ? ownedSellAssetAmounts
+      : ownedSellAssetAmounts.concat(
+          typeof sellAsset === "undefined"
+            ? []
+            : [
+                {
+                  asset: sellAsset,
+                  amount: 0n,
+                  decimalAmount: 0,
+                  localizedDecimalAmount: "0",
+                },
+              ]
+        )
+  ).filter(
+    (sellAssetAmount) => sellAssetAmount.asset.symbol !== buyAsset?.symbol
+  )
 }

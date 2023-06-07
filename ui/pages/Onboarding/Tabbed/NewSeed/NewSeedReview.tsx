@@ -14,6 +14,9 @@ export default function NewSeedReview({
   const { t } = useTranslation("translation", {
     keyPrefix: "onboarding.tabbed.newWalletReview",
   })
+  const { t: sharedT } = useTranslation("translation", {
+    keyPrefix: "shared",
+  })
   const dispatch = useBackgroundDispatch()
 
   return (
@@ -42,7 +45,7 @@ export default function NewSeedReview({
             iconMedium="copy"
             onClick={() => {
               navigator.clipboard.writeText(mnemonic?.join(" ") ?? "")
-              dispatch(setSnackbarMessage(t("copyAddressSnackbar")))
+              dispatch(setSnackbarMessage(sharedT("copyTextSnackbar")))
             }}
             center
           >

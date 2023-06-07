@@ -52,7 +52,12 @@ import {
   updateAccountName,
   updateENSAvatar,
 } from "./redux-slices/accounts"
-import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
+import {
+  assetsLoaded,
+  newPricePoint,
+  refreshAsset,
+  removeAssetData,
+} from "./redux-slices/assets"
 import {
   setEligibility,
   setEligibilityLoading,
@@ -149,6 +154,7 @@ import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
 import {
+  AnyAssetMetadata,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
   isSmartContractFungibleAsset,
@@ -167,7 +173,7 @@ import {
 } from "./redux-slices/nfts_update"
 import AbilitiesService from "./services/abilities"
 import {
-  addAbilities,
+  setAbilitiesForAddress,
   updateAbility,
   addAccount as addAccountFilter,
   deleteAccount as deleteAccountFilter,
@@ -180,7 +186,10 @@ import {
   isOneTimeAnalyticsEvent,
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
-import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
+import {
+  isBuiltInNetworkBaseAsset,
+  isSameAsset,
+} from "./redux-slices/utils/asset-utils"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -1009,11 +1018,7 @@ export default class Main extends BaseService<never> {
           .forEach((balance) => {
             // TODO support multi-network assets
             const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
-              (tracked) =>
-                tracked.symbol === balance.assetAmount.asset.symbol &&
-                isSmartContractFungibleAsset(balance.assetAmount.asset) &&
-                normalizeEVMAddress(tracked.contractAddress) ===
-                  normalizeEVMAddress(balance.assetAmount.asset.contractAddress)
+              (tracked) => isSameAsset(tracked, balance.assetAmount.asset)
             )
 
             if (
@@ -1039,6 +1044,18 @@ export default class Main extends BaseService<never> {
 
     this.indexingService.emitter.on("price", (pricePoint) => {
       this.store.dispatch(newPricePoint(pricePoint))
+    })
+
+    this.indexingService.emitter.on("refreshAsset", (asset) => {
+      this.store.dispatch(
+        refreshAsset({
+          asset,
+        })
+      )
+    })
+
+    this.indexingService.emitter.on("removeAssetData", (asset) => {
+      this.store.dispatch(removeAssetData({ asset }))
     })
   }
 
@@ -1222,14 +1239,13 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
-        // Don't await, as the below enrichment is expected to take longer than
-        // signer prep. If that assumption breaks, we should probably await the
-        // two in parallel.
-        this.signingService.prepareForSigningRequest()
+        // Run signer preparation and enrichment in parallel.
+        const [, enrichedSignTypedDataRequest] = await Promise.all([
+          this.signingService.prepareForSigningRequest(),
+          this.enrichmentService.enrichSignTypedDataRequest(payload),
+        ])
 
-        const enrichedsignTypedDataRequest =
-          await this.enrichmentService.enrichSignTypedDataRequest(payload)
-        this.store.dispatch(typedDataRequest(enrichedsignTypedDataRequest))
+        this.store.dispatch(typedDataRequest(enrichedSignTypedDataRequest))
 
         const clear = () => {
           this.signingService.emitter.off(
@@ -1619,9 +1635,12 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("initAbilities", (address) => {
       this.store.dispatch(initAbilities(address))
     })
-    this.abilitiesService.emitter.on("newAbilities", (newAbilities) => {
-      this.store.dispatch(addAbilities(newAbilities))
-    })
+    this.abilitiesService.emitter.on(
+      "updatedAbilities",
+      ({ address, abilities }) => {
+        this.store.dispatch(setAbilitiesForAddress({ address, abilities }))
+      }
+    )
     this.abilitiesService.emitter.on("deleteAbilities", (address) => {
       this.store.dispatch(deleteAbilitiesForAccount(address))
     })
@@ -1741,11 +1760,15 @@ export default class Main extends BaseService<never> {
     })
   }
 
-  async setAssetTrustStatus(
+  async updateAssetMetadata(
     asset: SmartContractFungibleAsset,
-    isTrusted: boolean
+    metadata: AnyAssetMetadata
   ): Promise<void> {
-    await this.indexingService.setAssetTrustStatus(asset, isTrusted)
+    await this.indexingService.updateAssetMetadata(asset, metadata)
+  }
+
+  async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {
+    await this.indexingService.hideAsset(asset)
   }
 
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {
@@ -1863,21 +1886,8 @@ export default class Main extends BaseService<never> {
     }
   }
 
-  async importAccountCustomToken({
-    asset,
-    addressNetwork,
-  }: {
-    asset: SmartContractFungibleAsset
-    addressNetwork: AddressOnNetwork
-  }): Promise<void> {
-    const { metadata = {} } = asset
-    // Manually imported tokens are trusted
-    metadata.trusted = true
-
-    await this.indexingService.importAccountCustomToken(
-      { ...asset, metadata },
-      addressNetwork
-    )
+  async importCustomToken(asset: SmartContractFungibleAsset): Promise<boolean> {
+    return this.indexingService.importCustomToken(asset)
   }
 
   private connectPopupMonitor() {

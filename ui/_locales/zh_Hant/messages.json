@@ -103,16 +103,8 @@
       "nonContractAsset": "嘗試允許傳輸一項非合約資產。"
     },
     "from": "支付：",
-    "getFinalQuote": "取得最終摘要",
     "title": "轉換資產",
-    "to": "收到：",
-    "transactionSettings": {
-      "daoFee": "DAO 費用",
-      "estimatedFee": "預估的網路費用",
-      "settings": "交易設定",
-      "slippageTolerance": "允許的滑點",
-      "title": "交易設定"
-    }
+    "to": "收到："
   },
   "toggle": {
     "collapse": "展開",

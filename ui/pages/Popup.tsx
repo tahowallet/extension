@@ -1,11 +1,5 @@
 import React, { ReactElement, useState, useEffect } from "react"
-import {
-  MemoryRouter as Router,
-  Switch,
-  Route,
-  Redirect,
-  matchPath,
-} from "react-router-dom"
+import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
 import { ErrorBoundary } from "react-error-boundary"
 
 import classNames from "classnames"
@@ -114,7 +108,6 @@ export function Main(): ReactElement {
   })
 
   const isDappPopup = useIsDappPopup()
-  const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)
   const [isDirectionRight, setIsDirectionRight] = useState(true)
   const [showTabBar, setShowTabBar] = useState(true)
 
@@ -157,9 +150,6 @@ export function Main(): ReactElement {
 
   return (
     <>
-      <div className="top_menu_wrap_decoy">
-        <TopMenu />
-      </div>
       <GlobalModal id="meet_taho" />
       <Router initialEntries={routeHistoryEntries}>
         <Route
@@ -191,12 +181,7 @@ export function Main(): ReactElement {
               saveHistoryEntries(routeProps.history.entries)
             }
 
-            setAnimationConditions(
-              routeProps,
-              pagePreferences,
-              setShouldDisplayDecoy,
-              setIsDirectionRight
-            )
+            setAnimationConditions(routeProps, setIsDirectionRight)
             setShowTabBar(pagePreferences[normalizedPathname].hasTabBar)
 
             return (
@@ -214,30 +199,12 @@ export function Main(): ReactElement {
                   <div>
                     <div
                       className={classNames("top_menu_wrap", {
-                        anti_animation: shouldDisplayDecoy,
                         hide: !pagePreferences[normalizedPathname].hasTopBar,
                       })}
                     >
                       <TopMenu />
                     </div>
                     <Switch location={transformedLocation}>
-                      {
-                        // If there are no existing accounts, display onboarding
-                        // (if we're not there already)
-                        //
-                        !isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING) &&
-                          !hasAccounts &&
-                          !matchPath(transformedLocation.pathname, {
-                            path: [
-                              "/onboarding",
-                              // need to unlock or set new password to import an account
-                              "/keyring",
-                              // this route has it's own error message
-                              "/dapp-permission",
-                            ],
-                            exact: false,
-                          }) && <Redirect to="/onboarding/info-intro" />
-                      }
                       {pageList.map(
                         ({ path, Component, hasTopBar, hasTabBar }) => {
                           return (
@@ -277,7 +244,7 @@ export function Main(): ReactElement {
               background: transparent;
             }
 
-            ${animationStyles(shouldDisplayDecoy, isDirectionRight)}
+            ${animationStyles(isDirectionRight)}
             .tab_bar_wrap {
               position: fixed;
               bottom: 0px;

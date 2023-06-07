@@ -2,7 +2,6 @@
  * Feature flags which are set at build time.
  */
 const BuildTimeFlag = {
-  SUPPORT_TABBED_ONBOARDING: process.env.SUPPORT_TABBED_ONBOARDING === "true",
   SWITCH_RUNTIME_FLAGS: process.env.SWITCH_RUNTIME_FLAGS === "true",
 } as const
 
@@ -11,19 +10,11 @@ const BuildTimeFlag = {
  */
 export const RuntimeFlag = {
   USE_MAINNET_FORK: process.env.USE_MAINNET_FORK === "true",
-  RESOLVE_RNS_NAMES: process.env.RESOLVE_RNS_NAMES === "true",
   HIDE_IMPORT_DERIVATION_PATH:
     process.env.HIDE_IMPORT_DERIVATION_PATH === "true",
   HIDE_SWAP_REWARDS: process.env.HIDE_SWAP_REWARDS === "true",
   USE_UPDATED_SIGNING_UI: process.env.USE_UPDATED_SIGNING_UI === "true",
   SUPPORT_MULTIPLE_LANGUAGES: process.env.SUPPORT_MULTIPLE_LANGUAGES === "true",
-  SUPPORT_ANALYTICS: process.env.SUPPORT_ANALYTICS === "true",
-  ENABLE_ANALYTICS_DEFAULT_ON:
-    process.env.ENABLE_ANALYTICS_DEFAULT_ON === "true",
-  SHOW_ANALYTICS_DELETE_DATA_BUTTON:
-    process.env.SHOW_ANALYTICS_DELETE_DATA_BUTTON === "true",
-  SUPPORT_KEYRING_LOCKING: process.env.SUPPORT_KEYRING_LOCKING === "true",
-  SUPPORT_FORGOT_PASSWORD: process.env.SUPPORT_FORGOT_PASSWORD === "true",
   ENABLE_ACHIEVEMENTS_TAB: process.env.ENABLE_ACHIEVEMENTS_TAB === "true",
   HIDE_TOKEN_FEATURES: process.env.HIDE_TOKEN_FEATURES === "true",
   SUPPORT_ARBITRUM_NOVA: process.env.SUPPORT_ARBITRUM_NOVA === "true",
@@ -35,7 +26,9 @@ export const RuntimeFlag = {
   SUPPORT_SWAP_QUOTE_REFRESH: process.env.SUPPORT_SWAP_QUOTE_REFRESH === "true",
   SUPPORT_CUSTOM_NETWORKS: process.env.SUPPORT_CUSTOM_NETWORKS === "true",
   SUPPORT_CUSTOM_RPCS: process.env.SUPPORT_CUSTOM_RPCS === "true",
-  SUPPORT_ASSET_TRUST: process.env.SUPPORT_ASSET_TRUST === "true",
+  SUPPORT_UNVERIFIED_ASSET: process.env.SUPPORT_UNVERIFIED_ASSET === "true",
+  ENABLE_UPDATED_DAPP_CONNECTIONS:
+    process.env.ENABLE_UPDATED_DAPP_CONNECTIONS === "true",
 } as const
 
 type BuildTimeFlagType = keyof typeof BuildTimeFlag
@@ -55,16 +48,24 @@ export const FeatureFlags = Object.keys({
 }
 
 /**
- * Checks the status of the feature flag.
- * If the SWITCH_RUNTIME_FLAGS is off all flags are read from environment variables.
- * If the SWITCH_RUNTIME_FLAGS is on then value for run time flag is read from Local Storage.
- * If value is not exist then is read from environment variables.
- * The value for the build time flag is read from environment variables.
+ * Checks the status of the feature flag and returns `true` if the flag is set
+ * to `true`. Note that some historical flags might have inverted meaning by
+ * default (e.g. `HIDE_...`, when set to `true`, might indicate disabling a
+ * feature).
+ *
+ * If the `SWITCH_RUNTIME_FLAGS` feature flag is disabled all flags are read from
+ * environment variables.
+ *
+ * If the `SWITCH_RUNTIME_FLAGS` feature flag is on then the value for runtime
+ * flags are read from localStorage first, and, if the value does not exist in
+ * localStorage, then it is read from the environment variables.
+ *
+ * The value for build time flags is always read from environment variables.
  */
-export const isEnabled = (
+export function isEnabled(
   flagName: FeatureFlagType,
   checkBrowserStorage: boolean = BuildTimeFlag.SWITCH_RUNTIME_FLAGS
-): boolean => {
+): boolean {
   // Guard to narrow flag type
   const isBuildTimeFlag = (flag: string): flag is BuildTimeFlagType =>
     flag in BuildTimeFlag
@@ -79,4 +80,15 @@ export const isEnabled = (
   }
 
   return RuntimeFlag[flagName]
+}
+
+/**
+ * Checks the inverse of `isEnabled`; used for clarity as an alternative to
+ * `!isEnabled`.
+ */
+export function isDisabled(
+  flagName: FeatureFlagType,
+  checkBrowserStorage: boolean = BuildTimeFlag.SWITCH_RUNTIME_FLAGS
+): boolean {
+  return !isEnabled(flagName, checkBrowserStorage)
 }

@@ -43,14 +43,15 @@ export default function PriceDetails(props: PriceDetailsProps): ReactElement {
           horizontalPosition="center"
           horizontalShift={82}
           IconComponent={() => (
-            <span className="warning">
+            <div className="warning">
               {t("noAssetPrice")}
               <SharedIcon
                 width={16}
                 icon="icons/m/info.svg"
                 color="var(--attention)"
+                customStyles="flex-shrink: 0;"
               />
-            </span>
+            </div>
           )}
         >
           <div>
@@ -109,6 +110,8 @@ export default function PriceDetails(props: PriceDetailsProps): ReactElement {
           align-items: center;
           gap: 5px;
           color: var(--attention);
+          line-height: 16px;
+          text-align: right;
         }
         .price_impact_percent {
           color: var(--${getPriceImpactColor(priceImpact)});
