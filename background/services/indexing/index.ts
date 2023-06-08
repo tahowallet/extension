@@ -422,7 +422,7 @@ export default class IndexingService extends BaseService<Events> {
             this.addTokenToTrackByContract(
               addressNetwork.network,
               fungibleAsset.contractAddress,
-              { discoveryTxHash: transfer.txHash }
+              { discoveryTxHash: { [addressNetwork.address]: transfer.txHash } }
             )
           }
         })
@@ -603,6 +603,27 @@ export default class IndexingService extends BaseService<Events> {
     this.emitter.emit("removeAssetData", asset)
   }
 
+  async removeDiscoveryTxHash(address: string): Promise<void> {
+    const assets = (await this.db.geAllCustomAssets()).filter(
+      (asset) =>
+        asset.metadata?.discoveryTxHash &&
+        asset.metadata?.discoveryTxHash[address]
+    )
+    // Remove all discovery tx hash from assets for address
+    if (assets.length > 0) {
+      assets.forEach((existingAsset) => {
+        const { metadata } = existingAsset
+        if (
+          metadata?.discoveryTxHash &&
+          Object.keys(metadata.discoveryTxHash).length !== 0
+        ) {
+          delete metadata.discoveryTxHash[address]
+          this.updateAssetMetadata(existingAsset, metadata)
+        }
+      })
+    }
+  }
+
   async importCustomToken(asset: SmartContractFungibleAsset): Promise<boolean> {
     const customAsset = {
       ...asset,
@@ -657,7 +678,12 @@ export default class IndexingService extends BaseService<Events> {
   async addTokenToTrackByContract(
     network: EVMNetwork,
     contractAddress: string,
-    metadata: { discoveryTxHash?: HexString; verified?: boolean } = {}
+    metadata: {
+      discoveryTxHash?: {
+        [address: HexString]: HexString
+      }
+      verified?: boolean
+    } = {}
   ): Promise<SmartContractFungibleAsset | undefined> {
     const normalizedAddress = normalizeEVMAddress(contractAddress)
 
@@ -667,8 +693,19 @@ export default class IndexingService extends BaseService<Events> {
     )
 
     if (knownAsset) {
-      await this.addAssetToTrack(knownAsset)
-      return knownAsset
+      const newDiscoveryTxHash = metadata?.discoveryTxHash
+      const addressForDiscoveryTxHash = newDiscoveryTxHash
+        ? Object.keys(newDiscoveryTxHash)[0]
+        : undefined
+      const existsDiscoveryTxHash = addressForDiscoveryTxHash
+        ? knownAsset.metadata?.discoveryTxHash?.[addressForDiscoveryTxHash]
+        : undefined
+      // If the discovery tx hash is not specified
+      // or if it already exists in the asset, do not update the asset
+      if (!newDiscoveryTxHash || existsDiscoveryTxHash) {
+        await this.addAssetToTrack(knownAsset)
+        return knownAsset
+      }
     }
 
     let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
@@ -692,7 +729,16 @@ export default class IndexingService extends BaseService<Events> {
       if (!isRemoved || (isRemoved && isVerified)) {
         if (Object.keys(metadata).length !== 0) {
           customAsset.metadata ??= {}
-          Object.assign(customAsset.metadata, metadata)
+          if (metadata.verified !== undefined) {
+            customAsset.metadata.verified = metadata.verified
+          }
+          if (metadata.discoveryTxHash) {
+            customAsset.metadata.discoveryTxHash ??= {}
+            Object.assign(
+              customAsset.metadata.discoveryTxHash,
+              metadata.discoveryTxHash
+            )
+          }
 
           if (isRemoved) {
             customAsset.metadata.removed = false

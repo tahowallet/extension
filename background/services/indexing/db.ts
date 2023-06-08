@@ -299,6 +299,10 @@ export class IndexingDatabase extends Dexie {
     )
   }
 
+  async geAllCustomAssets(): Promise<CustomAsset[]> {
+    return this.customAssets.toArray()
+  }
+
   async getActiveCustomAssetsByNetworks(
     networks: EVMNetwork[]
   ): Promise<CustomAsset[]> {

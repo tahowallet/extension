@@ -7,6 +7,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/assets"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import {
+  selectCurrentAccount,
   selectCurrentAccountActivities,
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
@@ -26,7 +27,10 @@ import { getBlockExplorerURL } from "../../../utils/networks"
 type AssetWarningProps = {
   asset: SmartContractFungibleAsset
   close: () => void
-  openActivityDetails: (activity: Activity | undefined) => void
+  openActivityDetails: (activityDetails: {
+    activityItem: Activity
+    activityInitiatorAddress: string
+  }) => void
 }
 
 export default function AssetWarning(props: AssetWarningProps): ReactElement {
@@ -52,8 +56,6 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
       ? asset.contractAddress
       : ""
 
-  const discoveryTxHash = asset.metadata?.discoveryTxHash
-
   const blockExplorerUrl = getBlockExplorerURL(network)
 
   const handleVerifyAsset = async () => {
@@ -74,6 +76,12 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
     navigator.clipboard.writeText(txHash)
     dispatch(setSnackbarMessage(sharedT("copyTextSnackbar")))
   }
+
+  const activityInitiatorAddress =
+    useBackgroundSelector(selectCurrentAccount).address
+
+  const discoveryTxHash =
+    asset.metadata?.discoveryTxHash?.[activityInitiatorAddress]
 
   const currentAccountActivities = useBackgroundSelector(
     selectCurrentAccountActivities
@@ -151,7 +159,10 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
                       })}
                       onClick={() => {
                         if (activityItem) {
-                          openActivityDetails(activityItem)
+                          openActivityDetails({
+                            activityItem,
+                            activityInitiatorAddress,
+                          })
                         } else {
                           copyTxHash(discoveryTxHash)
                         }
