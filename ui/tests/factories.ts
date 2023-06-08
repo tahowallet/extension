@@ -5,7 +5,7 @@ import { AccountState } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   NFTCached,
   NFTCollectionCached,
-} from "@tallyho/tally-background/redux-slices/nfts_update"
+} from "@tallyho/tally-background/redux-slices/nfts"
 import { createAccountData } from "@tallyho/tally-background/tests/factories"
 
 export const TEST_ADDRESS = normalizeEVMAddress(

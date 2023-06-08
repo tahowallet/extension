@@ -15,7 +15,11 @@ import {
   toggleFlashbots,
   selectUseFlashbots,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import {
+  FeatureFlags,
+  isDisabled,
+  isEnabled,
+} from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
 import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
@@ -336,7 +340,8 @@ export default function Settings(): ReactElement {
   }
 
   const generalList = [
-    setAsDefault,
+    // setAsDefault is removed from settings in the new dApp Connections flow.
+    isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && setAsDefault,
     hideSmallAssetBalance,
     unverifiedAssets,
     isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,

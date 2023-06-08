@@ -245,9 +245,7 @@
     }
   },
   "nfts": {
-    "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title",
-    "NFTPricingComingSoon": "Coming soon: NFT price + sending",
     "type1": "NFTs",
     "type2": "badges",
     "noMatchingNFTs": "No {{type}} matching your filters",
@@ -303,11 +301,6 @@
       "accountsTitle": "Show/hide accounts",
       "noCollections": "No collections"
     }
-  },
-  "achievements": {
-    "empty": "Nothing to see here",
-    "startWith": "You can start with the Taho collection!",
-    "collection": "Taho collection"
   },
   "onboarding": {
     "tabbed": {
@@ -939,10 +932,8 @@
         "HIDE_SWAP_REWARDS": "Hide swap rewards",
         "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
         "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
-        "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
-        "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab",
         "SUPPORT_NFT_SEND": "Enable sending NFTs",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
