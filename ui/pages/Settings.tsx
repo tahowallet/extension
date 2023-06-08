@@ -12,6 +12,8 @@ import {
   selectHideBanners,
   selectShowUnverifiedAssets,
   toggleShowUnverifiedAssets,
+  toggleFlashbots,
+  selectUseFlashbots,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
@@ -128,6 +130,7 @@ export default function Settings(): ReactElement {
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
   const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
+  const useFlashbots = useSelector(selectUseFlashbots)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
@@ -148,6 +151,9 @@ export default function Settings(): ReactElement {
   const toggleHideNotificationBanners = (toggleValue: boolean) => {
     dispatch(toggleHideBanners(!toggleValue))
   }
+
+  const toggleFlashbotsRPC = (value: boolean) =>
+    dispatch(toggleFlashbots(value))
 
   const hideSmallAssetBalance = {
     title: t("settings.hideSmallAssetBalance", {
@@ -319,6 +325,16 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const flashbotsRPC = {
+    title: t("wallet.useFlashbots"),
+    component: () => (
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleFlashbotsRPC(toggleValue)}
+        value={useFlashbots}
+      />
+    ),
+  }
+
   const generalList = [
     setAsDefault,
     hideSmallAssetBalance,
@@ -332,6 +348,7 @@ export default function Settings(): ReactElement {
     analytics,
     isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && notificationBanner,
     customNetworks,
+    flashbotsRPC,
   ].filter((item): item is Exclude<typeof item, boolean> => !!item)
 
   const settings = {
