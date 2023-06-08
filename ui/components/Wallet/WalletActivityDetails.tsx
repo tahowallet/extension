@@ -1,13 +1,22 @@
 import React, { useCallback, ReactElement, useState } from "react"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentAccount,
+  selectCurrentAccountSigner,
+  selectCurrentNetwork,
+  selectTrackedReplacementTransactions,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   ActivityDetail,
   Activity,
   fetchSelectedActivityDetails,
+  speedUpTx,
 } from "@tallyho/tally-background/redux-slices/activities"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import { AssetTransferDetail } from "@tallyho/tally-background/redux-slices/utils/activities-utils"
 import { useTranslation } from "react-i18next"
+import classNames from "classnames"
+import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import SharedAddress from "../Shared/SharedAddress"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
@@ -129,6 +138,32 @@ export default function WalletActivityDetails(
   const dispatch = useBackgroundDispatch()
   const [details, setDetails] = useState<ActivityDetail>()
 
+  const currentSigner = useBackgroundSelector(selectCurrentAccountSigner)
+  const currentAccount = useBackgroundSelector(selectCurrentAccount)
+
+  const isReadOnlyAccount = currentSigner.type === "read-only"
+
+  const isSentFromCurrentAccount = sameEVMAddress(
+    activityItem.from,
+    currentAccount.address
+  )
+
+  const replacementTransactions = useBackgroundSelector(
+    selectTrackedReplacementTransactions
+  )
+
+  const hasReplacementTx = replacementTransactions.some(
+    (tx) =>
+      tx.parentTx === props.activityItem.hash &&
+      tx.chainID === currentAccount.network.chainID
+  )
+
+  const isReplacementTx = replacementTransactions.some(
+    (tx) =>
+      tx.hash === props.activityItem.hash &&
+      tx.chainID === currentAccount.network.chainID
+  )
+
   const network = useBackgroundSelector(selectCurrentNetwork)
 
   const { t } = useTranslation("translation", {
@@ -210,6 +245,42 @@ export default function WalletActivityDetails(
           />
         )}
       </div>
+      {isEnabled(FeatureFlags.SUPPORT_TRANSACTION_REPLACEMENT) && (
+        <div className="tx_status_panel">
+          <div className="tx_status_header">
+            <span className="tx_status_panel_title">
+              {t("activityDetails.statusPanel.title")}
+            </span>
+            <span className={classNames("tx_current_status", details?.state)}>
+              {details?.state
+                ? t(`activities.status.${details?.state}`)
+                : "....."}
+            </span>
+          </div>
+          <div className="tx_status_controls">
+            {!isReadOnlyAccount &&
+              isSentFromCurrentAccount &&
+              details?.state === "pending" && (
+                <button
+                  type="button"
+                  className="speed_up_tx_btn"
+                  disabled={hasReplacementTx || isReplacementTx}
+                  onClick={() => {
+                    dispatch(speedUpTx(details.tx))
+                  }}
+                >
+                  <SharedIcon
+                    icon="icons/s/arrow-top-right.svg"
+                    color="currentColor"
+                    height={16}
+                    width={16}
+                  />
+                  {t("activityDetails.actions.speedup")}
+                </button>
+              )}
+          </div>
+        </div>
+      )}
       <div className="destination_cards">
         <DestinationCard label="From" address={activityItem.from} />
         <div className="icon_transfer" />
@@ -287,6 +358,67 @@ export default function WalletActivityDetails(
             position: relative;
             flex-grow: 1;
             flex-shrink: 0;
+          }
+
+          .tx_status_panel {
+            background: var(--green-80);
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            padding: 16px;
+            margin-bottom: 16px;
+          }
+
+          .tx_status_header {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+          }
+
+          .tx_status_panel_title {
+            color: var(--green-40);
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 16px;
+            letter-spacing: 0.03em;
+          }
+
+          .tx_status_controls {
+            display: flex;
+            align-items: self-end;
+          }
+
+          .tx_current_status {
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 24px;
+            letter-spacing: 0em;
+          }
+
+          .speed_up_tx_btn:disabled {
+            color: var(--green-60);
+          }
+
+          .speed_up_tx_btn {
+            color: var(--success);
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 24px;
+            letter-spacing: 0em;
+          }
+
+          .tx_current_status.pending {
+            color: var(--attention);
+          }
+
+          .tx_current_status.completed {
+            color: var(--success);
+          }
+          .tx_current_status.failed {
+            color: var(--error);
           }
         `}
       </style>

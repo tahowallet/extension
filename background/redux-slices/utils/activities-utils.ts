@@ -7,7 +7,7 @@ import {
   weiToGwei,
 } from "../../lib/utils"
 import { isDefined } from "../../lib/utils/type-guards"
-import { TxStatus } from "../../networks"
+import { ConfirmedEVMTransaction, TxStatus } from "../../networks"
 import { Transaction } from "../../services/chain/db"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
 import { getRecipient, getSender } from "../../services/enrichment/utils"
@@ -80,7 +80,11 @@ function getAmount(tx: EnrichedEVMTransaction): string {
 
 type TransactionStatus = "pending" | "dropped" | "failed" | "completed"
 
-function getTransactionStatus(tx: EnrichedEVMTransaction): TransactionStatus {
+export function getActivityStatus(
+  tx:
+    | Pick<Transaction, "blockHeight">
+    | Pick<ConfirmedEVMTransaction, "blockHeight" | "status">
+): TransactionStatus {
   const { blockHeight } = tx
   const status = "status" in tx ? tx.status : undefined
   if (
@@ -261,7 +265,7 @@ export function getActivityDetails(tx: EnrichedEVMTransaction): ActivityDetail {
     amount: getAmount(tx),
   }
 
-  switch (getTransactionStatus(tx)) {
+  switch (getActivityStatus(tx)) {
     case "pending":
       return { ...activity, state: "pending" }
     case "completed":

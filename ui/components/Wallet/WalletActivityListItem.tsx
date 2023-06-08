@@ -6,6 +6,7 @@ import {
 } from "@tallyho/tally-background/lib/utils"
 import { useTranslation } from "react-i18next"
 import { Activity } from "@tallyho/tally-background/redux-slices/activities"
+import { getActivityStatus } from "@tallyho/tally-background/redux-slices/utils/activities-utils"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedActivityIcon from "../Shared/SharedActivityIcon"
 import useActivityViewDetails from "../../hooks/activity-hooks"
@@ -52,6 +53,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     activityInitiatorAddress
   )
 
+  const status = getActivityStatus(activity)
+
   return (
     <li>
       <button type="button" className="standard_width" onClick={onClick}>
@@ -59,22 +62,8 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           <div className="left">
             <SharedActivityIcon type={activityViewDetails.icon} size={14} />
             {activityViewDetails.label}
-            {"status" in activity &&
-            activity.blockHash !== null &&
-            activity.status !== 1 ? (
-              <div className="status failed">{t("transactionFailed")}</div>
-            ) : (
-              <></>
-            )}
-            {"status" in activity &&
-            activity.blockHash === null &&
-            activity.status === 0 ? (
-              <div className="status dropped">{t("transactionDropped")}</div>
-            ) : (
-              <></>
-            )}
-            {!("status" in activity) && activity.blockHash === null ? (
-              <div className="status pending">{t("transactionPending")}</div>
+            {status !== "completed" ? (
+              <div className={`status ${status}`}>{t(`status.${status}`)}</div>
             ) : (
               <></>
             )}

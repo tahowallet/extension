@@ -19,3 +19,8 @@ export const selectActivitesHashesForEnrichment = createSelector(
     )
   }
 )
+
+export const selectTrackedReplacementTransactions = createSelector(
+  (state: RootState) => state.activities,
+  (activities) => activities.replacementTransactions
+)

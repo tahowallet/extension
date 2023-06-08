@@ -9,6 +9,7 @@ import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../lib/utils"
+import { AnyEVMTransaction, isEIP1559TransactionRequest } from "../networks"
 import { Transaction } from "../services/chain/db"
 import { EnrichedEVMTransaction } from "../services/enrichment"
 import { HexString } from "../types"
@@ -20,6 +21,7 @@ import {
   ActivityDetail,
   INFINITE_VALUE,
 } from "./utils/activities-utils"
+import { getProvider } from "./utils/contract-utils"
 
 export { Activity, ActivityDetail, INFINITE_VALUE }
 export type Activities = {
@@ -28,8 +30,16 @@ export type Activities = {
   }
 }
 
+type TrackedReplacementTx = {
+  chainID: string
+  hash: string
+  parentTx: string
+  initiator: string
+}
+
 type ActivitiesState = {
   activities: Activities
+  replacementTransactions: TrackedReplacementTx[]
 }
 
 const ACTIVITIES_MAX_COUNT = 25
@@ -113,6 +123,7 @@ const initializeActivitiesFromTransactions = ({
 
 const initialState: ActivitiesState = {
   activities: {},
+  replacementTransactions: [],
 }
 
 const activitiesSlice = createSlice({
@@ -126,9 +137,11 @@ const activitiesSlice = createSlice({
       }: {
         payload: { transactions: Transaction[]; accounts: AddressOnNetwork[] }
       }
-    ) => ({
-      activities: initializeActivitiesFromTransactions(payload),
-    }),
+    ) => {
+      immerState.activities = initializeActivitiesFromTransactions(payload)
+      // Clear these at extension restart
+      immerState.replacementTransactions = []
+    },
     initializeActivitiesForAccount: (
       immerState,
       {
@@ -170,6 +183,65 @@ const activitiesSlice = createSlice({
           immerState.activities[normalizeEVMAddress(address)]?.[chainID]
         )
       })
+
+      immerState.replacementTransactions ??= []
+
+      const { replacementTransactions } = immerState
+
+      const replacement = replacementTransactions.find(
+        (request) =>
+          request.hash === transaction.hash &&
+          request.chainID === transaction.network.chainID
+      )
+
+      // Remove parent tx if it's replacement tx succeded
+      if (replacement && transaction.blockHeight) {
+        Object.keys(immerState.activities).forEach((address) => {
+          immerState.activities[address][replacement.chainID] =
+            immerState.activities[address][replacement.chainID].filter(
+              (activity) => activity.hash !== replacement.parentTx
+            )
+        })
+      }
+    },
+    addReplacementTransaction: (
+      immerState,
+      { payload }: { payload: TrackedReplacementTx }
+    ) => {
+      immerState.replacementTransactions ??= []
+      const { replacementTransactions } = immerState
+      if (
+        !replacementTransactions.some(
+          (request) =>
+            request.hash === payload.hash && request.chainID === payload.chainID
+        )
+      ) {
+        replacementTransactions.push(payload)
+      }
+    },
+    removeReplacedTransaction: (
+      immerState,
+      { payload }: { payload: AnyEVMTransaction }
+    ) => {
+      immerState.replacementTransactions ??= []
+
+      const { replacementTransactions } = immerState
+
+      const replacement = replacementTransactions.find(
+        (request) =>
+          request.hash === payload.hash &&
+          request.chainID === payload.network.chainID
+      )
+
+      // Remove parent tx if it's replacement tx succeded
+      if (replacement && payload.blockHeight) {
+        Object.keys(immerState.activities).forEach((address) => {
+          immerState.activities[address][replacement.chainID] =
+            immerState.activities[address][replacement.chainID].filter(
+              (activity) => activity.hash !== replacement.parentTx
+            )
+        })
+      }
     },
   },
 })
@@ -179,6 +251,8 @@ export const {
   addActivity,
   removeActivities,
   initializeActivitiesForAccount,
+  addReplacementTransaction,
+  removeReplacedTransaction,
 } = activitiesSlice.actions
 
 export default activitiesSlice.reducer
@@ -187,5 +261,51 @@ export const fetchSelectedActivityDetails = createBackgroundAsyncThunk(
   "activities/fetchSelectedActivityDetails",
   async (activityHash: string, { extra: { main } }) => {
     return main.getActivityDetails(activityHash)
+  }
+)
+
+export const speedUpTx = createBackgroundAsyncThunk(
+  "activities/speedupTx",
+  async (tx: Transaction | EnrichedEVMTransaction, { dispatch }) => {
+    const { input, from, to, value, nonce, gasLimit } = tx
+    const provider = getProvider()
+    const signer = provider.getSigner()
+    const isEIP1559Tx = isEIP1559TransactionRequest(tx)
+
+    if (!tx.gasPrice || (isEIP1559Tx && !tx.maxFeePerGas)) {
+      throw new Error("Cannot speed up transaction without a valid gas price")
+    }
+
+    const TxRequest = {
+      data: input || "0x",
+      from,
+      to,
+      value,
+      gasLimit,
+      nonce,
+      type: tx.type as 0,
+    }
+
+    if (isEIP1559Tx) {
+      Object.assign(TxRequest, {
+        maxFeePerGas: tx.maxFeePerGas,
+        maxPriorityFeePerGas: (tx.maxPriorityFeePerGas * 125n) / 100n,
+      })
+    } else {
+      Object.assign(TxRequest, {
+        gasPrice: (tx.gasPrice * 125n) / 100n,
+      })
+    }
+
+    const newTx = await signer.sendTransaction(TxRequest)
+
+    dispatch(
+      addReplacementTransaction({
+        hash: newTx.hash,
+        chainID: tx.network.chainID,
+        parentTx: tx.hash,
+        initiator: tx.from,
+      })
+    )
   }
 )
