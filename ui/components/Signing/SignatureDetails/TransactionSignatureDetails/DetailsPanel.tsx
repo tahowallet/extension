@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next"
 import {
   BINANCE_SMART_CHAIN,
   EIP_1559_COMPLIANT_CHAIN_IDS,
+  FLASHBOTS_SUPPORTED_CHAIN_IDS,
 } from "@tallyho/tally-background/constants"
 import classNames from "classnames"
 import {
@@ -92,6 +93,10 @@ export default function DetailPanel({
   const isContractAddress =
     transactionDetails.annotation?.warnings?.includes("send-to-contract")
 
+  const canUseFlashbots = FLASHBOTS_SUPPORTED_CHAIN_IDS.has(
+    transactionDetails.chainID
+  )
+
   const networkSettingsSaved = () => {
     setUpdateNum(updateNum + 1)
 
@@ -143,7 +148,7 @@ export default function DetailPanel({
             />
           </span>
         )}
-      {isEnabled(FeatureFlags.SUPPORT_FLASHBOTS_RPC) && (
+      {isEnabled(FeatureFlags.SUPPORT_FLASHBOTS_RPC) && canUseFlashbots && (
         <>
           <span className="detail_item">
             <div className="detail_label">{t("wallet.useFlashbots")}</div>
