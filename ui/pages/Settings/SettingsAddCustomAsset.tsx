@@ -305,6 +305,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
                         textDecoration: "underline",
                         "--link-color": "var(--green-95)",
                         "--hover-color": "var(--green-40)",
+                        padding: "0px",
                       }}
                       type="button"
                       url={HELPDESK_CUSTOM_TOKENS_LINK}
