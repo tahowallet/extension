@@ -348,7 +348,7 @@ export default function Settings(): ReactElement {
     analytics,
     isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && notificationBanner,
     customNetworks,
-    flashbotsRPC,
+    isEnabled(FeatureFlags.SUPPORT_FLASHBOTS_RPC) && flashbotsRPC,
   ].filter((item): item is Exclude<typeof item, boolean> => !!item)
 
   const settings = {

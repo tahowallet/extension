@@ -20,6 +20,7 @@ import {
   selectUseFlashbots,
   toggleFlashbots,
 } from "@tallyho/tally-background/redux-slices/ui"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
 import NetworkSettingsChooser from "../../../NetworkFees/NetworkSettingsChooser"
@@ -142,13 +143,17 @@ export default function DetailPanel({
             />
           </span>
         )}
-      <span className="detail_item">
-        <div className="detail_label">{t("wallet.useFlashbots")}</div>
-        <SharedToggleButton
-          value={useFlashbots}
-          onChange={toggleFlashbotsRPC}
-        />
-      </span>
+      {isEnabled(FeatureFlags.SUPPORT_FLASHBOTS_RPC) && (
+        <>
+          <span className="detail_item">
+            <div className="detail_label">{t("wallet.useFlashbots")}</div>
+            <SharedToggleButton
+              value={useFlashbots}
+              onChange={toggleFlashbotsRPC}
+            />
+          </span>
+        </>
+      )}
       <span className="detail_item">
         <div className="detail_label">
           {t("networkFees.estimatedNetworkFee")}
