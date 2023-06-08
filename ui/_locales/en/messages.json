@@ -595,6 +595,7 @@
     "showPasswordHint": "Show Password",
     "hidePasswordHint": "Hide Password",
     "close": "Close",
+    "modalClose": "Background close",
     "accountItemSummary": {
       "connectedStatus": "Connected"
     },
@@ -736,7 +737,6 @@
       "networkSettingsBtn": "Add network (beta)"
     },
     "connectedDappInfo": {
-      "modalClose": "Background close",
       "dAppTitle": "Account connected to",
       "dappConnections": "Dapp connections",
       "guideline": {
