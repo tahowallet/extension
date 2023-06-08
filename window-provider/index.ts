@@ -150,6 +150,7 @@ export default class TallyWindowProvider extends EventEmitter {
         )
         const currentHost = window.location.host
         if (
+          process.env.ENABLE_UPDATED_DAPP_CONNECTIONS === "true" ||
           impersonateMetamaskWhitelist.some((host) =>
             currentHost.includes(host)
           )
