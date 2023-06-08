@@ -9,15 +9,40 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedIcon from "../Shared/SharedIcon"
 import SharedToggleButton from "../Shared/SharedToggleButton"
 
-export default function DAppConnectionDefaultToggle(): ReactElement {
+type Props = {
+  /**
+   * Renders as a button instead of a toggle. In this mode, always set the
+   * specified value (true means always setting Taho as default, false means
+   * always setting Taho as non-default), even if that value is already set.
+   */
+  alwaysForceSelection?: "taho" | "other"
+}
+
+export default function DAppConnectionDefaultToggle({
+  alwaysForceSelection,
+}: Props): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "topMenu" })
 
   const dispatch = useBackgroundDispatch()
 
   const isDefaultWallet = useBackgroundSelector(selectDefaultWallet)
-  const toggleDefaultWallet = (defaultWalletValue: boolean) => {
-    dispatch(setNewDefaultWalletValue(defaultWalletValue))
+  const setDefaultWallet = (defaultWalletValue: boolean) => {
+    // If renderAsButtonForValue is set, interactions will always set
+    // that value for defaultWallet.
+    const finalValue =
+      alwaysForceSelection === undefined
+        ? defaultWalletValue
+        : alwaysForceSelection === "taho"
+
+    dispatch(setNewDefaultWalletValue(finalValue))
   }
+
+  // If renderAsButtonForValue is set, we will always display that value for
+  // defaultWallet.
+  const defaultIsSelected =
+    alwaysForceSelection === undefined
+      ? isDefaultWallet
+      : alwaysForceSelection === "taho"
 
   // TODO Read this from background information.
   const hasDetectedOtherWallets = true
@@ -26,27 +51,27 @@ export default function DAppConnectionDefaultToggle(): ReactElement {
     <>
       {hasDetectedOtherWallets && (
         <p className="default_wallet">
-          {t("connectToWebsiteUsing")}
+          {alwaysForceSelection === undefined ? t("connectToWebsiteUsing") : ""}
           <SharedIcon
             width={20}
             icon="taho-connect-icon.svg"
             ariaLabel={t("setTahoAsDefault")}
-            color={isDefaultWallet ? "var(--success)" : "var(--green-20)"}
-            onClick={() => toggleDefaultWallet(true)}
+            color={defaultIsSelected ? "var(--success)" : "var(--green-20)"}
+            onClick={() => setDefaultWallet(true)}
           />
           <SharedToggleButton
-            onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
+            onChange={(toggleValue) => setDefaultWallet(toggleValue)}
             onColor="var(--success)"
             offColor="var(--white)"
-            value={isDefaultWallet}
+            value={defaultIsSelected}
             leftToRight={false}
           />
           <SharedIcon
             width={24}
             icon="other-wallet-connect-icon.svg"
             ariaLabel={t("setOtherAsDefault")}
-            color={isDefaultWallet ? "var(--green-20)" : "var(--white)"}
-            onClick={() => toggleDefaultWallet(false)}
+            color={defaultIsSelected ? "var(--green-20)" : "var(--white)"}
+            onClick={() => setDefaultWallet(false)}
           />
         </p>
       )}
