@@ -1689,7 +1689,7 @@ export default class Main extends BaseService<never> {
     return this.keyringService.unlock(password)
   }
 
-  async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
+  async getActivityDetails(txHash: string): Promise<[ActivityDetail]> {
     const addressNetwork = this.store.getState().ui.selectedAccount
     const transaction = await this.chainService.getTransaction(
       addressNetwork.network,
@@ -1700,7 +1700,7 @@ export default class Main extends BaseService<never> {
       2
     )
 
-    return getActivityDetails(enrichedTransaction)
+    return [getActivityDetails(enrichedTransaction)]
   }
 
   async connectAnalyticsService(): Promise<void> {

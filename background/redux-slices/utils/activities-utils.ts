@@ -7,15 +7,11 @@ import {
   weiToGwei,
 } from "../../lib/utils"
 import { isDefined } from "../../lib/utils/type-guards"
+import { TxStatus } from "../../networks"
 import { Transaction } from "../../services/chain/db"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
 import { getRecipient, getSender } from "../../services/enrichment/utils"
 import { HexString } from "../../types"
-
-enum TxStatus {
-  FAIL = 0,
-  SUCCESS = 1,
-}
 
 export const INFINITE_VALUE = "infinite"
 
@@ -36,11 +32,29 @@ export type Activity = {
   assetLogoUrl?: string
 }
 
-export type ActivityDetail = {
+export type AssetTransferDetail = {
   assetIconUrl?: string
   label: string
   value: string
 }
+
+export type ActivityDetail = {
+  tx: Transaction | EnrichedEVMTransaction
+  state: TransactionStatus
+  timestamp?: string
+  blockHeight?: string
+  gas?: string
+  nonce: string
+  gasPrice: string
+  maxFeePerGas: string
+  amount: string
+} & (
+  | { state: "pending" | "dropped" }
+  | ({ blockHeight: string; gas: string; timestamp: string } & (
+      | { state: "completed"; assetTransfers: AssetTransferDetail[] }
+      | { state: "failed" }
+    ))
+)
 
 const ACTIVITY_DECIMALS = 2
 
@@ -64,7 +78,9 @@ function getAmount(tx: EnrichedEVMTransaction): string {
   return `${convertToEth(value) || "0"} ${symbol}`
 }
 
-function getBlockHeight(tx: EnrichedEVMTransaction): string {
+type TransactionStatus = "pending" | "dropped" | "failed" | "completed"
+
+function getTransactionStatus(tx: EnrichedEVMTransaction): TransactionStatus {
   const { blockHeight } = tx
   const status = "status" in tx ? tx.status : undefined
   if (
@@ -72,16 +88,18 @@ function getBlockHeight(tx: EnrichedEVMTransaction): string {
     status !== undefined &&
     status !== TxStatus.SUCCESS
   ) {
-    return "(failed)"
-  }
-  if (blockHeight !== null) {
-    return blockHeight.toString()
-  }
-  if (blockHeight === null && status === TxStatus.FAIL) {
-    return "(dropped)"
+    return "failed"
   }
 
-  return "(pending)"
+  if (blockHeight !== null) {
+    return "completed"
+  }
+
+  if (blockHeight === null && status === TxStatus.FAIL) {
+    return "dropped"
+  }
+
+  return "pending"
 }
 
 function getGweiPrice(value: bigint | null | undefined): string {
@@ -209,9 +227,7 @@ export const sortActivities = (a: Activity, b: Activity): number => {
   return b.blockHeight - a.blockHeight
 }
 
-export function getActivityDetails(
-  tx: EnrichedEVMTransaction
-): ActivityDetail[] {
+export function getActivityDetails(tx: EnrichedEVMTransaction): ActivityDetail {
   const { annotation } = tx
   const assetTransfers =
     annotation?.subannotations === undefined
@@ -237,24 +253,46 @@ export function getActivityDetails(
           })
           .filter(isDefined)
 
-  return [
-    { label: "Block Height", value: getBlockHeight(tx) },
-    { label: "Amount", value: getAmount(tx) },
-    { label: "Max Fee/Gas", value: getGweiPrice(tx.maxFeePerGas) },
-    { label: "Gas Price", value: getGweiPrice(tx.gasPrice) },
-    { label: "Gas", value: "gasUsed" in tx ? tx.gasUsed.toString() : "" },
-    { label: "Nonce", value: tx.nonce.toString() },
-    { label: "Timestamp", value: getTimestamp(tx.annotation?.blockTimestamp) },
-  ].concat(
-    assetTransfers.map((transfer) => {
+  const activity = {
+    tx,
+    nonce: tx.nonce.toString(),
+    gasPrice: getGweiPrice(tx.gasPrice),
+    maxFeePerGas: getGweiPrice(tx.maxFeePerGas),
+    amount: getAmount(tx),
+  }
+
+  switch (getTransactionStatus(tx)) {
+    case "pending":
+      return { ...activity, state: "pending" }
+    case "completed":
       return {
-        assetIconUrl: transfer.assetLogoUrl ?? "",
-        label: transfer.assetSymbol,
-        value:
-          transfer.direction === "in"
-            ? transfer.localizedDecimalAmount
-            : `-${transfer.localizedDecimalAmount}`,
+        ...activity,
+        state: "completed",
+        blockHeight: tx.blockHeight?.toString() || "",
+        timestamp: getTimestamp(tx.annotation?.blockTimestamp),
+        gas: "gasUsed" in tx ? tx.gasUsed.toString() : "(Unknown)",
+        assetTransfers: assetTransfers.map((transfer) => {
+          return {
+            assetIconUrl: transfer.assetLogoUrl ?? "",
+            label: transfer.assetSymbol,
+            value:
+              transfer.direction === "in"
+                ? transfer.localizedDecimalAmount
+                : `-${transfer.localizedDecimalAmount}`,
+          }
+        }),
       }
-    })
-  )
+    case "failed":
+      return {
+        ...activity,
+        state: "failed",
+        blockHeight: tx.blockHeight?.toString() || "",
+        timestamp: getTimestamp(tx.annotation?.blockTimestamp),
+        gas: "gasUsed" in tx ? tx.gasUsed.toString() : "(Unknown)",
+      }
+    case "dropped":
+      return { ...activity, state: "dropped" }
+    default:
+      throw new Error("Unknown transaction status")
+  }
 }

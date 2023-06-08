@@ -11,6 +11,14 @@ import type {
 } from "./services/enrichment"
 
 /**
+ * Transaction status, uses the same convention as the result from eth_gettransactionreceipt
+ */
+export enum TxStatus {
+  FAIL = 0,
+  SUCCESS = 1,
+}
+
+/**
  * Each supported network family is generally incompatible with others from a
  * transaction, consensus, and/or wire format perspective.
  */
@@ -244,7 +252,7 @@ export type EVMLog = {
  */
 export type ConfirmedEVMTransaction = EVMTransaction & {
   gasUsed: bigint
-  status: number
+  status: TxStatus
   blockHash: string
   blockHeight: number
   logs: EVMLog[] | undefined
@@ -255,7 +263,7 @@ export type ConfirmedEVMTransaction = EVMTransaction & {
  * the error if available.
  */
 export type FailedConfirmationEVMTransaction = EVMTransaction & {
-  status: 0
+  status: TxStatus.FAIL
   error?: string
   blockHash: null
   blockHeight: null

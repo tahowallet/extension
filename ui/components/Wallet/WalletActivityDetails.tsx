@@ -1,10 +1,13 @@
-import React, { useCallback, ReactElement, useEffect, useState } from "react"
+import React, { useCallback, ReactElement, useState } from "react"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   ActivityDetail,
   Activity,
   fetchSelectedActivityDetails,
 } from "@tallyho/tally-background/redux-slices/activities"
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
+import { AssetTransferDetail } from "@tallyho/tally-background/redux-slices/utils/activities-utils"
+import { useTranslation } from "react-i18next"
 import SharedAddress from "../Shared/SharedAddress"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
@@ -13,8 +16,9 @@ import SharedActivityIcon from "../Shared/SharedActivityIcon"
 import SharedIcon from "../Shared/SharedIcon"
 import useActivityViewDetails from "../../hooks/activity-hooks"
 import { getBlockExplorerURL } from "../../utils/networks"
+import { useInterval } from "../../hooks/react-hooks"
 
-function DetailRowItem(props: ActivityDetail): ReactElement {
+function DetailRowItem(props: AssetTransferDetail): ReactElement {
   const { assetIconUrl, label, value } = props
 
   return (
@@ -110,7 +114,7 @@ function DestinationCard(props: DestinationCardProps): ReactElement {
   )
 }
 
-interface WalletActivityDetailsProps {
+type WalletActivityDetailsProps = {
   activityItem: Activity
   activityInitiatorAddress: string
 }
@@ -123,8 +127,13 @@ export default function WalletActivityDetails(
 ): ReactElement {
   const { activityItem, activityInitiatorAddress } = props
   const dispatch = useBackgroundDispatch()
-  const [details, setDetails] = useState<ActivityDetail[]>([])
+  const [details, setDetails] = useState<ActivityDetail>()
+
   const network = useBackgroundSelector(selectCurrentNetwork)
+
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet",
+  })
 
   const blockExplorerUrl = getBlockExplorerURL(network)
 
@@ -134,23 +143,57 @@ export default function WalletActivityDetails(
       ?.focus()
   }, [activityItem?.hash, blockExplorerUrl])
 
-  useEffect(() => {
+  useInterval(() => {
     const fetchDetails = async () => {
       if (activityItem?.hash) {
-        setDetails(
-          (await dispatch(
-            fetchSelectedActivityDetails(activityItem.hash)
-          )) as unknown as ActivityDetail[]
-        )
+        type SelectedActivityDetails = AsyncThunkFulfillmentType<
+          typeof fetchSelectedActivityDetails
+        >
+
+        const [result] = (await dispatch(
+          fetchSelectedActivityDetails(activityItem.hash)
+        )) as unknown as SelectedActivityDetails
+
+        setDetails(result)
       }
     }
     fetchDetails()
-  }, [activityItem.hash, dispatch])
+  }, 500)
 
   const activityViewDetails = useActivityViewDetails(
     activityItem,
     activityInitiatorAddress
   )
+
+  const detailsItems = [
+    {
+      key: "timestamp",
+      label: t("activityDetails.timestamp"),
+      value: details?.timestamp,
+    },
+    {
+      key: "blockHeight",
+      label: t("activityDetails.blockHeight"),
+      value: details?.blockHeight,
+    },
+    { key: "gas", label: t("activityDetails.gas"), value: details?.gas },
+    { key: "nonce", label: t("activityDetails.nonce"), value: details?.nonce },
+    {
+      key: "gasPrice",
+      label: t("activityDetails.gasPrice"),
+      value: details?.gasPrice,
+    },
+    {
+      key: "maxFeePerGas",
+      label: t("activityDetails.maxFeePerGas"),
+      value: details?.maxFeePerGas,
+    },
+    {
+      key: "amount",
+      label: t("activityDetails.amount"),
+      value: details?.amount,
+    },
+  ]
 
   return (
     <div className="wrap standard_width center_horizontal">
@@ -177,8 +220,25 @@ export default function WalletActivityDetails(
         />
       </div>
       <ul>
-        {details.length ? (
-          <></>
+        {details ? (
+          <>
+            {detailsItems.map(({ key, label, value }) => (
+              <DetailRowItem
+                key={key}
+                label={label}
+                value={value || "Unknown"}
+              />
+            ))}
+            {details.state === "completed" &&
+              details.assetTransfers.map(({ assetIconUrl, label, value }) => (
+                <DetailRowItem
+                  key={label}
+                  assetIconUrl={assetIconUrl}
+                  label={label}
+                  value={value}
+                />
+              ))}
+          </>
         ) : (
           Array.from({ length: 7 }).map(() => (
             <SharedSkeletonLoader
@@ -187,16 +247,6 @@ export default function WalletActivityDetails(
             />
           ))
         )}
-        {details.map(({ assetIconUrl, label, value }) => {
-          return (
-            <DetailRowItem
-              key={label}
-              assetIconUrl={assetIconUrl}
-              label={label}
-              value={value}
-            />
-          )
-        })}
       </ul>
       <style jsx>
         {`
