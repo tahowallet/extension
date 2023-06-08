@@ -12,9 +12,7 @@ import {
   SECOND,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
   ALCHEMY_RPC_METHOD_PROVIDER_ROUTING,
-  FLASHBOTS_SUPPORTED_CHAIN_IDS,
   FLASHBOTS_RPC_URL,
-  FLASHBOTS_RPC_METHOD_PROVIDER_ROUTING,
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction } from "../../networks"
@@ -24,6 +22,12 @@ import {
   ALCHEMY_KEY,
   transactionFromAlchemyWebsocketTransaction,
 } from "../../lib/alchemy"
+
+export type ProviderCreator = {
+  type: "alchemy" | "custom" | "generic"
+  supportedMethods?: string[]
+  creator: () => WebSocketProvider | JsonRpcProvider
+}
 
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 400
@@ -125,10 +129,22 @@ function alchemyOrDefaultProvider(chainID: string, method: string): boolean {
   )
 }
 
-function flashbotsOrDefaultProvider(chainID: string, method: string): boolean {
-  return (FLASHBOTS_RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some(
-    (m: string) => method.startsWith(m)
-  )
+function customOrDefaultProvider(
+  chainID: string,
+  method: string,
+  supportedMethods: string[] = []
+): boolean {
+  // Alchemy's methods have to go through Alchemy
+  if (method.startsWith("alchemy_")) {
+    return false
+  }
+
+  // If there are no supported methods we can assume we want to route everything through this provider
+  if (!supportedMethods.length) {
+    return true
+  }
+
+  return supportedMethods.some((m: string) => method.startsWith(m))
 }
 
 /**
@@ -157,7 +173,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   private alchemyProvider: JsonRpcProvider | undefined
 
-  private flashbotsProvider: JsonRpcProvider | undefined
+  private customProvider: JsonRpcProvider | undefined
+
+  private customProviderSupportedMethods: string[] = []
 
   /**
    * This object holds all messages that are either being sent to a provider
@@ -179,11 +197,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   supportsAlchemy = false
 
-  private flashbotsProviderCreator: (() => JsonRpcProvider) | undefined
-
-  supportsFlashbots = false
-
-  shouldUseFlashbots = false
+  private customProviderCreator: (() => JsonRpcProvider) | undefined
 
   /**
    * Since our architecture follows a pattern of using distinct provider instances
@@ -240,13 +254,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     // Internal network type useful for helper calls, but not exposed to avoid
     // clashing with Ethers's own `network` stuff.
     private chainID: string,
-    providerCreators: Array<{
-      type: "alchemy" | "flashbots" | "generic"
-      creator: () => WebSocketProvider | JsonRpcProvider
-    }>
+    providerCreators: Array<ProviderCreator>
   ) {
-    const flashbotsProviderCreator = providerCreators.find(
-      (creator) => creator.type === "flashbots"
+    const customProviderCreator = providerCreators.find(
+      (creator) => creator.type === "custom"
     )
 
     const alchemyProviderCreator = providerCreators.find(
@@ -254,9 +265,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     )
 
     const [firstProviderCreator, ...remainingProviderCreators] =
-      providerCreators.flatMap((pc) =>
-        pc.type === "flashbots" ? [] : pc.creator
-      )
+      providerCreators.flatMap((pc) => (pc.type === "custom" ? [] : pc.creator))
 
     const firstProvider = firstProviderCreator()
 
@@ -270,10 +279,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.alchemyProvider = this.alchemyProviderCreator()
     }
 
-    if (flashbotsProviderCreator) {
-      this.supportsFlashbots = true
-      this.flashbotsProviderCreator = flashbotsProviderCreator.creator
-      this.flashbotsProvider = this.flashbotsProviderCreator()
+    if (customProviderCreator) {
+      this.addCustomProvider(customProviderCreator)
     }
 
     setInterval(() => {
@@ -328,11 +335,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
 
       if (
-        this.shouldUseFlashbots &&
-        this.flashbotsProvider &&
-        flashbotsOrDefaultProvider(this.cachedChainId, method)
+        this.customProvider &&
+        customOrDefaultProvider(
+          this.cachedChainId,
+          method,
+          this.customProviderSupportedMethods
+        )
       ) {
-        const result = await this.flashbotsProvider.send(method, params)
+        const result = await this.customProvider.send(method, params)
         delete this.messagesToSend[messageId]
         return result
       }
@@ -416,8 +426,17 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 
-  toggleFlashbotsProvider(shouldUseFlashbots: boolean): void {
-    this.shouldUseFlashbots = shouldUseFlashbots
+  addCustomProvider(customProviderCreator: ProviderCreator): void {
+    this.customProviderSupportedMethods =
+      customProviderCreator.supportedMethods ?? []
+    this.customProviderCreator = customProviderCreator.creator
+    this.customProvider = this.customProviderCreator()
+  }
+
+  removeCustomProvider(): void {
+    this.customProviderSupportedMethods = []
+    this.customProviderCreator = undefined
+    this.customProvider = undefined
   }
 
   /**
@@ -953,53 +972,67 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 }
 
+function getProviderCreator(
+  rpcUrl: string
+): JsonRpcProvider | WebSocketProvider {
+  const url = new URL(rpcUrl)
+  if (/^wss?/.test(url.protocol)) {
+    return new WebSocketProvider(rpcUrl)
+  }
+
+  return new JsonRpcProvider(rpcUrl)
+}
+
+export function makeFlashbotsProvider(): ProviderCreator {
+  return {
+    type: "custom",
+    supportedMethods: ["eth_sendRawTransaction"],
+    creator: () => getProviderCreator(FLASHBOTS_RPC_URL),
+  }
+}
+
 export function makeSerialFallbackProvider(
   chainID: string,
-  rpcUrls: string[]
+  rpcUrls: string[],
+  customRpc?: { rpcUrl: string; supportedMethods?: string[] }
 ): SerialFallbackProvider {
-  const alchemyProviderCreators = ALCHEMY_SUPPORTED_CHAIN_IDS.has(chainID)
+  const alchemyProviderCreators: ProviderCreator[] =
+    ALCHEMY_SUPPORTED_CHAIN_IDS.has(chainID)
+      ? [
+          {
+            type: "alchemy" as const,
+            creator: () =>
+              new AlchemyProvider(getNetwork(Number(chainID)), ALCHEMY_KEY),
+          },
+          {
+            type: "alchemy" as const,
+            creator: () =>
+              new AlchemyWebSocketProvider(
+                getNetwork(Number(chainID)),
+                ALCHEMY_KEY
+              ),
+          },
+        ]
+      : []
+
+  const customProviderCreator: ProviderCreator[] = customRpc
     ? [
         {
-          type: "alchemy" as const,
-          creator: () =>
-            new AlchemyProvider(getNetwork(Number(chainID)), ALCHEMY_KEY),
-        },
-        {
-          type: "alchemy" as const,
-          creator: () =>
-            new AlchemyWebSocketProvider(
-              getNetwork(Number(chainID)),
-              ALCHEMY_KEY
-            ),
+          type: "custom" as const,
+          supportedMethods: customRpc.supportedMethods ?? [],
+          creator: () => getProviderCreator(customRpc.rpcUrl),
         },
       ]
     : []
 
-  const flashbotsProviderCreator = FLASHBOTS_SUPPORTED_CHAIN_IDS.has(chainID)
-    ? [
-        {
-          type: "flashbots" as const,
-          creator: () => new JsonRpcProvider(FLASHBOTS_RPC_URL),
-        },
-      ]
-    : []
-
-  const genericProviders = rpcUrls.map((rpcUrl) => ({
+  const genericProviders: ProviderCreator[] = rpcUrls.map((rpcUrl) => ({
     type: "generic" as const,
-    creator: () => {
-      const url = new URL(rpcUrl)
-      if (/^wss?/.test(url.protocol)) {
-        return new WebSocketProvider(rpcUrl)
-      }
-
-      return new JsonRpcProvider(rpcUrl)
-    },
+    creator: () => getProviderCreator(rpcUrl),
   }))
 
   return new SerialFallbackProvider(chainID, [
-    // Prefer alchemy as the primary provider when available
     ...genericProviders,
     ...alchemyProviderCreators,
-    ...flashbotsProviderCreator,
+    ...customProviderCreator,
   ])
 }

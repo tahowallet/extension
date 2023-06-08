@@ -84,6 +84,11 @@ export class ChainDatabase extends Dexie {
 
   private rpcUrls!: Dexie.Table<{ chainID: string; rpcUrls: string[] }, string>
 
+  private customRpcUrls!: Dexie.Table<
+    { chainID: string; rpcUrl: string; supportedMethods: string[] },
+    string
+  >
+
   constructor(options?: DexieOptions) {
     super("tally/chain", options)
     this.version(1).stores({
@@ -181,6 +186,10 @@ export class ChainDatabase extends Dexie {
           }
         })
     })
+
+    this.version(9).stores({
+      customRpcUrls: "&chainID, rpcUrl, supportedMethods",
+    })
   }
 
   async initialize(): Promise<void> {
@@ -267,6 +276,7 @@ export class ChainDatabase extends Dexie {
           this.networks.where({ chainID }).delete(),
           this.baseAssets.where({ chainID }).delete(),
           this.rpcUrls.where({ chainID }).delete(),
+          this.customRpcUrls.where({ chainID }).delete(),
         ])
 
         // @TODO - Deleting accounts inside the Promise.all does not seem
@@ -367,8 +377,30 @@ export class ChainDatabase extends Dexie {
     }
   }
 
+  async addCustomRpcUrl(
+    chainID: string,
+    rpcUrl: string,
+    supportedMethods: string[] = []
+  ): Promise<string> {
+    return this.customRpcUrls.put({ chainID, rpcUrl, supportedMethods })
+  }
+
+  async removeCustomRpcUrl(chainID: string): Promise<number> {
+    return this.customRpcUrls.where({ chainID }).delete()
+  }
+
   async getAllRpcUrls(): Promise<{ chainID: string; rpcUrls: string[] }[]> {
     return this.rpcUrls.toArray()
+  }
+
+  async getAllCustomRpcUrls(): Promise<
+    {
+      chainID: string
+      rpcUrl: string
+      supportedMethods: string[]
+    }[]
+  > {
+    return this.customRpcUrls.toArray()
   }
 
   async getAllSavedTransactionHashes(): Promise<IndexableTypeArray> {

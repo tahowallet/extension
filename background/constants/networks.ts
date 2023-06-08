@@ -264,10 +264,6 @@ export const ALCHEMY_RPC_METHOD_PROVIDER_ROUTING = {
   ],
 } as const
 
-export const FLASHBOTS_RPC_METHOD_PROVIDER_ROUTING = {
-  [ETHEREUM.chainID]: ["eth_sendRawTransaction"],
-}
-
 export const CHAIN_ID_TO_OPENSEA_CHAIN = {
   [ETHEREUM.chainID]: "ethereum",
   [OPTIMISM.chainID]: "optimism",

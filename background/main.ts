@@ -126,7 +126,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { OPTIMISM, USD } from "./constants"
+import { ETHEREUM, FLASHBOTS_RPC_URL, OPTIMISM, USD } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
@@ -189,6 +189,7 @@ import {
 } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
+import { makeFlashbotsProvider } from "./services/chain/serial-fallback-provider"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1867,7 +1868,16 @@ export default class Main extends BaseService<never> {
   }
 
   async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {
-    this.chainService.toggleFlashbotsProvider(shouldUseFlashbots)
+    if (shouldUseFlashbots) {
+      const flashbotsProvider = makeFlashbotsProvider()
+      this.chainService.addCustomProvider(
+        ETHEREUM.chainID,
+        FLASHBOTS_RPC_URL,
+        flashbotsProvider
+      )
+    } else {
+      this.chainService.removeCustomProvider(ETHEREUM.chainID)
+    }
   }
 
   async queryCustomTokenDetails(
