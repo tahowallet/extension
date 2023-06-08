@@ -1,4 +1,5 @@
 import {
+  RequestArgument,
   WindowListener,
   WindowRequestEvent,
 } from "@tallyho/provider-bridge-shared"
@@ -64,6 +65,9 @@ if (!window.walletRouter) {
             window.location.reload()
           }, 1000)
         }
+      },
+      routeToNewDefault(request: Required<RequestArgument>): Promise<unknown> {
+        return this.currentProvider.request(request)
       },
       getProviderInfo(provider: WalletProvider) {
         return (
