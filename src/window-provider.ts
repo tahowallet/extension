@@ -116,6 +116,10 @@ Object.defineProperty(window, "ethereum", {
       return cachedWindowEthereumProxy
     }
 
+    if (window.walletRouter.currentProvider === undefined) {
+      return undefined
+    }
+
     cachedWindowEthereumProxy = new Proxy(window.walletRouter.currentProvider, {
       get(target, prop, receiver) {
         if (
