@@ -2,7 +2,7 @@ import React, { ReactElement, useState } from "react"
 import {
   NFTCached,
   NFTCollectionCached,
-} from "@tallyho/tally-background/redux-slices/nfts_update"
+} from "@tallyho/tally-background/redux-slices/nfts"
 import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import NFTImage from "./NFTImage"
 import NFTHover from "./NFTHover"

@@ -5,7 +5,7 @@ import {
   NFTCached,
   NFTCollectionCached,
   NFTWithCollection,
-} from "@tallyho/tally-background/redux-slices/nfts_update"
+} from "@tallyho/tally-background/redux-slices/nfts"
 import classNames from "classnames"
 import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import NFTItem from "./NFTItem"
