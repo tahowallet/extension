@@ -792,7 +792,8 @@
     "sendButton": "Continue",
     "receiveAddress": "Receive address",
     "sendToContractWarning": "This is a contract address, sending assets could result in loss of funds.",
-    "useFlashbots": "Use Flashbots RPC",
+    "useFlashbots": "Use Flashbots RPC by default",
+    "useFlashbotsTooltip": "Sends all transactions through Flashbots to protect against frontrunning and shares MEV back with you.<br/><br/>This can leak some information about your transactions to searchers, see the <url>Flashbots documentation</url> for more.",
     "pages": {
       "assets": "Assets",
       "NFTs": "NFTs",

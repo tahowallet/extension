@@ -179,6 +179,8 @@ export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
 
 export const FLASHBOTS_SUPPORTED_CHAIN_IDS = new Set([ETHEREUM.chainID])
 export const FLASHBOTS_RPC_URL = "https://rpc.flashbots.net"
+export const FLASHBOTS_DOCS_URL =
+  "https://docs.flashbots.net/flashbots-protect/rpc/mev-share"
 
 export const CHAIN_ID_TO_RPC_URLS: {
   [chainId: string]: Array<string> | undefined

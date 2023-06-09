@@ -1,6 +1,6 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { useTranslation } from "react-i18next"
+import { Trans, useTranslation } from "react-i18next"
 import {
   setNewDefaultWalletValue,
   selectDefaultWallet,
@@ -22,6 +22,7 @@ import {
 } from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
 import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
+import { FLASHBOTS_DOCS_URL } from "@tallyho/tally-background/constants"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
@@ -30,6 +31,13 @@ import SettingButton from "./Settings/SettingButton"
 import { useBackgroundSelector } from "../hooks"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedTooltip from "../components/Shared/SharedTooltip"
+import SharedLink from "../components/Shared/SharedLink"
+
+type SettingsItem = {
+  title: string
+  component: () => ReactElement
+  tooltip?: () => ReactElement
+}
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
 const FAQ_URL =
@@ -97,18 +105,23 @@ function VersionLabel(): ReactElement {
   )
 }
 
-function SettingRow(props: {
-  title: string
-  component: () => ReactElement
-}): ReactElement {
-  const { title, component } = props
+function SettingRow(props: SettingsItem): ReactElement {
+  const { title, component, tooltip = () => null } = props
 
   return (
     <li>
-      <div className="left">{title}</div>
+      <div className="left">
+        {title}
+        {tooltip()}
+      </div>
       <div className="right">{component()}</div>
       <style jsx>
         {`
+          .left {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+          }
           li {
             height: 50px;
             display: flex;
@@ -173,43 +186,22 @@ export default function Settings(): ReactElement {
   }
 
   const unverifiedAssets = {
-    title: "",
-    component: () => (
-      <div className="content">
-        <div className="left">
-          {t("settings.showUnverifiedAssets")}
-          <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
-            <div className="tooltip">
-              <span>{t("settings.unverifiedAssets.tooltip.firstPart")}</span>
-              {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
-                <span>{t("settings.unverifiedAssets.tooltip.secondPart")}</span>
-              )}
-            </div>
-          </SharedTooltip>
+    title: t("settings.showUnverifiedAssets"),
+    tooltip: () => (
+      <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
+        <div className="tooltip">
+          <span>{t("settings.unverifiedAssets.tooltip.firstPart")}</span>
+          {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
+            <span>{t("settings.unverifiedAssets.tooltip.secondPart")}</span>
+          )}
         </div>
-        <SharedToggleButton
-          onChange={(toggleValue) => toggleShowUnverified(toggleValue)}
-          value={showUnverifiedAssets}
-        />
-        <style jsx>
-          {`
-            .content {
-              display: flex;
-              justify-content: space-between;
-              width: 336px;
-            }
-            .left {
-              display: flex;
-              align-items: center;
-            }
-            .tooltip {
-              display: flex;
-              flex-direction: column;
-              gap: 16px;
-            }
-          `}
-        </style>
-      </div>
+      </SharedTooltip>
+    ),
+    component: () => (
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleShowUnverified(toggleValue)}
+        value={showUnverifiedAssets}
+      />
     ),
   }
 
@@ -331,6 +323,21 @@ export default function Settings(): ReactElement {
 
   const flashbotsRPC = {
     title: t("wallet.useFlashbots"),
+    tooltip: () => (
+      <SharedTooltip
+        width={165}
+        customStyles={{ marginLeft: "4" }}
+        verticalPosition="top"
+      >
+        <Trans
+          t={t}
+          i18nKey="wallet.useFlashbotsTooltip"
+          components={{
+            url: <SharedLink type="tooltip" url={FLASHBOTS_DOCS_URL} />,
+          }}
+        />
+      </SharedTooltip>
+    ),
     component: () => (
       <SharedToggleButton
         onChange={(toggleValue) => toggleFlashbotsRPC(toggleValue)}
@@ -354,7 +361,7 @@ export default function Settings(): ReactElement {
     isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && notificationBanner,
     customNetworks,
     isEnabled(FeatureFlags.SUPPORT_FLASHBOTS_RPC) && flashbotsRPC,
-  ].filter((item): item is Exclude<typeof item, boolean> => !!item)
+  ].filter((item): item is Exclude<SettingsItem, boolean> => !!item)
 
   const settings = {
     general: generalList,
@@ -370,6 +377,7 @@ export default function Settings(): ReactElement {
               key={setting.title}
               title={setting.title}
               component={setting.component}
+              tooltip={setting.tooltip}
             />
           ))}
         </ul>
