@@ -1,7 +1,7 @@
 import React, { useState, ReactElement, useEffect } from "react"
 import classNames from "classnames"
 
-interface SharedToggleButtonProps {
+type SharedToggleButtonProps = {
   onChange: (toggleValue: boolean) => void
   /**
    * The color of the toggle bulb when the toggle is on. Any valid CSS color
