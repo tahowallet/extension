@@ -12,9 +12,7 @@ export default function DAppConnection(): ReactElement {
     PermissionRequest | undefined
   >(undefined)
 
-  const allowedPages = useBackgroundSelector((state) =>
-    selectAllowedPages(state)
-  )
+  const allowedPages = useBackgroundSelector(selectAllowedPages)
 
   const initPermissionAndOrigin = useCallback(async () => {
     const { url } = await browser.tabs
