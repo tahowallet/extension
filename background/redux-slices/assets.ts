@@ -13,20 +13,16 @@ import {
 import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
 import { createBackgroundAsyncThunk } from "./utils"
-import {
-  isBuiltInNetworkBaseAsset,
-  sameBuiltInNetworkBaseAsset,
-} from "./utils/asset-utils"
+import { isBuiltInNetworkBaseAsset, isSameAsset } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
 import { EVMNetwork, sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
 import { FIAT_CURRENCIES_SYMBOL } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
-import { updateAssetReferences } from "./accounts"
+import { removeAssetReferences, updateAssetReferences } from "./accounts"
 import { NormalizedEVMAddress } from "../types"
 import type { RootState } from "."
-import { sameEVMAddress } from "../lib/utils"
 
 export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
   recentPrices: {
@@ -71,18 +67,7 @@ const assetsSlice = createSlice({
           const duplicateIndexes = mappedAssets[newAsset.symbol].reduce<
             number[]
           >((acc, existingAsset, id) => {
-            if (
-              ("homeNetwork" in newAsset &&
-                "homeNetwork" in existingAsset &&
-                sameNetwork(existingAsset.homeNetwork, newAsset.homeNetwork) &&
-                "contractAddress" in newAsset &&
-                "contractAddress" in existingAsset &&
-                sameEVMAddress(
-                  existingAsset.contractAddress,
-                  newAsset.contractAddress
-                )) ||
-              sameBuiltInNetworkBaseAsset(newAsset, existingAsset)
-            ) {
+            if (isSameAsset(newAsset, existingAsset)) {
               acc.push(id)
             }
             return acc
@@ -128,10 +113,16 @@ const assetsSlice = createSlice({
         }
       })
     },
+    removeAsset: (
+      immerState,
+      { payload: removedAsset }: { payload: AnyAsset }
+    ) => {
+      return immerState.filter((asset) => !isSameAsset(asset, removedAsset))
+    },
   },
 })
 
-export const { assetsLoaded, newPricePoints } = assetsSlice.actions
+export const { assetsLoaded, newPricePoints, removeAsset } = assetsSlice.actions
 
 export default assetsSlice.reducer
 
@@ -174,6 +165,39 @@ export const refreshAsset = createBackgroundAsyncThunk(
     await dispatch(assetsLoaded([asset]))
     // Update accounts slice cached data about this asset
     await dispatch(updateAssetReferences(asset))
+  }
+)
+
+export const hideAsset = createBackgroundAsyncThunk(
+  "assets/hideAsset",
+  async (
+    {
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { extra: { main } }
+  ) => {
+    await main.hideAsset(asset)
+  }
+)
+
+/**
+ * Removes the asset from the user interface.
+ * The token should be removed from the assets list and all references associated with it.
+ */
+export const removeAssetData = createBackgroundAsyncThunk(
+  "assets/removeAssetData",
+  async (
+    {
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { dispatch }
+  ) => {
+    await dispatch(removeAsset(asset))
+    await dispatch(removeAssetReferences(asset))
   }
 )
 
@@ -341,15 +365,9 @@ export const importCustomToken = createBackgroundAsyncThunk(
     }: {
       asset: SmartContractFungibleAsset
     },
-    { getState, extra: { main } }
+    { extra: { main } }
   ) => {
-    const state = getState() as RootState
-    const currentAccount = state.ui.selectedAccount
-
-    await main.importCustomToken({
-      asset,
-      addressNetwork: currentAccount,
-    })
+    return { success: await main.importCustomToken(asset) }
   }
 )
 

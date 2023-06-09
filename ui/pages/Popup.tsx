@@ -108,7 +108,6 @@ export function Main(): ReactElement {
   })
 
   const isDappPopup = useIsDappPopup()
-  const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)
   const [isDirectionRight, setIsDirectionRight] = useState(true)
   const [showTabBar, setShowTabBar] = useState(true)
 
@@ -151,9 +150,6 @@ export function Main(): ReactElement {
 
   return (
     <>
-      <div className="top_menu_wrap_decoy">
-        <TopMenu />
-      </div>
       <GlobalModal id="meet_taho" />
       <Router initialEntries={routeHistoryEntries}>
         <Route
@@ -185,12 +181,7 @@ export function Main(): ReactElement {
               saveHistoryEntries(routeProps.history.entries)
             }
 
-            setAnimationConditions(
-              routeProps,
-              pagePreferences,
-              setShouldDisplayDecoy,
-              setIsDirectionRight
-            )
+            setAnimationConditions(routeProps, setIsDirectionRight)
             setShowTabBar(pagePreferences[normalizedPathname].hasTabBar)
 
             return (
@@ -208,7 +199,6 @@ export function Main(): ReactElement {
                   <div>
                     <div
                       className={classNames("top_menu_wrap", {
-                        anti_animation: shouldDisplayDecoy,
                         hide: !pagePreferences[normalizedPathname].hasTopBar,
                       })}
                     >
@@ -254,7 +244,7 @@ export function Main(): ReactElement {
               background: transparent;
             }
 
-            ${animationStyles(shouldDisplayDecoy, isDirectionRight)}
+            ${animationStyles(isDirectionRight)}
             .tab_bar_wrap {
               position: fixed;
               bottom: 0px;

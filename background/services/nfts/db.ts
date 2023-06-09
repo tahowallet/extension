@@ -1,6 +1,5 @@
 import Dexie from "dexie"
 import { AddressOnNetwork } from "../../accounts"
-import { FeatureFlags, isEnabled } from "../../features"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { NFT, NFTCollection } from "../../nfts"
 
@@ -28,25 +27,22 @@ export class NFTsDatabase extends Dexie {
   constructor() {
     super("tally/nfts")
 
-    // No tables are created when feature flag is off
-    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
-      this.version(1).stores({
-        nfts: "&[id+collectionID+owner+network.chainID]",
-        collections: "&[id+owner+network.chainID]",
+    this.version(1).stores({
+      nfts: "&[id+collectionID+owner+network.chainID]",
+      collections: "&[id+owner+network.chainID]",
+    })
+
+    this.version(2)
+      .stores({
+        preferences: "++id",
       })
-
-      this.version(2)
-        .stores({
-          preferences: "++id",
-        })
-        .upgrade((tx) => {
-          return tx.db.table("preferences").add(DEFAULT_PREFERENCES)
-        })
-
-      this.on("populate", (tx) => {
+      .upgrade((tx) => {
         return tx.db.table("preferences").add(DEFAULT_PREFERENCES)
       })
-    }
+
+    this.on("populate", (tx) => {
+      return tx.db.table("preferences").add(DEFAULT_PREFERENCES)
+    })
   }
 
   async updateNFTs(nfts: NFT[]): Promise<void> {

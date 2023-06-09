@@ -245,9 +245,7 @@
     }
   },
   "nfts": {
-    "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title",
-    "NFTPricingComingSoon": "Coming soon: NFT price + sending",
     "type1": "NFTs",
     "type2": "badges",
     "noMatchingNFTs": "No {{type}} matching your filters",
@@ -303,11 +301,6 @@
       "accountsTitle": "Show/hide accounts",
       "noCollections": "No collections"
     }
-  },
-  "achievements": {
-    "empty": "Nothing to see here",
-    "startWith": "You can start with the Taho collection!",
-    "collection": "Taho collection"
   },
   "onboarding": {
     "tabbed": {
@@ -381,8 +374,7 @@
       "newWalletReview": {
         "title": "Save and store your recovery phrase",
         "submit": "I wrote it down",
-        "copyAddressAction": "Copy phrase to clipboard",
-        "copyAddressSnackbar": "Copied to clipboard"
+        "copyAddressAction": "Copy phrase to clipboard"
       },
       "newWalletVerify": {
         "title": "Verify recovery phrase",
@@ -559,6 +551,7 @@
       "error.invalidToken": "Invalid contract address",
       "submit": "Add asset",
       "snackbar.success": "Asset added successfully",
+      "snackbar.failed": "Failed to look up token details",
       "footer.hint": "How to add a custom asset"
     },
     "customNetworksSettings": {
@@ -608,7 +601,8 @@
     "selectToken": "Select token",
     "backButtonText": "Back",
     "saveBtn": "Save",
-    "closeWindow": "Close window"
+    "closeWindow": "Close window",
+    "copyTextSnackbar": "Copied to clipboard"
   },
   "signing": {
     "signatureRequired": "Your signature is required",
@@ -772,7 +766,7 @@
       "transactionFrom": "From:",
       "loadingActivities": "Digging deeper...",
       "addCustomAssetPrompt": "Can't find an asset?",
-      "addCustomAssetAction": "add custom asset"
+      "addCustomAssetAction": "Add custom asset"
     },
     "banner": {
       "bannerTitle": "New Odyssey week!",
@@ -827,7 +821,8 @@
       "discoveryTxHash": "Added from transaction",
       "dontShow": "Don’t show",
       "addToAssetList": "Add to asset list",
-      "snackbar": "Asset added to list",
+      "verifyAssetSnackbar": "Asset added to list",
+      "removeAssetSnackbar": "Asset removed from list",
       "banner": {
         "titleUnverified": "Asset not verified",
         "titleVerified": "Asset verified by you",
@@ -932,18 +927,12 @@
       "title": "Feature flags",
       "flags": {
         "USE_MAINNET_FORK": "Use mainnet fork",
-        "RESOLVE_RNS_NAMES": "Resolve RNS names",
         "HIDE_IMPORT_DERIVATION_PATH": "Hide import derivation path",
         "HIDE_SWAP_REWARDS": "Hide swap rewards",
         "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
         "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
-        "SUPPORT_ANALYTICS": "Show Analytics page on the settings page",
-        "SUPPORT_KEYRING_LOCKING": "Enable to lock/unlock accounts ",
-        "SUPPORT_FORGOT_PASSWORD": "Enable to forgot password",
-        "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
-        "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab",
         "SUPPORT_NFT_SEND": "Enable sending NFTs",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",

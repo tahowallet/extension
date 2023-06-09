@@ -94,6 +94,11 @@ const BNB: NetworkBaseAsset = {
   },
 }
 
+const ZK_SYNC_ETH: NetworkBaseAsset = {
+  ...ETH,
+  chainID: "324",
+}
+
 export const BASE_ASSETS_BY_CUSTOM_NAME = {
   ETH,
   MATIC,
@@ -104,6 +109,7 @@ export const BASE_ASSETS_BY_CUSTOM_NAME = {
   ARBITRUM_NOVA_ETH,
   OPTIMISTIC_ETH,
   GOERLI_ETH,
+  ZK_SYNC_ETH,
 }
 
 export const BASE_ASSETS = Object.values(BASE_ASSETS_BY_CUSTOM_NAME)

@@ -71,7 +71,7 @@ export default function SharedButtonUp<T extends HTMLElement>(props: {
           mask-image: url("./images/chevron_down.svg");
           mask-size: 14px 8px;
           mask-repeat: no-repeat;
-          width: 18px;
+          width: 14px;
           height: 8px;
           background-color: var(--hunter-green);
           transform: rotate(180deg);

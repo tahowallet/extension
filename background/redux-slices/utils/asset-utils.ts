@@ -16,8 +16,10 @@ import {
   OPTIMISM,
   POLYGON,
 } from "../../constants"
+import { FeatureFlags, isEnabled } from "../../features"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
-import { AnyNetwork, NetworkBaseAsset } from "../../networks"
+import { sameEVMAddress } from "../../lib/utils"
+import { AnyNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
 
 /**
@@ -372,4 +374,45 @@ export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
   }
 
   return false
+}
+
+/**
+ * Assets that are untrusted and have not been verified by the user
+ * should not be swapped or sent.
+ */
+export function canBeUsedForTransaction(asset: AnyAsset): boolean {
+  if (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)) {
+    return true
+  }
+  return isUntrustedAsset(asset) ? !isUnverifiedAssetByUser(asset) : true
+}
+
+// FIXME Unify once asset similarity code is unified.
+export function isSameAsset(asset1?: AnyAsset, asset2?: AnyAsset): boolean {
+  if (typeof asset1 === "undefined" || typeof asset2 === "undefined") {
+    return false
+  }
+
+  if (
+    isSmartContractFungibleAsset(asset1) &&
+    isSmartContractFungibleAsset(asset2)
+  ) {
+    return (
+      sameNetwork(asset1.homeNetwork, asset2.homeNetwork) &&
+      sameEVMAddress(asset1.contractAddress, asset2.contractAddress)
+    )
+  }
+
+  if (
+    isSmartContractFungibleAsset(asset1) ||
+    isSmartContractFungibleAsset(asset2)
+  ) {
+    return false
+  }
+
+  if (isNetworkBaseAsset(asset1) && isNetworkBaseAsset(asset2)) {
+    return sameNetworkBaseAsset(asset1, asset2)
+  }
+
+  return asset1.symbol === asset2.symbol
 }

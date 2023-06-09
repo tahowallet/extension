@@ -13,7 +13,11 @@ import {
   selectShowUnverifiedAssets,
   toggleShowUnverifiedAssets,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import {
+  FeatureFlags,
+  isDisabled,
+  isEnabled,
+} from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
 import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
@@ -320,18 +324,19 @@ export default function Settings(): ReactElement {
   }
 
   const generalList = [
-    setAsDefault,
+    // setAsDefault is removed from settings in the new dApp Connections flow.
+    isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && setAsDefault,
     hideSmallAssetBalance,
     unverifiedAssets,
     isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
     enableTestNetworks,
     dAppsSettings,
-    isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && addCustomAsset,
+    addCustomAsset,
     needHelp,
     bugReport,
-    isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) && analytics,
+    analytics,
     isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && notificationBanner,
-    isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && customNetworks,
+    customNetworks,
   ].filter((item): item is Exclude<typeof item, boolean> => !!item)
 
   const settings = {
