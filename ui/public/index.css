@@ -201,7 +201,7 @@ label {
 }
 
 .fade_out {
-  animation: fade-out ease-out var(--fade-ou-durationt, 250ms);
+  animation: fade-out ease-out var(--fade-out-duration, 250ms);
   opacity: 0;
 }
 
