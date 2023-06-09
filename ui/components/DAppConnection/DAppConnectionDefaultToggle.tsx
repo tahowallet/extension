@@ -19,6 +19,7 @@ export default function DAppConnectionDefaultToggle(): ReactElement {
     dispatch(setNewDefaultWalletValue(defaultWalletValue))
   }
 
+  // TODO Read this from background information.
   const hasDetectedOtherWallets = true
 
   return (
