@@ -272,7 +272,7 @@ export const speedUpTx = createBackgroundAsyncThunk(
     const signer = provider.getSigner()
     const isEIP1559Tx = isEIP1559TransactionRequest(tx)
 
-    if (!tx.gasPrice || (isEIP1559Tx && !tx.maxFeePerGas)) {
+    if ((isEIP1559Tx && !tx.maxFeePerGas) || (!isEIP1559Tx && !tx.gasPrice)) {
       throw new Error("Cannot speed up transaction without a valid gas price")
     }
 
@@ -293,7 +293,8 @@ export const speedUpTx = createBackgroundAsyncThunk(
       })
     } else {
       Object.assign(TxRequest, {
-        gasPrice: (tx.gasPrice * 125n) / 100n,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        gasPrice: (tx.gasPrice! * 125n) / 100n,
       })
     }
 
