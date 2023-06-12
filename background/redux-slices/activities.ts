@@ -186,13 +186,14 @@ const activitiesSlice = createSlice({
 
       const { replacementTransactions } = immerState
 
+      // Check if we're already tracking the replacement tx so we can get the
+      // "replaced" tx and remove it if the replacement has been mined
       const replacement = replacementTransactions.find(
         (request) =>
           request.hash === transaction.hash &&
           request.chainID === transaction.network.chainID
       )
 
-      // Remove parent tx if it's replacement tx succeded
       if (replacement && transaction.blockHeight) {
         Object.keys(immerState.activities).forEach((address) => {
           immerState.activities[address][replacement.chainID] =

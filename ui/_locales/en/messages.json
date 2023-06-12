@@ -592,6 +592,7 @@
     "balance": "Balance: {{amount}}"
   },
   "shared": {
+    "unknown": "Unknown",
     "taho": "Taho",
     "metaMask": "MetaMask",
     "injected": "Injected",
@@ -784,7 +785,7 @@
       "gasPrice": "Gas Price",
       "maxFeePerGas": "Max Fee/Gas",
       "amount": "Amount",
-      "statusPanel.title": "Status:",
+      "statusPanel.title": "Status",
       "actions.speedup": "Speed up"
     },
     "banner": {
@@ -959,7 +960,8 @@
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
-        "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification"
+        "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification",
+        "SUPPORT_TRANSACTION_REPLACEMENT": "Support replacing transactions"
       }
     }
   },

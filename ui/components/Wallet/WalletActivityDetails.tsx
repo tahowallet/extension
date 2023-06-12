@@ -76,7 +76,7 @@ function DetailRowItem(props: AssetTransferDetail): ReactElement {
   )
 }
 
-interface DestinationCardProps {
+type DestinationCardProps = {
   label: string
   address: string
   name?: string | undefined
@@ -168,6 +168,10 @@ export default function WalletActivityDetails(
 
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet",
+  })
+
+  const { t: sharedT } = useTranslation("translation", {
+    keyPrefix: "shared",
   })
 
   const blockExplorerUrl = getBlockExplorerURL(network)
@@ -297,7 +301,7 @@ export default function WalletActivityDetails(
               <DetailRowItem
                 key={key}
                 label={label}
-                value={value || "Unknown"}
+                value={value || sharedT("unknown")}
               />
             ))}
             {details.state === "completed" &&
