@@ -16,8 +16,4 @@ export const intersperseWith = <T, K>(
   return result
 }
 
-export const excludeFalsyValues = <T>(items: (T | boolean)[]): T[] => {
-  return items.filter((item): item is Exclude<T | boolean, boolean> => !!item)
-}
-
 export default {}

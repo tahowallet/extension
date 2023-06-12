@@ -13,7 +13,11 @@ import {
   selectShowUnverifiedAssets,
   toggleShowUnverifiedAssets,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import {
+  FeatureFlags,
+  isEnabled,
+  wrapIfEnabled,
+} from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
 import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
@@ -24,7 +28,6 @@ import SettingButton from "./Settings/SettingButton"
 import { useBackgroundSelector } from "../hooks"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedTooltip from "../components/Shared/SharedTooltip"
-import { excludeFalsyValues } from "../utils/lists"
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
 const FAQ_URL =
@@ -327,9 +330,11 @@ export default function Settings(): ReactElement {
         setAsDefault,
         dAppsSettings,
         analytics,
-        isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
-        isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) &&
-          notificationBanner,
+        ...wrapIfEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES, languages),
+        ...wrapIfEnabled(
+          FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER,
+          notificationBanner
+        ),
       ],
     },
     walletOptions: {
@@ -346,7 +351,7 @@ export default function Settings(): ReactElement {
       title: t("settings.group.helpCenter"),
       items: [bugReport, needHelp],
     },
-  }).map(({ title, items }) => ({ title, items: excludeFalsyValues(items) }))
+  })
 
   return (
     <section className="standard_width_padded">
