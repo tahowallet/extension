@@ -1,7 +1,7 @@
 import {
   NFTCollectionCached,
   NFTWithCollection,
-} from "@tallyho/tally-background/redux-slices/nfts_update"
+} from "@tallyho/tally-background/redux-slices/nfts"
 import { selectIsReloadingNFTs } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useBackgroundSelector } from "../../hooks"

@@ -2,6 +2,11 @@ import React, { ReactElement } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { useTranslation } from "react-i18next"
+import {
+  FeatureFlags,
+  isDisabled,
+  isEnabled,
+} from "@tallyho/tally-background/features"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedAccountItemSummary from "../../components/Shared/SharedAccountItemSummary"
 import RequestingDAppBlock from "./RequestingDApp"
@@ -30,6 +35,7 @@ export default function DAppConnectPage({
       <section className="standard_width">
         <h1 className="serif_header">{t("connectToDapp")}</h1>
         <div className="connection_destination">
+          {isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && <></>}
           <RequestingDAppBlock
             title={title}
             url={origin}
@@ -54,7 +60,9 @@ export default function DAppConnectPage({
             </ul>
           </li>
         </ul>
-        <SwitchWallet switchWallet={switchWallet} />
+        {isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && (
+          <SwitchWallet switchWallet={switchWallet} />
+        )}
       </section>
       <div className="footer_actions">
         <SharedButton size="large" type="secondary" onClick={denyPermission}>

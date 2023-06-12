@@ -13,13 +13,14 @@ import {
   selectShowUnverifiedAssets,
   toggleShowUnverifiedAssets,
 } from "@tallyho/tally-background/redux-slices/ui"
+import { useHistory } from "react-router-dom"
+import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   FeatureFlags,
+  isDisabled,
   isEnabled,
   wrapIfEnabled,
 } from "@tallyho/tally-background/features"
-import { useHistory } from "react-router-dom"
-import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
@@ -327,7 +328,10 @@ export default function Settings(): ReactElement {
     general: {
       title: t("settings.group.general"),
       items: [
-        setAsDefault,
+        // setAsDefault is removed from settings in the new dApp Connections flow.
+        ...(isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS)
+          ? [setAsDefault]
+          : []),
         dAppsSettings,
         analytics,
         ...wrapIfEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES, languages),

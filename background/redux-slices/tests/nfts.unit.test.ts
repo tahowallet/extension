@@ -1,10 +1,6 @@
 import { ETHEREUM } from "../../constants"
-import {
-  OWNER_MOCK,
-  COLLECTION_MOCK,
-  extractCollection,
-} from "./nfts_update.utils"
-import { NFTsSliceState, updateCollection } from "../nfts_update"
+import { OWNER_MOCK, COLLECTION_MOCK, extractCollection } from "./nfts.utils"
+import { NFTsSliceState, updateCollection } from "../nfts"
 
 describe("NFTs redux slice", () => {
   describe("updateCollection util", () => {
