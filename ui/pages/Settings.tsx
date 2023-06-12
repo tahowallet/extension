@@ -359,15 +359,18 @@ export default function Settings(): ReactElement {
         <h1>{t("settings.mainMenu")}</h1>
         <ul>
           {settings.map(({ title, items }) => (
-            <div className="group">
+            <div className="group" key={title}>
               <span className="group_title">{title}</span>
-              {items.map((item) => (
-                <SettingRow
-                  key={item.title}
-                  title={item.title}
-                  component={item.component}
-                />
-              ))}
+              {items.map((item, index) => {
+                const key = `${title}-${item.title}-${index}`
+                return (
+                  <SettingRow
+                    key={key}
+                    title={item.title}
+                    component={item.component}
+                  />
+                )
+              })}
             </div>
           ))}
         </ul>
@@ -376,6 +379,7 @@ export default function Settings(): ReactElement {
         <div className="action_icons">
           {FOOTER_ACTIONS.map(({ icon, linkTo }) => (
             <SharedIcon
+              key={icon}
               icon={`${icon}.svg`}
               width={18}
               color="var(--green-20)"
@@ -445,7 +449,7 @@ export default function Settings(): ReactElement {
             margin: 0px;
           }
           .group_title {
-            color: var(--green-20);
+            color: var(--green-40);
             font-family: "Segment";
             font-style: normal;
             font-weight: 400;
