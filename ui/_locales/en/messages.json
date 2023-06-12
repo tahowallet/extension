@@ -104,7 +104,7 @@
     }
   },
   "ledger": {
-    "checkLedger": "Check Ledger",
+    "checkLedger": "Check Error",
     "onlyRejectFromLedger": "Tx can only be Rejected from Ledger",
     "onboarding": {
       "connecting": "Connecting...",

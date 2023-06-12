@@ -21,7 +21,7 @@ export default function SignerLedgerConnectionStatus({
       if (mustEnableArbitraryDataSigning) {
         return (
           <img
-            src="/images/connect_ledger_indicator_disconnected.svg"
+            src="/images/connect_ledger_indicator_check.svg"
             alt={t("availableButNoSigning")}
           />
         )
@@ -42,23 +42,20 @@ export default function SignerLedgerConnectionStatus({
     case "wrong-ledger-connected":
       return (
         <img
-          src="/images/connect_ledger_indicator_disconnected.svg"
+          src="/images/connect_ledger_indicator_check.svg"
           alt={t("wrongLedger")}
         />
       )
     case "multiple-ledgers-connected":
       return (
         <img
-          src="/images/connect_ledger_indicator_disconnected.svg"
+          src="/images/connect_ledger_indicator_check.svg"
           alt={t("multipleLedgers")}
         />
       )
     case "busy":
       return (
-        <img
-          src="/images/connect_ledger_indicator_disconnected.svg"
-          alt={t("busy")}
-        />
+        <img src="/images/connect_ledger_indicator_check.svg" alt={t("busy")} />
       )
     default:
       return assertUnreachable(ledgerState)
