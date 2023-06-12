@@ -239,7 +239,18 @@ export const fetchSelectedActivityDetails = createBackgroundAsyncThunk(
 export const speedUpTx = createBackgroundAsyncThunk(
   "activities/speedupTx",
   async (tx: Transaction | EnrichedEVMTransaction, { dispatch }) => {
-    const { input, from, to, value, nonce, gasLimit } = tx
+    const {
+      hash: parentTxHash,
+      network,
+      input,
+      from,
+      type,
+      to,
+      value,
+      nonce,
+      gasLimit,
+    } = tx
+
     const provider = getProvider()
     const signer = provider.getSigner()
     const isEIP1559Tx = isEIP1559TransactionRequest(tx)
@@ -248,36 +259,40 @@ export const speedUpTx = createBackgroundAsyncThunk(
       throw new Error("Cannot speed up transaction without a valid gas price")
     }
 
-    const TxRequest = {
+    if (type === null) {
+      throw new Error("Cannot speed up invalid transaction")
+    }
+
+    const txRequest = {
       data: input || "0x",
       from,
       to,
       value,
       gasLimit,
       nonce,
-      type: tx.type as 0,
+      type,
     }
 
     if (isEIP1559Tx) {
-      Object.assign(TxRequest, {
+      Object.assign(txRequest, {
         maxFeePerGas: tx.maxFeePerGas,
         maxPriorityFeePerGas: (tx.maxPriorityFeePerGas * 125n) / 100n,
       })
     } else {
-      Object.assign(TxRequest, {
+      Object.assign(txRequest, {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         gasPrice: (tx.gasPrice! * 125n) / 100n,
       })
     }
 
-    const newTx = await signer.sendTransaction(TxRequest)
+    const newTx = await signer.sendTransaction(txRequest)
 
     dispatch(
       addReplacementTransaction({
         hash: newTx.hash,
-        chainID: tx.network.chainID,
-        parentTx: tx.hash,
-        initiator: tx.from,
+        chainID: network.chainID,
+        parentTx: parentTxHash,
+        initiator: from,
       })
     )
   }

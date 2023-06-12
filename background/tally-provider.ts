@@ -1,7 +1,7 @@
 import { Deferrable } from "@ethersproject/properties"
 import {
   JsonRpcSigner,
-  TransactionRequest,
+  TransactionRequest as EthersTransactionRequest,
   TransactionResponse,
   Web3Provider,
 } from "@ethersproject/providers"
@@ -13,7 +13,7 @@ import { TransactionAnnotation } from "./services/enrichment"
 interface TallyInternalJsonRpcSigner extends JsonRpcSigner {
   sendTransaction(
     transaction: Deferrable<
-      TransactionRequest & { annotation?: TransactionAnnotation }
+      EthersTransactionRequest & { annotation?: TransactionAnnotation }
     >
   ): Promise<TransactionResponse>
 }
@@ -35,7 +35,9 @@ export default class TallyWeb3Provider extends Web3Provider {
   }
 
   static override hexlifyTransaction(
-    transaction: TransactionRequest & { annotation?: TransactionAnnotation },
+    transaction: EthersTransactionRequest & {
+      annotation?: TransactionAnnotation
+    },
     allowExtra?: { [key: string]: boolean }
   ): { [key: string]: string | AccessList } {
     const { annotation, ...transactionRequest } = transaction
