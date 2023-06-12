@@ -9,7 +9,7 @@ import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../lib/utils"
-import { AnyEVMTransaction, isEIP1559TransactionRequest } from "../networks"
+import { isEIP1559TransactionRequest } from "../networks"
 import { Transaction } from "../services/chain/db"
 import { EnrichedEVMTransaction } from "../services/enrichment"
 import { HexString } from "../types"
@@ -184,8 +184,6 @@ const activitiesSlice = createSlice({
         )
       })
 
-      immerState.replacementTransactions ??= []
-
       const { replacementTransactions } = immerState
 
       const replacement = replacementTransactions.find(
@@ -208,7 +206,6 @@ const activitiesSlice = createSlice({
       immerState,
       { payload }: { payload: TrackedReplacementTx }
     ) => {
-      immerState.replacementTransactions ??= []
       const { replacementTransactions } = immerState
       if (
         !replacementTransactions.some(
@@ -217,30 +214,6 @@ const activitiesSlice = createSlice({
         )
       ) {
         replacementTransactions.push(payload)
-      }
-    },
-    removeReplacedTransaction: (
-      immerState,
-      { payload }: { payload: AnyEVMTransaction }
-    ) => {
-      immerState.replacementTransactions ??= []
-
-      const { replacementTransactions } = immerState
-
-      const replacement = replacementTransactions.find(
-        (request) =>
-          request.hash === payload.hash &&
-          request.chainID === payload.network.chainID
-      )
-
-      // Remove parent tx if it's replacement tx succeded
-      if (replacement && payload.blockHeight) {
-        Object.keys(immerState.activities).forEach((address) => {
-          immerState.activities[address][replacement.chainID] =
-            immerState.activities[address][replacement.chainID].filter(
-              (activity) => activity.hash !== replacement.parentTx
-            )
-        })
       }
     },
   },
@@ -252,7 +225,6 @@ export const {
   removeActivities,
   initializeActivitiesForAccount,
   addReplacementTransaction,
-  removeReplacedTransaction,
 } = activitiesSlice.actions
 
 export default activitiesSlice.reducer

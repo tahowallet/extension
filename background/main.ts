@@ -147,7 +147,6 @@ import {
   initializeActivities,
   initializeActivitiesForAccount,
   removeActivities,
-  removeReplacedTransaction,
 } from "./redux-slices/activities"
 import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
 import { getActivityDetails } from "./redux-slices/utils/activities-utils"
@@ -957,9 +956,6 @@ export default class Main extends BaseService<never> {
     // connectEnrichmentService
     this.chainService.emitter.on("transaction", async (transactionInfo) => {
       this.store.dispatch(addActivity(transactionInfo))
-      this.store.dispatch(
-        removeReplacedTransaction(transactionInfo.transaction)
-      )
     })
 
     uiSliceEmitter.on("userActivityEncountered", (addressOnNetwork) => {
