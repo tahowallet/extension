@@ -113,3 +113,15 @@ export function wrapIfEnabled<T>(
 ): [T] | [] {
   return isEnabled(flag) ? [valueToWrap] : []
 }
+
+/**
+ * It works in the same way as the wrapIfEnabled function.
+ * But checks the inverse of `isEnabled`.
+ *
+ */
+export function wrapIfDisabled<T>(
+  flag: FeatureFlagType,
+  valueToWrap: T
+): [T] | [] {
+  return isDisabled(flag) ? [valueToWrap] : []
+}

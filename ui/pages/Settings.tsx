@@ -17,8 +17,8 @@ import { useHistory } from "react-router-dom"
 import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   FeatureFlags,
-  isDisabled,
   isEnabled,
+  wrapIfDisabled,
   wrapIfEnabled,
 } from "@tallyho/tally-background/features"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
@@ -329,9 +329,10 @@ export default function Settings(): ReactElement {
       title: t("settings.group.general"),
       items: [
         // setAsDefault is removed from settings in the new dApp Connections flow.
-        ...(isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS)
-          ? [setAsDefault]
-          : []),
+        ...wrapIfDisabled(
+          FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS,
+          setAsDefault
+        ),
         dAppsSettings,
         analytics,
         ...wrapIfEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES, languages),
