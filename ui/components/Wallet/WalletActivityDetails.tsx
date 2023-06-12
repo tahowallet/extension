@@ -256,9 +256,11 @@ export default function WalletActivityDetails(
               {t("activityDetails.statusPanel.title")}
             </span>
             <span className={classNames("tx_current_status", details?.state)}>
-              {details?.state
-                ? t(`activities.status.${details?.state}`)
-                : "....."}
+              {details?.state ? (
+                t(`activities.status.${details?.state}`)
+              ) : (
+                <SharedSkeletonLoader width={80} height={24} />
+              )}
             </span>
           </div>
           <div className="tx_status_controls">
@@ -421,7 +423,8 @@ export default function WalletActivityDetails(
           .tx_current_status.completed {
             color: var(--success);
           }
-          .tx_current_status.failed {
+          .tx_current_status.failed,
+          .tx_current_status.dropped {
             color: var(--error);
           }
         `}
