@@ -26,7 +26,7 @@ export default function LedgerPrepare({
   const showError = !initialScreen && deviceCount !== 1
   return (
     <LedgerPanelContainer
-      indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
+      indicatorImageSrc="/images/connect_ledger_indicator_unknown.svg"
       heading={initialScreen ? t("initialScreenHeader") : t("header")}
       subHeading={t("subheading", {
         subheadingWord: subHeadingWord,
