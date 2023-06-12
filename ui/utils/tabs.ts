@@ -20,18 +20,11 @@ const allTabs: (TabInfo & { visible?: boolean })[] = [
     path: "/nfts",
     title: "tabs.nfts",
     icon: "nfts",
-    visible: isEnabled(FeatureFlags.SUPPORT_NFT_TAB),
   },
   {
     path: "/portfolio",
     title: "tabs.portfolio",
     icon: "portfolio",
-  },
-  {
-    path: "/swap",
-    title: "tabs.swap",
-    icon: "swap",
-    visible: !isEnabled(FeatureFlags.SUPPORT_NFT_TAB),
   },
   {
     path: "/earn",

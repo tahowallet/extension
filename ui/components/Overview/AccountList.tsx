@@ -1,6 +1,4 @@
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { AccountTotalList } from "@tallyho/tally-background/redux-slices/selectors"
-import classNames from "classnames"
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
 import SharedIcon from "../Shared/SharedIcon"
@@ -55,12 +53,7 @@ export default function AccountList({
 
   return (
     <>
-      <div
-        className={classNames(
-          "accounts_list",
-          isEnabled(FeatureFlags.SUPPORT_NFT_TAB) && "nft-update"
-        )}
-      >
+      <div className="accounts_list">
         <div className="accounts_header">
           <span>
             {t("overview.accounts")} ({accountsCount})
@@ -106,7 +99,7 @@ export default function AccountList({
       </div>
       <style jsx>{`
         .accounts_list {
-          margin-bottom: 16px;
+          margin: 0;
         }
         .accounts_header {
           display: flex;
@@ -118,10 +111,7 @@ export default function AccountList({
           color: var(--green-40);
         }
 
-        .accounts_list.nft-update {
-          margin: 0;
-        }
-        .accounts_list.nft-update .accounts_header {
+        .accounts_list .accounts_header {
           font-family: "Segment";
           font-weight: 400;
           font-size: 16px;

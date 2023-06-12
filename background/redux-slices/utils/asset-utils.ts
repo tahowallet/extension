@@ -16,6 +16,7 @@ import {
   OPTIMISM,
   POLYGON,
 } from "../../constants"
+import { FeatureFlags, isEnabled } from "../../features"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { sameEVMAddress } from "../../lib/utils"
 import { AnyNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
@@ -373,6 +374,17 @@ export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
   }
 
   return false
+}
+
+/**
+ * Assets that are untrusted and have not been verified by the user
+ * should not be swapped or sent.
+ */
+export function canBeUsedForTransaction(asset: AnyAsset): boolean {
+  if (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)) {
+    return true
+  }
+  return isUntrustedAsset(asset) ? !isUnverifiedAssetByUser(asset) : true
 }
 
 // FIXME Unify once asset similarity code is unified.

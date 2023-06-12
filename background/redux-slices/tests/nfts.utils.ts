@@ -1,6 +1,6 @@
 import { ETHEREUM } from "../../constants"
 import { NFT, TransferredNFT } from "../../nfts"
-import { NFTCollectionCached, NFTsSliceState } from "../nfts_update"
+import { NFTCollectionCached, NFTsSliceState } from "../nfts"
 
 export const OWNER_MOCK = "0x1234"
 export const RECEIVER_MOCK = "0xABCD"

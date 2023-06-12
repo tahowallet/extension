@@ -1,5 +1,3 @@
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import classNames from "classnames"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
@@ -15,12 +13,7 @@ export default function BalanceHeader({
 
   return (
     <>
-      <div
-        className={classNames(
-          "balance_header",
-          isEnabled(FeatureFlags.SUPPORT_NFT_TAB) && "nft-update"
-        )}
-      >
+      <div className="balance_header">
         <span className="balance_title">
           {t("overview.totalBalanceEverywhere")}
         </span>
@@ -41,14 +34,10 @@ export default function BalanceHeader({
           background: linear-gradient(250.02deg, #034f4b 0%, #033734 66.93%);
           border-radius: 8px 8px 0 0;
           padding: 16px 0;
-          margin-bottom: 16px;
+          margin: 0;
           display: flex;
           flex-direction: column;
           align-items: center;
-        }
-
-        .balance_header.nft-update {
-          margin: 0;
         }
 
         .balance_title {

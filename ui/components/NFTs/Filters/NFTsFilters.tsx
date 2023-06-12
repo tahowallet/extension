@@ -4,7 +4,7 @@ import {
   updateAccountFilter,
   updateCollectionFilter,
   updateSortType,
-} from "@tallyho/tally-background/redux-slices/nfts_update"
+} from "@tallyho/tally-background/redux-slices/nfts"
 import { selectEnrichedNFTFilters } from "@tallyho/tally-background/redux-slices/selectors"
 import React, {
   ReactElement,
