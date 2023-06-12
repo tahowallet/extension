@@ -54,11 +54,11 @@ export default function setAnimationConditions(
 
 export function animationStyles(isDirectionRight: boolean): string {
   return `
-      .page-transition-enter > main {
+      .page-transition-enter > section > main {
         opacity: 0.3;
         transform: ${isDirectionRight ? `translateX(-7px)` : `translateX(7px)`};
       }
-      .page-transition-enter-active > main {
+      .page-transition-enter-active > section > main {
         opacity: 1;
         transform: translateX(0px);
         transition: transform cubic-bezier(0.25, 0.4, 0.55, 1.4) 250ms,

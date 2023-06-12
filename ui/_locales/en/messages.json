@@ -724,6 +724,9 @@
   },
   "topMenu": {
     "showCurrentDappConnection": "Show current dApp connection",
+    "connectToWebsiteUsing": "Connect to website using:",
+    "setTahoAsDefault": "Set Taho as default",
+    "setOtherAsDefault": "Set MetaMask/other wallet as default",
     "rewardsProgram": "Rewards program",
     "copyAddressTooltip": "Copy address",
     "addressCopiedMsg": "Address copied to clipboard",
