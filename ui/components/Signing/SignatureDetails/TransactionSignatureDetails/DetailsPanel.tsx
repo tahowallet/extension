@@ -1,9 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { ReactElement, useEffect, useState } from "react"
-import {
-  selectEstimatedFeesPerGas,
-  selectTransactionData,
-} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { selectEstimatedFeesPerGas } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { updateTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import type {
   EnrichedEIP1559TransactionRequest,
@@ -28,7 +25,7 @@ export type PanelState = {
 }
 
 type DetailPanelProps = {
-  transactionRequest?: EnrichedEVMTransactionRequest
+  transactionRequest: EnrichedEVMTransactionRequest
   defaultPanelState?: PanelState
 }
 
@@ -45,11 +42,6 @@ export default function DetailPanel({
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
-  const reduxTransactionData = useBackgroundSelector(selectTransactionData)
-
-  // If a transaction request is passed directly, prefer it over Redux.
-  const transactionDetails = transactionRequest ?? reduxTransactionData
-
   const dispatch = useBackgroundDispatch()
 
   const { t } = useTranslation()
@@ -58,31 +50,31 @@ export default function DetailPanel({
   // dispatched with old transactionDetails. transactionDetails is dependent on a
   // dispatching setFeeType, for example, inside NetworkSettingsChooser.
   useEffect(() => {
-    if (transactionDetails) {
-      dispatch(updateTransactionData(transactionDetails))
+    if (transactionRequest) {
+      dispatch(updateTransactionData(transactionRequest))
     }
     // Should trigger only on gas updates. If `transactionDetails` is a dependency, this will run constantly.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     updateNum,
     dispatch,
-    (transactionDetails as EnrichedEIP1559TransactionRequest)?.maxFeePerGas,
-    transactionDetails?.gasLimit,
-    (transactionDetails as EnrichedLegacyTransactionRequest)?.gasPrice,
-    (transactionDetails as EnrichedEIP1559TransactionRequest)?.maxFeePerGas,
+    (transactionRequest as EnrichedEIP1559TransactionRequest)?.maxFeePerGas,
+    transactionRequest?.gasLimit,
+    (transactionRequest as EnrichedLegacyTransactionRequest)?.gasPrice,
+    (transactionRequest as EnrichedEIP1559TransactionRequest)?.maxFeePerGas,
   ])
 
-  if (transactionDetails === undefined) return <></>
+  if (transactionRequest === undefined) return <></>
 
   const isEIP1559Compliant = EIP_1559_COMPLIANT_CHAIN_IDS.has(
-    transactionDetails.network.chainID
+    transactionRequest.network.chainID
   )
 
   const hasInsufficientFundsWarning =
-    transactionDetails.annotation?.warnings?.includes("insufficient-funds")
+    transactionRequest.annotation?.warnings?.includes("insufficient-funds")
 
   const isContractAddress =
-    transactionDetails.annotation?.warnings?.includes("send-to-contract")
+    transactionRequest.annotation?.warnings?.includes("send-to-contract")
 
   const networkSettingsSaved = () => {
     setUpdateNum(updateNum + 1)
@@ -92,7 +84,7 @@ export default function DetailPanel({
 
   const getHightForSlideUpMenu = () => {
     return `${
-      transactionDetails.network.name === BINANCE_SMART_CHAIN.name
+      transactionRequest.network.name === BINANCE_SMART_CHAIN.name
         ? 150
         : 3 * 56 +
           320 +
@@ -139,8 +131,8 @@ export default function DetailPanel({
         <FeeSettingsButton onClick={() => setNetworkSettingsModalOpen(true)} />
       </span>
       <TransactionAdditionalDetails
-        transactionRequest={transactionDetails}
-        annotation={transactionDetails.annotation}
+        transactionRequest={transactionRequest}
+        annotation={transactionRequest.annotation}
       />
       <span
         className={classNames("detail_item warning", {
@@ -149,7 +141,7 @@ export default function DetailPanel({
       >
         <TransactionSignatureDetailsWarning
           message={t("networkFees.insufficientBaseAsset", {
-            symbol: transactionDetails.network.baseAsset.symbol,
+            symbol: transactionRequest.network.baseAsset.symbol,
           })}
         />
       </span>
