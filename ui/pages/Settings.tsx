@@ -303,8 +303,52 @@ export default function Settings(): ReactElement {
 
   const autoLockSettings = {
     title: "",
-    // TODO: ADD AUTOLOCK DROPDOWN
-    component: () => <></>,
+    component: () => (
+      <div className="content">
+        <div className="left">
+          {t("settings.autoLockTimer.label")}
+          <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
+            <div className="tooltip">
+              <span>{t("settings.autoLockTimer.tooltip")}</span>
+            </div>
+          </SharedTooltip>
+        </div>
+        <div className="select_wrapper">
+          <SharedSelect
+            options={[
+              { label: "5", value: "5" },
+              { label: "15", value: "15" },
+              { label: "30", value: "30" },
+              { label: "60", value: "60" },
+            ]}
+            width="100%"
+            onChange={() => {}}
+          />
+        </div>
+        <style jsx>
+          {`
+            .content {
+              display: flex;
+              justify-content: space-between;
+              width: 336px;
+            }
+            .left {
+              display: flex;
+              align-items: center;
+            }
+            .select_wrapper {
+              width: 108px;
+              z-index: 2;
+            }
+            .tooltip {
+              display: flex;
+              flex-direction: column;
+              gap: 16px;
+            }
+          `}
+        </style>
+      </div>
+    ),
   }
 
   const notificationBanner = {
@@ -333,6 +377,7 @@ export default function Settings(): ReactElement {
     // setAsDefault is removed from settings in the new dApp Connections flow.
     isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && setAsDefault,
     hideSmallAssetBalance,
+    isEnabled(FeatureFlags.SUPPORT_CUSTOM_AUTOLOCK) && autoLockSettings,
     unverifiedAssets,
     isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
     enableTestNetworks,
@@ -341,7 +386,6 @@ export default function Settings(): ReactElement {
     needHelp,
     bugReport,
     analytics,
-    isEnabled(FeatureFlags.SUPPORT_CUSTOM_AUTOLOCK) && autoLockSettings,
     isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && notificationBanner,
     customNetworks,
   ].filter((item): item is Exclude<typeof item, boolean> => !!item)

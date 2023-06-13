@@ -552,6 +552,8 @@
     "connectedWebsites": "Connected websites",
     "addCustomAsset": "Add custom assets",
     "analytics": "Analytics",
+    "autoLockTimer.label": "Auto-lock timer",
+    "autoLockTimer.tooltip": "How long after your last interaction should we lock the wallet?",
     "needHelp": "Need Help?",
     "customNetworks": "Custom networks (beta)",
     "showBanners": "Show achievement banners",
