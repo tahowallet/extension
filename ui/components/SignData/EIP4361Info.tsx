@@ -1,4 +1,4 @@
-import React from "react"
+import React, { ReactElement } from "react"
 import { EIP4361Data } from "@tallyho/tally-background/utils/signing"
 import { useTranslation } from "react-i18next"
 import SignDataInfo from "./SignDataInfo"
@@ -14,23 +14,15 @@ const CHAIN_NAMES: (chain: number) => string = (chain) => {
   }
 }
 
-// this overides the type to expect EIP4361Data
-const EIP4361Info: React.FC<{
+type Props = {
   signingData: EIP4361Data
-  // FIXME Drop this once new signing flow is final.
-  excludeHeader?: boolean
-}> = ({ signingData, excludeHeader = false }) => {
+}
+
+// this overides the type to expect EIP4361Data
+export default function EIP4361Info({ signingData }: Props): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "signing.EIP4361" })
   return (
     <>
-      {excludeHeader ? (
-        <></>
-      ) : (
-        <>
-          <div className="domain">{signingData.domain}</div>
-          <div className="divider spaced" />
-        </>
-      )}
       <div className="subtext">
         {t("subtext1")}
         <br />
@@ -61,7 +53,7 @@ const EIP4361Info: React.FC<{
           line-height: 24px;
           font-size: 16px;
           margin-bottom: 4px;
-          ${excludeHeader ? "margin-top: 16px;" : ""}
+          margin-top: 16px;
         }
         .domain,
         .address,
@@ -80,5 +72,3 @@ const EIP4361Info: React.FC<{
     </>
   )
 }
-
-export default EIP4361Info
