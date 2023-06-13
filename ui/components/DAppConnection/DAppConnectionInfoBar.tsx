@@ -181,9 +181,9 @@ export default function DAppConnectionInfoBar(): ReactElement {
     setIsShowingDefaultConnectionTooltip,
   ] = useState(false)
 
-  const toggleIsShowingDefaultConnectionTooltip = useCallback(() => {
+  const toggleIsShowingDefaultConnectionTooltip = () => {
     setIsShowingDefaultConnectionTooltip(!isShowingDefaultConnectionTooltip)
-  }, [isShowingDefaultConnectionTooltip, setIsShowingDefaultConnectionTooltip])
+  }
 
   return (
     <section
