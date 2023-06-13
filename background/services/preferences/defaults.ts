@@ -1,6 +1,8 @@
-import { ETHEREUM, USD } from "../../constants"
+import { ETHEREUM, MINUTE, USD } from "../../constants"
 import { storageGatewayURL } from "../../lib/storage-gateway"
 import { Preferences } from "./types"
+
+export const DEFAULT_AUTOLOCK_TIMER = 60 * MINUTE
 
 const defaultPreferences: Preferences = {
   tokenLists: {
@@ -33,6 +35,7 @@ const defaultPreferences: Preferences = {
     isEnabled: false,
     hasDefaultOnBeenTurnedOn: false,
   },
+  autoLockTimer: DEFAULT_AUTOLOCK_TIMER,
 }
 
 export default defaultPreferences

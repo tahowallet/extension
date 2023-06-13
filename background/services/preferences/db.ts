@@ -3,11 +3,12 @@ import Dexie, { Transaction } from "dexie"
 import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork } from "../../accounts"
 
-import DEFAULT_PREFERENCES from "./defaults"
+import DEFAULT_PREFERENCES, { DEFAULT_AUTOLOCK_TIMER } from "./defaults"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
 import { AnalyticsPreferences } from "./types"
 import { NETWORK_BY_CHAIN_ID } from "../../constants"
+import { UNIXTime } from "../../types"
 
 type SignerRecordId = `${AccountSignerWithId["type"]}/${string}`
 
@@ -28,6 +29,7 @@ const getSignerRecordId = (signer: AccountSignerWithId): SignerRecordId => {
 
 // The idea is to use this interface to describe the data structure stored in indexedDb
 // In the future this might also have a runtime type check capability, but it's good enough for now.
+// NOTE: Check if can be merged with preferences/types.ts
 export interface Preferences {
   id?: number
   savedAt: number
@@ -40,6 +42,7 @@ export interface Preferences {
     isEnabled: boolean
     hasDefaultOnBeenTurnedOn: boolean
   }
+  autoLockTimer: UNIXTime
 }
 
 export class PreferenceDatabase extends Dexie {
@@ -322,6 +325,20 @@ export class PreferenceDatabase extends Dexie {
           const { selectedAccount } = storedPreferences
           selectedAccount.network =
             NETWORK_BY_CHAIN_ID[selectedAccount.network.chainID]
+        })
+    })
+
+    // Updates preferences to allow custom auto lock timers
+    this.version(16).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const update: Partial<Preferences> = {
+            autoLockTimer: DEFAULT_AUTOLOCK_TIMER,
+          }
+
+          Object.assign(storedPreferences, update)
         })
     })
 
