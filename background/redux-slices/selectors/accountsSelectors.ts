@@ -1,5 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
-import { selectHideDust } from "../ui"
+import { selectHideDust, selectShowUnverifiedAssets } from "../ui"
 import { RootState } from ".."
 import {
   AccountType,
@@ -13,6 +13,7 @@ import {
   formatCurrencyAmount,
   heuristicDesiredDecimalsForUnitPrice,
   isNetworkBaseAsset,
+  isUnverifiedAssetByUser,
 } from "../utils/asset-utils"
 import {
   AnyAsset,
@@ -42,6 +43,7 @@ import { DOGGO } from "../../constants/assets"
 import { FeatureFlags, isEnabled } from "../../features"
 import { AccountSigner, SignerType } from "../../services/signing"
 import { SignerImportSource } from "../../services/internal-signer"
+import { assertUnreachable } from "../../lib/utils/type-guards"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -68,16 +70,46 @@ const shouldForciblyDisplayAsset = (
   return isDoggo || isNetworkBaseAsset(assetAmount.asset)
 }
 
+export function determineAssetDisplayAndVerify(
+  assetAmount: CompleteAssetAmount<AnyAsset>,
+  {
+    hideDust,
+    showUnverifiedAssets,
+  }: { hideDust: boolean; showUnverifiedAssets: boolean }
+): { displayAsset: boolean; verifiedAsset: boolean } {
+  const isVerified = !isUnverifiedAssetByUser(assetAmount.asset)
+
+  if (shouldForciblyDisplayAsset(assetAmount)) {
+    return { displayAsset: true, verifiedAsset: isVerified }
+  }
+
+  const isNotDust =
+    typeof assetAmount.mainCurrencyAmount === "undefined"
+      ? true
+      : assetAmount.mainCurrencyAmount > userValueDustThreshold
+  const isPresent = assetAmount.decimalAmount > 0
+  const showDust = !hideDust
+
+  const verificationStatusAllowsVisibility = showUnverifiedAssets || isVerified
+  const enoughBalanceToBeVisible = isPresent && (isNotDust || showDust)
+
+  return {
+    displayAsset:
+      verificationStatusAllowsVisibility && enoughBalanceToBeVisible,
+    verifiedAsset: isVerified,
+  }
+}
+
 const computeCombinedAssetAmountsData = (
   assetAmounts: AnyAssetAmount<AnyAsset>[],
   assets: AssetsState,
   mainCurrencySymbol: string,
-  currentNetwork: EVMNetwork,
-  hideDust: boolean
+  hideDust: boolean,
+  showUnverifiedAssets: boolean
 ): {
   allAssetAmounts: CompleteAssetAmount[]
   combinedAssetAmounts: CompleteAssetAmount[]
-  hiddenAssetAmounts: CompleteAssetAmount[]
+  unverifiedAssetAmounts: CompleteAssetAmount[]
   totalMainCurrencyAmount: number | undefined
 } => {
   // Derive account "assets"/assetAmount which include USD values using
@@ -148,35 +180,28 @@ const computeCombinedAssetAmountsData = (
       return asset1.mainCurrencyAmount === undefined ? 1 : -1
     })
 
-  const { combinedAssetAmounts, hiddenAssetAmounts } = allAssetAmounts.reduce<{
-    combinedAssetAmounts: CompleteAssetAmount[]
-    hiddenAssetAmounts: CompleteAssetAmount[]
-  }>(
-    (acc, assetAmount) => {
-      const isForciblyDisplayed = shouldForciblyDisplayAsset(assetAmount)
+  const { combinedAssetAmounts, unverifiedAssetAmounts } =
+    allAssetAmounts.reduce<{
+      combinedAssetAmounts: CompleteAssetAmount[]
+      unverifiedAssetAmounts: CompleteAssetAmount[]
+    }>(
+      (acc, assetAmount) => {
+        const { displayAsset, verifiedAsset } = determineAssetDisplayAndVerify(
+          assetAmount,
+          { hideDust, showUnverifiedAssets }
+        )
 
-      const isNotDust =
-        typeof assetAmount.mainCurrencyAmount === "undefined"
-          ? true
-          : assetAmount.mainCurrencyAmount > userValueDustThreshold
-      const isPresent = assetAmount.decimalAmount > 0
-      const isTrusted =
-        !!(assetAmount.asset?.metadata?.tokenLists?.length ?? 0) ||
-        assetAmount.asset.metadata?.trusted
-
-      // Hide dust, untrusted assets and missing amounts.
-      if (
-        isForciblyDisplayed ||
-        (isTrusted && (hideDust ? isNotDust && isPresent : isPresent))
-      ) {
-        acc.combinedAssetAmounts.push(assetAmount)
-      } else if (isPresent) {
-        acc.hiddenAssetAmounts.push(assetAmount)
-      }
-      return acc
-    },
-    { combinedAssetAmounts: [], hiddenAssetAmounts: [] }
-  )
+        if (displayAsset) {
+          if (verifiedAsset) {
+            acc.combinedAssetAmounts.push(assetAmount)
+          } else {
+            acc.unverifiedAssetAmounts.push(assetAmount)
+          }
+        }
+        return acc
+      },
+      { combinedAssetAmounts: [], unverifiedAssetAmounts: [] }
+    )
 
   // Keep a tally of the total user value; undefined if no main currency data
   // is available.
@@ -191,7 +216,7 @@ const computeCombinedAssetAmountsData = (
   return {
     allAssetAmounts,
     combinedAssetAmounts,
-    hiddenAssetAmounts,
+    unverifiedAssetAmounts,
     totalMainCurrencyAmount,
   }
 }
@@ -208,17 +233,17 @@ export const getAssetsState = (state: RootState): AssetsState => state.assets
 export const selectAccountAndTimestampedActivities = createSelector(
   getAccountState,
   getAssetsState,
-  selectCurrentNetwork,
   selectHideDust,
+  selectShowUnverifiedAssets,
   selectMainCurrencySymbol,
-  (account, assets, currentNetwork, hideDust, mainCurrencySymbol) => {
+  (account, assets, hideDust, showUnverifiedAssets, mainCurrencySymbol) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
       computeCombinedAssetAmountsData(
         account.combinedData.assets,
         assets,
         mainCurrencySymbol,
-        currentNetwork,
-        hideDust
+        hideDust,
+        showUnverifiedAssets
       )
 
     return {
@@ -239,10 +264,16 @@ export const selectAccountAndTimestampedActivities = createSelector(
 export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   getAssetsState,
-  selectCurrentNetwork,
   selectHideDust,
+  selectShowUnverifiedAssets,
   selectMainCurrencySymbol,
-  (currentAccount, assets, currentNetwork, hideDust, mainCurrencySymbol) => {
+  (
+    currentAccount,
+    assets,
+    hideDust,
+    showUnverifiedAssets,
+    mainCurrencySymbol
+  ) => {
     if (typeof currentAccount === "undefined" || currentAccount === "loading") {
       return undefined
     }
@@ -254,20 +285,20 @@ export const selectCurrentAccountBalances = createSelector(
     const {
       allAssetAmounts,
       combinedAssetAmounts,
-      hiddenAssetAmounts,
+      unverifiedAssetAmounts,
       totalMainCurrencyAmount,
     } = computeCombinedAssetAmountsData(
       assetAmounts,
       assets,
       mainCurrencySymbol,
-      currentNetwork,
-      hideDust
+      hideDust,
+      showUnverifiedAssets
     )
 
     return {
       allAssetAmounts,
       assetAmounts: combinedAssetAmounts,
-      hiddenAssetAmounts,
+      unverifiedAssetAmounts,
       totalMainCurrencyValue: totalMainCurrencyAmount
         ? formatCurrencyAmount(
             mainCurrencySymbol,
@@ -282,10 +313,7 @@ export const selectCurrentAccountBalances = createSelector(
 export type AccountTotal = AddressOnNetwork & {
   shortenedAddress: string
   accountType: AccountType
-  // FIXME This is solely used for categorization.
-  // FIXME Add `categoryFor(accountSigner): string` utility function to
-  // FIXME generalize beyond keyrings.
-  keyringId: string | null
+  signerId: string | null
   path: string | null
   accountSigner: AccountSigner
   name?: string
@@ -293,13 +321,33 @@ export type AccountTotal = AddressOnNetwork & {
   localizedTotalMainCurrencyAmount?: string
 }
 
+/**
+ * Given an account signer, resolves a unique id for that signer. Returns null
+ * for read-only accounts. This allows for grouping accounts together by the
+ * signer that can provide signatures for those accounts.
+ */
+function signerIdFor(accountSigner: AccountSigner): string | null {
+  switch (accountSigner.type) {
+    case "private-key":
+      return accountSigner.walletID
+    case "keyring":
+      return accountSigner.keyringID
+    case "ledger":
+      return accountSigner.deviceID
+    case "read-only":
+      return null
+    default:
+      return assertUnreachable(accountSigner)
+  }
+}
+
 export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
 
 const signerTypeToAccountType: Record<SignerType, AccountType> = {
   keyring: AccountType.Imported,
-  privateKey: AccountType.PrivateKey,
+  "private-key": AccountType.PrivateKey,
   ledger: AccountType.Ledger,
-  readOnly: AccountType.ReadOnly,
+  "read-only": AccountType.ReadOnly,
 }
 
 const getAccountType = (
@@ -372,7 +420,7 @@ function getNetworkAccountTotalsByCategory(
       const shortenedAddress = truncateAddress(address)
 
       const accountSigner = accountSignersByAddress[address]
-      const keyringId = keyringsByAddresses[address]?.id
+      const signerId = signerIdFor(accountSigner)
       const path = keyringsByAddresses[address]?.path
 
       const accountType = getAccountType(
@@ -387,7 +435,7 @@ function getNetworkAccountTotalsByCategory(
           network,
           shortenedAddress,
           accountType,
-          keyringId,
+          signerId,
           path,
           accountSigner,
         }
@@ -398,7 +446,7 @@ function getNetworkAccountTotalsByCategory(
         network,
         shortenedAddress,
         accountType,
-        keyringId,
+        signerId,
         path,
         accountSigner,
         name: accountData.ens.name ?? accountData.defaultName,
@@ -534,13 +582,20 @@ export const selectCurrentAccountTotal = createSelector(
     findAccountTotal(categorizedAccountTotals, currentAccount)
 )
 
-export const getAllAddresses = createSelector(getAccountState, (account) => [
-  ...new Set(
-    Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
-      Object.keys(chainAddresses)
-    )
-  ),
-])
+export const getAllAddresses = createSelector(getAccountState, (account) => {
+  // On extension install we are using this selector to display onboarding screen,
+  // sometimes frontend is loading faster than background script and we need to
+  // prepare for redux slices to be undefined for a split second
+  return account
+    ? [
+        ...new Set(
+          Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
+            Object.keys(chainAddresses)
+          )
+        ),
+      ]
+    : []
+})
 
 export const getAddressCount = createSelector(
   getAllAddresses,

@@ -107,7 +107,7 @@ export async function getAssetAmount(
 }
 
 /**
- * If the tokenToEthRate of a is less than 1
+ * If the tokenToEthRate of a is less than 0.1
  * we will probably not get information about the price of the asset.
  * The goal is to reduce the number of price requests sent to CoinGecko.
  */
@@ -119,7 +119,7 @@ export async function checkCurrencyAmount(
   network: EVMNetwork
 ): Promise<string | undefined> {
   const currencyAmount =
-    tokenToEthRate >= 1
+    tokenToEthRate >= 0.1
       ? (
           await getAssetAmount(
             assets,

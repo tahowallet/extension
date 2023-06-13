@@ -13,6 +13,7 @@ import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
   isBuiltInNetworkBaseAsset,
+  isSameAsset,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
@@ -25,8 +26,8 @@ import { convertFixedPoint } from "../lib/fixed-point"
  * internal account types, depending on how the UI chooses to display data.
  */
 export const enum AccountType {
-  ReadOnly = "readOnly",
-  PrivateKey = "privateKey",
+  ReadOnly = "read-only",
+  PrivateKey = "private-key",
   Imported = "imported",
   Ledger = "ledger",
   Internal = "internal",
@@ -407,7 +408,7 @@ const accountSlice = createSlice({
     /**
      * Updates cached SmartContracts metadata
      */
-    updateAssetCache: (
+    updateAssetReferences: (
       immerState,
       { payload: asset }: { payload: SmartContractFungibleAsset }
     ) => {
@@ -431,6 +432,24 @@ const accountSlice = createSlice({
 
       updateCombinedData(immerState)
     },
+    removeAssetReferences: (
+      immerState,
+      { payload: asset }: { payload: SmartContractFungibleAsset }
+    ) => {
+      const allAccounts = immerState.accountsData.evm[asset.homeNetwork.chainID]
+      Object.keys(allAccounts).forEach((address) => {
+        const account = allAccounts[address]
+        if (account !== "loading") {
+          Object.values(account.balances).forEach(({ assetAmount }) => {
+            if (isSameAsset(assetAmount.asset, asset)) {
+              delete account.balances[assetAmount.asset.symbol]
+            }
+          })
+        }
+      })
+
+      updateCombinedData(immerState)
+    },
     removeChainBalances: (
       immerState,
       { payload: chainID }: { payload: string }
@@ -446,7 +465,8 @@ export const {
   updateAccountBalance,
   updateAccountName,
   updateENSAvatar,
-  updateAssetCache,
+  updateAssetReferences,
+  removeAssetReferences,
   removeChainBalances,
 } = accountSlice.actions
 

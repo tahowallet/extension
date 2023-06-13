@@ -19,7 +19,7 @@ const getSignerRecordId = (signer: AccountSignerWithId): SignerRecordId => {
   switch (signer.type) {
     case "keyring":
       return `${signer.type}/${signer.keyringID}`
-    case "privateKey":
+    case "private-key":
       return `${signer.type}/${signer.walletID}`
     default:
       return `${signer.type}/${signer.deviceID}`

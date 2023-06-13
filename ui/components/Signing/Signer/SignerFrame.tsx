@@ -22,12 +22,12 @@ export default function SignerFrame<T extends SignOperationType>(
   const { signer } = props
 
   switch (signer.type) {
-    case "privateKey":
+    case "private-key":
     case "keyring":
       return <SignerInternalFrame {...props} />
     case "ledger":
       return <SignerLedgerFrame {...props} />
-    case "readOnly":
+    case "read-only":
       return <SignerReadOnlyFrame {...props} />
     default:
       assertUnreachable(signer)

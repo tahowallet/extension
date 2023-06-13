@@ -62,7 +62,7 @@ export type KeyringAccountSigner = {
 }
 
 export type PrivateKeyAccountSigner = {
-  type: "privateKey"
+  type: "private-key"
   walletID: string
 }
 

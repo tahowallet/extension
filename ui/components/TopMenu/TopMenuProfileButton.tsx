@@ -1,4 +1,3 @@
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
   selectCurrentAccount,
   selectCurrentAccountTotal,
@@ -73,11 +72,7 @@ export default function TopMenuProfileButton(props: {
               name={name}
               avatarURL={avatarURL}
               showHoverStyle
-              showLockStatus={
-                isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
-                accountType &&
-                isAccountWithSecrets(accountType)
-              }
+              showLockStatus={accountType && isAccountWithSecrets(accountType)}
             />
           </>
         )}

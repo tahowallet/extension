@@ -13,4 +13,4 @@ export const isAccountSingular = (accountType: AccountType): boolean =>
   accountType === AccountType.PrivateKey || accountType === AccountType.ReadOnly
 
 export const isSignerWithSecrets = (accountSigner: AccountSigner): boolean =>
-  accountSigner.type === "keyring" || accountSigner.type === "privateKey"
+  accountSigner.type === "keyring" || accountSigner.type === "private-key"

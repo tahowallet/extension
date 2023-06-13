@@ -64,7 +64,7 @@ describe("Signing Service Unit", () => {
     it("should error when trying to derive from a read-only account", () => {
       expect(
         signingService.deriveAddress({
-          type: "readOnly",
+          type: "read-only",
         })
       ).rejects.toBeTruthy()
     })

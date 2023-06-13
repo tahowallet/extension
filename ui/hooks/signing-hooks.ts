@@ -5,8 +5,11 @@ import { clearSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { useEffect } from "react"
 import { useHistory } from "react-router-dom"
-import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
+import { HexString } from "@tallyho/tally-background/types"
+import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
+import { DisplayDetails } from "@tallyho/tally-background/services/ledger"
 import { isSignerWithSecrets } from "../utils/accounts"
+import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 
 /**
  * Checks and returns whether the internal signers service is currently unlocked, redirecting
@@ -45,6 +48,7 @@ export const useAreInternalSignersUnlocked = (
   return lockStatus === "unlocked"
 }
 
+// FIXME Remove after USE_UPDATED_SIGNING_UI = true
 export function useIsSignerLocked(signer: AccountSigner | null): boolean {
   const needInternalSigner =
     isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI) || !signer
@@ -70,4 +74,55 @@ export const useLockWallet = (): void => {
     }
     lockWallet()
   }, [dispatch])
+}
+
+export type SigningLedgerState =
+  | {
+      state: "no-ledger-connected" | "busy" | "multiple-ledgers-connected"
+    }
+  | { state: "wrong-ledger-connected"; requiredAddress: HexString }
+  | {
+      state: "available"
+      arbitraryDataEnabled: boolean
+      displayDetails: DisplayDetails
+    }
+
+export function useSigningLedgerState(
+  signingAddress: HexString | undefined,
+  accountSigner: AccountSigner | null
+): SigningLedgerState | null {
+  return useBackgroundSelector((state) => {
+    if (signingAddress === undefined || accountSigner?.type !== "ledger") {
+      return null
+    }
+
+    const { deviceID } = accountSigner
+
+    const connectedDevices = Object.values(state.ledger.devices).filter(
+      (device) => device.status !== "disconnected"
+    )
+    if (connectedDevices.length === 0) return { state: "no-ledger-connected" }
+    if (state.ledger.usbDeviceCount > 1)
+      return { state: "multiple-ledgers-connected" }
+
+    const device = state.ledger.devices[deviceID]
+
+    switch (device.status) {
+      case "available":
+        return {
+          state: "available",
+          arbitraryDataEnabled: device.isArbitraryDataSigningEnabled ?? false,
+          displayDetails: device.displayDetails,
+        }
+      case "busy":
+        return { state: "busy" }
+      case "disconnected":
+        return {
+          state: "wrong-ledger-connected",
+          requiredAddress: signingAddress,
+        }
+      default:
+        return assertUnreachable(device.status)
+    }
+  })
 }

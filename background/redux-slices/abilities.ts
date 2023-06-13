@@ -63,23 +63,14 @@ const abilitiesSlice = createSlice({
   name: "abilities",
   initialState,
   reducers: {
-    addAbilities: (immerState, { payload }: { payload: Ability[] }) => {
-      payload.forEach((ability) => {
-        const { address } = ability
-        if (!immerState.abilities[address]) {
-          immerState.abilities[address] = {}
-        }
-        if (immerState.abilities[address][ability.abilityId]) {
-          const existingAbility =
-            immerState.abilities[address][ability.abilityId]
-          immerState.abilities[address][ability.abilityId] = {
-            ...ability,
-            removedFromUi: existingAbility.removedFromUi,
-          }
-        } else {
-          immerState.abilities[address][ability.abilityId] = ability
-        }
-      })
+    setAbilitiesForAddress: (
+      immerState,
+      { payload }: { payload: { address: HexString; abilities: Ability[] } }
+    ) => {
+      const { address, abilities } = payload
+      immerState.abilities[address] = Object.fromEntries(
+        abilities.map((ability) => [ability.abilityId, ability])
+      )
     },
     updateAbility: (immerState, { payload }: { payload: Ability }) => {
       immerState.abilities[payload.address][payload.abilityId] = payload
@@ -124,7 +115,7 @@ const abilitiesSlice = createSlice({
 })
 
 export const {
-  addAbilities,
+  setAbilitiesForAddress,
   updateAbility,
   deleteAbilitiesForAccount,
   deleteAbility,

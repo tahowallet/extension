@@ -3,7 +3,6 @@ import { useHistory } from "react-router-dom"
 import { unlockInternalSigners } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { rejectTransactionSignature } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { useTranslation } from "react-i18next"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import {
   useBackgroundDispatch,
@@ -108,11 +107,6 @@ export default function InternalSignerUnlock({
             </SharedButton>
           </div>
         </div>
-        {isEnabled(FeatureFlags.SUPPORT_FORGOT_PASSWORD) && (
-          <SharedButton type="tertiaryGray" size="small" onClick={() => {}}>
-            {t("forgotPassword")}
-          </SharedButton>
-        )}
       </form>
       <style jsx>
         {`

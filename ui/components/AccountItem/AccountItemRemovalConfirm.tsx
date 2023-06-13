@@ -11,7 +11,6 @@ import { useHistory } from "react-router-dom"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { useTranslation } from "react-i18next"
 import { selectLedgerDeviceByAddresses } from "@tallyho/tally-background/redux-slices/selectors/ledgerSelectors"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
@@ -22,6 +21,7 @@ import {
 } from "../../hooks"
 import AccountItemActionHeader from "./AccountItemActionHeader"
 import RemoveAccountWarning from "./RemoveAccountWarning"
+import { ONBOARDING_ROOT } from "../../pages/Onboarding/Tabbed/Routes"
 
 interface AccountItemRemovalConfirmProps {
   account: AccountTotal
@@ -56,7 +56,7 @@ export default function AccountItemRemovalConfirm({
   const allAddresses = useBackgroundSelector(getAllAddresses)
   const signer = accountSigners[address]
 
-  const readOnlyAccount = signer.type === "readOnly"
+  const readOnlyAccount = signer.type === "read-only"
 
   const lastAddressInLedger =
     signer.type === "ledger" &&
@@ -122,11 +122,8 @@ export default function AccountItemRemovalConfirm({
                 })
               )
 
-              if (
-                lastAccountInTallyWallet &&
-                isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING)
-              ) {
-                window.open("/tab.html#onboarding")
+              if (lastAccountInTallyWallet) {
+                window.open(ONBOARDING_ROOT)
                 window.close()
                 return
               }

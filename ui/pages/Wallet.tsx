@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useEffect, useMemo, useState } from "react"
 import {
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
@@ -6,11 +6,18 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
 
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import {
+  FeatureFlags,
+  isDisabled,
+  isEnabled,
+} from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
-import { selectShowAnalyticsNotification } from "@tallyho/tally-background/redux-slices/ui"
+import {
+  selectShowAnalyticsNotification,
+  selectShowUnverifiedAssets,
+} from "@tallyho/tally-background/redux-slices/ui"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
 import { useHistory } from "react-router-dom"
@@ -20,12 +27,10 @@ import WalletAssetList from "../components/Wallet/WalletAssetList"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
 import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
-import NFTsWallet from "../components/NFTs/NFTsWallet"
-import SharedBanner from "../components/Shared/SharedBanner"
 import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultBanner"
 import WalletBanner from "../components/Wallet/Banner/WalletBanner"
 import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
-import NFTListCurrentWallet from "../components/NFTS_update/NFTListCurrentWallet"
+import NFTListCurrentWallet from "../components/NFTs/NFTListCurrentWallet"
 import WalletHiddenAssets from "../components/Wallet/WalletHiddenAssets"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
@@ -41,6 +46,7 @@ export default function Wallet(): ReactElement {
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
   const claimState = useBackgroundSelector((state) => state.claim)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const showUnverifiedAssets = useBackgroundSelector(selectShowUnverifiedAssets)
 
   useEffect(() => {
     dispatch(
@@ -57,10 +63,10 @@ export default function Wallet(): ReactElement {
     }
   }, [selectedNetwork.chainID])
 
-  const { assetAmounts, hiddenAssetAmounts, totalMainCurrencyValue } =
+  const { assetAmounts, unverifiedAssetAmounts, totalMainCurrencyValue } =
     accountData ?? {
       assetAmounts: [],
-      hiddenAssetAmounts: [],
+      unverifiedAssetAmounts: [],
       totalMainCurrencyValue: undefined,
     }
 
@@ -90,6 +96,11 @@ export default function Wallet(): ReactElement {
     selectShowAnalyticsNotification
   )
 
+  const showHiddenAssets = useMemo(
+    () => showUnverifiedAssets && unverifiedAssetAmounts.length > 0,
+    [showUnverifiedAssets, unverifiedAssetAmounts.length]
+  )
+
   const panelNames = [t("wallet.pages.assets")]
 
   if (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)) {
@@ -101,7 +112,10 @@ export default function Wallet(): ReactElement {
   return (
     <>
       <div className="page_content">
-        {!showAnalyticsNotification && <WalletToggleDefaultBanner />}
+        {!showAnalyticsNotification &&
+          isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && (
+            <WalletToggleDefaultBanner />
+          )}
         <WalletAnalyticsNotificationBanner />
         <div className="section">
           <WalletAccountBalanceControl
@@ -123,7 +137,9 @@ export default function Wallet(): ReactElement {
           />
           <div
             className={classNames("panel standard_width", {
-              no_padding: panelNumber === 1,
+              no_padding:
+                panelNumber === 1 &&
+                NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID),
             })}
           >
             {panelNumber === 0 && (
@@ -137,57 +153,41 @@ export default function Wallet(): ReactElement {
                     initializationLoadingTimeExpired
                   }
                 />
-                {isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS) && (
-                  <div
-                    className={classNames("add_custom_asset", {
-                      line: hiddenAssetAmounts.length > 0,
-                    })}
+                <div
+                  className={classNames("add_custom_asset", {
+                    line: showHiddenAssets,
+                  })}
+                >
+                  <span>{t("wallet.activities.addCustomAssetPrompt")}</span>
+                  <SharedButton
+                    size="medium"
+                    onClick={() => history.push("/settings/add-custom-asset")}
+                    type="tertiary"
                   >
-                    <span>{t("wallet.activities.addCustomAssetPrompt")}</span>
-                    <SharedButton
-                      size="medium"
-                      onClick={() => history.push("/settings/add-custom-asset")}
-                      type="tertiary"
-                    >
-                      <SharedIcon
-                        width={16}
-                        height={16}
-                        customStyles="margin-right: 4px"
-                        icon="icons/s/add.svg"
-                        color="currentColor"
-                      />
-                      {t("wallet.activities.addCustomAssetAction")}
-                    </SharedButton>
-                  </div>
-                )}
-                {hiddenAssetAmounts.length > 0 && (
+                    <SharedIcon
+                      width={16}
+                      height={16}
+                      customStyles="margin-right: 4px"
+                      icon="icons/s/add.svg"
+                      color="currentColor"
+                    />
+                    {t("wallet.activities.addCustomAssetAction")}
+                  </SharedButton>
+                </div>
+                {showHiddenAssets && (
                   <WalletHiddenAssets
                     assetAmounts={
                       // FIXME: Refactor AnyAsset type
-                      hiddenAssetAmounts as CompleteAssetAmount<SwappableAsset>[]
+                      unverifiedAssetAmounts as CompleteAssetAmount<SwappableAsset>[]
                     }
                   />
                 )}
               </>
             )}
             {panelNumber === 1 &&
-              NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) &&
-              (isEnabled(FeatureFlags.SUPPORT_NFT_TAB) ? (
+              NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID) && (
                 <NFTListCurrentWallet />
-              ) : (
-                <>
-                  <SharedBanner
-                    icon="notif-announcement"
-                    iconColor="var(--link)"
-                    canBeClosed
-                    id="nft_soon"
-                    customStyles="margin: 8px 0;"
-                  >
-                    {t("nfts.NFTPricingComingSoon")}
-                  </SharedBanner>
-                  <NFTsWallet />
-                </>
-              ))}
+              )}
             {panelNumber ===
               (NETWORKS_SUPPORTING_NFTS.has(selectedNetwork.chainID)
                 ? 2

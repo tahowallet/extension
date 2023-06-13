@@ -88,7 +88,7 @@ export const selectAccountSignersByAddress = createSelector(
           return [
             address,
             {
-              type: "privateKey",
+              type: "private-key",
               walletID: wallet.id,
             },
           ]

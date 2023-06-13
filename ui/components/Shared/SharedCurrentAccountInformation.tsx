@@ -63,7 +63,7 @@ export default function SharedCurrentAccountInformation({
             padding: 2px 6px 4px 2px;
             border-radius: 8px;
             position: absolute;
-            right: -16px;
+            right: -12px;
             top: -10px;
           }
         `}

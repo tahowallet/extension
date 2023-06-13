@@ -5,14 +5,17 @@ import { ETH, ETHEREUM } from "../../constants"
 import {
   createAccountData,
   createAddressOnNetwork,
+  createCompleteAssetAmount,
+  createNetworkBaseAsset,
   createSmartContractAsset,
 } from "../../tests/factories"
 import reducer, {
   AccountData,
   AccountState,
   updateAccountBalance,
-  updateAssetCache,
+  updateAssetReferences,
 } from "../accounts"
+import { determineAssetDisplayAndVerify } from "../selectors"
 
 const ADDRESS_MOCK = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
 const ACCOUNT_MOCK = {
@@ -239,20 +242,20 @@ describe("Accounts redux slice", () => {
 
       expect(
         firstAccountData.balances[asset.symbol].assetAmount.asset.metadata
-          ?.trusted
+          ?.verified
       ).not.toBeDefined()
       expect(
         secondAccountData.balances[asset.symbol].assetAmount.asset.metadata
-          ?.trusted
+          ?.verified
       ).not.toBeDefined()
 
       const updatedAsset = cloneDeep(asset)
       updatedAsset.metadata ??= {}
-      updatedAsset.metadata.trusted = true
+      updatedAsset.metadata.verified = true
 
       const newState = reducer(
         secondAccountUpdate,
-        updateAssetCache(updatedAsset)
+        updateAssetReferences(updatedAsset)
       )
 
       const updatedFirstAccountData = newState.accountsData.evm[
@@ -265,12 +268,208 @@ describe("Accounts redux slice", () => {
 
       expect(
         updatedFirstAccountData.balances[asset.symbol].assetAmount.asset
-          .metadata?.trusted
-      ).toBeTruthy()
+          .metadata?.verified
+      ).toBe(true)
       expect(
         updatedSecondAccountData.balances[asset.symbol].assetAmount.asset
-          .metadata?.trusted
-      ).toBeTruthy()
+          .metadata?.verified
+      ).toBe(true)
+    })
+  })
+})
+
+describe("Utilities", () => {
+  describe("determineAssetDisplayAndVerify", () => {
+    it("should always display base assets", () => {
+      const { displayAsset } = determineAssetDisplayAndVerify(
+        createCompleteAssetAmount(createNetworkBaseAsset(), 0, {
+          decimalAmount: 0,
+          mainCurrencyAmount: 0,
+        }),
+        {
+          hideDust: true,
+          showUnverifiedAssets: false,
+        }
+      )
+      expect(displayAsset).toBe(true)
+    })
+
+    describe("Hide dust", () => {
+      it("should display asset amount if NOT dust and hideDust is enabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
+          createCompleteAssetAmount(createSmartContractAsset(), 200, {
+            decimalAmount: 200,
+            mainCurrencyAmount: 200,
+          }),
+          {
+            hideDust: true,
+            showUnverifiedAssets: false,
+          }
+        )
+
+        expect(displayAsset).toBe(true)
+      })
+
+      it("should display asset amount if NOT dust and hideDust is disabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
+          createCompleteAssetAmount(createSmartContractAsset(), 200, {
+            decimalAmount: 200,
+            mainCurrencyAmount: 200,
+          }),
+          {
+            hideDust: false,
+            showUnverifiedAssets: false,
+          }
+        )
+
+        expect(displayAsset).toBe(true)
+      })
+
+      it("should display asset amount if dust and hideDust is disabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
+          createCompleteAssetAmount(createSmartContractAsset(), 0, {
+            decimalAmount: 1,
+            mainCurrencyAmount: 0,
+          }),
+          {
+            hideDust: false,
+            showUnverifiedAssets: false,
+          }
+        )
+
+        expect(displayAsset).toBe(true)
+      })
+
+      it("should NOT display asset amount if dust and hideDust is enabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
+          createCompleteAssetAmount(createSmartContractAsset(), 0, {
+            decimalAmount: 0,
+            mainCurrencyAmount: 0,
+          }),
+          {
+            hideDust: true,
+            showUnverifiedAssets: false,
+          }
+        )
+
+        expect(displayAsset).toBe(false)
+      })
+    })
+
+    describe("Verified assets", () => {
+      it("should display asset amount if verified and showUnverifiedAssets is disabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
+          createCompleteAssetAmount(
+            createSmartContractAsset({ metadata: { verified: true } }),
+            200,
+            {
+              decimalAmount: 200,
+              mainCurrencyAmount: 200,
+            }
+          ),
+          {
+            hideDust: true,
+            showUnverifiedAssets: false,
+          }
+        )
+
+        expect(displayAsset).toBe(true)
+      })
+
+      it("should display asset amount if verified and showUnverifiedAssets is enabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
+          createCompleteAssetAmount(
+            createSmartContractAsset({ metadata: { verified: true } }),
+            200,
+            {
+              decimalAmount: 200,
+              mainCurrencyAmount: 200,
+            }
+          ),
+          {
+            hideDust: true,
+            showUnverifiedAssets: true,
+          }
+        )
+
+        expect(displayAsset).toBe(true)
+      })
+
+      it("should NOT display asset amount if unverified (trusted value set to false) and showUnverifiedAssets is disabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
+          createCompleteAssetAmount(
+            createSmartContractAsset({ metadata: { verified: false } }),
+            200,
+            {
+              decimalAmount: 200,
+              mainCurrencyAmount: 200,
+            }
+          ),
+          {
+            hideDust: true,
+            showUnverifiedAssets: false,
+          }
+        )
+
+        expect(displayAsset).toBe(false)
+      })
+
+      it("should NOT display asset amount if unverified (empty metadata) and showUnverifiedAssets is disabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
+          createCompleteAssetAmount(
+            createSmartContractAsset({ metadata: {} }),
+            200,
+            {
+              decimalAmount: 200,
+              mainCurrencyAmount: 200,
+            }
+          ),
+          {
+            hideDust: true,
+            showUnverifiedAssets: false,
+          }
+        )
+
+        expect(displayAsset).toBe(false)
+      })
+
+      it("should display asset amount if unverified and showUnverifiedAssets is enabled", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
+          createCompleteAssetAmount(
+            createSmartContractAsset({ metadata: { verified: false } }),
+            200,
+            {
+              decimalAmount: 200,
+              mainCurrencyAmount: 200,
+            }
+          ),
+          {
+            hideDust: true,
+            showUnverifiedAssets: true,
+          }
+        )
+
+        expect(displayAsset).toBe(true)
+      })
+
+      it("should NOT display asset amount if verified and dust", () => {
+        const { displayAsset } = determineAssetDisplayAndVerify(
+          createCompleteAssetAmount(
+            createSmartContractAsset({ metadata: { verified: true } }),
+            0,
+            {
+              decimalAmount: 0,
+              mainCurrencyAmount: 0,
+            }
+          ),
+          {
+            hideDust: true,
+            showUnverifiedAssets: false,
+          }
+        )
+
+        expect(displayAsset).toBe(false)
+      })
     })
   })
 })

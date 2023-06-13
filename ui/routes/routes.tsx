@@ -1,15 +1,8 @@
-import React, { ReactElement } from "react"
+import { ReactElement } from "react"
 import Wallet from "../pages/Wallet"
 import SignTransaction from "../pages/SignTransaction"
 import SignData from "../pages/SignData"
 import PersonalSign from "../pages/PersonalSign"
-import OnboardingSaveSeed from "../pages/Onboarding/OnboardingSaveSeed"
-import OnboardingVerifySeed from "../pages/Onboarding/OnboardingVerifySeed"
-import OnboardingImportMetamask from "../pages/Onboarding/OnboardingImportMetamask"
-import OnboardingViewOnlyWallet from "../pages/Onboarding/OnboardingViewOnlyWallet"
-import OnboardingInfoIntro from "../pages/Onboarding/OnboardingInfoIntro"
-import OnboardingAddWallet from "../pages/Onboarding/OnboardingAddWallet"
-import OnboardingInterstitialCreatePhrase from "../pages/Onboarding/OnboardingInterstitialCreatePhrase"
 import Overview from "../pages/Overview"
 import SingleAsset from "../pages/SingleAsset"
 import Earn from "../pages/Earn"
@@ -32,7 +25,7 @@ import SettingsCustomNetworks from "../pages/Settings/SettingsCustomNetworks"
 import NewCustomNetworkRequest from "../pages/NewCustomNetworkRequest"
 import SettingsAddCustomAsset from "../pages/Settings/SettingsAddCustomAsset"
 
-interface PageList {
+type PageList = {
   path: string
   // Tricky to handle all props components are
   // accepting here.
@@ -64,34 +57,6 @@ const pageList: PageList[] = [
     hasTabBar: true,
     hasTopBar: true,
     persistOnClose: true,
-  },
-  {
-    path: "/onboarding/import-metamask",
-    Component: () => <OnboardingImportMetamask nextPage="/" />,
-    hasTabBar: false,
-    hasTopBar: false,
-    persistOnClose: false,
-  },
-  {
-    path: "/onboarding/view-only-wallet",
-    Component: OnboardingViewOnlyWallet,
-    hasTabBar: false,
-    hasTopBar: false,
-    persistOnClose: false,
-  },
-  {
-    path: "/onboarding/info-intro",
-    Component: OnboardingInfoIntro,
-    hasTabBar: false,
-    hasTopBar: false,
-    persistOnClose: false,
-  },
-  {
-    path: "/onboarding/add-wallet",
-    Component: OnboardingAddWallet,
-    hasTabBar: false,
-    hasTopBar: false,
-    persistOnClose: false,
   },
   {
     path: "/sign-transaction",
@@ -215,27 +180,6 @@ const pageList: PageList[] = [
   {
     path: "/dapp-permission",
     Component: DAppPermissionRequest,
-    hasTabBar: false,
-    hasTopBar: false,
-    persistOnClose: false,
-  },
-  {
-    path: "/onboarding/save-seed",
-    Component: OnboardingSaveSeed,
-    hasTabBar: false,
-    hasTopBar: false,
-    persistOnClose: false,
-  },
-  {
-    path: "/onboarding/verify-seed",
-    Component: OnboardingVerifySeed,
-    hasTabBar: false,
-    hasTopBar: false,
-    persistOnClose: false,
-  },
-  {
-    path: "/onboarding/onboarding-interstitial-create-phrase",
-    Component: OnboardingInterstitialCreatePhrase,
     hasTabBar: false,
     hasTopBar: false,
     persistOnClose: false,

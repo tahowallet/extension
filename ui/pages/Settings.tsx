@@ -10,8 +10,14 @@ import {
   toggleTestNetworks,
   toggleHideBanners,
   selectHideBanners,
+  selectShowUnverifiedAssets,
+  toggleShowUnverifiedAssets,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import {
+  FeatureFlags,
+  isDisabled,
+  isEnabled,
+} from "@tallyho/tally-background/features"
 import { useHistory } from "react-router-dom"
 import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
@@ -21,6 +27,7 @@ import { getLanguage, setLanguage } from "../_locales/i18n"
 import SettingButton from "./Settings/SettingButton"
 import { useBackgroundSelector } from "../hooks"
 import SharedIcon from "../components/Shared/SharedIcon"
+import SharedTooltip from "../components/Shared/SharedTooltip"
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
 const FAQ_URL =
@@ -105,8 +112,7 @@ function SettingRow(props: {
             display: flex;
             justify-content: space-between;
             align-items: center;
-          }
-          .left {
+
             color: var(--green-20);
             font-size: 18px;
             font-weight: 600;
@@ -125,6 +131,7 @@ export default function Settings(): ReactElement {
   const hideBanners = useSelector(selectHideBanners)
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
+  const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
@@ -136,6 +143,10 @@ export default function Settings(): ReactElement {
 
   const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
     dispatch(toggleTestNetworks(defaultWalletValue))
+  }
+
+  const toggleShowUnverified = (toggleValue: boolean) => {
+    dispatch(toggleShowUnverifiedAssets(toggleValue))
   }
 
   const toggleHideNotificationBanners = (toggleValue: boolean) => {
@@ -152,6 +163,47 @@ export default function Settings(): ReactElement {
         onChange={(toggleValue) => toggleHideDustAssets(toggleValue)}
         value={hideDust}
       />
+    ),
+  }
+
+  const unverifiedAssets = {
+    title: "",
+    component: () => (
+      <div className="content">
+        <div className="left">
+          {t("settings.showUnverifiedAssets")}
+          <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
+            <div className="tooltip">
+              <span>{t("settings.unverifiedAssets.tooltip.firstPart")}</span>
+              {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
+                <span>{t("settings.unverifiedAssets.tooltip.secondPart")}</span>
+              )}
+            </div>
+          </SharedTooltip>
+        </div>
+        <SharedToggleButton
+          onChange={(toggleValue) => toggleShowUnverified(toggleValue)}
+          value={showUnverifiedAssets}
+        />
+        <style jsx>
+          {`
+            .content {
+              display: flex;
+              justify-content: space-between;
+              width: 336px;
+            }
+            .left {
+              display: flex;
+              align-items: center;
+            }
+            .tooltip {
+              display: flex;
+              flex-direction: column;
+              gap: 16px;
+            }
+          `}
+        </style>
+      </div>
     ),
   }
 
@@ -272,24 +324,20 @@ export default function Settings(): ReactElement {
   }
 
   const generalList = [
-    setAsDefault,
+    // setAsDefault is removed from settings in the new dApp Connections flow.
+    isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && setAsDefault,
     hideSmallAssetBalance,
-    ...(isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) ? [languages] : []),
+    unverifiedAssets,
+    isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
     enableTestNetworks,
     dAppsSettings,
-    ...(isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)
-      ? [addCustomAsset]
-      : []),
+    addCustomAsset,
     needHelp,
     bugReport,
-    ...(isEnabled(FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON) ? [analytics] : []),
-    ...(isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER)
-      ? [notificationBanner]
-      : []),
-    ...(isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)
-      ? [customNetworks]
-      : []),
-  ]
+    analytics,
+    isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && notificationBanner,
+    customNetworks,
+  ].filter((item): item is Exclude<typeof item, boolean> => !!item)
 
   const settings = {
     general: generalList,

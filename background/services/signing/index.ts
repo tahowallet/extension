@@ -46,7 +46,7 @@ type Events = ServiceLifecycleEvents & {
  * An AccountSigner that represents a read-only account. Read-only accounts
  * generally cannot sign.
  */
-export const ReadOnlyAccountSigner = { type: "readOnly" } as const
+export const ReadOnlyAccountSigner = { type: "read-only" } as const
 
 /**
  * An AccountSigner carries the appropriate information for a given signer to
@@ -142,7 +142,7 @@ export default class SigningService extends BaseService<Events> {
           transactionWithNonce,
           accountSigner
         )
-      case "privateKey":
+      case "private-key":
       case "keyring":
         return this.internalSignerService.signTransaction(
           {
@@ -151,7 +151,7 @@ export default class SigningService extends BaseService<Events> {
           },
           transactionWithNonce
         )
-      case "readOnly":
+      case "read-only":
         throw new Error("Read-only signers cannot sign.")
       default:
         return assertUnreachable(accountSigner)
@@ -164,20 +164,37 @@ export default class SigningService extends BaseService<Events> {
   ): Promise<void> {
     if (signerType) {
       switch (signerType) {
-        case "privateKey":
+        case "private-key":
         case "keyring":
           await this.internalSignerService.removeAccount(address)
           break
         case "ledger":
           await this.ledgerService.removeAddress(address)
           break
-        case "readOnly":
+        case "read-only":
           break // no additional work here, just account removal below
         default:
           assertUnreachable(signerType)
       }
     }
     await this.chainService.removeAccountToTrack(address)
+  }
+
+  /**
+   * Requests that signers prepare for a signing request. For hardware wallets
+   * in particular, this can include refreshing connection information so that
+   * the status is up to date. For remote wallets, e.g. WalletConnect, it can
+   * include connection setup.
+   *
+   * Currently this method does not take information about the request, but if
+   * the required setup is expensive enough, the `from` address can be passed
+   * in so that signers are only set up when the request applies to them.
+   */
+  async prepareForSigningRequest(): Promise<void> {
+    // Refresh connected Ledger info indiscriminately. No real harm vs doing it
+    // only under certain circumstances, might even be more performant than
+    // testing whether the Ledger can sign for the requested `from` address.
+    await this.ledgerService.refreshConnectedLedger()
   }
 
   async signTransaction(
@@ -251,14 +268,14 @@ export default class SigningService extends BaseService<Events> {
             accountSigner
           )
           break
-        case "privateKey":
+        case "private-key":
         case "keyring":
           signedData = await this.internalSignerService.signTypedData({
             typedData,
             account: account.address,
           })
           break
-        case "readOnly":
+        case "read-only":
           throw new Error("Read-only signers cannot sign.")
         default:
           assertUnreachable(accountSigner)
@@ -297,14 +314,14 @@ export default class SigningService extends BaseService<Events> {
             hexDataToSign
           )
           break
-        case "privateKey":
+        case "private-key":
         case "keyring":
           signedData = await this.internalSignerService.personalSign({
             signingData: hexDataToSign,
             account: addressOnNetwork.address,
           })
           break
-        case "readOnly":
+        case "read-only":
           throw new Error("Read-only signers cannot sign.")
         default:
           assertUnreachable(accountSigner)

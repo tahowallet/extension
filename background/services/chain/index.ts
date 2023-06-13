@@ -850,6 +850,12 @@ export default class ChainService extends BaseService<Events> {
     return accounts
   }
 
+  async getTrackedAddressesOnNetwork(
+    network: EVMNetwork
+  ): Promise<AddressOnNetwork[]> {
+    return this.db.getTrackedAddressesOnNetwork(network)
+  }
+
   async getNetworksToTrack(): Promise<EVMNetwork[]> {
     const chainIDs = await this.db.getChainIDsToTrack()
     if (chainIDs.size === 0) {

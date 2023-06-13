@@ -1,12 +1,7 @@
 import { AddressOnNetwork } from "../../accounts"
-import { FeatureFlags, isEnabled } from "../../features"
-import {
-  getNFTCollections,
-  getNFTs,
-  getNFTsTransfers,
-} from "../../lib/nfts_update"
-import { getSimpleHashNFTs } from "../../lib/simple-hash_update"
-import { POAP_COLLECTION_ID } from "../../lib/poap_update"
+import { getNFTCollections, getNFTs, getNFTsTransfers } from "../../lib/nfts"
+import { getSimpleHashNFTs } from "../../lib/simple-hash"
+import { POAP_COLLECTION_ID } from "../../lib/poap"
 import { NFTCollection, NFT, TransferredNFT } from "../../nfts"
 import BaseService from "../base"
 import ChainService from "../chain"
@@ -57,10 +52,7 @@ export default class NFTsService extends BaseService<Events> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
-    // Nothing else beside creating a service should happen when feature flag is off
-    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
-      this.connectChainServiceEvents()
-    }
+    this.connectChainServiceEvents()
   }
 
   protected override async internalStopService(): Promise<void> {

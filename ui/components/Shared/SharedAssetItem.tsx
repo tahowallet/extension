@@ -4,7 +4,7 @@ import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { ROOTSTOCK } from "@tallyho/tally-background/constants"
 import SharedAssetIcon from "./SharedAssetIcon"
 import SharedIcon from "./SharedIcon"
-import { scanWebsite } from "../../utils/constants"
+import { blockExplorer } from "../../utils/constants"
 
 export type AnyAssetWithOptionalAmount<T extends AnyAsset> =
   | {
@@ -44,7 +44,7 @@ export default function SharedAssetItem<T extends AnyAsset>(
   }
 
   useEffect(() => {
-    const baseLink = scanWebsite[currentNetwork.chainID]?.url
+    const baseLink = blockExplorer[currentNetwork.chainID]?.url
     if ("contractAddress" in asset && baseLink) {
       const contractBase =
         currentNetwork.chainID === ROOTSTOCK.chainID ? "address" : "token"

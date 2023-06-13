@@ -30,7 +30,6 @@ import {
 import { clearSignature } from "@tallyho/tally-background/redux-slices/earn"
 import { resetClaimFlow } from "@tallyho/tally-background/redux-slices/claim"
 import { useTranslation } from "react-i18next"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { isSameAccountSignerWithId } from "@tallyho/tally-background/utils/signing"
 import SharedButton from "../Shared/SharedButton"
@@ -53,6 +52,7 @@ import {
   isAccountWithMnemonic,
   isAccountWithSecrets,
 } from "../../utils/accounts"
+import { ONBOARDING_ROOT } from "../../pages/Onboarding/Tabbed/Routes"
 
 type WalletTypeInfo = {
   title: string
@@ -135,7 +135,7 @@ function WalletTypeHeader({
     (state) => state.ui.accountSignerSettings
   )
   const signerSettings =
-    accountSigner.type !== "readOnly"
+    accountSigner.type !== "read-only"
       ? settingsBySigner.find(({ signer }) =>
           isSameAccountSignerWithId(signer, accountSigner)
         )
@@ -161,7 +161,7 @@ function WalletTypeHeader({
 
   return (
     <>
-      {accountSigner.type !== "readOnly" && (
+      {accountSigner.type !== "read-only" && (
         <SharedSlideUpMenu
           size="small"
           isOpen={showEditMenu}
@@ -220,8 +220,7 @@ function WalletTypeHeader({
                 icon: "icons/s/add.svg",
                 label: t("accounts.notificationPanel.addAddress"),
               },
-              isAccountWithMnemonic(accountType) &&
-              isEnabled(FeatureFlags.SUPPORT_PRIVATE_KEYS)
+              isAccountWithMnemonic(accountType)
                 ? {
                     key: "showMnemonic",
                     onClick: () => setShowExportMnemonicMenu(true),
@@ -358,23 +357,26 @@ export default function AccountsNotificationPanelAccounts({
 
   return (
     <div className="switcher_wrap">
-      {existingAccountTypes.map((accountType) => {
-        // Known-non-null due to above filter.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const accountTotalsByType = accountTotals[accountType]!.reduce(
+      {accountTypes.map((accountType) => {
+        const accountTypeTotals = accountTotals[accountType]
+
+        // If there are no account totals for the given type, skip the section.
+        if (accountTypeTotals === undefined || accountTypeTotals.length <= 0) {
+          return <></>
+        }
+
+        const accountTotalsByType = accountTypeTotals.reduce(
           (acc, accountTypeTotal) => {
-            if (accountTypeTotal.keyringId) {
-              acc[accountTypeTotal.keyringId] ??= []
-              // Known-non-null due to above ??=
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              acc[accountTypeTotal.keyringId].push(accountTypeTotal)
+            if (accountTypeTotal.signerId) {
+              acc[accountTypeTotal.signerId] ??= []
+              acc[accountTypeTotal.signerId].push(accountTypeTotal)
             } else {
               acc.readOnly ??= []
               acc.readOnly.push(accountTypeTotal)
             }
             return acc
           },
-          {} as { [keyringId: string]: AccountTotal[] }
+          {} as { [signerId: string]: AccountTotal[] }
         )
 
         return (
@@ -384,31 +386,30 @@ export default function AccountsNotificationPanelAccounts({
                 <p className="category_title">
                   {walletTypeDetails[accountType].category}
                 </p>
-                {isEnabled(FeatureFlags.SUPPORT_KEYRING_LOCKING) &&
-                  isAccountWithSecrets(accountType) && (
-                    <SigningButton
-                      onCurrentAddressChange={onCurrentAddressChange}
-                    />
-                  )}
+                {isAccountWithSecrets(accountType) && (
+                  <SigningButton
+                    onCurrentAddressChange={onCurrentAddressChange}
+                  />
+                )}
               </div>
             )}
             {Object.values(accountTotalsByType).map(
-              (accountTotalsByKeyringId, idx) => {
+              (accountTotalsBySignerId, idx) => {
                 return (
                   <section key={accountType}>
                     <WalletTypeHeader
                       accountType={accountType}
                       walletNumber={idx + 1}
-                      path={accountTotalsByKeyringId[0].path}
-                      accountSigner={accountTotalsByKeyringId[0].accountSigner}
-                      accountTotals={accountTotalsByKeyringId}
+                      path={accountTotalsBySignerId[0].path}
+                      accountSigner={accountTotalsBySignerId[0].accountSigner}
+                      accountTotals={accountTotalsBySignerId}
                       onClickAddAddress={
-                        accountType === "imported" || accountType === "internal"
+                        isAccountWithMnemonic(accountType)
                           ? () => {
-                              if (accountTotalsByKeyringId[0].keyringId) {
+                              if (accountTotalsBySignerId[0].signerId) {
                                 dispatch(
                                   deriveAddress(
-                                    accountTotalsByKeyringId[0].keyringId
+                                    accountTotalsBySignerId[0].signerId
                                   )
                                 )
                               }
@@ -417,7 +418,7 @@ export default function AccountsNotificationPanelAccounts({
                       }
                     />
                     <ul>
-                      {accountTotalsByKeyringId.map((accountTotal) => {
+                      {accountTotalsBySignerId.map((accountTotal) => {
                         const normalizedAddress = normalizeEVMAddress(
                           accountTotal.address
                         )
@@ -489,12 +490,8 @@ export default function AccountsNotificationPanelAccounts({
           iconSmall="add"
           iconPosition="left"
           onClick={() => {
-            if (isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING)) {
-              window.open("/tab.html#onboarding")
-              window.close()
-            } else {
-              history.push("/onboarding/add-wallet")
-            }
+            window.open(ONBOARDING_ROOT)
+            window.close()
           }}
         >
           {t("accounts.notificationPanel.addWallet")}
