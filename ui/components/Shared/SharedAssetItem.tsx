@@ -65,7 +65,11 @@ export default function SharedAssetItem<T extends AnyAsset>(
             />
 
             <div className="left_content">
-              <div className="symbol ellipsis" title={asset.symbol}>
+              <div
+                className="symbol ellipsis"
+                data-testid="asset_symbol"
+                title={asset.symbol}
+              >
                 {asset.symbol}
               </div>
               <div className="token_subtitle ellipsis" title={asset.name}>

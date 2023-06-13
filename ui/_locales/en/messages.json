@@ -576,8 +576,8 @@
     },
     "unverifiedAssets": {
       "tooltip": {
-        "firstPart": "Discover assets that you own but are not on our asset list. Some spam/scam assets will show up, so tread carefully.",
-        "secondPart": "These will show up on the bottom of the asset page until you verify them."
+        "firstPart": "Discover assets that you own but are not on our asset list. Some spam/scam assets may show up, so treat them with caution.",
+        "secondPart": "They will show up on the bottom of the asset page until you verify them."
       }
     }
   },

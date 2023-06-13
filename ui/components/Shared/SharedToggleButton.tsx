@@ -26,6 +26,7 @@ export default function SharedToggleButton({
       role="checkbox"
       aria-checked={isActive}
       className={classNames("container", { is_active: isActive })}
+      data-testid="toggle"
       onClick={handleToggleAction}
     >
       <div className="bulb" />

@@ -196,7 +196,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
             </div>
           </div>
           <div className="divider" />
-          <ul className="assets_list">
+          <ul className="assets_list" data-testid="assets_list">
             {sortedFilteredAssets.map((assetWithOptionalAmount) => {
               const { asset } = assetWithOptionalAmount
               return (
@@ -363,7 +363,12 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
   }
 
   return (
-    <button type="button" disabled={isDisabled} onClick={toggleIsAssetMenuOpen}>
+    <button
+      type="button"
+      data-testid="selected_asset_button"
+      disabled={isDisabled}
+      onClick={toggleIsAssetMenuOpen}
+    >
       <div className="asset_icon_wrap">
         <SharedAssetIcon
           logoURL={asset?.metadata?.logoURL}
