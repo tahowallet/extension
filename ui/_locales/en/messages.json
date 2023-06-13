@@ -142,7 +142,10 @@
       "disconnected": "Ledger is disconnected",
       "wrongLedger": "Wrong Ledger connected",
       "multipleLedgers": "Multiple ledgers connected",
-      "busy": "Ledger is busy"
+      "busy": "Ledger is busy",
+      "state.connected": "Connected",
+      "state.disconnected": "Disconnected",
+      "state.error": "Check error"
     },
     "activation": {
       "title": "Activate blind signing",
