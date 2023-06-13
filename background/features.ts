@@ -13,7 +13,6 @@ export const RuntimeFlag = {
   HIDE_IMPORT_DERIVATION_PATH:
     process.env.HIDE_IMPORT_DERIVATION_PATH === "true",
   HIDE_SWAP_REWARDS: process.env.HIDE_SWAP_REWARDS === "true",
-  USE_UPDATED_SIGNING_UI: process.env.USE_UPDATED_SIGNING_UI === "true",
   SUPPORT_MULTIPLE_LANGUAGES: process.env.SUPPORT_MULTIPLE_LANGUAGES === "true",
   HIDE_TOKEN_FEATURES: process.env.HIDE_TOKEN_FEATURES === "true",
   SUPPORT_ARBITRUM_NOVA: process.env.SUPPORT_ARBITRUM_NOVA === "true",
