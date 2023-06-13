@@ -27,8 +27,8 @@ export default function DAppConnectionDefaultToggle({
 
   const isDefaultWallet = useBackgroundSelector(selectDefaultWallet)
   const setDefaultWallet = (defaultWalletValue: boolean) => {
-    // If renderAsButtonForValue is set, interactions will always set
-    // that value for defaultWallet.
+    // If alwaysForceSelection is set, interactions will always set that value
+    // for defaultWallet.
     const finalValue =
       alwaysForceSelection === undefined
         ? defaultWalletValue
