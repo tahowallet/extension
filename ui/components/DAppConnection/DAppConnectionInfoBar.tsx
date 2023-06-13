@@ -132,7 +132,7 @@ function DefaultConnectionPopover({ close }: PopoverProps): ReactElement {
         }
 
         h3 {
-          font-size: 1.375rem;
+          font-size: 22px;
           color: var(--success);
 
           margin: 0 0 12px;
