@@ -81,7 +81,6 @@ function DefaultConnectionPopover({ close }: PopoverProps): ReactElement {
         section {
           position: absolute;
           top: 16px;
-          z-index: 4;
 
           display: flex;
           flex-direction: column;
