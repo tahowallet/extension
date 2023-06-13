@@ -3,7 +3,6 @@ import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
@@ -41,9 +40,7 @@ export default function AccountItemOptionsMenu({
     dispatch(setSnackbarMessage("Address copied to clipboard"))
   }, [address, dispatch])
 
-  const canExportPrivateKey =
-    isEnabled(FeatureFlags.SUPPORT_PRIVATE_KEYS) &&
-    allowExportPrivateKeys.includes(accountType)
+  const canExportPrivateKey = allowExportPrivateKeys.includes(accountType)
 
   return (
     <div className="options_menu_wrap">

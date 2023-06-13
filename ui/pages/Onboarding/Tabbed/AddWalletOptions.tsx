@@ -1,7 +1,6 @@
 import React, { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { isLedgerSupported } from "@tallyho/tally-background/services/ledger"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import OnboardingRoutes from "./Routes"
 import { intersperseWith } from "../../../utils/lists"
 import SharedButton from "../../../components/Shared/SharedButton"
@@ -76,7 +75,7 @@ export default function AddWalletOptions(): JSX.Element {
         label: t("options.importPrivateKey"),
         icon: "key-light.svg",
         url: OnboardingRoutes.IMPORT_PRIVATE_KEY,
-        isAvailable: isEnabled(FeatureFlags.SUPPORT_PRIVATE_KEYS),
+        isAvailable: true,
       },
       {
         label: t("options.ledger"),
