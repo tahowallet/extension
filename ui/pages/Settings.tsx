@@ -20,6 +20,7 @@ import {
   isDisabled,
   isEnabled,
 } from "@tallyho/tally-background/features"
+import { MINUTE } from "@tallyho/tally-background/constants"
 import { useHistory } from "react-router-dom"
 import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
@@ -304,10 +305,10 @@ export default function Settings(): ReactElement {
   }
 
   const autoLockOptions = [
-    { label: "5", value: "5" },
-    { label: "15", value: "15" },
-    { label: "30", value: "30" },
-    { label: "60", value: "60" },
+    { label: "5", value: String(5 * MINUTE) },
+    { label: "15", value: String(15 * MINUTE) },
+    { label: "30", value: String(30 * MINUTE) },
+    { label: "60", value: String(60 * MINUTE) },
   ]
 
   const autoLockTimer = useBackgroundSelector(selectAutoLockTimer)
