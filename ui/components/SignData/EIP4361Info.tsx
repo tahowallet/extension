@@ -1,18 +1,8 @@
 import React, { ReactElement } from "react"
 import { EIP4361Data } from "@tallyho/tally-background/utils/signing"
 import { useTranslation } from "react-i18next"
+import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import SignDataInfo from "./SignDataInfo"
-
-// can add networks, ideally should come from some sort of network config
-// TODO fetch this from NETWORK config
-const CHAIN_NAMES: (chain: number) => string = (chain) => {
-  switch (chain) {
-    case 1:
-      return "Ethereum"
-    default:
-      return "Unknown"
-  }
-}
 
 type Props = {
   signingData: EIP4361Data
@@ -21,6 +11,10 @@ type Props = {
 // this overides the type to expect EIP4361Data
 export default function EIP4361Info({ signingData }: Props): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "signing.EIP4361" })
+
+  const chainName =
+    NETWORK_BY_CHAIN_ID[signingData.chainId.toString()]?.name ?? "Unknown"
+
   return (
     <>
       <div className="subtext">
@@ -37,9 +31,7 @@ export default function EIP4361Info({ signingData }: Props): ReactElement {
       <SignDataInfo label={t("version")} content={signingData.version} />
       <SignDataInfo
         label={t("chainID")}
-        content={`${signingData.chainId.toString()} (${CHAIN_NAMES(
-          signingData.chainId
-        )})`}
+        content={`${signingData.chainId.toString()} (${chainName})`}
       />
       {signingData?.expiration ? (
         <SignDataInfo
