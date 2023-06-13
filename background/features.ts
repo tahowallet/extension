@@ -27,6 +27,7 @@ export const RuntimeFlag = {
   SUPPORT_UNVERIFIED_ASSET: process.env.SUPPORT_UNVERIFIED_ASSET === "true",
   ENABLE_UPDATED_DAPP_CONNECTIONS:
     process.env.ENABLE_UPDATED_DAPP_CONNECTIONS === "true",
+  SUPPORT_CUSTOM_AUTOLOCK: process.env.SUPPORT_CUSTOM_AUTOLOCK === "true",
 } as const
 
 type BuildTimeFlagType = keyof typeof BuildTimeFlag

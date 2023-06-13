@@ -301,6 +301,12 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const autoLockSettings = {
+    title: "",
+    // TODO: ADD AUTOLOCK DROPDOWN
+    component: () => <></>,
+  }
+
   const notificationBanner = {
     title: t("settings.showBanners"),
     component: () => (
@@ -335,6 +341,7 @@ export default function Settings(): ReactElement {
     needHelp,
     bugReport,
     analytics,
+    isEnabled(FeatureFlags.SUPPORT_CUSTOM_AUTOLOCK) && autoLockSettings,
     isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && notificationBanner,
     customNetworks,
   ].filter((item): item is Exclude<typeof item, boolean> => !!item)
