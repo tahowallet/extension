@@ -358,6 +358,16 @@ export class PreferenceDatabase extends Dexie {
     return this.preferences.reverse().first() as Promise<Preferences>
   }
 
+  async setAutoLockTimer(newValue: number): Promise<void> {
+    await this.preferences
+      .toCollection()
+      .modify((storedPreferences: Preferences) => {
+        const update: Partial<Preferences> = { autoLockTimer: newValue }
+
+        Object.assign(storedPreferences, update)
+      })
+  }
+
   async upsertAnalyticsPreferences(
     analyticsPreferences: Partial<AnalyticsPreferences>
   ): Promise<void> {

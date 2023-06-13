@@ -12,6 +12,8 @@ import {
   selectHideBanners,
   selectShowUnverifiedAssets,
   toggleShowUnverifiedAssets,
+  selectAutoLockTimer,
+  updateAutoLockTimer,
 } from "@tallyho/tally-background/redux-slices/ui"
 import {
   FeatureFlags,
@@ -301,6 +303,15 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const autoLockOptions = [
+    { label: "5", value: "5" },
+    { label: "15", value: "15" },
+    { label: "30", value: "30" },
+    { label: "60", value: "60" },
+  ]
+
+  const autoLockTimer = useBackgroundSelector(selectAutoLockTimer)
+
   const autoLockSettings = {
     title: "",
     component: () => (
@@ -315,14 +326,12 @@ export default function Settings(): ReactElement {
         </div>
         <div className="select_wrapper">
           <SharedSelect
-            options={[
-              { label: "5", value: "5" },
-              { label: "15", value: "15" },
-              { label: "30", value: "30" },
-              { label: "60", value: "60" },
-            ]}
+            options={autoLockOptions}
+            defaultIndex={autoLockOptions.findIndex(
+              ({ value }) => value === String(autoLockTimer)
+            )}
             width="100%"
-            onChange={() => {}}
+            onChange={(newValue) => dispatch(updateAutoLockTimer(newValue))}
           />
         </div>
         <style jsx>

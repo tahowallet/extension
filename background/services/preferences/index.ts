@@ -253,6 +253,14 @@ export default class PreferenceService extends BaseService<Events> {
     return (await this.db.getPreferences())?.defaultWallet
   }
 
+  async getAutoLockTimer(): Promise<number> {
+    return (await this.db.getPreferences()).autoLockTimer
+  }
+
+  async updateAutoLockTimer(newValue: number): Promise<void> {
+    return this.db.setAutoLockTimer(newValue)
+  }
+
   async setDefaultWalletValue(newDefaultWalletValue: boolean): Promise<void> {
     return this.db.setDefaultWalletValue(newDefaultWalletValue)
   }
