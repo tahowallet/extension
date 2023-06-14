@@ -45,11 +45,7 @@ export default function SignerLedgerConnectionStatus({
 
     case "wrong-ledger-connected":
       return (
-        <LedgerCheckErrorSvg
-          //
-          text={t("state.error")}
-          alt={t("wrongLedger")}
-        />
+        <LedgerCheckErrorSvg text={t("state.error")} alt={t("wrongLedger")} />
       )
 
     case "multiple-ledgers-connected":
@@ -60,13 +56,7 @@ export default function SignerLedgerConnectionStatus({
         />
       )
     case "busy":
-      return (
-        <LedgerCheckErrorSvg
-          //
-          text={t("state.error")}
-          alt={t("busy")}
-        />
-      )
+      return <LedgerCheckErrorSvg text={t("state.error")} alt={t("busy")} />
     default:
       return assertUnreachable(ledgerState)
   }

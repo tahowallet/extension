@@ -1,25 +1,39 @@
 import React, { ReactElement } from "react"
+import { useTranslation } from "react-i18next"
+import LedgerConnectedSvg from "../Signing/Signer/SignerLedger/LedgerConnectedSvg"
 
 export default function LedgerPanelContainer({
-  indicatorImageSrc,
+  indicatorImage,
   heading,
   subHeading,
   children,
 }: {
-  indicatorImageSrc: string
+  indicatorImage: "connected" | "unknown"
   heading?: React.ReactNode
   subHeading?: React.ReactNode
   children?: React.ReactNode
 }): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "ledger.connectionStatus",
+  })
+
   return (
     <div className="panel">
-      <img
-        width="318"
-        height="84"
-        className="indicator"
-        src={indicatorImageSrc}
-        alt=""
-      />
+      <div className="indicator">
+        {indicatorImage === "unknown" ? (
+          <img
+            width="318"
+            height="84"
+            src="/images/connect_ledger_indicator_unknown.svg"
+            alt={t("state.unknown")}
+          />
+        ) : (
+          <LedgerConnectedSvg
+            text={t("state.connected")}
+            alt={t("state.connected")}
+          />
+        )}
+      </div>
       {heading && <h1 className="heading">{heading}</h1>}
       {subHeading && <p className="subheading">{subHeading}</p>}
       {children}

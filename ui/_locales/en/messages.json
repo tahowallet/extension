@@ -145,7 +145,8 @@
       "busy": "Ledger is busy",
       "state.connected": "Connected",
       "state.disconnected": "Disconnected",
-      "state.error": "Check error"
+      "state.error": "Check error",
+      "state.unknown": "Unknown"
     },
     "activation": {
       "title": "Activate blind signing",
