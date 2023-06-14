@@ -178,8 +178,14 @@ export default function SettingsAddCustomAsset(): ReactElement {
   const hideDustEnabled = useBackgroundSelector(selectHideDust)
   const showWarningAboutDust =
     hideDustEnabled &&
+    assetData?.mainCurrencyAmount !== 0 &&
     assetData?.mainCurrencyAmount !== undefined &&
     assetData?.mainCurrencyAmount < userValueDustThreshold
+
+  const showWarningAboutNoBalance =
+    !showWarningAboutDust && assetData?.mainCurrencyAmount === 0
+  const showWarningAboutVisibility =
+    !showWarningAboutDust && !showWarningAboutNoBalance
 
   return (
     <div className="standard_width_padded wrapper">
@@ -370,7 +376,13 @@ export default function SettingsAddCustomAsset(): ReactElement {
             />
             <div className="alert_content">
               <div className="title">{t("warning.alreadyExists.title")}</div>
-              <div className="desc">{t("warning.alreadyExists.desc")}</div>
+              <div className="desc">
+                {showWarningAboutDust && t("warning.alreadyExists.desc.dust")}
+                {showWarningAboutNoBalance &&
+                  t("warning.alreadyExists.desc.noBalance")}
+                {showWarningAboutVisibility &&
+                  t("warning.alreadyExists.desc.visibility")}
+              </div>
             </div>
           </div>
         ) : (
