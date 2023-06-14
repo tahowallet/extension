@@ -1,8 +1,5 @@
-import { FeatureFlags } from "@tallyho/tally-background/features"
 import { wait } from "@tallyho/tally-background/lib/utils"
-import { skipIfFeatureFlagged, test, expect } from "./utils"
-
-skipIfFeatureFlagged(FeatureFlags.SUPPORT_NFT_TAB)
+import { test, expect } from "./utils"
 
 test.describe("NFTs", () => {
   test("User can view nft collections, poaps and badges", async ({

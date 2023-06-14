@@ -8,9 +8,7 @@ import * as uuid from "uuid"
 import browser from "webextension-polyfill"
 
 import AnalyticsService from ".."
-import * as features from "../../../features"
 import { createAnalyticsService } from "../../../tests/factories"
-import { Writeable } from "../../../types"
 import PreferenceService from "../../preferences"
 import * as posthog from "../../../lib/posthog"
 
@@ -19,9 +17,7 @@ const { AnalyticsEvent } = posthog
 describe("AnalyticsService", () => {
   let analyticsService: AnalyticsService
   let preferenceService: PreferenceService
-  const runtimeFlagWritable = features.RuntimeFlag as Writeable<
-    typeof features.RuntimeFlag
-  >
+
   beforeAll(() => {
     global.fetch = jest.fn()
     // We need this set otherwise the posthog lib won't send the events
@@ -44,43 +40,6 @@ describe("AnalyticsService", () => {
 
       expect(preferenceService.getAnalyticsPreferences).toBeCalled()
     })
-    it("should change the isEnabled output based on the changed feature flag", () => {
-      runtimeFlagWritable.SUPPORT_ANALYTICS = false
-      runtimeFlagWritable.ENABLE_ANALYTICS_DEFAULT_ON = false
-
-      expect(features.isEnabled(features.FeatureFlags.SUPPORT_ANALYTICS)).toBe(
-        false
-      )
-      expect(
-        features.isEnabled(features.FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON)
-      ).toBe(false)
-
-      runtimeFlagWritable.SUPPORT_ANALYTICS = true
-      runtimeFlagWritable.ENABLE_ANALYTICS_DEFAULT_ON = true
-
-      expect(features.isEnabled(features.FeatureFlags.SUPPORT_ANALYTICS)).toBe(
-        true
-      )
-      expect(
-        features.isEnabled(features.FeatureFlags.ENABLE_ANALYTICS_DEFAULT_ON)
-      ).toBe(true)
-    })
-  })
-  describe("before the feature is released (the feature flags are off)", () => {
-    beforeEach(async () => {
-      jest.spyOn(analyticsService, "sendAnalyticsEvent")
-
-      runtimeFlagWritable.SUPPORT_ANALYTICS = false
-      runtimeFlagWritable.ENABLE_ANALYTICS_DEFAULT_ON = false
-
-      await analyticsService.startService()
-    })
-
-    it("should not send any analytics events when both of the feature flags are off", async () => {
-      await analyticsService.sendAnalyticsEvent(AnalyticsEvent.UI_SHOWN)
-
-      expect(fetch).not.toBeCalled()
-    })
   })
   describe("when the feature is released (feature flags are on, but settings is still off)", () => {
     beforeEach(async () => {
@@ -89,9 +48,6 @@ describe("AnalyticsService", () => {
       jest.spyOn(preferenceService, "updateAnalyticsPreferences")
       jest.spyOn(preferenceService.emitter, "emit")
       jest.spyOn(posthog, "sendPosthogEvent")
-
-      runtimeFlagWritable.SUPPORT_ANALYTICS = true
-      runtimeFlagWritable.ENABLE_ANALYTICS_DEFAULT_ON = true
 
       await analyticsService.startService()
     })
@@ -159,9 +115,6 @@ describe("AnalyticsService", () => {
           })
         )
 
-      runtimeFlagWritable.SUPPORT_ANALYTICS = true
-      runtimeFlagWritable.ENABLE_ANALYTICS_DEFAULT_ON = true
-
       // Initialize analytics uuid
       await analyticsService["getOrCreateAnalyticsUUID"]()
 
@@ -200,9 +153,6 @@ describe("AnalyticsService", () => {
             hasDefaultOnBeenTurnedOn: true,
           })
         )
-
-      runtimeFlagWritable.SUPPORT_ANALYTICS = true
-      runtimeFlagWritable.ENABLE_ANALYTICS_DEFAULT_ON = true
 
       // Initialize analytics uuid
       await analyticsService["getOrCreateAnalyticsUUID"]()

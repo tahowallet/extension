@@ -102,16 +102,8 @@
       "nonContractAsset": "Intentar aprobar la transferencia de un activo no contractual."
     },
     "from": "Intercambiar desde :",
-    "getFinalQuote": "Obtener cotización final",
     "title": "Intercambiar Activos",
-    "to": "Cambiar a :",
-    "transactionSettings": {
-      "daoFee": "Comisión DAO",
-      "estimatedFee": "Comisión de la red estimada",
-      "settings": "Ajustes de transacciones",
-      "slippageTolerance": "Tolerancia del deslizamiento",
-      "title": "Configuración de transacciones"
-    }
+    "to": "Cambiar a :"
   },
   "toggle": {
     "collapse": "Colapsar",

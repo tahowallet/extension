@@ -10,6 +10,7 @@ import {
   MATIC,
   OPTIMISTIC_ETH,
   RBTC,
+  ZK_SYNC_ETH,
 } from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
@@ -85,6 +86,13 @@ export const GOERLI: EVMNetwork = {
   coingeckoPlatformID: "ethereum",
 }
 
+export const ZK_SYNC: EVMNetwork = {
+  name: "zkSync Era",
+  baseAsset: ZK_SYNC_ETH,
+  chainID: "324",
+  family: "EVM",
+}
+
 export const DEFAULT_NETWORKS = [
   ETHEREUM,
   POLYGON,
@@ -136,6 +144,7 @@ export const NETWORK_BY_CHAIN_ID = {
   [BINANCE_SMART_CHAIN.chainID]: BINANCE_SMART_CHAIN,
   [GOERLI.chainID]: GOERLI,
   [FORK.chainID]: FORK,
+  [ZK_SYNC.chainID]: ZK_SYNC,
 }
 
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(

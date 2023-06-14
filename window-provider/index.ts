@@ -60,6 +60,8 @@ const impersonateMetamaskWhitelist = [
   "tally.xyz",
   "kyberswap.com",
   "space.id",
+  "app.0xsplits.xyz",
+  "altlayer.io",
 ]
 
 const METAMASK_STATE_MOCK = {

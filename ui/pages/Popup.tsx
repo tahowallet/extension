@@ -1,14 +1,7 @@
 import React, { ReactElement, useState, useEffect } from "react"
-import {
-  MemoryRouter as Router,
-  Switch,
-  Route,
-  Redirect,
-  matchPath,
-} from "react-router-dom"
+import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
 import { ErrorBoundary } from "react-error-boundary"
 
-import classNames from "classnames"
 import {
   setRouteHistoryEntries,
   userActivityEncountered,
@@ -39,8 +32,6 @@ import setAnimationConditions, {
   animationStyles,
 } from "../utils/pageTransition"
 
-import TabBar from "../components/TabBar/TabBar"
-import TopMenu from "../components/TopMenu/TopMenu"
 import CorePage from "../components/Core/CorePage"
 import ErrorFallback from "./ErrorFallback"
 
@@ -114,9 +105,7 @@ export function Main(): ReactElement {
   })
 
   const isDappPopup = useIsDappPopup()
-  const [shouldDisplayDecoy, setShouldDisplayDecoy] = useState(false)
   const [isDirectionRight, setIsDirectionRight] = useState(true)
-  const [showTabBar, setShowTabBar] = useState(true)
 
   const routeHistoryEntries = useBackgroundSelector(
     (state) => state.ui.routeHistoryEntries
@@ -157,9 +146,6 @@ export function Main(): ReactElement {
 
   return (
     <>
-      <div className="top_menu_wrap_decoy">
-        <TopMenu />
-      </div>
       <GlobalModal id="meet_taho" />
       <Router initialEntries={routeHistoryEntries}>
         <Route
@@ -191,13 +177,7 @@ export function Main(): ReactElement {
               saveHistoryEntries(routeProps.history.entries)
             }
 
-            setAnimationConditions(
-              routeProps,
-              pagePreferences,
-              setShouldDisplayDecoy,
-              setIsDirectionRight
-            )
-            setShowTabBar(pagePreferences[normalizedPathname].hasTabBar)
+            setAnimationConditions(routeProps, setIsDirectionRight)
 
             return (
               <TransitionGroup>
@@ -212,32 +192,7 @@ export function Main(): ReactElement {
                   }
                 >
                   <div>
-                    <div
-                      className={classNames("top_menu_wrap", {
-                        anti_animation: shouldDisplayDecoy,
-                        hide: !pagePreferences[normalizedPathname].hasTopBar,
-                      })}
-                    >
-                      <TopMenu />
-                    </div>
                     <Switch location={transformedLocation}>
-                      {
-                        // If there are no existing accounts, display onboarding
-                        // (if we're not there already)
-                        //
-                        !isEnabled(FeatureFlags.SUPPORT_TABBED_ONBOARDING) &&
-                          !hasAccounts &&
-                          !matchPath(transformedLocation.pathname, {
-                            path: [
-                              "/onboarding",
-                              // need to unlock or set new password to import an account
-                              "/keyring",
-                              // this route has it's own error message
-                              "/dapp-permission",
-                            ],
-                            exact: false,
-                          }) && <Redirect to="/onboarding/info-intro" />
-                      }
                       {pageList.map(
                         ({ path, Component, hasTopBar, hasTabBar }) => {
                           return (
@@ -263,11 +218,6 @@ export function Main(): ReactElement {
             )
           }}
         />
-        {showTabBar && (
-          <div className="tab_bar_wrap">
-            <TabBar />
-          </div>
-        )}
       </Router>
       <>
         <style jsx global>
@@ -277,20 +227,8 @@ export function Main(): ReactElement {
               background: transparent;
             }
 
-            ${animationStyles(shouldDisplayDecoy, isDirectionRight)}
-            .tab_bar_wrap {
-              position: fixed;
-              bottom: 0px;
-              width: 100%;
-            }
-            .top_menu_wrap {
-              margin: 0 auto;
-              width: max-content;
-              display: block;
-              justify-content: center;
-              z-index: 0;
-              margin-top: 5px;
-            }
+            ${animationStyles(isDirectionRight)}
+
             .hide {
               opacity: 0;
             }

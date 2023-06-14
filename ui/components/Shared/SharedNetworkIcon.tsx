@@ -45,7 +45,9 @@ export default function SharedNetworkIcon(props: {
 
   return (
     <div className="icon_network_wrapper">
-      {hasBackground && <div className="icon_network_background" />}
+      {hasBackground && hasIconAvailable && (
+        <div className="icon_network_background" />
+      )}
       {hasIconAvailable ? (
         <div className="icon_network" />
       ) : (

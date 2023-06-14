@@ -6,7 +6,7 @@ import {
   NFTCached,
   NFTCollectionCached,
   SortType,
-} from "../nfts_update"
+} from "../nfts"
 import { enrichAssetAmountWithMainCurrencyValues } from "./asset-utils"
 
 const ETH_SYMBOLS = ["ETH", "WETH"]

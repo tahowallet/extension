@@ -12,7 +12,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import WalletActivityDetails from "./WalletActivityDetails"
 import WalletActivityListItem from "./WalletActivityListItem"
-import { scanWebsite } from "../../utils/constants"
+import { blockExplorer } from "../../utils/constants"
 import SharedButton from "../Shared/SharedButton"
 
 type Props = {
@@ -36,20 +36,24 @@ export default function WalletActivityList({
     useState(true)
 
   const network = useBackgroundSelector(selectCurrentNetwork)
-  const scanWebsiteInfo = scanWebsite[network.chainID]
+  const blockExplorerInfo = blockExplorer[network.chainID]
 
   useEffect(() => {
     setInstantlyHideActivityDetails(true)
     dispatch(setShowingActivityDetail(null))
   }, [dispatch])
 
-  const currentAccount = useBackgroundSelector(selectCurrentAccount).address
+  const activityInitiatorAddress =
+    useBackgroundSelector(selectCurrentAccount).address
 
   const openExplorer = useCallback(() => {
     window
-      .open(`${scanWebsiteInfo.url}/address/${currentAccount}`, "_blank")
+      .open(
+        `${blockExplorerInfo.url}/address/${activityInitiatorAddress}`,
+        "_blank"
+      )
       ?.focus()
-  }, [scanWebsiteInfo, currentAccount])
+  }, [blockExplorerInfo, activityInitiatorAddress])
 
   const handleOpen = useCallback(
     (activityItem: Activity) => {
@@ -91,7 +95,10 @@ export default function WalletActivityList({
       {!instantlyHideActivityDetails && (
         <SharedSlideUpMenu isOpen={!!showingActivityDetail} close={handleClose}>
           {showingActivityDetail ? (
-            <WalletActivityDetails activityItem={showingActivityDetail} />
+            <WalletActivityDetails
+              activityItem={showingActivityDetail}
+              activityInitiatorAddress={activityInitiatorAddress}
+            />
           ) : (
             <></>
           )}
@@ -108,7 +115,7 @@ export default function WalletActivityList({
                 }}
                 key={activityItem?.hash}
                 activity={activityItem}
-                asAccount={currentAccount}
+                activityInitiatorAddress={activityInitiatorAddress}
               />
             )
           }
@@ -118,7 +125,7 @@ export default function WalletActivityList({
       <span>
         <div className="hand">✋</div>
         <div>{t("endOfList")}</div>
-        {scanWebsiteInfo && (
+        {blockExplorerInfo && (
           <div className="row">
             {t("moreHistory")}
             <SharedButton
@@ -128,7 +135,7 @@ export default function WalletActivityList({
               onClick={openExplorer}
               style={{ padding: 0, fontWeight: 400 }}
             >
-              {scanWebsiteInfo?.title}
+              {blockExplorerInfo?.title}
             </SharedButton>
           </div>
         )}
