@@ -11,6 +11,7 @@ import SharedButton from "../../components/Shared/SharedButton"
 import SharedAccountItemSummary from "../../components/Shared/SharedAccountItemSummary"
 import RequestingDAppBlock from "./RequestingDApp"
 import SwitchWallet from "./SwitchWallet"
+import DAppConnectionInfoBar from "../../components/DAppConnection/DAppConnectionInfoBar"
 
 type DAppConnectPageProps = {
   permission: PermissionRequest
@@ -32,6 +33,9 @@ export default function DAppConnectPage({
 
   return (
     <>
+      {isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && (
+        <DAppConnectionInfoBar />
+      )}
       <section className="standard_width">
         <h1 className="serif_header">{t("connectToDapp")}</h1>
         <div className="connection_destination">

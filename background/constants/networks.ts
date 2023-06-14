@@ -1,4 +1,4 @@
-import { FeatureFlags, isEnabled } from "../features"
+import { FeatureFlags, wrapIfEnabled } from "../features"
 import { EVMNetwork } from "../networks"
 import {
   ARBITRUM_NOVA_ETH,
@@ -102,7 +102,7 @@ export const DEFAULT_NETWORKS = [
   ROOTSTOCK,
   AVALANCHE,
   BINANCE_SMART_CHAIN,
-  ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA) ? [ARBITRUM_NOVA] : []),
+  ...wrapIfEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA, ARBITRUM_NOVA),
 ]
 
 export function isBuiltInNetwork(network: EVMNetwork): boolean {
