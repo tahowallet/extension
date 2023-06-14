@@ -503,4 +503,23 @@ describe("InternalSignerService when autolocking", () => {
     callAutolockHandler(2 * maxIdleTime)
     expect(service.locked()).toEqual(true)
   })
+
+  it("locks when auto-lock timer has been updated to be less than current idle time", async () => {
+    // eslint-disable-next-line @typescript-eslint/dot-notation, prefer-destructuring
+    const preferenceService = service["preferenceService"]
+
+    const maxIdleTime = await preferenceService.getAutoLockTimer()
+
+    await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
+
+    expect(service.locked()).toBe(false)
+
+    callAutolockHandler(maxIdleTime / 2)
+
+    await preferenceService.updateAutoLockTimer(maxIdleTime / 2)
+
+    await service.updateAutoLockTimer()
+
+    expect(service.locked()).toEqual(true)
+  })
 })
