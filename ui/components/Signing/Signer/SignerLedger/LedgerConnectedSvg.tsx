@@ -19,7 +19,10 @@ export default function LedgerConnectedSvg({
       viewBox="0 0 318 84"
       aria-label={alt}
     >
-      <style>{`
+      <style jsx>{`
+        svg {
+          flex-shrink: 0;
+        }
         .st1 {
           fill: #ccd3d3;
         }
