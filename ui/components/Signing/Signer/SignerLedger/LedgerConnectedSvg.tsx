@@ -14,6 +14,8 @@ export default function LedgerConnectedSvg({
       id="Layer_1"
       x={0}
       y={0}
+      width="318"
+      height="84"
       viewBox="0 0 318 84"
       aria-label={alt}
     >
