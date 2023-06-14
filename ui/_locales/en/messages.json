@@ -659,6 +659,7 @@
     "hidePasswordHint": "Hide Password",
     "close": "Close",
     "readMore": "Read more",
+    "modalClose": "Background close",
     "accountItemSummary": {
       "connectedStatus": "Connected"
     },
@@ -801,7 +802,6 @@
       "networkSettingsBtn": "Add network (beta)"
     },
     "connectedDappInfo": {
-      "modalClose": "Background close",
       "dAppTitle": "Account connected to",
       "dappConnections": "Dapp connections",
       "guideline": {
@@ -905,6 +905,13 @@
       "descFirstPart": "We disabled Taho as default wallet for you. You can always enable it back from Settings",
       "descSecondPart": "at any time.",
       "toggleTitle": "Use Taho as default wallet"
+    },
+    "defaultConnectionPopover": {
+      "title": "Connecting with Taho",
+      "activeWallet": "Your active wallet is Taho.",
+      "activeWalletMeaning": "This means that you'll be connecting to websites with Taho even when selecting MetaMask.",
+      "metaMaskHeading": "Want to switch to MetaMask?",
+      "toggleLabel": "Use the toggle at the top to connect with MetaMask or another wallet."
     }
   },
   "abilities": {

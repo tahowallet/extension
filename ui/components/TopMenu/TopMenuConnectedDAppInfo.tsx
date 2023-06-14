@@ -256,7 +256,7 @@ export default function TopMenuConnectedDAppInfo(props: {
         <ConnectionDAppGuideline isConnected={isConnected} />
       </div>
       <button
-        aria-label={t("modalClose")}
+        aria-label={tShared("modalClose")}
         type="button"
         className="void_space"
         onClick={animateThenClose}
