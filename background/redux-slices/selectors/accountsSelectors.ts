@@ -92,17 +92,17 @@ export function determineAssetDisplayAndVerify(
       ? true
       : assetAmount.mainCurrencyAmount > userValueDustThreshold
   const isPresent = assetAmount.decimalAmount > 0
+  // Tokens that are added manually should be visible in the asset list even if they have a balance of zero
+  const canBePresent =
+    isUntrustedAsset(assetAmount.asset) && isVerified ? true : isPresent
   const showDust = !hideDust
 
   const verificationStatusAllowsVisibility = showUnverifiedAssets || isVerified
-  const enoughBalanceToBeVisible = isPresent && (isNotDust || showDust)
-  const showNewlyAddedAsset =
-    isUntrustedAsset(assetAmount.asset) && assetAmount.amount === 0n
+  const enoughBalanceToBeVisible = canBePresent && (isNotDust || showDust)
 
   return {
     displayAsset:
-      (verificationStatusAllowsVisibility && enoughBalanceToBeVisible) ||
-      showNewlyAddedAsset,
+      verificationStatusAllowsVisibility && enoughBalanceToBeVisible,
     verifiedAsset: isVerified,
   }
 }
