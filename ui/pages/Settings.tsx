@@ -14,7 +14,10 @@ import {
   toggleShowUnverifiedAssets,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
-import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectMainCurrencySign,
+  userValueDustThreshold,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   FeatureFlags,
   isEnabled,
@@ -156,7 +159,7 @@ export default function Settings(): ReactElement {
 
   const hideSmallAssetBalance = {
     title: t("settings.hideSmallAssetBalance", {
-      amount: 2,
+      amount: userValueDustThreshold,
       sign: mainCurrencySign,
     }),
     component: () => (

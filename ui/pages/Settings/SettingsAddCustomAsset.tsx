@@ -10,6 +10,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/assets"
 import {
   selectCurrentNetwork,
+  selectMainCurrencySign,
   userValueDustThreshold,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
@@ -96,6 +97,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const allNetworks = useBackgroundSelector(selectEVMNetworks)
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
+  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const networks = allNetworks.filter(
     (network) =>
@@ -186,6 +188,11 @@ export default function SettingsAddCustomAsset(): ReactElement {
     !showWarningAboutDust && assetData?.mainCurrencyAmount === 0
   const showWarningAboutVisibility =
     !showWarningAboutDust && !showWarningAboutNoBalance
+
+  const warningOptions = {
+    amount: userValueDustThreshold,
+    sign: mainCurrencySign,
+  }
 
   return (
     <div className="standard_width_padded wrapper">
@@ -377,11 +384,18 @@ export default function SettingsAddCustomAsset(): ReactElement {
             <div className="alert_content">
               <div className="title">{t("warning.alreadyExists.title")}</div>
               <div className="desc">
-                {showWarningAboutDust && t("warning.alreadyExists.desc.dust")}
+                {showWarningAboutDust &&
+                  t("warning.alreadyExists.desc.dust", {
+                    ...warningOptions,
+                    settings: sharedT(
+                      "settings.hideSmallAssetBalance",
+                      warningOptions
+                    ),
+                  })}
                 {showWarningAboutNoBalance &&
-                  t("warning.alreadyExists.desc.noBalance")}
+                  t("warning.alreadyExists.desc.noBalance", warningOptions)}
                 {showWarningAboutVisibility &&
-                  t("warning.alreadyExists.desc.visibility")}
+                  t("warning.alreadyExists.desc.visibility", warningOptions)}
               </div>
             </div>
           </div>

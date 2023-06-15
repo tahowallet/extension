@@ -552,11 +552,11 @@
       "networkSelect.title": "Select Network",
       "warning.alreadyExists.title": "Asset already exists",
       "warning.alreadyExists.desc": {
-        "dust": "Your balance is bellow $2, you will see it once your turn off “Hide asset balances under 2$” in Settings",
-        "noBalance": "Your balance is 0, you will see it once your balance is over $2",
-        "visibility": "You should see in it in your asset list"
+        "dust": "Your balance is below {{sign}}{{amount}}. You will see it once you turn off “{{settings}}” in Settings.",
+        "noBalance": "Your balance is 0, you will see it once your balance is over {{sign}}{{amount}}.",
+        "visibility": "You should see in it in your asset list."
       },
-      "warning.dust.title": "Asset balance is under <$2, you wil see it once your balance is over $2",
+      "warning.dust.title": "Asset balance is under <{{sign}}{{amount}}, you wil see it once your balance is over {{sign}}{{amount}}",
       "error.invalidToken": "Invalid contract address",
       "submit": "Add asset",
       "snackbar.success": "Asset added successfully",
