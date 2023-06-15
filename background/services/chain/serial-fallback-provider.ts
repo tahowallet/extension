@@ -130,7 +130,6 @@ function alchemyOrDefaultProvider(chainID: string, method: string): boolean {
 }
 
 function customOrDefaultProvider(
-  chainID: string,
   method: string,
   supportedMethods: string[] = []
 ): boolean {
@@ -336,11 +335,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
       if (
         this.customProvider &&
-        customOrDefaultProvider(
-          this.cachedChainId,
-          method,
-          this.customProviderSupportedMethods
-        )
+        customOrDefaultProvider(method, this.customProviderSupportedMethods)
       ) {
         const result = await this.customProvider.send(method, params)
         delete this.messagesToSend[messageId]
