@@ -184,16 +184,14 @@ export default class TallyWindowProvider extends EventEmitter {
             // Make sure to re-route the requests in the order they were
             // received.
             .sort(([id], [id2]) => Number(BigInt(id2) - BigInt(id)))
-            .forEach(([id, { sendData, reject, resolve }]) => {
+            .forEach(([, { sendData, reject, resolve }]) => {
               window.walletRouter
                 ?.routeToNewDefault(sendData.request)
                 // On success or error, call the original reject/resolve
                 // functions to notify the requestor of the new wallet's
                 // response.
-                .then((...a) => resolve(...a))
-                .catch((...b) => reject(...b))
-
-              this.requestResolvers.delete(id)
+                .then(resolve)
+                .catch(reject)
             })
         }
 
