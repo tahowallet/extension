@@ -71,7 +71,7 @@
       "input.networkName": "Network name",
       "input.rpc": "RPC URL",
       "input.chainID": "Chain ID",
-      "input.symbol": "Currency Symbol (Optional)",
+      "input.symbol": "Currency Symbol",
       "input.blockExplorer": "Block explorer (Optional)",
       "input.logoURL": "Link to logo (Optional)",
       "input.isTestnet": "This is a test network",
@@ -621,7 +621,8 @@
     "backButtonText": "Back",
     "saveBtn": "Save",
     "closeWindow": "Close window",
-    "copyTextSnackbar": "Copied to clipboard"
+    "copyTextSnackbar": "Copied to clipboard",
+    "invalidValue": "Invalid value"
   },
   "signing": {
     "signatureRequired": "Your signature is required",

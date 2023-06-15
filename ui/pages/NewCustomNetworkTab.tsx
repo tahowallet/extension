@@ -7,6 +7,19 @@ import SharedInput from "../components/Shared/SharedInput"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedNetworkIcon from "../components/Shared/SharedNetworkIcon"
+import { useSetState } from "../hooks/react-hooks"
+
+function isValidUrl(urlLike: string) {
+  let url: URL
+
+  try {
+    url = new URL(urlLike)
+  } catch (_) {
+    return false
+  }
+
+  return url.protocol === "http:" || url.protocol === "https:"
+}
 
 function NewCustomNetworkSuccess({ network }: { network: EVMNetwork }) {
   const { t } = useTranslation("translation", {
@@ -121,8 +134,37 @@ export default function NewCustomNetworkTab(): JSX.Element {
   const { t } = useTranslation("translation", {
     keyPrefix: "customNetworksTab.form",
   })
+  const { t: sharedT } = useTranslation("translation", {
+    keyPrefix: "shared",
+  })
 
-  const handleSubmit: React.FormEventHandler<HTMLFormElement> = () => {}
+  const [formData, setFormData] = useSetState({
+    networkName: "",
+    rpc: "",
+    chainID: "",
+    symbol: "",
+    blockExplorer: "",
+    logoURL: "",
+    isTestnet: false,
+  })
+
+  type ValidatedKeys = keyof Pick<
+    typeof formData,
+    "blockExplorer" | "logoURL" | "rpc"
+  >
+
+  const [formErrors, setFormErrors] = useSetState<
+    Record<ValidatedKeys, boolean>
+  >({
+    rpc: false,
+    blockExplorer: false,
+    logoURL: false,
+  })
+
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+    event.preventDefault()
+    // TODO: Send validated parameters
+  }
 
   const [submitSuccess] = useState(false)
 
@@ -136,6 +178,29 @@ export default function NewCustomNetworkTab(): JSX.Element {
       />
     )
   }
+
+  const validateURLValue = (
+    value: string,
+    field: ValidatedKeys
+  ): { parsed: string } | { error: string } => {
+    if (isValidUrl(value)) {
+      setFormErrors({ ...formErrors, [field]: false })
+      return { parsed: value }
+    }
+
+    setFormErrors({ ...formErrors, [field]: true })
+
+    return { error: sharedT("invalidValue") }
+  }
+
+  const hasInvalidValues =
+    formData.networkName.length < 1 ||
+    formData.rpc.length < 1 ||
+    formData.chainID.length < 1 ||
+    formData.symbol.length < 1 ||
+    formErrors.blockExplorer ||
+    formErrors.logoURL ||
+    formErrors.rpc
 
   return (
     <section>
@@ -163,29 +228,51 @@ export default function NewCustomNetworkTab(): JSX.Element {
           </header>
           <form onSubmit={handleSubmit}>
             <div className="row">
-              <SharedInput label={t("input.networkName")} />
+              <SharedInput
+                label={t("input.networkName")}
+                onChange={(value) => setFormData({ networkName: value })}
+              />
             </div>
             <div className="row">
-              <SharedInput label={t("input.rpc")} />
+              <SharedInput
+                label={t("input.rpc")}
+                parseAndValidate={(value) => validateURLValue(value, "rpc")}
+                onChange={(value) => setFormData({ rpc: value })}
+              />
             </div>
             <div className="row">
-              <SharedInput label={t("input.chainID")} />
+              <SharedInput
+                label={t("input.chainID")}
+                type="number"
+                onChange={(value) => setFormData({ chainID: value })}
+              />
             </div>
             <div className="row">
-              <SharedInput label={t("input.symbol")} />
+              <SharedInput
+                label={t("input.symbol")}
+                onChange={(value) => setFormData({ symbol: value })}
+              />
             </div>
             <div className="row">
-              <SharedInput label={t("input.blockExplorer")} />
+              <SharedInput
+                label={t("input.blockExplorer")}
+                onChange={(value) => setFormData({ blockExplorer: value })}
+                parseAndValidate={(value) =>
+                  validateURLValue(value, "blockExplorer")
+                }
+              />
             </div>
             <div className="row">
-              <SharedInput label={t("input.logoURL")} />
+              <SharedInput
+                label={t("input.logoURL")}
+                onChange={(value) => setFormData({ logoURL: value })}
+                parseAndValidate={(value) => validateURLValue(value, "logoURL")}
+              />
             </div>
             <div className="row testnet_toggler">
               {t("input.isTestnet")}
               <SharedToggleButton
-                onChange={() => {
-                  /* TODO */
-                }}
+                onChange={(checked) => setFormData({ isTestnet: checked })}
               />
             </div>
             <div>
@@ -193,10 +280,7 @@ export default function NewCustomNetworkTab(): JSX.Element {
                 style={{ width: "100%", boxSizing: "border-box" }}
                 size="medium"
                 type="primary"
-                onClick={() => {
-                  /* TODO */
-                }}
-                isDisabled
+                isDisabled={hasInvalidValues}
                 center
                 isFormSubmit
               >
