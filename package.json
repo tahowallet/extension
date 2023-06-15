@@ -56,7 +56,8 @@
     "background",
     "provider-bridge",
     "provider-bridge-shared",
-    "window-provider"
+    "window-provider",
+    "ci"
   ],
   "dependencies": {
     "@ethersproject/providers": "5.5.3",
@@ -109,6 +110,7 @@
     "eslint-plugin-react": "^7.24.0",
     "eslint-plugin-react-hooks": "^4.2.0",
     "fork-ts-checker-webpack-plugin": "^6.3.2",
+    "hardhat": "^2.14.0",
     "install": "^0.13.0",
     "jest": "^27.2.2",
     "npm": "^7.5.6",
