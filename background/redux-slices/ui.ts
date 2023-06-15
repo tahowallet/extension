@@ -320,8 +320,8 @@ export const sendEvent = createBackgroundAsyncThunk(
 export const toggleFlashbots = createBackgroundAsyncThunk(
   "ui/toggleFlashbots",
   async (value: boolean, { dispatch, extra: { main } }) => {
-    dispatch(toggleUseFlashbots(value))
     await main.toggleFlashbotsProvider(value)
+    dispatch(toggleUseFlashbots(value))
   }
 )
 
