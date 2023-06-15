@@ -395,7 +395,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
                 {showWarningAboutNoBalance &&
                   t("warning.alreadyExists.desc.noBalance", warningOptions)}
                 {showWarningAboutVisibility &&
-                  t("warning.alreadyExists.desc.visibility", warningOptions)}
+                  t("warning.alreadyExists.desc.visibility")}
               </div>
             </div>
           </div>
@@ -411,7 +411,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
                 />
                 <div className="alert_content">
                   <div className="title" style={{ color: "var(--attention)" }}>
-                    {t("warning.dust.title")}
+                    {t("warning.dust.title", warningOptions)}
                   </div>
                 </div>
               </div>
