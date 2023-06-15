@@ -1,33 +1,16 @@
 import { Ability } from "@tallyho/tally-background/abilities"
 import { ETHEREUM } from "@tallyho/tally-background/constants"
-import {
-  AccountData,
-  AccountState,
-} from "@tallyho/tally-background/redux-slices/accounts"
+import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { AccountState } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   NFTCached,
   NFTCollectionCached,
-} from "@tallyho/tally-background/redux-slices/nfts_update"
-import { NormalizedEVMAddress } from "@tallyho/tally-background/types"
+} from "@tallyho/tally-background/redux-slices/nfts"
+import { createAccountData } from "@tallyho/tally-background/tests/factories"
 
-export const TEST_ADDRESS =
-  "0x208e94d5661a73360d9387d3ca169e5c130090cd" as NormalizedEVMAddress
-
-export const createAccountData = (
-  overrides: Partial<AccountData> = {}
-): AccountData => {
-  return {
-    address: TEST_ADDRESS,
-    network: ETHEREUM,
-    balances: {},
-    ens: {
-      name: "test.crypto",
-    },
-    defaultName: "Test",
-    defaultAvatar: "test.png",
-    ...overrides,
-  }
-}
+export const TEST_ADDRESS = normalizeEVMAddress(
+  "0x208e94d5661a73360d9387d3ca169e5c130090cd"
+)
 
 export const createAccountState = (
   overrides: Partial<AccountState> = {}
@@ -65,6 +48,7 @@ export const createAbility = (overrides: Partial<Ability> = {}): Ability => {
       type: "hold",
       address: "",
     },
+    interestRank: 0,
     ...overrides,
   }
 }

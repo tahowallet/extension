@@ -3,6 +3,7 @@ import { ethers } from "ethers"
 import {
   AnyAsset,
   AnyAssetAmount,
+  AnyAssetMetadata,
   flipPricePoint,
   isFungibleAsset,
   isSmartContractFungibleAsset,
@@ -11,22 +12,16 @@ import {
 } from "../assets"
 import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
-import { normalizeEVMAddress } from "../lib/utils"
 import { createBackgroundAsyncThunk } from "./utils"
-import {
-  isBuiltInNetworkBaseAsset,
-  sameBuiltInNetworkBaseAsset,
-} from "./utils/asset-utils"
+import { isBuiltInNetworkBaseAsset, isSameAsset } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
 import { EVMNetwork, sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
-import {
-  BUILT_IN_NETWORK_BASE_ASSETS,
-  FIAT_CURRENCIES_SYMBOL,
-} from "../constants"
+import { FIAT_CURRENCIES_SYMBOL } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
-import { HexString, NormalizedEVMAddress } from "../types"
+import { removeAssetReferences, updateAssetReferences } from "./accounts"
+import { NormalizedEVMAddress } from "../types"
 import type { RootState } from "."
 
 export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
@@ -62,58 +57,72 @@ const assetsSlice = createSlice({
       // merge in new assets
       newAssets.forEach((newAsset) => {
         if (mappedAssets[newAsset.symbol] === undefined) {
-          mappedAssets[newAsset.symbol] = [{ ...newAsset, recentPrices: {} }]
+          mappedAssets[newAsset.symbol] = [
+            {
+              ...newAsset,
+              recentPrices: {},
+            },
+          ]
         } else {
-          const duplicates = mappedAssets[newAsset.symbol].filter(
-            (existingAsset) =>
-              ("homeNetwork" in newAsset &&
-                "contractAddress" in newAsset &&
-                "homeNetwork" in existingAsset &&
-                "contractAddress" in existingAsset &&
-                existingAsset.homeNetwork.name === newAsset.homeNetwork.name &&
-                normalizeEVMAddress(existingAsset.contractAddress) ===
-                  normalizeEVMAddress(newAsset.contractAddress)) ||
-              // Only match base assets by name - since there may be
-              // many assets that share a name and symbol across L2's
-              BUILT_IN_NETWORK_BASE_ASSETS.some(
-                (baseAsset) =>
-                  sameBuiltInNetworkBaseAsset(baseAsset, newAsset) &&
-                  sameBuiltInNetworkBaseAsset(baseAsset, existingAsset)
-              )
-          )
+          const duplicateIndexes = mappedAssets[newAsset.symbol].reduce<
+            number[]
+          >((acc, existingAsset, id) => {
+            if (isSameAsset(newAsset, existingAsset)) {
+              acc.push(id)
+            }
+            return acc
+          }, [])
+
           // if there aren't duplicates, add the asset
-          if (duplicates.length === 0) {
+          if (duplicateIndexes.length === 0) {
             mappedAssets[newAsset.symbol].push({
               ...newAsset,
               recentPrices: {},
             })
+          } else {
+            // TODO if there are duplicates... when should we replace assets?
+            duplicateIndexes.forEach((id) => {
+              // Update only the metadata for the duplicate
+              mappedAssets[newAsset.symbol][id] = {
+                ...mappedAssets[newAsset.symbol][id],
+                metadata: newAsset.metadata,
+              }
+            })
           }
-          // TODO if there are duplicates... when should we replace assets?
         }
       })
+
       return Object.values(mappedAssets).flat()
     },
-    newPricePoint: (
+    newPricePoints: (
       immerState,
-      { payload: pricePoint }: { payload: PricePoint }
+      { payload: pricePoints }: { payload: PricePoint[] }
     ) => {
-      const fiatCurrency = pricePoint.pair.find((asset) =>
-        FIAT_CURRENCIES_SYMBOL.includes(asset.symbol)
-      )
-      const [pricedAsset] = pricePoint.pair.filter(
-        (asset) => asset !== fiatCurrency
-      )
-      if (fiatCurrency && pricedAsset) {
-        const index = findClosestAssetIndex(pricedAsset, immerState)
-        if (typeof index !== "undefined") {
-          immerState[index].recentPrices[fiatCurrency.symbol] = pricePoint
+      pricePoints.forEach((pricePoint) => {
+        const fiatCurrency = pricePoint.pair.find((asset) =>
+          FIAT_CURRENCIES_SYMBOL.includes(asset.symbol)
+        )
+        const [pricedAsset] = pricePoint.pair.filter(
+          (asset) => asset !== fiatCurrency
+        )
+        if (fiatCurrency && pricedAsset) {
+          const index = findClosestAssetIndex(pricedAsset, immerState)
+          if (typeof index !== "undefined") {
+            immerState[index].recentPrices[fiatCurrency.symbol] = pricePoint
+          }
         }
-      }
+      })
+    },
+    removeAsset: (
+      immerState,
+      { payload: removedAsset }: { payload: AnyAsset }
+    ) => {
+      return immerState.filter((asset) => !isSameAsset(asset, removedAsset))
     },
   },
 })
 
-export const { assetsLoaded, newPricePoint } = assetsSlice.actions
+export const { assetsLoaded, newPricePoints, removeAsset } = assetsSlice.actions
 
 export default assetsSlice.reducer
 
@@ -125,6 +134,72 @@ const selectPairedAssetSymbol = (
   _2: AnyAsset,
   pairedAssetSymbol: string
 ) => pairedAssetSymbol
+
+export const updateAssetMetadata = createBackgroundAsyncThunk(
+  "assets/updateAssetMetadata",
+  async (
+    {
+      asset,
+      metadata,
+    }: {
+      asset: SmartContractFungibleAsset
+      metadata: AnyAssetMetadata
+    },
+    { extra: { main } }
+  ) => {
+    await main.updateAssetMetadata(asset, metadata)
+  }
+)
+
+export const refreshAsset = createBackgroundAsyncThunk(
+  "assets/refreshAsset",
+  async (
+    {
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { dispatch }
+  ) => {
+    // Update assets slice
+    await dispatch(assetsLoaded([asset]))
+    // Update accounts slice cached data about this asset
+    await dispatch(updateAssetReferences(asset))
+  }
+)
+
+export const hideAsset = createBackgroundAsyncThunk(
+  "assets/hideAsset",
+  async (
+    {
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { extra: { main } }
+  ) => {
+    await main.hideAsset(asset)
+  }
+)
+
+/**
+ * Removes the asset from the user interface.
+ * The token should be removed from the assets list and all references associated with it.
+ */
+export const removeAssetData = createBackgroundAsyncThunk(
+  "assets/removeAssetData",
+  async (
+    {
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { dispatch }
+  ) => {
+    await dispatch(removeAsset(asset))
+    await dispatch(removeAssetReferences(asset))
+  }
+)
 
 /**
  * Executes an asset transfer between two addresses, for a set amount. Supports
@@ -227,9 +302,9 @@ export const selectAssetPricePoint = createSelector(
           hasRecentPriceData(asset)
       )
 
-      /* Don't do anything else if this is an untrusted asset and there's no exact match */
+      /* Don't do anything else if this is an unverified asset and there's no exact match */
       if (
-        (assetToFind.metadata?.tokenLists.length ?? 0) < 1 &&
+        (assetToFind.metadata?.tokenLists?.length ?? 0) < 1 &&
         !isBuiltInNetworkBaseAsset(assetToFind, assetToFind.homeNetwork)
       ) {
         return undefined
@@ -282,16 +357,17 @@ export const selectAssetPricePoint = createSelector(
   }
 )
 
-export const importTokenViaContractAddress = createBackgroundAsyncThunk(
-  "assets/importTokenViaContractAddress",
+export const importCustomToken = createBackgroundAsyncThunk(
+  "assets/importCustomToken",
   async (
     {
-      contractAddress,
-      network,
-    }: { contractAddress: HexString; network: EVMNetwork },
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
     { extra: { main } }
   ) => {
-    await main.importTokenViaContractAddress(contractAddress, network)
+    return { success: await main.importCustomToken(asset) }
   }
 )
 

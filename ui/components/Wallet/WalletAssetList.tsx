@@ -1,11 +1,15 @@
 import React, { ReactElement, useState } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { useTranslation } from "react-i18next"
+import {
+  SmartContractFungibleAsset,
+  SwappableAsset,
+} from "@tallyho/tally-background/assets"
 import WalletAssetListItem from "./WalletAssetListItem"
-import AssetWarningSlideUp from "./AssetWarningSlideUp"
+import AssetWarningWrapper from "./UnverifiedAsset/AssetWarningWrapper"
 
 type WalletAssetListProps = {
-  assetAmounts: CompleteAssetAmount[]
+  assetAmounts: CompleteAssetAmount<SwappableAsset>[]
   initializationLoadingTimeExpired: boolean
 }
 
@@ -19,16 +23,18 @@ export default function WalletAssetList(
   const { assetAmounts, initializationLoadingTimeExpired } = props
 
   const [warnedAsset, setWarnedAsset] = useState<
-    CompleteAssetAmount["asset"] | null
+    CompleteAssetAmount<SmartContractFungibleAsset>["asset"] | null
   >(null)
 
   if (!assetAmounts) return <></>
 
   return (
     <>
-      <AssetWarningSlideUp
+      <AssetWarningWrapper
         asset={warnedAsset}
-        close={() => setWarnedAsset(null)}
+        close={() => {
+          setWarnedAsset(null)
+        }}
       />
       <ul>
         {assetAmounts.map((assetAmount) => (
@@ -36,7 +42,7 @@ export default function WalletAssetList(
             assetAmount={assetAmount}
             key={assetAmount.asset.symbol}
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
-            onUntrustedAssetWarningClick={(asset) => setWarnedAsset(asset)}
+            onUnverifiedAssetWarningClick={(asset) => setWarnedAsset(asset)}
           />
         ))}
         {!initializationLoadingTimeExpired && (

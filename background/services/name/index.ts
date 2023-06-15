@@ -21,7 +21,6 @@ import {
 } from "./resolvers"
 import PreferenceService from "../preferences"
 import { isFulfilledPromise } from "../../lib/utils/type-guards"
-import { FeatureFlags, isEnabled } from "../../features"
 
 export { NameResolverSystem }
 
@@ -124,7 +123,7 @@ export default class NameService extends BaseService<Events> {
       // for the given resource.
       ensResolverFor(chainService),
       unsResolver(),
-      ...(isEnabled(FeatureFlags.RESOLVE_RNS_NAMES) ? [rnsResolver()] : []),
+      rnsResolver(),
     ]
 
     preferenceService.emitter.on(
@@ -308,6 +307,14 @@ export default class NameService extends BaseService<Events> {
     if (this.cachedResolvedNames.EVM[chainId]?.[address] !== undefined) {
       delete this.cachedResolvedNames.EVM[chainId][address]
     }
+  }
+
+  removeAccount(address: HexString): void {
+    const chainIds = Object.keys(this.cachedResolvedNames.EVM)
+
+    chainIds.forEach((chainId) => {
+      this.clearNameCacheEntry(chainId, address)
+    })
   }
 
   async lookUpAvatar(

@@ -21,7 +21,11 @@ import {
   NetworkBaseAsset,
   sameChainID,
 } from "../../networks"
-import { AssetTransfer, SmartContractFungibleAsset } from "../../assets"
+import {
+  AnyAssetAmount,
+  AssetTransfer,
+  SmartContractFungibleAsset,
+} from "../../assets"
 import {
   HOUR,
   ETHEREUM,
@@ -65,7 +69,6 @@ import {
 } from "./utils/optimismGasPriceOracle"
 import KeyringService from "../keyring"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
-import { fromFixedPoint } from "../../lib/fixed-point"
 
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
@@ -844,6 +847,12 @@ export default class ChainService extends BaseService<Events> {
       )
     }
     return accounts
+  }
+
+  async getTrackedAddressesOnNetwork(
+    network: EVMNetwork
+  ): Promise<AddressOnNetwork[]> {
+    return this.db.getTrackedAddressesOnNetwork(network)
   }
 
   async getNetworksToTrack(): Promise<EVMNetwork[]> {
@@ -1901,6 +1910,7 @@ export default class ChainService extends BaseService<Events> {
       symbol: chainInfo.nativeCurrency.symbol,
       assetName: chainInfo.nativeCurrency.name,
       rpcUrls: chainInfo.rpcUrls,
+      blockExplorerURL: chainInfo.blockExplorerUrl,
     })
     await this.updateSupportedNetworks()
 
@@ -1916,6 +1926,10 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async removeCustomChain(chainID: string): Promise<void> {
+    this.trackedNetworks = this.trackedNetworks.filter(
+      (network) => network.chainID !== chainID
+    )
+
     await this.db.removeEVMNetwork(chainID)
     await this.updateSupportedNetworks()
   }
@@ -1927,14 +1941,11 @@ export default class ChainService extends BaseService<Events> {
     this.emitter.emit("supportedNetworks", supportedNetworks)
   }
 
-  async queryTokenDetails(
+  async queryAccountTokenDetails(
     contractAddress: NormalizedEVMAddress,
     addressOnNetwork: AddressOnNetwork,
     existingAsset?: SmartContractFungibleAsset
-  ): Promise<{
-    asset: SmartContractFungibleAsset
-    balance: number
-  }> {
+  ): Promise<AnyAssetAmount<SmartContractFungibleAsset>> {
     const { network } = addressOnNetwork
 
     const balance = await this.assetData.getTokenBalance(
@@ -1945,8 +1956,7 @@ export default class ChainService extends BaseService<Events> {
     if (existingAsset) {
       return {
         asset: existingAsset,
-        // FIXME: REMOVE FIXED PRECISION
-        balance: fromFixedPoint(balance.amount, existingAsset.decimals, 2),
+        amount: balance.amount,
       }
     }
 
@@ -1968,8 +1978,7 @@ export default class ChainService extends BaseService<Events> {
 
     return {
       asset,
-      // FIXME: REMOVE FIXED PRECISION
-      balance: fromFixedPoint(balance.amount, asset.decimals, 2),
+      amount: balance.amount,
     }
   }
 }

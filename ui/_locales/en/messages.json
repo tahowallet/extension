@@ -37,7 +37,11 @@
   },
   "viewAddressOnBlockExplorer": "View address on {{blockExplorer}}",
   "assets": {
-    "viewAsset": "View asset on {{siteTitle}}"
+    "viewAsset": "View asset on {{siteTitle}}",
+    "openNetworkExplorer": "Open network explorer",
+    "verifyAsset": "Verify asset",
+    "unverifiedAsset": "Asset not verified",
+    "verifiedByUser": "Verified by you"
   },
   "assetInput": {
     "search": "Search by name or address",
@@ -241,9 +245,7 @@
     }
   },
   "nfts": {
-    "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title",
-    "NFTPricingComingSoon": "Coming soon: NFT price + sending",
     "type1": "NFTs",
     "type2": "badges",
     "noMatchingNFTs": "No {{type}} matching your filters",
@@ -300,11 +302,6 @@
       "noCollections": "No collections"
     }
   },
-  "achievements": {
-    "empty": "Nothing to see here",
-    "startWith": "You can start with the Taho collection!",
-    "collection": "Taho collection"
-  },
   "onboarding": {
     "tabbed": {
       "walletShortcut": "Did you know that you can open Taho using a keyboard shortcut?",
@@ -329,7 +326,7 @@
         }
       },
       "intro": {
-        "title": "Let's get you setup!",
+        "title": "Let's get you set up!",
         "useExisting": "Use existing wallet",
         "createNew": "Create new wallet"
       },
@@ -377,8 +374,7 @@
       "newWalletReview": {
         "title": "Save and store your recovery phrase",
         "submit": "I wrote it down",
-        "copyAddressAction": "Copy phrase to clipboard",
-        "copyAddressSnackbar": "Copied to clipboard"
+        "copyAddressAction": "Copy phrase to clipboard"
       },
       "newWalletVerify": {
         "title": "Verify recovery phrase",
@@ -475,25 +471,31 @@
     "beta": "Mainnet (beta)",
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
-    "compatibleChain": "Ethereum-compatible blockchain",
+    "compatibleChain": "EVM-compatible blockchain",
     "avalanche": "Mainnet C-Chain",
     "connected": "Connected"
   },
   "readOnly": "Read-only",
   "readOnlyNotice": "Read-only mode",
   "settings": {
+    "group": {
+      "general": "General",
+      "walletOptions": "Networks & Assets",
+      "helpCenter": "Help center"
+    },
     "mainMenu": "Settings",
     "signing": "Signing",
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
-    "setAsDefault": "Use Taho as your default wallet",
-    "enableTestNetworks": "Enable test networks",
+    "setAsDefault": "Use Taho as default wallet",
+    "enableTestNetworks": "Show testnet networks",
+    "showUnverifiedAssets": "Show unverified assets",
     "language": "Language",
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
-    "addCustomAsset": "Add custom assets",
+    "addCustomAsset": "Custom assets",
     "analytics": "Analytics",
-    "needHelp": "Need Help?",
-    "customNetworks": "Custom networks",
+    "needHelp": "Need help?",
+    "customNetworks": "Custom networks (beta)",
     "showBanners": "Show achievement banners",
     "versionLabel": "Version {{version}}",
     "unknownVersionOrCommit": "<unknown>",
@@ -544,32 +546,43 @@
     "addCustomAssetSettings": {
       "title": "Add custom asset",
       "input.contractAddress.label": "Contract address",
-      "input.tooltip": " Visit your preferred block explorer and find the asset you want to import.<br>Copy and paste the contract address here.<br><br>For more information visit <url>Help Center</url>",
+      "input.tooltip": "Find the asset on your favorite block explorer, then copy the contract address here.<br><br>Haven't done this before? Check out <url>Knowledge Center</url> first.",
       "asset.label.balance": "Balance",
       "asset.label.symbol": "Name",
       "networkSelect.title": "Select Network",
       "warning.alreadyExists.title": "Asset already exists, you will see it once your balance is over 0",
-      "warning.alreadyExists.desc": "If you still have issues seeing an asset, turn off “hide balance 2$” from Settings",
+      "warning.alreadyExists.desc": "If you still have issues seeing an asset, turn off “Hide asset balances under 2$” from Settings",
+      "warning.dust.title": "Asset balance is under <$2, you wil see it once your balance is over $2",
       "error.invalidToken": "Invalid contract address",
       "submit": "Add asset",
       "snackbar.success": "Asset added successfully",
-      "footer.hint": "How to add a custom asset?"
+      "snackbar.failed": "Failed to look up token details",
+      "footer.hint": "How to add a custom asset"
     },
     "customNetworksSettings": {
-      "title": "Custom networks",
+      "title": "Custom networks (beta)",
       "ariaLabel": "Open custom networks page",
-      "subtitleAdded": "Added chains",
+      "subtitleAdded": "Manage chains",
       "subtitleAddMore": "Add more chains",
+      "deleteModal.title": "Remove custom network?",
+      "deleteModal.desc": "You are removing <name>{{name}}</name>. This means you won't be able to see assets from it and it won't be in your network selection list.",
+      "deleteModal.confirm": "Remove",
       "networksList": {
         "typeCustom": "Custom network"
       },
       "chainList": {
-        "description": "Fastest and safest way of adding a custom network is by visiting <url></url>, connecting your wallet and adding the chains you wish to see.",
+        "description": "<url></url> is the fastest, safest way to add a custom network. Just connect your wallet, search for the network you want to add, and click <strong>Add to Taho</strong>.",
         "addBtn": "Add chains with Chainlist"
       },
       "customRPC": {
         "description": "You can also add a custom RPC, this can be a bit risky as you might add a malicious RPC without knowing, that could result in loss of funds.",
         "addBtn": "Add custom RPC (Advanced)"
+      }
+    },
+    "unverifiedAssets": {
+      "tooltip": {
+        "firstPart": "Discover assets that you own but are not on our asset list. Some spam/scam assets will show up, so tread carefully.",
+        "secondPart": "These will show up on the bottom of the asset page until you verify them."
       }
     }
   },
@@ -587,13 +600,15 @@
     "showPasswordHint": "Show Password",
     "hidePasswordHint": "Hide Password",
     "close": "Close",
+    "modalClose": "Background close",
     "accountItemSummary": {
       "connectedStatus": "Connected"
     },
     "selectToken": "Select token",
     "backButtonText": "Back",
     "saveBtn": "Save",
-    "closeWindow": "Close window"
+    "closeWindow": "Close window",
+    "copyTextSnackbar": "Copied to clipboard"
   },
   "signing": {
     "signatureRequired": "Your signature is required",
@@ -626,6 +641,7 @@
     "help": "I need help",
     "refresh": "Refresh",
     "confirmButtonLabel": "Sign",
+    "unsavedChangesTooltip": "You have unsaved changed",
     "spendApproval": {
       "title": "Approve asset spend",
       "approveSpender": "Approve <spenderAddress></spenderAddress>",
@@ -654,10 +670,16 @@
       "authorizeDeposit": "Authorize Deposit",
       "signMessage": "Sign {{messageType}}",
       "confirmButtonLabel": "Confirm"
+    },
+    "swap": {
+      "title": "Swap assets",
+      "balanceChange": "Balance change",
+      "daoFee": "DAO fee",
+      "exchangeRoute": "Exchange route"
     }
   },
   "addNewChain": {
-    "subtitle": "Wants to add a main network to Taho",
+    "subtitle": "Wants to add a custom network to Taho",
     "name": "Name",
     "chainId": "Chain ID",
     "currency": "Currency",
@@ -665,7 +687,7 @@
     "explorer": "BlockExplorer",
     "submit": "Add network",
     "cancel": "Reject",
-    "warnAlreadyExistsHeader": "Network already added to Taho wallet.",
+    "warnAlreadyExistsHeader": "Network already added to Taho.",
     "warnAlreadyExistsBody": "You can switch to it from Network dropdown"
   },
   "swap": {
@@ -679,7 +701,6 @@
     "switchAssets": "Switch Assets",
     "swapRewardsTeaser": "Swap rewards coming soon",
     "continueSwap": "Continue Swap",
-    "exchangeRoute": "Exchange route",
     "loadingQuote": "Fetching price",
     "rewards": {
       "header": "Swap rewards for community",
@@ -692,14 +713,7 @@
       "noApprovalTarget": "Attempting to approve transfer without an approval target.",
       "nonContractAsset": "Attempting to approve transfer of a non-contract asset."
     },
-    "getFinalQuote": "Get final quote",
-    "transactionSettings": {
-      "title": "Transaction settings",
-      "slippageTolerance": "Slippage tolerance",
-      "settings": "Transaction settings",
-      "estimatedFee": "Estimated network fee",
-      "daoFee": "DAO fee"
-    }
+    "reviewSwap": "Review swap"
   },
   "switchWallet": {
     "title": "Want to use another wallet instead?",
@@ -716,16 +730,18 @@
   },
   "topMenu": {
     "showCurrentDappConnection": "Show current dApp connection",
+    "connectToWebsiteUsing": "Connect to website using:",
+    "setTahoAsDefault": "Set Taho as default",
+    "setOtherAsDefault": "Set MetaMask/other wallet as default",
     "rewardsProgram": "Rewards program",
     "copyAddressTooltip": "Copy address",
     "addressCopiedMsg": "Address copied to clipboard",
     "protocolList": {
       "testnetsSectionTitle": "Testnets",
       "customNetworksSectionTitle": "Custom networks",
-      "networkSettingsBtn": "Add network"
+      "networkSettingsBtn": "Add network (beta)"
     },
     "connectedDappInfo": {
-      "modalClose": "Background close",
       "dAppTitle": "Account connected to",
       "dappConnections": "Dapp connections",
       "guideline": {
@@ -758,16 +774,7 @@
       "transactionFrom": "From:",
       "loadingActivities": "Digging deeper...",
       "addCustomAssetPrompt": "Can't find an asset?",
-      "addCustomAssetAction": "add custom asset"
-    },
-    "trustedAssets": {
-      "notTrusted": "Asset isn't trusted",
-      "notVerified": "Asset has not been verified yet!",
-      "trustExplainer": "Only transact with assets you trust.",
-      "assetImported": "Asset imported from transaction history",
-      "name": "Name",
-      "contract": "Contract address",
-      "close": "Close"
+      "addCustomAssetAction": "Add custom asset"
     },
     "banner": {
       "bannerTitle": "New Odyssey week!",
@@ -783,6 +790,8 @@
     "totalAccountBalance": "Total account balance",
     "send": "Send",
     "swap": "Swap",
+    "swapDisabledOne": "Swaps aren't supported",
+    "swapDisabledTwo": "on this network",
     "receive": "Receive",
     "secureSeed": "First, secure your recovery seed",
     "sendAsset": "Send Asset",
@@ -796,9 +805,6 @@
       "NFTs": "NFTs",
       "activity": "Activity"
     },
-    "stateOfHiddenAssets1": "Hide",
-    "stateOfHiddenAssets2": "Show",
-    "hiddenAssets": "{{stateOfHiddenAssets}} hidden assets ({{amount}})",
     "defaultToggle": {
       "snackbar": "You can change this in Settings later",
       "isDefault": "is now your default wallet",
@@ -809,6 +815,28 @@
       "title": "Analytics are enabled",
       "description": "They help us improve the wallet.  You can disable anytime",
       "settingsLink": "Change settings"
+    },
+    "unverifiedAssets": {
+      "stateOfHiddenAssets1": "Hide",
+      "stateOfHiddenAssets2": "See",
+      "hiddenAssets": "{{stateOfHiddenAssets}} unverified assets ({{amount}})",
+      "verifyAsset": "Verify asset"
+    },
+    "verifiedAssets": {
+      "assetImported": "Asset automatically imported",
+      "symbol": "Symbol",
+      "contract": "Contract address",
+      "discoveryTxHash": "Added from transaction",
+      "dontShow": "Don’t show",
+      "addToAssetList": "Add to asset list",
+      "verifyAssetSnackbar": "Asset added to list",
+      "removeAssetSnackbar": "Asset removed from list",
+      "banner": {
+        "titleUnverified": "Asset not verified",
+        "titleVerified": "Asset verified by you",
+        "description": "Be aware of scam and spam assets, only interact with assets you trust.",
+        "oldDescription": "Only transact with assets you trust."
+      }
     }
   },
   "dAppConnect": {
@@ -817,6 +845,13 @@
       "descFirstPart": "We disabled Taho as default wallet for you. You can always enable it back from Settings",
       "descSecondPart": "at any time.",
       "toggleTitle": "Use Taho as default wallet"
+    },
+    "defaultConnectionPopover": {
+      "title": "Connecting with Taho",
+      "activeWallet": "Your active wallet is Taho.",
+      "activeWalletMeaning": "This means that you'll be connecting to websites with Taho even when selecting MetaMask.",
+      "metaMaskHeading": "Want to switch to MetaMask?",
+      "toggleLabel": "Use the toggle at the top to connect with MetaMask or another wallet."
     }
   },
   "abilities": {
@@ -832,8 +867,14 @@
       "open": "Open",
       "none": "None"
     },
-    "timeStarting": "Starting in 1 month",
-    "timeCloses": "Closes in 1 month",
+    "timeDetails": {
+      "day_one": "day",
+      "day_other": "days",
+      "timeStartingDays_one": "Starting in {{count}} day",
+      "timeStartingDays_other": "Starting in {{count}} days",
+      "timeClosesDays_one": "Closes in {{count}} day",
+      "timeClosesDays_other": "Closes in {{count}} days"
+    },
     "viewWebsiteBtn": "Visit website",
     "markBtn": "Mark as Completed",
     "snackbar": "Marked as completed",
@@ -871,7 +912,6 @@
         "airdrop": "A ERC-20 token airdrop, usually not promised in advance.",
         "mint": "A ERC-721 or ERC-11555 token mint.",
         "access": "A general off-chain token-gated experience, often a group chat.",
-        "product": "An off-chain product, often a discounted or free item available on an ecommerce store.",
         "event": "An event, often at a conference or a token-gated online experience.",
         "article": "A blog post or article about a specific token.",
         "result": "The result of a vote proposal.",
@@ -902,23 +942,18 @@
       "title": "Feature flags",
       "flags": {
         "USE_MAINNET_FORK": "Use mainnet fork",
-        "RESOLVE_RNS_NAMES": "Resolve RNS names",
         "HIDE_IMPORT_DERIVATION_PATH": "Hide import derivation path",
         "HIDE_SWAP_REWARDS": "Hide swap rewards",
         "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
         "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
-        "SUPPORT_ANALYTICS": "Show Analytics page on the settings page",
-        "SUPPORT_KEYRING_LOCKING": "Enable to lock/unlock accounts ",
-        "SUPPORT_FORGOT_PASSWORD": "Enable to forgot password",
-        "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
-        "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab",
         "SUPPORT_NFT_SEND": "Enable sending NFTs",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
-        "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs"
+        "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
+        "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification"
       }
     }
   },

@@ -226,6 +226,7 @@ export class ChainDatabase extends Dexie {
     symbol,
     assetName,
     rpcUrls,
+    blockExplorerURL,
   }: {
     chainName: string
     chainID: string
@@ -233,12 +234,14 @@ export class ChainDatabase extends Dexie {
     symbol: string
     assetName: string
     rpcUrls: string[]
+    blockExplorerURL: string
   }): Promise<EVMNetwork> {
     const network: EVMNetwork = {
       name: chainName,
       coingeckoPlatformID: CHAIN_ID_TO_COINGECKO_PLATFORM_ID[chainID],
       chainID,
       family: "EVM",
+      blockExplorerURL,
       baseAsset: {
         decimals,
         symbol,
@@ -527,6 +530,15 @@ export class ChainDatabase extends Dexie {
 
   async getAccountsToTrack(): Promise<AddressOnNetwork[]> {
     return this.accountsToTrack.toArray()
+  }
+
+  async getTrackedAddressesOnNetwork(
+    network: EVMNetwork
+  ): Promise<AddressOnNetwork[]> {
+    return this.accountsToTrack
+      .where("network.name")
+      .equals(network.name)
+      .toArray()
   }
 
   async getTrackedAccountOnNetwork({

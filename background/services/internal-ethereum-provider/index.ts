@@ -6,7 +6,9 @@ import {
   EIP1193_ERROR_CODES,
   RPCRequest,
 } from "@tallyho/provider-bridge-shared"
-import { hexlify, toUtf8Bytes } from "ethers/lib/utils"
+import { hexlify, toUtf8Bytes, _TypedDataEncoder } from "ethers/lib/utils"
+import { normalizeHexAddress } from "@tallyho/hd-keyring"
+
 import logger from "../../lib/logger"
 
 import BaseService from "../base"
@@ -32,13 +34,17 @@ import {
 } from "../../utils/signing"
 import { getOrCreateDB, InternalEthereumProviderDatabase } from "./db"
 import { TALLY_INTERNAL_ORIGIN } from "./constants"
+import { ROOTSTOCK } from "../../constants"
 import {
   EnrichedEVMTransactionRequest,
   TransactionAnnotation,
 } from "../enrichment"
-import { decodeJSON } from "../../lib/utils"
-import { FeatureFlags, isEnabled } from "../../features"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
+import {
+  isValidChecksumAddress,
+  isMixedCaseAddress,
+  decodeJSON,
+} from "../../lib/utils"
 
 // A type representing the transaction requests that come in over JSON-RPC
 // requests like eth_sendTransaction and eth_signTransaction. These are very
@@ -64,6 +70,18 @@ type JsonRpcTransactionRequest = Omit<EthersTransactionRequest, "gasLimit"> & {
 // https://eips.ethereum.org/EIPS/eip-3326
 export type SwitchEthereumChainParameter = {
   chainId: string
+}
+
+// https://eips.ethereum.org/EIPS/eip-747
+type WatchAssetParameters = {
+  type: string // The asset's interface, e.g. 'ERC1046'
+  options: WatchAssetOptions
+}
+
+type WatchAssetOptions = {
+  address: string // The hexadecimal address of the token contract
+  chainId?: number // The chain ID of the asset. If empty, defaults to the current chain ID.
+  // Fields such as symbol and name can be present here as well - but lets just fetch them from the contract
 }
 
 // https://eips.ethereum.org/EIPS/eip-3085
@@ -97,6 +115,7 @@ type Events = ServiceLifecycleEvents & {
   signTypedDataRequest: DAppRequestEvent<SignTypedDataRequest, string>
   signDataRequest: DAppRequestEvent<MessageSigningRequest, string>
   selectedNetwork: EVMNetwork
+  watchAssetRequest: { contractAddress: string; network: EVMNetwork }
   // connect
   // disconnet
   // account change
@@ -272,13 +291,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         const { chainId } = chainInfo
         const supportedNetwork = await this.getTrackedNetworkByChainId(chainId)
         if (supportedNetwork) {
-          this.switchToSupportedNetwork(origin, supportedNetwork)
+          await this.switchToSupportedNetwork(origin, supportedNetwork)
           this.emitter.emit("selectedNetwork", supportedNetwork)
           return null
-        }
-        if (!isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
-          // Dissallow adding new chains until feature flag is turned on.
-          throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
         }
         try {
           const customNetwork = await this.chainService.addCustomChain(
@@ -303,10 +318,41 @@ export default class InternalEthereumProviderService extends BaseService<Events>
 
         throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
       }
+      case "wallet_watchAsset": {
+        const { type, options } = params[0]
+          ? (params[0] as WatchAssetParameters)
+          : // some dapps send the object directly instead of an array
+            (params as unknown as WatchAssetParameters)
+        if (type !== "ERC20") {
+          throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
+        }
+
+        if (options.chainId) {
+          const supportedNetwork = await this.getTrackedNetworkByChainId(
+            String(options.chainId)
+          )
+          if (!supportedNetwork) {
+            throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
+          }
+          this.emitter.emit("watchAssetRequest", {
+            contractAddress: normalizeHexAddress(options.address),
+            network: supportedNetwork,
+          })
+          return true
+        }
+
+        // if chainID is not specified, we assume the current network - as per EIP-747
+        const network = await this.getCurrentOrDefaultNetworkForOrigin(origin)
+
+        this.emitter.emit("watchAssetRequest", {
+          contractAddress: normalizeHexAddress(options.address),
+          network,
+        })
+        return true
+      }
       case "metamask_getProviderState": // --- important MM only methods ---
       case "metamask_sendDomainMetadata":
       case "wallet_requestPermissions":
-      case "wallet_watchAsset":
       case "estimateGas": // --- eip1193-bridge only method --
       case "eth_coinbase": // --- MM only methods ---
       case "eth_decrypt":
@@ -348,6 +394,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     return currentNetwork
   }
 
+  async removePrefererencesForChain(chainId: string): Promise<void> {
+    await this.db.removeStoredPreferencesForChain(chainId)
+  }
+
   private async signTransaction(
     transactionRequest: JsonRpcTransactionRequest,
     origin: string
@@ -360,6 +410,28 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           (decodeJSON(transactionRequest.annotation) as TransactionAnnotation)
         : undefined
 
+    if (!transactionRequest.from) {
+      throw new Error("Transactions must have a from address for signing.")
+    }
+
+    const currentNetwork = await this.getCurrentOrDefaultNetworkForOrigin(
+      origin
+    )
+
+    const isRootstock = currentNetwork.chainID === ROOTSTOCK.chainID
+
+    if (isRootstock) {
+      ;[transactionRequest.from, transactionRequest.to].forEach((address) => {
+        if (
+          address &&
+          isMixedCaseAddress(address) &&
+          !isValidChecksumAddress(address, +currentNetwork.chainID)
+        ) {
+          throw new Error("Bad address checksum")
+        }
+      })
+    }
+
     const { from, ...convertedRequest } =
       transactionRequestFromEthersTransactionRequest({
         // Convert input -> data if necessary; if transactionRequest uses data
@@ -369,15 +441,18 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         data: transactionRequest.input,
         ...transactionRequest,
         gasLimit: transactionRequest.gas, // convert gas -> gasLimit
+        // Etherjs rejects Rootstock checksummed addresses so convert to lowercase
+        from: isRootstock
+          ? normalizeHexAddress(transactionRequest.from)
+          : transactionRequest.from,
+        to: isRootstock
+          ? transactionRequest.to && normalizeHexAddress(transactionRequest.to)
+          : transactionRequest.to,
       })
 
     if (typeof from === "undefined") {
       throw new Error("Transactions must have a from address for signing.")
     }
-
-    const currentNetwork = await this.getCurrentOrDefaultNetworkForOrigin(
-      origin
-    )
 
     return new Promise<SignedTransaction>((resolve, reject) => {
       this.emitter.emit("transactionSignatureRequest", {
@@ -424,19 +499,42 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   }
 
   private async signTypedData(params: SignTypedDataRequest) {
+    // Ethers does not want to see the EIP712Domain field, extract it.
+    const { EIP712Domain, ...typesForSigning } = params.typedData.types
+
+    // Ask Ethers to give us a filtered payload that only includes types
+    // specified in the `types` object.
+    const filteredTypedDataPayload = _TypedDataEncoder.getPayload(
+      params.typedData.domain,
+      typesForSigning,
+      params.typedData.message
+    )
+
+    const filteredRequest = {
+      ...params,
+      typedData: {
+        ...filteredTypedDataPayload,
+        types: {
+          // If there was an EIP712Domain field in the `types`, pass it along.
+          ...(EIP712Domain === undefined ? {} : { EIP712Domain }),
+          ...filteredTypedDataPayload.types,
+        },
+      },
+    }
+
     return new Promise<string>((resolve, reject) => {
       this.emitter.emit("signTypedDataRequest", {
-        payload: params,
+        payload: filteredRequest,
         resolver: resolve,
         rejecter: reject,
       })
     })
   }
 
-  private async switchToSupportedNetwork(
+  async switchToSupportedNetwork(
     origin: string,
     supportedNetwork: EVMNetwork
-  ) {
+  ): Promise<void> {
     const { address } = await this.preferenceService.getSelectedAccount()
     await this.chainService.markAccountActivity({
       address,

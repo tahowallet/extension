@@ -5,6 +5,7 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { debounce } from "lodash"
+import { utils } from "ethers"
 
 import {
   decodeJSON,
@@ -38,7 +39,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes, NormalizedEVMAddress } from "./types"
-import { EVMNetwork, SignedTransaction } from "./networks"
+import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -51,7 +52,12 @@ import {
   updateAccountName,
   updateENSAvatar,
 } from "./redux-slices/accounts"
-import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
+import {
+  assetsLoaded,
+  newPricePoints,
+  refreshAsset,
+  removeAssetData,
+} from "./redux-slices/assets"
 import {
   setEligibility,
   setEligibilityLoading,
@@ -120,7 +126,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { OPTIMISM } from "./constants"
+import { OPTIMISM, USD } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
@@ -134,7 +140,6 @@ import {
 } from "./redux-slices/migrations"
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
-import { deleteNFts } from "./redux-slices/nfts"
 import {
   ActivityDetail,
   addActivity,
@@ -148,6 +153,9 @@ import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
 import {
+  AnyAssetMetadata,
+  assetAmountToDesiredDecimals,
+  convertAssetAmountViaPricePoint,
   isSmartContractFungibleAsset,
   SmartContractAsset,
   SmartContractFungibleAsset,
@@ -162,10 +170,10 @@ import {
   deleteNFTsForAddress,
   updateIsReloading,
   deleteTransferredNFTs,
-} from "./redux-slices/nfts_update"
+} from "./redux-slices/nfts"
 import AbilitiesService from "./services/abilities"
 import {
-  addAbilities,
+  setAbilitiesForAddress,
   updateAbility,
   addAccount as addAccountFilter,
   deleteAccount as deleteAccountFilter,
@@ -179,6 +187,7 @@ import {
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
+import { getPricePoint, getTokenPrices } from "./lib/prices"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -575,11 +584,7 @@ export default class Main extends BaseService<never> {
     this.connectAnalyticsService()
     this.connectWalletConnectService()
     this.connectAbilitiesService()
-
-    // Nothing else beside creating a service should happen when feature flag is off
-    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
-      this.connectNFTsService()
-    }
+    this.connectNFTsService()
 
     await this.connectChainService()
 
@@ -627,13 +632,11 @@ export default class Main extends BaseService<never> {
     }
 
     this.store.dispatch(removeActivities(address))
-    this.store.dispatch(deleteNFts(address))
 
     // remove NFTs
-    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
-      this.store.dispatch(deleteNFTsForAddress(address))
-      await this.nftsService.removeNFTsForAddress(address)
-    }
+    this.store.dispatch(deleteNFTsForAddress(address))
+    await this.nftsService.removeNFTsForAddress(address)
+
     // remove abilities
     if (signer.type !== AccountType.ReadOnly) {
       await this.abilitiesService.deleteAbilitiesForAccount(address)
@@ -643,6 +646,8 @@ export default class Main extends BaseService<never> {
     await this.providerBridgeService.revokePermissionsForAddress(address)
     // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signer.type)
+
+    this.nameService.removeAccount(address)
   }
 
   async importLedgerAccounts(
@@ -1016,7 +1021,7 @@ export default class Main extends BaseService<never> {
 
             return isSmartContract
           })
-          // Sort trusted last to prevent shadowing assets from token lists
+          // Sort verified last to prevent shadowing assets from token lists
           // FIXME: Balances should not be indexed by symbol in redux
           .sort((balance, otherBalance) => {
             const asset = balance.assetAmount.asset as SmartContractAsset
@@ -1056,12 +1061,24 @@ export default class Main extends BaseService<never> {
       }
     )
 
-    this.indexingService.emitter.on("assets", (assets) => {
-      this.store.dispatch(assetsLoaded(assets))
+    this.indexingService.emitter.on("assets", async (assets) => {
+      await this.store.dispatch(assetsLoaded(assets))
     })
 
-    this.indexingService.emitter.on("price", (pricePoint) => {
-      this.store.dispatch(newPricePoint(pricePoint))
+    this.indexingService.emitter.on("prices", (pricePoints) => {
+      this.store.dispatch(newPricePoints(pricePoints))
+    })
+
+    this.indexingService.emitter.on("refreshAsset", (asset) => {
+      this.store.dispatch(
+        refreshAsset({
+          asset,
+        })
+      )
+    })
+
+    this.indexingService.emitter.on("removeAssetData", (asset) => {
+      this.store.dispatch(removeAssetData({ asset }))
     })
   }
 
@@ -1189,17 +1206,8 @@ export default class Main extends BaseService<never> {
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
-        /**
-         * There is a case in which the user changes the settings on the ledger after connection.
-         * For example, it sets disabled blind signing. Before the transaction signature request
-         * ledger should be connected again to refresh the state. Without reconnection,
-         * the user doesn't receive an error message on how to fix it.
-         */
-        const isArbitraryDataSigningEnabled =
-          await this.ledgerService.isArbitraryDataSigningEnabled()
-        if (!isArbitraryDataSigningEnabled) {
-          this.connectLedger()
-        }
+        await this.signingService.prepareForSigningRequest()
+
         this.store.dispatch(
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
@@ -1254,9 +1262,13 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
-        const enrichedsignTypedDataRequest =
-          await this.enrichmentService.enrichSignTypedDataRequest(payload)
-        this.store.dispatch(typedDataRequest(enrichedsignTypedDataRequest))
+        // Run signer preparation and enrichment in parallel.
+        const [, enrichedSignTypedDataRequest] = await Promise.all([
+          this.signingService.prepareForSigningRequest(),
+          this.enrichmentService.enrichSignTypedDataRequest(payload),
+        ])
+
+        this.store.dispatch(typedDataRequest(enrichedSignTypedDataRequest))
 
         const clear = () => {
           this.signingService.emitter.off(
@@ -1307,6 +1319,8 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
+        await this.signingService.prepareForSigningRequest()
+
         this.chainService.pollBlockPricesForNetwork(
           payload.account.network.chainID
         )
@@ -1369,6 +1383,26 @@ export default class Main extends BaseService<never> {
       this.chainService.pollBlockPricesForNetwork(network.chainID)
       this.store.dispatch(clearCustomGas())
     })
+
+    this.internalEthereumProviderService.emitter.on(
+      "watchAssetRequest",
+      async ({ contractAddress, network }) => {
+        const { address } = this.store.getState().ui.selectedAccount
+        const asset = await this.indexingService.addTokenToTrackByContract(
+          network,
+          contractAddress
+        )
+        if (asset) {
+          await this.indexingService.retrieveTokenBalances(
+            {
+              address,
+              network,
+            },
+            [asset]
+          )
+        }
+      }
+    )
   }
 
   async connectProviderBridgeService(): Promise<void> {
@@ -1624,9 +1658,12 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("initAbilities", (address) => {
       this.store.dispatch(initAbilities(address))
     })
-    this.abilitiesService.emitter.on("newAbilities", (newAbilities) => {
-      this.store.dispatch(addAbilities(newAbilities))
-    })
+    this.abilitiesService.emitter.on(
+      "updatedAbilities",
+      ({ address, abilities }) => {
+        this.store.dispatch(setAbilitiesForAddress({ address, abilities }))
+      }
+    )
     this.abilitiesService.emitter.on("deleteAbilities", (address) => {
       this.store.dispatch(deleteAbilitiesForAccount(address))
     })
@@ -1746,6 +1783,17 @@ export default class Main extends BaseService<never> {
     })
   }
 
+  async updateAssetMetadata(
+    asset: SmartContractFungibleAsset,
+    metadata: AnyAssetMetadata
+  ): Promise<void> {
+    await this.indexingService.updateAssetMetadata(asset, metadata)
+  }
+
+  async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {
+    await this.indexingService.hideAsset(asset)
+  }
+
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {
     return this.providerBridgeService.getNewCustomRPCDetails(requestId)
   }
@@ -1802,7 +1850,13 @@ export default class Main extends BaseService<never> {
   }
 
   async removeEVMNetwork(chainID: string): Promise<void> {
-    return this.chainService.removeCustomChain(chainID)
+    // Per origin chain id settings
+    await this.internalEthereumProviderService.removePrefererencesForChain(
+      chainID
+    )
+    // Connected dApps
+    await this.providerBridgeService.revokePermissionsForChain(chainID)
+    await this.chainService.removeCustomChain(chainID)
   }
 
   async queryCustomTokenDetails(
@@ -1810,6 +1864,8 @@ export default class Main extends BaseService<never> {
     addressOnNetwork: AddressOnNetwork
   ): Promise<{
     asset: SmartContractFungibleAsset
+    amount: bigint
+    mainCurrencyAmount?: number
     balance: number
     exists?: boolean
   }> {
@@ -1823,23 +1879,38 @@ export default class Main extends BaseService<never> {
           sameEVMAddress(contractAddress, asset.contractAddress)
       )
 
-    const result = await this.chainService.queryTokenDetails(
+    const assetData = await this.chainService.queryAccountTokenDetails(
       contractAddress,
       addressOnNetwork,
       cachedAsset
     )
 
-    return { ...result, exists: !!cachedAsset }
+    const priceData = await getTokenPrices([contractAddress], USD, network)
+
+    const convertedAssetAmount =
+      contractAddress in priceData
+        ? convertAssetAmountViaPricePoint(
+            assetData,
+            getPricePoint(assetData.asset, priceData[contractAddress])
+          )
+        : undefined
+
+    const mainCurrencyAmount = convertedAssetAmount
+      ? assetAmountToDesiredDecimals(convertedAssetAmount, 2)
+      : undefined
+
+    return {
+      ...assetData,
+      balance: Number.parseFloat(
+        utils.formatUnits(assetData.amount, assetData.asset.decimals)
+      ),
+      mainCurrencyAmount,
+      exists: !!cachedAsset,
+    }
   }
 
-  async importTokenViaContractAddress(
-    contractAddress: HexString,
-    network: EVMNetwork
-  ): Promise<void> {
-    return this.indexingService.addTokenToTrackByContract(
-      network,
-      contractAddress
-    )
+  async importCustomToken(asset: SmartContractFungibleAsset): Promise<boolean> {
+    return this.indexingService.importCustomToken(asset)
   }
 
   private connectPopupMonitor() {

@@ -5,8 +5,6 @@ import {
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import classNames from "classnames"
 import { useHistory } from "react-router-dom"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
 import { useBackgroundSelector } from "../../hooks"
@@ -16,6 +14,7 @@ import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import Receive from "../../pages/Receive"
 import ReadOnlyNotice from "../Shared/ReadOnlyNotice"
 import SharedSquareButton from "../Shared/SharedSquareButton"
+import SharedTooltip from "../Shared/SharedTooltip"
 
 type ActionButtonsProps = {
   onReceive: () => void
@@ -30,85 +29,94 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   return (
-    <div
-      className={classNames("action_buttons_wrap", {
-        with_icons: isEnabled(FeatureFlags.SUPPORT_NFT_TAB),
-      })}
-    >
-      {isEnabled(FeatureFlags.SUPPORT_NFT_TAB) ? (
-        <>
-          <div className="button_wrap">
-            <SharedSquareButton
-              icon="icons/s/send.svg"
-              ariaLabel={t("send")}
-              onClick={() => history.push("/send")}
-            >
-              {t("send")}
-            </SharedSquareButton>
-          </div>
-          {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) && (
-            <div className="button_wrap">
+    <div className="action_buttons_wrap">
+      <div className="button_wrap">
+        <SharedSquareButton
+          icon="icons/s/send.svg"
+          ariaLabel={t("send")}
+          onClick={() => history.push("/send")}
+        >
+          {t("send")}
+        </SharedSquareButton>
+      </div>
+      {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) ? (
+        <div className="button_wrap">
+          <SharedSquareButton
+            icon="icons/s/swap.svg"
+            ariaLabel={t("swap")}
+            onClick={() => history.push("/swap")}
+            iconColor={{
+              color: "var(--trophy-gold)",
+              hoverColor: "var(--gold-80)",
+            }}
+          >
+            {t("swap")}
+          </SharedSquareButton>
+        </div>
+      ) : (
+        <div className="button_wrap">
+          <SharedTooltip
+            type="dark"
+            width={180}
+            height={48}
+            horizontalPosition="center"
+            verticalPosition="bottom"
+            horizontalShift={22}
+            customStyles={{
+              marginLeft: "0",
+              display: "flex",
+              justifyContent: "center",
+              width: "100%",
+            }}
+            IconComponent={() => (
               <SharedSquareButton
                 icon="icons/s/swap.svg"
                 ariaLabel={t("swap")}
-                onClick={() => history.push("/swap")}
                 iconColor={{
-                  color: "var(--trophy-gold)",
-                  hoverColor: "var(--gold-80)",
+                  color: "#3A6565",
+                  hoverColor: "#3A6565",
                 }}
+                disabled
               >
                 {t("swap")}
               </SharedSquareButton>
+            )}
+          >
+            <div className="centered_tooltip">
+              <div>{t("swapDisabledOne")}</div>
+              <div>{t("swapDisabledTwo")}</div>
             </div>
-          )}
-          <div className="button_wrap">
-            <SharedSquareButton
-              icon="icons/s/receive.svg"
-              ariaLabel={t("receive")}
-              onClick={onReceive}
-            >
-              {t("receive")}
-            </SharedSquareButton>
-          </div>
-        </>
-      ) : (
-        <>
-          <SharedButton
-            iconSmall="send"
-            size="medium"
-            type="tertiary"
-            linkTo="/send"
-            iconPosition="left"
-          >
-            {t("send")}
-          </SharedButton>
-          <SharedButton
-            onClick={onReceive}
-            iconSmall="receive"
-            size="medium"
-            type="tertiary"
-            iconPosition="left"
-          >
-            {t("receive")}
-          </SharedButton>
-        </>
+          </SharedTooltip>
+        </div>
       )}
+      <div className="button_wrap">
+        <SharedSquareButton
+          icon="icons/s/receive.svg"
+          ariaLabel={t("receive")}
+          onClick={onReceive}
+        >
+          {t("receive")}
+        </SharedSquareButton>
+      </div>
       <style jsx>
         {`
           .action_buttons_wrap {
             display: flex;
             width: 180px;
-            gap: 16px;
             justify-content: center;
-          }
-          .action_buttons_wrap.with_icons {
             margin: 8px 0 32px;
-            gap: 0;
           }
           .button_wrap {
             margin: 0 7px;
             width: 50px;
             text-align: center;
+          }
+          .centered_tooltip {
+            display: flex;
+            font-size: 14px;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
           }
         `}
       </style>

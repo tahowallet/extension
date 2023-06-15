@@ -1,20 +1,27 @@
 import React, { ReactElement } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 
+import {
+  SmartContractFungibleAsset,
+  SwappableAsset,
+} from "@tallyho/tally-background/assets"
+
 import DoggoAssetListItem from "./AssetListItem/DoggoAssetListItem"
 import CommonAssetListItem from "./AssetListItem/CommonAssetListItem"
 
-interface Props {
-  assetAmount: CompleteAssetAmount
+type Props = {
+  assetAmount: CompleteAssetAmount<SwappableAsset>
   initializationLoadingTimeExpired: boolean
-  onUntrustedAssetWarningClick?: (asset: CompleteAssetAmount["asset"]) => void
+  onUnverifiedAssetWarningClick?: (
+    asset: CompleteAssetAmount<SmartContractFungibleAsset>["asset"]
+  ) => void
 }
 
 export default function WalletAssetListItem(props: Props): ReactElement {
   const {
     assetAmount,
     initializationLoadingTimeExpired,
-    onUntrustedAssetWarningClick,
+    onUnverifiedAssetWarningClick,
   } = props
 
   const isDoggoAsset = assetAmount.asset.symbol === "DOGGO"
@@ -27,7 +34,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
         <CommonAssetListItem
           assetAmount={assetAmount}
           initializationLoadingTimeExpired={initializationLoadingTimeExpired}
-          onUntrustedAssetWarningClick={onUntrustedAssetWarningClick}
+          onUnverifiedAssetWarningClick={onUnverifiedAssetWarningClick}
         />
       )}
       <style jsx global>
@@ -61,16 +68,6 @@ export default function WalletAssetListItem(props: Props): ReactElement {
           }
           .asset_icon_swap {
             mask-image: url("./images/swap_asset.svg");
-          }
-          .untrusted_asset_icon {
-            display: inline-block;
-            mask-image: url("./images/icons/m/notif-attention.svg");
-            mask-size: cover;
-            width: 22px;
-            height: 22px;
-            margin-left: 6px;
-            background-color: var(--trophy-gold);
-            font-size: 0;
           }
         `}
       </style>

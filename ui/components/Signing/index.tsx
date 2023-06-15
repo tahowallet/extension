@@ -5,14 +5,14 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import { useBackgroundSelector } from "../../hooks"
-import SignTransactionNetworkAccountInfoTopBar from "../SignTransaction/SignTransactionNetworkAccountInfoTopBar"
 import {
   ResolvedSignatureDetails,
   useResolvedSignatureDetails,
 } from "./SignatureDetails"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
-import SignTransactionLoader from "../SignTransaction/SignTransactionLoader"
 import SignerFrame from "./Signer/SignerFrame"
+import SigningLoading from "./SigningLoading"
+import SigningNetworkAccountInfoTopBar from "./SigningNetworkAccountInfoTopBar"
 
 // Signing acts as a dispatcher, so prop spreading is a good tradeoff.
 // The explicit prop and component types ease the linter rule's concern around
@@ -46,9 +46,7 @@ function SigningLoaded<T extends SignOperationType>({
         customStyles="margin: 15px 0 15px 220px;"
       >
         {signerAccountTotal !== undefined && (
-          <SignTransactionNetworkAccountInfoTopBar
-            accountTotal={signerAccountTotal}
-          />
+          <SigningNetworkAccountInfoTopBar accountTotal={signerAccountTotal} />
         )}
       </SharedSkeletonLoader>
       <SignerFrame request={request} {...signatureDetails}>
@@ -118,8 +116,7 @@ export default function Signing<T extends SignOperationType>({
   // Note that signatureDetails should only be undefined if request is
   // undefined.
   if (request === undefined || signatureDetails === undefined) {
-    // FIXME Move to SigningLoader when removing feature flag.
-    return <SignTransactionLoader />
+    return <SigningLoading />
   }
 
   return <SigningLoaded request={request} signatureDetails={signatureDetails} />

@@ -36,7 +36,6 @@ import {
 } from "./utils"
 import { toHexChainID } from "../../networks"
 import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
-import { FeatureFlags, isEnabled } from "../../features"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -274,6 +273,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         origin,
         dAppChainID
       )
+
       if (typeof persistedPermission !== "undefined") {
         // if agrees then let's return the account data
 
@@ -282,6 +282,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
           "eth_accounts",
           event.request.params,
           origin
+        )
+
+        // on dApp connection, persist the current network/origin state
+        await this.internalEthereumProviderService.switchToSupportedNetwork(
+          origin,
+          network
         )
       } else {
         // if user does NOT agree, then reject
@@ -424,6 +430,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
     return this.db.checkPermission(origin, currentAddress, chainID)
   }
 
+  async revokePermissionsForChain(chainId: string): Promise<void> {
+    await this.db.deletePermissionsByChain(chainId)
+  }
+
   async routeSafeRequest(
     method: string,
     params: unknown[],
@@ -516,15 +526,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
           )
 
         case "wallet_addEthereumChain": {
-          if (!isEnabled(FeatureFlags.SUPPORT_CUSTOM_NETWORKS)) {
-            // Attempt to switch to a chain if its one of the natively supported ones - otherwise fail
-            return await this.internalEthereumProviderService.routeSafeRPCRequest(
-              method,
-              params,
-              origin
-            )
-          }
-
           const id = this.addNetworkRequestId.toString()
 
           this.addNetworkRequestId += 1
@@ -558,6 +559,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
           })
 
           await userConfirmation
+
+          const account = await this.preferenceService.getSelectedAccount()
+
+          await this.grantPermission({
+            ...enablingPermission,
+            key: `${origin}_${account.address}_${validatedData.chainId}`,
+            chainID: validatedData.chainId,
+          })
 
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,

@@ -8,7 +8,12 @@ import {
   createPricePoint,
   createSmartContractAsset,
 } from "../../tests/factories"
-import { AssetsState, selectAssetPricePoint, SingleAssetState } from "../assets"
+import reducer, {
+  assetsLoaded,
+  AssetsState,
+  selectAssetPricePoint,
+  SingleAssetState,
+} from "../assets"
 
 const asset: SmartContractFungibleAsset = createSmartContractAsset()
 
@@ -22,6 +27,23 @@ const assetWithPricePoint = {
 }
 
 const assetState: AssetsState = [assetWithPricePoint]
+
+describe("Reducers", () => {
+  describe("assetsLoaded", () => {
+    test("updates cached asset metadata", () => {
+      const state = reducer([], assetsLoaded([asset]))
+
+      expect(state[0].metadata?.verified).not.toBeDefined()
+
+      const newState = reducer(
+        state,
+        assetsLoaded([{ ...asset, metadata: { verified: true } }])
+      )
+
+      expect(newState[0].metadata?.verified).toBeTruthy()
+    })
+  })
+})
 
 describe("Assets selectors", () => {
   describe("Price Points", () => {

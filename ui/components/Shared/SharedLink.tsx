@@ -1,9 +1,11 @@
+import classNames from "classnames"
 import React, { ReactElement } from "react"
 
 type Props = {
   url: string
   children?: React.ReactNode
   text?: string
+  type?: "link" | "button"
   styles?: React.CSSProperties & Record<string, string>
 }
 
@@ -12,6 +14,7 @@ export default function SharedLink({
   children,
   url,
   styles = {},
+  type = "link",
 }: Props): ReactElement {
   return (
     <a
@@ -19,7 +22,7 @@ export default function SharedLink({
       href={url}
       target="_blank"
       rel="noreferrer"
-      className="link"
+      className={classNames("link", { button: type === "button" })}
     >
       {text ?? children}
       <style jsx>{`
@@ -27,7 +30,11 @@ export default function SharedLink({
           color: var(--link-color, var(--trophy-gold));
         }
         .link:hover {
-          color: var(--gold-40);
+          color: var(--hover-color, var(--gold-40));
+        }
+        .button {
+          padding: 4px;
+          display: inline-block;
         }
       `}</style>
     </a>

@@ -27,6 +27,7 @@ import {
   USD,
 } from "../constants"
 import { DaylightAbility } from "../lib/daylight"
+import { normalizeEVMAddress } from "../lib/utils"
 import {
   AnyEVMTransaction,
   LegacyEVMTransactionRequest,
@@ -34,6 +35,7 @@ import {
   BlockPrices,
   NetworkBaseAsset,
 } from "../networks"
+import { AccountData, CompleteAssetAmount } from "../redux-slices/accounts"
 import {
   AnalyticsService,
   ChainService,
@@ -270,7 +272,7 @@ export const createAccountBalance = (
 export const createAddressOnNetwork = (
   overrides: Partial<AddressOnNetwork> = {}
 ): AddressOnNetwork => ({
-  address: createRandom0xHash(),
+  address: normalizeEVMAddress(createRandom0xHash()),
   network: ETHEREUM,
   ...overrides,
 })
@@ -313,6 +315,22 @@ export const createTransactionsToRetrieve = (
     }),
     priority: 0,
   }))
+}
+
+export const createAccountData = (
+  overrides: Partial<AccountData> = {}
+): AccountData => {
+  return {
+    address: createAddressOnNetwork().address,
+    network: ETHEREUM,
+    balances: {},
+    ens: {
+      name: "test.crypto",
+    },
+    defaultName: "Test",
+    defaultAvatar: "test.png",
+    ...overrides,
+  }
 }
 
 export const createTransactionResponse = (
@@ -434,6 +452,20 @@ export const createAssetAmount = (
   return {
     asset,
     amount: BigInt(Math.trunc(1e10 * amount)) * 10n ** 8n,
+  }
+}
+
+export const createCompleteAssetAmount = (
+  asset: AnyAsset = ETH,
+  amount = 1,
+  overrides: Partial<CompleteAssetAmount<AnyAsset>> = {}
+): CompleteAssetAmount<AnyAsset> => {
+  const assetAmount = createAssetAmount(asset, amount)
+  return {
+    ...assetAmount,
+    decimalAmount: amount,
+    localizedDecimalAmount: amount.toFixed(2),
+    ...overrides,
   }
 }
 
