@@ -14,11 +14,7 @@ import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { intersperseWith } from "../../utils/lists"
 import { ADD_CUSTOM_NETWORK } from "../Onboarding/Tabbed/Routes"
-
-const CHAIN_LIST = {
-  name: "ChainList",
-  url: "https://chainlist.org/",
-}
+import { CHAIN_LIST } from "../../utils/constants"
 
 export default function SettingsCustomNetworks(): ReactElement {
   const { t } = useTranslation("translation", {

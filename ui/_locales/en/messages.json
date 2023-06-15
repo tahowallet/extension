@@ -64,6 +64,18 @@
     }
   },
   "comingSoon": "Coming soon",
+  "customNetworksTab": {
+    "title": "Add custom network",
+    "subtitle": "Make sure you trust the provider and that details are correct.<br>Adding malicious RPC could result in loss of funds.<br>If you aren't sure of the details of an RPC, we advice using <url>ChainList</url> to add them.",
+    "input.networkName": "Network name",
+    "input.rpc": "RPC URL",
+    "input.chainID": "Chain ID",
+    "input.symbol": "Currency Symbol (Optional)",
+    "input.blockExplorer": "Block explorer (Optional)",
+    "input.logoURL": "Link to logo (Optional)",
+    "input.isTestnet": "This is a test network",
+    "form.submit": "Add network"
+  },
   "dappConnection": {
     "connectToDapp": "Connect to dApp",
     "dappPermissionListTitle": "dApp would get permission to:",
