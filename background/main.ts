@@ -54,7 +54,7 @@ import {
 } from "./redux-slices/accounts"
 import {
   assetsLoaded,
-  newPricePoint,
+  newPricePoints,
   refreshAsset,
   removeAssetData,
 } from "./redux-slices/assets"
@@ -1065,8 +1065,8 @@ export default class Main extends BaseService<never> {
       await this.store.dispatch(assetsLoaded(assets))
     })
 
-    this.indexingService.emitter.on("price", (pricePoint) => {
-      this.store.dispatch(newPricePoint(pricePoint))
+    this.indexingService.emitter.on("prices", (pricePoints) => {
+      this.store.dispatch(newPricePoints(pricePoints))
     })
 
     this.indexingService.emitter.on("refreshAsset", (asset) => {

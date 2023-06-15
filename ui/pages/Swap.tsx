@@ -34,7 +34,6 @@ import {
   selectInProgressApprovalContract,
 } from "@tallyho/tally-background/redux-slices/selectors/0xSwapSelectors"
 import { isSameAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
@@ -379,7 +378,7 @@ export default function Swap(): ReactElement {
 
   return (
     <>
-      <CorePage>
+      <>
         <div className="standard_width">
           <div className="back_button_wrap">
             <SharedBackButton path="/" />
@@ -544,7 +543,7 @@ export default function Swap(): ReactElement {
             </div>
           </div>
         </div>
-      </CorePage>
+      </>
       <style jsx>
         {`
           .header {

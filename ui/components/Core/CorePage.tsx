@@ -1,5 +1,7 @@
 import React, { ReactElement } from "react"
 import Snackbar from "../Snackbar/Snackbar"
+import TabBar from "../TabBar/TabBar"
+import TopMenu from "../TopMenu/TopMenu"
 
 interface Props {
   children: React.ReactNode
@@ -10,22 +12,21 @@ interface Props {
 export default function CorePage(props: Props): ReactElement {
   const { children, hasTopBar, hasTabBar } = props
 
-  let barSpace = 0
-  if (hasTabBar) {
-    // Tab bar is given 56px of height
-    barSpace += 56
-  }
-  if (hasTopBar) {
-    // Top bar is given 64px of height
-    barSpace += 64
-  }
-
   return (
-    <main>
-      {children}
-      <Snackbar />
+    <section>
+      {hasTopBar ? <TopMenu /> : <></>}
+      <main>
+        {children}
+        <Snackbar />
+      </main>
+      {hasTabBar ? <TabBar /> : <></>}
       <style jsx>
         {`
+          section {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+          }
           main {
             width: 100%;
             overflow-y: auto;
@@ -35,9 +36,7 @@ export default function CorePage(props: Props): ReactElement {
             margin: 0 auto;
             align-items: center;
             background-color: var(--hunter-green);
-            z-index: 10;
-            height: calc(100vh - ${barSpace}px);
-            margin-top: ${hasTopBar ? "0px" : "-64px"};
+            height: 100%;
           }
           .top_menu_wrap {
             z-index: 10;
@@ -45,7 +44,7 @@ export default function CorePage(props: Props): ReactElement {
           }
         `}
       </style>
-    </main>
+    </section>
   )
 }
 

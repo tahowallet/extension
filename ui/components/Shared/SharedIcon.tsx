@@ -37,6 +37,7 @@ export default function SharedIcon(props: Props): ReactElement {
         type="button"
         onClick={onClick}
         disabled={disabled}
+        title={ariaLabel}
         aria-label={ariaLabel}
       >
         <style jsx>{`
