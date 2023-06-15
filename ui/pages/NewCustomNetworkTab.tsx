@@ -1,13 +1,17 @@
 import React, { useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
-import SharedLink from "../components/Shared/SharedLink"
+import { addCustomChain } from "@tallyho/tally-background/redux-slices/networks"
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
+import { validateAddEthereumChainParameter } from "@tallyho/tally-background/services/provider-bridge/utils"
 import { CHAIN_LIST } from "../utils/constants"
+import SharedLink from "../components/Shared/SharedLink"
 import SharedInput from "../components/Shared/SharedInput"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedNetworkIcon from "../components/Shared/SharedNetworkIcon"
 import { useSetState } from "../hooks/react-hooks"
+import { useBackgroundDispatch } from "../hooks"
 
 function isValidUrl(urlLike: string) {
   let url: URL
@@ -138,6 +142,8 @@ export default function NewCustomNetworkTab(): JSX.Element {
     keyPrefix: "shared",
   })
 
+  const dispatch = useBackgroundDispatch()
+
   const [formData, setFormData] = useSetState({
     networkName: "",
     rpc: "",
@@ -161,22 +167,33 @@ export default function NewCustomNetworkTab(): JSX.Element {
     logoURL: false,
   })
 
-  const handleSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+  const [addedNetwork, setAddedNetwork] = useState<EVMNetwork | null>(null)
+
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (
+    event
+  ) => {
     event.preventDefault()
-    // TODO: Send validated parameters
+    const { symbol, networkName, rpc, chainID, blockExplorer, logoURL } =
+      formData
+
+    const network = (await dispatch(
+      addCustomChain([
+        validateAddEthereumChainParameter({
+          chainName: networkName,
+          rpcUrls: [rpc],
+          chainId: chainID,
+          blockExplorerUrls: blockExplorer ? [blockExplorer] : [],
+          iconUrls: logoURL ? [logoURL] : [],
+          nativeCurrency: { name: symbol, symbol, decimals: 18 },
+        }),
+      ])
+    )) as unknown as AsyncThunkFulfillmentType<typeof addCustomChain>
+
+    setAddedNetwork(network)
   }
 
-  const [submitSuccess] = useState(false)
-
-  if (submitSuccess) {
-    return (
-      <NewCustomNetworkSuccess
-        // TODO: Vlad's chain doesn't exist
-        network={
-          { chainID: "777", name: "Vlad's Chain" } as unknown as EVMNetwork
-        }
-      />
-    )
+  if (addedNetwork) {
+    return <NewCustomNetworkSuccess network={addedNetwork} />
   }
 
   const validateURLValue = (
