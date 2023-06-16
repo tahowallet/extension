@@ -106,6 +106,7 @@ export default class AbilitiesService extends BaseService<Events> {
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
+    await this.fetchAbilities()
   }
 
   // Should only be called with ledger or imported accounts
@@ -190,12 +191,7 @@ export default class AbilitiesService extends BaseService<Events> {
     }
   }
 
-  async refreshAbilities(): Promise<void> {
-    const lastFetchTime = localStorage.getItem(this.ABILITY_TIME_KEY)
-
-    if (lastFetchTime && Number(lastFetchTime) + HOUR > Date.now()) {
-      return
-    }
+  async fetchAbilities(): Promise<void> {
     localStorage.setItem(this.ABILITY_TIME_KEY, Date.now().toString())
     const accountsToTrack = await this.chainService.getAccountsToTrack()
     const addresses = new Set(
@@ -207,6 +203,15 @@ export default class AbilitiesService extends BaseService<Events> {
     for (const address of addresses) {
       this.emitter.emit("initAbilities", address)
     }
+  }
+
+  async refreshAbilities(): Promise<void> {
+    const lastFetchTime = localStorage.getItem(this.ABILITY_TIME_KEY)
+
+    if (lastFetchTime && Number(lastFetchTime) + HOUR > Date.now()) {
+      return
+    }
+    await this.fetchAbilities()
   }
 
   async reportAndRemoveAbility(
