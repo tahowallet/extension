@@ -12,7 +12,7 @@ export default function RouteBasedContent(): JSX.Element {
   return (
     <Switch>
       <Route key={OnboardingRoutes.NEW_SEED} path={OnboardingRoutes.NEW_SEED}>
-        <div className="fadeIn">
+        <div className="fade_in">
           {t("newSeed.tip")}
           <SharedButton
             type="secondary"
@@ -35,30 +35,30 @@ export default function RouteBasedContent(): JSX.Element {
         key={OnboardingRoutes.ADD_WALLET}
         path={OnboardingRoutes.ADD_WALLET}
       >
-        <div className="fadeIn">{t("addWallet.tip")}</div>
+        <div className="fade_in">{t("addWallet.tip")}</div>
       </Route>
       <Route
         key={OnboardingRoutes.VIEW_ONLY_WALLET}
         path={OnboardingRoutes.VIEW_ONLY_WALLET}
       >
-        <div className="fadeIn">{t("viewOnly.tip")}</div>
+        <div className="fade_in">{t("viewOnly.tip")}</div>
       </Route>
       <Route
         key={OnboardingRoutes.IMPORT_SEED}
         path={OnboardingRoutes.IMPORT_SEED}
       >
-        <div className="fadeIn">{t("importSeed.tip")}</div>
+        <div className="fade_in">{t("importSeed.tip")}</div>
       </Route>
       <Route
         key={OnboardingRoutes.ONBOARDING_COMPLETE}
         path={OnboardingRoutes.ONBOARDING_COMPLETE}
       >
-        <div className="fadeIn">
+        <div className="fade_in">
           <WalletShortcut />
         </div>
       </Route>
       <Route>
-        <div className="onboarding_facts fadeIn">
+        <div className="onboarding_facts fade_in">
           <p>{t("default.fact1")}</p>
           <p>{t("default.fact2")}</p>
           <p>{t("default.fact3")}</p>
