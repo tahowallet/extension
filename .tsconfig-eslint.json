@@ -7,5 +7,11 @@
     "**/*.tsx",
     ".github/**/*.js"
   ],
-  "exclude": ["node_modules", "dist", "**/validate/*.js", "**/local-chain/**"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/validate/*.js",
+    "**/local-chain/**",
+    "ci/cache"
+  ]
 }
