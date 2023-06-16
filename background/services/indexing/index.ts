@@ -48,7 +48,6 @@ import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../../lib/utils"
-import { fixPolygonWETHIssue, polygonTokenListURL } from "./token-list-edit"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -911,11 +910,6 @@ export default class IndexingService extends BaseService<Events> {
           try {
             const newListRef = await fetchAndValidateTokenList(url)
 
-            if (url === polygonTokenListURL) {
-              newListRef.tokenList.tokens = fixPolygonWETHIssue(
-                newListRef.tokenList.tokens
-              )
-            }
             await this.db.saveTokenList(url, newListRef.tokenList)
           } catch (err) {
             logger.error(
