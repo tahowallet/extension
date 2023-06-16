@@ -5,12 +5,14 @@ import {
   Activity,
   fetchSelectedActivityDetails,
 } from "@tallyho/tally-background/redux-slices/activities"
-import SharedButton from "../Shared/SharedButton"
 import SharedAddress from "../Shared/SharedAddress"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import { scanWebsite } from "../../utils/constants"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
+import SharedActivityIcon from "../Shared/SharedActivityIcon"
+import SharedIcon from "../Shared/SharedIcon"
+import useActivityViewDetails from "../../hooks/activity-hooks"
+import { getBlockExplorerURL } from "../../utils/networks"
 
 function DetailRowItem(props: ActivityDetail): ReactElement {
   const { assetIconUrl, label, value } = props
@@ -110,6 +112,7 @@ function DestinationCard(props: DestinationCardProps): ReactElement {
 
 interface WalletActivityDetailsProps {
   activityItem: Activity
+  activityInitiatorAddress: string
 }
 // Include this "or" type to handle existing placeholder data
 // on the single asset page. TODO: Remove once single asset page
@@ -118,18 +121,18 @@ interface WalletActivityDetailsProps {
 export default function WalletActivityDetails(
   props: WalletActivityDetailsProps
 ): ReactElement {
-  const { activityItem } = props
+  const { activityItem, activityInitiatorAddress } = props
   const dispatch = useBackgroundDispatch()
   const [details, setDetails] = useState<ActivityDetail[]>([])
   const network = useBackgroundSelector(selectCurrentNetwork)
 
-  const scanWebsiteInfo = scanWebsite[network.chainID]
+  const blockExplorerUrl = getBlockExplorerURL(network)
 
   const openExplorer = useCallback(() => {
     window
-      .open(`${scanWebsiteInfo.url}/tx/${activityItem.hash}`, "_blank")
+      .open(`${blockExplorerUrl}/tx/${activityItem.hash}`, "_blank")
       ?.focus()
-  }, [activityItem?.hash, scanWebsiteInfo])
+  }, [activityItem?.hash, blockExplorerUrl])
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -144,22 +147,24 @@ export default function WalletActivityDetails(
     fetchDetails()
   }, [activityItem.hash, dispatch])
 
-  if (!activityItem) return <></>
+  const activityViewDetails = useActivityViewDetails(
+    activityItem,
+    activityInitiatorAddress
+  )
 
   return (
     <div className="wrap standard_width center_horizontal">
       <div className="header">
-        {scanWebsiteInfo && (
-          <div className="header_button">
-            <SharedButton
-              type="tertiary"
-              size="medium"
-              iconMedium="new-tab"
-              onClick={openExplorer}
-            >
-              {scanWebsiteInfo?.title}
-            </SharedButton>
-          </div>
+        <SharedActivityIcon type={activityViewDetails.icon} size={16} />
+        <span className="header_title">{activityViewDetails.label}</span>
+        {blockExplorerUrl && (
+          <SharedIcon
+            icon="icons/s/new-tab.svg"
+            width={16}
+            color="var(--green-40)"
+            hoverColor="var(--trophy-gold)"
+            onClick={openExplorer}
+          />
         )}
       </div>
       <div className="destination_cards">
@@ -205,13 +210,18 @@ export default function WalletActivityDetails(
           }
           .header {
             display: flex;
-            align-items: top;
-            justify-content: space-between;
-            width: 304px;
-            margin-bottom: 10px;
+            align-items: center;
+            margin: 18px 0;
           }
-          .header_button {
-            margin-top: 10px;
+          .header_title {
+            margin-left: 4px;
+            margin-right: 8px;
+            font-family: "Segment";
+            font-style: normal;
+            font-weight: 600;
+            font-size: 18px;
+            line-height: 24px;
+            color: var(--white);
           }
           .icon_transfer {
             background: url("./images/transfer@2x.png") center no-repeat;

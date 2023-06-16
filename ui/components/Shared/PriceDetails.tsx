@@ -37,13 +37,36 @@ export default function PriceDetails(props: PriceDetailsProps): ReactElement {
   return (
     <div className="simple_text content_wrap">
       {!isLoading && amountMainCurrency === undefined ? (
-        t("noAssetPrice")
+        <SharedTooltip
+          width={180}
+          height={27}
+          horizontalPosition="center"
+          horizontalShift={82}
+          IconComponent={() => (
+            <div className="warning">
+              {t("noAssetPrice")}
+              <SharedIcon
+                width={16}
+                icon="icons/m/info.svg"
+                color="var(--attention)"
+                customStyles="flex-shrink: 0;"
+              />
+            </div>
+          )}
+        >
+          <div>
+            {t("noAssetPriceTooltip.firstLine")}
+            <br />
+            <br />
+            {t("noAssetPriceTooltip.secondLine")}
+          </div>
+        </SharedTooltip>
       ) : (
         <>
           {amountMainCurrency === "0.00" && "<"}
           {mainCurrencySign}
           {amountMainCurrency || "0.00"}
-          {!!priceImpact && priceImpact > 1 && (
+          {!isLoading && !!priceImpact && priceImpact > 1 && (
             <span
               data-testid="price_impact_percent"
               className="price_impact_percent"
@@ -80,6 +103,15 @@ export default function PriceDetails(props: PriceDetailsProps): ReactElement {
           flex-direction: row;
           justify-content: end;
           gap: 2px;
+        }
+        .warning {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 5px;
+          color: var(--attention);
+          line-height: 16px;
+          text-align: right;
         }
         .price_impact_percent {
           color: var(--${getPriceImpactColor(priceImpact)});

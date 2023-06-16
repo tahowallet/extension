@@ -1,12 +1,7 @@
-import { FeatureFlags } from "@tallyho/tally-background/features"
 import { wait } from "@tallyho/tally-background/lib/utils"
-import { skipIfFeatureFlagged, test, expect } from "./utils"
-
-skipIfFeatureFlagged(FeatureFlags.SUPPORT_NFT_TAB)
+import { test, expect } from "./utils"
 
 test.describe("NFTs", () => {
-  test.use({ viewport: { width: 384, height: 600 } })
-
   test("User can view nft collections, poaps and badges", async ({
     page,
     backgroundPage,
@@ -41,7 +36,10 @@ test.describe("NFTs", () => {
         }
       })
 
-      await walletPageHelper.onboardReadOnlyAddress("bravonaver.eth")
+      await walletPageHelper.onboarding.addReadOnlyAccount("bravonaver.eth")
+
+      await walletPageHelper.goToStartPage()
+      await walletPageHelper.setViewportSize()
       await walletPageHelper.navigateTo("NFTs")
 
       await expect(page.getByTestId("loading_doggo")).toBeVisible()

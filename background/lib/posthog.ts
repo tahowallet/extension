@@ -1,12 +1,29 @@
 import { v4 as uuidv4 } from "uuid"
 
-import { FeatureFlags, isEnabled } from "../features"
 import logger from "./logger"
 
 export enum AnalyticsEvent {
   NEW_INSTALL = "New install",
   UI_SHOWN = "UI shown",
+  ACCOUNT_NAME_EDITED = "Account Name Edited",
+  ANALYTICS_TOGGLED = "Analytics Toggled",
+  DEFAULT_WALLET_TOGGLED = "Default Wallet Toggled",
+  TRANSACTION_SIGNED = "Transaction Signed",
   NEW_ACCOUNT_TO_TRACK = "Address added to tracking on network",
+  CUSTOM_CHAIN_ADDED = "Custom chain added",
+  DAPP_CONNECTED = "Dapp Connected",
+}
+
+export enum OneTimeAnalyticsEvent {
+  ONBOARDING_STARTED = "Onboarding Started",
+  ONBOARDING_FINISHED = "Onboarding Finished",
+  CHAIN_ADDED = "Chain Added",
+}
+
+export const isOneTimeAnalyticsEvent = (
+  eventName: string
+): eventName is OneTimeAnalyticsEvent => {
+  return Object.values<string>(OneTimeAnalyticsEvent).includes(eventName)
 }
 
 const POSTHOG_PROJECT_ID = "11112"
@@ -21,9 +38,7 @@ export const POSTHOG_URL =
 export const USE_ANALYTICS_SOURCE = process.env.USE_ANALYTICS_SOURCE
 
 export function shouldSendPosthogEvents(): boolean {
-  return (
-    isEnabled(FeatureFlags.SUPPORT_ANALYTICS) && !!process.env.POSTHOG_API_KEY
-  )
+  return !!process.env.POSTHOG_API_KEY
 }
 
 export function createPosthogPayload(

@@ -1,5 +1,9 @@
-import { isBuiltInNetwork } from "@tallyho/tally-background/constants"
+import {
+  DEFAULT_NETWORKS_BY_CHAIN_ID,
+  isBuiltInNetwork,
+} from "@tallyho/tally-background/constants"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { blockExplorer } from "./constants"
 
 // From chainlist.org
 export const FALLBACK_ICONS_BY_CHAINID: Record<string, string> = {
@@ -71,30 +75,17 @@ export const FALLBACK_ICONS_BY_CHAINID: Record<string, string> = {
 }
 
 export const NETWORK_COLORS_FALLBACK = [
-  "#75c128",
-  "#5abf35",
-  "#5cf959",
-  "#68f286",
-  "#09ba58",
-  "#16ad80",
-  "#22ada4",
-  "#43d5f2",
-  "#4da1dd",
-  "#5680ce",
-  "#07168c",
-  "#1b0d72",
-  "#762fef",
-  "#9d3bdb",
-  "#d14ee8",
-  "#e05ed5",
-  "#bf0782",
-  "#ef1a76",
-  "#db294d",
-  "#ce3d35",
-  "#c96a44",
-  "#d89a58",
-  "#f2bb07",
-  "#eaea19",
+  "#CC3C3C",
+  "#B64396",
+  "#D1517F",
+  "#5184D1",
+  "#404BB2",
+  "#43B69A",
+  "#43B671",
+  "#9FB643",
+  "#CDA928",
+  "#EAC130",
+  "#EA7E30",
 ]
 
 export function getNetworkIconFallbackColor(network: EVMNetwork): string {
@@ -125,4 +116,12 @@ export const getNetworkIcon = (network: EVMNetwork): string => {
   }
 
   return FALLBACK_ICONS_BY_CHAINID[network.chainID] ?? ""
+}
+
+export const getBlockExplorerURL = (
+  network: EVMNetwork
+): string | undefined => {
+  return DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
+    ? blockExplorer[network.chainID].url
+    : network.blockExplorerURL
 }

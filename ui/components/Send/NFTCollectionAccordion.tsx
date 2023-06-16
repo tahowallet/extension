@@ -4,9 +4,9 @@ import {
   NFTCollectionCached,
   fetchNFTsFromCollection,
   NFTCached,
-} from "@tallyho/tally-background/redux-slices/nfts_update"
+} from "@tallyho/tally-background/redux-slices/nfts"
 import { useBackgroundDispatch } from "../../hooks"
-import { scanWebsite } from "../../utils/constants"
+import { blockExplorer } from "../../utils/constants"
 import SharedAccordion from "../Shared/SharedAccordion"
 import SharedIcon from "../Shared/SharedIcon"
 import SharedLoadingDoggo from "../Shared/SharedLoadingDoggo"
@@ -103,7 +103,7 @@ export default function NFTCollectionAccordion({
             const { contract } = collection.nfts[0] ?? {}
 
             const url = `${
-              scanWebsite[collection.chainID].url
+              blockExplorer[collection.chainID].url
             }/token/${contract}`
 
             window.open(url, "_blank")?.focus()

@@ -16,8 +16,10 @@ import {
   OPTIMISM,
   POLYGON,
 } from "../../constants"
+import { FeatureFlags, isEnabled } from "../../features"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
-import { AnyNetwork, NetworkBaseAsset } from "../../networks"
+import { sameEVMAddress } from "../../lib/utils"
+import { AnyNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
 import { hardcodedMainCurrencySign } from "./constants"
 
 /**
@@ -43,7 +45,10 @@ export type AssetDecimalAmount = {
   localizedDecimalAmount: string
 }
 
-function hasChainID(asset: AnyAsset): asset is NetworkBaseAsset {
+/**
+ * All network base assets have a chainID property
+ */
+export function isNetworkBaseAsset(asset: AnyAsset): asset is NetworkBaseAsset {
   return "chainID" in asset
 }
 
@@ -51,7 +56,7 @@ function isOptimismBaseAsset(asset: AnyAsset) {
   const hasMatchingChainID =
     (isSmartContractFungibleAsset(asset) &&
       asset.homeNetwork.chainID === OPTIMISM.chainID) ||
-    (hasChainID(asset) && asset.chainID === OPTIMISM.chainID)
+    (isNetworkBaseAsset(asset) && asset.chainID === OPTIMISM.chainID)
 
   return (
     hasMatchingChainID &&
@@ -64,7 +69,7 @@ function isPolygonBaseAsset(asset: AnyAsset) {
   const hasMatchingChainID =
     (isSmartContractFungibleAsset(asset) &&
       asset.homeNetwork.chainID === POLYGON.chainID) ||
-    (hasChainID(asset) && asset.chainID === POLYGON.chainID)
+    (isNetworkBaseAsset(asset) && asset.chainID === POLYGON.chainID)
 
   return (
     hasMatchingChainID &&
@@ -96,7 +101,7 @@ export function isBuiltInNetworkBaseAsset(
   }
 
   return (
-    hasChainID(asset) &&
+    isNetworkBaseAsset(asset) &&
     asset.symbol === network.baseAsset.symbol &&
     asset.chainID === network.baseAsset.chainID &&
     asset.name === network.baseAsset.name
@@ -120,7 +125,7 @@ export function getBuiltInNetworkBaseAsset(
  * @param asset2 any asset
  * @returns true if both assets are the same network base assets
  */
-export function sameBuiltInNetworkBaseAsset(
+export function sameNetworkBaseAsset(
   asset1: AnyAsset,
   asset2: AnyAsset
 ): boolean {
@@ -133,8 +138,8 @@ export function sameBuiltInNetworkBaseAsset(
   if (
     "homeNetwork" in asset1 ||
     "homeNetwork" in asset2 ||
-    !hasChainID(asset1) ||
-    !hasChainID(asset2)
+    !isNetworkBaseAsset(asset1) ||
+    !isNetworkBaseAsset(asset2)
   ) {
     return false
   }
@@ -143,6 +148,20 @@ export function sameBuiltInNetworkBaseAsset(
     asset1.symbol === asset2.symbol &&
     asset1.chainID === asset2.chainID &&
     asset1.name === asset2.name
+  )
+}
+
+/**
+ * Tests whether two assets should be considered the same built in network base asset.
+ */
+export function sameBuiltInNetworkBaseAsset(
+  asset1: AnyAsset,
+  asset2: AnyAsset
+): boolean {
+  return BUILT_IN_NETWORK_BASE_ASSETS.some(
+    (baseAsset) =>
+      sameNetworkBaseAsset(baseAsset, asset1) &&
+      sameNetworkBaseAsset(baseAsset, asset2)
   )
 }
 
@@ -323,21 +342,77 @@ export function heuristicDesiredDecimalsForUnitPrice(
 }
 
 /**
+ * Check if the asset has a list of tokens.
+ * Assets that do not have it are considered untrusted.
+ *
+ */
+export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
+  if (asset) {
+    return !asset?.metadata?.tokenLists?.length
+  }
+  return false
+}
+
+/**
  * NB: non-base assets that don't have any token lists are considered
  * untrusted. Reifying base assets clearly will improve this check down the
  * road. Eventually, assets can be flagged as trusted by adding them to an
  * "internal" token list that users can export and share.
  *
  */
-export function isUntrustedAsset(
-  asset: AnyAsset | undefined,
-  selectedNetwork: AnyNetwork
-): boolean {
+export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
   if (asset) {
-    const numTokenLists = asset?.metadata?.tokenLists?.length ?? 0
-    const baseAsset = isBuiltInNetworkBaseAsset(asset, selectedNetwork)
+    if (asset.metadata?.verified !== undefined) {
+      // If we have verified metadata return it
+      return !asset.metadata.verified
+    }
 
-    return numTokenLists === 0 && !baseAsset
+    const baseAsset = isNetworkBaseAsset(asset)
+    const isUntrusted = isUntrustedAsset(asset)
+
+    return !baseAsset && isUntrusted
   }
+
   return false
+}
+
+/**
+ * Assets that are untrusted and have not been verified by the user
+ * should not be swapped or sent.
+ */
+export function canBeUsedForTransaction(asset: AnyAsset): boolean {
+  if (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)) {
+    return true
+  }
+  return isUntrustedAsset(asset) ? !isUnverifiedAssetByUser(asset) : true
+}
+
+// FIXME Unify once asset similarity code is unified.
+export function isSameAsset(asset1?: AnyAsset, asset2?: AnyAsset): boolean {
+  if (typeof asset1 === "undefined" || typeof asset2 === "undefined") {
+    return false
+  }
+
+  if (
+    isSmartContractFungibleAsset(asset1) &&
+    isSmartContractFungibleAsset(asset2)
+  ) {
+    return (
+      sameNetwork(asset1.homeNetwork, asset2.homeNetwork) &&
+      sameEVMAddress(asset1.contractAddress, asset2.contractAddress)
+    )
+  }
+
+  if (
+    isSmartContractFungibleAsset(asset1) ||
+    isSmartContractFungibleAsset(asset2)
+  ) {
+    return false
+  }
+
+  if (isNetworkBaseAsset(asset1) && isNetworkBaseAsset(asset2)) {
+    return sameNetworkBaseAsset(asset1, asset2)
+  }
+
+  return asset1.symbol === asset2.symbol
 }

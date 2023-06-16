@@ -23,7 +23,7 @@ const impersonateMetamaskWhitelist = [
   "traderjoexyz.com",
   "transferto.xyz",
   "opensea.io",
-  "staking.polygon.technology",
+  "polygon.technology",
   "gmx.io",
   "app.lyra.finance",
   "matcha.xyz",
@@ -57,6 +57,11 @@ const impersonateMetamaskWhitelist = [
   "bscscan.com",
   "alchemy.com",
   "cow.fi",
+  "tally.xyz",
+  "kyberswap.com",
+  "space.id",
+  "app.0xsplits.xyz",
+  "altlayer.io",
 ]
 
 const METAMASK_STATE_MOCK = {
@@ -136,12 +141,16 @@ export default class TallyWindowProvider extends EventEmitter {
       }
 
       if (isTallyConfigPayload(result)) {
+        const wasTallySetAsDefault = this.tallySetAsDefault
+
         window.walletRouter?.shouldSetTallyForCurrentProvider(
           result.defaultWallet,
-          result.shouldReload
+          result.shouldReload &&
+            process.env.ENABLE_UPDATED_DAPP_CONNECTIONS !== "true"
         )
         const currentHost = window.location.host
         if (
+          process.env.ENABLE_UPDATED_DAPP_CONNECTIONS === "true" ||
           impersonateMetamaskWhitelist.some((host) =>
             currentHost.includes(host)
           )
@@ -160,6 +169,32 @@ export default class TallyWindowProvider extends EventEmitter {
 
           this.tallySetAsDefault = result.defaultWallet
         }
+
+        // When the default state flips, reroute any unresolved requests to the
+        // new default provider.
+        if (
+          process.env.ENABLE_UPDATED_DAPP_CONNECTIONS === "true" &&
+          wasTallySetAsDefault &&
+          !this.tallySetAsDefault
+        ) {
+          const existingRequests = [...this.requestResolvers.entries()]
+          this.requestResolvers.clear()
+
+          existingRequests
+            // Make sure to re-route the requests in the order they were
+            // received.
+            .sort(([id], [id2]) => Number(BigInt(id2) - BigInt(id)))
+            .forEach(([, { sendData, reject, resolve }]) => {
+              window.walletRouter
+                ?.routeToNewDefault(sendData.request)
+                // On success or error, call the original reject/resolve
+                // functions to notify the requestor of the new wallet's
+                // response.
+                .then(resolve)
+                .catch(reject)
+            })
+        }
+
         if (result.chainId && result.chainId !== this.chainId) {
           this.handleChainIdChange(result.chainId)
         }

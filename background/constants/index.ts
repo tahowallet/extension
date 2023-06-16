@@ -23,8 +23,13 @@ export const MINUTE = 60 * SECOND
 export const HOUR = 60 * MINUTE
 export const DAY = 24 * HOUR
 
-export const COMMUNITY_MULTISIG_ADDRESS =
+export const DEFAULT_COMMUNITY_MULTISIG_ADDRESS =
   "0x99b36fDbC582D113aF36A21EBa06BFEAb7b9bE12"
+
+// TODO add correct multisig community addresses for chains
+export const COMMUNITY_MULTISIG_ADDRESS_BY_CHAINID: {
+  [chainID: string]: string
+} = {}
 
 export enum EarnStages {
   ComingSoon = "ComingSoon",

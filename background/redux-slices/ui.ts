@@ -2,7 +2,9 @@ import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
+import { AnalyticsEvent, OneTimeAnalyticsEvent } from "../lib/posthog"
 import { EVMNetwork } from "../networks"
+import { DismissableItem } from "../services/preferences"
 import { AnalyticsPreferences } from "../services/preferences/types"
 import { AccountSignerWithId } from "../signing"
 import { AccountSignerSettings } from "../ui"
@@ -15,6 +17,7 @@ export const defaultSettings = {
   showTestNetworks: false,
   collectAnalytics: false,
   showAnalyticsNotification: false,
+  showUnverifiedAssets: false,
   hideBanners: false,
 }
 
@@ -22,12 +25,15 @@ export type UIState = {
   selectedAccount: AddressOnNetwork
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
+  shownDismissableItems?: DismissableItem[]
+  // FIXME: Move these settings to preferences service db
   settings: {
     hideDust: boolean
     defaultWallet: boolean
     showTestNetworks: boolean
     collectAnalytics: boolean
     showAnalyticsNotification: boolean
+    showUnverifiedAssets: boolean
     hideBanners: boolean
   }
   snackbarMessage: string
@@ -41,6 +47,7 @@ export type Events = {
   deleteAnalyticsData: never
   newDefaultWalletValue: boolean
   refreshBackgroundPage: null
+  sendEvent: AnalyticsEvent | OneTimeAnalyticsEvent
   newSelectedAccount: AddressOnNetwork
   newSelectedAccountSwitched: AddressOnNetwork
   userActivityEncountered: AddressOnNetwork
@@ -79,6 +86,12 @@ const uiSlice = createSlice({
       { payload: showTestNetworks }: { payload: boolean }
     ): void => {
       immerState.settings.showTestNetworks = showTestNetworks
+    },
+    toggleShowUnverifiedAssets: (
+      immerState,
+      { payload: showUnverifiedAssets }: { payload: boolean }
+    ): void => {
+      immerState.settings.showUnverifiedAssets = showUnverifiedAssets
     },
     toggleCollectAnalytics: (
       state,
@@ -151,6 +164,23 @@ const uiSlice = createSlice({
         defaultWallet,
       },
     }),
+    setShownDismissableItems: (
+      state,
+      { payload: shownDismissableItems }: { payload: DismissableItem[] }
+    ) => ({
+      ...state,
+      shownDismissableItems,
+    }),
+    dismissableItemMarkedAsShown: (
+      state,
+      { payload: shownDismissableItem }: { payload: DismissableItem }
+    ) => ({
+      ...state,
+      shownDismissableItems: [
+        ...(state.shownDismissableItems ?? []),
+        shownDismissableItem,
+      ],
+    }),
     setRouteHistoryEntries: (
       state,
       { payload: routeHistoryEntries }: { payload: Partial<Location>[] }
@@ -179,12 +209,15 @@ export const {
   initializationLoadingTimeHitLimit,
   toggleHideDust,
   toggleTestNetworks,
+  toggleShowUnverifiedAssets,
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
   toggleHideBanners,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
+  setShownDismissableItems,
+  dismissableItemMarkedAsShown,
   clearSnackbarMessage,
   setRouteHistoryEntries,
   setSlippageTolerance,
@@ -241,6 +274,13 @@ export const updateSignerTitle = createBackgroundAsyncThunk(
   }
 )
 
+export const markDismissableItemAsShown = createBackgroundAsyncThunk(
+  "ui/markDismissableItemAsShown",
+  async (item: DismissableItem, { extra: { main } }) => {
+    return main.markDismissableItemAsShown(item)
+  }
+)
+
 export const getAddNetworkRequestDetails = createBackgroundAsyncThunk(
   "ui/getAddNetworkRequestDetails",
   async (requestId: string, { extra: { main } }) => {
@@ -289,6 +329,13 @@ export const refreshBackgroundPage = createBackgroundAsyncThunk(
   }
 )
 
+export const sendEvent = createBackgroundAsyncThunk(
+  "ui/sendEvent",
+  async (event: AnalyticsEvent | OneTimeAnalyticsEvent) => {
+    await emitter.emit("sendEvent", event)
+  }
+)
+
 export const selectUI = createSelector(
   (state: { ui: UIState }): UIState => state.ui,
   (uiState) => uiState
@@ -331,6 +378,11 @@ export const selectShowTestNetworks = createSelector(
   (settings) => settings?.showTestNetworks
 )
 
+export const selectShowUnverifiedAssets = createSelector(
+  selectSettings,
+  (settings) => settings?.showUnverifiedAssets
+)
+
 export const selectCollectAnalytics = createSelector(
   selectSettings,
   (settings) => settings?.collectAnalytics
@@ -340,3 +392,13 @@ export const selectHideBanners = createSelector(
   selectSettings,
   (settings) => settings?.hideBanners
 )
+
+export function selectShouldShowDismissableItem(
+  dismissableItem: DismissableItem
+) {
+  return (state: { ui: UIState }): boolean => {
+    const itemWasShown =
+      selectUI(state).shownDismissableItems?.includes(dismissableItem) ?? false
+    return !itemWasShown
+  }
+}

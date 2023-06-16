@@ -1,4 +1,4 @@
-import { FeatureFlags, isEnabled } from "../features"
+import { FeatureFlags, wrapIfEnabled } from "../features"
 import { EVMNetwork } from "../networks"
 import {
   ARBITRUM_NOVA_ETH,
@@ -10,6 +10,7 @@ import {
   MATIC,
   OPTIMISTIC_ETH,
   RBTC,
+  ZK_SYNC_ETH,
 } from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
@@ -85,6 +86,13 @@ export const GOERLI: EVMNetwork = {
   coingeckoPlatformID: "ethereum",
 }
 
+export const ZK_SYNC: EVMNetwork = {
+  name: "zkSync Era",
+  baseAsset: ZK_SYNC_ETH,
+  chainID: "324",
+  family: "EVM",
+}
+
 export const DEFAULT_NETWORKS = [
   ETHEREUM,
   POLYGON,
@@ -94,7 +102,7 @@ export const DEFAULT_NETWORKS = [
   ROOTSTOCK,
   AVALANCHE,
   BINANCE_SMART_CHAIN,
-  ...(isEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA) ? [ARBITRUM_NOVA] : []),
+  ...wrapIfEnabled(FeatureFlags.SUPPORT_ARBITRUM_NOVA, ARBITRUM_NOVA),
 ]
 
 export function isBuiltInNetwork(network: EVMNetwork): boolean {
@@ -136,6 +144,7 @@ export const NETWORK_BY_CHAIN_ID = {
   [BINANCE_SMART_CHAIN.chainID]: BINANCE_SMART_CHAIN,
   [GOERLI.chainID]: GOERLI,
   [FORK.chainID]: FORK,
+  [ZK_SYNC.chainID]: ZK_SYNC,
 }
 
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(
@@ -172,7 +181,11 @@ export const CHAIN_ID_TO_RPC_URLS: {
   [chainId: string]: Array<string> | undefined
 } = {
   [ROOTSTOCK.chainID]: ["https://public-node.rsk.co"],
-  [POLYGON.chainID]: ["https://polygon-rpc.com", "https://1rpc.io/matic"],
+  [POLYGON.chainID]: [
+    // This one sometimes returns 0 for eth_getBalance
+    "https://polygon-rpc.com",
+    "https://1rpc.io/matic",
+  ],
   [OPTIMISM.chainID]: [
     "https://rpc.ankr.com/optimism",
     "https://1rpc.io/op",
@@ -256,3 +269,7 @@ export const CHAIN_ID_TO_OPENSEA_CHAIN = {
   [AVALANCHE.chainID]: "avalanche",
   [BINANCE_SMART_CHAIN.chainID]: "bsc",
 }
+
+export const NETWORKS_WITH_FEE_SETTINGS = new Set(
+  [ETHEREUM, POLYGON, ARBITRUM_ONE, AVALANCHE].map((network) => network.chainID)
+)

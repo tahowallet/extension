@@ -17,9 +17,8 @@ import { EVMNetwork } from "@tallyho/tally-background/networks"
 import {
   NFTCached,
   NFTCollectionCached,
-} from "@tallyho/tally-background/redux-slices/nfts_update"
+} from "@tallyho/tally-background/redux-slices/nfts"
 import classNames from "classnames"
-import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import SharedButton from "./SharedButton"
 import SharedSlideUpMenu from "./SharedSlideUpMenu"
 import SharedAssetItem, {
@@ -137,14 +136,10 @@ function SelectAssetMenuContent<T extends AnyAsset>(
   const [searchTerm, setSearchTerm] = useState("")
   const searchInput = useRef<HTMLInputElement | null>(null)
 
-  const trustedAssets = assets.filter(
-    ({ asset }) => !isUntrustedAsset(asset, currentNetwork)
-  )
-
   const filteredAssets =
     searchTerm.trim() === ""
-      ? trustedAssets
-      : trustedAssets.filter(({ asset }) => {
+      ? assets
+      : assets.filter(({ asset }) => {
           return (
             asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
             ("contractAddress" in asset &&
@@ -185,7 +180,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
         </div>
       )}
       {panelNumber === 0 && (
-        <div className={classNames(shouldDisplayNFTs && "nfts_update")}>
+        <div className={classNames({ has_nfts: shouldDisplayNFTs })}>
           <div className="standard_width_padded center_horizontal">
             <div className="search_label">{t("shared.selectToken")}</div>
             <div className="search_wrap">
@@ -223,7 +218,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
         </div>
       )}
       {panelNumber === 1 && (
-        <div className="nfts_update standard_width_padded center_horizontal">
+        <div className="standard_width_padded center_horizontal has_nfts">
           <div className="search_wrap">
             <input
               type="text"
@@ -251,7 +246,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
           .panel_switcher {
             width: 100%;
           }
-          .nfts_update > div {
+          .has_nfts > div {
             margin-top: 16px;
           }
 
@@ -422,6 +417,7 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   onFocus?: () => void
   onBlur?: () => void
   onAmountChange?: (value: string, errorMessage: string | undefined) => void
+  onErrorMessageChange?: (errorMessage: string) => void
   NFTCollections?: NFTCollectionCached[]
   onSelectNFT?: (nft: NFTCached) => void
   selectedNFT?: NFTCached
@@ -470,6 +466,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
     onAmountChange,
     onFocus = () => {},
     onBlur = () => {},
+    onErrorMessageChange = () => {},
     NFTCollections,
     onSelectNFT,
     selectedNFT,
@@ -543,9 +540,10 @@ export default function SharedAssetInput<T extends AnyAsset>(
   }
 
   useEffect(() => {
-    const error = getErrorMessage(amount)
-    setErrorMessage(error ?? "")
-  }, [amount, getErrorMessage])
+    const error = getErrorMessage(amount) ?? ""
+    setErrorMessage(error)
+    onErrorMessageChange(error)
+  }, [amount, getErrorMessage, onErrorMessageChange])
 
   const setMaxBalance = () => {
     if (
@@ -757,6 +755,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
           .input_amount_wrap {
             display: flex;
             flex-direction: column;
+            align-items: end;
           }
           .input_amount::placeholder {
             color: var(--green-40);

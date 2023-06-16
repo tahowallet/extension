@@ -8,6 +8,7 @@ import SharedIcon from "../components/Shared/SharedIcon"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import AbilityFilter from "./Abilities/AbilityFilter"
+import { ONBOARDING_ROOT } from "./Onboarding/Tabbed/Routes"
 
 export default function Abilities(): ReactElement {
   const { t } = useTranslation("translation", {
@@ -31,9 +32,11 @@ export default function Abilities(): ReactElement {
           <h1>{t("header")}</h1>
           <div className="filters_container">
             <SharedTooltip
-              horizontalPosition="left"
               width={36}
+              height={32}
               verticalPosition="bottom"
+              horizontalPosition="center"
+              horizontalShift={8}
               type="dark"
               isOpen={openFilterMenu}
               IconComponent={() => (
@@ -66,7 +69,10 @@ export default function Abilities(): ReactElement {
               size="medium"
               iconSmall="add"
               iconPosition="left"
-              linkTo="/onboarding/add-wallet"
+              onClick={() => {
+                window.open(ONBOARDING_ROOT)
+                window.close()
+              }}
             >
               {t("emptyState.addBtn")}
             </SharedButton>

@@ -45,7 +45,9 @@ export default function SharedNetworkIcon(props: {
 
   return (
     <div className="icon_network_wrapper">
-      {hasBackground && <div className="icon_network_background" />}
+      {hasBackground && hasIconAvailable && (
+        <div className="icon_network_background" />
+      )}
       {hasIconAvailable ? (
         <div className="icon_network" />
       ) : (
@@ -81,6 +83,7 @@ export default function SharedNetworkIcon(props: {
           justify-content: center;
           user-select: none;
           color: var(--white);
+          border-radius: 2px;
         }
         .icon_network {
           background: url("${sources[currentSource]}");

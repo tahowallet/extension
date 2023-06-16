@@ -20,6 +20,7 @@ const asset: FungibleAsset = {
       },
     ],
     websiteURL: "",
+    verified: true,
   },
 }
 const assetsAndAmounts = [
@@ -42,6 +43,7 @@ const assetsAndAmounts = [
           },
         ],
         websiteURL: "",
+        verified: true,
       },
     },
     amount: 300n,
@@ -50,12 +52,13 @@ const assetsAndAmounts = [
   {
     asset: {
       symbol: "UTT",
-      name: "Untrusted token",
+      name: "Unverified token",
       decimals: 2,
       metadata: {
         coinGeckoID: "test",
         tokenLists: [],
         websiteURL: "",
+        verified: false,
       },
     },
     amount: 300n,
@@ -136,20 +139,20 @@ describe("SharedAssetInput", () => {
     expect(ui.queryByText("Test token")).not.toBeInTheDocument()
   })
 
-  test("should not allow to search for untrusted assets with a searchbox", async () => {
+  test("should allow to search for unverified assets with a searchbox", async () => {
     const ui = renderWithProviders(<SharedAssetInputWithState />)
     const assetButton = ui.getByText("FAKE")
 
     await userEvent.click(assetButton)
-    expect(ui.queryByText("Untrusted token")).not.toBeInTheDocument()
+    expect(ui.queryByText("Unverified token")).toBeInTheDocument()
 
     const searchbox = ui.getByPlaceholderText("Search by name or address")
     expect(searchbox).toHaveValue("")
 
-    await userEvent.type(searchbox, "Untrusted")
+    await userEvent.type(searchbox, "Unverified")
 
-    expect(searchbox).toHaveValue("Untrusted")
-    expect(ui.queryByText("Untrusted token")).not.toBeInTheDocument()
+    expect(searchbox).toHaveValue("Unverified")
+    expect(ui.queryByText("Unverified token")).not.toBeInTheDocument()
   })
 
   test("should allow to select different asset", async () => {

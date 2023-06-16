@@ -38,8 +38,25 @@ export type AssetMetadata = {
   coinGeckoID?: string
   logoURL?: string
   websiteURL?: string
-  tokenLists: TokenListCitation[]
+  tokenLists?: TokenListCitation[]
+  /**
+   * Set by the user to indicate explicitly trust in a
+   * legitimate asset.
+   */
+  verified?: boolean
 }
+
+/**
+ * Every asset has metadata. Some of them have network-specific metadata.
+ */
+export type NetworkSpecificAssetMetadata = AssetMetadata & {
+  /**
+   * Set on assets discovered through transaction annotations
+   */
+  discoveryTxHash?: HexString
+}
+
+export type AnyAssetMetadata = AssetMetadata | NetworkSpecificAssetMetadata
 
 /**
  * The name and symbol of an arbitrary asset, fungible or non-fungible,
@@ -83,7 +100,10 @@ export type FiatCurrency = FungibleAsset
  * Any asset that exists on a particular network; see {@link NetworkSpecific)
  * for information on network-specific objects.
  */
-export type NetworkSpecificAsset = NetworkSpecific & Asset
+export type NetworkSpecificAsset = NetworkSpecific &
+  Asset & {
+    metadata?: NetworkSpecificAssetMetadata
+  }
 
 /**
  * Any asset that is managed by a smart contract; see {@link SmartContract) for
@@ -95,7 +115,9 @@ export type SmartContractAsset = SmartContract & Asset
  * Any fungible asset that is managed by a smart contract; see
  * {@link SmartContract) for information on smart contract objects.
  */
-export type SmartContractFungibleAsset = FungibleAsset & SmartContract
+export type SmartContractFungibleAsset = FungibleAsset &
+  SmartContract &
+  NetworkSpecificAsset
 
 /*
  * The primary type representing amounts in fungible or non-fungible asset

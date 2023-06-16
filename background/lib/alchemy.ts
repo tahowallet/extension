@@ -16,7 +16,6 @@ import {
 } from "./validate"
 import type SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import { AddressOnNetwork } from "../accounts"
-import { fetchWithTimeout } from "../utils/fetching"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -248,7 +247,7 @@ export async function getTokenBalances(
 export async function getTokenMetadata(
   provider: SerialFallbackProvider,
   { contractAddress, homeNetwork }: SmartContract
-): Promise<SmartContractFungibleAsset | undefined> {
+): Promise<SmartContractFungibleAsset> {
   const json: unknown = await provider.send("alchemy_getTokenMetadata", [
     contractAddress,
   ])
@@ -261,11 +260,10 @@ export async function getTokenMetadata(
     throw new Error("Alchemy token metadata response didn't validate.")
   }
   return {
-    decimals: json.decimals,
+    decimals: json.decimals ?? 0,
     name: json.name,
     symbol: json.symbol,
     metadata: {
-      tokenLists: [],
       ...(json.logo ? { logoURL: json.logo } : {}),
     },
     homeNetwork,
@@ -326,54 +324,4 @@ export function transactionFromAlchemyWebsocketTransaction(
     asset: network.baseAsset,
     network,
   }
-}
-
-export type AlchemyNFTItem = {
-  error?: string
-  media: { gateway?: string }[]
-  id: {
-    tokenId: string
-  }
-  contract: { address: string }
-  title: string
-  chainID: number
-  metadata: {
-    external_link: string | null
-  }
-}
-
-/**
- * Use Alchemy's getNFTs call to get a wallet's NFT holdings across collections.
- *
- * Note that pagination isn't supported in this wrapper, so any responses after
- * 100 NFTs will be dropped.
- *
- * More information https://docs.alchemy.com/reference/getnfts
- *
- * @param addressOnNetwork the address whose NFT portfolio we're fetching and
- *        the network it should happen on.
- */
-export async function getNFTs({
-  address,
-  network,
-}: AddressOnNetwork): Promise<AlchemyNFTItem[]> {
-  // Today, only Polygon and Ethereum are supported
-  if (!["Polygon", "Ethereum"].includes(network.name)) {
-    return []
-  }
-
-  const requestUrl = new URL(
-    `https://${
-      network.name === "Polygon" ? "polygon-mainnet.g" : "eth-mainnet"
-    }.alchemyapi.io/nft/v2/${ALCHEMY_KEY}/getNFTs/`
-  )
-  requestUrl.searchParams.set("owner", address)
-  requestUrl.searchParams.set("filters[]", "SPAM")
-  requestUrl.searchParams.set("pageSize", "100")
-
-  // TODO validate data with ajv
-  const result = await (await fetchWithTimeout(requestUrl.toString())).json()
-  return result.ownedNfts
-    .filter((nft: AlchemyNFTItem) => typeof nft.error === "undefined")
-    .map((nft: AlchemyNFTItem) => ({ ...nft, chainID: network.chainID }))
 }

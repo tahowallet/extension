@@ -5,6 +5,7 @@ import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { debounce } from "lodash"
+import { utils } from "ethers"
 
 import {
   decodeJSON,
@@ -12,6 +13,7 @@ import {
   getEthereumNetwork,
   isProbablyEVMAddress,
   normalizeEVMAddress,
+  sameEVMAddress,
   wait,
 } from "./lib/utils"
 
@@ -50,7 +52,12 @@ import {
   updateAccountName,
   updateENSAvatar,
 } from "./redux-slices/accounts"
-import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
+import {
+  assetsLoaded,
+  newPricePoints,
+  refreshAsset,
+  removeAssetData,
+} from "./redux-slices/assets"
 import {
   setEligibility,
   setEligibilityLoading,
@@ -75,6 +82,9 @@ import {
   setAccountsSignerSettings,
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
+  setSelectedNetwork,
+  setShownDismissableItems,
+  dismissableItemMarkedAsShown,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -118,7 +128,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { OPTIMISM } from "./constants"
+import { OPTIMISM, USD } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
@@ -132,7 +142,6 @@ import {
 } from "./redux-slices/migrations"
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
-import { deleteNFts } from "./redux-slices/nfts"
 import {
   ActivityDetail,
   addActivity,
@@ -145,7 +154,14 @@ import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
 import { AnalyticsPreferences } from "./services/preferences/types"
-import { isSmartContractFungibleAsset } from "./assets"
+import {
+  AnyAssetMetadata,
+  assetAmountToDesiredDecimals,
+  convertAssetAmountViaPricePoint,
+  isSmartContractFungibleAsset,
+  SmartContractAsset,
+  SmartContractFungibleAsset,
+} from "./assets"
 import { FeatureFlags, isEnabled } from "./features"
 import { NFTCollection } from "./nfts"
 import {
@@ -156,10 +172,10 @@ import {
   deleteNFTsForAddress,
   updateIsReloading,
   deleteTransferredNFTs,
-} from "./redux-slices/nfts_update"
+} from "./redux-slices/nfts"
 import AbilitiesService from "./services/abilities"
 import {
-  addAbilities,
+  setAbilitiesForAddress,
   updateAbility,
   addAccount as addAccountFilter,
   deleteAccount as deleteAccountFilter,
@@ -167,7 +183,14 @@ import {
   initAbilities,
 } from "./redux-slices/abilities"
 import { AddChainRequestData } from "./services/provider-bridge"
-import { AnalyticsEvent } from "./lib/posthog"
+import {
+  AnalyticsEvent,
+  isOneTimeAnalyticsEvent,
+  OneTimeAnalyticsEvent,
+} from "./lib/posthog"
+import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
+import { getPricePoint, getTokenPrices } from "./lib/prices"
+import { DismissableItem } from "./services/preferences"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -303,10 +326,7 @@ export default class Main extends BaseService<never> {
       chainService
     )
 
-    const analyticsService = AnalyticsService.create(
-      chainService,
-      preferenceService
-    )
+    const analyticsService = AnalyticsService.create(preferenceService)
 
     const nftsService = NFTsService.create(chainService)
 
@@ -567,11 +587,7 @@ export default class Main extends BaseService<never> {
     this.connectAnalyticsService()
     this.connectWalletConnectService()
     this.connectAbilitiesService()
-
-    // Nothing else beside creating a service should happen when feature flag is off
-    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
-      this.connectNFTsService()
-    }
+    this.connectNFTsService()
 
     await this.connectChainService()
 
@@ -600,6 +616,7 @@ export default class Main extends BaseService<never> {
       network,
       name,
     })
+    this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.ACCOUNT_NAME_EDITED)
   }
 
   async removeAccount(
@@ -618,13 +635,11 @@ export default class Main extends BaseService<never> {
     }
 
     this.store.dispatch(removeActivities(address))
-    this.store.dispatch(deleteNFts(address))
 
     // remove NFTs
-    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
-      this.store.dispatch(deleteNFTsForAddress(address))
-      await this.nftsService.removeNFTsForAddress(address)
-    }
+    this.store.dispatch(deleteNFTsForAddress(address))
+    await this.nftsService.removeNFTsForAddress(address)
+
     // remove abilities
     if (signer.type !== AccountType.ReadOnly) {
       await this.abilitiesService.deleteAbilitiesForAccount(address)
@@ -634,6 +649,8 @@ export default class Main extends BaseService<never> {
     await this.providerBridgeService.revokePermissionsForAddress(address)
     // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signer.type)
+
+    this.nameService.removeAccount(address)
   }
 
   async importLedgerAccounts(
@@ -861,6 +878,12 @@ export default class Main extends BaseService<never> {
           const signedTransactionResult =
             await this.signingService.signTransaction(request, accountSigner)
           await this.store.dispatch(transactionSigned(signedTransactionResult))
+          this.analyticsService.sendAnalyticsEvent(
+            AnalyticsEvent.TRANSACTION_SIGNED,
+            {
+              chainId: request.chainID,
+            }
+          )
         } catch (exception) {
           logger.error("Error signing transaction", exception)
           this.store.dispatch(
@@ -975,7 +998,46 @@ export default class Main extends BaseService<never> {
 
         const filteredBalancesToDispatch: AccountBalance[] = []
 
-        balances.forEach((balance) => {
+        const sortedBalances: AccountBalance[] = []
+
+        balances
+          .filter((balance) => {
+            const isSmartContract =
+              "contractAddress" in balance.assetAmount.asset
+
+            if (!isSmartContract) {
+              sortedBalances.push(balance)
+            }
+
+            // Network base assets with smart contract addresses from some networks
+            // e.g. Optimism, Polygon might have been retrieved through alchemy as
+            // token balances but they should not be handled here as they would
+            // not be correctly treated as base assets
+            if (
+              isBuiltInNetworkBaseAsset(
+                balance.assetAmount.asset,
+                balance.network
+              )
+            ) {
+              return false
+            }
+
+            return isSmartContract
+          })
+          // Sort verified last to prevent shadowing assets from token lists
+          // FIXME: Balances should not be indexed by symbol in redux
+          .sort((balance, otherBalance) => {
+            const asset = balance.assetAmount.asset as SmartContractAsset
+            const other = otherBalance.assetAmount.asset as SmartContractAsset
+
+            return (
+              (other.metadata?.tokenLists?.length ?? 0) -
+              (asset.metadata?.tokenLists?.length ?? 0)
+            )
+          })
+          .forEach((balance) => sortedBalances.unshift(balance))
+
+        sortedBalances.forEach((balance) => {
           // TODO support multi-network assets
           const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
             (tracked) =>
@@ -1002,12 +1064,24 @@ export default class Main extends BaseService<never> {
       }
     )
 
-    this.indexingService.emitter.on("assets", (assets) => {
-      this.store.dispatch(assetsLoaded(assets))
+    this.indexingService.emitter.on("assets", async (assets) => {
+      await this.store.dispatch(assetsLoaded(assets))
     })
 
-    this.indexingService.emitter.on("price", (pricePoint) => {
-      this.store.dispatch(newPricePoint(pricePoint))
+    this.indexingService.emitter.on("prices", (pricePoints) => {
+      this.store.dispatch(newPricePoints(pricePoints))
+    })
+
+    this.indexingService.emitter.on("refreshAsset", (asset) => {
+      this.store.dispatch(
+        refreshAsset({
+          asset,
+        })
+      )
+    })
+
+    this.indexingService.emitter.on("removeAssetData", (asset) => {
+      this.store.dispatch(removeAssetData({ asset }))
     })
   }
 
@@ -1135,17 +1209,8 @@ export default class Main extends BaseService<never> {
     this.internalEthereumProviderService.emitter.on(
       "transactionSignatureRequest",
       async ({ payload, resolver, rejecter }) => {
-        /**
-         * There is a case in which the user changes the settings on the ledger after connection.
-         * For example, it sets disabled blind signing. Before the transaction signature request
-         * ledger should be connected again to refresh the state. Without reconnection,
-         * the user doesn't receive an error message on how to fix it.
-         */
-        const isArbitraryDataSigningEnabled =
-          await this.ledgerService.isArbitraryDataSigningEnabled()
-        if (!isArbitraryDataSigningEnabled) {
-          this.connectLedger()
-        }
+        await this.signingService.prepareForSigningRequest()
+
         this.store.dispatch(
           clearTransactionState(TransactionConstructionStatus.Pending)
         )
@@ -1200,9 +1265,13 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
-        const enrichedsignTypedDataRequest =
-          await this.enrichmentService.enrichSignTypedDataRequest(payload)
-        this.store.dispatch(typedDataRequest(enrichedsignTypedDataRequest))
+        // Run signer preparation and enrichment in parallel.
+        const [, enrichedSignTypedDataRequest] = await Promise.all([
+          this.signingService.prepareForSigningRequest(),
+          this.enrichmentService.enrichSignTypedDataRequest(payload),
+        ])
+
+        this.store.dispatch(typedDataRequest(enrichedSignTypedDataRequest))
 
         const clear = () => {
           this.signingService.emitter.off(
@@ -1253,6 +1322,8 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
+        await this.signingService.prepareForSigningRequest()
+
         this.chainService.pollBlockPricesForNetwork(
           payload.account.network.chainID
         )
@@ -1299,6 +1370,12 @@ export default class Main extends BaseService<never> {
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
       }
     )
+    this.internalEthereumProviderService.emitter.on(
+      "selectedNetwork",
+      (network) => {
+        this.store.dispatch(setSelectedNetwork(network))
+      }
+    )
 
     uiSliceEmitter.on("newSelectedNetwork", (network) => {
       this.internalEthereumProviderService.routeSafeRPCRequest(
@@ -1309,6 +1386,26 @@ export default class Main extends BaseService<never> {
       this.chainService.pollBlockPricesForNetwork(network.chainID)
       this.store.dispatch(clearCustomGas())
     })
+
+    this.internalEthereumProviderService.emitter.on(
+      "watchAssetRequest",
+      async ({ contractAddress, network }) => {
+        const { address } = this.store.getState().ui.selectedAccount
+        const asset = await this.indexingService.addTokenToTrackByContract(
+          network,
+          contractAddress
+        )
+        if (asset) {
+          await this.indexingService.retrieveTokenBalances(
+            {
+              address,
+              network,
+            },
+            [asset]
+          )
+        }
+      }
+    )
   }
 
   async connectProviderBridgeService(): Promise<void> {
@@ -1367,6 +1464,10 @@ export default class Main extends BaseService<never> {
     )
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
+      this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.DAPP_CONNECTED, {
+        origin: permission.origin,
+        chainId: permission.chainID,
+      })
       await Promise.all(
         this.chainService.supportedNetworks.map(async (network) => {
           await this.providerBridgeService.grantPermission({
@@ -1428,6 +1529,20 @@ export default class Main extends BaseService<never> {
       }
     )
 
+    this.preferenceService.emitter.on(
+      "initializeShownDismissableItems",
+      async (dismissableItems) => {
+        this.store.dispatch(setShownDismissableItems(dismissableItems))
+      }
+    )
+
+    this.preferenceService.emitter.on(
+      "dismissableItemMarkedAsShown",
+      async (dismissableItem) => {
+        this.store.dispatch(dismissableItemMarkedAsShown(dismissableItem))
+      }
+    )
+
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
 
@@ -1460,8 +1575,16 @@ export default class Main extends BaseService<never> {
           newDefaultWalletValue
         )
 
+        // FIXME Both of these should be done as observations of the preference
+        // FIXME service event rather than being managed by `main`.
         this.providerBridgeService.notifyContentScriptAboutConfigChange(
           newDefaultWalletValue
+        )
+        this.analyticsService.sendAnalyticsEvent(
+          AnalyticsEvent.DEFAULT_WALLET_TOGGLED,
+          {
+            setToDefault: newDefaultWalletValue,
+          }
         )
       }
     )
@@ -1554,9 +1677,12 @@ export default class Main extends BaseService<never> {
     this.abilitiesService.emitter.on("initAbilities", (address) => {
       this.store.dispatch(initAbilities(address))
     })
-    this.abilitiesService.emitter.on("newAbilities", (newAbilities) => {
-      this.store.dispatch(addAbilities(newAbilities))
-    })
+    this.abilitiesService.emitter.on(
+      "updatedAbilities",
+      ({ address, abilities }) => {
+        this.store.dispatch(setAbilitiesForAddress({ address, abilities }))
+      }
+    )
     this.abilitiesService.emitter.on("deleteAbilities", (address) => {
       this.store.dispatch(deleteAbilitiesForAccount(address))
     })
@@ -1594,6 +1720,45 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(setShowAnalyticsNotification(true))
     })
 
+    this.chainService.emitter.on("networkSubscribed", (network) => {
+      this.analyticsService.sendOneTimeAnalyticsEvent(
+        OneTimeAnalyticsEvent.CHAIN_ADDED,
+        {
+          chainId: network.chainID,
+          name: network.name,
+          description: `This event is fired when a chain is subscribed to from the wallet for the first time.`,
+        }
+      )
+    })
+
+    // ⚠️ Note: We NEVER send addresses to analytics!
+    this.chainService.emitter.on("newAccountToTrack", () => {
+      this.analyticsService.sendAnalyticsEvent(
+        AnalyticsEvent.NEW_ACCOUNT_TO_TRACK,
+        {
+          description: `
+                This event is fired when any address on a network is added to the tracked list. 
+                
+                Note: this does not track recovery phrase(ish) import! But when an address is used 
+                on a network for the first time (read-only or recovery phrase/ledger/keyring).
+                `,
+        }
+      )
+    })
+
+    this.chainService.emitter.on("customChainAdded", (chainInfo) => {
+      this.analyticsService.sendAnalyticsEvent(
+        AnalyticsEvent.CUSTOM_CHAIN_ADDED,
+        {
+          description: `
+                This event is fired when a custom chain is added to the wallet.
+                `,
+          chainInfo: chainInfo.chainName,
+          chainId: chainInfo.chainId,
+        }
+      )
+    })
+
     this.preferenceService.emitter.on(
       "updateAnalyticsPreferences",
       async (analyticsPreferences: AnalyticsPreferences) => {
@@ -1604,6 +1769,13 @@ export default class Main extends BaseService<never> {
             // it's expected that more detailed analytics settings will come
             analyticsPreferences.isEnabled
           )
+        )
+
+        this.analyticsService.sendAnalyticsEvent(
+          AnalyticsEvent.ANALYTICS_TOGGLED,
+          {
+            analyticsEnabled: analyticsPreferences.isEnabled,
+          }
         )
       }
     )
@@ -1620,6 +1792,25 @@ export default class Main extends BaseService<never> {
     uiSliceEmitter.on("deleteAnalyticsData", () => {
       this.analyticsService.removeAnalyticsData()
     })
+
+    uiSliceEmitter.on("sendEvent", (event) => {
+      if (isOneTimeAnalyticsEvent(event)) {
+        this.analyticsService.sendOneTimeAnalyticsEvent(event)
+      } else {
+        this.analyticsService.sendAnalyticsEvent(event)
+      }
+    })
+  }
+
+  async updateAssetMetadata(
+    asset: SmartContractFungibleAsset,
+    metadata: AnyAssetMetadata
+  ): Promise<void> {
+    await this.indexingService.updateAssetMetadata(asset, metadata)
+  }
+
+  async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {
+    await this.indexingService.hideAsset(asset)
   }
 
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {
@@ -1631,6 +1822,10 @@ export default class Main extends BaseService<never> {
     title: string
   ): Promise<void> {
     return this.preferenceService.updateAccountSignerTitle(signer, title)
+  }
+
+  async markDismissableItemAsShown(item: DismissableItem): Promise<void> {
+    return this.preferenceService.markDismissableItemAsShown(item)
   }
 
   async resolveNameOnNetwork(
@@ -1678,7 +1873,67 @@ export default class Main extends BaseService<never> {
   }
 
   async removeEVMNetwork(chainID: string): Promise<void> {
-    return this.chainService.removeCustomChain(chainID)
+    // Per origin chain id settings
+    await this.internalEthereumProviderService.removePrefererencesForChain(
+      chainID
+    )
+    // Connected dApps
+    await this.providerBridgeService.revokePermissionsForChain(chainID)
+    await this.chainService.removeCustomChain(chainID)
+  }
+
+  async queryCustomTokenDetails(
+    contractAddress: NormalizedEVMAddress,
+    addressOnNetwork: AddressOnNetwork
+  ): Promise<{
+    asset: SmartContractFungibleAsset
+    amount: bigint
+    mainCurrencyAmount?: number
+    balance: number
+    exists?: boolean
+  }> {
+    const { network } = addressOnNetwork
+
+    const cachedAsset = this.indexingService
+      .getCachedAssets(network)
+      .find(
+        (asset): asset is SmartContractFungibleAsset =>
+          isSmartContractFungibleAsset(asset) &&
+          sameEVMAddress(contractAddress, asset.contractAddress)
+      )
+
+    const assetData = await this.chainService.queryAccountTokenDetails(
+      contractAddress,
+      addressOnNetwork,
+      cachedAsset
+    )
+
+    const priceData = await getTokenPrices([contractAddress], USD, network)
+
+    const convertedAssetAmount =
+      contractAddress in priceData
+        ? convertAssetAmountViaPricePoint(
+            assetData,
+            getPricePoint(assetData.asset, priceData[contractAddress])
+          )
+        : undefined
+
+    const mainCurrencyAmount = convertedAssetAmount
+      ? assetAmountToDesiredDecimals(convertedAssetAmount, 2)
+      : undefined
+
+    return {
+      ...assetData,
+      balance: Number.parseFloat(
+        utils.formatUnits(assetData.amount, assetData.asset.decimals)
+      ),
+      mainCurrencyAmount,
+      exists: !!cachedAsset,
+    }
+  }
+
+  async importCustomToken(asset: SmartContractFungibleAsset): Promise<boolean> {
+    return this.indexingService.importCustomToken(asset)
   }
 
   private connectPopupMonitor() {
@@ -1687,11 +1942,20 @@ export default class Main extends BaseService<never> {
 
       const openTime = Date.now()
 
+      const originalNetworkName =
+        this.store.getState().ui.selectedAccount.network.name
+
       port.onDisconnect.addListener(() => {
+        const networkNameAtClose =
+          this.store.getState().ui.selectedAccount.network.name
         this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.UI_SHOWN, {
           openTime: new Date(openTime).toISOString(),
           closeTime: new Date().toISOString(),
           openLength: (Date.now() - openTime) / 1e3,
+          networkName:
+            originalNetworkName === networkNameAtClose
+              ? originalNetworkName
+              : "switched networks",
           unit: "s",
         })
         this.onPopupDisconnected()

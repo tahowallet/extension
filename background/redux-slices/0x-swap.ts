@@ -1,9 +1,4 @@
-import {
-  AnyAction,
-  createSelector,
-  createSlice,
-  ThunkDispatch,
-} from "@reduxjs/toolkit"
+import { AnyAction, createSlice, ThunkDispatch } from "@reduxjs/toolkit"
 import { fetchJson } from "@ethersproject/web"
 import { BigNumber, ethers, utils } from "ethers"
 
@@ -19,7 +14,8 @@ import { getProvider } from "./utils/contract-utils"
 import { ERC20_ABI } from "../lib/erc20"
 import {
   CHAIN_ID_TO_0X_API_BASE,
-  COMMUNITY_MULTISIG_ADDRESS,
+  COMMUNITY_MULTISIG_ADDRESS_BY_CHAINID,
+  DEFAULT_COMMUNITY_MULTISIG_ADDRESS,
   ETHEREUM,
   OPTIMISM,
   OPTIMISTIC_ETH,
@@ -138,11 +134,18 @@ const get0xApiBase = (network: EVMNetwork) => {
   return `${prefix}${base}`
 }
 
-const gatedParameters = {
-  affiliateAddress: COMMUNITY_MULTISIG_ADDRESS,
-  feeRecipient: COMMUNITY_MULTISIG_ADDRESS,
-  buyTokenPercentageFee: SWAP_FEE,
+function getGatedParameters(network: EVMNetwork) {
+  // Look up the community multisig address for a specific chain
+  const address =
+    COMMUNITY_MULTISIG_ADDRESS_BY_CHAINID[network.chainID] ??
+    DEFAULT_COMMUNITY_MULTISIG_ADDRESS
+  return {
+    affiliateAddress: address,
+    feeRecipient: address,
+    buyTokenPercentageFee: SWAP_FEE,
+  }
 }
+
 const gatedHeaders: { [header: string]: string } =
   typeof process.env.ZEROX_API_KEY !== "undefined" &&
   process.env.ZEROX_API_KEY.trim() !== ""
@@ -208,7 +211,7 @@ function build0xUrlFromSwapRequest(
     gasPrice: gasPrice.toString(),
     slippagePercentage: slippageTolerance.toString(),
     [tradeField]: tradeAmount.toString(),
-    ...gatedParameters,
+    ...getGatedParameters(selectedNetwork),
     ...additionalParameters,
   }).forEach(([parameter, value]) => {
     // Do not set buyTokenPercentageFee if swapping to ETH. Currently the 0x
@@ -245,7 +248,7 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
       takerAddress: tradeAddress,
     })
 
-    const apiData = await fetchJson({
+    const apiData: unknown = await fetchJson({
       url: requestUrl.toString(),
       headers: gatedHeaders,
     })
@@ -257,10 +260,12 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
         isValidSwapQuoteResponse.errors
       )
 
-      return
+      return null
     }
 
     dispatch(setFinalSwapQuote(apiData))
+
+    return apiData
   }
 )
 
@@ -479,6 +484,9 @@ export const executeSwap = createBackgroundAsyncThunk(
         type: "asset-swap",
         fromAssetAmount: sellAssetAmount,
         toAssetAmount: buyAssetAmount,
+        estimatedPriceImpact: quote.estimatedPriceImpact
+          ? Number(quote.estimatedPriceImpact)
+          : 0,
         sources: quote.sources
           .map(({ name, proportion }) => {
             return {
@@ -492,14 +500,4 @@ export const executeSwap = createBackgroundAsyncThunk(
       },
     })
   }
-)
-
-export const selectLatestQuoteRequest = createSelector(
-  (state: { swap: SwapState }) => state.swap.latestQuoteRequest,
-  (latestQuoteRequest) => latestQuoteRequest
-)
-
-export const selectInProgressApprovalContract = createSelector(
-  (state: { swap: SwapState }) => state.swap.inProgressApprovalContract,
-  (approvalInProgress) => approvalInProgress
 )

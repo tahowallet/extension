@@ -17,7 +17,7 @@ import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/as
 import {
   cleanCachedNFTs,
   refetchCollections,
-} from "@tallyho/tally-background/redux-slices/nfts_update"
+} from "@tallyho/tally-background/redux-slices/nfts"
 import { useEffect } from "react"
 import {
   assetAmountToDesiredDecimals,

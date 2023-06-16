@@ -1,11 +1,21 @@
-import React, { ReactElement, useCallback, useEffect, useRef } from "react"
+import React, {
+  ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { useDispatch } from "react-redux"
 import classNames from "classnames"
 import {
   selectSnackbarMessage,
   clearSnackbarMessage,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { useBackgroundSelector, useDelayContentChange } from "../../hooks"
+import {
+  useBackgroundSelector,
+  useDelayContentChange,
+  useIsOnboarding,
+} from "../../hooks"
 
 // Number of ms before a snackbar message dismisses; changing the message will
 // extend visibility by this much.
@@ -14,8 +24,16 @@ const DISMISS_MS = 2500
 // dismissed.
 const DISMISS_ANIMATION_MS = 300
 
-export default function Snackbar(): ReactElement {
+export default function Snackbar({
+  isTabbedOnboarding = false,
+}: {
+  isTabbedOnboarding?: boolean
+}): ReactElement {
   const dispatch = useDispatch()
+
+  // Snackbar for tabbed onboarding should be displayed under the button in the right container on the page
+  const [isOnboarding] = useState(useIsOnboarding())
+  const showInRightContainer = isTabbedOnboarding ? isOnboarding : false
 
   const snackbarMessage = useBackgroundSelector(selectSnackbarMessage)
   const shouldHide = snackbarMessage.trim() === ""
@@ -52,7 +70,12 @@ export default function Snackbar(): ReactElement {
   }, [clearSnackbarTimeout, dispatch])
 
   return (
-    <div className={classNames("snackbar_container", { hidden: shouldHide })}>
+    <div
+      className={classNames("snackbar_container", {
+        hidden: shouldHide,
+        right_container: showInRightContainer,
+      })}
+    >
       <div className="snackbar_wrap">{displayMessage}</div>
       <style jsx>
         {`
@@ -97,6 +120,12 @@ export default function Snackbar(): ReactElement {
           .snackbar_container.hidden .snackbar_wrap {
             padding: 0;
             transform: translateY(10px);
+          }
+
+          @media (min-width: 980px) {
+            .right_container {
+              right: -50%;
+            }
           }
         `}
       </style>
