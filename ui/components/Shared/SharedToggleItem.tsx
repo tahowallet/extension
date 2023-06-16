@@ -25,7 +25,7 @@ export default function SharedToggleItem({
       <div className="text_wrap">
         <div className="thumbnail" role="img" />
         <label className="label ellipsis">
-          {isProbablyEVMAddress(label) ? truncateAddress(label) : label}
+          {isProbablyEVMAddress(label) ? truncateAddress(label) : label ?? ""}
         </label>
       </div>
       <SharedToggleButton onChange={onChange} value={checked} />
