@@ -18,7 +18,8 @@ To run the extension on a forked Mainnet:
    `yarn install`  
    `yarn start` (or `yarn build`)  
    `cd ci`  
-   `npx hardhat node --network hardhat`
+   `yarn install`
+   `yarn hardhat node --network hardhat`
 
 3. Unpack `./dist/chrome` to Chrome Extensions.
 
