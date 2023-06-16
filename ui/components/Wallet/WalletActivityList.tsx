@@ -96,6 +96,7 @@ export default function WalletActivityList({
         <SharedSlideUpMenu isOpen={!!showingActivityDetail} close={handleClose}>
           {showingActivityDetail ? (
             <WalletActivityDetails
+              key={showingActivityDetail.hash}
               activityItem={showingActivityDetail}
               activityInitiatorAddress={activityInitiatorAddress}
             />
