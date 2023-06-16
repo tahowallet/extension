@@ -423,6 +423,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
           background: var(--green-120);
           border-radius: 8px;
           padding: 8px;
+          padding-right: 24px;
           display: flex;
           gap: 8px;
         }
