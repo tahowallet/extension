@@ -510,7 +510,7 @@ describe("InternalSignerService when autolocking", () => {
 
     const maxIdleTime = await preferenceService.getAutoLockTimer()
 
-    await service.generateNewKeyring(KeyringTypes.mnemonicBIP39S256)
+    await service.generateNewKeyring(SignerInternalTypes.mnemonicBIP39S256)
 
     expect(service.locked()).toBe(false)
 
