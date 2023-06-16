@@ -400,7 +400,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     const { address } = await this.preferenceService.getSelectedAccount()
 
     // TODO make this multi-network friendly
-    await this.db.deletePermission(
+    const deleted = await this.db.deletePermission(
       permission.origin,
       address,
       permission.chainID
@@ -411,7 +411,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
       delete this.#pendingPermissionsRequests[permission.origin]
     }
 
-    this.notifyContentScriptsAboutAddressChange()
+    if (deleted > 0) {
+      this.notifyContentScriptsAboutAddressChange()
+    }
   }
 
   async revokePermissionsForAddress(revokeAddress: string): Promise<void> {

@@ -83,6 +83,8 @@ import {
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
   setSelectedNetwork,
+  setShownDismissableItems,
+  dismissableItemMarkedAsShown,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -188,6 +190,7 @@ import {
 } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
+import { DismissableItem } from "./services/preferences"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1526,6 +1529,20 @@ export default class Main extends BaseService<never> {
       }
     )
 
+    this.preferenceService.emitter.on(
+      "initializeShownDismissableItems",
+      async (dismissableItems) => {
+        this.store.dispatch(setShownDismissableItems(dismissableItems))
+      }
+    )
+
+    this.preferenceService.emitter.on(
+      "dismissableItemMarkedAsShown",
+      async (dismissableItem) => {
+        this.store.dispatch(dismissableItemMarkedAsShown(dismissableItem))
+      }
+    )
+
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
 
@@ -1558,6 +1575,8 @@ export default class Main extends BaseService<never> {
           newDefaultWalletValue
         )
 
+        // FIXME Both of these should be done as observations of the preference
+        // FIXME service event rather than being managed by `main`.
         this.providerBridgeService.notifyContentScriptAboutConfigChange(
           newDefaultWalletValue
         )
@@ -1803,6 +1822,10 @@ export default class Main extends BaseService<never> {
     title: string
   ): Promise<void> {
     return this.preferenceService.updateAccountSignerTitle(signer, title)
+  }
+
+  async markDismissableItemAsShown(item: DismissableItem): Promise<void> {
+    return this.preferenceService.markDismissableItemAsShown(item)
   }
 
   async resolveNameOnNetwork(
