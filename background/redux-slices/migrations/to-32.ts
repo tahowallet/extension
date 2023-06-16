@@ -1,4 +1,6 @@
-const DEFAULT_AUTOLOCK_TIMER = 60
+import { MINUTE } from "../../constants"
+
+const DEFAULT_AUTOLOCK_TIMER = 60 * MINUTE
 
 type OldState = {
   ui: {
