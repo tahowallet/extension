@@ -423,10 +423,7 @@ export default function Settings(): ReactElement {
         customNetworks,
         addCustomAsset,
         enableTestNetworks,
-        ...wrapIfEnabled(
-          FeatureFlags.SUPPORT_CUSTOM_AUTOLOCK,
-          autoLockSettings
-        ),
+        autoLockSettings,
       ],
     },
     helpCenter: {
