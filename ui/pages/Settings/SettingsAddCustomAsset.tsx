@@ -184,14 +184,26 @@ export default function SettingsAddCustomAsset(): ReactElement {
     assetData?.mainCurrencyAmount !== undefined &&
     assetData?.mainCurrencyAmount < userValueDustThreshold
 
-  const showWarningAboutNoBalance =
-    !showWarningAboutDust && assetData?.mainCurrencyAmount === 0
-  const showWarningAboutVisibility =
-    !showWarningAboutDust && !showWarningAboutNoBalance
-
   const warningOptions = {
     amount: userValueDustThreshold,
     sign: mainCurrencySign,
+  }
+
+  const renderWarningText = () => {
+    if (showWarningAboutDust) {
+      return t("warning.alreadyExists.desc.dust", {
+        ...warningOptions,
+        settings: sharedT("settings.hideSmallAssetBalance", warningOptions),
+      })
+    }
+
+    // showWarningAboutNoBalance
+    if (assetData?.mainCurrencyAmount === 0) {
+      return t("warning.alreadyExists.desc.noBalance", warningOptions)
+    }
+
+    // showWarningAboutVisibility
+    return t("warning.alreadyExists.desc.visibility")
   }
 
   return (
@@ -383,20 +395,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
             />
             <div className="alert_content">
               <div className="title">{t("warning.alreadyExists.title")}</div>
-              <div className="desc">
-                {showWarningAboutDust &&
-                  t("warning.alreadyExists.desc.dust", {
-                    ...warningOptions,
-                    settings: sharedT(
-                      "settings.hideSmallAssetBalance",
-                      warningOptions
-                    ),
-                  })}
-                {showWarningAboutNoBalance &&
-                  t("warning.alreadyExists.desc.noBalance", warningOptions)}
-                {showWarningAboutVisibility &&
-                  t("warning.alreadyExists.desc.visibility")}
-              </div>
+              <div className="desc">{renderWarningText()}</div>
             </div>
           </div>
         ) : (
