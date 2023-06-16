@@ -31,8 +31,11 @@ export const ABILITY_TYPES_ENABLED = [
 export const ABILITY_TYPES = [
   ...ABILITY_TYPES_ENABLED,
   "event",
-  "article",
-  "result",
+  // Abilities type `article` and `result` will be fetched from the new endpoint.
+  // Let's exclude this type for a moment.
+  // TODO Fetch abilities from the correct endpoint.
+  // "article",
+  // "result",
   "misc",
 ] as const
 

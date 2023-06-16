@@ -1,4 +1,5 @@
 import {
+  RequestArgument,
   WindowListener,
   WindowRequestEvent,
 } from "@tallyho/provider-bridge-shared"
@@ -65,6 +66,9 @@ if (!window.walletRouter) {
           }, 1000)
         }
       },
+      routeToNewDefault(request: Required<RequestArgument>): Promise<unknown> {
+        return this.currentProvider.request(request)
+      },
       getProviderInfo(provider: WalletProvider) {
         return (
           provider.providerInfo || {
@@ -112,6 +116,10 @@ Object.defineProperty(window, "ethereum", {
       return cachedWindowEthereumProxy
     }
 
+    if (window.walletRouter.currentProvider === undefined) {
+      return undefined
+    }
+
     cachedWindowEthereumProxy = new Proxy(window.walletRouter.currentProvider, {
       get(target, prop, receiver) {
         if (
@@ -138,7 +146,17 @@ Object.defineProperty(window, "ethereum", {
           return window.walletRouter[prop]
         }
 
-        return Reflect.get(target, prop, receiver)
+        return Reflect.get(
+          // Always proxy to the current provider, even if it has changed. This
+          // allows changes in the current provider, particularly when the user
+          // changes their default wallet, to take effect immediately. Combined
+          // with walletRouter.routeToNewDefault, this allows Taho to effect a
+          // change in provider without a page reload or even a second attempt
+          // at connecting.
+          window.walletRouter?.currentProvider ?? target,
+          prop,
+          receiver
+        )
       },
     })
     cachedCurrentProvider = window.walletRouter.currentProvider

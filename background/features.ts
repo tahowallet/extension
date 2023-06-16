@@ -91,3 +91,38 @@ export function isDisabled(
 ): boolean {
   return !isEnabled(flagName, checkBrowserStorage)
 }
+
+/**
+ * If the flag is enabled, wraps the given value in a single-item array and returns it.
+ * Otherwise, returns an empty array.
+ *
+ * Useful for cases where something is added conditionally to an array
+ * based on a feature flag--this function can be called with the spread
+ * operator to achieve that conditional wrapping, as in:
+ *
+ * ```
+ * const myArray = [
+ *   alwaysIncludeThis,
+ *   andThis,
+ *   ...wrapIfEnabled(myFeatureFlag, onlyIncludeWhenMyFeatureFlagIsEnabled),
+ * ]
+ * ```
+ */
+export function wrapIfEnabled<T>(
+  flag: FeatureFlagType,
+  valueToWrap: T
+): [T] | [] {
+  return isEnabled(flag) ? [valueToWrap] : []
+}
+
+/**
+ * It works in the same way as the wrapIfEnabled function.
+ * But checks the inverse of `isEnabled`.
+ *
+ */
+export function wrapIfDisabled<T>(
+  flag: FeatureFlagType,
+  valueToWrap: T
+): [T] | [] {
+  return isDisabled(flag) ? [valueToWrap] : []
+}
