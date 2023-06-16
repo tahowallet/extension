@@ -310,7 +310,7 @@ export class IndexingDatabase extends Dexie {
     )
   }
 
-  async geAllCustomAssets(): Promise<CustomAsset[]> {
+  async getAllCustomAssets(): Promise<CustomAsset[]> {
     return this.customAssets.toArray()
   }
 

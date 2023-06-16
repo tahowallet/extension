@@ -604,24 +604,22 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   async removeDiscoveryTxHash(address: string): Promise<void> {
-    const assets = (await this.db.geAllCustomAssets()).filter(
-      (asset) =>
-        asset.metadata?.discoveryTxHash &&
-        asset.metadata?.discoveryTxHash[address]
-    )
-    // Remove all discovery tx hash from assets for address
-    if (assets.length > 0) {
-      assets.forEach((existingAsset) => {
-        const { metadata } = existingAsset
-        if (
-          metadata?.discoveryTxHash &&
-          Object.keys(metadata.discoveryTxHash).length !== 0
-        ) {
-          delete metadata.discoveryTxHash[address]
-          this.updateAssetMetadata(existingAsset, metadata)
+    const customAssets = await this.db.getAllCustomAssets()
+
+    customAssets
+      .filter(
+        (asset) => asset.metadata?.discoveryTxHash?.[address] !== undefined
+      )
+      .forEach((assetWithDiscoveryHashReference) => {
+        const { metadata } = assetWithDiscoveryHashReference
+        if (Object.keys(metadata?.discoveryTxHash ?? {}).length !== 0) {
+          delete metadata?.discoveryTxHash?.[address]
+          this.updateAssetMetadata(
+            assetWithDiscoveryHashReference,
+            metadata ?? {}
+          )
         }
       })
-    }
   }
 
   async importCustomToken(asset: SmartContractFungibleAsset): Promise<boolean> {
@@ -697,12 +695,12 @@ export default class IndexingService extends BaseService<Events> {
       const addressForDiscoveryTxHash = newDiscoveryTxHash
         ? Object.keys(newDiscoveryTxHash)[0]
         : undefined
-      const existsDiscoveryTxHash = addressForDiscoveryTxHash
+      const existingDiscoveryTxHash = addressForDiscoveryTxHash
         ? knownAsset.metadata?.discoveryTxHash?.[addressForDiscoveryTxHash]
         : undefined
       // If the discovery tx hash is not specified
       // or if it already exists in the asset, do not update the asset
-      if (!newDiscoveryTxHash || existsDiscoveryTxHash) {
+      if (!newDiscoveryTxHash || existingDiscoveryTxHash) {
         await this.addAssetToTrack(knownAsset)
         return knownAsset
       }
