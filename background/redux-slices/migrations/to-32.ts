@@ -1,6 +1,6 @@
 import { MINUTE } from "../../constants"
 
-const DEFAULT_AUTOLOCK_TIMER = 60 * MINUTE
+const DEFAULT_AUTOLOCK_INTERVAL = 60 * MINUTE
 
 type OldState = {
   ui: {
@@ -16,7 +16,7 @@ type NewState = {
   ui: {
     settings: {
       [settingsKey: string]: unknown
-      autoLockTimer: number
+      autoLockInterval: number
     }
     [sliceKey: string]: unknown
   }
@@ -32,7 +32,7 @@ export default (prevState: Record<string, unknown>): NewState => {
       ...typedPrevState.ui,
       settings: {
         ...typedPrevState.ui.settings,
-        autoLockTimer: DEFAULT_AUTOLOCK_TIMER,
+        autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
       },
     },
   }

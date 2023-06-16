@@ -18,7 +18,7 @@ export interface Preferences {
     isEnabled: boolean
     hasDefaultOnBeenTurnedOn: boolean
   }
-  autoLockTimer: UNIXTime
+  autoLockInterval: UNIXTime
 }
 
 export type AnalyticsPreferences = Preferences["analytics"]

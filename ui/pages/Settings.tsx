@@ -12,8 +12,8 @@ import {
   selectHideBanners,
   selectShowUnverifiedAssets,
   toggleShowUnverifiedAssets,
-  selectAutoLockTimer,
-  updateAutoLockTimer,
+  selectAutoLockTimer as selectAutoLockInterval,
+  updateAutoLockInterval,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
 import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
@@ -325,7 +325,7 @@ export default function Settings(): ReactElement {
     { label: "60", value: String(60 * MINUTE) },
   ]
 
-  const autoLockTimer = useBackgroundSelector(selectAutoLockTimer)
+  const autoLockInterval = useBackgroundSelector(selectAutoLockInterval)
 
   const autoLockSettings = {
     title: "",
@@ -343,10 +343,10 @@ export default function Settings(): ReactElement {
           <SharedSelect
             options={autoLockOptions}
             defaultIndex={autoLockOptions.findIndex(
-              ({ value }) => value === String(autoLockTimer)
+              ({ value }) => value === String(autoLockInterval)
             )}
             width="100%"
-            onChange={(newValue) => dispatch(updateAutoLockTimer(newValue))}
+            onChange={(newValue) => dispatch(updateAutoLockInterval(newValue))}
           />
         </div>
         <style jsx>

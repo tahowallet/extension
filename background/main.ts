@@ -83,7 +83,7 @@ import {
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
   setSelectedNetwork,
-  setAutoLockTimer,
+  setAutoLockInterval,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -1796,10 +1796,10 @@ export default class Main extends BaseService<never> {
       }
     })
 
-    uiSliceEmitter.on("updateAutoLockTimer", async (newTimerValue) => {
-      await this.preferenceService.updateAutoLockTimer(newTimerValue)
-      await this.internalSignerService.updateAutoLockTimer()
-      this.store.dispatch(setAutoLockTimer(newTimerValue))
+    uiSliceEmitter.on("updateAutoLockInterval", async (newTimerValue) => {
+      await this.preferenceService.updateAutoLockInterval(newTimerValue)
+      await this.internalSignerService.updateAutoLockInterval()
+      this.store.dispatch(setAutoLockInterval(newTimerValue))
     })
   }
 

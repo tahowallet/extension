@@ -23,7 +23,7 @@ import { FeatureFlags, isEnabled } from "../../features"
 import { AddressOnNetwork } from "../../accounts"
 import logger from "../../lib/logger"
 import PreferenceService from "../preferences"
-import { DEFAULT_AUTOLOCK_TIMER } from "../preferences/defaults"
+import { DEFAULT_AUTOLOCK_INTERVAL } from "../preferences/defaults"
 
 export enum SignerInternalTypes {
   mnemonicBIP39S128 = "mnemonic#bip39:128",
@@ -169,7 +169,7 @@ export default class InternalSignerService extends BaseService<Events> {
    */
   lastOutsideActivity: UNIXTime | undefined
 
-  #internalAutoLockTimer: UNIXTime = DEFAULT_AUTOLOCK_TIMER
+  #internalAutoLockInterval: UNIXTime = DEFAULT_AUTOLOCK_INTERVAL
 
   static create: ServiceCreatorFunction<
     Events,
@@ -198,8 +198,8 @@ export default class InternalSignerService extends BaseService<Events> {
     // it is. Don't emit if there are no vaults to unlock.
     await super.internalStartService()
 
-    this.#internalAutoLockTimer =
-      await this.preferenceService.getAutoLockTimer()
+    this.#internalAutoLockInterval =
+      await this.preferenceService.getAutoLockInterval()
 
     if ((await getEncryptedVaults()).vaults.length > 0) {
       this.emitter.emit("locked", this.locked())
@@ -212,9 +212,9 @@ export default class InternalSignerService extends BaseService<Events> {
     await super.internalStopService()
   }
 
-  async updateAutoLockTimer(): Promise<void> {
-    this.#internalAutoLockTimer =
-      await this.preferenceService.getAutoLockTimer()
+  async updateAutoLockInterval(): Promise<void> {
+    this.#internalAutoLockInterval =
+      await this.preferenceService.getAutoLockInterval()
 
     await this.autolockIfNeeded()
   }
@@ -366,9 +366,9 @@ export default class InternalSignerService extends BaseService<Events> {
     const timeSinceLastActivity = now - this.lastActivity
     const timeSinceLastOutsideActivity = now - this.lastOutsideActivity
 
-    if (timeSinceLastActivity >= this.#internalAutoLockTimer) {
+    if (timeSinceLastActivity >= this.#internalAutoLockInterval) {
       this.lock()
-    } else if (timeSinceLastOutsideActivity >= this.#internalAutoLockTimer) {
+    } else if (timeSinceLastOutsideActivity >= this.#internalAutoLockInterval) {
       this.lock()
     }
   }

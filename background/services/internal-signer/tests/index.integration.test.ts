@@ -406,7 +406,7 @@ describe("InternalSignerService when autolocking", () => {
 
   it("will autolock after the keyring idle time but not sooner", async () => {
     // eslint-disable-next-line @typescript-eslint/dot-notation
-    const maxIdleTime = await service["preferenceService"].getAutoLockTimer()
+    const maxIdleTime = await service["preferenceService"].getAutoLockInterval()
 
     expect(service.locked()).toEqual(false)
 
@@ -419,7 +419,7 @@ describe("InternalSignerService when autolocking", () => {
 
   it("will autolock after the outside activity idle time but not sooner", async () => {
     // eslint-disable-next-line @typescript-eslint/dot-notation
-    const maxIdleTime = await service["preferenceService"].getAutoLockTimer()
+    const maxIdleTime = await service["preferenceService"].getAutoLockInterval()
 
     expect(service.locked()).toEqual(false)
 
@@ -460,7 +460,7 @@ describe("InternalSignerService when autolocking", () => {
     },
   ])("will bump keyring activity idle time when $action", async ({ call }) => {
     // eslint-disable-next-line @typescript-eslint/dot-notation
-    const maxIdleTime = await service["preferenceService"].getAutoLockTimer()
+    const maxIdleTime = await service["preferenceService"].getAutoLockInterval()
 
     jest.spyOn(Date, "now").mockReturnValue(dateNowValue + maxIdleTime - 1)
 
@@ -483,7 +483,7 @@ describe("InternalSignerService when autolocking", () => {
 
   it("will bump the outside activity idle time when outside activity is marked", async () => {
     // eslint-disable-next-line @typescript-eslint/dot-notation
-    const maxIdleTime = await service["preferenceService"].getAutoLockTimer()
+    const maxIdleTime = await service["preferenceService"].getAutoLockInterval()
 
     jest.spyOn(Date, "now").mockReturnValue(dateNowValue + maxIdleTime - 1)
 
@@ -508,7 +508,7 @@ describe("InternalSignerService when autolocking", () => {
     // eslint-disable-next-line @typescript-eslint/dot-notation, prefer-destructuring
     const preferenceService = service["preferenceService"]
 
-    const maxIdleTime = await preferenceService.getAutoLockTimer()
+    const maxIdleTime = await preferenceService.getAutoLockInterval()
 
     await service.generateNewKeyring(SignerInternalTypes.mnemonicBIP39S256)
 
@@ -516,9 +516,9 @@ describe("InternalSignerService when autolocking", () => {
 
     callAutolockHandler(maxIdleTime / 2)
 
-    await preferenceService.updateAutoLockTimer(maxIdleTime / 2)
+    await preferenceService.updateAutoLockInterval(maxIdleTime / 2)
 
-    await service.updateAutoLockTimer()
+    await service.updateAutoLockInterval()
 
     expect(service.locked()).toEqual(true)
   })

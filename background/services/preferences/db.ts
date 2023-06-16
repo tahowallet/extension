@@ -3,7 +3,7 @@ import Dexie, { Transaction } from "dexie"
 import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork } from "../../accounts"
 
-import DEFAULT_PREFERENCES, { DEFAULT_AUTOLOCK_TIMER } from "./defaults"
+import DEFAULT_PREFERENCES, { DEFAULT_AUTOLOCK_INTERVAL } from "./defaults"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
 import { AnalyticsPreferences } from "./types"
@@ -42,7 +42,7 @@ export interface Preferences {
     isEnabled: boolean
     hasDefaultOnBeenTurnedOn: boolean
   }
-  autoLockTimer: UNIXTime
+  autoLockInterval: UNIXTime
 }
 
 export class PreferenceDatabase extends Dexie {
@@ -335,7 +335,7 @@ export class PreferenceDatabase extends Dexie {
         .toCollection()
         .modify((storedPreferences: Preferences) => {
           const update: Partial<Preferences> = {
-            autoLockTimer: DEFAULT_AUTOLOCK_TIMER,
+            autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
           }
 
           Object.assign(storedPreferences, update)
@@ -358,11 +358,11 @@ export class PreferenceDatabase extends Dexie {
     return this.preferences.reverse().first() as Promise<Preferences>
   }
 
-  async setAutoLockTimer(newValue: number): Promise<void> {
+  async setAutoLockInterval(newValue: number): Promise<void> {
     await this.preferences
       .toCollection()
       .modify((storedPreferences: Preferences) => {
-        const update: Partial<Preferences> = { autoLockTimer: newValue }
+        const update: Partial<Preferences> = { autoLockInterval: newValue }
 
         Object.assign(storedPreferences, update)
       })
