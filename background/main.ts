@@ -651,6 +651,9 @@ export default class Main extends BaseService<never> {
     await this.signingService.removeAccount(address, signer.type)
 
     this.nameService.removeAccount(address)
+
+    // remove discovery tx hash for custom asset
+    this.indexingService.removeDiscoveryTxHash(address)
   }
 
   async importLedgerAccounts(

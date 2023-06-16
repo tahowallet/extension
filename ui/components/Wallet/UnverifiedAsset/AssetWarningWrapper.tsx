@@ -1,11 +1,9 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
-import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { Activity } from "@tallyho/tally-background/redux-slices/activities"
 import SharedSlideUpMenu from "../../Shared/SharedSlideUpMenu"
 import WalletActivityDetails from "../WalletActivityDetails"
 import AssetWarning from "./AssetWarning"
-import { useBackgroundSelector } from "../../../hooks"
 
 type AssetWarningWrapperProps = {
   asset: SmartContractFungibleAsset | null
@@ -18,12 +16,9 @@ export default function AssetWarningWrapper(
   const { asset, close } = props
 
   const [showAssetWarning, setShowAssetWarning] = useState(!!asset)
-  const [activityItem, setActivityItem] = useState<Activity | undefined>(
-    undefined
-  )
-
-  const activityInitiatorAddress =
-    useBackgroundSelector(selectCurrentAccount).address
+  const [activityDetails, setActivityDetails] = useState<
+    { activityItem: Activity; activityInitiatorAddress: string } | undefined
+  >(undefined)
 
   useEffect(() => {
     setShowAssetWarning(!!asset)
@@ -40,8 +35,8 @@ export default function AssetWarningWrapper(
           <AssetWarning
             asset={asset}
             close={() => close()}
-            openActivityDetails={(activity) => {
-              setActivityItem(activity)
+            openActivityDetails={(newActivityDetails) => {
+              setActivityDetails(newActivityDetails)
               setShowAssetWarning(false)
             }}
           />
@@ -49,17 +44,17 @@ export default function AssetWarningWrapper(
       </SharedSlideUpMenu>
 
       <SharedSlideUpMenu
-        isOpen={!!activityItem}
+        isOpen={!!activityDetails}
         size="custom"
         close={() => {
-          setActivityItem(undefined)
+          setActivityDetails(undefined)
           setShowAssetWarning(true)
         }}
       >
-        {activityItem && (
+        {activityDetails && (
           <WalletActivityDetails
-            activityItem={activityItem}
-            activityInitiatorAddress={activityInitiatorAddress}
+            activityItem={activityDetails.activityItem}
+            activityInitiatorAddress={activityDetails.activityInitiatorAddress}
           />
         )}
       </SharedSlideUpMenu>
