@@ -13,7 +13,7 @@ export default function NewSeedIntro({
   })
 
   return (
-    <section className="step_content fadeIn">
+    <section className="step_content fade_in">
       <h1 className="center_text">{t("title")}</h1>
       <div className="message">
         <div className="message_header">

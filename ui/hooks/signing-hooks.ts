@@ -1,11 +1,12 @@
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
-import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { useEffect } from "react"
 import { useHistory } from "react-router-dom"
 
 import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
-import { DisplayDetails } from "@tallyho/tally-background/services/ledger"
+import {
+  DisplayDetails,
+  LedgerAccountSigner,
+} from "@tallyho/tally-background/services/ledger"
 import { HexString } from "@tallyho/tally-background/types"
 import { useBackgroundSelector } from "./redux-hooks"
 
@@ -44,15 +45,6 @@ export const useAreKeyringsUnlocked = (redirectIfNot: boolean): boolean => {
   return keyringStatus === "unlocked"
 }
 
-// FIXME Remove after USE_UPDATED_SIGNING_UI = true
-export function useIsSignerLocked(signer: AccountSigner | null): boolean {
-  const needsKeyrings = isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI)
-    ? false
-    : signer?.type === "keyring"
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(needsKeyrings)
-  return needsKeyrings && !areKeyringsUnlocked
-}
-
 export type SigningLedgerState =
   | {
       state: "no-ledger-connected" | "busy" | "multiple-ledgers-connected"
@@ -65,14 +57,10 @@ export type SigningLedgerState =
     }
 
 export function useSigningLedgerState(
-  signingAddress: HexString | undefined,
-  accountSigner: AccountSigner | null
-): SigningLedgerState | null {
+  signingAddress: HexString,
+  accountSigner: LedgerAccountSigner
+): SigningLedgerState {
   return useBackgroundSelector((state) => {
-    if (signingAddress === undefined || accountSigner?.type !== "ledger") {
-      return null
-    }
-
     const { deviceID } = accountSigner
 
     const connectedDevices = Object.values(state.ledger.devices).filter(

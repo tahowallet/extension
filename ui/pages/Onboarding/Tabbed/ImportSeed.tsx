@@ -89,7 +89,7 @@ export default function ImportSeed(props: Props): ReactElement {
     )
 
   return (
-    <section className="fadeIn">
+    <section className="fade_in">
       <header className="portion">
         <div className="illustration_import" />
         <h1 className="serif_header">{t("title")}</h1>

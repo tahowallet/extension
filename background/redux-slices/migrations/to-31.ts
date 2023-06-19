@@ -1,35 +1,52 @@
-type OldState = {
-  ui: {
-    settings: {
-      [settingsKey: string]: unknown
+type PrevState = {
+  account: {
+    accountsData: {
+      evm: {
+        [chainID: string]: {
+          [address: string]: {
+            balances: {
+              [symbol: string]: unknown
+            }
+            [other: string]: unknown
+          }
+        }
+      }
     }
     [sliceKey: string]: unknown
   }
-  [otherSlice: string]: unknown
 }
 
 type NewState = {
-  ui: {
-    settings: {
-      [settingsKey: string]: unknown
-      useFlashbots: boolean
+  account: {
+    accountsData: {
+      evm: {
+        [chainID: string]: {
+          [address: string]: {
+            balances: {
+              [assetID: string]: unknown
+            }
+            [other: string]: unknown
+          }
+        }
+      }
     }
     [sliceKey: string]: unknown
   }
-  [otherSlice: string]: unknown
 }
 
 export default (prevState: Record<string, unknown>): NewState => {
-  const typedPrevState = prevState as OldState
+  const typedPrevState = prevState as PrevState
 
-  return {
-    ...prevState,
-    ui: {
-      ...typedPrevState.ui,
-      settings: {
-        ...typedPrevState.ui.settings,
-        useFlashbots: false,
-      },
-    },
-  }
+  const {
+    account: { accountsData },
+  } = typedPrevState
+
+  Object.keys(accountsData.evm).forEach((chainID) =>
+    Object.keys(accountsData.evm[chainID]).forEach((address) => {
+      // Clear all accounts cached balances
+      accountsData.evm[chainID][address].balances = {}
+    })
+  )
+
+  return { ...typedPrevState }
 }
