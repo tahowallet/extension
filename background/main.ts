@@ -1528,6 +1528,14 @@ export default class Main extends BaseService<never> {
       }
     )
 
+    this.preferenceService.emitter.on(
+      "updateAutoLockInterval",
+      async (newTimerValue) => {
+        await this.internalSignerService.updateAutoLockInterval()
+        this.store.dispatch(setAutoLockInterval(newTimerValue))
+      }
+    )
+
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
 
@@ -1798,8 +1806,6 @@ export default class Main extends BaseService<never> {
 
     uiSliceEmitter.on("updateAutoLockInterval", async (newTimerValue) => {
       await this.preferenceService.updateAutoLockInterval(newTimerValue)
-      await this.internalSignerService.updateAutoLockInterval()
-      this.store.dispatch(setAutoLockInterval(newTimerValue))
     })
   }
 

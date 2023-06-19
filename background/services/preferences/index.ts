@@ -12,7 +12,7 @@ import BaseService from "../base"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { ETHEREUM, OPTIMISM, ARBITRUM_ONE } from "../../constants"
 import { EVMNetwork, sameNetwork } from "../../networks"
-import { HexString } from "../../types"
+import { HexString, UNIXTime } from "../../types"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
 
@@ -99,6 +99,7 @@ interface Events extends ServiceLifecycleEvents {
   updateAnalyticsPreferences: AnalyticsPreferences
   addressBookEntryModified: AddressBookEntry
   updatedSignerSettings: AccountSignerSettings[]
+  updateAutoLockInterval: UNIXTime
 }
 
 /*
@@ -258,7 +259,8 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   async updateAutoLockInterval(newValue: number): Promise<void> {
-    return this.db.setAutoLockInterval(newValue)
+    await this.db.setAutoLockInterval(newValue)
+    this.emitter.emit("updateAutoLockInterval", newValue)
   }
 
   async setDefaultWalletValue(newDefaultWalletValue: boolean): Promise<void> {
