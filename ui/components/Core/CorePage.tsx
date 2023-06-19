@@ -36,7 +36,6 @@ export default function CorePage(props: Props): ReactElement {
             margin: 0 auto;
             align-items: center;
             background-color: var(--hunter-green);
-            z-index: 10;
             height: 100%;
           }
           .top_menu_wrap {

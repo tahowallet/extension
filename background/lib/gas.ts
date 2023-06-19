@@ -42,7 +42,7 @@ type PolygonGasResponse = {
 const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
   // @TODO Validate this response using ajv
   const gasEstimates = (await fetchJson(
-    "https://gasstation-mainnet.matic.network/v2"
+    "https://gasstation.polygon.technology/v2"
   )) as PolygonGasResponse
 
   const baseFeePerGas = BigInt(Math.ceil(gasEstimates.estimatedBaseFee * 1e9))

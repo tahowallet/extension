@@ -34,7 +34,7 @@ export function fixPolygonWETHIssue(tokensParam: TokenInfo[]): TokenInfo[] {
       ...tokens[tokenToRenameIndex],
       name: "Wrapped Ether",
       symbol: "WETH",
-      logoURI: "https://wallet-asset.matic.network/img/tokens/weth.svg",
+      logoURI: "https://assets.polygon.technology/tokenAssets/eth.svg",
     }
   }
 
