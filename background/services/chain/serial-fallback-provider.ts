@@ -25,6 +25,7 @@ import {
   transactionFromAlchemyWebsocketTransaction,
 } from "../../lib/alchemy"
 import { FeatureFlags, isEnabled } from "../../features"
+import { RpcConfig } from "./db"
 
 export type ProviderCreator = {
   type: "alchemy" | "custom" | "generic"
@@ -1018,7 +1019,7 @@ export function makeFlashbotsProviderCreator(): ProviderCreator {
 export function makeSerialFallbackProvider(
   chainID: string,
   rpcUrls: string[],
-  customRpc?: { rpcUrl: string; supportedMethods?: string[] }
+  customRpc?: RpcConfig
 ): SerialFallbackProvider {
   if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
     return new SerialFallbackProvider(FORK.chainID, [
@@ -1053,7 +1054,7 @@ export function makeSerialFallbackProvider(
         {
           type: "custom" as const,
           supportedMethods: customRpc.supportedMethods ?? [],
-          creator: () => getProviderCreator(customRpc.rpcUrl),
+          creator: () => getProviderCreator(customRpc.rpcUrls[0]),
         },
       ]
     : []

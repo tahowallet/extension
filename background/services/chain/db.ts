@@ -35,6 +35,12 @@ type AccountAssetTransferLookup = {
   endBlock: bigint
 }
 
+export type RpcConfig = {
+  chainID: string
+  rpcUrls: string[]
+  supportedMethods?: string[]
+}
+
 // TODO keep track of blocks invalidated by a reorg
 // TODO keep track of transaction replacement / nonce invalidation
 
@@ -84,12 +90,9 @@ export class ChainDatabase extends Dexie {
 
   private baseAssets!: Dexie.Table<NetworkBaseAsset, string>
 
-  private rpcUrls!: Dexie.Table<{ chainID: string; rpcUrls: string[] }, string>
+  private rpcConfig!: Dexie.Table<RpcConfig, string>
 
-  private customRpcUrls!: Dexie.Table<
-    { chainID: string; rpcUrl: string; supportedMethods: string[] },
-    string
-  >
+  private customRpcConfig!: Dexie.Table<RpcConfig, string>
 
   constructor(options?: DexieOptions) {
     super("tally/chain", options)
@@ -189,9 +192,18 @@ export class ChainDatabase extends Dexie {
         })
     })
 
-    this.version(9).stores({
-      customRpcUrls: "&chainID, rpcUrl, supportedMethods",
-    })
+    this.version(9)
+      .stores({
+        rpcConfig: "&chainID, rpcUrls",
+        customRpcConfig: "&chainID, rpcUrls, supportedMethods",
+      })
+      .upgrade(async (tx) => {
+        const rpcUrls = await tx.table<RpcConfig>("rpcUrls").toArray()
+        tx.table<RpcConfig>("rpcConfig").bulkPut(rpcUrls)
+      })
+      .stores({
+        rpcUrls: null,
+      })
   }
 
   async initialize(): Promise<void> {
@@ -271,14 +283,14 @@ export class ChainDatabase extends Dexie {
       "rw",
       this.networks,
       this.baseAssets,
-      this.rpcUrls,
+      this.rpcConfig,
       this.accountsToTrack,
       async () => {
         await Promise.all([
           this.networks.where({ chainID }).delete(),
           this.baseAssets.where({ chainID }).delete(),
-          this.rpcUrls.where({ chainID }).delete(),
-          this.customRpcUrls.where({ chainID }).delete(),
+          this.rpcConfig.where({ chainID }).delete(),
+          this.customRpcConfig.where({ chainID }).delete(),
         ])
 
         // @TODO - Deleting accounts inside the Promise.all does not seem
@@ -362,7 +374,7 @@ export class ChainDatabase extends Dexie {
   }
 
   async getRpcUrlsByChainId(chainId: string): Promise<string[]> {
-    const rpcUrls = await this.rpcUrls.where({ chainId }).first()
+    const rpcUrls = await this.rpcConfig.where({ chainId }).first()
     if (rpcUrls) {
       return rpcUrls.rpcUrls
     }
@@ -370,15 +382,15 @@ export class ChainDatabase extends Dexie {
   }
 
   private async addRpcUrls(chainID: string, rpcUrls: string[]): Promise<void> {
-    const existingRpcUrlsForChain = await this.rpcUrls.get(chainID)
+    const existingRpcUrlsForChain = await this.rpcConfig.get(chainID)
     if (existingRpcUrlsForChain) {
       existingRpcUrlsForChain.rpcUrls.push(...rpcUrls)
       existingRpcUrlsForChain.rpcUrls = [
         ...new Set(existingRpcUrlsForChain.rpcUrls),
       ]
-      await this.rpcUrls.put(existingRpcUrlsForChain)
+      await this.rpcConfig.put(existingRpcUrlsForChain)
     } else {
-      await this.rpcUrls.put({ chainID, rpcUrls })
+      await this.rpcConfig.put({ chainID, rpcUrls })
     }
   }
 
@@ -387,25 +399,23 @@ export class ChainDatabase extends Dexie {
     rpcUrl: string,
     supportedMethods: string[] = []
   ): Promise<string> {
-    return this.customRpcUrls.put({ chainID, rpcUrl, supportedMethods })
+    return this.customRpcConfig.put({
+      chainID,
+      rpcUrls: [rpcUrl],
+      supportedMethods,
+    })
   }
 
   async removeCustomRpcUrl(chainID: string): Promise<number> {
-    return this.customRpcUrls.where({ chainID }).delete()
+    return this.customRpcConfig.where({ chainID }).delete()
   }
 
   async getAllRpcUrls(): Promise<{ chainID: string; rpcUrls: string[] }[]> {
-    return this.rpcUrls.toArray()
+    return this.rpcConfig.toArray()
   }
 
-  async getAllCustomRpcUrls(): Promise<
-    {
-      chainID: string
-      rpcUrl: string
-      supportedMethods: string[]
-    }[]
-  > {
-    return this.customRpcUrls.toArray()
+  async getAllCustomRpcUrls(): Promise<RpcConfig[]> {
+    return this.customRpcConfig.toArray()
   }
 
   async getAllSavedTransactionHashes(): Promise<IndexableTypeArray> {
