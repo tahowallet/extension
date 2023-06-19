@@ -6,6 +6,7 @@ import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useHistory } from "react-router-dom"
+import { LedgerAccountSigner } from "@tallyho/tally-background/services/ledger"
 import {
   useBackgroundDispatch,
   useBackgroundSelector,
@@ -19,7 +20,10 @@ import SignerLedgerSigning from "./SignerLedgerSigning"
 import SignerLedgerConnectionStatus from "./SignerLedgerConnectionStatus"
 import TransactionButton from "../TransactionButton"
 
-export default function SignerLedgerFrame<T extends SignOperationType>({
+export default function SignerLedgerFrame<
+  T extends SignOperationType,
+  S extends LedgerAccountSigner
+>({
   children,
   request,
   signer,
@@ -28,7 +32,7 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
   signActionCreator,
   rejectActionCreator,
   redirectToActivityPage,
-}: SignerFrameProps<T>): ReactElement {
+}: SignerFrameProps<T, S>): ReactElement {
   const { t: globalT } = useTranslation()
   const { t } = useTranslation("translation", { keyPrefix: "ledger" })
   const { t: tSigning } = useTranslation("translation", {
@@ -67,15 +71,6 @@ export default function SignerLedgerFrame<T extends SignOperationType>({
   const additionalSigningStatus = useBackgroundSelector(
     selectAdditionalSigningStatus
   )
-
-  // FIXME Once the legacy signing flow is removed, `useSigningLedgerState` can
-  // FIXME be updated to not accept undefined or null and therefore to not
-  // FIXME return null, at which point ledgerState will be known non-null here.
-  if (ledgerState === null) {
-    throw new Error(
-      `Could not look up Ledger state for signer: ${JSON.stringify(signer)}`
-    )
-  }
 
   const mustEnableArbitraryDataSigning =
     ledgerState.state === "available" &&
