@@ -34,7 +34,7 @@ test.describe("Transactions", () => {
         .getByText("Settings", { exact: true })
         .click()
       const enableTestNetworksSetting = popup.locator("li").filter({
-        hasText: /^Enable test networks$/,
+        hasText: /^Show testnet networks$/,
       })
       await enableTestNetworksSetting.locator(".bulb").click()
       await popup
