@@ -1,6 +1,11 @@
 import classNames from "classnames"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
+import {
+  markDismissableItemAsShown,
+  selectShouldShowDismissableItem,
+} from "@tallyho/tally-background/redux-slices/ui"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedIcon from "../Shared/SharedIcon"
 import DAppConnectionDefaultToggle from "./DAppConnectionDefaultToggle"
 
@@ -24,7 +29,7 @@ function DefaultConnectionPopover({ close }: PopoverProps): ReactElement {
   return (
     <div
       className={classNames("bg", {
-        fadeIn: !isClosing,
+        fade_in: !isClosing,
         fade_out: isClosing,
       })}
     >
@@ -176,34 +181,54 @@ function DefaultConnectionPopover({ close }: PopoverProps): ReactElement {
  * switch to a different wallet right in the connection flow.
  */
 export default function DAppConnectionInfoBar(): ReactElement {
-  const [
-    isShowingDefaultConnectionTooltip,
-    setIsShowingDefaultConnectionTooltip,
-  ] = useState(false)
+  const dispatch = useBackgroundDispatch()
 
-  const toggleIsShowingDefaultConnectionTooltip = () => {
-    setIsShowingDefaultConnectionTooltip(!isShowingDefaultConnectionTooltip)
-  }
+  const shouldImmediatelyShowPopover = useBackgroundSelector(
+    selectShouldShowDismissableItem("default-connection-popover")
+  )
+
+  const [
+    isShowingDefaultConnectionPopover,
+    setIsShowingDefaultConnectionPopover,
+  ] = useState(shouldImmediatelyShowPopover)
+
+  const closeDefaultConnectionPopover = useCallback(() => {
+    if (shouldImmediatelyShowPopover && isShowingDefaultConnectionPopover) {
+      dispatch(markDismissableItemAsShown("default-connection-popover"))
+    }
+
+    setIsShowingDefaultConnectionPopover(false)
+  }, [
+    dispatch,
+    isShowingDefaultConnectionPopover,
+    shouldImmediatelyShowPopover,
+  ])
+
+  const toggleIsShowingDefaultConnectionPopover = useCallback(() => {
+    if (isShowingDefaultConnectionPopover) {
+      closeDefaultConnectionPopover()
+    } else {
+      setIsShowingDefaultConnectionPopover(true)
+    }
+  }, [closeDefaultConnectionPopover, isShowingDefaultConnectionPopover])
 
   return (
     <section
-      className={classNames({ highlighted: isShowingDefaultConnectionTooltip })}
+      className={classNames({ highlighted: isShowingDefaultConnectionPopover })}
     >
       <SharedIcon
-        onClick={() => toggleIsShowingDefaultConnectionTooltip()}
+        onClick={() => toggleIsShowingDefaultConnectionPopover()}
         icon="icons/m/info.svg"
         width={16}
         hoverColor="var(--success)"
         color={
-          isShowingDefaultConnectionTooltip
+          isShowingDefaultConnectionPopover
             ? "var(--success)"
             : "var(--green-20)"
         }
       />
-      {isShowingDefaultConnectionTooltip ? (
-        <DefaultConnectionPopover
-          close={() => setIsShowingDefaultConnectionTooltip(false)}
-        />
+      {isShowingDefaultConnectionPopover ? (
+        <DefaultConnectionPopover close={closeDefaultConnectionPopover} />
       ) : (
         <></>
       )}

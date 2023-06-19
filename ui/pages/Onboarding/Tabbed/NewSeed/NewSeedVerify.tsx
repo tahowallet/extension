@@ -229,7 +229,7 @@ export default function NewSeedVerify({
   }
 
   return (
-    <section className="verify_section fadeIn">
+    <section className="verify_section fade_in">
       <h1 className="center_text">{t("title")}</h1>
       <div className="subtitle center_text">{t("subtitle")}</div>
       <div className="words_list">
