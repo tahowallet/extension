@@ -13,7 +13,11 @@ import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
   isBuiltInNetworkBaseAsset,
+  AssetID,
+  getAssetID,
+  isNetworkBaseAsset,
   isSameAsset,
+  isUntrustedAsset,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
@@ -58,7 +62,7 @@ export type AccountData = {
   address: HexString
   network: Network
   balances: {
-    [assetSymbol: string]: AccountBalance
+    [assetID: AssetID]: AccountBalance
   }
   ens: {
     name?: DomainName
@@ -189,13 +193,24 @@ function updateCombinedData(immerState: AccountState) {
 
   immerState.combinedData.assets = Object.values(
     combinedAccountBalances.reduce<{
-      [symbol: string]: AnyAssetAmount
+      [assetID: string]: AnyAssetAmount
     }>((acc, combinedAssetAmount) => {
-      const assetSymbol = combinedAssetAmount.asset.symbol
+      const { asset } = combinedAssetAmount
+      /**
+       * Asset amounts can be aggregated if the asset is a base network asset
+       * or comes from a token list, e.g. ETH on Optimism, Mainnet
+       */
+      const canBeAggregated =
+        isNetworkBaseAsset(asset) || !isUntrustedAsset(asset)
+
+      const assetID = canBeAggregated
+        ? asset.symbol
+        : `${asset.homeNetwork.chainID}/${getAssetID(asset)}`
+
       let { amount } = combinedAssetAmount
 
-      if (acc[assetSymbol]?.asset) {
-        const accAsset = acc[assetSymbol].asset
+      if (acc[assetID]?.asset) {
+        const accAsset = acc[assetID].asset
         const existingDecimals = isFungibleAsset(accAsset)
           ? accAsset.decimals
           : 0
@@ -208,13 +223,14 @@ function updateCombinedData(immerState: AccountState) {
         }
       }
 
-      if (acc[assetSymbol]) {
-        acc[assetSymbol].amount += amount
+      if (acc[assetID]) {
+        acc[assetID].amount += amount
       } else {
-        acc[assetSymbol] = {
+        acc[assetID] = {
           ...combinedAssetAmount,
         }
       }
+
       return acc
     }, {})
   )
@@ -306,7 +322,7 @@ const accountSlice = createSlice({
           network,
           assetAmount: { asset },
         } = updatedAccountBalance
-        const { symbol: updatedAssetSymbol } = asset
+        const assetID = getAssetID(asset)
 
         const normalizedAddress = normalizeEVMAddress(address)
         const existingAccountData =
@@ -320,20 +336,19 @@ const accountSlice = createSlice({
         if (existingAccountData !== "loading") {
           if (
             updatedAccountBalance.assetAmount.amount === 0n &&
-            existingAccountData.balances[updatedAssetSymbol] === undefined &&
+            existingAccountData.balances[assetID] === undefined &&
             !isBuiltInNetworkBaseAsset(asset, network) // add base asset even if balance is 0
           ) {
             return
           }
-          existingAccountData.balances[updatedAssetSymbol] =
-            updatedAccountBalance
+          existingAccountData.balances[assetID] = updatedAccountBalance
         } else {
           immerState.accountsData.evm[network.chainID][normalizedAddress] = {
             // TODO Figure out the best way to handle default name assignment
             // TODO across networks.
             ...newAccountData(address, network, immerState),
             balances: {
-              [updatedAssetSymbol]: updatedAccountBalance,
+              [assetID]: updatedAccountBalance,
             },
           }
         }
@@ -442,7 +457,7 @@ const accountSlice = createSlice({
         if (account !== "loading") {
           Object.values(account.balances).forEach(({ assetAmount }) => {
             if (isSameAsset(assetAmount.asset, asset)) {
-              delete account.balances[assetAmount.asset.symbol]
+              delete account.balances[getAssetID(assetAmount.asset)]
             }
           })
         }

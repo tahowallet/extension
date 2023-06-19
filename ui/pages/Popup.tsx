@@ -12,13 +12,10 @@ import { Provider } from "react-redux"
 import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { runtime } from "webextension-polyfill"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { popupMonitorPortName } from "@tallyho/tally-background/main"
 import {
   getAddressCount,
-  selectCurrentAccountSigner,
   selectCurrentAddressNetwork,
-  selectInternalSignerStatus,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { Location } from "history"
@@ -37,7 +34,6 @@ import ErrorFallback from "./ErrorFallback"
 
 import pageList from "../routes/routes"
 import GlobalModal from "../components/GlobalModal/GlobalModal"
-import { isSignerWithSecrets } from "../utils/accounts"
 
 const pagePreferences = Object.fromEntries(
   pageList.map(({ path, hasTabBar, hasTopBar, persistOnClose }) => [
@@ -49,7 +45,6 @@ const pagePreferences = Object.fromEntries(
 function transformLocation(
   inputLocation: Location,
   isTransactionPendingSignature: boolean,
-  needsUnlock: boolean,
   hasAccounts: boolean
 ): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
@@ -67,10 +62,7 @@ function transformLocation(
   }
 
   if (isTransactionPendingSignature) {
-    pathname =
-      !isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI) && needsUnlock
-        ? "/internal-signer/unlock"
-        : "/sign-transaction"
+    pathname = "/sign-transaction"
   }
 
   return {
@@ -132,17 +124,9 @@ export function Main(): ReactElement {
   const isTransactionPendingSignature = useBackgroundSelector(
     selectIsTransactionPendingSignature
   )
-  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
-  const lockStatus = useBackgroundSelector(selectInternalSignerStatus)
   const hasAccounts = useBackgroundSelector(
     (state) => getAddressCount(state) > 0
   )
-
-  const needsUnlock =
-    isTransactionPendingSignature &&
-    currentAccountSigner &&
-    isSignerWithSecrets(currentAccountSigner) &&
-    lockStatus !== "unlocked"
 
   useConnectPopupMonitor()
 
@@ -155,7 +139,6 @@ export function Main(): ReactElement {
             const transformedLocation = transformLocation(
               routeProps.location,
               isTransactionPendingSignature,
-              needsUnlock,
               hasAccounts
             )
 

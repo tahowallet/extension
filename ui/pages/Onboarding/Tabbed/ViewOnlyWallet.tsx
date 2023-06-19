@@ -56,7 +56,7 @@ export default function ViewOnlyWallet(): ReactElement {
 
   // TODO remove the "embedded" variable and restyle
   return (
-    <section className="fadeIn">
+    <section className="fade_in">
       <header>
         <img
           width="80"
