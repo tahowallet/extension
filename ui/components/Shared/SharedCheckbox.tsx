@@ -54,7 +54,7 @@ export default function SharedCheckbox(props: Props): ReactElement {
           height: 16px;
           min-width: 16px;
           border-radius: 3px;
-          background-color: var(--green-120);
+          background-color: transparent;
           margin-right: 10px;
           border: 2px solid var(--green-40);
           box-sizing: border-box;
