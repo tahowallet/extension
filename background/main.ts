@@ -188,7 +188,7 @@ import {
 } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
-import { makeFlashbotsProvider } from "./services/chain/serial-fallback-provider"
+import { makeFlashbotsProviderCreator } from "./services/chain/serial-fallback-provider"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -1862,7 +1862,7 @@ export default class Main extends BaseService<never> {
 
   async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {
     if (shouldUseFlashbots) {
-      const flashbotsProvider = makeFlashbotsProvider()
+      const flashbotsProvider = makeFlashbotsProviderCreator()
       this.chainService.addCustomProvider(
         ETHEREUM.chainID,
         FLASHBOTS_RPC_URL,

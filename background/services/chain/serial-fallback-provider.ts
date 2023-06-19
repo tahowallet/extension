@@ -1003,7 +1003,7 @@ function getProviderCreator(
   return new JsonRpcProvider(rpcUrl)
 }
 
-export function makeFlashbotsProvider(): ProviderCreator {
+export function makeFlashbotsProviderCreator(): ProviderCreator {
   return {
     type: "custom",
     supportedMethods: ["eth_sendRawTransaction"],
