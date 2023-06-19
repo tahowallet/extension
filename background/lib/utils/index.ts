@@ -166,11 +166,7 @@ export function getEthereumNetwork(): EVMNetwork {
 }
 
 export function isProbablyEVMAddress(str: string): boolean {
-  if (
-    typeof str === "string" &&
-    str.length === 42 &&
-    normalizeHexAddress(str).startsWith("0x")
-  ) {
+  if (str.length === 42 && normalizeHexAddress(str).startsWith("0x")) {
     return true
   }
   return false

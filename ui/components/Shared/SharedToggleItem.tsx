@@ -8,7 +8,7 @@ import SharedToggleButton from "./SharedToggleButton"
 export const STARS_GREY_URL = "./images/stars_grey.svg"
 
 type SharedToggleItemProps = {
-  label: string
+  label?: string
   thumbnailURL?: string
   checked: boolean
   onChange: (toggleValue: boolean) => void
@@ -25,7 +25,9 @@ export default function SharedToggleItem({
       <div className="text_wrap">
         <div className="thumbnail" role="img" />
         <label className="label ellipsis">
-          {isProbablyEVMAddress(label) ? truncateAddress(label) : label ?? ""}
+          {typeof label === "string" && isProbablyEVMAddress(label)
+            ? truncateAddress(label)
+            : label ?? ""}
         </label>
       </div>
       <SharedToggleButton onChange={onChange} value={checked} />
