@@ -36,9 +36,11 @@ import { productionNetworkInfo } from "../../components/TopMenu/TopMenuProtocolL
 import TopMenuProtocolListItem from "../../components/TopMenu/TopMenuProtocolListItem"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { useSetState } from "../../hooks/react-hooks"
+import { trimWithEllipsis } from "../../utils/textUtils"
 
 const HELPDESK_CUSTOM_TOKENS_LINK =
   "https://tahowallet.notion.site/Adding-Custom-Tokens-2facd9b82b5f4685a7d4766caeb05a4c"
+const MAX_SYMBOL_LENGTH = 10
 
 const PlaceholderIcon = () => (
   <div>
@@ -75,13 +77,16 @@ export default function SettingsAddCustomAsset(): ReactElement {
 
   type AssetData = AsyncThunkFulfillmentType<typeof checkTokenContractDetails>
 
-  const [{ loading, error, assetData }, setState] = useSetState<{
-    loading: boolean
-    error: boolean
+  const [
+    { isLoadingAssetDetails, hasAssetDetailLoadError, assetData },
+    setState,
+  ] = useSetState<{
+    isLoadingAssetDetails: boolean
+    hasAssetDetailLoadError: boolean
     assetData: AssetData | null
   }>({
-    loading: false,
-    error: false,
+    isLoadingAssetDetails: false,
+    hasAssetDetailLoadError: false,
     assetData: null,
   })
 
@@ -100,6 +105,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
 
   const [chosenNetwork, setChosenNetwork] = useState<EVMNetwork>(currentNetwork)
   const [isNetworkSelectOpen, setNetworkSelectOpen] = useState(false)
+  const [isImportingToken, setIsImportingToken] = useState(false)
 
   const requestIdRef = useRef(0)
 
@@ -113,12 +119,20 @@ export default function SettingsAddCustomAsset(): ReactElement {
     const contractAddress = addressLike.trim()
 
     if (contractAddress.length < 1) {
-      setState({ loading: false, assetData: null, error: false })
+      setState({
+        isLoadingAssetDetails: false,
+        assetData: null,
+        hasAssetDetailLoadError: false,
+      })
       return
     }
 
     if (!isProbablyEVMAddress(contractAddress)) {
-      setState({ loading: false, assetData: null, error: true })
+      setState({
+        isLoadingAssetDetails: false,
+        assetData: null,
+        hasAssetDetailLoadError: true,
+      })
       return
     }
 
@@ -131,7 +145,11 @@ export default function SettingsAddCustomAsset(): ReactElement {
 
     // async setState safeguard
     if (requestIdRef.current === callId) {
-      setState({ loading: false, assetData: details, error: details === null })
+      setState({
+        isLoadingAssetDetails: false,
+        assetData: details,
+        hasAssetDetailLoadError: details === null,
+      })
     }
   }
 
@@ -142,9 +160,19 @@ export default function SettingsAddCustomAsset(): ReactElement {
       return
     }
 
-    await dispatch(importCustomToken({ asset: assetData.asset }))
-    await dispatch(setSnackbarMessage(t("snackbar.success")))
-    history.push("/")
+    setIsImportingToken(true)
+
+    const { success } = await dispatch(
+      importCustomToken({ asset: assetData.asset })
+    )
+    if (success) {
+      await dispatch(setSnackbarMessage(t("snackbar.success")))
+      setIsImportingToken(false)
+      history.push("/")
+    } else {
+      await dispatch(setSnackbarMessage(t("snackbar.failed")))
+      setIsImportingToken(false)
+    }
   }
 
   const hideDustEnabled = useBackgroundSelector(selectHideDust)
@@ -253,7 +281,9 @@ export default function SettingsAddCustomAsset(): ReactElement {
         <div className="input_container">
           <SharedInput
             label={t("input.contractAddress.label")}
-            errorMessage={error ? t("error.invalidToken") : ""}
+            errorMessage={
+              hasAssetDetailLoadError ? t("error.invalidToken") : ""
+            }
             onChange={(addressLike) => {
               setTokenAddress(addressLike)
               handleTokenInfoChange(addressLike, chosenNetwork)
@@ -275,6 +305,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
                         textDecoration: "underline",
                         "--link-color": "var(--green-95)",
                         "--hover-color": "var(--green-40)",
+                        padding: "0px",
                       }}
                       type="button"
                       url={HELPDESK_CUSTOM_TOKENS_LINK}
@@ -287,7 +318,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
         </div>
         <div className="form_controls">
           <div className="token_details_container">
-            {assetData && !loading ? (
+            {assetData && !isLoadingAssetDetails ? (
               <SharedAssetIcon
                 size={40}
                 logoURL={assetData?.asset.metadata?.logoURL}
@@ -302,7 +333,12 @@ export default function SettingsAddCustomAsset(): ReactElement {
                   {assetData?.balance ?? t("asset.label.balance")}
                 </strong>
                 <span className="symbol">
-                  {assetData?.asset?.symbol ?? t("asset.label.symbol")}
+                  {assetData?.asset?.symbol
+                    ? trimWithEllipsis(
+                        assetData.asset.symbol,
+                        MAX_SYMBOL_LENGTH
+                      )
+                    : t("asset.label.symbol")}
                 </span>
               </div>
               <span className="network_name">{chosenNetwork.name}</span>
@@ -312,8 +348,14 @@ export default function SettingsAddCustomAsset(): ReactElement {
             type="primary"
             size="medium"
             isFormSubmit
-            isDisabled={!assetData || loading || error || assetData.exists}
-            isLoading={loading}
+            isDisabled={
+              !assetData ||
+              isLoadingAssetDetails ||
+              hasAssetDetailLoadError ||
+              assetData.exists ||
+              isImportingToken
+            }
+            isLoading={isLoadingAssetDetails || isImportingToken}
           >
             {t("submit")}
           </SharedButton>

@@ -50,10 +50,14 @@ import {
   loadAccount,
   updateAccountBalance,
   updateAccountName,
-  updateAssetReferences,
   updateENSAvatar,
 } from "./redux-slices/accounts"
-import { assetsLoaded, newPricePoint } from "./redux-slices/assets"
+import {
+  assetsLoaded,
+  newPricePoints,
+  refreshAsset,
+  removeAssetData,
+} from "./redux-slices/assets"
 import {
   setEligibility,
   setEligibilityLoading,
@@ -79,6 +83,8 @@ import {
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
   setSelectedNetwork,
+  setShownDismissableItems,
+  dismissableItemMarkedAsShown,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -136,7 +142,6 @@ import {
 } from "./redux-slices/migrations"
 import { PermissionMap } from "./services/provider-bridge/utils"
 import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
-import { deleteNFts } from "./redux-slices/nfts"
 import {
   ActivityDetail,
   addActivity,
@@ -167,7 +172,7 @@ import {
   deleteNFTsForAddress,
   updateIsReloading,
   deleteTransferredNFTs,
-} from "./redux-slices/nfts_update"
+} from "./redux-slices/nfts"
 import AbilitiesService from "./services/abilities"
 import {
   setAbilitiesForAddress,
@@ -185,6 +190,7 @@ import {
 } from "./lib/posthog"
 import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
+import { DismissableItem } from "./services/preferences"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -581,11 +587,7 @@ export default class Main extends BaseService<never> {
     this.connectAnalyticsService()
     this.connectWalletConnectService()
     this.connectAbilitiesService()
-
-    // Nothing else beside creating a service should happen when feature flag is off
-    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
-      this.connectNFTsService()
-    }
+    this.connectNFTsService()
 
     await this.connectChainService()
 
@@ -633,13 +635,11 @@ export default class Main extends BaseService<never> {
     }
 
     this.store.dispatch(removeActivities(address))
-    this.store.dispatch(deleteNFts(address))
 
     // remove NFTs
-    if (isEnabled(FeatureFlags.SUPPORT_NFT_TAB)) {
-      this.store.dispatch(deleteNFTsForAddress(address))
-      await this.nftsService.removeNFTsForAddress(address)
-    }
+    this.store.dispatch(deleteNFTsForAddress(address))
+    await this.nftsService.removeNFTsForAddress(address)
+
     // remove abilities
     if (signer.type !== AccountType.ReadOnly) {
       await this.abilitiesService.deleteAbilitiesForAccount(address)
@@ -651,6 +651,9 @@ export default class Main extends BaseService<never> {
     await this.signingService.removeAccount(address, signer.type)
 
     this.nameService.removeAccount(address)
+
+    // remove discovery tx hash for custom asset
+    this.indexingService.removeDiscoveryTxHash(address)
   }
 
   async importLedgerAccounts(
@@ -1068,12 +1071,20 @@ export default class Main extends BaseService<never> {
       await this.store.dispatch(assetsLoaded(assets))
     })
 
-    this.indexingService.emitter.on("updateAssetReferences", async (asset) => {
-      await this.store.dispatch(updateAssetReferences(asset))
+    this.indexingService.emitter.on("prices", (pricePoints) => {
+      this.store.dispatch(newPricePoints(pricePoints))
     })
 
-    this.indexingService.emitter.on("price", (pricePoint) => {
-      this.store.dispatch(newPricePoint(pricePoint))
+    this.indexingService.emitter.on("refreshAsset", (asset) => {
+      this.store.dispatch(
+        refreshAsset({
+          asset,
+        })
+      )
+    })
+
+    this.indexingService.emitter.on("removeAssetData", (asset) => {
+      this.store.dispatch(removeAssetData({ asset }))
     })
   }
 
@@ -1257,14 +1268,13 @@ export default class Main extends BaseService<never> {
         resolver: (result: string | PromiseLike<string>) => void
         rejecter: () => void
       }) => {
-        // Don't await, as the below enrichment is expected to take longer than
-        // signer prep. If that assumption breaks, we should probably await the
-        // two in parallel.
-        this.signingService.prepareForSigningRequest()
+        // Run signer preparation and enrichment in parallel.
+        const [, enrichedSignTypedDataRequest] = await Promise.all([
+          this.signingService.prepareForSigningRequest(),
+          this.enrichmentService.enrichSignTypedDataRequest(payload),
+        ])
 
-        const enrichedsignTypedDataRequest =
-          await this.enrichmentService.enrichSignTypedDataRequest(payload)
-        this.store.dispatch(typedDataRequest(enrichedsignTypedDataRequest))
+        this.store.dispatch(typedDataRequest(enrichedSignTypedDataRequest))
 
         const clear = () => {
           this.signingService.emitter.off(
@@ -1522,6 +1532,20 @@ export default class Main extends BaseService<never> {
       }
     )
 
+    this.preferenceService.emitter.on(
+      "initializeShownDismissableItems",
+      async (dismissableItems) => {
+        this.store.dispatch(setShownDismissableItems(dismissableItems))
+      }
+    )
+
+    this.preferenceService.emitter.on(
+      "dismissableItemMarkedAsShown",
+      async (dismissableItem) => {
+        this.store.dispatch(dismissableItemMarkedAsShown(dismissableItem))
+      }
+    )
+
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
 
@@ -1554,6 +1578,8 @@ export default class Main extends BaseService<never> {
           newDefaultWalletValue
         )
 
+        // FIXME Both of these should be done as observations of the preference
+        // FIXME service event rather than being managed by `main`.
         this.providerBridgeService.notifyContentScriptAboutConfigChange(
           newDefaultWalletValue
         )
@@ -1786,6 +1812,10 @@ export default class Main extends BaseService<never> {
     await this.indexingService.updateAssetMetadata(asset, metadata)
   }
 
+  async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {
+    await this.indexingService.hideAsset(asset)
+  }
+
   getAddNetworkRequestDetails(requestId: string): AddChainRequestData {
     return this.providerBridgeService.getNewCustomRPCDetails(requestId)
   }
@@ -1795,6 +1825,10 @@ export default class Main extends BaseService<never> {
     title: string
   ): Promise<void> {
     return this.preferenceService.updateAccountSignerTitle(signer, title)
+  }
+
+  async markDismissableItemAsShown(item: DismissableItem): Promise<void> {
+    return this.preferenceService.markDismissableItemAsShown(item)
   }
 
   async resolveNameOnNetwork(
@@ -1901,14 +1935,8 @@ export default class Main extends BaseService<never> {
     }
   }
 
-  async importCustomToken({
-    asset,
-    addressNetwork,
-  }: {
-    asset: SmartContractFungibleAsset
-    addressNetwork: AddressOnNetwork
-  }): Promise<void> {
-    await this.indexingService.importCustomToken(asset, addressNetwork)
+  async importCustomToken(asset: SmartContractFungibleAsset): Promise<boolean> {
+    return this.indexingService.importCustomToken(asset)
   }
 
   private connectPopupMonitor() {

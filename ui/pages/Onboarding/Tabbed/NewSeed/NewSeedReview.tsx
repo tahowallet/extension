@@ -14,10 +14,13 @@ export default function NewSeedReview({
   const { t } = useTranslation("translation", {
     keyPrefix: "onboarding.tabbed.newWalletReview",
   })
+  const { t: sharedT } = useTranslation("translation", {
+    keyPrefix: "shared",
+  })
   const dispatch = useBackgroundDispatch()
 
   return (
-    <section className="fadeIn">
+    <section className="fade_in">
       <h1 className="center_text">{t("title")}</h1>
       <div className="step_content">
         <div className="seed_phrase">
@@ -42,7 +45,7 @@ export default function NewSeedReview({
             iconMedium="copy"
             onClick={() => {
               navigator.clipboard.writeText(mnemonic?.join(" ") ?? "")
-              dispatch(setSnackbarMessage(t("copyAddressSnackbar")))
+              dispatch(setSnackbarMessage(sharedT("copyTextSnackbar")))
             }}
             center
           >

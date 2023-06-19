@@ -1,5 +1,4 @@
 import { WEBSITE_ORIGIN } from "@tallyho/tally-background/constants/website"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import {
   deleteAnalyticsData,
   selectCollectAnalytics,
@@ -102,18 +101,16 @@ export default function SettingsAnalytics(): ReactElement {
         >
           {t(`policyBtn`)}
         </SharedButton>
-        {isEnabled(FeatureFlags.SHOW_ANALYTICS_DELETE_DATA_BUTTON) && (
-          <SharedButton
-            type="tertiaryError"
-            size="medium"
-            iconSmall="garbage"
-            iconPosition="left"
-            isDisabled={!collectAnalytics}
-            onClick={() => setShowDeleteMenu(true)}
-          >
-            {t(`deleteBtn`)}
-          </SharedButton>
-        )}
+        <SharedButton
+          type="tertiaryError"
+          size="medium"
+          iconSmall="garbage"
+          iconPosition="left"
+          isDisabled={!collectAnalytics}
+          onClick={() => setShowDeleteMenu(true)}
+        >
+          {t(`deleteBtn`)}
+        </SharedButton>
       </section>
       <AnalyticsSlideUpMenu
         isOpen={showAnalyticsMenu}

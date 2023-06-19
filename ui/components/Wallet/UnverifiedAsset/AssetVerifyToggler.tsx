@@ -16,14 +16,8 @@ export default function AssetVerifyToggler({
 }): ReactElement {
   return (
     <button type="button" onClick={onClick} className="asset_verify_toggler">
-      <span className="text">{text} </span>
-      <SharedIcon
-        icon={`/icons/m/${icon}.svg`}
-        width={24}
-        hoverColor={hoverColor}
-        color={color}
-        transitionHoverTime="0.2s"
-      />
+      <span className="text">{text}</span>
+      <SharedIcon icon={`/icons/m/${icon}.svg`} width={24} color={color} />
       <style jsx>{`
         .asset_verify_toggler {
           color: ${color};
@@ -48,6 +42,7 @@ export default function AssetVerifyToggler({
         {`
           .asset_verify_toggler:hover .icon {
             background-color: ${hoverColor};
+            transition: color 0.2s;
           }
         `}
       </style>

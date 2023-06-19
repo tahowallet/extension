@@ -5,8 +5,8 @@ import { AccountBalance } from "../../accounts"
 import { EVMNetwork } from "../../networks"
 import {
   AnyAsset,
-  AssetMetadata,
   FungibleAsset,
+  NetworkSpecificAssetMetadata,
   PricePoint,
   SmartContractFungibleAsset,
   TokenListCitation,
@@ -57,6 +57,17 @@ export type PriceMeasurement = IndexedPricePoint & {
 export type CachedTokenList = TokenListCitation & {
   retrievedAt: number
   list: TokenList
+}
+
+/*
+ * CustomAsset provides the ability to mark an asset as removed in the database.
+ * This state should only be stored in the db and not percolated to the user interface.
+ * The UI sees the asset as actually removed but the db tracks that it once existed and was removed.
+ * Used only for checking if an unverified, discovered (not added) asset should be added to the asset list.
+ *
+ */
+type CustomAsset = Omit<SmartContractFungibleAsset, "metadata"> & {
+  metadata?: NetworkSpecificAssetMetadata & { removed?: boolean }
 }
 
 /*
@@ -126,7 +137,7 @@ export class IndexingDatabase extends Dexie {
   /*
    * User- and contract-supplied fungible asset metadata.
    */
-  private customAssets!: Dexie.Table<SmartContractFungibleAsset, number>
+  private customAssets!: Dexie.Table<CustomAsset, number>
 
   /*
    * Tokens whose balances should be checked periodically. It might make sense
@@ -231,6 +242,17 @@ export class IndexingDatabase extends Dexie {
       assetsToTrack:
         "&[contractAddress+homeNetwork.name],symbol,contractAddress,homeNetwork.family,homeNetwork.chainID,homeNetwork.name",
     })
+
+    // Fix issue for discovery transaction hash
+    this.version(6).upgrade((tx) => {
+      return tx
+        .table("customAssets")
+        .toCollection()
+        .modify((customAsset: CustomAsset) => {
+          // eslint-disable-next-line no-param-reassign
+          delete customAsset.metadata?.discoveryTxHash
+        })
+    })
   }
 
   async savePriceMeasurement(
@@ -288,22 +310,28 @@ export class IndexingDatabase extends Dexie {
     )
   }
 
-  async getCustomAssetsByNetworks(
+  async getAllCustomAssets(): Promise<CustomAsset[]> {
+    return this.customAssets.toArray()
+  }
+
+  async getActiveCustomAssetsByNetworks(
     networks: EVMNetwork[]
-  ): Promise<SmartContractFungibleAsset[]> {
-    return this.customAssets
-      .where("homeNetwork.chainID")
-      .anyOf(networks.map((network) => network.chainID))
-      .toArray()
+  ): Promise<CustomAsset[]> {
+    return (
+      await this.customAssets
+        .where("homeNetwork.chainID")
+        .anyOf(networks.map((network) => network.chainID))
+        .toArray()
+    ).filter((asset) => asset?.metadata?.removed !== true)
   }
 
   async getCustomAssetByAddressAndNetwork(
     network: EVMNetwork,
     contractAddress: string
-  ): Promise<SmartContractFungibleAsset | undefined> {
+  ): Promise<CustomAsset | undefined> {
     return this.customAssets
       .where("[contractAddress+homeNetwork.name]")
-      .equals([network.name, contractAddress])
+      .equals([contractAddress, network.name])
       .first()
   }
 
@@ -313,24 +341,14 @@ export class IndexingDatabase extends Dexie {
   ): Promise<SmartContractFungibleAsset | undefined> {
     return this.assetsToTrack
       .where("[contractAddress+homeNetwork.name]")
-      .equals([network.name, contractAddress])
+      .equals([contractAddress, network.name])
       .first()
   }
 
-  async addCustomAsset(asset: SmartContractFungibleAsset): Promise<void> {
-    this.customAssets.put(asset)
-  }
-
-  async updateAssetMetadata(
-    asset: SmartContractFungibleAsset,
-    metadata: Partial<AssetMetadata>
+  async addOrUpdateCustomAsset(
+    asset: SmartContractFungibleAsset
   ): Promise<void> {
-    const update: AssetMetadata = {
-      ...asset.metadata,
-      ...metadata,
-    }
-
-    await this.customAssets.put({ ...asset, metadata: update })
+    this.customAssets.put(asset)
   }
 
   async addBalances(accountBalances: AccountBalance[]): Promise<void> {

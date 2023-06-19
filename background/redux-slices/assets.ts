@@ -4,7 +4,6 @@ import {
   AnyAsset,
   AnyAssetAmount,
   AnyAssetMetadata,
-  AssetMetadata,
   flipPricePoint,
   isFungibleAsset,
   isSmartContractFungibleAsset,
@@ -13,22 +12,15 @@ import {
 } from "../assets"
 import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
-import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
 import { createBackgroundAsyncThunk } from "./utils"
-import {
-  isBuiltInNetworkBaseAsset,
-  sameBuiltInNetworkBaseAsset,
-} from "./utils/asset-utils"
+import { isBuiltInNetworkBaseAsset, isSameAsset } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
 import { EVMNetwork, sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
-import {
-  BUILT_IN_NETWORK_BASE_ASSETS,
-  FIAT_CURRENCIES_SYMBOL,
-} from "../constants"
+import { FIAT_CURRENCIES_SYMBOL } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
-import { updateAssetReferences } from "./accounts"
+import { removeAssetReferences, updateAssetReferences } from "./accounts"
 import { NormalizedEVMAddress } from "../types"
 import type { RootState } from "."
 
@@ -68,82 +60,69 @@ const assetsSlice = createSlice({
           mappedAssets[newAsset.symbol] = [
             {
               ...newAsset,
-              metadata: newAsset.metadata ?? {},
               recentPrices: {},
             },
           ]
         } else {
-          const duplicates = mappedAssets[newAsset.symbol].filter(
-            (existingAsset) =>
-              ("homeNetwork" in newAsset &&
-                "contractAddress" in newAsset &&
-                "homeNetwork" in existingAsset &&
-                "contractAddress" in existingAsset &&
-                existingAsset.homeNetwork.name === newAsset.homeNetwork.name &&
-                normalizeEVMAddress(existingAsset.contractAddress) ===
-                  normalizeEVMAddress(newAsset.contractAddress)) ||
-              // Only match base assets by name - since there may be
-              // many assets that share a name and symbol across L2's
-              BUILT_IN_NETWORK_BASE_ASSETS.some(
-                (baseAsset) =>
-                  sameBuiltInNetworkBaseAsset(baseAsset, newAsset) &&
-                  sameBuiltInNetworkBaseAsset(baseAsset, existingAsset)
-              )
-          )
+          const duplicateIndexes = mappedAssets[newAsset.symbol].reduce<
+            number[]
+          >((acc, existingAsset, id) => {
+            if (isSameAsset(newAsset, existingAsset)) {
+              acc.push(id)
+            }
+            return acc
+          }, [])
+
           // if there aren't duplicates, add the asset
-          if (duplicates.length === 0) {
+          if (duplicateIndexes.length === 0) {
             mappedAssets[newAsset.symbol].push({
               ...newAsset,
-              metadata: newAsset.metadata ?? {},
               recentPrices: {},
             })
+          } else {
+            // TODO if there are duplicates... when should we replace assets?
+            duplicateIndexes.forEach((id) => {
+              // Update only the metadata for the duplicate
+              mappedAssets[newAsset.symbol][id] = {
+                ...mappedAssets[newAsset.symbol][id],
+                metadata: newAsset.metadata,
+              }
+            })
           }
-          // TODO if there are duplicates... when should we replace assets?
         }
       })
 
       return Object.values(mappedAssets).flat()
     },
-    newPricePoint: (
+    newPricePoints: (
       immerState,
-      { payload: pricePoint }: { payload: PricePoint }
+      { payload: pricePoints }: { payload: PricePoint[] }
     ) => {
-      const fiatCurrency = pricePoint.pair.find((asset) =>
-        FIAT_CURRENCIES_SYMBOL.includes(asset.symbol)
-      )
-      const [pricedAsset] = pricePoint.pair.filter(
-        (asset) => asset !== fiatCurrency
-      )
-      if (fiatCurrency && pricedAsset) {
-        const index = findClosestAssetIndex(pricedAsset, immerState)
-        if (typeof index !== "undefined") {
-          immerState[index].recentPrices[fiatCurrency.symbol] = pricePoint
-        }
-      }
-    },
-    updateMetadata: (
-      immerState,
-      {
-        payload: [targetAsset, metadata],
-      }: { payload: [SmartContractFungibleAsset, Partial<AssetMetadata>] }
-    ) => {
-      immerState.forEach((asset) => {
-        if (
-          isSmartContractFungibleAsset(asset) &&
-          sameEVMAddress(targetAsset.contractAddress, asset.contractAddress) &&
-          targetAsset.homeNetwork.chainID === asset.homeNetwork.chainID
-        ) {
-          // eslint-disable-next-line no-param-reassign
-          asset.metadata ??= {}
-          Object.assign(asset.metadata, metadata)
+      pricePoints.forEach((pricePoint) => {
+        const fiatCurrency = pricePoint.pair.find((asset) =>
+          FIAT_CURRENCIES_SYMBOL.includes(asset.symbol)
+        )
+        const [pricedAsset] = pricePoint.pair.filter(
+          (asset) => asset !== fiatCurrency
+        )
+        if (fiatCurrency && pricedAsset) {
+          const index = findClosestAssetIndex(pricedAsset, immerState)
+          if (typeof index !== "undefined") {
+            immerState[index].recentPrices[fiatCurrency.symbol] = pricePoint
+          }
         }
       })
+    },
+    removeAsset: (
+      immerState,
+      { payload: removedAsset }: { payload: AnyAsset }
+    ) => {
+      return immerState.filter((asset) => !isSameAsset(asset, removedAsset))
     },
   },
 })
 
-export const { assetsLoaded, newPricePoint, updateMetadata } =
-  assetsSlice.actions
+export const { assetsLoaded, newPricePoints, removeAsset } = assetsSlice.actions
 
 export default assetsSlice.reducer
 
@@ -166,18 +145,59 @@ export const updateAssetMetadata = createBackgroundAsyncThunk(
       asset: SmartContractFungibleAsset
       metadata: AnyAssetMetadata
     },
-    { dispatch, extra: { main } }
+    { extra: { main } }
   ) => {
     await main.updateAssetMetadata(asset, metadata)
+  }
+)
+
+export const refreshAsset = createBackgroundAsyncThunk(
+  "assets/refreshAsset",
+  async (
+    {
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { dispatch }
+  ) => {
     // Update assets slice
-    await dispatch(updateMetadata([asset, metadata]))
+    await dispatch(assetsLoaded([asset]))
     // Update accounts slice cached data about this asset
-    await dispatch(
-      updateAssetReferences({
-        ...asset,
-        metadata,
-      })
-    )
+    await dispatch(updateAssetReferences(asset))
+  }
+)
+
+export const hideAsset = createBackgroundAsyncThunk(
+  "assets/hideAsset",
+  async (
+    {
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { extra: { main } }
+  ) => {
+    await main.hideAsset(asset)
+  }
+)
+
+/**
+ * Removes the asset from the user interface.
+ * The token should be removed from the assets list and all references associated with it.
+ */
+export const removeAssetData = createBackgroundAsyncThunk(
+  "assets/removeAssetData",
+  async (
+    {
+      asset,
+    }: {
+      asset: SmartContractFungibleAsset
+    },
+    { dispatch }
+  ) => {
+    await dispatch(removeAsset(asset))
+    await dispatch(removeAssetReferences(asset))
   }
 )
 
@@ -345,15 +365,9 @@ export const importCustomToken = createBackgroundAsyncThunk(
     }: {
       asset: SmartContractFungibleAsset
     },
-    { getState, extra: { main } }
+    { extra: { main } }
   ) => {
-    const state = getState() as RootState
-    const currentAccount = state.ui.selectedAccount
-
-    await main.importCustomToken({
-      asset,
-      addressNetwork: currentAccount,
-    })
+    return { success: await main.importCustomToken(asset) }
   }
 )
 

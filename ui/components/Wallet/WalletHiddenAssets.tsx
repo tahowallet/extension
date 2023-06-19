@@ -85,7 +85,6 @@ export default function WalletHiddenAssets({
         <WalletAssetList
           assetAmounts={assetAmounts}
           initializationLoadingTimeExpired
-          onCloseWarningSlideUp={() => setIsOpen(false)}
         />
       </div>
       <style jsx>{`

@@ -13,7 +13,6 @@ import reducer, {
   AssetsState,
   selectAssetPricePoint,
   SingleAssetState,
-  updateMetadata,
 } from "../assets"
 
 const asset: SmartContractFungibleAsset = createSmartContractAsset()
@@ -30,7 +29,7 @@ const assetWithPricePoint = {
 const assetState: AssetsState = [assetWithPricePoint]
 
 describe("Reducers", () => {
-  describe("updateMetadata", () => {
+  describe("assetsLoaded", () => {
     test("updates cached asset metadata", () => {
       const state = reducer([], assetsLoaded([asset]))
 
@@ -38,7 +37,7 @@ describe("Reducers", () => {
 
       const newState = reducer(
         state,
-        updateMetadata([asset, { verified: true }])
+        assetsLoaded([{ ...asset, metadata: { verified: true } }])
       )
 
       expect(newState[0].metadata?.verified).toBeTruthy()

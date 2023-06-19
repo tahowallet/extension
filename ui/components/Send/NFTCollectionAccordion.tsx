@@ -4,7 +4,7 @@ import {
   NFTCollectionCached,
   fetchNFTsFromCollection,
   NFTCached,
-} from "@tallyho/tally-background/redux-slices/nfts_update"
+} from "@tallyho/tally-background/redux-slices/nfts"
 import { useBackgroundDispatch } from "../../hooks"
 import { blockExplorer } from "../../utils/constants"
 import SharedAccordion from "../Shared/SharedAccordion"

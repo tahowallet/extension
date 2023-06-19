@@ -1,4 +1,6 @@
-# Configuration / running
+# Running Taho extension on a forked Mainnet
+
+## Configuration / running
 
 To run the extension on a forked Mainnet:
 
@@ -16,11 +18,12 @@ To run the extension on a forked Mainnet:
    `yarn install`  
    `yarn start` (or `yarn build`)  
    `cd ci`  
-   `npx hardhat node --network hardhat`
+   `yarn install`
+   `yarn hardhat node --network hardhat`
 
 3. Unpack `./dist/chrome` to Chrome Extensions.
 
-# What wallet features work / don't work on `hardhat` network
+## What wallet features work / don't work on the `hardhat` network
 
 When run on `1337`:
 
@@ -34,10 +37,10 @@ avatars may look strange
 
 State of the network is lost after Hardhat reset.
 
-# Running E2E tests on fork
+## Running E2E tests on fork
 
 The E2E tests are located in the `../e2e-tests` directory. Only those with
-`-fork` suffix are meant to be run on forked Mainnet.
+`-fork` suffix are meant to be run on a forked Mainnet.
 
 To run specific test, go to root and run `npx playwright test <file_name>`.
 
