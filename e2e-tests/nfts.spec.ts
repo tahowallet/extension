@@ -45,21 +45,10 @@ test.describe("NFTs", () => {
 
       // Switch to Optimism, then to Polygon and then to Arbitrum (to load NFTs
       // on those chains).
-      await page.getByTestId("top_menu_network_switcher").last().click()
-      await page.getByText(/^Optimism$/).click()
-      await expect(
-        page.getByTestId("top_menu_network_switcher").last()
-      ).toHaveText(/^Optimism$/)
-      await page.getByTestId("top_menu_network_switcher").last().click()
-      await page.getByText(/^Polygon$/).click()
-      await expect(
-        page.getByTestId("top_menu_network_switcher").last()
-      ).toHaveText(/^Polygon$/)
-      await page.getByTestId("top_menu_network_switcher").last().click()
-      await page.getByText(/^Arbitrum$/).click()
-      await expect(
-        page.getByTestId("top_menu_network_switcher").last()
-      ).toHaveText(/^Arbitrum$/)
+      await walletPageHelper.switchNetwork(/^Optimism$/)
+      await walletPageHelper.switchNetwork(/^Polygon$/)
+      await walletPageHelper.switchNetwork(/^Arbitrum$/)
+
       await walletPageHelper.navigateTo("NFTs")
 
       await expect(page.getByTestId("loading_doggo")).toBeVisible()
