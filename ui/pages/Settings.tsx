@@ -47,8 +47,17 @@ type SettingsList = {
 }
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
+
 const FAQ_URL =
   "https://notion.taho.xyz/Tally-Ho-Knowledge-Base-4d95ed5439c64d6db3d3d27abf1fdae5"
+
+const AUTO_LOCK_OPTIONS = [
+  { label: "5", value: String(5 * MINUTE) },
+  { label: "15", value: String(15 * MINUTE) },
+  { label: "30", value: String(30 * MINUTE) },
+  { label: "60", value: String(60 * MINUTE) },
+]
+
 const FOOTER_ACTIONS = [
   {
     icon: "icons/m/discord",
@@ -318,13 +327,6 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const autoLockOptions = [
-    { label: "5", value: String(5 * MINUTE) },
-    { label: "15", value: String(15 * MINUTE) },
-    { label: "30", value: String(30 * MINUTE) },
-    { label: "60", value: String(60 * MINUTE) },
-  ]
-
   const autoLockInterval = useBackgroundSelector(selectAutoLockInterval)
 
   const autoLockSettings = {
@@ -341,8 +343,8 @@ export default function Settings(): ReactElement {
         </div>
         <div className="select_wrapper">
           <SharedSelect
-            options={autoLockOptions}
-            defaultIndex={autoLockOptions.findIndex(
+            options={AUTO_LOCK_OPTIONS}
+            defaultIndex={AUTO_LOCK_OPTIONS.findIndex(
               ({ value }) => value === String(autoLockInterval)
             )}
             width="100%"
