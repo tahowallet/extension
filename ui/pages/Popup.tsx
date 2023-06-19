@@ -2,7 +2,6 @@ import React, { ReactElement, useState, useEffect } from "react"
 import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
 import { ErrorBoundary } from "react-error-boundary"
 
-import classNames from "classnames"
 import {
   setRouteHistoryEntries,
   userActivityEncountered,
@@ -33,8 +32,6 @@ import setAnimationConditions, {
   animationStyles,
 } from "../utils/pageTransition"
 
-import TabBar from "../components/TabBar/TabBar"
-import TopMenu from "../components/TopMenu/TopMenu"
 import CorePage from "../components/Core/CorePage"
 import ErrorFallback from "./ErrorFallback"
 
@@ -109,7 +106,6 @@ export function Main(): ReactElement {
 
   const isDappPopup = useIsDappPopup()
   const [isDirectionRight, setIsDirectionRight] = useState(true)
-  const [showTabBar, setShowTabBar] = useState(true)
 
   const routeHistoryEntries = useBackgroundSelector(
     (state) => state.ui.routeHistoryEntries
@@ -182,7 +178,6 @@ export function Main(): ReactElement {
             }
 
             setAnimationConditions(routeProps, setIsDirectionRight)
-            setShowTabBar(pagePreferences[normalizedPathname].hasTabBar)
 
             return (
               <TransitionGroup>
@@ -197,13 +192,6 @@ export function Main(): ReactElement {
                   }
                 >
                   <div>
-                    <div
-                      className={classNames("top_menu_wrap", {
-                        hide: !pagePreferences[normalizedPathname].hasTopBar,
-                      })}
-                    >
-                      <TopMenu />
-                    </div>
                     <Switch location={transformedLocation}>
                       {pageList.map(
                         ({ path, Component, hasTopBar, hasTabBar }) => {
@@ -230,11 +218,6 @@ export function Main(): ReactElement {
             )
           }}
         />
-        {showTabBar && (
-          <div className="tab_bar_wrap">
-            <TabBar />
-          </div>
-        )}
       </Router>
       <>
         <style jsx global>
@@ -245,19 +228,7 @@ export function Main(): ReactElement {
             }
 
             ${animationStyles(isDirectionRight)}
-            .tab_bar_wrap {
-              position: fixed;
-              bottom: 0px;
-              width: 100%;
-            }
-            .top_menu_wrap {
-              margin: 0 auto;
-              width: max-content;
-              display: block;
-              justify-content: center;
-              z-index: 0;
-              margin-top: 5px;
-            }
+
             .hide {
               opacity: 0;
             }
