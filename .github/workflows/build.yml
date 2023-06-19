@@ -233,6 +233,7 @@ jobs:
           FORKING_BLOCK: 17094516
         run: |
           cd ci
+          yarn install
           npx hardhat node --network hardhat &
           sleep 20
       - name: Run Playwright tests designed for fork

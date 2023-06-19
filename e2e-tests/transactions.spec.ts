@@ -21,7 +21,8 @@ test.describe("Transactions", () => {
        * Verify we're on Ethereum network. Verify common elements on the main page.
        */
       await walletPageHelper.verifyCommonElements(
-        /^Goerli$/,
+        /^Ethereum$/,
+        false,
         /^testertesting\.eth$/
       )
       await walletPageHelper.verifyAnalyticsBanner()
@@ -40,6 +41,7 @@ test.describe("Transactions", () => {
       await popup
         .getByLabel("Main")
         .getByText("Wallet", { exact: true })
+        .first()
         .click()
 
       /**
@@ -52,6 +54,7 @@ test.describe("Transactions", () => {
         .click()
       await walletPageHelper.verifyCommonElements(
         /^Goerli$/,
+        true,
         /^testertesting\.eth$/
       )
       await walletPageHelper.verifyAnalyticsBanner()
@@ -61,8 +64,8 @@ test.describe("Transactions", () => {
        */
       const ethAsset = popup.locator("div.asset_list_item").first() // We use `.first()` because the base asset should be first on the list
       await expect(ethAsset.getByText(/^ETH$/)).toBeVisible()
-      await expect(ethAsset.getByText(/^\d+\.\d{4}$/)).toBeVisible()
-      await expect(ethAsset.getByText(/^\$(0|\d+\.\d{2})$/)).toBeVisible()
+      await expect(ethAsset.getByText(/^(\d|,)+(\.\d{0,4})*$/)).toBeVisible()
+      await expect(ethAsset.getByText(/^\$(\d|,)+(\.\d{1,2})*$/)).toBeVisible()
       await ethAsset.locator(".asset_icon_send").click({ trial: true })
       await ethAsset.locator(".asset_icon_swap").click({ trial: true })
 
@@ -82,7 +85,7 @@ test.describe("Transactions", () => {
         /^Goerli$/,
         /^testertesting\.eth$/,
         "ETH",
-        "\\d+\\.\\d{4}",
+        "(\\d|,)+(\\.\\d{0,4})*",
         true
       )
 
@@ -91,7 +94,7 @@ test.describe("Transactions", () => {
        */
       await popup.locator("input.input_amount").fill("0.00001")
       await expect(
-        popup.locator(".value").getByText(/^\$\d+\.\d{2}$/)
+        popup.locator(".value").getByText(/^\$\d+(\.\d{1,2})*$/)
       ).toBeVisible()
 
       await expect(
@@ -115,7 +118,7 @@ test.describe("Transactions", () => {
        * Check if "Transfer" has opened and verify elements on the page.
        */
       await transactionsHelper.verifyTransferScreen(
-        "Ethereum",
+        "Goerli",
         "testertesting\\.eth",
         "0x47745a7252e119431ccf973c0ebd4279638875a6",
         "0x4774…875a6",
@@ -147,11 +150,12 @@ test.describe("Transactions", () => {
         /**
          * Verify elements on the asset activity screen
          */
+        await expect(popup.getByTestId("activity_list")).toHaveCount(1)
         await transactionsHelper.verifyAssetActivityScreen(
           /^Goerli$/,
           /^testertesting\.eth$/,
           /^ETH$/,
-          /^\d+\.\d{2,4}$/,
+          /^(\d|,)+(\.\d{0,4})*$/,
           true
         )
 
@@ -159,82 +163,36 @@ test.describe("Transactions", () => {
          * Verify latest transaction.
          */
         setTimeout(() => {}, 10000) // wait for 10s
-        const latestSentTx = popup
-          .locator("li")
-          .filter({
-            hasText: /^Send$/,
-          })
-          .first()
-        await expect(latestSentTx).toHaveText(/^0x4774\.\.\.875a6$/)
-        await expect(latestSentTx.getByText(/^0 ETH$/)).toBeVisible()
+
+        const latestSentTx = popup.getByTestId("activity_list_item").first()
+        await expect(latestSentTx.getByText("Pending")).toHaveCount(0, {
+          timeout: 60000,
+        })
+        await expect(latestSentTx.getByText(/^Send$/)).toBeVisible()
         await expect(
           latestSentTx.getByText(/^[a-zA-Z]{3} \d{1,2}$/)
         ).toBeVisible()
+        await expect(
+          popup.getByTestId("activity_list_item_amount").getByText(/^0$/)
+        ).toBeVisible()
+        await expect(
+          popup.getByTestId("activity_list_item_amount").getByText(/^ETH$/)
+        ).toBeVisible()
+        await expect(latestSentTx.getByText(/^To: 0x4774…875a6$/)).toBeVisible()
 
         /**
          * Open latest transaction and verify it's deatils
          */
         await latestSentTx.click()
 
-        popup.getByText(/^Etherscan$/).click({ trial: true })
-        // TODO: Compare values from the scan website and extension.
-
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Block Height$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^\d+$/)
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Amount$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^0\.00001 ETH$/)
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Max Fee\/Gas$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^\d+\.\d{2} Gwei$/)
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Gas Price$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^\d+\.\d{2} Gwei$/)
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Gas$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^21000$/)
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Nonce$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^\d+$/)
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Timestamp$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}$/)
+        await transactionsHelper.verifyActivityItemProperties(
+          "0x0581470a8b62bd35dbf121a6329d43e7edd20fc7",
+          "0x0581…20fc7",
+          "0x47745A7252e119431CCF973c0eBD4279638875a6",
+          "0x4774…875a6",
+          /^0\.00001 ETH$/,
+          /^21000$/
+        )
       }
     )
 
@@ -244,7 +202,7 @@ test.describe("Transactions", () => {
         /**
          * Close and navigate to `Wallet` -> `Activity`
          */
-        await popup.getByLabel("Close menu").click()
+        await transactionsHelper.closeVerifyAssetPopup()
         await popup.getByText("Wallet", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `link`
         await popup.getByText("Activity", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `tab`
 
@@ -253,6 +211,7 @@ test.describe("Transactions", () => {
          */
         await walletPageHelper.verifyCommonElements(
           /^Goerli$/,
+          true,
           /^testertesting\.eth$/
         )
         await walletPageHelper.verifyAnalyticsBanner()
@@ -260,78 +219,30 @@ test.describe("Transactions", () => {
         /**
          * Open latest transaction and verify it's deatils
          */
-        const latestSentTx = popup
-          .locator("li")
-          .filter({
-            hasText: /^Send$/,
-          })
-          .first()
-        await expect(latestSentTx).toHaveText(/^0x4774\.\.\.875a6$/)
-        await expect(latestSentTx.getByText(/^0 ETH$/)).toBeVisible()
+        const latestSentTx = popup.getByTestId("activity_list_item").first()
+
+        await expect(latestSentTx.getByText(/^Send$/)).toBeVisible()
         await expect(
           latestSentTx.getByText(/^[a-zA-Z]{3} \d{1,2}$/)
         ).toBeVisible()
+        await expect(
+          popup.getByTestId("activity_list_item_amount").getByText(/^0$/)
+        ).toBeVisible()
+        await expect(
+          popup.getByTestId("activity_list_item_amount").getByText(/^ETH$/)
+        ).toBeVisible()
+        await expect(latestSentTx.getByText(/^To: 0x4774…875a6$/)).toBeVisible()
+
         await latestSentTx.click()
 
-        popup.getByText(/^Etherscan$/).click({ trial: true })
-        // TODO: Compare values from the scan website and extension.
-
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Block Height$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^\d+$/)
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Amount$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^0\.00001 ETH$/)
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Max Fee\/Gas$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^\d+\.\d{2} Gwei$/)
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Gas Price$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^\d+\.\d{2} Gwei$/)
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Gas$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^21000$/)
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Nonce$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^\d+$/)
-        await expect(
-          popup
-            .locator("li")
-            .filter({
-              hasText: /^Timestamp$/,
-            })
-            .locator(".right")
-        ).toHaveText(/^\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}$/)
+        await transactionsHelper.verifyActivityItemProperties(
+          "0x0581470a8b62bd35dbf121a6329d43e7edd20fc7",
+          "0x0581…20fc7",
+          "0x47745A7252e119431CCF973c0eBD4279638875a6",
+          "0x4774…875a6",
+          /^0\.00001 ETH$/,
+          /^21000$/
+        )
       }
     )
   })

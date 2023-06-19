@@ -97,13 +97,14 @@ export default class WalletPageHelper {
    */
   async verifyCommonElements(
     network: RegExp,
+    testnet: boolean,
     accountLabel: RegExp
   ): Promise<void> {
     await expect(this.popup.getByText("Total account balance")).toBeVisible({
       timeout: 240000,
     }) // we need longer timeout, because on fork it often takes long to load this section
     await expect(this.popup.getByTestId("wallet_balance")).toHaveText(
-      /^\$(0|\d+\.\d{2})$/
+      /^\$(\d|,)+(\.\d{1,2})*$/
     )
 
     await this.verifyTopWrap(network, accountLabel)
@@ -117,10 +118,12 @@ export default class WalletPageHelper {
     await this.popup
       .getByRole("button", { name: "Receive", exact: true })
       .click({ trial: true })
-    await this.popup
-      .getByTestId("panel_switcher")
-      .getByText("NFTs", { exact: true })
-      .click({ trial: true })
+    if (testnet === false) {
+      await this.popup
+        .getByTestId("panel_switcher")
+        .getByText("NFTs", { exact: true })
+        .click({ trial: true })
+    }
     await this.popup
       .getByTestId("panel_switcher")
       .getByText("Assets", { exact: true })

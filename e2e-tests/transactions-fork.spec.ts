@@ -23,6 +23,7 @@ test.describe("Transactions", () => {
        */
       await walletPageHelper.verifyCommonElements(
         /^Ethereum$/,
+        false,
         /^testertesting\.eth$/
       )
       await walletPageHelper.verifyAnalyticsBanner()
@@ -169,6 +170,7 @@ test.describe("Transactions", () => {
 
         await walletPageHelper.verifyCommonElements(
           /^Ethereum$/,
+          false,
           /^testertesting\.eth$/
         )
         await walletPageHelper.verifyAnalyticsBanner()
@@ -185,7 +187,6 @@ test.describe("Transactions", () => {
       /**
        * Onboard using walletPageHelper
        */
-
       const recoveryPhrase = process.env.RECOVERY_PHRASE
       if (recoveryPhrase) {
         await walletPageHelper.onboardWithSeedPhrase(recoveryPhrase)
@@ -199,6 +200,7 @@ test.describe("Transactions", () => {
        */
       await walletPageHelper.verifyCommonElements(
         /^Ethereum$/,
+        false,
         /^testertesting\.eth$/
       )
       await walletPageHelper.verifyAnalyticsBanner()
@@ -214,7 +216,7 @@ test.describe("Transactions", () => {
       })
       await expect(keepAsset.getByText(/^\$\d+\.\d{2}$/)).toBeVisible({
         timeout: 120000,
-      }) // TODO: decrease timeout(?)
+      })
       await keepAsset.locator(".asset_icon_send").click({ trial: true })
       await keepAsset.locator(".asset_icon_swap").click({ trial: true })
 
@@ -305,7 +307,7 @@ test.describe("Transactions", () => {
         false,
         "https://etherscan.io/token/0x85eee30c52b0b379b046fb0f85f4f3dc3009afec"
       )
-      // This is what we expect currently on forked network.
+      // This is what we expect currently on a forked network.
       await expect(
         popup
           .getByText(
@@ -340,6 +342,7 @@ test.describe("Transactions", () => {
        */
       await walletPageHelper.verifyCommonElements(
         /^Ethereum$/,
+        false,
         /^testertesting\.eth$/
       )
       await walletPageHelper.verifyAnalyticsBanner()
@@ -355,7 +358,7 @@ test.describe("Transactions", () => {
       })
       await expect(keepAsset.getByText(/^\$\d+\.\d{2}$/)).toBeVisible({
         timeout: 120000,
-      }) // TODO: decrease timeout(?)
+      })
       await keepAsset.locator(".asset_icon_send").click({ trial: true })
       await keepAsset.locator(".asset_icon_swap").click({ trial: true })
 
@@ -546,6 +549,7 @@ test.describe("Transactions", () => {
 
         await walletPageHelper.verifyCommonElements(
           /^Ethereum$/,
+          false,
           /^testertesting\.eth$/
         )
         await walletPageHelper.verifyAnalyticsBanner()

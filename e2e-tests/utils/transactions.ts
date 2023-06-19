@@ -1,4 +1,5 @@
 import { Page, expect } from "@playwright/test"
+import dedent from "dedent-js"
 import WalletPageHelper from "./walletPageHelper"
 
 export default class TransactionsHelper {
@@ -114,7 +115,9 @@ export default class TransactionsHelper {
       `^${regexSpendAmount} ${regexAssetSymbol}$`
     )
     await expect(spendAmountContainer.getByText(spendAmountRegEx)).toBeVisible()
-    await expect(spendAmountContainer.getByText(/^\$\d+\.\d{2}$/)).toBeVisible()
+    await expect(
+      spendAmountContainer.getByText(/^\$(\d|,)+(\.\d{1,2})*$/)
+    ).toBeVisible()
 
     await this.popup
       .getByText("Details", { exact: true })
@@ -123,13 +126,13 @@ export default class TransactionsHelper {
       .locator("span")
       .filter({ hasText: "Estimated network fee" })
     await expect(
-      estimatedFeeContainer.getByText(/^~\$\d+\.\d{2}$/)
+      estimatedFeeContainer.getByText(/^~\$\d+(\.\d{1,2})*$/)
     ).toBeVisible()
     await expect(
-      estimatedFeeContainer.getByText(/^\(\d+\.\d{2} Gwei\)$/)
+      estimatedFeeContainer.getByText(/^\(\d+(\.\d{1,2})* Gwei\)$/)
     ).toBeVisible()
     await estimatedFeeContainer.getByRole("button").click({ trial: true })
-    // TODO: Add network fees this.popup verification
+    // TODO: Add network fees verification
 
     await this.popup.getByText("Raw data", { exact: true }).click()
     await this.popup.getByRole("button", { name: "Copy hex" }).click()
@@ -170,6 +173,7 @@ export default class TransactionsHelper {
 
     await this.popup
       .getByRole("button", { name: "Back", exact: true })
+      .first()
       .click({ trial: true })
 
     await this.popup
@@ -184,20 +188,18 @@ export default class TransactionsHelper {
     /**
      * Verify the token balance gets updated to the right value
      */
-    const activityLeftContainer = this.popup.locator(".left").filter({
-      has: this.popup.locator("span").filter({ hasText: assetSymbol }),
-    })
+    const activityLeftContainer = this.popup.getByTestId("left_wrap")
+    await expect(activityLeftContainer.getByText(assetSymbol)).toBeVisible()
     await expect(async () => {
       const balance = await activityLeftContainer
-        .getByText(/^\d+\.\d{2,4}$/)
+        .getByText(/^(\d|,)+(\.\d{0,4})*$/)
         .textContent()
       expect(balance).toMatch(expectedBalance)
     }).toPass({
       timeout: 120000,
     })
-
     await expect(
-      activityLeftContainer.getByText(/^\$\d+\.\d{2}$/)
+      activityLeftContainer.getByText(/^(\d|,)+(\.\d{0,4})*$/)
     ).toBeVisible()
 
     if (baseAsset === false) {
@@ -211,5 +213,132 @@ export default class TransactionsHelper {
       }
       await tokenLinkIcon.click({ trial: true })
     }
+  }
+
+  /**
+   * This function verifies asset activity item's details.
+   */
+  async verifyActivityItemProperties(
+    sendFromAddressFull: string,
+    sendFromAddressShortened: string,
+    sendToAddressFull: string,
+    sendToAddressShortened: string,
+    amount: RegExp,
+    gas: RegExp
+  ): Promise<void> {
+    /**
+     * Assert header.
+     */
+    const assetActivityItemPopup = this.popup
+      .getByTestId("slide_up_menu")
+      .filter({ hasText: "Block Height" })
+
+    await expect(assetActivityItemPopup.getByText(/^Send$/)).toBeVisible()
+
+    assetActivityItemPopup
+      .locator(".header")
+      .getByRole("button")
+      .click({ trial: true })
+    // TODO: Compare values from the scan website and extension.
+
+    /**
+     * Assert sender'saddress.
+     */
+    const senderButton = assetActivityItemPopup
+      .getByTestId("tx_participant_wrap")
+      .filter({ hasText: "From:" })
+      .getByRole("button", { name: sendFromAddressShortened })
+    await expect(senderButton).toHaveAttribute(
+      "title",
+      dedent(`
+        Copy to clipboard:
+        ${sendFromAddressFull}
+      `)
+    )
+    await senderButton.click()
+    const clipboardSendFromAddress = await this.popup.evaluate(() =>
+      navigator.clipboard.readText()
+    )
+    expect(clipboardSendFromAddress).toBe(sendFromAddressFull)
+
+    /**
+     * Assert receipient's address.
+     */
+    const receipientButton = assetActivityItemPopup
+      .getByTestId("tx_participant_wrap")
+      .filter({ hasText: "To:" })
+      .getByRole("button", { name: sendToAddressShortened })
+
+    await expect(receipientButton).toHaveAttribute(
+      "title",
+      dedent(`
+        Copy to clipboard:
+        ${sendToAddressFull}
+      `)
+    )
+    await receipientButton.click()
+    const clipboardSendToAddress = await this.popup.evaluate(() =>
+      navigator.clipboard.readText()
+    )
+    expect(clipboardSendToAddress).toBe(sendToAddressFull)
+
+    /**
+     * Assert other transaction properties.
+     */
+    const blockHeightRow = this.popup.locator("li").filter({
+      has: this.popup.locator(".label").filter({ hasText: /^Block Height$/ }),
+    })
+    await expect(
+      blockHeightRow.locator(".right").getByText(/^\d+$/)
+    ).toBeVisible()
+
+    const amountRow = this.popup.locator("li").filter({
+      has: this.popup.locator(".label").filter({ hasText: /^Amount$/ }),
+    })
+    await expect(amountRow.locator(".right").getByText(amount)).toBeVisible()
+
+    const maxFeeRow = this.popup.locator("li").filter({
+      has: this.popup.locator(".label").filter({ hasText: /^Max Fee\/Gas$/ }),
+    })
+    await expect(
+      maxFeeRow.locator(".right").getByText(/^\d+\.\d{2} Gwei$/)
+    ).toBeVisible()
+
+    const gasPriceRow = this.popup.locator("li").filter({
+      has: this.popup.locator(".label").filter({ hasText: /^Gas Price$/ }),
+    })
+    await expect(
+      gasPriceRow.locator(".right").getByText(/^\d+\.\d{2} Gwei$/)
+    ).toBeVisible()
+
+    const gasRow = this.popup.locator("li").filter({
+      has: this.popup.locator(".label").filter({ hasText: /^Gas$/ }),
+    })
+    await expect(gasRow.locator(".right").getByText(gas)).toBeVisible()
+
+    const nonceRow = this.popup.locator("li").filter({
+      has: this.popup.locator(".label").filter({ hasText: /^Nonce$/ }),
+    })
+    await expect(nonceRow.locator(".right").getByText(/^\d+$/)).toBeVisible()
+
+    const timestampRow = this.popup.locator("li").filter({
+      has: this.popup.locator(".label").filter({ hasText: /^Timestamp$/ }),
+    })
+    await expect(
+      timestampRow
+        .locator(".right")
+        // eslint-disable-next-line no-irregular-whitespace
+        .getByText(/^\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2}:\d{2}( AM| PM)*$/)
+    ).toBeVisible()
+  }
+
+  /**
+   * Function closing the asset activity item popup.
+   */
+  async closeVerifyAssetPopup(): Promise<void> {
+    const assetActivityItemPopup = this.popup
+      .getByTestId("slide_up_menu")
+      .filter({ hasText: "Block Height" })
+    await assetActivityItemPopup.getByLabel("Close menu").click()
   }
 }
