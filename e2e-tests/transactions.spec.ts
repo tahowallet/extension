@@ -30,7 +30,7 @@ test.describe("Transactions", () => {
        * Enable test networks
        */
       await popup
-        .locator(".tab_bar_wrap")
+        .getByLabel("Main")
         .getByText("Settings", { exact: true })
         .click()
       const enableTestNetworksSetting = popup.locator("li").filter({
@@ -38,7 +38,7 @@ test.describe("Transactions", () => {
       })
       await enableTestNetworksSetting.locator(".bulb").click()
       await popup
-        .locator(".tab_bar_wrap")
+        .getByLabel("Main")
         .getByText("Wallet", { exact: true })
         .click()
 

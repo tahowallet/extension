@@ -75,19 +75,19 @@ export default class WalletPageHelper {
 
   async verifyBottomWrap(): Promise<void> {
     await this.popup
-      .locator(".tab_bar_wrap")
+      .getByLabel("Main")
       .getByText("Wallet", { exact: true })
       .click({ trial: true })
     await this.popup
-      .locator(".tab_bar_wrap")
+      .getByLabel("Main")
       .getByText("NFTs", { exact: true })
       .click({ trial: true })
     await this.popup
-      .locator(".tab_bar_wrap")
+      .getByLabel("Main")
       .getByText("Portfolio", { exact: true })
       .click({ trial: true })
     await this.popup
-      .locator(".tab_bar_wrap")
+      .getByLabel("Main")
       .getByText("Settings", { exact: true })
       .click({ trial: true })
   }
