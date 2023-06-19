@@ -249,84 +249,90 @@ export default function WalletActivityDetails(
           />
         )}
       </div>
-      {isEnabled(FeatureFlags.SUPPORT_TRANSACTION_REPLACEMENT) && (
-        <div className="tx_status_panel">
-          <div className="tx_status_header">
-            <span className="tx_status_panel_title">
-              {t("activityDetails.statusPanel.title")}
-            </span>
-            <span className={classNames("tx_current_status", details?.state)}>
-              {details?.state ? (
-                t(`activities.status.${details?.state}`)
-              ) : (
-                <SharedSkeletonLoader width={80} height={24} />
-              )}
-            </span>
+      <div className="scroll_wrap">
+        {isEnabled(FeatureFlags.SUPPORT_TRANSACTION_REPLACEMENT) && (
+          <div className="tx_status_panel">
+            <div className="tx_status_header">
+              <span className="tx_status_panel_title">
+                {t("activityDetails.statusPanel.title")}
+              </span>
+              <span className={classNames("tx_current_status", details?.state)}>
+                {details?.state ? (
+                  t(`activities.status.${details?.state}`)
+                ) : (
+                  <SharedSkeletonLoader width={80} height={24} />
+                )}
+              </span>
+            </div>
+            <div className="tx_status_controls">
+              {!isReadOnlyAccount &&
+                isSentFromCurrentAccount &&
+                details?.state === "pending" && (
+                  <button
+                    type="button"
+                    className="speed_up_tx_btn"
+                    disabled={hasReplacementTx || isReplacementTx}
+                    onClick={() => {
+                      dispatch(speedUpTx(details.tx))
+                    }}
+                  >
+                    <SharedIcon
+                      icon="icons/s/arrow-top-right.svg"
+                      color="currentColor"
+                      height={16}
+                      width={16}
+                    />
+                    {t("activityDetails.actions.speedup")}
+                  </button>
+                )}
+            </div>
           </div>
-          <div className="tx_status_controls">
-            {!isReadOnlyAccount &&
-              isSentFromCurrentAccount &&
-              details?.state === "pending" && (
-                <button
-                  type="button"
-                  className="speed_up_tx_btn"
-                  disabled={hasReplacementTx || isReplacementTx}
-                  onClick={() => {
-                    dispatch(speedUpTx(details.tx))
-                  }}
-                >
-                  <SharedIcon
-                    icon="icons/s/arrow-top-right.svg"
-                    color="currentColor"
-                    height={16}
-                    width={16}
-                  />
-                  {t("activityDetails.actions.speedup")}
-                </button>
-              )}
-          </div>
+        )}
+        <div className="destination_cards">
+          <DestinationCard label="From" address={activityItem.from} />
+          <div className="icon_transfer" />
+          <DestinationCard
+            label="To"
+            address={activityItem.recipient.address || "(Contract creation)"}
+            name={activityItem.recipient.name}
+          />
         </div>
-      )}
-      <div className="destination_cards">
-        <DestinationCard label="From" address={activityItem.from} />
-        <div className="icon_transfer" />
-        <DestinationCard
-          label="To"
-          address={activityItem.recipient.address || "(Contract creation)"}
-          name={activityItem.recipient.name}
-        />
-      </div>
-      <ul>
-        {details ? (
-          <>
-            {detailsItems.map(({ key, label, value }) => (
-              <DetailRowItem
-                key={key}
-                label={label}
-                value={value || sharedT("unknown")}
-              />
-            ))}
-            {details.state === "completed" &&
-              details.assetTransfers.map(({ assetIconUrl, label, value }) => (
+        <ul>
+          {details ? (
+            <>
+              {detailsItems.map(({ key, label, value }) => (
                 <DetailRowItem
-                  key={label}
-                  assetIconUrl={assetIconUrl}
+                  key={key}
                   label={label}
-                  value={value}
+                  value={value || sharedT("unknown")}
                 />
               ))}
-          </>
-        ) : (
-          Array.from({ length: 7 }).map(() => (
-            <SharedSkeletonLoader
-              height={24}
-              customStyles="margin: 10px 0 15px;"
-            />
-          ))
-        )}
-      </ul>
+              {details.state === "completed" &&
+                details.assetTransfers.map(({ assetIconUrl, label, value }) => (
+                  <DetailRowItem
+                    key={label}
+                    assetIconUrl={assetIconUrl}
+                    label={label}
+                    value={value}
+                  />
+                ))}
+            </>
+          ) : (
+            Array.from({ length: 7 }).map(() => (
+              <SharedSkeletonLoader
+                height={24}
+                customStyles="margin: 10px 0 15px;"
+              />
+            ))
+          )}
+        </ul>
+      </div>
       <style jsx>
         {`
+          .scroll_wrap {
+            overflow-y: scroll;
+            max-height: 470px;
+          }
           .wrap {
             margin-top: -24px;
           }
