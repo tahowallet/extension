@@ -11,8 +11,9 @@ import { getNetwork } from "@ethersproject/networks"
 import {
   SECOND,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
-  ALCHEMY_RPC_METHOD_PROVIDER_ROUTING,
   FLASHBOTS_RPC_URL,
+  ARBITRUM_ONE,
+  OPTIMISM,
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction } from "../../networks"
@@ -29,6 +30,30 @@ export type ProviderCreator = {
   creator: () => WebSocketProvider | JsonRpcProvider
 }
 
+/**
+ * Method list, to describe which rpc method calls on which networks should
+ * prefer alchemy provider over the generic ones.
+ *
+ * The method names can be full or the starting parts of the method name.
+ * This allows us to use "namespaces" for providers eg `alchemy_...` or `qn_...`
+ *
+ * The structure is network specific with an extra `everyChain` option.
+ * The methods in this array will be directed towards alchemy on every network.
+ */
+export const ALCHEMY_RPC_METHOD_PROVIDER_ROUTING = {
+  everyChain: [
+    "alchemy_", // alchemy specific api calls start with this
+    "eth_sendRawTransaction", // broadcast should always go to alchemy
+    "eth_subscribe", // generic http providers do not support this, but dapps need this
+    "eth_estimateGas", // just want to be safe, when setting up a transaction
+  ],
+  [OPTIMISM.chainID]: [
+    "eth_call", // this is causing issues on optimism with ankr and is used heavily by uniswap
+  ],
+  [ARBITRUM_ONE.chainID]: [
+    "eth_call", // this is causing issues on arbitrum with ankr and is used heavily by uniswap
+  ],
+} as const
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 400
 // Retry 3 times before falling back to the next provider.
