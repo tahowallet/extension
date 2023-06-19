@@ -88,7 +88,7 @@ function DestinationCard(props: DestinationCardProps): ReactElement {
   return (
     <div className="card_wrap">
       <div className="sub_info from">{label}:</div>
-      <SharedAddress address={address} name={name} alwaysShowAddress />
+      <SharedAddress address={address} name={name} elide alwaysShowAddress />
       <div className="sub_info name" />
       <style jsx>
         {`
