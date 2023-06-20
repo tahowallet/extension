@@ -69,9 +69,10 @@ export default function CopyToClipboard({
             </SharedBanner>
             <div className="checkbox">
               <SharedCheckbox
+                size={16}
                 label={t("dontAsk")}
-                value={isConfirmed}
-                onChange={() => setIsConfirmed((prevState) => !prevState)}
+                checked={isConfirmed}
+                onChange={(value) => setIsConfirmed(value)}
               />
             </div>
             <div className="buttons">

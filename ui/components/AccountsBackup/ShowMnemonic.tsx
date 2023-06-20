@@ -1,6 +1,7 @@
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
+import classNames from "classnames"
 import { useAreInternalSignersUnlocked, useLockWallet } from "../../hooks"
 import InternalSignerUnlock from "../InternalSigner/InternalSignerUnlock"
 import SharedAccordion from "../Shared/SharedAccordion"
@@ -78,7 +79,11 @@ export default function ShowMnemonic({
                       }
                     />
                   </div>
-                  <div className="exporting_container">
+                  <div
+                    className={classNames("exporting_container", {
+                      mnemonic: showMnemonic,
+                    })}
+                  >
                     {showMnemonic ? (
                       <RevealMnemonic address={accounts[0].address} />
                     ) : (
@@ -144,11 +149,14 @@ export default function ShowMnemonic({
         .exporting_container {
           box-sizing: border-box;
           width: 100%;
-          padding: 16px 24px 24px;
+          padding: 24px;
           background: var(--green-120);
           border-radius: 0 0 8px 8px;
           display: flex;
           flex-direction: column;
+        }
+        .exporting_container.mnemonic {
+          padding-top: 16px;
         }
         .accounts_header {
           display: flex;
