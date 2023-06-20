@@ -5,7 +5,6 @@ import {
   importLedgerAccounts,
   LedgerDeviceState,
 } from "@tallyho/tally-background/redux-slices/ledger"
-import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
