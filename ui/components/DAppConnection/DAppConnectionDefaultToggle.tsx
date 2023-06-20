@@ -53,25 +53,24 @@ export default function DAppConnectionDefaultToggle({
         <p className="default_wallet">
           {alwaysForceSelection === undefined ? t("connectToWebsiteUsing") : ""}
           <SharedIcon
-            width={20}
-            icon="taho-connect-icon.svg"
-            ariaLabel={t("setTahoAsDefault")}
-            color={defaultIsSelected ? "var(--success)" : "var(--green-20)"}
-            onClick={() => setDefaultWallet(true)}
+            width={24}
+            icon="other-wallet-connect-icon.svg"
+            ariaLabel={t("setOtherAsDefault")}
+            color={defaultIsSelected ? "var(--green-20)" : "var(--white)"}
+            onClick={() => setDefaultWallet(false)}
           />
           <SharedToggleButton
             onChange={(toggleValue) => setDefaultWallet(toggleValue)}
             onColor="var(--success)"
             offColor="var(--white)"
             value={defaultIsSelected}
-            leftToRight={false}
           />
           <SharedIcon
-            width={24}
-            icon="other-wallet-connect-icon.svg"
-            ariaLabel={t("setOtherAsDefault")}
-            color={defaultIsSelected ? "var(--green-20)" : "var(--white)"}
-            onClick={() => setDefaultWallet(false)}
+            width={20}
+            icon="taho-connect-icon.svg"
+            ariaLabel={t("setTahoAsDefault")}
+            color={defaultIsSelected ? "var(--success)" : "var(--green-20)"}
+            onClick={() => setDefaultWallet(true)}
           />
         </p>
       )}
