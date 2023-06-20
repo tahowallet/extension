@@ -4,6 +4,7 @@ import browser from "webextension-polyfill"
 export const getMetaPort = (
   name: string,
   senderUrl: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   postMessage: (message: any) => void
 ): Required<browser.Runtime.Port> => {
   const port: browser.Runtime.Port = browser.runtime.connect({

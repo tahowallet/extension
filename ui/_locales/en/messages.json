@@ -616,7 +616,6 @@
   },
   "signing": {
     "signatureRequired": "Your signature is required",
-    "dappSignatureRequest": "A dapp is requesting your signature",
     "message": "Message",
     "signed": "Signed,",
     "type": "Type",
@@ -948,7 +947,6 @@
         "USE_MAINNET_FORK": "Use mainnet fork",
         "HIDE_IMPORT_DERIVATION_PATH": "Hide import derivation path",
         "HIDE_SWAP_REWARDS": "Hide swap rewards",
-        "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
         "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
