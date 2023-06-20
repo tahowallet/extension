@@ -7,13 +7,15 @@ import { ResolvedSignatureDetails } from "../SignatureDetails"
  * The props passed to a signer-specific frame, as well as to the dispatcher
  * component SignerFrame.
  */
-export type SignerFrameProps<T extends SignOperationType> =
-  ResolvedSignatureDetails & {
-    request: T
-    signer: AccountSigner
-    /**
-     * The children a signer frame should render to present the user with
-     * additional information about the data being signed.
-     */
-    children: ReactElement
-  }
+export type SignerFrameProps<
+  T extends SignOperationType,
+  S extends AccountSigner = AccountSigner
+> = ResolvedSignatureDetails & {
+  request: T
+  signer: S
+  /**
+   * The children a signer frame should render to present the user with
+   * additional information about the data being signed.
+   */
+  children: ReactElement
+}
