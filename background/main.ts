@@ -1896,7 +1896,7 @@ export default class Main extends BaseService<never> {
       ? assetAmountToDesiredDecimals(convertedAssetAmount, 2)
       : undefined
     // The user should be able to add an asset that is on the untrusted list.
-    const exists = !isUntrustedAsset(cachedAsset) || false
+    const exists = cachedAsset ? !isUntrustedAsset(cachedAsset) : false
 
     return {
       ...assetData,
