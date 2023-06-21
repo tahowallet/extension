@@ -45,12 +45,12 @@ export type ActivityDetail = {
   blockHeight?: string
   gas?: string
   nonce: string
-  gasPrice: string
-  maxFeePerGas: string
+  gasPrice?: string
+  maxFeePerGas?: string
   amount: string
 } & (
   | { state: "pending" | "dropped" }
-  | ({ blockHeight: string; gas: string; timestamp: string } & (
+  | ({ blockHeight: string; gas: string } & (
       | { state: "completed"; assetTransfers: AssetTransferDetail[] }
       | { state: "failed" }
     ))
@@ -106,9 +106,9 @@ export function getActivityStatus(
   return "pending"
 }
 
-function getGweiPrice(value: bigint | null | undefined): string {
+function getGweiPrice(value: bigint | null | undefined) {
   if (value === null || typeof value === "undefined") {
-    return "(Unknown)"
+    return undefined
   }
   return `${weiToGwei(value) || "0"} Gwei`
 }
@@ -116,7 +116,7 @@ function getGweiPrice(value: bigint | null | undefined): string {
 function getTimestamp(blockTimestamp: number | undefined) {
   return blockTimestamp
     ? new Date(blockTimestamp * 1000).toLocaleString()
-    : "(Unknown)"
+    : undefined
 }
 
 const getAssetSymbol = (transaction: EnrichedEVMTransaction) => {
@@ -272,9 +272,10 @@ export function getActivityDetails(tx: EnrichedEVMTransaction): ActivityDetail {
       return {
         ...activity,
         state: "completed",
+        // FIXME: There's no EnrichedConfirmedEVMTx type
         blockHeight: tx.blockHeight?.toString() || "",
         timestamp: getTimestamp(tx.annotation?.blockTimestamp),
-        gas: "gasUsed" in tx ? tx.gasUsed.toString() : "(Unknown)",
+        gas: "gasUsed" in tx ? tx.gasUsed.toString() : "",
         assetTransfers: assetTransfers.map((transfer) => {
           return {
             assetIconUrl: transfer.assetLogoUrl ?? "",
@@ -292,7 +293,7 @@ export function getActivityDetails(tx: EnrichedEVMTransaction): ActivityDetail {
         state: "failed",
         blockHeight: tx.blockHeight?.toString() || "",
         timestamp: getTimestamp(tx.annotation?.blockTimestamp),
-        gas: "gasUsed" in tx ? tx.gasUsed.toString() : "(Unknown)",
+        gas: "gasUsed" in tx ? tx.gasUsed.toString() : "",
       }
     case "dropped":
       return { ...activity, state: "dropped" }

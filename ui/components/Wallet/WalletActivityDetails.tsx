@@ -27,8 +27,10 @@ import useActivityViewDetails from "../../hooks/activity-hooks"
 import { getBlockExplorerURL } from "../../utils/networks"
 import { useInterval } from "../../hooks/react-hooks"
 
-function DetailRowItem(props: AssetTransferDetail): ReactElement {
-  const { assetIconUrl, label, value } = props
+function DetailRowItem(
+  props: AssetTransferDetail & { loading?: boolean }
+): ReactElement {
+  const { assetIconUrl, label, loading, value } = props
 
   return (
     <li>
@@ -40,7 +42,9 @@ function DetailRowItem(props: AssetTransferDetail): ReactElement {
         )}
         {label}
       </div>
-      <div className="right">{value}</div>
+      <div className="right">
+        {loading ? <SharedSkeletonLoader width={80} height={24} /> : value}
+      </div>
       <style jsx>
         {`
           li {
@@ -305,6 +309,7 @@ export default function WalletActivityDetails(
                   key={key}
                   label={label}
                   value={value || sharedT("unknown")}
+                  loading={!value && details.state === "pending"}
                 />
               ))}
               {details.state === "completed" &&
