@@ -14,12 +14,6 @@ type SharedToggleButtonProps = {
    */
   offColor?: string
   value?: boolean | undefined
-  /**
-   * True if the toggle is off when on the left and on when on the right, false
-   * if the direction is opposite (on when on the left and off when on the
-   * right). True by default.
-   */
-  leftToRight: boolean
 }
 
 export default function SharedToggleButton({
@@ -27,7 +21,6 @@ export default function SharedToggleButton({
   onColor,
   offColor,
   value,
-  leftToRight,
 }: SharedToggleButtonProps): ReactElement {
   const [isActive, setIsActive] = useState(value || false)
 
@@ -59,8 +52,6 @@ export default function SharedToggleButton({
             padding: 4px;
             cursor: pointer;
             display: flex;
-
-            ${leftToRight ? "" : "transform: rotate(180deg);"}
           }
           .bulb {
             width: 16px;
@@ -81,6 +72,4 @@ export default function SharedToggleButton({
   )
 }
 
-SharedToggleButton.defaultProps = {
-  leftToRight: true,
-}
+SharedToggleButton.defaultProps = {}

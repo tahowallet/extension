@@ -11,5 +11,5 @@
     "noEmit": true,
     "noImplicitOverride": true
   },
-  "exclude": ["dev-utils"]
+  "exclude": ["dev-utils", "ci"]
 }

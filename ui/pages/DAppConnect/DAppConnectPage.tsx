@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { useTranslation } from "react-i18next"
@@ -7,10 +7,12 @@ import {
   isDisabled,
   isEnabled,
 } from "@tallyho/tally-background/features"
+import { selectDefaultWallet } from "@tallyho/tally-background/redux-slices/ui"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedAccountItemSummary from "../../components/Shared/SharedAccountItemSummary"
 import RequestingDAppBlock from "./RequestingDApp"
 import SwitchWallet from "./SwitchWallet"
+import { useBackgroundSelector } from "../../hooks"
 import DAppConnectionInfoBar from "../../components/DAppConnection/DAppConnectionInfoBar"
 
 type DAppConnectPageProps = {
@@ -30,6 +32,19 @@ export default function DAppConnectPage({
 }: DAppConnectPageProps): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "dappConnection" })
   const { title, origin, faviconUrl, accountAddress } = permission
+
+  const isDefaultWallet = useBackgroundSelector(selectDefaultWallet)
+
+  useEffect(() => {
+    if (
+      isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) &&
+      !isDefaultWallet
+    ) {
+      // When default wallet is toggled off, wait for the toggle animation to
+      // complete and close the window out.
+      setTimeout(() => window.close(), 300)
+    }
+  }, [isDefaultWallet])
 
   return (
     <>
