@@ -33,14 +33,20 @@ export default function SharedCheckbox(props: Props): ReactElement {
           className={classNames("checkbox_box", {
             checked,
             disabled,
-            invalid,
+            invalid: !disabled && invalid,
           })}
         />
-        <span className="label">{label}</span>
+        <span
+          className={classNames("label", {
+            disabled,
+          })}
+        >
+          {label}
+        </span>
       </label>
       <span
-        className={classNames("label message", {
-          visible: invalidMessage && invalid,
+        className={classNames("message", {
+          visible: !disabled && invalidMessage && invalid,
         })}
       >
         {invalidMessage}
@@ -55,7 +61,6 @@ export default function SharedCheckbox(props: Props): ReactElement {
         .checkbox_label {
           display: flex;
           flex-direction: row;
-          cursor: pointer;
           margin: unset;
         }
 
@@ -75,6 +80,7 @@ export default function SharedCheckbox(props: Props): ReactElement {
 
         .checkbox_box.disabled {
           background: var(--green-80);
+          cursor: default;
         }
 
         .checkbox_box:not(.checked) {
@@ -99,15 +105,24 @@ export default function SharedCheckbox(props: Props): ReactElement {
         }
 
         .label {
+          cursor: pointer;
           color: var(--green-5);
           font-weight: 500;
           font-size: 16px;
           line-height: 24px;
         }
 
+        .label.disabled {
+          color: var(--green-60);
+          cursor: default;
+        }
+
         .message {
           visibility: hidden;
           color: var(--error);
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
         }
 
         .message.visible {
