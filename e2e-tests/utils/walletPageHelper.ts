@@ -1,4 +1,4 @@
-import { Page, BrowserContext } from "@playwright/test"
+import { Page, BrowserContext, expect } from "@playwright/test"
 import OnboardingHelper from "./onboarding"
 
 export default class WalletPageHelper {
@@ -35,5 +35,13 @@ export default class WalletPageHelper {
       .getByRole("navigation", { name: "Main" })
       .getByRole("link", { name: tab })
       .click()
+  }
+
+  async switchNetwork(network: RegExp): Promise<void> {
+    await this.popup.getByTestId("top_menu_network_switcher").last().click()
+    await this.popup.getByText(network).click()
+    await expect(
+      this.popup.getByTestId("top_menu_network_switcher").last()
+    ).toHaveText(network)
   }
 }
