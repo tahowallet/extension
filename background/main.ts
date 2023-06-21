@@ -190,6 +190,7 @@ import {
 import {
   isBuiltInNetworkBaseAsset,
   isSameAsset,
+  isUntrustedAsset,
 } from "./redux-slices/utils/asset-utils"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
 import { DismissableItem } from "./services/preferences"
@@ -1894,6 +1895,8 @@ export default class Main extends BaseService<never> {
     const mainCurrencyAmount = convertedAssetAmount
       ? assetAmountToDesiredDecimals(convertedAssetAmount, 2)
       : undefined
+    // The user should be able to add an asset that is on the untrusted list.
+    const exists = !isUntrustedAsset(cachedAsset) || false
 
     return {
       ...assetData,
@@ -1901,7 +1904,7 @@ export default class Main extends BaseService<never> {
         utils.formatUnits(assetData.amount, assetData.asset.decimals)
       ),
       mainCurrencyAmount,
-      exists: !!cachedAsset,
+      exists,
     }
   }
 

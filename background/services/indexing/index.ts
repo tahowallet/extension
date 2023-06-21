@@ -48,6 +48,7 @@ import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../../lib/utils"
+import { isUntrustedAsset } from "../../redux-slices/utils/asset-utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -699,8 +700,8 @@ export default class IndexingService extends BaseService<Events> {
       network,
       normalizedAddress
     )
-
-    if (knownAsset) {
+    // The user should be able to add an asset that is on the untrusted list.
+    if (knownAsset && !isUntrustedAsset(knownAsset)) {
       const newDiscoveryTxHash = metadata?.discoveryTxHash
       const addressForDiscoveryTxHash = newDiscoveryTxHash
         ? Object.keys(newDiscoveryTxHash)[0]
