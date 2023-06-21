@@ -47,7 +47,9 @@ export type Preferences = {
  * manually dismissed. Manual dismissal can include closing a popover, or
  * selecting "Don't show again" on a popup before closing it.
  */
-export type ManuallyDismissableItem = "analytics-enabled-banner"
+export type ManuallyDismissableItem =
+  | "analytics-enabled-banner"
+  | "copy-sensitive-material-warning"
 /**
  * Items that the user will see once and will not be auto-displayed again. Can
  * be used for tours, or for popups that can be retriggered but will not

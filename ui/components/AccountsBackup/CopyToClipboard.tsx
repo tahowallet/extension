@@ -1,13 +1,15 @@
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
+import {
+  markDismissableItemAsShown,
+  selectShouldShowDismissableItem,
+} from "@tallyho/tally-background/redux-slices/ui"
 import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
 import SharedButton from "../Shared/SharedButton"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import { getLocalStorageItem, useLocalStorage } from "../../hooks"
 import SharedCheckbox from "../Shared/SharedCheckbox"
 import SharedBanner from "../Shared/SharedBanner"
-
-const MODAL_COPY_WARNING_ID = "modal_copy_warning"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 type CopyWarningProps = {
   copyText: string
@@ -25,17 +27,22 @@ export default function CopyToClipboard({
     keyPrefix: "shared",
   })
 
+  const dispatch = useBackgroundDispatch()
+  const shouldShowCopyWarning = useBackgroundSelector(
+    selectShouldShowDismissableItem("copy-sensitive-material-warning")
+  )
+
   const [isOpen, setIsOpen] = useState(false)
   const [isConfirmed, setIsConfirmed] = useState(false)
 
-  const [showWarning, setShowWarning] = useLocalStorage(
-    MODAL_COPY_WARNING_ID,
-    getLocalStorageItem(MODAL_COPY_WARNING_ID, "true")
-  )
+  const handleSubmitCopyWarning = () => {
+    copy()
+    setIsOpen(false)
 
-  useEffect(() => {
-    setShowWarning((!isConfirmed).toString())
-  }, [isConfirmed, setShowWarning])
+    if (isConfirmed) {
+      dispatch(markDismissableItemAsShown("copy-sensitive-material-warning"))
+    }
+  }
 
   return (
     <>
@@ -44,7 +51,7 @@ export default function CopyToClipboard({
         size="small"
         iconMedium="copy"
         onClick={() => {
-          if (showWarning === "true") {
+          if (shouldShowCopyWarning) {
             setIsOpen(true)
           } else {
             copy()
@@ -86,10 +93,7 @@ export default function CopyToClipboard({
               <SharedButton
                 size="medium"
                 type="primary"
-                onClick={() => {
-                  copy()
-                  setIsOpen(false)
-                }}
+                onClick={() => handleSubmitCopyWarning()}
               >
                 {t("submitBtn")}
               </SharedButton>
