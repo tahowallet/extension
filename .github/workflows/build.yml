@@ -224,7 +224,7 @@ jobs:
           key: ${{ runner.os }}-hardhat-${{ hashFiles('ci/cache/*.json') }}
       - name: Run Hardhat
         env:
-          CHAIN_API_URL: ${{ secrets.ALCHEMY_URL }}
+          CHAIN_API_URL: https://mainnet.infura.io/v3/${{ secrets.ALCHEMY_API_KEY }}
           MAINNET_FORK_CHAIN_ID: 1337
           # We're using a fixed block number as a start of the fork to get
           # consistent behavior in tests. The `17094516` block is a block at
