@@ -175,7 +175,7 @@ jobs:
       - name: Extract extension
         run: unzip -o chrome.zip -d dist/chrome
       - name: Run Playwright tests
-        run: find test -type f ! -name "*-fork.*" -exec xvfb-run npx playwright test {} \;
+        run: find e2e-tests -type f ! -name "*-fork.*" -exec xvfb-run npx playwright test {} \;
         #env:
         # DEBUG: pw:api*
       # Upload of Playwright artifacts commented out until we change the method
