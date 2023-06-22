@@ -33,13 +33,13 @@ export default function CopyToClipboard({
   )
 
   const [isOpen, setIsOpen] = useState(false)
-  const [isConfirmed, setIsConfirmed] = useState(false)
+  const [shouldNotDisplayAgain, setShouldNotDisplayAgain] = useState(false)
 
   const handleSubmitCopyWarning = () => {
     copy()
     setIsOpen(false)
 
-    if (isConfirmed) {
+    if (shouldNotDisplayAgain) {
       dispatch(markDismissableItemAsShown("copy-sensitive-material-warning"))
     }
   }
@@ -78,8 +78,8 @@ export default function CopyToClipboard({
               <SharedCheckbox
                 size={16}
                 label={t("dontAsk")}
-                checked={isConfirmed}
-                onChange={(value) => setIsConfirmed(value)}
+                checked={shouldNotDisplayAgain}
+                onChange={(value) => setShouldNotDisplayAgain(value)}
               />
             </div>
             <div className="buttons">
