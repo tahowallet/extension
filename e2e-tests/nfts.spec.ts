@@ -80,7 +80,7 @@ test.describe("NFTs", () => {
       await page
         .getByTestId("nft_account_filters")
         .filter({
-          hasText: /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
+          hasText: /^e2e\.testertesting\.eth$/,
         })
         .getByRole("checkbox")
         .click()
@@ -107,7 +107,7 @@ test.describe("NFTs", () => {
         .getByTestId("nft_account_filters")
         .getByTestId("toggle_item")
         .filter({
-          hasText: /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
+          hasText: /^e2e\.testertesting\.eth$/,
         })
         .getByRole("checkbox")
         .click()
