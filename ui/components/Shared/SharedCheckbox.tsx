@@ -1,79 +1,154 @@
-import React, { ReactElement, ChangeEventHandler } from "react"
+import classNames from "classnames"
+import React, { ReactElement } from "react"
 
-interface Props {
-  label: string
-  onChange: ChangeEventHandler<HTMLInputElement>
-  checked?: boolean
+type Props = {
+  label?: string
+  labelPosition?: "left" | "right"
+  size?: number
+  checked: boolean
+  disabled?: boolean
+  invalid?: boolean
+  invalidMessage?: string
+  customStyles?: React.CSSProperties
+  onChange: (value: boolean) => void
 }
 
 export default function SharedCheckbox(props: Props): ReactElement {
-  const { label, checked, onChange } = props
+  const {
+    label,
+    labelPosition = "right",
+    size = 16,
+    checked,
+    disabled,
+    invalid,
+    invalidMessage,
+    customStyles,
+    onChange,
+  } = props
+
+  const labelElement = (
+    <>
+      <span
+        style={customStyles}
+        className={classNames("label", {
+          disabled,
+        })}
+      >
+        {label}
+      </span>
+      <style jsx>
+        {`
+          .label {
+            cursor: pointer;
+            color: var(--green-5);
+            font-weight: 500;
+            font-size: 16px;
+            line-height: 24px;
+          }
+
+          .label.disabled {
+            color: var(--green-60);
+            cursor: default;
+          }
+        `}
+      </style>
+    </>
+  )
 
   return (
-    <div className="checkbox">
-      <input
-        id="checkbox"
-        defaultChecked={checked}
-        onChange={onChange}
-        type="checkbox"
-      />
-      <span className="checkmark" />
-      <label htmlFor="checkbox" className="label">
-        {label}
+    <div
+      className={classNames({
+        container: invalidMessage,
+      })}
+    >
+      <label className="checkbox_label">
+        <input
+          className="checkbox_input"
+          type="checkbox"
+          disabled={disabled}
+          checked={checked}
+          onChange={(event) => onChange(event.currentTarget.checked)}
+        />
+        {labelPosition === "left" && labelElement}
+        <div
+          className={classNames("checkbox_box", {
+            checked,
+            disabled,
+            invalid: !disabled && invalid,
+          })}
+        />
+        {labelPosition === "right" && labelElement}
       </label>
+      <span
+        className={classNames("message", {
+          visible: !disabled && invalidMessage && invalid,
+        })}
+      >
+        {invalidMessage}
+      </span>
       <style jsx>{`
-        .checkbox {
+        .container {
           display: flex;
-          align-items: center;
-          position: relative;
-          cursor: pointer;
-          font-size: 14px;
-          color: var(--green-60);
-          user-select: none;
+          flex-direction: column;
+          gap: 8px;
         }
 
-        .checkbox input {
-          position: absolute;
-          opacity: 0;
-          height: 0;
-          width: 0;
+        .checkbox_label {
+          display: flex;
+          flex-direction: row;
+          margin: unset;
+          gap: 8px;
         }
 
-        .checkmark {
-          position: relative;
-          height: 15px;
-          width: 15px;
-          border-radius: 3px;
-          background-color: var(--green-60);
-          margin-right: 5px;
-        }
-        .checkbox:hover input ~ .checkmark {
-          background-color: var(--green-80);
-        }
-        .checkbox input:checked ~ .checkmark {
-          background-color: var(--trophy-gold);
-        }
-        .checkmark:after {
-          content: "";
-          position: absolute;
+        .checkbox_input {
           display: none;
         }
-        .checkbox input:checked ~ .checkmark:after {
+
+        .checkbox_box {
+          min-width: ${size}px;
+          height: ${size}px;
+          border-radius: 2px;
+          box-sizing: border-box;
+          cursor: pointer;
+          margin-top: ${label ? 4 : 0}px;
+        }
+
+        .checkbox_box.disabled {
+          background: var(--green-80);
+          cursor: default;
+        }
+
+        .checkbox_box:not(.checked) {
+          border: 2px solid var(--green-60);
+        }
+
+        .checkbox_box.checked {
+          background-color: var(--trophy-gold);
+        }
+
+        .checkbox_box.invalid {
+          border: 2px solid var(--error);
+        }
+
+        .checkbox_box.checked::before {
+          content: "";
           display: block;
+          margin: ${size * 0.2}px;
+          width: ${size * 0.6}px;
+          height: ${size * 0.6}px;
+          background: no-repeat center / cover url("/images/checkmark@2x.png");
         }
-        .checkbox .checkmark:after {
-          left: 5px;
-          top: 2px;
-          width: 2px;
-          height: 7px;
-          border: solid white;
-          border-width: 0 3px 3px 0;
-          transform: rotate(45deg);
+
+        .message {
+          visibility: hidden;
+          color: var(--error);
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
         }
-        .label {
-          line-height: normal;
-          margin-top: 0;
-          color: var(--green-60);
+
+        .message.visible {
+          visibility: visible;
         }
       `}</style>
     </div>
