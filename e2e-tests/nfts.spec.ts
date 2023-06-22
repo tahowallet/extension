@@ -75,12 +75,14 @@ test.describe("NFTs", () => {
     })
 
     await test.step("Filtering accounts", async () => {
+      const accountName = /^e2e\.testertesting\.eth$/
+
       await page.getByRole("button", { name: "Filter collections" }).click()
 
       await page
         .getByTestId("nft_account_filters")
         .filter({
-          hasText: /^e2e\.testertesting\.eth$/,
+          hasText: accountName,
         })
         .getByRole("checkbox")
         .click()
@@ -107,7 +109,7 @@ test.describe("NFTs", () => {
         .getByTestId("nft_account_filters")
         .getByTestId("toggle_item")
         .filter({
-          hasText: /^e2e\.testertesting\.eth$/,
+          hasText: accountName,
         })
         .getByRole("checkbox")
         .click()
