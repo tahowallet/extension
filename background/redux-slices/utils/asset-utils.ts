@@ -377,6 +377,23 @@ export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
   return false
 }
 
+/**
+ * Check if an asset is verified.
+ * The asset can be verified by us when it is trusted by default.
+ * Untrusted asset can be manually verified by the user.
+ *
+ * Only verified assets can take part in wallet actions.
+ * By actions is meant:
+ * - doing an swap with this asset
+ * - sending this asset to another address
+ */
+export function isVerifiedAsset(asset: AnyAsset): boolean {
+  if (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)) {
+    return true
+  }
+  return isUntrustedAsset(asset) ? !isUnverifiedAssetByUser(asset) : true
+}
+
 type AssetType = "base" | "erc20"
 
 export type AssetID = `${AssetType}/${string}`
@@ -389,17 +406,6 @@ export const getAssetID = (
   }
 
   return `erc20/${asset.contractAddress}`
-}
-
-/**
- * Assets that are untrusted and have not been verified by the user
- * should not be swapped or sent.
- */
-export function canBeUsedForTransaction(asset: AnyAsset): boolean {
-  if (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)) {
-    return true
-  }
-  return isUntrustedAsset(asset) ? !isUnverifiedAssetByUser(asset) : true
 }
 
 // FIXME Unify once asset similarity code is unified.

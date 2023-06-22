@@ -28,7 +28,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/assets"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
-  canBeUsedForTransaction,
+  isVerifiedAsset,
   enrichAssetAmountWithMainCurrencyValues,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { useHistory, useLocation } from "react-router-dom"
@@ -112,7 +112,7 @@ export default function Send(): ReactElement {
       (assetAmount): assetAmount is CompleteAssetAmount<FungibleAsset> =>
         isFungibleAssetAmount(assetAmount) &&
         assetAmount.decimalAmount > 0 &&
-        canBeUsedForTransaction(assetAmount.asset)
+        isVerifiedAsset(assetAmount.asset)
     )
   const assetPricePoint = useBackgroundSelector((state) =>
     selectAssetPricePoint(state.assets, selectedAsset, mainCurrencySymbol)

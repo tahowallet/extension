@@ -18,7 +18,7 @@ import { debounce, DebouncedFunc } from "lodash"
 import { useState, useRef, useCallback } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
-  canBeUsedForTransaction,
+  isVerifiedAsset,
   isSameAsset,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
@@ -271,7 +271,7 @@ export function getOwnedSellAssetAmounts(
         (isSmartContractFungibleAsset(assetAmount.asset) ||
           assetAmount.asset.symbol === currentNetwork.baseAsset.symbol) &&
         assetAmount.decimalAmount > 0 &&
-        canBeUsedForTransaction(assetAmount.asset)
+        isVerifiedAsset(assetAmount.asset)
     ) ?? []
   )
 }

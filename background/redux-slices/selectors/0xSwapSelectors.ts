@@ -3,7 +3,7 @@ import { selectCurrentNetwork } from "./uiSelectors"
 import { SwappableAsset, isSmartContractFungibleAsset } from "../../assets"
 import { sameNetwork } from "../../networks"
 import {
-  canBeUsedForTransaction,
+  isVerifiedAsset,
   isBuiltInNetworkBaseAsset,
 } from "../utils/asset-utils"
 import { RootState } from ".."
@@ -29,7 +29,7 @@ export const selectSwapBuyAssets = createSelector(
       ): asset is SwappableAsset & {
         recentPrices: SingleAssetState["recentPrices"]
       } => {
-        if (!canBeUsedForTransaction(asset)) {
+        if (!isVerifiedAsset(asset)) {
           return false
         }
         if (isSmartContractFungibleAsset(asset)) {

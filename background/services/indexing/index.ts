@@ -48,7 +48,7 @@ import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../../lib/utils"
-import { isUntrustedAsset } from "../../redux-slices/utils/asset-utils"
+import { isVerifiedAsset } from "../../redux-slices/utils/asset-utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -97,6 +97,35 @@ const getActiveAssetsByAddressForNetwork = (
   )
 
   return getAssetsByAddress(networkActiveAssets)
+}
+
+function shouldRefreshKnownAsset(
+  asset: SmartContractFungibleAsset,
+  metadata: {
+    discoveryTxHash?: {
+      [address: HexString]: HexString
+    }
+    verified?: boolean
+  }
+): boolean {
+  const newDiscoveryTxHash = metadata?.discoveryTxHash
+  const addressForDiscoveryTxHash = newDiscoveryTxHash
+    ? Object.keys(newDiscoveryTxHash)[0]
+    : undefined
+  const existingDiscoveryTxHash = addressForDiscoveryTxHash
+    ? asset.metadata?.discoveryTxHash?.[addressForDiscoveryTxHash]
+    : undefined
+
+  // If a known asset does not yet have a tx detection hash, update it.
+  const noExistingDiscoveryTxHash = !existingDiscoveryTxHash
+
+  // Refresh a known unverified asset if it has been manually imported.
+  // This check allows the user to add an asset from the unverified list.
+  const isManuallyImported = asset.metadata?.verified
+  const allowUpdateUnverifiedAsset =
+    !isVerifiedAsset(asset) && isManuallyImported
+
+  return allowUpdateUnverifiedAsset || noExistingDiscoveryTxHash
 }
 
 /**
@@ -700,21 +729,10 @@ export default class IndexingService extends BaseService<Events> {
       network,
       normalizedAddress
     )
-    // The user should be able to add an asset that is on the untrusted list.
-    if (knownAsset && !isUntrustedAsset(knownAsset)) {
-      const newDiscoveryTxHash = metadata?.discoveryTxHash
-      const addressForDiscoveryTxHash = newDiscoveryTxHash
-        ? Object.keys(newDiscoveryTxHash)[0]
-        : undefined
-      const existingDiscoveryTxHash = addressForDiscoveryTxHash
-        ? knownAsset.metadata?.discoveryTxHash?.[addressForDiscoveryTxHash]
-        : undefined
-      // If the discovery tx hash is not specified
-      // or if it already exists in the asset, do not update the asset
-      if (!newDiscoveryTxHash || existingDiscoveryTxHash) {
-        await this.addAssetToTrack(knownAsset)
-        return knownAsset
-      }
+
+    if (knownAsset && !shouldRefreshKnownAsset(knownAsset, metadata)) {
+      await this.addAssetToTrack(knownAsset)
+      return knownAsset
     }
 
     let customAsset = await this.db.getCustomAssetByAddressAndNetwork(

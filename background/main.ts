@@ -188,9 +188,9 @@ import {
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
 import {
+  isVerifiedAsset,
   isBuiltInNetworkBaseAsset,
   isSameAsset,
-  isUntrustedAsset,
 } from "./redux-slices/utils/asset-utils"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
 import { DismissableItem } from "./services/preferences"
@@ -1895,8 +1895,9 @@ export default class Main extends BaseService<never> {
     const mainCurrencyAmount = convertedAssetAmount
       ? assetAmountToDesiredDecimals(convertedAssetAmount, 2)
       : undefined
-    // The user should be able to add an asset that is on the untrusted list.
-    const exists = cachedAsset ? !isUntrustedAsset(cachedAsset) : false
+    // Existing assets are those that are verified by default or by the user.
+    // This check allows the user to add an asset that is on the unverified list.
+    const exists = cachedAsset ? isVerifiedAsset(cachedAsset) : false
 
     return {
       ...assetData,
