@@ -162,4 +162,12 @@ export default class WalletPageHelper {
       .getByRole("button")
       .click({ trial: true })
   }
+
+  async switchNetwork(network: RegExp): Promise<void> {
+    await this.popup.getByTestId("top_menu_network_switcher").last().click()
+    await this.popup.getByText(network).click()
+    await expect(
+      this.popup.getByTestId("top_menu_network_switcher").last()
+    ).toHaveText(network)
+  }
 }

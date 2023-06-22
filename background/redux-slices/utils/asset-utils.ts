@@ -10,6 +10,7 @@ import {
   AnyAsset,
   CoinGeckoAsset,
   isSmartContractFungibleAsset,
+  SmartContractFungibleAsset,
 } from "../../assets"
 import {
   BUILT_IN_NETWORK_BASE_ASSETS,
@@ -374,6 +375,20 @@ export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
   }
 
   return false
+}
+
+type AssetType = "base" | "erc20"
+
+export type AssetID = `${AssetType}/${string}`
+
+export const getAssetID = (
+  asset: NetworkBaseAsset | SmartContractFungibleAsset
+): AssetID => {
+  if (isNetworkBaseAsset(asset)) {
+    return `base/${asset.symbol}`
+  }
+
+  return `erc20/${asset.contractAddress}`
 }
 
 /**
