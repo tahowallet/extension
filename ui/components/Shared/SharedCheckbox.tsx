@@ -10,6 +10,7 @@ type Props = {
   invalid?: boolean
   invalidMessage?: string
   customStyles?: React.CSSProperties
+  customStylesForLabel?: React.CSSProperties
   onChange: (value: boolean) => void
 }
 
@@ -23,13 +24,14 @@ export default function SharedCheckbox(props: Props): ReactElement {
     invalid,
     invalidMessage,
     customStyles,
+    customStylesForLabel,
     onChange,
   } = props
 
   const labelElement = (
     <>
       <span
-        style={customStyles}
+        style={customStylesForLabel}
         className={classNames("label", {
           disabled,
         })}
@@ -60,6 +62,7 @@ export default function SharedCheckbox(props: Props): ReactElement {
       className={classNames({
         container: invalidMessage,
       })}
+      style={customStyles}
     >
       <label className="checkbox_label">
         <input
