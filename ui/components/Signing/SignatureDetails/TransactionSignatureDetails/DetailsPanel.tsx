@@ -7,11 +7,10 @@ import type {
   EnrichedEVMTransactionRequest,
   EnrichedLegacyTransactionRequest,
 } from "@tallyho/tally-background/services/enrichment"
-import { Trans, useTranslation } from "react-i18next"
+import { useTranslation } from "react-i18next"
 import {
   BINANCE_SMART_CHAIN,
   EIP_1559_COMPLIANT_CHAIN_IDS,
-  FLASHBOTS_DOCS_URL,
   FLASHBOTS_SUPPORTED_CHAIN_IDS,
 } from "@tallyho/tally-background/constants"
 import classNames from "classnames"
@@ -26,9 +25,7 @@ import NetworkSettingsChooser from "../../../NetworkFees/NetworkSettingsChooser"
 import FeeSettingsButton from "../../../NetworkFees/FeeSettingsButton"
 import TransactionAdditionalDetails from "./TransactionAdditionalDetails"
 import TransactionSignatureDetailsWarning from "./TransactionSignatureDetailsWarning"
-import SharedToggleButton from "../../../Shared/SharedToggleButton"
-import SharedLink from "../../../Shared/SharedLink"
-import SharedTooltip from "../../../Shared/SharedTooltip"
+import SharedCheckbox from "../../../Shared/SharedCheckbox"
 
 export type PanelState = {
   dismissedWarnings: string[]
@@ -146,25 +143,17 @@ export default function DetailPanel({
       {isEnabled(FeatureFlags.SUPPORT_FLASHBOTS_RPC) && canUseFlashbots && (
         <>
           <span className="detail_item">
-            <div className="detail_label">
-              {t("wallet.useFlashbots")}
-              <SharedTooltip
-                width={180}
-                customStyles={{ marginLeft: "4" }}
-                verticalPosition="top"
-              >
-                <Trans
-                  t={t}
-                  i18nKey="wallet.useFlashbotsTooltip"
-                  components={{
-                    url: <SharedLink type="tooltip" url={FLASHBOTS_DOCS_URL} />,
-                  }}
-                />
-              </SharedTooltip>
-            </div>
-            <SharedToggleButton
-              value={useFlashbots}
+            <SharedCheckbox
+              size={16}
+              checked={useFlashbots}
               onChange={toggleFlashbotsRPC}
+              label={t("signTransaction.useFlashbots")}
+              labelPosition="left"
+              customStyles={{
+                color: "var(--green-40)",
+                fontSize: "14px",
+                marginRight: "auto",
+              }}
             />
           </span>
         </>

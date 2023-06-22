@@ -333,7 +333,7 @@ export default function Settings(): ReactElement {
   }
 
   const flashbotsRPC = {
-    title: t("wallet.useFlashbots"),
+    title: t("settings.useFlashbots"),
     tooltip: () => (
       <SharedTooltip
         width={165}
@@ -342,7 +342,7 @@ export default function Settings(): ReactElement {
       >
         <Trans
           t={t}
-          i18nKey="wallet.useFlashbotsTooltip"
+          i18nKey="settings.useFlashbotsTooltip"
           components={{
             url: <SharedLink type="tooltip" url={FLASHBOTS_DOCS_URL} />,
           }}
