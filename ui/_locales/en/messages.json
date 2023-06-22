@@ -53,6 +53,13 @@
           "text2": "Recovery phrase is the only way to regain access to your funds stored on those addresses.",
           "text3": "Taho has the option to import or create multiple recovery phrases. If you have multiple, make sure that you have safely save and store them all."
         }
+      },
+      "copyWarning": {
+        "header": "Copying to clipboard",
+        "title": "Careful copying content to clipboard",
+        "description": "It is dangerous to copy your recovery phrase or private key to clipboard, this can result in somebody gaining access to it",
+        "dontAsk": "Don’t ask me again",
+        "submitBtn": "Copy to clipboard"
       }
     },
     "notificationPanel": {
@@ -379,7 +386,7 @@
         "newWalletTitle": "New wallet",
         "options": {
           "importSeed": "Import recovery phrase",
-          "importPrivateKey": "Private Key import",
+          "importPrivateKey": "Import private key",
           "ledger": "Connect to Ledger",
           "readOnly": "Read-only address",
           "createNew": "Create new wallet"
@@ -679,7 +686,6 @@
   },
   "signing": {
     "signatureRequired": "Your signature is required",
-    "dappSignatureRequest": "A dapp is requesting your signature",
     "message": "Message",
     "signed": "Signed,",
     "type": "Type",
@@ -1011,7 +1017,6 @@
         "USE_MAINNET_FORK": "Use mainnet fork",
         "HIDE_IMPORT_DERIVATION_PATH": "Hide import derivation path",
         "HIDE_SWAP_REWARDS": "Hide swap rewards",
-        "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
         "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",

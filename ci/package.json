@@ -1,0 +1,20 @@
+{
+  "name": "@tallyho/ci",
+  "version": "0.0.1",
+  "description": "Taho, the community owned and operated Web3 wallet: window provider is responsible for creating the in-page object for communication.",
+  "repository": "git@github.com:thesis/tally-extension.git",
+  "author": "Michalina Cienciala",
+  "license": "GPL-3.0",
+  "keywords": [
+    "ethereum",
+    "bitcoin",
+    "cryptocurrency",
+    "wallet",
+    "web3",
+    "dapp"
+  ],
+  "devDependencies": {
+    "dotenv-defaults": "^5.0.2",
+    "hardhat": "^2.14.0"
+  }
+}

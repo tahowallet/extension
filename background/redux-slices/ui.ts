@@ -4,6 +4,7 @@ import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
 import { AnalyticsEvent, OneTimeAnalyticsEvent } from "../lib/posthog"
 import { EVMNetwork } from "../networks"
+import { DismissableItem } from "../services/preferences"
 import { AnalyticsPreferences } from "../services/preferences/types"
 import { AccountSignerWithId } from "../signing"
 import { AccountSignerSettings } from "../ui"
@@ -27,6 +28,7 @@ export type UIState = {
   selectedAccount: AddressOnNetwork
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
+  shownDismissableItems?: DismissableItem[]
   // FIXME: Move these settings to preferences service db
   settings: {
     hideDust: boolean
@@ -167,6 +169,23 @@ const uiSlice = createSlice({
         defaultWallet,
       },
     }),
+    setShownDismissableItems: (
+      state,
+      { payload: shownDismissableItems }: { payload: DismissableItem[] }
+    ) => ({
+      ...state,
+      shownDismissableItems,
+    }),
+    dismissableItemMarkedAsShown: (
+      state,
+      { payload: shownDismissableItem }: { payload: DismissableItem }
+    ) => ({
+      ...state,
+      shownDismissableItems: [
+        ...(state.shownDismissableItems ?? []),
+        shownDismissableItem,
+      ],
+    }),
     setRouteHistoryEntries: (
       state,
       { payload: routeHistoryEntries }: { payload: Partial<Location>[] }
@@ -208,6 +227,8 @@ export const {
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
+  setShownDismissableItems,
+  dismissableItemMarkedAsShown,
   clearSnackbarMessage,
   setRouteHistoryEntries,
   setSlippageTolerance,
@@ -262,6 +283,13 @@ export const updateSignerTitle = createBackgroundAsyncThunk(
     { extra: { main } }
   ) => {
     return main.updateSignerTitle(signer, title)
+  }
+)
+
+export const markDismissableItemAsShown = createBackgroundAsyncThunk(
+  "ui/markDismissableItemAsShown",
+  async (item: DismissableItem, { extra: { main } }) => {
+    return main.markDismissableItemAsShown(item)
   }
 )
 
@@ -394,3 +422,13 @@ export const selectHideBanners = createSelector(
   selectSettings,
   (settings) => settings?.hideBanners
 )
+
+export function selectShouldShowDismissableItem(
+  dismissableItem: DismissableItem
+) {
+  return (state: { ui: UIState }): boolean => {
+    const itemWasShown =
+      selectUI(state).shownDismissableItems?.includes(dismissableItem) ?? false
+    return !itemWasShown
+  }
+}

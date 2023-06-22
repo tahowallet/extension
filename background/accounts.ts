@@ -1,5 +1,5 @@
-import { AnyAssetAmount } from "./assets"
-import { EVMNetwork } from "./networks"
+import { AnyAssetAmount, SmartContractFungibleAsset } from "./assets"
+import { EVMNetwork, NetworkBaseAsset } from "./networks"
 import { HexString } from "./types"
 
 /**
@@ -15,7 +15,7 @@ export type AccountBalance = {
   /**
    * The measured balance and the asset in which it's denominated.
    */
-  assetAmount: AnyAssetAmount
+  assetAmount: AnyAssetAmount<NetworkBaseAsset | SmartContractFungibleAsset>
   /**
    * The network on which the account balance was measured.
    */

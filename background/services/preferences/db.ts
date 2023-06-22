@@ -30,7 +30,7 @@ const getSignerRecordId = (signer: AccountSignerWithId): SignerRecordId => {
 // The idea is to use this interface to describe the data structure stored in indexedDb
 // In the future this might also have a runtime type check capability, but it's good enough for now.
 // NOTE: Check if can be merged with preferences/types.ts
-export interface Preferences {
+export type Preferences = {
   id?: number
   savedAt: number
   tokenLists: { autoUpdate: boolean; urls: string[] }
@@ -45,6 +45,32 @@ export interface Preferences {
   autoLockInterval: UNIXTime
 }
 
+/**
+ * Items that the user will see and then will not reappear once they've been
+ * manually dismissed. Manual dismissal can include closing a popover, or
+ * selecting "Don't show again" on a popup before closing it.
+ */
+export type ManuallyDismissableItem =
+  | "analytics-enabled-banner"
+  | "copy-sensitive-material-warning"
+/**
+ * Items that the user will see once and will not be auto-displayed again. Can
+ * be used for tours, or for popups that can be retriggered but will not
+ * auto-display more than once.
+ */
+export type SingleShotItem = "default-connection-popover"
+
+/**
+ * Items that the user will view one time and either manually dismiss or that
+ * will remain auto-collapsed after first view.
+ */
+export type DismissableItem = ManuallyDismissableItem | SingleShotItem
+
+type DismissableItemEntry = {
+  id: DismissableItem
+  shown: boolean
+}
+
 export class PreferenceDatabase extends Dexie {
   private preferences!: Dexie.Table<Preferences, number>
 
@@ -53,19 +79,18 @@ export class PreferenceDatabase extends Dexie {
     string
   >
 
+  private shownDismissableItems!: Dexie.Table<DismissableItemEntry, string>
+
   constructor() {
     super("tally/preferences")
 
-    // DELETE ME: No need to keep this, but because this service was using a different method
-    // I thought it's easier to follow the history if it's here at least until we discuss this approach
+    // TODO Would be good to move all of these migrations to their own file or
+    // TODO files.
     this.version(1).stores({
       preferences: "++id,savedAt",
       migrations: "++id,appliedAt",
     })
 
-    // DELETE ME: This is not necessary either, but because there was a different approach
-    // implementing the migration I kept it here for now just to make sure
-    // the db is in working condition.
     this.version(2)
       .stores({
         preferences: "++id,savedAt,currency,tokenLists,defaultWallet",
@@ -85,9 +110,6 @@ export class PreferenceDatabase extends Dexie {
           })
       })
 
-    // TBD @Antonio: Implemented database versioning and population according to the Dexie docs
-    // https://dexie.org/docs/Tutorial/Design#database-versioning
-    // I fully expect that I might need to revert all of this, but as per my current knowledge this seems to be a good idea
     this.version(3).stores({
       migrations: null, // If we use dexie built in migrations then we don't need to keep track of them manually
       preferences: "++id", // removed all the unused indexes
@@ -212,6 +234,7 @@ export class PreferenceDatabase extends Dexie {
           })
       })
 
+    // Update Taho token list reference.
     this.version(9)
       .stores({
         preferences: "++id",
@@ -328,8 +351,14 @@ export class PreferenceDatabase extends Dexie {
         })
     })
 
+    this.version(17).stores({
+      preferences: "++id",
+      signersSettings: "&id",
+      shownDismissableItems: "&id,shown",
+    })
+
     // Updates preferences to allow custom auto lock timers
-    this.version(16).upgrade((tx) => {
+    this.version(18).upgrade((tx) => {
       return tx
         .table("preferences")
         .toCollection()
@@ -412,6 +441,20 @@ export class PreferenceDatabase extends Dexie {
   ): Promise<AccountSignerSettings[]> {
     await this.signersSettings.delete(getSignerRecordId(signer))
     return this.signersSettings.toArray()
+  }
+
+  async markDismissableItemAsShown(item: DismissableItem): Promise<void> {
+    await this.shownDismissableItems.put({ id: item, shown: true })
+  }
+
+  async getShownDismissableItems(): Promise<DismissableItem[]> {
+    return (await this.shownDismissableItems.toArray()).map(({ id }) => id)
+  }
+
+  async wasDismissableItemAlreadyShown(
+    item: DismissableItem
+  ): Promise<boolean> {
+    return (await this.shownDismissableItems.get(item))?.shown ?? false
   }
 }
 

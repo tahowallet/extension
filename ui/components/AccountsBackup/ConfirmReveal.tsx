@@ -17,45 +17,42 @@ export default function ConfirmReveal({
   const [isConfirmed, setIsConfirmed] = useState(false)
 
   return (
-    <>
-      <div className="confirmation_container">
-        <SharedCheckbox
-          label={description}
-          message={invalidMessage}
-          value={isConfirmed}
-          invalid={showInvalidMessage && !isConfirmed}
-          onChange={(value) => {
-            setIsConfirmed(value)
-            setShowInvalidMessage(false)
+    <div className="confirmation_container">
+      <SharedCheckbox
+        size={16}
+        label={description}
+        invalidMessage={invalidMessage}
+        checked={isConfirmed}
+        invalid={showInvalidMessage && !isConfirmed}
+        onChange={(value) => {
+          setIsConfirmed(value)
+          setShowInvalidMessage(false)
+        }}
+      />
+      <div>
+        <SharedButton
+          type="primary"
+          size="medium"
+          isDisabled={!isConfirmed}
+          hideEvents={false}
+          onClick={() => {
+            if (isConfirmed) {
+              onConfirm()
+            } else {
+              setShowInvalidMessage(true)
+            }
           }}
-        />
-        <div>
-          <SharedButton
-            type="primary"
-            size="medium"
-            isDisabled={!isConfirmed}
-            hideEvents={false}
-            onClick={() => {
-              if (isConfirmed) {
-                onConfirm()
-              } else {
-                setShowInvalidMessage(true)
-              }
-            }}
-          >
-            {confirmButton}
-          </SharedButton>
-        </div>
+        >
+          {confirmButton}
+        </SharedButton>
       </div>
       <style jsx>{`
         .confirmation_container {
-          height: 175px;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
-          margin-top: 16px;
+          gap: 16px;
         }
       `}</style>
-    </>
+    </div>
   )
 }
