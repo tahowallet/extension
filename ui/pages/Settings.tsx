@@ -343,7 +343,10 @@ export default function Settings(): ReactElement {
         </div>
         <div className="select_wrapper">
           <SharedSelect
-            options={AUTO_LOCK_OPTIONS}
+            options={AUTO_LOCK_OPTIONS.map((item) => ({
+              ...item,
+              label: t("settings.autoLockTimer.interval", { time: item.label }),
+            }))}
             defaultIndex={AUTO_LOCK_OPTIONS.findIndex(
               ({ value }) => value === String(autoLockInterval)
             )}
@@ -363,7 +366,7 @@ export default function Settings(): ReactElement {
               align-items: center;
             }
             .select_wrapper {
-              width: 108px;
+              width: 118px;
               z-index: 2;
             }
             .tooltip {
