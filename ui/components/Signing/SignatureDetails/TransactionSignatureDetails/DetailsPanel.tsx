@@ -154,7 +154,8 @@ export default function DetailPanel({
                 onChange={toggleFlashbotsRPC}
                 label={t("signTransaction.useFlashbots")}
                 labelPosition="left"
-                customStyles={{
+                customStyles={{ width: "100%" }}
+                customStylesForLabel={{
                   color: "var(--green-40)",
                   fontSize: "14px",
                   marginRight: "auto",
