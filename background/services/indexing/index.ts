@@ -121,7 +121,7 @@ function shouldRefreshKnownAsset(
 
   // Refresh a known unverified asset if it has been manually imported.
   // This check allows the user to add an asset from the unverified list.
-  const isManuallyImported = asset.metadata?.verified
+  const isManuallyImported = metadata?.verified
   const allowUpdateUnverifiedAsset =
     !isVerifiedAsset(asset) && isManuallyImported
 
