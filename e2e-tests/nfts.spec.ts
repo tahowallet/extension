@@ -7,6 +7,8 @@ test.describe("NFTs", () => {
     backgroundPage,
     walletPageHelper,
   }) => {
+    test.skip(process.env.USE_MAINNET_FORK === "true")
+
     await test.step("Shows loading state", async () => {
       let shouldInterceptRequests = true
 

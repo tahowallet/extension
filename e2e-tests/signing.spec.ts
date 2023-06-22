@@ -5,6 +5,8 @@ test.describe("Signing", () => {
     context,
     walletPageHelper,
   }) => {
+    test.skip(process.env.USE_MAINNET_FORK === "true")
+
     await walletPageHelper.onboarding.addNewWallet()
 
     const siwe = await context.newPage()

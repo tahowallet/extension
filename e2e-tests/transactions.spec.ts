@@ -7,6 +7,8 @@ test.describe("Transactions", () => {
     transactionsHelper,
   }) => {
     await test.step("Import account", async () => {
+      test.skip(process.env.USE_MAINNET_FORK === "true")
+
       /**
        * Onboard using walletPageHelper
        */

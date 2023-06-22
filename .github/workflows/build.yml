@@ -175,7 +175,7 @@ jobs:
       - name: Extract extension
         run: unzip -o chrome.zip -d dist/chrome
       - name: Run Playwright tests
-        run: find e2e-tests -type f ! -name "*-fork.*" -exec xvfb-run npx playwright test {} \;
+        run: xvfb-run npx playwright test
         #env:
         # DEBUG: pw:api*
       # Upload of Playwright artifacts commented out until we change the method
@@ -239,7 +239,7 @@ jobs:
       - name: Run Playwright tests designed for fork
         env:
           RECOVERY_PHRASE: ${{ secrets.FORK_TEST_WALLET_RECOVERY_PHRASE }}
-        run: find e2e-tests -type f -name "*-fork.*" -exec xvfb-run npx playwright test {} \;
+        run: xvfb-run npx playwright test
       # Upload of Playwright artifacts commented out until we change the method
       # of account import in the tests from seed to JSON (we don't want to leak
       # the seed phrase in logs/recordings from tests).

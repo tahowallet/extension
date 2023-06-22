@@ -1,6 +1,8 @@
 import { test, expect } from "./utils"
 
 test.describe("Transactions", () => {
+  test.skip(process.env.USE_MAINNET_FORK === "false")
+
   test("User can send base asset", async ({
     page: popup,
     walletPageHelper,

@@ -39,11 +39,11 @@ State of the network is lost after Hardhat reset.
 
 ## Running E2E tests on fork
 
-The E2E tests are located in the `../e2e-tests` directory. Only those with
-`-fork` suffix are meant to be run on a forked Mainnet.
+The E2E tests are located in the `../e2e-tests` directory. The tests use
+`test.skip` expression, which decides whether a given test should be run based
+on the value of a `USE_MAINNET_FORK` environment variable.
 
 To run specific test, go to root and run `npx playwright test <file_name>`.
 
-To run all tests designed for the fork, go to root and run
-`yarn run test:e2e-fork` ( or its equivalent
-`find e2e-tests -type f -name "*-fork.*" -exec npx playwright test {} \;`).
+To run all tests designed for the fork, make sure `USE_MAINNET_FORK` is set to
+`true` and run `yarn run test:e2e`.
