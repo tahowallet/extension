@@ -4,8 +4,8 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import { useBackgroundDispatch } from "../../hooks"
-import SharedButton from "../Shared/SharedButton"
 import SharedSecretText from "../Shared/SharedSecretText"
+import CopyToClipboard from "./CopyToClipboard"
 
 export default function RevealPrivateKey({
   address,
@@ -36,18 +36,13 @@ export default function RevealPrivateKey({
     <>
       <div className="key_container">
         <SharedSecretText text={privateKey} label={t("privateKey")} />
-        <SharedButton
-          type="tertiary"
-          size="small"
-          iconMedium="copy"
-          onClick={() => {
+        <CopyToClipboard
+          copyText={t("exportingPrivateKey.copyBtn")}
+          copy={() => {
             navigator.clipboard.writeText(privateKey)
             dispatch(setSnackbarMessage(t("exportingPrivateKey.copySuccess")))
           }}
-          center
-        >
-          {t("exportingPrivateKey.copyBtn")}
-        </SharedButton>
+        />
       </div>
       <style jsx>{`
         .key_container {
