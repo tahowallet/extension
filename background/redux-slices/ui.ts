@@ -353,6 +353,13 @@ export const toggleFlashbots = createBackgroundAsyncThunk(
   }
 )
 
+export const toggleUsingFlashbotsForGivenTx = createBackgroundAsyncThunk(
+  "ui/toggleUsingFlashbotsForGivenTx",
+  async (value: boolean, { extra: { main } }) => {
+    await main.toggleFlashbotsProvider(value)
+  }
+)
+
 export const selectUI = createSelector(
   (state: { ui: UIState }): UIState => state.ui,
   (uiState) => uiState

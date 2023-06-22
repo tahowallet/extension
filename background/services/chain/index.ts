@@ -394,12 +394,12 @@ export default class ChainService extends BaseService<Events> {
       : this.providers.evm[network.chainID]
   }
 
-  addCustomProvider(
+  async addCustomProvider(
     chainID: string,
     rpcUrl: string,
     customProviderCreator: ProviderCreator
-  ): void {
-    this.db.addCustomRpcUrl(
+  ): Promise<void> {
+    await this.db.addCustomRpcUrl(
       chainID,
       rpcUrl,
       customProviderCreator.supportedMethods
@@ -407,8 +407,8 @@ export default class ChainService extends BaseService<Events> {
     this.providers.evm[chainID]?.addCustomProvider(customProviderCreator)
   }
 
-  removeCustomProvider(chainID: string): void {
-    this.db.removeCustomRpcUrl(chainID)
+  async removeCustomProvider(chainID: string): Promise<void> {
+    await this.db.removeCustomRpcUrl(chainID)
     this.providers.evm[chainID]?.removeCustomProvider()
   }
 

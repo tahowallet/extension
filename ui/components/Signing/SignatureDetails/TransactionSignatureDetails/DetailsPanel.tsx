@@ -16,7 +16,7 @@ import {
 import classNames from "classnames"
 import {
   selectUseFlashbots,
-  toggleFlashbots,
+  toggleUsingFlashbotsForGivenTx,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
@@ -50,6 +50,7 @@ export default function DetailPanel({
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
 
   const useFlashbots = useBackgroundSelector(selectUseFlashbots)
+  const [shouldUseFlashbots, setShouldUseFlashbots] = useState(useFlashbots)
 
   const dispatch = useBackgroundDispatch()
 
@@ -95,8 +96,10 @@ export default function DetailPanel({
     setNetworkSettingsModalOpen(false)
   }
 
-  const toggleFlashbotsRPC = (value: boolean) =>
-    dispatch(toggleFlashbots(value))
+  const toggleFlashbotsRPC = async (value: boolean) => {
+    await dispatch(toggleUsingFlashbotsForGivenTx(value))
+    setShouldUseFlashbots(value)
+  }
 
   const getHightForSlideUpMenu = () => {
     return `${
@@ -140,24 +143,26 @@ export default function DetailPanel({
             />
           </span>
         )}
-      {isEnabled(FeatureFlags.SUPPORT_FLASHBOTS_RPC) && canUseFlashbots && (
-        <>
-          <span className="detail_item">
-            <SharedCheckbox
-              size={16}
-              checked={useFlashbots}
-              onChange={toggleFlashbotsRPC}
-              label={t("signTransaction.useFlashbots")}
-              labelPosition="left"
-              customStyles={{
-                color: "var(--green-40)",
-                fontSize: "14px",
-                marginRight: "auto",
-              }}
-            />
-          </span>
-        </>
-      )}
+      {isEnabled(FeatureFlags.SUPPORT_FLASHBOTS_RPC) &&
+        useFlashbots &&
+        canUseFlashbots && (
+          <>
+            <span className="detail_item">
+              <SharedCheckbox
+                size={16}
+                checked={shouldUseFlashbots}
+                onChange={toggleFlashbotsRPC}
+                label={t("signTransaction.useFlashbots")}
+                labelPosition="left"
+                customStyles={{
+                  color: "var(--green-40)",
+                  fontSize: "14px",
+                  marginRight: "auto",
+                }}
+              />
+            </span>
+          </>
+        )}
       <span className="detail_item">
         <div className="detail_label">
           {t("networkFees.estimatedNetworkFee")}

@@ -647,7 +647,7 @@
     "refresh": "Refresh",
     "confirmButtonLabel": "Sign",
     "unsavedChangesTooltip": "You have unsaved changed",
-    "useFlashbots": "Use Flashbots RPC",
+    "useFlashbots": "Use Flashbots RPC for this transaction",
     "spendApproval": {
       "title": "Approve asset spend",
       "approveSpender": "Approve <spenderAddress></spenderAddress>",

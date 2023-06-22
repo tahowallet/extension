@@ -1201,6 +1201,8 @@ export default class Main extends BaseService<never> {
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
+
+          this.autoToggleFlashbotsProvider()
         }
 
         const handleAndClear = (response: TXSignatureResponse) => {
@@ -1859,14 +1861,19 @@ export default class Main extends BaseService<never> {
   async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {
     if (shouldUseFlashbots) {
       const flashbotsProvider = makeFlashbotsProviderCreator()
-      this.chainService.addCustomProvider(
+      await this.chainService.addCustomProvider(
         ETHEREUM.chainID,
         FLASHBOTS_RPC_URL,
         flashbotsProvider
       )
     } else {
-      this.chainService.removeCustomProvider(ETHEREUM.chainID)
+      await this.chainService.removeCustomProvider(ETHEREUM.chainID)
     }
+  }
+
+  async autoToggleFlashbotsProvider(): Promise<void> {
+    const shouldUseFlashbots = this.store.getState().ui.settings.useFlashbots
+    await this.toggleFlashbotsProvider(shouldUseFlashbots)
   }
 
   async queryCustomTokenDetails(
