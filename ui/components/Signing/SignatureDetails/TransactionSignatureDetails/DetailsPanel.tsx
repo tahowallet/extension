@@ -18,7 +18,6 @@ import {
   selectUseFlashbots,
   toggleUsingFlashbotsForGivenTx,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
 import NetworkSettingsChooser from "../../../NetworkFees/NetworkSettingsChooser"
@@ -143,27 +142,25 @@ export default function DetailPanel({
             />
           </span>
         )}
-      {isEnabled(FeatureFlags.SUPPORT_FLASHBOTS_RPC) &&
-        useFlashbots &&
-        canUseFlashbots && (
-          <>
-            <span className="detail_item">
-              <SharedCheckbox
-                size={16}
-                checked={shouldUseFlashbots}
-                onChange={toggleFlashbotsRPC}
-                label={t("signTransaction.useFlashbots")}
-                labelPosition="left"
-                customStyles={{ width: "100%" }}
-                customStylesForLabel={{
-                  color: "var(--green-40)",
-                  fontSize: "14px",
-                  marginRight: "auto",
-                }}
-              />
-            </span>
-          </>
-        )}
+      {useFlashbots && canUseFlashbots && (
+        <>
+          <span className="detail_item">
+            <SharedCheckbox
+              size={16}
+              checked={shouldUseFlashbots}
+              onChange={toggleFlashbotsRPC}
+              label={t("signTransaction.useFlashbots")}
+              labelPosition="left"
+              customStyles={{ width: "100%" }}
+              customStylesForLabel={{
+                color: "var(--green-40)",
+                fontSize: "14px",
+                marginRight: "auto",
+              }}
+            />
+          </span>
+        </>
+      )}
       <span className="detail_item">
         <div className="detail_label">
           {t("networkFees.estimatedNetworkFee")}

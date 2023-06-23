@@ -383,7 +383,7 @@ export default function Settings(): ReactElement {
         customNetworks,
         addCustomAsset,
         enableTestNetworks,
-        ...wrapIfEnabled(FeatureFlags.SUPPORT_FLASHBOTS_RPC, flashbotsRPC),
+        flashbotsRPC,
       ],
     },
     helpCenter: {
