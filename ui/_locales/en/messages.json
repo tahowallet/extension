@@ -746,11 +746,11 @@
     },
     "connectedDappInfo": {
       "dAppTitle": "Account connected to",
-      "dappConnections": "Dapp connections",
+      "dappConnections": "Website connections",
       "guideline": {
-        "title": "How to connect to dapps",
-        "step1": "Set Taho as default",
-        "step2": "Click “connect to wallet” in a dapp",
+        "title": "How to connect to websites",
+        "step1": "Connect using Taho",
+        "step2": "Click “connect” on a website",
         "step3": "Select one similar to these"
       },
       "walletConnectInfo": "You can now connect to any dapp that supports Wallet Connect by selecting Taho from desktop tab. <url>Learn more</url>",
@@ -812,7 +812,7 @@
       "snackbar": "You can change this in Settings later",
       "isDefault": "is now your default wallet",
       "notDefault": "is not your default wallet",
-      "tooltip": "Setting Taho as your default wallet means that every time you connect to a dApp, Taho will open instead of MetaMask or other wallets."
+      "tooltip": "Setting Taho as your default wallet means that every time you connect to a website, Taho will open instead of MetaMask or other wallets."
     },
     "analyticsNotification": {
       "title": "Analytics are enabled",
