@@ -114,10 +114,6 @@ jobs:
             path-filter:
               - '.env.defaults'
   e2e-tests:
-    if: |
-      github.ref == 'refs/heads/main'
-        || contains(github.head_ref, 'e2e')
-        || needs.detect-if-flag-changed.outputs.path-filter == 'true'
     needs: [build, detect-if-flag-changed]
     timeout-minutes: 60
     runs-on: ubuntu-latest
@@ -139,10 +135,20 @@ jobs:
           name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
       - name: Extract extension
         run: unzip -o chrome.zip -d dist/chrome
-      - name: Run Playwright tests
-        run: xvfb-run npx playwright test
+      # Some tests that we have configured in the `e2e-tests` folder may require
+      # spending funds. Although they're desined to not spend much, with
+      # frequent execution that can accumulate. We don't want to execute such
+      # tests on every PR update. We'll tag those tests with the `@slow` tag.
+      - name: Run free Playwright tests
+        run: xvfb-run npx playwright test --grep-invert @slow
         #env:
         # DEBUG: pw:api*
+      - name: Run costing Playwright tests
+        if: |
+          github.ref == 'refs/heads/main'
+            || contains(github.head_ref, 'e2e')
+            || needs.detect-if-flag-changed.outputs.path-filter == 'true'
+        run: xvfb-run npx playwright test --grep @slow
       - uses: actions/upload-artifact@v3
         if: failure()
         with:
