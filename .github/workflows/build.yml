@@ -239,6 +239,7 @@ jobs:
       - name: Run Playwright tests designed for fork
         env:
           RECOVERY_PHRASE: ${{ secrets.FORK_TEST_WALLET_RECOVERY_PHRASE }}
+          USE_MAINNET_FORK: true
         run: xvfb-run npx playwright test
       # Upload of Playwright artifacts commented out until we change the method
       # of account import in the tests from seed to JSON (we don't want to leak
