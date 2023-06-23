@@ -143,12 +143,13 @@ jobs:
         run: xvfb-run npx playwright test --grep-invert @slow
         #env:
         # DEBUG: pw:api*
-      - name: Run costing Playwright tests
-        if: |
-          github.ref == 'refs/heads/main'
-            || contains(github.head_ref, 'e2e')
-            || needs.detect-if-flag-changed.outputs.path-filter == 'true'
-        run: xvfb-run npx playwright test --grep @slow
+      # TODO: Uncomment once we have some `@slow` tagged tests in our test set.
+      # - name: Run costing Playwright tests
+      #   if: |
+      #     github.ref == 'refs/heads/main'
+      #       || contains(github.head_ref, 'e2e')
+      #       || needs.detect-if-flag-changed.outputs.path-filter == 'true'
+      #   run: xvfb-run npx playwright test --grep @slow
       - uses: actions/upload-artifact@v3
         if: failure()
         with:
