@@ -28,39 +28,11 @@ export default function SharedCheckbox(props: Props): ReactElement {
     onChange,
   } = props
 
-  const labelElement = (
-    <>
-      <span
-        style={customStylesForLabel}
-        className={classNames("label", {
-          disabled,
-        })}
-      >
-        {label}
-      </span>
-      <style jsx>
-        {`
-          .label {
-            cursor: pointer;
-            color: var(--green-5);
-            font-weight: 500;
-            font-size: 16px;
-            line-height: 24px;
-          }
-
-          .label.disabled {
-            color: var(--green-60);
-            cursor: default;
-          }
-        `}
-      </style>
-    </>
-  )
-
   return (
     <div
       className={classNames({
         container: invalidMessage,
+        disabled,
       })}
       style={customStyles}
     >
@@ -72,15 +44,15 @@ export default function SharedCheckbox(props: Props): ReactElement {
           checked={checked}
           onChange={(event) => onChange(event.currentTarget.checked)}
         />
-        {labelPosition === "left" && labelElement}
         <div
           className={classNames("checkbox_box", {
             checked,
-            disabled,
             invalid: !disabled && invalid,
           })}
         />
-        {labelPosition === "right" && labelElement}
+        <span style={customStylesForLabel} className="label">
+          {label}
+        </span>
       </label>
       <span
         className={classNames("message", {
@@ -96,11 +68,27 @@ export default function SharedCheckbox(props: Props): ReactElement {
           gap: 8px;
         }
 
+        .label {
+          color: var(--green-5);
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
+        }
+
+        .disabled .label {
+          color: var(--green-60);
+        }
+
         .checkbox_label {
           display: flex;
-          flex-direction: row;
+          flex-direction: ${labelPosition === "right" ? "row" : "row-reverse"};
           margin: unset;
           gap: 8px;
+          cursor: pointer;
+        }
+
+        .disabled .checkbox_label {
+          cursor: default;
         }
 
         .checkbox_input {
@@ -116,7 +104,7 @@ export default function SharedCheckbox(props: Props): ReactElement {
           margin-top: ${label ? 4 : 0}px;
         }
 
-        .checkbox_box.disabled {
+        .disabled .checkbox_box {
           background: var(--green-80);
           cursor: default;
         }
