@@ -83,6 +83,7 @@ import {
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
   setSelectedNetwork,
+  setAutoLockInterval,
   setShownDismissableItems,
   dismissableItemMarkedAsShown,
 } from "./redux-slices/ui"
@@ -302,7 +303,8 @@ export default class Main extends BaseService<never> {
 
   static create: ServiceCreatorFunction<never, Main, []> = async () => {
     const preferenceService = PreferenceService.create()
-    const internalSignerService = InternalSignerService.create()
+    const internalSignerService =
+      InternalSignerService.create(preferenceService)
     const chainService = ChainService.create(
       preferenceService,
       internalSignerService
@@ -1503,6 +1505,14 @@ export default class Main extends BaseService<never> {
     )
 
     this.preferenceService.emitter.on(
+      "updateAutoLockInterval",
+      async (newTimerValue) => {
+        await this.internalSignerService.updateAutoLockInterval()
+        this.store.dispatch(setAutoLockInterval(newTimerValue))
+      }
+    )
+
+    this.preferenceService.emitter.on(
       "initializeShownDismissableItems",
       async (dismissableItems) => {
         this.store.dispatch(setShownDismissableItems(dismissableItems))
@@ -1784,6 +1794,10 @@ export default class Main extends BaseService<never> {
       } else {
         this.analyticsService.sendAnalyticsEvent(event)
       }
+    })
+
+    uiSliceEmitter.on("updateAutoLockInterval", async (newTimerValue) => {
+      await this.preferenceService.updateAutoLockInterval(newTimerValue)
     })
   }
 

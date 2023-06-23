@@ -17,14 +17,13 @@ import { HexString, EIP712TypedData, UNIXTime } from "../../types"
 import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
 
 import BaseService from "../base"
-import { FORK, MINUTE } from "../../constants"
+import { FORK } from "../../constants"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
 import { FeatureFlags, isEnabled } from "../../features"
 import { AddressOnNetwork } from "../../accounts"
 import logger from "../../lib/logger"
-
-export const MAX_INTERNAL_SIGNERS_IDLE_TIME = 60 * MINUTE
-export const MAX_OUTSIDE_IDLE_TIME = 60 * MINUTE
+import PreferenceService from "../preferences"
+import { DEFAULT_AUTOLOCK_INTERVAL } from "../preferences/defaults"
 
 export enum SignerInternalTypes {
   mnemonicBIP39S128 = "mnemonic#bip39:128",
@@ -170,12 +169,17 @@ export default class InternalSignerService extends BaseService<Events> {
    */
   lastOutsideActivity: UNIXTime | undefined
 
-  static create: ServiceCreatorFunction<Events, InternalSignerService, []> =
-    async () => {
-      return new this()
-    }
+  #internalAutoLockInterval: UNIXTime = DEFAULT_AUTOLOCK_INTERVAL
 
-  private constructor() {
+  static create: ServiceCreatorFunction<
+    Events,
+    InternalSignerService,
+    [Promise<PreferenceService>]
+  > = async (preferenceService) => {
+    return new this(await preferenceService)
+  }
+
+  private constructor(private preferenceService: PreferenceService) {
     super({
       autolock: {
         schedule: {
@@ -193,6 +197,10 @@ export default class InternalSignerService extends BaseService<Events> {
     // goal is to have external viewers synced to internal state no matter what
     // it is. Don't emit if there are no vaults to unlock.
     await super.internalStartService()
+
+    this.#internalAutoLockInterval =
+      await this.preferenceService.getAutoLockInterval()
+
     if ((await getEncryptedVaults()).vaults.length > 0) {
       this.emitter.emit("locked", this.locked())
     }
@@ -202,6 +210,13 @@ export default class InternalSignerService extends BaseService<Events> {
     await this.lock()
 
     await super.internalStopService()
+  }
+
+  async updateAutoLockInterval(): Promise<void> {
+    this.#internalAutoLockInterval =
+      await this.preferenceService.getAutoLockInterval()
+
+    await this.autolockIfNeeded()
   }
 
   /**
@@ -351,9 +366,9 @@ export default class InternalSignerService extends BaseService<Events> {
     const timeSinceLastActivity = now - this.lastActivity
     const timeSinceLastOutsideActivity = now - this.lastOutsideActivity
 
-    if (timeSinceLastActivity >= MAX_INTERNAL_SIGNERS_IDLE_TIME) {
+    if (timeSinceLastActivity >= this.#internalAutoLockInterval) {
       this.lock()
-    } else if (timeSinceLastOutsideActivity >= MAX_OUTSIDE_IDLE_TIME) {
+    } else if (timeSinceLastOutsideActivity >= this.#internalAutoLockInterval) {
       this.lock()
     }
   }

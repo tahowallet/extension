@@ -12,6 +12,8 @@ import {
   selectHideBanners,
   selectShowUnverifiedAssets,
   toggleShowUnverifiedAssets,
+  selectAutoLockTimer as selectAutoLockInterval,
+  updateAutoLockInterval,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
 import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
@@ -21,6 +23,7 @@ import {
   wrapIfDisabled,
   wrapIfEnabled,
 } from "@tallyho/tally-background/features"
+import { MINUTE } from "@tallyho/tally-background/constants"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
@@ -30,9 +33,31 @@ import { useBackgroundSelector } from "../hooks"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 
+type SettingsItem = {
+  title: string
+  component: () => ReactElement
+  tooltip?: () => ReactElement
+}
+
+type SettingsList = {
+  [key: string]: {
+    title: string
+    items: SettingsItem[]
+  }
+}
+
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
+
 const FAQ_URL =
   "https://notion.taho.xyz/Tally-Ho-Knowledge-Base-4d95ed5439c64d6db3d3d27abf1fdae5"
+
+const AUTO_LOCK_OPTIONS = [
+  { label: "5", value: String(5 * MINUTE) },
+  { label: "15", value: String(15 * MINUTE) },
+  { label: "30", value: String(30 * MINUTE) },
+  { label: "60", value: String(60 * MINUTE) },
+]
+
 const FOOTER_ACTIONS = [
   {
     icon: "icons/m/discord",
@@ -302,6 +327,59 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const autoLockInterval = useBackgroundSelector(selectAutoLockInterval)
+
+  const autoLockSettings = {
+    title: "",
+    component: () => (
+      <div className="content">
+        <div className="left">
+          {t("settings.autoLockTimer.label")}
+          <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
+            <div className="tooltip">
+              <span>{t("settings.autoLockTimer.tooltip")}</span>
+            </div>
+          </SharedTooltip>
+        </div>
+        <div className="select_wrapper">
+          <SharedSelect
+            options={AUTO_LOCK_OPTIONS.map((item) => ({
+              ...item,
+              label: t("settings.autoLockTimer.interval", { time: item.label }),
+            }))}
+            defaultIndex={AUTO_LOCK_OPTIONS.findIndex(
+              ({ value }) => value === String(autoLockInterval)
+            )}
+            width="100%"
+            onChange={(newValue) => dispatch(updateAutoLockInterval(newValue))}
+          />
+        </div>
+        <style jsx>
+          {`
+            .content {
+              display: flex;
+              justify-content: space-between;
+              width: 336px;
+            }
+            .left {
+              display: flex;
+              align-items: center;
+            }
+            .select_wrapper {
+              width: 118px;
+              z-index: 2;
+            }
+            .tooltip {
+              display: flex;
+              flex-direction: column;
+              gap: 16px;
+            }
+          `}
+        </style>
+      </div>
+    ),
+  }
+
   const notificationBanner = {
     title: t("settings.showBanners"),
     component: () => (
@@ -324,7 +402,7 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const settings = Object.values({
+  const settings: SettingsList = {
     general: {
       title: t("settings.group.general"),
       items: [
@@ -350,20 +428,21 @@ export default function Settings(): ReactElement {
         customNetworks,
         addCustomAsset,
         enableTestNetworks,
+        autoLockSettings,
       ],
     },
     helpCenter: {
       title: t("settings.group.helpCenter"),
       items: [bugReport, needHelp],
     },
-  })
+  }
 
   return (
     <section className="standard_width_padded">
       <div className="menu">
         <h1>{t("settings.mainMenu")}</h1>
         <ul>
-          {settings.map(({ title, items }) => (
+          {Object.values(settings).map(({ title, items }) => (
             <div className="group" key={title}>
               <span className="group_title">{title}</span>
               {items.map((item, index) => {

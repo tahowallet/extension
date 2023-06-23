@@ -18,7 +18,7 @@
         "header": "Show Private Key",
         "warningMessage": "Anybody that has your Private Key can move your assets.",
         "privateKeyInfo": "What is a Private Key?",
-        "privateKey":"Private key",
+        "privateKey": "Private key",
         "exportingPrivateKey": {
           "header": "Exporting Private Key for:",
           "confirmationDesc": "I understand that other Private Keys, Recovery Phrases, Ledger or  Read-only accounts will not be saved with this recovery phrase.",
@@ -564,7 +564,10 @@
     "connectedWebsites": "Connected websites",
     "addCustomAsset": "Custom assets",
     "analytics": "Analytics",
-    "needHelp": "Need help?",
+    "autoLockTimer.label": "Auto-lock timer",
+    "autoLockTimer.tooltip": "How long after your last interaction should we lock the wallet?",
+    "autoLockTimer.interval": "{{time}} min",
+    "needHelp": "Need Help?",
     "customNetworks": "Custom networks (beta)",
     "showBanners": "Show achievement banners",
     "versionLabel": "Version {{version}}",
@@ -1023,7 +1026,8 @@
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
-        "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification"
+        "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification",
+        "SUPPORT_CUSTOM_AUTOLOCK": "Enable custom auto-lock timer"
       }
     }
   },

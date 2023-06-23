@@ -3,11 +3,12 @@ import Dexie, { Transaction } from "dexie"
 import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork } from "../../accounts"
 
-import DEFAULT_PREFERENCES from "./defaults"
+import DEFAULT_PREFERENCES, { DEFAULT_AUTOLOCK_INTERVAL } from "./defaults"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
 import { AnalyticsPreferences } from "./types"
 import { NETWORK_BY_CHAIN_ID } from "../../constants"
+import { UNIXTime } from "../../types"
 
 type SignerRecordId = `${AccountSignerWithId["type"]}/${string}`
 
@@ -28,6 +29,7 @@ const getSignerRecordId = (signer: AccountSignerWithId): SignerRecordId => {
 
 // The idea is to use this interface to describe the data structure stored in indexedDb
 // In the future this might also have a runtime type check capability, but it's good enough for now.
+// NOTE: Check if can be merged with preferences/types.ts
 export type Preferences = {
   id?: number
   savedAt: number
@@ -40,6 +42,7 @@ export type Preferences = {
     isEnabled: boolean
     hasDefaultOnBeenTurnedOn: boolean
   }
+  autoLockInterval: UNIXTime
 }
 
 /**
@@ -354,6 +357,20 @@ export class PreferenceDatabase extends Dexie {
       shownDismissableItems: "&id,shown",
     })
 
+    // Updates preferences to allow custom auto lock timers
+    this.version(18).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const update: Partial<Preferences> = {
+            autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
+          }
+
+          Object.assign(storedPreferences, update)
+        })
+    })
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
@@ -368,6 +385,16 @@ export class PreferenceDatabase extends Dexie {
     // TBD: This will surely return a value because `getOrCreateDB` is called first
     // when the service is created. It runs the migration which writes the `DEFAULT_PREFERENCES`
     return this.preferences.reverse().first() as Promise<Preferences>
+  }
+
+  async setAutoLockInterval(newValue: number): Promise<void> {
+    await this.preferences
+      .toCollection()
+      .modify((storedPreferences: Preferences) => {
+        const update: Partial<Preferences> = { autoLockInterval: newValue }
+
+        Object.assign(storedPreferences, update)
+      })
   }
 
   async upsertAnalyticsPreferences(
