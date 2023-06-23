@@ -51,14 +51,12 @@ export function shouldRefreshKnownAsset(
   const existingDiscoveryTxHash = addressForDiscoveryTxHash
     ? asset.metadata?.discoveryTxHash?.[addressForDiscoveryTxHash]
     : undefined
-  const noExistingDiscoveryTxHash = !!existingDiscoveryTxHash
 
-  // If the discovery tx hash is specified
-  // or if it does not already exists in the asset, do update the asset.
-  // However, this should only happen for untrusted assets.
+  // If the discovery tx hash is not specified
+  // or if it already exists in the asset, do not update the asset
+  // Additionally, discovery tx Hash  should only be added for untrusted assets.
   const allowAddDiscoveryTxHash =
-    isUntrustedAsset(asset) &&
-    (!!newDiscoveryTxHash || noExistingDiscoveryTxHash)
+    isUntrustedAsset(asset) && !(!newDiscoveryTxHash || existingDiscoveryTxHash)
 
   // Refresh a known unverified asset if it has been manually imported.
   // This check allows the user to add an asset from the unverified list.
