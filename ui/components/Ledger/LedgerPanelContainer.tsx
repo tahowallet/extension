@@ -28,7 +28,7 @@ export default function LedgerPanelContainer({
             alt={t("state.unknown")}
           />
         ) : (
-          <LedgerConnectedSvg
+          <LedgerConnectedSvg.Large
             text={t("state.connected")}
             alt={t("state.connected")}
           />

@@ -30,7 +30,7 @@ export default function SignerLedgerConnectionStatus({
         )
       }
       return (
-        <LedgerConnectedSvg
+        <LedgerConnectedSvg.Small
           text={t("state.connected")}
           alt={t("readyToSign")}
         />
