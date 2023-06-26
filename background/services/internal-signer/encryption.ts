@@ -1,3 +1,4 @@
+import argon2 from "argon2-browser"
 /**
  * An encrypted vault which can be safely serialized and stored.
  */
@@ -64,7 +65,7 @@ function requireCryptoGlobal(message?: string) {
  *          material using AES GCM mode, as well as the salt required to derive
  *          the key again later.
  */
-export async function deriveSymmetricKeyFromPassword(
+export async function depricatedDeriveSymmetricKeyFromPassword(
   password: string,
   existingSalt?: string
 ): Promise<SaltedKey> {
@@ -90,6 +91,34 @@ export async function deriveSymmetricKeyFromPassword(
       hash: "SHA-256",
     },
     derivationKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  )
+
+  return {
+    key,
+    salt,
+  }
+}
+
+export async function deriveSymmetricKeyFromPassword(
+  password: string,
+  existingSalt?: string
+): Promise<SaltedKey> {
+  const { crypto } = global
+
+  const salt = existingSalt || (await generateSalt())
+
+  // Argon2 returns hash which is 24 bytes long, we need 16 bytes for AES-GCM
+  const { hash } = await argon2.hash({
+    pass: password,
+    salt,
+  })
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    hash.slice(0, 16),
     { name: "AES-GCM", length: 256 },
     false,
     ["encrypt", "decrypt"]

@@ -3396,6 +3396,11 @@
   dependencies:
     "@types/glob" "*"
 
+"@types/argon2-browser@^1.18.1":
+  version "1.18.1"
+  resolved "https://registry.yarnpkg.com/@types/argon2-browser/-/argon2-browser-1.18.1.tgz#39bc2bf2fbe86d4854005730ace3b8015758adfb"
+  integrity sha512-PZffP/CqH9m2kovDSRQMfMMxUC3V98I7i7/caa0RB0/nvsXzYbL9bKyqZpNMFmLFGZslROlG1R60ONt7abrwlA==
+
 "@types/aria-query@^4.2.0":
   version "4.2.2"
   resolved "https://registry.yarnpkg.com/@types/aria-query/-/aria-query-4.2.2.tgz#ed4e0ad92306a704f9fb132a0cfcf77486dbe2bc"
@@ -4908,6 +4913,11 @@ arg@^4.1.0:
   resolved "https://registry.yarnpkg.com/arg/-/arg-4.1.3.tgz#269fc7ad5b8e42cb63c896d5666017261c144089"
   integrity sha512-58S9QDqG0Xx27YwPSt9fJxivjYl432YCwfDMfZ+71RAqUrZef7LrKQZ3LHLOwCS4FLNBplP533Zx895SeOCHvA==
 
+argon2-browser@^1.18.0:
+  version "1.18.0"
+  resolved "https://registry.yarnpkg.com/argon2-browser/-/argon2-browser-1.18.0.tgz#f35820211e0a431aed7f82b9348477234be69bec"
+  integrity sha512-ImVAGIItnFnvET1exhsQB7apRztcoC5TnlSqernMJDUjbc/DLq3UEYeXFrLPrlaIl8cVfwnXb6wX2KpFf2zxHw==
+
 argparse@^1.0.7:
   version "1.0.10"
   resolved "https://registry.yarnpkg.com/argparse/-/argparse-1.0.10.tgz#bcd6791ea5ae09725e17e5ad988134cd40b3d911"
@@ -5285,6 +5295,11 @@ base64-js@^1.3.1:
   version "1.5.1"
   resolved "https://registry.yarnpkg.com/base64-js/-/base64-js-1.5.1.tgz#1b1b440160a5bf7ad40b650f095963481903930a"
   integrity sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==
+
+base64-loader@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/base64-loader/-/base64-loader-1.0.0.tgz#e530bad88e906dd2a1fad0af2d9e683fa8bd92a8"
+  integrity sha512-p32+F8dg+ANGx7s8QsZS74ZPHfIycmC2yZcoerzFgbersIYWitPbbF39G6SBx3gyvzyLH5nt1ooocxr0IHuWKA==
 
 base64id@1.0.0:
   version "1.0.0"
