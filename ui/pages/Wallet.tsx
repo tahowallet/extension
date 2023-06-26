@@ -6,7 +6,11 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
 
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import {
+  FeatureFlags,
+  isDisabled,
+  isEnabled,
+} from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
@@ -108,7 +112,10 @@ export default function Wallet(): ReactElement {
   return (
     <>
       <div className="page_content">
-        {!showAnalyticsNotification && <WalletToggleDefaultBanner />}
+        {!showAnalyticsNotification &&
+          isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && (
+            <WalletToggleDefaultBanner />
+          )}
         <WalletAnalyticsNotificationBanner />
         <div className="section">
           <WalletAccountBalanceControl

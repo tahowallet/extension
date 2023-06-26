@@ -13,7 +13,7 @@ export default function Intro(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   return (
-    <section className="fadeIn">
+    <section className="fade_in">
       <header>
         <div className="illustration" />
         <h1>{t("title")}</h1>

@@ -187,15 +187,29 @@ label {
   }
 }
 
-.fadeIn {
-  animation: fadeIn ease-in var(--fade-in-duration, 250ms);
+.fade_in {
+  animation: fade-in ease-in var(--fade-in-duration, 250ms);
 }
 
-@keyframes fadeIn {
+@keyframes fade-in {
   0% {
     opacity: 0;
   }
   100% {
     opacity: 1;
+  }
+}
+
+.fade_out {
+  animation: fade-out ease-out var(--fade-out-duration, 250ms);
+  opacity: 0;
+}
+
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }

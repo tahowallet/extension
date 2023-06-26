@@ -84,7 +84,7 @@ export default function Done(): ReactElement {
         <div className="confetti">
           <img src="./images/confetti.svg" alt="Confetti" />
         </div>
-        <div className="wrapper fadeIn">
+        <div className="wrapper fade_in">
           <header>
             <img
               width="80"
@@ -111,7 +111,7 @@ export default function Done(): ReactElement {
       <div className="confetti">
         <img src="./images/confetti.svg" alt="Confetti" />
       </div>
-      <div className="wrapper fadeIn">
+      <div className="wrapper fade_in">
         <header>
           <img
             width="80"

@@ -1,27 +1,20 @@
-import React from "react"
+import React, { ReactElement } from "react"
 import { MessageSigningRequest } from "@tallyho/tally-background/utils/signing"
 import { useTranslation } from "react-i18next"
 
-const EIP191Info: React.FC<{
+type Props = {
   signingData: MessageSigningRequest["signingData"]
   account: string
-  internal: boolean
-  // FIXME Drop this once new signing flow is final.
-  excludeHeader?: boolean
-}> = ({ signingData, account, internal, excludeHeader = false }) => {
+}
+
+export default function EIP191Info({
+  signingData,
+  account,
+}: Props): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "signing" })
+
   return (
     <>
-      {excludeHeader ? (
-        <></>
-      ) : (
-        <>
-          <div className="label header">
-            {internal ? t("signatureRequired") : t("dappSignatureRequest")}
-          </div>
-          <div className="divider" />
-        </>
-      )}
       <div className="message">
         <div className="message-title">{t("message")}</div>
         <div className="light">{`${signingData}`}</div>
@@ -58,4 +51,3 @@ const EIP191Info: React.FC<{
     </>
   )
 }
-export default EIP191Info

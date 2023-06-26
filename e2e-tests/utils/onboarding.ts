@@ -25,6 +25,10 @@ export const getOnboardingPage = async (
 }
 
 const DEFAULT_PASSWORD = "12345678"
+// The account1 is a 3rd address associated with the testertesting.eth account.
+// It owns some NFTs/badges.
+export const account1Address = "0x6f1b1f1feb01235e15a7962f16c389c7f8218ed6"
+export const account1Name = /^e2e\.testertesting\.eth$/
 
 export default class OnboardingHelper {
   constructor(
