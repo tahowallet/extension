@@ -220,7 +220,7 @@ export default function TopMenuConnectedDAppInfo(props: {
   return (
     <div
       className={classNames("bg", {
-        fadeIn: !isClosing,
+        fade_in: !isClosing,
         fade_out: isClosing,
       })}
     >
@@ -256,7 +256,7 @@ export default function TopMenuConnectedDAppInfo(props: {
         <ConnectionDAppGuideline isConnected={isConnected} />
       </div>
       <button
-        aria-label={t("modalClose")}
+        aria-label={tShared("modalClose")}
         type="button"
         className="void_space"
         onClick={animateThenClose}

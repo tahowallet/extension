@@ -11,7 +11,7 @@ function OnboardingAddWallet(): ReactElement {
   })
 
   return (
-    <section className="fadeIn">
+    <section className="fade_in">
       <header>
         <img
           width="80"

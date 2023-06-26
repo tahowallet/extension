@@ -12,6 +12,7 @@ import {
   SECOND,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
   RPC_METHOD_PROVIDER_ROUTING,
+  FORK,
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction } from "../../networks"
@@ -21,6 +22,7 @@ import {
   ALCHEMY_KEY,
   transactionFromAlchemyWebsocketTransaction,
 } from "../../lib/alchemy"
+import { FeatureFlags, isEnabled } from "../../features"
 
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 400
@@ -558,7 +560,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     { address, network }: AddressOnNetwork,
     handler: (pendingTransaction: AnyEVMTransaction) => void
   ): Promise<void> {
-    if (this.chainID !== network.chainID) {
+    if (
+      this.chainID !== network.chainID &&
+      !isEnabled(FeatureFlags.USE_MAINNET_FORK)
+    ) {
       logger.error(
         `Tried to subscribe to pending transactions for chain id ` +
           `${network.chainID} but provider was on ` +
@@ -566,7 +571,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       )
       return
     }
-
     const alchemySubscription =
       await this.alchemySubscribeFullPendingTransactions(
         { address, network },
@@ -923,6 +927,15 @@ export function makeSerialFallbackProvider(
   chainID: string,
   rpcUrls: string[]
 ): SerialFallbackProvider {
+  if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
+    return new SerialFallbackProvider(FORK.chainID, [
+      {
+        type: "generic" as const,
+        creator: () => new JsonRpcProvider(process.env.MAINNET_FORK_URL),
+      },
+    ])
+  }
+
   const alchemyProviderCreators = ALCHEMY_SUPPORTED_CHAIN_IDS.has(chainID)
     ? [
         {
