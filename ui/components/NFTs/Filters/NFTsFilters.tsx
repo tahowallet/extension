@@ -16,7 +16,6 @@ import React, {
 import { useTranslation } from "react-i18next"
 import classNames from "classnames"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
-import SharedSlideUpMenuPanel from "../../Shared/SharedSlideUpMenuPanel"
 import SharedRadio from "../../Shared/SharedRadio"
 import FilterList from "./FilterList"
 import { i18n } from "../../../_locales/i18n"
@@ -107,46 +106,44 @@ export default function NFTsFilters(): ReactElement {
   )
 
   return (
-    <SharedSlideUpMenuPanel header={t("title")}>
-      <div className="filters">
-        <span className="simple_text filter_warning">{t("warning")}</span>
-        <div>
-          <span className="simple_text filter_title">{t("sortTypeTitle")}</span>
-          {RADIO_BTNS.map(({ value, label }) => (
-            <SharedRadio
-              key={value}
-              id={`radio_${value}`}
-              name={RADIO_NAME}
-              value={filters.type === value}
-              label={label}
-              onChange={() => handleUpdateSortType(value)}
-            />
-          ))}
-        </div>
-        <div className="simple_text">
-          <span className="filter_title">{t("accountsTitle")}</span>
-          <FilterList
-            filters={filters.accounts}
-            onChange={handleUpdateAccountFilter}
-            testid="nft_account_filters"
+    <div className="filters">
+      <span className="simple_text filter_warning">{t("warning")}</span>
+      <div>
+        <span className="simple_text filter_title">{t("sortTypeTitle")}</span>
+        {RADIO_BTNS.map(({ value, label }) => (
+          <SharedRadio
+            key={value}
+            id={`radio_${value}`}
+            name={RADIO_NAME}
+            value={filters.type === value}
+            label={label}
+            onChange={() => handleUpdateSortType(value)}
           />
-        </div>
-        <div className="simple_text">
-          <span className="filter_title">{t("collectionsTitle")}</span>
-          <div
-            className={classNames("collections", {
-              visible: !isLoading,
-            })}
-          >
-            <FilterList
-              ref={collectionsRef}
-              isLoaded={!isLoading}
-              filters={filters.collections}
-              onChange={handleUpdateCollectionFilter}
-              emptyMessage={t("noCollections")}
-              testid="nft_collection_filters"
-            />
-          </div>
+        ))}
+      </div>
+      <div className="simple_text">
+        <span className="filter_title">{t("accountsTitle")}</span>
+        <FilterList
+          filters={filters.accounts}
+          onChange={handleUpdateAccountFilter}
+          testid="nft_account_filters"
+        />
+      </div>
+      <div className="simple_text">
+        <span className="filter_title">{t("collectionsTitle")}</span>
+        <div
+          className={classNames("collections", {
+            visible: !isLoading,
+          })}
+        >
+          <FilterList
+            ref={collectionsRef}
+            isLoaded={!isLoading}
+            filters={filters.collections}
+            onChange={handleUpdateCollectionFilter}
+            emptyMessage={t("noCollections")}
+            testid="nft_collection_filters"
+          />
         </div>
       </div>
       <style jsx>{`
@@ -183,6 +180,6 @@ export default function NFTsFilters(): ReactElement {
           transition: max-height 500ms ease-in;
         }
       `}</style>
-    </SharedSlideUpMenuPanel>
+    </div>
   )
 }

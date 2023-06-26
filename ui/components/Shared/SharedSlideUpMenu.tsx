@@ -10,6 +10,8 @@ export type SharedSlideUpMenuSize =
   | "large"
   | "custom"
 
+type CloseBtnType = "default" | "circle"
+
 const SLIDE_TRANSITION_MS = 445
 
 type Props = {
@@ -17,6 +19,7 @@ type Props = {
   close: (
     e: MouseEvent | TouchEvent | React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => void
+  header?: string
   children: React.ReactNode
   customSize?: string
   size: SharedSlideUpMenuSize
@@ -25,6 +28,7 @@ type Props = {
   isDark?: boolean
   alwaysRenderChildren?: boolean
   testid?: string
+  closeBtnType?: CloseBtnType
   customStyles?: React.CSSProperties & Record<string, string>
 }
 
@@ -40,6 +44,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
     isOpen,
     close,
     size,
+    header,
     children,
     customSize,
     isFullScreen,
@@ -47,6 +52,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
     isScrollable,
     alwaysRenderChildren,
     testid = "slide_up_menu",
+    closeBtnType = "default",
     customStyles = {},
   } = props
 
@@ -78,21 +84,24 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
         }
         ref={isOpen ? slideUpMenuRef : null}
       >
-        <div
-          className={classNames("slide_up_close", {
-            hover_content: isFullScreen,
-          })}
-        >
-          <SharedIcon
-            icon="close.svg"
-            width={12}
-            color="var(--green-20)"
-            hoverColor="#fff"
-            ariaLabel="Close menu"
-            onClick={(e) => {
-              close(e)
-            }}
-          />
+        <div className={header ? "slide_up_header" : "slide_up_close"}>
+          {header && <h3>{header}</h3>}
+          <div
+            className={classNames({
+              circle_close: closeBtnType === "circle",
+            })}
+          >
+            <SharedIcon
+              icon="close.svg"
+              width={12}
+              color="var(--green-20)"
+              hoverColor="#fff"
+              ariaLabel="Close menu"
+              onClick={(e) => {
+                close(e)
+              }}
+            />
+          </div>
         </div>
         {displayChildren}
       </div>
@@ -150,16 +159,27 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           .slide_up_close {
             position: absolute;
             z-index: 2;
-            top: 24px;
-            right: 24px;
+            top: ${isFullScreen ? 16 : 24}px;
+            right: ${isFullScreen ? 16 : 24}px;
           }
-          .slide_up_close.hover_content {
-            position: absolute;
-            top: 16px;
-            right: 16px;
+          .circle_close {
             background: rgba(0, 20, 19, 0.75);
             padding: 8px;
             border-radius: 100%;
+          }
+          h3 {
+            margin: 0;
+          }
+          .slide_up_header {
+            position: sticky;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            top: -25px;
+
+            box-sizing: border-box;
+            padding: 0 24px 16px 24px;
+            align-items: center;
           }
         `}
       </style>

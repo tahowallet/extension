@@ -1,24 +1,28 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import SharedSlideUpMenuPanel from "../Shared/SharedSlideUpMenuPanel"
 import AccountsNotificationPanelAccounts from "./AccountsNotificationPanelAccounts"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 
 type Props = {
-  onCurrentAddressChange: (address: string) => void
+  isOpen: boolean
+  close: () => void
 }
 
 export default function AccountsNotificationPanel({
-  onCurrentAddressChange,
+  isOpen,
+  close,
 }: Props): ReactElement {
-  const { t } = useTranslation()
+  const { t } = useTranslation("translation", {
+    keyPrefix: "accounts.notificationPanel",
+  })
 
   return (
-    <SharedSlideUpMenuPanel
-      header={t("accounts.notificationPanel.accountPanelName")}
+    <SharedSlideUpMenu
+      header={t("accountPanelName")}
+      isOpen={isOpen}
+      close={close}
     >
-      <AccountsNotificationPanelAccounts
-        onCurrentAddressChange={onCurrentAddressChange}
-      />
-    </SharedSlideUpMenuPanel>
+      <AccountsNotificationPanelAccounts onCurrentAddressChange={close} />
+    </SharedSlideUpMenu>
   )
 }

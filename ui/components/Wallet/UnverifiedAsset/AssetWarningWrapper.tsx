@@ -1,6 +1,7 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
 import { Activity } from "@tallyho/tally-background/redux-slices/activities"
+import { useTranslation } from "react-i18next"
 import SharedSlideUpMenu from "../../Shared/SharedSlideUpMenu"
 import WalletActivityDetails from "../WalletActivityDetails"
 import AssetWarning from "./AssetWarning"
@@ -13,6 +14,9 @@ type AssetWarningWrapperProps = {
 export default function AssetWarningWrapper(
   props: AssetWarningWrapperProps
 ): ReactElement {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "wallet.verifiedAssets",
+  })
   const { asset, close } = props
 
   const [showAssetWarning, setShowAssetWarning] = useState(!!asset)
@@ -27,6 +31,7 @@ export default function AssetWarningWrapper(
   return (
     <>
       <SharedSlideUpMenu
+        header={t("assetImported")}
         isOpen={showAssetWarning}
         size="auto"
         close={() => close()}

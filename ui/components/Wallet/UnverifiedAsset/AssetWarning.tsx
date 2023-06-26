@@ -19,7 +19,6 @@ import { useHistory, useLocation } from "react-router-dom"
 import { Activity } from "@tallyho/tally-background/redux-slices/activities"
 import SharedButton from "../../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
-import SharedSlideUpMenuPanel from "../../Shared/SharedSlideUpMenuPanel"
 import SharedIcon from "../../Shared/SharedIcon"
 import UnverifiedAssetBanner from "./UnverifiedAssetBanner"
 import { getBlockExplorerURL } from "../../../utils/networks"
@@ -91,50 +90,90 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
     : undefined
 
   return (
-    <SharedSlideUpMenuPanel header={t("assetImported")}>
-      <div className="content">
-        <div>
-          <UnverifiedAssetBanner
-            title={
-              isUnverified
-                ? t("banner.titleUnverified")
-                : t("banner.titleVerified")
-            }
-            description={
-              isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)
-                ? t("banner.description")
-                : t("banner.oldDescription")
-            }
-          />
-          <ul className="asset_details">
-            <li className="asset_symbol">
-              <div className="left">{t("symbol")}</div>
-              <div
-                className="right ellipsis"
-                title={asset?.symbol}
-              >{`${asset?.symbol}`}</div>
-            </li>
+    <div className="content">
+      <div>
+        <UnverifiedAssetBanner
+          title={
+            isUnverified
+              ? t("banner.titleUnverified")
+              : t("banner.titleVerified")
+          }
+          description={
+            isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)
+              ? t("banner.description")
+              : t("banner.oldDescription")
+          }
+        />
+        <ul className="asset_details">
+          <li className="asset_symbol">
+            <div className="left">{t("symbol")}</div>
+            <div
+              className="right ellipsis"
+              title={asset?.symbol}
+            >{`${asset?.symbol}`}</div>
+          </li>
+          <li>
+            <div className="left">{t("contract")}</div>
+            <div className="right">
+              <div className="address_button_wrap">
+                <button
+                  type="button"
+                  className={classNames("address_button", {
+                    no_click: !blockExplorerUrl,
+                  })}
+                  disabled={!blockExplorerUrl}
+                  onClick={() =>
+                    window
+                      .open(
+                        `${blockExplorerUrl}/token/${contractAddress}`,
+                        "_blank"
+                      )
+                      ?.focus()
+                  }
+                >
+                  {truncateAddress(contractAddress)}
+                  {blockExplorerUrl && (
+                    <SharedIcon
+                      width={16}
+                      icon="icons/s/new-tab.svg"
+                      color="var(--green-5)"
+                      hoverColor="var(--trophy-gold)"
+                      transitionHoverTime="0.2s"
+                    />
+                  )}
+                </button>
+              </div>
+            </div>
+          </li>
+          {discoveryTxHash && (
             <li>
-              <div className="left">{t("contract")}</div>
+              <div className="left">{t("discoveryTxHash")}</div>
               <div className="right">
                 <div className="address_button_wrap">
                   <button
                     type="button"
                     className={classNames("address_button", {
-                      no_click: !blockExplorerUrl,
+                      no_click: activityItem ? false : !blockExplorerUrl,
                     })}
-                    disabled={!blockExplorerUrl}
-                    onClick={() =>
-                      window
-                        .open(
-                          `${blockExplorerUrl}/token/${contractAddress}`,
-                          "_blank"
-                        )
-                        ?.focus()
-                    }
+                    onClick={() => {
+                      if (activityItem) {
+                        openActivityDetails({
+                          activityItem,
+                          activityInitiatorAddress,
+                        })
+                      } else {
+                        window
+                          .open(
+                            `${blockExplorerUrl}/tx/${discoveryTxHash}`,
+                            "_blank"
+                          )
+                          ?.focus()
+                      }
+                    }}
+                    title={discoveryTxHash}
                   >
-                    {truncateAddress(contractAddress)}
-                    {blockExplorerUrl && (
+                    {truncateAddress(discoveryTxHash)}
+                    {!activityItem && blockExplorerUrl && (
                       <SharedIcon
                         width={16}
                         icon="icons/s/new-tab.svg"
@@ -147,79 +186,38 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
                 </div>
               </div>
             </li>
-            {discoveryTxHash && (
-              <li>
-                <div className="left">{t("discoveryTxHash")}</div>
-                <div className="right">
-                  <div className="address_button_wrap">
-                    <button
-                      type="button"
-                      className={classNames("address_button", {
-                        no_click: activityItem ? false : !blockExplorerUrl,
-                      })}
-                      onClick={() => {
-                        if (activityItem) {
-                          openActivityDetails({
-                            activityItem,
-                            activityInitiatorAddress,
-                          })
-                        } else {
-                          window
-                            .open(
-                              `${blockExplorerUrl}/tx/${discoveryTxHash}`,
-                              "_blank"
-                            )
-                            ?.focus()
-                        }
-                      }}
-                      title={discoveryTxHash}
-                    >
-                      {truncateAddress(discoveryTxHash)}
-                      {!activityItem && blockExplorerUrl && (
-                        <SharedIcon
-                          width={16}
-                          icon="icons/s/new-tab.svg"
-                          color="var(--green-5)"
-                          hoverColor="var(--trophy-gold)"
-                          transitionHoverTime="0.2s"
-                        />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </li>
-            )}
-          </ul>
-        </div>
-        <div>
-          <div className="asset_verify_actions">
-            {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) ? (
-              <>
+          )}
+        </ul>
+      </div>
+      <div>
+        <div className="asset_verify_actions">
+          {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) ? (
+            <>
+              <SharedButton
+                size="medium"
+                type="secondary"
+                onClick={() => handleHideAsset()}
+              >
+                {t("dontShow")}
+              </SharedButton>
+              {isUnverified && (
                 <SharedButton
                   size="medium"
-                  type="secondary"
-                  onClick={() => handleHideAsset()}
+                  type="primary"
+                  onClick={() => handleVerifyAsset()}
                 >
-                  {t("dontShow")}
+                  {t("addToAssetList")}
                 </SharedButton>
-                {isUnverified && (
-                  <SharedButton
-                    size="medium"
-                    type="primary"
-                    onClick={() => handleVerifyAsset()}
-                  >
-                    {t("addToAssetList")}
-                  </SharedButton>
-                )}
-              </>
-            ) : (
-              <SharedButton size="medium" type="secondary" onClick={close}>
-                {sharedT("close")}
-              </SharedButton>
-            )}
-          </div>
+              )}
+            </>
+          ) : (
+            <SharedButton size="medium" type="secondary" onClick={close}>
+              {sharedT("close")}
+            </SharedButton>
+          )}
         </div>
       </div>
+
       <style jsx>{`
         .content {
           padding: 0 16px 16px 16px;
@@ -281,6 +279,6 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
           }
         `}
       </style>
-    </SharedSlideUpMenuPanel>
+    </div>
   )
 }

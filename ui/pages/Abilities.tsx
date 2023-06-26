@@ -23,7 +23,11 @@ export default function Abilities(): ReactElement {
 
   return (
     <section className="standard_width_padded">
-      <SharedSlideUpMenu isOpen={openFilterMenu} close={handleToggleClick}>
+      <SharedSlideUpMenu
+        header={t("filter.title")}
+        isOpen={openFilterMenu}
+        close={handleToggleClick}
+      >
         <AbilityFilter />
       </SharedSlideUpMenu>
       <div className="content">

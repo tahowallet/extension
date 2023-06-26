@@ -51,6 +51,7 @@ export default function NFTsHeader(): ReactElement {
     <>
       <SharedSlideUpMenu
         testid="nft_filters_menu"
+        header={t("filters.title")}
         isOpen={openFiltersMenu}
         close={handleToggleClick}
       >

@@ -14,13 +14,13 @@ import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 
 import BonusProgramModal from "../BonusProgram/BonusProgramModal"
-import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import TopMenuConnectedDAppInfo from "./TopMenuConnectedDAppInfo"
 import TopMenuProtocolList from "./TopMenuProtocolList"
 
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import DAppConnection from "../DAppConnection/DAppConnection"
+import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
 
 export default function TopMenu(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "topMenu" })
@@ -124,16 +124,10 @@ export default function TopMenu(): ReactElement {
           }}
         />
       </SharedSlideUpMenu>
-      <SharedSlideUpMenu
+      <AccountsNotificationPanel
         isOpen={isNotificationsOpen}
-        close={() => {
-          setIsNotificationsOpen(false)
-        }}
-      >
-        <AccountsNotificationPanel
-          onCurrentAddressChange={() => setIsNotificationsOpen(false)}
-        />
-      </SharedSlideUpMenu>
+        close={() => setIsNotificationsOpen(false)}
+      />
       {isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && (
         <DAppConnection />
       )}

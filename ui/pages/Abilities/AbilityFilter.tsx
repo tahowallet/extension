@@ -18,7 +18,6 @@ import React, { ReactElement, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import SharedIcon from "../../components/Shared/SharedIcon"
 import SharedRadio from "../../components/Shared/SharedRadio"
-import SharedSlideUpMenuPanel from "../../components/Shared/SharedSlideUpMenuPanel"
 import SharedToggleItem from "../../components/Shared/SharedToggleItem"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { i18n } from "../../_locales/i18n"
@@ -106,65 +105,64 @@ export default function AbilityFilter(): ReactElement {
   )
 
   return (
-    <SharedSlideUpMenuPanel header={t("title")}>
-      <div className="filter">
-        <div className="simple_text">
-          <span className="filter_title">{t("abilityStateTitle")}</span>
-          {RADIO_BTNS.map(({ value, label }) => (
-            <SharedRadio
-              key={value}
-              id={`radio_${value}`}
-              name={RADIO_NAME}
-              value={state === value}
-              label={label}
-              onChange={() => handleUpdateState(value)}
+    <div className="filter">
+      <div className="simple_text">
+        <span className="filter_title">{t("abilityStateTitle")}</span>
+        {RADIO_BTNS.map(({ value, label }) => (
+          <SharedRadio
+            key={value}
+            id={`radio_${value}`}
+            name={RADIO_NAME}
+            value={state === value}
+            label={label}
+            onChange={() => handleUpdateState(value)}
+          />
+        ))}
+      </div>
+      <div className="simple_text">
+        <span className="filter_title">{t("abilitiesTypesTitle")}</span>
+        <div className="filter_list">
+          {ABILITY_TYPES.map((type) => (
+            <AbilityFilterCard
+              key={type}
+              type={type}
+              description={ABILITY_TYPE_DESC[type]}
+              checked={types.includes(type)}
+              onChange={(toggleValue) => handleUpdateType(type, toggleValue)}
             />
           ))}
         </div>
-        <div className="simple_text">
-          <span className="filter_title">{t("abilitiesTypesTitle")}</span>
-          <div className="filter_list">
-            {ABILITY_TYPES.map((type) => (
-              <AbilityFilterCard
-                key={type}
-                type={type}
-                description={ABILITY_TYPE_DESC[type]}
-                checked={types.includes(type)}
-                onChange={(toggleValue) => handleUpdateType(type, toggleValue)}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="simple_text">
-          <span className="filter_title">{t("accountsTitle")}</span>
-          <div className="filter_list">
-            {filteredAccountTotals.length > 0 ? (
-              filteredAccountTotals.map(({ address, name, avatarURL }) => (
-                <SharedToggleItem
-                  key={address}
-                  label={name || address}
-                  thumbnailURL={avatarURL}
-                  checked={accounts.includes(address)}
-                  onChange={(toggleValue) =>
-                    handleUpdateAccount(address, toggleValue)
-                  }
-                />
-              ))
-            ) : (
-              <span className="no_accounts">{t("noAccounts")}</span>
-            )}
-          </div>
-        </div>
-        <span className="accounts_info">
-          <SharedIcon
-            width={24}
-            color="var(--link)"
-            icon="icons/m/notif-announcement.svg"
-            customStyles="flex-shrink:0; margin-right: 18px;"
-          />
-          <span>{t("accountsReadOnlyInfo")}</span>
-        </span>
       </div>
+      <div className="simple_text">
+        <span className="filter_title">{t("accountsTitle")}</span>
+        <div className="filter_list">
+          {filteredAccountTotals.length > 0 ? (
+            filteredAccountTotals.map(({ address, name, avatarURL }) => (
+              <SharedToggleItem
+                key={address}
+                label={name || address}
+                thumbnailURL={avatarURL}
+                checked={accounts.includes(address)}
+                onChange={(toggleValue) =>
+                  handleUpdateAccount(address, toggleValue)
+                }
+              />
+            ))
+          ) : (
+            <span className="no_accounts">{t("noAccounts")}</span>
+          )}
+        </div>
+      </div>
+      <span className="accounts_info">
+        <SharedIcon
+          width={24}
+          color="var(--link)"
+          icon="icons/m/notif-announcement.svg"
+          customStyles="flex-shrink:0; margin-right: 18px;"
+        />
+        <span>{t("accountsReadOnlyInfo")}</span>
+      </span>
+
       <style jsx>{`
         .filter {
           display: flex;
@@ -198,6 +196,6 @@ export default function AbilityFilter(): ReactElement {
           color: var(--green-20);
         }
       `}</style>
-    </SharedSlideUpMenuPanel>
+    </div>
   )
 }
