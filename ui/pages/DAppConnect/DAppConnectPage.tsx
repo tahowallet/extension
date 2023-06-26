@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { useTranslation } from "react-i18next"
@@ -34,17 +34,19 @@ export default function DAppConnectPage({
   const { title, origin, faviconUrl, accountAddress } = permission
 
   const isDefaultWallet = useBackgroundSelector(selectDefaultWallet)
+  const [wasDefaultWallet] = useState(isDefaultWallet)
 
   useEffect(() => {
     if (
       isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) &&
+      wasDefaultWallet &&
       !isDefaultWallet
     ) {
       // When default wallet is toggled off, wait for the toggle animation to
       // complete and close the window out.
       setTimeout(() => window.close(), 300)
     }
-  }, [isDefaultWallet])
+  }, [wasDefaultWallet, isDefaultWallet])
 
   return (
     <>
