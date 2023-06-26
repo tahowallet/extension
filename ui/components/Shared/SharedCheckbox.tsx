@@ -3,23 +3,38 @@ import React, { ReactElement } from "react"
 
 type Props = {
   label?: string
-  size: number
+  labelPosition?: "left" | "right"
+  size?: number
   checked: boolean
   disabled?: boolean
   invalid?: boolean
   invalidMessage?: string
+  customStyles?: React.CSSProperties
+  customStylesForLabel?: React.CSSProperties
   onChange: (value: boolean) => void
 }
 
 export default function SharedCheckbox(props: Props): ReactElement {
-  const { label, size, checked, disabled, invalid, invalidMessage, onChange } =
-    props
+  const {
+    label,
+    labelPosition = "right",
+    size = 16,
+    checked,
+    disabled,
+    invalid,
+    invalidMessage,
+    customStyles,
+    customStylesForLabel,
+    onChange,
+  } = props
 
   return (
     <div
       className={classNames({
         container: invalidMessage,
+        disabled,
       })}
+      style={customStyles}
     >
       <label className="checkbox_label">
         <input
@@ -32,15 +47,10 @@ export default function SharedCheckbox(props: Props): ReactElement {
         <div
           className={classNames("checkbox_box", {
             checked,
-            disabled,
             invalid: !disabled && invalid,
           })}
         />
-        <span
-          className={classNames("label", {
-            disabled,
-          })}
-        >
+        <span style={customStylesForLabel} className="label">
           {label}
         </span>
       </label>
@@ -58,10 +68,27 @@ export default function SharedCheckbox(props: Props): ReactElement {
           gap: 8px;
         }
 
+        .label {
+          color: var(--green-5);
+          font-weight: 500;
+          font-size: 16px;
+          line-height: 24px;
+        }
+
+        .disabled .label {
+          color: var(--green-60);
+        }
+
         .checkbox_label {
           display: flex;
-          flex-direction: row;
+          flex-direction: ${labelPosition === "right" ? "row" : "row-reverse"};
           margin: unset;
+          gap: 8px;
+          cursor: pointer;
+        }
+
+        .disabled .checkbox_label {
+          cursor: default;
         }
 
         .checkbox_input {
@@ -74,11 +101,10 @@ export default function SharedCheckbox(props: Props): ReactElement {
           border-radius: 2px;
           box-sizing: border-box;
           cursor: pointer;
-          margin-right: 8px;
           margin-top: ${label ? 4 : 0}px;
         }
 
-        .checkbox_box.disabled {
+        .disabled .checkbox_box {
           background: var(--green-80);
           cursor: default;
         }
@@ -102,19 +128,6 @@ export default function SharedCheckbox(props: Props): ReactElement {
           width: ${size * 0.6}px;
           height: ${size * 0.6}px;
           background: no-repeat center / cover url("/images/checkmark@2x.png");
-        }
-
-        .label {
-          cursor: pointer;
-          color: var(--green-5);
-          font-weight: 500;
-          font-size: 16px;
-          line-height: 24px;
-        }
-
-        .label.disabled {
-          color: var(--green-60);
-          cursor: default;
         }
 
         .message {
