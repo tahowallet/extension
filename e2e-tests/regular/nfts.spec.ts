@@ -1,5 +1,6 @@
 import { wait } from "@tallyho/tally-background/lib/utils"
 import { test, expect } from "../utils"
+import { account1Address, account1Name } from "../utils/onboarding"
 
 test.describe("NFTs", () => {
   test("User can view nft collections, poaps and badges", async ({
@@ -36,9 +37,7 @@ test.describe("NFTs", () => {
         }
       })
 
-      await walletPageHelper.onboarding.addReadOnlyAccount(
-        "0x6f1b1f1feb01235e15a7962f16c389c7f8218ed6"
-      )
+      await walletPageHelper.onboarding.addReadOnlyAccount(account1Address)
 
       await walletPageHelper.goToStartPage()
       await walletPageHelper.setViewportSize()
@@ -80,7 +79,7 @@ test.describe("NFTs", () => {
       await page
         .getByTestId("nft_account_filters")
         .filter({
-          hasText: /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
+          hasText: account1Name,
         })
         .getByRole("checkbox")
         .click()
@@ -107,7 +106,7 @@ test.describe("NFTs", () => {
         .getByTestId("nft_account_filters")
         .getByTestId("toggle_item")
         .filter({
-          hasText: /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
+          hasText: account1Name,
         })
         .getByRole("checkbox")
         .click()
