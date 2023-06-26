@@ -1,8 +1,6 @@
-import { test } from "./utils"
+import { test } from "../utils"
 
 test("dapp connect", async ({ page, context, walletPageHelper }) => {
-  test.skip(process.env.USE_MAINNET_FORK === "true")
-
   await walletPageHelper.onboarding.addReadOnlyAccount("testertesting.eth")
 
   const dappPage = await context.newPage()

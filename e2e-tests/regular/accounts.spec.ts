@@ -1,8 +1,6 @@
-import { test } from "./utils"
+import { test } from "../utils"
 
 test("Remove wallet", async ({ page, walletPageHelper }) => {
-  test.skip(process.env.USE_MAINNET_FORK === "true")
-
   await walletPageHelper.onboarding.addNewWallet()
   await walletPageHelper.goToStartPage()
 

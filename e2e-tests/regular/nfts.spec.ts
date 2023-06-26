@@ -1,5 +1,5 @@
 import { wait } from "@tallyho/tally-background/lib/utils"
-import { test, expect } from "./utils"
+import { test, expect } from "../utils"
 
 test.describe("NFTs", () => {
   test("User can view nft collections, poaps and badges", async ({
@@ -7,8 +7,6 @@ test.describe("NFTs", () => {
     backgroundPage,
     walletPageHelper,
   }) => {
-    test.skip(process.env.USE_MAINNET_FORK === "true")
-
     await test.step("Shows loading state", async () => {
       let shouldInterceptRequests = true
 

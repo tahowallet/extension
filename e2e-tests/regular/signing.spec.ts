@@ -1,12 +1,10 @@
-import { test, expect } from "./utils"
+import { test, expect } from "../utils"
 
 test.describe("Signing", () => {
   test("User can sign in with Ethereum", async ({
     context,
     walletPageHelper,
   }) => {
-    test.skip(process.env.USE_MAINNET_FORK === "true")
-
     await walletPageHelper.onboarding.addNewWallet()
 
     const siwe = await context.newPage()

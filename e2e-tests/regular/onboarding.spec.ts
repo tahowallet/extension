@@ -1,11 +1,9 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Wallet } from "ethers"
-import { test, expect } from "./utils"
-import { getOnboardingPage } from "./utils/onboarding"
+import { test, expect } from "../utils"
+import { getOnboardingPage } from "../utils/onboarding"
 
 test.describe("Onboarding", () => {
-  test.skip(process.env.USE_MAINNET_FORK === "true")
-
   test("User can onboard a read-only address", async ({
     page: popup,
     walletPageHelper,

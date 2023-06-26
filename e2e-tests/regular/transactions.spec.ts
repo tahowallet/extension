@@ -1,4 +1,4 @@
-import { test, expect } from "./utils"
+import { test, expect } from "../utils"
 
 test.describe("Transactions", () => {
   test("User can send base asset (on Goerli testnet)", async ({
@@ -7,8 +7,6 @@ test.describe("Transactions", () => {
     transactionsHelper,
   }) => {
     await test.step("Import account", async () => {
-      test.skip(process.env.USE_MAINNET_FORK === "true")
-
       /**
        * Onboard using walletPageHelper
        */
