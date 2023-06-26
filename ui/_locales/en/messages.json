@@ -732,7 +732,7 @@
     "viewAll": "View all"
   },
   "topMenu": {
-    "showCurrentDappConnection": "Show current dApp connection",
+    "showCurrentDappConnection": "Show current website connection",
     "connectToWebsiteUsing": "Connect to website using:",
     "setTahoAsDefault": "Set Taho as default",
     "setOtherAsDefault": "Set MetaMask/other wallet as default",
