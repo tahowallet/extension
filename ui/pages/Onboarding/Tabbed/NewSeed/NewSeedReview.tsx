@@ -20,7 +20,7 @@ export default function NewSeedReview({
   const dispatch = useBackgroundDispatch()
 
   return (
-    <section className="fadeIn">
+    <section className="fade_in">
       <h1 className="center_text">{t("title")}</h1>
       <div className="step_content">
         <div className="seed_phrase">

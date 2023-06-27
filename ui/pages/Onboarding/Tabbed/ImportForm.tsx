@@ -11,7 +11,7 @@ export default function ImportForm(props: Props): ReactElement {
   const { children, title, subtitle, illustration } = props
   return (
     <>
-      <div className="centered fadeIn">
+      <div className="centered fade_in">
         <form
           className="centered"
           onSubmit={(event) => {

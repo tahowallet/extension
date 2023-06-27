@@ -12,14 +12,21 @@ import {
   selectHideBanners,
   selectShowUnverifiedAssets,
   toggleShowUnverifiedAssets,
+  selectAutoLockTimer as selectAutoLockInterval,
+  updateAutoLockInterval,
 } from "@tallyho/tally-background/redux-slices/ui"
+import { useHistory } from "react-router-dom"
+import {
+  selectMainCurrencySign,
+  userValueDustThreshold,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   FeatureFlags,
-  isDisabled,
   isEnabled,
+  wrapIfDisabled,
+  wrapIfEnabled,
 } from "@tallyho/tally-background/features"
-import { useHistory } from "react-router-dom"
-import { selectMainCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
+import { MINUTE } from "@tallyho/tally-background/constants"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
@@ -29,9 +36,31 @@ import { useBackgroundSelector } from "../hooks"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 
+type SettingsItem = {
+  title: string
+  component: () => ReactElement
+  tooltip?: () => ReactElement
+}
+
+type SettingsList = {
+  [key: string]: {
+    title: string
+    items: SettingsItem[]
+  }
+}
+
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
+
 const FAQ_URL =
   "https://notion.taho.xyz/Tally-Ho-Knowledge-Base-4d95ed5439c64d6db3d3d27abf1fdae5"
+
+const AUTO_LOCK_OPTIONS = [
+  { label: "5", value: String(5 * MINUTE) },
+  { label: "15", value: String(15 * MINUTE) },
+  { label: "30", value: String(30 * MINUTE) },
+  { label: "60", value: String(60 * MINUTE) },
+]
+
 const FOOTER_ACTIONS = [
   {
     icon: "icons/m/discord",
@@ -108,7 +137,7 @@ function SettingRow(props: {
       <style jsx>
         {`
           li {
-            height: 50px;
+            padding-top: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -155,7 +184,7 @@ export default function Settings(): ReactElement {
 
   const hideSmallAssetBalance = {
     title: t("settings.hideSmallAssetBalance", {
-      amount: 2,
+      amount: userValueDustThreshold,
       sign: mainCurrencySign,
     }),
     component: () => (
@@ -301,6 +330,59 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const autoLockInterval = useBackgroundSelector(selectAutoLockInterval)
+
+  const autoLockSettings = {
+    title: "",
+    component: () => (
+      <div className="content">
+        <div className="left">
+          {t("settings.autoLockTimer.label")}
+          <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
+            <div className="tooltip">
+              <span>{t("settings.autoLockTimer.tooltip")}</span>
+            </div>
+          </SharedTooltip>
+        </div>
+        <div className="select_wrapper">
+          <SharedSelect
+            options={AUTO_LOCK_OPTIONS.map((item) => ({
+              ...item,
+              label: t("settings.autoLockTimer.interval", { time: item.label }),
+            }))}
+            defaultIndex={AUTO_LOCK_OPTIONS.findIndex(
+              ({ value }) => value === String(autoLockInterval)
+            )}
+            width="100%"
+            onChange={(newValue) => dispatch(updateAutoLockInterval(newValue))}
+          />
+        </div>
+        <style jsx>
+          {`
+            .content {
+              display: flex;
+              justify-content: space-between;
+              width: 336px;
+            }
+            .left {
+              display: flex;
+              align-items: center;
+            }
+            .select_wrapper {
+              width: 118px;
+              z-index: 2;
+            }
+            .tooltip {
+              display: flex;
+              flex-direction: column;
+              gap: 16px;
+            }
+          `}
+        </style>
+      </div>
+    ),
+  }
+
   const notificationBanner = {
     title: t("settings.showBanners"),
     component: () => (
@@ -323,24 +405,39 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const generalList = [
-    // setAsDefault is removed from settings in the new dApp Connections flow.
-    isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && setAsDefault,
-    hideSmallAssetBalance,
-    unverifiedAssets,
-    isEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES) && languages,
-    enableTestNetworks,
-    dAppsSettings,
-    addCustomAsset,
-    needHelp,
-    bugReport,
-    analytics,
-    isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && notificationBanner,
-    customNetworks,
-  ].filter((item): item is Exclude<typeof item, boolean> => !!item)
-
-  const settings = {
-    general: generalList,
+  const settings: SettingsList = {
+    general: {
+      title: t("settings.group.general"),
+      items: [
+        // setAsDefault is removed from settings in the new dApp Connections flow.
+        ...wrapIfDisabled(
+          FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS,
+          setAsDefault
+        ),
+        dAppsSettings,
+        analytics,
+        ...wrapIfEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES, languages),
+        ...wrapIfEnabled(
+          FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER,
+          notificationBanner
+        ),
+      ],
+    },
+    walletOptions: {
+      title: t("settings.group.walletOptions"),
+      items: [
+        hideSmallAssetBalance,
+        unverifiedAssets,
+        customNetworks,
+        addCustomAsset,
+        enableTestNetworks,
+        autoLockSettings,
+      ],
+    },
+    helpCenter: {
+      title: t("settings.group.helpCenter"),
+      items: [bugReport, needHelp],
+    },
   }
 
   return (
@@ -348,12 +445,20 @@ export default function Settings(): ReactElement {
       <div className="menu">
         <h1>{t("settings.mainMenu")}</h1>
         <ul>
-          {settings.general.map((setting) => (
-            <SettingRow
-              key={setting.title}
-              title={setting.title}
-              component={setting.component}
-            />
+          {Object.values(settings).map(({ title, items }) => (
+            <div className="group" key={title}>
+              <span className="group_title">{title}</span>
+              {items.map((item, index) => {
+                const key = `${title}-${item.title}-${index}`
+                return (
+                  <SettingRow
+                    key={key}
+                    title={item.title}
+                    component={item.component}
+                  />
+                )
+              })}
+            </div>
           ))}
         </ul>
       </div>
@@ -361,6 +466,7 @@ export default function Settings(): ReactElement {
         <div className="action_icons">
           {FOOTER_ACTIONS.map(({ icon, linkTo }) => (
             <SharedIcon
+              key={icon}
               icon={`${icon}.svg`}
               width={18}
               color="var(--green-20)"
@@ -394,7 +500,7 @@ export default function Settings(): ReactElement {
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
-            margin-bottom: 5px;
+            margin-bottom: 28px;
           }
           span {
             color: var(--green-40);
@@ -418,6 +524,24 @@ export default function Settings(): ReactElement {
             display: flex;
             justify-content: center;
             gap: 24px;
+          }
+          .group {
+            border-bottom: 1px solid var(--green-80);
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+          }
+          .group:last-child {
+            border-bottom: none;
+            padding: 0px;
+            margin: 0px;
+          }
+          .group_title {
+            color: var(--green-40);
+            font-family: "Segment";
+            font-style: normal;
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 24px;
           }
         `}
       </style>

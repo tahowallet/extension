@@ -18,7 +18,7 @@
         "header": "Show Private Key",
         "warningMessage": "Anybody that has your Private Key can move your assets.",
         "privateKeyInfo": "What is a Private Key?",
-        "privateKey":"Private key",
+        "privateKey": "Private key",
         "exportingPrivateKey": {
           "header": "Exporting Private Key for:",
           "confirmationDesc": "I understand that other Private Keys, Recovery Phrases, Ledger or  Read-only accounts will not be saved with this recovery phrase.",
@@ -53,6 +53,13 @@
           "text2": "Recovery phrase is the only way to regain access to your funds stored on those addresses.",
           "text3": "Taho has the option to import or create multiple recovery phrases. If you have multiple, make sure that you have safely save and store them all."
         }
+      },
+      "copyWarning": {
+        "header": "Copying to clipboard",
+        "title": "Careful copying content to clipboard",
+        "description": "It is dangerous to copy your recovery phrase or private key to clipboard, this can result in somebody gaining access to it",
+        "dontAsk": "Don’t ask me again",
+        "submitBtn": "Copy to clipboard"
       }
     },
     "notificationPanel": {
@@ -145,7 +152,7 @@
     }
   },
   "ledger": {
-    "checkLedger": "Check Ledger",
+    "checkLedger": "Check Error",
     "onlyRejectFromLedger": "Tx can only be Rejected from Ledger",
     "onboarding": {
       "connecting": "Connecting...",
@@ -183,7 +190,11 @@
       "disconnected": "Ledger is disconnected",
       "wrongLedger": "Wrong Ledger connected",
       "multipleLedgers": "Multiple ledgers connected",
-      "busy": "Ledger is busy"
+      "busy": "Ledger is busy",
+      "state.connected": "Connected",
+      "state.disconnected": "Disconnected",
+      "state.error": "Check error",
+      "state.unknown": "Unknown"
     },
     "activation": {
       "title": "Activate blind signing",
@@ -379,7 +390,7 @@
         "newWalletTitle": "New wallet",
         "options": {
           "importSeed": "Import recovery phrase",
-          "importPrivateKey": "Private Key import",
+          "importPrivateKey": "Import private key",
           "ledger": "Connect to Ledger",
           "readOnly": "Read-only address",
           "createNew": "Create new wallet"
@@ -541,17 +552,25 @@
   "readOnly": "Read-only",
   "readOnlyNotice": "Read-only mode",
   "settings": {
+    "group": {
+      "general": "General",
+      "walletOptions": "Networks & Assets",
+      "helpCenter": "Help center"
+    },
     "mainMenu": "Settings",
     "signing": "Signing",
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
-    "setAsDefault": "Use Taho as your default wallet",
-    "enableTestNetworks": "Enable test networks",
+    "setAsDefault": "Use Taho as default wallet",
+    "enableTestNetworks": "Show testnet networks",
     "showUnverifiedAssets": "Show unverified assets",
     "language": "Language",
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
-    "addCustomAsset": "Add custom assets",
+    "addCustomAsset": "Custom assets",
     "analytics": "Analytics",
+    "autoLockTimer.label": "Auto-lock timer",
+    "autoLockTimer.tooltip": "How long after your last interaction should we lock the wallet?",
+    "autoLockTimer.interval": "{{time}} min",
     "needHelp": "Need Help?",
     "customNetworks": "Custom networks (beta)",
     "showBanners": "Show achievement banners",
@@ -608,9 +627,13 @@
       "asset.label.balance": "Balance",
       "asset.label.symbol": "Name",
       "networkSelect.title": "Select Network",
-      "warning.alreadyExists.title": "Asset already exists, you will see it once your balance is over 0",
-      "warning.alreadyExists.desc": "If you still have issues seeing an asset, turn off “Hide asset balances under 2$” from Settings",
-      "warning.dust.title": "Asset balance is under <$2, you wil see it once your balance is over $2",
+      "warning.alreadyExists.title": "Asset already exists",
+      "warning.alreadyExists.desc": {
+        "dust": "Your balance is under {{sign}}{{amount}}. You will see it once you turn off “{{settings}}” in Settings.",
+        "noBalance": "Your balance is 0, you will see it once your balance is over {{sign}}{{amount}}.",
+        "visibility": "You should see it in your asset list."
+      },
+      "warning.dust.title": "Asset balance is under {{sign}}{{amount}}, you wil see it once your balance is over {{sign}}{{amount}}",
       "error.invalidToken": "Invalid contract address",
       "submit": "Add asset",
       "snackbar.success": "Asset added successfully",
@@ -672,7 +695,6 @@
   },
   "signing": {
     "signatureRequired": "Your signature is required",
-    "dappSignatureRequest": "A dapp is requesting your signature",
     "message": "Message",
     "signed": "Signed,",
     "type": "Type",
@@ -1004,7 +1026,6 @@
         "USE_MAINNET_FORK": "Use mainnet fork",
         "HIDE_IMPORT_DERIVATION_PATH": "Hide import derivation path",
         "HIDE_SWAP_REWARDS": "Hide swap rewards",
-        "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
         "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
@@ -1013,7 +1034,8 @@
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
-        "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification"
+        "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification",
+        "SUPPORT_CUSTOM_AUTOLOCK": "Enable custom auto-lock timer"
       }
     }
   },

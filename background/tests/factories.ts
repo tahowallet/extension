@@ -67,10 +67,15 @@ export const createPreferenceService = async (): Promise<PreferenceService> => {
   return PreferenceService.create()
 }
 
-export const createInternalSignerService =
-  async (): Promise<InternalSignerService> => {
-    return InternalSignerService.create()
-  }
+export const createInternalSignerService = async (
+  preferenceService?: PreferenceService
+): Promise<InternalSignerService> => {
+  const override = preferenceService
+    ? Promise.resolve(preferenceService)
+    : createPreferenceService()
+
+  return InternalSignerService.create(override)
+}
 
 type CreateChainServiceOverrides = {
   preferenceService?: Promise<PreferenceService>

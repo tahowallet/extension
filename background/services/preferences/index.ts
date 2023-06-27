@@ -7,14 +7,16 @@ import {
   Preferences,
   TokenListPreferences,
 } from "./types"
-import { getOrCreateDB, PreferenceDatabase } from "./db"
+import { DismissableItem, getOrCreateDB, PreferenceDatabase } from "./db"
 import BaseService from "../base"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { ETHEREUM, OPTIMISM, ARBITRUM_ONE } from "../../constants"
 import { EVMNetwork, sameNetwork } from "../../networks"
-import { HexString } from "../../types"
+import { HexString, UNIXTime } from "../../types"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
+
+export { ManuallyDismissableItem, SingleShotItem, DismissableItem } from "./db"
 
 type AddressBookEntry = {
   network: EVMNetwork
@@ -96,9 +98,12 @@ interface Events extends ServiceLifecycleEvents {
   preferencesChanges: Preferences
   initializeDefaultWallet: boolean
   initializeSelectedAccount: AddressOnNetwork
+  initializeShownDismissableItems: DismissableItem[]
   updateAnalyticsPreferences: AnalyticsPreferences
   addressBookEntryModified: AddressBookEntry
   updatedSignerSettings: AccountSignerSettings[]
+  updateAutoLockInterval: UNIXTime
+  dismissableItemMarkedAsShown: DismissableItem
 }
 
 /*
@@ -137,6 +142,10 @@ export default class PreferenceService extends BaseService<Events> {
       "updateAnalyticsPreferences",
       await this.getAnalyticsPreferences()
     )
+    this.emitter.emit(
+      "initializeShownDismissableItems",
+      await this.getShownDismissableItems()
+    )
   }
 
   protected override async internalStopService(): Promise<void> {
@@ -145,8 +154,8 @@ export default class PreferenceService extends BaseService<Events> {
     await super.internalStopService()
   }
 
-  // TODO Implement the following 6 methods as something stored in the database and user-manageable.
-  // TODO Track account names in the UI in the address book.
+  // TODO Implement the following 6 methods as something stored in the database
+  // TODO and user-manageable.
 
   addOrEditNameInAddressBook(newEntry: AddressBookEntry): void {
     const correspondingEntryIndex = this.addressBook.findIndex((entry) =>
@@ -203,6 +212,8 @@ export default class PreferenceService extends BaseService<Events> {
     )
   }
 
+  // FIXME This should not be publicly accessible, but triggered by observing
+  // FIXME an event on the signer service.
   async deleteAccountSignerSettings(
     signer: AccountSignerWithId
   ): Promise<void> {
@@ -222,6 +233,16 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit("updatedSignerSettings", await updatedSignerSettings)
   }
 
+  async markDismissableItemAsShown(item: DismissableItem): Promise<void> {
+    await this.db.markDismissableItemAsShown(item)
+
+    this.emitter.emit("dismissableItemMarkedAsShown", item)
+  }
+
+  async getShownDismissableItems(): Promise<DismissableItem[]> {
+    return this.db.getShownDismissableItems()
+  }
+
   async getAnalyticsPreferences(): Promise<Preferences["analytics"]> {
     return (await this.db.getPreferences())?.analytics
   }
@@ -232,8 +253,6 @@ export default class PreferenceService extends BaseService<Events> {
     await this.db.upsertAnalyticsPreferences(analyticsPreferences)
     const { analytics } = await this.db.getPreferences()
 
-    // This step is not strictly needed, because the settings can only
-    // be changed from the UI
     this.emitter.emit("updateAnalyticsPreferences", analytics)
   }
 
@@ -251,6 +270,15 @@ export default class PreferenceService extends BaseService<Events> {
 
   async getDefaultWallet(): Promise<boolean> {
     return (await this.db.getPreferences())?.defaultWallet
+  }
+
+  async getAutoLockInterval(): Promise<number> {
+    return (await this.db.getPreferences()).autoLockInterval
+  }
+
+  async updateAutoLockInterval(newValue: number): Promise<void> {
+    await this.db.setAutoLockInterval(newValue)
+    this.emitter.emit("updateAutoLockInterval", newValue)
   }
 
   async setDefaultWalletValue(newDefaultWalletValue: boolean): Promise<void> {

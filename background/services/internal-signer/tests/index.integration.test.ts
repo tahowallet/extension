@@ -3,8 +3,6 @@ import browser from "webextension-polyfill"
 
 import InternalSignerService, {
   Keyring,
-  MAX_INTERNAL_SIGNERS_IDLE_TIME,
-  MAX_OUTSIDE_IDLE_TIME,
   SignerImportSource,
   SignerSourceTypes,
   SignerInternalTypes,
@@ -15,7 +13,10 @@ import {
   mockLocalStorage,
   mockLocalStorageWithCalls,
 } from "../../../tests/utils"
-import { createTransactionRequest } from "../../../tests/factories"
+import {
+  createTransactionRequest,
+  createPreferenceService,
+} from "../../../tests/factories"
 
 const originalCrypto = global.crypto
 beforeEach(() => {
@@ -52,7 +53,9 @@ const testPassword = "my password"
 const dateNowValue = 1000000000000
 
 const startInternalSignerService = async () => {
-  const service = await InternalSignerService.create()
+  const preferencesService = createPreferenceService()
+  const service = await InternalSignerService.create(preferencesService)
+
   await service.startService()
 
   return service
@@ -402,22 +405,28 @@ describe("InternalSignerService when autolocking", () => {
   })
 
   it("will autolock after the keyring idle time but not sooner", async () => {
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    const maxIdleTime = await service["preferenceService"].getAutoLockInterval()
+
     expect(service.locked()).toEqual(false)
 
-    callAutolockHandler(MAX_INTERNAL_SIGNERS_IDLE_TIME - 10)
+    callAutolockHandler(maxIdleTime - 10)
     expect(service.locked()).toEqual(false)
 
-    callAutolockHandler(MAX_INTERNAL_SIGNERS_IDLE_TIME)
+    callAutolockHandler(maxIdleTime)
     expect(service.locked()).toEqual(true)
   })
 
   it("will autolock after the outside activity idle time but not sooner", async () => {
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    const maxIdleTime = await service["preferenceService"].getAutoLockInterval()
+
     expect(service.locked()).toEqual(false)
 
-    callAutolockHandler(MAX_OUTSIDE_IDLE_TIME - 10)
+    callAutolockHandler(maxIdleTime - 10)
     expect(service.locked()).toEqual(false)
 
-    callAutolockHandler(MAX_OUTSIDE_IDLE_TIME)
+    callAutolockHandler(maxIdleTime)
     expect(service.locked()).toEqual(true)
   })
 
@@ -450,50 +459,67 @@ describe("InternalSignerService when autolocking", () => {
       },
     },
   ])("will bump keyring activity idle time when $action", async ({ call }) => {
-    jest
-      .spyOn(Date, "now")
-      .mockReturnValue(dateNowValue + MAX_INTERNAL_SIGNERS_IDLE_TIME - 1)
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    const maxIdleTime = await service["preferenceService"].getAutoLockInterval()
+
+    jest.spyOn(Date, "now").mockReturnValue(dateNowValue + maxIdleTime - 1)
 
     await call()
 
     // Bump the outside activity timer to make sure the service doesn't
     // autolock due to outside idleness.
-    jest
-      .spyOn(Date, "now")
-      .mockReturnValue(dateNowValue + MAX_OUTSIDE_IDLE_TIME - 1)
+    jest.spyOn(Date, "now").mockReturnValue(dateNowValue + maxIdleTime - 1)
     service.markOutsideActivity()
 
-    callAutolockHandler(MAX_INTERNAL_SIGNERS_IDLE_TIME)
+    callAutolockHandler(maxIdleTime)
     expect(service.locked()).toEqual(false)
 
-    callAutolockHandler(2 * MAX_INTERNAL_SIGNERS_IDLE_TIME - 10)
+    callAutolockHandler(2 * maxIdleTime - 10)
     expect(service.locked()).toEqual(false)
 
-    callAutolockHandler(2 * MAX_INTERNAL_SIGNERS_IDLE_TIME)
+    callAutolockHandler(2 * maxIdleTime)
     expect(service.locked()).toEqual(true)
   })
 
   it("will bump the outside activity idle time when outside activity is marked", async () => {
-    jest
-      .spyOn(Date, "now")
-      .mockReturnValue(dateNowValue + MAX_OUTSIDE_IDLE_TIME - 1)
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    const maxIdleTime = await service["preferenceService"].getAutoLockInterval()
+
+    jest.spyOn(Date, "now").mockReturnValue(dateNowValue + maxIdleTime - 1)
 
     service.markOutsideActivity()
 
     // Bump the keyring activity timer to make sure the service doesn't
     // autolock due to keyring idleness.
-    jest
-      .spyOn(Date, "now")
-      .mockReturnValue(dateNowValue + MAX_INTERNAL_SIGNERS_IDLE_TIME - 1)
+    jest.spyOn(Date, "now").mockReturnValue(dateNowValue + maxIdleTime - 1)
     await service.generateNewKeyring(SignerInternalTypes.mnemonicBIP39S256)
 
-    callAutolockHandler(MAX_OUTSIDE_IDLE_TIME)
+    callAutolockHandler(maxIdleTime)
     expect(service.locked()).toEqual(false)
 
-    callAutolockHandler(2 * MAX_OUTSIDE_IDLE_TIME - 10)
+    callAutolockHandler(2 * maxIdleTime - 10)
     expect(service.locked()).toEqual(false)
 
-    callAutolockHandler(2 * MAX_OUTSIDE_IDLE_TIME)
+    callAutolockHandler(2 * maxIdleTime)
+    expect(service.locked()).toEqual(true)
+  })
+
+  it("locks when auto-lock timer has been updated to be less than current idle time", async () => {
+    // eslint-disable-next-line @typescript-eslint/dot-notation, prefer-destructuring
+    const preferenceService = service["preferenceService"]
+
+    const maxIdleTime = await preferenceService.getAutoLockInterval()
+
+    await service.generateNewKeyring(SignerInternalTypes.mnemonicBIP39S256)
+
+    expect(service.locked()).toBe(false)
+
+    callAutolockHandler(maxIdleTime / 2)
+
+    await preferenceService.updateAutoLockInterval(maxIdleTime / 2)
+
+    await service.updateAutoLockInterval()
+
     expect(service.locked()).toEqual(true)
   })
 })

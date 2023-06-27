@@ -220,7 +220,7 @@ export default function TopMenuConnectedDAppInfo(props: {
   return (
     <div
       className={classNames("bg", {
-        fadeIn: !isClosing,
+        fade_in: !isClosing,
         fade_out: isClosing,
       })}
     >

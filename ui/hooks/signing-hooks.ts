@@ -1,14 +1,14 @@
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { lockInternalSigners } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { selectInternalSignerStatus } from "@tallyho/tally-background/redux-slices/selectors"
 import { clearSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
-import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { useEffect } from "react"
 import { useHistory } from "react-router-dom"
-import { HexString } from "@tallyho/tally-background/types"
 import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
-import { DisplayDetails } from "@tallyho/tally-background/services/ledger"
-import { isSignerWithSecrets } from "../utils/accounts"
+import {
+  DisplayDetails,
+  LedgerAccountSigner,
+} from "@tallyho/tally-background/services/ledger"
+import { HexString } from "@tallyho/tally-background/types"
 import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 
 /**
@@ -48,18 +48,6 @@ export const useAreInternalSignersUnlocked = (
   return lockStatus === "unlocked"
 }
 
-// FIXME Remove after USE_UPDATED_SIGNING_UI = true
-export function useIsSignerLocked(signer: AccountSigner | null): boolean {
-  const needInternalSigner =
-    isEnabled(FeatureFlags.USE_UPDATED_SIGNING_UI) || !signer
-      ? false
-      : isSignerWithSecrets(signer)
-
-  const areInternalSignersUnlocked =
-    useAreInternalSignersUnlocked(needInternalSigner)
-  return needInternalSigner && !areInternalSignersUnlocked
-}
-
 /**
  * Silently lock wallet when a given component becomes visible
  */
@@ -88,14 +76,10 @@ export type SigningLedgerState =
     }
 
 export function useSigningLedgerState(
-  signingAddress: HexString | undefined,
-  accountSigner: AccountSigner | null
-): SigningLedgerState | null {
+  signingAddress: HexString,
+  accountSigner: LedgerAccountSigner
+): SigningLedgerState {
   return useBackgroundSelector((state) => {
-    if (signingAddress === undefined || accountSigner?.type !== "ledger") {
-      return null
-    }
-
     const { deviceID } = accountSigner
 
     const connectedDevices = Object.values(state.ledger.devices).filter(

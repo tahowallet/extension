@@ -48,7 +48,6 @@ import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../../lib/utils"
-import { fixPolygonWETHIssue, polygonTokenListURL } from "./token-list-edit"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -433,7 +432,7 @@ export default class IndexingService extends BaseService<Events> {
             this.addTokenToTrackByContract(
               addressNetwork.network,
               fungibleAsset.contractAddress,
-              { discoveryTxHash: transfer.txHash }
+              { discoveryTxHash: { [addressNetwork.address]: transfer.txHash } }
             )
           }
         })
@@ -614,6 +613,25 @@ export default class IndexingService extends BaseService<Events> {
     this.emitter.emit("removeAssetData", asset)
   }
 
+  async removeDiscoveryTxHash(address: string): Promise<void> {
+    const customAssets = await this.db.getAllCustomAssets()
+
+    customAssets
+      .filter(
+        (asset) => asset.metadata?.discoveryTxHash?.[address] !== undefined
+      )
+      .forEach((assetWithDiscoveryHashReference) => {
+        const { metadata } = assetWithDiscoveryHashReference
+        if (Object.keys(metadata?.discoveryTxHash ?? {}).length !== 0) {
+          delete metadata?.discoveryTxHash?.[address]
+          this.updateAssetMetadata(
+            assetWithDiscoveryHashReference,
+            metadata ?? {}
+          )
+        }
+      })
+  }
+
   async importCustomToken(asset: SmartContractFungibleAsset): Promise<boolean> {
     const customAsset = {
       ...asset,
@@ -668,7 +686,12 @@ export default class IndexingService extends BaseService<Events> {
   async addTokenToTrackByContract(
     network: EVMNetwork,
     contractAddress: string,
-    metadata: { discoveryTxHash?: HexString; verified?: boolean } = {}
+    metadata: {
+      discoveryTxHash?: {
+        [address: HexString]: HexString
+      }
+      verified?: boolean
+    } = {}
   ): Promise<SmartContractFungibleAsset | undefined> {
     const normalizedAddress = normalizeEVMAddress(contractAddress)
 
@@ -678,8 +701,19 @@ export default class IndexingService extends BaseService<Events> {
     )
 
     if (knownAsset) {
-      await this.addAssetToTrack(knownAsset)
-      return knownAsset
+      const newDiscoveryTxHash = metadata?.discoveryTxHash
+      const addressForDiscoveryTxHash = newDiscoveryTxHash
+        ? Object.keys(newDiscoveryTxHash)[0]
+        : undefined
+      const existingDiscoveryTxHash = addressForDiscoveryTxHash
+        ? knownAsset.metadata?.discoveryTxHash?.[addressForDiscoveryTxHash]
+        : undefined
+      // If the discovery tx hash is not specified
+      // or if it already exists in the asset, do not update the asset
+      if (!newDiscoveryTxHash || existingDiscoveryTxHash) {
+        await this.addAssetToTrack(knownAsset)
+        return knownAsset
+      }
     }
 
     let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
@@ -703,7 +737,16 @@ export default class IndexingService extends BaseService<Events> {
       if (!isRemoved || (isRemoved && isVerified)) {
         if (Object.keys(metadata).length !== 0) {
           customAsset.metadata ??= {}
-          Object.assign(customAsset.metadata, metadata)
+          if (metadata.verified !== undefined) {
+            customAsset.metadata.verified = metadata.verified
+          }
+          if (metadata.discoveryTxHash) {
+            customAsset.metadata.discoveryTxHash ??= {}
+            Object.assign(
+              customAsset.metadata.discoveryTxHash,
+              metadata.discoveryTxHash
+            )
+          }
 
           if (isRemoved) {
             customAsset.metadata.removed = false
@@ -911,11 +954,6 @@ export default class IndexingService extends BaseService<Events> {
           try {
             const newListRef = await fetchAndValidateTokenList(url)
 
-            if (url === polygonTokenListURL) {
-              newListRef.tokenList.tokens = fixPolygonWETHIssue(
-                newListRef.tokenList.tokens
-              )
-            }
             await this.db.saveTokenList(url, newListRef.tokenList)
           } catch (err) {
             logger.error(

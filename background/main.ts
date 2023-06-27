@@ -83,6 +83,9 @@ import {
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
   setSelectedNetwork,
+  setAutoLockInterval,
+  setShownDismissableItems,
+  dismissableItemMarkedAsShown,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -157,7 +160,6 @@ import {
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
   isSmartContractFungibleAsset,
-  SmartContractAsset,
   SmartContractFungibleAsset,
 } from "./assets"
 import { FeatureFlags, isEnabled } from "./features"
@@ -186,12 +188,16 @@ import {
   isOneTimeAnalyticsEvent,
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
-import { isBuiltInNetworkBaseAsset } from "./redux-slices/utils/asset-utils"
+import {
+  isBuiltInNetworkBaseAsset,
+  isSameAsset,
+} from "./redux-slices/utils/asset-utils"
 import {
   SignerImportMetadata,
   SignerInternalTypes,
 } from "./services/internal-signer"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
+import { DismissableItem } from "./services/preferences"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -297,7 +303,8 @@ export default class Main extends BaseService<never> {
 
   static create: ServiceCreatorFunction<never, Main, []> = async () => {
     const preferenceService = PreferenceService.create()
-    const internalSignerService = InternalSignerService.create()
+    const internalSignerService =
+      InternalSignerService.create(preferenceService)
     const chainService = ChainService.create(
       preferenceService,
       internalSignerService
@@ -655,6 +662,9 @@ export default class Main extends BaseService<never> {
     await this.signingService.removeAccount(address, signer.type)
 
     this.nameService.removeAccount(address)
+
+    // remove discovery tx hash for custom asset
+    this.indexingService.removeDiscoveryTxHash(address)
   }
 
   async importLedgerAccounts(
@@ -1002,62 +1012,30 @@ export default class Main extends BaseService<never> {
 
         const filteredBalancesToDispatch: AccountBalance[] = []
 
-        const sortedBalances: AccountBalance[] = []
-
         balances
           .filter((balance) => {
-            const isSmartContract =
-              "contractAddress" in balance.assetAmount.asset
-
-            if (!isSmartContract) {
-              sortedBalances.push(balance)
-            }
-
             // Network base assets with smart contract addresses from some networks
             // e.g. Optimism, Polygon might have been retrieved through alchemy as
             // token balances but they should not be handled here as they would
             // not be correctly treated as base assets
-            if (
-              isBuiltInNetworkBaseAsset(
-                balance.assetAmount.asset,
-                balance.network
-              )
-            ) {
-              return false
-            }
-
-            return isSmartContract
-          })
-          // Sort verified last to prevent shadowing assets from token lists
-          // FIXME: Balances should not be indexed by symbol in redux
-          .sort((balance, otherBalance) => {
-            const asset = balance.assetAmount.asset as SmartContractAsset
-            const other = otherBalance.assetAmount.asset as SmartContractAsset
-
-            return (
-              (other.metadata?.tokenLists?.length ?? 0) -
-              (asset.metadata?.tokenLists?.length ?? 0)
+            return !isBuiltInNetworkBaseAsset(
+              balance.assetAmount.asset,
+              balance.network
             )
           })
-          .forEach((balance) => sortedBalances.unshift(balance))
+          .forEach((balance) => {
+            // TODO support multi-network assets
+            const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
+              (tracked) => isSameAsset(tracked, balance.assetAmount.asset)
+            )
 
-        sortedBalances.forEach((balance) => {
-          // TODO support multi-network assets
-          const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
-            (tracked) =>
-              tracked.symbol === balance.assetAmount.asset.symbol &&
-              isSmartContractFungibleAsset(balance.assetAmount.asset) &&
-              normalizeEVMAddress(tracked.contractAddress) ===
-                normalizeEVMAddress(balance.assetAmount.asset.contractAddress)
-          )
-
-          if (
-            balance.assetAmount.amount > 0 ||
-            balanceHasAnAlreadyTrackedAsset
-          ) {
-            filteredBalancesToDispatch.push(balance)
-          }
-        })
+            if (
+              balance.assetAmount.amount > 0 ||
+              balanceHasAnAlreadyTrackedAsset
+            ) {
+              filteredBalancesToDispatch.push(balance)
+            }
+          })
 
         this.store.dispatch(
           updateAccountBalance({
@@ -1526,6 +1504,28 @@ export default class Main extends BaseService<never> {
       }
     )
 
+    this.preferenceService.emitter.on(
+      "updateAutoLockInterval",
+      async (newTimerValue) => {
+        await this.internalSignerService.updateAutoLockInterval()
+        this.store.dispatch(setAutoLockInterval(newTimerValue))
+      }
+    )
+
+    this.preferenceService.emitter.on(
+      "initializeShownDismissableItems",
+      async (dismissableItems) => {
+        this.store.dispatch(setShownDismissableItems(dismissableItems))
+      }
+    )
+
+    this.preferenceService.emitter.on(
+      "dismissableItemMarkedAsShown",
+      async (dismissableItem) => {
+        this.store.dispatch(dismissableItemMarkedAsShown(dismissableItem))
+      }
+    )
+
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
       await this.preferenceService.setSelectedAccount(addressNetwork)
 
@@ -1558,6 +1558,8 @@ export default class Main extends BaseService<never> {
           newDefaultWalletValue
         )
 
+        // FIXME Both of these should be done as observations of the preference
+        // FIXME service event rather than being managed by `main`.
         this.providerBridgeService.notifyContentScriptAboutConfigChange(
           newDefaultWalletValue
         )
@@ -1793,6 +1795,10 @@ export default class Main extends BaseService<never> {
         this.analyticsService.sendAnalyticsEvent(event)
       }
     })
+
+    uiSliceEmitter.on("updateAutoLockInterval", async (newTimerValue) => {
+      await this.preferenceService.updateAutoLockInterval(newTimerValue)
+    })
   }
 
   async updateAssetMetadata(
@@ -1815,6 +1821,10 @@ export default class Main extends BaseService<never> {
     title: string
   ): Promise<void> {
     return this.preferenceService.updateAccountSignerTitle(signer, title)
+  }
+
+  async markDismissableItemAsShown(item: DismissableItem): Promise<void> {
+    return this.preferenceService.markDismissableItemAsShown(item)
   }
 
   async resolveNameOnNetwork(

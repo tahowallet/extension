@@ -1,40 +1,52 @@
-type OldState = {
-  keyrings: {
-    keyringMetadata: {
-      [keyringId: string]: {
-        source: "import" | "internal"
+type PrevState = {
+  account: {
+    accountsData: {
+      evm: {
+        [chainID: string]: {
+          [address: string]: {
+            balances: {
+              [symbol: string]: unknown
+            }
+            [other: string]: unknown
+          }
+        }
       }
     }
-    importing: false | "pending" | "done" | "failed"
     [sliceKey: string]: unknown
   }
 }
 
 type NewState = {
-  internalSigner: {
-    metadata: {
-      [keyringId: string]: {
-        source: "import" | "internal"
+  account: {
+    accountsData: {
+      evm: {
+        [chainID: string]: {
+          [address: string]: {
+            balances: {
+              [assetID: string]: unknown
+            }
+            [other: string]: unknown
+          }
+        }
       }
     }
-    privateKeys: { type: "single#secp256k1"; path: null; addresses: [string] }[]
     [sliceKey: string]: unknown
   }
 }
 
 export default (prevState: Record<string, unknown>): NewState => {
-  const oldState = prevState as OldState
-  const {
-    keyrings: { keyringMetadata, importing, ...keyringsState },
-    ...stateWithoutKeyrings
-  } = oldState
+  const typedPrevState = prevState as PrevState
 
-  return {
-    ...stateWithoutKeyrings,
-    internalSigner: {
-      ...keyringsState,
-      metadata: keyringMetadata,
-      privateKeys: [],
-    },
-  }
+  const {
+    account: { accountsData },
+  } = typedPrevState
+
+  Object.keys(accountsData.evm).forEach((chainID) =>
+    Object.keys(accountsData.evm[chainID]).forEach((address) => {
+      // Clear all accounts cached balances
+      accountsData.evm[chainID][address].balances = {}
+    })
+  )
+
+  return { ...typedPrevState }
 }

@@ -4,11 +4,14 @@ import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
 import { AnalyticsEvent, OneTimeAnalyticsEvent } from "../lib/posthog"
 import { EVMNetwork } from "../networks"
+import { DismissableItem } from "../services/preferences"
 import { AnalyticsPreferences } from "../services/preferences/types"
 import { AccountSignerWithId } from "../signing"
 import { AccountSignerSettings } from "../ui"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
+import { UNIXTime } from "../types"
+import { DEFAULT_AUTOLOCK_INTERVAL } from "../services/preferences/defaults"
 
 export const defaultSettings = {
   hideDust: false,
@@ -18,12 +21,14 @@ export const defaultSettings = {
   showAnalyticsNotification: false,
   showUnverifiedAssets: false,
   hideBanners: false,
+  autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
 }
 
 export type UIState = {
   selectedAccount: AddressOnNetwork
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
+  shownDismissableItems?: DismissableItem[]
   // FIXME: Move these settings to preferences service db
   settings: {
     hideDust: boolean
@@ -33,6 +38,7 @@ export type UIState = {
     showAnalyticsNotification: boolean
     showUnverifiedAssets: boolean
     hideBanners: boolean
+    autoLockInterval: UNIXTime
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
@@ -52,6 +58,7 @@ export type Events = {
   newSelectedNetwork: EVMNetwork
   updateAnalyticsPreferences: Partial<AnalyticsPreferences>
   addCustomNetworkResponse: [string, boolean]
+  updateAutoLockInterval: number
 }
 
 export const emitter = new Emittery<Events>()
@@ -162,6 +169,23 @@ const uiSlice = createSlice({
         defaultWallet,
       },
     }),
+    setShownDismissableItems: (
+      state,
+      { payload: shownDismissableItems }: { payload: DismissableItem[] }
+    ) => ({
+      ...state,
+      shownDismissableItems,
+    }),
+    dismissableItemMarkedAsShown: (
+      state,
+      { payload: shownDismissableItem }: { payload: DismissableItem }
+    ) => ({
+      ...state,
+      shownDismissableItems: [
+        ...(state.shownDismissableItems ?? []),
+        shownDismissableItem,
+      ],
+    }),
     setRouteHistoryEntries: (
       state,
       { payload: routeHistoryEntries }: { payload: Partial<Location>[] }
@@ -182,6 +206,12 @@ const uiSlice = createSlice({
     ) => {
       return { ...state, accountSignerSettings: payload }
     },
+    setAutoLockInterval: (state, { payload }: { payload: number }) => {
+      return {
+        ...state,
+        settings: { ...state.settings, autoLockInterval: payload },
+      }
+    },
   },
 })
 
@@ -197,10 +227,13 @@ export const {
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
+  setShownDismissableItems,
+  dismissableItemMarkedAsShown,
   clearSnackbarMessage,
   setRouteHistoryEntries,
   setSlippageTolerance,
   setAccountsSignerSettings,
+  setAutoLockInterval,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -253,6 +286,13 @@ export const updateSignerTitle = createBackgroundAsyncThunk(
   }
 )
 
+export const markDismissableItemAsShown = createBackgroundAsyncThunk(
+  "ui/markDismissableItemAsShown",
+  async (item: DismissableItem, { extra: { main } }) => {
+    return main.markDismissableItemAsShown(item)
+  }
+)
+
 export const getAddNetworkRequestDetails = createBackgroundAsyncThunk(
   "ui/getAddNetworkRequestDetails",
   async (requestId: string, { extra: { main } }) => {
@@ -264,6 +304,19 @@ export const addNetworkUserResponse = createBackgroundAsyncThunk(
   "ui/handleAddNetworkConfirmation",
   async ([requestId, result]: [string, boolean]) => {
     emitter.emit("addCustomNetworkResponse", [requestId, result])
+  }
+)
+
+export const updateAutoLockInterval = createBackgroundAsyncThunk(
+  "ui/updateAutoLockInterval",
+  async (newValue: string) => {
+    const parsedValue = parseInt(newValue, 10)
+
+    if (Number.isNaN(parsedValue) || parsedValue <= 1) {
+      throw new Error("Invalid value for auto lock timer")
+    }
+
+    emitter.emit("updateAutoLockInterval", parsedValue)
   }
 )
 
@@ -320,6 +373,11 @@ export const selectHideDust = createSelector(
   (settings) => settings?.hideDust
 )
 
+export const selectAutoLockTimer = createSelector(
+  selectSettings,
+  (settings) => settings.autoLockInterval
+)
+
 export const selectSnackbarMessage = createSelector(
   selectUI,
   (ui) => ui.snackbarMessage
@@ -364,3 +422,13 @@ export const selectHideBanners = createSelector(
   selectSettings,
   (settings) => settings?.hideBanners
 )
+
+export function selectShouldShowDismissableItem(
+  dismissableItem: DismissableItem
+) {
+  return (state: { ui: UIState }): boolean => {
+    const itemWasShown =
+      selectUI(state).shownDismissableItems?.includes(dismissableItem) ?? false
+    return !itemWasShown
+  }
+}

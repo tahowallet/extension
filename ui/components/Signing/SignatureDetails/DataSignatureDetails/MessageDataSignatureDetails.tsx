@@ -19,7 +19,7 @@ export default function MessageDataSignatureDetails({
           requestingSource={messageRequest.signingData.domain}
           excludeTitle
         >
-          <EIP4361Info signingData={messageRequest.signingData} excludeHeader />
+          <EIP4361Info signingData={messageRequest.signingData} />
         </DataSignatureDetails>
       )
     case "eip191":
@@ -27,8 +27,6 @@ export default function MessageDataSignatureDetails({
         <DataSignatureDetails>
           <EIP191Info
             account={messageRequest.account.address}
-            internal={false}
-            excludeHeader
             signingData={messageRequest.signingData}
           />
         </DataSignatureDetails>

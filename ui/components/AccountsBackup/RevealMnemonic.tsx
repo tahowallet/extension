@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next"
 import classNames from "classnames"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import { useBackgroundDispatch } from "../../hooks"
-import SharedButton from "../Shared/SharedButton"
 import SharedSecretText from "../Shared/SharedSecretText"
+import CopyToClipboard from "./CopyToClipboard"
 
 function MnemonicList(props: {
   mnemonic: string
@@ -85,18 +85,13 @@ export default function RevealMnemonic({
           width="50%"
         />
       </div>
-      <SharedButton
-        type="tertiary"
-        size="small"
-        iconMedium="copy"
-        onClick={() => {
+      <CopyToClipboard
+        copyText={t("exportingMnemonic.copyBtn")}
+        copy={() => {
           navigator.clipboard.writeText(mnemonic)
           dispatch(setSnackbarMessage(t("exportingMnemonic.copySuccess")))
         }}
-        center
-      >
-        {t("exportingMnemonic.copyBtn")}
-      </SharedButton>
+      />
       <style jsx>{`
         .mnemonic_container {
           display: flex;
