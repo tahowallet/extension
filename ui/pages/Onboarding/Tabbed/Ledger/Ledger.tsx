@@ -84,7 +84,7 @@ export default function Ledger(): ReactElement {
       )}
       {phase === "2-connect" && !device && connecting && (
         <LedgerPanelContainer
-          indicatorImageSrc="/images/connect_ledger_indicator_disconnected.svg"
+          indicatorImage="unknown"
           heading={t("connecting")}
         />
       )}
