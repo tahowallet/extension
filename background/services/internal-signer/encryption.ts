@@ -65,7 +65,7 @@ function requireCryptoGlobal(message?: string) {
  *          material using AES GCM mode, as well as the salt required to derive
  *          the key again later.
  */
-export async function depricatedDeriveSymmetricKeyFromPassword(
+export async function deprecatedDerivePbkdf2KeyFromPassword(
   password: string,
   existingSalt?: string
 ): Promise<SaltedKey> {
@@ -110,15 +110,15 @@ export async function deriveSymmetricKeyFromPassword(
 
   const salt = existingSalt || (await generateSalt())
 
-  // Argon2 returns hash which is 24 bytes long, we need 16 bytes for AES-GCM
   const { hash } = await argon2.hash({
     pass: password,
     salt,
+    hashLen: 32,
   })
 
   const key = await crypto.subtle.importKey(
     "raw",
-    hash.slice(0, 16),
+    hash,
     { name: "AES-GCM", length: 256 },
     false,
     ["encrypt", "decrypt"]
