@@ -11,6 +11,11 @@ export type EncryptedVault = {
   cipherText: string
 }
 
+export enum VaultVersion {
+  PBKDF2 = 1,
+  Argon2 = 2,
+}
+
 /*
  * A key with a salt that can be combined with a password to re-derive the key.
  *
@@ -102,7 +107,7 @@ export async function deprecatedDerivePbkdf2KeyFromPassword(
   }
 }
 
-export async function deriveSymmetricKeyFromPassword(
+export async function deriveArgon2KeyFromPassword(
   password: string,
   existingSalt?: string
 ): Promise<SaltedKey> {
@@ -130,6 +135,20 @@ export async function deriveSymmetricKeyFromPassword(
   }
 }
 
+export async function deriveSymmetricKeyFromPassword(
+  version: VaultVersion,
+  password: string,
+  existingSalt?: string
+): Promise<SaltedKey> {
+  switch (version) {
+    case VaultVersion.PBKDF2:
+      return deprecatedDerivePbkdf2KeyFromPassword(password, existingSalt)
+    case VaultVersion.Argon2:
+      return deriveArgon2KeyFromPassword(password, existingSalt)
+    default:
+      throw new Error(`Unsupported vault version: ${version}`)
+  }
+}
 /**
  * Encrypt a JSON-serializable object with a supplied password using AES GCM
  * mode.
@@ -140,16 +159,18 @@ export async function deriveSymmetricKeyFromPassword(
  * @returns the ciphertext and all non-password material required for later
  *          decryption, including the salt and AES initialization vector.
  */
-export async function encryptVault<V>(
-  vault: V,
+export async function encryptVault<V>(vaultData: {
+  vault: V
   passwordOrSaltedKey: string | SaltedKey
-): Promise<EncryptedVault> {
+  version: VaultVersion
+}): Promise<EncryptedVault> {
   requireCryptoGlobal("Encrypting a vault")
   const { crypto } = global
+  const { vault, passwordOrSaltedKey, version } = vaultData
 
   const { key, salt } =
     typeof passwordOrSaltedKey === "string"
-      ? await deriveSymmetricKeyFromPassword(passwordOrSaltedKey)
+      ? await deriveSymmetricKeyFromPassword(version, passwordOrSaltedKey)
       : passwordOrSaltedKey
 
   const encoder = new TextEncoder()
@@ -188,10 +209,12 @@ export async function encryptVault<V>(
  *          most objects `decryptVault(encryptVault(o, password), password)`
  *          should deeply equal `o`.
  */
-export async function decryptVault<V>(
-  vault: EncryptedVault,
+export async function decryptVault<V>(vaultData: {
+  vault: EncryptedVault
   passwordOrSaltedKey: string | SaltedKey
-): Promise<V> {
+  version: VaultVersion
+}): Promise<V> {
+  const { vault, passwordOrSaltedKey } = vaultData
   requireCryptoGlobal("Decrypting a vault")
   const { crypto } = global
 
@@ -199,7 +222,11 @@ export async function decryptVault<V>(
 
   const { key } =
     typeof passwordOrSaltedKey === "string"
-      ? await deriveSymmetricKeyFromPassword(passwordOrSaltedKey, salt)
+      ? await deriveSymmetricKeyFromPassword(
+          vaultData.version,
+          passwordOrSaltedKey,
+          salt
+        )
       : passwordOrSaltedKey
 
   const plaintext = await crypto.subtle.decrypt(

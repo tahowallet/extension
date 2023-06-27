@@ -3,6 +3,7 @@ import {
   encryptVault,
   decryptVault,
   deriveSymmetricKeyFromPassword,
+  VaultVersion,
 } from "../encryption"
 
 const originalCrypto = global.crypto
@@ -28,6 +29,7 @@ describe("Encryption utils", () => {
       ).toString("base64")
 
       const { key, salt } = await deriveSymmetricKeyFromPassword(
+        VaultVersion.PBKDF2,
         password,
         newSalt
       )
@@ -41,13 +43,21 @@ describe("Encryption utils", () => {
   it("doesn't throw when encrypting a vault with a password", async () => {
     const vault = { a: 1 }
     const password = "this-is-a-poor-password"
-    await encryptVault(vault, password)
+    await encryptVault({
+      version: VaultVersion.PBKDF2,
+      vault,
+      passwordOrSaltedKey: password,
+    })
   })
 
   it("avoids couple common footguns when encrypting a vault with a password", async () => {
     const vault = { thisIsAnInterestingKey: "sentinel" }
     const password = "this-is-a-poor-password"
-    const newVault = await encryptVault(vault, password)
+    const newVault = await encryptVault({
+      version: VaultVersion.PBKDF2,
+      vault,
+      passwordOrSaltedKey: password,
+    })
     // ensure sensitive plaintext isn't in the output, with a couple simple
     // transformations. Note this *doesn't* show correctness of encryption — a
     // simple substitution cipher would still pass this — it's just a smoke test.
@@ -63,9 +73,17 @@ describe("Encryption utils", () => {
   it("can decrypt a vault encrypted with a password", async () => {
     const vault = { a: 1 }
     const password = "this-is-a-poor-password"
-    const encryptedVault = await encryptVault(vault, password)
+    const encryptedVault = await encryptVault({
+      version: VaultVersion.PBKDF2,
+      vault,
+      passwordOrSaltedKey: password,
+    })
 
-    const newVault = await decryptVault(encryptedVault, password)
+    const newVault = await decryptVault({
+      version: VaultVersion.PBKDF2,
+      vault: encryptedVault,
+      passwordOrSaltedKey: password,
+    })
 
     expect(newVault).toEqual(vault)
   })
@@ -77,9 +95,17 @@ describe("Encryption utils", () => {
       d: 123,
     }
     const password = "this-is-a-poor-password"
-    const encryptedVault = await encryptVault(vault, password)
+    const encryptedVault = await encryptVault({
+      version: VaultVersion.PBKDF2,
+      vault,
+      passwordOrSaltedKey: password,
+    })
 
-    const newVault = await decryptVault(encryptedVault, password)
+    const newVault = await decryptVault({
+      version: VaultVersion.PBKDF2,
+      vault: encryptedVault,
+      passwordOrSaltedKey: password,
+    })
 
     expect(newVault).toEqual(vault)
   })
@@ -94,11 +120,22 @@ describe("Encryption utils", () => {
       global.crypto.getRandomValues(new Uint8Array(16))
     ).toString("base64")
 
-    const saltedKey = await deriveSymmetricKeyFromPassword(password)
+    const saltedKey = await deriveSymmetricKeyFromPassword(
+      VaultVersion.PBKDF2,
+      password
+    )
 
-    const encryptedVault = await encryptVault(vault, saltedKey)
+    const encryptedVault = await encryptVault({
+      version: VaultVersion.PBKDF2,
+      vault,
+      passwordOrSaltedKey: saltedKey,
+    })
 
-    const newVault = await decryptVault(encryptedVault, saltedKey)
+    const newVault = await decryptVault({
+      version: VaultVersion.PBKDF2,
+      vault: encryptedVault,
+      passwordOrSaltedKey: saltedKey,
+    })
 
     expect(newVault).toEqual(vault)
   })

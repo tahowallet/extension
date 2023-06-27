@@ -18,6 +18,7 @@ export enum OneTimeAnalyticsEvent {
   ONBOARDING_STARTED = "Onboarding Started",
   ONBOARDING_FINISHED = "Onboarding Finished",
   CHAIN_ADDED = "Chain Added",
+  ARGON_MIGRATION = "Vaults migrated to Argon2",
 }
 
 export const isOneTimeAnalyticsEvent = (

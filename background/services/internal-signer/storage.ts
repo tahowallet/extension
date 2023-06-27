@@ -2,17 +2,14 @@ import browser from "webextension-polyfill"
 
 import {
   EncryptedVault,
+  VaultVersion,
   decryptVault,
   deprecatedDerivePbkdf2KeyFromPassword,
-  deriveSymmetricKeyFromPassword,
+  deriveArgon2KeyFromPassword,
   encryptVault,
 } from "./encryption"
 import { UNIXTime } from "../../types"
-
-export enum VaultVersion {
-  PBKDF2 = 1,
-  Argon2 = 2,
-}
+import logger from "../../lib/logger"
 
 export type SerializedEncryptedVault = {
   timeSaved: UNIXTime
@@ -101,46 +98,55 @@ export async function writeLatestEncryptedVault(
 
 export async function migrateVaultsToArgon(
   password: string
-): Promise<SerializedEncryptedVault[]> {
+): Promise<SerializedEncryptedVaults> {
   const serializedVaults = await getEncryptedVaults()
   if (serializedVaults.version === VaultVersion.Argon2) {
-    return serializedVaults.vaults
+    return serializedVaults
   }
+
   const { vaults } = serializedVaults
+  try {
+    const newVaults = await Promise.all(
+      vaults.map(async ({ vault, timeSaved }) => {
+        const deprecatedSaltedKey = await deprecatedDerivePbkdf2KeyFromPassword(
+          password,
+          vault.salt
+        )
+        const newSaltedKey = await deriveArgon2KeyFromPassword(
+          password,
+          vault.salt
+        )
 
-  const newVaults = await Promise.all(
-    vaults.map(async ({ vault, timeSaved }) => {
-      const deprecatedSaltedKey = await deprecatedDerivePbkdf2KeyFromPassword(
-        password,
-        vault.salt
-      )
-      const newSaltedKey = await deriveSymmetricKeyFromPassword(
-        password,
-        vault.salt
-      )
+        const deprecatedDecryptedVault = await decryptVault({
+          version: VaultVersion.PBKDF2,
+          vault,
+          passwordOrSaltedKey: deprecatedSaltedKey,
+        })
+        const newEncryptedVault = await encryptVault({
+          version: VaultVersion.Argon2,
+          vault: deprecatedDecryptedVault,
+          passwordOrSaltedKey: newSaltedKey,
+        })
 
-      const deprecatedDecryptedVault = await decryptVault(
-        vault,
-        deprecatedSaltedKey
-      )
-      const newEncryptedVault = await encryptVault(
-        deprecatedDecryptedVault,
-        newSaltedKey
-      )
+        return {
+          timeSaved,
+          vault: newEncryptedVault,
+        }
+      })
+    )
 
-      return {
-        timeSaved,
-        vault: newEncryptedVault,
-      }
-    })
-  )
-
-  await browser.storage.local.set({
-    tallyVaults: {
+    const newSerializedVaults = {
       version: VaultVersion.Argon2,
       vaults: newVaults,
-    },
-  })
+    }
 
-  return newVaults
+    await browser.storage.local.set({
+      tallyVaults: newSerializedVaults,
+    })
+
+    return newSerializedVaults
+  } catch (error) {
+    logger.error("Failed to migrate vaults to Argon2")
+    return serializedVaults
+  }
 }

@@ -1151,6 +1151,12 @@ export default class Main extends BaseService<never> {
       }
     })
 
+    this.internalSignerService.emitter.on("migratedToArgon2", async () => {
+      this.analyticsService.sendOneTimeAnalyticsEvent(
+        OneTimeAnalyticsEvent.ARGON_MIGRATION
+      )
+    })
+
     internalSignerSliceEmitter.on("createPassword", async (password) => {
       await this.internalSignerService.unlock(password, true)
     })

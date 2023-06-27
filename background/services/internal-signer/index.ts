@@ -7,7 +7,6 @@ import { Wallet } from "ethers"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import {
-  VaultVersion,
   getEncryptedVaults,
   migrateVaultsToArgon,
   writeLatestEncryptedVault,
@@ -17,6 +16,7 @@ import {
   deriveSymmetricKeyFromPassword,
   encryptVault,
   SaltedKey,
+  VaultVersion,
 } from "./encryption"
 import { HexString, EIP712TypedData, UNIXTime } from "../../types"
 import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
@@ -126,6 +126,7 @@ interface Events extends ServiceLifecycleEvents {
   // TODO message was signed
   signedTx: SignedTransaction
   signedData: string
+  migratedToArgon2: never
 }
 
 const isPrivateKey = (
@@ -153,6 +154,8 @@ const isKeyring = (
  */
 export default class InternalSignerService extends BaseService<Events> {
   #cachedKey: SaltedKey | null = null
+
+  #cachedVaultVersion: VaultVersion = VaultVersion.PBKDF2
 
   #keyrings: HDKeyring[] = []
 
@@ -270,27 +273,29 @@ export default class InternalSignerService extends BaseService<Events> {
       return true
     }
 
+    const { vaults, version } = await migrateVaultsToArgon(password)
+    this.#cachedVaultVersion = version
+
+    if (version === VaultVersion.Argon2) {
+      this.emitter.emit("migratedToArgon2")
+    }
+
     if (!ignoreExistingVaults) {
-      const encryptedVaultsData = await getEncryptedVaults()
-      let { vaults } = encryptedVaultsData
-
-      if (encryptedVaultsData.version === VaultVersion.PBKDF2) {
-        vaults = await migrateVaultsToArgon(password)
-      }
-
       const currentEncryptedVault = vaults.slice(-1)[0]?.vault
       if (currentEncryptedVault) {
         // attempt to load the vault
         const saltedKey = await deriveSymmetricKeyFromPassword(
+          version,
           password,
           currentEncryptedVault.salt
         )
         let plainTextVault: SerializedKeyringData
         try {
-          plainTextVault = await decryptVault<SerializedKeyringData>(
-            currentEncryptedVault,
-            saltedKey
-          )
+          plainTextVault = await decryptVault<SerializedKeyringData>({
+            version,
+            vault: currentEncryptedVault,
+            passwordOrSaltedKey: saltedKey,
+          })
           this.#cachedKey = saltedKey
         } catch (err) {
           // if we weren't able to load the vault, don't unlock
@@ -323,7 +328,7 @@ export default class InternalSignerService extends BaseService<Events> {
     // if there's no vault or we want to force a new vault, generate a new key
     // and unlock
     if (!this.#cachedKey) {
-      this.#cachedKey = await deriveSymmetricKeyFromPassword(password)
+      this.#cachedKey = await deriveSymmetricKeyFromPassword(version, password)
       await this.#persistInternalSigners()
     }
 
@@ -1050,15 +1055,16 @@ export default class InternalSignerService extends BaseService<Events> {
       const hiddenAccounts = { ...this.#hiddenAccounts }
       const metadata = { ...this.#signerMetadata }
       serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
-      const vault = await encryptVault(
-        {
+      const vault = await encryptVault({
+        version: this.#cachedVaultVersion,
+        passwordOrSaltedKey: this.#cachedKey,
+        vault: {
           keyrings: serializedKeyrings,
           privateKeys: serializedPrivateKeys,
           metadata,
           hiddenAccounts,
         },
-        this.#cachedKey
-      )
+      })
       await writeLatestEncryptedVault(vault)
     }
   }
