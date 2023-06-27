@@ -324,7 +324,7 @@ export default function LedgerImportAccounts({
   return (
     <>
       <LedgerPanelContainer
-        indicatorImageSrc="/images/connect_ledger_indicator_connected.svg"
+        indicatorImage="connected"
         heading={t("selectLedgeraccounts")}
         subHeading={t("connectSelectedLedger")}
       >
