@@ -118,9 +118,13 @@ export async function migrateVaultsToArgon(
         password,
         vault.salt
       )
-      const oldDecryptedVault = await decryptVault(vault, deprecatedSaltedKey)
+
+      const deprecatedDecryptedVault = await decryptVault(
+        vault,
+        deprecatedSaltedKey
+      )
       const newEncryptedVault = await encryptVault(
-        oldDecryptedVault,
+        deprecatedDecryptedVault,
         newSaltedKey
       )
 
