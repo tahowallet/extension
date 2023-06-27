@@ -1,15 +1,26 @@
 import browser from "webextension-polyfill"
 
-import { EncryptedVault } from "./encryption"
+import {
+  EncryptedVault,
+  decryptVault,
+  deprecatedDerivePbkdf2KeyFromPassword,
+  deriveSymmetricKeyFromPassword,
+  encryptVault,
+} from "./encryption"
 import { UNIXTime } from "../../types"
 
-type SerializedEncryptedVault = {
+export enum VaultVersion {
+  PBKDF2 = 1,
+  Argon2 = 2,
+}
+
+export type SerializedEncryptedVault = {
   timeSaved: UNIXTime
   vault: EncryptedVault
 }
 
 type SerializedEncryptedVaults = {
-  version: 1
+  version: VaultVersion
   vaults: SerializedEncryptedVault[]
 }
 
@@ -22,15 +33,16 @@ export async function getEncryptedVaults(): Promise<SerializedEncryptedVaults> {
   const data = await browser.storage.local.get("tallyVaults")
   if (!("tallyVaults" in data)) {
     return {
-      version: 1,
+      version: VaultVersion.Argon2,
       vaults: [],
     }
   }
   const { tallyVaults } = data
   if (
     "version" in tallyVaults &&
-    tallyVaults.version === 1 &&
     "vaults" in tallyVaults &&
+    (tallyVaults.version === VaultVersion.PBKDF2 ||
+      tallyVaults.version === VaultVersion.Argon2) &&
     Array.isArray(tallyVaults.vaults)
   ) {
     return tallyVaults as SerializedEncryptedVaults
@@ -85,4 +97,46 @@ export async function writeLatestEncryptedVault(
       },
     })
   }
+}
+
+export async function migrateVaultsToArgon(
+  password: string
+): Promise<SerializedEncryptedVault[]> {
+  const serializedVaults = await getEncryptedVaults()
+  if (serializedVaults.version === VaultVersion.Argon2) {
+    return serializedVaults.vaults
+  }
+  const { vaults } = serializedVaults
+
+  const newVaults = await Promise.all(
+    vaults.map(async ({ vault, timeSaved }) => {
+      const deprecatedSaltedKey = await deprecatedDerivePbkdf2KeyFromPassword(
+        password,
+        vault.salt
+      )
+      const newSaltedKey = await deriveSymmetricKeyFromPassword(
+        password,
+        vault.salt
+      )
+      const oldDecryptedVault = await decryptVault(vault, deprecatedSaltedKey)
+      const newEncryptedVault = await encryptVault(
+        oldDecryptedVault,
+        newSaltedKey
+      )
+
+      return {
+        timeSaved,
+        vault: newEncryptedVault,
+      }
+    })
+  )
+
+  await browser.storage.local.set({
+    tallyVaults: {
+      version: VaultVersion.Argon2,
+      vaults: newVaults,
+    },
+  })
+
+  return newVaults
 }

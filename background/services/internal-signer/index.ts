@@ -6,7 +6,12 @@ import { arrayify } from "ethers/lib/utils"
 import { Wallet } from "ethers"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
+import {
+  VaultVersion,
+  getEncryptedVaults,
+  migrateVaultsToArgon,
+  writeLatestEncryptedVault,
+} from "./storage"
 import {
   decryptVault,
   deriveSymmetricKeyFromPassword,
@@ -251,7 +256,13 @@ export default class InternalSignerService extends BaseService<Events> {
     }
 
     if (!ignoreExistingVaults) {
-      const { vaults } = await getEncryptedVaults()
+      const encryptedVaultsData = await getEncryptedVaults()
+      let { vaults } = encryptedVaultsData
+
+      if (encryptedVaultsData.version === VaultVersion.PBKDF2) {
+        vaults = await migrateVaultsToArgon(password)
+      }
+
       const currentEncryptedVault = vaults.slice(-1)[0]?.vault
       if (currentEncryptedVault) {
         // attempt to load the vault
