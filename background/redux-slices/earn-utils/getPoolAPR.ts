@@ -9,6 +9,7 @@ import getDoggoPrice from "./getDoggoPrice"
 import getTokenPrice from "./getTokenPrice"
 import { sameEVMAddress } from "../../lib/utils"
 import { fetchWithTimeout } from "../../utils/fetching"
+import { PricesState } from "../prices"
 
 async function getYearnVaultAPY(yearnVaultAddress: HexString) {
   const yearnVaultsAPIData = await (
@@ -58,7 +59,7 @@ const DOGGO_HIGH_PRICE_ESTIMATE = 250000000n // $750M valuation
 
 const getPoolAPR = async ({
   asset,
-  assets,
+  prices,
   vaultAddress,
 }: {
   asset: AnyAsset & {
@@ -66,6 +67,7 @@ const getPoolAPR = async ({
     contractAddress: HexString
   }
   assets: AssetsState
+  prices: PricesState
   vaultAddress: HexString
 }): Promise<{
   totalAPR?: string
@@ -80,7 +82,7 @@ const getPoolAPR = async ({
   // How many tokens have been staked into the hunting ground
   const tokensStaked = await huntingGroundContract.totalSupply()
   // What is the value of a single stake token
-  const { singleTokenPrice } = await getTokenPrice(asset, assets)
+  const { singleTokenPrice } = await getTokenPrice(asset, prices)
   // Fetch underlying yearn vault APR
   const yearnVaultAddress = await huntingGroundContract.vault()
   const yearnVaultAPYPercent = await getYearnVaultAPY(yearnVaultAddress)
@@ -115,7 +117,7 @@ const getPoolAPR = async ({
       ? secondsInAYear.div(remainingPeriodSeconds)
       : BigNumber.from(0)
   // What is the value of single reward token in USD bigint with 10 decimals
-  const rewardTokenPrice = await getDoggoPrice(assets, mainCurrencySymbol)
+  const rewardTokenPrice = await getDoggoPrice(prices, mainCurrencySymbol)
   // The doggo price is not available before DAO vote, we will return approximate values
   // The values are in USD with 10 decimals, e.g. 1_000_000_000n = $0.1
 

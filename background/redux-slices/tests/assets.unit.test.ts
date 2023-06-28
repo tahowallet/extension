@@ -8,12 +8,9 @@ import {
   createPricePoint,
   createSmartContractAsset,
 } from "../../tests/factories"
-import reducer, {
-  assetsLoaded,
-  AssetsState,
-  selectAssetPricePoint,
-  SingleAssetState,
-} from "../assets"
+import reducer, { assetsLoaded, SingleAssetState } from "../assets"
+import { PricesState, selectAssetPricePoint } from "../prices"
+import { getFullAssetID } from "../utils/asset-utils"
 
 const asset: SmartContractFungibleAsset = createSmartContractAsset()
 
@@ -21,12 +18,13 @@ const pricePoint: PricePoint = createPricePoint(asset)
 
 const assetWithPricePoint = {
   ...asset,
-  recentPrices: {
+}
+
+const pricesState: PricesState = {
+  [getFullAssetID(assetWithPricePoint)]: {
     USD: pricePoint,
   },
 }
-
-const assetState: AssetsState = [assetWithPricePoint]
 
 describe("Reducers", () => {
   describe("assetsLoaded", () => {
@@ -48,7 +46,7 @@ describe("Reducers", () => {
 describe("Assets selectors", () => {
   describe("Price Points", () => {
     test("should retrieve price point for an asset", () => {
-      const result = selectAssetPricePoint(assetState, asset, "USD")
+      const result = selectAssetPricePoint(pricesState, asset, "USD")
 
       expect(result).toMatchObject(pricePoint)
     })
@@ -62,14 +60,10 @@ describe("Assets selectors", () => {
 
       const similarAssetPricePoint: PricePoint = createPricePoint(similarAsset)
 
-      const similarAssetWithPricePoint: SingleAssetState = {
-        ...similarAsset,
-        recentPrices: {
-          USD: similarAssetPricePoint,
-        },
+      const state = {
+        ...pricesState,
+        [getFullAssetID(similarAsset)]: { USD: similarAssetPricePoint },
       }
-
-      const state = [assetWithPricePoint, similarAssetWithPricePoint]
       const result = selectAssetPricePoint(state, similarAsset, "USD")
 
       expect(result).toMatchObject(similarAssetPricePoint)
@@ -81,11 +75,13 @@ describe("Assets selectors", () => {
       const assetWithoutPricePoint: SingleAssetState = {
         ...asset,
         homeNetwork: POLYGON,
-        recentPrices: {},
       }
 
-      const state = [assetWithPricePoint, assetWithoutPricePoint]
-      const result = selectAssetPricePoint(state, assetWithoutPricePoint, "USD")
+      const result = selectAssetPricePoint(
+        pricesState,
+        assetWithoutPricePoint,
+        "USD"
+      )
 
       expect(result).toMatchObject(pricePoint)
     })
@@ -96,10 +92,9 @@ describe("Assets selectors", () => {
         ...asset,
         homeNetwork: POLYGON,
         decimals: 6,
-        recentPrices: {},
       }
 
-      const state = [assetWithPricePoint, assetWithoutPricePoint]
+      const state = { ...pricesState }
       const result = selectAssetPricePoint(state, assetWithoutPricePoint, "USD")
 
       expect(assetWithPricePoint.decimals).toBe(18)

@@ -1,6 +1,4 @@
-/* eslint-disable import/prefer-default-export */
 import {
-  getAssetsState,
   selectFilteredTotalFloorPrice,
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
@@ -13,7 +11,7 @@ import {
   ETH,
   USD,
 } from "@tallyho/tally-background/constants"
-import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
+import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/prices"
 import {
   cleanCachedNFTs,
   refetchCollections,
@@ -30,10 +28,15 @@ export const useTotalNFTsFloorPrice = (): {
   totalFloorPriceInETH: string
   totalFloorPriceInUSD: string
 } => {
-  const assets = useBackgroundSelector(getAssetsState)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
   const totalFloorPrice = useBackgroundSelector(selectFilteredTotalFloorPrice)
-  const ETHPricePoint = selectAssetPricePoint(assets, ETH, mainCurrencySymbol)
+  const allPrices = useBackgroundSelector((state) => state.prices)
+
+  const ETHPricePoint = selectAssetPricePoint(
+    allPrices,
+    ETH,
+    mainCurrencySymbol
+  )
 
   const mainCurrencyTotalPrice = Object.entries(totalFloorPrice).reduce(
     (acc, [symbol, price]) => {
@@ -44,7 +47,7 @@ export const useTotalNFTsFloorPrice = (): {
       if (!baseAsset) return acc
 
       const pricePoint = selectAssetPricePoint(
-        assets,
+        allPrices,
         baseAsset,
         mainCurrencySymbol
       )

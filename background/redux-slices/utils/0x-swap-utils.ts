@@ -7,7 +7,8 @@ import {
 } from "../../lib/fixed-point"
 import { getPricePoint, getTokenPrices } from "../../lib/prices"
 import { EVMNetwork } from "../../networks"
-import { AssetsState, selectAssetPricePoint, SingleAssetState } from "../assets"
+import { AssetsState, SingleAssetState } from "../assets"
+import { PricesState, selectAssetPricePoint } from "../prices"
 import {
   AssetMainCurrencyAmount,
   enrichAssetAmountWithMainCurrencyValues,
@@ -46,6 +47,7 @@ export async function getAssetPricePoint(
   assets: AssetsState,
   network: EVMNetwork
 ): Promise<PricePoint | undefined> {
+  // FIXME: review
   const assetPricesNetworks = assets
     .filter(
       (assetItem) =>
@@ -71,6 +73,7 @@ export async function getAssetPricePoint(
 
 export async function getAssetAmount(
   assets: AssetsState,
+  prices: PricesState,
   asset: SwappableAsset,
   amount: string,
   network: EVMNetwork
@@ -91,7 +94,7 @@ export async function getAssetAmount(
   )
 
   const assetPricePoint = selectAssetPricePoint(
-    assets,
+    prices,
     asset,
     hardcodedMainCurrencySymbol
   )
@@ -115,6 +118,7 @@ export async function checkCurrencyAmount(
   tokenToEthRate: number,
   asset: SwappableAsset,
   assets: AssetsState,
+  prices: PricesState,
   amount: string,
   network: EVMNetwork
 ): Promise<string | undefined> {
@@ -123,6 +127,7 @@ export async function checkCurrencyAmount(
       ? (
           await getAssetAmount(
             assets,
+            prices,
             asset,
             fixedPointNumberToString({
               amount: BigInt(amount),

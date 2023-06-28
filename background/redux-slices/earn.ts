@@ -24,6 +24,7 @@ import { ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
 import YEARN_VAULT_ABI from "../lib/yearnVault"
 import { getPoolAPR, getTokenPrice, tokenIcons } from "./earn-utils"
+import { PricesState } from "./prices"
 
 export type ApprovalTargetAllowance = {
   contractAddress: HexString
@@ -414,9 +415,10 @@ export const updateVaults = createBackgroundAsyncThunk(
   "earn/updateLockedValues",
   async (vaultsToUpdate: AvailableVault[], { getState, dispatch }) => {
     const currentState = getState()
-    const { assets } = currentState as {
+    const { assets, prices } = currentState as {
       earn: EarnState
       assets: AssetsState
+      prices: PricesState
     }
     const provider = getProvider()
     const signer = provider.getSigner()
@@ -444,10 +446,11 @@ export const updateVaults = createBackgroundAsyncThunk(
       const vaultAPR = await getPoolAPR({
         asset: vault.asset,
         assets,
+        prices,
         vaultAddress: vault.vaultAddress,
       })
 
-      const { pricePoint } = await getTokenPrice(vault.asset, assets)
+      const { pricePoint } = await getTokenPrice(vault.asset, prices)
       const userTVL = enrichAssetAmountWithMainCurrencyValues(
         { amount: newUserLockedValue.toBigInt(), asset: vault.asset },
         pricePoint,

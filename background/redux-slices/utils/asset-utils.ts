@@ -397,11 +397,9 @@ export function isUntrustedAsset(asset: AnyAsset): boolean {
 }
 
 type AssetType = "base" | "erc20"
-
-export type AssetID = `${AssetType}/${string}`
-
 type ChainID = string
 
+export type AssetID = `${AssetType}/${string}`
 export type FullAssetID = `${ChainID}/${AssetID}`
 
 /**
@@ -417,6 +415,16 @@ export const getAssetID = (
   }
 
   return `erc20/${asset.contractAddress}`
+}
+
+export const getFullAssetID = (
+  asset: NetworkBaseAsset | SmartContractFungibleAsset
+): FullAssetID => {
+  if (isNetworkBaseAsset(asset)) {
+    return `${asset.chainID}/${getAssetID(asset)}`
+  }
+
+  return `${asset.homeNetwork.chainID}/${getAssetID(asset)}`
 }
 
 // FIXME Unify once asset similarity code is unified.

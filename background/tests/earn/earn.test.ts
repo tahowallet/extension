@@ -5,7 +5,7 @@
 import { BigNumber } from "ethers"
 import * as getTokenPrice from "../../redux-slices/earn-utils/getTokenPrice"
 import { getDoggoPrice, getPoolAPR } from "../../redux-slices/earn-utils"
-import assets from "./assets.mock"
+import { assets, prices } from "./assets.mock"
 import * as contractUtils from "../../redux-slices/utils/contract-utils"
 
 const mainCurrencySymbol = "USD"
@@ -26,7 +26,7 @@ describe("Earn", () => {
           reserve1: BigNumber.from(0n),
         }),
       }))
-      const doggoPrice = await getDoggoPrice(assets, mainCurrencySymbol)
+      const doggoPrice = await getDoggoPrice(prices, mainCurrencySymbol)
 
       expect(doggoPrice).toBe(0n)
     })
@@ -39,7 +39,7 @@ describe("Earn", () => {
           reserve1: BigNumber.from(100000000000000000n),
         }),
       }))
-      const doggoPrice = await getDoggoPrice(assets, mainCurrencySymbol)
+      const doggoPrice = await getDoggoPrice(prices, mainCurrencySymbol)
 
       expect(doggoPrice).toBeGreaterThan(0n)
     })
@@ -52,7 +52,7 @@ describe("Earn", () => {
           reserve1: BigNumber.from(100000n),
         }),
       }))
-      const doggoPrice = await getDoggoPrice([], mainCurrencySymbol)
+      const doggoPrice = await getDoggoPrice({}, mainCurrencySymbol)
 
       expect(doggoPrice).toBe(0n)
     })
@@ -85,7 +85,12 @@ describe("Earn", () => {
         vault: () => "",
       }))
 
-      const APR = await getPoolAPR({ asset, assets, vaultAddress: "0x0" })
+      const APR = await getPoolAPR({
+        asset,
+        assets,
+        prices,
+        vaultAddress: "0x0",
+      })
 
       expect(APR.totalAPR).toBe(undefined)
     })
@@ -107,7 +112,12 @@ describe("Earn", () => {
         vault: () => "",
       }))
 
-      const APR = await getPoolAPR({ asset, assets, vaultAddress: "0x0" })
+      const APR = await getPoolAPR({
+        asset,
+        assets,
+        prices,
+        vaultAddress: "0x0",
+      })
 
       expect(APR.totalAPR).toBe("New")
     })
@@ -134,7 +144,12 @@ describe("Earn", () => {
         vault: () => "",
       }))
 
-      const APR = await getPoolAPR({ asset, assets, vaultAddress: "0x0" })
+      const APR = await getPoolAPR({
+        asset,
+        assets,
+        prices,
+        vaultAddress: "0x0",
+      })
 
       expect(APR.totalAPR).toBe("332.2B%")
     })
