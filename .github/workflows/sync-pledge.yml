@@ -13,6 +13,7 @@ jobs:
           node-version: "16"
           cache: "yarn"
       - run: yarn install --frozen-lockfile
+        working-directory: .github/workflows/cron
       - name: Sync pledge addresses
         run: node ./.github/workflows/cron/pledge-sync.js
         env:
