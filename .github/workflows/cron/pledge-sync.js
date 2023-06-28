@@ -1,5 +1,5 @@
 // @ts-check
-/* eslint-disable no-console, no-await-in-loop */
+/* eslint-disable no-console, no-await-in-loop, import/no-unresolved */
 import admin from "firebase-admin"
 import fetch from "node-fetch"
 
