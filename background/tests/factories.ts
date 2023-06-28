@@ -67,14 +67,27 @@ export const createPreferenceService = async (): Promise<PreferenceService> => {
   return PreferenceService.create()
 }
 
-export const createInternalSignerService = async (
-  preferenceService?: PreferenceService
-): Promise<InternalSignerService> => {
-  const override = preferenceService
-    ? Promise.resolve(preferenceService)
-    : createPreferenceService()
+export async function createAnalyticsService(overrides?: {
+  chainService?: Promise<ChainService>
+  preferenceService?: Promise<PreferenceService>
+}): Promise<AnalyticsService> {
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+  return AnalyticsService.create(preferenceService)
+}
 
-  return InternalSignerService.create(override)
+type CreateInternalSignerServiceOverrides = {
+  preferenceService?: Promise<PreferenceService>
+  analyticsService?: Promise<AnalyticsService>
+}
+
+export const createInternalSignerService = async (
+  overrides: CreateInternalSignerServiceOverrides = {}
+): Promise<InternalSignerService> => {
+  return InternalSignerService.create(
+    overrides.preferenceService ?? createPreferenceService(),
+    overrides.analyticsService ?? createAnalyticsService()
+  )
 }
 
 type CreateChainServiceOverrides = {
@@ -141,15 +154,6 @@ type CreateProviderBridgeServiceOverrides = {
 type CreateInternalEthereumProviderServiceOverrides = {
   chainService?: Promise<ChainService>
   preferenceService?: Promise<PreferenceService>
-}
-
-export async function createAnalyticsService(overrides?: {
-  chainService?: Promise<ChainService>
-  preferenceService?: Promise<PreferenceService>
-}): Promise<AnalyticsService> {
-  const preferenceService =
-    overrides?.preferenceService ?? createPreferenceService()
-  return AnalyticsService.create(preferenceService)
 }
 
 export const createSigningService = async (

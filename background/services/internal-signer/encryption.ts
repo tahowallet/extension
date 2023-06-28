@@ -27,7 +27,7 @@ export type SaltedKey = {
   key: CryptoKey
 }
 
-function bufferToBase64(array: Uint8Array): string {
+function bufferToBase64(array: Uint8Array | ArrayBuffer): string {
   return Buffer.from(array).toString("base64")
 }
 

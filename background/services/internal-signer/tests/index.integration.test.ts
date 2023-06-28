@@ -15,6 +15,7 @@ import {
 import {
   createTransactionRequest,
   createPreferenceService,
+  createAnalyticsService,
 } from "../../../tests/factories"
 
 const validMnemonics = {
@@ -43,7 +44,11 @@ const dateNowValue = 1000000000000
 
 const startInternalSignerService = async () => {
   const preferencesService = createPreferenceService()
-  const service = await InternalSignerService.create(preferencesService)
+  const analyticsService = createAnalyticsService()
+  const service = await InternalSignerService.create(
+    preferencesService,
+    analyticsService
+  )
 
   await service.startService()
 

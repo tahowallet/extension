@@ -29,6 +29,8 @@ import { AddressOnNetwork } from "../../accounts"
 import logger from "../../lib/logger"
 import PreferenceService from "../preferences"
 import { DEFAULT_AUTOLOCK_INTERVAL } from "../preferences/defaults"
+import AnalyticsService from "../analytics"
+import { OneTimeAnalyticsEvent } from "../../lib/posthog"
 
 export enum SignerInternalTypes {
   mnemonicBIP39S128 = "mnemonic#bip39:128",
@@ -126,7 +128,6 @@ interface Events extends ServiceLifecycleEvents {
   // TODO message was signed
   signedTx: SignedTransaction
   signedData: string
-  migratedToArgon2: never
 }
 
 const isPrivateKey = (
@@ -182,12 +183,15 @@ export default class InternalSignerService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     InternalSignerService,
-    [Promise<PreferenceService>]
-  > = async (preferenceService) => {
-    return new this(await preferenceService)
+    [Promise<PreferenceService>, Promise<AnalyticsService>]
+  > = async (preferenceService, analyticsService) => {
+    return new this(await preferenceService, await analyticsService)
   }
 
-  private constructor(private preferenceService: PreferenceService) {
+  private constructor(
+    private preferenceService: PreferenceService,
+    private analyticsService: AnalyticsService
+  ) {
     super({
       autolock: {
         schedule: {
@@ -277,7 +281,9 @@ export default class InternalSignerService extends BaseService<Events> {
     this.#cachedVaultVersion = version
 
     if (version === VaultVersion.Argon2) {
-      this.emitter.emit("migratedToArgon2")
+      this.analyticsService.sendOneTimeAnalyticsEvent(
+        OneTimeAnalyticsEvent.ARGON_MIGRATION
+      )
     }
 
     if (!ignoreExistingVaults) {

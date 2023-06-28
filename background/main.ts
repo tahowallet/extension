@@ -303,8 +303,12 @@ export default class Main extends BaseService<never> {
 
   static create: ServiceCreatorFunction<never, Main, []> = async () => {
     const preferenceService = PreferenceService.create()
-    const internalSignerService =
-      InternalSignerService.create(preferenceService)
+    const analyticsService = AnalyticsService.create(preferenceService)
+
+    const internalSignerService = InternalSignerService.create(
+      preferenceService,
+      analyticsService
+    )
     const chainService = ChainService.create(
       preferenceService,
       internalSignerService
@@ -336,8 +340,6 @@ export default class Main extends BaseService<never> {
       ledgerService,
       chainService
     )
-
-    const analyticsService = AnalyticsService.create(preferenceService)
 
     const nftsService = NFTsService.create(chainService)
 
@@ -1149,12 +1151,6 @@ export default class Main extends BaseService<never> {
       } else {
         this.store.dispatch(internalSignerUnlocked())
       }
-    })
-
-    this.internalSignerService.emitter.on("migratedToArgon2", async () => {
-      this.analyticsService.sendOneTimeAnalyticsEvent(
-        OneTimeAnalyticsEvent.ARGON_MIGRATION
-      )
     })
 
     internalSignerSliceEmitter.on("createPassword", async (password) => {
