@@ -1,4 +1,3 @@
-import { webcrypto } from "crypto"
 import browser from "webextension-polyfill"
 
 import InternalSignerService, {
@@ -17,16 +16,6 @@ import {
   createTransactionRequest,
   createPreferenceService,
 } from "../../../tests/factories"
-
-const originalCrypto = global.crypto
-beforeEach(() => {
-  // polyfill the WebCrypto API
-  global.crypto = webcrypto as unknown as Crypto
-})
-
-afterEach(() => {
-  global.crypto = originalCrypto
-})
 
 const validMnemonics = {
   metamask: [

@@ -1,4 +1,3 @@
-import { webcrypto } from "crypto"
 import {
   encryptVault,
   decryptVault,
@@ -6,18 +5,7 @@ import {
   VaultVersion,
 } from "../encryption"
 
-const originalCrypto = global.crypto
-
 describe("Encryption utils", () => {
-  beforeEach(() => {
-    // polyfill the WebCrypto API
-    global.crypto = webcrypto as unknown as Crypto
-  })
-
-  afterEach(() => {
-    global.crypto = originalCrypto
-  })
-
   it("derives symmetric keys", async () => {
     /* eslint-disable no-await-in-loop */
     for (let i = 0; i < 5; i += 1) {
