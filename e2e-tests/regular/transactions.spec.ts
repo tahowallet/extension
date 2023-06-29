@@ -1,7 +1,7 @@
 import { test, expect } from "../utils"
 
 test.describe("Transactions", () => {
-  test("User can send base asset (on Goerli testnet)", async ({
+  test("User can send base asset (on Goerli testnet) @expensive", async ({
     page: popup,
     walletPageHelper,
     transactionsHelper,

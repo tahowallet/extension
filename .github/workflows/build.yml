@@ -171,9 +171,10 @@ jobs:
       # Some tests that we have configured in the `e2e-tests` folder may require
       # spending funds. Although they're desined to not spend much, with
       # frequent execution that can accumulate. We don't want to execute such
-      # tests on every PR update. We'll tag those tests with the `@slow` tag.
+      # tests on every PR update. We'll tag those tests with the `@expensive`
+      # tag.
       - name: Run free Playwright tests
-        run: xvfb-run npx playwright test --grep-invert @slow
+        run: xvfb-run npx playwright test --grep-invert @expensive
         #env:
         # DEBUG: pw:api*
       - name: Run costing Playwright tests
