@@ -1,14 +1,23 @@
 // @ts-check
 /* eslint-disable no-console */ // need logging
 /* eslint-disable no-await-in-loop  */ // need to process items in sequence
-import admin from "firebase-admin"
+import auth from "firebase/auth"
+import { initializeApp } from "firebase/app"
+import {
+  getFirestore,
+  query,
+  orderBy,
+  limit,
+  getDocs,
+  collection,
+  startAfter,
+  where,
+} from "firebase/firestore"
 import fetch from "node-fetch"
 
-/* eslint-disable prefer-destructuring */
-const GALXE_ACCESS_TOKEN = process.env.GALXE_ACCESS_TOKEN
-const FIRESTORE_AUTH = process.env.FIRESTORE_AUTH
+const { GALXE_ACCESS_TOKEN, FIRESTORE_USER, FIRESTORE_PASSWORD } = process.env
 
-if (!GALXE_ACCESS_TOKEN || !FIRESTORE_AUTH) {
+if (!GALXE_ACCESS_TOKEN || !FIRESTORE_USER || !FIRESTORE_PASSWORD) {
   console.error("Missing credentials")
   process.exit(1)
 }
@@ -19,26 +28,39 @@ const TARGET_DATE = new Date(Date.now() - 4 * 24 * 60 * 60_000)
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const getAddresses = async () => {
-  const app = admin.initializeApp({
-    credential: admin.credential.cert(JSON.parse(FIRESTORE_AUTH)),
+  const app = initializeApp({
+    apiKey: "AIzaSyAa78OwfLesUAW8hdzbhUkc5U8LSVH3y7s",
+    authDomain: "tally-prd.firebaseapp.com",
+    projectId: "tally-prd",
+    storageBucket: "tally-prd.appspot.com",
+    messagingSenderId: "567502050788",
+    appId: "1:567502050788:web:bb953a931a98e396d363f1",
   })
 
-  const db = app.firestore()
-  const collection = db.collection("address")
+  await auth.signInWithEmailAndPassword(
+    auth.getAuth(app),
+    FIRESTORE_USER,
+    FIRESTORE_PASSWORD
+  )
+
+  const db = getFirestore(app)
+  const dbCollection = collection(db, "address")
 
   const CHUNK_SIZE = 5_000
 
-  const getDocs = async (offset) => {
-    let query = collection
-      .orderBy("signedManifesto.timestamp", "desc")
-      .limit(CHUNK_SIZE)
-      .where("signedManifesto.timestamp", ">=", TARGET_DATE)
+  const fetchNextBatch = async (offset) => {
+    let currentQuery = query(
+      dbCollection,
+      orderBy("signedManifesto.timestamp", "desc"),
+      limit(CHUNK_SIZE),
+      where("signedManifesto.timestamp", ">=", TARGET_DATE)
+    )
 
     if (offset) {
-      query = query.startAfter(offset)
+      currentQuery = query(currentQuery, startAfter(offset))
     }
 
-    return query.get().then((snapshot) => snapshot.docs)
+    return getDocs(currentQuery).then((snapshot) => snapshot.docs)
   }
 
   const allDocs = []
@@ -47,7 +69,7 @@ const getAddresses = async () => {
   let nextBatch = []
 
   do {
-    nextBatch = await getDocs(offsetDoc)
+    nextBatch = await fetchNextBatch(offsetDoc)
 
     offsetDoc = nextBatch[nextBatch.length - 1]
 

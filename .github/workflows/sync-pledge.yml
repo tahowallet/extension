@@ -20,4 +20,5 @@ jobs:
         working-directory: .github/workflows/cron
         env:
           GALXE_ACCESS_TOKEN: ${{ secrets.GALXE_ACCESS_TOKEN }}
-          FIRESTORE_AUTH: ${{ secrets.FIRESTORE_AUTH }}
+          FIRESTORE_USER: ${{ secrets.FIRESTORE_USER }}
+          FIRESTORE_PASSWORD: ${{ secrets.FIRESTORE_PASSWORD }}
