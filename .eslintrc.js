@@ -97,7 +97,6 @@ module.exports = {
       {
         argsIgnorePattern: "^_",
         varsIgnorePattern: "^_",
-        ignoreRestSiblings: true,
       },
     ],
     "no-unused-vars": "off",

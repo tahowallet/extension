@@ -956,7 +956,7 @@ export default class InternalSignerService extends BaseService<Events> {
     }
 
     // When signing we should not include EIP712Domain type
-    const { EIP712Domain, ...typesForSigning } = types
+    const { EIP712Domain: _, ...typesForSigning } = types
     try {
       let signature: string
       if (isPrivateKey(signerWithType)) {

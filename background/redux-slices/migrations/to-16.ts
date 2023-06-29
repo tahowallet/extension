@@ -96,8 +96,11 @@ export default (prevState: Record<string, unknown>): NewState => {
                   : {},
               }
 
-              const { spenderName, spenderAddress, ...oldAnnotationProps } =
-                annotation
+              const {
+                spenderName: __,
+                spenderAddress: ___,
+                ...oldAnnotationProps
+              } = annotation
 
               newState.activities[address][chainID].entities[
                 activityItem.hash

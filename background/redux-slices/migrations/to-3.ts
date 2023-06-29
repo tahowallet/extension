@@ -5,7 +5,7 @@
 export default (
   prevState: Record<string, unknown>
 ): Record<string, unknown> => {
-  const { assets, ...newState } = prevState
+  const { assets: _, ...newState } = prevState
 
   // Clear assets collection; these should be immediately repopulated by the
   // IndexingService in startService.

@@ -25,7 +25,7 @@ type NewState = {
 export default (prevState: Record<string, unknown>): NewState => {
   const oldState = prevState as OldState
   const {
-    keyrings: { keyringMetadata, importing, ...keyringsState },
+    keyrings: { keyringMetadata, importing: _, ...keyringsState },
     ...stateWithoutKeyrings
   } = oldState
 

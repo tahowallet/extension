@@ -55,7 +55,7 @@ function SignerLedgerSigningTypedData({
 }: {
   typedData: EIP712TypedData
 }): ReactElement {
-  const { EIP712Domain, ...typesForSigning } = typedData.types
+  const { EIP712Domain: _, ...typesForSigning } = typedData.types
   const domainHash = _TypedDataEncoder
     .hashDomain(typedData.domain)
     .toUpperCase()
