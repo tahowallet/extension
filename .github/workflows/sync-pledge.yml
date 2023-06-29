@@ -15,7 +15,8 @@ jobs:
       - run: yarn install --frozen-lockfile
         working-directory: .github/workflows/cron
       - name: Sync pledge addresses
-        run: node ./.github/workflows/cron/pledge-sync.js
+        run: node pledge-sync.js
+        working-directory: .github/workflows/cron
         env:
           GALXE_ACCESS_TOKEN: ${{ secrets.GALXE_ACCESS_TOKEN }}
           FIRESTORE_AUTH: ${{ secrets.FIRESTORE_AUTH }}

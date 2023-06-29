@@ -98,6 +98,8 @@ jobs:
           node-version: "${{ steps.nvm.outputs.NVMRC }}"
           cache: "yarn"
       - run: yarn install --frozen-lockfile
+      - run: yarn install --frozen-lockfile
+        workdir: .github/workflows/cron
       - run: yarn lint
   detect-if-flag-changed:
     runs-on: ubuntu-latest

@@ -1,5 +1,6 @@
 // @ts-check
-/* eslint-disable no-console, no-await-in-loop, import/no-unresolved */
+/* eslint-disable no-console */ // need logging
+/* eslint-disable no-await-in-loop  */ // need to process items in sequence
 import admin from "firebase-admin"
 import fetch from "node-fetch"
 
