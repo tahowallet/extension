@@ -49,26 +49,24 @@ test.describe("Token Trust", () => {
         .getByText("Wallet", { exact: true })
         .click()
 
-      // Commented out until https://github.com/tahowallet/extension/pull/3195
-      // gets fixed.
-      //   /**
-      //    * Ensure the base asset is visible and is not unverified.
-      //    */
-      //   await assetsHelper.assertVerifiedAssetOnWalletPage(/^ETH$/, "base")
+      /**
+       * Ensure the base asset is visible and is not unverified.
+       */
+      await assetsHelper.assertVerifiedAssetOnWalletPage(/^ETH$/, "base")
 
-      //   /**
-      //    * Ensure there are no fields related to unverified assets in the
-      //    * base asset's details.
-      //    */
-      //   await popup.locator(".asset_list_item").first().click() // We use `.first()` because the base asset should be first on the list
-      //   await assetsHelper.assertAssetDetailsPage(
-      //     /^Ethereum$/,
-      //     /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
-      //     /^ETH$/,
-      //     /^(\d|,)+(\.\d{2,4})*$/,
-      //     "base"
-      //   )
-      //   await popup.getByRole("button", { name: "Back", exact: true }).click()
+      /**
+       * Ensure there are no fields related to unverified assets in the
+       * base asset's details.
+       */
+      await popup.locator(".asset_list_item").first().click() // We use `.first()` because the base asset should be first on the list
+      await assetsHelper.assertAssetDetailsPage(
+        /^Ethereum$/,
+        /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
+        /^ETH$/,
+        /^(\d|,)+(\.\d{2,4})*$/,
+        "base"
+      )
+      await popup.getByRole("button", { name: "Back", exact: true }).click()
 
       /**
        * Ensure the ERC-20 asset is visible and is not unverified.
@@ -165,26 +163,24 @@ test.describe("Token Trust", () => {
         .getByText("Wallet", { exact: true })
         .click()
 
-      // Commented out until https://github.com/tahowallet/extension/pull/3195
-      // gets fixed.
-      //   /**
-      //    * Ensure the base asset is visible and is not unverified.
-      //    */
-      //   await assetsHelper.assertVerifiedAssetOnWalletPage(/^ETH$/, "base")
+      /**
+       * Ensure the base asset is visible and is not unverified.
+       */
+      await assetsHelper.assertVerifiedAssetOnWalletPage(/^ETH$/, "base")
 
-      //   /**
-      //    * Ensure there are no fields related to unverified assets in the
-      //    * base asset's details.
-      //    */
-      //   await popup.locator(".asset_list_item").first().click() // We use `.first()` because the base asset should be first on the list
-      //   await assetsHelper.assertAssetDetailsPage(
-      //     /^Ethereum$/,
-      //     /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
-      //     /^ETH$/,
-      //     /^(\d|,)+(\.\d{2,4)*$/,
-      //     "base"
-      //   )
-      //   await popup.getByRole("button", { name: "Back", exact: true }).click()
+      /**
+       * Ensure there are no fields related to unverified assets in the
+       * base asset's details.
+       */
+      await popup.locator(".asset_list_item").first().click() // We use `.first()` because the base asset should be first on the list
+      await assetsHelper.assertAssetDetailsPage(
+        /^Ethereum$/,
+        /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
+        /^ETH$/,
+        /^(\d|,)+(\.\d{2,4)*$/,
+        "base"
+      )
+      await popup.getByRole("button", { name: "Back", exact: true }).click()
 
       /**
        * Ensure the verified ERC-20 asset is visible and is not unverified.
@@ -333,9 +329,7 @@ test.describe("Token Trust", () => {
         /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/
       )
       await walletPageHelper.verifyAnalyticsBanner()
-      // Commented out until https://github.com/tahowallet/extension/pull/3195
-      // gets fixed.
-      // await assetsHelper.assertVerifiedAssetOnWalletPage(/^ETH$/, "base"")
+      await assetsHelper.assertVerifiedAssetOnWalletPage(/^ETH$/, "base")
       await assetsHelper.assertUnverifiedAssetsPresentOnWalletPage()
 
       /**
@@ -502,9 +496,7 @@ test.describe("Token Trust", () => {
         /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/
       )
       await walletPageHelper.verifyAnalyticsBanner()
-      // Commented out until https://github.com/tahowallet/extension/pull/3195
-      // gets fixed.
-      // await assetsHelper.assertVerifiedAssetOnWalletPage(/^ETH$/, "base"")
+      await assetsHelper.assertVerifiedAssetOnWalletPage(/^ETH$/, "base")
       await assetsHelper.assertUnverifiedAssetsPresentOnWalletPage()
 
       /**
