@@ -7,7 +7,7 @@ const defaultPreferences: Preferences = {
     autoUpdate: false,
     urls: [
       storageGatewayURL(
-        "ipfs://bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm"
+        "ipfs://bafybeihufwj43zej34itf66qyguq35k4f6s4ual4uk3iy643wn3xnff2ka"
       ).href, // the Taho community-curated list
       "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
       "https://meta.yearn.finance/api/tokens/list", // the Yearn list
