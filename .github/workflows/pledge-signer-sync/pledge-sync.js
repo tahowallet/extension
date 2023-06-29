@@ -1,7 +1,7 @@
 // @ts-check
 /* eslint-disable no-console */ // need logging
 /* eslint-disable no-await-in-loop  */ // need to process items in sequence
-import auth from "firebase/auth"
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth"
 import { initializeApp } from "firebase/app"
 import {
   getFirestore,
@@ -37,8 +37,8 @@ const getAddresses = async () => {
     appId: "1:567502050788:web:bb953a931a98e396d363f1",
   })
 
-  await auth.signInWithEmailAndPassword(
-    auth.getAuth(app),
+  await signInWithEmailAndPassword(
+    getAuth(app),
     FIRESTORE_USER,
     FIRESTORE_PASSWORD
   )
@@ -95,7 +95,7 @@ const syncGalxe = async () => {
   for (let i = 0; i < addresses.length; i += CHUNK_SIZE) {
     const batch = addresses.slice(i, i + CHUNK_SIZE)
 
-    console.log("Syncing addresses...", i, "of", addresses.length)
+    console.log("Syncing addresses...", batch.length, "of", addresses.length)
 
     const payload = {
       operationName: "credentialItems",
@@ -136,4 +136,7 @@ const syncGalxe = async () => {
   }
 }
 
-syncGalxe()
+syncGalxe().then(() => {
+  console.log("Sync complete!")
+  process.exit(0)
+})

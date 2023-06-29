@@ -14,10 +14,10 @@ jobs:
           node-version: "16"
           cache: "yarn"
       - run: yarn install --frozen-lockfile
-        working-directory: .github/workflows/cron
+        working-directory: .github/workflows/pledge-signer-sync
       - name: Sync pledge addresses
         run: node pledge-sync.js
-        working-directory: .github/workflows/cron
+        working-directory: .github/workflows/pledge-signer-sync
         env:
           GALXE_ACCESS_TOKEN: ${{ secrets.GALXE_ACCESS_TOKEN }}
           FIRESTORE_USER: ${{ secrets.FIRESTORE_USER }}
