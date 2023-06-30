@@ -342,6 +342,10 @@ export function heuristicDesiredDecimalsForUnitPrice(
   )
 }
 
+export function isTokenListAsset(asset?: AnyAsset): boolean {
+  return !!asset?.metadata?.tokenLists?.length
+}
+
 /**
  * Check if the asset has a list of tokens.
  * Assets that do not have it are considered untrusted.
@@ -349,7 +353,7 @@ export function heuristicDesiredDecimalsForUnitPrice(
  */
 export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
   if (asset) {
-    return !asset?.metadata?.tokenLists?.length
+    return !isTokenListAsset(asset)
   }
   return false
 }

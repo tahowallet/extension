@@ -48,7 +48,10 @@ import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../../lib/utils"
-import { getFullAssetID } from "../../redux-slices/utils/asset-utils"
+import {
+  getFullAssetID,
+  isTokenListAsset,
+} from "../../redux-slices/utils/asset-utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -821,7 +824,16 @@ export default class IndexingService extends BaseService<Events> {
     // Filter all assets based on supported networks
     const activeAssetsToTrack = assetsToTrack.filter((asset) => {
       // Skip custom assets
-      if (customAssetsById.has(getFullAssetID(asset))) {
+      if (
+        customAssetsById.has(getFullAssetID(asset)) &&
+        // Only filter custom assets which do not appear in token lists
+        !isTokenListAsset(
+          this.getKnownSmartContractAsset(
+            asset.homeNetwork,
+            asset.contractAddress
+          )
+        )
+      ) {
         return false
       }
 
@@ -952,10 +964,12 @@ export default class IndexingService extends BaseService<Events> {
 
     // Cache assets across all supported networks even if a network
     // may be inactive.
-    this.chainService.supportedNetworks.forEach(async (network) => {
-      await this.cacheAssetsForNetwork(network)
-      this.emitter.emit("assets", this.getCachedAssets(network))
-    })
+    await Promise.allSettled(
+      this.chainService.supportedNetworks.map(async (network) => {
+        await this.cacheAssetsForNetwork(network)
+        this.emitter.emit("assets", this.getCachedAssets(network))
+      })
+    )
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if
     // the version has gone up
