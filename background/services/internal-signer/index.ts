@@ -277,12 +277,19 @@ export default class InternalSignerService extends BaseService<Events> {
       return true
     }
 
-    const { vaults, version } = await migrateVaultsToArgon(password)
+    const {
+      encryptedData: { vaults, version },
+      success,
+    } = await migrateVaultsToArgon(password)
     this.#cachedVaultVersion = version
 
-    if (version === VaultVersion.Argon2) {
+    if (success) {
       this.analyticsService.sendOneTimeAnalyticsEvent(
         OneTimeAnalyticsEvent.ARGON_MIGRATION
+      )
+    } else {
+      this.analyticsService.sendOneTimeAnalyticsEvent(
+        OneTimeAnalyticsEvent.ARGON_MIGRATION_FAILED
       )
     }
 

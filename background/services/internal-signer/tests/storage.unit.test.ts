@@ -63,7 +63,7 @@ describe("Storage utils", () => {
     expect(vaults[0].vault).toEqual(vaultEncryptedWithArgon2)
   })
 
-  it("shoould migrate existing vaults to Argon2", async () => {
+  it("should migrate existing vaults to Argon2", async () => {
     await browser.storage.local.set({
       tallyVaults: {
         version: VaultVersion.PBKDF2,
@@ -72,8 +72,12 @@ describe("Storage utils", () => {
     })
     await writeLatestEncryptedVault(vaultEncryptedWithPBKDF2)
 
-    const { vaults, version } = await migrateVaultsToArgon(mockedPassword)
+    const {
+      encryptedData: { vaults, version },
+      success,
+    } = await migrateVaultsToArgon(mockedPassword)
 
+    expect(success).toEqual(true)
     expect(version).toEqual(VaultVersion.Argon2)
     expect(vaults.length).toEqual(1)
 
@@ -94,8 +98,13 @@ describe("Storage utils", () => {
     })
     await writeLatestEncryptedVault(vaultEncryptedWithArgon2)
 
-    const { vaults } = await migrateVaultsToArgon(mockedPassword)
+    const {
+      encryptedData: { vaults, version },
+      success,
+    } = await migrateVaultsToArgon(mockedPassword)
 
+    expect(success).toEqual(true)
+    expect(version).toEqual(VaultVersion.Argon2)
     expect(vaults[0].vault).toEqual(vaultEncryptedWithArgon2)
   })
 })
