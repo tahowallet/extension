@@ -48,6 +48,7 @@ import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../../lib/utils"
+import { getFullAssetID } from "../../redux-slices/utils/asset-utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -294,9 +295,8 @@ export default class IndexingService extends BaseService<Events> {
     const searchResult = knownAssets.find(
       (asset): asset is SmartContractFungibleAsset =>
         isSmartContractFungibleAsset(asset) &&
-        asset.homeNetwork.name === network.name &&
-        normalizeEVMAddress(asset.contractAddress) ===
-          normalizeEVMAddress(contractAddress)
+        asset.homeNetwork.chainID === network.chainID &&
+        sameEVMAddress(asset.contractAddress, contractAddress)
     )
 
     return searchResult
@@ -823,19 +823,16 @@ export default class IndexingService extends BaseService<Events> {
     const assetsToTrack = await this.db.getAssetsToTrack()
     const trackedNetworks = await this.chainService.getTrackedNetworks()
 
-    const getAssetId = (asset: SmartContractFungibleAsset) =>
-      `${asset.homeNetwork.chainID}:${asset.contractAddress}`
-
     const customAssets = await this.db.getActiveCustomAssetsByNetworks(
       trackedNetworks
     )
 
-    const customAssetsById = new Set(customAssets.map(getAssetId))
+    const customAssetsById = new Set(customAssets.map(getFullAssetID))
 
     // Filter all assets based on supported networks
     const activeAssetsToTrack = assetsToTrack.filter((asset) => {
       // Skip custom assets
-      if (customAssetsById.has(getAssetId(asset))) {
+      if (customAssetsById.has(getFullAssetID(asset))) {
         return false
       }
 

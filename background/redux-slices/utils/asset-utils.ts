@@ -381,6 +381,13 @@ type AssetType = "base" | "erc20"
 
 export type AssetID = `${AssetType}/${string}`
 
+type ChainID = string
+
+export type FullAssetID = `${ChainID}/${AssetID}`
+
+/**
+ * Returns a string that can be used as an identifier for an asset
+ */
 export const getAssetID = (
   asset: NetworkBaseAsset | SmartContractFungibleAsset
 ): AssetID => {
@@ -389,6 +396,19 @@ export const getAssetID = (
   }
 
   return `erc20/${asset.contractAddress}`
+}
+
+/**
+ * Returns a string that can be used as a unique identifier for an asset
+ */
+export const getFullAssetID = (
+  asset: NetworkBaseAsset | SmartContractFungibleAsset
+): FullAssetID => {
+  if (isNetworkBaseAsset(asset)) {
+    return `${asset.chainID}/${getAssetID(asset)}`
+  }
+
+  return `${asset.homeNetwork.chainID}/${getAssetID(asset)}`
 }
 
 /**
