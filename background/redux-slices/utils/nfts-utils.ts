@@ -38,7 +38,7 @@ export const getAdditionalDataForFilter = (
   accounts: AccountData[]
 ): { name?: string; thumbnailURL?: string } => {
   const a = accounts.find(({ address }) => address === id)
-  return a ? { name: a.name, thumbnailURL: a.avatarURL } : {}
+  return a ? { name: a.name ?? a.address, thumbnailURL: a.avatarURL } : {}
 }
 
 /* Items are sorted by price in USD. All other elements are added at the end. */
