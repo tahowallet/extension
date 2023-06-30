@@ -369,6 +369,7 @@ export class PreferenceDatabase extends Dexie {
             "bafybeihufwj43zej34itf66qyguq35k4f6s4ual4uk3iy643wn3xnff2ka"
           )
 
+          // Param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
           // eslint-disable-next-line no-param-reassign
           storedPreferences.tokenLists = {
             ...storedPreferences.tokenLists,
