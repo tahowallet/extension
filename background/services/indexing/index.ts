@@ -701,19 +701,8 @@ export default class IndexingService extends BaseService<Events> {
     )
 
     if (knownAsset) {
-      const newDiscoveryTxHash = metadata?.discoveryTxHash
-      const addressForDiscoveryTxHash = newDiscoveryTxHash
-        ? Object.keys(newDiscoveryTxHash)[0]
-        : undefined
-      const existingDiscoveryTxHash = addressForDiscoveryTxHash
-        ? knownAsset.metadata?.discoveryTxHash?.[addressForDiscoveryTxHash]
-        : undefined
-      // If the discovery tx hash is not specified
-      // or if it already exists in the asset, do not update the asset
-      if (!newDiscoveryTxHash || existingDiscoveryTxHash) {
-        await this.addAssetToTrack(knownAsset)
-        return knownAsset
-      }
+      await this.addAssetToTrack(knownAsset)
+      return knownAsset
     }
 
     let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
