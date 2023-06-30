@@ -86,7 +86,7 @@ const getAddresses = async () => {
 const syncGalxe = async () => {
   const CHUNK_SIZE = 3_000
 
-  const addresses = await getAddresses().catch(() => null)
+  const addresses = await getAddresses().catch(console.error)
 
   if (!addresses) {
     throw new Error("Unable to retrieve pledge signers addresses")
