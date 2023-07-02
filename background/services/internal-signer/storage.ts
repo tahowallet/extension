@@ -96,12 +96,20 @@ export async function writeLatestEncryptedVault(
   }
 }
 
-export async function migrateVaultsToArgon(
-  password: string
-): Promise<{ encryptedData: SerializedEncryptedVaults; success: boolean }> {
+export async function migrateVaultsToLatestVersion(password: string): Promise<
+  | {
+      encryptedData: SerializedEncryptedVaults
+      migrated: true
+    }
+  | {
+      encryptedData: SerializedEncryptedVaults
+      migrated: false
+      errorMessage?: string
+    }
+> {
   const serializedVaults = await getEncryptedVaults()
   if (serializedVaults.version === VaultVersion.Argon2) {
-    return { encryptedData: serializedVaults, success: true }
+    return { encryptedData: serializedVaults, migrated: false }
   }
 
   const { vaults } = serializedVaults
@@ -160,9 +168,13 @@ export async function migrateVaultsToArgon(
       tallyVaults: newSerializedVaults,
     })
 
-    return { encryptedData: newSerializedVaults, success: true }
+    return { encryptedData: newSerializedVaults, migrated: true }
   } catch (error) {
-    logger.error("Failed to migrate vaults to Argon2")
-    return { encryptedData: serializedVaults, success: false }
+    logger.error("Failed to migrate vaults to Argon2", error)
+    return {
+      encryptedData: serializedVaults,
+      migrated: false,
+      errorMessage: String(error),
+    }
   }
 }

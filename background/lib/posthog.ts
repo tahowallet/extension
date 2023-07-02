@@ -12,14 +12,14 @@ export enum AnalyticsEvent {
   NEW_ACCOUNT_TO_TRACK = "Address added to tracking on network",
   CUSTOM_CHAIN_ADDED = "Custom chain added",
   DAPP_CONNECTED = "Dapp Connected",
+  VAULT_MIGRATION = "Migrate to newer vault version",
+  VAULT_MIGRATION_FAILED = "Vault version migration failed",
 }
 
 export enum OneTimeAnalyticsEvent {
   ONBOARDING_STARTED = "Onboarding Started",
   ONBOARDING_FINISHED = "Onboarding Finished",
   CHAIN_ADDED = "Chain Added",
-  ARGON_MIGRATION = "Migrate to Argon2",
-  ARGON_MIGRATION_FAILED = "Migrate to Argon2 failed",
 }
 
 export const isOneTimeAnalyticsEvent = (

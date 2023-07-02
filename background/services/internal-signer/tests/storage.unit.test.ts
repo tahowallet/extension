@@ -6,7 +6,7 @@ import {
 } from "../encryption"
 import {
   getEncryptedVaults,
-  migrateVaultsToArgon,
+  migrateVaultsToLatestVersion,
   writeLatestEncryptedVault,
 } from "../storage"
 
@@ -74,10 +74,10 @@ describe("Storage utils", () => {
 
     const {
       encryptedData: { vaults, version },
-      success,
-    } = await migrateVaultsToArgon(mockedPassword)
+      migrated,
+    } = await migrateVaultsToLatestVersion(mockedPassword)
 
-    expect(success).toEqual(true)
+    expect(migrated).toEqual(true)
     expect(version).toEqual(VaultVersion.Argon2)
     expect(vaults.length).toEqual(1)
 
@@ -100,11 +100,36 @@ describe("Storage utils", () => {
 
     const {
       encryptedData: { vaults, version },
-      success,
-    } = await migrateVaultsToArgon(mockedPassword)
+      ...migrationData
+    } = await migrateVaultsToLatestVersion(mockedPassword)
 
-    expect(success).toEqual(true)
+    expect(migrationData.migrated).toEqual(false)
+    expect(
+      migrationData.migrated === false && migrationData.errorMessage
+    ).toBeUndefined()
     expect(version).toEqual(VaultVersion.Argon2)
     expect(vaults[0].vault).toEqual(vaultEncryptedWithArgon2)
+  })
+
+  it("should report migration errors in the return value", async () => {
+    await browser.storage.local.set({
+      tallyVaults: {
+        version: VaultVersion.PBKDF2,
+        vaults: [],
+      },
+    })
+    await writeLatestEncryptedVault(vaultEncryptedWithPBKDF2)
+
+    const migrationData = await migrateVaultsToLatestVersion("wrong password")
+
+    expect(migrationData.migrated).toEqual(false)
+    expect(
+      migrationData.migrated === false && migrationData.errorMessage
+    ).not.toBeUndefined()
+    expect(
+      migrationData.migrated === false &&
+        migrationData.errorMessage !== undefined &&
+        migrationData.errorMessage.length
+    ).toBeGreaterThan(1)
   })
 })

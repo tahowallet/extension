@@ -8,7 +8,7 @@ import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import {
   getEncryptedVaults,
-  migrateVaultsToArgon,
+  migrateVaultsToLatestVersion,
   writeLatestEncryptedVault,
 } from "./storage"
 import {
@@ -30,7 +30,7 @@ import logger from "../../lib/logger"
 import PreferenceService from "../preferences"
 import { DEFAULT_AUTOLOCK_INTERVAL } from "../preferences/defaults"
 import AnalyticsService from "../analytics"
-import { OneTimeAnalyticsEvent } from "../../lib/posthog"
+import { AnalyticsEvent } from "../../lib/posthog"
 
 export enum SignerInternalTypes {
   mnemonicBIP39S128 = "mnemonic#bip39:128",
@@ -279,17 +279,18 @@ export default class InternalSignerService extends BaseService<Events> {
 
     const {
       encryptedData: { vaults, version },
-      success,
-    } = await migrateVaultsToArgon(password)
+      ...migrationResults
+    } = await migrateVaultsToLatestVersion(password)
     this.#cachedVaultVersion = version
 
-    if (success) {
-      this.analyticsService.sendOneTimeAnalyticsEvent(
-        OneTimeAnalyticsEvent.ARGON_MIGRATION
-      )
-    } else {
-      this.analyticsService.sendOneTimeAnalyticsEvent(
-        OneTimeAnalyticsEvent.ARGON_MIGRATION_FAILED
+    if (migrationResults.migrated) {
+      this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.VAULT_MIGRATION, {
+        version,
+      })
+    } else if (migrationResults.errorMessage !== undefined) {
+      this.analyticsService.sendAnalyticsEvent(
+        AnalyticsEvent.VAULT_MIGRATION_FAILED,
+        { error: migrationResults.errorMessage }
       )
     }
 
