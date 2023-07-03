@@ -24,6 +24,7 @@ import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import {
   NETWORKS_SUPPORTING_SWAPS,
+  OPTIMISM,
   SECOND,
 } from "@tallyho/tally-background/constants"
 
@@ -347,16 +348,25 @@ export default function Swap(): ReactElement {
       )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapQuote>
 
       if (finalQuote) {
+        const { gasPrice, ...quoteWithoutGasPrice } = finalQuote
+
         await dispatch(
           executeSwap({
-            ...finalQuote,
+            ...quoteWithoutGasPrice,
             sellAsset,
             buyAsset,
+            gasPrice:
+              // Let's use the gas price from 0x API for Optimism
+              // to avoid problems with gas price on Optimism Bedrock.
+              currentNetwork.chainID === OPTIMISM.chainID
+                ? gasPrice
+                : quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
+                  gasPrice,
           })
         )
       }
     }
-  }, [dispatch, sellAsset, buyAsset, quote])
+  }, [dispatch, sellAsset, buyAsset, quote, currentNetwork.chainID])
 
   if (!NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID)) {
     return <Redirect to="/" />
