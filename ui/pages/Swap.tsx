@@ -347,16 +347,11 @@ export default function Swap(): ReactElement {
       )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapQuote>
 
       if (finalQuote) {
-        const { gasPrice, ...quoteWithoutGasPrice } = finalQuote
-
         await dispatch(
           executeSwap({
-            ...quoteWithoutGasPrice,
+            ...finalQuote,
             sellAsset,
             buyAsset,
-            gasPrice:
-              quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
-              gasPrice,
           })
         )
       }
