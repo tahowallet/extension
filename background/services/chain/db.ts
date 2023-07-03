@@ -39,6 +39,12 @@ type AccountAssetTransferLookup = {
 // TODO keep track of transaction replacement / nonce invalidation
 
 export class ChainDatabase extends Dexie {
+  static defaultSettings = {
+    CHAIN_ID_TO_RPC_URLS,
+    BASE_ASSETS,
+    DEFAULT_NETWORKS,
+  }
+
   /*
    * Accounts whose transaction and balances should be tracked on a particular
    * network.
@@ -322,32 +328,36 @@ export class ChainDatabase extends Dexie {
     return this.baseAssets.toArray()
   }
 
-  async initializeRPCs(): Promise<void> {
+  private async initializeRPCs(): Promise<void> {
     await Promise.all(
-      Object.entries(CHAIN_ID_TO_RPC_URLS).map(async ([chainId, rpcUrls]) => {
-        if (rpcUrls) {
-          await this.addRpcUrls(chainId, rpcUrls)
+      Object.entries(ChainDatabase.defaultSettings.CHAIN_ID_TO_RPC_URLS).map(
+        async ([chainId, rpcUrls]) => {
+          if (rpcUrls) {
+            await this.addRpcUrls(chainId, rpcUrls)
+          }
         }
-      })
+      )
     )
   }
 
-  async initializeBaseAssets(): Promise<void> {
-    await this.updateBaseAssets(BASE_ASSETS)
+  private async initializeBaseAssets(): Promise<void> {
+    await this.updateBaseAssets(ChainDatabase.defaultSettings.BASE_ASSETS)
   }
 
-  async initializeEVMNetworks(): Promise<void> {
+  private async initializeEVMNetworks(): Promise<void> {
     const existingNetworks = await this.getAllEVMNetworks()
     await Promise.all(
-      DEFAULT_NETWORKS.map(async (defaultNetwork) => {
-        if (
-          !existingNetworks.some(
-            (network) => network.chainID === defaultNetwork.chainID
-          )
-        ) {
-          await this.networks.put(defaultNetwork)
+      ChainDatabase.defaultSettings.DEFAULT_NETWORKS.map(
+        async (defaultNetwork) => {
+          if (
+            !existingNetworks.some(
+              (network) => network.chainID === defaultNetwork.chainID
+            )
+          ) {
+            await this.networks.put(defaultNetwork)
+          }
         }
-      })
+      )
     )
   }
 
