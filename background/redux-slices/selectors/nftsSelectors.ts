@@ -3,7 +3,6 @@ import { RootState } from ".."
 import { normalizeEVMAddress } from "../../lib/utils"
 import { Filter } from "../nfts"
 import {
-  AccountData,
   getAdditionalDataForFilter,
   getFilteredCollections,
   getNFTsCount,
@@ -46,7 +45,7 @@ export const selectEnrichedNFTFilters = createSelector(
     const accounts = filters.accounts.reduce<Filter[]>((acc, filter) => {
       const additionalData = getAdditionalDataForFilter(
         filter.id,
-        accountTotals as AccountData[]
+        accountTotals
       )
       if (Object.keys(additionalData).length > 0) {
         return [
