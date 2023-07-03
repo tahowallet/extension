@@ -117,6 +117,7 @@ jobs:
               - '.env.defaults'
   e2e-tests:
     needs: [build, detect-if-flag-changed]
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
