@@ -6,12 +6,17 @@ import { arrayify } from "ethers/lib/utils"
 import { Wallet } from "ethers"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { getEncryptedVaults, writeLatestEncryptedVault } from "./storage"
+import {
+  getEncryptedVaults,
+  migrateVaultsToLatestVersion,
+  writeLatestEncryptedVault,
+} from "./storage"
 import {
   decryptVault,
   deriveSymmetricKeyFromPassword,
   encryptVault,
   SaltedKey,
+  VaultVersion,
 } from "./encryption"
 import { HexString, EIP712TypedData, UNIXTime } from "../../types"
 import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
@@ -24,6 +29,8 @@ import { AddressOnNetwork } from "../../accounts"
 import logger from "../../lib/logger"
 import PreferenceService from "../preferences"
 import { DEFAULT_AUTOLOCK_INTERVAL } from "../preferences/defaults"
+import AnalyticsService from "../analytics"
+import { AnalyticsEvent } from "../../lib/posthog"
 
 export enum SignerInternalTypes {
   mnemonicBIP39S128 = "mnemonic#bip39:128",
@@ -149,6 +156,8 @@ const isKeyring = (
 export default class InternalSignerService extends BaseService<Events> {
   #cachedKey: SaltedKey | null = null
 
+  #cachedVaultVersion: VaultVersion = VaultVersion.PBKDF2
+
   #keyrings: HDKeyring[] = []
 
   #privateKeys: Wallet[] = []
@@ -174,12 +183,15 @@ export default class InternalSignerService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     InternalSignerService,
-    [Promise<PreferenceService>]
-  > = async (preferenceService) => {
-    return new this(await preferenceService)
+    [Promise<PreferenceService>, Promise<AnalyticsService>]
+  > = async (preferenceService, analyticsService) => {
+    return new this(await preferenceService, await analyticsService)
   }
 
-  private constructor(private preferenceService: PreferenceService) {
+  private constructor(
+    private preferenceService: PreferenceService,
+    private analyticsService: AnalyticsService
+  ) {
     super({
       autolock: {
         schedule: {
@@ -265,21 +277,39 @@ export default class InternalSignerService extends BaseService<Events> {
       return true
     }
 
+    const {
+      encryptedData: { vaults, version },
+      ...migrationResults
+    } = await migrateVaultsToLatestVersion(password)
+    this.#cachedVaultVersion = version
+
+    if (migrationResults.migrated) {
+      this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.VAULT_MIGRATION, {
+        version,
+      })
+    } else if (migrationResults.errorMessage !== undefined) {
+      this.analyticsService.sendAnalyticsEvent(
+        AnalyticsEvent.VAULT_MIGRATION_FAILED,
+        { error: migrationResults.errorMessage }
+      )
+    }
+
     if (!ignoreExistingVaults) {
-      const { vaults } = await getEncryptedVaults()
       const currentEncryptedVault = vaults.slice(-1)[0]?.vault
       if (currentEncryptedVault) {
         // attempt to load the vault
         const saltedKey = await deriveSymmetricKeyFromPassword(
+          version,
           password,
           currentEncryptedVault.salt
         )
         let plainTextVault: SerializedKeyringData
         try {
-          plainTextVault = await decryptVault<SerializedKeyringData>(
-            currentEncryptedVault,
-            saltedKey
-          )
+          plainTextVault = await decryptVault<SerializedKeyringData>({
+            version,
+            vault: currentEncryptedVault,
+            passwordOrSaltedKey: saltedKey,
+          })
           this.#cachedKey = saltedKey
         } catch (err) {
           // if we weren't able to load the vault, don't unlock
@@ -312,7 +342,7 @@ export default class InternalSignerService extends BaseService<Events> {
     // if there's no vault or we want to force a new vault, generate a new key
     // and unlock
     if (!this.#cachedKey) {
-      this.#cachedKey = await deriveSymmetricKeyFromPassword(password)
+      this.#cachedKey = await deriveSymmetricKeyFromPassword(version, password)
       await this.#persistInternalSigners()
     }
 
@@ -934,7 +964,7 @@ export default class InternalSignerService extends BaseService<Events> {
     }
 
     // When signing we should not include EIP712Domain type
-    const { EIP712Domain, ...typesForSigning } = types
+    const { EIP712Domain: _, ...typesForSigning } = types
     try {
       let signature: string
       if (isPrivateKey(signerWithType)) {
@@ -1039,15 +1069,16 @@ export default class InternalSignerService extends BaseService<Events> {
       const hiddenAccounts = { ...this.#hiddenAccounts }
       const metadata = { ...this.#signerMetadata }
       serializedKeyrings.sort((a, b) => (a.id > b.id ? 1 : -1))
-      const vault = await encryptVault(
-        {
+      const vault = await encryptVault({
+        version: this.#cachedVaultVersion,
+        passwordOrSaltedKey: this.#cachedKey,
+        vault: {
           keyrings: serializedKeyrings,
           privateKeys: serializedPrivateKeys,
           metadata,
           hiddenAccounts,
         },
-        this.#cachedKey
-      )
+      })
       await writeLatestEncryptedVault(vault)
     }
   }

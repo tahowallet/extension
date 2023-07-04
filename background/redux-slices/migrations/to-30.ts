@@ -11,7 +11,7 @@ type NewState = {
 
 // Remove old nfts slice and rename updated nfts slice
 export default (prevState: Record<string, unknown>): NewState => {
-  const { nfts, nftsUpdate, ...otherState } = prevState as OldState
+  const { nfts: _, nftsUpdate, ...otherState } = prevState as OldState
 
   return {
     ...otherState,

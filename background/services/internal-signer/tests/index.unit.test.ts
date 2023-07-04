@@ -1,4 +1,3 @@
-import { webcrypto } from "crypto"
 import InternalSignerService, {
   SignerInternalTypes,
   SignerImportSource,
@@ -12,7 +11,6 @@ import {
 } from "../../../tests/factories"
 import { mockLocalStorage } from "../../../tests/utils"
 
-const originalCrypto = global.crypto
 const HD_WALLET_MOCK = {
   mnemonic:
     "input pulp truth gain expire kick castle voyage firm fee degree draft",
@@ -31,7 +29,6 @@ describe("InternalSignerService", () => {
   let internalSignerService: InternalSignerService
 
   beforeEach(async () => {
-    global.crypto = webcrypto as unknown as Crypto
     mockLocalStorage()
 
     internalSignerService = await createInternalSignerService()
@@ -41,7 +38,6 @@ describe("InternalSignerService", () => {
 
   afterEach(async () => {
     await internalSignerService.stopService()
-    global.crypto = originalCrypto
   })
 
   describe("generated HD wallet", () => {
