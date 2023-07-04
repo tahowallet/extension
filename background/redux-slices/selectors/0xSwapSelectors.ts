@@ -29,21 +29,13 @@ export const selectSwapBuyAssets = createSelector(
       ): asset is SwappableAsset & {
         recentPrices: SingleAssetState["recentPrices"]
       } => {
-        if (!isVerifiedAsset(asset)) {
-          return false
-        }
-        if (isSmartContractFungibleAsset(asset)) {
-          if (sameNetwork(asset.homeNetwork, currentNetwork)) {
-            return true
-          }
-        }
-        if (
-          // Explicitly add a network's base asset.
-          isBuiltInNetworkBaseAsset(asset, currentNetwork)
-        ) {
-          return true
-        }
-        return false
+        return (
+          isVerifiedAsset(asset) &&
+          // Only list assets for the current network.
+          (isBuiltInNetworkBaseAsset(asset, currentNetwork) ||
+            (isSmartContractFungibleAsset(asset) &&
+              sameNetwork(asset.homeNetwork, currentNetwork)))
+        )
       }
     )
   }

@@ -1864,7 +1864,7 @@ export default class Main extends BaseService<never> {
     amount: bigint
     mainCurrencyAmount?: number
     balance: number
-    exists?: boolean
+    shouldDisplay?: boolean
   }> {
     const { network } = addressOnNetwork
 
@@ -1895,9 +1895,9 @@ export default class Main extends BaseService<never> {
     const mainCurrencyAmount = convertedAssetAmount
       ? assetAmountToDesiredDecimals(convertedAssetAmount, 2)
       : undefined
-    // Existing assets are those that are verified by default or by the user.
+    // The asset should be displayed in the regular list when that is verified by default or by the user.
     // This check allows the user to add an asset that is on the unverified list.
-    const exists = cachedAsset ? isVerifiedAsset(cachedAsset) : false
+    const shouldDisplay = cachedAsset && isVerifiedAsset(cachedAsset)
 
     return {
       ...assetData,
@@ -1905,7 +1905,7 @@ export default class Main extends BaseService<never> {
         utils.formatUnits(assetData.amount, assetData.asset.decimals)
       ),
       mainCurrencyAmount,
-      exists,
+      shouldDisplay,
     }
   }
 

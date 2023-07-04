@@ -377,7 +377,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
               !assetData ||
               isLoadingAssetDetails ||
               hasAssetDetailLoadError ||
-              assetData.exists ||
+              assetData.shouldDisplay ||
               isImportingToken
             }
             isLoading={isLoadingAssetDetails || isImportingToken}
@@ -385,7 +385,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
             {t("submit")}
           </SharedButton>
         </div>
-        {assetData?.exists ? (
+        {assetData?.shouldDisplay ? (
           <div className="alert">
             <SharedIcon
               color="var(--success)"
