@@ -6,8 +6,8 @@ import sinon from "sinon"
 import browser from "webextension-polyfill"
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { waitFor } from "@testing-library/dom"
+import * as popupUtils from "../show-popup"
 import * as featureFlags from "../../../features"
-import { wait } from "../../../lib/utils"
 import { createProviderBridgeService } from "../../../tests/factories"
 import { AddEthereumChainParameter } from "../../internal-ethereum-provider"
 import ProviderBridgeService from "../index"
@@ -133,6 +133,7 @@ describe("ProviderBridgeService", () => {
       const { enablingPermission } = BASE_DATA
 
       jest.spyOn(featureFlags, "isEnabled").mockImplementation(() => true)
+      const showPopupSpy = jest.spyOn(popupUtils, "default")
 
       const request = providerBridgeService.routeContentScriptRPCRequest(
         {
@@ -147,17 +148,20 @@ describe("ProviderBridgeService", () => {
       const IEP = providerBridgeService["internalEthereumProviderService"]
       const spy = jest.spyOn(IEP, "routeSafeRPCRequest")
 
-      await wait(0) // wait next tick to setup popup
+      // wait until popup is set up
+      await waitFor(() => expect(showPopupSpy).toHaveBeenCalled())
 
       const validatedPayload = validateAddEthereumChainParameter(
         params[0] as AddEthereumChainParameter
       )
 
-      expect(providerBridgeService.getNewCustomRPCDetails("0")).toEqual({
-        ...validatedPayload,
-        favicon: "favicon.png",
-        siteTitle: "some site",
-      })
+      await waitFor(() =>
+        expect(providerBridgeService.getNewCustomRPCDetails("0")).toEqual({
+          ...validatedPayload,
+          favicon: "favicon.png",
+          siteTitle: "some site",
+        })
+      )
 
       expect(spy).not.toHaveBeenCalled()
       providerBridgeService.handleAddNetworkRequest("0", true)

@@ -542,7 +542,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
               this.handleAddNetworkRequest(id, false)
             }
           })
-          
+
           const [rawChainData, address, siteTitle, favicon] = params
           const validatedData = validateAddEthereumChainParameter(
             rawChainData as AddEthereumChainParameter
