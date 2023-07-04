@@ -1,36 +1,22 @@
-import React from "react"
+import React, { ReactElement } from "react"
 import { EIP4361Data } from "@tallyho/tally-background/utils/signing"
 import { useTranslation } from "react-i18next"
+import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import SignDataInfo from "./SignDataInfo"
 
-// can add networks, ideally should come from some sort of network config
-// TODO fetch this from NETWORK config
-const CHAIN_NAMES: (chain: number) => string = (chain) => {
-  switch (chain) {
-    case 1:
-      return "Ethereum"
-    default:
-      return "Unknown"
-  }
+type Props = {
+  signingData: EIP4361Data
 }
 
 // this overides the type to expect EIP4361Data
-const EIP4361Info: React.FC<{
-  signingData: EIP4361Data
-  // FIXME Drop this once new signing flow is final.
-  excludeHeader?: boolean
-}> = ({ signingData, excludeHeader = false }) => {
+export default function EIP4361Info({ signingData }: Props): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "signing.EIP4361" })
+
+  const chainName =
+    NETWORK_BY_CHAIN_ID[signingData.chainId.toString()]?.name ?? "Unknown"
+
   return (
     <>
-      {excludeHeader ? (
-        <></>
-      ) : (
-        <>
-          <div className="domain">{signingData.domain}</div>
-          <div className="divider spaced" />
-        </>
-      )}
       <div className="subtext">
         {t("subtext1")}
         <br />
@@ -45,9 +31,7 @@ const EIP4361Info: React.FC<{
       <SignDataInfo label={t("version")} content={signingData.version} />
       <SignDataInfo
         label={t("chainID")}
-        content={`${signingData.chainId.toString()} (${CHAIN_NAMES(
-          signingData.chainId
-        )})`}
+        content={`${signingData.chainId.toString()} (${chainName})`}
       />
       {signingData?.expiration ? (
         <SignDataInfo
@@ -61,7 +45,7 @@ const EIP4361Info: React.FC<{
           line-height: 24px;
           font-size: 16px;
           margin-bottom: 4px;
-          ${excludeHeader ? "margin-top: 16px;" : ""}
+          margin-top: 16px;
         }
         .domain,
         .address,
@@ -80,5 +64,3 @@ const EIP4361Info: React.FC<{
     </>
   )
 }
-
-export default EIP4361Info

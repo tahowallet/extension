@@ -92,7 +92,7 @@ export default function SetPassword(): JSX.Element {
     }
 
     return (
-      <section className="fadeIn">
+      <section className="fade_in">
         <header className="center_text">
           <img
             alt={t("onboarding.tabbed.unlockWallet.title")}
@@ -149,7 +149,7 @@ export default function SetPassword(): JSX.Element {
 
   // Set new password
   return (
-    <section className="fadeIn">
+    <section className="fade_in">
       <header>
         <img
           alt="Secure doggo"

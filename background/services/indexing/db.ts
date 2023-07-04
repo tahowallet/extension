@@ -242,6 +242,17 @@ export class IndexingDatabase extends Dexie {
       assetsToTrack:
         "&[contractAddress+homeNetwork.name],symbol,contractAddress,homeNetwork.family,homeNetwork.chainID,homeNetwork.name",
     })
+
+    // Fix issue for discovery transaction hash
+    this.version(6).upgrade((tx) => {
+      return tx
+        .table("customAssets")
+        .toCollection()
+        .modify((customAsset: CustomAsset) => {
+          // eslint-disable-next-line no-param-reassign
+          delete customAsset.metadata?.discoveryTxHash
+        })
+    })
   }
 
   async savePriceMeasurement(
@@ -297,6 +308,10 @@ export class IndexingDatabase extends Dexie {
         asset.contractAddress
       )) !== undefined
     )
+  }
+
+  async getAllCustomAssets(): Promise<CustomAsset[]> {
+    return this.customAssets.toArray()
   }
 
   async getActiveCustomAssetsByNetworks(

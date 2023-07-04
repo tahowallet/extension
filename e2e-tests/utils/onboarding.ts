@@ -3,28 +3,28 @@ import { BrowserContext, test as base, expect, Page } from "@playwright/test"
 export const getOnboardingPage = async (
   context: BrowserContext
 ): Promise<Page> => {
-  await expect(async () => {
+  const getOnboardingOrThrow = () => {
     const pages = context.pages()
+
     const onboarding = pages.find((page) => /onboarding/.test(page.url()))
 
     if (!onboarding) {
       throw new Error("Unable to find onboarding tab")
     }
 
-    expect(onboarding).toHaveURL(/onboarding/)
-  }).toPass()
-
-  const onboarding = context.pages().at(-1)
-
-  if (!onboarding) {
-    // Should never happen
-    throw new Error("Onboarding page closed too early")
+    return onboarding
   }
 
-  return onboarding
+  await expect(async () => getOnboardingOrThrow()).toPass()
+
+  return getOnboardingOrThrow()
 }
 
 const DEFAULT_PASSWORD = "12345678"
+// The account1 is a 3rd address associated with the testertesting.eth account.
+// It owns some NFTs/badges.
+export const account1Address = "0x6f1b1f1feb01235e15a7962f16c389c7f8218ed6"
+export const account1Name = /^e2e\.testertesting\.eth$/
 
 export default class OnboardingHelper {
   constructor(
@@ -32,30 +32,6 @@ export default class OnboardingHelper {
     // public readonly backgroundPage: Page,
     public readonly context: BrowserContext
   ) {}
-
-  async getOnboardingPage(): Promise<Page> {
-    await expect(async () => {
-      const pages = this.context.pages()
-      const onboarding = pages.find((page) => /onboarding/.test(page.url()))
-
-      if (!onboarding) {
-        throw new Error("Unable to find onboarding tab")
-      }
-
-      expect(onboarding).toHaveURL(/onboarding/)
-    }).toPass()
-
-    const onboarding = this.context
-      .pages()
-      .find((page) => /onboarding/.test(page.url()))
-
-    if (!onboarding) {
-      // Should never happen
-      throw new Error("Onboarding page closed too early")
-    }
-
-    return onboarding
-  }
 
   async addReadOnlyAccount(
     addressOrName: string,

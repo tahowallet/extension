@@ -104,7 +104,7 @@
     }
   },
   "ledger": {
-    "checkLedger": "Check Ledger",
+    "checkLedger": "Check Error",
     "onlyRejectFromLedger": "Tx can only be Rejected from Ledger",
     "onboarding": {
       "connecting": "Connecting...",
@@ -142,7 +142,11 @@
       "disconnected": "Ledger is disconnected",
       "wrongLedger": "Wrong Ledger connected",
       "multipleLedgers": "Multiple ledgers connected",
-      "busy": "Ledger is busy"
+      "busy": "Ledger is busy",
+      "state.connected": "Connected",
+      "state.disconnected": "Disconnected",
+      "state.error": "Check error",
+      "state.unknown": "Unknown"
     },
     "activation": {
       "title": "Activate blind signing",
@@ -550,9 +554,13 @@
       "asset.label.balance": "Balance",
       "asset.label.symbol": "Name",
       "networkSelect.title": "Select Network",
-      "warning.alreadyExists.title": "Asset already exists, you will see it once your balance is over 0",
-      "warning.alreadyExists.desc": "If you still have issues seeing an asset, turn off “Hide asset balances under 2$” from Settings",
-      "warning.dust.title": "Asset balance is under <$2, you wil see it once your balance is over $2",
+      "warning.alreadyExists.title": "Asset already exists",
+      "warning.alreadyExists.desc": {
+        "dust": "Your balance is under {{sign}}{{amount}}. You will see it once you turn off “{{settings}}” in Settings.",
+        "noBalance": "Your balance is 0, you will see it once your balance is over {{sign}}{{amount}}.",
+        "visibility": "You should see it in your asset list."
+      },
+      "warning.dust.title": "Asset balance is under {{sign}}{{amount}}, you wil see it once your balance is over {{sign}}{{amount}}",
       "error.invalidToken": "Invalid contract address",
       "submit": "Add asset",
       "snackbar.success": "Asset added successfully",
@@ -612,7 +620,6 @@
   },
   "signing": {
     "signatureRequired": "Your signature is required",
-    "dappSignatureRequest": "A dapp is requesting your signature",
     "message": "Message",
     "signed": "Signed,",
     "type": "Type",
@@ -944,7 +951,6 @@
         "USE_MAINNET_FORK": "Use mainnet fork",
         "HIDE_IMPORT_DERIVATION_PATH": "Hide import derivation path",
         "HIDE_SWAP_REWARDS": "Hide swap rewards",
-        "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
         "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
