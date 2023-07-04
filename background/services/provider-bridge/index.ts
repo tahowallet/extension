@@ -532,17 +532,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
           this.addNetworkRequestId += 1
 
-          const window = await showExtensionPopup(
-            AllowedQueryParamPage.addNewChain,
-            { requestId: id.toString() }
-          )
-
-          browser.windows.onRemoved.addListener((removed) => {
-            if (removed === window.id) {
-              this.handleAddNetworkRequest(id, false)
-            }
-          })
-
           const [rawChainData, address, siteTitle, favicon] = params
           const validatedData = validateAddEthereumChainParameter(
             rawChainData as AddEthereumChainParameter
@@ -561,6 +550,17 @@ export default class ProviderBridgeService extends BaseService<Events> {
               origin
             )
           }
+
+          const window = await showExtensionPopup(
+            AllowedQueryParamPage.addNewChain,
+            { requestId: id.toString() }
+          )
+
+          browser.windows.onRemoved.addListener((removed) => {
+            if (removed === window.id) {
+              this.handleAddNetworkRequest(id, false)
+            }
+          })
 
           const userConfirmation = new Promise<void>((resolve, reject) => {
             this.#pendingAddNetworkRequests[id] = {
