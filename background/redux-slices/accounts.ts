@@ -18,6 +18,7 @@ import {
   isNetworkBaseAsset,
   isSameAsset,
   isUntrustedAsset,
+  getFullAssetID,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
@@ -194,9 +195,7 @@ function updateCombinedData(immerState: AccountState) {
       const canBeAggregated =
         isNetworkBaseAsset(asset) || !isUntrustedAsset(asset)
 
-      const assetID = canBeAggregated
-        ? asset.symbol
-        : `${asset.homeNetwork.chainID}/${getAssetID(asset)}`
+      const assetID = canBeAggregated ? asset.symbol : getFullAssetID(asset)
 
       let { amount } = combinedAssetAmount
 

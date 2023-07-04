@@ -8,6 +8,7 @@ import {
   EVMNetwork,
   Network,
   NetworkBaseAsset,
+  sameNetwork,
 } from "../../networks"
 import { FungibleAsset } from "../../assets"
 import {
@@ -350,8 +351,8 @@ export class ChainDatabase extends Dexie {
       ChainDatabase.defaultSettings.DEFAULT_NETWORKS.map(
         async (defaultNetwork) => {
           if (
-            !existingNetworks.some(
-              (network) => network.chainID === defaultNetwork.chainID
+            !existingNetworks.some((network) =>
+              sameNetwork(network, defaultNetwork)
             )
           ) {
             await this.networks.put(defaultNetwork)

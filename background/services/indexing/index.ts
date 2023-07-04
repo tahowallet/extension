@@ -298,7 +298,7 @@ export default class IndexingService extends BaseService<Events> {
     const searchResult = knownAssets.find(
       (asset): asset is SmartContractFungibleAsset =>
         isSmartContractFungibleAsset(asset) &&
-        asset.homeNetwork.chainID === network.chainID &&
+        sameNetwork(asset.homeNetwork, network) &&
         sameEVMAddress(asset.contractAddress, contractAddress)
     )
 

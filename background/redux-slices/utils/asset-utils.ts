@@ -391,6 +391,8 @@ export type FullAssetID = `${ChainID}/${AssetID}`
 
 /**
  * Returns a string that can be used as an identifier for an asset
+ * TODO: This should be removed in favour of getFullAssetID; Base
+ * assets should not use symbol in their identifier
  */
 export const getAssetID = (
   asset: NetworkBaseAsset | SmartContractFungibleAsset
