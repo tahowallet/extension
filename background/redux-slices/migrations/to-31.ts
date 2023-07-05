@@ -3,12 +3,14 @@ type PrevState = {
     accountsData: {
       evm: {
         [chainID: string]: {
-          [address: string]: {
-            balances: {
-              [symbol: string]: unknown
-            }
-            [other: string]: unknown
-          }
+          [address: string]:
+            | "loading"
+            | {
+                balances: {
+                  [symbol: string]: unknown
+                }
+                [other: string]: unknown
+              }
         }
       }
     }
@@ -21,12 +23,14 @@ type NewState = {
     accountsData: {
       evm: {
         [chainID: string]: {
-          [address: string]: {
-            balances: {
-              [assetID: string]: unknown
-            }
-            [other: string]: unknown
-          }
+          [address: string]:
+            | "loading"
+            | {
+                balances: {
+                  [assetID: string]: unknown
+                }
+                [other: string]: unknown
+              }
         }
       }
     }
@@ -43,8 +47,12 @@ export default (prevState: Record<string, unknown>): NewState => {
 
   Object.keys(accountsData.evm).forEach((chainID) =>
     Object.keys(accountsData.evm[chainID]).forEach((address) => {
-      // Clear all accounts cached balances
-      accountsData.evm[chainID][address].balances = {}
+      const account = accountsData.evm[chainID][address]
+
+      if (account !== "loading") {
+        // Clear all accounts cached balances
+        account.balances = {}
+      }
     })
   )
 
