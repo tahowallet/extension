@@ -17,7 +17,6 @@ import {
   OPTIMISM,
   POLYGON,
 } from "../../constants"
-import { FeatureFlags, isEnabled } from "../../features"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { sameEVMAddress } from "../../lib/utils"
 import { AnyNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
