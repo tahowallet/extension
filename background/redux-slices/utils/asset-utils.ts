@@ -391,19 +391,10 @@ export function isUnverifiedAsset(asset?: AnyAsset): boolean {
 /**
  * Checks if the asset can be treated as trusted.
  * Trusted means the asset is baseline trusted OR verified.
- * Only trusted assets can take part in wallet actions.
- * By actions is meant:
- * - doing an swap with this asset
- * - sending this asset to another address
  *
  */
 export function isTrustedAsset(asset?: AnyAsset): boolean {
   if (asset) {
-    // If the feature flag is enabled,
-    // the user has the option of swapping and sending unverified assets as well.
-    if (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)) {
-      return true
-    }
     return isBaselineTrustedAsset(asset) || isVerifiedAsset(asset)
   }
   return false

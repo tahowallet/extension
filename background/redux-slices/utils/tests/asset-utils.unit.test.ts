@@ -7,7 +7,6 @@ import {
   isVerifiedAsset,
 } from "../asset-utils"
 import { NetworkBaseAsset } from "../../../networks"
-import * as featureFlags from "../../../features"
 
 describe("Asset utils", () => {
   describe("isBaselineTrustedAsset", () => {
@@ -53,10 +52,6 @@ describe("Asset utils", () => {
   })
 
   describe("isTrustedAsset", () => {
-    beforeEach(() => {
-      jest.spyOn(featureFlags, "isEnabled").mockImplementation(() => true)
-    })
-
     test("should return true if is a verified asset", () => {
       const asset = createSmartContractAsset({ metadata: { verified: true } })
 
