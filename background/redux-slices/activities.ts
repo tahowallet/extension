@@ -260,10 +260,6 @@ export const speedUpTx = createBackgroundAsyncThunk(
       throw new Error("Cannot speed up transaction without a valid gas price")
     }
 
-    if (type === null) {
-      throw new Error("Cannot speed up invalid transaction")
-    }
-
     const txRequest = {
       data: input || "0x",
       from,
@@ -271,7 +267,8 @@ export const speedUpTx = createBackgroundAsyncThunk(
       value,
       gasLimit,
       nonce,
-      type,
+      // if type is null, don't pass it
+      ...(type === null ? {} : { type }),
     }
 
     if (isEIP1559Tx) {
