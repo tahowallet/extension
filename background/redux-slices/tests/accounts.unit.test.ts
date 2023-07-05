@@ -17,6 +17,7 @@ import reducer, {
 } from "../accounts"
 import { getAssetID } from "../utils/asset-utils"
 import { determineAssetDisplayAndVerify } from "../selectors"
+import * as featureFlags from "../../features"
 
 const ADDRESS_MOCK = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
 const ACCOUNT_MOCK = {
@@ -337,6 +338,10 @@ describe("Accounts redux slice", () => {
 
 describe("Utilities", () => {
   describe("determineAssetDisplayAndVerify", () => {
+    beforeEach(() => {
+      jest.spyOn(featureFlags, "isEnabled").mockImplementation(() => true)
+    })
+
     it("should always display base assets", () => {
       const { displayAsset } = determineAssetDisplayAndVerify(
         createCompleteAssetAmount(createNetworkBaseAsset(), 0, {

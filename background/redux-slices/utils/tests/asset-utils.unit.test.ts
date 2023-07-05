@@ -53,6 +53,10 @@ describe("Asset utils", () => {
   })
 
   describe("isTrustedAsset", () => {
+    beforeEach(() => {
+      jest.spyOn(featureFlags, "isEnabled").mockImplementation(() => true)
+    })
+
     test("should return true if is a verified asset", () => {
       const asset = createSmartContractAsset({ metadata: { verified: true } })
 
@@ -60,7 +64,6 @@ describe("Asset utils", () => {
     })
 
     test("should return false if is a unverified asset", () => {
-      jest.spyOn(featureFlags, "isEnabled").mockImplementation(() => true)
       const asset = createSmartContractAsset({ metadata: { verified: false } })
 
       expect(isTrustedAsset(asset)).toBeFalsy()
