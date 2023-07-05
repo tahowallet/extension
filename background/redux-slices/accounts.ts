@@ -17,7 +17,7 @@ import {
   getAssetID,
   isNetworkBaseAsset,
   isSameAsset,
-  isUntrustedAsset,
+  isTrustedAsset,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
@@ -190,9 +190,9 @@ function updateCombinedData(immerState: AccountState) {
       /**
        * Asset amounts can be aggregated if the asset is a base network asset
        * or comes from a token list, e.g. ETH on Optimism, Mainnet
+       * or has been verified by the user
        */
-      const canBeAggregated =
-        isNetworkBaseAsset(asset) || !isUntrustedAsset(asset)
+      const canBeAggregated = isNetworkBaseAsset(asset) || isTrustedAsset(asset)
 
       const assetID = canBeAggregated
         ? asset.symbol

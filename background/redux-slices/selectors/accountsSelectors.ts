@@ -13,7 +13,7 @@ import {
   formatCurrencyAmount,
   heuristicDesiredDecimalsForUnitPrice,
   isNetworkBaseAsset,
-  isUnverifiedAssetByUser,
+  isTrustedAsset,
 } from "../utils/asset-utils"
 import {
   AnyAsset,
@@ -79,11 +79,11 @@ export function determineAssetDisplayAndVerify(
     hideDust,
     showUnverifiedAssets,
   }: { hideDust: boolean; showUnverifiedAssets: boolean }
-): { displayAsset: boolean; verifiedAsset: boolean } {
-  const isVerified = !isUnverifiedAssetByUser(assetAmount.asset)
+): { displayAsset: boolean; trustedAsset: boolean } {
+  const isTrusted = isTrustedAsset(assetAmount.asset)
 
   if (shouldForciblyDisplayAsset(assetAmount)) {
-    return { displayAsset: true, verifiedAsset: isVerified }
+    return { displayAsset: true, trustedAsset: isTrusted }
   }
 
   const isNotDust =
@@ -93,13 +93,13 @@ export function determineAssetDisplayAndVerify(
   const isPresent = assetAmount.decimalAmount > 0
   const showDust = !hideDust
 
-  const verificationStatusAllowsVisibility = showUnverifiedAssets || isVerified
+  const verificationStatusAllowsVisibility = showUnverifiedAssets || isTrusted
   const enoughBalanceToBeVisible = isPresent && (isNotDust || showDust)
 
   return {
     displayAsset:
       verificationStatusAllowsVisibility && enoughBalanceToBeVisible,
-    verifiedAsset: isVerified,
+    trustedAsset: isTrusted,
   }
 }
 
@@ -189,13 +189,13 @@ const computeCombinedAssetAmountsData = (
       unverifiedAssetAmounts: CompleteAssetAmount[]
     }>(
       (acc, assetAmount) => {
-        const { displayAsset, verifiedAsset } = determineAssetDisplayAndVerify(
+        const { displayAsset, trustedAsset } = determineAssetDisplayAndVerify(
           assetAmount,
           { hideDust, showUnverifiedAssets }
         )
 
         if (displayAsset) {
-          if (verifiedAsset) {
+          if (trustedAsset) {
             acc.combinedAssetAmounts.push(assetAmount)
           } else {
             acc.unverifiedAssetAmounts.push(assetAmount)

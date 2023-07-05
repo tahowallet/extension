@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 
 import { useTranslation } from "react-i18next"
-import { isUnverifiedAssetByUser } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
 import {
@@ -52,7 +52,7 @@ export default function CommonAssetListItem(
       ? assetAmount.asset.contractAddress
       : undefined
 
-  const isUnverified = isUnverifiedAssetByUser(assetAmount.asset)
+  const isUntrusted = isUntrustedAsset(assetAmount.asset)
 
   const handleVerifyAsset = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
@@ -90,7 +90,7 @@ export default function CommonAssetListItem(
             {
               // @TODO don't fetch prices for unverified assets in the first place
               // Only show prices for verified assets
-              isUnverified ||
+              isUntrusted ||
               (initializationLoadingTimeExpired &&
                 isMissingLocalizedUserValue) ? (
                 <></>
@@ -108,8 +108,7 @@ export default function CommonAssetListItem(
         </div>
         <div className="asset_right">
           <>
-            {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) &&
-            isUnverified ? (
+            {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && isUntrusted ? (
               <AssetVerifyToggler
                 text={t("unverifiedAssets.verifyAsset")}
                 icon="notif-attention"
@@ -120,7 +119,7 @@ export default function CommonAssetListItem(
             ) : (
               <>
                 {!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) &&
-                  isUnverified && (
+                  isUntrusted && (
                     <SharedIcon
                       icon="/icons/m/notif-attention.svg"
                       width={24}

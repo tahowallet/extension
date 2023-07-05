@@ -343,37 +343,81 @@ export function heuristicDesiredDecimalsForUnitPrice(
 }
 
 /**
- * Check if the asset has a list of tokens.
- * Assets that do not have it are considered untrusted.
+ * Check if the asset is from a token list.
  *
  */
-export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
+export function isTokenListAsset(asset?: AnyAsset): boolean {
+  return !!asset?.metadata?.tokenLists?.length
+}
+
+/**
+ * Checks if the asset is baseline trusted.
+ * Baseline trusted means that wallet can trust them by default.
+ * The asset is in a token list OR the asset is a network base asset.
+ *
+ */
+export function isBaselineTrustedAsset(asset?: AnyAsset): boolean {
   if (asset) {
-    return !asset?.metadata?.tokenLists?.length
+    return isTokenListAsset(asset) || isNetworkBaseAsset(asset)
   }
   return false
 }
 
 /**
- * NB: non-base assets that don't have any token lists are considered
- * untrusted. Reifying base assets clearly will improve this check down the
- * road. Eventually, assets can be flagged as trusted by adding them to an
- * "internal" token list that users can export and share.
+ * Checks the user has explicitly verified the asset.
+ * The verified property was manually set to true.
  *
  */
-export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
-  if (asset) {
-    if (asset.metadata?.verified !== undefined) {
-      // If we have verified metadata return it
-      return !asset.metadata.verified
-    }
-
-    const baseAsset = isNetworkBaseAsset(asset)
-    const isUntrusted = isUntrustedAsset(asset)
-
-    return !baseAsset && isUntrusted
+export function isVerifiedAsset(asset?: AnyAsset): boolean {
+  if (asset?.metadata?.verified !== undefined) {
+    // If we have verified metadata return it
+    return asset.metadata.verified
   }
+  return false
+}
 
+/**
+ * Checks the user has not explicitly verified the asset.
+ * It can still be baseline trusted.
+ *
+ */
+export function isUnverifiedAsset(asset?: AnyAsset): boolean {
+  if (asset) {
+    return !isVerifiedAsset(asset)
+  }
+  return false
+}
+
+/**
+ * Checks if the asset can be treated as trusted.
+ * Trusted means the asset is baseline trusted OR verified.
+ * Only trusted assets can take part in wallet actions.
+ * By actions is meant:
+ * - doing an swap with this asset
+ * - sending this asset to another address
+ *
+ */
+export function isTrustedAsset(asset?: AnyAsset): boolean {
+  if (asset) {
+    // If the feature flag is enabled,
+    // the user has the option of swapping and sending unverified assets as well.
+    if (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)) {
+      return true
+    }
+    return isBaselineTrustedAsset(asset) || isVerifiedAsset(asset)
+  }
+  return false
+}
+
+/**
+ * Checks if the asset is untrusted.
+ * Untrusted means the asset is neither baseline trusted NOR verified.
+ *
+ */
+export function isUntrustedAsset(asset?: AnyAsset): boolean {
+  if (asset) {
+    return !isTrustedAsset(asset)
+  }
   return false
 }
 
@@ -389,17 +433,6 @@ export const getAssetID = (
   }
 
   return `erc20/${asset.contractAddress}`
-}
-
-/**
- * Assets that are untrusted and have not been verified by the user
- * should not be swapped or sent.
- */
-export function canBeUsedForTransaction(asset: AnyAsset): boolean {
-  if (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)) {
-    return true
-  }
-  return isUntrustedAsset(asset) ? !isUnverifiedAssetByUser(asset) : true
 }
 
 // FIXME Unify once asset similarity code is unified.
