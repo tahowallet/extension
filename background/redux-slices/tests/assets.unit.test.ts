@@ -15,7 +15,10 @@ import reducer, {
   SingleAssetState,
 } from "../assets"
 
-const asset: SmartContractFungibleAsset = createSmartContractAsset()
+const assetSymbol = "TEST"
+const asset: SmartContractFungibleAsset = createSmartContractAsset({
+  symbol: assetSymbol,
+})
 
 const pricePoint: PricePoint = createPricePoint(asset)
 
@@ -26,21 +29,23 @@ const assetWithPricePoint = {
   },
 }
 
-const assetState: AssetsState = [assetWithPricePoint]
+const assetState: AssetsState = {
+  [assetSymbol]: [assetWithPricePoint],
+}
 
 describe("Reducers", () => {
   describe("assetsLoaded", () => {
     test("updates cached asset metadata", () => {
-      const state = reducer([], assetsLoaded([asset]))
+      const state = reducer({}, assetsLoaded([asset]))
 
-      expect(state[0].metadata?.verified).not.toBeDefined()
+      expect(state[asset.symbol][0].metadata?.verified).not.toBeDefined()
 
       const newState = reducer(
         state,
         assetsLoaded([{ ...asset, metadata: { verified: true } }])
       )
 
-      expect(newState[0].metadata?.verified).toBeTruthy()
+      expect(newState[asset.symbol][0].metadata?.verified).toBeTruthy()
     })
   })
 })
@@ -69,7 +74,9 @@ describe("Assets selectors", () => {
         },
       }
 
-      const state = [assetWithPricePoint, similarAssetWithPricePoint]
+      const state = {
+        [assetSymbol]: [assetWithPricePoint, similarAssetWithPricePoint],
+      }
       const result = selectAssetPricePoint(state, similarAsset, "USD")
 
       expect(result).toMatchObject(similarAssetPricePoint)
@@ -84,7 +91,9 @@ describe("Assets selectors", () => {
         recentPrices: {},
       }
 
-      const state = [assetWithPricePoint, assetWithoutPricePoint]
+      const state = {
+        [assetSymbol]: [assetWithPricePoint, assetWithoutPricePoint],
+      }
       const result = selectAssetPricePoint(state, assetWithoutPricePoint, "USD")
 
       expect(result).toMatchObject(pricePoint)
@@ -99,7 +108,9 @@ describe("Assets selectors", () => {
         recentPrices: {},
       }
 
-      const state = [assetWithPricePoint, assetWithoutPricePoint]
+      const state = {
+        [assetSymbol]: [assetWithPricePoint, assetWithoutPricePoint],
+      }
       const result = selectAssetPricePoint(state, assetWithoutPricePoint, "USD")
 
       expect(assetWithPricePoint.decimals).toBe(18)

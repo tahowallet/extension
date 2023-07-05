@@ -52,7 +52,7 @@ describe("Earn", () => {
           reserve1: BigNumber.from(100000n),
         }),
       }))
-      const doggoPrice = await getDoggoPrice([], mainCurrencySymbol)
+      const doggoPrice = await getDoggoPrice({}, mainCurrencySymbol)
 
       expect(doggoPrice).toBe(0n)
     })

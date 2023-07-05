@@ -46,12 +46,9 @@ export async function getAssetPricePoint(
   assets: AssetsState,
   network: EVMNetwork
 ): Promise<PricePoint | undefined> {
-  const assetPricesNetworks = assets
+  const assetPricesNetworks = assets[asset.symbol]
     .filter(
-      (assetItem) =>
-        "contractAddress" in assetItem &&
-        assetItem.contractAddress &&
-        assetItem.symbol === asset.symbol
+      (assetItem) => "contractAddress" in assetItem && assetItem.contractAddress
     )
     .map((assetItem) => {
       const { contractAddress } = assetItem as SingleAssetState & {

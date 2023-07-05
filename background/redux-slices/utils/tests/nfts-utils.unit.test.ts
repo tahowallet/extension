@@ -17,26 +17,32 @@ const COLLECTION_MOCK = {
   hasNextPage: false,
 }
 
-const assetsState: AssetsState = [
-  {
-    ...ETH,
-    recentPrices: {
-      USD: createPricePoint(ETH, 2000),
+const assetsState: AssetsState = {
+  ETH: [
+    {
+      ...ETH,
+      recentPrices: {
+        USD: createPricePoint(ETH, 2000),
+      },
     },
-  },
-  {
-    ...AVAX,
-    recentPrices: {
-      USD: createPricePoint(AVAX, 15),
+  ],
+  AVAX: [
+    {
+      ...AVAX,
+      recentPrices: {
+        USD: createPricePoint(AVAX, 15),
+      },
     },
-  },
-  {
-    ...BNB,
-    recentPrices: {
-      USD: createPricePoint(BNB, 50),
+  ],
+  BNB: [
+    {
+      ...BNB,
+      recentPrices: {
+        USD: createPricePoint(BNB, 50),
+      },
     },
-  },
-]
+  ],
+}
 
 describe("NFTs utils", () => {
   describe("getTotalFloorPrice", () => {

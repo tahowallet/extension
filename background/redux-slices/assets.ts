@@ -32,9 +32,9 @@ export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
 
 export type SingleAssetState = AssetWithRecentPrices
 
-export type AssetsState = SingleAssetState[]
+export type AssetsState = { [symbol: string]: SingleAssetState[] }
 
-export const initialState = [] as AssetsState
+export const initialState = {} as AssetsState
 
 const assetsSlice = createSlice({
   name: "assets",
@@ -44,55 +44,43 @@ const assetsSlice = createSlice({
       immerState,
       { payload: newAssets }: { payload: AnyAsset[] }
     ) => {
-      const mappedAssets: { [sym: string]: SingleAssetState[] } = {}
-      // bin existing known assets
-      immerState.forEach((asset) => {
-        if (mappedAssets[asset.symbol] === undefined) {
-          mappedAssets[asset.symbol] = []
-        }
-        // if an asset is already in state, assume unique checks have been done
-        // no need to check network, contract address, etc
-        mappedAssets[asset.symbol].push(asset)
-      })
+      const newAssetsMap = new Map<string, SingleAssetState[]>(
+        Object.entries(immerState)
+      )
+
       // merge in new assets
       newAssets.forEach((newAsset) => {
-        if (mappedAssets[newAsset.symbol] === undefined) {
-          mappedAssets[newAsset.symbol] = [
-            {
-              ...newAsset,
-              recentPrices: {},
-            },
-          ]
-        } else {
-          const duplicateIndexes = mappedAssets[newAsset.symbol].reduce<
-            number[]
-          >((acc, existingAsset, id) => {
-            if (isSameAsset(newAsset, existingAsset)) {
-              acc.push(id)
-            }
-            return acc
-          }, [])
+        const existingAssets = newAssetsMap.get(newAsset.symbol) ?? []
+        const newAssetWithRecentPrices = {
+          ...newAsset,
+          recentPrices: {},
+        }
 
-          // if there aren't duplicates, add the asset
-          if (duplicateIndexes.length === 0) {
-            mappedAssets[newAsset.symbol].push({
-              ...newAsset,
-              recentPrices: {},
-            })
-          } else {
-            // TODO if there are duplicates... when should we replace assets?
-            duplicateIndexes.forEach((id) => {
-              // Update only the metadata for the duplicate
-              mappedAssets[newAsset.symbol][id] = {
-                ...mappedAssets[newAsset.symbol][id],
+        if (existingAssets.length) {
+          let hasDuplicates = false
+
+          const updatedAssets = existingAssets.map((existingAsset) => {
+            if (isSameAsset(newAsset, existingAsset)) {
+              hasDuplicates = true
+              return {
+                ...existingAsset,
                 metadata: newAsset.metadata,
               }
-            })
+            }
+            return existingAsset
+          })
+
+          if (!hasDuplicates) {
+            updatedAssets.push(newAssetWithRecentPrices)
           }
+
+          newAssetsMap.set(newAsset.symbol, updatedAssets)
+        } else {
+          newAssetsMap.set(newAsset.symbol, [newAssetWithRecentPrices])
         }
       })
 
-      return Object.values(mappedAssets).flat()
+      return Object.fromEntries(newAssetsMap)
     },
     newPricePoints: (
       immerState,
@@ -106,9 +94,10 @@ const assetsSlice = createSlice({
           (asset) => asset !== fiatCurrency
         )
         if (fiatCurrency && pricedAsset) {
-          const index = findClosestAssetIndex(pricedAsset, immerState)
+          const assets = immerState[pricedAsset.symbol] ?? []
+          const index = findClosestAssetIndex(pricedAsset, assets)
           if (typeof index !== "undefined") {
-            immerState[index].recentPrices[fiatCurrency.symbol] = pricePoint
+            assets[index].recentPrices[fiatCurrency.symbol] = pricePoint
           }
         }
       })
@@ -117,7 +106,13 @@ const assetsSlice = createSlice({
       immerState,
       { payload: removedAsset }: { payload: AnyAsset }
     ) => {
-      return immerState.filter((asset) => !isSameAsset(asset, removedAsset))
+      if (immerState[removedAsset.symbol]) {
+        immerState[removedAsset.symbol] = immerState[
+          removedAsset.symbol
+        ].filter((asset) => !isSameAsset(asset, removedAsset))
+      }
+
+      return immerState
     },
   },
 })
@@ -294,7 +289,7 @@ export const selectAssetPricePoint = createSelector(
 
     /* If we're looking for a smart contract, try to find an exact price point */
     if (isSmartContractFungibleAsset(assetToFind)) {
-      pricedAsset = assets.find(
+      pricedAsset = assets[assetToFind.symbol]?.find(
         (asset): asset is AssetWithRecentPrices<SmartContractFungibleAsset> =>
           isSmartContractFungibleAsset(asset) &&
           asset.contractAddress === assetToFind.contractAddress &&
@@ -313,9 +308,8 @@ export const selectAssetPricePoint = createSelector(
 
     /* Otherwise, find a best-effort match by looking for assets with the same symbol  */
     if (!pricedAsset) {
-      pricedAsset = assets.find(
-        (asset) =>
-          asset.symbol === assetToFind.symbol && hasRecentPriceData(asset)
+      pricedAsset = assets[assetToFind.symbol]?.find((asset) =>
+        hasRecentPriceData(asset)
       )
     }
 
