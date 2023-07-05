@@ -12,15 +12,26 @@ import {
   SmartContractFungibleAsset,
 } from "../../assets"
 import {
+  ARBITRUM_ONE,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
   BUILT_IN_NETWORK_BASE_ASSETS,
+  ETHEREUM,
   FIAT_CURRENCIES,
   HOUR,
   MINUTE,
   NETWORK_BY_CHAIN_ID,
+  OPTIMISM,
+  POLYGON,
   SECOND,
   USD,
 } from "../../constants"
 import { getPrices, getTokenPrices, getPricePoint } from "../../lib/prices"
+
+import {
+  getUSDPriceForBaseAsset,
+  getUSDPriceForTokens,
+} from "../../lib/priceOracle"
 import {
   fetchAndValidateTokenList,
   mergeAssets,
@@ -37,7 +48,6 @@ import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../../lib/utils"
-import { fixPolygonWETHIssue, polygonTokenListURL } from "./token-list-edit"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -59,7 +69,7 @@ interface Events extends ServiceLifecycleEvents {
      */
     addressOnNetwork: AddressOnNetwork
   }
-  price: PricePoint
+  prices: PricePoint[]
   assets: AnyAsset[]
   refreshAsset: SmartContractFungibleAsset
   removeAssetData: SmartContractFungibleAsset
@@ -422,7 +432,7 @@ export default class IndexingService extends BaseService<Events> {
             this.addTokenToTrackByContract(
               addressNetwork.network,
               fungibleAsset.contractAddress,
-              { discoveryTxHash: transfer.txHash }
+              { discoveryTxHash: { [addressNetwork.address]: transfer.txHash } }
             )
           }
         })
@@ -437,7 +447,7 @@ export default class IndexingService extends BaseService<Events> {
         const balances = await this.retrieveTokenBalances(addressOnNetwork)
 
         // FIXME Refactor this to only update prices for tokens with balances.
-        await this.handlePriceAlarm()
+        this.handlePriceAlarm()
 
         // Every asset we have that hasn't already been balance checked and is
         // on the currently selected network should be checked once.
@@ -603,6 +613,25 @@ export default class IndexingService extends BaseService<Events> {
     this.emitter.emit("removeAssetData", asset)
   }
 
+  async removeDiscoveryTxHash(address: string): Promise<void> {
+    const customAssets = await this.db.getAllCustomAssets()
+
+    customAssets
+      .filter(
+        (asset) => asset.metadata?.discoveryTxHash?.[address] !== undefined
+      )
+      .forEach((assetWithDiscoveryHashReference) => {
+        const { metadata } = assetWithDiscoveryHashReference
+        if (Object.keys(metadata?.discoveryTxHash ?? {}).length !== 0) {
+          delete metadata?.discoveryTxHash?.[address]
+          this.updateAssetMetadata(
+            assetWithDiscoveryHashReference,
+            metadata ?? {}
+          )
+        }
+      })
+  }
+
   async importCustomToken(asset: SmartContractFungibleAsset): Promise<boolean> {
     const customAsset = {
       ...asset,
@@ -657,7 +686,12 @@ export default class IndexingService extends BaseService<Events> {
   async addTokenToTrackByContract(
     network: EVMNetwork,
     contractAddress: string,
-    metadata: { discoveryTxHash?: HexString; verified?: boolean } = {}
+    metadata: {
+      discoveryTxHash?: {
+        [address: HexString]: HexString
+      }
+      verified?: boolean
+    } = {}
   ): Promise<SmartContractFungibleAsset | undefined> {
     const normalizedAddress = normalizeEVMAddress(contractAddress)
 
@@ -667,8 +701,19 @@ export default class IndexingService extends BaseService<Events> {
     )
 
     if (knownAsset) {
-      await this.addAssetToTrack(knownAsset)
-      return knownAsset
+      const newDiscoveryTxHash = metadata?.discoveryTxHash
+      const addressForDiscoveryTxHash = newDiscoveryTxHash
+        ? Object.keys(newDiscoveryTxHash)[0]
+        : undefined
+      const existingDiscoveryTxHash = addressForDiscoveryTxHash
+        ? knownAsset.metadata?.discoveryTxHash?.[addressForDiscoveryTxHash]
+        : undefined
+      // If the discovery tx hash is not specified
+      // or if it already exists in the asset, do not update the asset
+      if (!newDiscoveryTxHash || existingDiscoveryTxHash) {
+        await this.addAssetToTrack(knownAsset)
+        return knownAsset
+      }
     }
 
     let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
@@ -692,7 +737,16 @@ export default class IndexingService extends BaseService<Events> {
       if (!isRemoved || (isRemoved && isVerified)) {
         if (Object.keys(metadata).length !== 0) {
           customAsset.metadata ??= {}
-          Object.assign(customAsset.metadata, metadata)
+          if (metadata.verified !== undefined) {
+            customAsset.metadata.verified = metadata.verified
+          }
+          if (metadata.discoveryTxHash) {
+            customAsset.metadata.discoveryTxHash ??= {}
+            Object.assign(
+              customAsset.metadata.discoveryTxHash,
+              metadata.discoveryTxHash
+            )
+          }
 
           if (isRemoved) {
             customAsset.metadata.removed = false
@@ -717,13 +771,29 @@ export default class IndexingService extends BaseService<Events> {
       // TODO include user-preferred currencies
       // get the prices of ETH and BTC vs major currencies
       const baseAssets = await this.chainService.getNetworkBaseAssets()
-      const basicPrices = await getPrices(baseAssets, FIAT_CURRENCIES)
+      let basicPrices = await getPrices(baseAssets, FIAT_CURRENCIES)
+
+      if (basicPrices.length === 0) {
+        basicPrices = await Promise.all(
+          [
+            ETHEREUM,
+            ARBITRUM_ONE,
+            OPTIMISM,
+            BINANCE_SMART_CHAIN,
+            POLYGON,
+            AVALANCHE,
+          ].map(async (network: EVMNetwork) => {
+            const provider =
+              this.chainService.providerForNetworkOrThrow(network)
+            return getUSDPriceForBaseAsset(network, provider)
+          })
+        )
+      }
 
       // kick off db writes and event emission, don't wait for the promises to
       // settle
       const measuredAt = Date.now()
       basicPrices.forEach((pricePoint) => {
-        this.emitter.emit("price", pricePoint)
         this.db
           .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
           .catch((err) =>
@@ -735,9 +805,10 @@ export default class IndexingService extends BaseService<Events> {
             )
           )
       })
+      this.emitter.emit("prices", basicPrices)
     } catch (e) {
       logger.error(
-        "Error getting base asset prices",
+        "Error getting base asset prices from coingecko",
         BUILT_IN_NETWORK_BASE_ASSETS,
         FIAT_CURRENCIES
       )
@@ -772,7 +843,6 @@ export default class IndexingService extends BaseService<Events> {
         (network) => network.chainID === asset.homeNetwork.chainID
       )
     })
-
     try {
       // TODO only uses USD
 
@@ -795,42 +865,63 @@ export default class IndexingService extends BaseService<Events> {
 
       // @TODO consider allSettled here
       const activeAssetPricesByNetwork = await Promise.all(
-        activeAssetsByNetwork.map(({ activeAssetsByAddress, network }) =>
-          getTokenPrices(Object.keys(activeAssetsByAddress), USD, network)
+        activeAssetsByNetwork.map(
+          async ({ activeAssetsByAddress, network }) => {
+            const coingeckoTokenPrices = await getTokenPrices(
+              Object.keys(activeAssetsByAddress),
+              USD,
+              network
+            )
+            if (Object.keys(coingeckoTokenPrices).length) {
+              return coingeckoTokenPrices
+            }
+
+            const provider =
+              this.chainService.providerForNetworkOrThrow(network)
+
+            return getUSDPriceForTokens(
+              Object.values(activeAssetsByAddress),
+              network,
+              provider
+            )
+          }
         )
       )
 
-      activeAssetPricesByNetwork.forEach((activeAssetPrices) => {
-        Object.entries(activeAssetPrices).forEach(
-          ([contractAddress, unitPricePoint]) => {
-            const asset =
-              allActiveAssetsByAddress[contractAddress.toLowerCase()]
-            if (asset) {
-              // TODO look up fiat currency
-              const pricePoint = getPricePoint(asset, unitPricePoint)
-              this.emitter.emit("price", pricePoint)
-              // TODO move the "coingecko" data source elsewhere
-              this.db
-                .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
-                .catch(() =>
-                  logger.error(
-                    "Error saving price point",
-                    pricePoint,
-                    measuredAt
-                  )
-                )
-            } else {
-              logger.warn(
-                "Discarding price from unknown asset",
-                contractAddress,
-                unitPricePoint
+      const activeAssetPrices = activeAssetPricesByNetwork.flatMap(
+        (activeAssetPrice) => {
+          return Object.entries(activeAssetPrice)
+        }
+      )
+
+      const pricePoints = activeAssetPrices
+        .map(([contractAddress, unitPricePoint]) => {
+          const asset = allActiveAssetsByAddress[contractAddress.toLowerCase()]
+          if (asset) {
+            const pricePoint = getPricePoint(asset, unitPricePoint)
+            this.db
+              .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
+              .catch(() =>
+                logger.error("Error saving price point", pricePoint, measuredAt)
               )
-            }
+            return pricePoint
           }
-        )
-      })
+          logger.warn(
+            "Discarding price from unknown asset",
+            contractAddress,
+            unitPricePoint
+          )
+          return null
+        })
+        .filter((pricePoint): pricePoint is PricePoint => pricePoint !== null)
+
+      this.emitter.emit("prices", pricePoints)
     } catch (err) {
-      logger.error("Error getting token prices", activeAssetsToTrack, err)
+      logger.error(
+        "Error getting token prices from coingecko",
+        activeAssetsToTrack,
+        err
+      )
     }
   }
 
@@ -843,9 +934,12 @@ export default class IndexingService extends BaseService<Events> {
     }
 
     this.lastPriceAlarmTime = Date.now()
-    // TODO refactor for multiple price sources
-    await this.getBaseAssetsPrices()
-    await this.getTrackedAssetsPrices()
+
+    // Avoid awaiting here so price fetching can happen in the background
+    // and the extension can go on doing whatever it needs to do while waiting
+    // for prices to come back.
+    this.getBaseAssetsPrices()
+    this.getTrackedAssetsPrices()
   }
 
   private async fetchAndCacheTokenLists(): Promise<void> {
@@ -860,11 +954,6 @@ export default class IndexingService extends BaseService<Events> {
           try {
             const newListRef = await fetchAndValidateTokenList(url)
 
-            if (url === polygonTokenListURL) {
-              newListRef.tokenList.tokens = fixPolygonWETHIssue(
-                newListRef.tokenList.tokens
-              )
-            }
             await this.db.saveTokenList(url, newListRef.tokenList)
           } catch (err) {
             logger.error(

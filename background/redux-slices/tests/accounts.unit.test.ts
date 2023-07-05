@@ -15,6 +15,7 @@ import reducer, {
   updateAccountBalance,
   updateAssetReferences,
 } from "../accounts"
+import { getAssetID } from "../utils/asset-utils"
 import { determineAssetDisplayAndVerify } from "../selectors"
 
 const ADDRESS_MOCK = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
@@ -73,7 +74,7 @@ describe("Accounts redux slice", () => {
       expect(updatedAccountData).not.toEqual("loading")
 
       const updatedBalance = (updatedAccountData as AccountData)?.balances
-      expect(updatedBalance?.[ETH.symbol].assetAmount.amount).toBe(1n)
+      expect(updatedBalance?.[getAssetID(ETH)].assetAmount.amount).toBe(1n)
       expect(updated.combinedData.totalMainCurrencyValue).toBe("")
     })
 
@@ -93,7 +94,7 @@ describe("Accounts redux slice", () => {
         updated.accountsData.evm[ETHEREUM.chainID][ADDRESS_MOCK]
       const updatedBalance = (updatedAccountData as AccountData)?.balances
 
-      expect(updatedBalance?.[ETH.symbol].assetAmount.amount).toBe(1n)
+      expect(updatedBalance?.[getAssetID(ETH)].assetAmount.amount).toBe(1n)
       expect(updated.combinedData.totalMainCurrencyValue).toBe("")
     })
 
@@ -124,7 +125,8 @@ describe("Accounts redux slice", () => {
       expect(updatedAccountData).not.toEqual("loading")
 
       const updatedBalance = (updatedAccountData as AccountData)?.balances
-      expect(updatedBalance?.[ETH.symbol].assetAmount.amount).toBe(0n)
+
+      expect(updatedBalance?.[getAssetID(ETH)].assetAmount.amount).toBe(0n)
     })
 
     it("should update zero balance for account that is loaded", () => {
@@ -151,7 +153,7 @@ describe("Accounts redux slice", () => {
         updated.accountsData.evm[ETHEREUM.chainID][ADDRESS_MOCK]
       const updatedBalance = (updatedAccountData as AccountData)?.balances
 
-      expect(updatedBalance?.[ETH.symbol].assetAmount.amount).toBe(0n)
+      expect(updatedBalance?.[getAssetID(ETH)].assetAmount.amount).toBe(0n)
     })
 
     it("should update positive balance multiple times", () => {
@@ -186,8 +188,63 @@ describe("Accounts redux slice", () => {
         updated.accountsData.evm[ETHEREUM.chainID][ADDRESS_MOCK]
       const updatedBalance = (updatedAccountData as AccountData)?.balances
 
-      expect(updatedBalance?.[ETH.symbol].assetAmount.amount).toBe(1n)
-      expect(updatedBalance?.[ASSET_MOCK.symbol].assetAmount.amount).toBe(10n)
+      expect(updatedBalance?.[getAssetID(ETH)].assetAmount.amount).toBe(1n)
+      expect(updatedBalance?.[getAssetID(ASSET_MOCK)].assetAmount.amount).toBe(
+        10n
+      )
+    })
+
+    it("should support storing balances for assets with the same symbol", () => {
+      state.accountsData.evm = {
+        [ETHEREUM.chainID]: { [ADDRESS_MOCK]: ACCOUNT_MOCK },
+      }
+
+      const someToken = createSmartContractAsset({ symbol: "USDC" })
+      const someOtherToken = createSmartContractAsset({ symbol: "USDC" })
+
+      const initial = reducer(
+        state,
+        updateAccountBalance({
+          balances: [BALANCE_MOCK],
+          addressOnNetwork: { address: ADDRESS_MOCK, network: ETHEREUM },
+        })
+      )
+
+      const updated = reducer(
+        initial,
+        updateAccountBalance({
+          balances: [
+            BALANCE_MOCK,
+            {
+              ...BALANCE_MOCK,
+              assetAmount: { asset: someToken, amount: 1n },
+            },
+            {
+              ...BALANCE_MOCK,
+              assetAmount: { asset: someOtherToken, amount: 2n },
+            },
+          ],
+          addressOnNetwork: { address: ADDRESS_MOCK, network: ETHEREUM },
+        })
+      )
+
+      const updatedAccountData =
+        updated.accountsData.evm[ETHEREUM.chainID][ADDRESS_MOCK]
+      const balances = (updatedAccountData as AccountData)?.balances
+
+      expect(balances?.[getAssetID(ETH)].assetAmount.asset).toEqual(ETH)
+
+      expect(balances?.[getAssetID(someToken)].assetAmount.asset).toEqual(
+        someToken
+      )
+      expect(balances?.[getAssetID(someToken)].assetAmount.amount).toEqual(1n)
+
+      expect(balances?.[getAssetID(someOtherToken)].assetAmount.asset).toEqual(
+        someOtherToken
+      )
+      expect(balances?.[getAssetID(someOtherToken)].assetAmount.amount).toEqual(
+        2n
+      )
     })
 
     it("updates cached asset data for all accounts", () => {
@@ -241,11 +298,11 @@ describe("Accounts redux slice", () => {
       ][otherAccount.address] as AccountData
 
       expect(
-        firstAccountData.balances[asset.symbol].assetAmount.asset.metadata
+        firstAccountData.balances[getAssetID(asset)].assetAmount.asset.metadata
           ?.verified
       ).not.toBeDefined()
       expect(
-        secondAccountData.balances[asset.symbol].assetAmount.asset.metadata
+        secondAccountData.balances[getAssetID(asset)].assetAmount.asset.metadata
           ?.verified
       ).not.toBeDefined()
 
@@ -267,11 +324,11 @@ describe("Accounts redux slice", () => {
       ][otherAccount.address] as AccountData
 
       expect(
-        updatedFirstAccountData.balances[asset.symbol].assetAmount.asset
+        updatedFirstAccountData.balances[getAssetID(asset)].assetAmount.asset
           .metadata?.verified
       ).toBe(true)
       expect(
-        updatedSecondAccountData.balances[asset.symbol].assetAmount.asset
+        updatedSecondAccountData.balances[getAssetID(asset)].assetAmount.asset
           .metadata?.verified
       ).toBe(true)
     })

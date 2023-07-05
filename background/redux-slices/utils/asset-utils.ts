@@ -10,12 +10,14 @@ import {
   AnyAsset,
   CoinGeckoAsset,
   isSmartContractFungibleAsset,
+  SmartContractFungibleAsset,
 } from "../../assets"
 import {
   BUILT_IN_NETWORK_BASE_ASSETS,
   OPTIMISM,
   POLYGON,
 } from "../../constants"
+import { FeatureFlags, isEnabled } from "../../features"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { sameEVMAddress } from "../../lib/utils"
 import { AnyNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
@@ -373,6 +375,31 @@ export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
   }
 
   return false
+}
+
+type AssetType = "base" | "erc20"
+
+export type AssetID = `${AssetType}/${string}`
+
+export const getAssetID = (
+  asset: NetworkBaseAsset | SmartContractFungibleAsset
+): AssetID => {
+  if (isNetworkBaseAsset(asset)) {
+    return `base/${asset.symbol}`
+  }
+
+  return `erc20/${asset.contractAddress}`
+}
+
+/**
+ * Assets that are untrusted and have not been verified by the user
+ * should not be swapped or sent.
+ */
+export function canBeUsedForTransaction(asset: AnyAsset): boolean {
+  if (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)) {
+    return true
+  }
+  return isUntrustedAsset(asset) ? !isUnverifiedAssetByUser(asset) : true
 }
 
 // FIXME Unify once asset similarity code is unified.

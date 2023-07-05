@@ -10,6 +10,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/assets"
 import {
   selectCurrentNetwork,
+  selectMainCurrencySign,
   userValueDustThreshold,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
@@ -96,6 +97,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const allNetworks = useBackgroundSelector(selectEVMNetworks)
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
+  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const networks = allNetworks.filter(
     (network) =>
@@ -178,8 +180,31 @@ export default function SettingsAddCustomAsset(): ReactElement {
   const hideDustEnabled = useBackgroundSelector(selectHideDust)
   const showWarningAboutDust =
     hideDustEnabled &&
+    assetData?.mainCurrencyAmount !== 0 &&
     assetData?.mainCurrencyAmount !== undefined &&
     assetData?.mainCurrencyAmount < userValueDustThreshold
+
+  const warningOptions = {
+    amount: userValueDustThreshold,
+    sign: mainCurrencySign,
+  }
+
+  const renderWarningText = () => {
+    if (showWarningAboutDust) {
+      return t("warning.alreadyExists.desc.dust", {
+        ...warningOptions,
+        settings: sharedT("settings.hideSmallAssetBalance", warningOptions),
+      })
+    }
+
+    // showWarningAboutNoBalance
+    if (assetData?.mainCurrencyAmount === 0) {
+      return t("warning.alreadyExists.desc.noBalance", warningOptions)
+    }
+
+    // showWarningAboutVisibility
+    return t("warning.alreadyExists.desc.visibility")
+  }
 
   return (
     <div className="standard_width_padded wrapper">
@@ -305,6 +330,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
                         textDecoration: "underline",
                         "--link-color": "var(--green-95)",
                         "--hover-color": "var(--green-40)",
+                        padding: "0px",
                       }}
                       type="button"
                       url={HELPDESK_CUSTOM_TOKENS_LINK}
@@ -369,7 +395,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
             />
             <div className="alert_content">
               <div className="title">{t("warning.alreadyExists.title")}</div>
-              <div className="desc">{t("warning.alreadyExists.desc")}</div>
+              <div className="desc">{renderWarningText()}</div>
             </div>
           </div>
         ) : (
@@ -384,7 +410,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
                 />
                 <div className="alert_content">
                   <div className="title" style={{ color: "var(--attention)" }}>
-                    {t("warning.dust.title")}
+                    {t("warning.dust.title", warningOptions)}
                   </div>
                 </div>
               </div>
@@ -397,6 +423,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
           background: var(--green-120);
           border-radius: 8px;
           padding: 8px;
+          padding-right: 24px;
           display: flex;
           gap: 8px;
         }

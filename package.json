@@ -1,7 +1,7 @@
 {
   "name": "@tallyho/tally-extension",
   "private": true,
-  "version": "0.36.1",
+  "version": "0.40.0",
   "description": "Taho, the community owned and operated Web3 wallet.",
   "main": "index.js",
   "repository": "git@github.com:thesis/tally-extension.git",
@@ -46,7 +46,7 @@
     "test:unit": "echo \"> Running Unit Tests\" && jest \"unit.test.ts\" --forceExit",
     "test:ui": "echo \"> Running UI Tests\" && jest \".test.tsx\" --forceExit",
     "test:e2e": "echo \"> Running e2e Tests\" && playwright test",
-    "preversion": "(which jq &>1 && which yq &>1) || (echo 'You must install jq and yq; scripts/macos-setup.sh for macOS.' && exit 1)",
+    "preversion": "(which jq >&1 && which yq >&1) || (echo 'You must install jq and yq; scripts/macos-setup.sh for macOS.' && exit 1)",
     "version": "scripts/update-version.sh",
     "postversion": "git push --tags origin release-$npm_package_version",
     "postinstall": "patch-package && playwright install chromium"

@@ -7,6 +7,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/assets"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import {
+  selectCurrentAccount,
   selectCurrentAccountActivities,
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
@@ -14,7 +15,7 @@ import classNames from "classnames"
 import { isUnverifiedAssetByUser } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
-import { useHistory } from "react-router-dom"
+import { useHistory, useLocation } from "react-router-dom"
 import { Activity } from "@tallyho/tally-background/redux-slices/activities"
 import SharedButton from "../../Shared/SharedButton"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
@@ -26,7 +27,10 @@ import { getBlockExplorerURL } from "../../../utils/networks"
 type AssetWarningProps = {
   asset: SmartContractFungibleAsset
   close: () => void
-  openActivityDetails: (activity: Activity | undefined) => void
+  openActivityDetails: (activityDetails: {
+    activityItem: Activity
+    activityInitiatorAddress: string
+  }) => void
 }
 
 export default function AssetWarning(props: AssetWarningProps): ReactElement {
@@ -43,6 +47,8 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
 
   const history = useHistory()
 
+  const { pathname } = useLocation()
+
   const network = useBackgroundSelector(selectCurrentNetwork)
 
   const isUnverified = isUnverifiedAssetByUser(asset)
@@ -51,8 +57,6 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
     asset && "contractAddress" in asset && asset.contractAddress
       ? asset.contractAddress
       : ""
-
-  const discoveryTxHash = asset.metadata?.discoveryTxHash
 
   const blockExplorerUrl = getBlockExplorerURL(network)
 
@@ -67,13 +71,17 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
     await dispatch(hideAsset({ asset }))
     dispatch(setSnackbarMessage(t("removeAssetSnackbar")))
     close()
-    history.push("/")
+
+    if (pathname === "/singleAsset") {
+      history.push("/")
+    }
   }
 
-  const copyTxHash = (txHash: string) => {
-    navigator.clipboard.writeText(txHash)
-    dispatch(setSnackbarMessage(sharedT("copyTextSnackbar")))
-  }
+  const activityInitiatorAddress =
+    useBackgroundSelector(selectCurrentAccount).address
+
+  const discoveryTxHash =
+    asset.metadata?.discoveryTxHash?.[activityInitiatorAddress]
 
   const currentAccountActivities = useBackgroundSelector(
     selectCurrentAccountActivities
@@ -147,18 +155,35 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
                     <button
                       type="button"
                       className={classNames("address_button", {
-                        no_click: !blockExplorerUrl,
+                        no_click: activityItem ? false : !blockExplorerUrl,
                       })}
                       onClick={() => {
                         if (activityItem) {
-                          openActivityDetails(activityItem)
+                          openActivityDetails({
+                            activityItem,
+                            activityInitiatorAddress,
+                          })
                         } else {
-                          copyTxHash(discoveryTxHash)
+                          window
+                            .open(
+                              `${blockExplorerUrl}/tx/${discoveryTxHash}`,
+                              "_blank"
+                            )
+                            ?.focus()
                         }
                       }}
                       title={discoveryTxHash}
                     >
                       {truncateAddress(discoveryTxHash)}
+                      {!activityItem && blockExplorerUrl && (
+                        <SharedIcon
+                          width={16}
+                          icon="icons/s/new-tab.svg"
+                          color="var(--green-5)"
+                          hoverColor="var(--trophy-gold)"
+                          transitionHoverTime="0.2s"
+                        />
+                      )}
                     </button>
                   </div>
                 </div>

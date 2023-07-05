@@ -2,7 +2,10 @@ import { createSelector } from "@reduxjs/toolkit"
 import { selectCurrentNetwork } from "./uiSelectors"
 import { SwappableAsset, isSmartContractFungibleAsset } from "../../assets"
 import { sameNetwork } from "../../networks"
-import { isBuiltInNetworkBaseAsset } from "../utils/asset-utils"
+import {
+  canBeUsedForTransaction,
+  isBuiltInNetworkBaseAsset,
+} from "../utils/asset-utils"
 import { RootState } from ".."
 import { SingleAssetState } from "../assets"
 
@@ -26,6 +29,9 @@ export const selectSwapBuyAssets = createSelector(
       ): asset is SwappableAsset & {
         recentPrices: SingleAssetState["recentPrices"]
       } => {
+        if (!canBeUsedForTransaction(asset)) {
+          return false
+        }
         if (isSmartContractFungibleAsset(asset)) {
           if (sameNetwork(asset.homeNetwork, currentNetwork)) {
             return true

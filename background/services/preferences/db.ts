@@ -20,9 +20,27 @@ const getSignerRecordId = (signer: AccountSignerWithId): SignerRecordId => {
   return `${signer.type}/${id}`
 }
 
+/**
+ * Update Taho token list reference.
+ * Returns an updated URLs for the token list.
+ */
+const getNewUrlsForTokenList = (
+  storedPreferences: Preferences,
+  oldPath: string,
+  newPath: string
+): string[] => {
+  // Get rid of old Taho URL
+  const newURLs = storedPreferences.tokenLists.urls.filter(
+    (url) => !url.includes(oldPath)
+  )
+  newURLs.push(`https://ipfs.io/ipfs/${newPath}`)
+
+  return newURLs
+}
+
 // The idea is to use this interface to describe the data structure stored in indexedDb
 // In the future this might also have a runtime type check capability, but it's good enough for now.
-export interface Preferences {
+export type Preferences = {
   id?: number
   savedAt: number
   tokenLists: { autoUpdate: boolean; urls: string[] }
@@ -36,6 +54,30 @@ export interface Preferences {
   }
 }
 
+/**
+ * Items that the user will see and then will not reappear once they've been
+ * manually dismissed. Manual dismissal can include closing a popover, or
+ * selecting "Don't show again" on a popup before closing it.
+ */
+export type ManuallyDismissableItem = "analytics-enabled-banner"
+/**
+ * Items that the user will see once and will not be auto-displayed again. Can
+ * be used for tours, or for popups that can be retriggered but will not
+ * auto-display more than once.
+ */
+export type SingleShotItem = "default-connection-popover"
+
+/**
+ * Items that the user will view one time and either manually dismiss or that
+ * will remain auto-collapsed after first view.
+ */
+export type DismissableItem = ManuallyDismissableItem | SingleShotItem
+
+type DismissableItemEntry = {
+  id: DismissableItem
+  shown: boolean
+}
+
 export class PreferenceDatabase extends Dexie {
   private preferences!: Dexie.Table<Preferences, number>
 
@@ -44,19 +86,18 @@ export class PreferenceDatabase extends Dexie {
     string
   >
 
+  private shownDismissableItems!: Dexie.Table<DismissableItemEntry, string>
+
   constructor() {
     super("tally/preferences")
 
-    // DELETE ME: No need to keep this, but because this service was using a different method
-    // I thought it's easier to follow the history if it's here at least until we discuss this approach
+    // TODO Would be good to move all of these migrations to their own file or
+    // TODO files.
     this.version(1).stores({
       preferences: "++id,savedAt",
       migrations: "++id,appliedAt",
     })
 
-    // DELETE ME: This is not necessary either, but because there was a different approach
-    // implementing the migration I kept it here for now just to make sure
-    // the db is in working condition.
     this.version(2)
       .stores({
         preferences: "++id,savedAt,currency,tokenLists,defaultWallet",
@@ -76,9 +117,6 @@ export class PreferenceDatabase extends Dexie {
           })
       })
 
-    // TBD @Antonio: Implemented database versioning and population according to the Dexie docs
-    // https://dexie.org/docs/Tutorial/Design#database-versioning
-    // I fully expect that I might need to revert all of this, but as per my current knowledge this seems to be a good idea
     this.version(3).stores({
       migrations: null, // If we use dexie built in migrations then we don't need to keep track of them manually
       preferences: "++id", // removed all the unused indexes
@@ -139,16 +177,12 @@ export class PreferenceDatabase extends Dexie {
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
-            // Get rid of old tally URL
-            const newURLs = storedPreferences.tokenLists.urls.filter(
-              (url) =>
-                !url.includes(
-                  "bafybeicovpqvb533alo5scf7vg34z6fjspdytbzsa2es2lz35sw3ksh2la"
-                )
-            )
-
-            newURLs.push(
-              "https://ipfs.io/ipfs/bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife"
+            const newURLs = getNewUrlsForTokenList(
+              storedPreferences,
+              // Old path
+              "bafybeicovpqvb533alo5scf7vg34z6fjspdytbzsa2es2lz35sw3ksh2la",
+              // New path
+              "bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife"
             )
 
             // eslint-disable-next-line no-param-reassign
@@ -203,6 +237,7 @@ export class PreferenceDatabase extends Dexie {
           })
       })
 
+    // Update Taho token list reference.
     this.version(9)
       .stores({
         preferences: "++id",
@@ -212,16 +247,12 @@ export class PreferenceDatabase extends Dexie {
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
-            // Get rid of old tally URL
-            const newURLs = storedPreferences.tokenLists.urls.filter(
-              (url) =>
-                !url.includes(
-                  "bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife"
-                )
-            )
-
-            newURLs.push(
-              "https://ipfs.io/ipfs/bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm"
+            const newURLs = getNewUrlsForTokenList(
+              storedPreferences,
+              // Old path
+              "bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife",
+              // New path
+              "bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm"
             )
 
             // eslint-disable-next-line no-param-reassign
@@ -319,6 +350,34 @@ export class PreferenceDatabase extends Dexie {
         })
     })
 
+    this.version(17).stores({
+      preferences: "++id",
+      signersSettings: "&id",
+      shownDismissableItems: "&id,shown",
+    })
+
+    this.version(18).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const newURLs = getNewUrlsForTokenList(
+            storedPreferences,
+            // Old path
+            "bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm",
+            // New path
+            "bafybeihufwj43zej34itf66qyguq35k4f6s4ual4uk3iy643wn3xnff2ka"
+          )
+
+          // Param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
+          // eslint-disable-next-line no-param-reassign
+          storedPreferences.tokenLists = {
+            ...storedPreferences.tokenLists,
+            urls: newURLs,
+          }
+        })
+    })
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
@@ -379,6 +438,20 @@ export class PreferenceDatabase extends Dexie {
   ): Promise<AccountSignerSettings[]> {
     await this.signersSettings.delete(getSignerRecordId(signer))
     return this.signersSettings.toArray()
+  }
+
+  async markDismissableItemAsShown(item: DismissableItem): Promise<void> {
+    await this.shownDismissableItems.put({ id: item, shown: true })
+  }
+
+  async getShownDismissableItems(): Promise<DismissableItem[]> {
+    return (await this.shownDismissableItems.toArray()).map(({ id }) => id)
+  }
+
+  async wasDismissableItemAlreadyShown(
+    item: DismissableItem
+  ): Promise<boolean> {
+    return (await this.shownDismissableItems.get(item))?.shown ?? false
   }
 }
 

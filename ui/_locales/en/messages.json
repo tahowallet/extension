@@ -104,7 +104,7 @@
     }
   },
   "ledger": {
-    "checkLedger": "Check Ledger",
+    "checkLedger": "Check Error",
     "onlyRejectFromLedger": "Tx can only be Rejected from Ledger",
     "onboarding": {
       "connecting": "Connecting...",
@@ -142,7 +142,11 @@
       "disconnected": "Ledger is disconnected",
       "wrongLedger": "Wrong Ledger connected",
       "multipleLedgers": "Multiple ledgers connected",
-      "busy": "Ledger is busy"
+      "busy": "Ledger is busy",
+      "state.connected": "Connected",
+      "state.disconnected": "Disconnected",
+      "state.error": "Check error",
+      "state.unknown": "Unknown"
     },
     "activation": {
       "title": "Activate blind signing",
@@ -245,9 +249,7 @@
     }
   },
   "nfts": {
-    "empty": "Looks like you don't have any NFTs yet? Get some and view them here!",
     "noTitle": "No title",
-    "NFTPricingComingSoon": "Coming soon: NFT price + sending",
     "type1": "NFTs",
     "type2": "badges",
     "noMatchingNFTs": "No {{type}} matching your filters",
@@ -303,11 +305,6 @@
       "accountsTitle": "Show/hide accounts",
       "noCollections": "No collections"
     }
-  },
-  "achievements": {
-    "empty": "Nothing to see here",
-    "startWith": "You can start with the Taho collection!",
-    "collection": "Taho collection"
   },
   "onboarding": {
     "tabbed": {
@@ -485,18 +482,23 @@
   "readOnly": "Read-only",
   "readOnlyNotice": "Read-only mode",
   "settings": {
+    "group": {
+      "general": "General",
+      "walletOptions": "Networks & Assets",
+      "helpCenter": "Help center"
+    },
     "mainMenu": "Settings",
     "signing": "Signing",
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
-    "setAsDefault": "Use Taho as your default wallet",
-    "enableTestNetworks": "Enable test networks",
+    "setAsDefault": "Use Taho as default wallet",
+    "enableTestNetworks": "Show testnet networks",
     "showUnverifiedAssets": "Show unverified assets",
     "language": "Language",
     "bugReport": "Bug report",
     "connectedWebsites": "Connected websites",
-    "addCustomAsset": "Add custom assets",
+    "addCustomAsset": "Custom assets",
     "analytics": "Analytics",
-    "needHelp": "Need Help?",
+    "needHelp": "Need help?",
     "customNetworks": "Custom networks (beta)",
     "showBanners": "Show achievement banners",
     "versionLabel": "Version {{version}}",
@@ -552,9 +554,13 @@
       "asset.label.balance": "Balance",
       "asset.label.symbol": "Name",
       "networkSelect.title": "Select Network",
-      "warning.alreadyExists.title": "Asset already exists, you will see it once your balance is over 0",
-      "warning.alreadyExists.desc": "If you still have issues seeing an asset, turn off “Hide asset balances under 2$” from Settings",
-      "warning.dust.title": "Asset balance is under <$2, you wil see it once your balance is over $2",
+      "warning.alreadyExists.title": "Asset already exists",
+      "warning.alreadyExists.desc": {
+        "dust": "Your balance is under {{sign}}{{amount}}. You will see it once you turn off “{{settings}}” in Settings.",
+        "noBalance": "Your balance is 0, you will see it once your balance is over {{sign}}{{amount}}.",
+        "visibility": "You should see it in your asset list."
+      },
+      "warning.dust.title": "Asset balance is under {{sign}}{{amount}}, you wil see it once your balance is over {{sign}}{{amount}}",
       "error.invalidToken": "Invalid contract address",
       "submit": "Add asset",
       "snackbar.success": "Asset added successfully",
@@ -603,6 +609,7 @@
     "showPasswordHint": "Show Password",
     "hidePasswordHint": "Hide Password",
     "close": "Close",
+    "modalClose": "Background close",
     "accountItemSummary": {
       "connectedStatus": "Connected"
     },
@@ -614,7 +621,6 @@
   },
   "signing": {
     "signatureRequired": "Your signature is required",
-    "dappSignatureRequest": "A dapp is requesting your signature",
     "message": "Message",
     "signed": "Signed,",
     "type": "Type",
@@ -732,6 +738,9 @@
   },
   "topMenu": {
     "showCurrentDappConnection": "Show current dApp connection",
+    "connectToWebsiteUsing": "Connect to website using:",
+    "setTahoAsDefault": "Set Taho as default",
+    "setOtherAsDefault": "Set MetaMask/other wallet as default",
     "rewardsProgram": "Rewards program",
     "copyAddressTooltip": "Copy address",
     "addressCopiedMsg": "Address copied to clipboard",
@@ -741,7 +750,6 @@
       "networkSettingsBtn": "Add network (beta)"
     },
     "connectedDappInfo": {
-      "modalClose": "Background close",
       "dAppTitle": "Account connected to",
       "dappConnections": "Dapp connections",
       "guideline": {
@@ -857,6 +865,13 @@
       "descFirstPart": "We disabled Taho as default wallet for you. You can always enable it back from Settings",
       "descSecondPart": "at any time.",
       "toggleTitle": "Use Taho as default wallet"
+    },
+    "defaultConnectionPopover": {
+      "title": "Connecting with Taho",
+      "activeWallet": "Your active wallet is Taho.",
+      "activeWalletMeaning": "This means that you'll be connecting to websites with Taho even when selecting MetaMask.",
+      "metaMaskHeading": "Want to switch to MetaMask?",
+      "toggleLabel": "Use the toggle at the top to connect with MetaMask or another wallet."
     }
   },
   "abilities": {
@@ -949,12 +964,9 @@
         "USE_MAINNET_FORK": "Use mainnet fork",
         "HIDE_IMPORT_DERIVATION_PATH": "Hide import derivation path",
         "HIDE_SWAP_REWARDS": "Hide swap rewards",
-        "USE_UPDATED_SIGNING_UI": "Use updated signing UI",
         "SUPPORT_MULTIPLE_LANGUAGES": "Enable to choose language",
-        "ENABLE_ACHIEVEMENTS_TAB": "Show an Achievements tab on the overview page",
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
-        "SUPPORT_NFT_TAB": "Enable to open NFTs page from tab",
         "SUPPORT_NFT_SEND": "Enable sending NFTs",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",

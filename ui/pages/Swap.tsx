@@ -24,6 +24,7 @@ import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import {
   NETWORKS_SUPPORTING_SWAPS,
+  OPTIMISM,
   SECOND,
 } from "@tallyho/tally-background/constants"
 
@@ -34,7 +35,6 @@ import {
   selectInProgressApprovalContract,
 } from "@tallyho/tally-background/redux-slices/selectors/0xSwapSelectors"
 import { isSameAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import CorePage from "../components/Core/CorePage"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
@@ -356,13 +356,17 @@ export default function Swap(): ReactElement {
             sellAsset,
             buyAsset,
             gasPrice:
-              quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
-              gasPrice,
+              // Let's use the gas price from 0x API for Optimism
+              // to avoid problems with gas price on Optimism Bedrock.
+              currentNetwork.chainID === OPTIMISM.chainID
+                ? gasPrice
+                : quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
+                  gasPrice,
           })
         )
       }
     }
-  }, [dispatch, sellAsset, buyAsset, quote])
+  }, [dispatch, sellAsset, buyAsset, quote, currentNetwork.chainID])
 
   if (!NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID)) {
     return <Redirect to="/" />
@@ -379,7 +383,7 @@ export default function Swap(): ReactElement {
 
   return (
     <>
-      <CorePage>
+      <>
         <div className="standard_width">
           <div className="back_button_wrap">
             <SharedBackButton path="/" />
@@ -544,7 +548,7 @@ export default function Swap(): ReactElement {
             </div>
           </div>
         </div>
-      </CorePage>
+      </>
       <style jsx>
         {`
           .header {

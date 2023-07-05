@@ -1,8 +1,6 @@
-import { FeatureFlags } from "@tallyho/tally-background/features"
 import { wait } from "@tallyho/tally-background/lib/utils"
-import { skipIfFeatureFlagged, test, expect } from "./utils"
-
-skipIfFeatureFlagged(FeatureFlags.SUPPORT_NFT_TAB)
+import { test, expect } from "./utils"
+import { account1Address, account1Name } from "./utils/onboarding"
 
 test.describe("NFTs", () => {
   test("User can view nft collections, poaps and badges", async ({
@@ -39,10 +37,17 @@ test.describe("NFTs", () => {
         }
       })
 
-      await walletPageHelper.onboarding.addReadOnlyAccount("bravonaver.eth")
+      await walletPageHelper.onboarding.addReadOnlyAccount(account1Address)
 
       await walletPageHelper.goToStartPage()
       await walletPageHelper.setViewportSize()
+
+      // Switch to Optimism, then to Polygon and then to Arbitrum (to load NFTs
+      // on those chains).
+      await walletPageHelper.switchNetwork(/^Optimism$/)
+      await walletPageHelper.switchNetwork(/^Polygon$/)
+      await walletPageHelper.switchNetwork(/^Arbitrum$/)
+
       await walletPageHelper.navigateTo("NFTs")
 
       await expect(page.getByTestId("loading_doggo")).toBeVisible()
@@ -73,7 +78,9 @@ test.describe("NFTs", () => {
 
       await page
         .getByTestId("nft_account_filters")
-        .filter({ hasText: "bravonaver.eth" })
+        .filter({
+          hasText: account1Name,
+        })
         .getByRole("checkbox")
         .click()
 
@@ -98,7 +105,9 @@ test.describe("NFTs", () => {
       await page
         .getByTestId("nft_account_filters")
         .getByTestId("toggle_item")
-        .filter({ hasText: "bravonaver.eth" })
+        .filter({
+          hasText: account1Name,
+        })
         .getByRole("checkbox")
         .click()
 
@@ -113,6 +122,8 @@ test.describe("NFTs", () => {
         .getByRole("tablist")
         .getByRole("tab", { name: "Badges" })
         .click()
+
+      await expect(page.getByTestId("loading_skeleton")).toHaveCount(0)
 
       const badges = await badgeCount.innerText()
 
@@ -171,7 +182,7 @@ test.describe("NFTs", () => {
         const nftCollection = page
           .getByTestId("nft_list_item")
           .filter({ has: page.getByTestId("nft_list_item_collection") })
-          .filter({ hasText: /noox badge/i })
+          .filter({ hasText: "Notable Crypto Punks" })
           .first()
 
         await nftCollection.hover()
@@ -183,7 +194,7 @@ test.describe("NFTs", () => {
 
         expect((await collectionItems.all()).length).toBeGreaterThan(1)
 
-        return collectionItems.filter({ hasText: /ethereum unique user/i })
+        return collectionItems.filter({ hasText: /2152/ })
       }
     )
 
@@ -193,23 +204,17 @@ test.describe("NFTs", () => {
 
       const previewMenu = page.getByTestId("nft_preview_menu")
 
-      await expect(
-        page.getByText(
-          /owning this badge indicates that the user has created 1,000\+ transactions on eth/i
-        )
-      ).toBeVisible()
+      await expect(previewMenu.getByText(/^10,000$/)).toBeVisible()
 
       // Displays traits
       expect(
         await previewMenu.locator(".preview_property_trait").allInnerTexts()
-      ).toEqual(
-        expect.arrayContaining(["category", "project", "required_action"])
-      )
+      ).toEqual(expect.arrayContaining(["background", "body", "eyez"]))
 
       // ...And their values
       await expect(
         previewMenu.locator(".preview_property_value")
-      ).toContainText([/general/i, /ethereum/i, /generate transactions/i])
+      ).toContainText([/dark green/i, /dark brown/i, /blue sunglasses/i])
 
       await previewMenu.getByRole("button", { name: "Close menu" }).click()
     })
@@ -220,7 +225,7 @@ test.describe("NFTs", () => {
     await test.step("Check Poap Badge", async () => {
       const poap = page
         .getByTestId("nft_list_item_single")
-        .filter({ hasText: /paladin community call/i })
+        .filter({ hasText: /Taho TEST POAP/i })
         .first()
 
       await poap.hover()
@@ -231,7 +236,7 @@ test.describe("NFTs", () => {
 
       await expect(
         poapPreview.getByRole("heading", {
-          name: "Paladin Community Call #04",
+          name: "Taho TEST POAP",
         })
       ).toBeVisible()
 
@@ -239,12 +244,12 @@ test.describe("NFTs", () => {
         await poapPreview
           .getByRole("link", { name: "POAP" })
           .getAttribute("href")
-      ).toEqual("https://app.poap.xyz/token/3114612")
+      ).toEqual("https://app.poap.xyz/token/6676760")
 
       // Description
       await expect(
         poapPreview.getByText(
-          "POAP for 4th Paladin and final community call of 2021."
+          "This is a POAP used to test some functionalities of a Taho wallet"
         )
       ).toBeVisible()
 
@@ -252,11 +257,9 @@ test.describe("NFTs", () => {
       const poapTraits = poapPreview.getByTestId("nft_properties_list")
 
       await expect(poapTraits.getByText("Event")).toBeVisible()
-      await expect(
-        poapTraits.getByTitle("Paladin Community Call #04")
-      ).toBeVisible()
+      await expect(poapTraits.getByTitle("Taho TEST POAP")).toBeVisible()
       await expect(poapTraits.getByText("Year")).toBeVisible()
-      await expect(poapTraits.getByText("2021")).toBeVisible()
+      await expect(poapTraits.getByText("2023")).toBeVisible()
 
       await poapPreview.getByRole("button", { name: "Close menu" }).click()
     })
@@ -264,7 +267,7 @@ test.describe("NFTs", () => {
     // Check a Galxe badge
     await test.step("Check a Galxe badge", async () => {
       const galxeBadge = page.getByTestId("nft_list_item_single").filter({
-        has: page.getByText("Odos.xyz - DEFI Aggregator III"),
+        has: page.getByText("PARIS"),
       })
 
       await galxeBadge.scrollIntoViewIfNeeded()
@@ -275,7 +278,7 @@ test.describe("NFTs", () => {
 
       await expect(
         galxePreview.getByRole("heading", {
-          name: "Odos.xyz - DEFI Aggregator III",
+          name: "PARIS",
         })
       ).toBeVisible()
 
@@ -284,18 +287,16 @@ test.describe("NFTs", () => {
           .getByRole("link", { name: "Galxe" })
           .getAttribute("href")
       ).toEqual(
-        "https://galxe.com/nft/21102/0x91eEdA83433690056e22fe33F0E2FFc754bA1076"
+        "https://galxe.com/nft/8038/0x9972158B1456bd22cF4D2436831942a135492369"
       )
 
       // Displays properties
       const badgeTraits = galxePreview.getByTestId("nft_properties_list")
 
       await expect(badgeTraits.getByText("category")).toBeVisible()
-      await expect(
-        badgeTraits.getByText("Odos.xyz - DEFI Aggregator III")
-      ).toBeVisible()
+      await expect(badgeTraits.getByText("PARIS")).toBeVisible()
       await expect(badgeTraits.getByText("birthday")).toBeVisible()
-      await expect(badgeTraits.getByText("1670832780")).toBeVisible()
+      await expect(badgeTraits.getByText("1664885216")).toBeVisible()
     })
   })
 })
