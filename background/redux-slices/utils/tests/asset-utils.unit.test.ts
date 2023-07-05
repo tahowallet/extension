@@ -1,9 +1,82 @@
 import { createSmartContractAsset } from "../../../tests/factories"
 import { ETH, OPTIMISTIC_ETH } from "../../../constants"
-import { isSameAsset } from "../asset-utils"
+import {
+  isBaselineTrustedAsset,
+  isSameAsset,
+  isTrustedAsset,
+  isVerifiedAsset,
+} from "../asset-utils"
 import { NetworkBaseAsset } from "../../../networks"
+import * as featureFlags from "../../../features"
 
 describe("Asset utils", () => {
+  describe("isBaselineTrustedAsset", () => {
+    test("should return true if is a token list asset", () => {
+      const asset = createSmartContractAsset()
+
+      expect(isBaselineTrustedAsset(asset)).toBeTruthy()
+    })
+
+    test("should return false if is not a token list asset", () => {
+      const asset = createSmartContractAsset({ metadata: {} })
+
+      expect(isBaselineTrustedAsset(asset)).toBeFalsy()
+    })
+
+    test("should return true if is a network base asset", () => {
+      expect(isBaselineTrustedAsset(ETH)).toBeTruthy()
+    })
+  })
+
+  describe("isVerifiedAsset", () => {
+    test("should return true if is a verified asset", () => {
+      const asset = createSmartContractAsset({ metadata: { verified: true } })
+
+      expect(isVerifiedAsset(asset)).toBeTruthy()
+    })
+
+    test("should return false if is a unverified asset", () => {
+      const asset = createSmartContractAsset({ metadata: { verified: false } })
+
+      expect(isVerifiedAsset(asset)).toBeFalsy()
+    })
+
+    test("should return false if is a network base asset", () => {
+      expect(isVerifiedAsset(ETH)).toBeFalsy()
+    })
+
+    test("should return false if is a token list asset", () => {
+      const asset = createSmartContractAsset()
+
+      expect(isVerifiedAsset(asset)).toBeFalsy()
+    })
+  })
+
+  describe("isTrustedAsset", () => {
+    test("should return true if is a verified asset", () => {
+      const asset = createSmartContractAsset({ metadata: { verified: true } })
+
+      expect(isTrustedAsset(asset)).toBeTruthy()
+    })
+
+    test("should return false if is a unverified asset", () => {
+      jest.spyOn(featureFlags, "isEnabled").mockImplementation(() => true)
+      const asset = createSmartContractAsset({ metadata: { verified: false } })
+
+      expect(isTrustedAsset(asset)).toBeFalsy()
+    })
+
+    test("should return true if is a network base asset", () => {
+      expect(isTrustedAsset(ETH)).toBeTruthy()
+    })
+
+    test("should return true if is a token list asset", () => {
+      const asset = createSmartContractAsset()
+
+      expect(isTrustedAsset(asset)).toBeTruthy()
+    })
+  })
+
   describe("isSameAsset", () => {
     const smartContractAsset = createSmartContractAsset({ symbol: "ABC" })
 
