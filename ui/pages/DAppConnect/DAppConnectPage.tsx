@@ -34,7 +34,7 @@ export default function DAppConnectPage({
   const { title, origin, faviconUrl, accountAddress } = permission
 
   const isDefaultWallet = useBackgroundSelector(selectDefaultWallet)
-  const [wasDefaultWallet] = useState(isDefaultWallet)
+  const [wasDefaultWallet, setWasDefaultWallet] = useState(isDefaultWallet)
 
   useEffect(() => {
     if (
@@ -45,6 +45,22 @@ export default function DAppConnectPage({
       // When default wallet is toggled off, wait for the toggle animation to
       // complete and close the window out.
       setTimeout(() => window.close(), 300)
+    }
+  }, [wasDefaultWallet, isDefaultWallet])
+
+  useEffect(() => {
+    if (
+      isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) &&
+      !wasDefaultWallet &&
+      isDefaultWallet
+    ) {
+      // When default wallet is toggled on, make sure wasDefaultWallet is
+      // updated. This handles the situation where the wallet is not default,
+      // then a connection popup appears, then the user toggles it to default,
+      // then they toggle it back off---in that scenario, we want the same
+      // behavior as if the popup had been set as default and then it was
+      // turned off.
+      setWasDefaultWallet(true)
     }
   }, [wasDefaultWallet, isDefaultWallet])
 
