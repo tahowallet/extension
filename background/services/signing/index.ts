@@ -5,16 +5,18 @@ import InternalSignerService, {
 } from "../internal-signer"
 import LedgerService, { LedgerAccountSigner } from "../ledger"
 import {
+  areNetworksAddressCompatible,
+  EVMNetwork,
+  sameNetwork,
   SignedTransaction,
-  TransactionRequest,
   TransactionRequestWithNonce,
 } from "../../networks"
 import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import ChainService from "../chain"
-import { AddressOnNetwork } from "../../accounts"
+import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { assertUnreachable } from "../../lib/utils/type-guards"
+import { sameEVMAddress } from "../../lib/utils"
 
 type SigningErrorReason = "userRejected" | "genericError"
 type ErrorResponse = {
@@ -95,28 +97,23 @@ export default class SigningService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     SigningService,
-    [
-      Promise<InternalSignerService>,
-      Promise<LedgerService>,
-      Promise<ChainService>,
-    ]
-  > = async (internalSignerService, ledgerService, chainService) =>
-    new this(
-      await internalSignerService,
-      await ledgerService,
-      await chainService,
-    )
+    [Promise<InternalSignerService>, Promise<LedgerService>]
+  > = async (internalSignerService, ledgerService) =>
+    new this(await internalSignerService, await ledgerService)
 
   private constructor(
     private internalSignerService: InternalSignerService,
-    private ledgerService: LedgerService,
-    private chainService: ChainService,
+    private ledgerService: LedgerService
   ) {
     super()
   }
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
+
+    // Get list of signers by address for each service?
+    // Update this.addressHandlers.
+    // Make sure events are hooked up to keep this.addressHandlers up-to-date.
   }
 
   async deriveAddress(signerID: AccountSigner): Promise<HexString> {
@@ -176,7 +173,53 @@ export default class SigningService extends BaseService<Events> {
           assertUnreachable(signerType)
       }
     }
-    await this.chainService.removeAccountToTrack(address)
+  }
+
+  isControlCompatible(
+    objectOnNetwork: AddressOnNetwork | NameOnNetwork,
+    otherNetwork: EVMNetwork
+  ): boolean {
+    const { network } = objectOnNetwork
+
+    if (sameNetwork(network, otherNetwork)) {
+      return true
+    }
+
+    if (!areNetworksAddressCompatible(network, otherNetwork)) {
+      return false
+    }
+
+    if ("address" in objectOnNetwork) {
+      const addressHandler = this.addressHandlers.find(({ address }) =>
+        sameEVMAddress(address, objectOnNetwork.address)
+      )
+
+      if (addressHandler === undefined) {
+        return false
+      }
+
+      switch (addressHandler.signer) {
+        case "keyring":
+          return this.keyringService.isTransactionCompatible(
+            network,
+            otherNetwork
+          )
+        case "ledger":
+          return this.ledgerService.isTransactionCompatible(
+            network,
+            otherNetwork
+          )
+        case "read-only":
+          return false
+
+        default:
+          assertUnreachable(addressHandler.signer)
+      }
+    }
+
+    // FIXME Implement NameOnNetwork resolution: resolve name to an address,
+    // FIXME then check for address control-compatibility.
+    return false
   }
 
   /**
@@ -197,12 +240,9 @@ export default class SigningService extends BaseService<Events> {
   }
 
   async signTransaction(
-    transactionRequest: TransactionRequest,
-    accountSigner: AccountSigner,
+    transactionWithNonce: TransactionRequestWithNonce,
+    accountSigner: AccountSigner
   ): Promise<SignedTransaction> {
-    const transactionWithNonce =
-      await this.chainService.populateEVMTransactionNonce(transactionRequest)
-
     try {
       const signedTx = await this.signTransactionWithNonce(
         transactionWithNonce,
@@ -220,8 +260,6 @@ export default class SigningService extends BaseService<Events> {
         type: "error",
         reason: getSigningErrorReason(err),
       })
-
-      this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
 
       throw err
     }

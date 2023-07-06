@@ -304,29 +304,41 @@ export default class Main extends BaseService<never> {
   store: ReduxStoreType
 
   static create: ServiceCreatorFunction<never, Main, []> = async () => {
-    const preferenceService = PreferenceService.create()
+    const preferenceService = PreferenceService.create(internalSignerService)
 
+    const ledgerService = LedgerService.create()
     const internalSignerService =
       InternalSignerService.create(preferenceService)
+
     const chainService = ChainService.create(
       preferenceService,
-      internalSignerService,
+      internalSignerService
     )
+
+    const signingService = SigningService.create(
+      internalSignerService,
+      ledgerService
+    )
+
     const indexingService = IndexingService.create(
       preferenceService,
-      chainService,
+      chainService
     )
-    const nameService = NameService.create(chainService, preferenceService)
+    const nameService = NameService.create(
+      chainService,
+      signingService,
+      preferenceService
+    )
     const enrichmentService = EnrichmentService.create(
       chainService,
       indexingService,
-      nameService,
+      nameService
     )
     const internalEthereumProviderService =
       InternalEthereumProviderService.create(chainService, preferenceService)
     const providerBridgeService = ProviderBridgeService.create(
       internalEthereumProviderService,
-      preferenceService,
+      preferenceService
     )
 
     const notificationsService = NotificationsService.create(preferenceService)
@@ -335,25 +347,17 @@ export default class Main extends BaseService<never> {
 
     const telemetryService = TelemetryService.create()
 
-    const ledgerService = LedgerService.create()
-
-    const signingService = SigningService.create(
-      internalSignerService,
-      ledgerService,
-      chainService,
-    )
-
     const analyticsService = AnalyticsService.create(
       internalSignerService,
       signingService,
-      preferenceService,
+      preferenceService
     )
 
     const nftsService = NFTsService.create(chainService)
 
     const abilitiesService = AbilitiesService.create(
       chainService,
-      ledgerService,
+      ledgerService
     )
 
     const walletConnectService = isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT)
@@ -361,7 +365,7 @@ export default class Main extends BaseService<never> {
           providerBridgeService,
           internalEthereumProviderService,
           preferenceService,
-          chainService,
+          chainService
         )
       : getNoopService<WalletConnectService>()
 
@@ -382,7 +386,7 @@ export default class Main extends BaseService<never> {
           // problem...
           savedReduxState = migrateReduxState(
             restoredState as Record<string, unknown>,
-            version || undefined,
+            version || undefined
           )
         } else {
           throw new Error(`Unexpected JSON persisted for state: ${state}`)
@@ -411,7 +415,7 @@ export default class Main extends BaseService<never> {
       await nftsService,
       await walletConnectService,
       await abilitiesService,
-      await notificationsService,
+      await notificationsService
     )
   }
 
@@ -509,7 +513,7 @@ export default class Main extends BaseService<never> {
     /**
      * A promise to the Notifications service which takes care of observing and delivering notifications
      */
-    private notificationsService: NotificationsService,
+    private notificationsService: NotificationsService
   ) {
     super({
       initialLoadWaitExpired: {
@@ -542,7 +546,7 @@ export default class Main extends BaseService<never> {
         releaseLock()
       },
       30,
-      { maxWait: 30, trailing: true },
+      { maxWait: 30, trailing: true }
     )
 
     wrapStore(this.store, {
@@ -565,7 +569,7 @@ export default class Main extends BaseService<never> {
       },
       dispatchResponder: async (
         dispatchResult: Promise<unknown> | unknown,
-        send: (param: { error: string | null; value: unknown | null }) => void,
+        send: (param: { error: string | null; value: unknown | null }) => void
       ) => {
         try {
           // if dispatch is a thunk, wait for the result
@@ -583,7 +587,7 @@ export default class Main extends BaseService<never> {
         } catch (error) {
           logger.error(
             "Error awaiting and dispatching redux store result: ",
-            error,
+            error
           )
 
           // Store could still have been updated if there was an error
@@ -674,7 +678,7 @@ export default class Main extends BaseService<never> {
     // FIXME Should no longer be necessary once transaction queueing enters the
     // FIXME picture.
     this.store.dispatch(
-      clearTransactionState(TransactionConstructionStatus.Idle),
+      clearTransactionState(TransactionConstructionStatus.Idle)
     )
 
     this.store.dispatch(clearApprovalInProgress())
@@ -702,7 +706,7 @@ export default class Main extends BaseService<never> {
   async removeAccount(
     address: HexString,
     signer: AccountSigner,
-    lastAddressInAccount: boolean,
+    lastAddressInAccount: boolean
   ): Promise<void> {
     // FIXME This whole method should be replaced with a call to
     // FIXME signerService.removeAccount and an event emission that is
@@ -730,6 +734,7 @@ export default class Main extends BaseService<never> {
     // remove dApp premissions
     this.store.dispatch(revokePermissionsForAddress(address))
     await this.providerBridgeService.revokePermissionsForAddress(address)
+    await this.chainService.removeAccountToTrack(address)
     // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signer.type)
 
@@ -743,7 +748,7 @@ export default class Main extends BaseService<never> {
     accounts: Array<{
       path: string
       address: string
-    }>,
+    }>
   ): Promise<void> {
     const trackedNetworks = await this.chainService.getTrackedNetworks()
     await Promise.all(
@@ -760,24 +765,24 @@ export default class Main extends BaseService<never> {
             this.abilitiesService.getNewAccountAbilities(address)
 
             this.store.dispatch(loadAccount(addressNetwork))
-          }),
+          })
         )
-      }),
+      })
     )
     this.store.dispatch(
       setNewSelectedAccount({
         address: accounts[0].address,
         network:
           await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
-            TAHO_INTERNAL_ORIGIN,
+            TAHO_INTERNAL_ORIGIN
           ),
-      }),
+      })
     )
   }
 
   async deriveLedgerAddress(
     deviceID: string,
-    derivationPath: string,
+    derivationPath: string
   ): Promise<string> {
     return this.signingService.deriveAddress({
       type: "ledger",
@@ -791,10 +796,11 @@ export default class Main extends BaseService<never> {
   }
 
   async getAccountEthBalanceUncached(
-    addressNetwork: AddressOnNetwork,
+    addressNetwork: AddressOnNetwork
   ): Promise<bigint> {
-    const accountBalance =
-      await this.chainService.getLatestBaseAccountBalance(addressNetwork)
+    const accountBalance = await this.chainService.getLatestBaseAccountBalance(
+      addressNetwork
+    )
 
     return accountBalance.assetAmount.amount
   }
@@ -809,13 +815,13 @@ export default class Main extends BaseService<never> {
   async enrichActivities(addressNetwork: AddressOnNetwork): Promise<void> {
     const accountsToTrack = await this.chainService.getAccountsToTrack()
     const activitiesToEnrich = selectActivitesHashesForEnrichment(
-      this.store.getState(),
+      this.store.getState()
     )
 
     activitiesToEnrich.forEach(async (txHash) => {
       const transaction = await this.chainService.getTransaction(
         addressNetwork.network,
-        txHash,
+        txHash
       )
       const enrichedTransaction =
         await this.enrichmentService.enrichTransaction(transaction, 2)
@@ -825,9 +831,9 @@ export default class Main extends BaseService<never> {
           transaction: enrichedTransaction,
           forAccounts: getRelevantTransactionAddresses(
             enrichedTransaction,
-            accountsToTrack,
+            accountsToTrack
           ),
-        }),
+        })
       )
     })
   }
@@ -844,7 +850,7 @@ export default class Main extends BaseService<never> {
         async (payloadForAccount) => {
           this.store.dispatch(initializeActivitiesForAccount(payloadForAccount))
           await this.enrichActivitiesForSelectedAccount()
-        },
+        }
       )
 
       // Set up initial state.
@@ -867,7 +873,7 @@ export default class Main extends BaseService<never> {
       (accountWithBalance) => {
         // The first account balance update will transition the account to loading.
         this.store.dispatch(updateAccountBalance(accountWithBalance))
-      },
+      }
     )
 
     this.chainService.emitter.on("supportedNetworks", (supportedNetworks) => {
@@ -880,10 +886,10 @@ export default class Main extends BaseService<never> {
 
     this.chainService.emitter.on("transactionSend", async () => {
       this.store.dispatch(
-        setSnackbarMessage("Transaction signed, broadcasting..."),
+        setSnackbarMessage("Transaction signed, broadcasting...")
       )
       this.store.dispatch(
-        clearTransactionState(TransactionConstructionStatus.Idle),
+        clearTransactionState(TransactionConstructionStatus.Idle)
       )
       await this.autoToggleFlashbotsProvider()
     })
@@ -894,7 +900,7 @@ export default class Main extends BaseService<never> {
 
     this.chainService.emitter.on("transactionSendFailure", async () => {
       this.store.dispatch(
-        setSnackbarMessage("Transaction failed to broadcast."),
+        setSnackbarMessage("Transaction failed to broadcast.")
       )
       await this.autoToggleFlashbotsProvider()
     })
@@ -912,7 +918,7 @@ export default class Main extends BaseService<never> {
           await this.chainService.populatePartialTransactionRequest(
             network,
             { ...transaction },
-            { maxFeePerGas, maxPriorityFeePerGas },
+            { maxFeePerGas, maxPriorityFeePerGas }
           )
 
         // Create promise to pass into Promise.race
@@ -921,7 +927,7 @@ export default class Main extends BaseService<never> {
             await this.enrichmentService.enrichTransactionSignature(
               network,
               populatedRequest,
-              2 /* TODO desiredDecimals should be configurable */,
+              2 /* TODO desiredDecimals should be configurable */
             )
           return annotation
         }
@@ -941,40 +947,60 @@ export default class Main extends BaseService<never> {
             transactionRequest({
               transactionRequest: populatedRequest,
               transactionLikelyFails: false,
-            }),
+            })
           )
         } else {
           this.store.dispatch(
             transactionRequest({
               transactionRequest: populatedRequest,
               transactionLikelyFails: true,
-            }),
+            })
           )
         }
-      },
+      }
     )
 
     transactionConstructionSliceEmitter.on(
       "broadcastSignedTransaction",
       async (transaction: SignedTransaction) => {
         this.chainService.broadcastSignedTransaction(transaction)
-      },
+      }
     )
 
     transactionConstructionSliceEmitter.on(
       "requestSignature",
       async ({ request, accountSigner }) => {
         try {
-          const signedTransactionResult =
-            await this.signingService.signTransaction(request, accountSigner)
-          await this.store.dispatch(transactionSigned(signedTransactionResult))
+          const transactionWithNonce =
+            await this.chainService.populateEVMTransactionNonce(request)
+
+          try {
+            const signedTransactionResult =
+              await this.signingService.signTransaction(
+                transactionWithNonce,
+                accountSigner
+              )
+            await this.store.dispatch(
+              transactionSigned(signedTransactionResult)
+            )
+            this.analyticsService.sendAnalyticsEvent(
+              AnalyticsEvent.TRANSACTION_SIGNED,
+              {
+                chainId: request.chainID,
+              }
+            )
+          } catch (signingException) {
+            this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
+            throw signingException
+          }
         } catch (exception) {
           logger.error("Error signing transaction", exception)
+
           this.store.dispatch(
-            clearTransactionState(TransactionConstructionStatus.Idle),
+            clearTransactionState(TransactionConstructionStatus.Idle)
           )
         }
-      },
+      }
     )
     signingSliceEmitter.on(
       "requestSignTypedData",
@@ -990,7 +1016,7 @@ export default class Main extends BaseService<never> {
           logger.error("Error signing typed data", typedData, "error: ", err)
           this.store.dispatch(clearSigningState)
         }
-      },
+      }
     )
     signingSliceEmitter.on(
       "requestSignData",
@@ -998,10 +1024,10 @@ export default class Main extends BaseService<never> {
         const signedData = await this.signingService.signData(
           account,
           rawSigningData,
-          accountSigner,
+          accountSigner
         )
         this.store.dispatch(signedDataAction(signedData))
-      },
+      }
     )
 
     this.chainService.emitter.on(
@@ -1016,7 +1042,7 @@ export default class Main extends BaseService<never> {
             const estimatedRollupFee =
               await this.chainService.estimateL1RollupFeeForOptimism(
                 currentTransactionRequest.network,
-                currentTransactionRequest,
+                currentTransactionRequest
               )
             const estimatedRollupGwei =
               await this.chainService.estimateL1RollupGasPrice(network)
@@ -1025,14 +1051,14 @@ export default class Main extends BaseService<never> {
               updateRollupEstimates({
                 estimatedRollupFee,
                 estimatedRollupGwei,
-              }),
+              })
             )
           }
         }
         this.store.dispatch(
-          estimatedFeesPerGas({ estimatedFeesPerGas: blockPrices, network }),
+          estimatedFeesPerGas({ estimatedFeesPerGas: blockPrices, network })
         )
-      },
+      }
     )
 
     // Report on transactions for basic activity. Fancier stuff is handled via
@@ -1057,7 +1083,7 @@ export default class Main extends BaseService<never> {
         },
       }) => {
         this.store.dispatch(updateAccountName({ ...addressOnNetwork, name }))
-      },
+      }
     )
 
     this.nameService.emitter.on(
@@ -1067,9 +1093,9 @@ export default class Main extends BaseService<never> {
           updateENSAvatar({
             ...addressOnNetwork,
             avatar: avatar.toString(),
-          }),
+          })
         )
-      },
+      }
     )
   }
 
@@ -1080,7 +1106,7 @@ export default class Main extends BaseService<never> {
         const assetsToTrack = await this.indexingService.getAssetsToTrack()
         const trackedAccounts = await this.chainService.getAccountsToTrack()
         const allTrackedAddresses = new Set(
-          trackedAccounts.map((account) => account.address),
+          trackedAccounts.map((account) => account.address)
         )
 
         if (!allTrackedAddresses.has(addressOnNetwork.address)) {
@@ -1096,15 +1122,12 @@ export default class Main extends BaseService<never> {
               // e.g. Optimism, Polygon might have been retrieved through alchemy as
               // token balances but they should not be handled here as they would
               // not be correctly treated as base assets
-              !isBaseAssetForNetwork(
-                balance.assetAmount.asset,
-                balance.network,
-              ),
+              !isBaseAssetForNetwork(balance.assetAmount.asset, balance.network)
           )
           .forEach((balance) => {
             // TODO support multi-network assets
             const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
-              (tracked) => isSameAsset(tracked, balance.assetAmount.asset),
+              (tracked) => isSameAsset(tracked, balance.assetAmount.asset)
             )
 
             if (
@@ -1119,9 +1142,9 @@ export default class Main extends BaseService<never> {
           updateAccountBalance({
             balances: filteredBalancesToDispatch,
             addressOnNetwork,
-          }),
+          })
         )
-      },
+      }
     )
 
     this.indexingService.emitter.on("assets", async (assets) => {
@@ -1136,7 +1159,7 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(
         refreshAsset({
           asset,
-        }),
+        })
       )
     })
 
@@ -1150,20 +1173,20 @@ export default class Main extends BaseService<never> {
       "enrichedEVMTransaction",
       (transactionData) => {
         this.indexingService.notifyEnrichedTransaction(
-          transactionData.transaction,
+          transactionData.transaction
         )
         this.store.dispatch(addActivity(transactionData))
-      },
+      }
     )
   }
 
   async connectSigningService(): Promise<void> {
     this.internalSignerService.emitter.on("address", (address) =>
-      this.signingService.addTrackedAddress(address, "keyring"),
+      this.signingService.addTrackedAddress(address, "keyring")
     )
 
     this.ledgerService.emitter.on("address", ({ address }) =>
-      this.signingService.addTrackedAddress(address, "ledger"),
+      this.signingService.addTrackedAddress(address, "ledger")
     )
   }
 
@@ -1177,7 +1200,7 @@ export default class Main extends BaseService<never> {
           status: "available",
           isArbitraryDataSigningEnabled: metadata.isArbitraryDataSigningEnabled,
           displayDetails: metadata.displayDetails,
-        }),
+        })
       )
     })
 
@@ -1188,7 +1211,7 @@ export default class Main extends BaseService<never> {
           status: "disconnected",
           isArbitraryDataSigningEnabled: false /* dummy */,
           displayDetails: undefined,
-        }),
+        })
       )
     })
 
@@ -1210,7 +1233,7 @@ export default class Main extends BaseService<never> {
           loadAccount({
             address,
             network,
-          }),
+          })
         )
 
         this.chainService.addAccountToTrack({
@@ -1251,7 +1274,7 @@ export default class Main extends BaseService<never> {
         mnemonic: string[]
       } = await this.internalSignerService.generateNewKeyring(
         SignerInternalTypes.mnemonicBIP39S256,
-        path,
+        path
       )
 
       this.store.dispatch(setKeyringToVerify(generated))
@@ -1265,7 +1288,7 @@ export default class Main extends BaseService<never> {
         await this.signingService.prepareForSigningRequest()
 
         this.store.dispatch(
-          clearTransactionState(TransactionConstructionStatus.Pending),
+          clearTransactionState(TransactionConstructionStatus.Pending)
         )
         this.store.dispatch(updateTransactionData(payload))
 
@@ -1278,7 +1301,7 @@ export default class Main extends BaseService<never> {
             "signatureRejected",
             // Mutual dependency to rejectAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            rejectAndClear,
+            rejectAndClear
           )
         }
 
@@ -1304,9 +1327,9 @@ export default class Main extends BaseService<never> {
 
         transactionConstructionSliceEmitter.on(
           "signatureRejected",
-          rejectAndClear,
+          rejectAndClear
         )
-      },
+      }
     )
     this.internalEthereumProviderService.emitter.on(
       "signTypedDataRequest",
@@ -1332,14 +1355,14 @@ export default class Main extends BaseService<never> {
             "signingDataResponse",
             // Mutual dependency to handleAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            handleAndClear,
+            handleAndClear
           )
 
           signingSliceEmitter.off(
             "signatureRejected",
             // Mutual dependency to rejectAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            rejectAndClear,
+            rejectAndClear
           )
         }
 
@@ -1363,7 +1386,7 @@ export default class Main extends BaseService<never> {
         this.signingService.emitter.on("signingDataResponse", handleAndClear)
 
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
-      },
+      }
     )
     this.internalEthereumProviderService.emitter.on(
       "signDataRequest",
@@ -1379,7 +1402,7 @@ export default class Main extends BaseService<never> {
         await this.signingService.prepareForSigningRequest()
 
         this.chainService.pollBlockPricesForNetwork(
-          payload.account.network.chainID,
+          payload.account.network.chainID
         )
         this.store.dispatch(signDataRequest(payload))
 
@@ -1388,14 +1411,14 @@ export default class Main extends BaseService<never> {
             "personalSigningResponse",
             // Mutual dependency to handleAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            handleAndClear,
+            handleAndClear
           )
 
           signingSliceEmitter.off(
             "signatureRejected",
             // Mutual dependency to rejectAndClear.
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            rejectAndClear,
+            rejectAndClear
           )
         }
 
@@ -1418,24 +1441,24 @@ export default class Main extends BaseService<never> {
 
         this.signingService.emitter.on(
           "personalSigningResponse",
-          handleAndClear,
+          handleAndClear
         )
 
         signingSliceEmitter.on("signatureRejected", rejectAndClear)
-      },
+      }
     )
     this.internalEthereumProviderService.emitter.on(
       "selectedNetwork",
       (network) => {
         this.store.dispatch(setSelectedNetwork(network))
-      },
+      }
     )
 
     uiSliceEmitter.on("newSelectedNetwork", (network) => {
       this.internalEthereumProviderService.routeSafeRPCRequest(
         "wallet_switchEthereumChain",
         [{ chainId: network.chainID }],
-        TAHO_INTERNAL_ORIGIN,
+        TAHO_INTERNAL_ORIGIN
       )
       this.chainService.pollBlockPricesForNetwork(network.chainID)
       this.store.dispatch(clearCustomGas())
@@ -1447,7 +1470,7 @@ export default class Main extends BaseService<never> {
         const { address } = this.store.getState().ui.selectedAccount
         const asset = await this.indexingService.addTokenToTrackByContract(
           network,
-          contractAddress,
+          contractAddress
         )
         if (asset) {
           await this.indexingService.retrieveTokenBalances(
@@ -1455,30 +1478,30 @@ export default class Main extends BaseService<never> {
               address,
               network,
             },
-            [asset],
+            [asset]
           )
         }
-      },
+      }
     )
   }
 
   async connectProviderBridgeService(): Promise<void> {
     uiSliceEmitter.on("addCustomNetworkResponse", ([requestId, success]) =>
-      this.providerBridgeService.handleAddNetworkRequest(requestId, success),
+      this.providerBridgeService.handleAddNetworkRequest(requestId, success)
     )
 
     this.providerBridgeService.emitter.on(
       "requestPermission",
       (permissionRequest: PermissionRequest) => {
         this.store.dispatch(requestPermission(permissionRequest))
-      },
+      }
     )
 
     this.providerBridgeService.emitter.on(
       "initializeAllowedPages",
       async (allowedPages: PermissionMap) => {
         this.store.dispatch(initializePermissions(allowedPages))
-      },
+      }
     )
 
     this.providerBridgeService.emitter.on(
@@ -1508,10 +1531,10 @@ export default class Main extends BaseService<never> {
             setReferrer({
               address,
               ensName,
-            }),
+            })
           )
         }
-      },
+      }
     )
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
@@ -1525,7 +1548,7 @@ export default class Main extends BaseService<never> {
             ...permission,
             chainID: network.chainID,
           })
-        }),
+        })
       )
     })
 
@@ -1538,9 +1561,9 @@ export default class Main extends BaseService<never> {
               ...permission,
               chainID: network.chainID,
             })
-          }),
+          })
         )
-      },
+      }
     )
   }
 
@@ -1549,7 +1572,7 @@ export default class Main extends BaseService<never> {
       "initializeDefaultWallet",
       async (isDefaultWallet: boolean) => {
         await this.store.dispatch(setDefaultWallet(isDefaultWallet))
-      },
+      }
     )
 
     this.preferenceService.emitter.on(
@@ -1570,14 +1593,14 @@ export default class Main extends BaseService<never> {
             await this.preferenceService.setSelectedAccount(addressNetwork)
           }
         }
-      },
+      }
     )
 
     this.preferenceService.emitter.on(
       "updatedSignerSettings",
       (accountSignerSettings) => {
         this.store.dispatch(setAccountsSignerSettings(accountSignerSettings))
-      },
+      }
     )
 
     this.preferenceService.emitter.on(
@@ -1585,28 +1608,28 @@ export default class Main extends BaseService<never> {
       async (newTimerValue) => {
         await this.internalSignerService.updateAutoLockInterval()
         this.store.dispatch(setAutoLockInterval(newTimerValue))
-      },
+      }
     )
 
     this.preferenceService.emitter.on(
       "initializeShownDismissableItems",
       async (dismissableItems) => {
         this.store.dispatch(setShownDismissableItems(dismissableItems))
-      },
+      }
     )
 
     this.preferenceService.emitter.on(
       "initializeNotificationsPreferences",
       async (isPermissionGranted) => {
         this.store.dispatch(toggleNotifications(isPermissionGranted))
-      },
+      }
     )
 
     this.preferenceService.emitter.on(
       "dismissableItemMarkedAsShown",
       async (dismissableItem) => {
         this.store.dispatch(dismissableItemMarkedAsShown(dismissableItem))
-      },
+      }
     )
 
     uiSliceEmitter.on("newSelectedAccount", async (addressNetwork) => {
@@ -1620,12 +1643,13 @@ export default class Main extends BaseService<never> {
 
       await this.chainService.markAccountActivity(addressNetwork)
 
-      const referrerStats =
-        await this.islandService.getReferrerStats(addressNetwork)
+      const referrerStats = await this.islandService.getReferrerStats(
+        addressNetwork
+      )
       this.store.dispatch(setReferrerStats(referrerStats))
 
       this.providerBridgeService.notifyContentScriptsAboutAddressChange(
-        addressNetwork.address,
+        addressNetwork.address
       )
     })
 
@@ -1637,21 +1661,21 @@ export default class Main extends BaseService<never> {
       "newDefaultWalletValue",
       async (newDefaultWalletValue) => {
         await this.preferenceService.setDefaultWalletValue(
-          newDefaultWalletValue,
+          newDefaultWalletValue
         )
 
         // FIXME Both of these should be done as observations of the preference
         // FIXME service event rather than being managed by `main`.
         this.providerBridgeService.notifyContentScriptAboutConfigChange(
-          newDefaultWalletValue,
+          newDefaultWalletValue
         )
         this.analyticsService.sendAnalyticsEvent(
           AnalyticsEvent.DEFAULT_WALLET_TOGGLED,
           {
             setToDefault: newDefaultWalletValue,
-          },
+          }
         )
-      },
+      }
     )
 
     uiSliceEmitter.on("refreshBackgroundPage", async () => {
@@ -1664,7 +1688,7 @@ export default class Main extends BaseService<never> {
       "newEligibility",
       async (eligibility: Eligible) => {
         await this.store.dispatch(setEligibility(eligibility))
-      },
+      }
     )
 
     this.islandService.emitter.on(
@@ -1672,7 +1696,7 @@ export default class Main extends BaseService<never> {
       async (
         referral: {
           referrer: AddressOnNetwork
-        } & ReferrerStats,
+        } & ReferrerStats
       ) => {
         const { referrer, referredUsers, bonusTotal } = referral
         const { selectedAccount } = this.store.getState().ui
@@ -1685,10 +1709,10 @@ export default class Main extends BaseService<never> {
             setReferrerStats({
               referredUsers,
               bonusTotal,
-            }),
+            })
           )
         }
-      },
+      }
     )
 
     this.islandService.emitter.on("monitoringTestnetAsset", (asset) => {
@@ -1706,13 +1730,13 @@ export default class Main extends BaseService<never> {
       "initializeNFTs",
       (collections: NFTCollection[]) => {
         this.store.dispatch(initializeNFTs(collections))
-      },
+      }
     )
     this.nftsService.emitter.on(
       "updateCollections",
       (collections: NFTCollection[]) => {
         this.store.dispatch(updateNFTsCollections(collections))
-      },
+      }
     )
     this.nftsService.emitter.on("updateNFTs", async (payload) => {
       await this.store.dispatch(updateNFTs(payload))
@@ -1724,16 +1748,16 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(updateIsReloading(payload))
     })
     nftsSliceEmitter.on("fetchNFTs", ({ collectionID, account }) =>
-      this.nftsService.fetchNFTsFromCollection(collectionID, account),
+      this.nftsService.fetchNFTsFromCollection(collectionID, account)
     )
     nftsSliceEmitter.on("refetchNFTs", ({ collectionID, account }) =>
-      this.nftsService.refreshNFTsFromCollection(collectionID, account),
+      this.nftsService.refreshNFTsFromCollection(collectionID, account)
     )
     nftsSliceEmitter.on("fetchMoreNFTs", ({ collectionID, account }) =>
-      this.nftsService.fetchNFTsFromNextPage(collectionID, account),
+      this.nftsService.fetchNFTsFromNextPage(collectionID, account)
     )
     nftsSliceEmitter.on("refetchCollections", () =>
-      this.nftsService.refreshCollections(),
+      this.nftsService.refreshCollections()
     )
   }
 
@@ -1750,7 +1774,7 @@ export default class Main extends BaseService<never> {
       "updatedAbilities",
       ({ address, abilities }) => {
         this.store.dispatch(setAbilitiesForAddress({ address, abilities }))
-      },
+      }
     )
     this.abilitiesService.emitter.on("deleteAbilities", (address) => {
       this.store.dispatch(deleteAbilitiesForAccount(address))
@@ -1792,11 +1816,11 @@ export default class Main extends BaseService<never> {
     const addressNetwork = this.store.getState().ui.selectedAccount
     const transaction = await this.chainService.getTransaction(
       addressNetwork.network,
-      txHash,
+      txHash
     )
     const enrichedTransaction = await this.enrichmentService.enrichTransaction(
       transaction,
-      2,
+      2
     )
 
     return getActivityDetails(enrichedTransaction)
@@ -1815,7 +1839,7 @@ export default class Main extends BaseService<never> {
           name: network.name,
           description:
             "This event is fired when a chain is subscribed to from the wallet for the first time.",
-        },
+        }
       )
     })
 
@@ -1830,7 +1854,7 @@ export default class Main extends BaseService<never> {
                 Note: this does not track recovery phrase(ish) import! But when an address is used 
                 on a network for the first time (read-only or recovery phrase/ledger/keyring/private key).
                 `,
-        },
+        }
       )
     })
 
@@ -1843,7 +1867,7 @@ export default class Main extends BaseService<never> {
                 `,
           chainInfo: chainInfo.chainName,
           chainId: chainInfo.chainId,
-        },
+        }
       )
     })
 
@@ -1855,17 +1879,17 @@ export default class Main extends BaseService<never> {
           toggleCollectAnalytics(
             // we are using only this field on the UI atm
             // it's expected that more detailed analytics settings will come
-            analyticsPreferences.isEnabled,
-          ),
+            analyticsPreferences.isEnabled
+          )
         )
 
         this.analyticsService.sendAnalyticsEvent(
           AnalyticsEvent.ANALYTICS_TOGGLED,
           {
             analyticsEnabled: analyticsPreferences.isEnabled,
-          },
+          }
         )
-      },
+      }
     )
 
     uiSliceEmitter.on(
@@ -1873,19 +1897,19 @@ export default class Main extends BaseService<never> {
       async (shouldShowNotifications: boolean) => {
         const isPermissionGranted =
           await this.preferenceService.setShouldShowNotifications(
-            shouldShowNotifications,
+            shouldShowNotifications
           )
         this.store.dispatch(toggleNotifications(isPermissionGranted))
-      },
+      }
     )
 
     uiSliceEmitter.on(
       "updateAnalyticsPreferences",
       async (analyticsPreferences: Partial<AnalyticsPreferences>) => {
         await this.preferenceService.updateAnalyticsPreferences(
-          analyticsPreferences,
+          analyticsPreferences
         )
-      },
+      }
     )
 
     uiSliceEmitter.on("deleteAnalyticsData", () => {
@@ -1907,7 +1931,7 @@ export default class Main extends BaseService<never> {
 
   async updateAssetMetadata(
     asset: SmartContractFungibleAsset,
-    metadata: AnyAssetMetadata,
+    metadata: AnyAssetMetadata
   ): Promise<void> {
     await this.indexingService.updateAssetMetadata(asset, metadata)
   }
@@ -1922,7 +1946,7 @@ export default class Main extends BaseService<never> {
 
   async updateSignerTitle(
     signer: AccountSignerWithId,
-    title: string,
+    title: string
   ): Promise<void> {
     return this.preferenceService.updateAccountSignerTitle(signer, title)
   }
@@ -1932,7 +1956,7 @@ export default class Main extends BaseService<never> {
   }
 
   async resolveNameOnNetwork(
-    nameOnNetwork: NameOnNetwork,
+    nameOnNetwork: NameOnNetwork
   ): Promise<AddressOnNetwork | undefined> {
     try {
       return (await this.nameService.lookUpEthereumAddress(nameOnNetwork))
@@ -1949,14 +1973,14 @@ export default class Main extends BaseService<never> {
 
   async markAbilityAsCompleted(
     address: NormalizedEVMAddress,
-    abilityId: string,
+    abilityId: string
   ): Promise<void> {
     return this.abilitiesService.markAbilityAsCompleted(address, abilityId)
   }
 
   async markAbilityAsRemoved(
     address: NormalizedEVMAddress,
-    abilityId: string,
+    abilityId: string
   ): Promise<void> {
     return this.abilitiesService.markAbilityAsRemoved(address, abilityId)
   }
@@ -1965,20 +1989,20 @@ export default class Main extends BaseService<never> {
     address: NormalizedEVMAddress,
     abilitySlug: string,
     abilityId: string,
-    reason: string,
+    reason: string
   ): Promise<void> {
     this.abilitiesService.reportAndRemoveAbility(
       address,
       abilitySlug,
       abilityId,
-      reason,
+      reason
     )
   }
 
   async removeEVMNetwork(chainID: string): Promise<void> {
     // Per origin chain id settings
     await this.internalEthereumProviderService.removePreferencesForChain(
-      chainID,
+      chainID
     )
     // Connected dApps
     await this.providerBridgeService.revokePermissionsForChain(chainID)
@@ -1991,7 +2015,7 @@ export default class Main extends BaseService<never> {
       await this.chainService.addCustomProvider(
         ETHEREUM.chainID,
         FLASHBOTS_RPC_URL,
-        flashbotsProvider,
+        flashbotsProvider
       )
     } else {
       await this.chainService.removeCustomProvider(ETHEREUM.chainID)
@@ -2005,7 +2029,7 @@ export default class Main extends BaseService<never> {
 
   async queryCustomTokenDetails(
     contractAddress: NormalizedEVMAddress,
-    addressOnNetwork: AddressOnNetwork,
+    addressOnNetwork: AddressOnNetwork
   ): Promise<{
     asset: SmartContractFungibleAsset
     amount: bigint
@@ -2020,13 +2044,13 @@ export default class Main extends BaseService<never> {
       .find(
         (asset): asset is SmartContractFungibleAsset =>
           isSmartContractFungibleAsset(asset) &&
-          sameEVMAddress(contractAddress, asset.contractAddress),
+          sameEVMAddress(contractAddress, asset.contractAddress)
       )
 
     const assetData = await this.chainService.queryAccountTokenDetails(
       contractAddress,
       addressOnNetwork,
-      cachedAsset,
+      cachedAsset
     )
 
     const priceData = await getTokenPrices([contractAddress], USD, network)
@@ -2035,7 +2059,7 @@ export default class Main extends BaseService<never> {
       contractAddress in priceData
         ? convertAssetAmountViaPricePoint(
             assetData,
-            getPricePoint(assetData.asset, priceData[contractAddress]),
+            getPricePoint(assetData.asset, priceData[contractAddress])
           )
         : undefined
 
@@ -2046,7 +2070,7 @@ export default class Main extends BaseService<never> {
     return {
       ...assetData,
       balance: Number.parseFloat(
-        utils.formatUnits(assetData.amount, assetData.asset.decimals),
+        utils.formatUnits(assetData.amount, assetData.asset.decimals)
       ),
       mainCurrencyAmount,
       exists: !!cachedAsset,

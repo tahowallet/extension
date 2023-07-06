@@ -1,12 +1,13 @@
 import PreferenceService from ".."
 import { POLYGON } from "../../../constants"
+import { createPreferenceService } from "../../../tests/factories"
 import DEFAULT_PREFERENCES from "../defaults"
 
 describe("Preference Service Integration", () => {
   let preferenceService: PreferenceService
 
   beforeEach(async () => {
-    preferenceService = await PreferenceService.create()
+    preferenceService = await createPreferenceService()
     await preferenceService.startService()
   })
 

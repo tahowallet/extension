@@ -18,6 +18,7 @@ import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString, UNIXTime } from "../../types"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
+import SigningService from "../signing"
 
 export {
   AnalyticsPreferences,
@@ -35,10 +36,6 @@ type AddressBookEntry = {
 }
 
 type InMemoryAddressBook = AddressBookEntry[]
-
-const sameAddressBookEntry = (a: AddressOnNetwork, b: AddressOnNetwork) =>
-  normalizeEVMAddress(a.address) === normalizeEVMAddress(b.address) &&
-  sameNetwork(a.network, b.network)
 
 const BUILT_IN_CONTRACTS = [
   {
@@ -131,14 +128,20 @@ export default class PreferenceService extends BaseService<Events> {
    * Create a new PreferenceService. The service isn't initialized until
    * startService() is called and resolved.
    */
-  static create: ServiceCreatorFunction<Events, PreferenceService, []> =
-    async () => {
-      const db = await getOrCreateDB()
+  static create: ServiceCreatorFunction<
+    Events,
+    PreferenceService,
+    [Promise<SigningService>]
+  > = async (signingService) => {
+    const db = await getOrCreateDB()
 
-      return new this(db)
-    }
+    return new this(db, await signingService)
+  }
 
-  private constructor(private db: PreferenceDatabase) {
+  private constructor(
+    private db: PreferenceDatabase,
+    private signingService: SigningService
+  ) {
     super()
   }
 
@@ -173,10 +176,16 @@ export default class PreferenceService extends BaseService<Events> {
 
   // TODO Implement the following 6 methods as something stored in the database
   // TODO and user-manageable.
+  private sameAddressBookEntry(a: AddressOnNetwork, b: AddressOnNetwork) {
+    return (
+      normalizeEVMAddress(a.address) === normalizeEVMAddress(b.address) &&
+      this.signingService.isControlCompatible(a, b.network)
+    )
+  }
 
   addOrEditNameInAddressBook(newEntry: AddressBookEntry): void {
     const correspondingEntryIndex = this.addressBook.findIndex((entry) =>
-      sameAddressBookEntry(newEntry, entry),
+      this.sameAddressBookEntry(newEntry, entry)
     )
     if (correspondingEntryIndex !== -1) {
       this.addressBook[correspondingEntryIndex] = newEntry
@@ -204,7 +213,7 @@ export default class PreferenceService extends BaseService<Events> {
     addressOnNetwork: AddressOnNetwork,
   ): NameOnNetwork | undefined {
     return this.addressBook.find((addressBookEntry) =>
-      sameAddressBookEntry(addressBookEntry, addressOnNetwork),
+      this.sameAddressBookEntry(addressBookEntry, addressOnNetwork)
     )
   }
 

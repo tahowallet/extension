@@ -21,6 +21,7 @@ import {
 } from "./resolvers"
 import PreferenceService from "../preferences"
 import { isFulfilledPromise } from "../../lib/utils/type-guards"
+import SigningService from "../signing"
 
 export { NameResolverSystem }
 
@@ -104,13 +105,14 @@ export default class NameService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     NameService,
-    [Promise<ChainService>, Promise<PreferenceService>]
-  > = async (chainService, preferenceService) =>
-    new this(await chainService, await preferenceService)
+    [Promise<ChainService>, Promise<SigningService>, Promise<PreferenceService>]
+  > = async (chainService, signingService, preferenceService) =>
+    new this(await chainService, await signingService, await preferenceService)
 
   private constructor(
     private chainService: ChainService,
-    preferenceService: PreferenceService,
+    private signingService: SigningService,
+    private preferenceService: PreferenceService
   ) {
     super({})
 
@@ -127,9 +129,35 @@ export default class NameService extends BaseService<Events> {
 
     preferenceService.emitter.on(
       "addressBookEntryModified",
-      async ({ network, address }) => {
-        this.clearNameCacheEntry(network.chainID, address)
-        await this.lookUpName({ network, address })
+      async ({ address, network }) => {
+        const allActiveNetworks = await this.chainService.getNetworksToTrack()
+        console.warn(
+          allActiveNetworks,
+          network,
+          allActiveNetworks.map((activeNetwork) =>
+            this.signingService.isControlCompatible(
+              { address, network },
+              activeNetwork
+            )
+          )
+        )
+        allActiveNetworks
+          .filter((activeNetwork) =>
+            this.signingService.isControlCompatible(
+              { address, network },
+              activeNetwork
+            )
+          )
+          .forEach(async (controlCompatibleNetwork) => {
+            console.warn("Doing the thing with", controlCompatibleNetwork)
+            await this.lookUpName(
+              {
+                address,
+                network: controlCompatibleNetwork,
+              },
+              false
+            )
+          })
       },
     )
 

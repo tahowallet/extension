@@ -372,6 +372,19 @@ export function sameNetwork(
 }
 
 /**
+ * Tests whether two networks have addresses that use a compatible format.
+ * Generally, EVM networks use compatible 20-byte hex addresses in hex format,
+ * while Bitcoin networks use an incompatible address format to EVM networks.
+ * Other networks may vary.
+ */
+export function areNetworksAddressCompatible(
+  network1: AnyNetwork,
+  network2: AnyNetwork
+): boolean {
+  return network1.family === network2.family
+}
+
+/**
  * Returns a 0x-prefixed hexadecimal representation of a number or string chainID
  * while also handling cases where an already hexlified chainID is passed in.
  */

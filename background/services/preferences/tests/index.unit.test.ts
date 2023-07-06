@@ -1,11 +1,12 @@
 import PreferenceService from ".."
 import { ETHEREUM } from "../../../constants"
+import { createPreferenceService } from "../../../tests/factories"
 
 describe("Preference Service Unit", () => {
   let preferenceService: PreferenceService
 
   beforeEach(async () => {
-    preferenceService = await PreferenceService.create()
+    preferenceService = await createPreferenceService()
     await preferenceService.startService()
   })
 

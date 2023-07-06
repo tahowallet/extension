@@ -15,6 +15,7 @@ import {
 import {
   isEIP1559TransactionRequest,
   isKnownTxType,
+  Network,
   sameNetwork,
   SignedTransaction,
   TransactionRequestWithNonce,
@@ -25,7 +26,15 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
-import { NETWORK_FOR_LEDGER_SIGNING } from "../../constants"
+import {
+  ARBITRUM_NOVA,
+  ARBITRUM_ONE,
+  AVALANCHE,
+  ETHEREUM,
+  GOERLI,
+  OPTIMISM,
+  POLYGON,
+} from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { AddressOnNetwork } from "../../accounts"
 
@@ -315,6 +324,26 @@ export default class LedgerService extends BaseService<Events> {
     return this.#currentLedgerId
   }
 
+  /**
+   * Returns true if the two networks are transaction compatible for a signer
+   * controlled by this service. Returns false otherwise.
+   *
+   * Transaction compatibility between two networks means that, if we have a
+   * working Ledger connection for `network` for a given address, it can derive
+   * addresses and sign for `otherNetwork` as well without changing apps.
+   */
+  // Expecting to have more this-related stuff in the future or convert to static.
+  // eslint-disable-next-line class-methods-use-this
+  isTransactionCompatible(network: Network, otherNetwork: Network): boolean {
+    return (
+      network.family === "EVM" &&
+      network.family === otherNetwork.family &&
+      // Ledger apps generally are mutually incompatible if derivation paths
+      // differ.
+      network.derivationPath === otherNetwork.derivationPath
+    )
+  }
+
   async deriveAddress({
     // FIXME Use deviceID.
     path: derivationPath,
@@ -365,9 +394,21 @@ export default class LedgerService extends BaseService<Events> {
     await this.db.removeAccount(address)
   }
 
-  async getAccountByAddress(address: HexString): Promise<LedgerAccount | null> {
+  async getSignerForAddress({
+    address,
+  }: AddressOnNetwork): Promise<LedgerAccountSigner | undefined> {
+    // FIXME Take network into account in the db.
     const ledgerAccount = await this.db.getAccountByAddress(address)
-    return ledgerAccount
+
+    if (ledgerAccount === null) {
+      return undefined
+    }
+
+    return {
+      type: "ledger",
+      deviceID: ledgerAccount.ledgerId,
+      path: ledgerAccount.path,
+    }
   }
 
   async signTransaction(
@@ -542,10 +583,12 @@ export default class LedgerService extends BaseService<Events> {
     { address, network }: AddressOnNetwork,
     hexDataToSign: HexString,
   ): Promise<string> {
+    // Currently the service assumes the Eth app, which requires a network that
+    // uses the same derivation path as Ethereum, or one that starts with the
+    // same components.
     if (
-      !NETWORK_FOR_LEDGER_SIGNING.find((supportedNetwork) =>
-        sameNetwork(network, supportedNetwork),
-      )
+      network.derivationPath !== ETHEREUM.derivationPath &&
+      !network.derivationPath?.startsWith(ETHEREUM.derivationPath ?? "")
     ) {
       throw new Error("Unsupported network for Ledger signing")
     }
