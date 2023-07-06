@@ -188,9 +188,9 @@ import {
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
 import {
-  isVerifiedAsset,
   isBuiltInNetworkBaseAsset,
   isSameAsset,
+  isVerifiedOrTrustedAsset,
 } from "./redux-slices/utils/asset-utils"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
 import { DismissableItem } from "./services/preferences"
@@ -1895,9 +1895,9 @@ export default class Main extends BaseService<never> {
     const mainCurrencyAmount = convertedAssetAmount
       ? assetAmountToDesiredDecimals(convertedAssetAmount, 2)
       : undefined
-    // The asset should be displayed in the regular list when that is verified by default or by the user.
+    // The asset should be displayed in the regular list when that is trusted by default or verified by the user.
     // This check allows the user to add an asset that is on the unverified list.
-    const shouldDisplay = cachedAsset && isVerifiedAsset(cachedAsset)
+    const shouldDisplay = cachedAsset && isVerifiedOrTrustedAsset(cachedAsset)
 
     return {
       ...assetData,

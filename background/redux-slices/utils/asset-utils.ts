@@ -17,7 +17,6 @@ import {
   OPTIMISM,
   POLYGON,
 } from "../../constants"
-import { FeatureFlags, isEnabled } from "../../features"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { sameEVMAddress } from "../../lib/utils"
 import { AnyNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
@@ -342,56 +341,54 @@ export function heuristicDesiredDecimalsForUnitPrice(
   )
 }
 
+export function isTokenListAsset(asset?: AnyAsset): boolean {
+  return !!asset?.metadata?.tokenLists?.length
+}
+
 /**
- * Check if the asset has a list of tokens.
- * Assets that do not have it are considered untrusted.
+ * Check if the asset is in a token list or is a network base asset.
+ * If not it means it is an untrusted asset.
  *
  */
 export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
   if (asset) {
-    return !asset?.metadata?.tokenLists?.length
+    return !isTokenListAsset(asset) && !isNetworkBaseAsset(asset)
   }
   return false
 }
 
 /**
- * NB: non-base assets that don't have any token lists are considered
- * untrusted. Reifying base assets clearly will improve this check down the
- * road. Eventually, assets can be flagged as trusted by adding them to an
- * "internal" token list that users can export and share.
+ * Checks the user has explicitly verified the asset.
+ * The verified property was manually set to true.
  *
  */
-export function isUnverifiedAssetByUser(asset: AnyAsset | undefined): boolean {
-  if (asset) {
-    if (asset.metadata?.verified !== undefined) {
-      // If we have verified metadata return it
-      return !asset.metadata.verified
-    }
-
-    const baseAsset = isNetworkBaseAsset(asset)
-    const isUntrusted = isUntrustedAsset(asset)
-
-    return !baseAsset && isUntrusted
+export function isVerifiedAssetByUser(asset?: AnyAsset): boolean {
+  if (asset?.metadata?.verified !== undefined) {
+    // If we have verified metadata return it
+    return asset.metadata.verified
   }
-
   return false
 }
 
 /**
- * Check if an asset is verified.
- * The asset can be verified by us when it is trusted by default.
+ * Check if an asset is verified or trusted.
+ * The asset can be trusted when is in a token list or the asset is a network base asset.
  * Untrusted asset can be manually verified by the user.
  *
- * Only verified assets can take part in wallet actions.
+ * Only such assets can take part in wallet actions.
  * By actions is meant:
  * - doing an swap with this asset
  * - sending this asset to another address
  */
-export function isVerifiedAsset(asset: AnyAsset): boolean {
-  if (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)) {
-    return true
+export function isVerifiedOrTrustedAsset(asset?: AnyAsset): boolean {
+  if (asset) {
+    return (
+      isVerifiedAssetByUser(asset) ||
+      isNetworkBaseAsset(asset) ||
+      isTokenListAsset(asset)
+    )
   }
-  return isNetworkBaseAsset(asset) || !isUntrustedAsset(asset)
+  return false
 }
 
 type AssetType = "base" | "erc20"

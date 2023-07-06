@@ -2,7 +2,7 @@ import { SmartContractFungibleAsset } from "../../../assets"
 import { EVMNetwork } from "../../../networks"
 import {
   isUntrustedAsset,
-  isVerifiedAsset,
+  isVerifiedAssetByUser,
 } from "../../../redux-slices/utils/asset-utils"
 import { HexString } from "../../../types"
 
@@ -44,6 +44,10 @@ export function shouldRefreshKnownAsset(
     verified?: boolean
   }
 ): boolean {
+  // The asset that is in a token list or is a network base asset should not be refreshed.
+  // They shouldn't have a discovery tx hash or any custom metadata.
+  if (!isUntrustedAsset(asset)) return false
+
   const newDiscoveryTxHash = metadata?.discoveryTxHash
   const addressForDiscoveryTxHash = newDiscoveryTxHash
     ? Object.keys(newDiscoveryTxHash)[0]
@@ -54,15 +58,15 @@ export function shouldRefreshKnownAsset(
 
   // If the discovery tx hash is not specified
   // or if it already exists in the asset, do not update the asset
-  // Additionally, discovery tx Hash  should only be added for untrusted assets.
-  const allowAddDiscoveryTxHash =
-    isUntrustedAsset(asset) && !(!newDiscoveryTxHash || existingDiscoveryTxHash)
+  const allowAddDiscoveryTxHash = !(
+    !newDiscoveryTxHash || existingDiscoveryTxHash
+  )
 
   // Refresh a known unverified asset if it has been manually imported.
   // This check allows the user to add an asset from the unverified list.
   const isManuallyImported = metadata?.verified
   const allowVerifyAssetByManualImport =
-    !isVerifiedAsset(asset) && isManuallyImported
+    !isVerifiedAssetByUser(asset) && isManuallyImported
 
   return allowVerifyAssetByManualImport || allowAddDiscoveryTxHash
 }
