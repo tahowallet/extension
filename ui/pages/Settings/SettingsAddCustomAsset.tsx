@@ -178,11 +178,14 @@ export default function SettingsAddCustomAsset(): ReactElement {
   }
 
   const hideDustEnabled = useBackgroundSelector(selectHideDust)
-  const showWarningAboutDust =
-    hideDustEnabled &&
+  const isDust =
     assetData?.mainCurrencyAmount !== 0 &&
     assetData?.mainCurrencyAmount !== undefined &&
     assetData?.mainCurrencyAmount < userValueDustThreshold
+  // The dust warning should be displayed when the asset does not yet exist in the wallet.
+  // Unverified assets are sometimes hidden by the user.
+  // After they have been added manually, they will be displayed normally despite being dust.
+  const showWarningAboutDust = hideDustEnabled && isDust && !assetData?.exists
 
   const warningOptions = {
     amount: userValueDustThreshold,

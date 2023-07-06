@@ -1865,6 +1865,7 @@ export default class Main extends BaseService<never> {
     mainCurrencyAmount?: number
     balance: number
     shouldDisplay?: boolean
+    exists?: boolean
   }> {
     const { network } = addressOnNetwork
 
@@ -1906,6 +1907,7 @@ export default class Main extends BaseService<never> {
       ),
       mainCurrencyAmount,
       shouldDisplay,
+      exists: !!cachedAsset,
     }
   }
 
