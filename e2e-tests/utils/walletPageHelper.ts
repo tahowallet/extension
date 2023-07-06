@@ -1,5 +1,5 @@
 import { Page, BrowserContext, expect } from "@playwright/test"
-import OnboardingHelper from "./onboarding"
+import OnboardingHelper, { getOnboardingPage } from "./onboarding"
 
 export default class WalletPageHelper {
   readonly url: string
@@ -41,7 +41,7 @@ export default class WalletPageHelper {
    * Onboard using walletPageHelper
    */
   async onboardWithSeedPhrase(recoveryPhrase: string): Promise<void> {
-    const onboardingPage = await this.onboarding.getOnboardingPage()
+    const onboardingPage = await getOnboardingPage(this.context)
     await this.onboarding.addAccountFromSeed({
       phrase: recoveryPhrase,
       onboardingPage,

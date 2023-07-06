@@ -33,30 +33,6 @@ export default class OnboardingHelper {
     public readonly context: BrowserContext
   ) {}
 
-  async getOnboardingPage(): Promise<Page> {
-    await expect(async () => {
-      const pages = this.context.pages()
-      const onboarding = pages.find((page) => /onboarding/.test(page.url()))
-
-      if (!onboarding) {
-        throw new Error("Unable to find onboarding tab")
-      }
-
-      expect(onboarding).toHaveURL(/onboarding/)
-    }).toPass()
-
-    const onboarding = this.context
-      .pages()
-      .find((page) => /onboarding/.test(page.url()))
-
-    if (!onboarding) {
-      // Should never happen
-      throw new Error("Onboarding page closed too early")
-    }
-
-    return onboarding
-  }
-
   async addReadOnlyAccount(
     addressOrName: string,
     onboardingPage?: Page
