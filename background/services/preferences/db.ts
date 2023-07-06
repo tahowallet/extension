@@ -27,6 +27,24 @@ const getSignerRecordId = (signer: AccountSignerWithId): SignerRecordId => {
   }
 }
 
+/**
+ * Update Taho token list reference.
+ * Returns an updated URLs for the token list.
+ */
+const getNewUrlsForTokenList = (
+  storedPreferences: Preferences,
+  oldPath: string,
+  newPath: string
+): string[] => {
+  // Get rid of old Taho URL
+  const newURLs = storedPreferences.tokenLists.urls.filter(
+    (url) => !url.includes(oldPath)
+  )
+  newURLs.push(`https://ipfs.io/ipfs/${newPath}`)
+
+  return newURLs
+}
+
 // The idea is to use this interface to describe the data structure stored in indexedDb
 // In the future this might also have a runtime type check capability, but it's good enough for now.
 // NOTE: Check if can be merged with preferences/types.ts
@@ -170,16 +188,12 @@ export class PreferenceDatabase extends Dexie {
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
-            // Get rid of old tally URL
-            const newURLs = storedPreferences.tokenLists.urls.filter(
-              (url) =>
-                !url.includes(
-                  "bafybeicovpqvb533alo5scf7vg34z6fjspdytbzsa2es2lz35sw3ksh2la"
-                )
-            )
-
-            newURLs.push(
-              "https://ipfs.io/ipfs/bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife"
+            const newURLs = getNewUrlsForTokenList(
+              storedPreferences,
+              // Old path
+              "bafybeicovpqvb533alo5scf7vg34z6fjspdytbzsa2es2lz35sw3ksh2la",
+              // New path
+              "bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife"
             )
 
             // eslint-disable-next-line no-param-reassign
@@ -244,16 +258,12 @@ export class PreferenceDatabase extends Dexie {
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
-            // Get rid of old tally URL
-            const newURLs = storedPreferences.tokenLists.urls.filter(
-              (url) =>
-                !url.includes(
-                  "bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife"
-                )
-            )
-
-            newURLs.push(
-              "https://ipfs.io/ipfs/bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm"
+            const newURLs = getNewUrlsForTokenList(
+              storedPreferences,
+              // Old path
+              "bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife",
+              // New path
+              "bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm"
             )
 
             // eslint-disable-next-line no-param-reassign
@@ -357,8 +367,30 @@ export class PreferenceDatabase extends Dexie {
       shownDismissableItems: "&id,shown",
     })
 
-    // Updates preferences to allow custom auto lock timers
     this.version(18).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const newURLs = getNewUrlsForTokenList(
+            storedPreferences,
+            // Old path
+            "bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm",
+            // New path
+            "bafybeihufwj43zej34itf66qyguq35k4f6s4ual4uk3iy643wn3xnff2ka"
+          )
+
+          // Param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
+          // eslint-disable-next-line no-param-reassign
+          storedPreferences.tokenLists = {
+            ...storedPreferences.tokenLists,
+            urls: newURLs,
+          }
+        })
+    })
+
+    // Updates preferences to allow custom auto lock timers
+    this.version(19).upgrade((tx) => {
       return tx
         .table("preferences")
         .toCollection()
