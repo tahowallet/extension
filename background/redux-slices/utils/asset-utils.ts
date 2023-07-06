@@ -391,7 +391,7 @@ export function isVerifiedAsset(asset: AnyAsset): boolean {
   if (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)) {
     return true
   }
-  return isUntrustedAsset(asset) ? !isUnverifiedAssetByUser(asset) : true
+  return isNetworkBaseAsset(asset) || !isUntrustedAsset(asset)
 }
 
 type AssetType = "base" | "erc20"
