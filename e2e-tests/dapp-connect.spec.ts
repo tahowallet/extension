@@ -30,10 +30,12 @@ test.describe("dApp Connections", () => {
     await expect(connectingPopupTitle).toBeVisible()
 
     // Clear the popover.
-    const bgLocator = popupPage.locator(".bg")
+    const popupCloseLocator = popupPage.getByRole("button", {
+      name: "Background close",
+    })
 
-    await bgLocator.click()
-    await bgLocator.waitFor({ state: "detached", timeout: 1000 })
+    await popupCloseLocator.click()
+    await popupCloseLocator.waitFor({ state: "detached", timeout: 1000 })
 
     await popupPage.locator("button", { hasText: "Reject" }).click()
 
