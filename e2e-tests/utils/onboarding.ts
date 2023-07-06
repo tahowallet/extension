@@ -25,6 +25,10 @@ const DEFAULT_PASSWORD = "12345678"
 // It owns some NFTs/badges.
 export const account1Address = "0x6f1b1f1feb01235e15a7962f16c389c7f8218ed6"
 export const account1Name = /^e2e\.testertesting\.eth$/
+// The account2 is the he testertesting.eth account. It's used for manual
+// testing, so it's balance may fluctuate. It can be used to test features that
+// don't depend on the constant balance or state of the assets.
+export const account2Name = /^testertesting\.eth$/
 
 export default class OnboardingHelper {
   constructor(
@@ -32,6 +36,30 @@ export default class OnboardingHelper {
     // public readonly backgroundPage: Page,
     public readonly context: BrowserContext
   ) {}
+
+  async getOnboardingPage(): Promise<Page> {
+    await expect(async () => {
+      const pages = this.context.pages()
+      const onboarding = pages.find((page) => /onboarding/.test(page.url()))
+
+      if (!onboarding) {
+        throw new Error("Unable to find onboarding tab")
+      }
+
+      expect(onboarding).toHaveURL(/onboarding/)
+    }).toPass()
+
+    const onboarding = this.context
+      .pages()
+      .find((page) => /onboarding/.test(page.url()))
+
+    if (!onboarding) {
+      // Should never happen
+      throw new Error("Onboarding page closed too early")
+    }
+
+    return onboarding
+  }
 
   async addReadOnlyAccount(
     addressOrName: string,

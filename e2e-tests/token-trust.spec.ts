@@ -1,5 +1,6 @@
 import { FeatureFlags } from "@tallyho/tally-background/features"
 import { skipIfFeatureFlagged, test, expect } from "./utils"
+import { account1Name, account2Name } from "./utils/onboarding"
 
 skipIfFeatureFlagged(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)
 
@@ -17,10 +18,16 @@ test.describe("Token Trust", () => {
     page: popup,
     assetsHelper,
   }) => {
-    await test.step("Import account", async () => {
-      await walletPageHelper.onboarding.addAccountFromSeed({
-        phrase: "test test test test test test test test test test test junk",
-      })
+    await test.step("Import account and add addresses", async () => {
+      /**
+       * Onboard using walletPageHelper, with testertesting.eth account.
+       */
+      const recoveryPhrase = process.env.RECOVERY_PHRASE
+      if (recoveryPhrase) {
+        await walletPageHelper.onboardWithSeedPhrase(recoveryPhrase)
+      } else {
+        throw new Error("RECOVERY_PHRASE environment variable is not defined.")
+      }
 
       await walletPageHelper.goToStartPage()
       await walletPageHelper.setViewportSize()
@@ -30,29 +37,45 @@ test.describe("Token Trust", () => {
        */
       await walletPageHelper.verifyCommonElements(
         /^Ethereum$/,
-        /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/
+        false,
+        account2Name
       )
       await walletPageHelper.verifyAnalyticsBanner()
 
-      setTimeout(() => {}, 500000) // wait for 5s
+      /**
+       * Add addresses to the wallet.
+       */
+      await walletPageHelper.addAddressToAccount("Import 1")
+      await walletPageHelper.addAddressToAccount("Import 1")
+
+      /**
+       * Switch to the 3rd address of the `Import 1` wallet.
+       */
+      await walletPageHelper.switchToAddress("Import 1", 3, account1Name)
+
+      /**
+       * Switch to the Polygon network.
+       */
+      await walletPageHelper.switchNetwork(/^Polygon$/)
+      await walletPageHelper.waitForAssetsToLoad(240000)
 
       /**
        * Verify that `Show unverified assets` is OFF by default.
        */
       await popup
-        .locator(".tab_bar_wrap")
+        .getByLabel("Main")
         .getByText("Settings", { exact: true })
         .click()
       await assetsHelper.assertShowUnverifiedAssetsSetting(false)
       await popup
-        .locator(".tab_bar_wrap")
+        .getByLabel("Main")
         .getByText("Wallet", { exact: true })
         .click()
 
       /**
        * Ensure the base asset is visible and is not unverified.
        */
-      await assetsHelper.assertVerifiedAssetOnWalletPage(/^ETH$/, "base")
+      await assetsHelper.assertVerifiedAssetOnWalletPage(/^MATIC$/, "base")
 
       /**
        * Ensure there are no fields related to unverified assets in the
@@ -60,9 +83,9 @@ test.describe("Token Trust", () => {
        */
       await popup.locator(".asset_list_item").first().click() // We use `.first()` because the base asset should be first on the list
       await assetsHelper.assertAssetDetailsPage(
-        /^Ethereum$/,
-        /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
-        /^ETH$/,
+        /^Polygon$/,
+        account1Name,
+        /^MATIC$/,
         /^(\d|,)+(\.\d{2,4})*$/,
         "base"
       )
@@ -74,10 +97,13 @@ test.describe("Token Trust", () => {
       await popup
         .locator(".asset_list_item")
         .filter({
-          has: popup.locator("span").filter({ hasText: /^DAI$/ }),
+          has: popup.locator("span").filter({ hasText: /^WMATIC$/ }),
         })
         .click({ trial: true })
-      await assetsHelper.assertVerifiedAssetOnWalletPage(/^DAI$/, "knownERC20")
+      await assetsHelper.assertVerifiedAssetOnWalletPage(
+        /^WMATIC$/,
+        "knownERC20"
+      )
 
       /**
        * Ensure there are no fields related to unverified assets in the
@@ -86,16 +112,16 @@ test.describe("Token Trust", () => {
       await popup
         .locator(".asset_list_item")
         .filter({
-          has: popup.locator("span").filter({ hasText: /^DAI$/ }),
+          has: popup.locator("span").filter({ hasText: /^WMATIC$/ }),
         })
         .click()
       await assetsHelper.assertAssetDetailsPage(
-        /^Ethereum$/,
-        /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
-        /^DAI$/,
+        /^Polygon$/,
+        account1Name,
+        /^WMATIC$/,
         /^(\d|,)+(\.\d{2,4})*$/,
         "knownERC20",
-        "https://etherscan.io/token/0x6b175474e89094c44da98b954eedeac495271d0f"
+        "https://polygonscan.com/token/0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
       )
       await popup.getByRole("button", { name: "Back", exact: true }).click()
 
@@ -106,25 +132,18 @@ test.describe("Token Trust", () => {
 
       // In order for the next few tests to make sense the wallet address should
       // have a positive balance of at least one of the listed assets. At the
-      // moment of writing the test, the wallet had positive balance for all those
-      // assets.
+      // moment of writing the test, the wallet had positive balance for all
+      // those assets.
       const untrustedAssets = [
-        "DANK",
-        "FOOL",
-        "JIZZ",
-        "M87",
-        "PHIBA",
-        "WLUNC",
-        "WTF",
+        "BANANA",
+        "Claim USDC/WETH at https://USDCpool.cloud",
+        "pAAVE",
       ]
 
       /**
        * Verify there are no unverified assets on the Send screen.
        */
-      await popup
-        .getByRole("button", { name: "Send", exact: true })
-        .first() // TODO: Investigate why we need it
-        .click()
+      await popup.getByLabel("Send", { exact: true }).click()
       await popup.getByTestId("selected_asset_button").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(untrustedAssets)
       await assetsHelper.closeSelectTokenPopup()
@@ -133,7 +152,7 @@ test.describe("Token Trust", () => {
       /**
        * Verify there are no unverified assets on the Swap screen.
        */
-      await popup.getByRole("button", { name: "Swap", exact: true }).click()
+      await popup.getByLabel("Swap", { exact: true }).click()
       await popup
         .getByRole("button", { name: "Select token", exact: true })
         .first()
@@ -153,30 +172,30 @@ test.describe("Token Trust", () => {
        * Toggle `Show unverified assets` and make sure it's ON
        */
       await popup
-        .locator(".tab_bar_wrap")
+        .getByLabel("Main")
         .getByText("Settings", { exact: true })
         .click()
       await assetsHelper.toggleShowUnverifaiedAssetsSetting()
       await assetsHelper.assertShowUnverifiedAssetsSetting(true)
       await popup
-        .locator(".tab_bar_wrap")
+        .getByLabel("Main")
         .getByText("Wallet", { exact: true })
         .click()
 
       /**
        * Ensure the base asset is visible and is not unverified.
        */
-      await assetsHelper.assertVerifiedAssetOnWalletPage(/^ETH$/, "base")
+      await assetsHelper.assertVerifiedAssetOnWalletPage(/^MATIC$/, "base")
 
       /**
        * Ensure there are no fields related to unverified assets in the
        * base asset's details.
        */
-      await popup.locator(".asset_list_item").first().click() // We use `.first()` because the base asset should be first on the list
+      await popup.getByTestId("asset_list_item").first().click() // We use `.first()` because the base asset should be first on the list
       await assetsHelper.assertAssetDetailsPage(
-        /^Ethereum$/,
-        /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
-        /^ETH$/,
+        /^Polygon$/,
+        account1Name,
+        /^MATIC$/,
         /^(\d|,)+(\.\d{2,4)*$/,
         "base"
       )
@@ -186,30 +205,33 @@ test.describe("Token Trust", () => {
        * Ensure the verified ERC-20 asset is visible and is not unverified.
        */
       await popup
-        .locator(".asset_list_item")
+        .getByTestId("asset_list_item")
         .filter({
-          has: popup.locator("span").filter({ hasText: /^DAI$/ }),
+          has: popup.locator("span").filter({ hasText: /^WMATIC$/ }),
         })
         .click({ trial: true })
-      await assetsHelper.assertVerifiedAssetOnWalletPage(/^DAI$/, "knownERC20")
+      await assetsHelper.assertVerifiedAssetOnWalletPage(
+        /^WMATIC$/,
+        "knownERC20"
+      )
 
       /**
        * Ensure there are no fields related to unverified assets in the verified
        * ERC-20 asset's details.
        */
       await popup
-        .locator(".asset_list_item")
+        .getByTestId("asset_list_item")
         .filter({
-          has: popup.locator("span").filter({ hasText: /^DAI$/ }),
+          has: popup.locator("span").filter({ hasText: /^WMATIC$/ }),
         })
         .click()
       await assetsHelper.assertAssetDetailsPage(
-        /^Ethereum$/,
-        /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
-        /^DAI$/,
+        /^Polygon$/,
+        account1Name,
+        /^WMATIC$/,
         /^(\d|,)+(\.\d{2,4})*$/,
         "knownERC20",
-        "https://etherscan.io/token/0x6b175474e89094c44da98b954eedeac495271d0f"
+        "https://polygonscan.com/token/0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
       )
       await popup.getByRole("button", { name: "Back", exact: true }).click()
 
@@ -226,19 +248,19 @@ test.describe("Token Trust", () => {
         .getByRole("button", { name: /^See unverified assets \(\d+\)$/ })
         .click()
       await popup
-        .locator(".asset_list_item")
+        .getByTestId("asset_list_item")
         .filter({
-          has: popup.locator("span").filter({ hasText: /^DANK$/ }),
+          has: popup.locator("span").filter({ hasText: /^BANANA$/ }),
         })
         .click()
       await assetsHelper.assertAssetDetailsPage(
-        /^Ethereum$/,
-        /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
-        /^DANK$/,
+        /^Polygon$/,
+        account1Name,
+        /^BANANA$/,
         /^(\d|,)+(\.\d{2,4})*$/,
         "unverified",
-        "https://etherscan.io/token/0x0cb8d0b37c7487b11d57f1f33defa2b1d3cfccfe",
-        "0x0cb8…fccfe"
+        "https://polygonscan.com/token/0x5d47baba0d66083c52009271faf3f50dcc01023c",
+        "0x5d47…1023c"
       )
       await popup.getByRole("button", { name: "Back", exact: true }).click()
 
@@ -247,19 +269,15 @@ test.describe("Token Trust", () => {
       // moment of writing the test, the wallet had positive balance for all those
       // assets.
       const untrustedAssets = [
-        "DANK",
-        "FOOL",
-        "JIZZ",
-        "M87",
-        "PHIBA",
-        "WLUNC",
-        "WTF",
+        "BANANA",
+        "Claim USDC/WETH at https://USDCpool.cloud",
+        "pAAVE",
       ]
 
       /**
        * Verify there are no unverified assets on the Send screen.
        */
-      await popup.getByRole("button", { name: "Send", exact: true }).click()
+      await popup.getByLabel("Send", { exact: true }).click()
       await popup.getByTestId("selected_asset_button").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(untrustedAssets)
       await assetsHelper.closeSelectTokenPopup()
@@ -268,7 +286,7 @@ test.describe("Token Trust", () => {
       /**
        * Verify there are no unverified assets on the Swap screen.
        */
-      await popup.getByRole("button", { name: "Swap", exact: true }).click()
+      await popup.getByLabel("Swap", { exact: true }).click()
       await popup
         .getByRole("button", { name: "Select token", exact: true })
         .first()
@@ -288,7 +306,7 @@ test.describe("Token Trust", () => {
        * Click `Don't show` on unverified ERC-20 asset
        */
       await popup
-        .locator(".tab_bar_wrap")
+        .getByLabel("Main")
         .getByText("Wallet", { exact: true })
         .click()
 
@@ -296,9 +314,9 @@ test.describe("Token Trust", () => {
         .getByRole("button", { name: /^See unverified assets \(\d+\)$/ })
         .click()
       await popup
-        .locator(".asset_list_item")
+        .getByTestId("asset_list_item")
         .filter({
-          has: popup.locator("span").filter({ hasText: /^DANK$/ }),
+          has: popup.locator("span").filter({ hasText: /^pAAVE$/ }),
         })
         .click()
       await popup.getByRole("button", { name: "Verify asset" }).first().click()
@@ -325,47 +343,48 @@ test.describe("Token Trust", () => {
        * Make sure `Wallet` page is opened and there are unverified assets shown
        */
       await walletPageHelper.verifyCommonElements(
-        /^Ethereum$/,
-        /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/
+        /^Polygon$/,
+        false,
+        account1Name
       )
       await walletPageHelper.verifyAnalyticsBanner()
-      await assetsHelper.assertVerifiedAssetOnWalletPage(/^ETH$/, "base")
+      await assetsHelper.assertVerifiedAssetOnWalletPage(/^MATIC$/, "base")
       await assetsHelper.assertUnverifiedAssetsPresentOnWalletPage()
 
       /**
-       * Make sure the recelntly hidden asset "DANK" is no longer shown on the
+       * Make sure the recelntly hidden asset "pAAVE" is no longer shown on the
        * `Wallet` page.
        */
       await expect(
-        popup.locator(".asset_list_item").filter({
-          has: popup.locator("span").filter({ hasText: /^DANK$/ }),
+        popup.getByTestId("asset_list_item").filter({
+          has: popup.locator("span").filter({ hasText: /^pAAVE$/ }),
         })
       ).not.toBeVisible()
 
       /**
-       * Verify there is no "DANK" asset on the Send screen.
+       * Verify there is no "pAAVE" asset on the Send screen.
        */
-      await popup.getByRole("button", { name: "Send", exact: true }).click()
+      await popup.getByLabel("Send", { exact: true }).click()
       await popup.getByTestId("selected_asset_button").click()
-      await assetsHelper.assertAssetsNotPresentOnAssetsList(["DANK"])
+      await assetsHelper.assertAssetsNotPresentOnAssetsList(["pAAVE"])
       await assetsHelper.closeSelectTokenPopup()
       await popup.getByRole("button", { name: "Back", exact: true }).click()
 
       /**
-       * Verify there is no "DANK" asset on the Swap screen.
+       * Verify there is no "pAAVE" asset on the Swap screen.
        */
-      await popup.getByRole("button", { name: "Swap", exact: true }).click()
+      await popup.getByLabel("Swap", { exact: true }).click()
       await popup
         .getByRole("button", { name: "Select token", exact: true })
         .first()
         .click()
-      await assetsHelper.assertAssetsNotPresentOnAssetsList(["DANK"])
+      await assetsHelper.assertAssetsNotPresentOnAssetsList(["pAAVE"])
       await assetsHelper.closeSelectTokenPopup()
       await popup
         .getByRole("button", { name: "Select token", exact: true })
         .nth(1)
         .click()
-      await assetsHelper.assertAssetsNotPresentOnAssetsList(["DANK"])
+      await assetsHelper.assertAssetsNotPresentOnAssetsList(["pAAVE"])
       await assetsHelper.closeSelectTokenPopup()
     })
 
@@ -374,7 +393,7 @@ test.describe("Token Trust", () => {
        * Click `Add to asset list` on unverified ERC-20 asset
        */
       await popup
-        .locator(".tab_bar_wrap")
+        .getByLabel("Main")
         .getByText("Wallet", { exact: true })
         .click()
 
@@ -382,9 +401,9 @@ test.describe("Token Trust", () => {
         .getByRole("button", { name: /^See unverified assets \(\d+\)$/ })
         .click()
       await popup
-        .locator(".asset_list_item")
+        .getByTestId("asset_list_item")
         .filter({
-          has: popup.locator("span").filter({ hasText: /^WLUNC$/ }),
+          has: popup.locator("span").filter({ hasText: /^BANANA$/ }),
         })
         .click()
       await popup.getByRole("button", { name: "Verify asset" }).first().click()
@@ -406,50 +425,46 @@ test.describe("Token Trust", () => {
        * trusted assets in the trusted ERC-20 asset's details.
        */
       await assetsHelper.assertAssetDetailsPage(
-        /^Ethereum$/,
-        /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/,
-        /^WLUNC$/,
+        /^Polygon$/,
+        account1Name,
+        /^BANANA$/,
         /^(\d|,)+(\.\d{2,4})*$/,
         "trusted",
-        "https://etherscan.io/token/0xd2877702675e6ceb975b4a1dff9fb7baf4c91ea9",
-        "0xd287…91ea9"
+        "https://polygonscan.com/token/0x5d47baba0d66083c52009271faf3f50dcc01023c",
+        "0x5d47…1023c"
       )
-      await popup.getByRole("button", { name: "Back", exact: true }).click()
 
       /**
        * Go to `Wallet` page and make sure the recently trusted asset is visible
        * among verified assets.
        */
-      await popup
-        .locator(".tab_bar_wrap")
-        .getByText("Wallet", { exact: true })
-        .click()
-      await assetsHelper.assertVerifiedAssetOnWalletPage(/^WLUNC$/, "trusted")
+      await popup.getByRole("button", { name: "Back", exact: true }).click()
+      await assetsHelper.assertVerifiedAssetOnWalletPage(/^BANANA$/, "trusted")
 
       /**
        * Verify recently trusted asset is available on the Send screen.
        */
-      await popup.getByRole("button", { name: "Send", exact: true }).click()
+      await popup.getByLabel("Send", { exact: true }).click()
       await popup.getByTestId("selected_asset_button").click()
-      await assetsHelper.assertAssetsPresentOnAssetsList(["WLUNC"])
+      await assetsHelper.assertAssetsPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
       await popup.getByRole("button", { name: "Back", exact: true }).click()
 
       /**
        * Verify recently trusted asset is available on the Swap screen.
        */
-      await popup.getByRole("button", { name: "Swap", exact: true }).click()
+      await popup.getByLabel("Swap", { exact: true }).click()
       await popup
         .getByRole("button", { name: "Select token", exact: true })
         .first()
         .click()
-      await assetsHelper.assertAssetsPresentOnAssetsList(["WLUNC"])
+      await assetsHelper.assertAssetsPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
       await popup
         .getByRole("button", { name: "Select token", exact: true })
         .nth(1)
         .click()
-      await assetsHelper.assertAssetsPresentOnAssetsList(["WLUNC"])
+      await assetsHelper.assertAssetsPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
     })
 
@@ -458,14 +473,14 @@ test.describe("Token Trust", () => {
        * Click `Don't show` on trusted ERC-20 asset
        */
       await popup
-        .locator(".tab_bar_wrap")
+        .getByLabel("Main")
         .getByText("Wallet", { exact: true })
         .click()
 
       await popup
-        .locator(".asset_list_item")
+        .getByTestId("asset_list_item")
         .filter({
-          has: popup.locator("span").filter({ hasText: /^WLUNC$/ }),
+          has: popup.locator("span").filter({ hasText: /^BANANA$/ }),
         })
         .click()
       await popup.getByRole("button", { name: "Verified by you" }).click()
@@ -492,47 +507,48 @@ test.describe("Token Trust", () => {
        * Make sure `Wallet` page is opened and there are unverified assets shown
        */
       await walletPageHelper.verifyCommonElements(
-        /^Ethereum$/,
-        /^(Phoenix|Matilda|Sirius|Topa|Atos|Sport|Lola|Foz)$/
+        /^Polygon$/,
+        false,
+        account1Name
       )
       await walletPageHelper.verifyAnalyticsBanner()
-      await assetsHelper.assertVerifiedAssetOnWalletPage(/^ETH$/, "base")
+      await assetsHelper.assertVerifiedAssetOnWalletPage(/^MATIC$/, "base")
       await assetsHelper.assertUnverifiedAssetsPresentOnWalletPage()
 
       /**
-       * Make sure the recelntly hidden asset "WLUNC" is no longer shown on the
+       * Make sure the recelntly hidden asset "BANANA" is no longer shown on the
        * `Wallet` page.
        */
       await expect(
-        popup.locator(".asset_list_item").filter({
-          has: popup.locator("span").filter({ hasText: /^WLUNC$/ }),
+        popup.getByTestId("asset_list_item").filter({
+          has: popup.locator("span").filter({ hasText: /^BANANA$/ }),
         })
       ).not.toBeVisible()
 
       /**
-       * Verify there is no "WLUNC" asset on the Send screen.
+       * Verify there is no "BANANA" asset on the Send screen.
        */
-      await popup.getByRole("button", { name: "Send", exact: true }).click()
+      await popup.getByLabel("Send", { exact: true }).click()
       await popup.getByTestId("selected_asset_button").click()
-      await assetsHelper.assertAssetsNotPresentOnAssetsList(["WLUNC"])
+      await assetsHelper.assertAssetsNotPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
       await popup.getByRole("button", { name: "Back", exact: true }).click()
 
       /**
-       * Verify there is no "WLUNC" asset on the Swap screen.
+       * Verify there is no "BANANA" asset on the Swap screen.
        */
-      await popup.getByRole("button", { name: "Swap", exact: true }).click()
+      await popup.getByLabel("Swap", { exact: true }).click()
       await popup
         .getByRole("button", { name: "Select token", exact: true })
         .first()
         .click()
-      await assetsHelper.assertAssetsNotPresentOnAssetsList(["WLUNC"])
+      await assetsHelper.assertAssetsNotPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
       await popup
         .getByRole("button", { name: "Select token", exact: true })
         .nth(1)
         .click()
-      await assetsHelper.assertAssetsNotPresentOnAssetsList(["WLUNC"])
+      await assetsHelper.assertAssetsNotPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
     })
   })

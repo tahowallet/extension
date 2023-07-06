@@ -23,7 +23,10 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
   } = accountTotal
 
   return (
-    <div className="item-summary standard_width">
+    <div
+      className="item-summary standard_width"
+      data-testid="wallet_address_item"
+    >
       <div className="summary">
         <div className="left">
           {isSelected ? (

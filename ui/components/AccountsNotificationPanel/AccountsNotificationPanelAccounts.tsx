@@ -141,7 +141,7 @@ function WalletTypeHeader({
           />
         </SharedSlideUpMenu>
       )}
-      <header className="wallet_title">
+      <header className="wallet_title" data-testid="wallet_title">
         <h2 className="left">
           <div className="icon_wrap">
             <div className="icon" />

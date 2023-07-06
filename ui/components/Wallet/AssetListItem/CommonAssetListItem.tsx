@@ -71,7 +71,7 @@ export default function CommonAssetListItem(
         state: assetAmount.asset,
       }}
     >
-      <div className="asset_list_item">
+      <div className="asset_list_item" data-testid="asset_list_item">
         <div className="asset_left">
           <SharedAssetIcon
             logoURL={assetAmount?.asset?.metadata?.logoURL}
