@@ -49,9 +49,9 @@ import {
   sameEVMAddress,
 } from "../../lib/utils"
 import {
+  allowVerifyUntrustedAssetByManualImport,
   getActiveAssetsByAddressForNetwork,
   getAssetsByAddress,
-  shouldRefreshKnownAsset,
 } from "./utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
@@ -682,7 +682,12 @@ export default class IndexingService extends BaseService<Events> {
       normalizedAddress
     )
 
-    if (knownAsset && !shouldRefreshKnownAsset(knownAsset, metadata)) {
+    if (
+      knownAsset &&
+      // Refresh a known unverified asset if it has been manually imported.
+      // This check allows the user to add an asset from the unverified list.
+      !allowVerifyUntrustedAssetByManualImport(knownAsset, metadata?.verified)
+    ) {
       await this.addAssetToTrack(knownAsset)
       return knownAsset
     }
