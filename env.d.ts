@@ -55,7 +55,7 @@ interface Window {
       shouldSetTally: boolean,
       shouldReload?: boolean
     ) => void
-    routeToNewDefault: (request: unknown) => Promise<unknown>
+    routeToNewNonTahoDefault: (request: unknown) => Promise<unknown>
     getProviderInfo: (
       provider: WalletProvider
     ) => WalletProvider["providerInfo"]
