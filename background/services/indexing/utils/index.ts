@@ -4,7 +4,6 @@ import {
   isUntrustedAsset,
   isVerifiedAssetByUser,
 } from "../../../redux-slices/utils/asset-utils"
-import { HexString } from "../../../types"
 
 export const getAssetsByAddress = (
   assets: SmartContractFungibleAsset[]
