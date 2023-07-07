@@ -56,7 +56,7 @@ function transformLocation(
   if (
     hasAccounts &&
     isAllowedQueryParamPage(maybePage) &&
-    !inputLocation.pathname.includes("/keyring/")
+    !inputLocation.pathname.includes("/internal-signer/")
   ) {
     pathname = maybePage
   }
@@ -171,7 +171,7 @@ export function Main(): ReactElement {
                   classNames="page-transition"
                   key={
                     routeProps.location.pathname.includes("onboarding") ||
-                    routeProps.location.pathname.includes("keyring")
+                    routeProps.location.pathname.includes("internal-signer")
                       ? ""
                       : transformedLocation.key
                   }

@@ -1,6 +1,8 @@
 import * as util from "util"
 import Dexie from "dexie"
 import logger, { LogLevel } from "@tallyho/tally-background/lib/logger"
+import { readFileSync } from "fs"
+import { webcrypto } from "crypto"
 
 const IS_CI = process.env.CI === "true"
 
@@ -36,11 +38,31 @@ Object.defineProperty(Dexie.dependencies, "indexedDB", {
   get: () => indexedDB,
 })
 
-// Stub fetch calls
+// Stub fetch calls but allow wasm files to be loaded.
 Object.defineProperty(window, "fetch", {
   writable: true,
-  value: (url: string) => {
+  value: async (
+    url: string
+  ): Promise<{ status: number; body: string | Buffer } | undefined> => {
+    if (url.endsWith(".wasm")) {
+      const file = readFileSync(url)
+      return {
+        status: 200,
+        body: file,
+      }
+    }
     // eslint-disable-next-line no-console
     console.warn("Uncaught fetch call to: \n", url)
+    return undefined
   },
+})
+
+// Below, we replace any existing crypto.subtle implementation with the Node
+// one. jsdom ships with an ad hoc, informally-specified, bug-ridden
+// implementation of half of WebCrypto, but that includes securing the `crypto`
+// variable to prevent it from being replaced, which manes we have to dig into
+// the object instead of being able to replace the top-level variable.
+Object.defineProperty(globalThis.crypto, "subtle", {
+  writable: true,
+  value: (webcrypto as unknown as Crypto).subtle,
 })

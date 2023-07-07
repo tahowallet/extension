@@ -22,6 +22,7 @@ import Ledger from "./Ledger/Ledger"
 import OnboardingRoutes from "./Routes"
 import RouteBasedContent from "../../../components/Onboarding/RouteBasedContent"
 import { useIsOnboarding } from "../../../hooks"
+import ImportPrivateKeyForm from "./ImportPrivateKeyForm"
 
 function Navigation({
   children,
@@ -105,7 +106,7 @@ function Navigation({
             margin-bottom: 40px;
           }
 
-          @media (max-width: 980px) {
+          @media (max-width: 1000px) {
             .left_container {
               display: none;
             }
@@ -174,6 +175,11 @@ export default function Root(): ReactElement {
         </Route>
         <Route path={OnboardingRoutes.IMPORT_SEED}>
           <ImportSeed nextPage={OnboardingRoutes.ONBOARDING_COMPLETE} />
+        </Route>
+        <Route path={OnboardingRoutes.IMPORT_PRIVATE_KEY}>
+          <ImportPrivateKeyForm
+            nextPage={OnboardingRoutes.ONBOARDING_COMPLETE}
+          />
         </Route>
         <Route path={OnboardingRoutes.NEW_SEED}>
           <NewSeed />

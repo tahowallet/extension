@@ -22,6 +22,7 @@ type Props = {
   size: SharedSlideUpMenuSize
   isFullScreen?: boolean
   isScrollable?: boolean
+  allowOverflow?: boolean
   isDark?: boolean
   alwaysRenderChildren?: boolean
   testid?: string
@@ -45,6 +46,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
     isFullScreen,
     isDark,
     isScrollable,
+    allowOverflow,
     alwaysRenderChildren,
     testid = "slide_up_menu",
     customStyles = {},
@@ -71,6 +73,8 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
         className={classNames("slide_up_menu", {
           dark: isDark,
           closed: !isOpen,
+          scrollable: isScrollable,
+          with_overflow: allowOverflow,
         })}
         data-testid={testid}
         style={
@@ -102,7 +106,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             width: 100%;
             height: var(--menu-height);
             overflow-x: hidden;
-            overflow-y: ${isScrollable ? "auto" : "hidden"};
+            overflow-y: hidden;
             border-radius: ${isFullScreen ? "0" : "16px 16px 0 0"};
             background-color: var(--green-95);
             position: fixed;
@@ -116,6 +120,13 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
               ${SLIDE_TRANSITION_MS}ms;
             padding-top: ${isFullScreen ? "0" : "24px"};
             box-sizing: border-box;
+          }
+          .slide_up_menu.scrollable {
+            overflow-y: auto;
+          }
+          .slide_up_menu.with_overflow {
+            overflow-y: visible;
+            overflow-x: visible;
           }
           .overlay {
             position: fixed;
