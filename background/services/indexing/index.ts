@@ -49,10 +49,9 @@ import {
   sameEVMAddress,
 } from "../../lib/utils"
 import {
-  allowVerifyUntrustedAssetByManualImport,
-  getActiveAssetsByAddressForNetwork,
-  getAssetsByAddress,
-} from "./utils"
+  isUntrustedAsset,
+  isVerifiedAssetByUser,
+} from "../../redux-slices/utils/asset-utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -78,6 +77,41 @@ interface Events extends ServiceLifecycleEvents {
   assets: AnyAsset[]
   refreshAsset: SmartContractFungibleAsset
   removeAssetData: SmartContractFungibleAsset
+}
+
+const getAssetsByAddress = (assets: SmartContractFungibleAsset[]) => {
+  const activeAssetsByAddress = assets.reduce((agg, t) => {
+    const newAgg = {
+      ...agg,
+    }
+    newAgg[t.contractAddress.toLowerCase()] = t
+    return newAgg
+  }, {} as { [address: string]: SmartContractFungibleAsset })
+
+  return activeAssetsByAddress
+}
+
+const getActiveAssetsByAddressForNetwork = (
+  network: EVMNetwork,
+  activeAssetsToTrack: SmartContractFungibleAsset[]
+) => {
+  const networkActiveAssets = activeAssetsToTrack.filter(
+    (asset) => asset.homeNetwork.chainID === network.chainID
+  )
+
+  return getAssetsByAddress(networkActiveAssets)
+}
+
+function allowVerifyAssetByManualImport(
+  asset: SmartContractFungibleAsset,
+  verified?: boolean
+): boolean {
+  // Only untrusted and unverified assets can be verified.
+  if (isUntrustedAsset(asset) && !isVerifiedAssetByUser(asset)) {
+    return !!verified
+  }
+
+  return false
 }
 
 /**
@@ -686,7 +720,7 @@ export default class IndexingService extends BaseService<Events> {
       knownAsset &&
       // Refresh a known unverified asset if it has been manually imported.
       // This check allows the user to add an asset from the unverified list.
-      !allowVerifyUntrustedAssetByManualImport(knownAsset, metadata?.verified)
+      !allowVerifyAssetByManualImport(knownAsset, metadata?.verified)
     ) {
       await this.addAssetToTrack(knownAsset)
       return knownAsset

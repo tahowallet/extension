@@ -98,15 +98,11 @@ export default function SingleAsset(): ReactElement {
       localizedMainCurrencyAmount: undefined,
       localizedDecimalAmount: undefined,
     }
-
-  const isUntrusted = isUntrustedAsset(asset)
-  const isVerifiedOrTrusted = isVerifiedOrTrustedAsset(asset)
-  const isVerified = isVerifiedAssetByUser(asset)
   const [warnedAsset, setWarnedAsset] =
     useState<SmartContractFungibleAsset | null>(null)
 
   const showActionButtons = isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)
-    ? isVerifiedOrTrusted
+    ? asset && isVerifiedOrTrustedAsset(asset)
     : true
 
   return (
@@ -121,9 +117,9 @@ export default function SingleAsset(): ReactElement {
         <SharedBackButton path="/" />
         {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
           <>
-            {isUntrusted &&
-              isVerified &&
-              asset &&
+            {asset &&
+              isUntrustedAsset(asset) &&
+              isVerifiedAssetByUser(asset) &&
               isSmartContractFungibleAsset(asset) && (
                 <AssetVerifyToggler
                   text={t("assets.verifiedByUser")}
@@ -183,8 +179,8 @@ export default function SingleAsset(): ReactElement {
           <div className="right">
             {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
               <>
-                {isUntrusted &&
-                  !isVerified &&
+                {isUntrustedAsset(asset) &&
+                  !isVerifiedAssetByUser(asset) &&
                   isSmartContractFungibleAsset(asset) && (
                     <div className="unverified_asset_button">
                       <AssetVerifyToggler

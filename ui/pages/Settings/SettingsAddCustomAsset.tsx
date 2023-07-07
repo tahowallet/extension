@@ -209,7 +209,8 @@ export default function SettingsAddCustomAsset(): ReactElement {
 
   // The asset should be displayed in the regular list when that is trusted by default or verified by the user.
   // This check allows the user to add an asset that is on the unverified list.
-  const isVerifiedOrTrusted = isVerifiedOrTrustedAsset(assetData?.asset)
+  const isVerifiedOrTrusted =
+    assetData?.asset && isVerifiedOrTrustedAsset(assetData.asset)
   const shouldDisplayAsset = assetData?.exists && isVerifiedOrTrusted
 
   return (

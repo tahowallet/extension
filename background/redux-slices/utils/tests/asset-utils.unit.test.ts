@@ -42,10 +42,6 @@ describe("Asset utils", () => {
     test("should return false if is a base asset", () => {
       expect(isVerifiedAssetByUser(ETH)).toBeFalsy()
     })
-
-    test("should return false if an asset is undefined", () => {
-      expect(isVerifiedAssetByUser(undefined)).toBeFalsy()
-    })
   })
 
   describe("isSameAsset", () => {

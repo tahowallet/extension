@@ -341,8 +341,8 @@ export function heuristicDesiredDecimalsForUnitPrice(
   )
 }
 
-export function isTokenListAsset(asset?: AnyAsset): boolean {
-  return !!asset?.metadata?.tokenLists?.length
+export function isTokenListAsset(asset: AnyAsset): boolean {
+  return !!asset.metadata?.tokenLists?.length
 }
 
 /**
@@ -350,11 +350,8 @@ export function isTokenListAsset(asset?: AnyAsset): boolean {
  * If not it means it is an untrusted asset.
  *
  */
-export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
-  if (asset) {
-    return !isTokenListAsset(asset) && !isNetworkBaseAsset(asset)
-  }
-  return false
+export function isUntrustedAsset(asset: AnyAsset): boolean {
+  return !isTokenListAsset(asset) && !isNetworkBaseAsset(asset)
 }
 
 /**
@@ -362,8 +359,8 @@ export function isUntrustedAsset(asset: AnyAsset | undefined): boolean {
  * The verified property was manually set to true.
  *
  */
-export function isVerifiedAssetByUser(asset?: AnyAsset): boolean {
-  if (asset?.metadata?.verified !== undefined) {
+export function isVerifiedAssetByUser(asset: AnyAsset): boolean {
+  if (asset.metadata?.verified !== undefined) {
     // If we have verified metadata return it
     return asset.metadata.verified
   }
@@ -380,15 +377,12 @@ export function isVerifiedAssetByUser(asset?: AnyAsset): boolean {
  * - doing an swap with this asset
  * - sending this asset to another address
  */
-export function isVerifiedOrTrustedAsset(asset?: AnyAsset): boolean {
-  if (asset) {
-    return (
-      isVerifiedAssetByUser(asset) ||
-      isNetworkBaseAsset(asset) ||
-      isTokenListAsset(asset)
-    )
-  }
-  return false
+export function isVerifiedOrTrustedAsset(asset: AnyAsset): boolean {
+  return (
+    isVerifiedAssetByUser(asset) ||
+    isNetworkBaseAsset(asset) ||
+    isTokenListAsset(asset)
+  )
 }
 
 type AssetType = "base" | "erc20"
