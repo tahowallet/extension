@@ -14,6 +14,7 @@ import {
 import { DeepWriteable } from "../../types"
 import { fixPolygonWETHIssue, polygonTokenListURL } from "./token-list-edit"
 import { normalizeEVMAddress } from "../../lib/utils"
+import { isNetworkBaseAsset } from "../../redux-slices/utils/asset-utils"
 
 /*
  * IndexedPricePoint extends PricePoint to expose each asset's ID directly for
@@ -255,14 +256,17 @@ export class IndexingDatabase extends Dexie {
     })
 
     // Assets in the token list shouldn't be in the customAssets table, let's remove them
-    // Also, such tokens shouldn't have a discoveryTxHash defined
+    // Also, such tokens and network base assets shouldn't have a discoveryTxHash defined
     this.version(7).upgrade(async (tx) => {
       const contractAddresses: string[] = []
       await tx
         .table("assetsToTrack")
         .toCollection()
         .modify((asset: SmartContractFungibleAsset) => {
-          if (Object.keys(asset.metadata?.discoveryTxHash ?? {}).length !== 0) {
+          if (
+            Object.keys(asset.metadata?.discoveryTxHash ?? {}).length !== 0 &&
+            (isNetworkBaseAsset(asset) || !!asset.metadata?.tokenLists?.length)
+          ) {
             // param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
             // eslint-disable-next-line no-param-reassign
             delete asset.metadata?.discoveryTxHash
