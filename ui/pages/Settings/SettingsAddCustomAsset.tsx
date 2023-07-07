@@ -24,10 +24,7 @@ import { HexString } from "@tallyho/tally-background/types"
 import React, { FormEventHandler, ReactElement, useRef, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
-import {
-  isUntrustedAsset,
-  isVerifiedOrTrustedAsset,
-} from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { isVerifiedOrTrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import SharedAssetIcon from "../../components/Shared/SharedAssetIcon"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
@@ -194,20 +191,16 @@ export default function SettingsAddCustomAsset(): ReactElement {
   }
 
   const renderWarningText = () => {
-    // Currently, we don't fetch prices for untrusted assets
-    // so we should ignore the price warnings for them because they are always visible.
-    if (assetData?.asset && !isUntrustedAsset(assetData.asset)) {
-      if (showWarningAboutDust) {
-        return t("warning.alreadyExists.desc.dust", {
-          ...warningOptions,
-          settings: sharedT("settings.hideSmallAssetBalance", warningOptions),
-        })
-      }
+    if (showWarningAboutDust) {
+      return t("warning.alreadyExists.desc.dust", {
+        ...warningOptions,
+        settings: sharedT("settings.hideSmallAssetBalance", warningOptions),
+      })
+    }
 
-      // showWarningAboutNoBalance
-      if (assetData?.mainCurrencyAmount === 0) {
-        return t("warning.alreadyExists.desc.noBalance", warningOptions)
-      }
+    // showWarningAboutNoBalance
+    if (assetData?.mainCurrencyAmount === 0) {
+      return t("warning.alreadyExists.desc.noBalance", warningOptions)
     }
 
     // showWarningAboutVisibility
@@ -399,7 +392,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
             {t("submit")}
           </SharedButton>
         </div>
-        {shouldDisplayAsset && (
+        {shouldDisplayAsset ? (
           <div className="alert">
             <SharedIcon
               color="var(--success)"
@@ -412,26 +405,25 @@ export default function SettingsAddCustomAsset(): ReactElement {
               <div className="desc">{renderWarningText()}</div>
             </div>
           </div>
-        )}
-        {
-          // After manually adding a token from the list of unverified assets, it will be displayed normally, even though it is dust.
-          // Therefore, the dust warning should be displayed when the asset does not yet exist in the wallet.
-          showWarningAboutDust && !assetData?.exists && (
-            <div className="alert">
-              <SharedIcon
-                color="var(--attention)"
-                width={24}
-                customStyles="min-width: 24px;"
-                icon="icons/m/notif-attention.svg"
-              />
-              <div className="alert_content">
-                <div className="title" style={{ color: "var(--attention)" }}>
-                  {t("warning.dust.title", warningOptions)}
+        ) : (
+          <>
+            {showWarningAboutDust && (
+              <div className="alert">
+                <SharedIcon
+                  color="var(--attention)"
+                  width={24}
+                  customStyles="min-width: 24px;"
+                  icon="icons/m/notif-attention.svg"
+                />
+                <div className="alert_content">
+                  <div className="title" style={{ color: "var(--attention)" }}>
+                    {t("warning.dust.title", warningOptions)}
+                  </div>
                 </div>
               </div>
-            </div>
-          )
-        }
+            )}
+          </>
+        )}
       </form>
       <style jsx>{`
         .alert {
