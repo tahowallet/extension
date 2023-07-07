@@ -24,7 +24,10 @@ import { HexString } from "@tallyho/tally-background/types"
 import React, { FormEventHandler, ReactElement, useRef, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
-import { isVerifiedOrTrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import {
+  isUntrustedAsset,
+  isVerifiedOrTrustedAsset,
+} from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import SharedAssetIcon from "../../components/Shared/SharedAssetIcon"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
@@ -191,16 +194,20 @@ export default function SettingsAddCustomAsset(): ReactElement {
   }
 
   const renderWarningText = () => {
-    if (showWarningAboutDust) {
-      return t("warning.alreadyExists.desc.dust", {
-        ...warningOptions,
-        settings: sharedT("settings.hideSmallAssetBalance", warningOptions),
-      })
-    }
+    // Currently, we don't fetch prices for untrusted assets
+    // so we should ignore the price warnings for them because they are always visible.
+    if (assetData?.asset && !isUntrustedAsset(assetData.asset)) {
+      if (showWarningAboutDust) {
+        return t("warning.alreadyExists.desc.dust", {
+          ...warningOptions,
+          settings: sharedT("settings.hideSmallAssetBalance", warningOptions),
+        })
+      }
 
-    // showWarningAboutNoBalance
-    if (assetData?.mainCurrencyAmount === 0) {
-      return t("warning.alreadyExists.desc.noBalance", warningOptions)
+      // showWarningAboutNoBalance
+      if (assetData?.mainCurrencyAmount === 0) {
+        return t("warning.alreadyExists.desc.noBalance", warningOptions)
+      }
     }
 
     // showWarningAboutVisibility
