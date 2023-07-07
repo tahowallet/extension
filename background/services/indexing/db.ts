@@ -253,6 +253,29 @@ export class IndexingDatabase extends Dexie {
           delete customAsset.metadata?.discoveryTxHash
         })
     })
+
+    // Assets in the token list shouldn't be in the customAssets table, let's remove them
+    // Also, such tokens shouldn't have a discoveryTxHash defined
+    this.version(7).upgrade(async (tx) => {
+      const contractAddresses: string[] = []
+      await tx
+        .table("assetsToTrack")
+        .toCollection()
+        .modify((asset: SmartContractFungibleAsset) => {
+          if (Object.keys(asset.metadata?.discoveryTxHash ?? {}).length !== 0) {
+            // param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
+            // eslint-disable-next-line no-param-reassign
+            delete asset.metadata?.discoveryTxHash
+            contractAddresses.push(asset.contractAddress)
+          }
+        })
+
+      tx.table("customAssets")
+        .filter((asset: CustomAsset) =>
+          contractAddresses.includes(asset.contractAddress)
+        )
+        .delete()
+    })
   }
 
   async savePriceMeasurement(
