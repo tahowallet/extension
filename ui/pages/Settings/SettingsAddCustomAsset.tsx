@@ -24,6 +24,7 @@ import { HexString } from "@tallyho/tally-background/types"
 import React, { FormEventHandler, ReactElement, useRef, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
+import { isVerifiedOrTrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import SharedAssetIcon from "../../components/Shared/SharedAssetIcon"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
@@ -178,14 +179,11 @@ export default function SettingsAddCustomAsset(): ReactElement {
   }
 
   const hideDustEnabled = useBackgroundSelector(selectHideDust)
-  const isDust =
+  const showWarningAboutDust =
+    hideDustEnabled &&
     assetData?.mainCurrencyAmount !== 0 &&
     assetData?.mainCurrencyAmount !== undefined &&
     assetData?.mainCurrencyAmount < userValueDustThreshold
-  // Unverified assets are sometimes hidden by the user.
-  // After they have been added manually, they will be displayed normally despite being dust.
-  // Therefore, the dust warning should be displayed when the asset does not yet exist in the wallet.
-  const showWarningAboutDust = hideDustEnabled && isDust && !assetData?.exists
 
   const warningOptions = {
     amount: userValueDustThreshold,
@@ -208,6 +206,11 @@ export default function SettingsAddCustomAsset(): ReactElement {
     // showWarningAboutVisibility
     return t("warning.alreadyExists.desc.visibility")
   }
+
+  // The asset should be displayed in the regular list when that is trusted by default or verified by the user.
+  // This check allows the user to add an asset that is on the unverified list.
+  const isVerifiedOrTrusted = isVerifiedOrTrustedAsset(assetData?.asset)
+  const shouldDisplayAsset = assetData?.exists && isVerifiedOrTrusted
 
   return (
     <div className="standard_width_padded wrapper">
@@ -380,7 +383,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
               !assetData ||
               isLoadingAssetDetails ||
               hasAssetDetailLoadError ||
-              assetData.shouldDisplay ||
+              shouldDisplayAsset ||
               isImportingToken
             }
             isLoading={isLoadingAssetDetails || isImportingToken}
@@ -388,7 +391,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
             {t("submit")}
           </SharedButton>
         </div>
-        {assetData?.shouldDisplay ? (
+        {shouldDisplayAsset && (
           <div className="alert">
             <SharedIcon
               color="var(--success)"
@@ -401,25 +404,26 @@ export default function SettingsAddCustomAsset(): ReactElement {
               <div className="desc">{renderWarningText()}</div>
             </div>
           </div>
-        ) : (
-          <>
-            {showWarningAboutDust && (
-              <div className="alert">
-                <SharedIcon
-                  color="var(--attention)"
-                  width={24}
-                  customStyles="min-width: 24px;"
-                  icon="icons/m/notif-attention.svg"
-                />
-                <div className="alert_content">
-                  <div className="title" style={{ color: "var(--attention)" }}>
-                    {t("warning.dust.title", warningOptions)}
-                  </div>
+        )}
+        {
+          // After manually adding a token from the list of unverified assets, it will be displayed normally, even though it is dust.
+          // Therefore, the dust warning should be displayed when the asset does not yet exist in the wallet.
+          showWarningAboutDust && !assetData?.exists && (
+            <div className="alert">
+              <SharedIcon
+                color="var(--attention)"
+                width={24}
+                customStyles="min-width: 24px;"
+                icon="icons/m/notif-attention.svg"
+              />
+              <div className="alert_content">
+                <div className="title" style={{ color: "var(--attention)" }}>
+                  {t("warning.dust.title", warningOptions)}
                 </div>
               </div>
-            )}
-          </>
-        )}
+            </div>
+          )
+        }
       </form>
       <style jsx>{`
         .alert {

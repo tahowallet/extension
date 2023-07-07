@@ -190,7 +190,6 @@ import {
 import {
   isBuiltInNetworkBaseAsset,
   isSameAsset,
-  isVerifiedOrTrustedAsset,
 } from "./redux-slices/utils/asset-utils"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
 import { DismissableItem } from "./services/preferences"
@@ -1864,7 +1863,6 @@ export default class Main extends BaseService<never> {
     amount: bigint
     mainCurrencyAmount?: number
     balance: number
-    shouldDisplay?: boolean
     exists?: boolean
   }> {
     const { network } = addressOnNetwork
@@ -1896,9 +1894,6 @@ export default class Main extends BaseService<never> {
     const mainCurrencyAmount = convertedAssetAmount
       ? assetAmountToDesiredDecimals(convertedAssetAmount, 2)
       : undefined
-    // The asset should be displayed in the regular list when that is trusted by default or verified by the user.
-    // This check allows the user to add an asset that is on the unverified list.
-    const shouldDisplay = cachedAsset && isVerifiedOrTrustedAsset(cachedAsset)
 
     return {
       ...assetData,
@@ -1906,7 +1901,6 @@ export default class Main extends BaseService<never> {
         utils.formatUnits(assetData.amount, assetData.asset.decimals)
       ),
       mainCurrencyAmount,
-      shouldDisplay,
       exists: !!cachedAsset,
     }
   }
