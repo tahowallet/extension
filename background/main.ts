@@ -496,10 +496,33 @@ export default class Main extends BaseService<never> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState, this)
 
+    let nextUpdate: number | undefined
+
+    function debouncedDeepDiffFunction(
+      store: ReturnType<typeof initializeStore>
+    ) {
+      return (oldState: unknown, newState: unknown): unknown | [] => {
+        if (nextUpdate === undefined) {
+          nextUpdate = Date.now() + 300
+          window.setTimeout(() => store.dispatch({ type: "noop" }), 301)
+        }
+
+        if (Date.now() < nextUpdate) {
+          return []
+        }
+
+        // Sending a full diff, clear the next update marker.
+        nextUpdate = undefined
+
+        // @ts-expect-error booyan
+        return deepDiff(oldState, newState)
+      }
+    }
+
     wrapStore(this.store, {
       serializer: encodeJSON,
       deserializer: decodeJSON,
-      diffStrategy: deepDiff,
+      diffStrategy: debouncedDeepDiffFunction(this.store),
       dispatchResponder: async (
         dispatchResult: Promise<unknown>,
         send: (param: { error: string | null; value: unknown | null }) => void
