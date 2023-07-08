@@ -34,6 +34,8 @@ import {
   AnyEVMBlock,
   BlockPrices,
   NetworkBaseAsset,
+  EIP1559TransactionRequest,
+  TransactionRequestWithNonce,
 } from "../networks"
 import { AccountData, CompleteAssetAmount } from "../redux-slices/accounts"
 import {
@@ -41,7 +43,7 @@ import {
   ChainService,
   IndexingService,
   InternalEthereumProviderService,
-  KeyringService,
+  InternalSignerService,
   LedgerService,
   NameService,
   PreferenceService,
@@ -53,6 +55,7 @@ import {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
 } from "../services/chain"
+import { EIP712TypedData } from "../types"
 
 // We don't want the chain service to use a real provider in tests
 jest.mock("../services/chain/serial-fallback-provider")
@@ -64,13 +67,32 @@ export const createPreferenceService = async (): Promise<PreferenceService> => {
   return PreferenceService.create()
 }
 
-export const createKeyringService = async (): Promise<KeyringService> => {
-  return KeyringService.create()
+export async function createAnalyticsService(overrides?: {
+  chainService?: Promise<ChainService>
+  preferenceService?: Promise<PreferenceService>
+}): Promise<AnalyticsService> {
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+  return AnalyticsService.create(preferenceService)
+}
+
+type CreateInternalSignerServiceOverrides = {
+  preferenceService?: Promise<PreferenceService>
+  analyticsService?: Promise<AnalyticsService>
+}
+
+export const createInternalSignerService = async (
+  overrides: CreateInternalSignerServiceOverrides = {}
+): Promise<InternalSignerService> => {
+  return InternalSignerService.create(
+    overrides.preferenceService ?? createPreferenceService(),
+    overrides.analyticsService ?? createAnalyticsService()
+  )
 }
 
 type CreateChainServiceOverrides = {
   preferenceService?: Promise<PreferenceService>
-  keyringService?: Promise<KeyringService>
+  internalSignerService?: Promise<InternalSignerService>
 }
 
 export const createChainService = async (
@@ -78,7 +100,7 @@ export const createChainService = async (
 ): Promise<ChainService> => {
   return ChainService.create(
     overrides.preferenceService ?? createPreferenceService(),
-    overrides.keyringService ?? createKeyringService()
+    overrides.internalSignerService ?? createInternalSignerService()
   )
 }
 
@@ -114,7 +136,7 @@ export const createLedgerService = async (): Promise<LedgerService> => {
 }
 
 type CreateSigningServiceOverrides = {
-  keyringService?: Promise<KeyringService>
+  internalSignerService?: Promise<InternalSignerService>
   ledgerService?: Promise<LedgerService>
   chainService?: Promise<ChainService>
 }
@@ -134,20 +156,11 @@ type CreateInternalEthereumProviderServiceOverrides = {
   preferenceService?: Promise<PreferenceService>
 }
 
-export async function createAnalyticsService(overrides?: {
-  chainService?: Promise<ChainService>
-  preferenceService?: Promise<PreferenceService>
-}): Promise<AnalyticsService> {
-  const preferenceService =
-    overrides?.preferenceService ?? createPreferenceService()
-  return AnalyticsService.create(preferenceService)
-}
-
 export const createSigningService = async (
   overrides: CreateSigningServiceOverrides = {}
 ): Promise<SigningService> => {
   return SigningService.create(
-    overrides.keyringService ?? createKeyringService(),
+    overrides.internalSignerService ?? createInternalSignerService(),
     overrides.ledgerService ?? createLedgerService(),
     overrides.chainService ?? createChainService()
   )
@@ -181,6 +194,62 @@ export const createProviderBridgeService = async (
       createInternalEthereumProviderService({ preferenceService }),
     preferenceService
   )
+}
+
+export const createTypedData = (
+  overrides: Partial<EIP712TypedData> = {}
+): EIP712TypedData => {
+  // Example values from ethers docs
+  return {
+    domain: {
+      name: "Ether Mail",
+      version: "1",
+      chainId: ETHEREUM.chainID,
+      verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
+    },
+    types: {
+      Person: [
+        { name: "name", type: "string" },
+        { name: "wallet", type: "address" },
+      ],
+      Mail: [
+        { name: "from", type: "Person" },
+        { name: "to", type: "Person" },
+        { name: "contents", type: "string" },
+      ],
+    },
+    message: {
+      from: {
+        name: "Cow",
+        wallet: "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
+      },
+      to: {
+        name: "Bob",
+        wallet: "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB",
+      },
+      contents: "Hello, Bob!",
+    },
+    primaryType: "Person",
+    ...overrides,
+  }
+}
+
+export const createTransactionRequest = (
+  overrides: Partial<EIP1559TransactionRequest & { nonce: number }> = {}
+): TransactionRequestWithNonce => {
+  return {
+    nonce: 0,
+    from: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+    type: 2,
+    input: "0x",
+    value: 0n,
+    maxFeePerGas: 0n,
+    maxPriorityFeePerGas: 0n,
+    gasLimit: 0n,
+    chainID: "0",
+    network: ETHEREUM,
+    ...overrides,
+  }
 }
 
 // Copied from a legacy Optimism transaction generated with our test wallet.

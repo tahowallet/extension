@@ -13,7 +13,54 @@
       "lastAccountWarningBody": "Are you sure you want to proceed?",
       "removeAddress": "Remove address",
       "copyAddress": "Copy address",
-      "removeConfirm": "Yes, I want to remove it"
+      "removeConfirm": "Yes, I want to remove it",
+      "showPrivateKey": {
+        "header": "Show Private Key",
+        "warningMessage": "Anybody that has your Private Key can move your assets.",
+        "privateKeyInfo": "What is a Private Key?",
+        "privateKey": "Private key",
+        "exportingPrivateKey": {
+          "header": "Exporting Private Key for:",
+          "confirmationDesc": "I understand that other Private Keys, Recovery Phrases, Ledger or  Read-only accounts will not be saved with this recovery phrase.",
+          "invalidMessage": "Check the above box to confirm",
+          "showBtn": "Show Private Key",
+          "copyBtn": "Copy Private key to clipboard",
+          "copySuccess": "Copied!"
+        },
+        "explainer": {
+          "header": "What is a private key?",
+          "text1": "A private key is also known as a secret key is a string of letter and numbers that allow you to access and manage your assets on one address.",
+          "text2": "A private key only unlocks one address, while a recovery phrase unlocks all addresses that are tied to that phrase.",
+          "text3": "If you don’t use recovery phrase, you need to save a private key for each address."
+        }
+      },
+      "showMnemonic": {
+        "header": "Show Recovery Phrase",
+        "warningMessage": "Anybody that has your recovery phrase can move your assets.",
+        "mnemonicInfo": "Why do i need a recovery phrase?",
+        "exportingMnemonic": {
+          "confirmationDesc": "I understand that other Recovery Phrases, Ledger, Private Keys or Read-only accounts will not be saved with this recovery phrase.",
+          "invalidMessage": "Check the above box to confirm",
+          "showBtn": "Show recovery phrase",
+          "copyBtn": "Copy phrase to clipboard",
+          "copySuccess": "Copied!",
+          "address_one": "address",
+          "address_other": "addresses"
+        },
+        "explainer": {
+          "header": "Why do i need a recovery phrase?",
+          "text1": "You need a recovery phrase in case you lose access to your computer, wallet or you forget your password.",
+          "text2": "Recovery phrase is the only way to regain access to your funds stored on those addresses.",
+          "text3": "Taho has the option to import or create multiple recovery phrases. If you have multiple, make sure that you have safely save and store them all."
+        }
+      },
+      "copyWarning": {
+        "header": "Copying to clipboard",
+        "title": "Careful copying content to clipboard",
+        "description": "It is dangerous to copy your recovery phrase or private key to clipboard, this can result in somebody gaining access to it",
+        "dontAsk": "Don’t ask me again",
+        "submitBtn": "Copy to clipboard"
+      }
     },
     "notificationPanel": {
       "accountPanelName": "Accounts",
@@ -23,6 +70,7 @@
       "import": "Import",
       "internal": "Taho",
       "ledger": "Ledger",
+      "privateKey": "Private key",
       "category": {
         "readOnly": "Preview",
         "ledger": "Hardware wallets",
@@ -104,7 +152,7 @@
     }
   },
   "ledger": {
-    "checkLedger": "Check Ledger",
+    "checkLedger": "Check Error",
     "onlyRejectFromLedger": "Tx can only be Rejected from Ledger",
     "onboarding": {
       "connecting": "Connecting...",
@@ -142,7 +190,11 @@
       "disconnected": "Ledger is disconnected",
       "wrongLedger": "Wrong Ledger connected",
       "multipleLedgers": "Multiple ledgers connected",
-      "busy": "Ledger is busy"
+      "busy": "Ledger is busy",
+      "state.connected": "Connected",
+      "state.disconnected": "Disconnected",
+      "state.error": "Check error",
+      "state.unknown": "Unknown"
     },
     "activation": {
       "title": "Activate blind signing",
@@ -338,6 +390,7 @@
         "newWalletTitle": "New wallet",
         "options": {
           "importSeed": "Import recovery phrase",
+          "importPrivateKey": "Import private key",
           "ledger": "Connect to Ledger",
           "readOnly": "Read-only address",
           "createNew": "Create new wallet"
@@ -352,6 +405,27 @@
             "phraseLengthError": "Must be a 12 or 24 word recovery phrase",
             "invalidPhraseError": "Invalid recovery phrase"
           }
+        },
+        "importPrivateKey": {
+          "title": "Import private key",
+          "subtitle": "Importing a private key does not associate it to a secret recovery phrase, but it’s still protected by the same password",
+          "inputLabel": "Paste private key string",
+          "submit": "Import account",
+          "error": "Invalid private key",
+          "privateKey": "Private key",
+          "password": "JSON file password",
+          "json": "JSON",
+          "browseFiles": "<span>Browse files</span> or drag and drop your {{type}} file",
+          "uploading": "Uploading...",
+          "uploadFail": "Upload failed, try again",
+          "wrongFile": "Wrong file, only {{type}} accepted",
+          "decrypt": "Decrypt file",
+          "decrypting": "Decrypting file",
+          "decryptingTime": "this may take up to 1 minute",
+          "finalize": "Finalize",
+          "completed": "Completed!",
+          "address": "address",
+          "wrongPassword": "Wrong password or incorrect file. Ensure file is correct and enter the password you used when encrypting it."
         },
         "viewOnly": {
           "title": "Read-only address",
@@ -494,7 +568,10 @@
     "connectedWebsites": "Connected websites",
     "addCustomAsset": "Custom assets",
     "analytics": "Analytics",
-    "needHelp": "Need help?",
+    "autoLockTimer.label": "Auto-lock timer",
+    "autoLockTimer.tooltip": "How long after your last interaction should we lock the wallet?",
+    "autoLockTimer.interval": "{{time}} min",
+    "needHelp": "Need Help?",
     "customNetworks": "Custom networks (beta)",
     "showBanners": "Show achievement banners",
     "versionLabel": "Version {{version}}",
@@ -604,10 +681,12 @@
     "showPasswordHint": "Show Password",
     "hidePasswordHint": "Hide Password",
     "close": "Close",
+    "readMore": "Read more",
     "modalClose": "Background close",
     "accountItemSummary": {
       "connectedStatus": "Connected"
     },
+    "mouseOverToShow": "Mouse over to show",
     "selectToken": "Select token",
     "backButtonText": "Back",
     "saveBtn": "Save",
@@ -955,7 +1034,8 @@
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
-        "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification"
+        "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification",
+        "SUPPORT_CUSTOM_AUTOLOCK": "Enable custom auto-lock timer"
       }
     }
   },

@@ -5,7 +5,6 @@ import {
   importLedgerAccounts,
   LedgerDeviceState,
 } from "@tallyho/tally-background/redux-slices/ledger"
-import classNames from "classnames"
 import React, { ReactElement, useEffect, useState } from "react"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
@@ -16,6 +15,7 @@ import LedgerContinueButton from "../../../../components/Ledger/LedgerContinueBu
 import LedgerPanelContainer from "../../../../components/Ledger/LedgerPanelContainer"
 import OnboardingDerivationPathSelectAlt from "../../../../components/Onboarding/OnboardingDerivationPathSelect"
 import { blockExplorer } from "../../../../utils/constants"
+import SharedCheckbox from "../../../../components/Shared/SharedCheckbox"
 
 const addressesPerPage = 6
 
@@ -139,24 +139,12 @@ function LedgerAccountList({
           {pageData.items.map(
             ({ path, address, balance, isSelected, setSelected }) => (
               <div className="item" key={path}>
-                <label className="checkbox_label">
-                  {/* TODO: Share this implementation of checkbox. */}
-                  <input
-                    className="checkbox_input"
-                    type="checkbox"
-                    disabled={address === null}
-                    checked={isSelected}
-                    onChange={(event) => {
-                      setSelected(event.currentTarget.checked)
-                    }}
-                  />
-                  <div
-                    className={classNames("checkbox_box", {
-                      selected: isSelected,
-                      disabled: address === null,
-                    })}
-                  />
-                </label>
+                <SharedCheckbox
+                  size={20}
+                  checked={isSelected}
+                  disabled={address == null}
+                  onChange={(value) => setSelected(value)}
+                />
                 {address === null && <div className="address_loading" />}
                 {address !== null && (
                   <>
@@ -250,45 +238,6 @@ function LedgerAccountList({
           padding: 0 0.5rem;
         }
 
-        .checkbox_label {
-          margin: unset;
-          line-height: unset;
-          margin-right: 1rem;
-        }
-
-        .checkbox_input {
-          display: none;
-        }
-
-        .checkbox_box {
-          width: 1.25rem;
-          height: 1.25rem;
-          border-radius: 2px;
-          box-sizing: border-box;
-          cursor: pointer;
-        }
-
-        .checkbox_box.disabled {
-          background: var(--green-80);
-        }
-
-        .checkbox_box:not(.selected) {
-          border: 2px solid var(--green-60);
-        }
-
-        .checkbox_box.selected {
-          background-color: var(--trophy-gold);
-        }
-
-        .checkbox_box.selected::before {
-          content: "";
-          display: block;
-          margin: 0.25rem;
-          width: 0.75rem;
-          height: 0.75rem;
-          background: no-repeat center / cover url("/images/checkmark@2x.png");
-        }
-
         .address_loading,
         .balance_loading {
           height: 1.5rem;
@@ -375,7 +324,7 @@ export default function LedgerImportAccounts({
   return (
     <>
       <LedgerPanelContainer
-        indicatorImageSrc="/images/connect_ledger_indicator_connected.svg"
+        indicatorImage="connected"
         heading={t("selectLedgeraccounts")}
         subHeading={t("connectSelectedLedger")}
       >

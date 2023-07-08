@@ -2,6 +2,9 @@ import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guar
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { SigningLedgerState } from "../../../../hooks"
+import LedgerDisconnectedSvg from "./LedgerDisconnectedSvg"
+import LedgerCheckErrorSvg from "./LedgerCheckErrorSvg"
+import LedgerConnectedSvg from "./LedgerConnectedSvg"
 
 type SignerLedgerConnectionStatusProps = {
   ledgerState: SigningLedgerState
@@ -20,46 +23,40 @@ export default function SignerLedgerConnectionStatus({
     case "available":
       if (mustEnableArbitraryDataSigning) {
         return (
-          <img
-            src="/images/connect_ledger_indicator_disconnected.svg"
+          <LedgerCheckErrorSvg
+            text={t("state.error")}
             alt={t("availableButNoSigning")}
           />
         )
       }
       return (
-        <img
-          src="/images/connect_ledger_indicator_connected.svg"
+        <LedgerConnectedSvg.Small
+          text={t("state.connected")}
           alt={t("readyToSign")}
         />
       )
     case "no-ledger-connected":
       return (
-        <img
-          src="/images/connect_ledger_indicator_disconnected.svg"
+        <LedgerDisconnectedSvg
+          text={t("state.disconnected")}
           alt={t("disconnected")}
         />
       )
+
     case "wrong-ledger-connected":
       return (
-        <img
-          src="/images/connect_ledger_indicator_disconnected.svg"
-          alt={t("wrongLedger")}
-        />
+        <LedgerCheckErrorSvg text={t("state.error")} alt={t("wrongLedger")} />
       )
+
     case "multiple-ledgers-connected":
       return (
-        <img
-          src="/images/connect_ledger_indicator_disconnected.svg"
+        <LedgerCheckErrorSvg
+          text={t("state.error")}
           alt={t("multipleLedgers")}
         />
       )
     case "busy":
-      return (
-        <img
-          src="/images/connect_ledger_indicator_disconnected.svg"
-          alt={t("busy")}
-        />
-      )
+      return <LedgerCheckErrorSvg text={t("state.error")} alt={t("busy")} />
     default:
       return assertUnreachable(ledgerState)
   }

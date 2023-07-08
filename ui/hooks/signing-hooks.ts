@@ -1,35 +1,38 @@
-import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
+import { lockInternalSigners } from "@tallyho/tally-background/redux-slices/internal-signer"
+import { selectInternalSignerStatus } from "@tallyho/tally-background/redux-slices/selectors"
+import { clearSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { useEffect } from "react"
 import { useHistory } from "react-router-dom"
-
 import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
 import {
   DisplayDetails,
   LedgerAccountSigner,
 } from "@tallyho/tally-background/services/ledger"
 import { HexString } from "@tallyho/tally-background/types"
-import { useBackgroundSelector } from "./redux-hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 
 /**
- * Checks and returns whether the keyrings are currently unlocked, redirecting
+ * Checks and returns whether the internal signers service is currently unlocked, redirecting
  * to unlock if requested.
  *
  * If `redirectIfNot` is `true`, this hook will use react-router to redirect
- * the page to either the set-password page (if the keyrings are uninitialized)
- * or the unlock page (if the keyrings are initialized and locked).
+ * the page to either the set-password page (if key vaults are uninitialized)
+ * or the unlock page (if vaults are initialized and locked).
  *
- * If `redirectIfNot` is `false`, or if the keyrings are unlocked, the unlocked
+ * If `redirectIfNot` is `false`, or if the vaults are unlocked, the unlocked
  * status is returned and no further action is taken.
  */
-export const useAreKeyringsUnlocked = (redirectIfNot: boolean): boolean => {
-  const keyringStatus = useBackgroundSelector(selectKeyringStatus)
+export const useAreInternalSignersUnlocked = (
+  redirectIfNot: boolean
+): boolean => {
+  const lockStatus = useBackgroundSelector(selectInternalSignerStatus)
   const history = useHistory()
 
   let redirectTarget: string | undefined
-  if (keyringStatus === "uninitialized") {
-    redirectTarget = "/keyring/set-password"
-  } else if (keyringStatus === "locked") {
-    redirectTarget = "/keyring/unlock"
+  if (lockStatus === "uninitialized") {
+    redirectTarget = "/internal-signer/set-password"
+  } else if (lockStatus === "locked") {
+    redirectTarget = "/internal-signer/unlock"
   }
 
   useEffect(() => {
@@ -42,7 +45,23 @@ export const useAreKeyringsUnlocked = (redirectIfNot: boolean): boolean => {
     }
   })
 
-  return keyringStatus === "unlocked"
+  return lockStatus === "unlocked"
+}
+
+/**
+ * Silently lock wallet when a given component becomes visible
+ */
+export const useLockWallet = (): void => {
+  const dispatch = useBackgroundDispatch()
+
+  useEffect(() => {
+    const lockWallet = async () => {
+      await dispatch(lockInternalSigners())
+      // No need to show that signing got locked
+      dispatch(clearSnackbarMessage())
+    }
+    lockWallet()
+  }, [dispatch])
 }
 
 export type SigningLedgerState =

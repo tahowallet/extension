@@ -1,11 +1,11 @@
 import React from "react"
-import { initialState } from "@tallyho/tally-background/redux-slices/keyrings"
+import { initialState } from "@tallyho/tally-background/redux-slices/internal-signer"
 import SharedCurrentAccountInformation from "../SharedCurrentAccountInformation"
 import { renderWithProviders } from "../../../tests/test-utils"
 
 const name = "Name"
 const shortenedAddress = "0x208e…090cd"
-const keyringId = "keyring"
+const keyringId = "lock"
 const lock = "lock"
 const unlock = "unlock"
 
@@ -40,7 +40,7 @@ describe("SharedCurrentAccountInformation", () => {
         name={name}
         shortenedAddress=""
         avatarURL={undefined}
-        showKeyring={false}
+        showLockStatus={false}
       />
     )
 
@@ -48,13 +48,13 @@ describe("SharedCurrentAccountInformation", () => {
     expect(keyringElement).not.toBeInTheDocument()
   })
 
-  test("should display lock keyring", () => {
+  test("should display lock internal signer", () => {
     const ui = renderWithProviders(
       <SharedCurrentAccountInformation
         name={name}
         shortenedAddress=""
         avatarURL={undefined}
-        showKeyring
+        showLockStatus
       />
     )
     const keyringElement = ui.getByTestId(keyringId)
@@ -64,17 +64,17 @@ describe("SharedCurrentAccountInformation", () => {
     )
   })
 
-  test("should display unlock keyring", () => {
+  test("should display unlock internal signer", () => {
     const ui = renderWithProviders(
       <SharedCurrentAccountInformation
         name={name}
         shortenedAddress=""
         avatarURL={undefined}
-        showKeyring
+        showLockStatus
       />,
       {
         preloadedState: {
-          keyrings: {
+          internalSigner: {
             ...initialState,
             status: "unlocked",
           },

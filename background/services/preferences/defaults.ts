@@ -1,13 +1,15 @@
-import { ETHEREUM, USD } from "../../constants"
+import { ETHEREUM, MINUTE, USD } from "../../constants"
 import { storageGatewayURL } from "../../lib/storage-gateway"
 import { Preferences } from "./types"
+
+export const DEFAULT_AUTOLOCK_INTERVAL = 60 * MINUTE
 
 const defaultPreferences: Preferences = {
   tokenLists: {
     autoUpdate: false,
     urls: [
       storageGatewayURL(
-        "ipfs://bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm"
+        "ipfs://bafybeihufwj43zej34itf66qyguq35k4f6s4ual4uk3iy643wn3xnff2ka"
       ).href, // the Taho community-curated list
       "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
       "https://meta.yearn.finance/api/tokens/list", // the Yearn list
@@ -33,6 +35,7 @@ const defaultPreferences: Preferences = {
     isEnabled: false,
     hasDefaultOnBeenTurnedOn: false,
   },
+  autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
 }
 
 export default defaultPreferences

@@ -457,7 +457,7 @@ export default class IndexingService extends BaseService<Events> {
 
     this.chainService.emitter.on(
       "newAccountToTrack",
-      async ({ addressOnNetwork }) => {
+      async (addressOnNetwork) => {
         // whenever a new account is added, get token balances from Alchemy's
         // default list and add any non-zero tokens to the tracking list
         const balances = await this.retrieveTokenBalances(addressOnNetwork)

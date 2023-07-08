@@ -146,6 +146,9 @@ export const isSameAccountSignerWithId = (
   if (signerA.type !== signerB.type) return false
 
   switch (signerB.type) {
+    case "private-key":
+      return signerB.walletID === (signerA as typeof signerB).walletID
+
     case "keyring":
       return signerB.keyringID === (signerA as typeof signerB).keyringID
 
