@@ -3,11 +3,12 @@ import Dexie, { Transaction } from "dexie"
 import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork } from "../../accounts"
 
-import DEFAULT_PREFERENCES from "./defaults"
+import DEFAULT_PREFERENCES, { DEFAULT_AUTOLOCK_INTERVAL } from "./defaults"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
 import { AnalyticsPreferences } from "./types"
 import { NETWORK_BY_CHAIN_ID } from "../../constants"
+import { UNIXTime } from "../../types"
 
 type SignerRecordId = `${AccountSignerWithId["type"]}/${string}`
 
@@ -16,8 +17,14 @@ type SignerRecordId = `${AccountSignerWithId["type"]}/${string}`
  * in the form of "signerType/someId" e.g. "ledger/deviceId"
  */
 const getSignerRecordId = (signer: AccountSignerWithId): SignerRecordId => {
-  const id = signer.type === "keyring" ? signer.keyringID : signer.deviceID
-  return `${signer.type}/${id}`
+  switch (signer.type) {
+    case "keyring":
+      return `${signer.type}/${signer.keyringID}`
+    case "private-key":
+      return `${signer.type}/${signer.walletID}`
+    default:
+      return `${signer.type}/${signer.deviceID}`
+  }
 }
 
 /**
@@ -40,6 +47,7 @@ const getNewUrlsForTokenList = (
 
 // The idea is to use this interface to describe the data structure stored in indexedDb
 // In the future this might also have a runtime type check capability, but it's good enough for now.
+// NOTE: Check if can be merged with preferences/types.ts
 export type Preferences = {
   id?: number
   savedAt: number
@@ -52,6 +60,7 @@ export type Preferences = {
     isEnabled: boolean
     hasDefaultOnBeenTurnedOn: boolean
   }
+  autoLockInterval: UNIXTime
 }
 
 /**
@@ -59,7 +68,9 @@ export type Preferences = {
  * manually dismissed. Manual dismissal can include closing a popover, or
  * selecting "Don't show again" on a popup before closing it.
  */
-export type ManuallyDismissableItem = "analytics-enabled-banner"
+export type ManuallyDismissableItem =
+  | "analytics-enabled-banner"
+  | "copy-sensitive-material-warning"
 /**
  * Items that the user will see once and will not be auto-displayed again. Can
  * be used for tours, or for popups that can be retriggered but will not
@@ -378,6 +389,20 @@ export class PreferenceDatabase extends Dexie {
         })
     })
 
+    // Updates preferences to allow custom auto lock timers
+    this.version(19).upgrade((tx) => {
+      return tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const update: Partial<Preferences> = {
+            autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
+          }
+
+          Object.assign(storedPreferences, update)
+        })
+    })
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
@@ -392,6 +417,16 @@ export class PreferenceDatabase extends Dexie {
     // TBD: This will surely return a value because `getOrCreateDB` is called first
     // when the service is created. It runs the migration which writes the `DEFAULT_PREFERENCES`
     return this.preferences.reverse().first() as Promise<Preferences>
+  }
+
+  async setAutoLockInterval(newValue: number): Promise<void> {
+    await this.preferences
+      .toCollection()
+      .modify((storedPreferences: Preferences) => {
+        const update: Partial<Preferences> = { autoLockInterval: newValue }
+
+        Object.assign(storedPreferences, update)
+      })
   }
 
   async upsertAnalyticsPreferences(

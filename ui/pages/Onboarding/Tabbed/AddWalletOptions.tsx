@@ -72,6 +72,12 @@ export default function AddWalletOptions(): JSX.Element {
         isAvailable: true,
       },
       {
+        label: t("options.importPrivateKey"),
+        icon: "key-light.svg",
+        url: OnboardingRoutes.IMPORT_PRIVATE_KEY,
+        isAvailable: true,
+      },
+      {
         label: t("options.ledger"),
         icon: "add_wallet/ledger.svg",
         url: OnboardingRoutes.LEDGER,

@@ -1,4 +1,3 @@
-import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   selectCurrentAccount,
   selectCurrentAccountTotal,
@@ -10,6 +9,7 @@ import { useDispatch } from "react-redux"
 import { useBackgroundSelector } from "../../hooks"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
 import TopMenuProfileTooltip from "./TopMenuProfileTooltip"
+import { isAccountWithSecrets } from "../../utils/accounts"
 
 const TOOLTIP_DELAY = 500
 
@@ -72,10 +72,7 @@ export default function TopMenuProfileButton(props: {
               name={name}
               avatarURL={avatarURL}
               showHoverStyle
-              showKeyring={
-                accountType === AccountType.Imported ||
-                accountType === AccountType.Internal
-              }
+              showLockStatus={accountType && isAccountWithSecrets(accountType)}
             />
           </>
         )}

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { SignerFrameProps } from ".."
 import { useBackgroundDispatch } from "../../../../hooks"
 import SignerBaseFrame from "../SignerBaseFrame"
-import SignerKeyringSigning from "./SignerKeyringSigning"
+import SignerInternalSigning from "./SignerInternalSigning"
 
 export default function SignerKeyringFrame<T extends SignOperationType>({
   children,
@@ -24,7 +24,7 @@ export default function SignerKeyringFrame<T extends SignOperationType>({
 
   if (isSigning) {
     return (
-      <SignerKeyringSigning
+      <SignerInternalSigning
         signActionCreator={signActionCreator}
         redirectToActivityPage={redirectToActivityPage}
       />

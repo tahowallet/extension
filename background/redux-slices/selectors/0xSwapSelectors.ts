@@ -3,11 +3,12 @@ import { selectCurrentNetwork } from "./uiSelectors"
 import { SwappableAsset, isSmartContractFungibleAsset } from "../../assets"
 import { sameNetwork } from "../../networks"
 import {
-  canBeUsedForTransaction,
   isBuiltInNetworkBaseAsset,
+  isVerifiedOrTrustedAsset,
 } from "../utils/asset-utils"
 import { RootState } from ".."
 import { SingleAssetState } from "../assets"
+import { FeatureFlags, isEnabled } from "../../features"
 
 export const selectLatestQuoteRequest = createSelector(
   (state: RootState) => state.swap.latestQuoteRequest,
@@ -29,21 +30,15 @@ export const selectSwapBuyAssets = createSelector(
       ): asset is SwappableAsset & {
         recentPrices: SingleAssetState["recentPrices"]
       } => {
-        if (!canBeUsedForTransaction(asset)) {
-          return false
-        }
-        if (isSmartContractFungibleAsset(asset)) {
-          if (sameNetwork(asset.homeNetwork, currentNetwork)) {
-            return true
-          }
-        }
-        if (
-          // Explicitly add a network's base asset.
-          isBuiltInNetworkBaseAsset(asset, currentNetwork)
-        ) {
-          return true
-        }
-        return false
+        return (
+          // When the flag is disabled all assets can be sent and swapped
+          (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) ||
+            isVerifiedOrTrustedAsset(asset)) &&
+          // Only list assets for the current network.
+          (isBuiltInNetworkBaseAsset(asset, currentNetwork) ||
+            (isSmartContractFungibleAsset(asset) &&
+              sameNetwork(asset.homeNetwork, currentNetwork)))
+        )
       }
     )
   }
