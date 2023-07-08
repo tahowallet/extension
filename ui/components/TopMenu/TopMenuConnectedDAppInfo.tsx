@@ -128,7 +128,7 @@ function ConnectionDAppGuideline({
           justify-content: space-between;
         }
         .panel_wrap {
-          padding: ${showWalletConnectInfo ? "16px 8px" : "0 8px 16px"};
+          padding: ${showWalletConnectInfo ? "16px" : "0 16px 16px"};
         }
         .wallet_connect_info p {
           margin: 0;

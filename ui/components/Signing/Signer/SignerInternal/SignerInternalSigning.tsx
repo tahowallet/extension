@@ -1,38 +1,39 @@
-import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectInternalSignerStatus } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useEffect, useState } from "react"
 import { AnyAction } from "redux"
 import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
-import KeyringSetPassword from "../../../Keyring/KeyringSetPassword"
-import KeyringUnlock from "../../../Keyring/KeyringUnlock"
+import InternalSignerSetPassword from "../../../InternalSigner/InternalSignerSetPassword"
+import InternalSignerUnlock from "../../../InternalSigner/InternalSignerUnlock"
 
-type SignerKeyringSigningProps = {
+type SignerInternalSigningProps = {
   signActionCreator: () => AnyAction
   redirectToActivityPage?: boolean
 }
 
-export default function SignerKeyringSigning({
+export default function SignerInternalSigning({
   signActionCreator,
   redirectToActivityPage,
-}: SignerKeyringSigningProps): ReactElement {
+}: SignerInternalSigningProps): ReactElement {
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
-  const keyringStatus = useBackgroundSelector(selectKeyringStatus)
+  const lockStatus = useBackgroundSelector(selectInternalSignerStatus)
   const [signingInitiated, setSigningInitiated] = useState(false)
 
-  // Initiate signing once keyring is ready.
+  // Initiate signing once internal signer service is ready.
   useEffect(() => {
-    if (!signingInitiated && keyringStatus === "unlocked") {
+    if (!signingInitiated && lockStatus === "unlocked") {
       dispatch(signActionCreator()).finally(() => {
         // Redirect to activity page after submitting
         if (redirectToActivityPage) {
           history.push("/", { goTo: "activity-page" })
         }
       })
+
       setSigningInitiated(true)
     }
   }, [
-    keyringStatus,
+    lockStatus,
     signingInitiated,
     setSigningInitiated,
     dispatch,
@@ -41,16 +42,16 @@ export default function SignerKeyringSigning({
     redirectToActivityPage,
   ])
 
-  // In this construction, keyring unlocking isn't done as a route, but in line
+  // In this construction, internal signer service unlocking isn't done as a route, but in line
   // in the signing frame.
-  if (keyringStatus === "uninitialized") {
-    return <KeyringSetPassword />
+  if (lockStatus === "uninitialized") {
+    return <InternalSignerSetPassword />
   }
-  if (keyringStatus === "locked") {
-    return <KeyringUnlock displayCancelButton={false} />
+  if (lockStatus === "locked") {
+    return <InternalSignerUnlock displayCancelButton={false} />
   }
 
-  // If the keyring is ready, we don't render anything as signing should be
+  // If the internal signer service is ready, we don't render anything as signing should be
   // quick; we may want a brief spinner.
   return <></>
 }

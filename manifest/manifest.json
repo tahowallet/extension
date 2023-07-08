@@ -5,7 +5,7 @@
   "homepage_url": "https://taho.xyz",
   "author": "https://taho.xyz",
   "manifest_version": 2,
-  "content_security_policy": "object-src 'self'; script-src 'self';",
+  "content_security_policy": "object-src 'self'; script-src 'self' 'wasm-eval';",
   "web_accessible_resources": ["*.js", "*.json"],
   "content_scripts": [
     {

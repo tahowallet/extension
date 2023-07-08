@@ -243,7 +243,7 @@ services (in the API package) and the interface and browser notifications:
 │                 │                                                    - On-chain prices        ┃     │      └─────────────────┘
 │                 │                                                                             ┃     │
 │                 │                                                                             ┃     │      ┌────────────────┐
-│                 │                                                   Keyring                   ┃     │      │                │
+│                 │                                                   Internal Signer           ┃     │      │                │
 │                 ├──────list accounts, sign tx, sign message───────▶ - Native  ────────────────╋─────┼──────▶   Extension    │
 │                 │                                                   - Remote                  ┃     │      │  Storage API   │
 │      ┌──────────┴──────────┐                                                                  ┃     │      │                │
