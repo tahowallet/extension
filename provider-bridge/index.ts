@@ -69,7 +69,7 @@ export function connectProviderBridge(): void {
   })
 }
 
-export function injectTallyWindowProvider(): void {
+export function injectTahoWindowProvider(): void {
   if (document.contentType !== "text/html") return
 
   try {

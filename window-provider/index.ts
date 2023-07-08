@@ -72,7 +72,7 @@ const METAMASK_STATE_MOCK = {
   isPermanentlyDisconnected: false,
 }
 
-export default class TallyWindowProvider extends EventEmitter {
+export default class TahoWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
   // onboard.js relies on this, or uses a deprecated api. It seemed to be a reasonable workaround for now.
   chainId = "0x1"
@@ -81,11 +81,11 @@ export default class TallyWindowProvider extends EventEmitter {
 
   connected = false
 
-  isTally = true
+  isTally: true = true
 
   isMetaMask = false
 
-  tallySetAsDefault = false
+  tahoSetAsDefault = false
 
   isWeb3 = true
 
@@ -141,7 +141,7 @@ export default class TallyWindowProvider extends EventEmitter {
       }
 
       if (isTallyConfigPayload(result)) {
-        const wasTallySetAsDefault = this.tallySetAsDefault
+        const wasTallySetAsDefault = this.tahoSetAsDefault
 
         window.walletRouter?.shouldSetTallyForCurrentProvider(
           result.defaultWallet,
@@ -167,7 +167,7 @@ export default class TallyWindowProvider extends EventEmitter {
             this._state = METAMASK_STATE_MOCK
           }
 
-          this.tallySetAsDefault = result.defaultWallet
+          this.tahoSetAsDefault = result.defaultWallet
         }
 
         // When the default state flips, reroute any unresolved requests to the
@@ -175,7 +175,7 @@ export default class TallyWindowProvider extends EventEmitter {
         if (
           process.env.ENABLE_UPDATED_DAPP_CONNECTIONS === "true" &&
           wasTallySetAsDefault &&
-          !this.tallySetAsDefault
+          !this.tahoSetAsDefault
         ) {
           const existingRequests = [...this.requestResolvers.entries()]
           this.requestResolvers.clear()
