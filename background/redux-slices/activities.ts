@@ -264,7 +264,10 @@ export const fetchSelectedActivityDetails = createBackgroundAsyncThunk(
 
 export const speedUpTx = createBackgroundAsyncThunk(
   "activities/speedupTx",
-  async (tx: Transaction | EnrichedEVMTransaction, { dispatch }) => {
+  async (
+    tx: Transaction | EnrichedEVMTransaction,
+    { dispatch, extra: { main } }
+  ) => {
     const {
       hash: parentTxHash,
       network,
@@ -309,6 +312,11 @@ export const speedUpTx = createBackgroundAsyncThunk(
     }
 
     const newTx = await signer.sendTransaction(txRequest)
+
+    await main.trackReplacementTransaction(newTx.hash, parentTxHash, {
+      address: from,
+      network,
+    })
 
     dispatch(
       addReplacementTransaction({

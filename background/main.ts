@@ -1909,6 +1909,18 @@ export default class Main extends BaseService<never> {
     return this.indexingService.importCustomToken(asset)
   }
 
+  async trackReplacementTransaction(
+    hash: string,
+    parentTx: string,
+    addressOnNetwork: AddressOnNetwork
+  ): Promise<void> {
+    this.chainService.trackReplacementTransaction(
+      hash,
+      addressOnNetwork,
+      parentTx
+    )
+  }
+
   private connectPopupMonitor() {
     runtime.onConnect.addListener((port) => {
       if (port.name !== popupMonitorPortName) return

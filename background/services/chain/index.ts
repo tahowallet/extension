@@ -242,6 +242,12 @@ export default class ChainService extends BaseService<Events> {
 
   assetData: AssetDataHelper
 
+  trackedReplacementTransactions: {
+    hash: string
+    parentTx: string
+    addressOnNetwork: AddressOnNetwork
+  }[] = []
+
   private constructor(
     private db: ChainDatabase,
     private preferenceService: PreferenceService,
@@ -1227,7 +1233,11 @@ export default class ChainService extends BaseService<Events> {
       ])
     } catch (error) {
       this.releaseEVMTransactionNonce(transaction)
-      this.emitter.emit("transactionSendFailure")
+
+      // Don't set a snackbar if the transaction being replaced drops
+      if (!this.getReplacementTransactionRef(transaction).isParentTx) {
+        this.emitter.emit("transactionSendFailure")
+      }
       logger.error("Error broadcasting transaction", transaction, error)
 
       throw error
@@ -1955,6 +1965,37 @@ export default class ChainService extends BaseService<Events> {
 
     this.supportedNetworks = supportedNetworks
     this.emitter.emit("supportedNetworks", supportedNetworks)
+  }
+
+  getReplacementTransactionRef(transaction: AnyEVMTransaction): {
+    isReplacement?: boolean
+    isParentTx?: boolean
+  } {
+    const { hash } = transaction
+    const lowerCaseCmp = (a: string, b: string) =>
+      a.toLowerCase() === b.toLowerCase()
+
+    const match = this.trackedReplacementTransactions.find(
+      (txRef) =>
+        lowerCaseCmp(txRef.hash, hash) || lowerCaseCmp(txRef.parentTx, hash)
+    )
+
+    return {
+      isReplacement: match && lowerCaseCmp(match?.hash, hash),
+      isParentTx: match && lowerCaseCmp(match?.parentTx, hash),
+    }
+  }
+
+  trackReplacementTransaction(
+    hash: string,
+    addressOnNetwork: AddressOnNetwork,
+    parentTx: string
+  ): void {
+    this.trackedReplacementTransactions.push({
+      hash,
+      addressOnNetwork,
+      parentTx,
+    })
   }
 
   async queryAccountTokenDetails(
