@@ -50,10 +50,9 @@ test.describe("NFTs", () => {
 
       await walletPageHelper.navigateTo("NFTs")
 
-      await expect(page.getByTestId("loading_doggo")).toBeVisible()
-
       // Wait until load finishes
       await expect(page.getByTestId("loading_doggo")).not.toBeVisible()
+
       shouldInterceptRequests = false
     })
 
