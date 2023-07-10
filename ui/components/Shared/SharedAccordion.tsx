@@ -119,7 +119,6 @@ export default function SharedAccordion({
           transition: max-height ${DELAY}ms ease-out,
             opacity var(--content-fade-in-duration, 130ms) ease-in;
           opacity: 0;
-          padding: 0 8px;
         }
         .accordion_content.visible {
           max-height: ${height + 10}px;

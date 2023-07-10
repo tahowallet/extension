@@ -13,7 +13,7 @@ import {
   formatCurrencyAmount,
   heuristicDesiredDecimalsForUnitPrice,
   isNetworkBaseAsset,
-  isUnverifiedAssetByUser,
+  isVerifiedOrTrustedAsset,
 } from "../utils/asset-utils"
 import {
   AnyAsset,
@@ -35,17 +35,14 @@ import { selectAccountSignersByAddress } from "./signingSelectors"
 import {
   selectKeyringsByAddresses,
   selectSourcesByAddress,
-} from "./keyringsSelectors"
+} from "./internalSignerSelectors"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { NETWORK_BY_CHAIN_ID, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { FeatureFlags, isEnabled } from "../../features"
-import {
-  AccountSigner,
-  ReadOnlyAccountSigner,
-  SignerType,
-} from "../../services/signing"
+import { AccountSigner, SignerType } from "../../services/signing"
+import { SignerImportSource } from "../../services/internal-signer"
 import { assertUnreachable } from "../../lib/utils/type-guards"
 
 // TODO What actual precision do we want here? Probably more than 2
@@ -79,11 +76,11 @@ export function determineAssetDisplayAndVerify(
     hideDust,
     showUnverifiedAssets,
   }: { hideDust: boolean; showUnverifiedAssets: boolean }
-): { displayAsset: boolean; verifiedAsset: boolean } {
-  const isVerified = !isUnverifiedAssetByUser(assetAmount.asset)
+): { displayAsset: boolean; verifiedOrTrustedAsset: boolean } {
+  const isVerifiedOrTrusted = isVerifiedOrTrustedAsset(assetAmount.asset)
 
   if (shouldForciblyDisplayAsset(assetAmount)) {
-    return { displayAsset: true, verifiedAsset: isVerified }
+    return { displayAsset: true, verifiedOrTrustedAsset: isVerifiedOrTrusted }
   }
 
   const isNotDust =
@@ -93,13 +90,14 @@ export function determineAssetDisplayAndVerify(
   const isPresent = assetAmount.decimalAmount > 0
   const showDust = !hideDust
 
-  const verificationStatusAllowsVisibility = showUnverifiedAssets || isVerified
+  const verificationStatusAllowsVisibility =
+    showUnverifiedAssets || isVerifiedOrTrusted
   const enoughBalanceToBeVisible = isPresent && (isNotDust || showDust)
 
   return {
     displayAsset:
       verificationStatusAllowsVisibility && enoughBalanceToBeVisible,
-    verifiedAsset: isVerified,
+    verifiedOrTrustedAsset: isVerifiedOrTrusted,
   }
 }
 
@@ -189,13 +187,14 @@ const computeCombinedAssetAmountsData = (
       unverifiedAssetAmounts: CompleteAssetAmount[]
     }>(
       (acc, assetAmount) => {
-        const { displayAsset, verifiedAsset } = determineAssetDisplayAndVerify(
-          assetAmount,
-          { hideDust, showUnverifiedAssets }
-        )
+        const { displayAsset, verifiedOrTrustedAsset } =
+          determineAssetDisplayAndVerify(assetAmount, {
+            hideDust,
+            showUnverifiedAssets,
+          })
 
         if (displayAsset) {
-          if (verifiedAsset) {
+          if (verifiedOrTrustedAsset) {
             acc.combinedAssetAmounts.push(assetAmount)
           } else {
             acc.unverifiedAssetAmounts.push(assetAmount)
@@ -331,6 +330,8 @@ export type AccountTotal = AddressOnNetwork & {
  */
 function signerIdFor(accountSigner: AccountSigner): string | null {
   switch (accountSigner.type) {
+    case "private-key":
+      return accountSigner.walletID
     case "keyring":
       return accountSigner.keyringID
     case "ledger":
@@ -346,6 +347,7 @@ export type CategorizedAccountTotals = { [key in AccountType]?: AccountTotal[] }
 
 const signerTypeToAccountType: Record<SignerType, AccountType> = {
   keyring: AccountType.Imported,
+  "private-key": AccountType.PrivateKey,
   ledger: AccountType.Ledger,
   "read-only": AccountType.ReadOnly,
 }
@@ -354,19 +356,19 @@ const getAccountType = (
   address: string,
   signer: AccountSigner,
   addressSources: {
-    [address: string]: "import" | "internal"
+    [address: string]: SignerImportSource
   }
 ): AccountType => {
-  if (signer === ReadOnlyAccountSigner) {
-    return AccountType.ReadOnly
+  switch (true) {
+    case signerTypeToAccountType[signer.type] === AccountType.ReadOnly:
+    case signerTypeToAccountType[signer.type] === AccountType.Ledger:
+    case signerTypeToAccountType[signer.type] === AccountType.PrivateKey:
+      return signerTypeToAccountType[signer.type]
+    case addressSources[address] === SignerImportSource.import:
+      return AccountType.Imported
+    default:
+      return AccountType.Internal
   }
-  if (signerTypeToAccountType[signer.type] === "ledger") {
-    return AccountType.Ledger
-  }
-  if (addressSources[address] === "import") {
-    return AccountType.Imported
-  }
-  return AccountType.Internal
 }
 
 const getTotalBalance = (

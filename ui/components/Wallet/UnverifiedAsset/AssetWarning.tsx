@@ -12,7 +12,7 @@ import {
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
-import { isUnverifiedAssetByUser } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { isVerifiedAssetByUser } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory, useLocation } from "react-router-dom"
@@ -51,7 +51,7 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
 
   const network = useBackgroundSelector(selectCurrentNetwork)
 
-  const isUnverified = isUnverifiedAssetByUser(asset)
+  const isUnverified = !isVerifiedAssetByUser(asset)
 
   const contractAddress =
     asset && "contractAddress" in asset && asset.contractAddress

@@ -1,14 +1,17 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { createPassword } from "@tallyho/tally-background/redux-slices/keyrings"
+import { createPassword } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { useHistory } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { useBackgroundDispatch, useAreKeyringsUnlocked } from "../../hooks"
+import {
+  useBackgroundDispatch,
+  useAreInternalSignersUnlocked,
+} from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedBackButton from "../Shared/SharedBackButton"
 import PasswordStrengthBar from "../Password/PasswordStrengthBar"
 import PasswordInput from "../Shared/PasswordInput"
 
-export default function KeyringSetPassword(): ReactElement {
+export default function InternalSignerSetPassword(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "keyring.setPassword",
   })
@@ -17,15 +20,15 @@ export default function KeyringSetPassword(): ReactElement {
   const [passwordConfirmation, setPasswordConfirmation] = useState("")
   const history = useHistory()
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
 
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
-    if (areKeyringsUnlocked) {
+    if (areInternalSignersUnlocked) {
       history.goBack()
     }
-  }, [history, areKeyringsUnlocked])
+  }, [history, areInternalSignersUnlocked])
 
   const validatePassword = (): boolean => {
     if (password.length < 8) {

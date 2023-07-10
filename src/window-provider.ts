@@ -66,7 +66,18 @@ if (!window.walletRouter) {
           }, 1000)
         }
       },
-      routeToNewDefault(request: Required<RequestArgument>): Promise<unknown> {
+      routeToNewNonTahoDefault(
+        request: Required<RequestArgument>
+      ): Promise<unknown> {
+        // Don't route to a new default if it's Taho. This avoids situations
+        // where Taho is default, then default is turned off, but no other
+        // provider is installed, so that we don't try to reroute back to Taho
+        // as the only other provider.
+        if (this.currentProvider === this.tallyProvider) {
+          return Promise.reject(
+            new Error("Only the Taho provider is installed.")
+          )
+        }
         return this.currentProvider.request(request)
       },
       getProviderInfo(provider: WalletProvider) {
@@ -150,9 +161,9 @@ Object.defineProperty(window, "ethereum", {
           // Always proxy to the current provider, even if it has changed. This
           // allows changes in the current provider, particularly when the user
           // changes their default wallet, to take effect immediately. Combined
-          // with walletRouter.routeToNewDefault, this allows Taho to effect a
-          // change in provider without a page reload or even a second attempt
-          // at connecting.
+          // with walletRouter.routeToNewNonTahoDefault, this allows Taho to
+          // effect a change in provider without a page reload or even a second
+          // attempt at connecting.
           window.walletRouter?.currentProvider ?? target,
           prop,
           receiver
