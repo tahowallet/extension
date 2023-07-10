@@ -4,11 +4,10 @@ import { ETHEREUM } from "../../../constants"
 import {
   createChainService,
   createIndexingService,
-  createNameService,
   createAnyEVMBlock,
 } from "../../../tests/factories"
 import { makeSerialFallbackProvider } from "../../chain/serial-fallback-provider"
-import { annotationsFromLogs } from "../transactions"
+import { parseTransactionLogs } from "../transactions"
 
 // These logs reference transaction https://etherscan.io/tx/0x0ba306853f8be38d54327675f14694d582a14759b851f2126dd900bef0aff840
 // prettier-ignore
@@ -27,14 +26,10 @@ describe("Enrichment Service Transactions", () => {
       const indexingServicePromise = createIndexingService({
         chainService: chainServicePromise,
       })
-      const nameServicePromise = createNameService({
-        chainService: chainServicePromise,
-      })
 
-      const [chainService, indexingService, nameService] = await Promise.all([
+      const [chainService, indexingService] = await Promise.all([
         chainServicePromise,
         indexingServicePromise,
-        nameServicePromise,
       ])
 
       await chainService.startService()
@@ -64,10 +59,9 @@ describe("Enrichment Service Transactions", () => {
         .stub(chainService, "providerForNetworkOrThrow")
         .returns(makeSerialFallbackProvider("1", []))
 
-      const subannotations = await annotationsFromLogs(
+      const subannotations = await parseTransactionLogs(
         chainService,
         indexingService,
-        nameService,
         TEST_ERC20_LOGS,
         ETHEREUM,
         2,

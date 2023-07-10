@@ -8,7 +8,6 @@ import {
 import {
   SmartContractFungibleAsset,
   isSmartContractFungibleAsset,
-  AnyAsset,
 } from "../../assets"
 import { enrichAssetAmountWithDecimalValues } from "../../redux-slices/utils/asset-utils"
 
@@ -22,106 +21,77 @@ import {
   PartialTransactionRequestWithFrom,
   EnrichedEVMTransactionRequest,
   EnrichedAddressOnNetwork,
+  AssetTransfer,
 } from "./types"
-import {
-  getDistinctRecipentAddressesFromERC20Logs,
-  getERC20LogsForAddresses,
-} from "./utils"
+import { getERC20LogsForAddresses } from "./utils"
 import { enrichAddressOnNetwork } from "./addresses"
 import { OPTIMISM } from "../../constants"
 import { parseLogsForWrappedDepositsAndWithdrawals } from "../../lib/wrappedAsset"
-import {
-  ERC20TransferLog,
-  parseERC20Tx,
-  parseLogsForERC20Transfers,
-} from "../../lib/erc20"
-import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
+import { parseERC20Tx, parseLogsForERC20Transfers } from "../../lib/erc20"
+import { isDefined } from "../../lib/utils/type-guards"
 import { unsignedTransactionFromEVMTransaction } from "../chain/utils"
+import { AddressOnNetwork } from "../../accounts"
 
-async function buildSubannotations(
-  chainService: ChainService,
-  nameService: NameService,
-  relevantTransferLogs: ERC20TransferLog[],
-  assets: AnyAsset[],
-  addressEnrichmentsByAddress: {
-    [k: string]: EnrichedAddressOnNetwork
-  },
-  network: EVMNetwork,
-  desiredDecimals: number,
-  resolvedTime: number,
-  block: AnyEVMBlock | undefined
-) {
-  const subannotations = (
-    await Promise.allSettled(
-      relevantTransferLogs.map(
-        async ({
-          contractAddress,
-          amount,
-          senderAddress,
-          recipientAddress,
-        }) => {
-          // See if the address matches a fungible asset.
-          const matchingFungibleAsset = assets.find(
-            (asset): asset is SmartContractFungibleAsset =>
-              isSmartContractFungibleAsset(asset) &&
-              sameEVMAddress(asset.contractAddress, contractAddress)
-          )
+const txHasLogs = <T extends Partial<AnyEVMTransaction>>(
+  tx: T
+): tx is T & { logs: EVMLog[] } =>
+  "logs" in tx && typeof tx.logs !== "undefined"
 
-          if (!matchingFungibleAsset) {
-            return undefined
-          }
+const txHasRecipient = <T extends Partial<AnyEVMTransaction>>(
+  tx: T
+): tx is T & { to: string } => typeof tx.to !== "undefined"
 
-          // Try to find a resolved annotation for the recipient and sender and otherwise fetch them
-          const recipient =
-            addressEnrichmentsByAddress[
-              normalizeEVMAddress(recipientAddress)
-            ] ??
-            (await enrichAddressOnNetwork(chainService, nameService, {
-              address: recipientAddress,
-              network,
-            }))
-          const sender =
-            addressEnrichmentsByAddress[normalizeEVMAddress(senderAddress)] ??
-            (await enrichAddressOnNetwork(chainService, nameService, {
-              address: senderAddress,
-              network,
-            }))
+const txHasInput = <T extends Partial<AnyEVMTransaction>>(
+  transaction: T
+): transaction is T & { input: string } =>
+  transaction.input !== null &&
+  transaction.input !== "0x" &&
+  typeof transaction.input !== "undefined"
 
-          return {
-            type: "asset-transfer" as const,
-            assetAmount: enrichAssetAmountWithDecimalValues(
-              {
-                asset: matchingFungibleAsset,
-                amount,
-              },
-              desiredDecimals
-            ),
-            sender,
-            recipient,
-            timestamp: resolvedTime,
-            blockTimestamp: block?.timestamp,
-          }
+const getERC20TxData = (tx: Partial<AnyEVMTransaction>) => {
+  const erc20Tx = txHasInput(tx) && parseERC20Tx(tx.input)
+
+  if (erc20Tx) {
+    switch (erc20Tx.name) {
+      case "transfer":
+      case "transferFrom":
+        return {
+          type: erc20Tx.name,
+          from: erc20Tx.args.from,
+          to: erc20Tx.args.to,
+          amount: erc20Tx.args.amount,
         }
-      )
-    )
-  )
-    .filter(isFulfilledPromise)
-    .map(({ value }) => value)
-    .filter(isDefined)
-
-  return subannotations
+      case "approve":
+        return {
+          type: erc20Tx.name,
+          spender: erc20Tx.args.to,
+          amount: erc20Tx.args.value,
+        }
+      default:
+        break
+    }
+  }
+  return undefined
 }
 
-export async function annotationsFromLogs(
+export async function parseTransactionLogs(
   chainService: ChainService,
   indexingService: IndexingService,
-  nameService: NameService,
   logs: EVMLog[],
   network: EVMNetwork,
   desiredDecimals: number,
   resolvedTime: number,
   block: AnyEVMBlock | undefined
-): Promise<TransactionAnnotation[]> {
+): Promise<
+  {
+    type: "asset-transfer"
+    assetAmount: AssetTransfer["assetAmount"]
+    sender: AddressOnNetwork
+    recipient: AddressOnNetwork
+    timestamp: number
+    blockTimestamp: number | undefined
+  }[]
+> {
   const assets = indexingService.getCachedAssets(network)
 
   const accountAddresses = (await chainService.getAccountsToTrack()).map(
@@ -136,45 +106,48 @@ export async function annotationsFromLogs(
   const relevantTransferLogs = getERC20LogsForAddresses(
     tokenTransferLogs,
     accountAddresses
-  )
-
-  const relevantAddresses =
-    getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
-      normalizeEVMAddress
+  ).filter(({ contractAddress }) => {
+    const matchingFungibleAsset = assets.some(
+      (asset): asset is SmartContractFungibleAsset =>
+        isSmartContractFungibleAsset(asset) &&
+        sameEVMAddress(asset.contractAddress, contractAddress)
     )
 
-  // Look up transfer log names, then flatten to an address -> name map.
-  const addressEnrichmentsByAddress = Object.fromEntries(
-    (
-      await Promise.allSettled(
-        relevantAddresses.map(
-          async (address) =>
-            [
-              address,
-              await enrichAddressOnNetwork(chainService, nameService, {
-                address,
-                network,
-              }),
-            ] as const
-        )
+    return matchingFungibleAsset
+  })
+
+  const subannotations = relevantTransferLogs
+    .map(({ contractAddress, amount, senderAddress, recipientAddress }) => {
+      // See if the address matches a fungible asset.
+      const matchingFungibleAsset = assets.find(
+        (asset): asset is SmartContractFungibleAsset =>
+          isSmartContractFungibleAsset(asset) &&
+          sameEVMAddress(asset.contractAddress, contractAddress)
       )
-    )
-      .filter(isFulfilledPromise)
-      .map(({ value }) => value)
-      .filter(([, annotation]) => isDefined(annotation))
-  )
 
-  const subannotations = await buildSubannotations(
-    chainService,
-    nameService,
-    relevantTransferLogs,
-    assets,
-    addressEnrichmentsByAddress,
-    network,
-    desiredDecimals,
-    resolvedTime,
-    block
-  )
+      if (!matchingFungibleAsset) {
+        return undefined
+      }
+
+      return {
+        type: "asset-transfer" as const,
+        assetAmount: enrichAssetAmountWithDecimalValues(
+          {
+            asset: matchingFungibleAsset,
+            amount,
+          },
+          desiredDecimals
+        ),
+        sender: { address: normalizeEVMAddress(senderAddress), network },
+        recipient: {
+          address: normalizeEVMAddress(recipientAddress),
+          network,
+        },
+        timestamp: resolvedTime,
+        blockTimestamp: block?.timestamp,
+      }
+    })
+    .filter(isDefined)
 
   return subannotations
 }
@@ -199,6 +172,40 @@ export default async function resolveTransactionAnnotation(
   desiredDecimals: number
 ): Promise<TransactionAnnotation> {
   const assets = await indexingService.getCachedAssets(network)
+  const trackedAddresses = (await chainService.getAccountsToTrack()).map(
+    (account) => account.address
+  )
+  const isFromTrackedAddress = trackedAddresses.includes(transaction.from)
+  const hasRecipient = txHasRecipient(transaction)
+  const hasInput = txHasInput(transaction)
+
+  // See if the address matches a fungible asset.
+  const knownAssetForERC20Tx =
+    hasRecipient &&
+    hasInput &&
+    assets.find(
+      (asset): asset is SmartContractFungibleAsset =>
+        isSmartContractFungibleAsset(asset) &&
+        sameEVMAddress(asset.contractAddress, transaction.to)
+    )
+
+  const knownERC20TxData = knownAssetForERC20Tx && getERC20TxData(transaction)
+
+  const enrichMap: Record<string, Promise<EnrichedAddressOnNetwork>> = {}
+  /**
+   * Adds an address to the enrichment map and kicks off enrichment
+   * in the background
+   */
+  const requestEnrichment = (rawAddress: string) => {
+    const address = normalizeEVMAddress(rawAddress)
+
+    enrichMap[address] ??= enrichAddressOnNetwork(chainService, nameService, {
+      address,
+      network,
+    })
+  }
+
+  let block: AnyEVMBlock | undefined
 
   // By default, annotate all requests as contract interactions, unless they
   // already carry additional metadata.
@@ -216,46 +223,63 @@ export default async function resolveTransactionAnnotation(
           )?.metadata?.logoURL,
         }
 
-  let block: AnyEVMBlock | undefined
+  const txLogs = txHasLogs(transaction)
+    ? await parseTransactionLogs(
+        chainService,
+        indexingService,
+        transaction.logs,
+        network,
+        desiredDecimals,
+        txAnnotation.timestamp,
+        block
+      )
+    : []
 
-  const {
-    assetAmount: { amount: baseAssetBalance },
-  } = await chainService.getLatestBaseAccountBalance({
-    address: transaction.from,
-    network,
+  // Look up logs and parse subannotations, if available.
+  txLogs.forEach((log) => {
+    requestEnrichment(log.sender.address)
+    requestEnrichment(log.recipient.address)
   })
 
   const { gasLimit, blockHash } = transaction
 
-  const additionalL1Gas =
-    network.chainID === OPTIMISM.chainID
-      ? await chainService.estimateL1RollupFeeForOptimism(
-          network,
-          unsignedTransactionFromEVMTransaction(transaction)
-        )
-      : 0n
+  // Only run for non completed transactions
+  if (!blockHash && isFromTrackedAddress) {
+    const {
+      assetAmount: { amount: baseAssetBalance },
+    } = await chainService.getLatestBaseAccountBalance({
+      address: transaction.from,
+      network,
+    })
 
-  const gasFee: bigint = isEIP1559TransactionRequest(transaction)
-    ? (transaction?.maxFeePerGas ?? 0n) * (gasLimit ?? 0n) + additionalL1Gas
-    : (("gasPrice" in transaction && transaction?.gasPrice) || 0n) *
-        (gasLimit ?? 0n) +
-      additionalL1Gas
+    const additionalL1Gas =
+      network.chainID === OPTIMISM.chainID
+        ? await chainService.estimateL1RollupFeeForOptimism(
+            network,
+            unsignedTransactionFromEVMTransaction(transaction)
+          )
+        : 0n
 
-  txAnnotation.warnings ??= []
+    const gasFee: bigint = isEIP1559TransactionRequest(transaction)
+      ? (transaction?.maxFeePerGas ?? 0n) * (gasLimit ?? 0n) + additionalL1Gas
+      : (("gasPrice" in transaction && transaction?.gasPrice) || 0n) *
+          (gasLimit ?? 0n) +
+        additionalL1Gas
 
-  // If the wallet doesn't have enough base asset to cover gas, push a warning
-  if (gasFee + (transaction.value ?? 0n) > baseAssetBalance) {
-    if (!txAnnotation.warnings.includes("insufficient-funds")) {
-      txAnnotation.warnings.push("insufficient-funds")
+    txAnnotation.warnings ??= []
+
+    // If the wallet doesn't have enough base asset to cover gas, push a warning
+    if (gasFee + (transaction.value ?? 0n) > baseAssetBalance) {
+      if (!txAnnotation.warnings.includes("insufficient-funds")) {
+        txAnnotation.warnings.push("insufficient-funds")
+      }
+    } else {
+      txAnnotation.warnings = txAnnotation.warnings.filter(
+        (warning) => warning !== "insufficient-funds"
+      )
     }
-  } else {
-    txAnnotation.warnings = txAnnotation.warnings.filter(
-      (warning) => warning !== "insufficient-funds"
-    )
-  }
-
-  // If the transaction has been mined, get the block and set the timestamp
-  if (blockHash) {
+  } else if (blockHash) {
+    // If the transaction has been mined, get the block and set the timestamp
     block = await chainService.getBlockData(network, blockHash)
     txAnnotation = {
       ...txAnnotation,
@@ -263,56 +287,51 @@ export default async function resolveTransactionAnnotation(
     }
   }
 
+  if (hasRecipient) {
+    requestEnrichment(transaction.to)
+    requestEnrichment(transaction.from)
+
+    if (knownERC20TxData) {
+      switch (knownERC20TxData.type) {
+        case "transfer":
+        case "transferFrom":
+          requestEnrichment(knownERC20TxData.from ?? transaction.from)
+          requestEnrichment(knownERC20TxData.to)
+          break
+        case "approve":
+          requestEnrichment(knownERC20TxData.spender)
+          break
+        default:
+          break
+      }
+    }
+  }
+
   // If the tx has a recipient, its a contract interaction or another tx type
   // rather than a deployment.
-  if (typeof transaction.to !== "undefined") {
-    const contractInfo = await enrichAddressOnNetwork(
-      chainService,
-      nameService,
-      {
-        address: transaction.to,
-        network,
-      }
-    )
-
-    txAnnotation =
-      txAnnotation.type === "contract-deployment"
-        ? {
-            ...txAnnotation,
-            type: "contract-interaction",
-            contractInfo: await enrichAddressOnNetwork(
-              chainService,
-              nameService,
-              {
-                address: transaction.to,
-                network,
-              }
-            ),
-          }
-        : // Don't replace prepopulated annotations.
-          txAnnotation
+  if (hasRecipient) {
+    const [recipientInfo, sender] = await Promise.all([
+      enrichMap[normalizeEVMAddress(transaction.to)],
+      enrichMap[normalizeEVMAddress(transaction.from)],
+    ])
 
     // For prepopulated swap annotations, resolve the swap contract info.
     if (txAnnotation.type === "asset-swap") {
       txAnnotation = {
         ...txAnnotation,
-        swapContractInfo: contractInfo,
+        swapContractInfo: recipientInfo,
+      }
+    } else if (txAnnotation.type === "contract-deployment") {
+      txAnnotation = {
+        ...txAnnotation,
+        type: "contract-interaction",
+        contractInfo: recipientInfo,
       }
     }
 
-    if (
-      transaction.input === null ||
-      transaction.input === "0x" ||
-      typeof transaction.input === "undefined"
-    ) {
+    if (!hasInput) {
       // If the tx has no data, it's either a simple ETH send, or it's relying
       // on a contract that's `payable` to execute code
-
-      const recipient = contractInfo
-      const sender = await enrichAddressOnNetwork(chainService, nameService, {
-        address: transaction.from,
-        network,
-      })
 
       // This is _almost certainly_ not a contract interaction, move on. Note that
       // a simple ETH send to a contract address can still effectively be a
@@ -327,11 +346,11 @@ export default async function resolveTransactionAnnotation(
         // If the annotation is a built-in contract or in the address book,
         // skip the warning.
         if (
-          recipient.annotation.hasCode &&
+          recipientInfo.annotation.hasCode &&
           !(
-            recipient.annotation.nameRecord?.system ===
+            recipientInfo.annotation.nameRecord?.system ===
               "tally-known-contracts" ||
-            recipient.annotation.nameRecord?.system === "tally-address-book"
+            recipientInfo.annotation.nameRecord?.system === "tally-address-book"
           )
         ) {
           txAnnotation.warnings ??= []
@@ -342,7 +361,7 @@ export default async function resolveTransactionAnnotation(
           ...txAnnotation,
           type: "asset-transfer",
           sender,
-          recipient,
+          recipient: recipientInfo,
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
               asset: network.baseAsset,
@@ -352,33 +371,19 @@ export default async function resolveTransactionAnnotation(
           ),
         }
       }
-    } else {
-      const erc20Tx = parseERC20Tx(transaction.input)
-
-      // See if the address matches a fungible asset.
-      const matchingFungibleAsset = assets.find(
-        (asset): asset is SmartContractFungibleAsset =>
-          isSmartContractFungibleAsset(asset) &&
-          sameEVMAddress(asset.contractAddress, transaction.to)
-      )
-
-      const transactionLogoURL = matchingFungibleAsset?.metadata?.logoURL
+    } else if (knownERC20TxData) {
+      const transactionLogoURL = knownAssetForERC20Tx?.metadata?.logoURL
 
       // TODO handle the case where we don't have asset metadata already
       if (
-        matchingFungibleAsset &&
-        erc20Tx &&
-        (erc20Tx.name === "transfer" || erc20Tx.name === "transferFrom")
+        knownERC20TxData.type === "transfer" ||
+        knownERC20TxData.type === "transferFrom"
       ) {
-        const [sender, recipient] = await Promise.all([
-          enrichAddressOnNetwork(chainService, nameService, {
-            address: erc20Tx.args.from ?? transaction.from,
-            network,
-          }),
-          enrichAddressOnNetwork(chainService, nameService, {
-            address: erc20Tx.args.to,
-            network,
-          }),
+        const [erc20Sender, recipient] = await Promise.all([
+          enrichMap[
+            normalizeEVMAddress(knownERC20TxData.from ?? transaction.from)
+          ],
+          enrichMap[normalizeEVMAddress(knownERC20TxData.to)],
         ])
 
         // We have an ERC-20 transfer
@@ -386,18 +391,18 @@ export default async function resolveTransactionAnnotation(
           ...txAnnotation,
           type: "asset-transfer",
           transactionLogoURL,
-          sender,
+          sender: erc20Sender,
           recipient,
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
-              asset: matchingFungibleAsset,
-              amount: BigInt(erc20Tx.args.amount),
+              asset: knownAssetForERC20Tx,
+              amount: BigInt(knownERC20TxData.amount),
             },
             desiredDecimals
           ),
         }
         // Warn if we're sending the token to its own contract
-        if (sameEVMAddress(erc20Tx.args.to, transaction.to)) {
+        if (sameEVMAddress(knownERC20TxData.to, transaction.to)) {
           txAnnotation.warnings ??= []
           txAnnotation.warnings.push("send-to-token")
         }
@@ -416,19 +421,11 @@ export default async function resolveTransactionAnnotation(
           txAnnotation.warnings ??= []
           txAnnotation.warnings.push("send-to-contract")
         }
-      } else if (
-        matchingFungibleAsset &&
-        erc20Tx &&
-        erc20Tx.name === "approve"
-      ) {
-        const spender = await enrichAddressOnNetwork(
-          chainService,
-          nameService,
-          {
-            address: erc20Tx.args.spender,
-            network,
-          }
-        )
+      } else if (knownERC20TxData.type === "approve") {
+        const spender = await enrichMap[
+          normalizeEVMAddress(knownERC20TxData.spender)
+        ]
+
         // Warn if we're approving spending to a likely EOA. Note this will also
         // sweep up CREATE2 contracts that haven't yet been deployed
         if (!spender.annotation.hasCode) {
@@ -442,31 +439,23 @@ export default async function resolveTransactionAnnotation(
           spender,
           assetAmount: enrichAssetAmountWithDecimalValues(
             {
-              asset: matchingFungibleAsset,
-              amount: BigInt(erc20Tx.args.value),
+              asset: knownAssetForERC20Tx,
+              amount: BigInt(knownERC20TxData.amount),
             },
             desiredDecimals
           ),
         }
       }
     }
-  }
 
-  // Look up logs and resolve subannotations, if available.
-  if ("logs" in transaction && typeof transaction.logs !== "undefined") {
-    const subannotations = await annotationsFromLogs(
-      chainService,
-      indexingService,
-      nameService,
-      transaction.logs,
-      network,
-      desiredDecimals,
-      txAnnotation.timestamp,
-      block
-    )
-
-    if (subannotations.length > 0) {
-      txAnnotation.subannotations = subannotations
+    if (txLogs.length > 0) {
+      txAnnotation.subannotations = await Promise.all(
+        txLogs.map(async (log) => ({
+          ...log,
+          sender: await enrichMap[log.sender.address],
+          recipient: await enrichMap[log.recipient.address],
+        }))
+      )
     }
   }
 
