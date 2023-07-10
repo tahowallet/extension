@@ -15,6 +15,25 @@ const tahoWindowProvider: TahoProvider = new TahoWindowProvider({
   origin: window.location.origin,
 })
 
+const tahoRoutedProperties = new Set(
+  [
+    "request",
+    "isConnected",
+    "enable",
+    "send",
+    "sendAsync",
+    "on",
+    "addListener",
+    "removeListener",
+    "removeAllListeners",
+    "listeners",
+    "listenerCount",
+  ] /* satisfies (keyof TahoWindowProvider)[] FIXME TypeScript 4.9 */
+)
+
+// FIXME need a substitute proxy in cases where MetaMask is *not* installed to
+// FIXME make it appear installed? Needed on e.g. bitcoinbridge.network or
+// FIXME there will be no available wallet connection option.
 function defaultManageProvider(provider: WalletProvider): WalletProvider {
   if (
     // Rewrap MetaMask in a proxy that will route to Taho whenever Taho is
@@ -28,6 +47,7 @@ function defaultManageProvider(provider: WalletProvider): WalletProvider {
           window.walletRouter &&
           window.walletRouter.currentProvider === tahoWindowProvider &&
           tahoWindowProvider.tahoSetAsDefault &&
+          tahoRoutedProperties.has(String(prop)) &&
           prop in tahoWindowProvider
         ) {
           return Reflect.get(
@@ -39,7 +59,7 @@ function defaultManageProvider(provider: WalletProvider): WalletProvider {
             // attempt at connecting.
             tahoWindowProvider,
             prop,
-            receiver
+            target
           )
         }
 
@@ -170,6 +190,20 @@ Object.defineProperty(window, "ethereum", {
 
     cachedWindowEthereumProxy = new Proxy(window.walletRouter.currentProvider, {
       get(target, prop, receiver) {
+        if (
+          window.walletRouter &&
+          window.walletRouter.currentProvider === tahoWindowProvider &&
+          tahoWindowProvider.tahoSetAsDefault &&
+          prop === "isMetaMask"
+        ) {
+          // Return `true` for window.ethereum isMetaMask call if Taho is
+          // installed and set as default. The Taho provider itself will
+          // always return `false`, as certain dApps detect a wallet that
+          // declares isMetaMask AND isSomethingElse and disallow the behavior
+          // we're going for here.
+          return true
+        }
+
         if (
           window.walletRouter &&
           !(prop in window.walletRouter.currentProvider) &&

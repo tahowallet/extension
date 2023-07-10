@@ -104,6 +104,8 @@ export default class TahoWindowProvider extends EventEmitter {
 
   _state?: typeof METAMASK_STATE_MOCK
 
+  _metamask?: this
+
   providerInfo = {
     label: "Taho",
     injectedNamespace: "tally",
@@ -155,18 +157,6 @@ export default class TahoWindowProvider extends EventEmitter {
             currentHost.includes(host)
           )
         ) {
-          this.isMetaMask = result.defaultWallet
-
-          if (
-            this.isMetaMask &&
-            // This is internal to MetaMask but accessed by this dApp
-            // TODO: Improve MetaMask provider impersonation
-            currentHost.includes("core.app")
-          ) {
-            // eslint-disable-next-line no-underscore-dangle
-            this._state = METAMASK_STATE_MOCK
-          }
-
           this.tahoSetAsDefault = result.defaultWallet
         }
 
