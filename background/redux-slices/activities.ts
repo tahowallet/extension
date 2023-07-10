@@ -30,6 +30,9 @@ export type Activities = {
   }
 }
 
+const lowerCaseCmp = (a: string, b: string) =>
+  a.toLowerCase() === b.toLowerCase()
+
 type TrackedReplacementTx = {
   chainID: string
   hash: string
@@ -188,19 +191,41 @@ const activitiesSlice = createSlice({
 
       // Check if we're already tracking the replacement tx so we can get the
       // "replaced" tx and remove it if the replacement has been mined
-      const replacement = replacementTransactions.find(
-        (request) =>
-          request.hash === transaction.hash &&
-          request.chainID === transaction.network.chainID
+      const replacementRef = replacementTransactions.find(
+        (ref) =>
+          (lowerCaseCmp(ref.hash, transaction.hash) ||
+            lowerCaseCmp(ref.parentTx, transaction.hash)) &&
+          ref.chainID === transaction.network.chainID
       )
 
-      if (replacement && transaction.blockHeight) {
-        Object.keys(immerState.activities).forEach((address) => {
-          immerState.activities[address][replacement.chainID] =
-            immerState.activities[address][replacement.chainID].filter(
-              (activity) => activity.hash !== replacement.parentTx
-            )
-        })
+      if (replacementRef) {
+        const accountActivities =
+          immerState.activities[normalizeEVMAddress(transaction.from)][
+            replacementRef.chainID
+          ]
+
+        const replacementTx = accountActivities.find((tx) =>
+          lowerCaseCmp(tx.hash, replacementRef.hash)
+        )
+
+        if (
+          replacementTx &&
+          // this new activity is the replacement tx
+          ((lowerCaseCmp(replacementRef.hash, transaction.hash) &&
+            // tx has been mined
+            transaction.blockHash) ||
+            // if this new activity is the replaced tx
+            (lowerCaseCmp(replacementRef.parentTx, transaction.hash) &&
+              // replacement has been mined
+              replacementTx.blockHash))
+        ) {
+          // drop replaced tx
+          immerState.activities[normalizeEVMAddress(transaction.from)][
+            replacementRef.chainID
+          ] = accountActivities.filter(
+            ({ hash }) => !lowerCaseCmp(hash, replacementRef.parentTx)
+          )
+        }
       }
     },
     addReplacementTransaction: (
