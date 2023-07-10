@@ -2,6 +2,7 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import React, { ReactElement, useCallback, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
+import DAppConnectionDefaultToggle from "../DAppConnection/DAppConnectionDefaultToggle"
 import SharedAccordion from "../Shared/SharedAccordion"
 import SharedLink from "../Shared/SharedLink"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
@@ -80,7 +81,13 @@ function ConnectionDAppGuideline({
                     <li>
                       <span className="wallet_toggle_wrap">
                         {t("guideline.step1")}
-                        <WalletDefaultToggle />
+                        {isEnabled(
+                          FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS
+                        ) ? (
+                          <DAppConnectionDefaultToggle alwaysForceSelection="taho" />
+                        ) : (
+                          <WalletDefaultToggle />
+                        )}
                       </span>
                     </li>
                     <li>{t("guideline.step2")}</li>
@@ -121,7 +128,7 @@ function ConnectionDAppGuideline({
           justify-content: space-between;
         }
         .panel_wrap {
-          padding: ${showWalletConnectInfo ? "16px 8px" : "0 8px 16px"};
+          padding: ${showWalletConnectInfo ? "16px" : "0 16px 16px"};
         }
         .wallet_connect_info p {
           margin: 0;

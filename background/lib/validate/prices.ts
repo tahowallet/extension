@@ -27,7 +27,7 @@ export const coingeckoPriceSchema: JSONSchemaType<CoingeckoPriceData> = {
     additionalProperties: { type: "number", nullable: true },
     nullable: true,
   },
-}
+} as const
 
 export type CoingeckoPriceData = {
   [coinId: string]:

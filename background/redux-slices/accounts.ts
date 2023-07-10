@@ -31,10 +31,19 @@ import { convertFixedPoint } from "../lib/fixed-point"
  */
 export const enum AccountType {
   ReadOnly = "read-only",
+  PrivateKey = "private-key",
   Imported = "imported",
   Ledger = "ledger",
   Internal = "internal",
 }
+
+export const accountTypes = [
+  AccountType.Internal,
+  AccountType.Imported,
+  AccountType.PrivateKey,
+  AccountType.Ledger,
+  AccountType.ReadOnly,
+]
 
 export const DEFAULT_ACCOUNT_NAMES = [
   "Phoenix",

@@ -132,7 +132,7 @@ export default function NFTCollectionAccordion({
           }
 
           .nft_list {
-            padding: 10px 0 12px;
+            padding: 10px 8px 12px;
             display: flex;
             flex-direction: column;
             gap: 8px;

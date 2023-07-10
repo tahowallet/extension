@@ -1,5 +1,8 @@
 import { StatusCodes, TransportStatusError } from "@ledgerhq/errors"
-import KeyringService, { KeyringAccountSigner } from "../keyring"
+import InternalSignerService, {
+  KeyringAccountSigner,
+  PrivateKeyAccountSigner,
+} from "../internal-signer"
 import LedgerService, { LedgerAccountSigner } from "../ledger"
 import {
   SignedTransaction,
@@ -53,6 +56,7 @@ export const ReadOnlyAccountSigner = { type: "read-only" } as const
  */
 export type AccountSigner =
   | typeof ReadOnlyAccountSigner
+  | PrivateKeyAccountSigner
   | KeyringAccountSigner
   | HardwareAccountSigner
 export type HardwareAccountSigner = LedgerAccountSigner
@@ -91,17 +95,21 @@ export default class SigningService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     SigningService,
-    [Promise<KeyringService>, Promise<LedgerService>, Promise<ChainService>]
-  > = async (keyringService, ledgerService, chainService) => {
+    [
+      Promise<InternalSignerService>,
+      Promise<LedgerService>,
+      Promise<ChainService>
+    ]
+  > = async (internalSignerService, ledgerService, chainService) => {
     return new this(
-      await keyringService,
+      await internalSignerService,
       await ledgerService,
       await chainService
     )
   }
 
   private constructor(
-    private keyringService: KeyringService,
+    private internalSignerService: InternalSignerService,
     private ledgerService: LedgerService,
     private chainService: ChainService
   ) {
@@ -118,7 +126,7 @@ export default class SigningService extends BaseService<Events> {
     }
 
     if (signerID.type === "keyring") {
-      return this.keyringService.deriveAddress(signerID)
+      return this.internalSignerService.deriveAddress(signerID)
     }
 
     throw new Error(`Unknown signerID: ${signerID}`)
@@ -134,8 +142,9 @@ export default class SigningService extends BaseService<Events> {
           transactionWithNonce,
           accountSigner
         )
+      case "private-key":
       case "keyring":
-        return this.keyringService.signTransaction(
+        return this.internalSignerService.signTransaction(
           {
             address: transactionWithNonce.from,
             network: transactionWithNonce.network,
@@ -155,8 +164,9 @@ export default class SigningService extends BaseService<Events> {
   ): Promise<void> {
     if (signerType) {
       switch (signerType) {
+        case "private-key":
         case "keyring":
-          await this.keyringService.hideAccount(address)
+          await this.internalSignerService.removeAccount(address)
           break
         case "ledger":
           await this.ledgerService.removeAddress(address)
@@ -258,8 +268,9 @@ export default class SigningService extends BaseService<Events> {
             accountSigner
           )
           break
+        case "private-key":
         case "keyring":
-          signedData = await this.keyringService.signTypedData({
+          signedData = await this.internalSignerService.signTypedData({
             typedData,
             account: account.address,
           })
@@ -303,8 +314,9 @@ export default class SigningService extends BaseService<Events> {
             hexDataToSign
           )
           break
+        case "private-key":
         case "keyring":
-          signedData = await this.keyringService.personalSign({
+          signedData = await this.internalSignerService.personalSign({
             signingData: hexDataToSign,
             account: addressOnNetwork.address,
           })
