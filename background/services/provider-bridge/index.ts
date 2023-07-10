@@ -532,6 +532,25 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
           this.addNetworkRequestId += 1
 
+          const [rawChainData, address, siteTitle, favicon] = params
+          const validatedData = validateAddEthereumChainParameter(
+            rawChainData as AddEthereumChainParameter
+          )
+
+          const supportedNetwork =
+            await this.internalEthereumProviderService.getTrackedNetworkByChainId(
+              validatedData.chainId
+            )
+
+          if (supportedNetwork) {
+            // If the network is already added - just switch to it.
+            return await this.internalEthereumProviderService.routeSafeRPCRequest(
+              method,
+              params,
+              origin
+            )
+          }
+
           const window = await showExtensionPopup(
             AllowedQueryParamPage.addNewChain,
             { requestId: id.toString() }
@@ -542,11 +561,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
               this.handleAddNetworkRequest(id, false)
             }
           })
-
-          const [rawChainData, address, siteTitle, favicon] = params
-          const validatedData = validateAddEthereumChainParameter(
-            rawChainData as AddEthereumChainParameter
-          )
 
           const userConfirmation = new Promise<void>((resolve, reject) => {
             this.#pendingAddNetworkRequests[id] = {
