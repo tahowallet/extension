@@ -6,6 +6,7 @@ test.describe("Signing", () => {
     walletPageHelper,
   }) => {
     await walletPageHelper.onboarding.addNewWallet()
+    await walletPageHelper.hideDappConnectPopup()
 
     const siwe = await context.newPage()
     await siwe.goto("https://login.xyz")

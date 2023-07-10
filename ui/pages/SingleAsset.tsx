@@ -20,7 +20,8 @@ import {
 } from "@tallyho/tally-background/constants"
 import {
   isUntrustedAsset,
-  isUnverifiedAssetByUser,
+  isVerifiedAssetByUser,
+  isVerifiedOrTrustedAsset,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../hooks"
@@ -97,14 +98,11 @@ export default function SingleAsset(): ReactElement {
       localizedMainCurrencyAmount: undefined,
       localizedDecimalAmount: undefined,
     }
-
-  const isUntrusted = isUntrustedAsset(asset)
-  const isUnverifiedByUser = isUnverifiedAssetByUser(asset)
   const [warnedAsset, setWarnedAsset] =
     useState<SmartContractFungibleAsset | null>(null)
 
   const showActionButtons = isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)
-    ? !isUnverifiedByUser
+    ? asset && isVerifiedOrTrustedAsset(asset)
     : true
 
   return (
@@ -119,9 +117,9 @@ export default function SingleAsset(): ReactElement {
         <SharedBackButton path="/" />
         {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
           <>
-            {isUntrusted &&
-              !isUnverifiedByUser &&
-              asset &&
+            {asset &&
+              isUntrustedAsset(asset) &&
+              isVerifiedAssetByUser(asset) &&
               isSmartContractFungibleAsset(asset) && (
                 <AssetVerifyToggler
                   text={t("assets.verifiedByUser")}
@@ -181,26 +179,28 @@ export default function SingleAsset(): ReactElement {
           <div className="right">
             {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
               <>
-                {isUnverifiedByUser && isSmartContractFungibleAsset(asset) && (
-                  <div className="unverified_asset_button">
-                    <AssetVerifyToggler
-                      text={t("assets.unverifiedAsset")}
-                      icon="notif-attention"
-                      color="var(--green-20)"
-                      hoverColor="var(--white)"
-                      onClick={() => setWarnedAsset(asset)}
-                    />
-                    <div>
-                      <SharedButton
-                        type="primary"
-                        size="medium"
+                {isUntrustedAsset(asset) &&
+                  !isVerifiedAssetByUser(asset) &&
+                  isSmartContractFungibleAsset(asset) && (
+                    <div className="unverified_asset_button">
+                      <AssetVerifyToggler
+                        text={t("assets.unverifiedAsset")}
+                        icon="notif-attention"
+                        color="var(--green-20)"
+                        hoverColor="var(--white)"
                         onClick={() => setWarnedAsset(asset)}
-                      >
-                        {t("assets.verifyAsset")}
-                      </SharedButton>
+                      />
+                      <div>
+                        <SharedButton
+                          type="primary"
+                          size="medium"
+                          onClick={() => setWarnedAsset(asset)}
+                        >
+                          {t("assets.verifyAsset")}
+                        </SharedButton>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </>
             )}
 

@@ -108,14 +108,14 @@ export function gweiToWei(value: number | bigint): bigint {
   return BigInt(utils.parseUnits(value.toString(), "gwei").toString())
 }
 
-export function convertToEth(value: string | number | bigint): string {
+export function convertToEth(value: bigint): string {
   if (value && value >= 1) {
     return utils.formatUnits(BigInt(value))
   }
   return ""
 }
 
-export function weiToGwei(value: string | number | bigint): string {
+export function weiToGwei(value: bigint): string {
   if (value && value >= 1) {
     return truncateDecimalAmount(utils.formatUnits(BigInt(value), "gwei"), 2)
   }

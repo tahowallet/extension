@@ -8,6 +8,15 @@
   "author": "Matt Luongo <matt@thesis.co>",
   "license": "GPL-3.0",
   "jest": {
+    "reporters": [
+      [
+        "github-actions",
+        {
+          "silent": false
+        }
+      ],
+      "default"
+    ],
     "setupFiles": [
       "fake-indexeddb/auto",
       "jest-webextension-mock",
@@ -17,7 +26,17 @@
       "./setupJest.env.ts",
       "./ui/setupJest.env.ts"
     ],
-    "testEnvironment": "jsdom"
+    "testEnvironment": "jsdom",
+    "transformIgnorePatterns": [
+      "node_modules/(?!@walletconnect/)"
+    ],
+    "moduleNameMapper": {
+      "^dexie$": "<rootDir>/node_modules/dexie",
+      "^@walletconnect/utils$": "<rootDir>/node_modules/@walletconnect/utils",
+      "^@walletconnect/((?!types))$": "<rootDir>/node_modules/@walletconnect/$1",
+      "^multiformats(.*)": "<rootDir>/node_modules/multiformats$1",
+      "^uint8arrays(.*)": "<rootDir>/node_modules/uint8arrays$1"
+    }
   },
   "keywords": [
     "ethereum",
@@ -85,7 +104,7 @@
     "@types/copy-webpack-plugin": "^8.0.0",
     "@types/dotenv-webpack": "^7.0.3",
     "@types/firefox-webext-browser": "^82.0.0",
-    "@types/jest": "^27.0.2",
+    "@types/jest": "^29.5.0",
     "@types/react-router-dom": "^5.3.1",
     "@types/remote-redux-devtools": "^0.5.5",
     "@types/terser-webpack-plugin": "^5.0.3",
@@ -111,7 +130,8 @@
     "eslint-plugin-react-hooks": "^4.2.0",
     "fork-ts-checker-webpack-plugin": "^6.3.2",
     "install": "^0.13.0",
-    "jest": "^27.2.2",
+    "jest": "^29.5.0",
+    "jest-environment-jsdom": "^29.5.0",
     "npm": "^7.5.6",
     "npm-run-all": "^4.1.5",
     "patch-package": "^6.4.7",
@@ -122,7 +142,7 @@
     "styled-jsx": "^3.4.4",
     "terser-webpack-plugin": "^5.1.1",
     "ts-loader": "^9.2.3",
-    "typescript": "^4.3.2",
+    "typescript": "^5.0.4",
     "webpack": "^5.58.1",
     "webpack-cli": "4.5.0",
     "webpack-livereload-plugin": "^3.0.1",

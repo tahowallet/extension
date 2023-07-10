@@ -9,10 +9,11 @@ interface Props {
   isSelected?: boolean
   accountTotal: AccountTotal
   children?: React.ReactNode
+  style?: React.CSSProperties & Record<string, unknown>
 }
 
 export default function SharedAccountItemSummary(props: Props): ReactElement {
-  const { isSelected, accountTotal, children } = props
+  const { isSelected, accountTotal, children, style } = props
   const { t } = useTranslation()
   const {
     address,
@@ -23,7 +24,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
   } = accountTotal
 
   return (
-    <div className="item-summary standard_width">
+    <div className="item-summary standard_width" style={style}>
       <div className="summary">
         <div className="left">
           {isSelected ? (

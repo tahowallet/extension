@@ -61,23 +61,23 @@ export default function SharedPanelSwitcher(props: Props): ReactElement {
             cursor: pointer;
           }
           .option:hover {
-            color: var(--gold-40);
+            color: var(--panel-switcher-secondary, var(--gold-40));
           }
           .selected {
             font-weight: 500;
-            color: var(--trophy-gold);
+            color: var(--panel-switcher-primary, var(--trophy-gold));
             text-align: center;
             display: flex;
             justify-content: center;
           }
           .selected:hover {
-            color: var(--trophy-gold);
+            color: var(--panel-switcher-primary, var(--trophy-gold));
           }
           .selected::after {
             content: "";
             width: 18px;
             height: 2px;
-            background-color: var(--trophy-gold);
+            background-color: var(--panel-switcher-primary, var(--trophy-gold));
             border-radius: 10px;
             position: absolute;
             display: block;

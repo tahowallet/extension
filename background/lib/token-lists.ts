@@ -22,7 +22,7 @@ import { DeepWriteable } from "../types"
 const cleanTokenListResponse = (json: any, url: string) => {
   if (url.includes("api-polygon-tokens.polygon.technology")) {
     if (typeof json === "object" && json !== null && "tags" in json) {
-      const { tags, ...cleanedJson } = json
+      const { tags: _, ...cleanedJson } = json
       return cleanedJson
     }
   }

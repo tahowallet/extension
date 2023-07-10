@@ -1,11 +1,11 @@
 import { createSmartContractAsset } from "../../../tests/factories"
 import { ETH, OPTIMISTIC_ETH } from "../../../constants"
-import { isSameAsset, isUnverifiedAssetByUser } from "../asset-utils"
+import { isSameAsset, isVerifiedAssetByUser } from "../asset-utils"
 import { NetworkBaseAsset } from "../../../networks"
 
 describe("Asset utils", () => {
-  describe("isUnverifiedAssetByUser", () => {
-    test("should return true if is an unverified asset", () => {
+  describe("isVerifiedAssetByUser", () => {
+    test("should return false if is an unverified asset", () => {
       const asset = {
         name: "Test",
         symbol: "TST",
@@ -16,10 +16,10 @@ describe("Asset utils", () => {
           websiteURL: "",
         },
       }
-      expect(isUnverifiedAssetByUser(asset)).toBeTruthy()
+      expect(isVerifiedAssetByUser(asset)).toBeFalsy()
     })
 
-    test("should return false if is a verified asset", () => {
+    test("should return true if is a verified asset", () => {
       const asset = {
         name: "Test",
         symbol: "TST",
@@ -36,15 +36,11 @@ describe("Asset utils", () => {
           verified: true,
         },
       }
-      expect(isUnverifiedAssetByUser(asset)).toBeFalsy()
+      expect(isVerifiedAssetByUser(asset)).toBeTruthy()
     })
 
     test("should return false if is a base asset", () => {
-      expect(isUnverifiedAssetByUser(ETH)).toBeFalsy()
-    })
-
-    test("should return false if an asset is undefined", () => {
-      expect(isUnverifiedAssetByUser(undefined)).toBeFalsy()
+      expect(isVerifiedAssetByUser(ETH)).toBeFalsy()
     })
   })
 

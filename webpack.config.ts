@@ -31,7 +31,13 @@ const baseConfig: Configuration = {
     "provider-bridge": "./src/provider-bridge.ts",
   },
   module: {
+    noParse: /\.wasm$/,
     rules: [
+      {
+        test: /\.wasm$/,
+        loader: "base64-loader",
+        type: "javascript/auto",
+      },
       {
         test: /\.(tsx|ts|jsx)?$/,
         exclude: /node_modules(?!\/@tallyho)|webpack/,
@@ -53,6 +59,8 @@ const baseConfig: Configuration = {
   resolve: {
     extensions: [".tsx", ".ts", ".js", ".jsx"],
     fallback: {
+      fs: false,
+      path: false,
       stream: require.resolve("stream-browserify"),
       process: require.resolve("process/browser"),
       // these are required for @tallyho/keyring-controller
