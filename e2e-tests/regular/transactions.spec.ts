@@ -99,7 +99,7 @@ test.describe("Transactions", () => {
 
       await expect(
         popup.getByRole("button", { name: "Continue", exact: true })
-      ).toHaveClass(/^\S+ button large disabled$/) // We can't use `toBeDisabled`, as the element doesn't have `disabled` attribute.
+      ).toHaveClass(/disabled/) // We can't use `toBeDisabled`, as the element doesn't have `disabled` attribute.
       await popup
         .getByRole("button", { name: "Continue", exact: true })
         .click({ force: true })

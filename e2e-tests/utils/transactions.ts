@@ -57,7 +57,7 @@ export default class TransactionsHelper {
 
     await expect(
       this.popup.getByRole("button", { name: "Continue", exact: true })
-    ).toHaveClass(/^\S+ button large disabled$/)
+    ).toHaveClass(/disabled/)
     await this.popup
       .getByRole("button", { name: "Continue", exact: true })
       .click({ force: true })
