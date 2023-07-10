@@ -14,7 +14,6 @@ import {
 import classNames from "classnames"
 import { isUnverifiedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useHistory, useLocation } from "react-router-dom"
 import { Activity } from "@tallyho/tally-background/redux-slices/activities"
 import SharedButton from "../../Shared/SharedButton"
@@ -36,9 +35,6 @@ type AssetWarningProps = {
 export default function AssetWarning(props: AssetWarningProps): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet.verifiedAssets",
-  })
-  const { t: sharedT } = useTranslation("translation", {
-    keyPrefix: "shared",
   })
 
   const { asset, close, openActivityDetails } = props
@@ -100,11 +96,7 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
                 ? t("banner.titleUnverified")
                 : t("banner.titleVerified")
             }
-            description={
-              isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)
-                ? t("banner.description")
-                : t("banner.oldDescription")
-            }
+            description={t("banner.description")}
           />
           <ul className="asset_details">
             <li className="asset_symbol">
@@ -193,28 +185,20 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
         </div>
         <div>
           <div className="asset_verify_actions">
-            {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) ? (
-              <>
-                <SharedButton
-                  size="medium"
-                  type="secondary"
-                  onClick={() => handleHideAsset()}
-                >
-                  {t("dontShow")}
-                </SharedButton>
-                {isUnverified && (
-                  <SharedButton
-                    size="medium"
-                    type="primary"
-                    onClick={() => handleVerifyAsset()}
-                  >
-                    {t("addToAssetList")}
-                  </SharedButton>
-                )}
-              </>
-            ) : (
-              <SharedButton size="medium" type="secondary" onClick={close}>
-                {sharedT("close")}
+            <SharedButton
+              size="medium"
+              type="secondary"
+              onClick={() => handleHideAsset()}
+            >
+              {t("dontShow")}
+            </SharedButton>
+            {isUnverified && (
+              <SharedButton
+                size="medium"
+                type="primary"
+                onClick={() => handleVerifyAsset()}
+              >
+                {t("addToAssetList")}
               </SharedButton>
             )}
           </div>

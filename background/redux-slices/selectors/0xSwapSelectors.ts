@@ -5,7 +5,6 @@ import { sameNetwork } from "../../networks"
 import { isBuiltInNetworkBaseAsset, isTrustedAsset } from "../utils/asset-utils"
 import { RootState } from ".."
 import { SingleAssetState } from "../assets"
-import { FeatureFlags, isEnabled } from "../../features"
 
 export const selectLatestQuoteRequest = createSelector(
   (state: RootState) => state.swap.latestQuoteRequest,
@@ -28,9 +27,7 @@ export const selectSwapBuyAssets = createSelector(
         recentPrices: SingleAssetState["recentPrices"]
       } => {
         return (
-          // When the flag is disabled all assets can be sent and swapped
-          (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) ||
-            isTrustedAsset(asset)) &&
+          isTrustedAsset(asset) &&
           // Only list assets for the current network.
           (isBuiltInNetworkBaseAsset(asset, currentNetwork) ||
             (isSmartContractFungibleAsset(asset) &&

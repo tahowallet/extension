@@ -22,7 +22,6 @@ import {
   isTrustedAsset,
   isVerifiedAsset,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -103,19 +102,6 @@ export default function SingleAsset(): ReactElement {
   const [warnedAsset, setWarnedAsset] =
     useState<SmartContractFungibleAsset | null>(null)
 
-  const showActionButtons = isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)
-    ? isTrusted
-    : true
-  const showVerificationButton = isEnabled(
-    FeatureFlags.SUPPORT_UNVERIFIED_ASSET
-  )
-    ? !isVerified && !isTrusted
-    : false
-
-  const showVerifiedLabel = isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)
-    ? isVerified
-    : false
-
   return (
     <>
       <AssetWarningWrapper
@@ -126,7 +112,7 @@ export default function SingleAsset(): ReactElement {
       />
       <div className="navigation standard_width_padded">
         <SharedBackButton path="/" />
-        {showVerifiedLabel && asset && isSmartContractFungibleAsset(asset) && (
+        {isVerified && asset && isSmartContractFungibleAsset(asset) && (
           <AssetVerifyToggler
             text={t("assets.verifiedByUser")}
             icon="notif-correct"
@@ -181,7 +167,7 @@ export default function SingleAsset(): ReactElement {
             )}
           </div>
           <div className="right">
-            {showVerificationButton && isSmartContractFungibleAsset(asset) && (
+            {!isVerified && !isTrusted && isSmartContractFungibleAsset(asset) && (
               <div className="unverified_asset_button">
                 <AssetVerifyToggler
                   text={t("assets.unverifiedAsset")}
@@ -202,60 +188,59 @@ export default function SingleAsset(): ReactElement {
               </div>
             )}
 
-            {showActionButtons &&
-              currentAccountSigner !== ReadOnlyAccountSigner && (
-                <>
+            {isTrusted && currentAccountSigner !== ReadOnlyAccountSigner && (
+              <>
+                <SharedButton
+                  type="primary"
+                  size="medium"
+                  iconSmall="send"
+                  linkTo={{
+                    pathname: "/send",
+                    state: asset,
+                  }}
+                >
+                  {t("shared.send")}
+                </SharedButton>
+                {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) ? (
                   <SharedButton
                     type="primary"
                     size="medium"
-                    iconSmall="send"
+                    iconSmall="swap"
                     linkTo={{
-                      pathname: "/send",
+                      pathname: "/swap",
                       state: asset,
                     }}
                   >
-                    {t("shared.send")}
+                    {t("shared.swap")}
                   </SharedButton>
-                  {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) ? (
-                    <SharedButton
-                      type="primary"
-                      size="medium"
-                      iconSmall="swap"
-                      linkTo={{
-                        pathname: "/swap",
-                        state: asset,
-                      }}
-                    >
-                      {t("shared.swap")}
-                    </SharedButton>
-                  ) : (
-                    <SharedTooltip
-                      type="dark"
-                      width={180}
-                      height={48}
-                      horizontalPosition="center"
-                      verticalPosition="bottom"
-                      customStyles={{ marginLeft: "0" }}
-                      horizontalShift={94}
-                      IconComponent={() => (
-                        <SharedButton
-                          type="primary"
-                          size="medium"
-                          isDisabled
-                          iconSmall="swap"
-                        >
-                          {t("shared.swap")}
-                        </SharedButton>
-                      )}
-                    >
-                      <div className="centered_tooltip">
-                        <div>{t("wallet.swapDisabledOne")}</div>
-                        <div>{t("wallet.swapDisabledTwo")}</div>
-                      </div>
-                    </SharedTooltip>
-                  )}
-                </>
-              )}
+                ) : (
+                  <SharedTooltip
+                    type="dark"
+                    width={180}
+                    height={48}
+                    horizontalPosition="center"
+                    verticalPosition="bottom"
+                    customStyles={{ marginLeft: "0" }}
+                    horizontalShift={94}
+                    IconComponent={() => (
+                      <SharedButton
+                        type="primary"
+                        size="medium"
+                        isDisabled
+                        iconSmall="swap"
+                      >
+                        {t("shared.swap")}
+                      </SharedButton>
+                    )}
+                  >
+                    <div className="centered_tooltip">
+                      <div>{t("wallet.swapDisabledOne")}</div>
+                      <div>{t("wallet.swapDisabledTwo")}</div>
+                    </div>
+                  </SharedTooltip>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}

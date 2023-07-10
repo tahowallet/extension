@@ -841,8 +841,7 @@
       "banner": {
         "titleUnverified": "Asset not verified",
         "titleVerified": "Asset verified by you",
-        "description": "Be aware of scam and spam assets, only interact with assets you trust.",
-        "oldDescription": "Only transact with assets you trust."
+        "description": "Be aware of scam and spam assets, only interact with assets you trust."
       }
     }
   },
@@ -958,8 +957,7 @@
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
-        "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
-        "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification"
+        "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs"
       }
     }
   },
