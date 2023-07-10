@@ -1,4 +1,4 @@
-import { initialState } from "@tallyho/tally-background/redux-slices/keyrings"
+import { initialState } from "@tallyho/tally-background/redux-slices/internal-signer"
 import userEvent from "@testing-library/user-event"
 import { createMemoryHistory } from "history"
 import React from "react"
@@ -11,7 +11,7 @@ const unlockText = "Unlock signing"
 const lockText = "Lock signing"
 
 const getPreloadedState = (status: "locked" | "unlocked") => ({
-  keyrings: {
+  internalSigner: {
     ...initialState,
     status,
   },
@@ -31,7 +31,7 @@ describe("SigningButton", () => {
 
     expect(buttonElement).toHaveTextContent(unlockText)
     await userEvent.click(buttonElement)
-    expect(history.location.pathname).toBe("/keyring/unlock")
+    expect(history.location.pathname).toBe("/internal-signer/unlock")
   })
 
   test("should go to the root page after being clicked when the wallet is unlocked", async () => {

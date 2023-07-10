@@ -38,7 +38,7 @@ setTimeout(() => {
 }, 1000)
 
 const POPUP_WIDTH = 384
-// const POPUP_HEIGHT = 600
+const POPUP_HEIGHT = 600
 
 /**
  * Because browser.windows.create(...) takes a height and width that includes
@@ -48,7 +48,7 @@ const POPUP_WIDTH = 384
  */
 const missingWidth = POPUP_WIDTH - window.innerWidth
 // TODO: Change this to use POPUP_HEIGHT and test signing and other popups
-const missingHeight = window.outerHeight - window.innerHeight
+const missingHeight = POPUP_HEIGHT - window.innerHeight
 
 window.resizeBy(missingWidth, missingHeight)
 

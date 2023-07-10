@@ -1,24 +1,24 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { useHistory } from "react-router-dom"
-import { unlockKeyrings } from "@tallyho/tally-background/redux-slices/keyrings"
+import { unlockInternalSigners } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { rejectTransactionSignature } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { useTranslation } from "react-i18next"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import {
   useBackgroundDispatch,
-  useAreKeyringsUnlocked,
   useIsDappPopup,
+  useAreInternalSignersUnlocked,
 } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import PasswordInput from "../Shared/PasswordInput"
 
-type KeyringUnlockProps = {
+type InternalSignerUnlockProps = {
   displayCancelButton: boolean
 }
 
-export default function KeyringUnlock({
+export default function InternalSignerUnlock({
   displayCancelButton,
-}: KeyringUnlockProps): ReactElement {
+}: InternalSignerUnlockProps): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "keyring.unlock" })
   const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
   const [password, setPassword] = useState("")
@@ -29,23 +29,23 @@ export default function KeyringUnlock({
     goBack: () => void
   } = useHistory()
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
 
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
-    if (areKeyringsUnlocked) {
+    if (areInternalSignersUnlocked) {
       history.goBack()
       dispatch(setSnackbarMessage(t("snackbar")))
     }
-  }, [history, areKeyringsUnlocked, dispatch, t])
+  }, [history, areInternalSignersUnlocked, dispatch, t])
 
   const dispatchUnlockWallet = async (
     event: React.FormEvent<HTMLFormElement>
   ): Promise<void> => {
     event.preventDefault()
-    await dispatch(unlockKeyrings(password))
-    // If keyring was unable to unlock, display error message
+    await dispatch(unlockInternalSigners(password))
+    // If internal signer service was unable to unlock, display error message
     setErrorMessage(t("error.incorrect"))
   }
 
@@ -82,7 +82,11 @@ export default function KeyringUnlock({
       </div>
       <h1 className="serif_header">{t("title")}</h1>
       <div className="simple_text subtitle">{t("subtitle")}</div>
-      <form onSubmit={dispatchUnlockWallet}>
+      <form
+        role="presentation"
+        onSubmit={dispatchUnlockWallet}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <div className="signing_wrap">
           <div className="input_wrap">
             <PasswordInput
@@ -157,6 +161,6 @@ export default function KeyringUnlock({
   )
 }
 
-KeyringUnlock.defaultProps = {
+InternalSignerUnlock.defaultProps = {
   displayCancelButton: true,
 }
