@@ -1,35 +1,40 @@
 type OldState = {
-  ui: {
-    settings: {
-      [settingsKey: string]: unknown
+  keyrings: {
+    keyringMetadata: {
+      [keyringId: string]: {
+        source: "import" | "internal"
+      }
     }
+    importing: false | "pending" | "done" | "failed"
     [sliceKey: string]: unknown
   }
-  [otherSlice: string]: unknown
 }
 
 type NewState = {
-  ui: {
-    settings: {
-      [settingsKey: string]: unknown
-      useFlashbots: boolean
+  internalSigner: {
+    metadata: {
+      [keyringId: string]: {
+        source: "import" | "internal"
+      }
     }
+    privateKeys: { type: "single#secp256k1"; path: null; addresses: [string] }[]
     [sliceKey: string]: unknown
   }
-  [otherSlice: string]: unknown
 }
 
 export default (prevState: Record<string, unknown>): NewState => {
-  const typedPrevState = prevState as OldState
+  const oldState = prevState as OldState
+  const {
+    keyrings: { keyringMetadata, importing: _, ...keyringsState },
+    ...stateWithoutKeyrings
+  } = oldState
 
   return {
-    ...prevState,
-    ui: {
-      ...typedPrevState.ui,
-      settings: {
-        ...typedPrevState.ui.settings,
-        useFlashbots: false,
-      },
+    ...stateWithoutKeyrings,
+    internalSigner: {
+      ...keyringsState,
+      metadata: keyringMetadata,
+      privateKeys: [],
     },
   }
 }

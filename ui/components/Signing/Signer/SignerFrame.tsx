@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react"
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
-import SignerKeyringFrame from "./SignerKeyring/SignerKeyringFrame"
+import SignerInternalFrame from "./SignerInternal/SignerInternalFrame"
 import SignerLedgerFrame from "./SignerLedger/SignerLedgerFrame"
 import SignerReadOnlyFrame from "./SignerReadOnly/SignerReadOnlyFrame"
 import { SignerFrameProps } from "."
@@ -22,8 +22,9 @@ export default function SignerFrame<T extends SignOperationType>(
   const { signer } = props
 
   switch (signer.type) {
+    case "private-key":
     case "keyring":
-      return <SignerKeyringFrame {...props} />
+      return <SignerInternalFrame {...props} />
     case "ledger":
       // Below, we repeat `signer` so it is typed correctly, because the prop
       // spread passes it with a type that is not specific enough.

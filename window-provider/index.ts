@@ -186,7 +186,7 @@ export default class TallyWindowProvider extends EventEmitter {
             .sort(([id], [id2]) => Number(BigInt(id2) - BigInt(id)))
             .forEach(([, { sendData, reject, resolve }]) => {
               window.walletRouter
-                ?.routeToNewDefault(sendData.request)
+                ?.routeToNewNonTahoDefault(sendData.request)
                 // On success or error, call the original reject/resolve
                 // functions to notify the requestor of the new wallet's
                 // response.
