@@ -2,7 +2,7 @@ import { createSelector } from "@reduxjs/toolkit"
 import { selectCurrentNetwork } from "./uiSelectors"
 import { SwappableAsset, isSmartContractFungibleAsset } from "../../assets"
 import { sameNetwork } from "../../networks"
-import { isBuiltInNetworkBaseAsset, isTrustedAsset } from "../utils/asset-utils"
+import { isBaseAssetForNetwork, isTrustedAsset } from "../utils/asset-utils"
 import { RootState } from ".."
 import { SingleAssetState } from "../assets"
 
@@ -26,13 +26,13 @@ export const selectSwapBuyAssets = createSelector(
       ): asset is SwappableAsset & {
         recentPrices: SingleAssetState["recentPrices"]
       } => {
-        return (
-          isTrustedAsset(asset) &&
-          // Only list assets for the current network.
-          (isBuiltInNetworkBaseAsset(asset, currentNetwork) ||
-            (isSmartContractFungibleAsset(asset) &&
-              sameNetwork(asset.homeNetwork, currentNetwork)))
-        )
+        // Only list assets for the current network.
+        const assetIsOnCurrentNetwork =
+          isBaseAssetForNetwork(asset, currentNetwork) ||
+          (isSmartContractFungibleAsset(asset) &&
+            sameNetwork(asset.homeNetwork, currentNetwork))
+
+        return isTrustedAsset(asset) && assetIsOnCurrentNetwork
       }
     )
   }

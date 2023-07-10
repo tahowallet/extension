@@ -12,7 +12,7 @@ import {
 import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
-  isBuiltInNetworkBaseAsset,
+  isBaseAssetForNetwork,
   AssetID,
   getAssetID,
   isNetworkBaseAsset,
@@ -337,7 +337,7 @@ const accountSlice = createSlice({
           if (
             updatedAccountBalance.assetAmount.amount === 0n &&
             existingAccountData.balances[assetID] === undefined &&
-            !isBuiltInNetworkBaseAsset(asset, network) // add base asset even if balance is 0
+            !isBaseAssetForNetwork(asset, network) // add base asset even if balance is 0
           ) {
             return
           }

@@ -88,7 +88,7 @@ function isPolygonBaseAsset(asset: AnyAsset) {
  *
  * @return True if the passed asset is the base asset for the passed network.
  */
-export function isBuiltInNetworkBaseAsset(
+export function isBaseAssetForNetwork(
   asset: AnyAsset,
   network: AnyNetwork
 ): asset is NetworkBaseAsset {
