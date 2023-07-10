@@ -4,14 +4,17 @@ import {
 } from "@tallyho/provider-bridge-shared"
 import sinon from "sinon"
 import browser from "webextension-polyfill"
+// FIXME Pull the appropriate dependency to this package.json so we're not
+// FIXME relying on weird cross-package dependencies.
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { waitFor } from "@testing-library/dom"
+import * as popupUtils from "../show-popup"
 import * as featureFlags from "../../../features"
-import { wait } from "../../../lib/utils"
 import { createProviderBridgeService } from "../../../tests/factories"
 import { AddEthereumChainParameter } from "../../internal-ethereum-provider"
 import ProviderBridgeService from "../index"
 import { validateAddEthereumChainParameter } from "../utils"
+import { ETHEREUM } from "../../../constants"
 
 const WINDOW = {
   focused: true,
@@ -133,6 +136,7 @@ describe("ProviderBridgeService", () => {
       const { enablingPermission } = BASE_DATA
 
       jest.spyOn(featureFlags, "isEnabled").mockImplementation(() => true)
+      const showPopupSpy = jest.spyOn(popupUtils, "default")
 
       const request = providerBridgeService.routeContentScriptRPCRequest(
         {
@@ -143,21 +147,24 @@ describe("ProviderBridgeService", () => {
         enablingPermission.origin
       )
 
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      const IEP = providerBridgeService["internalEthereumProviderService"]
+      // @ts-expect-error private access to reference the service
+      const IEP = providerBridgeService.internalEthereumProviderService
       const spy = jest.spyOn(IEP, "routeSafeRPCRequest")
 
-      await wait(0) // wait next tick to setup popup
+      // wait until popup is set up
+      await waitFor(() => expect(showPopupSpy).toHaveBeenCalled())
 
       const validatedPayload = validateAddEthereumChainParameter(
         params[0] as AddEthereumChainParameter
       )
 
-      expect(providerBridgeService.getNewCustomRPCDetails("0")).toEqual({
-        ...validatedPayload,
-        favicon: "favicon.png",
-        siteTitle: "some site",
-      })
+      await waitFor(() =>
+        expect(providerBridgeService.getNewCustomRPCDetails("0")).toEqual({
+          ...validatedPayload,
+          favicon: "favicon.png",
+          siteTitle: "some site",
+        })
+      )
 
       expect(spy).not.toHaveBeenCalled()
       providerBridgeService.handleAddNetworkRequest("0", true)
@@ -170,6 +177,59 @@ describe("ProviderBridgeService", () => {
         )
       )
 
+      await expect(request).resolves.toEqual(null) // resolves without errors
+    })
+
+    it("should skip user confirmation if the network already exists", async () => {
+      const params = [
+        {
+          chainId: "1",
+          chainName: "Ethereum Mainnet",
+          nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+          iconUrl: undefined,
+          rpcUrls: ["booyan"],
+          blockExplorerUrls: ["https://etherscan.io"],
+        },
+        "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+        "some site",
+        "favicon.png",
+      ]
+
+      const { enablingPermission } = BASE_DATA
+
+      jest.spyOn(featureFlags, "isEnabled").mockImplementation(() => true)
+      const showPopupSpy = jest.spyOn(popupUtils, "default")
+
+      const internalEthereumProvider =
+        // @ts-expect-error private access to reference the service
+        providerBridgeService.internalEthereumProviderService
+      jest
+        .spyOn(internalEthereumProvider, "getTrackedNetworkByChainId")
+        .mockImplementation(() => Promise.resolve(ETHEREUM))
+      const internalEthereumProviderSpy = jest.spyOn(
+        internalEthereumProvider,
+        "routeSafeRPCRequest"
+      )
+
+      const request = providerBridgeService.routeContentScriptRPCRequest(
+        {
+          ...enablingPermission,
+        },
+        "wallet_addEthereumChain",
+        params,
+        enablingPermission.origin
+      )
+
+      await waitFor(() =>
+        expect(internalEthereumProviderSpy).toHaveBeenCalledWith(
+          "wallet_addEthereumChain",
+          params,
+          BASE_DATA.origin
+        )
+      )
+
+      // expect no popup
+      expect(showPopupSpy).not.toHaveBeenCalled()
       await expect(request).resolves.toEqual(null) // resolves without errors
     })
   })
