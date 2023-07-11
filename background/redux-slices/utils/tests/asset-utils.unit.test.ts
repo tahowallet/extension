@@ -13,65 +13,83 @@ describe("Asset utils", () => {
     test("should return true if is a token list asset", () => {
       const asset = createSmartContractAsset()
 
-      expect(isBaselineTrustedAsset(asset)).toBeTruthy()
+      expect(isBaselineTrustedAsset(asset)).toBe(true)
     })
 
-    test("should return false if is not a token list asset", () => {
-      const asset = createSmartContractAsset({ metadata: {} })
+    test("should return false if is neither a token list asset nor a network base asset", () => {
+      const asset = createSmartContractAsset({ metadata: { tokenLists: [] } })
 
       expect(isBaselineTrustedAsset(asset)).toBeFalsy()
     })
 
     test("should return true if is a network base asset", () => {
-      expect(isBaselineTrustedAsset(ETH)).toBeTruthy()
+      expect(isBaselineTrustedAsset(ETH)).toBe(true)
+    })
+
+    test("should return true if is a network base and a token list asset", () => {
+      const asset = {
+        ...createSmartContractAsset(),
+        // Only network base assets have a chainID property
+        chainID: "1",
+      }
+
+      expect(isBaselineTrustedAsset(asset)).toBe(true)
     })
   })
 
   describe("isVerifiedAsset", () => {
-    test("should return true if is a verified asset", () => {
+    test("should return true if asset is explicitly verified", () => {
       const asset = createSmartContractAsset({ metadata: { verified: true } })
 
-      expect(isVerifiedAsset(asset)).toBeTruthy()
+      expect(isVerifiedAsset(asset)).toBe(true)
     })
 
-    test("should return false if is a unverified asset", () => {
-      const asset = createSmartContractAsset({ metadata: { verified: false } })
-
-      expect(isVerifiedAsset(asset)).toBeFalsy()
-    })
-
-    test("should return false if is a network base asset", () => {
-      expect(isVerifiedAsset(ETH)).toBeFalsy()
-    })
-
-    test("should return false if is a token list asset", () => {
-      const asset = createSmartContractAsset()
-
-      expect(isVerifiedAsset(asset)).toBeFalsy()
+    test("should return false if it has no explicit verification state", () => {
+      expect(isVerifiedAsset(ETH)).toBe(false)
+      expect(isVerifiedAsset(createSmartContractAsset())).toBe(false)
+      expect(
+        isVerifiedAsset(
+          createSmartContractAsset({ metadata: { verified: false } })
+        )
+      ).toBe(false)
     })
   })
 
   describe("isTrustedAsset", () => {
-    test("should return true if is a verified asset", () => {
+    test("should return true if asset is explicitly verified", () => {
       const asset = createSmartContractAsset({ metadata: { verified: true } })
 
-      expect(isTrustedAsset(asset)).toBeTruthy()
+      expect(isTrustedAsset(asset)).toBe(true)
     })
 
     test("should return false if is a unverified asset", () => {
       const asset = createSmartContractAsset({ metadata: { verified: false } })
 
-      expect(isTrustedAsset(asset)).toBeFalsy()
+      expect(isTrustedAsset(asset)).toBe(false)
     })
 
     test("should return true if is a network base asset", () => {
-      expect(isTrustedAsset(ETH)).toBeTruthy()
+      expect(isTrustedAsset(ETH)).toBe(true)
     })
 
     test("should return true if is a token list asset", () => {
       const asset = createSmartContractAsset()
 
-      expect(isTrustedAsset(asset)).toBeTruthy()
+      expect(isTrustedAsset(asset)).toBe(true)
+    })
+
+    test("should return false if is not a token list asset", () => {
+      const asset = createSmartContractAsset({ metadata: { tokenLists: [] } })
+
+      expect(isTrustedAsset(asset)).toBe(false)
+    })
+
+    test("should return false if asset is with no verification state, no token list, and that isn't a network base asset", () => {
+      const asset = createSmartContractAsset({
+        metadata: {},
+      })
+
+      expect(isTrustedAsset(asset)).toBe(false)
     })
   })
 
