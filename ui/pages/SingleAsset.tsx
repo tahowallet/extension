@@ -19,10 +19,9 @@ import {
   NETWORKS_SUPPORTING_SWAPS,
 } from "@tallyho/tally-background/constants"
 import {
-  isUntrustedAsset,
-  isUnverifiedAssetByUser,
+  isTrustedAsset,
+  isVerifiedAsset,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundSelector } from "../hooks"
 import SharedAssetIcon from "../components/Shared/SharedAssetIcon"
 import SharedButton from "../components/Shared/SharedButton"
@@ -98,14 +97,10 @@ export default function SingleAsset(): ReactElement {
       localizedDecimalAmount: undefined,
     }
 
-  const isUntrusted = isUntrustedAsset(asset)
-  const isUnverifiedByUser = isUnverifiedAssetByUser(asset)
+  const isTrusted = asset && isTrustedAsset(asset)
+  const isVerified = asset && isVerifiedAsset(asset)
   const [warnedAsset, setWarnedAsset] =
     useState<SmartContractFungibleAsset | null>(null)
-
-  const showActionButtons = isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)
-    ? !isUnverifiedByUser
-    : true
 
   return (
     <>
@@ -117,21 +112,14 @@ export default function SingleAsset(): ReactElement {
       />
       <div className="navigation standard_width_padded">
         <SharedBackButton path="/" />
-        {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
-          <>
-            {isUntrusted &&
-              !isUnverifiedByUser &&
-              asset &&
-              isSmartContractFungibleAsset(asset) && (
-                <AssetVerifyToggler
-                  text={t("assets.verifiedByUser")}
-                  icon="notif-correct"
-                  color="var(--green-20)"
-                  hoverColor="var(--white)"
-                  onClick={() => setWarnedAsset(asset)}
-                />
-              )}
-          </>
+        {isVerified && asset && isSmartContractFungibleAsset(asset) && (
+          <AssetVerifyToggler
+            text={t("assets.verifiedByUser")}
+            icon="notif-correct"
+            color="var(--green-20)"
+            hoverColor="var(--white)"
+            onClick={() => setWarnedAsset(asset)}
+          />
         )}
       </div>
       {asset && (
@@ -179,85 +167,80 @@ export default function SingleAsset(): ReactElement {
             )}
           </div>
           <div className="right">
-            {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
-              <>
-                {isUnverifiedByUser && isSmartContractFungibleAsset(asset) && (
-                  <div className="unverified_asset_button">
-                    <AssetVerifyToggler
-                      text={t("assets.unverifiedAsset")}
-                      icon="notif-attention"
-                      color="var(--green-20)"
-                      hoverColor="var(--white)"
-                      onClick={() => setWarnedAsset(asset)}
-                    />
-                    <div>
-                      <SharedButton
-                        type="primary"
-                        size="medium"
-                        onClick={() => setWarnedAsset(asset)}
-                      >
-                        {t("assets.verifyAsset")}
-                      </SharedButton>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
-            {showActionButtons &&
-              currentAccountSigner !== ReadOnlyAccountSigner && (
-                <>
+            {!isVerified && !isTrusted && isSmartContractFungibleAsset(asset) && (
+              <div className="unverified_asset_button">
+                <AssetVerifyToggler
+                  text={t("assets.unverifiedAsset")}
+                  icon="notif-attention"
+                  color="var(--green-20)"
+                  hoverColor="var(--white)"
+                  onClick={() => setWarnedAsset(asset)}
+                />
+                <div>
                   <SharedButton
                     type="primary"
                     size="medium"
-                    iconSmall="send"
+                    onClick={() => setWarnedAsset(asset)}
+                  >
+                    {t("assets.verifyAsset")}
+                  </SharedButton>
+                </div>
+              </div>
+            )}
+
+            {isTrusted && currentAccountSigner !== ReadOnlyAccountSigner && (
+              <>
+                <SharedButton
+                  type="primary"
+                  size="medium"
+                  iconSmall="send"
+                  linkTo={{
+                    pathname: "/send",
+                    state: asset,
+                  }}
+                >
+                  {t("shared.send")}
+                </SharedButton>
+                {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) ? (
+                  <SharedButton
+                    type="primary"
+                    size="medium"
+                    iconSmall="swap"
                     linkTo={{
-                      pathname: "/send",
+                      pathname: "/swap",
                       state: asset,
                     }}
                   >
-                    {t("shared.send")}
+                    {t("shared.swap")}
                   </SharedButton>
-                  {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) ? (
-                    <SharedButton
-                      type="primary"
-                      size="medium"
-                      iconSmall="swap"
-                      linkTo={{
-                        pathname: "/swap",
-                        state: asset,
-                      }}
-                    >
-                      {t("shared.swap")}
-                    </SharedButton>
-                  ) : (
-                    <SharedTooltip
-                      type="dark"
-                      width={180}
-                      height={48}
-                      horizontalPosition="center"
-                      verticalPosition="bottom"
-                      customStyles={{ marginLeft: "0" }}
-                      horizontalShift={94}
-                      IconComponent={() => (
-                        <SharedButton
-                          type="primary"
-                          size="medium"
-                          isDisabled
-                          iconSmall="swap"
-                        >
-                          {t("shared.swap")}
-                        </SharedButton>
-                      )}
-                    >
-                      <div className="centered_tooltip">
-                        <div>{t("wallet.swapDisabledOne")}</div>
-                        <div>{t("wallet.swapDisabledTwo")}</div>
-                      </div>
-                    </SharedTooltip>
-                  )}
-                </>
-              )}
+                ) : (
+                  <SharedTooltip
+                    type="dark"
+                    width={180}
+                    height={48}
+                    horizontalPosition="center"
+                    verticalPosition="bottom"
+                    customStyles={{ marginLeft: "0" }}
+                    horizontalShift={94}
+                    IconComponent={() => (
+                      <SharedButton
+                        type="primary"
+                        size="medium"
+                        isDisabled
+                        iconSmall="swap"
+                      >
+                        {t("shared.swap")}
+                      </SharedButton>
+                    )}
+                  >
+                    <div className="centered_tooltip">
+                      <div>{t("wallet.swapDisabledOne")}</div>
+                      <div>{t("wallet.swapDisabledTwo")}</div>
+                    </div>
+                  </SharedTooltip>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}

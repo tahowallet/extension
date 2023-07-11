@@ -67,7 +67,7 @@ import {
   OPTIMISM_GAS_ORACLE_ABI,
   OPTIMISM_GAS_ORACLE_ADDRESS,
 } from "./utils/optimismGasPriceOracle"
-import KeyringService from "../keyring"
+import InternalSignerService, { SignerImportSource } from "../internal-signer"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
 
 // The number of blocks to query at a time for historic asset transfers.
@@ -112,10 +112,7 @@ interface Events extends ServiceLifecycleEvents {
     transactions: Transaction[]
     account: AddressOnNetwork
   }
-  newAccountToTrack: {
-    addressOnNetwork: AddressOnNetwork
-    source: "import" | "internal" | null
-  }
+  newAccountToTrack: AddressOnNetwork
   supportedNetworks: EVMNetwork[]
   accountsWithBalances: {
     /**
@@ -231,9 +228,13 @@ export default class ChainService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     ChainService,
-    [Promise<PreferenceService>, Promise<KeyringService>]
-  > = async (preferenceService, keyringService) => {
-    return new this(createDB(), await preferenceService, await keyringService)
+    [Promise<PreferenceService>, Promise<InternalSignerService>]
+  > = async (preferenceService, internalSignerService) => {
+    return new this(
+      createDB(),
+      await preferenceService,
+      await internalSignerService
+    )
   }
 
   supportedNetworks: EVMNetwork[] = []
@@ -245,7 +246,7 @@ export default class ChainService extends BaseService<Events> {
   private constructor(
     private db: ChainDatabase,
     private preferenceService: PreferenceService,
-    private keyringService: KeyringService
+    private internalSignerService: InternalSignerService
   ) {
     super({
       queuedTransactions: {
@@ -922,7 +923,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
-    const source = await this.keyringService.getKeyringSourceForAddress(
+    const source = this.internalSignerService.getSignerSourceForAddress(
       addressNetwork.address
     )
     const isAccountOnNetworkAlreadyTracked =
@@ -930,10 +931,7 @@ export default class ChainService extends BaseService<Events> {
     if (!isAccountOnNetworkAlreadyTracked) {
       // Skip save, emit and savedTransaction emission on resubmission
       await this.db.addAccountToTrack(addressNetwork)
-      this.emitter.emit("newAccountToTrack", {
-        addressOnNetwork: addressNetwork,
-        source,
-      })
+      this.emitter.emit("newAccountToTrack", addressNetwork)
     }
     this.emitSavedTransactions(addressNetwork)
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
@@ -948,7 +946,7 @@ export default class ChainService extends BaseService<Events> {
         e
       )
     })
-    if (source !== "internal") {
+    if (source !== SignerImportSource.internal) {
       this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
         logger.error(
           "chainService/addAccountToTrack: Error loading historic asset transfers",
@@ -1644,7 +1642,7 @@ export default class ChainService extends BaseService<Events> {
               // Don't override an already-persisted successful status with
               // an expiration-based failed status, but do set status to
               // failure if no transaction was seen.
-              { status: 0, ...existingTransaction },
+              { status: 0, ...existingTransaction } as AnyEVMTransaction,
               "local"
             )
           }
@@ -1712,6 +1710,9 @@ export default class ChainService extends BaseService<Events> {
       logger.error(`Error emitting tx ${finalTransaction}`, error)
     }
     if (error) {
+      // We don't control the errors in the whole stack, but we do want to
+      // rethrow them regardless.
+      // eslint-disable-next-line @typescript-eslint/no-throw-literal
       throw error
     }
   }

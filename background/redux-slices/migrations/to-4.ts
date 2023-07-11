@@ -39,7 +39,7 @@ export default (
     },
   }
 
-  const { blocks, ...oldStateAccountWithoutBlocks } = oldState.account ?? {
+  const { blocks: _, ...oldStateAccountWithoutBlocks } = oldState.account ?? {
     blocks: undefined,
   }
 

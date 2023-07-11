@@ -24,6 +24,7 @@ import { HexString } from "@tallyho/tally-background/types"
 import React, { FormEventHandler, ReactElement, useRef, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
+import { isTrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import SharedAssetIcon from "../../components/Shared/SharedAssetIcon"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
@@ -206,6 +207,11 @@ export default function SettingsAddCustomAsset(): ReactElement {
     return t("warning.alreadyExists.desc.visibility")
   }
 
+  // The asset should be displayed in the regular list when that is trusted by default or verified by the user.
+  // This check allows the user to add an asset that is on the unverified list.
+  const isTrusted = assetData?.asset && isTrustedAsset(assetData.asset)
+  const shouldDisplayAsset = assetData?.exists && isTrusted
+
   return (
     <div className="standard_width_padded wrapper">
       <SharedPageHeader withoutBackText>{t(`title`)}</SharedPageHeader>
@@ -377,7 +383,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
               !assetData ||
               isLoadingAssetDetails ||
               hasAssetDetailLoadError ||
-              assetData.exists ||
+              shouldDisplayAsset ||
               isImportingToken
             }
             isLoading={isLoadingAssetDetails || isImportingToken}
@@ -385,7 +391,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
             {t("submit")}
           </SharedButton>
         </div>
-        {assetData?.exists ? (
+        {shouldDisplayAsset ? (
           <div className="alert">
             <SharedIcon
               color="var(--success)"

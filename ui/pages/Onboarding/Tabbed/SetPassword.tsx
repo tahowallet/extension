@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react"
 import {
   createPassword,
-  unlockKeyrings,
-} from "@tallyho/tally-background/redux-slices/keyrings"
+  unlockInternalSigners,
+} from "@tallyho/tally-background/redux-slices/internal-signer"
 import { Redirect, useHistory, useLocation } from "react-router-dom"
 import { Trans, useTranslation } from "react-i18next"
-import { selectKeyringStatus } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectInternalSignerStatus } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   useBackgroundDispatch,
-  useAreKeyringsUnlocked,
+  useAreInternalSignersUnlocked,
   useBackgroundSelector,
   useIsOnboarding,
 } from "../../../hooks"
@@ -27,15 +27,15 @@ export default function SetPassword(): JSX.Element {
 
   const { state: { nextPage } = {} } = useLocation<{ nextPage?: string }>()
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
 
   const dispatch = useBackgroundDispatch()
 
   useEffect(() => {
-    if (nextPage && areKeyringsUnlocked) {
+    if (nextPage && areInternalSignersUnlocked) {
       history.replace(nextPage)
     }
-  }, [areKeyringsUnlocked, history, nextPage])
+  }, [areInternalSignersUnlocked, history, nextPage])
 
   const validatePassword = (): boolean => {
     if (password.length < 8) {
@@ -65,7 +65,7 @@ export default function SetPassword(): JSX.Element {
     }
   }
 
-  const keyringStatus = useBackgroundSelector(selectKeyringStatus)
+  const lockStatus = useBackgroundSelector(selectInternalSignerStatus)
   const isOnboarding = useIsOnboarding()
 
   if (!nextPage) {
@@ -73,7 +73,7 @@ export default function SetPassword(): JSX.Element {
   }
 
   // Unlock Wallet
-  if (!isOnboarding && keyringStatus === "locked") {
+  if (!isOnboarding && lockStatus === "locked") {
     const handleAttemptUnlock: React.FormEventHandler<HTMLFormElement> = async (
       event
     ) => {
@@ -82,7 +82,7 @@ export default function SetPassword(): JSX.Element {
 
       const input = form.elements.namedItem("password") as HTMLInputElement
 
-      const { success } = await dispatch(unlockKeyrings(input.value))
+      const { success } = await dispatch(unlockInternalSigners(input.value))
 
       if (success) {
         history.replace(nextPage)

@@ -51,6 +51,8 @@ import {
 import {
   getFullAssetID,
   isTokenListAsset,
+  isBaselineTrustedAsset,
+  isUnverifiedAsset,
 } from "../../redux-slices/utils/asset-utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
@@ -100,6 +102,18 @@ const getActiveAssetsByAddressForNetwork = (
   )
 
   return getAssetsByAddress(networkActiveAssets)
+}
+
+function allowVerifyAssetByManualImport(
+  asset: SmartContractFungibleAsset,
+  verified?: boolean
+): boolean {
+  // Only not baseline trusted and unverified assets can be verified.
+  if (!isBaselineTrustedAsset(asset) && isUnverifiedAsset(asset)) {
+    return !!verified
+  }
+
+  return false
 }
 
 /**
@@ -444,7 +458,7 @@ export default class IndexingService extends BaseService<Events> {
 
     this.chainService.emitter.on(
       "newAccountToTrack",
-      async ({ addressOnNetwork }) => {
+      async (addressOnNetwork) => {
         // whenever a new account is added, get token balances from Alchemy's
         // default list and add any non-zero tokens to the tracking list
         const balances = await this.retrieveTokenBalances(addressOnNetwork)
@@ -703,20 +717,14 @@ export default class IndexingService extends BaseService<Events> {
       normalizedAddress
     )
 
-    if (knownAsset) {
-      const newDiscoveryTxHash = metadata?.discoveryTxHash
-      const addressForDiscoveryTxHash = newDiscoveryTxHash
-        ? Object.keys(newDiscoveryTxHash)[0]
-        : undefined
-      const existingDiscoveryTxHash = addressForDiscoveryTxHash
-        ? knownAsset.metadata?.discoveryTxHash?.[addressForDiscoveryTxHash]
-        : undefined
-      // If the discovery tx hash is not specified
-      // or if it already exists in the asset, do not update the asset
-      if (!newDiscoveryTxHash || existingDiscoveryTxHash) {
-        await this.addAssetToTrack(knownAsset)
-        return knownAsset
-      }
+    if (
+      knownAsset &&
+      // Refresh a known unverified asset if it has been manually imported.
+      // This check allows the user to add an asset from the unverified list.
+      !allowVerifyAssetByManualImport(knownAsset, metadata?.verified)
+    ) {
+      await this.addAssetToTrack(knownAsset)
+      return knownAsset
     }
 
     let customAsset = await this.db.getCustomAssetByAddressAndNetwork(
@@ -835,15 +843,15 @@ export default class IndexingService extends BaseService<Events> {
     // Filter all assets based on supported networks
     const activeAssetsToTrack = assetsToTrack.filter((asset) => {
       // Skip custom assets
+      const cachedAsset = this.getKnownSmartContractAsset(
+        asset.homeNetwork,
+        asset.contractAddress
+      )
       if (
         customAssetsById.has(getFullAssetID(asset)) &&
         // Only filter custom assets which do not appear in token lists
-        !isTokenListAsset(
-          this.getKnownSmartContractAsset(
-            asset.homeNetwork,
-            asset.contractAddress
-          )
-        )
+        cachedAsset &&
+        !isTokenListAsset(cachedAsset)
       ) {
         return false
       }

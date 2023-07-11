@@ -22,7 +22,7 @@ export default function SignTypedDataInfo({
       ? annotation.displayFields
       : typedData.message ?? {}
 
-  const keys = Object.keys(fieldsToDisplay)
+  const keys = Object.keys(fieldsToDisplay) as (keyof typeof fieldsToDisplay)[]
   return (
     <div className="messages">
       <div className="message">

@@ -1,7 +1,8 @@
 import {
   generateNewKeyring,
-  importKeyring,
-} from "@tallyho/tally-background/redux-slices/keyrings"
+  importSigner,
+  setKeyringToVerify,
+} from "@tallyho/tally-background/redux-slices/internal-signer"
 import React, { ReactElement } from "react"
 import {
   Redirect,
@@ -11,9 +12,14 @@ import {
   useRouteMatch,
 } from "react-router-dom"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  SignerImportSource,
+  SignerSourceTypes,
+} from "@tallyho/tally-background/services/internal-signer"
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import OnboardingStepsIndicator from "../../../components/Onboarding/OnboardingStepsIndicator"
 import {
-  useAreKeyringsUnlocked,
+  useAreInternalSignersUnlocked,
   useBackgroundDispatch,
   useBackgroundSelector,
 } from "../../../hooks"
@@ -59,11 +65,11 @@ export const NewSeedRoutes = {
 export default function NewSeed(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const mnemonic = useBackgroundSelector(
-    (state) => state.keyrings.keyringToVerify?.mnemonic
+    (state) => state.internalSigner.keyringToVerify?.mnemonic
   )
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
-  const areKeyringsUnlocked = useAreKeyringsUnlocked(false)
+  const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
 
   const history = useHistory()
   const { path } = useRouteMatch()
@@ -78,16 +84,22 @@ export default function NewSeed(): ReactElement {
     history.replace(NewSeedRoutes.VERIFY_SEED)
   }
 
-  const onVerifySuccess = (verifiedMnemonic: string[]) => {
-    dispatch(
-      importKeyring({
+  const onVerifySuccess = async (verifiedMnemonic: string[]) => {
+    const { success } = (await dispatch(
+      importSigner({
+        type: SignerSourceTypes.keyring,
         mnemonic: verifiedMnemonic.join(" "),
-        source: "internal",
+        source: SignerImportSource.internal,
       })
-    ).then(() => history.push(OnboardingRoutes.ONBOARDING_COMPLETE))
+    )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
+
+    if (success) {
+      dispatch(setKeyringToVerify(null))
+      history.push(OnboardingRoutes.ONBOARDING_COMPLETE)
+    }
   }
 
-  if (!areKeyringsUnlocked)
+  if (!areInternalSignersUnlocked)
     return (
       <Redirect
         to={{
