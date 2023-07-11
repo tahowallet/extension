@@ -49,8 +49,8 @@ import {
   sameEVMAddress,
 } from "../../lib/utils"
 import {
-  isUntrustedAsset,
-  isVerifiedAssetByUser,
+  isBaselineTrustedAsset,
+  isUnverifiedAsset,
 } from "../../redux-slices/utils/asset-utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
@@ -106,8 +106,8 @@ function allowVerifyAssetByManualImport(
   asset: SmartContractFungibleAsset,
   verified?: boolean
 ): boolean {
-  // Only untrusted and unverified assets can be verified.
-  if (isUntrustedAsset(asset) && !isVerifiedAssetByUser(asset)) {
+  // Only not baseline trusted and unverified assets can be verified.
+  if (!isBaselineTrustedAsset(asset) && isUnverifiedAsset(asset)) {
     return !!verified
   }
 

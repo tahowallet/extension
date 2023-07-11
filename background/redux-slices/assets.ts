@@ -13,7 +13,7 @@ import {
 import { AddressOnNetwork } from "../accounts"
 import { findClosestAssetIndex } from "../lib/asset-similarity"
 import { createBackgroundAsyncThunk } from "./utils"
-import { isBuiltInNetworkBaseAsset, isSameAsset } from "./utils/asset-utils"
+import { isBaseAssetForNetwork, isSameAsset } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
 import { EVMNetwork, sameNetwork } from "../networks"
 import { ERC20_INTERFACE } from "../lib/erc20"
@@ -230,7 +230,7 @@ export const transferAsset = createBackgroundAsyncThunk(
     const provider = getProvider()
     const signer = provider.getSigner()
 
-    if (isBuiltInNetworkBaseAsset(assetAmount.asset, fromNetwork)) {
+    if (isBaseAssetForNetwork(assetAmount.asset, fromNetwork)) {
       logger.debug(
         `Sending ${assetAmount.amount} ${assetAmount.asset.symbol} from ` +
           `${fromAddress} to ${toAddress} as a base asset transfer.`
@@ -305,7 +305,7 @@ export const selectAssetPricePoint = createSelector(
       /* Don't do anything else if this is an unverified asset and there's no exact match */
       if (
         (assetToFind.metadata?.tokenLists?.length ?? 0) < 1 &&
-        !isBuiltInNetworkBaseAsset(assetToFind, assetToFind.homeNetwork)
+        !isBaseAssetForNetwork(assetToFind, assetToFind.homeNetwork)
       ) {
         return undefined
       }
