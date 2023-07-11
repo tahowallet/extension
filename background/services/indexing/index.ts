@@ -269,8 +269,8 @@ export default class IndexingService extends BaseService<Events> {
 
   /**
    * Retrieves cached assets data from internal cache
-   * @returns An array of assets, including base assets that are "built in" to
-   *          the codebase. Fiat currencies are not included.
+   * @returns An array of assets, including network base assets, token list
+   *          assets and custom assets.
    */
   getCachedAssets(network: EVMNetwork): AnyAsset[] {
     return this.cachedAssets[network.chainID] ?? []
@@ -375,7 +375,6 @@ export default class IndexingService extends BaseService<Events> {
             enrichedEVMTransaction.network,
             asset.contractAddress
           ) !== "undefined" ||
-          (await this.db.isTrackingAsset(asset)) ||
           (
             await this.chainService.filterTrackedAddressesOnNetworks([
               {
@@ -836,8 +835,8 @@ export default class IndexingService extends BaseService<Events> {
     const activeAssetsToTrack = assetsToTrack.filter((asset) => {
       return (
         isTrustedAsset(asset) &&
-        trackedNetworks.some(
-          (network) => network.chainID === asset.homeNetwork.chainID
+        trackedNetworks.some((network) =>
+          sameNetwork(network, asset.homeNetwork)
         )
       )
     })
