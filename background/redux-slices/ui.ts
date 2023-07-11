@@ -10,6 +10,8 @@ import { AccountSignerWithId } from "../signing"
 import { AccountSignerSettings } from "../ui"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
+import { UNIXTime } from "../types"
+import { DEFAULT_AUTOLOCK_INTERVAL } from "../services/preferences/defaults"
 
 export const defaultSettings = {
   hideDust: false,
@@ -19,6 +21,7 @@ export const defaultSettings = {
   showAnalyticsNotification: false,
   showUnverifiedAssets: false,
   hideBanners: false,
+  autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
 }
 
 export type UIState = {
@@ -35,6 +38,7 @@ export type UIState = {
     showAnalyticsNotification: boolean
     showUnverifiedAssets: boolean
     hideBanners: boolean
+    autoLockInterval: UNIXTime
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
@@ -54,6 +58,7 @@ export type Events = {
   newSelectedNetwork: EVMNetwork
   updateAnalyticsPreferences: Partial<AnalyticsPreferences>
   addCustomNetworkResponse: [string, boolean]
+  updateAutoLockInterval: number
 }
 
 export const emitter = new Emittery<Events>()
@@ -201,6 +206,12 @@ const uiSlice = createSlice({
     ) => {
       return { ...state, accountSignerSettings: payload }
     },
+    setAutoLockInterval: (state, { payload }: { payload: number }) => {
+      return {
+        ...state,
+        settings: { ...state.settings, autoLockInterval: payload },
+      }
+    },
   },
 })
 
@@ -222,6 +233,7 @@ export const {
   setRouteHistoryEntries,
   setSlippageTolerance,
   setAccountsSignerSettings,
+  setAutoLockInterval,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -295,6 +307,19 @@ export const addNetworkUserResponse = createBackgroundAsyncThunk(
   }
 )
 
+export const updateAutoLockInterval = createBackgroundAsyncThunk(
+  "ui/updateAutoLockInterval",
+  async (newValue: string) => {
+    const parsedValue = parseInt(newValue, 10)
+
+    if (Number.isNaN(parsedValue) || parsedValue <= 1) {
+      throw new Error("Invalid value for auto lock timer")
+    }
+
+    emitter.emit("updateAutoLockInterval", parsedValue)
+  }
+)
+
 export const userActivityEncountered = createBackgroundAsyncThunk(
   "ui/userActivityEncountered",
   async (addressNetwork: AddressOnNetwork) => {
@@ -346,6 +371,11 @@ export const selectSettings = createSelector(selectUI, (ui) => ui.settings)
 export const selectHideDust = createSelector(
   selectSettings,
   (settings) => settings?.hideDust
+)
+
+export const selectAutoLockTimer = createSelector(
+  selectSettings,
+  (settings) => settings.autoLockInterval
 )
 
 export const selectSnackbarMessage = createSelector(

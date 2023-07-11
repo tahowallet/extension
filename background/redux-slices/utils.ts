@@ -68,6 +68,16 @@ const asyncThunkProperties = (() => {
   return exhaustiveList
 })()
 
+// Extracts a @reduxjs/toolkit internal type for type alignment in the below
+// function types.
+type AsyncThunkConfig = ReturnType<typeof createAsyncThunk> extends AsyncThunk<
+  infer _,
+  infer __,
+  infer T
+>
+  ? T
+  : never
+
 /**
  * Create an async thunk action that will always run in the background script,
  * and dispatches lifecycle actions (pending, fulfilled, rejected) on the
@@ -108,7 +118,7 @@ export function createBackgroundAsyncThunk<
   TypePrefix extends string,
   Returned,
   ThunkArg = void,
-  ThunkApiConfig = { extra: { main: Main } }
+  ThunkApiConfig extends AsyncThunkConfig = { extra: { main: Main } }
 >(
   typePrefix: TypePrefix,
   payloadCreator: AsyncThunkPayloadCreator<Returned, ThunkArg, ThunkApiConfig>,

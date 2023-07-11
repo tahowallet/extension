@@ -509,11 +509,11 @@ export default function Swap(): ReactElement {
                 )}
               </div>
             </div>
-            <div className="settings_wrap">
-              {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
+            {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
+              <div className="settings_wrap">
                 <SwapRewardsCard />
-              ) : null}
-            </div>
+              </div>
+            ) : null}
             <div className="footer standard_width_padded">
               {quoteAppliesToCurrentAssets && quote?.needsApproval ? (
                 <ApproveQuoteBtn
@@ -555,7 +555,7 @@ export default function Swap(): ReactElement {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-top: 13px;
+            margin-top: 10px;
           }
           .network_fee_group {
             display: flex;
@@ -580,13 +580,12 @@ export default function Swap(): ReactElement {
 
           .loading_wrapper {
             min-height: 73.5px;
-            margin: 16px 0 32px;
+            margin: 7px 0 10px;
           }
 
           .footer {
             display: flex;
             justify-content: center;
-            margin-top: 24px;
           }
           .total_label {
             width: 33px;

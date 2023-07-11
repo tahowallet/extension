@@ -86,7 +86,7 @@ export default function DAppConnectRequest(): ReactElement {
         .page {
           background-color: var(--green-95);
           height: 100vh;
-          width: 100vw;
+          width: 100%;
           z-index: 1000;
         }
       `}</style>

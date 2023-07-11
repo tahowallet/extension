@@ -1,3 +1,4 @@
+import argon2 from "argon2-browser"
 /**
  * An encrypted vault which can be safely serialized and stored.
  */
@@ -8,6 +9,11 @@ export type EncryptedVault = {
   initializationVector: string
   // base-64 encoded ciphertext holding the vault contents
   cipherText: string
+}
+
+export enum VaultVersion {
+  PBKDF2 = 1,
+  Argon2 = 2,
 }
 
 /*
@@ -21,7 +27,7 @@ export type SaltedKey = {
   key: CryptoKey
 }
 
-function bufferToBase64(array: Uint8Array): string {
+function bufferToBase64(array: Uint8Array | ArrayBuffer): string {
   return Buffer.from(array).toString("base64")
 }
 
@@ -64,7 +70,7 @@ function requireCryptoGlobal(message?: string) {
  *          material using AES GCM mode, as well as the salt required to derive
  *          the key again later.
  */
-export async function deriveSymmetricKeyFromPassword(
+export async function deprecatedDerivePbkdf2KeyFromPassword(
   password: string,
   existingSalt?: string
 ): Promise<SaltedKey> {
@@ -101,6 +107,48 @@ export async function deriveSymmetricKeyFromPassword(
   }
 }
 
+export async function deriveArgon2KeyFromPassword(
+  password: string,
+  existingSalt?: string
+): Promise<SaltedKey> {
+  const { crypto } = global
+
+  const salt = existingSalt || (await generateSalt())
+
+  const { hash } = await argon2.hash({
+    pass: password,
+    salt,
+    hashLen: 32,
+  })
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    hash,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  )
+
+  return {
+    key,
+    salt,
+  }
+}
+
+export async function deriveSymmetricKeyFromPassword(
+  version: VaultVersion,
+  password: string,
+  existingSalt?: string
+): Promise<SaltedKey> {
+  switch (version) {
+    case VaultVersion.PBKDF2:
+      return deprecatedDerivePbkdf2KeyFromPassword(password, existingSalt)
+    case VaultVersion.Argon2:
+      return deriveArgon2KeyFromPassword(password, existingSalt)
+    default:
+      throw new Error(`Unsupported vault version: ${version}`)
+  }
+}
 /**
  * Encrypt a JSON-serializable object with a supplied password using AES GCM
  * mode.
@@ -111,16 +159,18 @@ export async function deriveSymmetricKeyFromPassword(
  * @returns the ciphertext and all non-password material required for later
  *          decryption, including the salt and AES initialization vector.
  */
-export async function encryptVault<V>(
-  vault: V,
+export async function encryptVault<V>(vaultData: {
+  vault: V
   passwordOrSaltedKey: string | SaltedKey
-): Promise<EncryptedVault> {
+  version: VaultVersion
+}): Promise<EncryptedVault> {
   requireCryptoGlobal("Encrypting a vault")
   const { crypto } = global
+  const { vault, passwordOrSaltedKey, version } = vaultData
 
   const { key, salt } =
     typeof passwordOrSaltedKey === "string"
-      ? await deriveSymmetricKeyFromPassword(passwordOrSaltedKey)
+      ? await deriveSymmetricKeyFromPassword(version, passwordOrSaltedKey)
       : passwordOrSaltedKey
 
   const encoder = new TextEncoder()
@@ -159,10 +209,12 @@ export async function encryptVault<V>(
  *          most objects `decryptVault(encryptVault(o, password), password)`
  *          should deeply equal `o`.
  */
-export async function decryptVault<V>(
-  vault: EncryptedVault,
+export async function decryptVault<V>(vaultData: {
+  vault: EncryptedVault
   passwordOrSaltedKey: string | SaltedKey
-): Promise<V> {
+  version: VaultVersion
+}): Promise<V> {
+  const { vault, passwordOrSaltedKey } = vaultData
   requireCryptoGlobal("Decrypting a vault")
   const { crypto } = global
 
@@ -170,7 +222,11 @@ export async function decryptVault<V>(
 
   const { key } =
     typeof passwordOrSaltedKey === "string"
-      ? await deriveSymmetricKeyFromPassword(passwordOrSaltedKey, salt)
+      ? await deriveSymmetricKeyFromPassword(
+          vaultData.version,
+          passwordOrSaltedKey,
+          salt
+        )
       : passwordOrSaltedKey
 
   const plaintext = await crypto.subtle.decrypt(
