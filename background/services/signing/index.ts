@@ -189,6 +189,13 @@ export default class SigningService extends BaseService<Events> {
       return false
     }
 
+    // FIXME Address handlers aren't actually being populated or managed.
+    // FIXME Want to find out when addresses are added and manage the handlers
+    // FIXME list, also need to initialize it at service start.
+    // FIXME
+    // FIXME Alternatively, need to ask for control compatibility with the
+    // FIXME address, and based on service info determine if the address is
+    // FIXME controlled by the service or not. The latter seems better.
     if ("address" in objectOnNetwork) {
       const addressHandler = this.addressHandlers.find(({ address }) =>
         sameEVMAddress(address, objectOnNetwork.address)

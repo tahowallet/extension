@@ -174,6 +174,9 @@ export default class PreferenceService extends BaseService<Events> {
     await super.internalStopService()
   }
 
+  // FIXME Move to a separate service, as sameAddressBookEntry will require
+  // FIXME signing service isControlCompatible checks and the preference
+  // FIXME service needs to remain independent of other services.
   // TODO Implement the following 6 methods as something stored in the database
   // TODO and user-manageable.
   private sameAddressBookEntry(a: AddressOnNetwork, b: AddressOnNetwork) {
