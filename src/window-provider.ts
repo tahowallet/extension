@@ -113,6 +113,17 @@ if (!window.walletRouter) {
           this.currentProvider = this.lastInjectedProvider ?? this.tallyProvider
         }
 
+        // Make the new "current provider" first in the provider list. This
+        // makes it so that frameworks like wagmi that rely on the first item
+        // in the list being the default browser wallet correctly see either
+        // Taho (when default) or not-Taho (when not default).
+        this.providers = [
+          this.currentProvider,
+          ...this.providers.filter(
+            (provider: WalletProvider) => provider !== this.currentProvider
+          ),
+        ]
+
         if (
           shouldReload &&
           (window.location.href.includes("app.uniswap.org") ||
@@ -209,7 +220,7 @@ Object.defineProperty(window, "ethereum", {
           !(prop in window.walletRouter.currentProvider) &&
           prop in window.walletRouter
         ) {
-          // let's publish the api of `window.walletRoute` also on `window.ethereum` for better discoverability
+          // let's publish the api of `window.walletRouter` also on `window.ethereum` for better discoverability
 
           // @ts-expect-error ts accepts symbols as index only from 4.4
           // https://stackoverflow.com/questions/59118271/using-symbol-as-object-key-type-in-typescript
