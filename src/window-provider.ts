@@ -31,17 +31,39 @@ const tahoRoutedProperties = new Set(
   ] /* satisfies (keyof TahoWindowProvider)[] FIXME TypeScript 4.9 */
 )
 
-// FIXME need a substitute proxy in cases where MetaMask is *not* installed to
-// FIXME make it appear installed? Needed on e.g. bitcoinbridge.network or
-// FIXME there will be no available wallet connection option.
-function defaultManageProvider(provider: WalletProvider): WalletProvider {
+// Used exclusively if Taho is set to replace MetaMask AND MetaMask is not seen
+// to be installed. In this case, we drop a MetaMask mock so that sites that
+// only support MetaMask allow Taho connections; see the defaultManageProviders
+// function below.
+const metaMaskMock: WalletProvider = {
+  isMetaMask: true,
+  on: () => {},
+  removeListener: () => {},
+  _state: {
+    accounts: null,
+    isConnected: false,
+    isUnlocked: false,
+    initialized: false,
+    isPermanentlyDisconnected: false,
+  },
+}
+
+// A tracking list of MetaMask wrappers that allow us to avoid double-wrapping.
+const metaMaskWrappers = new Set()
+let metaMaskMockWrapper: WalletProvider | undefined
+
+function wrapMetaMaskProvider(provider: WalletProvider): WalletProvider {
+  if (metaMaskWrappers.has(provider)) {
+    return provider
+  }
+
   if (
     // Rewrap MetaMask in a proxy that will route to Taho whenever Taho is
     // default.
     provider.isMetaMask === true &&
     Object.keys(provider).filter((key) => key.startsWith("is")).length === 1
   ) {
-    return new Proxy(provider, {
+    const wrapper = new Proxy(provider, {
       get(target, prop, receiver) {
         if (
           window.walletRouter &&
@@ -66,13 +88,67 @@ function defaultManageProvider(provider: WalletProvider): WalletProvider {
         return Reflect.get(target, prop, receiver)
       },
     })
+
+    metaMaskWrappers.add(wrapper)
+
+    if (provider === metaMaskMock) {
+      metaMaskMockWrapper = wrapper
+    }
+
+    return wrapper
   }
 
   return provider
 }
 
-function defaultManageProviders(providers: WalletProvider[]): WalletProvider[] {
-  return providers.map(defaultManageProvider)
+/**
+ * Returns the list of providers but with any providers that manifest as
+ * MetaMask wrapped in the proxy from wrapMetaMaskProvider. If no MetaMask-like
+ * provider is detected and Taho is currently set as default, also creates a
+ * MetaMask mock that will allow dApps that only detect MetaMask to work with
+ * Taho when it is set as default.
+ */
+function metaMaskWrappedProviders(
+  providers: (WalletProvider | undefined)[]
+): WalletProvider[] {
+  const tahoIsDefault =
+    window.walletRouter !== undefined &&
+    window.walletRouter.currentProvider === tahoWindowProvider &&
+    tahoWindowProvider.tahoSetAsDefault
+
+  const { defaultManagedProviders, metaMaskDetected } = providers.reduce<{
+    defaultManagedProviders: WalletProvider[]
+    metaMaskDetected: boolean
+  }>(
+    // Shadowing as we're building up the final value extracted above.
+    // eslint-disable-next-line @typescript-eslint/no-shadow
+    ({ defaultManagedProviders, metaMaskDetected }, provider) => {
+      if (provider === undefined) {
+        return { defaultManagedProviders, metaMaskDetected }
+      }
+
+      // Filter out MetaMask mock if Taho has been flipped off from default.
+      if (provider === metaMaskMockWrapper && !tahoIsDefault) {
+        return { defaultManagedProviders, metaMaskDetected }
+      }
+
+      const defaultManaged = wrapMetaMaskProvider(provider)
+
+      return {
+        defaultManagedProviders: [...defaultManagedProviders, defaultManaged],
+        // MetaMask is the only one whose return value will differ from the
+        // underlying object.
+        metaMaskDetected: metaMaskDetected || defaultManaged !== provider,
+      }
+    },
+    { defaultManagedProviders: [], metaMaskDetected: false }
+  )
+
+  if (!metaMaskDetected && tahoIsDefault) {
+    return [wrapMetaMaskProvider(metaMaskMock), ...defaultManagedProviders]
+  }
+
+  return defaultManagedProviders
 }
 
 // The window object is considered unsafe, because other extensions could have modified them before this script is run.
@@ -87,11 +163,14 @@ Object.defineProperty(window, "tally", {
 if (!window.walletRouter) {
   const existingProviders =
     window.ethereum !== undefined && Array.isArray(window.ethereum?.providers)
-      ? defaultManageProviders(window.ethereum.providers)
+      ? window.ethereum.providers
       : [window.ethereum]
 
   const dedupedProviders = [
-    ...new Set([tahoWindowProvider, ...existingProviders]),
+    ...new Set([
+      tahoWindowProvider,
+      ...metaMaskWrappedProviders(existingProviders),
+    ]),
   ].filter((item) => item !== undefined)
 
   Object.defineProperty(window, "walletRouter", {
@@ -119,8 +198,10 @@ if (!window.walletRouter) {
         // Taho (when default) or not-Taho (when not default).
         this.providers = [
           this.currentProvider,
-          ...this.providers.filter(
-            (provider: WalletProvider) => provider !== this.currentProvider
+          ...metaMaskWrappedProviders(
+            this.providers.filter(
+              (provider: WalletProvider) => provider !== this.currentProvider
+            )
           ),
         ]
 
@@ -160,7 +241,7 @@ if (!window.walletRouter) {
       setSelectedProvider() {},
       addProvider(newProvider: WalletProvider) {
         if (!this.providers.includes(newProvider)) {
-          this.providers.push(defaultManageProvider(newProvider))
+          this.providers.push(wrapMetaMaskProvider(newProvider))
         }
 
         this.lastInjectedProvider = newProvider
