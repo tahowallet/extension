@@ -345,8 +345,10 @@ export function heuristicDesiredDecimalsForUnitPrice(
  * Check if the asset is from a token list.
  *
  */
-export function isTokenListAsset(asset?: AnyAsset): boolean {
-  return !!asset?.metadata?.tokenLists?.length
+export function isTokenListAsset(asset: AnyAsset): boolean {
+  const tokenListCount = asset.metadata?.tokenLists?.length ?? 0
+
+  return tokenListCount > 0
 }
 
 /**
@@ -355,11 +357,8 @@ export function isTokenListAsset(asset?: AnyAsset): boolean {
  * The asset is in a token list OR the asset is a network base asset.
  *
  */
-export function isBaselineTrustedAsset(asset?: AnyAsset): boolean {
-  if (asset) {
-    return isTokenListAsset(asset) || isNetworkBaseAsset(asset)
-  }
-  return false
+export function isBaselineTrustedAsset(asset: AnyAsset): boolean {
+  return isTokenListAsset(asset) || isNetworkBaseAsset(asset)
 }
 
 /**
@@ -367,12 +366,8 @@ export function isBaselineTrustedAsset(asset?: AnyAsset): boolean {
  * The verified property was manually set to true.
  *
  */
-export function isVerifiedAsset(asset?: AnyAsset): boolean {
-  if (asset?.metadata?.verified !== undefined) {
-    // If we have verified metadata return it
-    return asset.metadata.verified
-  }
-  return false
+export function isVerifiedAsset(asset: AnyAsset): boolean {
+  return asset.metadata?.verified !== undefined && asset.metadata.verified
 }
 
 /**
@@ -380,11 +375,8 @@ export function isVerifiedAsset(asset?: AnyAsset): boolean {
  * It can still be baseline trusted.
  *
  */
-export function isUnverifiedAsset(asset?: AnyAsset): boolean {
-  if (asset) {
-    return !isVerifiedAsset(asset)
-  }
-  return false
+export function isUnverifiedAsset(asset: AnyAsset): boolean {
+  return !isVerifiedAsset(asset)
 }
 
 /**
@@ -392,11 +384,8 @@ export function isUnverifiedAsset(asset?: AnyAsset): boolean {
  * Trusted means the asset is baseline trusted OR verified.
  *
  */
-export function isTrustedAsset(asset?: AnyAsset): boolean {
-  if (asset) {
-    return isBaselineTrustedAsset(asset) || isVerifiedAsset(asset)
-  }
-  return false
+export function isTrustedAsset(asset: AnyAsset): boolean {
+  return isBaselineTrustedAsset(asset) || isVerifiedAsset(asset)
 }
 
 /**
@@ -404,11 +393,8 @@ export function isTrustedAsset(asset?: AnyAsset): boolean {
  * Untrusted means the asset is neither baseline trusted NOR verified.
  *
  */
-export function isUntrustedAsset(asset?: AnyAsset): boolean {
-  if (asset) {
-    return !isTrustedAsset(asset)
-  }
-  return false
+export function isUntrustedAsset(asset: AnyAsset): boolean {
+  return !isTrustedAsset(asset)
 }
 
 type AssetType = "base" | "erc20"

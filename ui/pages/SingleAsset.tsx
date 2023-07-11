@@ -97,8 +97,8 @@ export default function SingleAsset(): ReactElement {
       localizedDecimalAmount: undefined,
     }
 
-  const isTrusted = isTrustedAsset(asset)
-  const isVerified = isVerifiedAsset(asset)
+  const isTrusted = asset && isTrustedAsset(asset)
+  const isVerified = asset && isVerifiedAsset(asset)
   const [warnedAsset, setWarnedAsset] =
     useState<SmartContractFungibleAsset | null>(null)
 
