@@ -20,6 +20,7 @@ import {
   toHexChainID,
   NetworkBaseAsset,
   sameChainID,
+  sameNetwork,
 } from "../../networks"
 import {
   AnyAssetAmount,
@@ -1410,8 +1411,17 @@ export default class ChainService extends BaseService<Events> {
           "alchemy"
         )
 
-        // Let's also release the nonce from our bookkeeping.
-        await this.releaseEVMTransactionNonce(savedTx)
+        const replacementData = this.trackedReplacementTransactions.find(
+          (replacement) =>
+            replacement.parentTx.toLowerCase() === hash &&
+            sameNetwork(replacement.addressOnNetwork.network, network)
+        )
+
+        // if transaction has no replacement release the nonce from our bookkeeping.
+        // otherwise let the replacement drop and release the nonce
+        if (!replacementData) {
+          await this.releaseEVMTransactionNonce(savedTx)
+        }
       }
     }
 
