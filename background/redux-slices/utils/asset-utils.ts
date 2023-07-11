@@ -419,19 +419,6 @@ export const getAssetID = (
   return `erc20/${asset.contractAddress}`
 }
 
-/**
- * Returns a string that can be used as a unique identifier for an asset
- */
-export const getFullAssetID = (
-  asset: NetworkBaseAsset | SmartContractFungibleAsset
-): FullAssetID => {
-  if (isNetworkBaseAsset(asset)) {
-    return `${asset.chainID}/${getAssetID(asset)}`
-  }
-
-  return `${asset.homeNetwork.chainID}/${getAssetID(asset)}`
-}
-
 // FIXME Unify once asset similarity code is unified.
 export function isSameAsset(asset1?: AnyAsset, asset2?: AnyAsset): boolean {
   if (typeof asset1 === "undefined" || typeof asset2 === "undefined") {
