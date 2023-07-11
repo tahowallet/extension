@@ -15,7 +15,6 @@ import {
   isBaseAssetForNetwork,
   AssetID,
   getAssetID,
-  isNetworkBaseAsset,
   isSameAsset,
   isTrustedAsset,
 } from "./utils/asset-utils"
@@ -192,47 +191,42 @@ function updateCombinedData(immerState: AccountState) {
     )
 
   immerState.combinedData.assets = Object.values(
-    combinedAccountBalances.reduce<{
-      [assetID: string]: AnyAssetAmount
-    }>((acc, combinedAssetAmount) => {
-      const { asset } = combinedAssetAmount
-      /**
-       * Asset amounts can be aggregated if the asset is a base network asset
-       * or comes from a token list, e.g. ETH on Optimism, Mainnet
-       * or has been verified by the user
-       */
-      const canBeAggregated = isNetworkBaseAsset(asset) || isTrustedAsset(asset)
+    combinedAccountBalances
+      // Combine account balances for trusted assets only
+      .filter(({ asset }) => isTrustedAsset(asset))
+      .reduce<{
+        [assetID: string]: AnyAssetAmount
+      }>((acc, combinedAssetAmount) => {
+        const { asset } = combinedAssetAmount
 
-      const assetID = canBeAggregated
-        ? asset.symbol
-        : `${asset.homeNetwork.chainID}/${getAssetID(asset)}`
+        const assetID = asset.symbol
 
-      let { amount } = combinedAssetAmount
+        let { amount } = combinedAssetAmount
 
-      if (acc[assetID]?.asset) {
-        const accAsset = acc[assetID].asset
-        const existingDecimals = isFungibleAsset(accAsset)
-          ? accAsset.decimals
-          : 0
-        const newDecimals = isFungibleAsset(combinedAssetAmount.asset)
-          ? combinedAssetAmount.asset.decimals
-          : 0
+        if (acc[assetID]?.asset) {
+          const accAsset = acc[assetID].asset
+          const existingDecimals = isFungibleAsset(accAsset)
+            ? accAsset.decimals
+            : 0
+          const newDecimals = isFungibleAsset(combinedAssetAmount.asset)
+            ? combinedAssetAmount.asset.decimals
+            : 0
 
-        if (newDecimals !== existingDecimals) {
-          amount = convertFixedPoint(amount, newDecimals, existingDecimals)
+          if (newDecimals !== existingDecimals) {
+            amount = convertFixedPoint(amount, newDecimals, existingDecimals)
+          }
         }
-      }
 
-      if (acc[assetID]) {
-        acc[assetID].amount += amount
-      } else {
-        acc[assetID] = {
-          ...combinedAssetAmount,
+        if (acc[assetID]) {
+          acc[assetID].amount += amount
+        } else {
+          acc[assetID] = {
+            ...combinedAssetAmount,
+          }
         }
-      }
 
-      return acc
-    }, {})
+        return acc
+      }, {})
   )
 }
 
