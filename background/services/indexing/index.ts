@@ -49,10 +49,9 @@ import {
   sameEVMAddress,
 } from "../../lib/utils"
 import {
-  getFullAssetID,
-  isTokenListAsset,
   isBaselineTrustedAsset,
   isUnverifiedAsset,
+  isTrustedAsset,
 } from "../../redux-slices/utils/asset-utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
@@ -833,31 +832,13 @@ export default class IndexingService extends BaseService<Events> {
     // get the prices of all assets to track and save them
     const assetsToTrack = await this.db.getAssetsToTrack()
     const trackedNetworks = await this.chainService.getTrackedNetworks()
-
-    const customAssets = await this.db.getActiveCustomAssetsByNetworks(
-      trackedNetworks
-    )
-
-    const customAssetsById = new Set(customAssets.map(getFullAssetID))
-
     // Filter all assets based on supported networks
     const activeAssetsToTrack = assetsToTrack.filter((asset) => {
-      // Skip custom assets
-      const cachedAsset = this.getKnownSmartContractAsset(
-        asset.homeNetwork,
-        asset.contractAddress
-      )
-      if (
-        customAssetsById.has(getFullAssetID(asset)) &&
-        // Only filter custom assets which do not appear in token lists
-        cachedAsset &&
-        !isTokenListAsset(cachedAsset)
-      ) {
-        return false
-      }
-
-      return trackedNetworks.some(
-        (network) => network.chainID === asset.homeNetwork.chainID
+      return (
+        isTrustedAsset(asset) &&
+        trackedNetworks.some(
+          (network) => network.chainID === asset.homeNetwork.chainID
+        )
       )
     })
     try {
