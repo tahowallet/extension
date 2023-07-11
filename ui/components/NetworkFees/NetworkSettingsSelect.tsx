@@ -1,5 +1,8 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
-import { BlockEstimate } from "@tallyho/tally-background/networks"
+import React, { ReactElement, useMemo, useEffect, useState } from "react"
+import {
+  BlockEstimate,
+  isEIP1559TransactionRequest,
+} from "@tallyho/tally-background/networks"
 import { ESTIMATED_FEE_MULTIPLIERS } from "@tallyho/tally-background/constants/network-fees"
 import {
   EstimatedFeesPerGas,
@@ -14,6 +17,7 @@ import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
 import { PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { selectTransactionToReplace } from "@tallyho/tally-background/redux-slices/selectors/activitiesSelectors"
 import {
   selectTransactionData,
   selectTransactionMainCurrencyPricePoint,
@@ -42,7 +46,8 @@ const gasOptionFromEstimate = (
   mainCurrencyPricePoint: PricePoint | undefined,
   baseFeePerGas: bigint,
   gasLimit: bigint | undefined,
-  { confidence, maxFeePerGas, maxPriorityFeePerGas, price }: BlockEstimate
+  { confidence, maxFeePerGas, maxPriorityFeePerGas, price }: BlockEstimate,
+  priceBumpModifier = 1
 ): GasOption => {
   const feeOptionData: {
     [confidence: number]: NetworkFeeTypeChosen
@@ -52,13 +57,15 @@ const gasOptionFromEstimate = (
     99: NetworkFeeTypeChosen.Instant,
     0: NetworkFeeTypeChosen.Custom,
   }
+  const applyPriceBump = (value: bigint) =>
+    (value * BigInt(priceBumpModifier * 100)) / 100n
 
   const feeAssetAmount =
     typeof gasLimit !== "undefined"
       ? enrichAssetAmountWithMainCurrencyValues(
           {
             asset: ETH,
-            amount: maxFeePerGas * gasLimit,
+            amount: applyPriceBump(maxFeePerGas * gasLimit),
           },
           mainCurrencyPricePoint,
           2
@@ -73,17 +80,24 @@ const gasOptionFromEstimate = (
       ],
     type: feeOptionData[confidence],
     estimatedGwei: weiToGwei(
-      (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
+      applyPriceBump(
+        (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
+      )
     ).split(".")[0],
-    maxPriorityGwei: weiToGwei(maxPriorityFeePerGas),
-    maxGwei: weiToGwei(maxFeePerGas).split(".")[0],
+    maxPriorityGwei: weiToGwei(applyPriceBump(maxPriorityFeePerGas)),
+    maxGwei: weiToGwei(applyPriceBump(maxFeePerGas)).split(".")[0],
     dollarValue: dollarValue ? `$${dollarValue}` : "-",
-    estimatedFeePerGas:
-      (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
-    baseMaxFeePerGas: BigInt(maxFeePerGas) - BigInt(maxPriorityFeePerGas),
-    baseMaxGwei: weiToGwei(BigInt(maxFeePerGas) - BigInt(maxPriorityFeePerGas)),
-    maxFeePerGas,
-    maxPriorityFeePerGas,
+    estimatedFeePerGas: applyPriceBump(
+      (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
+    ),
+    baseMaxFeePerGas: applyPriceBump(
+      BigInt(maxFeePerGas) - BigInt(maxPriorityFeePerGas)
+    ),
+    baseMaxGwei: weiToGwei(
+      applyPriceBump(BigInt(maxFeePerGas) - BigInt(maxPriorityFeePerGas))
+    ),
+    maxFeePerGas: applyPriceBump(maxFeePerGas),
+    maxPriorityFeePerGas: applyPriceBump(maxPriorityFeePerGas),
     gasPrice: price?.toString(),
   }
 }
@@ -99,13 +113,31 @@ export default function NetworkSettingsSelect({
   const dispatch = useBackgroundDispatch()
 
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
-  const customGas = useBackgroundSelector((state) => {
-    return state.transactionConstruction.customFeesPerGas
-  })
+  const replacedTxData = useBackgroundSelector(selectTransactionToReplace)
+
+  const customGasFromState: BlockEstimate | undefined = useBackgroundSelector(
+    (state) => {
+      return state.transactionConstruction.customFeesPerGas
+    }
+  )
+
+  const customGasFromTx = useMemo(() => {
+    if (replacedTxData && isEIP1559TransactionRequest(replacedTxData)) {
+      return {
+        confidence: 0,
+        maxFeePerGas: (replacedTxData.maxFeePerGas * 120n) / 100n,
+        maxPriorityFeePerGas:
+          (replacedTxData.maxPriorityFeePerGas * 120n) / 100n,
+      }
+    }
+    return undefined
+  }, [replacedTxData])
+
+  const customGas = customGasFromTx || customGasFromState
 
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [currentlySelectedType, setCurrentlySelectedType] = useState(
-    networkSettings.feeType
+    replacedTxData ? "custom" : networkSettings.feeType
   )
 
   const transactionDetails = useBackgroundSelector(selectTransactionData)
@@ -149,51 +181,57 @@ export default function NetworkSettingsSelect({
     })
   }
 
-  const updateGasOptions = useCallback(() => {
-    if (typeof estimatedFeesPerGas !== "undefined") {
-      const { regular, express, instant, custom } = estimatedFeesPerGas ?? {}
-      const gasLimit =
-        networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
+  useEffect(() => {
+    const updateGasOptions = () => {
+      if (typeof estimatedFeesPerGas !== "undefined") {
+        const { regular, express, instant, custom } = estimatedFeesPerGas ?? {}
+        const gasLimit =
+          networkSettings.gasLimit ?? networkSettings.suggestedGasLimit
 
-      if (typeof instant !== "undefined") {
-        const baseFees = [regular, express, instant, custom]
+        if (typeof instant !== "undefined") {
+          const baseFees = [regular, express, instant, custom]
 
-        const updatedGasOptions: GasOption[] = []
+          const updatedGasOptions: GasOption[] = []
 
-        baseFees.forEach((option) => {
-          if (option) {
+          baseFees.forEach((option) => {
+            if (option) {
+              updatedGasOptions.push(
+                gasOptionFromEstimate(
+                  mainCurrencyPricePoint,
+                  estimatedFeesPerGas.baseFeePerGas ?? 0n,
+                  gasLimit,
+                  option,
+                  replacedTxData ? 1.2 : 1
+                )
+              )
+            }
+          })
+
+          if (customGas) {
             updatedGasOptions.push(
               gasOptionFromEstimate(
                 mainCurrencyPricePoint,
                 estimatedFeesPerGas.baseFeePerGas ?? 0n,
                 gasLimit,
-                option
+                customGas,
+                replacedTxData ? 1.2 : 1
               )
             )
           }
-        })
 
-        if (customGas) {
-          updatedGasOptions.push(
-            gasOptionFromEstimate(
-              mainCurrencyPricePoint,
-              estimatedFeesPerGas.baseFeePerGas ?? 0n,
-              gasLimit,
-              customGas
-            )
+          const selectedGasFeeIndex = updatedGasOptions.findIndex(
+            (el) => el.type === currentlySelectedType
           )
+          const currentlySelectedFeeIndex =
+            selectedGasFeeIndex === -1 ? 0 : selectedGasFeeIndex
+
+          setGasOptions(updatedGasOptions)
+          setActiveFeeIndex(currentlySelectedFeeIndex)
         }
-
-        const selectedGasFeeIndex = updatedGasOptions.findIndex(
-          (el) => el.type === currentlySelectedType
-        )
-        const currentlySelectedFeeIndex =
-          selectedGasFeeIndex === -1 ? 0 : selectedGasFeeIndex
-
-        setGasOptions(updatedGasOptions)
-        setActiveFeeIndex(currentlySelectedFeeIndex)
       }
     }
+
+    updateGasOptions()
   }, [
     estimatedFeesPerGas,
     networkSettings.gasLimit,
@@ -201,11 +239,8 @@ export default function NetworkSettingsSelect({
     mainCurrencyPricePoint,
     customGas,
     currentlySelectedType,
+    replacedTxData,
   ])
-
-  useEffect(() => {
-    updateGasOptions()
-  }, [updateGasOptions])
 
   const setGasLimit = (gasLimit: bigint | undefined) => {
     dispatch(setCustomGasLimit(gasLimit ?? networkSettings.suggestedGasLimit))

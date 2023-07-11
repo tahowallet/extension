@@ -9,7 +9,7 @@ import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../lib/utils"
-import { isEIP1559TransactionRequest } from "../networks"
+import { EVMTransaction, isEIP1559TransactionRequest } from "../networks"
 import { Transaction } from "../services/chain/db"
 import { EnrichedEVMTransaction } from "../services/enrichment"
 import { HexString } from "../types"
@@ -43,6 +43,7 @@ type TrackedReplacementTx = {
 type ActivitiesState = {
   activities: Activities
   replacementTransactions: TrackedReplacementTx[]
+  transactionToReplace?: EVMTransaction
 }
 
 const ACTIVITIES_MAX_COUNT = 25
@@ -242,6 +243,12 @@ const activitiesSlice = createSlice({
         replacementTransactions.push(payload)
       }
     },
+    setTransactionToReplace(
+      immerState,
+      { payload }: { payload: EVMTransaction | undefined }
+    ) {
+      immerState.transactionToReplace = payload
+    },
   },
 })
 
@@ -251,6 +258,7 @@ export const {
   removeActivities,
   initializeActivitiesForAccount,
   addReplacementTransaction,
+  setTransactionToReplace,
 } = activitiesSlice.actions
 
 export default activitiesSlice.reducer
@@ -302,27 +310,34 @@ export const speedUpTx = createBackgroundAsyncThunk(
     if (isEIP1559Tx) {
       Object.assign(txRequest, {
         maxFeePerGas: tx.maxFeePerGas,
-        maxPriorityFeePerGas: (tx.maxPriorityFeePerGas * 125n) / 100n,
+        maxPriorityFeePerGas: (tx.maxPriorityFeePerGas * 120n) / 100n,
       })
     } else {
       Object.assign(txRequest, {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        gasPrice: (tx.gasPrice! * 125n) / 100n,
+        gasPrice: (tx.gasPrice! * 120n) / 100n,
       })
     }
 
-    const newTx = await signer.sendTransaction(txRequest)
+    dispatch(
+      setTransactionToReplace(await main.getTxData(network, parentTxHash))
+    )
 
-    await main.trackReplacementTransaction(newTx.hash, parentTxHash, {
+    const newTxHash = await signer.sendTransaction(txRequest).finally(() => {
+      // reset state whether the process fails or not
+      dispatch(setTransactionToReplace(undefined))
+    })
+
+    await main.trackReplacementTransaction(newTxHash.hash, parentTxHash, {
       address: from,
       network,
     })
 
     dispatch(
       addReplacementTransaction({
-        hash: newTx.hash,
+        hash: newTxHash.hash,
         chainID: network.chainID,
-        parentTx: parentTxHash,
+        parentTx: newTxHash.hash,
         initiator: from,
       })
     )

@@ -39,7 +39,7 @@ import {
 } from "./services"
 
 import { HexString, KeyringTypes, NormalizedEVMAddress } from "./types"
-import { SignedTransaction } from "./networks"
+import { EVMNetwork, EVMTransaction, SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
 
@@ -1919,6 +1919,10 @@ export default class Main extends BaseService<never> {
       addressOnNetwork,
       parentTx
     )
+  }
+
+  async getTxData(network: EVMNetwork, hash: string): Promise<EVMTransaction> {
+    return this.chainService.getTransaction(network, hash)
   }
 
   private connectPopupMonitor() {

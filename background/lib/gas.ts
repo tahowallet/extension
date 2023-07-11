@@ -1,4 +1,4 @@
-import { Provider } from "@ethersproject/abstract-provider"
+import { Block, Provider } from "@ethersproject/abstract-provider"
 import { fetchJson } from "@ethersproject/web"
 
 import logger from "./logger"
@@ -148,7 +148,8 @@ const getLegacyGasPrices = async (
 
 export default async function getBlockPrices(
   network: EVMNetwork,
-  provider: Provider
+  provider: Provider,
+  block?: Block
 ): Promise<BlockPrices> {
   // if BlockNative is configured and we're on mainnet, prefer their gas service
   if (
@@ -169,7 +170,7 @@ export default async function getBlockPrices(
   }
 
   const [currentBlock, feeData] = await Promise.all([
-    provider.getBlock("latest"),
+    block ? Promise.resolve(block) : provider.getBlock("latest"),
     provider.getFeeData(),
   ])
 

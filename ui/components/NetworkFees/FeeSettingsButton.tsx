@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import { isBuiltInNetwork } from "@tallyho/tally-background/constants"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { isEIP1559EnrichedTransactionRequest } from "@tallyho/tally-background/networks"
 import { selectTransactionData } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../../hooks"
@@ -20,7 +21,11 @@ export default function FeeSettingsButton({
 
   const { t } = useTranslation()
 
-  if (!isBuiltInNetwork(currentNetwork)) {
+  if (
+    transactionData &&
+    !isEIP1559EnrichedTransactionRequest(transactionData) &&
+    !isBuiltInNetwork(currentNetwork)
+  ) {
     return (
       <div>
         <SharedTooltip

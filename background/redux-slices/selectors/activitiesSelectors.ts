@@ -24,3 +24,8 @@ export const selectTrackedReplacementTransactions = createSelector(
   (state: RootState) => state.activities,
   (activities) => activities.replacementTransactions
 )
+
+export const selectTransactionToReplace = createSelector(
+  (state: RootState) => state.activities,
+  (activities) => activities.transactionToReplace
+)

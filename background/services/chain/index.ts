@@ -681,7 +681,14 @@ export default class ChainService extends BaseService<Events> {
     transactionRequest: EnrichedEVMTransactionRequest
     gasEstimationError: string | undefined
   }> {
-    if (EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)) {
+    const block = await this.providerForNetworkOrThrow(network).getBlock(
+      "latest"
+    )
+
+    if (
+      block?.baseFeePerGas ||
+      EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)
+    ) {
       const {
         maxFeePerGas = defaults.maxFeePerGas,
         maxPriorityFeePerGas = defaults.maxPriorityFeePerGas,
@@ -1295,6 +1302,7 @@ export default class ChainService extends BaseService<Events> {
             this.pollBlockPricesForNetwork(network.chainID)
           )
         )
+        // Every 15 seconds
       }, (GAS_POLLING_PERIOD / GAS_POLLS_PER_PERIOD) * (GAS_POLLING_PERIOD * MINUTE) * i)
     }
 
@@ -1322,10 +1330,13 @@ export default class ChainService extends BaseService<Events> {
       return
     }
 
+    this.pollLatestBlock(subscription.network, subscription.provider)
+
     const blockPrices = await getBlockPrices(
       subscription.network,
       subscription.provider
     )
+
     this.emitter.emit("blockPrices", {
       blockPrices,
       network: subscription.network,
