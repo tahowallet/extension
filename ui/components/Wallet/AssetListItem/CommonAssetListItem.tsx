@@ -86,8 +86,8 @@ export default function CommonAssetListItem(
             </div>
 
             {
-              // @TODO don't fetch prices for unverified assets in the first place
-              // Only show prices for verified assets
+              // @TODO don't fetch prices for untrusted assets in the first place
+              // Only show prices for trusted or verified assets
               isUntrusted ||
               (initializationLoadingTimeExpired &&
                 isMissingLocalizedUserValue) ? (
