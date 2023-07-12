@@ -653,7 +653,7 @@
       },
       "chainList": {
         "description": "<url></url> is the fastest, safest way to add a custom network. Just connect your wallet, search for the network you want to add, and click <strong>Add to Taho</strong>.",
-        "addBtn": "Add chains with Chainlist"
+        "addBtn": "Add chains with ChainList"
       },
       "customRPC": {
         "description": "You can also add a custom RPC, this can be a bit risky as you might add a malicious RPC without knowing, that could result in loss of funds.",
