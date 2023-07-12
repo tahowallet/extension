@@ -64,7 +64,7 @@ function wrapMetaMaskProvider(provider: WalletProvider): WalletProvider {
     Object.keys(provider).filter((key) => key.startsWith("is")).length === 1
   ) {
     const wrapper = new Proxy(provider, {
-      get(target, prop, receiver) {
+      get(target, prop) {
         if (
           window.walletRouter &&
           window.walletRouter.currentProvider === tahoWindowProvider &&
@@ -81,11 +81,11 @@ function wrapMetaMaskProvider(provider: WalletProvider): WalletProvider {
             // attempt at connecting.
             tahoWindowProvider,
             prop,
-            target
+            tahoWindowProvider
           )
         }
 
-        return Reflect.get(target, prop, receiver)
+        return Reflect.get(target, prop, target)
       },
     })
 
@@ -281,7 +281,7 @@ Object.defineProperty(window, "ethereum", {
     }
 
     cachedWindowEthereumProxy = new Proxy(window.walletRouter.currentProvider, {
-      get(target, prop, receiver) {
+      get(target, prop) {
         if (
           window.walletRouter &&
           window.walletRouter.currentProvider === tahoWindowProvider &&
@@ -317,7 +317,7 @@ Object.defineProperty(window, "ethereum", {
           // attempt at connecting.
           window.walletRouter?.currentProvider ?? target,
           prop,
-          receiver
+          target
         )
       },
     })
