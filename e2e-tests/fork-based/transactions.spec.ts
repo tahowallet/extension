@@ -404,7 +404,9 @@ test.describe("Transactions", () => {
       const keepToken = await popup
         .locator(".token_group")
         .filter({ has: popup.locator("div").filter({ hasText: /^KEEP$/ }) })
-      await expect(keepToken.getByText(/^Keep Network$/)).toBeVisible()
+      await expect(
+        keepToken.getByText(/^(KeepToken|Keep Network( Token)?)$/)
+      ).toBeVisible()
       await expect(keepToken.getByText(/^65\.88$/)).toBeVisible()
       await expect(keepToken.locator(".icon")).toBeVisible()
       await keepToken.locator(".icon").click({ trial: true }) // TODO: click and verify if correct address is opened
@@ -413,7 +415,9 @@ test.describe("Transactions", () => {
        *  Filter by `keep` and verify that only KEEP token is present
        */
       await popup.getByPlaceholder("Search by name or address").fill("keep")
-      await expect(keepToken.getByText(/^Keep Network$/)).toBeVisible()
+      await expect(
+        keepToken.getByText(/^(KeepToken|Keep Network( Token)?)$/)
+      ).toBeVisible()
       await expect(keepToken.getByText(/^65\.88$/)).toBeVisible()
       await expect(keepToken.locator(".icon")).toBeVisible()
       await keepToken.locator(".icon").click({ trial: true })
