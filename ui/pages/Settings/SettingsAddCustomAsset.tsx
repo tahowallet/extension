@@ -24,7 +24,7 @@ import { HexString } from "@tallyho/tally-background/types"
 import React, { FormEventHandler, ReactElement, useRef, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
-import { isVerifiedOrTrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { isTrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import SharedAssetIcon from "../../components/Shared/SharedAssetIcon"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
@@ -209,9 +209,8 @@ export default function SettingsAddCustomAsset(): ReactElement {
 
   // The asset should be displayed in the regular list when that is trusted by default or verified by the user.
   // This check allows the user to add an asset that is on the unverified list.
-  const isVerifiedOrTrusted =
-    assetData?.asset && isVerifiedOrTrustedAsset(assetData.asset)
-  const shouldDisplayAsset = assetData?.exists && isVerifiedOrTrusted
+  const isTrusted = assetData?.asset && isTrustedAsset(assetData.asset)
+  const shouldDisplayAsset = assetData?.exists && isTrusted
 
   return (
     <div className="standard_width_padded wrapper">
