@@ -343,7 +343,6 @@ export function heuristicDesiredDecimalsForUnitPrice(
 
 /**
  * Check if the asset is from a token list.
- *
  */
 export function isTokenListAsset(asset: AnyAsset): boolean {
   const tokenListCount = asset.metadata?.tokenLists?.length ?? 0
@@ -401,6 +400,15 @@ type AssetType = "base" | "erc20"
 
 export type AssetID = `${AssetType}/${string}`
 
+type ChainID = string
+
+export type FullAssetID = `${ChainID}/${AssetID}`
+
+/**
+ * Returns a string that can be used as an identifier for an asset
+ * TODO: This should be removed in favour of getFullAssetID; Base
+ * assets should not use symbol in their identifier
+ */
 export const getAssetID = (
   asset: NetworkBaseAsset | SmartContractFungibleAsset
 ): AssetID => {
