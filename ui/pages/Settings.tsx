@@ -211,10 +211,7 @@ export default function Settings(): ReactElement {
     title: t("settings.showUnverifiedAssets"),
     tooltip: () => (
       <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
-        <div className="tooltip">
-          <span>{t("settings.unverifiedAssets.tooltip.firstPart")}</span>
-          <span>{t("settings.unverifiedAssets.tooltip.secondPart")}</span>
-        </div>
+        <Trans t={t} i18nKey="settings.unverifiedAssets.tooltip" />
       </SharedTooltip>
     ),
     component: () => (
