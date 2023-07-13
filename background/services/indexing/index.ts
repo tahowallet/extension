@@ -49,9 +49,8 @@ import {
   sameEVMAddress,
 } from "../../lib/utils"
 import {
-  isBaselineTrustedAsset,
-  isUnverifiedAsset,
-  isTrustedAsset,
+  isUntrustedAsset,
+  isVerifiedAssetByUser,
 } from "../../redux-slices/utils/asset-utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
@@ -107,8 +106,8 @@ function allowVerifyAssetByManualImport(
   asset: SmartContractFungibleAsset,
   verified?: boolean
 ): boolean {
-  // Only not baseline trusted and unverified assets can be verified.
-  if (!isBaselineTrustedAsset(asset) && isUnverifiedAsset(asset)) {
+  // Only untrusted and unverified assets can be verified.
+  if (isUntrustedAsset(asset) && !isVerifiedAssetByUser(asset)) {
     return !!verified
   }
 
@@ -269,8 +268,8 @@ export default class IndexingService extends BaseService<Events> {
 
   /**
    * Retrieves cached assets data from internal cache
-   * @returns An array of assets, including network base assets, token list
-   *          assets and custom assets.
+   * @returns An array of assets, including base assets that are "built in" to
+   *          the codebase. Fiat currencies are not included.
    */
   getCachedAssets(network: EVMNetwork): AnyAsset[] {
     return this.cachedAssets[network.chainID] ?? []
@@ -311,8 +310,9 @@ export default class IndexingService extends BaseService<Events> {
     const searchResult = knownAssets.find(
       (asset): asset is SmartContractFungibleAsset =>
         isSmartContractFungibleAsset(asset) &&
-        sameNetwork(asset.homeNetwork, network) &&
-        sameEVMAddress(asset.contractAddress, contractAddress)
+        asset.homeNetwork.name === network.name &&
+        normalizeEVMAddress(asset.contractAddress) ===
+          normalizeEVMAddress(contractAddress)
     )
 
     return searchResult
@@ -375,6 +375,7 @@ export default class IndexingService extends BaseService<Events> {
             enrichedEVMTransaction.network,
             asset.contractAddress
           ) !== "undefined" ||
+          (await this.db.isTrackingAsset(asset)) ||
           (
             await this.chainService.filterTrackedAddressesOnNetworks([
               {
@@ -831,13 +832,25 @@ export default class IndexingService extends BaseService<Events> {
     // get the prices of all assets to track and save them
     const assetsToTrack = await this.db.getAssetsToTrack()
     const trackedNetworks = await this.chainService.getTrackedNetworks()
+
+    const getAssetId = (asset: SmartContractFungibleAsset) =>
+      `${asset.homeNetwork.chainID}:${asset.contractAddress}`
+
+    const customAssets = await this.db.getActiveCustomAssetsByNetworks(
+      trackedNetworks
+    )
+
+    const customAssetsById = new Set(customAssets.map(getAssetId))
+
     // Filter all assets based on supported networks
     const activeAssetsToTrack = assetsToTrack.filter((asset) => {
-      return (
-        isTrustedAsset(asset) &&
-        trackedNetworks.some((network) =>
-          sameNetwork(network, asset.homeNetwork)
-        )
+      // Skip custom assets
+      if (customAssetsById.has(getAssetId(asset))) {
+        return false
+      }
+
+      return trackedNetworks.some(
+        (network) => network.chainID === asset.homeNetwork.chainID
       )
     })
     try {
@@ -963,12 +976,10 @@ export default class IndexingService extends BaseService<Events> {
 
     // Cache assets across all supported networks even if a network
     // may be inactive.
-    await Promise.allSettled(
-      this.chainService.supportedNetworks.map(async (network) => {
-        await this.cacheAssetsForNetwork(network)
-        this.emitter.emit("assets", this.getCachedAssets(network))
-      })
-    )
+    this.chainService.supportedNetworks.forEach(async (network) => {
+      await this.cacheAssetsForNetwork(network)
+      this.emitter.emit("assets", this.getCachedAssets(network))
+    })
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if
     // the version has gone up

@@ -17,13 +17,13 @@ declare module "webext-redux/lib/strategies/deepDiff/patch" {
 
 declare module "styled-jsx/style"
 
-type BaseWalletProvider = {
+type WalletProvider = {
   providerInfo?: {
     label: string
     injectedNamespace: string
     iconURL: string
     identityFlag?: string
-    checkIdentity?: (provider: WalletProvider) => boolean
+    checkIdentity?: () => boolean
   }
   on: (
     eventName: string | symbol,
@@ -33,16 +33,12 @@ type BaseWalletProvider = {
     eventName: string | symbol,
     listener: (...args: unknown[]) => void
   ) => unknown
-}
-
-type WalletProvider = BaseWalletProvider & {
   [optionalProps: string]: unknown
 }
 
-type TahoProvider = BaseWalletProvider & {
+type TallyProvider = WalletProvider & {
   isTally: true
-  tahoSetAsDefault: boolean
-  send: (method: string, params: unknown[]) => void | Promise<unknown>
+  send: (method: string, params: unknown[]) => Promise<void>
 }
 
 type WindowEthereum = WalletProvider & {
@@ -65,7 +61,7 @@ interface Window {
     ) => WalletProvider["providerInfo"]
     addProvider: (newProvider: WalletProvider) => void
   }
-  tally?: TahoProvider
+  tally?: TallyProvider
   ethereum?: WindowEthereum
   oldEthereum?: WindowEthereum
 }

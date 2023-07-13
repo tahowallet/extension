@@ -13,7 +13,7 @@ import {
   formatCurrencyAmount,
   heuristicDesiredDecimalsForUnitPrice,
   isNetworkBaseAsset,
-  isTrustedAsset,
+  isVerifiedOrTrustedAsset,
 } from "../utils/asset-utils"
 import {
   AnyAsset,
@@ -76,11 +76,11 @@ export function determineAssetDisplayAndVerify(
     hideDust,
     showUnverifiedAssets,
   }: { hideDust: boolean; showUnverifiedAssets: boolean }
-): { displayAsset: boolean; trustedAsset: boolean } {
-  const isTrusted = isTrustedAsset(assetAmount.asset)
+): { displayAsset: boolean; verifiedOrTrustedAsset: boolean } {
+  const isVerifiedOrTrusted = isVerifiedOrTrustedAsset(assetAmount.asset)
 
   if (shouldForciblyDisplayAsset(assetAmount)) {
-    return { displayAsset: true, trustedAsset: isTrusted }
+    return { displayAsset: true, verifiedOrTrustedAsset: isVerifiedOrTrusted }
   }
 
   const isNotDust =
@@ -90,13 +90,14 @@ export function determineAssetDisplayAndVerify(
   const isPresent = assetAmount.decimalAmount > 0
   const showDust = !hideDust
 
-  const verificationStatusAllowsVisibility = showUnverifiedAssets || isTrusted
+  const verificationStatusAllowsVisibility =
+    showUnverifiedAssets || isVerifiedOrTrusted
   const enoughBalanceToBeVisible = isPresent && (isNotDust || showDust)
 
   return {
     displayAsset:
       verificationStatusAllowsVisibility && enoughBalanceToBeVisible,
-    trustedAsset: isTrusted,
+    verifiedOrTrustedAsset: isVerifiedOrTrusted,
   }
 }
 
@@ -186,13 +187,14 @@ const computeCombinedAssetAmountsData = (
       unverifiedAssetAmounts: CompleteAssetAmount[]
     }>(
       (acc, assetAmount) => {
-        const { displayAsset, trustedAsset } = determineAssetDisplayAndVerify(
-          assetAmount,
-          { hideDust, showUnverifiedAssets }
-        )
+        const { displayAsset, verifiedOrTrustedAsset } =
+          determineAssetDisplayAndVerify(assetAmount, {
+            hideDust,
+            showUnverifiedAssets,
+          })
 
         if (displayAsset) {
-          if (trustedAsset) {
+          if (verifiedOrTrustedAsset) {
             acc.combinedAssetAmounts.push(assetAmount)
           } else {
             acc.unverifiedAssetAmounts.push(assetAmount)

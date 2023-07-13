@@ -30,15 +30,7 @@ export function connectProviderBridge(): void {
         const faviconUrl = largestFavicon?.href ?? ""
         const { title } = window.document ?? ""
 
-        if (event.data.request.method === "eth_requestAccounts") {
-          // For eth_requestAccounts specifically, we force the parameters as
-          // the dApp should be sending none, but some send parameters that look
-          // more like what you'd expect on wallet_requestPermissions.
-          // eslint-disable-next-line no-param-reassign
-          event.data.request.params = [title, faviconUrl]
-        } else {
-          event.data.request.params.push(title, faviconUrl)
-        }
+        event.data.request.params.push(title, faviconUrl)
       }
 
       // TODO: replace with better logging before v1. Now it's invaluable in debugging.
@@ -77,7 +69,7 @@ export function connectProviderBridge(): void {
   })
 }
 
-export function injectTahoWindowProvider(): void {
+export function injectTallyWindowProvider(): void {
   if (document.contentType !== "text/html") return
 
   try {

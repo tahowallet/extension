@@ -50,8 +50,6 @@ This release checklist should be performed before release is published.
    - [ ] check abilities
    - [ ] check activities
    - [ ] check overview page
-   - [ ] check seed phrase export
-   - [ ] check private key export for first account
 5. Add another account from the same seed phrase
    - [ ] check assets
    - [ ] check balance
@@ -59,7 +57,6 @@ This release checklist should be performed before release is published.
    - [ ] check abilities
    - [ ] check activities
    - [ ] check overview page
-   - [ ] check private key export for second account
 6. Add account with a Ledger
    - [ ] check assets
    - [ ] check balance
@@ -74,23 +71,6 @@ This release checklist should be performed before release is published.
    - [ ] check abilities
    - [ ] check activities
    - [ ] check overview page
-   - [ ] check private key export
-8. Add account with private key
-   - [ ] check assets
-   - [ ] check balance
-   - [ ] check NFTs
-   - [ ] check abilities
-   - [ ] check activities
-   - [ ] check overview page
-   - [ ] check private key export
-9. Add account with JSON keystore
-   - [ ] check assets
-   - [ ] check balance
-   - [ ] check NFTs
-   - [ ] check abilities
-   - [ ] check activities
-   - [ ] check overview page
-   - [ ] check private key export
 
 ### 🗑️ Remove account
 
@@ -98,8 +78,6 @@ This release checklist should be performed before release is published.
    - [ ] remove read-only account
    - [ ] remove address from imported account
    - [ ] remove Ledger account
-   - [ ] remove account imported with private key
-   - [ ] remove account imported with JSON keystore
    - [ ] remove selected account
    - [ ] remove not selected account
    - [ ] remove all accounts

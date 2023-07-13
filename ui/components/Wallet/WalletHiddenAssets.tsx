@@ -3,6 +3,7 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 import { useTranslation } from "react-i18next"
 import classNames from "classnames"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import WalletAssetList from "./WalletAssetList"
 import SharedButton from "../Shared/SharedButton"
@@ -73,12 +74,14 @@ export default function WalletHiddenAssets({
           visible: mountedRef.current && isOpen,
         })}
       >
-        <UnverifiedAssetBanner
-          id="unverified_asset_banner"
-          title={t("verifiedAssets.banner.titleUnverified")}
-          description={t("verifiedAssets.banner.description")}
-          customStyles="margin-bottom: 16px;"
-        />
+        {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
+          <UnverifiedAssetBanner
+            id="unverified_asset_banner"
+            title={t("verifiedAssets.banner.titleUnverified")}
+            description={t("verifiedAssets.banner.description")}
+            customStyles="margin-bottom: 16px;"
+          />
+        )}
         <WalletAssetList
           assetAmounts={assetAmounts}
           initializationLoadingTimeExpired

@@ -10,7 +10,6 @@ import {
   createSmartContractAsset,
 } from "../../../tests/factories"
 import ChainService from "../../chain"
-import { ChainDatabase } from "../../chain/db"
 import PreferenceService from "../../preferences"
 import { getOrCreateDb as getIndexingDB } from "../db"
 
@@ -86,14 +85,11 @@ describe("IndexingService", () => {
       urls: ["https://gateway.ipfs.io/ipns/tokens.uniswap.org"],
     })
 
-    sandbox
-      .stub(ChainDatabase.defaultSettings, "DEFAULT_NETWORKS")
-      .value([ETHEREUM, OPTIMISM])
-
     chainService = await createChainService({
       preferenceService: Promise.resolve(preferenceService),
     })
 
+    sandbox.stub(chainService, "supportedNetworks").value([ETHEREUM, OPTIMISM])
     sandbox
       .stub(chainService, "getTrackedNetworks")
       .resolves([ETHEREUM, OPTIMISM])
@@ -177,6 +173,10 @@ describe("IndexingService", () => {
     })
 
     it("should update cache once token lists load", async () => {
+      const spy = getPrivateMethodSpy<
+        IndexingService["fetchAndCacheTokenLists"]
+      >(indexingService, "fetchAndCacheTokenLists")
+
       const cacheSpy = jest.spyOn(indexingService, "cacheAssetsForNetwork")
 
       const delay = sinon.promise<void>()
@@ -193,23 +193,26 @@ describe("IndexingService", () => {
         indexingService.startService(),
       ])
 
-      const trackedNetworks = await chainService.getTrackedNetworks()
-      expect(trackedNetworks).toHaveLength(2)
-      // We emit twice for every tracked network at service start
-      await indexingService.emitter.once("assets")
-      await indexingService.emitter.once("assets")
+      await indexingService.emitter.once("assets").then(() => {
+        // The order in which assets are emitted is non-deterministic
+        // since the `emit` function gets called as part of an unawaited
+        // series of promises (trackedNetworks.forEach in "internalStartService")
+        // Since we expect two asset emissions and we don't know which will
+        // be emitted first - we make our test assertions after the second
+        // emission in the event handler below this one.
+      })
 
-      // Resolve delay so fetchAndCacheTokenLists can continue
       delay.resolve(undefined)
 
-      await indexingService.emitter.once("assets")
+      await spy.mock.results[0].value
+
       await indexingService.emitter.once("assets").then(() => {
         /**
          * Caches assets for every tracked network at service start and
          * for every supported network after tokenlist load
          */
         expect(cacheSpy).toHaveBeenCalledTimes(
-          chainService.supportedNetworks.length + trackedNetworks.length
+          chainService.supportedNetworks.length + 2
         )
 
         expect(

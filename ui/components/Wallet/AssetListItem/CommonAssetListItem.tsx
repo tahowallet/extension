@@ -3,7 +3,11 @@ import { Link } from "react-router-dom"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 
 import { useTranslation } from "react-i18next"
-import { isUntrustedAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import {
+  isUntrustedAsset,
+  isVerifiedAssetByUser,
+  isVerifiedOrTrustedAsset,
+} from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
 import {
@@ -11,6 +15,7 @@ import {
   SmartContractFungibleAsset,
   SwappableAsset,
 } from "@tallyho/tally-background/assets"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
@@ -19,6 +24,7 @@ import { useBackgroundSelector } from "../../../hooks"
 import { trimWithEllipsis } from "../../../utils/textUtils"
 import SharedTooltip from "../../Shared/SharedTooltip"
 import AssetVerifyToggler from "../UnverifiedAsset/AssetVerifyToggler"
+import SharedIcon from "../../Shared/SharedIcon"
 
 type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount<SwappableAsset>
@@ -51,6 +57,7 @@ export default function CommonAssetListItem(
       : undefined
 
   const isUntrusted = isUntrustedAsset(assetAmount.asset)
+  const isVerified = isVerifiedAssetByUser(assetAmount.asset)
 
   const handleVerifyAsset = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
@@ -88,7 +95,7 @@ export default function CommonAssetListItem(
             {
               // @TODO don't fetch prices for untrusted assets in the first place
               // Only show prices for trusted or verified assets
-              isUntrusted ||
+              !isVerifiedOrTrustedAsset(assetAmount.asset) ||
               (initializationLoadingTimeExpired &&
                 isMissingLocalizedUserValue) ? (
                 <></>
@@ -106,7 +113,9 @@ export default function CommonAssetListItem(
         </div>
         <div className="asset_right">
           <>
-            {isUntrusted ? (
+            {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) &&
+            isUntrusted &&
+            !isVerified ? (
               <AssetVerifyToggler
                 text={t("unverifiedAssets.verifyAsset")}
                 icon="notif-attention"
@@ -116,6 +125,15 @@ export default function CommonAssetListItem(
               />
             ) : (
               <>
+                {!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) &&
+                  isUntrusted && (
+                    <SharedIcon
+                      icon="/icons/m/notif-attention.svg"
+                      width={24}
+                      color="var(--attention)"
+                      onClick={(event) => handleVerifyAsset(event)}
+                    />
+                  )}
                 <SharedIconRouterLink
                   path="/send"
                   state={assetAmount.asset}

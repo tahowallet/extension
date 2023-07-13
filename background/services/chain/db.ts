@@ -8,7 +8,6 @@ import {
   EVMNetwork,
   Network,
   NetworkBaseAsset,
-  sameNetwork,
 } from "../../networks"
 import { FungibleAsset } from "../../assets"
 import {
@@ -46,12 +45,6 @@ export type RpcConfig = {
 // TODO keep track of transaction replacement / nonce invalidation
 
 export class ChainDatabase extends Dexie {
-  static defaultSettings = {
-    CHAIN_ID_TO_RPC_URLS,
-    BASE_ASSETS,
-    DEFAULT_NETWORKS,
-  }
-
   /*
    * Accounts whose transaction and balances should be tracked on a particular
    * network.
@@ -351,36 +344,32 @@ export class ChainDatabase extends Dexie {
     return this.baseAssets.toArray()
   }
 
-  private async initializeRPCs(): Promise<void> {
+  async initializeRPCs(): Promise<void> {
     await Promise.all(
-      Object.entries(ChainDatabase.defaultSettings.CHAIN_ID_TO_RPC_URLS).map(
-        async ([chainId, rpcUrls]) => {
-          if (rpcUrls) {
-            await this.addRpcUrls(chainId, rpcUrls)
-          }
+      Object.entries(CHAIN_ID_TO_RPC_URLS).map(async ([chainId, rpcUrls]) => {
+        if (rpcUrls) {
+          await this.addRpcUrls(chainId, rpcUrls)
         }
-      )
+      })
     )
   }
 
-  private async initializeBaseAssets(): Promise<void> {
-    await this.updateBaseAssets(ChainDatabase.defaultSettings.BASE_ASSETS)
+  async initializeBaseAssets(): Promise<void> {
+    await this.updateBaseAssets(BASE_ASSETS)
   }
 
-  private async initializeEVMNetworks(): Promise<void> {
+  async initializeEVMNetworks(): Promise<void> {
     const existingNetworks = await this.getAllEVMNetworks()
     await Promise.all(
-      ChainDatabase.defaultSettings.DEFAULT_NETWORKS.map(
-        async (defaultNetwork) => {
-          if (
-            !existingNetworks.some((network) =>
-              sameNetwork(network, defaultNetwork)
-            )
-          ) {
-            await this.networks.put(defaultNetwork)
-          }
+      DEFAULT_NETWORKS.map(async (defaultNetwork) => {
+        if (
+          !existingNetworks.some(
+            (network) => network.chainID === defaultNetwork.chainID
+          )
+        ) {
+          await this.networks.put(defaultNetwork)
         }
-      )
+      })
     )
   }
 

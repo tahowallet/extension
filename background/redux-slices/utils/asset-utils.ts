@@ -88,7 +88,7 @@ function isPolygonBaseAsset(asset: AnyAsset) {
  *
  * @return True if the passed asset is the base asset for the passed network.
  */
-export function isBaseAssetForNetwork(
+export function isBuiltInNetworkBaseAsset(
   asset: AnyAsset,
   network: AnyNetwork
 ): asset is NetworkBaseAsset {
@@ -341,23 +341,17 @@ export function heuristicDesiredDecimalsForUnitPrice(
   )
 }
 
-/**
- * Check if the asset is from a token list.
- */
 export function isTokenListAsset(asset: AnyAsset): boolean {
-  const tokenListCount = asset.metadata?.tokenLists?.length ?? 0
-
-  return tokenListCount > 0
+  return !!asset.metadata?.tokenLists?.length
 }
 
 /**
- * Checks if the asset is baseline trusted.
- * Baseline trusted means that wallet can trust them by default.
- * The asset is in a token list OR the asset is a network base asset.
+ * Check if the asset is in a token list or is a network base asset.
+ * If not it means it is an untrusted asset.
  *
  */
-export function isBaselineTrustedAsset(asset: AnyAsset): boolean {
-  return isTokenListAsset(asset) || isNetworkBaseAsset(asset)
+export function isUntrustedAsset(asset: AnyAsset): boolean {
+  return !isTokenListAsset(asset) && !isNetworkBaseAsset(asset)
 }
 
 /**
@@ -365,50 +359,36 @@ export function isBaselineTrustedAsset(asset: AnyAsset): boolean {
  * The verified property was manually set to true.
  *
  */
-export function isVerifiedAsset(asset: AnyAsset): boolean {
-  return asset.metadata?.verified !== undefined && asset.metadata.verified
+export function isVerifiedAssetByUser(asset: AnyAsset): boolean {
+  if (asset.metadata?.verified !== undefined) {
+    // If we have verified metadata return it
+    return asset.metadata.verified
+  }
+  return false
 }
 
 /**
- * Checks the user has not explicitly verified the asset.
- * It can still be baseline trusted.
+ * Check if an asset is verified or trusted.
+ * The asset can be trusted when is in a token list or the asset is a network base asset.
+ * Untrusted asset can be manually verified by the user.
  *
+ * Only such assets can take part in wallet actions.
+ * By actions is meant:
+ * - doing an swap with this asset
+ * - sending this asset to another address
  */
-export function isUnverifiedAsset(asset: AnyAsset): boolean {
-  return !isVerifiedAsset(asset)
-}
-
-/**
- * Checks if the asset can be treated as trusted.
- * Trusted means the asset is baseline trusted OR verified.
- *
- */
-export function isTrustedAsset(asset: AnyAsset): boolean {
-  return isBaselineTrustedAsset(asset) || isVerifiedAsset(asset)
-}
-
-/**
- * Checks if the asset is untrusted.
- * Untrusted means the asset is neither baseline trusted NOR verified.
- *
- */
-export function isUntrustedAsset(asset: AnyAsset): boolean {
-  return !isTrustedAsset(asset)
+export function isVerifiedOrTrustedAsset(asset: AnyAsset): boolean {
+  return (
+    isVerifiedAssetByUser(asset) ||
+    isNetworkBaseAsset(asset) ||
+    isTokenListAsset(asset)
+  )
 }
 
 type AssetType = "base" | "erc20"
 
 export type AssetID = `${AssetType}/${string}`
 
-type ChainID = string
-
-export type FullAssetID = `${ChainID}/${AssetID}`
-
-/**
- * Returns a string that can be used as an identifier for an asset
- * TODO: This should be removed in favour of getFullAssetID; Base
- * assets should not use symbol in their identifier
- */
 export const getAssetID = (
   asset: NetworkBaseAsset | SmartContractFungibleAsset
 ): AssetID => {

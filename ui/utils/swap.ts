@@ -19,8 +19,9 @@ import { useState, useRef, useCallback } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   isSameAsset,
-  isTrustedAsset,
+  isVerifiedOrTrustedAsset,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import { useValueRef, useIsMounted, useSetState } from "../hooks/react-hooks"
 
@@ -271,7 +272,9 @@ export function getOwnedSellAssetAmounts(
         (isSmartContractFungibleAsset(assetAmount.asset) ||
           assetAmount.asset.symbol === currentNetwork.baseAsset.symbol) &&
         assetAmount.decimalAmount > 0 &&
-        isTrustedAsset(assetAmount.asset)
+        // When the flag is disabled all assets can be sent and swapped
+        (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) ||
+          isVerifiedOrTrustedAsset(assetAmount.asset))
     ) ?? []
   )
 }
