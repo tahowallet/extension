@@ -2,13 +2,9 @@ import { createSelector } from "@reduxjs/toolkit"
 import { selectCurrentNetwork } from "./uiSelectors"
 import { SwappableAsset, isSmartContractFungibleAsset } from "../../assets"
 import { sameNetwork } from "../../networks"
-import {
-  isBuiltInNetworkBaseAsset,
-  isVerifiedOrTrustedAsset,
-} from "../utils/asset-utils"
+import { isBaseAssetForNetwork, isTrustedAsset } from "../utils/asset-utils"
 import { RootState } from ".."
 import { SingleAssetState } from "../assets"
-import { FeatureFlags, isEnabled } from "../../features"
 
 export const selectLatestQuoteRequest = createSelector(
   (state: RootState) => state.swap.latestQuoteRequest,
@@ -30,15 +26,13 @@ export const selectSwapBuyAssets = createSelector(
       ): asset is SwappableAsset & {
         recentPrices: SingleAssetState["recentPrices"]
       } => {
-        return (
-          // When the flag is disabled all assets can be sent and swapped
-          (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) ||
-            isVerifiedOrTrustedAsset(asset)) &&
-          // Only list assets for the current network.
-          (isBuiltInNetworkBaseAsset(asset, currentNetwork) ||
-            (isSmartContractFungibleAsset(asset) &&
-              sameNetwork(asset.homeNetwork, currentNetwork)))
-        )
+        // Only list assets for the current network.
+        const assetIsOnCurrentNetwork =
+          isBaseAssetForNetwork(asset, currentNetwork) ||
+          (isSmartContractFungibleAsset(asset) &&
+            sameNetwork(asset.homeNetwork, currentNetwork))
+
+        return isTrustedAsset(asset) && assetIsOnCurrentNetwork
       }
     )
   }
