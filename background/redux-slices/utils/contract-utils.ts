@@ -1,4 +1,4 @@
-import TallyWindowProvider from "@tallyho/window-provider"
+import TahoWindowProvider from "@tallyho/window-provider"
 import { Contract, ethers, ContractInterface } from "ethers"
 import Emittery from "emittery"
 import TallyWeb3Provider from "../../tally-provider"
@@ -31,7 +31,7 @@ export const internalProviderPort = {
 }
 /* eslint-enable @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types */
 
-export const internalProvider = new TallyWindowProvider(internalProviderPort)
+export const internalProvider = new TahoWindowProvider(internalProviderPort)
 
 export function getProvider(this: unknown): TallyWeb3Provider {
   return new TallyWeb3Provider(internalProvider)

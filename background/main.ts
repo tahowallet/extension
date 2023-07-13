@@ -189,7 +189,7 @@ import {
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
 import {
-  isBuiltInNetworkBaseAsset,
+  isBaseAssetForNetwork,
   isSameAsset,
 } from "./redux-slices/utils/asset-utils"
 import {
@@ -1021,7 +1021,7 @@ export default class Main extends BaseService<never> {
             // e.g. Optimism, Polygon might have been retrieved through alchemy as
             // token balances but they should not be handled here as they would
             // not be correctly treated as base assets
-            return !isBuiltInNetworkBaseAsset(
+            return !isBaseAssetForNetwork(
               balance.assetAmount.asset,
               balance.network
             )
