@@ -319,17 +319,16 @@ export default function Settings(): ReactElement {
   const autoLockInterval = useBackgroundSelector(selectAutoLockInterval)
 
   const autoLockSettings = {
-    title: "",
-    component: () => (
-      <div className="content">
-        <div className="left">
-          {t("settings.autoLockTimer.label")}
-          <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
-            <div className="tooltip">
-              <span>{t("settings.autoLockTimer.tooltip")}</span>
-            </div>
-          </SharedTooltip>
+    title: t("settings.autoLockTimer.label"),
+    tooltip: () => (
+      <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
+        <div className="tooltip">
+          <span>{t("settings.autoLockTimer.tooltip")}</span>
         </div>
+      </SharedTooltip>
+    ),
+    component: () => (
+      <>
         <div className="select_wrapper">
           <SharedSelect
             options={AUTO_LOCK_OPTIONS.map((item) => ({
@@ -345,27 +344,13 @@ export default function Settings(): ReactElement {
         </div>
         <style jsx>
           {`
-            .content {
-              display: flex;
-              justify-content: space-between;
-              width: 336px;
-            }
-            .left {
-              display: flex;
-              align-items: center;
-            }
             .select_wrapper {
               width: 118px;
               z-index: 2;
             }
-            .tooltip {
-              display: flex;
-              flex-direction: column;
-              gap: 16px;
-            }
           `}
         </style>
-      </div>
+      </>
     ),
   }
 
