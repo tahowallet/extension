@@ -807,23 +807,25 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(blockSeen(block))
     })
 
-    this.chainService.emitter.on("transactionSend", () => {
+    this.chainService.emitter.on("transactionSend", async () => {
       this.store.dispatch(
         setSnackbarMessage("Transaction signed, broadcasting...")
       )
       this.store.dispatch(
         clearTransactionState(TransactionConstructionStatus.Idle)
       )
+      await this.autoToggleFlashbotsProvider()
     })
 
     earnSliceEmitter.on("earnDeposit", (message) => {
       this.store.dispatch(setSnackbarMessage(message))
     })
 
-    this.chainService.emitter.on("transactionSendFailure", () => {
+    this.chainService.emitter.on("transactionSendFailure", async () => {
       this.store.dispatch(
         setSnackbarMessage("Transaction failed to broadcast.")
       )
+      await this.autoToggleFlashbotsProvider()
     })
 
     transactionConstructionSliceEmitter.on(
@@ -1205,8 +1207,6 @@ export default class Main extends BaseService<never> {
             // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear
           )
-
-          this.autoToggleFlashbotsProvider()
         }
 
         const handleAndClear = (response: TXSignatureResponse) => {
@@ -1221,7 +1221,8 @@ export default class Main extends BaseService<never> {
           }
         }
 
-        const rejectAndClear = () => {
+        const rejectAndClear = async () => {
+          await this.autoToggleFlashbotsProvider()
           clear()
           rejecter()
         }
