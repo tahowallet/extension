@@ -1,4 +1,4 @@
-import { test } from "./utils"
+import { test } from "../utils"
 
 test("Remove wallet", async ({ page, walletPageHelper }) => {
   await walletPageHelper.onboarding.addNewWallet()

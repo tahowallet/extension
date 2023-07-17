@@ -1,6 +1,6 @@
 import { wait } from "@tallyho/tally-background/lib/utils"
-import { test, expect } from "./utils"
-import { account1Address, account1Name } from "./utils/onboarding"
+import { test, expect } from "../utils"
+import { account1Address, account1Name } from "../utils/onboarding"
 
 test.describe("NFTs", () => {
   test("User can view nft collections, poaps and badges", async ({
