@@ -1,6 +1,6 @@
 import browser, { runtime } from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
-import deepDiff from "webext-redux/lib/strategies/deepDiff/diff"
+import { diff as deepDiff } from "jsondiffpatch"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
@@ -510,7 +510,10 @@ export default class Main extends BaseService<never> {
     wrapStore(this.store, {
       serializer: encodeJSON,
       deserializer: decodeJSON,
-      diffStrategy: deepDiff,
+      diffStrategy: (oldObj, newObj) => {
+        const diffWrapper = deepDiff(oldObj, newObj)
+        return diffWrapper === undefined ? [] : [diffWrapper]
+      },
       dispatchResponder: async (
         dispatchResult: Promise<unknown>,
         send: (param: { error: string | null; value: unknown | null }) => void
