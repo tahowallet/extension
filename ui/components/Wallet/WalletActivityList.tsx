@@ -105,7 +105,7 @@ export default function WalletActivityList({
         </SharedSlideUpMenu>
       )}
 
-      <ul>
+      <ul data-testid="activity_list">
         {activities.map((activityItem) => {
           if (activityItem) {
             return (

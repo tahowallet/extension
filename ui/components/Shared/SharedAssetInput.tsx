@@ -363,7 +363,12 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
   }
 
   return (
-    <button type="button" disabled={isDisabled} onClick={toggleIsAssetMenuOpen}>
+    <button
+      type="button"
+      data-testid="selected_asset_button"
+      disabled={isDisabled}
+      onClick={toggleIsAssetMenuOpen}
+    >
       <div className="asset_icon_wrap">
         <SharedAssetIcon
           logoURL={asset?.metadata?.logoURL}

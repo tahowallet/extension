@@ -1,4 +1,4 @@
-import { test, expect } from "./utils"
+import { test, expect } from "../utils"
 
 test.describe("dApp Connections", () => {
   test("should display an informational popup for Taho as default on first connection", async ({

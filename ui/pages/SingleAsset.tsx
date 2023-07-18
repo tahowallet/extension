@@ -124,7 +124,7 @@ export default function SingleAsset(): ReactElement {
       </div>
       {asset && (
         <div className="header standard_width_padded">
-          <div className="left">
+          <div className="left" data-testid="left_wrap">
             <div className="asset_wrap">
               <SharedAssetIcon
                 logoURL={asset?.metadata?.logoURL}

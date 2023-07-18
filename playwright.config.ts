@@ -8,14 +8,15 @@ import "dotenv-defaults/config"
 
 const SECOND = 1e3
 const CI_ENV = typeof process.env.CI === "string"
+const FORK = process.env.USE_MAINNET_FORK === "true"
 
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 const config: PlaywrightTestConfig = {
-  testDir: "./e2e-tests",
+  testDir: FORK ? "./e2e-tests/fork-based" : "./e2e-tests/regular",
   /* Maximum time one test can run for. */
-  timeout: 120 * SECOND,
+  timeout: 240 * SECOND,
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
@@ -58,6 +59,14 @@ const config: PlaywrightTestConfig = {
       }
     }
     */
+
+    /* For debugging purposes */
+    // launchOptions: {
+    //   slowMo: 1000,
+    // },
+
+    /* Needed to verify the content of the clipboard */
+    permissions: ["clipboard-read"],
   },
 
   /* Configure projects for major browsers */
