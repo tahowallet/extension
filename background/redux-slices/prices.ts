@@ -12,6 +12,7 @@ import {
   FullAssetID,
   getFullAssetID,
   isNetworkBaseAsset,
+  isTrustedAsset,
 } from "./utils/asset-utils"
 
 type AssetPricesMap = {
@@ -103,10 +104,7 @@ export const selectAssetPricePoint = createSelector(
       }
 
       /* Don't do anything else if this is an unverified asset and there's no exact match */
-      if (
-        (assetToFind.metadata?.tokenLists?.length ?? 0) < 1 &&
-        !isBuiltInNetworkBaseAsset(assetToFind, assetToFind.homeNetwork)
-      ) {
+      if (!isTrustedAsset(assetToFind)) {
         return undefined
       }
     }
