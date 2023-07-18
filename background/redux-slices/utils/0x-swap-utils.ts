@@ -48,7 +48,7 @@ export async function getAssetPricePoint(
   network: EVMNetwork
 ): Promise<PricePoint | undefined> {
   // FIXME: review
-  const assetPricesNetworks = assets
+  const assetPricesNetworks = Object.values(assets)
     .filter(
       (assetItem) =>
         "contractAddress" in assetItem &&

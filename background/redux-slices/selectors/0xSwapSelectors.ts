@@ -19,7 +19,7 @@ export const selectSwapBuyAssets = createSelector(
   (state: RootState) => state.assets,
   selectCurrentNetwork,
   (assets, currentNetwork) => {
-    return assets.filter((asset): asset is SwappableAsset => {
+    return Object.values(assets).filter((asset): asset is SwappableAsset => {
       // Only list assets for the current network.
       const assetIsOnCurrentNetwork =
         isBaseAssetForNetwork(asset, currentNetwork) ||

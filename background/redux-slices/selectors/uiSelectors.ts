@@ -50,11 +50,3 @@ export const selectMainCurrencySign = createSelector(
   () => null,
   () => hardcodedMainCurrencySign
 )
-
-export const selectMainCurrency = createSelector(
-  (state: RootState) => state.ui,
-  (state: RootState) => state.assets,
-  (state: RootState) => selectMainCurrencySymbol(state),
-  (_, assets, mainCurrencySymbol) =>
-    assets.find((asset) => asset.symbol === mainCurrencySymbol)
-)

@@ -11,18 +11,24 @@ import {
 } from "../assets"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
-import { EVMNetwork, sameNetwork } from "../networks"
+import { EVMNetwork, NetworkBaseAsset, sameNetwork } from "../networks"
 import { NormalizedEVMAddress } from "../types"
 import { removeAssetReferences, updateAssetReferences } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
-import { isBaseAssetForNetwork, isSameAsset } from "./utils/asset-utils"
+import {
+  FullAssetID,
+  getFullAssetID,
+  isBaseAssetForNetwork,
+  isBaselineTrustedAsset,
+  isNetworkBaseAsset,
+} from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
 
 export type SingleAssetState = AnyAsset
 
-export type AssetsState = SingleAssetState[]
+export type AssetsState = { [assetID: FullAssetID]: SingleAssetState }
 
-export const initialState: AssetsState = []
+export const initialState: AssetsState = {}
 
 const assetsSlice = createSlice({
   name: "assets",
@@ -30,61 +36,52 @@ const assetsSlice = createSlice({
   reducers: {
     assetsLoaded: (
       immerState,
-      { payload: newAssets }: { payload: AnyAsset[] }
+      {
+        payload: newAssets,
+      }: { payload: (NetworkBaseAsset | SmartContractFungibleAsset)[] }
     ) => {
-      const mappedAssets: { [sym: string]: SingleAssetState[] } = {}
-      // bin existing known assets
-      immerState.forEach((asset) => {
-        if (mappedAssets[asset.symbol] === undefined) {
-          mappedAssets[asset.symbol] = []
-        }
-        // if an asset is already in state, assume unique checks have been done
-        // no need to check network, contract address, etc
-        mappedAssets[asset.symbol].push(asset)
-      })
-      // merge in new assets
       newAssets.forEach((newAsset) => {
-        if (mappedAssets[newAsset.symbol] === undefined) {
-          mappedAssets[newAsset.symbol] = [
-            {
-              ...newAsset,
-            },
-          ]
-        } else {
-          const duplicateIndexes = mappedAssets[newAsset.symbol].reduce<
-            number[]
-          >((acc, existingAsset, id) => {
-            if (isSameAsset(newAsset, existingAsset)) {
-              acc.push(id)
-            }
-            return acc
-          }, [])
+        const newAssetId = getFullAssetID(newAsset)
 
-          // if there aren't duplicates, add the asset
-          if (duplicateIndexes.length === 0) {
-            mappedAssets[newAsset.symbol].push({
-              ...newAsset,
-            })
-          } else {
-            // TODO if there are duplicates... when should we replace assets?
-            duplicateIndexes.forEach((id) => {
-              // Update only the metadata for the duplicate
-              mappedAssets[newAsset.symbol][id] = {
-                ...mappedAssets[newAsset.symbol][id],
-                metadata: newAsset.metadata,
-              }
-            })
+        const existing = immerState[newAssetId]
+        if (existing) {
+          // Update all properties except metadata for network base assets
+          if (isNetworkBaseAsset(existing)) {
+            const { metadata: _, ...rest } = newAsset
+            Object.assign(existing, rest)
           }
+
+          if (isSmartContractFungibleAsset(existing) && newAsset.metadata) {
+            existing.metadata ??= {}
+
+            // Update verified status, token lists or discovery txs for custom assets
+            if (!isBaselineTrustedAsset(existing)) {
+              existing.metadata.verified = (<SmartContractFungibleAsset>(
+                newAsset
+              ))?.metadata?.verified
+
+              if (newAsset.metadata?.tokenLists?.length) {
+                existing.metadata.tokenLists = newAsset.metadata.tokenLists
+              }
+
+              if ("discoveryTxHash" in newAsset.metadata) {
+                existing.metadata.discoveryTxHash =
+                  newAsset.metadata.discoveryTxHash
+              }
+            }
+          }
+        } else {
+          immerState[newAssetId] = newAsset
         }
       })
-
-      return Object.values(mappedAssets).flat()
     },
     removeAsset: (
       immerState,
-      { payload: removedAsset }: { payload: AnyAsset }
+      {
+        payload: removedAsset,
+      }: { payload: NetworkBaseAsset | SmartContractFungibleAsset }
     ) => {
-      return immerState.filter((asset) => !isSameAsset(asset, removedAsset))
+      delete immerState[getFullAssetID(removedAsset)]
     },
   },
 })

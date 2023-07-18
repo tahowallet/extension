@@ -1,9 +1,8 @@
 import logger from "../../lib/logger"
 import { HexString } from "../../types"
-import { EVMNetwork, sameNetwork } from "../../networks"
+import { EVMNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
-  AnyAsset,
   AnyAssetMetadata,
   FungibleAsset,
   isSmartContractFungibleAsset,
@@ -61,6 +60,8 @@ const FAST_TOKEN_REFRESH_BLOCK_RANGE = 10
 // before balance-checking them.
 const ACCELERATED_TOKEN_REFRESH_TIMEOUT = 300
 
+type IndexedAsset = SmartContractFungibleAsset | NetworkBaseAsset
+
 interface Events extends ServiceLifecycleEvents {
   accountsWithBalances: {
     /**
@@ -75,7 +76,7 @@ interface Events extends ServiceLifecycleEvents {
     addressOnNetwork: AddressOnNetwork
   }
   prices: PricePoint[]
-  assets: AnyAsset[]
+  assets: IndexedAsset[]
   refreshAsset: SmartContractFungibleAsset
   removeAssetData: SmartContractFungibleAsset
 }
@@ -133,7 +134,7 @@ export default class IndexingService extends BaseService<Events> {
 
   private lastPriceAlarmTime = 0
 
-  private cachedAssets: Record<EVMNetwork["chainID"], AnyAsset[]> =
+  private cachedAssets: Record<EVMNetwork["chainID"], IndexedAsset[]> =
     Object.fromEntries(
       Object.keys(NETWORK_BY_CHAIN_ID).map((network) => [network, []])
     )
@@ -272,7 +273,7 @@ export default class IndexingService extends BaseService<Events> {
    * @returns An array of assets, including network base assets, token list
    *          assets and custom assets.
    */
-  getCachedAssets(network: EVMNetwork): AnyAsset[] {
+  getCachedAssets(network: EVMNetwork): IndexedAsset[] {
     return this.cachedAssets[network.chainID] ?? []
   }
 
@@ -288,7 +289,7 @@ export default class IndexingService extends BaseService<Events> {
       await this.preferenceService.getTokenListPreferences()
     const tokenLists = await this.db.getLatestTokenLists(tokenListPrefs.urls)
 
-    this.cachedAssets[network.chainID] = mergeAssets<FungibleAsset>(
+    this.cachedAssets[network.chainID] = mergeAssets<IndexedAsset>(
       [network.baseAsset],
       customAssets,
       networkAssetsFromLists(network, tokenLists)

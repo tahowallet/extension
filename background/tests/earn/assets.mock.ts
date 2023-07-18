@@ -3,22 +3,25 @@ import { ETHEREUM } from "../../constants"
 import { PricesState } from "../../redux-slices/prices"
 import { getFullAssetID } from "../../redux-slices/utils/asset-utils"
 
-export const assets: SmartContractFungibleAsset[] = [
-  {
-    name: "Wrapped Ether",
-    symbol: "WETH",
-    decimals: 18,
-    homeNetwork: ETHEREUM,
-    contractAddress: "0x0",
-  },
-  {
-    name: "Uniswap",
-    symbol: "UNI",
-    decimals: 18,
-    homeNetwork: ETHEREUM,
-    contractAddress: "0x0",
-  },
-]
+export const assets: Record<string, SmartContractFungibleAsset> =
+  Object.fromEntries(
+    [
+      {
+        name: "Wrapped Ether",
+        symbol: "WETH",
+        decimals: 18,
+        homeNetwork: ETHEREUM,
+        contractAddress: "0x0",
+      },
+      {
+        name: "Uniswap",
+        symbol: "UNI",
+        decimals: 18,
+        homeNetwork: ETHEREUM,
+        contractAddress: "0x0",
+      },
+    ].map((asset) => [getFullAssetID(asset), asset])
+  )
 
 export const prices: PricesState = {
   [getFullAssetID(assets[0])]: {

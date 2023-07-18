@@ -21,7 +21,7 @@ type OldState = {
 }
 
 type NewState = {
-  assets: unknown[]
+  assets: Record<string, unknown>
   account: {
     accountsData: {
       evm: {
@@ -62,6 +62,6 @@ export default (prevState: Record<string, unknown>): NewState => {
 
   return {
     ...typedPrevState,
-    assets: [],
+    assets: {},
   }
 }
