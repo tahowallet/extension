@@ -11,7 +11,6 @@ import { convertFixedPoint } from "../lib/fixed-point"
 import {
   FullAssetID,
   getFullAssetID,
-  isNetworkBaseAsset,
   isTrustedAsset,
 } from "./utils/asset-utils"
 
@@ -42,11 +41,7 @@ const pricesSlice = createSlice({
           (asset) => asset !== fiatCurrency
         )
 
-        if (
-          fiatCurrency &&
-          (isSmartContractFungibleAsset(pricedAsset) ||
-            isNetworkBaseAsset(pricedAsset))
-        ) {
+        if (fiatCurrency && isTrustedAsset(pricedAsset)) {
           const assetId = getFullAssetID(pricedAsset)
 
           immerState[assetId] ??= {}

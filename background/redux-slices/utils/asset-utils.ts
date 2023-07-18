@@ -383,7 +383,12 @@ export function isUnverifiedAsset(asset: AnyAsset): boolean {
  * Trusted means the asset is baseline trusted OR verified.
  *
  */
-export function isTrustedAsset(asset: AnyAsset): boolean {
+export function isTrustedAsset(
+  asset: AnyAsset
+): asset is
+  | NetworkBaseAsset
+  | (SmartContractFungibleAsset & { tokenLists: string[] })
+  | (SmartContractFungibleAsset & { verified: true }) {
   return isBaselineTrustedAsset(asset) || isVerifiedAsset(asset)
 }
 
