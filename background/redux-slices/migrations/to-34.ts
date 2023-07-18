@@ -1,12 +1,35 @@
-export default (
-  prevState: Record<string, unknown>
-): Record<string, unknown> => {
-  const { assets: _, ...newState } = prevState
+type OldState = {
+  ui: {
+    settings: {
+      [settingsKey: string]: unknown
+    }
+    [sliceKey: string]: unknown
+  }
+  [otherSlice: string]: unknown
+}
 
-  // Clear assets collection; these should be immediately repopulated by the
-  // IndexingService in startService.
-  // We are changing assets slice from array to object to improve performance.
-  newState.assets = {}
+type NewState = {
+  ui: {
+    settings: {
+      [settingsKey: string]: unknown
+      useFlashbots: boolean
+    }
+    [sliceKey: string]: unknown
+  }
+  [otherSlice: string]: unknown
+}
 
-  return newState
+export default (prevState: Record<string, unknown>): NewState => {
+  const typedPrevState = prevState as OldState
+
+  return {
+    ...prevState,
+    ui: {
+      ...typedPrevState.ui,
+      settings: {
+        ...typedPrevState.ui.settings,
+        useFlashbots: false,
+      },
+    },
+  }
 }

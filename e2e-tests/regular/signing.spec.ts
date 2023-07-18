@@ -1,4 +1,4 @@
-import { test, expect } from "./utils"
+import { test, expect } from "../utils"
 
 test.describe("Signing", () => {
   test("User can sign in with Ethereum", async ({

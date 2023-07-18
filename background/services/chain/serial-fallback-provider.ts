@@ -11,7 +11,9 @@ import { getNetwork } from "@ethersproject/networks"
 import {
   SECOND,
   ALCHEMY_SUPPORTED_CHAIN_IDS,
-  RPC_METHOD_PROVIDER_ROUTING,
+  FLASHBOTS_RPC_URL,
+  ARBITRUM_ONE,
+  OPTIMISM,
   FORK,
 } from "../../constants"
 import logger from "../../lib/logger"
@@ -23,7 +25,38 @@ import {
   transactionFromAlchemyWebsocketTransaction,
 } from "../../lib/alchemy"
 import { FeatureFlags, isEnabled } from "../../features"
+import { RpcConfig } from "./db"
 
+export type ProviderCreator = {
+  type: "alchemy" | "custom" | "generic"
+  supportedMethods?: string[]
+  creator: () => WebSocketProvider | JsonRpcProvider
+}
+
+/**
+ * Method list, to describe which rpc method calls on which networks should
+ * prefer alchemy provider over the generic ones.
+ *
+ * The method names can be full or the starting parts of the method name.
+ * This allows us to use "namespaces" for providers eg `alchemy_...` or `qn_...`
+ *
+ * The structure is network specific with an extra `everyChain` option.
+ * The methods in this array will be directed towards alchemy on every network.
+ */
+export const ALCHEMY_RPC_METHOD_PROVIDER_ROUTING = {
+  everyChain: [
+    "alchemy_", // alchemy specific api calls start with this
+    "eth_sendRawTransaction", // broadcast should always go to alchemy
+    "eth_subscribe", // generic http providers do not support this, but dapps need this
+    "eth_estimateGas", // just want to be safe, when setting up a transaction
+  ],
+  [OPTIMISM.chainID]: [
+    "eth_call", // this is causing issues on optimism with ankr and is used heavily by uniswap
+  ],
+  [ARBITRUM_ONE.chainID]: [
+    "eth_call", // this is causing issues on arbitrum with ankr and is used heavily by uniswap
+  ],
+} as const
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 400
 // Retry 3 times before falling back to the next provider.
@@ -115,13 +148,30 @@ function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
  */
 function alchemyOrDefaultProvider(chainID: string, method: string): boolean {
   return (
-    RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
+    ALCHEMY_RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
       method.startsWith(m)
     ) ||
-    (RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some((m: string) =>
-      method.startsWith(m)
+    (ALCHEMY_RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some(
+      (m: string) => method.startsWith(m)
     )
   )
+}
+
+function customOrDefaultProvider(
+  method: string,
+  supportedMethods: string[] = []
+): boolean {
+  // Alchemy's methods have to go through Alchemy
+  if (method.startsWith("alchemy_")) {
+    return false
+  }
+
+  // If there are no supported methods we can assume we want to route everything through this provider
+  if (!supportedMethods.length) {
+    return true
+  }
+
+  return supportedMethods.some((m: string) => method.startsWith(m))
 }
 
 /**
@@ -150,6 +200,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   private alchemyProvider: JsonRpcProvider | undefined
 
+  private customProvider: JsonRpcProvider | undefined
+
+  private customProviderSupportedMethods: string[] = []
+
   /**
    * This object holds all messages that are either being sent to a provider
    * and waiting for a response, or are in the process of being backed off due
@@ -169,6 +223,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     | undefined
 
   supportsAlchemy = false
+
+  private customProviderCreator: (() => JsonRpcProvider) | undefined
 
   /**
    * Since our architecture follows a pattern of using distinct provider instances
@@ -225,13 +281,18 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     // Internal network type useful for helper calls, but not exposed to avoid
     // clashing with Ethers's own `network` stuff.
     private chainID: string,
-    providerCreators: Array<{
-      type: "alchemy" | "generic"
-      creator: () => WebSocketProvider | JsonRpcProvider
-    }>
+    providerCreators: Array<ProviderCreator>
   ) {
+    const customProviderCreator = providerCreators.find(
+      (creator) => creator.type === "custom"
+    )
+
+    const alchemyProviderCreator = providerCreators.find(
+      (creator) => creator.type === "alchemy"
+    )
+
     const [firstProviderCreator, ...remainingProviderCreators] =
-      providerCreators.map((pc) => pc.creator)
+      providerCreators.flatMap((pc) => (pc.type === "custom" ? [] : pc.creator))
 
     const firstProvider = firstProviderCreator()
 
@@ -239,14 +300,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
     this.currentProvider = firstProvider
 
-    const alchemyProviderCreator = providerCreators.find(
-      (creator) => creator.type === "alchemy"
-    )
-
     if (alchemyProviderCreator) {
       this.supportsAlchemy = true
       this.alchemyProviderCreator = alchemyProviderCreator.creator
       this.alchemyProvider = this.alchemyProviderCreator()
+    }
+
+    if (customProviderCreator) {
+      this.addCustomProvider(customProviderCreator)
     }
 
     setInterval(() => {
@@ -301,22 +362,22 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
 
       if (
+        this.customProvider &&
+        customOrDefaultProvider(method, this.customProviderSupportedMethods)
+      ) {
+        const result = await this.customProvider.send(method, params)
+        delete this.messagesToSend[messageId]
+        return result
+      }
+
+      if (
         // Force some methods to be handled by alchemy if we're on an alchemy supported chain
         this.alchemyProvider &&
         alchemyOrDefaultProvider(this.cachedChainId, method)
       ) {
-        if (this.alchemyProvider) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const result = await this.alchemyProvider.send(method, params)
-          delete this.messagesToSend[messageId]
-          return result
-        }
-        if (/^alchemy_|^eth_subscribe$/.test(method)) {
-          delete this.messagesToSend[messageId]
-          throw new Error(
-            `Calling ${method} is not supported on ${this.currentProvider.network.name}`
-          )
-        }
+        const result = await this.alchemyProvider.send(method, params)
+        delete this.messagesToSend[messageId]
+        return result
       }
 
       const result = await this.currentProvider.send(method, params)
@@ -386,6 +447,19 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       delete this.messagesToSend[messageId]
       throw error
     }
+  }
+
+  addCustomProvider(customProviderCreator: ProviderCreator): void {
+    this.customProviderSupportedMethods =
+      customProviderCreator.supportedMethods ?? []
+    this.customProviderCreator = customProviderCreator.creator
+    this.customProvider = this.customProviderCreator()
+  }
+
+  removeCustomProvider(): void {
+    this.customProviderSupportedMethods = []
+    this.customProviderCreator = undefined
+    this.customProvider = undefined
   }
 
   /**
@@ -923,9 +997,29 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 }
 
+function getProviderCreator(
+  rpcUrl: string
+): JsonRpcProvider | WebSocketProvider {
+  const url = new URL(rpcUrl)
+  if (/^wss?/.test(url.protocol)) {
+    return new WebSocketProvider(rpcUrl)
+  }
+
+  return new JsonRpcProvider(rpcUrl)
+}
+
+export function makeFlashbotsProviderCreator(): ProviderCreator {
+  return {
+    type: "custom",
+    supportedMethods: ["eth_sendRawTransaction"],
+    creator: () => getProviderCreator(FLASHBOTS_RPC_URL),
+  }
+}
+
 export function makeSerialFallbackProvider(
   chainID: string,
-  rpcUrls: string[]
+  rpcUrls: string[],
+  customRpc?: RpcConfig
 ): SerialFallbackProvider {
   if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
     return new SerialFallbackProvider(FORK.chainID, [
@@ -936,39 +1030,43 @@ export function makeSerialFallbackProvider(
     ])
   }
 
-  const alchemyProviderCreators = ALCHEMY_SUPPORTED_CHAIN_IDS.has(chainID)
+  const alchemyProviderCreators: ProviderCreator[] =
+    ALCHEMY_SUPPORTED_CHAIN_IDS.has(chainID)
+      ? [
+          {
+            type: "alchemy" as const,
+            creator: () =>
+              new AlchemyProvider(getNetwork(Number(chainID)), ALCHEMY_KEY),
+          },
+          {
+            type: "alchemy" as const,
+            creator: () =>
+              new AlchemyWebSocketProvider(
+                getNetwork(Number(chainID)),
+                ALCHEMY_KEY
+              ),
+          },
+        ]
+      : []
+
+  const customProviderCreator: ProviderCreator[] = customRpc
     ? [
         {
-          type: "alchemy" as const,
-          creator: () =>
-            new AlchemyProvider(getNetwork(Number(chainID)), ALCHEMY_KEY),
-        },
-        {
-          type: "alchemy" as const,
-          creator: () =>
-            new AlchemyWebSocketProvider(
-              getNetwork(Number(chainID)),
-              ALCHEMY_KEY
-            ),
+          type: "custom" as const,
+          supportedMethods: customRpc.supportedMethods ?? [],
+          creator: () => getProviderCreator(customRpc.rpcUrls[0]),
         },
       ]
     : []
 
-  const genericProviders = rpcUrls.map((rpcUrl) => ({
+  const genericProviders: ProviderCreator[] = rpcUrls.map((rpcUrl) => ({
     type: "generic" as const,
-    creator: () => {
-      const url = new URL(rpcUrl)
-      if (/^wss?/.test(url.protocol)) {
-        return new WebSocketProvider(rpcUrl)
-      }
-
-      return new JsonRpcProvider(rpcUrl)
-    },
+    creator: () => getProviderCreator(rpcUrl),
   }))
 
   return new SerialFallbackProvider(chainID, [
-    // Prefer alchemy as the primary provider when available
     ...genericProviders,
     ...alchemyProviderCreators,
+    ...customProviderCreator,
   ])
 }

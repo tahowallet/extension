@@ -73,7 +73,7 @@ function DestinationCard(props: DestinationCardProps): ReactElement {
   const { label, address, name } = props
 
   return (
-    <div className="card_wrap">
+    <div className="card_wrap" data-testid="tx_participant_wrap">
       <div className="sub_info from">{label}:</div>
       <SharedAddress address={address} name={name} alwaysShowAddress />
       <div className="sub_info name" />

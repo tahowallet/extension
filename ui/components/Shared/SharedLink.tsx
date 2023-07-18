@@ -5,7 +5,7 @@ type Props = {
   url: string
   children?: React.ReactNode
   text?: string
-  type?: "link" | "button"
+  type?: "link" | "button" | "tooltip"
   styles?: React.CSSProperties & Record<string, string>
 }
 
@@ -22,7 +22,10 @@ export default function SharedLink({
       href={url}
       target="_blank"
       rel="noreferrer"
-      className={classNames("link", { button: type === "button" })}
+      className={classNames("link", {
+        button: type === "button",
+        tooltip: type === "tooltip",
+      })}
     >
       {text ?? children}
       <style jsx>{`
@@ -35,6 +38,14 @@ export default function SharedLink({
         .button {
           padding: 4px;
           display: inline-block;
+        }
+        .link.tooltip {
+          text-decoration: underline;
+          color: var(--green-95);
+          padding: 0px;
+        }
+        .link.tooltip:hover {
+          color: var(--green-40);
         }
       `}</style>
     </a>

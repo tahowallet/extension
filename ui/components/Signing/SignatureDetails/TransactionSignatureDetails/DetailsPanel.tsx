@@ -11,14 +11,20 @@ import { useTranslation } from "react-i18next"
 import {
   BINANCE_SMART_CHAIN,
   EIP_1559_COMPLIANT_CHAIN_IDS,
+  FLASHBOTS_SUPPORTED_CHAIN_IDS,
 } from "@tallyho/tally-background/constants"
 import classNames from "classnames"
+import {
+  selectUseFlashbots,
+  toggleUsingFlashbotsForGivenTx,
+} from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
 import NetworkSettingsChooser from "../../../NetworkFees/NetworkSettingsChooser"
 import FeeSettingsButton from "../../../NetworkFees/FeeSettingsButton"
 import TransactionAdditionalDetails from "./TransactionAdditionalDetails"
 import TransactionSignatureDetailsWarning from "./TransactionSignatureDetailsWarning"
+import SharedCheckbox from "../../../Shared/SharedCheckbox"
 
 export type PanelState = {
   dismissedWarnings: string[]
@@ -41,6 +47,9 @@ export default function DetailPanel({
   const [updateNum, setUpdateNum] = useState(0)
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
+
+  const useFlashbots = useBackgroundSelector(selectUseFlashbots)
+  const [shouldUseFlashbots, setShouldUseFlashbots] = useState(useFlashbots)
 
   const dispatch = useBackgroundDispatch()
 
@@ -76,10 +85,19 @@ export default function DetailPanel({
   const isContractAddress =
     transactionRequest.annotation?.warnings?.includes("send-to-contract")
 
+  const canUseFlashbots = FLASHBOTS_SUPPORTED_CHAIN_IDS.has(
+    transactionRequest.chainID
+  )
+
   const networkSettingsSaved = () => {
     setUpdateNum(updateNum + 1)
 
     setNetworkSettingsModalOpen(false)
+  }
+
+  const toggleFlashbotsRPC = async (value: boolean) => {
+    await dispatch(toggleUsingFlashbotsForGivenTx(value))
+    setShouldUseFlashbots(value)
   }
 
   const getHightForSlideUpMenu = () => {
@@ -124,6 +142,25 @@ export default function DetailPanel({
             />
           </span>
         )}
+      {useFlashbots && canUseFlashbots && (
+        <>
+          <span className="detail_item">
+            <SharedCheckbox
+              size={16}
+              checked={shouldUseFlashbots}
+              onChange={toggleFlashbotsRPC}
+              label={t("signTransaction.useFlashbots")}
+              labelPosition="left"
+              customStyles={{ width: "100%" }}
+              customStylesForLabel={{
+                color: "var(--green-40)",
+                fontSize: "14px",
+                marginRight: "auto",
+              }}
+            />
+          </span>
+        </>
+      )}
       <span className="detail_item">
         <div className="detail_label">
           {t("networkFees.estimatedNetworkFee")}
@@ -162,11 +199,9 @@ export default function DetailPanel({
             gap: 10px;
             flex-direction: column;
           }
-          .detail_item_right {
-            color: var(--green-20);
-            font-size: 16px;
-          }
           .detail_label {
+            display: flex;
+            align-items: center;
             font-weight: 500;
             font-size: 14px;
             line-height: 16px;

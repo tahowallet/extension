@@ -1,6 +1,6 @@
 import { wait } from "@tallyho/tally-background/lib/utils"
-import { test, expect } from "./utils"
-import { account1Address, account1Name } from "./utils/onboarding"
+import { test, expect } from "../utils"
+import { account1Address, account1Name } from "../utils/onboarding"
 
 test.describe("NFTs", () => {
   test("User can view nft collections, poaps and badges", async ({
@@ -50,10 +50,9 @@ test.describe("NFTs", () => {
 
       await walletPageHelper.navigateTo("NFTs")
 
-      await expect(page.getByTestId("loading_doggo")).toBeVisible()
-
       // Wait until load finishes
       await expect(page.getByTestId("loading_doggo")).not.toBeVisible()
+
       shouldInterceptRequests = false
     })
 

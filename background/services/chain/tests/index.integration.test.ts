@@ -57,15 +57,15 @@ describe("ChainService", () => {
 
       const initializeBaseAssets = sandbox.spy(
         chainServiceInstance.db,
-        "initializeBaseAssets"
+        "initializeBaseAssets" as keyof ChainDatabase
       )
       const initializeRPCs = sandbox.spy(
         chainServiceInstance.db,
-        "initializeRPCs"
+        "initializeRPCs" as keyof ChainDatabase
       )
       const initializeEVMNetworks = sandbox.spy(
         chainServiceInstance.db,
-        "initializeEVMNetworks"
+        "initializeEVMNetworks" as keyof ChainDatabase
       )
 
       const initializeNetworks = sandbox.spy(
