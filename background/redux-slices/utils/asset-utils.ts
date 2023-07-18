@@ -401,35 +401,19 @@ export function isUntrustedAsset(asset: AnyAsset): boolean {
   return !isTrustedAsset(asset)
 }
 
-type AssetType = "base" | "erc20"
+type AssetID = "base" | SmartContractFungibleAsset["contractAddress"]
 type ChainID = string
 
-export type AssetID = `${AssetType}/${string}`
 export type FullAssetID = `${ChainID}/${AssetID}`
-
-/**
- * Returns a string that can be used as an identifier for an asset
- * TODO: This should be removed in favour of getFullAssetID; Base
- * assets should not use symbol in their identifier
- */
-export const getAssetID = (
-  asset: NetworkBaseAsset | SmartContractFungibleAsset
-): AssetID => {
-  if (isNetworkBaseAsset(asset)) {
-    return `base/${asset.symbol}`
-  }
-
-  return `erc20/${asset.contractAddress}`
-}
 
 export const getFullAssetID = (
   asset: NetworkBaseAsset | SmartContractFungibleAsset
 ): FullAssetID => {
   if (isNetworkBaseAsset(asset)) {
-    return `${asset.chainID}/${getAssetID(asset)}`
+    return `${asset.chainID}/base`
   }
 
-  return `${asset.homeNetwork.chainID}/${getAssetID(asset)}`
+  return `${asset.homeNetwork.chainID}/${asset.contractAddress}`
 }
 
 // FIXME Unify once asset similarity code is unified.
