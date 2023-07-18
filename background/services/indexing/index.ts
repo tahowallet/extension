@@ -52,6 +52,7 @@ import {
   isUnverifiedAsset,
   isTrustedAsset,
 } from "../../redux-slices/utils/asset-utils"
+import { isFulfilledPromise } from "../../lib/utils/type-guards"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -208,14 +209,22 @@ export default class IndexingService extends BaseService<Events> {
       const trackedNetworks = await this.chainService.getTrackedNetworks()
 
       // Push any assets we have cached in the db for all active networks
-      Promise.allSettled(
-        trackedNetworks.map(async (network) => {
-          await this.cacheAssetsForNetwork(network)
-          this.emitter.emit("assets", this.getCachedAssets(network))
-        })
+      await Promise.allSettled(
+        trackedNetworks.map(async (network) =>
+          this.cacheAssetsForNetwork(network)
+        )
+      ).then((cachedAssetsPromises) => {
+        const cachedAssets = cachedAssetsPromises
+          .filter(isFulfilledPromise)
+          .map(({ value }) => value)
+          .flat()
+
+        this.emitter.emit("assets", cachedAssets)
+
         // Load balances after token lists load and after assets are cached, otherwise
         // we will not load balances on initial balance query
-      ).then(() => tokenListLoad.then(() => this.loadAccountBalances()))
+        return tokenListLoad.then(() => this.loadAccountBalances())
+      })
     })
   }
 
@@ -281,7 +290,7 @@ export default class IndexingService extends BaseService<Events> {
    * Caches to memory asset metadata from hard-coded base assets and configured token
    * lists.
    */
-  async cacheAssetsForNetwork(network: EVMNetwork): Promise<void> {
+  async cacheAssetsForNetwork(network: EVMNetwork): Promise<IndexedAsset[]> {
     const customAssets = await this.db.getActiveCustomAssetsByNetworks([
       network,
     ])
@@ -294,6 +303,8 @@ export default class IndexingService extends BaseService<Events> {
       customAssets,
       networkAssetsFromLists(network, tokenLists)
     )
+
+    return this.cachedAssets[network.chainID]
   }
 
   /**
@@ -965,11 +976,17 @@ export default class IndexingService extends BaseService<Events> {
     // Cache assets across all supported networks even if a network
     // may be inactive.
     await Promise.allSettled(
-      this.chainService.supportedNetworks.map(async (network) => {
-        await this.cacheAssetsForNetwork(network)
-        this.emitter.emit("assets", this.getCachedAssets(network))
-      })
-    )
+      this.chainService.supportedNetworks.map(async (network) =>
+        this.cacheAssetsForNetwork(network)
+      )
+    ).then((cachedAssetsPromises) => {
+      const cachedAssets = cachedAssetsPromises
+        .filter(isFulfilledPromise)
+        .map(({ value }) => value)
+        .flat()
+
+      this.emitter.emit("assets", cachedAssets)
+    })
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if
     // the version has gone up

@@ -197,12 +197,10 @@ describe("IndexingService", () => {
       expect(trackedNetworks).toHaveLength(2)
       // We emit twice for every tracked network at service start
       await indexingService.emitter.once("assets")
-      await indexingService.emitter.once("assets")
 
       // Resolve delay so fetchAndCacheTokenLists can continue
       delay.resolve(undefined)
 
-      await indexingService.emitter.once("assets")
       await indexingService.emitter.once("assets").then(() => {
         /**
          * Caches assets for every tracked network at service start and
