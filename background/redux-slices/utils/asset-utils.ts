@@ -11,6 +11,7 @@ import {
   CoinGeckoAsset,
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
+  AssetMetadata,
 } from "../../assets"
 import {
   BUILT_IN_NETWORK_BASE_ASSETS,
@@ -383,7 +384,12 @@ export function isUnverifiedAsset(asset: AnyAsset): boolean {
  * Trusted means the asset is baseline trusted OR verified.
  *
  */
-export function isTrustedAsset(asset: AnyAsset): boolean {
+export function isTrustedAsset(asset: AnyAsset): asset is
+  | NetworkBaseAsset
+  | (SmartContractFungibleAsset & {
+      metadata: { tokenLists: Exclude<AssetMetadata["tokenLists"], undefined> }
+    })
+  | (SmartContractFungibleAsset & { metadata: { verified: true } }) {
   return isBaselineTrustedAsset(asset) || isVerifiedAsset(asset)
 }
 
