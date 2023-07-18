@@ -12,16 +12,12 @@ import reducer, { assetsLoaded, SingleAssetState } from "../assets"
 import { PricesState, selectAssetPricePoint } from "../prices"
 import { getFullAssetID } from "../utils/asset-utils"
 
-const asset: SmartContractFungibleAsset = createSmartContractAsset()
+const asset: SmartContractFungibleAsset = createSmartContractAsset({})
 
 const pricePoint: PricePoint = createPricePoint(asset)
 
-const assetWithPricePoint = {
-  ...asset,
-}
-
 const pricesState: PricesState = {
-  [getFullAssetID(assetWithPricePoint)]: {
+  [getFullAssetID(asset)]: {
     USD: pricePoint,
   },
 }
@@ -29,16 +25,24 @@ const pricesState: PricesState = {
 describe("Reducers", () => {
   describe("assetsLoaded", () => {
     test("updates cached asset metadata", () => {
-      const state = reducer({}, assetsLoaded([asset]))
+      const customAsset: SmartContractFungibleAsset = createSmartContractAsset({
+        metadata: { tokenLists: [] },
+      })
 
-      expect(state[getFullAssetID(asset)].metadata?.verified).not.toBeDefined()
+      const state = reducer({}, assetsLoaded([customAsset]))
+
+      expect(
+        state[getFullAssetID(customAsset)].metadata?.verified
+      ).not.toBeDefined()
 
       const newState = reducer(
         state,
-        assetsLoaded([{ ...asset, metadata: { verified: true } }])
+        assetsLoaded([{ ...customAsset, metadata: { verified: true } }])
       )
 
-      expect(newState[getFullAssetID(asset)].metadata?.verified).toBeTruthy()
+      expect(
+        newState[getFullAssetID(customAsset)].metadata?.verified
+      ).toBeTruthy()
     })
   })
 })
@@ -97,7 +101,7 @@ describe("Assets selectors", () => {
       const state = { ...pricesState }
       const result = selectAssetPricePoint(state, assetWithoutPricePoint, "USD")
 
-      expect(assetWithPricePoint.decimals).toBe(18)
+      expect(asset.decimals).toBe(18)
 
       expect(result).toMatchObject({
         ...pricePoint,
