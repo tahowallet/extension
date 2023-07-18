@@ -332,13 +332,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
                 components={{
                   url: (
                     <SharedLink
-                      styles={{
-                        textDecoration: "underline",
-                        "--link-color": "var(--green-95)",
-                        "--hover-color": "var(--green-40)",
-                        padding: "0px",
-                      }}
-                      type="button"
+                      type="tooltip"
                       url={HELPDESK_CUSTOM_TOKENS_LINK}
                     />
                   ),
