@@ -72,7 +72,9 @@ export default class AnalyticsService extends BaseService<Events> {
       const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
 
       browser.runtime.setUninstallURL(
-        `${process.env.WEBSITE_ORIGIN}/goodbye?uuid=${uuid}`
+        process.env.NODE_ENV === "development"
+          ? "about:blank"
+          : `${process.env.WEBSITE_ORIGIN}/goodbye?uuid=${uuid}`
       )
 
       if (isNew) {
