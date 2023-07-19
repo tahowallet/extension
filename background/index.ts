@@ -4,6 +4,7 @@ import { Store as ProxyStore } from "webext-redux"
 import { Delta, patch as patchDeepDiff } from "jsondiffpatch"
 import { produce } from "immer"
 import { AnyAction } from "@reduxjs/toolkit"
+import { debounce } from "lodash"
 
 import Main from "./main"
 import { encodeJSON, decodeJSON } from "./lib/utils"
@@ -28,19 +29,40 @@ export type BackgroundDispatch = Main["store"]["dispatch"]
 export async function newProxyStore(): Promise<
   ProxyStore<RootState, AnyAction>
 > {
+  const updates: Delta[] = []
+
+  const queueUpdate = debounce(
+    <T>(lastState: T, updater: (updatedState: T) => void) => {
+      const updatedState = produce(lastState, (draft) => {
+        while (updates.length) {
+          // updates is guaranteed to hold a delta
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          patchDeepDiff(draft, updates.shift()!)
+        }
+      })
+
+      updater(updatedState)
+    },
+    16,
+    { trailing: true, maxWait: 30 }
+  )
+
   const proxyStore = new ProxyStore({
     serializer: encodeJSON,
     deserializer: decodeJSON,
-    patchStrategy: <T>(oldObj: T, patchesWrapper: [Delta] | []) => {
+    patchStrategy<T>(
+      this: ProxyStore,
+      oldObj: T,
+      patchesWrapper: [Delta] | []
+    ) {
       if (patchesWrapper.length === 0) {
         return oldObj
       }
 
-      const result = produce(oldObj, (draft) =>
-        patchDeepDiff(draft, patchesWrapper[0])
-      )
+      updates.push(patchesWrapper[0])
+      queueUpdate(oldObj, (updatedState) => this.replaceState(updatedState))
 
-      return result
+      return oldObj
     },
   })
   await proxyStore.ready()
