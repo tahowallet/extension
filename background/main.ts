@@ -1,12 +1,12 @@
 import browser, { runtime } from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
-import { diff as deepDiff } from "jsondiffpatch"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { debounce } from "lodash"
 import { utils } from "ethers"
 
+import { diff as deepDiff } from "./differ"
 import {
   decodeJSON,
   encodeJSON,

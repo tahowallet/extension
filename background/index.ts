@@ -1,10 +1,10 @@
 import browser from "webextension-polyfill"
 
 import { Store as ProxyStore } from "webext-redux"
-import { Delta, patch as patchDeepDiff } from "jsondiffpatch"
 import { produce } from "immer"
 import { AnyAction } from "@reduxjs/toolkit"
 
+import { Delta, patch as patchDeepDiff } from "./differ"
 import Main from "./main"
 import { encodeJSON, decodeJSON } from "./lib/utils"
 
