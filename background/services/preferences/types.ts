@@ -1,6 +1,7 @@
 import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork } from "../../accounts"
 import { AccountSignerSettings } from "../../ui"
+import { UNIXTime } from "../../types"
 
 export interface TokenListPreferences {
   autoUpdate: boolean
@@ -17,6 +18,7 @@ export interface Preferences {
     isEnabled: boolean
     hasDefaultOnBeenTurnedOn: boolean
   }
+  autoLockInterval: UNIXTime
 }
 
 export type AnalyticsPreferences = Preferences["analytics"]

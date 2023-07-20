@@ -1,5 +1,5 @@
 import { Page, BrowserContext, expect } from "@playwright/test"
-import OnboardingHelper from "./onboarding"
+import OnboardingHelper, { getOnboardingPage } from "./onboarding"
 
 export default class WalletPageHelper {
   readonly url: string
@@ -41,7 +41,7 @@ export default class WalletPageHelper {
    * Onboard using walletPageHelper
    */
   async onboardWithSeedPhrase(recoveryPhrase: string): Promise<void> {
-    const onboardingPage = await this.onboarding.getOnboardingPage()
+    const onboardingPage = await getOnboardingPage(this.context)
     await this.onboarding.addAccountFromSeed({
       phrase: recoveryPhrase,
       onboardingPage,
@@ -167,6 +167,16 @@ export default class WalletPageHelper {
     // }) // TODO: delete?
   }
 
+  async verifyDefaultWalletBanner(): Promise<void> {
+    await expect(
+      this.popup.getByText("Taho is not your default wallet")
+    ).toBeVisible()
+    await this.popup
+      .locator(".default_toggle")
+      .getByRole("button")
+      .click({ trial: true })
+  }
+
   async switchNetwork(network: RegExp): Promise<void> {
     await this.popup.getByTestId("top_menu_network_switcher").last().click()
     await this.popup.getByText(network).click()
@@ -180,7 +190,6 @@ export default class WalletPageHelper {
    */
   async addAddressToAccount(accountLabel: string): Promise<void> {
     await this.popup.getByTestId("top_menu_profile_button").last().click()
-
     const numberOfAccounts = await this.popup
       .getByTestId("wallet_address_item")
       .count()
@@ -197,7 +206,6 @@ export default class WalletPageHelper {
         hasText: accountLabel,
       })
       .click({ trial: true })
-
     await this.popup
       .getByTestId("wallet_title")
       .filter({
@@ -207,14 +215,12 @@ export default class WalletPageHelper {
       .click({ trial: true })
     await accountLabelButton.click()
     await this.popup.getByText(/^Add address$/).click()
-
     await expect(this.popup.getByTestId("wallet_address_item")).toHaveCount(
       numberOfAccounts + 1
     )
     await expect(
       this.popup.getByTestId("slide_up_menu").locator(".spinner")
     ).toHaveCount(0)
-
     await this.closeAccountsPopup()
   }
 
@@ -257,5 +263,40 @@ export default class WalletPageHelper {
     } else {
       throw new Error("Accounts popup not found")
     }
+  }
+
+  /**
+   * Hides the dApp Connection "use Taho as default" informational popup so
+   * tests can proceed assuming dApp connection will be available without
+   * additional interactions.
+   */
+  async hideDappConnectPopup(): Promise<void> {
+    const dappPage = await this.context.newPage()
+    await dappPage.goto("https://swap.cow.fi/")
+    await dappPage
+      .locator("#swap-button")
+      .getByRole("button", { name: "Connect Wallet" })
+      .click()
+
+    const [popupPage] = await Promise.all([
+      this.context.waitForEvent("page"),
+      await dappPage.locator("text=Injected").click(), // Opens a new tab
+    ])
+    await popupPage.waitForLoadState()
+
+    // Clear the one-time informational popup, if present.
+    const connectingPopupTitle = popupPage.locator("h3", {
+      hasText: "Connecting with Taho",
+    })
+    if ((await connectingPopupTitle.count()) > 0) {
+      await expect(connectingPopupTitle).toBeVisible()
+      const bgLocator = popupPage.locator(".bg")
+
+      await bgLocator.click()
+      await bgLocator.waitFor({ state: "detached", timeout: 1000 })
+    }
+
+    await popupPage.close()
+    await dappPage.close()
   }
 }

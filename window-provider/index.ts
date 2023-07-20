@@ -72,7 +72,7 @@ const METAMASK_STATE_MOCK = {
   isPermanentlyDisconnected: false,
 }
 
-export default class TallyWindowProvider extends EventEmitter {
+export default class TahoWindowProvider extends EventEmitter {
   // TODO: This should come from the background with onConnect when any interaction is initiated by the dApp.
   // onboard.js relies on this, or uses a deprecated api. It seemed to be a reasonable workaround for now.
   chainId = "0x1"
@@ -81,11 +81,11 @@ export default class TallyWindowProvider extends EventEmitter {
 
   connected = false
 
-  isTally = true
+  isTally: true = true
 
   isMetaMask = false
 
-  tallySetAsDefault = false
+  tahoSetAsDefault = false
 
   isWeb3 = true
 
@@ -103,6 +103,8 @@ export default class TallyWindowProvider extends EventEmitter {
   >()
 
   _state?: typeof METAMASK_STATE_MOCK
+
+  _metamask?: this
 
   providerInfo = {
     label: "Taho",
@@ -141,7 +143,7 @@ export default class TallyWindowProvider extends EventEmitter {
       }
 
       if (isTallyConfigPayload(result)) {
-        const wasTallySetAsDefault = this.tallySetAsDefault
+        const wasTallySetAsDefault = this.tahoSetAsDefault
 
         window.walletRouter?.shouldSetTallyForCurrentProvider(
           result.defaultWallet,
@@ -155,19 +157,7 @@ export default class TallyWindowProvider extends EventEmitter {
             currentHost.includes(host)
           )
         ) {
-          this.isMetaMask = result.defaultWallet
-
-          if (
-            this.isMetaMask &&
-            // This is internal to MetaMask but accessed by this dApp
-            // TODO: Improve MetaMask provider impersonation
-            currentHost.includes("core.app")
-          ) {
-            // eslint-disable-next-line no-underscore-dangle
-            this._state = METAMASK_STATE_MOCK
-          }
-
-          this.tallySetAsDefault = result.defaultWallet
+          this.tahoSetAsDefault = result.defaultWallet
         }
 
         // When the default state flips, reroute any unresolved requests to the
@@ -175,7 +165,7 @@ export default class TallyWindowProvider extends EventEmitter {
         if (
           process.env.ENABLE_UPDATED_DAPP_CONNECTIONS === "true" &&
           wasTallySetAsDefault &&
-          !this.tallySetAsDefault
+          !this.tahoSetAsDefault
         ) {
           const existingRequests = [...this.requestResolvers.entries()]
           this.requestResolvers.clear()
@@ -186,7 +176,7 @@ export default class TallyWindowProvider extends EventEmitter {
             .sort(([id], [id2]) => Number(BigInt(id2) - BigInt(id)))
             .forEach(([, { sendData, reject, resolve }]) => {
               window.walletRouter
-                ?.routeToNewDefault(sendData.request)
+                ?.routeToNewNonTahoDefault(sendData.request)
                 // On success or error, call the original reject/resolve
                 // functions to notify the requestor of the new wallet's
                 // response.

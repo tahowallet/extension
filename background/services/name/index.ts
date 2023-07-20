@@ -134,20 +134,13 @@ export default class NameService extends BaseService<Events> {
       }
     )
 
-    chainService.emitter.on(
-      "newAccountToTrack",
-      async ({ addressOnNetwork }) => {
-        try {
-          await this.lookUpName(addressOnNetwork)
-        } catch (error) {
-          logger.error(
-            "Error fetching name for address",
-            addressOnNetwork,
-            error
-          )
-        }
+    chainService.emitter.on("newAccountToTrack", async (addressOnNetwork) => {
+      try {
+        await this.lookUpName(addressOnNetwork)
+      } catch (error) {
+        logger.error("Error fetching name for address", addressOnNetwork, error)
       }
-    )
+    })
     this.emitter.on("resolvedName", async ({ from: { addressOnNetwork } }) => {
       try {
         const avatar = await this.lookUpAvatar(addressOnNetwork)

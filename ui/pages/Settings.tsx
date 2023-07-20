@@ -1,6 +1,6 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { useTranslation } from "react-i18next"
+import { Trans, useTranslation } from "react-i18next"
 import {
   setNewDefaultWalletValue,
   selectDefaultWallet,
@@ -12,8 +12,13 @@ import {
   selectHideBanners,
   selectShowUnverifiedAssets,
   toggleShowUnverifiedAssets,
+  toggleFlashbots,
+  selectUseFlashbots,
+  selectAutoLockTimer as selectAutoLockInterval,
+  updateAutoLockInterval,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
+import { FLASHBOTS_DOCS_URL, MINUTE } from "@tallyho/tally-background/constants"
 import {
   selectMainCurrencySign,
   userValueDustThreshold,
@@ -32,10 +37,33 @@ import SettingButton from "./Settings/SettingButton"
 import { useBackgroundSelector } from "../hooks"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedTooltip from "../components/Shared/SharedTooltip"
+import SharedLink from "../components/Shared/SharedLink"
+
+type SettingsItem = {
+  title: string
+  component: () => ReactElement
+  tooltip?: () => ReactElement
+}
+
+type SettingsList = {
+  [key: string]: {
+    title: string
+    items: SettingsItem[]
+  }
+}
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
+
 const FAQ_URL =
   "https://notion.taho.xyz/Tally-Ho-Knowledge-Base-4d95ed5439c64d6db3d3d27abf1fdae5"
+
+const AUTO_LOCK_OPTIONS = [
+  { label: "5", value: String(5 * MINUTE) },
+  { label: "15", value: String(15 * MINUTE) },
+  { label: "30", value: String(30 * MINUTE) },
+  { label: "60", value: String(60 * MINUTE) },
+]
+
 const FOOTER_ACTIONS = [
   {
     icon: "icons/m/discord",
@@ -99,18 +127,23 @@ function VersionLabel(): ReactElement {
   )
 }
 
-function SettingRow(props: {
-  title: string
-  component: () => ReactElement
-}): ReactElement {
-  const { title, component } = props
+function SettingRow(props: SettingsItem): ReactElement {
+  const { title, component, tooltip = () => null } = props
 
   return (
     <li>
-      <div className="left">{title}</div>
+      <div className="left">
+        {title}
+        {tooltip()}
+      </div>
       <div className="right">{component()}</div>
       <style jsx>
         {`
+          .left {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+          }
           li {
             padding-top: 16px;
             display: flex;
@@ -136,6 +169,7 @@ export default function Settings(): ReactElement {
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
   const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
+  const useFlashbots = useSelector(selectUseFlashbots)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
@@ -157,6 +191,9 @@ export default function Settings(): ReactElement {
     dispatch(toggleHideBanners(!toggleValue))
   }
 
+  const toggleFlashbotsRPC = (value: boolean) =>
+    dispatch(toggleFlashbots(value))
+
   const hideSmallAssetBalance = {
     title: t("settings.hideSmallAssetBalance", {
       amount: userValueDustThreshold,
@@ -171,43 +208,17 @@ export default function Settings(): ReactElement {
   }
 
   const unverifiedAssets = {
-    title: "",
+    title: t("settings.showUnverifiedAssets"),
+    tooltip: () => (
+      <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
+        <Trans t={t} i18nKey="settings.unverifiedAssets.tooltip" />
+      </SharedTooltip>
+    ),
     component: () => (
-      <div className="content">
-        <div className="left">
-          {t("settings.showUnverifiedAssets")}
-          <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
-            <div className="tooltip">
-              <span>{t("settings.unverifiedAssets.tooltip.firstPart")}</span>
-              {isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) && (
-                <span>{t("settings.unverifiedAssets.tooltip.secondPart")}</span>
-              )}
-            </div>
-          </SharedTooltip>
-        </div>
-        <SharedToggleButton
-          onChange={(toggleValue) => toggleShowUnverified(toggleValue)}
-          value={showUnverifiedAssets}
-        />
-        <style jsx>
-          {`
-            .content {
-              display: flex;
-              justify-content: space-between;
-              width: 336px;
-            }
-            .left {
-              display: flex;
-              align-items: center;
-            }
-            .tooltip {
-              display: flex;
-              flex-direction: column;
-              gap: 16px;
-            }
-          `}
-        </style>
-      </div>
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleShowUnverified(toggleValue)}
+        value={showUnverifiedAssets}
+      />
     ),
   }
 
@@ -305,6 +316,44 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const autoLockInterval = useBackgroundSelector(selectAutoLockInterval)
+
+  const autoLockSettings = {
+    title: t("settings.autoLockTimer.label"),
+    tooltip: () => (
+      <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
+        <div className="tooltip">
+          <span>{t("settings.autoLockTimer.tooltip")}</span>
+        </div>
+      </SharedTooltip>
+    ),
+    component: () => (
+      <>
+        <div className="select_wrapper">
+          <SharedSelect
+            options={AUTO_LOCK_OPTIONS.map((item) => ({
+              ...item,
+              label: t("settings.autoLockTimer.interval", { time: item.label }),
+            }))}
+            defaultIndex={AUTO_LOCK_OPTIONS.findIndex(
+              ({ value }) => value === String(autoLockInterval)
+            )}
+            width="100%"
+            onChange={(newValue) => dispatch(updateAutoLockInterval(newValue))}
+          />
+        </div>
+        <style jsx>
+          {`
+            .select_wrapper {
+              width: 118px;
+              z-index: 2;
+            }
+          `}
+        </style>
+      </>
+    ),
+  }
+
   const notificationBanner = {
     title: t("settings.showBanners"),
     component: () => (
@@ -327,7 +376,32 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const settings = Object.values({
+  const flashbotsRPC = {
+    title: t("settings.useFlashbots"),
+    tooltip: () => (
+      <SharedTooltip
+        width={165}
+        customStyles={{ marginLeft: "4" }}
+        verticalPosition="top"
+      >
+        <Trans
+          t={t}
+          i18nKey="settings.useFlashbotsTooltip"
+          components={{
+            url: <SharedLink type="tooltip" url={FLASHBOTS_DOCS_URL} />,
+          }}
+        />
+      </SharedTooltip>
+    ),
+    component: () => (
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleFlashbotsRPC(toggleValue)}
+        value={useFlashbots}
+      />
+    ),
+  }
+
+  const settings: SettingsList = {
     general: {
       title: t("settings.group.general"),
       items: [
@@ -353,20 +427,22 @@ export default function Settings(): ReactElement {
         customNetworks,
         addCustomAsset,
         enableTestNetworks,
+        flashbotsRPC,
+        autoLockSettings,
       ],
     },
     helpCenter: {
       title: t("settings.group.helpCenter"),
       items: [bugReport, needHelp],
     },
-  })
+  }
 
   return (
     <section className="standard_width_padded">
       <div className="menu">
         <h1>{t("settings.mainMenu")}</h1>
         <ul>
-          {settings.map(({ title, items }) => (
+          {Object.values(settings).map(({ title, items }) => (
             <div className="group" key={title}>
               <span className="group_title">{title}</span>
               {items.map((item, index) => {
@@ -376,6 +452,7 @@ export default function Settings(): ReactElement {
                     key={key}
                     title={item.title}
                     component={item.component}
+                    tooltip={item.tooltip}
                   />
                 )
               })}

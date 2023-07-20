@@ -3,3 +3,5 @@ dist
 ui/_locales/**/*.json
 !.github
 ci/cache
+.vscode
+size-plugin.json

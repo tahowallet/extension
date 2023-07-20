@@ -1,6 +1,6 @@
 import browser, { runtime } from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
-import deepDiff from "webext-redux/lib/strategies/deepDiff/diff"
+import { diff as deepDiff } from "jsondiffpatch"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
@@ -23,7 +23,7 @@ import {
   EnrichmentService,
   IndexingService,
   InternalEthereumProviderService,
-  KeyringService,
+  InternalSignerService,
   NameService,
   PreferenceService,
   ProviderBridgeService,
@@ -38,7 +38,7 @@ import {
   getNoopService,
 } from "./services"
 
-import { HexString, KeyringTypes, NormalizedEVMAddress } from "./types"
+import { HexString, NormalizedEVMAddress } from "./types"
 import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
 import { Eligible } from "./services/doggo/types"
@@ -65,12 +65,12 @@ import {
   setReferrerStats,
 } from "./redux-slices/claim"
 import {
-  emitter as keyringSliceEmitter,
-  keyringLocked,
-  keyringUnlocked,
-  updateKeyrings,
+  emitter as internalSignerSliceEmitter,
+  internalSignerLocked,
+  internalSignerUnlocked,
+  updateInternalSigners,
   setKeyringToVerify,
-} from "./redux-slices/keyrings"
+} from "./redux-slices/internal-signer"
 import { blockSeen, setEVMNetworks } from "./redux-slices/networks"
 import {
   initializationLoadingTimeHitLimit,
@@ -83,6 +83,7 @@ import {
   toggleCollectAnalytics,
   setShowAnalyticsNotification,
   setSelectedNetwork,
+  setAutoLockInterval,
   setShownDismissableItems,
   dismissableItemMarkedAsShown,
 } from "./redux-slices/ui"
@@ -128,7 +129,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { OPTIMISM, USD } from "./constants"
+import { ETHEREUM, FLASHBOTS_RPC_URL, OPTIMISM, USD } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
@@ -188,10 +189,15 @@ import {
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
 import {
-  isBuiltInNetworkBaseAsset,
+  isBaseAssetForNetwork,
   isSameAsset,
 } from "./redux-slices/utils/asset-utils"
+import {
+  SignerImportMetadata,
+  SignerInternalTypes,
+} from "./services/internal-signer"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
+import { makeFlashbotsProviderCreator } from "./services/chain/serial-fallback-provider"
 import { DismissableItem } from "./services/preferences"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -298,8 +304,16 @@ export default class Main extends BaseService<never> {
 
   static create: ServiceCreatorFunction<never, Main, []> = async () => {
     const preferenceService = PreferenceService.create()
-    const keyringService = KeyringService.create()
-    const chainService = ChainService.create(preferenceService, keyringService)
+    const analyticsService = AnalyticsService.create(preferenceService)
+
+    const internalSignerService = InternalSignerService.create(
+      preferenceService,
+      analyticsService
+    )
+    const chainService = ChainService.create(
+      preferenceService,
+      internalSignerService
+    )
     const indexingService = IndexingService.create(
       preferenceService,
       chainService
@@ -323,12 +337,10 @@ export default class Main extends BaseService<never> {
     const ledgerService = LedgerService.create()
 
     const signingService = SigningService.create(
-      keyringService,
+      internalSignerService,
       ledgerService,
       chainService
     )
-
-    const analyticsService = AnalyticsService.create(preferenceService)
 
     const nftsService = NFTsService.create(chainService)
 
@@ -380,7 +392,7 @@ export default class Main extends BaseService<never> {
       await chainService,
       await enrichmentService,
       await indexingService,
-      await keyringService,
+      await internalSignerService,
       await nameService,
       await internalEthereumProviderService,
       await providerBridgeService,
@@ -418,11 +430,11 @@ export default class Main extends BaseService<never> {
      */
     private indexingService: IndexingService,
     /**
-     * A promise to the keyring service, which stores key material, derives
-     * accounts, and signs messagees and transactions. The promise will be
+     * A promise to the internal signer service, which stores key material, derives
+     * accounts, and signs messages and transactions. The promise will be
      * resolved when the service is initialized.
      */
-    private keyringService: KeyringService,
+    private internalSignerService: InternalSignerService,
     /**
      * A promise to the name service, responsible for resolving names to
      * addresses and content.
@@ -496,10 +508,31 @@ export default class Main extends BaseService<never> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState, this)
 
+    const queueUpdate = debounce(
+      (lastState, newState, updateFn) => {
+        if (lastState === newState) {
+          return
+        }
+
+        const diff = deepDiff(lastState, newState)
+
+        if (diff !== undefined) {
+          updateFn(newState, [diff])
+        }
+      },
+      30,
+      { maxWait: 30, trailing: true }
+    )
+
     wrapStore(this.store, {
       serializer: encodeJSON,
       deserializer: decodeJSON,
-      diffStrategy: deepDiff,
+      diffStrategy: (oldObj, newObj, forceUpdate) => {
+        queueUpdate(oldObj, newObj, forceUpdate)
+
+        // Return no diffs as we're manually handling these inside `queueUpdate`
+        return []
+      },
       dispatchResponder: async (
         dispatchResult: Promise<unknown>,
         send: (param: { error: string | null; value: unknown | null }) => void
@@ -533,7 +566,7 @@ export default class Main extends BaseService<never> {
       this.chainService.startService(),
       this.indexingService.startService(),
       this.enrichmentService.startService(),
-      this.keyringService.startService(),
+      this.internalSignerService.startService(),
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
@@ -556,7 +589,7 @@ export default class Main extends BaseService<never> {
       this.chainService.stopService(),
       this.indexingService.stopService(),
       this.enrichmentService.stopService(),
-      this.keyringService.stopService(),
+      this.internalSignerService.stopService(),
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
@@ -576,7 +609,7 @@ export default class Main extends BaseService<never> {
 
   async initializeRedux(): Promise<void> {
     this.connectIndexingService()
-    this.connectKeyringService()
+    this.connectInternalSignerService()
     this.connectNameService()
     this.connectInternalEthereumProviderService()
     this.connectProviderBridgeService()
@@ -795,23 +828,25 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(blockSeen(block))
     })
 
-    this.chainService.emitter.on("transactionSend", () => {
+    this.chainService.emitter.on("transactionSend", async () => {
       this.store.dispatch(
         setSnackbarMessage("Transaction signed, broadcasting...")
       )
       this.store.dispatch(
         clearTransactionState(TransactionConstructionStatus.Idle)
       )
+      await this.autoToggleFlashbotsProvider()
     })
 
     earnSliceEmitter.on("earnDeposit", (message) => {
       this.store.dispatch(setSnackbarMessage(message))
     })
 
-    this.chainService.emitter.on("transactionSendFailure", () => {
+    this.chainService.emitter.on("transactionSendFailure", async () => {
       this.store.dispatch(
         setSnackbarMessage("Transaction failed to broadcast.")
       )
+      await this.autoToggleFlashbotsProvider()
     })
 
     transactionConstructionSliceEmitter.on(
@@ -1009,7 +1044,7 @@ export default class Main extends BaseService<never> {
             // e.g. Optimism, Polygon might have been retrieved through alchemy as
             // token balances but they should not be handled here as they would
             // not be correctly treated as base assets
-            return !isBuiltInNetworkBaseAsset(
+            return !isBaseAssetForNetwork(
               balance.assetAmount.asset,
               balance.network
             )
@@ -1071,7 +1106,7 @@ export default class Main extends BaseService<never> {
   }
 
   async connectSigningService(): Promise<void> {
-    this.keyringService.emitter.on("address", (address) =>
+    this.internalSignerService.emitter.on("address", (address) =>
       this.signingService.addTrackedAddress(address, "keyring")
     )
 
@@ -1110,12 +1145,12 @@ export default class Main extends BaseService<never> {
     })
   }
 
-  async connectKeyringService(): Promise<void> {
-    this.keyringService.emitter.on("keyrings", (keyrings) => {
-      this.store.dispatch(updateKeyrings(keyrings))
+  async connectInternalSignerService(): Promise<void> {
+    this.internalSignerService.emitter.on("internalSigners", (signers) => {
+      this.store.dispatch(updateInternalSigners(signers))
     })
 
-    this.keyringService.emitter.on("address", async (address) => {
+    this.internalSignerService.emitter.on("address", async (address) => {
       const trackedNetworks = await this.chainService.getTrackedNetworks()
       trackedNetworks.forEach((network) => {
         // Mark as loading and wire things up.
@@ -1134,48 +1169,41 @@ export default class Main extends BaseService<never> {
       })
     })
 
-    this.keyringService.emitter.on("locked", async (isLocked) => {
+    this.internalSignerService.emitter.on("locked", async (isLocked) => {
       if (isLocked) {
-        this.store.dispatch(keyringLocked())
+        this.store.dispatch(internalSignerLocked())
       } else {
-        this.store.dispatch(keyringUnlocked())
+        this.store.dispatch(internalSignerUnlocked())
       }
     })
 
-    keyringSliceEmitter.on("createPassword", async (password) => {
-      await this.keyringService.unlock(password, true)
+    internalSignerSliceEmitter.on("createPassword", async (password) => {
+      await this.internalSignerService.unlock(password, true)
     })
 
-    keyringSliceEmitter.on("lockKeyrings", async () => {
-      await this.keyringService.lock()
+    internalSignerSliceEmitter.on("lockInternalSigners", async () => {
+      await this.internalSignerService.lock()
     })
 
-    keyringSliceEmitter.on("deriveAddress", async (keyringID) => {
+    internalSignerSliceEmitter.on("deriveAddress", async (keyringID) => {
       await this.signingService.deriveAddress({
         type: "keyring",
         keyringID,
       })
     })
 
-    keyringSliceEmitter.on("generateNewKeyring", async (path) => {
+    internalSignerSliceEmitter.on("generateNewKeyring", async (path) => {
       // TODO move unlocking to a reasonable place in the initialization flow
       const generated: {
         id: string
         mnemonic: string[]
-      } = await this.keyringService.generateNewKeyring(
-        KeyringTypes.mnemonicBIP39S256,
+      } = await this.internalSignerService.generateNewKeyring(
+        SignerInternalTypes.mnemonicBIP39S256,
         path
       )
 
       this.store.dispatch(setKeyringToVerify(generated))
     })
-
-    keyringSliceEmitter.on(
-      "importKeyring",
-      async ({ mnemonic, path, source }) => {
-        await this.keyringService.importKeyring(mnemonic, source, path)
-      }
-    )
   }
 
   async connectInternalEthereumProviderService(): Promise<void> {
@@ -1214,7 +1242,8 @@ export default class Main extends BaseService<never> {
           }
         }
 
-        const rejectAndClear = () => {
+        const rejectAndClear = async () => {
+          await this.autoToggleFlashbotsProvider()
           clear()
           rejecter()
         }
@@ -1503,6 +1532,14 @@ export default class Main extends BaseService<never> {
     )
 
     this.preferenceService.emitter.on(
+      "updateAutoLockInterval",
+      async (newTimerValue) => {
+        await this.internalSignerService.updateAutoLockInterval()
+        this.store.dispatch(setAutoLockInterval(newTimerValue))
+      }
+    )
+
+    this.preferenceService.emitter.on(
       "initializeShownDismissableItems",
       async (dismissableItems) => {
         this.store.dispatch(setShownDismissableItems(dismissableItems))
@@ -1670,8 +1707,20 @@ export default class Main extends BaseService<never> {
     })
   }
 
-  async unlockKeyrings(password: string): Promise<boolean> {
-    return this.keyringService.unlock(password)
+  async unlockInternalSigners(password: string): Promise<boolean> {
+    return this.internalSignerService.unlock(password)
+  }
+
+  async exportMnemonic(address: HexString): Promise<string | null> {
+    return this.internalSignerService.exportMnemonic(address)
+  }
+
+  async exportPrivateKey(address: HexString): Promise<string | null> {
+    return this.internalSignerService.exportPrivateKey(address)
+  }
+
+  async importSigner(signerRaw: SignerImportMetadata): Promise<string | null> {
+    return this.internalSignerService.importSigner(signerRaw)
   }
 
   async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
@@ -1713,7 +1762,7 @@ export default class Main extends BaseService<never> {
                 This event is fired when any address on a network is added to the tracked list. 
                 
                 Note: this does not track recovery phrase(ish) import! But when an address is used 
-                on a network for the first time (read-only or recovery phrase/ledger/keyring).
+                on a network for the first time (read-only or recovery phrase/ledger/keyring/private key).
                 `,
         }
       )
@@ -1772,6 +1821,10 @@ export default class Main extends BaseService<never> {
       } else {
         this.analyticsService.sendAnalyticsEvent(event)
       }
+    })
+
+    uiSliceEmitter.on("updateAutoLockInterval", async (newTimerValue) => {
+      await this.preferenceService.updateAutoLockInterval(newTimerValue)
     })
   }
 
@@ -1853,6 +1906,24 @@ export default class Main extends BaseService<never> {
     // Connected dApps
     await this.providerBridgeService.revokePermissionsForChain(chainID)
     await this.chainService.removeCustomChain(chainID)
+  }
+
+  async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {
+    if (shouldUseFlashbots) {
+      const flashbotsProvider = makeFlashbotsProviderCreator()
+      await this.chainService.addCustomProvider(
+        ETHEREUM.chainID,
+        FLASHBOTS_RPC_URL,
+        flashbotsProvider
+      )
+    } else {
+      await this.chainService.removeCustomProvider(ETHEREUM.chainID)
+    }
+  }
+
+  async autoToggleFlashbotsProvider(): Promise<void> {
+    const shouldUseFlashbots = this.store.getState().ui.settings.useFlashbots
+    await this.toggleFlashbotsProvider(shouldUseFlashbots)
   }
 
   async queryCustomTokenDetails(

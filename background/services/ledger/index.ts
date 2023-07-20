@@ -396,7 +396,7 @@ export default class LedgerService extends BaseService<Events> {
 
         if (!isEIP1559TransactionRequest(ethersTx)) {
           // Ethers does not permit "from" field when serializing legacy transaction requests
-          const { from, ...fieldsWithoutFrom } = ethersTx
+          const { from: _, ...fieldsWithoutFrom } = ethersTx
           serializableEthersTx = fieldsWithoutFrom
         }
 
@@ -492,7 +492,7 @@ export default class LedgerService extends BaseService<Events> {
       }
 
       const eth = new Eth(this.transport)
-      const { EIP712Domain, ...typesForSigning } = typedData.types
+      const { EIP712Domain: _, ...typesForSigning } = typedData.types
       const hashedDomain = _TypedDataEncoder.hashDomain(typedData.domain)
       const hashedMessage = _TypedDataEncoder
         .from(typesForSigning)

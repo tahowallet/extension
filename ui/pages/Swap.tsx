@@ -24,6 +24,7 @@ import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import {
   NETWORKS_SUPPORTING_SWAPS,
+  OPTIMISM,
   SECOND,
 } from "@tallyho/tally-background/constants"
 
@@ -355,13 +356,17 @@ export default function Swap(): ReactElement {
             sellAsset,
             buyAsset,
             gasPrice:
-              quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
-              gasPrice,
+              // Let's use the gas price from 0x API for Optimism
+              // to avoid problems with gas price on Optimism Bedrock.
+              currentNetwork.chainID === OPTIMISM.chainID
+                ? gasPrice
+                : quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
+                  gasPrice,
           })
         )
       }
     }
-  }, [dispatch, sellAsset, buyAsset, quote])
+  }, [dispatch, sellAsset, buyAsset, quote, currentNetwork.chainID])
 
   if (!NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID)) {
     return <Redirect to="/" />
@@ -504,11 +509,11 @@ export default function Swap(): ReactElement {
                 )}
               </div>
             </div>
-            <div className="settings_wrap">
-              {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
+            {!isEnabled(FeatureFlags.HIDE_SWAP_REWARDS) ? (
+              <div className="settings_wrap">
                 <SwapRewardsCard />
-              ) : null}
-            </div>
+              </div>
+            ) : null}
             <div className="footer standard_width_padded">
               {quoteAppliesToCurrentAssets && quote?.needsApproval ? (
                 <ApproveQuoteBtn
@@ -550,7 +555,7 @@ export default function Swap(): ReactElement {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-top: 13px;
+            margin-top: 10px;
           }
           .network_fee_group {
             display: flex;
@@ -575,13 +580,12 @@ export default function Swap(): ReactElement {
 
           .loading_wrapper {
             min-height: 73.5px;
-            margin: 16px 0 32px;
+            margin: 7px 0 10px;
           }
 
           .footer {
             display: flex;
             justify-content: center;
-            margin-top: 24px;
           }
           .total_label {
             width: 33px;
