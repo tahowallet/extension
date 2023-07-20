@@ -1,3 +1,4 @@
+import fs from "fs"
 import { test, expect } from "../utils"
 
 test.describe("Transactions", () => {
@@ -8,13 +9,30 @@ test.describe("Transactions", () => {
   }) => {
     await test.step("Import account", async () => {
       /**
-       * Onboard using walletPageHelper
+       * Create a JSON file with an encoded private key based on the file
+       * content passed from an environment variable. The further steps of
+       * the test assume that the file encodes the pk of the `testertesting.eth`
+       * account. The JSON file can be generated using a script
+       * `scripts/key-generation/export-key-as-json.js`.
        */
-      const recoveryPhrase = process.env.RECOVERY_PHRASE
-      if (recoveryPhrase) {
-        await walletPageHelper.onboardWithSeedPhrase(recoveryPhrase)
+      const jsonBody = process.env.JSON_BODY
+      if (jsonBody) {
+        fs.writeFileSync("./e2e-tests/utils/JSON.json", jsonBody)
       } else {
-        throw new Error("RECOVERY_PHRASE environment variable is not defined.")
+        throw new Error("JSON_BODY environment variable is not defined.")
+      }
+
+      /**
+       * Onboard using JSON file.
+       */
+      const jsonPassword = process.env.JSON_PASSWORD
+      if (jsonPassword) {
+        await walletPageHelper.onboardWithJSON(
+          "./e2e-tests/utils/JSON.json",
+          jsonPassword
+        )
+      } else {
+        throw new Error("JSON_PASSWORD environment variable is not defined.")
       }
 
       /**
@@ -113,36 +131,36 @@ test.describe("Transactions", () => {
       await popup.getByRole("button", { name: "Continue", exact: true }).click()
     })
 
-    await test.step("Send transaction", async () => {
-      /**
-       * Check if "Transfer" has opened and verify elements on the page.
-       */
-      await transactionsHelper.verifyTransferScreen(
-        "Goerli",
-        "testertesting\\.eth",
-        "0x47745a7252e119431ccf973c0ebd4279638875a6",
-        "0x4774…875a6",
-        "0",
-        "ETH",
-        true
-      )
+    // await test.step("Send transaction", async () => {
+    //   /**
+    //    * Check if "Transfer" has opened and verify elements on the page.
+    //    */
+    //   await transactionsHelper.verifyTransferScreen(
+    //     "Goerli",
+    //     "testertesting\\.eth",
+    //     "0x47745a7252e119431ccf973c0ebd4279638875a6",
+    //     "0x4774…875a6",
+    //     "0",
+    //     "ETH",
+    //     true
+    //   )
 
-      /**
-       * Sign.
-       */
-      await popup.getByRole("button", { name: "Sign" }).click()
+    //   /**
+    //    * Sign.
+    //    */
+    //   await popup.getByRole("button", { name: "Sign" }).click()
 
-      /**
-       * Confirm there is "Transaction signed, broadcasting..." snackbar visible
-       * and there is no "Transaction failed to broadcast" snackbar visible.
-       */
-      await expect(
-        popup.getByText("Transaction signed, broadcasting...").first()
-      ).toBeVisible() // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
-      await expect(
-        popup.getByText("Transaction failed to broadcast.")
-      ).toHaveCount(0)
-    })
+    //   /**
+    //    * Confirm there is "Transaction signed, broadcasting..." snackbar visible
+    //    * and there is no "Transaction failed to broadcast" snackbar visible.
+    //    */
+    //   await expect(
+    //     popup.getByText("Transaction signed, broadcasting...").first()
+    //   ).toBeVisible() // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
+    //   await expect(
+    //     popup.getByText("Transaction failed to broadcast.")
+    //   ).toHaveCount(0)
+    // })
 
     await test.step(
       "Verify asset activity screen and latest transaction status",

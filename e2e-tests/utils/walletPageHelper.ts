@@ -38,12 +38,26 @@ export default class WalletPageHelper {
   }
 
   /**
-   * Onboard using walletPageHelper
+   * Onboard using seed phrase.
    */
   async onboardWithSeedPhrase(recoveryPhrase: string): Promise<void> {
     const onboardingPage = await getOnboardingPage(this.context)
     await this.onboarding.addAccountFromSeed({
       phrase: recoveryPhrase,
+      onboardingPage,
+    })
+    await this.setViewportSize()
+    await this.goToStartPage()
+  }
+
+  /**
+   * Onboard using JSON with password-encrypted private key
+   */
+  async onboardWithJSON(file: string, filePassword: string): Promise<void> {
+    const onboardingPage = await getOnboardingPage(this.context)
+    await this.onboarding.addAccountFromJSON({
+      file,
+      filePassword,
       onboardingPage,
     })
     await this.setViewportSize()

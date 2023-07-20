@@ -1,4 +1,5 @@
 import { BrowserContext, test as base, expect, Page } from "@playwright/test"
+import * as path from "path"
 
 export const getOnboardingPage = async (
   context: BrowserContext
@@ -60,7 +61,7 @@ export default class OnboardingHelper {
   }): Promise<void> {
     const page = onboardingPage || (await getOnboardingPage(this.context))
 
-    await base.step("Onboard readonly address", async () => {
+    await base.step("Onboard using seed", async () => {
       await page.getByRole("button", { name: "Use existing wallet" }).click()
       await page.getByRole("button", { name: "Import recovery phrase" }).click()
 
@@ -80,6 +81,65 @@ export default class OnboardingHelper {
         .fill(phrase)
 
       await page.getByRole("button", { name: "Import account" }).click()
+      await expect(
+        page.getByRole("heading", { name: "Welcome to Taho" })
+      ).toBeVisible()
+    })
+  }
+
+  async addAccountFromJSON({
+    file,
+    filePassword,
+    onboardingPage,
+  }: {
+    file: string
+    filePassword: string
+    onboardingPage?: Page
+  }): Promise<void> {
+    const page = onboardingPage || (await getOnboardingPage(this.context))
+
+    await base.step("Onboard using JSON with private key", async () => {
+      await page.getByRole("button", { name: "Use existing wallet" }).click()
+      await page.getByRole("button", { name: "Import private key" }).click()
+
+      const passwordInput = page.locator('input[name="password"]')
+
+      if (await passwordInput.isVisible()) {
+        await page.locator('input[name="password"]').fill(DEFAULT_PASSWORD)
+        await page
+          .locator('input[name="confirm_password"]')
+          .fill(DEFAULT_PASSWORD)
+      }
+
+      await page.getByRole("button", { name: "Begin the hunt" }).click()
+
+      await page.getByTestId("panel_switcher").getByText("JSON").click()
+      // await page.getByText("Browse files").click()
+
+      // Start waiting for file chooser before clicking. Note no await.
+      const fileChooserPromise = page.waitForEvent("filechooser")
+      await page.getByText("Browse files").click({ force: true })
+      const fileChooser = await fileChooserPromise
+      await fileChooser.setFiles(file)
+
+      await expect(
+        page.getByTestId("file_status").getByText(path.basename(file))
+      ).toBeVisible()
+      await expect(
+        page.getByText("Wrong file, only JSON accepted")
+      ).toHaveCount(0)
+
+      await page.getByPlaceholder(" ").fill(filePassword)
+      await page.getByRole("button", { name: "Decrypt file" }).click()
+
+      await expect(page.getByTestId("loading_doggo")).toBeVisible()
+      await expect(page.getByText("Decrypting file...")).toBeVisible()
+      await expect(page.getByText("this may take up to 1 minute")).toBeVisible()
+
+      await expect(page.getByText("Completed!")).toBeVisible({ timeout: 60000 })
+
+      await page.getByRole("button", { name: "Finalize" }).click()
+
       await expect(
         page.getByRole("heading", { name: "Welcome to Taho" })
       ).toBeVisible()

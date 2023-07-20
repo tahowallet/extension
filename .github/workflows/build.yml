@@ -186,17 +186,14 @@ jobs:
             || contains(github.head_ref, 'e2e')
             || needs.detect-if-flag-changed.outputs.path-filter == 'true'
         run: xvfb-run npx playwright test --grep @expensive
-      # Upload of Playwright artifacts commented out until we change the method
-      # of account import in the tests from seed to JSON (we don't want to leak
-      # the seed phrase in logs/recordings from tests).
-      # - uses: actions/upload-artifact@v3
-      #   if: failure()
-      #   with:
-      #     name: debug-output
-      #     path: |
-      #       test-results/
-      #       #videos/
-      #     retention-days: 30
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: debug-output
+          path: |
+            test-results/
+            #videos/
+          retention-days: 30
   e2e-tests-fork:
     if: |
       github.ref == 'refs/heads/main'
@@ -247,14 +244,11 @@ jobs:
           RECOVERY_PHRASE: ${{ secrets.TEST_WALLET_RECOVERY_PHRASE }}
           USE_MAINNET_FORK: true
         run: xvfb-run npx playwright test
-      # Upload of Playwright artifacts commented out until we change the method
-      # of account import in the tests from seed to JSON (we don't want to leak
-      # the seed phrase in logs/recordings from tests).
-      # - uses: actions/upload-artifact@v3
-      #   if: failure()
-      #   with:
-      #     name: fork-debug-output
-      #     path: |
-      #       test-results/
-      #       #videos/
-      #     retention-days: 30
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: fork-debug-output
+          path: |
+            test-results/
+            #videos/
+          retention-days: 30

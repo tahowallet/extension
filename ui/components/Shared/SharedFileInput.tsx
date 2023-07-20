@@ -105,6 +105,7 @@ export default function SharedFileInput(props: Props): ReactElement {
         className={classNames("file_status", {
           hidden: !fileName,
         })}
+        data-testid="file_status"
       >
         {isLoading && (
           <SharedIcon
