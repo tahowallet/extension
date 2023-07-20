@@ -1,6 +1,6 @@
 import browser, { runtime } from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
-import deepDiff from "webext-redux/lib/strategies/deepDiff/diff"
+import { diff as deepDiff } from "jsondiffpatch"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
@@ -129,7 +129,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { OPTIMISM, USD } from "./constants"
+import { ETHEREUM, FLASHBOTS_RPC_URL, OPTIMISM, USD } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
@@ -197,6 +197,7 @@ import {
   SignerInternalTypes,
 } from "./services/internal-signer"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
+import { makeFlashbotsProviderCreator } from "./services/chain/serial-fallback-provider"
 import { DismissableItem } from "./services/preferences"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -507,10 +508,31 @@ export default class Main extends BaseService<never> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState, this)
 
+    const queueUpdate = debounce(
+      (lastState, newState, updateFn) => {
+        if (lastState === newState) {
+          return
+        }
+
+        const diff = deepDiff(lastState, newState)
+
+        if (diff !== undefined) {
+          updateFn(newState, [diff])
+        }
+      },
+      30,
+      { maxWait: 30, trailing: true }
+    )
+
     wrapStore(this.store, {
       serializer: encodeJSON,
       deserializer: decodeJSON,
-      diffStrategy: deepDiff,
+      diffStrategy: (oldObj, newObj, forceUpdate) => {
+        queueUpdate(oldObj, newObj, forceUpdate)
+
+        // Return no diffs as we're manually handling these inside `queueUpdate`
+        return []
+      },
       dispatchResponder: async (
         dispatchResult: Promise<unknown>,
         send: (param: { error: string | null; value: unknown | null }) => void
@@ -806,23 +828,25 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(blockSeen(block))
     })
 
-    this.chainService.emitter.on("transactionSend", () => {
+    this.chainService.emitter.on("transactionSend", async () => {
       this.store.dispatch(
         setSnackbarMessage("Transaction signed, broadcasting...")
       )
       this.store.dispatch(
         clearTransactionState(TransactionConstructionStatus.Idle)
       )
+      await this.autoToggleFlashbotsProvider()
     })
 
     earnSliceEmitter.on("earnDeposit", (message) => {
       this.store.dispatch(setSnackbarMessage(message))
     })
 
-    this.chainService.emitter.on("transactionSendFailure", () => {
+    this.chainService.emitter.on("transactionSendFailure", async () => {
       this.store.dispatch(
         setSnackbarMessage("Transaction failed to broadcast.")
       )
+      await this.autoToggleFlashbotsProvider()
     })
 
     transactionConstructionSliceEmitter.on(
@@ -1218,7 +1242,8 @@ export default class Main extends BaseService<never> {
           }
         }
 
-        const rejectAndClear = () => {
+        const rejectAndClear = async () => {
+          await this.autoToggleFlashbotsProvider()
           clear()
           rejecter()
         }
@@ -1881,6 +1906,24 @@ export default class Main extends BaseService<never> {
     // Connected dApps
     await this.providerBridgeService.revokePermissionsForChain(chainID)
     await this.chainService.removeCustomChain(chainID)
+  }
+
+  async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {
+    if (shouldUseFlashbots) {
+      const flashbotsProvider = makeFlashbotsProviderCreator()
+      await this.chainService.addCustomProvider(
+        ETHEREUM.chainID,
+        FLASHBOTS_RPC_URL,
+        flashbotsProvider
+      )
+    } else {
+      await this.chainService.removeCustomProvider(ETHEREUM.chainID)
+    }
+  }
+
+  async autoToggleFlashbotsProvider(): Promise<void> {
+    const shouldUseFlashbots = this.store.getState().ui.settings.useFlashbots
+    await this.toggleFlashbotsProvider(shouldUseFlashbots)
   }
 
   async queryCustomTokenDetails(
