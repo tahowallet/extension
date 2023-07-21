@@ -177,6 +177,9 @@ jobs:
       # tests on every PR update. We'll tag those tests with the `@expensive`
       # tag.
       - name: Run free Playwright tests
+        env:
+          TEST_WALLET_3RD_ADDRESS_JSON_BODY: ${{ secrets.TEST_WALLET_3RD_ADDRESS_JSON_BODY }}
+          TEST_WALLET_3RD_ADDRESS_JSON_PASSWORD: ${{ secrets.TEST_WALLET_3RD_ADDRESS_JSON_PASSWORD }}
         run: xvfb-run npx playwright test --grep-invert @expensive
         #env:
         # DEBUG: pw:api*

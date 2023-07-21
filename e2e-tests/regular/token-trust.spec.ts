@@ -1,8 +1,6 @@
-import { FeatureFlags } from "@tallyho/tally-background/features"
-import { skipIfFeatureFlagged, test, expect } from "./utils"
-import { account1Name, account2Name } from "./utils/onboarding"
-
-skipIfFeatureFlagged(FeatureFlags.SUPPORT_UNVERIFIED_ASSET)
+import fs from "fs"
+import { test, expect } from "../utils"
+import { account1Name } from "../utils/onboarding"
 
 // This test verifies functionalites of verified/unverified tokens using a
 // publicly known Mainnet wallet 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266.
@@ -20,13 +18,34 @@ test.describe("Token Trust", () => {
   }) => {
     await test.step("Import account and add addresses", async () => {
       /**
-       * Onboard using walletPageHelper, with testertesting.eth account.
+       * Create a JSON file with an encoded private key based on the file
+       * content passed from an environment variable. The further steps of
+       * the test assume that the file encodes the pk of the `testertesting.eth`
+       * account. The JSON file can be generated using a script
+       * `scripts/key-generation/export-key-as-json.js`.
        */
-      const recoveryPhrase = process.env.RECOVERY_PHRASE
-      if (recoveryPhrase) {
-        await walletPageHelper.onboardWithSeedPhrase(recoveryPhrase)
+      const jsonBody = process.env.TEST_WALLET_3RD_ADDRESS_JSON_BODY
+      if (jsonBody) {
+        fs.writeFileSync("./e2e-tests/utils/JSON.json", jsonBody)
       } else {
-        throw new Error("RECOVERY_PHRASE environment variable is not defined.")
+        throw new Error(
+          "TEST_WALLET_3RD_ADDRESS_JSON_BODY environment variable is not defined."
+        )
+      }
+
+      /**
+       * Onboard using JSON file.
+       */
+      const jsonPassword = process.env.TEST_WALLET_3RD_ADDRESS_JSON_PASSWORD
+      if (jsonPassword) {
+        await walletPageHelper.onboardWithJSON(
+          "./e2e-tests/utils/JSON.json",
+          jsonPassword
+        )
+      } else {
+        throw new Error(
+          "TEST_WALLET_3RD_ADDRESS_JSON_PASSWORD environment variable is not defined."
+        )
       }
 
       await walletPageHelper.goToStartPage()
@@ -38,20 +57,9 @@ test.describe("Token Trust", () => {
       await walletPageHelper.verifyCommonElements(
         /^Ethereum$/,
         false,
-        account2Name
+        account1Name
       )
       await walletPageHelper.verifyAnalyticsBanner()
-
-      /**
-       * Add addresses to the wallet.
-       */
-      await walletPageHelper.addAddressToAccount("Import 1")
-      await walletPageHelper.addAddressToAccount("Import 1")
-
-      /**
-       * Switch to the 3rd address of the `Import 1` wallet.
-       */
-      await walletPageHelper.switchToAddress("Import 1", 3, account1Name)
 
       /**
        * Switch to the Polygon network.

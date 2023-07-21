@@ -50,6 +50,20 @@ export default class WalletPageHelper {
     await this.goToStartPage()
   }
 
+  /**
+   * Onboard using JSON with password-encrypted private key
+   */
+  async onboardWithJSON(file: string, filePassword: string): Promise<void> {
+    const onboardingPage = await getOnboardingPage(this.context)
+    await this.onboarding.addAccountFromJSON({
+      file,
+      filePassword,
+      onboardingPage,
+    })
+    await this.setViewportSize()
+    await this.goToStartPage()
+  }
+
   async verifyTopWrap(network: RegExp, accountLabel: RegExp): Promise<void> {
     // TODO: maybe we could also verify graphical elements (network icon, profile picture, etc)?
 
