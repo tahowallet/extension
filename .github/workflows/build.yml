@@ -133,6 +133,8 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn install --frozen-lockfile
         working-directory: .github/workflows/pledge-signer-sync
+      - run: yarn install --frozen-lockfile
+        working-directory: scripts/key-generation
       - run: yarn lint
   detect-if-flag-changed:
     runs-on: ubuntu-latest
