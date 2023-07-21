@@ -3,13 +3,11 @@ import { test, expect } from "../utils"
 import { account1Name } from "../utils/onboarding"
 
 // This test verifies functionalites of verified/unverified tokens using a
-// publicly known Mainnet wallet 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266.
+// wallet address that control: `e2e.testertesting.eth`
+// (`0x6f1b1f1feb01235e15a7962f16c389c7f8218ed6`).
 // The wallet at the moment of writing the test owns several trusted and
-// untrusted tokens. It may happen that those assets will be moved and we will
-// need to update the test to reflect new state. In the future, if the bug
-// https://github.com/tahowallet/extension/issues/3437 gets fixed, we may want
-// to switch to testing on a forked Mainnet (at fixed block), which would
-// increase stability of the test.
+// untrusted tokens. Changes to the types of the assets owned by the wallet may
+// influence the test results, so we should be careful when interacting with it.
 test.describe("Token Trust", () => {
   test("User can mark tokens as trusted/untrusted", async ({
     walletPageHelper,
@@ -20,9 +18,9 @@ test.describe("Token Trust", () => {
       /**
        * Create a JSON file with an encoded private key based on the file
        * content passed from an environment variable. The further steps of
-       * the test assume that the file encodes the pk of the `testertesting.eth`
-       * account. The JSON file can be generated using a script
-       * `scripts/key-generation/export-key-as-json.js`.
+       * the test assume that the file encodes the pk of the
+       * `e2e.testertesting.eth` account. The JSON file can be generated using
+       * the script `scripts/key-generation/export-key-as-json.js`.
        */
       const jsonBody = process.env.TEST_WALLET_3RD_ADDRESS_JSON_BODY
       if (jsonBody) {
