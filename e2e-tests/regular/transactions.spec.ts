@@ -135,36 +135,36 @@ test.describe("Transactions", () => {
       await popup.getByRole("button", { name: "Continue", exact: true }).click()
     })
 
-    // await test.step("Send transaction", async () => {
-    //   /**
-    //    * Check if "Transfer" has opened and verify elements on the page.
-    //    */
-    //   await transactionsHelper.verifyTransferScreen(
-    //     "Goerli",
-    //     "testertesting\\.eth",
-    //     "0x47745a7252e119431ccf973c0ebd4279638875a6",
-    //     "0x4774…875a6",
-    //     "0",
-    //     "ETH",
-    //     true
-    //   )
+    await test.step("Send transaction", async () => {
+      /**
+       * Check if "Transfer" has opened and verify elements on the page.
+       */
+      await transactionsHelper.verifyTransferScreen(
+        "Goerli",
+        "testertesting\\.eth",
+        "0x47745a7252e119431ccf973c0ebd4279638875a6",
+        "0x4774…875a6",
+        "0",
+        "ETH",
+        true
+      )
 
-    //   /**
-    //    * Sign.
-    //    */
-    //   await popup.getByRole("button", { name: "Sign" }).click()
+      /**
+       * Sign.
+       */
+      await popup.getByRole("button", { name: "Sign" }).click()
 
-    //   /**
-    //    * Confirm there is "Transaction signed, broadcasting..." snackbar visible
-    //    * and there is no "Transaction failed to broadcast" snackbar visible.
-    //    */
-    //   await expect(
-    //     popup.getByText("Transaction signed, broadcasting...").first()
-    //   ).toBeVisible() // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
-    //   await expect(
-    //     popup.getByText("Transaction failed to broadcast.")
-    //   ).toHaveCount(0)
-    // })
+      /**
+       * Confirm there is "Transaction signed, broadcasting..." snackbar visible
+       * and there is no "Transaction failed to broadcast" snackbar visible.
+       */
+      await expect(
+        popup.getByText("Transaction signed, broadcasting...").first()
+      ).toBeVisible() // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
+      await expect(
+        popup.getByText("Transaction failed to broadcast.")
+      ).toHaveCount(0)
+    })
 
     await test.step(
       "Verify asset activity screen and latest transaction status",
