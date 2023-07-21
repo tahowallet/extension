@@ -179,9 +179,6 @@ jobs:
       # tests on every PR update. We'll tag those tests with the `@expensive`
       # tag.
       - name: Run free Playwright tests
-        env:
-          TEST_WALLET_1ST_ADDRESS_JSON_BODY: ${{ secrets.TEST_WALLET_1ST_ADDRESS_JSON_BODY }}
-          TEST_WALLET_1ST_ADDRESS_JSON_PASSWORD: ${{ secrets.TEST_WALLET_1ST_ADDRESS_JSON_PASSWORD }}
         run: xvfb-run npx playwright test --grep-invert @expensive
         #env:
         # DEBUG: pw:api*
@@ -191,8 +188,8 @@ jobs:
             || contains(github.head_ref, 'e2e')
             || needs.detect-if-flag-changed.outputs.path-filter == 'true'
         env:
-          TEST_WALLET_1ST_ADDRESS_JSON_BODY: ${{ secrets.TEST_WALLET_1ST_ADDRESS_JSON_BODY }}
-          TEST_WALLET_1ST_ADDRESS_JSON_PASSWORD: ${{ secrets.TEST_WALLET_1ST_ADDRESS_JSON_PASSWORD }}
+          TEST_WALLET_JSON_BODY: ${{ secrets.TEST_WALLET_JSON_BODY }}
+          TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
         run: xvfb-run npx playwright test --grep @expensive
       - uses: actions/upload-artifact@v3
         if: failure()
@@ -249,8 +246,8 @@ jobs:
           sleep 20
       - name: Run Playwright tests designed for fork
         env:
-          TEST_WALLET_1ST_ADDRESS_JSON_BODY: ${{ secrets.TEST_WALLET_1ST_ADDRESS_JSON_BODY }}
-          TEST_WALLET_1ST_ADDRESS_JSON_PASSWORD: ${{ secrets.TEST_WALLET_1ST_ADDRESS_JSON_PASSWORD }}
+          TEST_WALLET_JSON_BODY: ${{ secrets.TEST_WALLET_JSON_BODY }}
+          TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
           USE_MAINNET_FORK: true
         run: xvfb-run npx playwright test
       - uses: actions/upload-artifact@v3
