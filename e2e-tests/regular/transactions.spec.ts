@@ -15,24 +15,28 @@ test.describe("Transactions", () => {
        * account. The JSON file can be generated using a script
        * `scripts/key-generation/export-key-as-json.js`.
        */
-      const jsonBody = process.env.JSON_BODY
+      const jsonBody = process.env.TEST_WALLET_1ST_ADDRESS_JSON_BODY
       if (jsonBody) {
         fs.writeFileSync("./e2e-tests/utils/JSON.json", jsonBody)
       } else {
-        throw new Error("JSON_BODY environment variable is not defined.")
+        throw new Error(
+          "TEST_WALLET_1ST_ADDRESS_JSON_BODY environment variable is not defined."
+        )
       }
 
       /**
        * Onboard using JSON file.
        */
-      const jsonPassword = process.env.JSON_PASSWORD
+      const jsonPassword = process.env.TEST_WALLET_1ST_ADDRESS_JSON_PASSWORD
       if (jsonPassword) {
         await walletPageHelper.onboardWithJSON(
           "./e2e-tests/utils/JSON.json",
           jsonPassword
         )
       } else {
-        throw new Error("JSON_PASSWORD environment variable is not defined.")
+        throw new Error(
+          "TEST_WALLET_1ST_ADDRESS_JSON_PASSWORD environment variable is not defined."
+        )
       }
 
       /**
