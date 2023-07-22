@@ -40,6 +40,7 @@ jobs:
           yarn build
         env:
           ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
+          ZEROX_API_KEY: ${{ secrets.DEV_ZEROX_API_KEY }}
           BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
           DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
           COMMIT_SHA: ${{ github.sha }}
@@ -57,6 +58,14 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
           POAP_API_KEY: ${{ secrets.POAP_API_KEY }}
           DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
+      - name: Create Release and Upload Artifacts
+        uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: dist/*.zip
+          draft: true
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref, '-pre') || contains(github.ref, 'v0.') }}
       - name: Upload build asset
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         uses: actions/upload-artifact@v3
@@ -80,6 +89,7 @@ jobs:
         run: |
           echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
           yarn build
+          find dist -name "*.zip" -exec sh -c 'mv "$1" "${1%.zip}-fork.zip"' _ {} \;
         env:
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
           BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
@@ -96,14 +106,6 @@ jobs:
         with:
           name: extension-builds-fork-${{ github.event.number || github.event.head_commit.id }}
           path: dist/*.zip
-      - name: Create Release and Upload Artifacts
-        uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: dist/*.zip
-          draft: true
-          generate_release_notes: true
-          prerelease: ${{ contains(github.ref, '-pre') || contains(github.ref, 'v0.') }}
   test:
     runs-on: ubuntu-latest
     steps:
@@ -224,7 +226,7 @@ jobs:
         with:
           name: extension-builds-fork-${{ github.event.number || github.event.head_commit.id }}
       - name: Extract extension
-        run: unzip -o chrome.zip -d dist/chrome
+        run: unzip -o chrome-fork.zip -d dist/chrome
       - name: Cache Hardhat
         uses: actions/cache@v2
         with:

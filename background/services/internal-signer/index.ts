@@ -334,8 +334,6 @@ export default class InternalSignerService extends BaseService<Events> {
         this.#hiddenAccounts = {
           ...plainTextVault.hiddenAccounts,
         }
-
-        this.#emitInternalSigners()
       }
     }
 
@@ -347,6 +345,8 @@ export default class InternalSignerService extends BaseService<Events> {
     }
 
     this.#unlock()
+    this.#emitInternalSigners()
+
     return true
   }
 
