@@ -38,11 +38,9 @@ export default class AssetsHelper {
     ).not.toBeVisible()
 
     await expect(asset.getByText(/^(\d|,)+(\.\d{2,4})*$/)).toBeVisible()
-    // TODO: Uncommment once https://github.com/tahowallet/extension/pull/3508
-    // is merged.
-    // if (assetType === "base" || assetType === "knownERC20") {
-    //   await expect(asset.getByText(/^\$(0|\d+\.\d{2})$/)).toBeVisible()
-    // }
+    if (assetType === "base" || assetType === "knownERC20") {
+      await expect(asset.getByText(/^\$(0|\d+\.\d{2})$/)).toBeVisible()
+    }
     await asset.locator(".asset_icon_send").click({ trial: true })
     await asset.locator(".asset_icon_swap").click({ trial: true })
   }
@@ -89,11 +87,9 @@ export default class AssetsHelper {
     })
 
     if (assetType === "base" || assetType === "knownERC20") {
-      // TODO: Uncommment once https://github.com/tahowallet/extension/pull/3508
-      // is merged.
-      // await expect(
-      //   activityLeftContainer.getByText(/^\$(\d|,)+\.\d{2}$/)
-      // ).toBeVisible()
+      await expect(
+        activityLeftContainer.getByText(/^\$(\d|,)+\.\d{2}$/)
+      ).toBeVisible()
     } else {
       await expect(
         activityLeftContainer.getByText(/^\$(\d|,)+\.\d{2}$/)
