@@ -187,6 +187,8 @@ jobs:
           github.ref == 'refs/heads/main'
             || contains(github.head_ref, 'e2e')
             || needs.detect-if-flag-changed.outputs.path-filter == 'true'
+        env:
+          RECOVERY_PHRASE: ${{ secrets.TEST_WALLET_RECOVERY_PHRASE }}
         run: xvfb-run npx playwright test --grep @expensive
       # Upload of Playwright artifacts commented out until we change the method
       # of account import in the tests from seed to JSON (we don't want to leak
