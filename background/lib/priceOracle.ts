@@ -152,6 +152,10 @@ const getRatesForTokens = async (
     }
   }[]
 > => {
+  if (SPOT_PRICE_ORACLE_CONSTANTS[network.chainID] === undefined) {
+    return []
+  }
+
   const multicall = new ethers.Contract(
     MULTICALL_CONTRACT_ADDRESS,
     MULTICALL_ABI,

@@ -57,6 +57,8 @@
     "dexie": "^3.0.3",
     "emittery": "^0.9.2",
     "ethers": "^5.5.1",
+    "jsondiffpatch": "^0.4.1",
+    "immer": "^9.0.1",
     "lodash": "^4.17.21",
     "sinon": "^14.0.0",
     "siwe": "^1.1.0",

@@ -576,6 +576,8 @@
     "showBanners": "Show achievement banners",
     "versionLabel": "Version {{version}}",
     "unknownVersionOrCommit": "<unknown>",
+    "useFlashbots": "Use Flashbots RPC by default",
+    "useFlashbotsTooltip": "Sends all transactions through Flashbots to protect against frontrunning and shares MEV back with you.<br/><br/>This can leak some information about your transactions to searchers, see the <url>Flashbots documentation</url> for more.",
     "exportLogs": {
       "title": "Bug report",
       "discordTitle": "1. Join #bug-reports on Discord",
@@ -661,10 +663,7 @@
       }
     },
     "unverifiedAssets": {
-      "tooltip": {
-        "firstPart": "Discover assets that you own but are not on our asset list. Some spam/scam assets will show up, so tread carefully.",
-        "secondPart": "These will show up on the bottom of the asset page until you verify them."
-      }
+      "tooltip": "Discover assets that you own but are not on our asset list. Some spam/scam assets will show up, so tread carefully.<br/><br/>These will show up on the bottom of the asset page until you verify them."
     }
   },
   "send": {
@@ -724,6 +723,7 @@
     "refresh": "Refresh",
     "confirmButtonLabel": "Sign",
     "unsavedChangesTooltip": "You have unsaved changed",
+    "useFlashbots": "Use Flashbots RPC for this transaction",
     "spendApproval": {
       "title": "Approve asset spend",
       "approveSpender": "Approve <spenderAddress></spenderAddress>",

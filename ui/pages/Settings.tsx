@@ -1,6 +1,6 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { useTranslation } from "react-i18next"
+import { Trans, useTranslation } from "react-i18next"
 import {
   setNewDefaultWalletValue,
   selectDefaultWallet,
@@ -12,10 +12,13 @@ import {
   selectHideBanners,
   selectShowUnverifiedAssets,
   toggleShowUnverifiedAssets,
+  toggleFlashbots,
+  selectUseFlashbots,
   selectAutoLockTimer as selectAutoLockInterval,
   updateAutoLockInterval,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
+import { FLASHBOTS_DOCS_URL, MINUTE } from "@tallyho/tally-background/constants"
 import {
   selectMainCurrencySign,
   userValueDustThreshold,
@@ -26,7 +29,6 @@ import {
   wrapIfDisabled,
   wrapIfEnabled,
 } from "@tallyho/tally-background/features"
-import { MINUTE } from "@tallyho/tally-background/constants"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
@@ -35,6 +37,7 @@ import SettingButton from "./Settings/SettingButton"
 import { useBackgroundSelector } from "../hooks"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedTooltip from "../components/Shared/SharedTooltip"
+import SharedLink from "../components/Shared/SharedLink"
 
 type SettingsItem = {
   title: string
@@ -124,18 +127,23 @@ function VersionLabel(): ReactElement {
   )
 }
 
-function SettingRow(props: {
-  title: string
-  component: () => ReactElement
-}): ReactElement {
-  const { title, component } = props
+function SettingRow(props: SettingsItem): ReactElement {
+  const { title, component, tooltip = () => null } = props
 
   return (
     <li>
-      <div className="left">{title}</div>
+      <div className="left">
+        {title}
+        {tooltip()}
+      </div>
       <div className="right">{component()}</div>
       <style jsx>
         {`
+          .left {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+          }
           li {
             padding-top: 16px;
             display: flex;
@@ -161,6 +169,7 @@ export default function Settings(): ReactElement {
   const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
   const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
+  const useFlashbots = useSelector(selectUseFlashbots)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
@@ -182,6 +191,9 @@ export default function Settings(): ReactElement {
     dispatch(toggleHideBanners(!toggleValue))
   }
 
+  const toggleFlashbotsRPC = (value: boolean) =>
+    dispatch(toggleFlashbots(value))
+
   const hideSmallAssetBalance = {
     title: t("settings.hideSmallAssetBalance", {
       amount: userValueDustThreshold,
@@ -196,41 +208,17 @@ export default function Settings(): ReactElement {
   }
 
   const unverifiedAssets = {
-    title: "",
+    title: t("settings.showUnverifiedAssets"),
+    tooltip: () => (
+      <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
+        <Trans t={t} i18nKey="settings.unverifiedAssets.tooltip" />
+      </SharedTooltip>
+    ),
     component: () => (
-      <div className="content">
-        <div className="left">
-          {t("settings.showUnverifiedAssets")}
-          <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
-            <div className="tooltip">
-              <span>{t("settings.unverifiedAssets.tooltip.firstPart")}</span>
-              <span>{t("settings.unverifiedAssets.tooltip.secondPart")}</span>
-            </div>
-          </SharedTooltip>
-        </div>
-        <SharedToggleButton
-          onChange={(toggleValue) => toggleShowUnverified(toggleValue)}
-          value={showUnverifiedAssets}
-        />
-        <style jsx>
-          {`
-            .content {
-              display: flex;
-              justify-content: space-between;
-              width: 336px;
-            }
-            .left {
-              display: flex;
-              align-items: center;
-            }
-            .tooltip {
-              display: flex;
-              flex-direction: column;
-              gap: 16px;
-            }
-          `}
-        </style>
-      </div>
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleShowUnverified(toggleValue)}
+        value={showUnverifiedAssets}
+      />
     ),
   }
 
@@ -331,17 +319,16 @@ export default function Settings(): ReactElement {
   const autoLockInterval = useBackgroundSelector(selectAutoLockInterval)
 
   const autoLockSettings = {
-    title: "",
-    component: () => (
-      <div className="content">
-        <div className="left">
-          {t("settings.autoLockTimer.label")}
-          <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
-            <div className="tooltip">
-              <span>{t("settings.autoLockTimer.tooltip")}</span>
-            </div>
-          </SharedTooltip>
+    title: t("settings.autoLockTimer.label"),
+    tooltip: () => (
+      <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
+        <div className="tooltip">
+          <span>{t("settings.autoLockTimer.tooltip")}</span>
         </div>
+      </SharedTooltip>
+    ),
+    component: () => (
+      <>
         <div className="select_wrapper">
           <SharedSelect
             options={AUTO_LOCK_OPTIONS.map((item) => ({
@@ -357,27 +344,13 @@ export default function Settings(): ReactElement {
         </div>
         <style jsx>
           {`
-            .content {
-              display: flex;
-              justify-content: space-between;
-              width: 336px;
-            }
-            .left {
-              display: flex;
-              align-items: center;
-            }
             .select_wrapper {
               width: 118px;
               z-index: 2;
             }
-            .tooltip {
-              display: flex;
-              flex-direction: column;
-              gap: 16px;
-            }
           `}
         </style>
-      </div>
+      </>
     ),
   }
 
@@ -399,6 +372,31 @@ export default function Settings(): ReactElement {
         label={t("settings.customNetworks")}
         ariaLabel={t("settings.customNetworksSettings.ariaLabel")}
         icon="continue"
+      />
+    ),
+  }
+
+  const flashbotsRPC = {
+    title: t("settings.useFlashbots"),
+    tooltip: () => (
+      <SharedTooltip
+        width={165}
+        customStyles={{ marginLeft: "4" }}
+        verticalPosition="top"
+      >
+        <Trans
+          t={t}
+          i18nKey="settings.useFlashbotsTooltip"
+          components={{
+            url: <SharedLink type="tooltip" url={FLASHBOTS_DOCS_URL} />,
+          }}
+        />
+      </SharedTooltip>
+    ),
+    component: () => (
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleFlashbotsRPC(toggleValue)}
+        value={useFlashbots}
       />
     ),
   }
@@ -429,6 +427,7 @@ export default function Settings(): ReactElement {
         customNetworks,
         addCustomAsset,
         enableTestNetworks,
+        flashbotsRPC,
         autoLockSettings,
       ],
     },
@@ -453,6 +452,7 @@ export default function Settings(): ReactElement {
                     key={key}
                     title={item.title}
                     component={item.component}
+                    tooltip={item.tooltip}
                   />
                 )
               })}
