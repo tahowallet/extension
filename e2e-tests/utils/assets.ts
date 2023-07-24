@@ -371,7 +371,6 @@ export default class AssetsHelper {
     ).not.toBeVisible()
   }
 
-  // TODO: Move it to transactionsHelper once #3418 gets merged to `main`.
   async assertAssetsNotPresentOnAssetsList(
     tokens: Array<unknown>
   ): Promise<void> {
@@ -385,7 +384,6 @@ export default class AssetsHelper {
     )
   }
 
-  // TODO: Move it to transactionsHelper once #3418 gets merged to `main`.
   async assertAssetsPresentOnAssetsList(tokens: Array<unknown>): Promise<void> {
     await expect(this.popup.getByTestId("assets_list")).toHaveCount(1)
     await Promise.all(
@@ -397,7 +395,6 @@ export default class AssetsHelper {
     )
   }
 
-  // TODO: Move it to transactionsHelper once #3418 gets merged to `main`.
   /**
    * Function closing the Select token popup
    */
