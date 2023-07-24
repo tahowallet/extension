@@ -78,15 +78,13 @@ export default class AssetsHelper {
      * Assert the token name and make sure the balance equals (or gets updated
      * to) the correct value.
      */
-    const activityLeftContainer = this.popup.locator(".left").filter({
+    const activityLeftContainer = this.popup.getByTestId("left_wrap").filter({
       has: this.popup.locator("span").filter({ hasText: assetSymbol }),
     })
-    await expect(async () => {
-      const balance = await activityLeftContainer
-        .getByText(/^(\d|,)+(\.\d{2,4})*$/)
-        .textContent()
-      expect(balance).toMatch(expectedBalance)
-    }).toPass({
+    const balance = await activityLeftContainer.getByText(
+      /^(\d|,)+(\.\d{2,4})*$/
+    )
+    await expect(balance.getByText(expectedBalance)).toHaveCount(1, {
       timeout: 120000,
     })
 
