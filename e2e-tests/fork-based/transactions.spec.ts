@@ -1,10 +1,12 @@
 import { test, expect } from "../utils"
+import { account2Name } from "../utils/onboarding"
 
 test.describe("Transactions", () => {
   test("User can send base asset", async ({
     page: popup,
     walletPageHelper,
     transactionsHelper,
+    assetsHelper,
   }) => {
     await test.step("Import account", async () => {
       /**
@@ -119,12 +121,12 @@ test.describe("Transactions", () => {
         /**
          * Verify elements on the asset activity screen
          */
-        await transactionsHelper.verifyAssetActivityScreen(
+        await assetsHelper.assertAssetDetailsPage(
           /^Ethereum$/,
-          /^testertesting\.eth$/,
+          account2Name,
           /^ETH$/,
           /^0\.0914$/,
-          true
+          "base"
         )
         // This is what we expect currently on forked network. If ve ever fix
         // displaying activity on fork, we should perform following checks
@@ -182,6 +184,7 @@ test.describe("Transactions", () => {
     page: popup,
     walletPageHelper,
     transactionsHelper,
+    assetsHelper,
   }) => {
     await test.step("Import account", async () => {
       /**
@@ -299,12 +302,12 @@ test.describe("Transactions", () => {
       /**
        * Verify elements on the asset activity screen
        */
-      await transactionsHelper.verifyAssetActivityScreen(
+      await assetsHelper.assertAssetDetailsPage(
         /^Ethereum$/,
-        /^testertesting\.eth$/,
+        account2Name,
         /^KEEP$/,
         /^65\.88$/,
-        false,
+        "knownERC20",
         "https://etherscan.io/token/0x85eee30c52b0b379b046fb0f85f4f3dc3009afec"
       )
       // This is what we expect currently on a forked network.
@@ -324,6 +327,7 @@ test.describe("Transactions", () => {
     page: popup,
     walletPageHelper,
     transactionsHelper,
+    assetsHelper,
   }) => {
     await test.step("Import account", async () => {
       /**
@@ -501,12 +505,12 @@ test.describe("Transactions", () => {
         /**
          * Verify elements on the asset activity screen
          */
-        await transactionsHelper.verifyAssetActivityScreen(
+        await assetsHelper.assertAssetDetailsPage(
           /^Ethereum$/,
-          /^testertesting\.eth$/,
+          account2Name,
           /^KEEP$/,
           /^53\.54$/,
-          false,
+          "knownERC20",
           "https://etherscan.io/token/0x85eee30c52b0b379b046fb0f85f4f3dc3009afec"
         )
         // This is what we expect currently on forked network. If ve ever fix

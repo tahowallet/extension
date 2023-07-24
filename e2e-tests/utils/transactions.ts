@@ -159,63 +159,6 @@ export default class TransactionsHelper {
   }
 
   /**
-   * This function verifies elements on the asset activity screen.
-   */
-  async verifyAssetActivityScreen(
-    network: RegExp,
-    accountLabel: RegExp,
-    assetSymbol: RegExp,
-    expectedBalance: RegExp,
-    baseAsset: boolean,
-    tokenLink?: string
-  ): Promise<void> {
-    await this.walletPageHelper.verifyTopWrap(network, accountLabel)
-
-    await this.popup
-      .getByRole("button", { name: "Back", exact: true })
-      .first()
-      .click({ trial: true })
-
-    await this.popup
-      .getByRole("button", { name: "Send", exact: true })
-      .click({ trial: true })
-    await this.popup
-      .getByRole("button", { name: "Swap", exact: true })
-      .click({ trial: true })
-
-    await this.walletPageHelper.verifyBottomWrap()
-
-    /**
-     * Verify the token balance gets updated to the right value
-     */
-    const activityLeftContainer = this.popup.getByTestId("left_wrap")
-    await expect(activityLeftContainer.getByText(assetSymbol)).toBeVisible()
-    await expect(async () => {
-      const balance = await activityLeftContainer
-        .getByText(/^(\d|,)+(\.\d{0,4})*$/)
-        .textContent()
-      expect(balance).toMatch(expectedBalance)
-    }).toPass({
-      timeout: 120000,
-    })
-    await expect(
-      activityLeftContainer.getByText(/^(\d|,)+(\.\d{0,4})*$/)
-    ).toBeVisible()
-
-    if (baseAsset === false) {
-      const tokenLinkIcon = activityLeftContainer
-        .getByRole("link")
-        .filter({ has: this.popup.locator(".icon_new_tab") })
-      if (tokenLink !== undefined) {
-        await expect(tokenLinkIcon).toHaveAttribute("href", tokenLink)
-      } else {
-        throw new Error("`tokenLink` not defined.")
-      }
-      await tokenLinkIcon.click({ trial: true })
-    }
-  }
-
-  /**
    * This function verifies asset activity item's details.
    */
   async verifyActivityItemProperties(

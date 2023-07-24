@@ -45,9 +45,6 @@ export default class AssetsHelper {
     await asset.locator(".asset_icon_swap").click({ trial: true })
   }
 
-  // This is a more robust version of
-  // `transactionsHelper.verifyAssetActivityScreen()`. After merge of PR #3418
-  // let's merge both functions into one.
   /**
    * This function verifies elements on the asset details page.
    */

@@ -1,10 +1,12 @@
 import { test, expect } from "../utils"
+import { account2Name } from "../utils/onboarding"
 
 test.describe("Transactions", () => {
   test("User can send base asset (on Goerli testnet) @expensive", async ({
     page: popup,
     walletPageHelper,
     transactionsHelper,
+    assetsHelper,
   }) => {
     await test.step("Import account", async () => {
       /**
@@ -151,12 +153,12 @@ test.describe("Transactions", () => {
          * Verify elements on the asset activity screen
          */
         await expect(popup.getByTestId("activity_list")).toHaveCount(1)
-        await transactionsHelper.verifyAssetActivityScreen(
+        await assetsHelper.assertAssetDetailsPage(
           /^Goerli$/,
-          /^testertesting\.eth$/,
+          account2Name,
           /^ETH$/,
           /^(\d|,)+(\.\d{0,4})*$/,
-          true
+          "base"
         )
 
         /**
