@@ -78,6 +78,7 @@ jobs:
           echo -e ${{ steps.env-block.outputs.result }} > .env
           echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
           yarn build
+          find dist -name "*.zip" -exec sh -c 'mv "$1" "${1%.zip}-fork.zip"' _ {} \;
         env:
           ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
           BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
@@ -187,6 +188,8 @@ jobs:
           github.ref == 'refs/heads/main'
             || contains(github.head_ref, 'e2e')
             || needs.detect-if-flag-changed.outputs.path-filter == 'true'
+        env:
+          RECOVERY_PHRASE: ${{ secrets.TEST_WALLET_RECOVERY_PHRASE }}
         run: xvfb-run npx playwright test --grep @expensive
       # Upload of Playwright artifacts commented out until we change the method
       # of account import in the tests from seed to JSON (we don't want to leak
