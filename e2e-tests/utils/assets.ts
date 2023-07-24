@@ -271,6 +271,10 @@ export default class AssetsHelper {
     }
   }
 
+  /**
+   * The function asserts that there are no unverified assets and there is no
+   * `See unverified assets` label on the Wallet view.
+   */
   async assertNoUnverifiedAssetsOnWalletPage(): Promise<void> {
     await expect(
       this.popup.getByRole("button", { name: "See unverified assets" })
@@ -284,6 +288,10 @@ export default class AssetsHelper {
     ).not.toBeVisible()
   }
 
+  /**
+   * The function checks if `See unverified assets` label is displayed on the
+   * Wallet view. It also checks the behaviour after expanding/hoding the list.
+   */
   async assertUnverifiedAssetsPresentOnWalletPage(): Promise<void> {
     /** Make sure there is a `See unverified assets` button, but no unverified
      * assets are listed before button is clicked.
@@ -371,6 +379,10 @@ export default class AssetsHelper {
     ).not.toBeVisible()
   }
 
+  /**
+   * Makes sure that the provided assets are not present on the list of assets
+   * available on the Transaction/Swap form.
+   */
   async assertAssetsNotPresentOnAssetsList(
     tokens: Array<unknown>
   ): Promise<void> {
@@ -384,6 +396,10 @@ export default class AssetsHelper {
     )
   }
 
+  /**
+   * Makes sure that the provided assets are present on the list of assets
+   * available on the Transaction/Swap form.
+   */
   async assertAssetsPresentOnAssetsList(tokens: Array<unknown>): Promise<void> {
     await expect(this.popup.getByTestId("assets_list")).toHaveCount(1)
     await Promise.all(
@@ -439,7 +455,8 @@ export default class AssetsHelper {
 
   // TODO: Move to settingsHelper once we create dedicated e2e tests for
   // Settings.
-  /** Verifies the copy in the setting and tooltip, checks if toggle is in
+  /**
+   * Verifies the copy in the setting and tooltip, checks if toggle is in
    * the expected position.
    */
   async toggleShowUnverifaiedAssetsSetting(): Promise<void> {
