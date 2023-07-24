@@ -178,8 +178,8 @@ jobs:
       # tag.
       - name: Run free Playwright tests
         env:
-          TEST_WALLET_3RD_ADDRESS_JSON_BODY: ${{ secrets.TEST_WALLET_3RD_ADDRESS_JSON_BODY }}
-          TEST_WALLET_3RD_ADDRESS_JSON_PASSWORD: ${{ secrets.TEST_WALLET_3RD_ADDRESS_JSON_PASSWORD }}
+          E2E_TEST_ONLY_WALLET_JSON_BODY: ${{ secrets.E2E_TEST_ONLY_WALLET_JSON_BODY }}
+          E2E_TEST_ONLY_WALLET_JSON_PASSWORD: ${{ secrets.E2E_TEST_ONLY_WALLET_JSON_PASSWORD }}
         run: xvfb-run npx playwright test --grep-invert @expensive
         #env:
         # DEBUG: pw:api*

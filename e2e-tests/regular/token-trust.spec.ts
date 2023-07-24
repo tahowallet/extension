@@ -22,19 +22,19 @@ test.describe("Token Trust", () => {
        * `e2e.testertesting.eth` account. The JSON file can be generated using
        * the script `scripts/key-generation/export-key-as-json.js`.
        */
-      const jsonBody = process.env.TEST_WALLET_3RD_ADDRESS_JSON_BODY
+      const jsonBody = process.env.E2E_TEST_ONLY_WALLET_JSON_BODY
       if (jsonBody) {
         fs.writeFileSync("./e2e-tests/utils/JSON.json", jsonBody)
       } else {
         throw new Error(
-          "TEST_WALLET_3RD_ADDRESS_JSON_BODY environment variable is not defined."
+          "E2E_TEST_ONLY_WALLET_JSON_BODY environment variable is not defined."
         )
       }
 
       /**
        * Onboard using JSON file.
        */
-      const jsonPassword = process.env.TEST_WALLET_3RD_ADDRESS_JSON_PASSWORD
+      const jsonPassword = process.env.E2E_TEST_ONLY_WALLET_JSON_PASSWORD
       if (jsonPassword) {
         await walletPageHelper.onboardWithJSON(
           "./e2e-tests/utils/JSON.json",
@@ -42,7 +42,7 @@ test.describe("Token Trust", () => {
         )
       } else {
         throw new Error(
-          "TEST_WALLET_3RD_ADDRESS_JSON_PASSWORD environment variable is not defined."
+          "E2E_TEST_ONLY_WALLET_JSON_PASSWORD environment variable is not defined."
         )
       }
 
