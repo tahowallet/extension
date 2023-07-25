@@ -136,6 +136,8 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn install --frozen-lockfile
         working-directory: .github/workflows/pledge-signer-sync
+      - run: yarn install --frozen-lockfile
+        working-directory: scripts/key-generation
       - run: yarn lint
   detect-if-flag-changed:
     runs-on: ubuntu-latest
@@ -189,19 +191,17 @@ jobs:
             || contains(github.head_ref, 'e2e')
             || needs.detect-if-flag-changed.outputs.path-filter == 'true'
         env:
-          RECOVERY_PHRASE: ${{ secrets.TEST_WALLET_RECOVERY_PHRASE }}
+          TEST_WALLET_JSON_BODY: ${{ secrets.TEST_WALLET_JSON_BODY }}
+          TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
         run: xvfb-run npx playwright test --grep @expensive
-      # Upload of Playwright artifacts commented out until we change the method
-      # of account import in the tests from seed to JSON (we don't want to leak
-      # the seed phrase in logs/recordings from tests).
-      # - uses: actions/upload-artifact@v3
-      #   if: failure()
-      #   with:
-      #     name: debug-output
-      #     path: |
-      #       test-results/
-      #       #videos/
-      #     retention-days: 30
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: debug-output
+          path: |
+            test-results/
+            #videos/
+          retention-days: 30
   e2e-tests-fork:
     if: |
       github.ref == 'refs/heads/main'
@@ -249,17 +249,15 @@ jobs:
           sleep 20
       - name: Run Playwright tests designed for fork
         env:
-          RECOVERY_PHRASE: ${{ secrets.TEST_WALLET_RECOVERY_PHRASE }}
+          TEST_WALLET_JSON_BODY: ${{ secrets.TEST_WALLET_JSON_BODY }}
+          TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
           USE_MAINNET_FORK: true
         run: xvfb-run npx playwright test
-      # Upload of Playwright artifacts commented out until we change the method
-      # of account import in the tests from seed to JSON (we don't want to leak
-      # the seed phrase in logs/recordings from tests).
-      # - uses: actions/upload-artifact@v3
-      #   if: failure()
-      #   with:
-      #     name: fork-debug-output
-      #     path: |
-      #       test-results/
-      #       #videos/
-      #     retention-days: 30
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: fork-debug-output
+          path: |
+            test-results/
+            #videos/
+          retention-days: 30

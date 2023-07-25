@@ -1,6 +1,25 @@
+import fs from "fs"
 import { test, expect } from "../utils"
 
 test.describe("Transactions", () => {
+  test.beforeAll(async () => {
+    /**
+     * Create a JSON file with an encoded private key based on the file
+     * content passed from an environment variable. The further steps of
+     * the tests assume that the file encodes the pk of the `testertesting.eth`
+     * account. The JSON file can be generated using a script
+     * `scripts/key-generation/export-key-as-json.js`.
+     */
+    const jsonBody = process.env.TEST_WALLET_JSON_BODY
+    if (jsonBody) {
+      fs.writeFileSync("./e2e-tests/utils/JSON.json", jsonBody)
+    } else {
+      throw new Error(
+        "TEST_WALLET_JSON_BODY environment variable is not defined."
+      )
+    }
+  })
+
   test("User can send base asset", async ({
     page: popup,
     walletPageHelper,
@@ -8,13 +27,18 @@ test.describe("Transactions", () => {
   }) => {
     await test.step("Import account", async () => {
       /**
-       * Onboard using walletPageHelper
+       * Onboard using JSON file.
        */
-      const recoveryPhrase = process.env.RECOVERY_PHRASE
-      if (recoveryPhrase) {
-        await walletPageHelper.onboardWithSeedPhrase(recoveryPhrase)
+      const jsonPassword = process.env.TEST_WALLET_JSON_PASSWORD
+      if (jsonPassword) {
+        await walletPageHelper.onboardWithJSON(
+          "./e2e-tests/utils/JSON.json",
+          jsonPassword
+        )
       } else {
-        throw new Error("RECOVERY_PHRASE environment variable is not defined.")
+        throw new Error(
+          "TEST_WALLET_JSON_PASSWORD environment variable is not defined."
+        )
       }
 
       /**
@@ -185,13 +209,18 @@ test.describe("Transactions", () => {
   }) => {
     await test.step("Import account", async () => {
       /**
-       * Onboard using walletPageHelper
+       * Onboard using JSON file.
        */
-      const recoveryPhrase = process.env.RECOVERY_PHRASE
-      if (recoveryPhrase) {
-        await walletPageHelper.onboardWithSeedPhrase(recoveryPhrase)
+      const jsonPassword = process.env.TEST_WALLET_JSON_PASSWORD
+      if (jsonPassword) {
+        await walletPageHelper.onboardWithJSON(
+          "./e2e-tests/utils/JSON.json",
+          jsonPassword
+        )
       } else {
-        throw new Error("RECOVERY_PHRASE environment variable is not defined.")
+        throw new Error(
+          "TEST_WALLET_JSON_PASSWORD environment variable is not defined."
+        )
       }
 
       /**
@@ -327,13 +356,18 @@ test.describe("Transactions", () => {
   }) => {
     await test.step("Import account", async () => {
       /**
-       * Onboard using walletPageHelper
+       * Onboard using JSON file.
        */
-      const recoveryPhrase = process.env.RECOVERY_PHRASE
-      if (recoveryPhrase) {
-        await walletPageHelper.onboardWithSeedPhrase(recoveryPhrase)
+      const jsonPassword = process.env.TEST_WALLET_JSON_PASSWORD
+      if (jsonPassword) {
+        await walletPageHelper.onboardWithJSON(
+          "./e2e-tests/utils/JSON.json",
+          jsonPassword
+        )
       } else {
-        throw new Error("RECOVERY_PHRASE environment variable is not defined.")
+        throw new Error(
+          "TEST_WALLET_JSON_PASSWORD environment variable is not defined."
+        )
       }
 
       /**

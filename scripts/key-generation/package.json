@@ -1,0 +1,16 @@
+{
+  "name": "@tallyho/key-generation",
+  "version": "0.0.1",
+  "description": "Taho, the community owned and operated Web3 wallet: a script generating JSON keystore file encoding given private key.",
+  "main": "export-key-as-json.js",
+  "repository": "git@github.com:tahowallet/extension.git",
+  "author": "Michalina Cienciała",
+  "license": "GPL-3.0",
+  "private": true,
+  "scripts": {
+    "generate": "node export-key-as-json.js"
+  },
+  "dependencies": {
+    "ethereumjs-wallet": "^1.0.2"
+  }
+}
