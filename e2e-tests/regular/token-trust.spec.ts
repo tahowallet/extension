@@ -335,17 +335,9 @@ test.describe("Token Trust", () => {
       /**
        * Confirm there is `Asset removed from list` snackbar visible.
        */
-      // Sometimes the snackbar is not displayed, the DOM looks like this:
-      // <div class="jsx-2495026369 snackbar_container hidden">
-      //   <div class="jsx-2495026369 snackbar_wrap">Asset removed from list</div>
-      // </div>
-      // The below check does not fail in such case.
-      // TODO: Check if this can be improved. Or if bug should be raised.
-      // TODO: Sometimes below assertion fails because element is not present in
-      // DOM. Raise a bug?
-      //   await expect(
-      //     popup.getByText("Asset removed from list").first()
-      //   ).toBeVisible({ timeout: 5000 })
+      await expect(
+        popup.getByText("Asset removed from list").first()
+      ).toBeVisible({ timeout: 5000 })
 
       /**
        * Make sure `Wallet` page is opened and there are unverified assets shown
@@ -422,11 +414,9 @@ test.describe("Token Trust", () => {
       /**
        * Confirm there is `Asset added to list` snackbar visible.
        */
-      // TODO: Sometimes below assertion fails because element is not present in
-      // DOM. Raise a bug?
-      //   await expect(popup.getByText("Asset added to list").first()).toBeVisible({
-      //     timeout: 5000,
-      //   })
+      await expect(popup.getByText("Asset added to list").first()).toBeVisible({
+        timeout: 5000,
+      })
 
       /**
        * Confirm asset's details are opened. Ensure there are fields related to
@@ -499,17 +489,9 @@ test.describe("Token Trust", () => {
       /**
        * Confirm there is `Asset removed from list` snackbar visible.
        */
-      // Sometimes the snackbar is not displayed, the DOM looks like this:
-      // <div class="jsx-2495026369 snackbar_container hidden">
-      //   <div class="jsx-2495026369 snackbar_wrap">Asset removed from list</div>
-      // </div>
-      // The below check does not fail in such case.
-      // TODO: Check if this can be improved. Or if bug should be raised.
-      // TODO: Sometimes below assertion fails because element is not present in
-      // DOM. Raise a bug?
-      //   await expect(
-      //     popup.getByText("Asset removed from list").first()
-      //   ).toBeVisible({ timeout: 5000 })
+      await expect(
+        popup.getByText("Asset removed from list").first()
+      ).toBeVisible({ timeout: 5000 })
 
       /**
        * Make sure `Wallet` page is opened and there are unverified assets shown
