@@ -62,7 +62,6 @@ test.describe("Token Trust", () => {
       /**
        * Switch to the Polygon network.
        */
-
       await popup.waitForTimeout(3000) // without this timeout the prices of ERC-20 assets are not loaded
       await walletPageHelper.switchNetwork(/^Polygon$/)
       await walletPageHelper.waitForAssetsToLoad(240000)
