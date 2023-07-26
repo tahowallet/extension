@@ -508,30 +508,12 @@ export default class Main extends BaseService<never> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState, this)
 
-    const queueUpdate = debounce(
-      (lastState, newState, updateFn) => {
-        if (lastState === newState) {
-          return
-        }
-
-        const diff = deepDiff(lastState, newState)
-
-        if (diff !== undefined) {
-          updateFn(newState, [diff])
-        }
-      },
-      30,
-      { maxWait: 30, trailing: true }
-    )
-
     wrapStore(this.store, {
       serializer: encodeJSON,
       deserializer: decodeJSON,
-      diffStrategy: (oldObj, newObj, forceUpdate) => {
-        queueUpdate(oldObj, newObj, forceUpdate)
-
-        // Return no diffs as we're manually handling these inside `queueUpdate`
-        return []
+      diffStrategy: (oldObj, newObj) => {
+        const diffWrapper = deepDiff(oldObj, newObj)
+        return diffWrapper === undefined ? [] : [diffWrapper]
       },
       dispatchResponder: async (
         dispatchResult: Promise<unknown>,

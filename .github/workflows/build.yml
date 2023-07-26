@@ -78,6 +78,7 @@ jobs:
           echo -e ${{ steps.env-block.outputs.result }} > .env
           echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
           yarn build
+          find dist -name "*.zip" -exec sh -c 'mv "$1" "${1%.zip}-fork.zip"' _ {} \;
         env:
           ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
           BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
@@ -135,6 +136,8 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn install --frozen-lockfile
         working-directory: .github/workflows/pledge-signer-sync
+      - run: yarn install --frozen-lockfile
+        working-directory: scripts/key-generation
       - run: yarn lint
   detect-if-flag-changed:
     runs-on: ubuntu-latest
@@ -187,18 +190,18 @@ jobs:
           github.ref == 'refs/heads/main'
             || contains(github.head_ref, 'e2e')
             || needs.detect-if-flag-changed.outputs.path-filter == 'true'
+        env:
+          TEST_WALLET_JSON_BODY: ${{ secrets.TEST_WALLET_JSON_BODY }}
+          TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
         run: xvfb-run npx playwright test --grep @expensive
-      # Upload of Playwright artifacts commented out until we change the method
-      # of account import in the tests from seed to JSON (we don't want to leak
-      # the seed phrase in logs/recordings from tests).
-      # - uses: actions/upload-artifact@v3
-      #   if: failure()
-      #   with:
-      #     name: debug-output
-      #     path: |
-      #       test-results/
-      #       #videos/
-      #     retention-days: 30
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: debug-output
+          path: |
+            test-results/
+            #videos/
+          retention-days: 30
   e2e-tests-fork:
     if: |
       github.ref == 'refs/heads/main'
@@ -246,17 +249,15 @@ jobs:
           sleep 20
       - name: Run Playwright tests designed for fork
         env:
-          RECOVERY_PHRASE: ${{ secrets.TEST_WALLET_RECOVERY_PHRASE }}
+          TEST_WALLET_JSON_BODY: ${{ secrets.TEST_WALLET_JSON_BODY }}
+          TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
           USE_MAINNET_FORK: true
         run: xvfb-run npx playwright test
-      # Upload of Playwright artifacts commented out until we change the method
-      # of account import in the tests from seed to JSON (we don't want to leak
-      # the seed phrase in logs/recordings from tests).
-      # - uses: actions/upload-artifact@v3
-      #   if: failure()
-      #   with:
-      #     name: fork-debug-output
-      #     path: |
-      #       test-results/
-      #       #videos/
-      #     retention-days: 30
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: fork-debug-output
+          path: |
+            test-results/
+            #videos/
+          retention-days: 30
