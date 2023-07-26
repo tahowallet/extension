@@ -508,6 +508,15 @@ export default class Main extends BaseService<never> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(savedReduxState, this)
 
+    /**
+     * Tracks pending updates to the redux store. This is used to delay responding
+     * to dispatched thunks until the store has been updated in the UI. This is
+     * necessary to prevent race conditions where the UI expects the store to be
+     * updated before the thunk has finished dispatching.
+     */
+    let storeUpdateLock: Promise<void> = Promise.resolve()
+    const pendingUpdates: (() => void)[] = []
+
     const queueUpdate = debounce(
       (lastState, newState, updateFn) => {
         if (lastState === newState) {
@@ -519,6 +528,13 @@ export default class Main extends BaseService<never> {
         if (diff !== undefined) {
           updateFn(newState, [diff])
         }
+
+        pendingUpdates.forEach((resolve) => resolve())
+
+        // Clear all broadcasted updates
+        while (pendingUpdates.length) {
+          pendingUpdates.pop()
+        }
       },
       30,
       { maxWait: 30, trailing: true }
@@ -528,25 +544,41 @@ export default class Main extends BaseService<never> {
       serializer: encodeJSON,
       deserializer: decodeJSON,
       diffStrategy: (oldObj, newObj, forceUpdate) => {
-        queueUpdate(oldObj, newObj, forceUpdate)
+        storeUpdateLock = new Promise((resolve) => {
+          pendingUpdates.push(resolve)
+          queueUpdate(oldObj, newObj, forceUpdate)
+        })
 
         // Return no diffs as we're manually handling these inside `queueUpdate`
         return []
       },
       dispatchResponder: async (
-        dispatchResult: Promise<unknown>,
+        dispatchResult: Promise<unknown> | unknown,
         send: (param: { error: string | null; value: unknown | null }) => void
       ) => {
+        const isThunk = dispatchResult instanceof Promise
         try {
+          // if dispatch is a thunk, wait for the result
+          const result = await dispatchResult
+
+          // by this time, all pending updates should've been tracked.
+          // since we're dealing with a thunk, we need to wait for
+          // the store to be updated
+          if (isThunk) await storeUpdateLock
+
           send({
             error: null,
-            value: encodeJSON(await dispatchResult),
+            value: encodeJSON(result),
           })
         } catch (error) {
           logger.error(
             "Error awaiting and dispatching redux store result: ",
             error
           )
+
+          // Store could still have been updated if there was an error
+          if (isThunk) await storeUpdateLock
+
           send({
             error: encodeJSON(error),
             value: null,
