@@ -18,7 +18,6 @@ import {
   getProvider,
   getSignerAddress,
 } from "./utils/contract-utils"
-import { AssetsState } from "./assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "./utils/asset-utils"
 import { ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
@@ -415,9 +414,8 @@ export const updateVaults = createBackgroundAsyncThunk(
   "earn/updateLockedValues",
   async (vaultsToUpdate: AvailableVault[], { getState, dispatch }) => {
     const currentState = getState()
-    const { assets, prices } = currentState as {
+    const { prices } = currentState as {
       earn: EarnState
-      assets: AssetsState
       prices: PricesState
     }
     const provider = getProvider()
@@ -445,7 +443,6 @@ export const updateVaults = createBackgroundAsyncThunk(
 
       const vaultAPR = await getPoolAPR({
         asset: vault.asset,
-        assets,
         prices,
         vaultAddress: vault.vaultAddress,
       })

@@ -5,7 +5,7 @@
 import { BigNumber } from "ethers"
 import * as getTokenPrice from "../../redux-slices/earn-utils/getTokenPrice"
 import { getDoggoPrice, getPoolAPR } from "../../redux-slices/earn-utils"
-import { assets, prices } from "./assets.mock"
+import { prices } from "./assets.mock"
 import * as contractUtils from "../../redux-slices/utils/contract-utils"
 
 const mainCurrencySymbol = "USD"
@@ -87,7 +87,6 @@ describe("Earn", () => {
 
       const APR = await getPoolAPR({
         asset,
-        assets,
         prices,
         vaultAddress: "0x0",
       })
@@ -114,7 +113,6 @@ describe("Earn", () => {
 
       const APR = await getPoolAPR({
         asset,
-        assets,
         prices,
         vaultAddress: "0x0",
       })
@@ -146,7 +144,6 @@ describe("Earn", () => {
 
       const APR = await getPoolAPR({
         asset,
-        assets,
         prices,
         vaultAddress: "0x0",
       })

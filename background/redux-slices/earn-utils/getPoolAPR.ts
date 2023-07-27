@@ -1,7 +1,6 @@
 import { BigNumber } from "ethers"
 import { AnyAsset } from "../../assets"
 import { HexString } from "../../types"
-import { AssetsState } from "../assets"
 import { getContract, getCurrentTimestamp } from "../utils/contract-utils"
 import VAULT_ABI from "../../lib/vault"
 import { DOGGO } from "../../constants"
@@ -66,7 +65,6 @@ const getPoolAPR = async ({
     decimals: number
     contractAddress: HexString
   }
-  assets: AssetsState
   prices: PricesState
   vaultAddress: HexString
 }): Promise<{

@@ -1,4 +1,5 @@
 import {
+  getPricesState,
   selectFilteredTotalFloorPrice,
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
@@ -30,7 +31,7 @@ export const useTotalNFTsFloorPrice = (): {
 } => {
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
   const totalFloorPrice = useBackgroundSelector(selectFilteredTotalFloorPrice)
-  const allPrices = useBackgroundSelector((state) => state.prices)
+  const allPrices = useBackgroundSelector(getPricesState)
 
   const ETHPricePoint = selectAssetPricePoint(
     allPrices,
