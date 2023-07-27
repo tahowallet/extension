@@ -28,28 +28,31 @@ This release checklist should be performed before release is published.
    - [ ] check NFTs
    - [ ] check abilities (abilities should not be displayed)
    - [ ] check activities
-   - [ ] check overview page
+   - [ ] check portfolio page
+   - [ ] check export options (export recovery phase and export private key should not be available)
 2. Add read-only account with UNS
    - [ ] check assets
    - [ ] check balance
    - [ ] check NFTs
    - [ ] check abilities (abilities should not be displayed)
    - [ ] check activities
-   - [ ] check overview page
+   - [ ] check portfolio page
+   - [ ] check export options (export recovery phase and export private key should not be available)
 3. Add read-only account with 0x address
    - [ ] check assets
    - [ ] check balance
    - [ ] check NFTs
    - [ ] check abilities (abilities should not be displayed)
    - [ ] check activities
-   - [ ] check overview page
+   - [ ] check portfolio page
+   - [ ] check export options (export recovery phase and export private key should not be available)
 4. Import account with a seed phrase
    - [ ] check assets
    - [ ] check balance
    - [ ] check NFTs
    - [ ] check abilities
    - [ ] check activities
-   - [ ] check overview page
+   - [ ] check portfolio page
    - [ ] check seed phrase export
    - [ ] check private key export for first account
 5. Add another account from the same seed phrase
@@ -58,7 +61,7 @@ This release checklist should be performed before release is published.
    - [ ] check NFTs
    - [ ] check abilities
    - [ ] check activities
-   - [ ] check overview page
+   - [ ] check portfolio page
    - [ ] check private key export for second account
 6. Add account with a Ledger
    - [ ] check assets
@@ -66,14 +69,14 @@ This release checklist should be performed before release is published.
    - [ ] check NFTs
    - [ ] check abilities
    - [ ] check activities
-   - [ ] check overview page
+   - [ ] check portfolio page
 7. Create new wallet
    - [ ] check assets
    - [ ] check balance
    - [ ] check NFTs
    - [ ] check abilities
    - [ ] check activities
-   - [ ] check overview page
+   - [ ] check portfolio page
    - [ ] check private key export
 8. Add account with private key
    - [ ] check assets
@@ -81,7 +84,7 @@ This release checklist should be performed before release is published.
    - [ ] check NFTs
    - [ ] check abilities
    - [ ] check activities
-   - [ ] check overview page
+   - [ ] check portfolio page
    - [ ] check private key export
 9. Add account with JSON keystore
    - [ ] check assets
@@ -89,7 +92,7 @@ This release checklist should be performed before release is published.
    - [ ] check NFTs
    - [ ] check abilities
    - [ ] check activities
-   - [ ] check overview page
+   - [ ] check portfolio page
    - [ ] check private key export
 
 ### 🗑️ Remove account
