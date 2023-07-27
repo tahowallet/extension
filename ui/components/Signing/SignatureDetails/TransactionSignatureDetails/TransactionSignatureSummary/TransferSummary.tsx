@@ -1,6 +1,6 @@
-import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
+import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/prices"
 import {
-  getAssetsState,
+  getPricesState,
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -33,10 +33,10 @@ export function TransferSummaryBase({
   const { t } = useTranslation("translation", {
     keyPrefix: "signTransaction.assetTransfer",
   })
-  const assets = useBackgroundSelector(getAssetsState)
+  const prices = useBackgroundSelector(getPricesState)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
   const assetPricePoint = selectAssetPricePoint(
-    assets,
+    prices,
     assetAmount.asset,
     mainCurrencySymbol
   )
