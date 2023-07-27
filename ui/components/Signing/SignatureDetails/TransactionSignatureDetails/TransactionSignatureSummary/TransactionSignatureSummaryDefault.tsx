@@ -1,5 +1,5 @@
 import { unitPricePointForPricePoint } from "@tallyho/tally-background/assets"
-import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
+import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/prices"
 import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   enrichAssetAmountWithDecimalValues,
@@ -30,7 +30,7 @@ export default function TransactionSignatureSummaryDefault({
 
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
   const baseAssetPricePoint = useBackgroundSelector((state) =>
-    selectAssetPricePoint(state.assets, network.baseAsset, mainCurrencySymbol)
+    selectAssetPricePoint(state.prices, network.baseAsset, mainCurrencySymbol)
   )
   const transactionAssetAmount = enrichAssetAmountWithDecimalValues(
     {

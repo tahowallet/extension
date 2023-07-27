@@ -1,12 +1,12 @@
 import { BigNumber } from "ethers"
-import { AssetsState, selectAssetPricePoint } from "../assets"
 import { HexString } from "../../types"
 import { getContract } from "../utils/contract-utils"
 import { ERC20_ABI } from "../../lib/erc20"
+import { PricesState, selectAssetPricePoint } from "../prices"
 
 const getLPTokenValue = async (
   mainCurrencySymbol: string,
-  assets: AssetsState,
+  prices: PricesState,
   token: HexString,
   reserve: BigNumber,
   LPDecimals: number,
@@ -16,7 +16,7 @@ const getLPTokenValue = async (
   const token0Symbol = await token0Contract.symbol()
 
   const assetPricePoint = selectAssetPricePoint(
-    assets,
+    prices,
     token0Symbol,
     mainCurrencySymbol
   )

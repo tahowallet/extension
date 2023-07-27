@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers"
-import { AssetsState, selectAssetPricePoint } from "../assets"
+import { PricesState, selectAssetPricePoint } from "../prices"
 import { HexString } from "../../types"
 import { AnyAsset, PricePoint } from "../../assets"
 import getCurveLPTokenPrice from "./getCurveLPTokenPrice"
@@ -7,7 +7,7 @@ import getUniswapPairTokenPrice from "./getUniswapPairTokenPrice"
 
 const getTokenPrice = async (
   asset: AnyAsset & { decimals: number; contractAddress: HexString },
-  assets: AssetsState
+  prices: PricesState
 ): Promise<{ singleTokenPrice: bigint; pricePoint: PricePoint }> => {
   const mainCurrencySymbol = "USD"
   let tokenPrice
@@ -16,13 +16,13 @@ const getTokenPrice = async (
   } else if (asset.symbol.startsWith("UNI-V2")) {
     tokenPrice = await getUniswapPairTokenPrice(
       asset.contractAddress,
-      assets,
+      prices,
       mainCurrencySymbol
     ) // in USD bigint with 10 decimals
   } else {
     // assetPricePoint.amounts[1] returns USD value with 10 decimals
     const assetPricePoint = selectAssetPricePoint(
-      assets,
+      prices,
       asset,
       mainCurrencySymbol
     )
