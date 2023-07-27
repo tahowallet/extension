@@ -75,9 +75,10 @@ export default class WalletPageHelper {
       .last()
       .click({ trial: true })
 
-    // There's no `connection_button` in the current code from `main`. TODO:
-    // verify if we'll need this or not.
-    // await this.popup.locator(".connection_button").last().click({ trial: true })
+    await expect(this.popup.getByText("Connect to website using:")).toHaveCount(
+      1
+    )
+    await this.popup.locator(".bulb").last().click({ trial: true })
 
     await expect(
       this.popup.getByTestId("top_menu_profile_button").last()
