@@ -576,6 +576,8 @@
     "showBanners": "Show achievement banners",
     "versionLabel": "Version {{version}}",
     "unknownVersionOrCommit": "<unknown>",
+    "useFlashbots": "Use Flashbots RPC by default",
+    "useFlashbotsTooltip": "Sends all transactions through Flashbots to protect against frontrunning and shares MEV back with you.<br/><br/>This can leak some information about your transactions to searchers, see the <url>Flashbots documentation</url> for more.",
     "exportLogs": {
       "title": "Bug report",
       "discordTitle": "1. Join #bug-reports on Discord",
@@ -653,7 +655,7 @@
       },
       "chainList": {
         "description": "<url></url> is the fastest, safest way to add a custom network. Just connect your wallet, search for the network you want to add, and click <strong>Add to Taho</strong>.",
-        "addBtn": "Add chains with Chainlist"
+        "addBtn": "Add chains with ChainList"
       },
       "customRPC": {
         "description": "You can also add a custom RPC, this can be a bit risky as you might add a malicious RPC without knowing, that could result in loss of funds.",
@@ -661,10 +663,7 @@
       }
     },
     "unverifiedAssets": {
-      "tooltip": {
-        "firstPart": "Discover assets that you own but are not on our asset list. Some spam/scam assets will show up, so tread carefully.",
-        "secondPart": "These will show up on the bottom of the asset page until you verify them."
-      }
+      "tooltip": "Discover assets that you own but are not on our asset list. Some spam/scam assets will show up, so tread carefully.<br/><br/>These will show up on the bottom of the asset page until you verify them."
     }
   },
   "send": {
@@ -725,6 +724,7 @@
     "refresh": "Refresh",
     "confirmButtonLabel": "Sign",
     "unsavedChangesTooltip": "You have unsaved changed",
+    "useFlashbots": "Use Flashbots RPC for this transaction",
     "spendApproval": {
       "title": "Approve asset spend",
       "approveSpender": "Approve <spenderAddress></spenderAddress>",
@@ -929,8 +929,7 @@
       "banner": {
         "titleUnverified": "Asset not verified",
         "titleVerified": "Asset verified by you",
-        "description": "Be aware of scam and spam assets, only interact with assets you trust.",
-        "oldDescription": "Only transact with assets you trust."
+        "description": "Be aware of scam and spam assets, only interact with assets you trust."
       }
     }
   },
@@ -1047,7 +1046,6 @@
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",
         "SUPPORT_CUSTOM_RPCS": "Enable adding custom RPCs",
-        "SUPPORT_UNVERIFIED_ASSET": "Enable assets verification",
         "SUPPORT_TRANSACTION_REPLACEMENT": "Support replacing transactions",
         "SUPPORT_CUSTOM_AUTOLOCK": "Enable custom auto-lock timer"
       }

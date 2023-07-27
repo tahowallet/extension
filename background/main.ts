@@ -1,12 +1,12 @@
 import browser, { runtime } from "webextension-polyfill"
 import { alias, wrapStore } from "webext-redux"
-import deepDiff from "webext-redux/lib/strategies/deepDiff/diff"
 import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
 import { devToolsEnhancer } from "@redux-devtools/remote"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { debounce } from "lodash"
 import { utils } from "ethers"
 
+import { diff as deepDiff } from "./differ"
 import {
   decodeJSON,
   encodeJSON,
@@ -128,7 +128,7 @@ import {
   setDeviceConnectionStatus,
   setUsbDeviceCount,
 } from "./redux-slices/ledger"
-import { OPTIMISM, USD } from "./constants"
+import { ETHEREUM, FLASHBOTS_RPC_URL, OPTIMISM, USD } from "./constants"
 import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
 import {
   AccountSigner,
@@ -188,7 +188,7 @@ import {
   OneTimeAnalyticsEvent,
 } from "./lib/posthog"
 import {
-  isBuiltInNetworkBaseAsset,
+  isBaseAssetForNetwork,
   isSameAsset,
 } from "./redux-slices/utils/asset-utils"
 import {
@@ -196,6 +196,7 @@ import {
   SignerInternalTypes,
 } from "./services/internal-signer"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
+import { makeFlashbotsProviderCreator } from "./services/chain/serial-fallback-provider"
 import { DismissableItem } from "./services/preferences"
 
 // This sanitizer runs on store and action data before serializing for remote
@@ -509,7 +510,10 @@ export default class Main extends BaseService<never> {
     wrapStore(this.store, {
       serializer: encodeJSON,
       deserializer: decodeJSON,
-      diffStrategy: deepDiff,
+      diffStrategy: (oldObj, newObj) => {
+        const diffWrapper = deepDiff(oldObj, newObj)
+        return diffWrapper === undefined ? [] : [diffWrapper]
+      },
       dispatchResponder: async (
         dispatchResult: Promise<unknown>,
         send: (param: { error: string | null; value: unknown | null }) => void
@@ -805,23 +809,25 @@ export default class Main extends BaseService<never> {
       this.store.dispatch(blockSeen(block))
     })
 
-    this.chainService.emitter.on("transactionSend", () => {
+    this.chainService.emitter.on("transactionSend", async () => {
       this.store.dispatch(
         setSnackbarMessage("Transaction signed, broadcasting...")
       )
       this.store.dispatch(
         clearTransactionState(TransactionConstructionStatus.Idle)
       )
+      await this.autoToggleFlashbotsProvider()
     })
 
     earnSliceEmitter.on("earnDeposit", (message) => {
       this.store.dispatch(setSnackbarMessage(message))
     })
 
-    this.chainService.emitter.on("transactionSendFailure", () => {
+    this.chainService.emitter.on("transactionSendFailure", async () => {
       this.store.dispatch(
         setSnackbarMessage("Transaction failed to broadcast.")
       )
+      await this.autoToggleFlashbotsProvider()
     })
 
     transactionConstructionSliceEmitter.on(
@@ -1019,7 +1025,7 @@ export default class Main extends BaseService<never> {
             // e.g. Optimism, Polygon might have been retrieved through alchemy as
             // token balances but they should not be handled here as they would
             // not be correctly treated as base assets
-            return !isBuiltInNetworkBaseAsset(
+            return !isBaseAssetForNetwork(
               balance.assetAmount.asset,
               balance.network
             )
@@ -1217,7 +1223,8 @@ export default class Main extends BaseService<never> {
           }
         }
 
-        const rejectAndClear = () => {
+        const rejectAndClear = async () => {
+          await this.autoToggleFlashbotsProvider()
           clear()
           rejecter()
         }
@@ -1880,6 +1887,24 @@ export default class Main extends BaseService<never> {
     // Connected dApps
     await this.providerBridgeService.revokePermissionsForChain(chainID)
     await this.chainService.removeCustomChain(chainID)
+  }
+
+  async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {
+    if (shouldUseFlashbots) {
+      const flashbotsProvider = makeFlashbotsProviderCreator()
+      await this.chainService.addCustomProvider(
+        ETHEREUM.chainID,
+        FLASHBOTS_RPC_URL,
+        flashbotsProvider
+      )
+    } else {
+      await this.chainService.removeCustomProvider(ETHEREUM.chainID)
+    }
+  }
+
+  async autoToggleFlashbotsProvider(): Promise<void> {
+    const shouldUseFlashbots = this.store.getState().ui.settings.useFlashbots
+    await this.toggleFlashbotsProvider(shouldUseFlashbots)
   }
 
   async queryCustomTokenDetails(

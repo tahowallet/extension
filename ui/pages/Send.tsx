@@ -29,7 +29,7 @@ import {
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   enrichAssetAmountWithMainCurrencyValues,
-  isVerifiedOrTrustedAsset,
+  isTrustedAsset,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { useHistory, useLocation } from "react-router-dom"
 import classNames from "classnames"
@@ -112,9 +112,7 @@ export default function Send(): ReactElement {
       (assetAmount): assetAmount is CompleteAssetAmount<FungibleAsset> =>
         isFungibleAssetAmount(assetAmount) &&
         assetAmount.decimalAmount > 0 &&
-        // When the flag is disabled all assets can be sent and swapped
-        (!isEnabled(FeatureFlags.SUPPORT_UNVERIFIED_ASSET) ||
-          isVerifiedOrTrustedAsset(assetAmount.asset))
+        isTrustedAsset(assetAmount.asset)
     )
   const assetPricePoint = useBackgroundSelector((state) =>
     selectAssetPricePoint(state.assets, selectedAsset, mainCurrencySymbol)

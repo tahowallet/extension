@@ -61,6 +61,7 @@ import type {
   EnrichedLegacyTransactionSignatureRequest,
 } from "../enrichment"
 import SerialFallbackProvider, {
+  ProviderCreator,
   makeSerialFallbackProvider,
 } from "./serial-fallback-provider"
 import AssetDataHelper from "./asset-data-helper"
@@ -368,6 +369,7 @@ export default class ChainService extends BaseService<Events> {
 
   async initializeNetworks(): Promise<void> {
     const rpcUrls = await this.db.getAllRpcUrls()
+    const customRpcUrls = await this.db.getAllCustomRpcUrls()
 
     await this.updateSupportedNetworks()
 
@@ -382,7 +384,8 @@ export default class ChainService extends BaseService<Events> {
           network.chainID,
           makeSerialFallbackProvider(
             network.chainID,
-            rpcUrls.find((v) => v.chainID === network.chainID)?.rpcUrls || []
+            rpcUrls.find((v) => v.chainID === network.chainID)?.rpcUrls || [],
+            customRpcUrls.find((v) => v.chainID === network.chainID)
           ),
         ])
       ),
@@ -397,6 +400,24 @@ export default class ChainService extends BaseService<Events> {
     return isEnabled(FeatureFlags.USE_MAINNET_FORK)
       ? this.providers.evm[ETHEREUM.chainID]
       : this.providers.evm[network.chainID]
+  }
+
+  async addCustomProvider(
+    chainID: string,
+    rpcUrl: string,
+    customProviderCreator: ProviderCreator
+  ): Promise<void> {
+    await this.db.addCustomRpcUrl(
+      chainID,
+      rpcUrl,
+      customProviderCreator.supportedMethods
+    )
+    this.providers.evm[chainID]?.addCustomProvider(customProviderCreator)
+  }
+
+  async removeCustomProvider(chainID: string): Promise<void> {
+    await this.db.removeCustomRpcUrl(chainID)
+    this.providers.evm[chainID]?.removeCustomProvider()
   }
 
   /**

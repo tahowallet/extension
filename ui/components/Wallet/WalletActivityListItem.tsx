@@ -56,7 +56,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
   const status = getActivityStatus(activity)
 
   return (
-    <li>
+    <li data-testid="activity_list_item">
       <button type="button" className="standard_width" onClick={onClick}>
         <div className="top">
           <div className="left">
@@ -84,7 +84,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
                 size="small"
               />
             </div>
-            <div className="amount">
+            <div className="amount" data-testid="activity_list_item_amount">
               <span
                 className="bold_amount_count"
                 title={activityViewDetails.assetValue}
