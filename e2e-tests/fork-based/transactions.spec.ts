@@ -47,12 +47,12 @@ test.describe("Transactions", () => {
        * Verify we're on Ethereum network. Verify common elements on the main
        * page.
        */
-      await walletPageHelper.verifyCommonElements(
+      await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
         /^testertesting\.eth$/
       )
-      await walletPageHelper.verifyAnalyticsBanner()
+      await walletPageHelper.assertAnalyticsBanner()
 
       /**
        * Verify ETH is visible on the asset list and has the correct balance
@@ -76,7 +76,7 @@ test.describe("Transactions", () => {
        * already selected. Verify elements on the page. Make sure `Continue`
        * isn't active.
        */
-      await transactionsHelper.verifyUnfilledSendAssetScreen(
+      await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
         /^testertesting\.eth$/,
         "ETH",
@@ -112,7 +112,7 @@ test.describe("Transactions", () => {
       /**
        * Check if "Transfer" has opened and verify elements on the page.
        */
-      await transactionsHelper.verifyTransferScreen(
+      await transactionsHelper.assertTransferScreen(
         "Ethereum",
         "testertesting\\.eth",
         "0x47745a7252e119431ccf973c0ebd4279638875a6",
@@ -194,12 +194,12 @@ test.describe("Transactions", () => {
             .first()
         ).toBeVisible()
 
-        await walletPageHelper.verifyCommonElements(
+        await walletPageHelper.assertCommonElements(
           /^Ethereum$/,
           false,
           /^testertesting\.eth$/
         )
-        await walletPageHelper.verifyAnalyticsBanner()
+        await walletPageHelper.assertAnalyticsBanner()
       }
     )
   })
@@ -230,12 +230,12 @@ test.describe("Transactions", () => {
        * Verify we're on Ethereum network. Verify common elements on the main
        * page.
        */
-      await walletPageHelper.verifyCommonElements(
+      await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
         /^testertesting\.eth$/
       )
-      await walletPageHelper.verifyAnalyticsBanner()
+      await walletPageHelper.assertAnalyticsBanner()
 
       /**
        * Verify KEEP is visible on the asset list and has the correct balance
@@ -264,7 +264,7 @@ test.describe("Transactions", () => {
        * already selected. Verify elements on the page. Make sure `Continue`
        * isn't active.
        */
-      await transactionsHelper.verifyUnfilledSendAssetScreen(
+      await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
         /^testertesting\.eth$/,
         "KEEP",
@@ -300,7 +300,7 @@ test.describe("Transactions", () => {
       /**
        * Check if "Transfer" has opened and verify elements on the page.
        */
-      await transactionsHelper.verifyTransferScreen(
+      await transactionsHelper.assertTransferScreen(
         "Ethereum",
         "testertesting\\.eth",
         "0x47745a7252e119431ccf973c0ebd4279638875a6",
@@ -378,12 +378,12 @@ test.describe("Transactions", () => {
        * Verify we're on Ethereum network. Verify common elements on the main
        * page.
        */
-      await walletPageHelper.verifyCommonElements(
+      await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
         /^testertesting\.eth$/
       )
-      await walletPageHelper.verifyAnalyticsBanner()
+      await walletPageHelper.assertAnalyticsBanner()
 
       /**
        * Verify KEEP is visible on the asset list and has the correct balance
@@ -412,7 +412,7 @@ test.describe("Transactions", () => {
        * already selected. Verify elements on the page. Make sure `Continue`
        * isn't active.
        */
-      await transactionsHelper.verifyUnfilledSendAssetScreen(
+      await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
         /^testertesting\.eth$/,
         "ETH",
@@ -470,7 +470,7 @@ test.describe("Transactions", () => {
        *  Verify elements on the page after selecting token. Make sure
        * `Continue` isn't active.
        */
-      await transactionsHelper.verifyUnfilledSendAssetScreen(
+      await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
         /^testertesting\.eth$/,
         "KEEP",
@@ -506,7 +506,7 @@ test.describe("Transactions", () => {
       /**
        * Check if "Transfer" has opened and verify elements on the page.
        */
-      await transactionsHelper.verifyTransferScreen(
+      await transactionsHelper.assertTransferScreen(
         "Ethereum",
         "testertesting\\.eth",
         "0x47745a7252e119431ccf973c0ebd4279638875a6",
@@ -589,12 +589,12 @@ test.describe("Transactions", () => {
             .first()
         ).toBeVisible()
 
-        await walletPageHelper.verifyCommonElements(
+        await walletPageHelper.assertCommonElements(
           /^Ethereum$/,
           false,
           /^testertesting\.eth$/
         )
-        await walletPageHelper.verifyAnalyticsBanner()
+        await walletPageHelper.assertAnalyticsBanner()
       }
     )
   })

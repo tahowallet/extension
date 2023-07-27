@@ -12,7 +12,7 @@ export default class TransactionsHelper {
    * This function verifies elements on the unfilled Send Assets form.
    * Makes sure `Continue` button isn't active.
    */
-  async verifyUnfilledSendAssetScreen(
+  async assertUnfilledSendAssetScreen(
     network: RegExp,
     accountLabel: RegExp,
     assetSymbol: string,
@@ -23,7 +23,7 @@ export default class TransactionsHelper {
       this.popup.getByRole("heading", { name: "Send Asset", exact: true })
     ).toBeVisible()
 
-    await this.walletPageHelper.verifyTopWrap(network, accountLabel)
+    await this.walletPageHelper.assertTopWrap(network, accountLabel)
 
     await this.popup
       .getByRole("button", { name: "Back", exact: true })
@@ -62,13 +62,13 @@ export default class TransactionsHelper {
       .getByRole("button", { name: "Continue", exact: true })
       .click({ force: true })
 
-    await this.walletPageHelper.verifyBottomWrap()
+    await this.walletPageHelper.assertBottomWrap()
   }
 
   /**
    * This function verifies elements on the Transfer screen.
    */
-  async verifyTransferScreen(
+  async assertTransferScreen(
     regexNetwork: string, // a network in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
     regexAccountLabel: string, // an account label in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
     sendToAddressFull: string,
@@ -161,7 +161,7 @@ export default class TransactionsHelper {
   /**
    * This function verifies asset activity item's details.
    */
-  async verifyActivityItemProperties(
+  async assertActivityItemProperties(
     sendFromAddressFull: string,
     sendFromAddressShortened: string,
     sendToAddressFull: string,

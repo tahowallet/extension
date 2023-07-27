@@ -64,7 +64,7 @@ export default class WalletPageHelper {
     await this.goToStartPage()
   }
 
-  async verifyTopWrap(network: RegExp, accountLabel: RegExp): Promise<void> {
+  async assertTopWrap(network: RegExp, accountLabel: RegExp): Promise<void> {
     // TODO: maybe we could also verify graphical elements (network icon, profile picture, etc)?
 
     await expect(
@@ -89,7 +89,7 @@ export default class WalletPageHelper {
     // TODO: verify 'Copy address'
   }
 
-  async verifyBottomWrap(): Promise<void> {
+  async assertBottomWrap(): Promise<void> {
     await this.popup
       .getByLabel("Main")
       .getByText("Wallet", { exact: true })
@@ -111,7 +111,7 @@ export default class WalletPageHelper {
   /**
    *  The function checks elements of the main page that should always be present.
    */
-  async verifyCommonElements(
+  async assertCommonElements(
     network: RegExp,
     testnet: boolean,
     accountLabel: RegExp
@@ -123,7 +123,7 @@ export default class WalletPageHelper {
       /^\$(\d|,)+(\.\d{1,2})*$/
     )
 
-    await this.verifyTopWrap(network, accountLabel)
+    await this.assertTopWrap(network, accountLabel)
 
     await this.popup
       .getByRole("button", { name: "Send", exact: true })
@@ -148,10 +148,10 @@ export default class WalletPageHelper {
       .getByTestId("panel_switcher")
       .getByText("Activity", { exact: true })
       .click({ trial: true })
-    await this.verifyBottomWrap()
+    await this.assertBottomWrap()
   }
 
-  async verifyAnalyticsBanner(): Promise<void> {
+  async assertAnalyticsBanner(): Promise<void> {
     const analyticsBanner = this.popup.locator("div").filter({
       has: this.popup.getByRole("heading", {
         name: "Analytics are enabled",
@@ -181,7 +181,7 @@ export default class WalletPageHelper {
     // }) // TODO: delete?
   }
 
-  async verifyDefaultWalletBanner(): Promise<void> {
+  async assertDefaultWalletBanner(): Promise<void> {
     await expect(
       this.popup.getByText("Taho is not your default wallet")
     ).toBeVisible()

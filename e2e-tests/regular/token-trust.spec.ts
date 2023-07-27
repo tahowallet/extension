@@ -52,12 +52,12 @@ test.describe("Token Trust", () => {
       /**
        * Verify we're on Ethereum network. Verify common elements on the main page.
        */
-      await walletPageHelper.verifyCommonElements(
+      await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
         account1Name
       )
-      await walletPageHelper.verifyAnalyticsBanner()
+      await walletPageHelper.assertAnalyticsBanner()
 
       /**
        * Switch to the Polygon network.
@@ -341,12 +341,12 @@ test.describe("Token Trust", () => {
       /**
        * Make sure `Wallet` page is opened and there are unverified assets shown
        */
-      await walletPageHelper.verifyCommonElements(
+      await walletPageHelper.assertCommonElements(
         /^Polygon$/,
         false,
         account1Name
       )
-      await walletPageHelper.verifyAnalyticsBanner()
+      await walletPageHelper.assertAnalyticsBanner()
       await assetsHelper.assertVerifiedAssetOnWalletPage(/^MATIC$/, "base")
       await assetsHelper.assertUnverifiedAssetsPresentOnWalletPage()
 
@@ -495,12 +495,12 @@ test.describe("Token Trust", () => {
       /**
        * Make sure `Wallet` page is opened and there are unverified assets shown
        */
-      await walletPageHelper.verifyCommonElements(
+      await walletPageHelper.assertCommonElements(
         /^Polygon$/,
         false,
         account1Name
       )
-      await walletPageHelper.verifyAnalyticsBanner()
+      await walletPageHelper.assertAnalyticsBanner()
       await assetsHelper.assertVerifiedAssetOnWalletPage(/^MATIC$/, "base")
       await assetsHelper.assertUnverifiedAssetsPresentOnWalletPage()
 

@@ -60,7 +60,7 @@ export default class AssetsHelper {
     /**
      * Assert the top wrap.
      */
-    await this.walletPageHelper.verifyTopWrap(network, accountLabel)
+    await this.walletPageHelper.assertTopWrap(network, accountLabel)
 
     /**
      * Assert the `Back` button.
@@ -171,7 +171,7 @@ export default class AssetsHelper {
     /**
      * Assert the bottom wrap.
      */
-    await this.walletPageHelper.verifyBottomWrap()
+    await this.walletPageHelper.assertBottomWrap()
   }
 
   /**

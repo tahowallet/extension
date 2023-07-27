@@ -44,12 +44,12 @@ test.describe("Transactions", () => {
       /**
        * Verify we're on Ethereum network. Verify common elements on the main page.
        */
-      await walletPageHelper.verifyCommonElements(
+      await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
         /^testertesting\.eth$/
       )
-      await walletPageHelper.verifyAnalyticsBanner()
+      await walletPageHelper.assertAnalyticsBanner()
 
       /**
        * Enable test networks
@@ -76,12 +76,12 @@ test.describe("Transactions", () => {
         .getByText(/^Goerli$/)
         .last()
         .click()
-      await walletPageHelper.verifyCommonElements(
+      await walletPageHelper.assertCommonElements(
         /^Goerli$/,
         true,
         /^testertesting\.eth$/
       )
-      await walletPageHelper.verifyAnalyticsBanner()
+      await walletPageHelper.assertAnalyticsBanner()
 
       /**
        * Verify ETH is visible on the asset list.
@@ -105,7 +105,7 @@ test.describe("Transactions", () => {
        * already selected. Verify elements on the page. Make sure `Continue`
        * isn't active.
        */
-      await transactionsHelper.verifyUnfilledSendAssetScreen(
+      await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Goerli$/,
         /^testertesting\.eth$/,
         "ETH",
@@ -141,7 +141,7 @@ test.describe("Transactions", () => {
       /**
        * Check if "Transfer" has opened and verify elements on the page.
        */
-      await transactionsHelper.verifyTransferScreen(
+      await transactionsHelper.assertTransferScreen(
         "Goerli",
         "testertesting\\.eth",
         "0x47745a7252e119431ccf973c0ebd4279638875a6",
@@ -211,7 +211,7 @@ test.describe("Transactions", () => {
          */
         await latestSentTx.click()
 
-        await transactionsHelper.verifyActivityItemProperties(
+        await transactionsHelper.assertActivityItemProperties(
           "0x0581470a8b62bd35dbf121a6329d43e7edd20fc7",
           "0x0581…20fc7",
           "0x47745A7252e119431CCF973c0eBD4279638875a6",
@@ -235,12 +235,12 @@ test.describe("Transactions", () => {
         /**
          * Verify elements on the activity screen
          */
-        await walletPageHelper.verifyCommonElements(
+        await walletPageHelper.assertCommonElements(
           /^Goerli$/,
           true,
           /^testertesting\.eth$/
         )
-        await walletPageHelper.verifyAnalyticsBanner()
+        await walletPageHelper.assertAnalyticsBanner()
 
         /**
          * Open latest transaction and verify it's deatils
@@ -263,7 +263,7 @@ test.describe("Transactions", () => {
 
         await latestSentTx.click()
 
-        await transactionsHelper.verifyActivityItemProperties(
+        await transactionsHelper.assertActivityItemProperties(
           "0x0581470a8b62bd35dbf121a6329d43e7edd20fc7",
           "0x0581…20fc7",
           "0x47745A7252e119431CCF973c0eBD4279638875a6",
