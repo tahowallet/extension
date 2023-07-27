@@ -38,7 +38,7 @@ export default class WalletPageHelper {
   }
 
   /**
-   * Onboard using walletPageHelper
+   * Onboard using seed phrase.
    */
   async onboardWithSeedPhrase(recoveryPhrase: string): Promise<void> {
     const onboardingPage = await getOnboardingPage(this.context)

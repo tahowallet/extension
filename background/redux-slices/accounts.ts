@@ -13,10 +13,10 @@ import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
   isBaseAssetForNetwork,
-  AssetID,
-  getAssetID,
   isSameAsset,
   isTrustedAsset,
+  getFullAssetID,
+  FullAssetID,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
@@ -61,7 +61,7 @@ export type AccountData = {
   address: HexString
   network: Network
   balances: {
-    [assetID: AssetID]: AccountBalance
+    [assetID: FullAssetID]: AccountBalance
   }
   ens: {
     name?: DomainName
@@ -316,7 +316,7 @@ const accountSlice = createSlice({
           network,
           assetAmount: { asset },
         } = updatedAccountBalance
-        const assetID = getAssetID(asset)
+        const assetID = getFullAssetID(asset)
 
         const normalizedAddress = normalizeEVMAddress(address)
         const existingAccountData =
@@ -451,7 +451,7 @@ const accountSlice = createSlice({
         if (account !== "loading") {
           Object.values(account.balances).forEach(({ assetAmount }) => {
             if (isSameAsset(assetAmount.asset, asset)) {
-              delete account.balances[getAssetID(assetAmount.asset)]
+              delete account.balances[getFullAssetID(assetAmount.asset)]
             }
           })
         }

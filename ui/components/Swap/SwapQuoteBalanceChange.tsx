@@ -8,11 +8,11 @@ import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { truncateDecimalAmount } from "@tallyho/tally-background/lib/utils"
 import {
-  getAssetsState,
+  getPricesState,
   selectMainCurrencySign,
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/assets"
+import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/prices"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import { useBackgroundSelector } from "../../hooks"
 import PriceDetails from "../Shared/PriceDetails"
@@ -27,7 +27,7 @@ export default function SwapQuoteBalanceChange(
 ): ReactElement {
   const { fromAsset, toAsset, priceImpact } = props
   const { t } = useTranslation()
-  const assets = useBackgroundSelector(getAssetsState)
+  const prices = useBackgroundSelector(getPricesState)
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
@@ -37,12 +37,12 @@ export default function SwapQuoteBalanceChange(
   const toAmount = truncateDecimalAmount(rawToAmount, 2, 8)
 
   const fromAssetPricePoint = selectAssetPricePoint(
-    assets,
+    prices,
     fromAsset.asset,
     mainCurrencySymbol
   )
   const toAssetPricePoint = selectAssetPricePoint(
-    assets,
+    prices,
     toAsset.asset,
     mainCurrencySymbol
   )

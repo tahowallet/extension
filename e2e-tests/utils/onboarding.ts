@@ -65,7 +65,7 @@ export default class OnboardingHelper {
   }): Promise<void> {
     const page = onboardingPage || (await getOnboardingPage(this.context))
 
-    await base.step("Onboard readonly address", async () => {
+    await base.step("Onboard using seed", async () => {
       await page.getByRole("button", { name: "Use existing wallet" }).click()
       await page.getByRole("button", { name: "Import recovery phrase" }).click()
 
