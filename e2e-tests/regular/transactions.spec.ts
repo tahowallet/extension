@@ -195,10 +195,12 @@ test.describe("Transactions", () => {
           latestSentTx.getByText(/^[a-zA-Z]{3} \d{1,2}$/)
         ).toBeVisible()
         await expect(
-          popup.getByTestId("activity_list_item_amount").getByText(/^0$/)
+          latestSentTx.getByTestId("activity_list_item_amount").getByText(/^0$/)
         ).toBeVisible()
         await expect(
-          popup.getByTestId("activity_list_item_amount").getByText(/^ETH$/)
+          latestSentTx
+            .getByTestId("activity_list_item_amount")
+            .getByText(/^ETH$/)
         ).toBeVisible()
         await expect(latestSentTx.getByText(/^To: 0x4774…875a6$/)).toBeVisible()
 
@@ -248,10 +250,12 @@ test.describe("Transactions", () => {
           latestSentTx.getByText(/^[a-zA-Z]{3} \d{1,2}$/)
         ).toBeVisible()
         await expect(
-          popup.getByTestId("activity_list_item_amount").getByText(/^0$/)
+          latestSentTx.getByTestId("activity_list_item_amount").getByText(/^0$/)
         ).toBeVisible()
         await expect(
-          popup.getByTestId("activity_list_item_amount").getByText(/^ETH$/)
+          latestSentTx
+            .getByTestId("activity_list_item_amount")
+            .getByText(/^ETH$/)
         ).toBeVisible()
         await expect(latestSentTx.getByText(/^To: 0x4774…875a6$/)).toBeVisible()
 
