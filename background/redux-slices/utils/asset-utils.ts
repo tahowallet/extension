@@ -11,6 +11,7 @@ import {
   CoinGeckoAsset,
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
+  AssetMetadata,
 } from "../../assets"
 import {
   BUILT_IN_NETWORK_BASE_ASSETS,
@@ -383,7 +384,12 @@ export function isUnverifiedAsset(asset: AnyAsset): boolean {
  * Trusted means the asset is baseline trusted OR verified.
  *
  */
-export function isTrustedAsset(asset: AnyAsset): boolean {
+export function isTrustedAsset(asset: AnyAsset): asset is
+  | NetworkBaseAsset
+  | (SmartContractFungibleAsset & {
+      metadata: { tokenLists: Exclude<AssetMetadata["tokenLists"], undefined> }
+    })
+  | (SmartContractFungibleAsset & { metadata: { verified: true } }) {
   return isBaselineTrustedAsset(asset) || isVerifiedAsset(asset)
 }
 
@@ -396,27 +402,19 @@ export function isUntrustedAsset(asset: AnyAsset): boolean {
   return !isTrustedAsset(asset)
 }
 
-type AssetType = "base" | "erc20"
-
-export type AssetID = `${AssetType}/${string}`
-
+type AssetID = "base" | SmartContractFungibleAsset["contractAddress"]
 type ChainID = string
 
 export type FullAssetID = `${ChainID}/${AssetID}`
 
-/**
- * Returns a string that can be used as an identifier for an asset
- * TODO: This should be removed in favour of getFullAssetID; Base
- * assets should not use symbol in their identifier
- */
-export const getAssetID = (
+export const getFullAssetID = (
   asset: NetworkBaseAsset | SmartContractFungibleAsset
-): AssetID => {
+): FullAssetID => {
   if (isNetworkBaseAsset(asset)) {
-    return `base/${asset.symbol}`
+    return `${asset.chainID}/base`
   }
 
-  return `erc20/${asset.contractAddress}`
+  return `${asset.homeNetwork.chainID}/${asset.contractAddress}`
 }
 
 // FIXME Unify once asset similarity code is unified.
