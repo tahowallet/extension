@@ -70,6 +70,7 @@ This release checklist should be performed before release is published.
    - [ ] check abilities
    - [ ] check activities
    - [ ] check portfolio page
+   - [ ] check export options (export recovery phase and export private key should not be available)
 7. Create new wallet
    - [ ] check assets
    - [ ] check balance
