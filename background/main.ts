@@ -519,7 +519,17 @@ export default class Main extends BaseService<never> {
 
     const queueUpdate = debounce(
       (lastState, newState, updateFn) => {
+        const clearPendingUpdates = () => {
+          pendingUpdates.forEach((resolve) => resolve())
+
+          // Clear all currently tracked updates
+          while (pendingUpdates.length) {
+            pendingUpdates.pop()
+          }
+        }
+
         if (lastState === newState) {
+          clearPendingUpdates()
           return
         }
 
@@ -529,12 +539,7 @@ export default class Main extends BaseService<never> {
           updateFn(newState, [diff])
         }
 
-        pendingUpdates.forEach((resolve) => resolve())
-
-        // Clear all broadcasted updates
-        while (pendingUpdates.length) {
-          pendingUpdates.pop()
-        }
+        clearPendingUpdates()
       },
       30,
       { maxWait: 30, trailing: true }
