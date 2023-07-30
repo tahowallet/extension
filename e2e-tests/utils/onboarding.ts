@@ -188,6 +188,7 @@ export default class OnboardingHelper {
       await page
         .getByTestId("remaining_seed_words")
         .getByRole("button", { name: word })
+        .first() // can be a duplicate word
         .click()
     }
 
