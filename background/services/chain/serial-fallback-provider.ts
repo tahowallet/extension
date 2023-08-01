@@ -2,6 +2,7 @@ import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
   EventType,
+  JsonRpcBatchProvider,
   JsonRpcProvider,
   Listener,
   WebSocketProvider,
@@ -1003,6 +1004,10 @@ function getProviderCreator(
   const url = new URL(rpcUrl)
   if (/^wss?/.test(url.protocol)) {
     return new WebSocketProvider(rpcUrl)
+  }
+
+  if (/rpc\.ankr\.com|1rpc\.io|polygon-rpc\.com/.test(url.hostname)) {
+    return new JsonRpcBatchProvider(rpcUrl)
   }
 
   return new JsonRpcProvider(rpcUrl)
