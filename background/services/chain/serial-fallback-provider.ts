@@ -1006,7 +1006,7 @@ function getProviderCreator(
     return new WebSocketProvider(rpcUrl)
   }
 
-  if (/rpc\.ankr\.com|1rpc\.io/.test(url.hostname)) {
+  if (/rpc\.ankr\.com|1rpc\.io|polygon-rpc\.com/.test(url.hostname)) {
     return new JsonRpcBatchProvider(rpcUrl)
   }
 
