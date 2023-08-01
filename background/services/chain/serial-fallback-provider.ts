@@ -381,6 +381,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         return result
       }
 
+      // FIXME: currentProvider.send is not rethrowing rate limiting errors, they are being swallowed here
+      // and we have to wait for them to timeout to react and change current provider
       const result = await this.currentProvider.send(method, params)
       // If https://github.com/tc39/proposal-decorators ever gets out of Stage 3
       // cleaning up the messageToSend object seems like a great job for a decorator
@@ -389,6 +391,19 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     } catch (error) {
       // Awful, but what can ya do.
       const stringifiedError = String(error)
+
+      // We are getting rate limited probably, let's try different provider without retrying
+      if (
+        stringifiedError.includes("Error: timeout") &&
+        this.currentProviderIndex + 1 < this.providerCreators.length
+      ) {
+        // If there is another provider to try - try to send the message on that provider
+        if (stringifiedError.includes(this.currentProvider.connection.url)) {
+          return await this.attemptToSendMessageOnNewProvider(messageId)
+        }
+        // We've already switched to a different provider, let's try again
+        return await this.routeRpcCall(messageId)
+      }
 
       if (
         /**
