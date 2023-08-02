@@ -384,8 +384,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         return result
       }
 
-      // FIXME: currentProvider.send is not rethrowing rate limiting errors, they are being swallowed here
-      // and we have to wait for them to timeout to react and change current provider
       const result = await this.currentProvider.send(method, params)
       // If https://github.com/tc39/proposal-decorators ever gets out of Stage 3
       // cleaning up the messageToSend object seems like a great job for a decorator
@@ -395,65 +393,66 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       // Awful, but what can ya do.
       const stringifiedError = String(error)
 
-      // We are getting rate limited probably, let's try different provider without retrying
-      if (
-        stringifiedError.includes("Error: timeout") &&
-        this.currentProviderIndex + 1 < this.providerCreators.length
-      ) {
-        // If there is another provider to try - try to send the message on that provider
-        if (stringifiedError.includes(this.currentProvider.connection.url)) {
-          return await this.attemptToSendMessageOnNewProvider(messageId)
-        }
-        // We've already switched to a different provider, let's try again
-        return await this.routeRpcCall(messageId)
-      }
-
       if (
         /**
          * WebSocket is already in CLOSING - We are reconnecting
-         * bad response - error on the endpoint provider's side
-         * missing response - we might be disconnected due to network instability
-         * we can't execute this request - ankr rate limit hit
+         * - bad response
+         * error on the endpoint provider's side
+         * - missing response
+         * We might be disconnected due to network instability
+         * - we can't execute this request
+         * ankr rate limit hit
+         * - failed response
+         * fetchJson default "fallback" error, generally thrown after 429s
+         * - TIMEOUT
+         * fetchJson timed out, we could retry but it's safer to just fail over
+         * - NETWORK_ERROR
+         * Any other network error, including no-network errors
+         *
+         * Note: We can't use ether's generic SERVER_ERROR because it's also
+         * used for invalid responses from the server, which we can retry on
          */
         stringifiedError.match(
-          /WebSocket is already in CLOSING|bad response|missing response|we can't execute this request/
+          /WebSocket is already in CLOSING|bad response|missing response|we can't execute this request|failed response|TIMEOUT|NETWORK_ERROR/
         )
       ) {
-        if (this.shouldSendMessageOnNextProvider(messageId)) {
-          // If there is another provider to try - try to send the message on that provider
-          if (this.currentProviderIndex + 1 < this.providerCreators.length) {
-            return await this.attemptToSendMessageOnNewProvider(messageId)
+        // If there is another provider to try - try to send the message on that provider
+        if (this.currentProviderIndex + 1 < this.providerCreators.length) {
+          return await this.attemptToSendMessageOnNewProvider(messageId)
+        }
+
+        // Otherwise, set us up for the next call, but fail the
+        // current one since we've gone through every available provider. Note
+        // that this may happen over time, but we still fail the request that
+        // hits the end of the list.
+        this.currentProviderIndex = 0
+
+        // Reconnect, but don't wait for the connection to go through.
+        this.reconnectProvider()
+        delete this.messagesToSend[messageId]
+        throw error
+      } else if (
+        // If we received some bogus response, let's try again
+        stringifiedError.match(/bad result from backend/) &&
+        this.shouldSendMessageOnNextProvider(messageId)
+      ) {
+        const backoff = this.backoffFor(messageId)
+        logger.debug(
+          "Backing off for",
+          backoff,
+          "and retrying: ",
+          method,
+          params
+        )
+
+        return await waitAnd(backoff, async () => {
+          if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
+            await this.reconnectProvider()
           }
 
-          // Otherwise, set us up for the next call, but fail the
-          // current one since we've gone through every available provider. Note
-          // that this may happen over time, but we still fail the request that
-          // hits the end of the list.
-          this.currentProviderIndex = 0
-
-          // Reconnect, but don't wait for the connection to go through.
-          this.reconnectProvider()
-          delete this.messagesToSend[messageId]
-          throw error
-        } else {
-          const backoff = this.backoffFor(messageId)
-          logger.debug(
-            "Backing off for",
-            backoff,
-            "and retrying: ",
-            method,
-            params
-          )
-
-          return await waitAnd(backoff, async () => {
-            if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
-              await this.reconnectProvider()
-            }
-
-            logger.debug("Retrying", method, params)
-            return this.routeRpcCall(messageId)
-          })
-        }
+          logger.debug("Retrying", method, params)
+          return this.routeRpcCall(messageId)
+        })
       }
 
       logger.debug(
