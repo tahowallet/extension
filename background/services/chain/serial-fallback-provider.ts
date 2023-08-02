@@ -208,6 +208,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   private customProviderSupportedMethods: string[] = []
 
+  private cachedProvidersByIndex: Record<string, JsonRpcProvider | undefined> =
+    {}
+
   /**
    * This object holds all messages that are either being sent to a provider
    * and waiting for a response, or are in the process of being backed off due
@@ -303,6 +306,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     super(firstProvider.connection, firstProvider.network)
 
     this.currentProvider = firstProvider
+    this.cachedProvidersByIndex[0] = firstProvider
 
     if (alchemyProviderCreator) {
       this.supportsAlchemy = true
@@ -849,7 +853,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       "..."
     )
 
-    this.currentProvider = this.providerCreators[this.currentProviderIndex]()
+    const cachedProvider =
+      this.cachedProvidersByIndex[this.currentProviderIndex] ??
+      this.providerCreators[this.currentProviderIndex]()
+
+    this.cachedProvidersByIndex[this.currentProviderIndex] = cachedProvider
+
+    this.currentProvider = cachedProvider
+
     await this.resubscribe(this.currentProvider)
 
     // TODO After a longer backoff, attempt to reset the current provider to 0.
