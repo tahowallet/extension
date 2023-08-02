@@ -183,7 +183,7 @@ export const FLASHBOTS_DOCS_URL =
   "https://docs.flashbots.net/flashbots-protect/rpc/mev-share"
 
 export const CHAIN_ID_TO_RPC_URLS: {
-  [chainId: string]: Array<string> | undefined
+  [chainId: string]: string[]
 } = {
   [ROOTSTOCK.chainID]: ["https://public-node.rsk.co"],
   [POLYGON.chainID]: [
