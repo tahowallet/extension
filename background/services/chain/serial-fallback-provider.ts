@@ -72,6 +72,9 @@ const WAIT_BEFORE_SEND_AGAIN = 100
 const BALANCE_TTL = 1 * SECOND
 // How often to cleanup our hasCode and balance caches.
 const CACHE_CLEANUP_INTERVAL = 10 * SECOND
+// How long to wait for a provider to respond before falling back to the next provider.
+const PROVIDER_REQUEST_TIMEOUT = 5 * SECOND
+
 /**
  * Wait the given number of ms, then run the provided function. Returns a
  * promise that will resolve after the delay has elapsed and the passed
@@ -1021,11 +1024,19 @@ function getProviderCreator(
     return new WebSocketProvider(rpcUrl)
   }
 
-  if (/rpc\.ankr\.com|1rpc\.io|polygon-rpc\.com/.test(url.hostname)) {
-    return new JsonRpcBatchProvider(rpcUrl)
+  if (/rpc\.ankr\.com|1rpc\.io|polygon-rpc\.com/.test(url.href)) {
+    return new JsonRpcBatchProvider({
+      url: rpcUrl,
+      throttleLimit: 1,
+      timeout: PROVIDER_REQUEST_TIMEOUT,
+    })
   }
 
-  return new JsonRpcProvider(rpcUrl)
+  return new JsonRpcProvider({
+    url: rpcUrl,
+    throttleLimit: 1,
+    timeout: PROVIDER_REQUEST_TIMEOUT,
+  })
 }
 
 export function makeFlashbotsProviderCreator(): ProviderCreator {
