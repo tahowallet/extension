@@ -1,9 +1,9 @@
 import { JsonRpcProvider } from "@ethersproject/providers"
 import Sinon, * as sinon from "sinon"
+import { waitFor } from "@testing-library/dom"
 import { ETHEREUM } from "../../../constants"
 import { wait } from "../../../lib/utils"
 import SerialFallbackProvider from "../serial-fallback-provider"
-import { waitFor } from "../../../tests/utils"
 
 const sandbox = sinon.createSandbox()
 
