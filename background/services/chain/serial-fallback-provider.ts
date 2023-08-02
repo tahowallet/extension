@@ -437,9 +437,17 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         throw error
       } else if (
         // If we received some bogus response, let's try again
-        stringifiedError.match(/bad result from backend/) &&
-        this.shouldSendMessageOnNextProvider(messageId)
+        stringifiedError.match(/bad result from backend/)
       ) {
+        if (
+          // If there is another provider to try and we have exceeded the
+          // number of retries try to send the message on that provider
+          this.currentProviderIndex + 1 < this.providerCreators.length &&
+          this.shouldSendMessageOnNextProvider(messageId)
+        ) {
+          return await this.attemptToSendMessageOnNewProvider(messageId)
+        }
+
         const backoff = this.backoffFor(messageId)
         logger.debug(
           "Backing off for",
