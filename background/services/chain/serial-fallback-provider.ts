@@ -583,7 +583,19 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.currentProviderIndex += 1
     // Try again with the next provider.
     await this.reconnectProvider()
-    return this.routeRpcCall(messageId)
+
+    const isAlchemyFallback =
+      this.alchemyProvider && this.currentProvider === this.alchemyProvider
+
+    return this.routeRpcCall(messageId).finally(() => {
+      // If every other provider failed and we're on the alchemy provider,
+      // reconnect to the first provider once we've handled this request
+      // as we should limit relying on alchemy as a fallback
+      if (isAlchemyFallback) {
+        this.currentProviderIndex = 0
+        this.reconnectProvider()
+      }
+    })
   }
 
   /**
