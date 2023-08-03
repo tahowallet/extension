@@ -265,13 +265,12 @@ jobs:
             test-results/
             #videos/
           retention-days: 30
-      - uses: actions/cache/save@v3
+      - name: Save Hardhat cache
+        uses: actions/cache/save@v3
         # We want to save the cache even if the tests failed. Without the cache
-        # the tests always fail, so without `if: always()` we would never be
-        # able to create the first cache.
+        # the tests almost always fail, so without `if: always()` we would have
+        # problem with creating the first cache.
         if: always()
         with:
           path: ci/cache
-          # We're using hash of the cache files for debugging purposes, to know
-          # which cache files have the same content.
           key: hardhat-17094516-${{ github.ref_name }}-${{ hashFiles('ci/cache/**/*.json') }}
