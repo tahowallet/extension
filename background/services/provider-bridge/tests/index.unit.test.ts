@@ -4,9 +4,6 @@ import {
 } from "@tallyho/provider-bridge-shared"
 import sinon from "sinon"
 import browser from "webextension-polyfill"
-// FIXME Pull the appropriate dependency to this package.json so we're not
-// FIXME relying on weird cross-package dependencies.
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { waitFor } from "@testing-library/dom"
 import * as popupUtils from "../show-popup"
 import * as featureFlags from "../../../features"
