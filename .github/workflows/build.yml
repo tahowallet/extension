@@ -233,9 +233,8 @@ jobs:
         with:
           path: ci/cache
           # 17094516 is a forking block used in the tests.
-          key: hardhat-17094516-${{ github.ref_name }}-${{ github.run_id }}
+          key: hardhat-17094516-${{ github.ref_name }}
           restore-keys: |
-            hardhat-17094516-${{ github.ref_name }}-
             hardhat-17094516-
             hardhat-
       - name: Run Hardhat
@@ -275,4 +274,4 @@ jobs:
           path: ci/cache
           # We're using hash of the cache files for debugging purposes, to know
           # which cache files have the same content.
-          key: hardhat-17094516-${{ github.ref_name }}-${{ github.run_id }}-${{ hashFiles('ci/cache/**/*.json') }}
+          key: hardhat-17094516-${{ github.ref_name }}-${{ hashFiles('ci/cache/**/*.json') }}
