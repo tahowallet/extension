@@ -2,6 +2,7 @@ import {
   AlchemyProvider,
   AlchemyWebSocketProvider,
   EventType,
+  JsonRpcBatchProvider,
   JsonRpcProvider,
   Listener,
   WebSocketProvider,
@@ -71,6 +72,9 @@ const WAIT_BEFORE_SEND_AGAIN = 100
 const BALANCE_TTL = 1 * SECOND
 // How often to cleanup our hasCode and balance caches.
 const CACHE_CLEANUP_INTERVAL = 10 * SECOND
+// How long to wait for a provider to respond before falling back to the next provider.
+const PROVIDER_REQUEST_TIMEOUT = 5 * SECOND
+
 /**
  * Wait the given number of ms, then run the provided function. Returns a
  * promise that will resolve after the delay has elapsed and the passed
@@ -204,6 +208,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   private customProviderSupportedMethods: string[] = []
 
+  private cachedProvidersByIndex: Record<string, JsonRpcProvider | undefined> =
+    {}
+
   /**
    * This object holds all messages that are either being sent to a provider
    * and waiting for a response, or are in the process of being backed off due
@@ -299,6 +306,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     super(firstProvider.connection, firstProvider.network)
 
     this.currentProvider = firstProvider
+    this.cachedProvidersByIndex[0] = firstProvider
 
     if (alchemyProviderCreator) {
       this.supportsAlchemy = true
@@ -392,49 +400,71 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       if (
         /**
          * WebSocket is already in CLOSING - We are reconnecting
-         * bad response - error on the endpoint provider's side
-         * missing response - we might be disconnected due to network instability
-         * we can't execute this request - ankr rate limit hit
+         * - bad response
+         * error on the endpoint provider's side
+         * - missing response
+         * We might be disconnected due to network instability
+         * - we can't execute this request
+         * ankr rate limit hit
+         * - failed response
+         * fetchJson default "fallback" error, generally thrown after 429s
+         * - TIMEOUT
+         * fetchJson timed out, we could retry but it's safer to just fail over
+         * - NETWORK_ERROR
+         * Any other network error, including no-network errors
+         *
+         * Note: We can't use ether's generic SERVER_ERROR because it's also
+         * used for invalid responses from the server, which we can retry on
          */
         stringifiedError.match(
-          /WebSocket is already in CLOSING|bad response|missing response|we can't execute this request/
+          /WebSocket is already in CLOSING|bad response|missing response|we can't execute this request|failed response|TIMEOUT|NETWORK_ERROR/
         )
       ) {
-        if (this.shouldSendMessageOnNextProvider(messageId)) {
-          // If there is another provider to try - try to send the message on that provider
-          if (this.currentProviderIndex + 1 < this.providerCreators.length) {
-            return await this.attemptToSendMessageOnNewProvider(messageId)
+        // If there is another provider to try - try to send the message on that provider
+        if (this.currentProviderIndex + 1 < this.providerCreators.length) {
+          return await this.attemptToSendMessageOnNewProvider(messageId)
+        }
+
+        // Otherwise, set us up for the next call, but fail the
+        // current one since we've gone through every available provider. Note
+        // that this may happen over time, but we still fail the request that
+        // hits the end of the list.
+        this.currentProviderIndex = 0
+
+        // Reconnect, but don't wait for the connection to go through.
+        this.reconnectProvider()
+        delete this.messagesToSend[messageId]
+        throw error
+      } else if (
+        // If we received some bogus response, let's try again
+        stringifiedError.match(/bad result from backend/)
+      ) {
+        if (
+          // If there is another provider to try and we have exceeded the
+          // number of retries try to send the message on that provider
+          this.currentProviderIndex + 1 < this.providerCreators.length &&
+          this.shouldSendMessageOnNextProvider(messageId)
+        ) {
+          return await this.attemptToSendMessageOnNewProvider(messageId)
+        }
+
+        const backoff = this.backoffFor(messageId)
+        logger.debug(
+          "Backing off for",
+          backoff,
+          "and retrying: ",
+          method,
+          params
+        )
+
+        return await waitAnd(backoff, async () => {
+          if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
+            await this.reconnectProvider()
           }
 
-          // Otherwise, set us up for the next call, but fail the
-          // current one since we've gone through every available provider. Note
-          // that this may happen over time, but we still fail the request that
-          // hits the end of the list.
-          this.currentProviderIndex = 0
-
-          // Reconnect, but don't wait for the connection to go through.
-          this.reconnectProvider()
-          delete this.messagesToSend[messageId]
-          throw error
-        } else {
-          const backoff = this.backoffFor(messageId)
-          logger.debug(
-            "Backing off for",
-            backoff,
-            "and retrying: ",
-            method,
-            params
-          )
-
-          return await waitAnd(backoff, async () => {
-            if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
-              await this.reconnectProvider()
-            }
-
-            logger.debug("Retrying", method, params)
-            return this.routeRpcCall(messageId)
-          })
-        }
+          logger.debug("Retrying", method, params)
+          return this.routeRpcCall(messageId)
+        })
       }
 
       logger.debug(
@@ -565,7 +595,19 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.currentProviderIndex += 1
     // Try again with the next provider.
     await this.reconnectProvider()
-    return this.routeRpcCall(messageId)
+
+    const isAlchemyFallback =
+      this.alchemyProvider && this.currentProvider === this.alchemyProvider
+
+    return this.routeRpcCall(messageId).finally(() => {
+      // If every other provider failed and we're on the alchemy provider,
+      // reconnect to the first provider once we've handled this request
+      // as we should limit relying on alchemy as a fallback
+      if (isAlchemyFallback) {
+        this.currentProviderIndex = 0
+        this.reconnectProvider()
+      }
+    })
   }
 
   /**
@@ -819,7 +861,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       "..."
     )
 
-    this.currentProvider = this.providerCreators[this.currentProviderIndex]()
+    const cachedProvider =
+      this.cachedProvidersByIndex[this.currentProviderIndex] ??
+      this.providerCreators[this.currentProviderIndex]()
+
+    this.cachedProvidersByIndex[this.currentProviderIndex] = cachedProvider
+
+    this.currentProvider = cachedProvider
+
     await this.resubscribe(this.currentProvider)
 
     // TODO After a longer backoff, attempt to reset the current provider to 0.
@@ -1005,7 +1054,19 @@ function getProviderCreator(
     return new WebSocketProvider(rpcUrl)
   }
 
-  return new JsonRpcProvider(rpcUrl)
+  if (/rpc\.ankr\.com|1rpc\.io|polygon-rpc\.com/.test(url.href)) {
+    return new JsonRpcBatchProvider({
+      url: rpcUrl,
+      throttleLimit: 1,
+      timeout: PROVIDER_REQUEST_TIMEOUT,
+    })
+  }
+
+  return new JsonRpcProvider({
+    url: rpcUrl,
+    throttleLimit: 1,
+    timeout: PROVIDER_REQUEST_TIMEOUT,
+  })
 }
 
 export function makeFlashbotsProviderCreator(): ProviderCreator {

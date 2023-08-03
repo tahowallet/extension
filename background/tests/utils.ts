@@ -1,4 +1,6 @@
 import browser from "webextension-polyfill"
+// eslint-disable-next-line import/no-extraneous-dependencies
+export { waitFor } from "@testing-library/dom"
 
 type LocalStorageMock = Record<string, Record<string, unknown>>
 
