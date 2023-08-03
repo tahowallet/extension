@@ -107,7 +107,7 @@ This release checklist should be performed before release is published.
    - [ ] remove selected account
    - [ ] remove not selected account
    - [ ] remove all accounts
-2. Remove account and check functinalities
+2. Remove account and check functionalities
    - [ ] add removed address from imported account
    - [ ] remove all addresses from imported account
    - [ ] check if NFTs are removed for removed accounts
@@ -229,7 +229,7 @@ This release checklist should be performed before release is published.
 1. Default wallet setting turned OFF
    - [ ] connect with dapp without MM available using Taho
    - [ ] connect with dapp with MM available using MM
-2. Default wallet setting turnef ON
+2. Default wallet setting turned ON
    - [ ] connect with dapp without MM available using Taho
    - [ ] connect with dapp with MM available using Taho
 
@@ -256,3 +256,17 @@ This release checklist should be performed before release is published.
    - [ ] check each sort type
    - [ ] disable account
    - [ ] disable collection
+  
+### 🦾 Flashbots
+
+ 1. Enable Flashbots in settings:
+    - [ ] send/swap an asset & confirm trxn on Ethereum shows the Flashbots option with it auto-selected
+    - [ ] confirm trxn is then sent through Flashbots
+    - [ ] send/swap another asset deselect Flashbots option
+    - [ ] confirm that trxn is not sent through Flashbots
+ 2. Check trxns on other networks
+    - [ ] confirm Flashbots checkbox isn't shown at all
+    - [ ] confirm trxn is not sent through Flashbots
+ 3. Disable Flashbots option in settings
+    - [ ] send/swap an asset on Ethereum & confirm trxn shows without the Flashbots option
+    - [ ] confirm trxn is not sent through Flashbots
