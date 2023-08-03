@@ -259,14 +259,14 @@ This release checklist should be performed before release is published.
   
 ### 🦾 Flashbots
 
- 1. Enable Flashbots in settings:
-    - [ ] send/swap an asset & confirm trxn on Ethereum shows the Flashbots option with it auto-selected
-    - [ ] confirm trxn is then sent through Flashbots
-    - [ ] send/swap another asset deselect Flashbots option
-    - [ ] confirm that trxn is not sent through Flashbots
- 2. Check trxns on other networks
-    - [ ] confirm Flashbots checkbox isn't shown at all
-    - [ ] confirm trxn is not sent through Flashbots
- 3. Disable Flashbots option in settings
-    - [ ] send/swap an asset on Ethereum & confirm trxn shows without the Flashbots option
-    - [ ] confirm trxn is not sent through Flashbots
+1. Enable Flashbots in settings:
+   - [ ] send/swap an asset & confirm trxn on Ethereum shows the Flashbots option with it auto-selected
+   - [ ] confirm trxn is then sent through Flashbots
+   - [ ] send/swap another asset deselect Flashbots option
+   - [ ] confirm that trxn is not sent through Flashbots
+2. Check trxns on other networks
+   - [ ] confirm Flashbots checkbox isn't shown at all
+   - [ ] confirm trxn is not sent through Flashbots
+3. Disable Flashbots option in settings
+   - [ ] send/swap an asset on Ethereum & confirm trxn shows without the Flashbots option
+   - [ ] confirm trxn is not sent through Flashbots
