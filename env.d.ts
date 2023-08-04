@@ -25,6 +25,7 @@ type BaseWalletProvider = {
     identityFlag?: string
     checkIdentity?: (provider: WalletProvider) => boolean
   }
+  emit: (eventName: string | symbol, ...args: unknown[]) => boolean
   on: (
     eventName: string | symbol,
     listener: (...args: unknown[]) => void
@@ -60,6 +61,7 @@ interface Window {
       shouldReload?: boolean
     ) => void
     routeToNewNonTahoDefault: (request: unknown) => Promise<unknown>
+    reemitTahoEvent: (event: string | symbol, ...args: unknown[]) => boolean
     getProviderInfo: (
       provider: WalletProvider
     ) => WalletProvider["providerInfo"]

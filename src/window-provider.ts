@@ -37,6 +37,7 @@ const tahoRoutedProperties = new Set(
 // function below.
 const metaMaskMock: WalletProvider = {
   isMetaMask: true,
+  emit: (_: string | symbol, ...__: unknown[]) => false,
   on: () => {},
   removeListener: () => {},
   _state: {
@@ -261,6 +262,17 @@ if (!window.walletRouter) {
             iconURL: "TODO",
           }
         )
+      },
+      reemitTahoEvent(event: string | symbol, ...args: unknown[]): boolean {
+        if (
+          this.currentProvider !== this.tallyProvider ||
+          this.lastInjectedProvider === undefined ||
+          this.currentProvider === this.lastInjectedProvider
+        ) {
+          return false
+        }
+
+        return this.lastInjectedProvider.emit(event, ...args)
       },
       setSelectedProvider() {},
       addProvider(newProvider: WalletProvider) {
