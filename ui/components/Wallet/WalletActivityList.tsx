@@ -94,13 +94,11 @@ export default function WalletActivityList({
     <>
       {!instantlyHideActivityDetails && (
         <SharedSlideUpMenu isOpen={!!showingActivityDetail} close={handleClose}>
-          {showingActivityDetail ? (
+          {showingActivityDetail && (
             <WalletActivityDetails
               activityItem={showingActivityDetail}
               activityInitiatorAddress={activityInitiatorAddress}
             />
-          ) : (
-            <></>
           )}
         </SharedSlideUpMenu>
       )}
@@ -119,7 +117,7 @@ export default function WalletActivityList({
               />
             )
           }
-          return <></>
+          return null
         })}
       </ul>
       <span>

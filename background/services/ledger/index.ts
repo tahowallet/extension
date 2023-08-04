@@ -52,11 +52,8 @@ export const LedgerProductDatabase = {
 
 export const isLedgerSupported = typeof navigator.usb === "object"
 
-const TestedProductId = (productId: number): boolean => {
-  return Object.values(LedgerProductDatabase).some(
-    (e) => e.productId === productId
-  )
-}
+const TestedProductId = (productId: number): boolean =>
+  Object.values(LedgerProductDatabase).some((e) => e.productId === productId)
 
 /**
  * Metadata details about the display of a given Ledger device.
@@ -176,10 +173,8 @@ export default class LedgerService extends BaseService<Events> {
 
   #lastOperationPromise = Promise.resolve()
 
-  static create: ServiceCreatorFunction<Events, LedgerService, []> =
-    async () => {
-      return new this(await getOrCreateDB())
-    }
+  static create: ServiceCreatorFunction<Events, LedgerService, []> = async () =>
+    new this(await getOrCreateDB())
 
   private constructor(private db: LedgerDatabase) {
     super()

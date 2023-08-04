@@ -273,7 +273,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private subscriptions: {
     tag: string
     param: unknown[]
-    processFunc: (result: unknown) => void
+    processFunc: (_: unknown) => void
   }[] = []
 
   // Information on event subscriptions, which can be restored on non-WebSocket
@@ -681,7 +681,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       !isEnabled(FeatureFlags.USE_MAINNET_FORK)
     ) {
       logger.error(
-        `Tried to subscribe to pending transactions for chain id ` +
+        "Tried to subscribe to pending transactions for chain id " +
           `${network.chainID} but provider was on ` +
           `${this.chainID}`
       )

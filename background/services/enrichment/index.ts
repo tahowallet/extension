@@ -58,13 +58,8 @@ export default class EnrichmentService extends BaseService<Events> {
     Events,
     EnrichmentService,
     [Promise<ChainService>, Promise<IndexingService>, Promise<NameService>]
-  > = async (chainService, indexingService, nameService) => {
-    return new this(
-      await chainService,
-      await indexingService,
-      await nameService
-    )
-  }
+  > = async (chainService, indexingService, nameService) =>
+    new this(await chainService, await indexingService, await nameService)
 
   private constructor(
     private chainService: ChainService,

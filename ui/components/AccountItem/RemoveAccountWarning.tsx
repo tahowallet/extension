@@ -1,11 +1,11 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 
-const RegularWarning = () => {
+function RegularWarning() {
   const { t } = useTranslation()
   return <span>{t("accounts.accountItem.regularWarning")}</span>
 }
-const LoudWarning = () => {
+function LoudWarning() {
   const { t } = useTranslation()
   return (
     <span>
@@ -14,7 +14,7 @@ const LoudWarning = () => {
     </span>
   )
 }
-const LastAccountWarning = () => {
+function LastAccountWarning() {
   const { t } = useTranslation()
   return (
     <span>

@@ -304,7 +304,7 @@ type Props = {
 
 export default function AccountsNotificationPanelAccounts({
   onCurrentAddressChange,
-}: Props): ReactElement {
+}: Props): ReactElement | null {
   const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
@@ -362,7 +362,7 @@ export default function AccountsNotificationPanelAccounts({
 
         // If there are no account totals for the given type, skip the section.
         if (accountTypeTotals === undefined || accountTypeTotals.length <= 0) {
-          return <></>
+          return null
         }
 
         const accountTotalsByType = accountTypeTotals.reduce(
@@ -394,91 +394,89 @@ export default function AccountsNotificationPanelAccounts({
               </div>
             )}
             {Object.values(accountTotalsByType).map(
-              (accountTotalsBySignerId, idx) => {
-                return (
-                  <section key={accountType}>
-                    <WalletTypeHeader
-                      accountType={accountType}
-                      walletNumber={idx + 1}
-                      path={accountTotalsBySignerId[0].path}
-                      accountSigner={accountTotalsBySignerId[0].accountSigner}
-                      accountTotals={accountTotalsBySignerId}
-                      onClickAddAddress={
-                        isAccountWithMnemonic(accountType)
-                          ? () => {
-                              if (accountTotalsBySignerId[0].signerId) {
-                                dispatch(
-                                  deriveAddress(
-                                    accountTotalsBySignerId[0].signerId
-                                  )
+              (accountTotalsBySignerId, idx) => (
+                <section key={accountType}>
+                  <WalletTypeHeader
+                    accountType={accountType}
+                    walletNumber={idx + 1}
+                    path={accountTotalsBySignerId[0].path}
+                    accountSigner={accountTotalsBySignerId[0].accountSigner}
+                    accountTotals={accountTotalsBySignerId}
+                    onClickAddAddress={
+                      isAccountWithMnemonic(accountType)
+                        ? () => {
+                            if (accountTotalsBySignerId[0].signerId) {
+                              dispatch(
+                                deriveAddress(
+                                  accountTotalsBySignerId[0].signerId
                                 )
-                              }
+                              )
                             }
-                          : undefined
-                      }
-                    />
-                    <ul>
-                      {accountTotalsBySignerId.map((accountTotal) => {
-                        const normalizedAddress = normalizeEVMAddress(
-                          accountTotal.address
-                        )
+                          }
+                        : undefined
+                    }
+                  />
+                  <ul>
+                    {accountTotalsBySignerId.map((accountTotal) => {
+                      const normalizedAddress = normalizeEVMAddress(
+                        accountTotal.address
+                      )
 
-                        const isSelected = sameEVMAddress(
-                          normalizedAddress,
-                          selectedAccountAddress
-                        )
+                      const isSelected = sameEVMAddress(
+                        normalizedAddress,
+                        selectedAccountAddress
+                      )
 
-                        return (
-                          <li
-                            key={normalizedAddress}
-                            // We use these event handlers in leiu of :hover so that we can prevent child hovering
-                            // from affecting the hover state of this li.
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.backgroundColor =
-                                "var(--hunter-green)"
+                      return (
+                        <li
+                          key={normalizedAddress}
+                          // We use these event handlers in leiu of :hover so that we can prevent child hovering
+                          // from affecting the hover state of this li.
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "var(--hunter-green)"
+                          }}
+                          onFocus={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "var(--hunter-green)"
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = ""
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.backgroundColor = ""
+                          }}
+                        >
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                updateCurrentAccount(normalizedAddress)
+                              }
                             }}
-                            onFocus={(e) => {
-                              e.currentTarget.style.backgroundColor =
-                                "var(--hunter-green)"
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.backgroundColor = ""
-                            }}
-                            onBlur={(e) => {
-                              e.currentTarget.style.backgroundColor = ""
+                            onClick={() => {
+                              dispatch(resetClaimFlow())
+                              updateCurrentAccount(normalizedAddress)
                             }}
                           >
-                            <div
-                              role="button"
-                              tabIndex={0}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  updateCurrentAccount(normalizedAddress)
-                                }
-                              }}
-                              onClick={() => {
-                                dispatch(resetClaimFlow())
-                                updateCurrentAccount(normalizedAddress)
-                              }}
+                            <SharedAccountItemSummary
+                              key={normalizedAddress}
+                              accountTotal={accountTotal}
+                              isSelected={isSelected}
                             >
-                              <SharedAccountItemSummary
-                                key={normalizedAddress}
+                              <AccountItemOptionsMenu
                                 accountTotal={accountTotal}
-                                isSelected={isSelected}
-                              >
-                                <AccountItemOptionsMenu
-                                  accountTotal={accountTotal}
-                                  accountType={accountType}
-                                />
-                              </SharedAccountItemSummary>
-                            </div>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </section>
-                )
-              }
+                                accountType={accountType}
+                              />
+                            </SharedAccountItemSummary>
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              )
             )}
           </>
         )

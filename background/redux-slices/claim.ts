@@ -85,12 +85,10 @@ const initialState: ClaimingState = {
   eligibilityLoading: false,
   delegates: delegates
     .sort(() => Math.random() - 0.5)
-    .map((delegate) => {
-      return {
-        ...delegate,
-        truncatedAddress: truncateAddress(delegate.address),
-      }
-    }),
+    .map((delegate) => ({
+      ...delegate,
+      truncatedAddress: truncateAddress(delegate.address),
+    })),
   DAOs: DAOs.sort(() => Math.random() - 0.5),
   claimStep: 1,
   signature: undefined,
@@ -396,17 +394,15 @@ export const selectCurrentlyClaiming = createSelector(
 
 export const selectClaimSelections = createSelector(
   selectClaim,
-  (claimState: ClaimingState) => {
-    return {
-      selectedDelegate: {
-        ...claimState.selectedDelegate,
-        truncatedAddress: claimState?.selectedDelegate?.address
-          ? truncateAddress(claimState?.selectedDelegate?.address)
-          : undefined,
-      },
-      selectedForBonus: claimState.selectedForBonus,
-    }
-  }
+  (claimState: ClaimingState) => ({
+    selectedDelegate: {
+      ...claimState.selectedDelegate,
+      truncatedAddress: claimState?.selectedDelegate?.address
+        ? truncateAddress(claimState?.selectedDelegate?.address)
+        : undefined,
+    },
+    selectedForBonus: claimState.selectedForBonus,
+  })
 )
 
 export const selectReferrerStats = createSelector(

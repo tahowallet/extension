@@ -113,8 +113,8 @@ export class PreferenceDatabase extends Dexie {
       .stores({
         preferences: "++id,savedAt,currency,tokenLists,defaultWallet",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
@@ -126,7 +126,7 @@ export class PreferenceDatabase extends Dexie {
                 DEFAULT_PREFERENCES.defaultWallet
             }
           })
-      })
+      )
 
     this.version(3).stores({
       migrations: null, // If we use dexie built in migrations then we don't need to keep track of them manually
@@ -138,8 +138,8 @@ export class PreferenceDatabase extends Dexie {
       .stores({
         preferences: "++id",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
@@ -155,15 +155,15 @@ export class PreferenceDatabase extends Dexie {
                 DEFAULT_PREFERENCES.selectedAccount
             }
           })
-      })
+      )
 
     // Add the new default token list
     this.version(5)
       .stores({
         preferences: "++id",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
@@ -176,15 +176,15 @@ export class PreferenceDatabase extends Dexie {
               ],
             }
           })
-      })
+      )
 
     // Add the new default token list
     this.version(6)
       .stores({
         preferences: "++id",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
@@ -202,15 +202,15 @@ export class PreferenceDatabase extends Dexie {
               urls: newURLs,
             }
           })
-      })
+      )
 
     // Add the Polygon, Optimism, and Arbitrum token lists
     this.version(7)
       .stores({
         preferences: "++id",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
@@ -225,15 +225,15 @@ export class PreferenceDatabase extends Dexie {
               ],
             }
           })
-      })
+      )
 
     // Update .eth.link token lists urls to .eth.limo fallback
     this.version(8)
       .stores({
         preferences: "++id",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
@@ -246,15 +246,15 @@ export class PreferenceDatabase extends Dexie {
               urls: updatedURLs,
             }
           })
-      })
+      )
 
     // Update Taho token list reference.
     this.version(9)
       .stores({
         preferences: "++id",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
@@ -272,25 +272,25 @@ export class PreferenceDatabase extends Dexie {
               urls: newURLs,
             }
           })
-      })
+      )
 
     this.version(10).stores({
       preferences: "++id",
       signersSettings: "&id",
     })
 
-    this.version(11).upgrade((tx) => {
-      return tx
+    this.version(11).upgrade((tx) =>
+      tx
         .table("preferences")
         .toCollection()
         .modify((storedPreferences: Preferences) => {
           // eslint-disable-next-line no-param-reassign
           storedPreferences.analytics = DEFAULT_PREFERENCES.analytics
         })
-    })
+    )
 
-    this.version(12).upgrade((tx) => {
-      return tx
+    this.version(12).upgrade((tx) =>
+      tx
         .table("preferences")
         .toCollection()
         .modify((storedPreferences: Preferences) => {
@@ -298,10 +298,10 @@ export class PreferenceDatabase extends Dexie {
             "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/src/joe.tokenlist-v2.json"
           )
         })
-    })
+    )
 
-    this.version(13).upgrade((tx) => {
-      return tx
+    this.version(13).upgrade((tx) =>
+      tx
         .table("preferences")
         .toCollection()
         .modify((storedPreferences: Preferences) => {
@@ -309,10 +309,10 @@ export class PreferenceDatabase extends Dexie {
             "https://tokens.pancakeswap.finance/pancakeswap-default.json"
           )
         })
-    })
+    )
 
-    this.version(14).upgrade((tx) => {
-      return tx
+    this.version(14).upgrade((tx) =>
+      tx
         .table("preferences")
         .toCollection()
         .modify((storedPreferences: Preferences) => {
@@ -328,10 +328,10 @@ export class PreferenceDatabase extends Dexie {
 
           Object.assign(storedPreferences.tokenLists, { urls })
         })
-    })
+    )
 
-    this.version(15).upgrade((tx) => {
-      return tx
+    this.version(15).upgrade((tx) =>
+      tx
         .table("preferences")
         .toCollection()
         .modify((storedPreferences: Preferences) => {
@@ -347,11 +347,11 @@ export class PreferenceDatabase extends Dexie {
 
           Object.assign(storedPreferences.tokenLists, { urls })
         })
-    })
+    )
 
     // Updates saved accounts stored networks for old installs
-    this.version(16).upgrade((tx) => {
-      return tx
+    this.version(16).upgrade((tx) =>
+      tx
         .table("preferences")
         .toCollection()
         .modify((storedPreferences: Preferences) => {
@@ -359,7 +359,7 @@ export class PreferenceDatabase extends Dexie {
           selectedAccount.network =
             NETWORK_BY_CHAIN_ID[selectedAccount.network.chainID]
         })
-    })
+    )
 
     this.version(17).stores({
       preferences: "++id",
@@ -367,8 +367,8 @@ export class PreferenceDatabase extends Dexie {
       shownDismissableItems: "&id,shown",
     })
 
-    this.version(18).upgrade((tx) => {
-      return tx
+    this.version(18).upgrade((tx) =>
+      tx
         .table("preferences")
         .toCollection()
         .modify((storedPreferences: Preferences) => {
@@ -387,11 +387,11 @@ export class PreferenceDatabase extends Dexie {
             urls: newURLs,
           }
         })
-    })
+    )
 
     // Updates preferences to allow custom auto lock timers
-    this.version(19).upgrade((tx) => {
-      return tx
+    this.version(19).upgrade((tx) =>
+      tx
         .table("preferences")
         .toCollection()
         .modify((storedPreferences: Preferences) => {
@@ -401,11 +401,11 @@ export class PreferenceDatabase extends Dexie {
 
           Object.assign(storedPreferences, update)
         })
-    })
+    )
 
     // Remove broken yearn's token list
-    this.version(20).upgrade((tx) => {
-      return tx
+    this.version(20).upgrade((tx) =>
+      tx
         .table("preferences")
         .toCollection()
         .modify((storedPreferences: Preferences) => {
@@ -415,7 +415,7 @@ export class PreferenceDatabase extends Dexie {
 
           Object.assign(storedPreferences.tokenLists, { urls })
         })
-    })
+    )
 
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)

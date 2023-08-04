@@ -16,7 +16,7 @@ export default function HeaderDeploy(): ReactElement {
         iconPosition="left"
         onClick={() => {
           window
-            .open(`https://github.com/tallycash/contracts`, "_blank")
+            .open("https://github.com/tallycash/contracts", "_blank")
             ?.focus()
         }}
       >

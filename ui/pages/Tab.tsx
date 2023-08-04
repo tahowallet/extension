@@ -30,16 +30,14 @@ export default function Tab({ store }: { store: Store }): ReactElement {
         </Container>
         <Snackbar isTabbedOnboarding />
       </Provider>
-      <>
-        <style jsx global>
-          {`
-            body,
-            #tally-root {
-              height: 100%;
-            }
-          `}
-        </style>
-      </>
+      <style jsx global>
+        {`
+          body,
+          #tally-root {
+            height: 100%;
+          }
+        `}
+      </style>
     </>
   )
 }

@@ -63,18 +63,14 @@ export default function TopMenuProfileButton(props: {
         onClick={handleClick}
         onMouseEnter={showTooltip}
       >
-        {typeof truncatedAddress === "undefined" ? (
-          <></>
-        ) : (
-          <>
-            <SharedCurrentAccountInformation
-              shortenedAddress={truncatedAddress}
-              name={name}
-              avatarURL={avatarURL}
-              showHoverStyle
-              showLockStatus={accountType && isAccountWithSecrets(accountType)}
-            />
-          </>
+        {truncatedAddress !== undefined && (
+          <SharedCurrentAccountInformation
+            shortenedAddress={truncatedAddress}
+            name={name}
+            avatarURL={avatarURL}
+            showHoverStyle
+            showLockStatus={accountType && isAccountWithSecrets(accountType)}
+          />
         )}
       </button>
       {shouldDisplayTooltip && (

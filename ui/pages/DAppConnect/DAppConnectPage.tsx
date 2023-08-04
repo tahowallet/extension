@@ -72,7 +72,6 @@ export default function DAppConnectPage({
       <section className="standard_width">
         <h1 className="serif_header">{t("connectToDapp")}</h1>
         <div className="connection_destination">
-          {isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && <></>}
           <RequestingDAppBlock
             title={title}
             url={origin}

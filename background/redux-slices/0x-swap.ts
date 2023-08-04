@@ -494,12 +494,10 @@ export const executeSwap = createBackgroundAsyncThunk(
           ? Number(quote.estimatedPriceImpact)
           : 0,
         sources: quote.sources
-          .map(({ name, proportion }) => {
-            return {
-              name,
-              proportion: parseFloat(proportion),
-            }
-          })
+          .map(({ name, proportion }) => ({
+            name,
+            proportion: parseFloat(proportion),
+          }))
           .filter(({ proportion }) => proportion > 0),
         timestamp: Date.now(),
         blockTimestamp: undefined,

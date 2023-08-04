@@ -78,11 +78,8 @@ const selectPairedAssetSymbol = (
 export const selectAssetPricePoint = createSelector(
   [selectPricesState, selectAsset, selectPairedAssetSymbol],
   (prices, assetToFind, pairedAssetSymbol) => {
-    const getTargetAssetFromPricePoint = (pricePoint: PricePoint) => {
-      return pricePoint.pair.filter(
-        ({ symbol }) => symbol !== pairedAssetSymbol
-      )[0]
-    }
+    const getTargetAssetFromPricePoint = (pricePoint: PricePoint) =>
+      pricePoint.pair.filter(({ symbol }) => symbol !== pairedAssetSymbol)[0]
 
     const hasRecentPriceData = (
       assetPriceData: AssetPricesMap | undefined

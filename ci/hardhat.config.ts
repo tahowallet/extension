@@ -2,7 +2,7 @@ import { HardhatUserConfig } from "hardhat/config"
 import "dotenv-defaults/config"
 
 /* eslint-disable @typescript-eslint/no-var-requires */
-require(`dotenv-defaults`).config({
+require("dotenv-defaults").config({
   path: "../.env",
   defaults: "../.env.defaults",
 })

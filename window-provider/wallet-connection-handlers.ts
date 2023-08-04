@@ -9,7 +9,7 @@ const INJECTED = "Injected"
 
 const observeMutations = (handler: (node: Node) => void) => {
   document.addEventListener("DOMContentLoaded", () => {
-    const observer = new MutationObserver(function monitorMutations(mutations) {
+    const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach(handler)
       })
@@ -228,7 +228,7 @@ function findAndReplaceAboardMetamaskOption(addedNode: Node): void {
 
   // children are `HTMLCollection`'s without array methods.
   // eslint-disable-next-line no-restricted-syntax
-  for (const child of maybeIconsContainer.children?.[0]?.children) {
+  for (const child of maybeIconsContainer.children?.[0]?.children ?? []) {
     if (child.innerHTML.includes("img/metamask")) {
       child.innerHTML = child.innerHTML.replace(
         /\ssrc="(.+)"\s/,
@@ -313,7 +313,7 @@ function findAndReplaceCelerMetamaskOption(addedNode: Node): void {
 
       if (modal instanceof HTMLElement) {
         // eslint-disable-next-line no-restricted-syntax
-        for (const element of modal.children?.[0].children) {
+        for (const element of modal.children?.[0].children ?? []) {
           const textContainer =
             element.children?.[0]?.children?.[1].children?.[0]
 
@@ -505,9 +505,11 @@ const hostnameToHandler = {
 } as const
 
 export default function monitorForWalletConnectionPrompts(): void {
-  ;(
-    Object.keys(hostnameToHandler) as Array<keyof typeof hostnameToHandler>
-  ).forEach((hostname) => {
+  const hostnames = Object.keys(hostnameToHandler) as Array<
+    keyof typeof hostnameToHandler
+  >
+
+  hostnames.forEach((hostname) => {
     if (window.location.hostname.includes(hostname)) {
       observeMutations(hostnameToHandler[hostname])
     }

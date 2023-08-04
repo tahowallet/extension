@@ -7,13 +7,14 @@ import QRCode from "react-qr-code"
 import { useBackgroundSelector } from "../hooks"
 import SharedButton from "../components/Shared/SharedButton"
 
-export default function Receive(): ReactElement {
+export default function Receive(): ReactElement | null {
   const { t } = useTranslation()
   const dispatch = useDispatch()
 
   const currentAccount: { address: string } =
     useBackgroundSelector(selectCurrentAccount)
-  if (!currentAccount) return <></>
+
+  if (!currentAccount) return null
 
   return (
     <section>

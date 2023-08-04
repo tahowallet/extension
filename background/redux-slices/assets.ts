@@ -83,9 +83,7 @@ const assetsSlice = createSlice({
     removeAsset: (
       immerState,
       { payload: removedAsset }: { payload: AnyAsset }
-    ) => {
-      return immerState.filter((asset) => !isSameAsset(asset, removedAsset))
-    },
+    ) => immerState.filter((asset) => !isSameAsset(asset, removedAsset)),
   },
 })
 
@@ -238,9 +236,7 @@ export const importCustomToken = createBackgroundAsyncThunk(
       asset: SmartContractFungibleAsset
     },
     { extra: { main } }
-  ) => {
-    return { success: await main.importCustomToken(asset) }
-  }
+  ) => ({ success: await main.importCustomToken(asset) })
 )
 
 export const checkTokenContractDetails = createBackgroundAsyncThunk(

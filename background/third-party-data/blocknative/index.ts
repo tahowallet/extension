@@ -121,14 +121,12 @@ export default class Blocknative {
       blockNumber: currentBlock.blockNumber,
       baseFeePerGas: gweiToWei(currentBlock.baseFeePerGas),
       estimatedPrices: currentBlock.estimatedPrices.map(
-        (estimate: BlockEstimate) => {
-          return {
-            confidence: estimate.confidence,
-            price: gweiToWei(estimate.price ?? 0),
-            maxPriorityFeePerGas: gweiToWei(estimate.maxPriorityFeePerGas),
-            maxFeePerGas: gweiToWei(estimate.maxFeePerGas),
-          }
-        }
+        (estimate: BlockEstimate) => ({
+          confidence: estimate.confidence,
+          price: gweiToWei(estimate.price ?? 0),
+          maxPriorityFeePerGas: gweiToWei(estimate.maxPriorityFeePerGas),
+          maxFeePerGas: gweiToWei(estimate.maxFeePerGas),
+        })
       ),
       dataSource: "blocknative",
     }

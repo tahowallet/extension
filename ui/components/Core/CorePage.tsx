@@ -14,12 +14,12 @@ export default function CorePage(props: Props): ReactElement {
 
   return (
     <section>
-      {hasTopBar ? <TopMenu /> : <></>}
+      {hasTopBar && <TopMenu />}
       <main>
         {children}
         <Snackbar />
       </main>
-      {hasTabBar ? <TabBar /> : <></>}
+      {hasTabBar && <TabBar />}
       <style jsx>
         {`
           section {

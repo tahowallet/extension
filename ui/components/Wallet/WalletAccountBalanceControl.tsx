@@ -178,24 +178,21 @@ export default function WalletAccountBalanceControl(
           customStyles="margin-bottom: 10px;"
         >
           <ReadOnlyNotice />
-          {currentAccountSigner !== ReadOnlyAccountSigner && (
-            <>
-              {hasSavedSeed ? (
-                <ActionButtons onReceive={handleClick} />
-              ) : (
-                <div className="save_seed_button_wrap">
-                  <SharedButton
-                    iconSmall="arrow-right"
-                    size="large"
-                    type="warning"
-                    linkTo="/onboarding/2"
-                  >
-                    {t("secureSeed")}
-                  </SharedButton>
-                </div>
-              )}
-            </>
-          )}
+          {currentAccountSigner !== ReadOnlyAccountSigner &&
+            (hasSavedSeed ? (
+              <ActionButtons onReceive={handleClick} />
+            ) : (
+              <div className="save_seed_button_wrap">
+                <SharedButton
+                  iconSmall="arrow-right"
+                  size="large"
+                  type="warning"
+                  linkTo="/onboarding/2"
+                >
+                  {t("secureSeed")}
+                </SharedButton>
+              </div>
+            ))}
         </SharedSkeletonLoader>
       </div>
       <style jsx>

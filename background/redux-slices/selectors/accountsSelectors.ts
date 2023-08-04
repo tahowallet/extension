@@ -388,8 +388,8 @@ const getTotalBalance = (
   accountBalances: { [assetSymbol: string]: AccountBalance },
   prices: PricesState,
   mainCurrencySymbol: string
-) => {
-  return Object.values(accountBalances)
+) =>
+  Object.values(accountBalances)
     .map(({ assetAmount }) => {
       const assetPricePoint = selectAssetPricePoint(
         prices,
@@ -416,7 +416,6 @@ const getTotalBalance = (
       )
     })
     .reduce((total, assetBalance) => total + assetBalance, 0)
-}
 
 function getNetworkAccountTotalsByCategory(
   state: RootState,
@@ -487,9 +486,8 @@ function getNetworkAccountTotalsByCategory(
 
 const selectNetworkAccountTotalsByCategoryResolver = createSelector(
   (state: RootState) => state,
-  (state) => (network: EVMNetwork) => {
-    return getNetworkAccountTotalsByCategory(state, network)
-  }
+  (state) => (network: EVMNetwork) =>
+    getNetworkAccountTotalsByCategory(state, network)
 )
 
 export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
@@ -498,9 +496,8 @@ export const selectCurrentNetworkAccountTotalsByCategory = createSelector(
   (
     selectNetworkAccountTotalsByCategory,
     currentNetwork
-  ): CategorizedAccountTotals => {
-    return selectNetworkAccountTotalsByCategory(currentNetwork)
-  }
+  ): CategorizedAccountTotals =>
+    selectNetworkAccountTotalsByCategory(currentNetwork)
 )
 
 export const selectAccountTotals = createSelector(
@@ -598,11 +595,11 @@ export const selectCurrentAccountTotal = createSelector(
     findAccountTotal(categorizedAccountTotals, currentAccount)
 )
 
-export const getAllAddresses = createSelector(getAccountState, (account) => {
+export const getAllAddresses = createSelector(getAccountState, (account) =>
   // On extension install we are using this selector to display onboarding screen,
   // sometimes frontend is loading faster than background script and we need to
   // prepare for redux slices to be undefined for a split second
-  return account
+  account
     ? [
         ...new Set(
           Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
@@ -611,7 +608,7 @@ export const getAllAddresses = createSelector(getAccountState, (account) => {
         ),
       ]
     : []
-})
+)
 
 export const getAddressCount = createSelector(
   getAllAddresses,

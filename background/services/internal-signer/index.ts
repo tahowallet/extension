@@ -184,9 +184,8 @@ export default class InternalSignerService extends BaseService<Events> {
     Events,
     InternalSignerService,
     [Promise<PreferenceService>, Promise<AnalyticsService>]
-  > = async (preferenceService, analyticsService) => {
-    return new this(await preferenceService, await analyticsService)
-  }
+  > = async (preferenceService, analyticsService) =>
+    new this(await preferenceService, await analyticsService)
 
   private constructor(
     private preferenceService: PreferenceService,
@@ -985,7 +984,7 @@ export default class InternalSignerService extends BaseService<Events> {
 
       return signature
     } catch (error) {
-      throw new Error(`Signing data failed`)
+      throw new Error("Signing data failed")
     }
   }
 

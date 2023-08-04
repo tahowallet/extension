@@ -127,9 +127,9 @@ export function useLocalStorage(
   key: string,
   initialValue: string
 ): [string, React.Dispatch<React.SetStateAction<string>>] {
-  const [value, setValue] = useState(() => {
-    return getLocalStorageItem(key, initialValue)
-  })
+  const [value, setValue] = useState(() =>
+    getLocalStorageItem(key, initialValue)
+  )
 
   useEffect(() => {
     setLocalStorageItem(key, value)

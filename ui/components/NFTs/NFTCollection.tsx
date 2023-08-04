@@ -17,7 +17,7 @@ export default function NFTCollection(props: {
   isExpanded: boolean
   setExpandedID: (id: string | null, owner: string | null) => void
   openPreview: (current: NFTWithCollection) => void
-}): ReactElement {
+}): ReactElement | null {
   const { collection, openPreview, isExpanded, setExpandedID } = props
   const { id, owner, chainID, nfts, nftCount, hasNextPage } = collection
   const dispatch = useBackgroundDispatch()
@@ -112,7 +112,7 @@ export default function NFTCollection(props: {
 
   const onItemClick = (nft: NFTCached) => openPreview({ nft, collection })
 
-  if ((!nftCount || !nfts.length) && !isLoading && wasUpdated) return <></>
+  if ((!nftCount || !nfts.length) && !isLoading && wasUpdated) return null
 
   return (
     <>

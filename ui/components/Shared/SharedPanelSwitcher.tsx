@@ -20,23 +20,21 @@ export default function SharedPanelSwitcher(props: Props): ReactElement {
   return (
     <nav>
       <ul role="tablist" data-testid={panelId}>
-        {panelNames.slice(0, 3).map((name, index) => {
-          return (
-            <li key={name}>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={panelNumber === index}
-                onClick={() => {
-                  setPanelNumber(index)
-                }}
-                className={`option${panelNumber === index ? " selected" : ""}`}
-              >
-                {name}
-              </button>
-            </li>
-          )
-        })}
+        {panelNames.slice(0, 3).map((name, index) => (
+          <li key={name}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={panelNumber === index}
+              onClick={() => {
+                setPanelNumber(index)
+              }}
+              className={`option${panelNumber === index ? " selected" : ""}`}
+            >
+              {name}
+            </button>
+          </li>
+        ))}
       </ul>
       <style jsx>
         {`

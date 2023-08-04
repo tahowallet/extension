@@ -38,7 +38,7 @@ type DetailPanelProps = {
 export default function DetailPanel({
   transactionRequest,
   defaultPanelState,
-}: DetailPanelProps): ReactElement {
+}: DetailPanelProps): ReactElement | null {
   const [panelState, setPanelState] = useState(
     defaultPanelState ?? { dismissedWarnings: [] }
   )
@@ -73,7 +73,7 @@ export default function DetailPanel({
     (transactionRequest as EnrichedEIP1559TransactionRequest)?.maxFeePerGas,
   ])
 
-  if (transactionRequest === undefined) return <></>
+  if (transactionRequest === undefined) return null
 
   const isEIP1559Compliant = EIP_1559_COMPLIANT_CHAIN_IDS.has(
     transactionRequest.network.chainID
@@ -100,8 +100,8 @@ export default function DetailPanel({
     setShouldUseFlashbots(value)
   }
 
-  const getHightForSlideUpMenu = () => {
-    return `${
+  const getHightForSlideUpMenu = () =>
+    `${
       transactionRequest.network.name === BINANCE_SMART_CHAIN.name
         ? 150
         : 3 * 56 +
@@ -109,7 +109,6 @@ export default function DetailPanel({
           (hasInsufficientFundsWarning ? 15 : 0) +
           (isEIP1559Compliant ? 0 : 40)
     }px`
-  }
 
   return (
     <div className="detail_items_wrap standard_width_padded">
@@ -143,23 +142,21 @@ export default function DetailPanel({
           </span>
         )}
       {useFlashbots && canUseFlashbots && (
-        <>
-          <span className="detail_item">
-            <SharedCheckbox
-              size={16}
-              checked={shouldUseFlashbots}
-              onChange={toggleFlashbotsRPC}
-              label={t("signTransaction.useFlashbots")}
-              labelPosition="left"
-              customStyles={{ width: "100%" }}
-              customStylesForLabel={{
-                color: "var(--green-40)",
-                fontSize: "14px",
-                marginRight: "auto",
-              }}
-            />
-          </span>
-        </>
+        <span className="detail_item">
+          <SharedCheckbox
+            size={16}
+            checked={shouldUseFlashbots}
+            onChange={toggleFlashbotsRPC}
+            label={t("signTransaction.useFlashbots")}
+            labelPosition="left"
+            customStyles={{ width: "100%" }}
+            customStylesForLabel={{
+              color: "var(--green-40)",
+              fontSize: "14px",
+              marginRight: "auto",
+            }}
+          />
+        </span>
       )}
       <span className="detail_item">
         <div className="detail_label">

@@ -56,7 +56,7 @@ export function animationStyles(isDirectionRight: boolean): string {
   return `
       .page-transition-enter > section > main {
         opacity: 0.3;
-        transform: ${isDirectionRight ? `translateX(-7px)` : `translateX(7px)`};
+        transform: ${isDirectionRight ? "translateX(-7px)" : "translateX(7px)"};
       }
       .page-transition-enter-active > section > main {
         opacity: 1;

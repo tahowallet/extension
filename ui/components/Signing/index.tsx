@@ -33,9 +33,9 @@ function SigningLoaded<T extends SignOperationType>({
 }: SigningLoadedProps<T>): ReactElement {
   const { signingAddress, renderedSigningData } = signatureDetails
 
-  const signerAccountTotal = useBackgroundSelector((state) => {
-    return getAccountTotal(state, signingAddress)
-  })
+  const signerAccountTotal = useBackgroundSelector((state) =>
+    getAccountTotal(state, signingAddress)
+  )
 
   return (
     <section>

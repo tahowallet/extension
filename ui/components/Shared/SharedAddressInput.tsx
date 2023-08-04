@@ -54,12 +54,10 @@ export default function SharedAddressInput({
         placeholder={placeholder}
         isEmpty={isEmpty}
       />
-      {isValidating ? (
+      {isValidating && (
         <div className="validating_spinner">
           <SharedLoadingSpinner size="small" />
         </div>
-      ) : (
-        <></>
       )}
       <style jsx>{`
         .validating_spinner {

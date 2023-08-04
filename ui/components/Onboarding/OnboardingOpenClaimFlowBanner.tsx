@@ -68,10 +68,8 @@ function EligibleCTAContent({
           </span>{" "}
           DOGGO
         </div>
-        {currentAccountSigner === ReadOnlyAccountSigner ? (
+        {currentAccountSigner === ReadOnlyAccountSigner && (
           <div>Upgrade above to claim</div>
-        ) : (
-          <></>
         )}
       </div>
       {hasAlreadyClaimed ? (
@@ -240,7 +238,7 @@ function IneligibleCTAContent({
   )
 }
 
-export default function OnboardingOpenClaimFlowBanner(): ReactElement {
+export default function OnboardingOpenClaimFlowBanner(): ReactElement | null {
   const claimAmount = useBackgroundSelector(selectEligibility).toString()
   const isClaimLoading = useBackgroundSelector(selectEligibilityLoading)
 
@@ -268,7 +266,7 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement {
     ((!hasSomethingToClaim || isClaimLoading) &&
       addresHasNothingToClaimClosed.split(";").includes(currentAddress))
   )
-    return <></>
+    return null
 
   if (isClaimLoading)
     return (

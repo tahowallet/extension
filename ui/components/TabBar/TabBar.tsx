@@ -54,18 +54,16 @@ export default function TabBar(): ReactElement {
     <nav aria-label="Main">
       {tabs
         .filter((tab) => isTabSupportedByNetwork(tab, selectedNetwork))
-        .map(({ path, title, icon }) => {
-          return (
-            <TabBarIconButton
-              key={path}
-              icon={icon}
-              title={t(title)}
-              onClick={() => history.push(path)}
-              isActive={noActiveTab ? false : activeTab.path === path}
-              showNotifications={hasNotifications(path)}
-            />
-          )
-        })}
+        .map(({ path, title, icon }) => (
+          <TabBarIconButton
+            key={path}
+            icon={icon}
+            title={t(title)}
+            onClick={() => history.push(path)}
+            isActive={noActiveTab ? false : activeTab.path === path}
+            showNotifications={hasNotifications(path)}
+          />
+        ))}
       <style jsx>
         {`
           nav {

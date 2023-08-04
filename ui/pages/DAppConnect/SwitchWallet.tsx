@@ -9,13 +9,13 @@ export default function SwitchWallet({
   switchWallet,
 }: {
   switchWallet: () => void
-}): ReactElement {
+}): ReactElement | null {
   const { t } = useTranslation("translation", {
     keyPrefix: "switchWallet",
   })
   const isDefaultWallet = useBackgroundSelector(selectDefaultWallet)
 
-  if (!isDefaultWallet) return <></>
+  if (!isDefaultWallet) return null
 
   return (
     <div className="switch_wallet">

@@ -22,14 +22,14 @@ export class InternalEthereumProviderDatabase extends Dexie {
       .stores({
         currentNetwork: "&origin,chainId,network, address",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table("activeNetwork")
           .toArray()
           .then((networksForOrigins) =>
             tx.table("currentNetwork").bulkAdd(networksForOrigins)
           )
-      })
+      )
 
     this.version(3).stores({
       activeNetworks: null,
@@ -39,11 +39,11 @@ export class InternalEthereumProviderDatabase extends Dexie {
       currentNetwork: "&origin,network.chainID",
     })
 
-    this.on("populate", (tx) => {
-      return tx.db
+    this.on("populate", (tx) =>
+      tx.db
         .table("currentNetwork")
         .add({ origin: TALLY_INTERNAL_ORIGIN, network: ETHEREUM })
-    })
+    )
   }
 
   async setCurrentChainIdForOrigin(

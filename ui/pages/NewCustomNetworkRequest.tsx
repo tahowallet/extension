@@ -11,7 +11,7 @@ import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedNetworkIcon from "../components/Shared/SharedNetworkIcon"
 
-export default function NewCustomNetworkRequest(): JSX.Element {
+export default function NewCustomNetworkRequest(): JSX.Element | null {
   const parsedQueryString = new URLSearchParams(window.location.search)
   const { requestId } = Object.fromEntries(parsedQueryString.entries())
 
@@ -30,7 +30,7 @@ export default function NewCustomNetworkRequest(): JSX.Element {
   const allNetworks = useBackgroundSelector(selectEVMNetworks)
 
   if (!networkDetails) {
-    return <></>
+    return null
   }
 
   const existingNetwork = allNetworks.find(

@@ -35,18 +35,15 @@ export async function getFileHashProspect(
 
   const fileIndex =
     partGlossaryJson
-      .map((item: { startAddress: string; file: string }) => {
-        return item.startAddress
-      })
-      .findIndex((startAddress: string) => {
-        return BigInt(startAddress ?? 0) > numericTargetAddress
-      }) - 1
+      .map((item: { startAddress: string; file: string }) => item.startAddress)
+      .findIndex(
+        (startAddress: string) =>
+          BigInt(startAddress ?? 0) > numericTargetAddress
+      ) - 1
   const inClaimFileName = partGlossaryJson[fileIndex]?.file
 
   const IPFSHashForFoundFile = IPFSFileDirectoryJson.Links.find(
-    (linkItem: IPFSLinkItem) => {
-      return linkItem.Name === inClaimFileName
-    }
+    (linkItem: IPFSLinkItem) => linkItem.Name === inClaimFileName
   )
 
   return IPFSHashForFoundFile?.Hash["/"]

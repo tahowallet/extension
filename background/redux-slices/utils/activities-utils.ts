@@ -246,15 +246,13 @@ export function getActivityDetails(
     { label: "Nonce", value: tx.nonce.toString() },
     { label: "Timestamp", value: getTimestamp(tx.annotation?.blockTimestamp) },
   ].concat(
-    assetTransfers.map((transfer) => {
-      return {
-        assetIconUrl: transfer.assetLogoUrl ?? "",
-        label: transfer.assetSymbol,
-        value:
-          transfer.direction === "in"
-            ? transfer.localizedDecimalAmount
-            : `-${transfer.localizedDecimalAmount}`,
-      }
-    })
+    assetTransfers.map((transfer) => ({
+      assetIconUrl: transfer.assetLogoUrl ?? "",
+      label: transfer.assetSymbol,
+      value:
+        transfer.direction === "in"
+          ? transfer.localizedDecimalAmount
+          : `-${transfer.localizedDecimalAmount}`,
+    }))
   )
 }
