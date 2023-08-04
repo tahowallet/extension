@@ -1,6 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { PricePoint } from "../../assets"
-import { selectCurrentNetwork } from "."
+import { getPricesState, selectCurrentNetwork } from "."
 import { NetworksState } from "../networks"
 import { LegacyEVMTransactionRequest } from "../../networks"
 import { ROOTSTOCK } from "../../constants/networks"
@@ -8,9 +8,8 @@ import {
   TransactionConstruction,
   NetworkFeeSettings,
 } from "../transaction-construction"
-import { getAssetsState } from "./accountsSelectors"
 import { selectMainCurrencySymbol } from "./uiSelectors"
-import { selectAssetPricePoint } from "../assets"
+import { selectAssetPricePoint } from "../prices"
 
 export const selectTransactionNetwork = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
@@ -81,17 +80,17 @@ export const selectBaseAsset = createSelector(
 
 export const selectTransactionMainCurrencyPricePoint = createSelector(
   selectBaseAsset, // Base asset for transaction
-  getAssetsState,
+  getPricesState,
   (state) => selectMainCurrencySymbol(state),
   selectCurrentNetwork,
   (
     baseAsset,
-    assets,
+    prices,
     mainCurrencySymbol,
     currentNetwork
   ): PricePoint | undefined =>
     selectAssetPricePoint(
-      assets,
+      prices,
       baseAsset ?? currentNetwork.baseAsset, // Fallback to current network's base asset
       mainCurrencySymbol
     )

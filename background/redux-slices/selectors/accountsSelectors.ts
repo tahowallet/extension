@@ -6,7 +6,7 @@ import {
   DEFAULT_ACCOUNT_NAMES,
   CompleteAssetAmount,
 } from "../accounts"
-import { AssetsState, selectAssetPricePoint } from "../assets"
+import { AssetsState } from "../assets"
 import {
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
@@ -44,6 +44,7 @@ import { FeatureFlags, isEnabled } from "../../features"
 import { AccountSigner, SignerType } from "../../services/signing"
 import { SignerImportSource } from "../../services/internal-signer"
 import { assertUnreachable } from "../../lib/utils/type-guards"
+import { PricesState, selectAssetPricePoint } from "../prices"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -105,7 +106,8 @@ const computeCombinedAssetAmountsData = (
   assets: AssetsState,
   mainCurrencySymbol: string,
   hideDust: boolean,
-  showUnverifiedAssets: boolean
+  showUnverifiedAssets: boolean,
+  prices: PricesState
 ): {
   allAssetAmounts: CompleteAssetAmount[]
   combinedAssetAmounts: CompleteAssetAmount[]
@@ -117,7 +119,7 @@ const computeCombinedAssetAmountsData = (
   const allAssetAmounts = assetAmounts
     .map<CompleteAssetAmount>((assetAmount) => {
       const assetPricePoint = selectAssetPricePoint(
-        assets,
+        prices,
         assetAmount.asset,
         mainCurrencySymbol
       )
@@ -229,21 +231,31 @@ const getCurrentAccountState = (state: RootState) => {
   ]
 }
 export const getAssetsState = (state: RootState): AssetsState => state.assets
+export const getPricesState = (state: RootState): PricesState => state.prices
 
 export const selectAccountAndTimestampedActivities = createSelector(
   getAccountState,
   getAssetsState,
+  getPricesState,
   selectHideDust,
   selectShowUnverifiedAssets,
   selectMainCurrencySymbol,
-  (account, assets, hideDust, showUnverifiedAssets, mainCurrencySymbol) => {
+  (
+    account,
+    assets,
+    prices,
+    hideDust,
+    showUnverifiedAssets,
+    mainCurrencySymbol
+  ) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
       computeCombinedAssetAmountsData(
         account.combinedData.assets,
         assets,
         mainCurrencySymbol,
         hideDust,
-        showUnverifiedAssets
+        showUnverifiedAssets,
+        prices
       )
 
     return {
@@ -264,12 +276,14 @@ export const selectAccountAndTimestampedActivities = createSelector(
 export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   getAssetsState,
+  getPricesState,
   selectHideDust,
   selectShowUnverifiedAssets,
   selectMainCurrencySymbol,
   (
     currentAccount,
     assets,
+    prices,
     hideDust,
     showUnverifiedAssets,
     mainCurrencySymbol
@@ -292,7 +306,8 @@ export const selectCurrentAccountBalances = createSelector(
       assets,
       mainCurrencySymbol,
       hideDust,
-      showUnverifiedAssets
+      showUnverifiedAssets,
+      prices
     )
 
     return {
@@ -371,13 +386,13 @@ const getAccountType = (
 
 const getTotalBalance = (
   accountBalances: { [assetSymbol: string]: AccountBalance },
-  assets: AssetsState,
+  prices: PricesState,
   mainCurrencySymbol: string
 ) =>
   Object.values(accountBalances)
     .map(({ assetAmount }) => {
       const assetPricePoint = selectAssetPricePoint(
-        assets,
+        prices,
         assetAmount.asset,
         mainCurrencySymbol
       )
@@ -407,7 +422,7 @@ function getNetworkAccountTotalsByCategory(
   network: EVMNetwork
 ): CategorizedAccountTotals {
   const accounts = getAccountState(state)
-  const assets = getAssetsState(state)
+  const prices = getPricesState(state)
   const accountSignersByAddress = selectAccountSignersByAddress(state)
   const keyringsByAddresses = selectKeyringsByAddresses(state)
   const sourcesByAddress = selectSourcesByAddress(state)
@@ -452,7 +467,7 @@ function getNetworkAccountTotalsByCategory(
         avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
         localizedTotalMainCurrencyAmount: formatCurrencyAmount(
           mainCurrencySymbol,
-          getTotalBalance(accountData.balances, assets, mainCurrencySymbol),
+          getTotalBalance(accountData.balances, prices, mainCurrencySymbol),
           desiredDecimals.default
         ),
       }
@@ -504,8 +519,9 @@ export type AccountTotalList = {
 export const selectAccountTotalsForOverview = createSelector(
   getAccountState,
   getAssetsState,
+  getPricesState,
   selectMainCurrencySymbol,
-  (accountsState, assetsState, mainCurrencySymbol) => {
+  (accountsState, assetsState, pricesState, mainCurrencySymbol) => {
     const accountsTotal: AccountTotalList = {}
 
     Object.entries(accountsState.accountsData.evm)
@@ -527,7 +543,7 @@ export const selectAccountTotalsForOverview = createSelector(
 
           accountsTotal[normalizedAddress].totals[chainID] = getTotalBalance(
             accountData.balances,
-            assetsState,
+            pricesState,
             mainCurrencySymbol
           )
         })

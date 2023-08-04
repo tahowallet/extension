@@ -54,7 +54,6 @@ import {
 } from "./redux-slices/accounts"
 import {
   assetsLoaded,
-  newPricePoints,
   refreshAsset,
   removeAssetData,
 } from "./redux-slices/assets"
@@ -199,6 +198,7 @@ import {
 import { getPricePoint, getTokenPrices } from "./lib/prices"
 import { makeFlashbotsProviderCreator } from "./services/chain/serial-fallback-provider"
 import { DismissableItem } from "./services/preferences"
+import { newPricePoints } from "./redux-slices/prices"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly

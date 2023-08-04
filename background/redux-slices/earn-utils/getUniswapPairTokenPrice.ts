@@ -1,12 +1,12 @@
 import { HexString } from "../../types"
-import { AssetsState } from "../assets"
 import { getContract } from "../utils/contract-utils"
 import UNISWAP_V2_PAIR from "../../lib/uniswapPair"
 import getLPTokenValue from "./getLPTokenValue"
+import { PricesState } from "../prices"
 
 const getUniswapPairTokenPrice = async (
   tokenAddress: HexString,
-  assets: AssetsState,
+  prices: PricesState,
   mainCurrencySymbol: string
 ): Promise<bigint> => {
   const UniswapV2PairContract = await getContract(
@@ -24,7 +24,7 @@ const getUniswapPairTokenPrice = async (
 
   const priceFromToken0 = await getLPTokenValue(
     mainCurrencySymbol,
-    assets,
+    prices,
     token0,
     reserve0,
     LPDecimals,
@@ -37,7 +37,7 @@ const getUniswapPairTokenPrice = async (
 
   const priceFromToken1 = await getLPTokenValue(
     mainCurrencySymbol,
-    assets,
+    prices,
     token1,
     reserve1,
     LPDecimals,

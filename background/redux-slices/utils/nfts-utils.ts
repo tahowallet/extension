@@ -1,5 +1,5 @@
 import { BUILT_IN_NETWORK_BASE_ASSETS } from "../../constants"
-import { AssetsState, selectAssetPricePoint } from "../assets"
+import { PricesState, selectAssetPricePoint } from "../prices"
 import {
   Filter,
   FiltersState,
@@ -157,7 +157,7 @@ export const getNFTsCount = (collections: NFTCollectionCached[]): number =>
 
 export function enrichCollectionWithUSDFloorPrice(
   collection: NFTCollectionCached,
-  assets: AssetsState,
+  prices: PricesState,
   mainCurrencySymbol: string
 ): NFTCollectionEnriched {
   if (!collection.floorPrice) return collection
@@ -172,7 +172,7 @@ export function enrichCollectionWithUSDFloorPrice(
   if (!baseAsset) return collection
 
   const pricePoint = selectAssetPricePoint(
-    assets,
+    prices,
     baseAsset,
     mainCurrencySymbol
   )
@@ -200,7 +200,7 @@ export function enrichCollectionWithUSDFloorPrice(
 export const getFilteredCollections = (
   collections: NFTCollectionCached[],
   filters: FiltersState,
-  assets: AssetsState,
+  prices: PricesState,
   mainCurrencySymbol: string
 ): NFTCollectionCached[] => {
   const applyPriceSort = filters.type === "asc" || filters.type === "desc"
@@ -217,7 +217,7 @@ export const getFilteredCollections = (
       return applyPriceSort
         ? enrichCollectionWithUSDFloorPrice(
             collectionWithSortedNFTs,
-            assets,
+            prices,
             mainCurrencySymbol
           )
         : collectionWithSortedNFTs

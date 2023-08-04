@@ -29,6 +29,7 @@ import {
   PriceDetails,
   SwapQuoteRequest,
 } from "./utils/0x-swap-utils"
+import { PricesState } from "./prices"
 
 // This is how 0x represents native token addresses
 const ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS =
@@ -315,7 +316,10 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
   > => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
-    const { assets } = getState() as { assets: AssetsState }
+    const { assets, prices } = getState() as {
+      assets: AssetsState
+      prices: PricesState
+    }
 
     const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest, {
       takerAddress: tradeAddress,
@@ -369,6 +373,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
           Number(quote.buyTokenToEthRate),
           quoteRequest.assets.buyAsset,
           assets,
+          prices,
           quote.buyAmount,
           quoteRequest.network
         ),
@@ -376,6 +381,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
           Number(quote.sellTokenToEthRate),
           quoteRequest.assets.sellAsset,
           assets,
+          prices,
           quote.sellAmount,
           quoteRequest.network
         ),

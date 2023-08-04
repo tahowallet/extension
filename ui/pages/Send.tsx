@@ -22,10 +22,8 @@ import {
   convertFixedPointNumber,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
-import {
-  selectAssetPricePoint,
-  transferAsset,
-} from "@tallyho/tally-background/redux-slices/assets"
+import { transferAsset } from "@tallyho/tally-background/redux-slices/assets"
+import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/prices"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   enrichAssetAmountWithMainCurrencyValues,
@@ -115,7 +113,7 @@ export default function Send(): ReactElement {
         isTrustedAsset(assetAmount.asset)
     )
   const assetPricePoint = useBackgroundSelector((state) =>
-    selectAssetPricePoint(state.assets, selectedAsset, mainCurrencySymbol)
+    selectAssetPricePoint(state.prices, selectedAsset, mainCurrencySymbol)
   )
 
   const assetAmountFromForm = () => {

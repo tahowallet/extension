@@ -4,7 +4,6 @@ import { SwappableAsset, isSmartContractFungibleAsset } from "../../assets"
 import { sameNetwork } from "../../networks"
 import { isBaseAssetForNetwork, isTrustedAsset } from "../utils/asset-utils"
 import { RootState } from ".."
-import { SingleAssetState } from "../assets"
 
 export const selectLatestQuoteRequest = createSelector(
   (state: RootState) => state.swap.latestQuoteRequest,
@@ -20,19 +19,13 @@ export const selectSwapBuyAssets = createSelector(
   (state: RootState) => state.assets,
   selectCurrentNetwork,
   (assets, currentNetwork) =>
-    assets.filter(
-      (
-        asset
-      ): asset is SwappableAsset & {
-        recentPrices: SingleAssetState["recentPrices"]
-      } => {
-        // Only list assets for the current network.
-        const assetIsOnCurrentNetwork =
-          isBaseAssetForNetwork(asset, currentNetwork) ||
-          (isSmartContractFungibleAsset(asset) &&
-            sameNetwork(asset.homeNetwork, currentNetwork))
+    assets.filter((asset): asset is SwappableAsset => {
+      // Only list assets for the current network.
+      const assetIsOnCurrentNetwork =
+        isBaseAssetForNetwork(asset, currentNetwork) ||
+        (isSmartContractFungibleAsset(asset) &&
+          sameNetwork(asset.homeNetwork, currentNetwork))
 
-        return isTrustedAsset(asset) && assetIsOnCurrentNetwork
-      }
-    )
+      return isTrustedAsset(asset) && assetIsOnCurrentNetwork
+    })
 )

@@ -12,7 +12,6 @@ const defaultPreferences: Preferences = {
         "ipfs://bafybeihufwj43zej34itf66qyguq35k4f6s4ual4uk3iy643wn3xnff2ka"
       ).href, // the Taho community-curated list
       "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
-      "https://meta.yearn.finance/api/tokens/list", // the Yearn list
       "https://messari.io/tokenlist/messari-verified", // Messari-verified projects
       "https://wrapped.tokensoft.eth.limo", // Wrapped tokens
       "https://tokenlist.aave.eth.limo", // Aave-listed tokens and interest-bearing assets

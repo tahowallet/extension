@@ -1,40 +1,28 @@
-import { createSelector, createSlice } from "@reduxjs/toolkit"
+import { createSlice } from "@reduxjs/toolkit"
 import { ethers } from "ethers"
+import type { RootState } from "."
+import { AddressOnNetwork } from "../accounts"
 import {
   AnyAsset,
   AnyAssetAmount,
   AnyAssetMetadata,
-  flipPricePoint,
-  isFungibleAsset,
   isSmartContractFungibleAsset,
-  PricePoint,
   SmartContractFungibleAsset,
 } from "../assets"
-import { AddressOnNetwork } from "../accounts"
-import { findClosestAssetIndex } from "../lib/asset-similarity"
+import { ERC20_INTERFACE } from "../lib/erc20"
+import logger from "../lib/logger"
+import { EVMNetwork, sameNetwork } from "../networks"
+import { NormalizedEVMAddress } from "../types"
+import { removeAssetReferences, updateAssetReferences } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 import { isBaseAssetForNetwork, isSameAsset } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
-import { EVMNetwork, sameNetwork } from "../networks"
-import { ERC20_INTERFACE } from "../lib/erc20"
-import logger from "../lib/logger"
-import { FIAT_CURRENCIES_SYMBOL } from "../constants"
-import { convertFixedPoint } from "../lib/fixed-point"
-import { removeAssetReferences, updateAssetReferences } from "./accounts"
-import { NormalizedEVMAddress } from "../types"
-import type { RootState } from "."
 
-export type AssetWithRecentPrices<T extends AnyAsset = AnyAsset> = T & {
-  recentPrices: {
-    [assetSymbol: string]: PricePoint
-  }
-}
-
-export type SingleAssetState = AssetWithRecentPrices
+export type SingleAssetState = AnyAsset
 
 export type AssetsState = SingleAssetState[]
 
-export const initialState = [] as AssetsState
+export const initialState: AssetsState = []
 
 const assetsSlice = createSlice({
   name: "assets",
@@ -60,7 +48,6 @@ const assetsSlice = createSlice({
           mappedAssets[newAsset.symbol] = [
             {
               ...newAsset,
-              recentPrices: {},
             },
           ]
         } else {
@@ -77,7 +64,6 @@ const assetsSlice = createSlice({
           if (duplicateIndexes.length === 0) {
             mappedAssets[newAsset.symbol].push({
               ...newAsset,
-              recentPrices: {},
             })
           } else {
             // TODO if there are duplicates... when should we replace assets?
@@ -94,25 +80,6 @@ const assetsSlice = createSlice({
 
       return Object.values(mappedAssets).flat()
     },
-    newPricePoints: (
-      immerState,
-      { payload: pricePoints }: { payload: PricePoint[] }
-    ) => {
-      pricePoints.forEach((pricePoint) => {
-        const fiatCurrency = pricePoint.pair.find((asset) =>
-          FIAT_CURRENCIES_SYMBOL.includes(asset.symbol)
-        )
-        const [pricedAsset] = pricePoint.pair.filter(
-          (asset) => asset !== fiatCurrency
-        )
-        if (fiatCurrency && pricedAsset) {
-          const index = findClosestAssetIndex(pricedAsset, immerState)
-          if (typeof index !== "undefined") {
-            immerState[index].recentPrices[fiatCurrency.symbol] = pricePoint
-          }
-        }
-      })
-    },
     removeAsset: (
       immerState,
       { payload: removedAsset }: { payload: AnyAsset }
@@ -120,18 +87,9 @@ const assetsSlice = createSlice({
   },
 })
 
-export const { assetsLoaded, newPricePoints, removeAsset } = assetsSlice.actions
+export const { assetsLoaded, removeAsset } = assetsSlice.actions
 
 export default assetsSlice.reducer
-
-const selectAssetsState = (state: AssetsState) => state
-const selectAsset = (_: AssetsState, asset: AnyAsset) => asset
-
-const selectPairedAssetSymbol = (
-  _: AssetsState,
-  _2: AnyAsset,
-  pairedAssetSymbol: string
-) => pairedAssetSymbol
 
 export const updateAssetMetadata = createBackgroundAsyncThunk(
   "assets/updateAssetMetadata",
@@ -266,92 +224,6 @@ export const transferAsset = createBackgroundAsyncThunk(
         "Only base and fungible smart contract asset transfers are supported for now."
       )
     }
-  }
-)
-
-/**
- * Selects a particular asset price point given the asset symbol and the paired
- * asset symbol used to price it.
- *
- * For example, calling `selectAssetPricePoint(state.assets, ETH, "USD")`
- * will return the ETH-USD price point, if it exists. Note that this selector
- * guarantees that the returned price point will have the pair in the specified
- * order, so even if the store price point has amounts in the order [USD, ETH],
- * the selector will return them in the order [ETH, USD].
- */
-export const selectAssetPricePoint = createSelector(
-  [selectAssetsState, selectAsset, selectPairedAssetSymbol],
-  (assets, assetToFind, pairedAssetSymbol) => {
-    const hasRecentPriceData = (asset: SingleAssetState): boolean =>
-      pairedAssetSymbol in asset.recentPrices &&
-      asset.recentPrices[pairedAssetSymbol].pair.some(
-        ({ symbol }) => symbol === assetToFind.symbol
-      )
-
-    let pricedAsset: SingleAssetState | undefined
-
-    /* If we're looking for a smart contract, try to find an exact price point */
-    if (isSmartContractFungibleAsset(assetToFind)) {
-      pricedAsset = assets.find(
-        (asset): asset is AssetWithRecentPrices<SmartContractFungibleAsset> =>
-          isSmartContractFungibleAsset(asset) &&
-          asset.contractAddress === assetToFind.contractAddress &&
-          asset.homeNetwork.chainID === assetToFind.homeNetwork.chainID &&
-          hasRecentPriceData(asset)
-      )
-
-      /* Don't do anything else if this is an unverified asset and there's no exact match */
-      if (
-        (assetToFind.metadata?.tokenLists?.length ?? 0) < 1 &&
-        !isBaseAssetForNetwork(assetToFind, assetToFind.homeNetwork)
-      ) {
-        return undefined
-      }
-    }
-
-    /* Otherwise, find a best-effort match by looking for assets with the same symbol  */
-    if (!pricedAsset) {
-      pricedAsset = assets.find(
-        (asset) =>
-          asset.symbol === assetToFind.symbol && hasRecentPriceData(asset)
-      )
-    }
-
-    if (pricedAsset) {
-      let pricePoint = pricedAsset.recentPrices[pairedAssetSymbol]
-
-      // Flip it if the price point looks like USD-ETH
-      if (pricePoint.pair[0].symbol !== assetToFind.symbol) {
-        pricePoint = flipPricePoint(pricePoint)
-      }
-
-      const assetDecimals = isFungibleAsset(assetToFind)
-        ? assetToFind.decimals
-        : 0
-      const pricePointAssetDecimals = isFungibleAsset(pricePoint.pair[0])
-        ? pricePoint.pair[0].decimals
-        : 0
-
-      if (assetDecimals !== pricePointAssetDecimals) {
-        const { amounts } = pricePoint
-        pricePoint = {
-          ...pricePoint,
-          amounts: [
-            convertFixedPoint(
-              amounts[0],
-              pricePointAssetDecimals,
-              assetDecimals
-            ),
-            amounts[1],
-          ],
-        }
-      }
-
-      return pricePoint
-    }
-
-    // If no matching priced asset was found, return undefined.
-    return undefined
   }
 )
 

@@ -1,11 +1,12 @@
 import { AVAX, BNB, ETH, ETHEREUM, USD } from "../../../constants"
-import { AssetsState } from "../../assets"
 import {
   enrichCollectionWithUSDFloorPrice,
   getTotalFloorPrice,
   sortByPrice,
 } from "../nfts-utils"
 import { createPricePoint } from "../../../tests/factories"
+import { PricesState } from "../../prices"
+import { getFullAssetID } from "../asset-utils"
 
 const COLLECTION_MOCK = {
   id: "",
@@ -17,26 +18,17 @@ const COLLECTION_MOCK = {
   hasNextPage: false,
 }
 
-const assetsState: AssetsState = [
-  {
-    ...ETH,
-    recentPrices: {
-      USD: createPricePoint(ETH, 2000),
-    },
+const pricesState: PricesState = {
+  [getFullAssetID(ETH)]: {
+    USD: createPricePoint(ETH, 2000),
   },
-  {
-    ...AVAX,
-    recentPrices: {
-      USD: createPricePoint(AVAX, 15),
-    },
+  [getFullAssetID(AVAX)]: {
+    USD: createPricePoint(AVAX, 15),
   },
-  {
-    ...BNB,
-    recentPrices: {
-      USD: createPricePoint(BNB, 50),
-    },
+  [getFullAssetID(BNB)]: {
+    USD: createPricePoint(BNB, 50),
   },
-]
+}
 
 describe("NFTs utils", () => {
   describe("getTotalFloorPrice", () => {
@@ -153,7 +145,7 @@ describe("NFTs utils", () => {
       }
 
       expect(
-        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+        enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
           .floorPrice
       ).toMatchObject({
         value: 1,
@@ -171,7 +163,7 @@ describe("NFTs utils", () => {
       }
 
       expect(
-        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+        enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
           .floorPrice
       ).toMatchObject({
         value: 0.5,
@@ -189,7 +181,7 @@ describe("NFTs utils", () => {
       }
 
       expect(
-        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+        enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
           .floorPrice
       ).toMatchObject({
         value: 2,
@@ -207,7 +199,7 @@ describe("NFTs utils", () => {
       }
 
       expect(
-        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+        enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
           .floorPrice
       ).toMatchObject({
         value: 0.5,
@@ -225,7 +217,7 @@ describe("NFTs utils", () => {
       }
 
       expect(
-        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+        enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
           .floorPrice
       ).toMatchObject({
         value: 0.5,
@@ -235,7 +227,7 @@ describe("NFTs utils", () => {
     test("shouldn't add USD price if there is not floor price", () => {
       const collection = COLLECTION_MOCK
       expect(
-        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+        enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
           .floorPrice
       ).toBeUndefined()
     })
@@ -249,7 +241,7 @@ describe("NFTs utils", () => {
       }
 
       expect(
-        enrichCollectionWithUSDFloorPrice(collection, assetsState, USD.symbol)
+        enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
           .floorPrice
       ).toMatchObject({
         value: 0.5,

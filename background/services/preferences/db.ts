@@ -403,6 +403,20 @@ export class PreferenceDatabase extends Dexie {
         })
     )
 
+    // Remove broken yearn's token list
+    this.version(20).upgrade((tx) =>
+      tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const urls = storedPreferences.tokenLists.urls.filter(
+            (url) => !url.includes("meta.yearn.finance")
+          )
+
+          Object.assign(storedPreferences.tokenLists, { urls })
+        })
+    )
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
