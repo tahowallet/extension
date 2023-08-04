@@ -115,30 +115,28 @@ export default function SharedSelect(props: Props): ReactElement {
             hide: !isDropdownOpen,
           })}
         >
-          {options.map((option, index) => {
-            return (
-              <li
-                key={option.value}
-                role="option"
-                tabIndex={index}
-                className={classNames("option", {
-                  selected: activeIndex === index,
-                })}
-                aria-selected={activeIndex === index}
-                onClick={() => updateSelectedOption(index)}
-                onKeyPress={(e) => {
-                  if (e.key === "enter") {
-                    updateSelectedOption(index)
-                  }
-                }}
-              >
-                <div className="option_content">
-                  <span>{option.label}</span>
-                  {showOptionValue && <span>{option.value}</span>}
-                </div>
-              </li>
-            )
-          })}
+          {options.map((option, index) => (
+            <li
+              key={option.value}
+              role="option"
+              tabIndex={index}
+              className={classNames("option", {
+                selected: activeIndex === index,
+              })}
+              aria-selected={activeIndex === index}
+              onClick={() => updateSelectedOption(index)}
+              onKeyPress={(e) => {
+                if (e.key === "enter") {
+                  updateSelectedOption(index)
+                }
+              }}
+            >
+              <div className="option_content">
+                <span>{option.label}</span>
+                {showOptionValue && <span>{option.value}</span>}
+              </div>
+            </li>
+          ))}
           {triggerLabel && (
             <li className="custom_option">
               <button type="button" onClick={onTrigger}>

@@ -106,23 +106,19 @@ export default function TransactionButton({
     </SharedButton>
   )
 
-  return (
-    <>
-      {tooltip ? (
-        <SharedTooltip
-          width={200}
-          height={60}
-          horizontalPosition="center"
-          verticalPosition="top"
-          horizontalShift={102}
-          type="dark"
-          IconComponent={() => renderButton()}
-        >
-          {tooltip}
-        </SharedTooltip>
-      ) : (
-        renderButton()
-      )}
-    </>
+  return tooltip ? (
+    <SharedTooltip
+      width={200}
+      height={60}
+      horizontalPosition="center"
+      verticalPosition="top"
+      horizontalShift={102}
+      type="dark"
+      IconComponent={() => renderButton()}
+    >
+      {tooltip}
+    </SharedTooltip>
+  ) : (
+    renderButton()
   )
 }

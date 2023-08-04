@@ -25,7 +25,7 @@ export default class InjectWindowProvider {
               .toString("base64")
 
             windowProviderSource = windowProviderSource.replace(
-              `@@@SEGMENT_MEDIUM_BASE64@@@`,
+              "@@@SEGMENT_MEDIUM_BASE64@@@",
               fontAsB64
             )
 
@@ -40,7 +40,7 @@ export default class InjectWindowProvider {
             assets[PROVIDER_BRIDGE_FILENAME] = new sources.RawSource(
               providerBridgeSource.replace(
                 // eslint-disable-next-line no-useless-escape
-                `\"@@@WINDOW_PROVIDER@@@\"`,
+                '"@@@WINDOW_PROVIDER@@@"',
                 windowProviderSource
               )
             )

@@ -84,67 +84,63 @@ const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
 const getArbitrumPrices = async (
   baseFeePerGas: bigint,
   blockNumber: number
-): Promise<BlockPrices> => {
-  return {
-    network: ARBITRUM_ONE,
-    blockNumber,
-    baseFeePerGas,
-    estimatedPrices: [
-      {
-        confidence: 99,
-        maxPriorityFeePerGas: 0n, // priority fee doesn't make sense for Arbitrum
-        maxFeePerGas: 0n, // max fee doesn't make sense for Arbitrum
-        price: baseFeePerGas * 3n,
-      },
-      {
-        confidence: 95,
-        maxPriorityFeePerGas: 0n,
-        maxFeePerGas: 0n,
-        price: baseFeePerGas * 2n,
-      },
-      {
-        confidence: 70,
-        maxPriorityFeePerGas: 0n,
-        maxFeePerGas: 0n,
-        price: baseFeePerGas,
-      },
-    ],
-    dataSource: "local",
-  }
-}
+): Promise<BlockPrices> => ({
+  network: ARBITRUM_ONE,
+  blockNumber,
+  baseFeePerGas,
+  estimatedPrices: [
+    {
+      confidence: 99,
+      maxPriorityFeePerGas: 0n, // priority fee doesn't make sense for Arbitrum
+      maxFeePerGas: 0n, // max fee doesn't make sense for Arbitrum
+      price: baseFeePerGas * 3n,
+    },
+    {
+      confidence: 95,
+      maxPriorityFeePerGas: 0n,
+      maxFeePerGas: 0n,
+      price: baseFeePerGas * 2n,
+    },
+    {
+      confidence: 70,
+      maxPriorityFeePerGas: 0n,
+      maxFeePerGas: 0n,
+      price: baseFeePerGas,
+    },
+  ],
+  dataSource: "local",
+})
 
 const getLegacyGasPrices = async (
   network: EVMNetwork,
   gasPrice: bigint,
   blockNumber: number
-): Promise<BlockPrices> => {
-  return {
-    network,
-    blockNumber,
-    baseFeePerGas: gasPrice,
-    estimatedPrices: [
-      {
-        confidence: 99,
-        maxPriorityFeePerGas: 0n, // doesn't exist
-        maxFeePerGas: 0n, // doesn't exist
-        price: gasPrice,
-      },
-      {
-        confidence: 95,
-        maxPriorityFeePerGas: 0n,
-        maxFeePerGas: 0n,
-        price: gasPrice,
-      },
-      {
-        confidence: 70,
-        maxPriorityFeePerGas: 0n,
-        maxFeePerGas: 0n,
-        price: gasPrice,
-      },
-    ],
-    dataSource: "local",
-  }
-}
+): Promise<BlockPrices> => ({
+  network,
+  blockNumber,
+  baseFeePerGas: gasPrice,
+  estimatedPrices: [
+    {
+      confidence: 99,
+      maxPriorityFeePerGas: 0n, // doesn't exist
+      maxFeePerGas: 0n, // doesn't exist
+      price: gasPrice,
+    },
+    {
+      confidence: 95,
+      maxPriorityFeePerGas: 0n,
+      maxFeePerGas: 0n,
+      price: gasPrice,
+    },
+    {
+      confidence: 70,
+      maxPriorityFeePerGas: 0n,
+      maxFeePerGas: 0n,
+      price: gasPrice,
+    },
+  ],
+  dataSource: "local",
+})
 
 export default async function getBlockPrices(
   network: EVMNetwork,

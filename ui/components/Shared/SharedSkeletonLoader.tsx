@@ -1,17 +1,20 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, ReactNode } from "react"
 import classNames from "classnames"
 
 export default function SharedSkeletonLoader(props: {
   width?: number
   height?: number
   borderRadius?: number
-  children?: React.ReactNode
+  children?: ReactNode
   isLoaded?: boolean
   customStyles?: string
 }): ReactElement {
   const { width, height, borderRadius, isLoaded, customStyles, children } =
     props
 
+  // Want to return a ReactElement to make this maximally easy to integrate,
+  // whereas children can be a ReactNode; Fragment will let us achieve that.
+  // eslint-disable-next-line react/jsx-no-useless-fragment
   if (isLoaded) return <>{children}</>
 
   return (

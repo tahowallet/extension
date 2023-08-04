@@ -57,7 +57,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
   useOnClickOutside(slideUpMenuRef, close)
 
   // Continue showing children during the close transition.
-  const visibleChildren = isOpen || alwaysRenderChildren ? children : <></>
+  const visibleChildren = (isOpen || alwaysRenderChildren) && children
   const displayChildren = useDelayContentChange(
     visibleChildren,
     !isOpen,

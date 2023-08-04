@@ -96,13 +96,8 @@ export default class AbilitiesService extends BaseService<Events> {
     ServiceLifecycleEvents,
     AbilitiesService,
     [Promise<ChainService>, Promise<LedgerService>]
-  > = async (chainService, ledgerService) => {
-    return new this(
-      await getOrCreateDB(),
-      await chainService,
-      await ledgerService
-    )
-  }
+  > = async (chainService, ledgerService) =>
+    new this(await getOrCreateDB(), await chainService, await ledgerService)
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()

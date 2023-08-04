@@ -2,9 +2,9 @@ import { logger } from "ethers"
 
 const DEFAULT_TIMEOUT = 10000
 
-export const makeFetchWithTimeout = (timeoutMs: number) => {
+export const makeFetchWithTimeout = (timeoutMs: number) =>
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  return async function fetchWithTimeout(
+  async function fetchWithTimeout(
     requestInfo: RequestInfo,
     options?: RequestInit | undefined
   ) {
@@ -20,6 +20,5 @@ export const makeFetchWithTimeout = (timeoutMs: number) => {
     clearTimeout(id)
     return response
   }
-}
 
 export const fetchWithTimeout = makeFetchWithTimeout(DEFAULT_TIMEOUT)

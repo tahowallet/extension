@@ -9,10 +9,10 @@ interface Props {
   initializationLoadingTimeExpired: boolean
 }
 
-export default function OverviewAssetsTable(props: Props): ReactElement {
+export default function OverviewAssetsTable(props: Props): ReactElement | null {
   const { t } = useTranslation()
   const { assets, initializationLoadingTimeExpired } = props
-  if (!assets) return <></>
+  if (!assets) return null
 
   function assetSortCompare(a: CompleteAssetAmount, b: CompleteAssetAmount) {
     if (a.mainCurrencyAmount !== b.mainCurrencyAmount) {
@@ -60,9 +60,7 @@ export default function OverviewAssetsTable(props: Props): ReactElement {
                   <div>${asset.localizedUnitPrice}</div>
                 ) : (
                   <div className="loading_wrap">
-                    {initializationLoadingTimeExpired ? (
-                      <></>
-                    ) : (
+                    {!initializationLoadingTimeExpired && (
                       <SharedLoadingSpinner size="small" />
                     )}
                   </div>

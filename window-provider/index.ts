@@ -132,12 +132,12 @@ export default class TahoWindowProvider extends EventEmitter {
           return
         }
 
-        ;({ result } = event.data)
+        result = event.data.result
       } else if (
         isPortResponseEvent(event) &&
         isTallyInternalCommunication(event)
       ) {
-        ;({ result } = event)
+        result = event.result
       } else {
         return
       }
@@ -219,9 +219,11 @@ export default class TahoWindowProvider extends EventEmitter {
         return
       }
 
-      ;({ id, result } = event.data)
+      id = event.data.id
+      result = event.data.result
     } else if (isPortResponseEvent(event)) {
-      ;({ id, result } = event)
+      id = event.id
+      result = event.result
     } else {
       return
     }

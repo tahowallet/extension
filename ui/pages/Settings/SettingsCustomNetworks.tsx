@@ -133,7 +133,7 @@ export default function SettingsCustomNetworks(): ReactElement {
           color: var(--white);
         }
       `}</style>
-      <SharedPageHeader withoutBackText>{t(`title`)}</SharedPageHeader>
+      <SharedPageHeader withoutBackText>{t("title")}</SharedPageHeader>
       {customNetworksListItems.length > 0 && (
         <section className="content">
           <h2 className="subheader">{t("subtitleAdded")}</h2>
@@ -202,16 +202,16 @@ export default function SettingsCustomNetworks(): ReactElement {
                 style={{ marginTop: "24px" }}
                 onClick={() => window.open(CHAIN_LIST.url, "_blank")?.focus()}
               >
-                {t(`chainList.addBtn`)}
+                {t("chainList.addBtn")}
               </SharedButton>
             </div>
           </div>
           <hr className="separator" />
           {isEnabled(FeatureFlags.SUPPORT_CUSTOM_RPCS) && (
             <div className="custom_rpc_wrap">
-              <span className="simple_text">{t(`customRPC.description`)}</span>
+              <span className="simple_text">{t("customRPC.description")}</span>
               <SharedButton type="tertiary" size="medium" iconSmall="new-tab">
-                {t(`customRPC.addBtn`)}
+                {t("customRPC.addBtn")}
               </SharedButton>
             </div>
           )}

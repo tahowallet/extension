@@ -70,7 +70,9 @@ function Banner(props: BannerProps): ReactElement {
   )
 }
 
-function BannerWithClose(props: BannerProps & { id: string }): ReactElement {
+function BannerWithClose(
+  props: BannerProps & { id: string }
+): ReactElement | null {
   const {
     id,
     children,
@@ -82,7 +84,7 @@ function BannerWithClose(props: BannerProps & { id: string }): ReactElement {
   } = props
   const [isVisible, setIsVisible] = useLocalStorage(`banner_${id}`, "true")
 
-  if (isVisible === "false") return <></>
+  if (isVisible === "false") return null
 
   return (
     <Banner
@@ -112,7 +114,7 @@ function BannerWithClose(props: BannerProps & { id: string }): ReactElement {
 
 export default function SharedBanner(
   props: BannerProps & CanBeClosedProps
-): ReactElement {
+): ReactElement | null {
   const { canBeClosed = false, id, ...bannerProps } = props
 
   if (canBeClosed && id) return BannerWithClose({ id, ...bannerProps })

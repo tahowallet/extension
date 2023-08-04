@@ -28,13 +28,13 @@ import NewSeedReview from "./NewSeed/NewSeedReview"
 import NewSeedVerify from "./NewSeed/NewSeedVerify"
 import OnboardingRoutes from "./Routes"
 
-const StepContainer = ({
+function StepContainer({
   children,
   step,
 }: {
   children: React.ReactNode
   step: number
-}) => {
+}) {
   return (
     <div className="steps_section">
       <div className="steps_indicator">

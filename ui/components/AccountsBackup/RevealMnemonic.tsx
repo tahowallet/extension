@@ -12,9 +12,9 @@ function MnemonicList(props: {
   mnemonic: string
   startIndex: number
   endIndex?: number
-}): ReactElement {
+}): ReactElement | null {
   const { mnemonic, startIndex, endIndex } = props
-  if (!mnemonic.length) return <></>
+  if (!mnemonic.length) return null
 
   const splitMnemonic = mnemonic.split(" ").slice(startIndex, endIndex)
 

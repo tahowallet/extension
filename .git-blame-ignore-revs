@@ -4,3 +4,5 @@
 8a90e88658795d569ca525ecb7bced875922c59c
 # Impose prettier formatting on .github YAML files.
 4851e7989a3473c64b03adb4fbef16b3957ac2ab
+# Shift to @thesis-co/eslint-config.
+fd45e9ffe8405e00ed34ca500bbf8f88d06de20f

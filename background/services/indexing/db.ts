@@ -163,8 +163,8 @@ export class IndexingDatabase extends Dexie {
       migrations: null,
     })
 
-    this.version(3).upgrade((tx) => {
-      return tx
+    this.version(3).upgrade((tx) =>
+      tx
         .table("tokenLists")
         .toCollection()
         .modify((storedTokenList: DeepWriteable<CachedTokenList>) => {
@@ -176,7 +176,7 @@ export class IndexingDatabase extends Dexie {
             )
           }
         })
-    })
+    )
 
     this.version(4).upgrade(async (tx) => {
       const seenAddresses = new Set<string>()
@@ -244,15 +244,15 @@ export class IndexingDatabase extends Dexie {
     })
 
     // Fix issue for discovery transaction hash
-    this.version(6).upgrade((tx) => {
-      return tx
+    this.version(6).upgrade((tx) =>
+      tx
         .table("customAssets")
         .toCollection()
         .modify((customAsset: CustomAsset) => {
           // eslint-disable-next-line no-param-reassign
           delete customAsset.metadata?.discoveryTxHash
         })
-    })
+    )
   }
 
   async savePriceMeasurement(

@@ -110,12 +110,10 @@ const signingSlice = createSlice({
     signDataRequest: (
       state,
       { payload }: { payload: MessageSigningRequest }
-    ) => {
-      return {
-        ...state,
-        signDataRequest: payload,
-      }
-    },
+    ) => ({
+      ...state,
+      signDataRequest: payload,
+    }),
     signedData: (state, { payload }: { payload: string }) => ({
       ...state,
       signedData: payload,

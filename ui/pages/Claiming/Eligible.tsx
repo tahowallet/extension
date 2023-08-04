@@ -21,26 +21,24 @@ import { doggoTokenDecimalDigits } from "../../utils/constants"
 import TopMenuProfileButton from "../../components/TopMenu/TopMenuProfileButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
 
-export default function Eligible(): ReactElement {
+export default function Eligible(): ReactElement | null {
   const dispatch = useBackgroundDispatch()
   const { delegates, DAOs, claimAmount, step, referrer } =
-    useBackgroundSelector((state) => {
-      return {
-        delegates: state.claim.delegates,
-        DAOs: state.claim.DAOs,
-        claimAmount:
-          state.claim?.eligibility &&
-          fromFixedPointNumber(
-            {
-              amount: BigInt(Number(state.claim?.eligibility?.amount)) || 0n,
-              decimals: doggoTokenDecimalDigits,
-            },
-            0
-          ),
-        step: state.claim.claimStep,
-        referrer: state.claim.referrer,
-      }
-    })
+    useBackgroundSelector((state) => ({
+      delegates: state.claim.delegates,
+      DAOs: state.claim.DAOs,
+      claimAmount:
+        state.claim?.eligibility &&
+        fromFixedPointNumber(
+          {
+            amount: BigInt(Number(state.claim?.eligibility?.amount)) || 0n,
+            decimals: doggoTokenDecimalDigits,
+          },
+          0
+        ),
+      step: state.claim.claimStep,
+      referrer: state.claim.referrer,
+    }))
 
   const history = useHistory()
   const [infoModalVisible, setInfoModalVisible] = useState(false)
@@ -74,7 +72,7 @@ export default function Eligible(): ReactElement {
   }
 
   const BONUS_PERCENT = 0.05
-  if (!claimAmount) return <></>
+  if (!claimAmount) return null
 
   const claimAmountWithBonus = claimAmount + claimAmount * BONUS_PERCENT
 

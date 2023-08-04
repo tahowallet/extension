@@ -33,7 +33,7 @@ export default function LedgerPrepare({
       })}
     >
       <div className="content" data-has-errors={showError}>
-        {showError ? (
+        {showError && (
           <div className="error_container">
             <div className="box error">
               <span className="block_icon" />
@@ -43,8 +43,6 @@ export default function LedgerPrepare({
               <p className="highlight_text">{t("stepsExplainer")}</p>
             </div>
           </div>
-        ) : (
-          <></>
         )}
         <ol className="steps">
           <li>{t("step1")}</li>

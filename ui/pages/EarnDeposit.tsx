@@ -46,7 +46,7 @@ import {
   AccordionPoolInfoContent,
 } from "./Earn/AccordionPoolInfo"
 
-export default function EarnDeposit(): ReactElement {
+export default function EarnDeposit(): ReactElement | null {
   const storedInput = useBackgroundSelector(selectEarnInputAmount)
   const account = useBackgroundSelector(selectCurrentAccount)
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
@@ -139,7 +139,7 @@ export default function EarnDeposit(): ReactElement {
   }, [amount, dispatch, history, inDepositProcess, vault])
 
   if (typeof vault === "undefined") {
-    return <></>
+    return null
   }
 
   const pendingRewards = fromFixedPointNumber(
@@ -310,7 +310,7 @@ export default function EarnDeposit(): ReactElement {
             </div>
           </li>
         </ul>
-        {!isVaultDataStale && (deposited || pendingRewards > 0) ? (
+        {!isVaultDataStale && (deposited || pendingRewards > 0) && (
           <div className="wrapper">
             <li className="row">
               <div className="label">Deposited amount</div>
@@ -334,8 +334,6 @@ export default function EarnDeposit(): ReactElement {
               </button>
             </li>
           </div>
-        ) : (
-          <></>
         )}
       </section>
       <SharedPanelSwitcher
@@ -343,7 +341,7 @@ export default function EarnDeposit(): ReactElement {
         panelNumber={panelNumber}
         panelNames={["Deposit", "Withdraw"]}
       />
-      {panelNumber === 0 ? (
+      {panelNumber === 0 && (
         <div className="deposit_wrap">
           <SharedAssetInput
             currentNetwork={currentNetwork}
@@ -384,8 +382,6 @@ export default function EarnDeposit(): ReactElement {
             )}
           </div>
         </div>
-      ) : (
-        <></>
       )}
       {panelNumber === 1 &&
         (userDeposited > 0 ? (

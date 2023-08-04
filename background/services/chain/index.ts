@@ -230,13 +230,8 @@ export default class ChainService extends BaseService<Events> {
     Events,
     ChainService,
     [Promise<PreferenceService>, Promise<InternalSignerService>]
-  > = async (preferenceService, internalSignerService) => {
-    return new this(
-      createDB(),
-      await preferenceService,
-      await internalSignerService
-    )
-  }
+  > = async (preferenceService, internalSignerService) =>
+    new this(createDB(), await preferenceService, await internalSignerService)
 
   supportedNetworks: EVMNetwork[] = []
 
@@ -1529,9 +1524,9 @@ export default class ChainService extends BaseService<Events> {
   ): Promise<void> {
     const accountsToTrack = await this.getAccountsToTrack(onlyActiveAccounts)
     await Promise.allSettled(
-      accountsToTrack.map(async (addressNetwork) => {
-        return this.loadRecentAssetTransfers(addressNetwork, true)
-      })
+      accountsToTrack.map(async (addressNetwork) =>
+        this.loadRecentAssetTransfers(addressNetwork, true)
+      )
     )
   }
 

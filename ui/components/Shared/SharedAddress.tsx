@@ -54,9 +54,7 @@ export default function SharedAddress({
     >
       <p className={classNames({ ellipsis: elide })}>
         {primaryText}
-        {name === undefined || nameResolverSystem === undefined ? (
-          <></>
-        ) : (
+        {name !== undefined && nameResolverSystem !== undefined && (
           <>
             <SharedTooltip width={130}>
               <p className="name_source_tooltip">
@@ -66,10 +64,8 @@ export default function SharedAddress({
           </>
         )}
       </p>
-      {alwaysShowAddress && name !== undefined ? (
+      {alwaysShowAddress && name !== undefined && (
         <p className="detail">{truncateAddress(address)}</p>
-      ) : (
-        <></>
       )}
       <style jsx>{`
         button {

@@ -151,13 +151,12 @@ export default class IndexingService extends BaseService<Events> {
     Events,
     IndexingService,
     [Promise<PreferenceService>, Promise<ChainService>]
-  > = async (preferenceService, chainService, dexieOptions) => {
-    return new this(
+  > = async (preferenceService, chainService, dexieOptions) =>
+    new this(
       await getOrCreateDb(dexieOptions),
       await preferenceService,
       await chainService
     )
-  }
 
   private constructor(
     private db: IndexingDatabase,
@@ -832,14 +831,13 @@ export default class IndexingService extends BaseService<Events> {
     const assetsToTrack = await this.db.getAssetsToTrack()
     const trackedNetworks = await this.chainService.getTrackedNetworks()
     // Filter all assets based on supported networks
-    const activeAssetsToTrack = assetsToTrack.filter((asset) => {
-      return (
+    const activeAssetsToTrack = assetsToTrack.filter(
+      (asset) =>
         isTrustedAsset(asset) &&
         trackedNetworks.some((network) =>
           sameNetwork(network, asset.homeNetwork)
         )
-      )
-    })
+    )
     try {
       // TODO only uses USD
 
@@ -886,9 +884,7 @@ export default class IndexingService extends BaseService<Events> {
       )
 
       const activeAssetPrices = activeAssetPricesByNetwork.flatMap(
-        (activeAssetPrice) => {
-          return Object.entries(activeAssetPrice)
-        }
+        (activeAssetPrice) => Object.entries(activeAssetPrice)
       )
 
       const pricePoints = activeAssetPrices

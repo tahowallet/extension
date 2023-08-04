@@ -38,20 +38,16 @@ export default function TransactionSignatureSummary({
         />
       )
     case "contract-interaction":
-      return (
-        <>
-          {transactionRequest.value === BigInt(0) ? (
-            <ContractInteractionSummary
-              transactionRequest={transactionRequest}
-              annotation={annotation}
-            />
-          ) : (
-            <TransactionSignatureSummaryDefault
-              transactionRequest={transactionRequest}
-              annotation={annotation}
-            />
-          )}
-        </>
+      return transactionRequest.value === BigInt(0) ? (
+        <ContractInteractionSummary
+          transactionRequest={transactionRequest}
+          annotation={annotation}
+        />
+      ) : (
+        <TransactionSignatureSummaryDefault
+          transactionRequest={transactionRequest}
+          annotation={annotation}
+        />
       )
     default:
       return (

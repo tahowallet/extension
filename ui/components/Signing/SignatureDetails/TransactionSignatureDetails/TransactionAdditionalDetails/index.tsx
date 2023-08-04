@@ -5,7 +5,7 @@ import SwapAssetDetails from "./SwapAssetDetails"
 export default function TransactionAdditionalDetails({
   transactionRequest,
   annotation,
-}: TransactionSignatureSummaryProps): ReactElement {
+}: TransactionSignatureSummaryProps): ReactElement | null {
   switch (annotation?.type) {
     case "asset-swap":
       return (
@@ -15,6 +15,6 @@ export default function TransactionAdditionalDetails({
         />
       )
     default:
-      return <></>
+      return null
   }
 }

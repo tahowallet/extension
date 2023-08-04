@@ -32,7 +32,5 @@ export default class MockSerialFallbackProvider
   }
 }
 
-export const makeSerialFallbackProvider =
-  (): Partial<SerialFallbackProvider> => {
-    return new MockSerialFallbackProvider()
-  }
+export const makeSerialFallbackProvider = (): Partial<SerialFallbackProvider> =>
+  new MockSerialFallbackProvider()

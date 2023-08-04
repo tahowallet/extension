@@ -24,9 +24,8 @@ export enum OneTimeAnalyticsEvent {
 
 export const isOneTimeAnalyticsEvent = (
   eventName: string
-): eventName is OneTimeAnalyticsEvent => {
-  return Object.values<string>(OneTimeAnalyticsEvent).includes(eventName)
-}
+): eventName is OneTimeAnalyticsEvent =>
+  Object.values<string>(OneTimeAnalyticsEvent).includes(eventName)
 
 const POSTHOG_PROJECT_ID = "11112"
 

@@ -227,10 +227,8 @@ export default function DAppConnectionInfoBar(): ReactElement {
             : "var(--green-20)"
         }
       />
-      {isShowingDefaultConnectionPopover ? (
+      {isShowingDefaultConnectionPopover && (
         <DefaultConnectionPopover close={closeDefaultConnectionPopover} />
-      ) : (
-        <></>
       )}
 
       <DAppConnectionDefaultToggle />

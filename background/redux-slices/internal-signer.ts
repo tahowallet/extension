@@ -140,9 +140,9 @@ export const deriveAddress = createBackgroundAsyncThunk(
 
 export const unlockInternalSigners = createBackgroundAsyncThunk(
   "internalSigner/unlockInternalSigners",
-  async (password: string, { extra: { main } }) => {
-    return { success: await main.unlockInternalSigners(password) }
-  }
+  async (password: string, { extra: { main } }) => ({
+    success: await main.unlockInternalSigners(password),
+  })
 )
 
 export const lockInternalSigners = createBackgroundAsyncThunk(
@@ -161,14 +161,12 @@ export const createPassword = createBackgroundAsyncThunk(
 
 export const exportMnemonic = createBackgroundAsyncThunk(
   "internalSigner/exportMnemonic",
-  async (address: HexString, { extra: { main } }) => {
-    return main.exportMnemonic(address)
-  }
+  async (address: HexString, { extra: { main } }) =>
+    main.exportMnemonic(address)
 )
 
 export const exportPrivateKey = createBackgroundAsyncThunk(
   "internalSigner/exportPrivateKey",
-  async (address: HexString, { extra: { main } }) => {
-    return main.exportPrivateKey(address)
-  }
+  async (address: HexString, { extra: { main } }) =>
+    main.exportPrivateKey(address)
 )

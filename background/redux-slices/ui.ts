@@ -157,12 +157,10 @@ const uiSlice = createSlice({
     setSnackbarMessage: (
       state,
       { payload: snackbarMessage }: { payload: string }
-    ): UIState => {
-      return {
-        ...state,
-        snackbarMessage,
-      }
-    },
+    ): UIState => ({
+      ...state,
+      snackbarMessage,
+    }),
     clearSnackbarMessage: (state): UIState => ({
       ...state,
       snackbarMessage: "",
@@ -211,15 +209,11 @@ const uiSlice = createSlice({
     setAccountsSignerSettings: (
       state,
       { payload }: { payload: AccountSignerSettings[] }
-    ) => {
-      return { ...state, accountSignerSettings: payload }
-    },
-    setAutoLockInterval: (state, { payload }: { payload: number }) => {
-      return {
-        ...state,
-        settings: { ...state.settings, autoLockInterval: payload },
-      }
-    },
+    ) => ({ ...state, accountSignerSettings: payload }),
+    setAutoLockInterval: (state, { payload }: { payload: number }) => ({
+      ...state,
+      settings: { ...state.settings, autoLockInterval: payload },
+    }),
   },
 })
 
@@ -287,26 +281,20 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
 
 export const updateSignerTitle = createBackgroundAsyncThunk(
   "ui/updateSignerTitle",
-  async (
-    [signer, title]: [AccountSignerWithId, string],
-    { extra: { main } }
-  ) => {
-    return main.updateSignerTitle(signer, title)
-  }
+  async ([signer, title]: [AccountSignerWithId, string], { extra: { main } }) =>
+    main.updateSignerTitle(signer, title)
 )
 
 export const markDismissableItemAsShown = createBackgroundAsyncThunk(
   "ui/markDismissableItemAsShown",
-  async (item: DismissableItem, { extra: { main } }) => {
-    return main.markDismissableItemAsShown(item)
-  }
+  async (item: DismissableItem, { extra: { main } }) =>
+    main.markDismissableItemAsShown(item)
 )
 
 export const getAddNetworkRequestDetails = createBackgroundAsyncThunk(
   "ui/getAddNetworkRequestDetails",
-  async (requestId: string, { extra: { main } }) => {
-    return main.getAddNetworkRequestDetails(requestId)
-  }
+  async (requestId: string, { extra: { main } }) =>
+    main.getAddNetworkRequestDetails(requestId)
 )
 
 export const addNetworkUserResponse = createBackgroundAsyncThunk(

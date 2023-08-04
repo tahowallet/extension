@@ -49,15 +49,13 @@ export default function SetPassword(): JSX.Element {
     return true
   }
 
-  const handleInputChange = (
-    f: (value: string) => void
-  ): ((value: string) => void) => {
-    return (value: string) => {
+  const handleInputChange =
+    (f: (value: string) => void): ((value: string) => void) =>
+    (value: string) => {
       // If the input field changes, remove the error.
       setPasswordErrorMessage("")
       return f(value)
     }
-  }
 
   const dispatchCreatePassword = (): void => {
     if (validatePassword()) {

@@ -60,23 +60,17 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             <SharedActivityIcon type={activityViewDetails.icon} size={14} />
             {activityViewDetails.label}
             {"status" in activity &&
-            activity.blockHash !== null &&
-            activity.status !== 1 ? (
-              <div className="status failed">{t("transactionFailed")}</div>
-            ) : (
-              <></>
-            )}
+              activity.blockHash !== null &&
+              activity.status !== 1 && (
+                <div className="status failed">{t("transactionFailed")}</div>
+              )}
             {"status" in activity &&
-            activity.blockHash === null &&
-            activity.status === 0 ? (
-              <div className="status dropped">{t("transactionDropped")}</div>
-            ) : (
-              <></>
-            )}
-            {!("status" in activity) && activity.blockHash === null ? (
+              activity.blockHash === null &&
+              activity.status === 0 && (
+                <div className="status dropped">{t("transactionDropped")}</div>
+              )}
+            {!("status" in activity) && activity.blockHash === null && (
               <div className="status pending">{t("transactionPending")}</div>
-            ) : (
-              <></>
             )}
           </div>
           <div className="right">

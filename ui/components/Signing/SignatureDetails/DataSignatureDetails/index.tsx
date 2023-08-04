@@ -19,9 +19,7 @@ export default function DataSignatureDetails({
     <div className="primary_info_card standard_width">
       <div className="sign_block">
         <div className="container">
-          {excludeTitle ? (
-            <></>
-          ) : (
+          {!excludeTitle && (
             <div className="label header">{t("signatureRequired")}</div>
           )}
           <div
