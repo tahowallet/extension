@@ -7,12 +7,12 @@ import {
   isPortResponseEvent,
   RequestArgument,
   EthersSendCallback,
-  isTallyConfigPayload,
-  TallyConfigPayload,
+  isTahoConfigPayload,
+  TahoConfigPayload,
   isEIP1193Error,
-  isTallyInternalCommunication,
-  TallyAccountPayload,
-  isTallyAccountPayload,
+  isTahoInternalCommunication,
+  TahoAccountPayload,
+  isTahoAccountPayload,
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
 import monitorForWalletConnectionPrompts from "./wallet-connection-handlers"
@@ -35,6 +35,8 @@ export default class TahoWindowProvider extends EventEmitter {
   connected = false
 
   isTally: true = true
+
+  isTaho: true = true
 
   isMetaMask = false
 
@@ -65,17 +67,17 @@ export default class TahoWindowProvider extends EventEmitter {
     iconURL: "TODO",
     identityFlag: "isTally",
     checkIdentity: (provider: WalletProvider) =>
-      !!provider && !!provider.isTally,
+      !!provider && !!provider.isTaho,
   } as const
 
   constructor(public transport: ProviderTransport) {
     super()
 
     const internalListener = (event: unknown) => {
-      let result: TallyConfigPayload | TallyAccountPayload
+      let result: TahoConfigPayload | TahoAccountPayload
       if (
         isWindowResponseEvent(event) &&
-        isTallyInternalCommunication(event.data)
+        isTahoInternalCommunication(event.data)
       ) {
         if (
           event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
@@ -88,17 +90,17 @@ export default class TahoWindowProvider extends EventEmitter {
         result = event.data.result
       } else if (
         isPortResponseEvent(event) &&
-        isTallyInternalCommunication(event)
+        isTahoInternalCommunication(event)
       ) {
         result = event.result
       } else {
         return
       }
 
-      if (isTallyConfigPayload(result)) {
+      if (isTahoConfigPayload(result)) {
         const wasTahoSetAsDefault = this.tahoSetAsDefault
 
-        window.walletRouter?.shouldSetTallyForCurrentProvider(
+        window.walletRouter?.shouldSetTahoForCurrentProvider(
           result.defaultWallet,
           false
         )
@@ -128,7 +130,7 @@ export default class TahoWindowProvider extends EventEmitter {
         if (result.chainId && result.chainId !== this.chainId) {
           this.handleChainIdChange(result.chainId)
         }
-      } else if (isTallyAccountPayload(result)) {
+      } else if (isTahoAccountPayload(result)) {
         this.handleAddressChange(result.address)
       }
     }

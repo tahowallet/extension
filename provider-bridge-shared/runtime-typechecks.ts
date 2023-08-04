@@ -2,9 +2,9 @@ import {
   RPCRequest,
   WindowResponseEvent,
   PortResponseEvent,
-  TallyConfigPayload,
-  TallyInternalCommunication,
-  TallyAccountPayload,
+  TahoConfigPayload,
+  TahoInternalCommunication,
+  TahoAccountPayload,
 } from "./types"
 
 export function getType(arg: unknown): string {
@@ -80,19 +80,17 @@ export function isAllowedQueryParamPage(
   return Object.values<unknown>(AllowedQueryParamPage).includes(url)
 }
 
-export function isTallyInternalCommunication(
+export function isTahoInternalCommunication(
   arg: unknown
-): arg is TallyInternalCommunication {
+): arg is TahoInternalCommunication {
   return isObject(arg) && arg.id === "tallyHo"
 }
 
-export function isTallyConfigPayload(arg: unknown): arg is TallyConfigPayload {
+export function isTahoConfigPayload(arg: unknown): arg is TahoConfigPayload {
   return isObject(arg) && arg.method === "tally_getConfig"
 }
 
-export function isTallyAccountPayload(
-  arg: unknown
-): arg is TallyAccountPayload {
+export function isTahoAccountPayload(arg: unknown): arg is TahoAccountPayload {
   return (
     isObject(arg) &&
     arg.method === "tally_accountChanged" &&

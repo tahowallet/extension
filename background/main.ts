@@ -141,7 +141,7 @@ import {
   REDUX_STATE_VERSION,
 } from "./redux-slices/migrations"
 import { PermissionMap } from "./services/provider-bridge/utils"
-import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
+import { TAHO_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 import {
   ActivityDetail,
   addActivity,
@@ -703,7 +703,7 @@ export default class Main extends BaseService<never> {
         address: accounts[0].address,
         network:
           await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
-            TALLY_INTERNAL_ORIGIN
+            TAHO_INTERNAL_ORIGIN
           ),
       })
     )
@@ -1363,7 +1363,7 @@ export default class Main extends BaseService<never> {
       this.internalEthereumProviderService.routeSafeRPCRequest(
         "wallet_switchEthereumChain",
         [{ chainId: network.chainID }],
-        TALLY_INTERNAL_ORIGIN
+        TAHO_INTERNAL_ORIGIN
       )
       this.chainService.pollBlockPricesForNetwork(network.chainID)
       this.store.dispatch(clearCustomGas())
