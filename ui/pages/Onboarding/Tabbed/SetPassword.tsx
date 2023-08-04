@@ -15,7 +15,7 @@ import {
 import SharedButton from "../../../components/Shared/SharedButton"
 import PasswordStrengthBar from "../../../components/Password/PasswordStrengthBar"
 import PasswordInput from "../../../components/Shared/PasswordInput"
-import { WalletDefaultToggle } from "../../../components/Wallet/WalletToggleDefaultBanner"
+import WalletDefaultToggle from "../../../components/Wallet/WalletDefaultToggle"
 import OnboardingRoutes from "./Routes"
 
 export default function SetPassword(): JSX.Element {

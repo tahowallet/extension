@@ -17,53 +17,6 @@ import {
 import { EventEmitter } from "events"
 import monitorForWalletConnectionPrompts from "./wallet-connection-handlers"
 
-// TODO: we don't want to impersonate MetaMask everywhere to not break existing integrations,
-//       so let's do this only on the websites that need this feature
-const impersonateMetamaskWhitelist = [
-  "traderjoexyz.com",
-  "transferto.xyz",
-  "opensea.io",
-  "polygon.technology",
-  "gmx.io",
-  "app.lyra.finance",
-  "matcha.xyz",
-  "bridge.umbria.network",
-  "galaxy.eco",
-  "galxe.com",
-  "dydx.exchange",
-  "app.euler.finance",
-  "kwenta.io",
-  "stargate.finance",
-  "etherscan.io",
-  "swapr.eth.link",
-  "apex.exchange",
-  "app.yieldprotocol.com",
-  "tofunft.com",
-  "aboard.exchange",
-  "portal.zksync.io",
-  "blur.io",
-  "app.benqi.fi",
-  "snowtrace.io",
-  "core.app",
-  "cbridge.celer.network",
-  "stargate.finance",
-  "app.multchain.cn",
-  "app.venus.io",
-  "app.alpacafinance.org",
-  "pancakeswap.finance",
-  "liquidifty.io",
-  "ankr.com",
-  "mint.xencrypto.io",
-  "bscscan.com",
-  "alchemy.com",
-  "cow.fi",
-  "tally.xyz",
-  "kyberswap.com",
-  "space.id",
-  "app.0xsplits.xyz",
-  "altlayer.io",
-]
-
 const METAMASK_STATE_MOCK = {
   accounts: null,
   isConnected: false,
@@ -143,30 +96,17 @@ export default class TahoWindowProvider extends EventEmitter {
       }
 
       if (isTallyConfigPayload(result)) {
-        const wasTallySetAsDefault = this.tahoSetAsDefault
+        const wasTahoSetAsDefault = this.tahoSetAsDefault
 
         window.walletRouter?.shouldSetTallyForCurrentProvider(
           result.defaultWallet,
-          result.shouldReload &&
-            process.env.ENABLE_UPDATED_DAPP_CONNECTIONS !== "true"
+          false
         )
-        const currentHost = window.location.host
-        if (
-          process.env.ENABLE_UPDATED_DAPP_CONNECTIONS === "true" ||
-          impersonateMetamaskWhitelist.some((host) =>
-            currentHost.includes(host)
-          )
-        ) {
-          this.tahoSetAsDefault = result.defaultWallet
-        }
+        this.tahoSetAsDefault = result.defaultWallet
 
         // When the default state flips, reroute any unresolved requests to the
         // new default provider.
-        if (
-          process.env.ENABLE_UPDATED_DAPP_CONNECTIONS === "true" &&
-          wasTallySetAsDefault &&
-          !this.tahoSetAsDefault
-        ) {
+        if (wasTahoSetAsDefault && !this.tahoSetAsDefault) {
           const existingRequests = [...this.requestResolvers.entries()]
           this.requestResolvers.clear()
 

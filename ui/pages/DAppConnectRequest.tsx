@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useEffect } from "react"
 import {
   selectCurrentPendingPermission,
   selectCurrentAccountTotal,
@@ -9,10 +9,8 @@ import {
 } from "@tallyho/tally-background/redux-slices/dapp"
 
 import { Redirect } from "react-router-dom"
-import { FeatureFlags, isDisabled } from "@tallyho/tally-background/features"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import DAppConnectPage from "./DAppConnect/DAppConnectPage"
-import SwitchWalletPage from "./DAppConnect/SwitchWalletPage"
 import ErrorFallback from "./ErrorFallback"
 
 export default function DAppConnectRequest(): ReactElement {
@@ -20,8 +18,6 @@ export default function DAppConnectRequest(): ReactElement {
 
   const currentAccountTotal = useBackgroundSelector(selectCurrentAccountTotal)
   const permission = useBackgroundSelector(selectCurrentPendingPermission)
-
-  const [showSwitchWallet, setShowSwitchWallet] = useState(false)
 
   useEffect(() => {
     window.onbeforeunload = () => {
@@ -70,18 +66,12 @@ export default function DAppConnectRequest(): ReactElement {
 
   return (
     <div className="page">
-      {showSwitchWallet &&
-      isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) ? (
-        <SwitchWalletPage close={deny} />
-      ) : (
-        <DAppConnectPage
-          permission={permission}
-          currentAccountTotal={currentAccountTotal}
-          switchWallet={() => setShowSwitchWallet(true)}
-          denyPermission={deny}
-          grantPermission={grant}
-        />
-      )}
+      <DAppConnectPage
+        permission={permission}
+        currentAccountTotal={currentAccountTotal}
+        denyPermission={deny}
+        grantPermission={grant}
+      />
       <style jsx>{`
         .page {
           background-color: var(--green-95);
