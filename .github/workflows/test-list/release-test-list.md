@@ -256,7 +256,7 @@ This release checklist should be performed before release is published.
    - [ ] check each sort type
    - [ ] disable account
    - [ ] disable collection
-  
+
 ### 🦾 Flashbots
 
 1. Enable Flashbots in settings:
