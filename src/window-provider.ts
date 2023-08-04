@@ -49,12 +49,29 @@ const metaMaskMock: WalletProvider = {
 }
 
 // A tracking list of MetaMask wrappers that allow us to avoid double-wrapping.
-const metaMaskWrappers = new Set()
+// The map key is the provider that *was wrapped*, i.e. the original, and the
+// map value is the wrapping provider, i.e. the proxy that makes sure default
+// settings are respected.
+const metaMaskWrapperByWrappedProvider = new Map<
+  WalletProvider,
+  WalletProvider
+>()
 let metaMaskMockWrapper: WalletProvider | undefined
 
-function wrapMetaMaskProvider(provider: WalletProvider): WalletProvider {
-  if (metaMaskWrappers.has(provider)) {
-    return provider
+function wrapMetaMaskProvider(provider: WalletProvider): {
+  provider: WalletProvider
+  wasMetaMaskLike: boolean
+} {
+  if (metaMaskWrapperByWrappedProvider.has(provider)) {
+    return {
+      // `get` is guarded by the `has` check above.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      provider: metaMaskWrapperByWrappedProvider.get(provider)!,
+      wasMetaMaskLike: true,
+    }
+  }
+  if (new Set(metaMaskWrapperByWrappedProvider.values()).has(provider)) {
+    return { provider, wasMetaMaskLike: true }
   }
 
   if (
@@ -89,16 +106,19 @@ function wrapMetaMaskProvider(provider: WalletProvider): WalletProvider {
       },
     })
 
-    metaMaskWrappers.add(wrapper)
+    metaMaskWrapperByWrappedProvider.set(provider, wrapper)
 
     if (provider === metaMaskMock) {
       metaMaskMockWrapper = wrapper
     }
 
-    return wrapper
+    return {
+      provider: wrapper,
+      wasMetaMaskLike: true,
+    }
   }
 
-  return provider
+  return { provider, wasMetaMaskLike: false }
 }
 
 /**
@@ -132,20 +152,21 @@ function metaMaskWrappedProviders(
         return { defaultManagedProviders, metaMaskDetected }
       }
 
-      const defaultManaged = wrapMetaMaskProvider(provider)
+      const { provider: defaultManaged, wasMetaMaskLike } =
+        wrapMetaMaskProvider(provider)
 
       return {
         defaultManagedProviders: [...defaultManagedProviders, defaultManaged],
-        // MetaMask is the only one whose return value will differ from the
-        // underlying object.
-        metaMaskDetected: metaMaskDetected || defaultManaged !== provider,
+        metaMaskDetected: metaMaskDetected || wasMetaMaskLike,
       }
     },
     { defaultManagedProviders: [], metaMaskDetected: false }
   )
 
   if (!metaMaskDetected && tahoIsDefault) {
-    return [wrapMetaMaskProvider(metaMaskMock), ...defaultManagedProviders]
+    const { provider: metaMaskMockProvider } =
+      wrapMetaMaskProvider(metaMaskMock)
+    return [metaMaskMockProvider, ...defaultManagedProviders]
   }
 
   return defaultManagedProviders
@@ -176,7 +197,10 @@ if (!window.walletRouter) {
   Object.defineProperty(window, "walletRouter", {
     value: {
       currentProvider: window.tally,
-      lastInjectedProvider: window.ethereum,
+      lastInjectedProvider:
+        window.ethereum === undefined
+          ? undefined
+          : wrapMetaMaskProvider(window.ethereum),
       tallyProvider: window.tally,
       providers: dedupedProviders,
       shouldSetTallyForCurrentProvider(
@@ -240,11 +264,15 @@ if (!window.walletRouter) {
       },
       setSelectedProvider() {},
       addProvider(newProvider: WalletProvider) {
-        if (!this.providers.includes(newProvider)) {
-          this.providers.push(wrapMetaMaskProvider(newProvider))
+        const wrappedProvider = wrapMetaMaskProvider(newProvider).provider
+        if (
+          !this.providers.includes(newProvider) &&
+          !this.providers.includes(wrappedProvider)
+        ) {
+          this.providers.push(wrappedProvider)
         }
 
-        this.lastInjectedProvider = newProvider
+        this.lastInjectedProvider = wrappedProvider
       },
     },
     writable: false,
