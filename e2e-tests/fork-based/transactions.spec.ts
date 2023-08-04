@@ -50,7 +50,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        /^testertesting\.eth$/
+        account2Name
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -78,7 +78,7 @@ test.describe("Transactions", () => {
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
-        /^testertesting\.eth$/,
+        account2Name,
         "ETH",
         "0\\.1021",
         true
@@ -197,7 +197,7 @@ test.describe("Transactions", () => {
         await walletPageHelper.assertCommonElements(
           /^Ethereum$/,
           false,
-          /^testertesting\.eth$/
+          account2Name
         )
         await walletPageHelper.assertAnalyticsBanner()
       }
@@ -233,7 +233,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        /^testertesting\.eth$/
+        account2Name
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -266,7 +266,7 @@ test.describe("Transactions", () => {
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
-        /^testertesting\.eth$/,
+        account2Name,
         "KEEP",
         "65\\.88",
         false
@@ -381,7 +381,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        /^testertesting\.eth$/
+        account2Name
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -414,7 +414,7 @@ test.describe("Transactions", () => {
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
-        /^testertesting\.eth$/,
+        account2Name,
         "ETH",
         "\\d+\\.\\d{4}",
         true
@@ -472,7 +472,7 @@ test.describe("Transactions", () => {
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
-        /^testertesting\.eth$/,
+        account2Name,
         "KEEP",
         "65\\.88",
         false
@@ -592,7 +592,7 @@ test.describe("Transactions", () => {
         await walletPageHelper.assertCommonElements(
           /^Ethereum$/,
           false,
-          /^testertesting\.eth$/
+          account2Name
         )
         await walletPageHelper.assertAnalyticsBanner()
       }

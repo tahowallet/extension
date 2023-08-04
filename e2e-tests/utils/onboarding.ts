@@ -29,6 +29,7 @@ export const account1Name = /^e2e\.testertesting\.eth$/
 // The account2 is the he testertesting.eth account. It's used for manual
 // testing, so it's balance may fluctuate. It can be used to test features that
 // don't depend on the constant balance or state of the assets.
+export const account2Address = "0x0581470a8b62bd35dbf121a6329d43e7edd20fc7"
 export const account2Name = /^testertesting\.eth$/
 
 export default class OnboardingHelper {

@@ -1,6 +1,6 @@
 import fs from "fs"
 import { test, expect } from "../utils"
-import { account2Name } from "../utils/onboarding"
+import { account2Address, account2Name } from "../utils/onboarding"
 
 test.describe("Transactions", () => {
   test("User can send base asset (on Goerli testnet) @expensive", async ({
@@ -47,7 +47,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        /^testertesting\.eth$/
+        account2Name
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -79,7 +79,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Goerli$/,
         true,
-        /^testertesting\.eth$/
+        account2Name
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -107,7 +107,7 @@ test.describe("Transactions", () => {
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Goerli$/,
-        /^testertesting\.eth$/,
+        account2Name,
         "ETH",
         "(\\d|,)+(\\.\\d{0,4})*",
         true
@@ -212,7 +212,7 @@ test.describe("Transactions", () => {
         await latestSentTx.click()
 
         await transactionsHelper.assertActivityItemProperties(
-          "0x0581470a8b62bd35dbf121a6329d43e7edd20fc7",
+          account2Address,
           "0x0581…20fc7",
           "0x47745A7252e119431CCF973c0eBD4279638875a6",
           "0x4774…875a6",
@@ -238,7 +238,7 @@ test.describe("Transactions", () => {
         await walletPageHelper.assertCommonElements(
           /^Goerli$/,
           true,
-          /^testertesting\.eth$/
+          account2Name
         )
         await walletPageHelper.assertAnalyticsBanner()
 
@@ -264,7 +264,7 @@ test.describe("Transactions", () => {
         await latestSentTx.click()
 
         await transactionsHelper.assertActivityItemProperties(
-          "0x0581470a8b62bd35dbf121a6329d43e7edd20fc7",
+          account2Address,
           "0x0581…20fc7",
           "0x47745A7252e119431CCF973c0eBD4279638875a6",
           "0x4774…875a6",
