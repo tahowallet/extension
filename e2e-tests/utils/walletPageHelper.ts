@@ -177,9 +177,6 @@ export default class WalletPageHelper {
     await expect(this.popup.locator(".spinner")).toHaveCount(0, {
       timeout: timeout ?? 120000,
     })
-    // await expect(this.popup.locator(".token_icon_fallback")).toHaveCount(0, {
-    //   timeout: timeout ?? 120000,
-    // }) // TODO: delete?
   }
 
   async assertDefaultWalletBanner(): Promise<void> {
