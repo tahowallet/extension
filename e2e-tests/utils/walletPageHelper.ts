@@ -214,20 +214,6 @@ export default class WalletPageHelper {
         hasText: accountLabel,
       })
       .getByRole("button")
-    await this.popup.getByTestId("wallet_title").click({ trial: true }) // TODO: why trial?
-    await this.popup
-      .getByTestId("wallet_title")
-      .filter({
-        hasText: accountLabel,
-      })
-      .click({ trial: true })
-    await this.popup
-      .getByTestId("wallet_title")
-      .filter({
-        hasText: accountLabel,
-      })
-      .getByRole("button")
-      .click({ trial: true })
     await accountLabelButton.click()
     await this.popup.getByText(/^Add address$/).click()
     await expect(this.popup.getByTestId("wallet_address_item")).toHaveCount(
