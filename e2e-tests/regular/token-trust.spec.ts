@@ -8,6 +8,11 @@ import { account1Name } from "../utils/onboarding"
 // The wallet at the moment of writing the test owns several trusted and
 // untrusted tokens. Changes to the types of the assets owned by the wallet may
 // influence the test results, so we should be careful when interacting with it.
+// For some of the tests below to make sense, the wallet address used in test
+// should have a positive balance of at least one of the following assets:
+// - "BANANA",
+// - "Claim USDC/WETH at https://USDCpool.cloud",
+// - "pAAVE",
 test.describe("Token Trust", () => {
   test("User can mark tokens as trusted/untrusted", async ({
     walletPageHelper,
@@ -50,7 +55,8 @@ test.describe("Token Trust", () => {
       await walletPageHelper.setViewportSize()
 
       /**
-       * Verify we're on Ethereum network. Verify common elements on the main page.
+       * Verify we're on Ethereum network. Verify common elements on the main
+       * page.
        */
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
@@ -85,8 +91,8 @@ test.describe("Token Trust", () => {
       await assetsHelper.assertVerifiedAssetOnWalletPage(/^MATIC$/, "base")
 
       /**
-       * Ensure there are no fields related to unverified assets in the
-       * base asset's details.
+       * Ensure there are no fields related to unverified assets in the base
+       * asset's details.
        */
       await popup.locator(".asset_list_item").first().click() // We use `.first()` because the base asset should be first on the list
       await assetsHelper.assertAssetDetailsPage(
@@ -113,8 +119,8 @@ test.describe("Token Trust", () => {
       )
 
       /**
-       * Ensure there are no fields related to unverified assets in the
-       * ERC-20 asset's details.
+       * Ensure there are no fields related to unverified assets in the ERC-20
+       * asset's details.
        */
       await popup
         .locator(".asset_list_item")
@@ -137,10 +143,6 @@ test.describe("Token Trust", () => {
        */
       await assetsHelper.assertNoUnverifiedAssetsOnWalletPage()
 
-      // In order for the next few tests to make sense the wallet address should
-      // have a positive balance of at least one of the listed assets. At the
-      // moment of writing the test, the wallet had positive balance for all
-      // those assets.
       const untrustedAssets = [
         "BANANA",
         "Claim USDC/WETH at https://USDCpool.cloud",
@@ -176,7 +178,7 @@ test.describe("Token Trust", () => {
 
     await test.step("Enable `Show unverified assets`", async () => {
       /**
-       * Toggle `Show unverified assets` and make sure it's ON
+       * Toggle `Show unverified assets` and make sure it's ON.
        */
       await popup
         .getByLabel("Main")
@@ -195,8 +197,8 @@ test.describe("Token Trust", () => {
       await assetsHelper.assertVerifiedAssetOnWalletPage(/^MATIC$/, "base")
 
       /**
-       * Ensure there are no fields related to unverified assets in the
-       * base asset's details.
+       * Ensure there are no fields related to unverified assets in the base
+       * asset's details.
        */
       await popup.getByTestId("asset_list_item").first().click() // We use `.first()` because the base asset should be first on the list
       await assetsHelper.assertAssetDetailsPage(
@@ -271,10 +273,6 @@ test.describe("Token Trust", () => {
       )
       await popup.getByRole("button", { name: "Back", exact: true }).click()
 
-      // In order for the next few tests to make sense the wallet address should
-      // have a positive balance of at least one of the listed assets. At the
-      // moment of writing the test, the wallet had positive balance for all those
-      // assets.
       const untrustedAssets = [
         "BANANA",
         "Claim USDC/WETH at https://USDCpool.cloud",
@@ -310,7 +308,7 @@ test.describe("Token Trust", () => {
 
     await test.step("Hide asset", async () => {
       /**
-       * Click `Don't show` on unverified ERC-20 asset
+       * Click `Don't show` on unverified ERC-20 asset.
        */
       await popup
         .getByLabel("Main")
@@ -339,7 +337,8 @@ test.describe("Token Trust", () => {
       ).toBeVisible({ timeout: 5000 })
 
       /**
-       * Make sure `Wallet` page is opened and there are unverified assets shown
+       * Make sure `Wallet` page is opened and there are unverified assets
+       * shown.
        */
       await walletPageHelper.assertCommonElements(
         /^Polygon$/,
@@ -389,7 +388,7 @@ test.describe("Token Trust", () => {
 
     await test.step("Trust asset", async () => {
       /**
-       * Click `Add to asset list` on unverified ERC-20 asset
+       * Click `Add to asset list` on unverified ERC-20 asset.
        */
       await popup
         .getByLabel("Main")
@@ -467,7 +466,7 @@ test.describe("Token Trust", () => {
 
     await test.step("Hide trusted asset", async () => {
       /**
-       * Click `Don't show` on trusted ERC-20 asset
+       * Click `Don't show` on trusted ERC-20 asset.
        */
       await popup
         .getByLabel("Main")
@@ -493,7 +492,8 @@ test.describe("Token Trust", () => {
       ).toBeVisible({ timeout: 5000 })
 
       /**
-       * Make sure `Wallet` page is opened and there are unverified assets shown
+       * Make sure `Wallet` page is opened and there are unverified assets
+       * shown.
        */
       await walletPageHelper.assertCommonElements(
         /^Polygon$/,
