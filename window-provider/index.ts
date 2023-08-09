@@ -367,6 +367,17 @@ export default class TahoWindowProvider extends EventEmitter {
     })
   }
 
+  override emit(event: string | symbol, ...args: unknown[]): boolean {
+    const hadAdditionalListeners = window.walletRouter?.reemitTahoEvent(
+      event,
+      ...args
+    )
+
+    const hadDirectListeners = super.emit(event, ...args)
+
+    return hadAdditionalListeners || hadDirectListeners
+  }
+
   handleChainIdChange(chainId: string): void {
     this.chainId = chainId
     this.emit("chainChanged", chainId)
