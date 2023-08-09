@@ -68,21 +68,19 @@ type PanelDescriptor = {
  * return switchablePanels
  * ```
  */
-export function useSwitchablePanels(
-  panels: PanelDescriptor[]
-): ReactElement | null {
+export function useSwitchablePanels(panels: PanelDescriptor[]): JSX.Element {
   const [panelNumber, setPanelNumber] = useState(0)
 
-  return React.Fragment({
-    children: [
-      SharedPanelSwitcher({
-        setPanelNumber,
-        panelNumber,
-        panelNames: panels.map(({ name }) => name),
-      }),
-      panels[panelNumber].panelElement(),
-    ],
-  })
+  return React.createElement(
+    React.Fragment,
+    null,
+    SharedPanelSwitcher({
+      setPanelNumber,
+      panelNumber,
+      panelNames: panels.map(({ name }) => name),
+    }),
+    panels[panelNumber].panelElement()
+  )
 }
 
 export function useIsOnboarding(): boolean {
