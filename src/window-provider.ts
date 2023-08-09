@@ -195,13 +195,15 @@ if (!window.walletRouter) {
     ]),
   ].filter((item) => item !== undefined)
 
+  const wrappedLastInjectedProvider: WalletProvider | undefined =
+    window.ethereum === undefined
+      ? undefined
+      : wrapMetaMaskProvider(window.ethereum).provider
+
   Object.defineProperty(window, "walletRouter", {
     value: {
       currentProvider: window.tally,
-      lastInjectedProvider:
-        window.ethereum === undefined
-          ? undefined
-          : wrapMetaMaskProvider(window.ethereum),
+      lastInjectedProvider: wrappedLastInjectedProvider,
       tallyProvider: window.tally,
       providers: dedupedProviders,
       shouldSetTallyForCurrentProvider(
