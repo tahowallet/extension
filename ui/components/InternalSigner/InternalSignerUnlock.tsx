@@ -68,14 +68,12 @@ export default function InternalSignerUnlock({
 
   return (
     <section className="standard_width">
-      {displayCancelButton ? (
+      {displayCancelButton && (
         <div className="cancel_btn_wrap">
           <SharedButton type="tertiaryGray" size="small" onClick={handleCancel}>
             {tShared("cancelBtn")}
           </SharedButton>
         </div>
-      ) : (
-        <></>
       )}
       <div className="img_wrap">
         <div className="illustration_unlock" />

@@ -100,13 +100,12 @@ export default class SigningService extends BaseService<Events> {
       Promise<LedgerService>,
       Promise<ChainService>
     ]
-  > = async (internalSignerService, ledgerService, chainService) => {
-    return new this(
+  > = async (internalSignerService, ledgerService, chainService) =>
+    new this(
       await internalSignerService,
       await ledgerService,
       await chainService
     )
-  }
 
   private constructor(
     private internalSignerService: InternalSignerService,

@@ -138,6 +138,8 @@ jobs:
         working-directory: .github/workflows/pledge-signer-sync
       - run: yarn install --frozen-lockfile
         working-directory: scripts/key-generation
+      - run: yarn install --frozen-lockfile
+        working-directory: ci
       - run: yarn lint
   detect-if-flag-changed:
     runs-on: ubuntu-latest
@@ -228,11 +230,15 @@ jobs:
           name: extension-builds-fork-${{ github.event.number || github.event.head_commit.id }}
       - name: Extract extension
         run: unzip -o chrome-fork.zip -d dist/chrome
-      - name: Cache Hardhat
-        uses: actions/cache@v2
+      - name: Restore Hardhat cache
+        uses: actions/cache/restore@v3
         with:
           path: ci/cache
-          key: ${{ runner.os }}-hardhat-${{ hashFiles('ci/cache/*.json') }}
+          # 17094516 is a forking block used in the tests.
+          key: hardhat-17094516-${{ github.ref_name }}
+          restore-keys: |
+            hardhat-17094516-
+            hardhat-
       - name: Run Hardhat
         env:
           CHAIN_API_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.DEV_ALCHEMY_API_KEY }}
@@ -261,3 +267,12 @@ jobs:
             test-results/
             #videos/
           retention-days: 30
+      - name: Save Hardhat cache
+        uses: actions/cache/save@v3
+        # We want to save the cache even if the tests failed. Without the cache
+        # the tests almost always fail, so without `if: always()` we would have
+        # problem with creating the first cache.
+        if: always()
+        with:
+          path: ci/cache
+          key: hardhat-17094516-${{ github.ref_name }}-${{ hashFiles('ci/cache/**/*.json') }}

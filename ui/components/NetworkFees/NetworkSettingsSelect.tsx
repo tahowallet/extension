@@ -99,9 +99,9 @@ export default function NetworkSettingsSelect({
   const dispatch = useBackgroundDispatch()
 
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
-  const customGas = useBackgroundSelector((state) => {
-    return state.transactionConstruction.customFeesPerGas
-  })
+  const customGas = useBackgroundSelector(
+    (state) => state.transactionConstruction.customFeesPerGas
+  )
 
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [currentlySelectedType, setCurrentlySelectedType] = useState(
@@ -230,31 +230,25 @@ export default function NetworkSettingsSelect({
       <span className="settings_label network_fee_label">
         {t("networkFees.settingsTitle")}
       </span>
-      {gasOptions.map((option, i) => {
-        return (
-          <>
-            {option.type === "custom" ? (
-              <NetworkSettingsSelectOptionButtonCustom
-                option={option}
-                isActive={i === activeFeeIndex}
-                handleSelectGasOption={() => handleSelectGasOption(i)}
-                updateCustomGas={(
-                  customMaxBaseFee: bigint,
-                  customMaxPriorityFeePerGas: bigint
-                ) =>
-                  updateCustomGas(customMaxBaseFee, customMaxPriorityFeePerGas)
-                }
-              />
-            ) : (
-              <NetworkSettingsSelectOptionButton
-                option={option}
-                isActive={i === activeFeeIndex}
-                handleSelectGasOption={() => handleSelectGasOption(i)}
-              />
-            )}
-          </>
+      {gasOptions.map((option, i) =>
+        option.type === "custom" ? (
+          <NetworkSettingsSelectOptionButtonCustom
+            option={option}
+            isActive={i === activeFeeIndex}
+            handleSelectGasOption={() => handleSelectGasOption(i)}
+            updateCustomGas={(
+              customMaxBaseFee: bigint,
+              customMaxPriorityFeePerGas: bigint
+            ) => updateCustomGas(customMaxBaseFee, customMaxPriorityFeePerGas)}
+          />
+        ) : (
+          <NetworkSettingsSelectOptionButton
+            option={option}
+            isActive={i === activeFeeIndex}
+            handleSelectGasOption={() => handleSelectGasOption(i)}
+          />
         )
-      })}
+      )}
       <footer>
         {transactionDetails?.annotation?.warnings?.includes(
           "insufficient-funds"

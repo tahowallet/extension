@@ -27,12 +27,10 @@ export default function ClaimDelegateChoiceProfile(props: {
           <SharedAddressAvatar address={name} />
         )}
         <div className="referrer_label">{referrerLabel}</div>
-        {discard ? (
+        {discard && (
           <SharedButton type="tertiaryGray" size="small" onClick={discard}>
             Change
           </SharedButton>
-        ) : (
-          <></>
         )}
       </div>
       <style jsx>

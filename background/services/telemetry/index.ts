@@ -20,9 +20,7 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
     ServiceLifecycleEvents,
     TelemetryService,
     []
-  > = async () => {
-    return new this()
-  }
+  > = async () => new this()
 
   private constructor() {
     super({
@@ -45,7 +43,7 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
     const output = [
       "Extension storage quota:",
       TelemetryService.formatBytes(storageUsage.quota),
-      "\nIndexedDB usage:", // This is supposed to be formatted more nicely, but prettier made me do this
+      "\nIndexedDB usage:",
       TelemetryService.formatBytes(storageUsage.usage),
     ]
 

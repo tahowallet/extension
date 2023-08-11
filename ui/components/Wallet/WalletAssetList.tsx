@@ -15,7 +15,7 @@ type WalletAssetListProps = {
 
 export default function WalletAssetList(
   props: WalletAssetListProps
-): ReactElement {
+): ReactElement | null {
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet.activities",
   })
@@ -26,7 +26,7 @@ export default function WalletAssetList(
     CompleteAssetAmount<SmartContractFungibleAsset>["asset"] | null
   >(null)
 
-  if (!assetAmounts) return <></>
+  if (!assetAmounts) return null
 
   return (
     <>

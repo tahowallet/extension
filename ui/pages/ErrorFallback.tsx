@@ -10,10 +10,12 @@ export default function ErrorFallback(
 ): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "genericPages" })
 
+  const { error } = props
+
   useOnMount(() => {
     // We only need the original stack trace available in production logs
     if (process.env.NODE_ENV === "production") {
-      logger.error(props.error?.message, props.error?.stack)
+      logger.error(error?.message, error?.stack)
     }
   })
 

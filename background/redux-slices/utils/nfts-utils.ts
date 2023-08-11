@@ -20,13 +20,11 @@ type NFTCollectionEnriched = NFTCollectionCached & {
   }
 }
 
-const isEnabledFilter = (id: string, filters: Filter[]): boolean => {
-  return !!filters.find((filter) => id === filter.id && filter.isEnabled)
-}
+const isEnabledFilter = (id: string, filters: Filter[]): boolean =>
+  filters.some((filter) => id === filter.id && filter.isEnabled)
 
-const isETHPrice = (collection: NFTCollectionCached): boolean => {
-  return !!ETH_SYMBOLS.includes(collection?.floorPrice?.tokenSymbol ?? "")
-}
+const isETHPrice = (collection: NFTCollectionCached): boolean =>
+  ETH_SYMBOLS.includes(collection?.floorPrice?.tokenSymbol ?? "")
 
 export const getAdditionalDataForFilter = (
   id: string,

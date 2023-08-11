@@ -124,15 +124,14 @@ describe("InternalSignerService when uninitialized", () => {
 
     it.each(validMnemonics.metamask)(
       "will import mnemonic '%s'",
-      async (mnemonic) => {
-        return expect(
+      async (mnemonic) =>
+        expect(
           service.importSigner({
             type: SignerSourceTypes.keyring,
             mnemonic,
             source: SignerImportSource.import,
           })
         ).resolves
-      }
     )
 
     it("will create multiple distinct BIP-39 S256 accounts and expose mnemonics", async () => {

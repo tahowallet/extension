@@ -244,7 +244,7 @@ const reduxCache: Middleware = (store) => (next) => (action) => {
 
 // Declared out here so ReduxStoreType can be used in Main.store type
 // declaration.
-const initializeStore = (preloadedState = {}, main: Main) =>
+const initializeStore = (main: Main, preloadedState = {}) =>
   configureStore({
     preloadedState,
     reducer: rootReducer,
@@ -506,7 +506,7 @@ export default class Main extends BaseService<never> {
     })
 
     // Start up the redux store and set it up for proxying.
-    this.store = initializeStore(savedReduxState, this)
+    this.store = initializeStore(this, savedReduxState)
 
     /**
      * Tracks pending updates to the redux store. This is used to delay responding
@@ -1076,16 +1076,14 @@ export default class Main extends BaseService<never> {
         const filteredBalancesToDispatch: AccountBalance[] = []
 
         balances
-          .filter((balance) => {
-            // Network base assets with smart contract addresses from some networks
-            // e.g. Optimism, Polygon might have been retrieved through alchemy as
-            // token balances but they should not be handled here as they would
-            // not be correctly treated as base assets
-            return !isBaseAssetForNetwork(
-              balance.assetAmount.asset,
-              balance.network
-            )
-          })
+          .filter(
+            (balance) =>
+              // Network base assets with smart contract addresses from some networks
+              // e.g. Optimism, Polygon might have been retrieved through alchemy as
+              // token balances but they should not be handled here as they would
+              // not be correctly treated as base assets
+              !isBaseAssetForNetwork(balance.assetAmount.asset, balance.network)
+          )
           .forEach((balance) => {
             // TODO support multi-network assets
             const balanceHasAnAlreadyTrackedAsset = assetsToTrack.some(
@@ -1448,12 +1446,9 @@ export default class Main extends BaseService<never> {
   }
 
   async connectProviderBridgeService(): Promise<void> {
-    uiSliceEmitter.on("addCustomNetworkResponse", ([requestId, success]) => {
-      return this.providerBridgeService.handleAddNetworkRequest(
-        requestId,
-        success
-      )
-    })
+    uiSliceEmitter.on("addCustomNetworkResponse", ([requestId, success]) =>
+      this.providerBridgeService.handleAddNetworkRequest(requestId, success)
+    )
 
     this.providerBridgeService.emitter.on(
       "requestPermission",
@@ -1785,7 +1780,8 @@ export default class Main extends BaseService<never> {
         {
           chainId: network.chainID,
           name: network.name,
-          description: `This event is fired when a chain is subscribed to from the wallet for the first time.`,
+          description:
+            "This event is fired when a chain is subscribed to from the wallet for the first time.",
         }
       )
     })

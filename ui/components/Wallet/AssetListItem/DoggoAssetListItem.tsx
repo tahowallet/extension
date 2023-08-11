@@ -56,15 +56,13 @@ export default function DoggoAssetListItem({
           </div>
         </div>
         <div className="asset_right">
-          <>
-            <button
-              type="button"
-              aria-label="Rewards program"
-              onClick={() => setIsBonusProgramOpen(true)}
-              className="asset_icon asset_icon_gift"
-            />
-            <Link to="/earn" className="asset_icon asset_icon_earn" />
-          </>
+          <button
+            type="button"
+            aria-label="Rewards program"
+            onClick={() => setIsBonusProgramOpen(true)}
+            className="asset_icon asset_icon_gift"
+          />
+          <Link to="/earn" className="asset_icon asset_icon_earn" />
         </div>
         <style jsx>{`
           ${styles}

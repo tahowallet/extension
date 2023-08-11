@@ -481,13 +481,13 @@ export class ChainDatabase extends Dexie {
     tx: AnyEVMTransaction,
     dataSource: Transaction["dataSource"]
   ): Promise<void> {
-    await this.transaction("rw", this.chainTransactions, () => {
-      return this.chainTransactions.put({
+    await this.transaction("rw", this.chainTransactions, () =>
+      this.chainTransactions.put({
         ...tx,
         firstSeen: Date.now(),
         dataSource,
       })
-    })
+    )
   }
 
   async getLatestAccountBalance(

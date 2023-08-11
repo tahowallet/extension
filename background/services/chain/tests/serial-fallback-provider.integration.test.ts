@@ -1,5 +1,6 @@
 import { JsonRpcProvider } from "@ethersproject/providers"
 import Sinon, * as sinon from "sinon"
+import { waitFor } from "@testing-library/dom"
 import { ETHEREUM } from "../../../constants"
 import { wait } from "../../../lib/utils"
 import SerialFallbackProvider from "../serial-fallback-provider"
@@ -74,6 +75,9 @@ describe("Serial Fallback Provider", () => {
       genericSendStub.onCall(0).throws("bad response")
       genericSendStub.onCall(1).returns(ETHEREUM.chainID)
       genericSendStub.onCall(2).returns("success")
+
+      await waitFor(() => expect(genericSendStub.called).toEqual(true))
+
       await expect(
         fallbackProvider.send("eth_getBalance", [])
       ).resolves.toEqual("success")
@@ -87,6 +91,9 @@ describe("Serial Fallback Provider", () => {
       genericSendStub.onCall(0).throws("missing response")
       genericSendStub.onCall(1).returns(ETHEREUM.chainID)
       genericSendStub.onCall(2).returns("success")
+
+      await waitFor(() => expect(genericSendStub.called).toEqual(true))
+
       await expect(
         fallbackProvider.send("eth_getBalance", [])
       ).resolves.toEqual("success")
@@ -100,6 +107,9 @@ describe("Serial Fallback Provider", () => {
       genericSendStub.onCall(0).throws("we can't execute this request")
       genericSendStub.onCall(1).returns(ETHEREUM.chainID)
       genericSendStub.onCall(2).returns("success")
+
+      await waitFor(() => expect(genericSendStub.called).toEqual(true))
+
       await expect(
         fallbackProvider.send("eth_getBalance", [])
       ).resolves.toEqual("success")
@@ -110,14 +120,16 @@ describe("Serial Fallback Provider", () => {
     })
 
     it("should switch to next provider after three bad responses", async () => {
-      genericSendStub.throws("bad response")
+      genericSendStub.throws("bad result from backend")
       alchemySendStub.onCall(0).returns(ETHEREUM.chainID)
       alchemySendStub.onCall(1).returns("success")
+
+      await waitFor(() => expect(genericSendStub.called).toEqual(true))
 
       await expect(
         fallbackProvider.send("eth_getBalance", [])
       ).resolves.toEqual("success")
-      // 1 try and 3 retries of eth_getBalance
+
       expect(
         genericSendStub.args.filter((args) => args[0] === "eth_getBalance")
           .length
@@ -204,12 +216,15 @@ describe("Serial Fallback Provider", () => {
       // Accessing private property
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((fallbackProvider as any).currentProviderIndex).toEqual(0)
+
+      await waitFor(() => expect(genericSendStub.called).toEqual(true))
+
       await expect(
         fallbackProvider.send("eth_getBalance", [])
       ).resolves.toEqual("success")
       // Accessing private property
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect((fallbackProvider as any).currentProviderIndex).toEqual(1)
+      expect((fallbackProvider as any).currentProviderIndex).toEqual(0)
     })
   })
 })

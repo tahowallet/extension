@@ -44,30 +44,32 @@ const HELPDESK_CUSTOM_TOKENS_LINK =
   "https://tahowallet.notion.site/Adding-Custom-Tokens-2facd9b82b5f4685a7d4766caeb05a4c"
 const MAX_SYMBOL_LENGTH = 10
 
-const PlaceholderIcon = () => (
-  <div>
-    <i />
-    <style jsx>{`
-      i {
-        mask-image: url("/images/placeholder.svg");
-        mask-size: cover;
-        display: block;
-        width: 24px;
-        height: 24px;
-        background-color: var(--green-20);
-      }
-      div {
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: var(--green-60);
-        width: 40px;
-        color: var(--green-20);
-      }
-    `}</style>
-  </div>
-)
+function PlaceholderIcon() {
+  return (
+    <div>
+      <i />
+      <style jsx>{`
+        i {
+          mask-image: url("/images/placeholder.svg");
+          mask-size: cover;
+          display: block;
+          width: 24px;
+          height: 24px;
+          background-color: var(--green-20);
+        }
+        div {
+          border-radius: 50%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: var(--green-60);
+          width: 40px;
+          color: var(--green-20);
+        }
+      `}</style>
+    </div>
+  )
+}
 
 export default function SettingsAddCustomAsset(): ReactElement {
   const { t } = useTranslation("translation", {
@@ -214,7 +216,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
 
   return (
     <div className="standard_width_padded wrapper">
-      <SharedPageHeader withoutBackText>{t(`title`)}</SharedPageHeader>
+      <SharedPageHeader withoutBackText>{t("title")}</SharedPageHeader>
       <style jsx>{`
         .tooltip_wrap {
           position: absolute;
@@ -399,23 +401,21 @@ export default function SettingsAddCustomAsset(): ReactElement {
             </div>
           </div>
         ) : (
-          <>
-            {showWarningAboutDust && (
-              <div className="alert">
-                <SharedIcon
-                  color="var(--attention)"
-                  width={24}
-                  customStyles="min-width: 24px;"
-                  icon="icons/m/notif-attention.svg"
-                />
-                <div className="alert_content">
-                  <div className="title" style={{ color: "var(--attention)" }}>
-                    {t("warning.dust.title", warningOptions)}
-                  </div>
+          showWarningAboutDust && (
+            <div className="alert">
+              <SharedIcon
+                color="var(--attention)"
+                width={24}
+                customStyles="min-width: 24px;"
+                icon="icons/m/notif-attention.svg"
+              />
+              <div className="alert_content">
+                <div className="title" style={{ color: "var(--attention)" }}>
+                  {t("warning.dust.title", warningOptions)}
                 </div>
               </div>
-            )}
-          </>
+            </div>
+          )
         )}
       </form>
       <style jsx>{`

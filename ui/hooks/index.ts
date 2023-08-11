@@ -1,6 +1,6 @@
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 
-import { useState, useEffect, ReactElement, ReactNode } from "react"
+import React, { useState, useEffect, ReactElement } from "react"
 import { getAllAddresses } from "@tallyho/tally-background/redux-slices/selectors/accountsSelectors"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
 import { useBackgroundSelector } from "./redux-hooks"
@@ -41,7 +41,7 @@ type PanelDescriptor = {
  * interchange between several screens exclusively from each other.
  *
  * The underlying component is a `SharedPanelSwitcher`, and the hook returns
- * the switcher element and current panel being displayed as siblings for
+ * the switcher element and current panel being displayed as a fragment for
  * adding to a JSX component.
  *
  * @example
@@ -65,20 +65,22 @@ type PanelDescriptor = {
  *   },
  * ])
 
- * return <>{switchablePanels}</>
+ * return switchablePanels
  * ```
  */
-export function useSwitchablePanels(panels: PanelDescriptor[]): ReactNode {
+export function useSwitchablePanels(panels: PanelDescriptor[]): JSX.Element {
   const [panelNumber, setPanelNumber] = useState(0)
 
-  return [
+  return React.createElement(
+    React.Fragment,
+    null,
     SharedPanelSwitcher({
       setPanelNumber,
       panelNumber,
       panelNames: panels.map(({ name }) => name),
     }),
-    panels[panelNumber].panelElement(),
-  ]
+    panels[panelNumber].panelElement()
+  )
 }
 
 export function useIsOnboarding(): boolean {

@@ -1,9 +1,11 @@
 import React from "react"
 
-const SignDataInfo: React.FC<{
+type Props = {
   label: string
   content: string
-}> = ({ label, content }) => {
+}
+
+export default function SignDataInfo({ label, content }: Props): JSX.Element {
   return (
     <>
       <div className="wrapper">
@@ -30,5 +32,3 @@ const SignDataInfo: React.FC<{
     </>
   )
 }
-
-export default SignDataInfo

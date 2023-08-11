@@ -14,7 +14,7 @@ type SignerInternalSigningProps = {
 export default function SignerInternalSigning({
   signActionCreator,
   redirectToActivityPage,
-}: SignerInternalSigningProps): ReactElement {
+}: SignerInternalSigningProps): ReactElement | null {
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
   const lockStatus = useBackgroundSelector(selectInternalSignerStatus)
@@ -53,5 +53,5 @@ export default function SignerInternalSigning({
 
   // If the internal signer service is ready, we don't render anything as signing should be
   // quick; we may want a brief spinner.
-  return <></>
+  return null
 }

@@ -9,11 +9,11 @@ export default function ReadOnlyNotice({
   isLite = false,
 }: {
   isLite?: boolean
-}): ReactElement {
+}): ReactElement | null {
   const { t } = useTranslation()
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
-  if (currentAccountSigner !== ReadOnlyAccountSigner) return <></>
+  if (currentAccountSigner !== ReadOnlyAccountSigner) return null
 
   return (
     <div

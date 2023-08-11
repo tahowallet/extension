@@ -30,7 +30,7 @@ interface NetworkSettingsChooserProps {
 export default function NetworkSettingsChooser({
   estimatedFeesPerGas,
   onNetworkSettingsSave,
-}: NetworkSettingsChooserProps): ReactElement {
+}: NetworkSettingsChooserProps): ReactElement | null {
   const [networkSettings, setNetworkSettings] = useState(
     useBackgroundSelector(selectDefaultNetworkFeeSettings)
   )
@@ -74,7 +74,7 @@ export default function NetworkSettingsChooser({
       )
     }
 
-    return <></>
+    return null
   }
 
   return (

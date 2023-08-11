@@ -118,10 +118,7 @@ export const getNetworkIcon = (network: EVMNetwork): string => {
   return FALLBACK_ICONS_BY_CHAINID[network.chainID] ?? ""
 }
 
-export const getBlockExplorerURL = (
-  network: EVMNetwork
-): string | undefined => {
-  return DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
+export const getBlockExplorerURL = (network: EVMNetwork): string | undefined =>
+  DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
     ? blockExplorer[network.chainID].url
     : network.blockExplorerURL
-}

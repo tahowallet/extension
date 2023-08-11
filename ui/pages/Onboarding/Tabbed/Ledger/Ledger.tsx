@@ -65,7 +65,9 @@ export default function Ledger(): ReactElement {
               // e.g., "I don't see my device".
               // Without a timeout, the DOM is updated
               // before firing clicks outside the popup.
-              await new Promise((resolve) => setTimeout(resolve, 100))
+              await new Promise((resolve) => {
+                setTimeout(resolve, 100)
+              })
 
               // We don't handle the error here but let
               // connectLedger fail later.

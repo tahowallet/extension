@@ -21,12 +21,10 @@ export default function ClaimAmountBanner({
             column: showLabel,
           })}
         >
-          {showLabel ? (
+          {showLabel && (
             <div className="claimable_text">
               Your claim{showBonus ? " + Bonus" : ""}
             </div>
-          ) : (
-            <></>
           )}
           <div className="claimable_amount">{amount}</div>
           <div className="claimable_text symbol">DOGGO</div>
