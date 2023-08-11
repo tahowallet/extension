@@ -16,7 +16,6 @@ import {
   isEIP1559TransactionRequest,
   isKnownTxType,
   Network,
-  sameNetwork,
   SignedTransaction,
   TransactionRequestWithNonce,
 } from "../../networks"
@@ -26,15 +25,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
-import {
-  ARBITRUM_NOVA,
-  ARBITRUM_ONE,
-  AVALANCHE,
-  ETHEREUM,
-  GOERLI,
-  OPTIMISM,
-  POLYGON,
-} from "../../constants"
+import { ETHEREUM } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { AddressOnNetwork } from "../../accounts"
 
