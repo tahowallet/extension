@@ -514,32 +514,19 @@ export default class Main extends BaseService<never> {
      * necessary to prevent race conditions where the UI expects the store to be
      * updated before the thunk has finished dispatching.
      */
-    let storeUpdateLock: Promise<void> = Promise.resolve()
-    const pendingUpdates: (() => void)[] = []
+    let storeUpdateLock: Promise<void> | null
+    let releaseLock: () => void
 
     const queueUpdate = debounce(
       (lastState, newState, updateFn) => {
-        const clearPendingUpdates = () => {
-          pendingUpdates.forEach((resolve) => resolve())
+        if (lastState !== newState) {
+          const diff = deepDiff(lastState, newState)
 
-          // Clear all currently tracked updates
-          while (pendingUpdates.length) {
-            pendingUpdates.pop()
+          if (diff !== undefined) {
+            updateFn(newState, [diff])
           }
         }
-
-        if (lastState === newState) {
-          clearPendingUpdates()
-          return
-        }
-
-        const diff = deepDiff(lastState, newState)
-
-        if (diff !== undefined) {
-          updateFn(newState, [diff])
-        }
-
-        clearPendingUpdates()
+        releaseLock()
       },
       30,
       { maxWait: 30, trailing: true }
@@ -549,10 +536,16 @@ export default class Main extends BaseService<never> {
       serializer: encodeJSON,
       deserializer: decodeJSON,
       diffStrategy: (oldObj, newObj, forceUpdate) => {
-        storeUpdateLock = new Promise((resolve) => {
-          pendingUpdates.push(resolve)
-          queueUpdate(oldObj, newObj, forceUpdate)
-        })
+        if (!storeUpdateLock) {
+          storeUpdateLock = new Promise((resolve) => {
+            releaseLock = () => {
+              resolve()
+              storeUpdateLock = null
+            }
+          })
+        }
+
+        queueUpdate(oldObj, newObj, forceUpdate)
 
         // Return no diffs as we're manually handling these inside `queueUpdate`
         return []
@@ -561,15 +554,14 @@ export default class Main extends BaseService<never> {
         dispatchResult: Promise<unknown> | unknown,
         send: (param: { error: string | null; value: unknown | null }) => void
       ) => {
-        const isThunk = dispatchResult instanceof Promise
         try {
           // if dispatch is a thunk, wait for the result
           const result = await dispatchResult
 
-          // by this time, all pending updates should've been tracked.
+          // By this time, all pending updates should've been tracked.
           // since we're dealing with a thunk, we need to wait for
           // the store to be updated
-          if (isThunk) await storeUpdateLock
+          await storeUpdateLock
 
           send({
             error: null,
@@ -582,7 +574,7 @@ export default class Main extends BaseService<never> {
           )
 
           // Store could still have been updated if there was an error
-          if (isThunk) await storeUpdateLock
+          await storeUpdateLock
 
           send({
             error: encodeJSON(error),
