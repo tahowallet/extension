@@ -207,7 +207,7 @@ export default class SigningService extends BaseService<Events> {
 
       switch (addressHandler.signer) {
         case "keyring":
-          return this.keyringService.isTransactionCompatible(
+          return this.internalSignerService.isTransactionCompatible(
             network,
             otherNetwork
           )

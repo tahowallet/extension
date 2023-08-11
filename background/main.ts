@@ -735,7 +735,6 @@ export default class Main extends BaseService<never> {
     this.store.dispatch(revokePermissionsForAddress(address))
     await this.providerBridgeService.revokePermissionsForAddress(address)
     await this.chainService.removeAccountToTrack(address)
-    // TODO Adjust to handle specific network.
     await this.signingService.removeAccount(address, signer.type)
 
     this.nameService.removeAccount(address)
