@@ -14,7 +14,7 @@ import {
 import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
+import { AddressOnNetwork } from "../../accounts"
 import { assertUnreachable } from "../../lib/utils/type-guards"
 import { sameEVMAddress } from "../../lib/utils"
 
