@@ -26,7 +26,6 @@ export default class AssetsHelper {
         has: this.popup.locator("span").filter({ hasText: assetSymbol }),
       })
     }
-    await this.popup.waitForTimeout(2000) // We need to wait for the background elements to disappear
     await expect(asset.getByText(assetSymbol)).toBeVisible()
     /**
      * Make sure the asset is not listed among unverified assets.
