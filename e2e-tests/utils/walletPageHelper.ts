@@ -219,7 +219,7 @@ export default class WalletPageHelper {
     await expect(
       this.popup.getByTestId("slide_up_menu").locator(".spinner")
     ).toHaveCount(0)
-    await this.closeAccountsPopup()
+    await this.closeAccountsSlideUp()
   }
 
   /**
@@ -247,29 +247,15 @@ export default class WalletPageHelper {
   /**
    * Function closing the Accounts popup.
    */
-  async closeAccountsPopup(): Promise<void> {
-    // The `slide_up_menu` DOM element for Accounts contains a number of
-    // identical `slide_up_menu` child elements, all containing their own Close
-    // button. All Close buttons except of one are not visible for users. On the
-    // DOM side, the difference is that those invisible buttons are wrapped with
-    // the `div` element of `slide_up_menu closed` class, whereas the visible
-    // button is wrapped by `slide_up_menu with_overflow` `div`.
-    // As a workaround we use ElementHandle to locate the right item to click,
-    // by specifying that the element shouldn't be wrapped by the DOM item of
-    // the `closed` class.
-    const accountsPopup = await this.popup.$(".slide_up_menu:not(.closed)")
-    if (accountsPopup) {
-      const closeButton = await accountsPopup.$(
-        'button[aria-label="Close menu"]'
-      )
-      if (closeButton) {
-        await closeButton.click()
-      } else {
-        throw new Error("Close button not found")
-      }
-    } else {
-      throw new Error("Accounts popup not found")
-    }
+  async closeAccountsSlideUp(): Promise<void> {
+    const accountsSlideUp = await this.popup
+      .getByTestId("slide_up_menu")
+      .filter({ hasText: "Accounts" })
+    await expect(accountsSlideUp).toBeVisible()
+    await accountsSlideUp
+      .getByRole("button", { name: "Close menu" })
+      .first()
+      .click()
   }
 
   /**
