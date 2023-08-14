@@ -198,10 +198,17 @@ export default class WalletPageHelper {
   }
 
   /**
-   * Function adding new address to an already imported account
+   * Function adding new address to an already imported account.
    */
   async addAddressToAccount(accountLabel: string): Promise<void> {
+    /**
+     * Open the Accounts slide up.
+     */
     await this.popup.getByTestId("top_menu_profile_button").last().click()
+
+    /**
+     * Add new address.
+     */
     const numberOfAccounts = await this.popup
       .getByTestId("wallet_address_item")
       .count()
@@ -219,7 +226,18 @@ export default class WalletPageHelper {
     await expect(
       this.popup.getByTestId("slide_up_menu").locator(".spinner")
     ).toHaveCount(0)
-    await this.closeAccountsSlideUp()
+
+    /**
+     * Close the Accounts slide up.
+     */
+    const accountsSlideUp = await this.popup
+      .getByTestId("slide_up_menu")
+      .filter({ hasText: "Accounts" })
+    await expect(accountsSlideUp).toBeVisible()
+    await accountsSlideUp
+      .getByRole("button", { name: "Close menu" })
+      .first()
+      .click()
   }
 
   /**
@@ -242,20 +260,6 @@ export default class WalletPageHelper {
     await expect(
       this.popup.getByTestId("top_menu_profile_button").last()
     ).toHaveText(accountName)
-  }
-
-  /**
-   * Function closing the Accounts popup.
-   */
-  async closeAccountsSlideUp(): Promise<void> {
-    const accountsSlideUp = await this.popup
-      .getByTestId("slide_up_menu")
-      .filter({ hasText: "Accounts" })
-    await expect(accountsSlideUp).toBeVisible()
-    await accountsSlideUp
-      .getByRole("button", { name: "Close menu" })
-      .first()
-      .click()
   }
 
   /**
