@@ -10,38 +10,57 @@ export default class AssetsHelper {
   /**
    * This function verifies that the provided asset is present (an in case of
    * base assets, displayed as first) on the list of assets on the Wallet page.
-   * It verifies that the asset has a balance (and a USD value, when aplicable)
-   * displayed and there are options to Send and Swap. It also makes sure the
-   * asset is not displayed in the unverified section.
+   * In case of situation where there are multiple assets with the same name, it
+   * verifies that all of those assets except of one are hidden.
+   * The function then verifies that the not hidden asset has a balance (and a
+   * USD value, when aplicable) displayed and there are options to Send and
+   * Swap.
    */
   async assertVerifiedAssetOnWalletPage(
     assetSymbol: RegExp,
     assetType: "base" | "knownERC20" | "trusted"
   ): Promise<void> {
-    let asset: ReturnType<typeof this.popup.locator> | undefined
-    if (assetType === "base") {
-      asset = this.popup.getByTestId("asset_list_item").first() // We use `.first()` because the base asset should be first on the list
-    } else {
-      asset = this.popup.getByTestId("asset_list_item").filter({
+    const allSpecifiedAssets = this.popup
+      .getByTestId("asset_list_item")
+      .filter({
         has: this.popup.locator("span").filter({ hasText: assetSymbol }),
       })
-    }
-    await expect(asset.getByText(assetSymbol)).toBeVisible()
-    /**
-     * Make sure the asset is not listed among unverified assets.
-     */
-    await expect(
-      this.popup
-        .getByTestId("hidden_assets_container")
-        .filter({ has: asset.getByText(assetSymbol) })
-    ).not.toBeVisible()
 
-    await expect(asset.getByText(/^(\d|,)+(\.\d{2,4})*$/)).toBeVisible()
-    if (assetType === "base" || assetType === "knownERC20") {
-      await expect(asset.getByText(/^\$(0|\d+\.\d{2})$/)).toBeVisible()
+    /**
+     * Make sure that the asset we're checking appears exactly once on the list
+     * of verified assets.
+     */
+    const hiddenSpecifiedAssets = this.popup
+      .getByTestId("hidden_assets_container")
+      .getByTestId("asset_list_item")
+      .filter({
+        has: this.popup.locator("span").filter({ hasText: assetSymbol }),
+      })
+    const hiddenSpecifiedAssetsCount = await hiddenSpecifiedAssets.count()
+    const allSpecifiedAssetsCount = await allSpecifiedAssets.count()
+    expect(hiddenSpecifiedAssetsCount).toBe(allSpecifiedAssetsCount - 1)
+
+    /**
+     * If specified asset is a base asset, make sure it's first on the list.
+     */
+    if (assetType === "base") {
+      expect(
+        allSpecifiedAssets.first().getByTestId("asset_symbol")
+      ).toBeVisible()
     }
-    await asset.locator(".asset_icon_send").click({ trial: true })
-    await asset.locator(".asset_icon_swap").click({ trial: true })
+
+    /**
+     * Verify that the fields displayed for the first asset with the specified
+     * name are the fields we expect for a verified asset.
+     */
+
+    const verifiedAsset = allSpecifiedAssets.first()
+    await expect(verifiedAsset.getByText(/^(\d|,)+(\.\d{2,4})*$/)).toBeVisible()
+    if (assetType === "base" || assetType === "knownERC20") {
+      await expect(verifiedAsset.getByText(/^\$(0|\d+\.\d{2})$/)).toBeVisible()
+    }
+    await verifiedAsset.locator(".asset_icon_send").click({ trial: true })
+    await verifiedAsset.locator(".asset_icon_swap").click({ trial: true })
   }
 
   /**

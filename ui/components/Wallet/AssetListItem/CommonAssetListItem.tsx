@@ -80,7 +80,7 @@ export default function CommonAssetListItem(
               <span className="bold_amount_count">
                 {assetAmount.localizedDecimalAmount}
               </span>
-              <span title={assetAmount.asset.symbol}>
+              <span title={assetAmount.asset.symbol} data-testid="asset_symbol">
                 {trimWithEllipsis(assetAmount.asset.symbol, MAX_SYMBOL_LENGTH)}
               </span>
             </div>
